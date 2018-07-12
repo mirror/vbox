@@ -410,7 +410,7 @@
      </widget>
      <widget class="QWidget" name="m_pTabVideoCapture">
       <attribute name="title">
-       <string>Video &amp;Capture</string>
+       <string>&amp;Capture</string>
       </attribute>
       <layout class="QVBoxLayout" name="m_pLayoutTabVideoCapture">
        <item>
@@ -425,7 +425,7 @@
              <string>When checked, VirtualBox will record the virtual machine session as a video file.</string>
             </property>
             <property name="text">
-             <string>&amp;Enable Video Capture</string>
+             <string>&amp;Enable Capture</string>
             </property>
            </widget>
           </item>
@@ -452,6 +452,26 @@
             </property>
             <layout class="QGridLayout" name="m_pContainerLayoutVideoCapture">
              <item row="0" column="0">
+              <widget class="QLabel" name="m_pLabelCaptureMode">
+               <property name="text">
+                <string>Capture &amp;Mode:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="buddy">
+                <cstring>m_pEditorVideoCapturePath</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1" colspan="1">
+              <widget class="QComboBox" name="m_pComboBoxCaptureMode">
+               <property name="whatsThis">
+                <string>Stores the capture mode.</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
               <widget class="QLabel" name="m_pLabelVideoCapturePath">
                <property name="text">
                 <string>File &amp;Path:</string>
@@ -464,14 +484,14 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1" colspan="3">
+             <item row="1" column="1" colspan="3">
               <widget class="UIFilePathSelector" name="m_pEditorVideoCapturePath">
                <property name="whatsThis">
                 <string>Holds the filename VirtualBox uses to save the recorded content.</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="2" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureSize">
                <property name="text">
                 <string>Frame &amp;Size:</string>
@@ -484,7 +504,7 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
+             <item row="2" column="1">
               <widget class="QComboBox" name="m_pComboVideoCaptureSize">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -497,21 +517,21 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
+             <item row="2" column="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureWidth">
                <property name="whatsThis">
                 <string>Holds the &lt;b>horizontal&lt;/b> resolution (frame width) of the recorded video.</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="3">
+             <item row="2" column="3">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureHeight">
                <property name="whatsThis">
                 <string>Holds the &lt;b>vertical&lt;/b> resolution (frame height) of the recorded video.</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="3" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureFrameRate">
                <property name="text">
                 <string>&amp;Frame Rate:</string>
@@ -524,7 +544,7 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="1" rowspan="2">
+             <item row="3" column="1" rowspan="2">
               <widget class="QWidget" name="m_pContainerSliderVideoCaptureFrameRate">
                <layout class="QGridLayout" name="m_pContainerLayoutSliderVideoCaptureFrameRate">
                 <property name="spacing">
@@ -562,14 +582,14 @@
                </layout>
               </widget>
              </item>
-             <item row="2" column="2" colspan="2">
+             <item row="3" column="2" colspan="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureFrameRate">
                <property name="whatsThis">
                 <string>Controls the maximum number of &lt;b>frames per second&lt;/b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
+             <item row="5" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureRate">
                <property name="text">
                 <string>&amp;Quality:</string>
@@ -582,7 +602,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="1" rowspan="2">
+             <item row="5" column="1" rowspan="2">
               <widget class="QWidget" name="m_pContainerSliderVideoCaptureQuality">
                <layout class="QGridLayout" name="m_pContainerLayoutSliderVideoCaptureQuality">
                 <property name="spacing">
@@ -636,35 +656,15 @@
                </layout>
               </widget>
              </item>
-             <item row="4" column="2" colspan="2">
+             <item row="5" column="2" colspan="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureBitRate">
                <property name="whatsThis">
                 <string>Holds the bitrate in &lt;b>kilobits per second&lt;/b>. Increasing this value will make the video look better at the cost of an increased file size.</string>
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
+             <item row="7" column="1">
               <widget class="QLabel" name="m_pLabelVideoCaptureSizeHint"/>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="m_pLabelVideoCaptureExtended">
-               <property name="text">
-                <string>Extended Features:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="1" colspan="3">
-              <widget class="QCheckBox" name="m_pCheckBoxVideoCaptureWithAudio">
-               <property name="whatsThis">
-                <string>When checked, VirtualBox will record the audio stream to video file as well.</string>
-               </property>
-               <property name="text">
-                <string>&amp;Record Audio</string>
-               </property>
-              </widget>
              </item>
              <item row="8" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureScreens">

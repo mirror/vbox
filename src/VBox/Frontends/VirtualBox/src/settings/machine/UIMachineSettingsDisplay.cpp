@@ -103,6 +103,14 @@ struct UIDataSettingsMachineDisplay
     {
         VideoCaptureOption_Unknown,
         VideoCaptureOption_AC,
+        VideoCaptureOption_VC
+    };
+
+    enum CaptureMode
+    {
+        CaptureMode_VideoAudio,
+        CaptureMode_VideoOnly,
+        CaptureMode_AudioOnly
     };
 
     /** Returns enum value corresponding to passed @a strKey. */
@@ -111,6 +119,7 @@ struct UIDataSettingsMachineDisplay
         /* Compare case-sensitive: */
         QMap<QString, VideoCaptureOption> keys;
         keys["ac_enabled"] = VideoCaptureOption_AC;
+        keys["vc_enabled"] = VideoCaptureOption_VC;
         /* Return known value or VideoCaptureOption_Unknown otherwise: */
         return keys.value(strKey, VideoCaptureOption_Unknown);
     }
@@ -132,6 +141,7 @@ struct UIDataSettingsMachineDisplay
         /* Compare case-sensitive: */
         QMap<VideoCaptureOption, QString> values;
         values[VideoCaptureOption_AC] = "ac_enabled";
+        values[VideoCaptureOption_VC] = "vc_enabled";
         /* Return known value or QString() otherwise: */
         return values.value(enmKey);
     }
@@ -213,6 +223,34 @@ struct UIDataSettingsMachineDisplay
         else
         {
             aValues[iIndex] = fEnabled;
+        }
+        QString strResult;
+        serializeVideoCaptureOptions(aKeys, aValues, strResult);
+        return strResult;
+    }
+
+    /** Defines whether passed Video Capture Options @a enmOptions is @a flags (enabled). */
+    static QString setVideoCaptureOptionEnabled(const QString &strOptions,
+                                                const QVector<VideoCaptureOption> &enmOptions,
+                                                const QVector<bool> &flags)
+    {
+        if (enmOptions.size() != flags.size())
+            return QString();
+        QList<VideoCaptureOption> aKeys;
+        QList<bool> aValues;
+        parseVideoCaptureOptions(strOptions, aKeys, aValues);
+        for(int i = 0; i < flags.size(); ++i)
+        {
+            int iIndex = aKeys.indexOf(enmOptions[i]);
+            if (iIndex == -1)
+            {
+                aKeys << enmOptions[i];
+                aValues << flags[i];
+            }
+            else
+            {
+                aValues[iIndex] = flags[i];
+            }
         }
         QString strResult;
         serializeVideoCaptureOptions(aKeys, aValues, strResult);
@@ -417,8 +455,17 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorVideoCaptureFrameRate->setValue(oldDisplayData.m_iVideoCaptureFrameRate);
     m_pEditorVideoCaptureBitRate->setValue(oldDisplayData.m_iVideoCaptureBitRate);
     m_pScrollerVideoCaptureScreens->setValue(oldDisplayData.m_screens);
-    m_pCheckBoxVideoCaptureWithAudio->setChecked(UIDataSettingsMachineDisplay::isVideoCaptureOptionEnabled(oldDisplayData.m_strVideoCaptureOptions,
-                                                                                                           UIDataSettingsMachineDisplay::VideoCaptureOption_AC));
+
+    bool fAudioCapture = UIDataSettingsMachineDisplay::isVideoCaptureOptionEnabled(oldDisplayData.m_strVideoCaptureOptions,
+                                                                                   UIDataSettingsMachineDisplay::VideoCaptureOption_AC);
+    bool fVideoCapture = UIDataSettingsMachineDisplay::isVideoCaptureOptionEnabled(oldDisplayData.m_strVideoCaptureOptions,
+                                                                                   UIDataSettingsMachineDisplay::VideoCaptureOption_VC);
+    if (fAudioCapture && fVideoCapture)
+        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio));
+    else if (!fAudioCapture && fVideoCapture)
+        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly));
+    else if (fAudioCapture && !fVideoCapture)
+        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_AudioOnly));
 
     /* Polish page finally: */
     polishPage();
@@ -462,9 +509,23 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
     newDisplayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
     newDisplayData.m_screens = m_pScrollerVideoCaptureScreens->value();
+
+    QVector<bool> flagsVector;
+    flagsVector.push_back(
+                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio) ||
+                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly));
+
+    flagsVector.push_back(
+                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio) ||
+                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_AudioOnly));
+
+    QVector<UIDataSettingsMachineDisplay::VideoCaptureOption> videoCaptureOptionVector;
+    videoCaptureOptionVector.push_back(UIDataSettingsMachineDisplay::VideoCaptureOption_VC);
+    videoCaptureOptionVector.push_back(UIDataSettingsMachineDisplay::VideoCaptureOption_AC);
+
     newDisplayData.m_strVideoCaptureOptions = UIDataSettingsMachineDisplay::setVideoCaptureOptionEnabled(m_pCache->base().m_strVideoCaptureOptions,
-                                                                                                         UIDataSettingsMachineDisplay::VideoCaptureOption_AC,
-                                                                                                         m_pCheckBoxVideoCaptureWithAudio->isChecked());
+                                                                                                         videoCaptureOptionVector,
+                                                                                                         flagsVector);
 
     /* Cache new display data: */
     m_pCache->cacheCurrentData(newDisplayData);
@@ -791,32 +852,13 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
     const bool fIsVideoCaptureOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
                                                (isMachineOnline() && !m_pCache->base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
 
-    /* Video Capture Screens option should be enabled only if:
-     * Machine is in *any* valid state and check-box is checked. */
-    const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
+    m_pLabelCaptureMode->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pComboBoxCaptureMode->setEnabled(fIsVideoCaptureOptionsEnabled);
 
     m_pLabelVideoCapturePath->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pEditorVideoCapturePath->setEnabled(fIsVideoCaptureOptionsEnabled);
 
-    m_pLabelVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pComboVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pEditorVideoCaptureWidth->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pEditorVideoCaptureHeight->setEnabled(fIsVideoCaptureOptionsEnabled);
-
-    m_pLabelVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pContainerSliderVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pEditorVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-
-    m_pLabelVideoCaptureRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pContainerSliderVideoCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pEditorVideoCaptureBitRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-
-    m_pLabelVideoCaptureExtended->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pCheckBoxVideoCaptureWithAudio->setEnabled(fIsVideoCaptureOptionsEnabled);
-
-    m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
-    m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled);
-    m_pScrollerVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
+    enableDisableCaptureWidgets();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameSizeComboboxChange()
@@ -894,6 +936,11 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
     updateVideoCaptureFileSizeHint();
 }
 
+void UIMachineSettingsDisplay::sltHandleCaptureComboBoxChange()
+{
+    enableDisableCaptureWidgets();
+}
+
 void UIMachineSettingsDisplay::prepare()
 {
     /* Apply UI decorations: */
@@ -911,6 +958,7 @@ void UIMachineSettingsDisplay::prepare()
         prepareTabRemoteDisplay();
         /* Prepare 'Video Capture' tab: */
         prepareTabVideoCapture();
+        prepareModeCombo();
         /* Prepare connections: */
         prepareConnections();
     }
@@ -1141,6 +1189,15 @@ void UIMachineSettingsDisplay::prepareTabVideoCapture()
     }
 }
 
+void UIMachineSettingsDisplay::prepareModeCombo()
+{
+    if (!m_pComboBoxCaptureMode)
+        return;
+    m_pComboBoxCaptureMode->insertItem(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio, "Video/Audio");
+    m_pComboBoxCaptureMode->insertItem(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly, "Video Only");
+    m_pComboBoxCaptureMode->insertItem(UIDataSettingsMachineDisplay::CaptureMode_AudioOnly, "Audio Only");
+}
+
 void UIMachineSettingsDisplay::prepareConnections()
 {
     /* Configure 'Screen' connections: */
@@ -1169,6 +1226,9 @@ void UIMachineSettingsDisplay::prepareConnections()
     connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateEditorChange()));
     connect(m_pSliderVideoCaptureQuality, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureQualitySliderChange()));
     connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
+
+    connect(m_pComboBoxCaptureMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                this, &UIMachineSettingsDisplay::sltHandleCaptureComboBoxChange);
 }
 
 void UIMachineSettingsDisplay::cleanup()
@@ -1599,3 +1659,38 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
     return fSuccess;
 }
 
+void UIMachineSettingsDisplay::enableDisableCaptureWidgets()
+{
+    /* Video Capture options should be enabled only if:
+     * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
+     * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
+    const bool fIsVideoCaptureOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
+                                               (isMachineOnline() && !m_pCache->base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
+
+    const UIDataSettingsMachineDisplay::CaptureMode enmCaptureMode =
+        static_cast<UIDataSettingsMachineDisplay::CaptureMode>(m_pComboBoxCaptureMode->currentIndex());
+
+    /* Video Capture Screens option should be enabled only if:
+     * Machine is in *any* valid state and check-box is checked. */
+    const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
+
+    bool fVideoCapture = enmCaptureMode == UIDataSettingsMachineDisplay::CaptureMode_VideoOnly ||
+        enmCaptureMode == UIDataSettingsMachineDisplay::CaptureMode_VideoAudio;
+
+    m_pLabelVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+    m_pComboVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+    m_pEditorVideoCaptureWidth->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+    m_pEditorVideoCaptureHeight->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+
+    m_pLabelVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+    m_pContainerSliderVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+    m_pEditorVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+
+    m_pLabelVideoCaptureRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pContainerSliderVideoCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pEditorVideoCaptureBitRate->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
+    m_pScrollerVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fVideoCapture);
+
+    m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fVideoCapture);
+    m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled && fVideoCapture);
+}
