@@ -68,11 +68,8 @@ STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vbox
 NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(MAKECMDGOALS),clean)
- rpmrel   := $(subst ol,el,$(subst rhel,el,$(subst centos,el,$(shell cat /etc/distname))))
- ifeq ($(rpmrel),)
  # look for fedora
-  rpmrel  := $(shell cat /etc/fedora-release 2> /dev/null | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
- endif
+ rpmrel  := $(shell cat /etc/fedora-release 2> /dev/null | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
  ifeq ($(rpmrel),)
  # look for OL
   rpmrel  := $(shell cat /etc/enterprise-release 2> /dev/null | sed -ne 's/^Enterprise Linux[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
@@ -90,7 +87,7 @@ ifneq ($(MAKECMDGOALS),clean)
   rpmrel  := $(shell cat /etc/SUSE-brand 2> /dev/null | sed -ne 's/^VERSION *= *\([0-9]*\)\.\([0-9]*\)/openSUSE\1\2/p')
  endif
  ifeq ($(rpmrel),)
-  $(error failed to detect the release type. Add /etc/distname or hack the detection.)
+  $(error failed to detect the release type.  Hack the detection.)
  endif
 
  rpmdist := $(strip $(shell grep $(rpmrel) $(current)/distributions_rpm | cut -d'=' -f2))
