@@ -1506,14 +1506,14 @@ typedef struct VBOXVDMACMD
 } VBOXVDMACMD;
 
 #define VBOXVDMACMD_HEADER_SIZE()                   sizeof(VBOXVDMACMD)
-#define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s)           (VBOXVDMACMD_HEADER_SIZE() + (_s))
-#define VBOXVDMACMD_SIZE(_t)                        (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (_t)))
+#define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s)           ((uint32_t)(VBOXVDMACMD_HEADER_SIZE() + (_s)))
+#define VBOXVDMACMD_SIZE(_t)                        (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof(_t)))
 #define VBOXVDMACMD_BODY(a_pCmd, a_TypeBody)        \
     ( (a_TypeBody RT_UNTRUSTED_VOLATILE_HSTGST  *)( ((uint8_t *)(a_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
 #define VBOXVDMACMD_BODY_SIZE(_s)                   ( (_s) - VBOXVDMACMD_HEADER_SIZE() )
 #define VBOXVDMACMD_FROM_BODY(a_pBody)                \
     ( (VBOXVDMACMD RT_UNTRUSTED_VOLATILE_HSTGST *)( ((uint8_t *)(a_pBody)) - VBOXVDMACMD_HEADER_SIZE()) )
-#define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f)  ( (_ot)(uintptr_t)( VBOXVDMACMD_BODY(0, uint8_t) + RT_OFFSETOF(_t, _f) ) )
+#define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f)  ( (_ot)(uintptr_t)( VBOXVDMACMD_BODY(0, uint8_t) + RT_UOFFSETOF_DYN(_t, _f) ) )
 
 typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
 {
