@@ -91,9 +91,9 @@ void UIWizardExportAppPage3::populateProviders()
     // arbitrary contents for testing purposes.
     QStringList providers;
     providers << "OCI";
-    providers << "Amazon";
-    providers << "Google";
-    providers << "Microsoft";
+    providers << "Dummy Provider 2";
+    providers << "Dummy Provider 3";
+    providers << "Dummy Provider 4";
     m_pProviderComboBox->addItems(providers);
 
     /* Duplicate non-translated names to data fields: */
@@ -110,10 +110,10 @@ void UIWizardExportAppPage3::populateProfiles()
     // Here goes the experiamental list with
     // arbitrary contents for testing purposes.
     QStringList profiles;
-    profiles << "Profile 1";
-    profiles << "Profile 2";
-    profiles << "Profile 3";
-    profiles << "Profile 4";
+    profiles << "Dummy Profile 1";
+    profiles << "Dummy Profile 2";
+    profiles << "Dummy Profile 3";
+    profiles << "Dummy Profile 4";
     m_pProfileComboBox->clear();
     m_pProfileComboBox->addItems(profiles);
 
@@ -129,14 +129,14 @@ void UIWizardExportAppPage3::populateProfileSettings()
     // arbitrary contents for testing purposes.
     QStringList keys;
     QStringList values;
-    keys << "Key 1";
-    keys << "Key 2";
-    keys << "Key 3";
-    keys << "Key 4";
-    values << "Value 1";
-    values << "Value 2";
-    values << "Value 3";
-    values << "Value 4";
+    keys << "Dummy Key 1";
+    keys << "Dummy Key 2";
+    keys << "Dummy Key 3";
+    keys << "Dummy Key 4";
+    values << "Dummy Value 1";
+    values << "Dummy Value 2";
+    values << "Dummy Value 3";
+    values << "Dummy Value 4";
     m_pProfileSettingsTable->clear();
     m_pProfileSettingsTable->setRowCount(4);
     m_pProfileSettingsTable->setColumnCount(2);
