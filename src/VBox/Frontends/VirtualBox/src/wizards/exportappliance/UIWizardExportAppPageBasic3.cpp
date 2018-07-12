@@ -668,21 +668,22 @@ void UIWizardExportAppPageBasic3::updatePageAppearance()
         case LocalFilesystem:
         {
             m_pLabel->setText(tr("<p>Please choose a filename to export the virtual appliance to.</p>"
-                                 "<p>The <b>Open Virtualization Format</b> supports only "
-                                 "<b>ovf</b> or <b>ova</b> extensions. "
-                                 "<br>If you use the <b>ovf</b> extension, "
-                                 "several files will be written separately."
-                                 "<br>If you use the <b>ova</b> extension, "
-                                 "all the files will be combined into one Open Virtualization Format archive.</p>"
-                                 "<p>The <b>Oracle Public Cloud Format</b> supports only the <b>tar.gz</b> extension."
-                                 "<br>Each virtual disk file will be written separately.</p>"));
+                                 "<p>The <b>Open Virtualization Format</b> supports only <b>ovf</b> or <b>ova</b> extensions. "
+                                 "If you use the <b>ovf</b> extension, several files will be written separately. "
+                                 "If you use the <b>ova</b> extension, all the files will be combined into one Open "
+                                 "Virtualization Format archive.</p>"
+                                 "<p>The <b>Oracle Public Cloud Format</b> supports only the <b>tar.gz</b> extension. "
+                                 "Each virtual disk file will be written separately.</p>"));
             m_pFileSelector->setFocus();
             break;
         }
         case CloudProvider:
         {
-            m_pLabel->setText(tr("Please complete the additional fields and provide a filename for "
-                                 "the OVF target."));
+            m_pLabel->setText(tr("<p>Please choose a cloud service <b>provider</b> and one of its <b>profiles</b> you have "
+                                 "registered to export virtual machines to.</p>"
+                                 "<p>Make sure profile settings reflected in the underlying table are valid. "
+                                 "They will be used to establish network connection required to upload your virtual machine "
+                                 "files to remote cloud facility."));
             m_pProviderComboBox->setFocus();
             break;
         }
