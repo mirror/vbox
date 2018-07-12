@@ -54,6 +54,7 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
     , m_pFormatComboBox(0)
     , m_pAdditionalLabel(0)
     , m_pManifestCheckbox(0)
+    , m_pIncludeISOsCheckbox(0)
     , m_pProviderComboBoxLabel(0)
     , m_pProviderComboBox(0)
     , m_pProfileComboBoxLabel(0)
@@ -233,6 +234,22 @@ void UIWizardExportAppPage3::refreshManifestCheckBoxAccess()
     }
 }
 
+void UIWizardExportAppPage3::refreshIncludeISOsCheckBoxAccess()
+{
+    /* If the format is set to OPC: */
+    if (fieldImp("format").toString() == "opc-1.0")
+    {
+        /* Disable manifest check-box: */
+        m_pManifestCheckbox->setEnabled(false);
+    }
+    /* Otherwise: */
+    else
+    {
+        /* Enable manifest check-box: */
+        m_pManifestCheckbox->setEnabled(true);
+    }
+}
+
 void UIWizardExportAppPage3::updateFormatComboToolTip()
 {
     const int iCurrentIndex = m_pFormatComboBox->currentIndex();
@@ -297,6 +314,16 @@ bool UIWizardExportAppPage3::isManifestSelected() const
 void UIWizardExportAppPage3::setManifestSelected(bool fChecked)
 {
     m_pManifestCheckbox->setChecked(fChecked);
+}
+
+bool UIWizardExportAppPage3::isIncludeISOsSelected() const
+{
+    return m_pIncludeISOsCheckbox->isChecked();
+}
+
+void UIWizardExportAppPage3::setIncludeISOsSelected(bool fChecked)
+{
+    m_pIncludeISOsCheckbox->setChecked(fChecked);
 }
 
 QString UIWizardExportAppPage3::provider() const
@@ -417,13 +444,20 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         /* Add into layout: */
                         pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
                     }
+                    /* Create include ISOs check-box: */
+                    m_pIncludeISOsCheckbox = new QCheckBox;
+                    if (m_pIncludeISOsCheckbox)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
+                    }
 
                     /* Create placeholder: */
                     QWidget *pPlaceholder = new QWidget;
                     if (pPlaceholder)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(pPlaceholder, 3, 0, 1, 2);
+                        pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 2);
                     }
                 }
 
@@ -530,6 +564,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     registerField("path", this, "path");
     registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
+    registerField("includeISOsSelected", this, "includeISOsSelected");
 }
 
 bool UIWizardExportAppPageBasic3::event(QEvent *pEvent)
@@ -581,6 +616,8 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
+    m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("Include &ISO image files"));
 
     /* Translate Provider combo-box: */
     m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Provider:"));
@@ -622,6 +659,8 @@ void UIWizardExportAppPageBasic3::initializePage()
     refreshFileSelectorExtension();
     /* Refresh manifest check-box access: */
     refreshManifestCheckBoxAccess();
+    /* Refresh include ISOs check-box access: */
+    refreshIncludeISOsCheckBoxAccess();
 }
 
 bool UIWizardExportAppPageBasic3::isComplete() const
@@ -700,6 +739,7 @@ void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
     /* Refresh required settings: */
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
+    refreshIncludeISOsCheckBoxAccess();
 }
 
 void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()

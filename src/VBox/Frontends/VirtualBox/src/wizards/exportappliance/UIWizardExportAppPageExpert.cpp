@@ -220,13 +220,20 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 /* Add into layout: */
                                 pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
                             }
+                            /* Create include ISOs check-box: */
+                            m_pIncludeISOsCheckbox = new QCheckBox;
+                            if (m_pIncludeISOsCheckbox)
+                            {
+                                /* Add into layout: */
+                                pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
+                            }
 
                             /* Create placeholder: */
                             QWidget *pPlaceholder = new QWidget;
                             if (pPlaceholder)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(pPlaceholder, 3, 0, 1, 2);
+                                pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 2);
                             }
                         }
 
@@ -357,6 +364,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("path", this, "path");
     registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
+    registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -416,6 +424,8 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
+    m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("Include &ISO image files"));
 
     /* Translate Provider combo-box: */
     m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Cloud Service Provider:"));
@@ -454,6 +464,8 @@ void UIWizardExportAppPageExpert::initializePage()
     refreshFileSelectorExtension();
     /* Refresh manifest check-box access: */
     refreshManifestCheckBoxAccess();
+    /* Refresh include ISOs check-box access: */
+    refreshIncludeISOsCheckBoxAccess();
 
     /* Refresh appliance settings: */
     refreshApplianceSettingsWidget();
@@ -542,6 +554,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     /* Refresh required settings: */
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
+    refreshIncludeISOsCheckBoxAccess();
 }
 
 void UIWizardExportAppPageExpert::sltHandleProviderComboChange()

@@ -63,6 +63,8 @@ protected:
     void refreshFileSelectorPath();
     /** Refresh Manifest check-box access. */
     void refreshManifestCheckBoxAccess();
+    /** Refresh Include ISOs check-box access. */
+    void refreshIncludeISOsCheckBoxAccess();
 
     /** Updates format combo tool-tips. */
     void updateFormatComboToolTip();
@@ -86,6 +88,11 @@ protected:
     bool isManifestSelected() const;
     /** Defines whether manifest @a fSelected. */
     void setManifestSelected(bool fChecked);
+
+    /** Returns whether include ISOs selected. */
+    bool isIncludeISOsSelected() const;
+    /** Defines whether include ISOs @a fSelected. */
+    void setIncludeISOsSelected(bool fChecked);
 
     /** Returns provider. */
     QString provider() const;
@@ -122,6 +129,8 @@ protected:
     QLabel    *m_pAdditionalLabel;
     /** Holds the manifest check-box instance. */
     QCheckBox *m_pManifestCheckbox;
+    /** Holds the include ISOs check-box instance. */
+    QCheckBox *m_pIncludeISOsCheckbox;
 
     /** Holds the provider combo-box label instance. */
     QLabel    *m_pProviderComboBoxLabel;
@@ -144,6 +153,7 @@ class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
+    Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString provider READ provider WRITE setProvider);
 
 public:
