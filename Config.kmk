@@ -420,7 +420,7 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
  endif
 endif
 # Enable native NEM on windows.
-if "$(KBUILD_TARGET)" == win && !defined(VBOX_OSE)
+if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_NATIVE_NEM = 1
 endif
 ## @}
@@ -1166,6 +1166,9 @@ ifdef VBOX_OSE
  VBOX_WITH_EXTPACK_PUEL_BUILD=
  VBOX_WITH_PCI_PASSTHROUGH_IMPL=
  VBOX_WITH_OS2_ADDITIONS_BIN=
+ ifeq ($(KBUILD_TARGET),win)
+  VBOX_WITH_NATIVE_NEM=
+ endif
  # not yet
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_KCHMVIEWER=
