@@ -2385,6 +2385,17 @@
 # define RT_FROM_CPP_MEMBER(pMem, Type, Member) RT_FROM_MEMBER(pMem, Type, Member)
 #endif
 
+/** @def RT_FROM_MEMBER_DYN
+ * Convert a pointer to a structure member into a pointer to the structure.
+ *
+ * @returns pointer to the structure.
+ * @param   pMem    Pointer to the member.
+ * @param   Type    Structure type.
+ * @param   Member  Member name dynamic size (some array is index by
+ *                  non-constant value).
+ */
+#define RT_FROM_MEMBER_DYN(pMem, Type, Member)  ( (Type *) ((uint8_t *)(void *)(pMem) - RT_UOFFSETOF_DYN(Type, Member)) )
+
 /** @def RT_ELEMENTS
  * Calculates the number of elements in a statically sized array.
  * @returns Element count.
