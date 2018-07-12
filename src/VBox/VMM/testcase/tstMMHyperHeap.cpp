@@ -80,7 +80,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     pVM->pUVM = pUVM;
 
     pVM->cCpus = NUM_CPUS;
-    pVM->cbSelf = RT_UOFFSETOF(VM, aCpus[pVM->cCpus]);
+    pVM->cbSelf = RT_UOFFSETOF_DYN(VM, aCpus[pVM->cCpus]);
 
     rc = STAMR3InitUVM(pUVM);
     if (RT_FAILURE(rc))

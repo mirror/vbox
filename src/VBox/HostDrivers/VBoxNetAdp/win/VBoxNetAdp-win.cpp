@@ -182,7 +182,7 @@ typedef VBOXNETADP_ADAPTER *PVBOXNETADP_ADAPTER;
 /* Port */
 
 #define IFPORT_2_VBOXNETADP_ADAPTER(pIfPort) \
-    ( (PVBOXNETADP_ADAPTER)((uint8_t *)pIfPort - RT_OFFSETOF(VBOXNETADP_ADAPTER, MyPort)) )
+    ( (PVBOXNETADP_ADAPTER)((uint8_t *)(pIfPort) - RT_UOFFSETOF(VBOXNETADP_ADAPTER, MyPort)) )
 
 DECLINLINE(VBOXNETADPWIN_ADAPTER_STATE) vboxNetAdpWinGetState(PVBOXNETADP_ADAPTER pThis)
 {
@@ -489,7 +489,7 @@ DECLHIDDEN(PINTNETSG) vboxNetAdpWinNBtoSG(PVBOXNETADP_ADAPTER pThis, PNET_BUFFER
     UINT cSegs = vboxNetAdpWinCalcSegments(pNetBuf);
     /* Allocate and initialize SG */
     PINTNETSG pSG = (PINTNETSG)NdisAllocateMemoryWithTagPriority(pThis->hAdapter,
-                                                                 RT_OFFSETOF(INTNETSG, aSegs[cSegs]),
+                                                                 RT_UOFFSETOF_DYN(INTNETSG, aSegs[cSegs]),
                                                                  VBOXNETADP_MEM_TAG,
                                                                  NormalPoolPriority);
     AssertReturn(pSG, pSG);
@@ -791,9 +791,9 @@ static DECLCALLBACK(void) vboxNetAdpWinPortDisconnectInterface(PINTNETTRUNKIFPOR
  * @param   pszInterfaceUuid    The factory interface id.
  */
 static DECLCALLBACK(void *) vboxNetAdpWinQueryFactoryInterface(PCSUPDRVFACTORY pSupDrvFactory, PSUPDRVSESSION pSession,
-                                                            const char *pszInterfaceUuid)
+                                                               const char *pszInterfaceUuid)
 {
-    PVBOXNETADPGLOBALS pGlobals = (PVBOXNETADPGLOBALS)((uint8_t *)pSupDrvFactory - RT_OFFSETOF(VBOXNETADPGLOBALS, SupDrvFactory));
+    PVBOXNETADPGLOBALS pGlobals = (PVBOXNETADPGLOBALS)((uint8_t *)pSupDrvFactory - RT_UOFFSETOF(VBOXNETADPGLOBALS, SupDrvFactory));
 
     /*
      * Convert the UUID strings and compare them.
@@ -845,7 +845,7 @@ static DECLCALLBACK(int) vboxNetAdpWinFactoryCreateAndConnect(PINTNETTRUNKFACTOR
                                                            PINTNETTRUNKSWPORT pSwitchPort, uint32_t fFlags,
                                                            PINTNETTRUNKIFPORT *ppIfPort)
 {
-    PVBOXNETADPGLOBALS pGlobals = (PVBOXNETADPGLOBALS)((uint8_t *)pIfFactory - RT_OFFSETOF(VBOXNETADPGLOBALS, TrunkFactory));
+    PVBOXNETADPGLOBALS pGlobals = (PVBOXNETADPGLOBALS)((uint8_t *)pIfFactory - RT_UOFFSETOF(VBOXNETADPGLOBALS, TrunkFactory));
 
     LogFlow(("==>vboxNetAdpWinFactoryCreateAndConnect: pszName=%p:{%s} fFlags=%#x\n", pszName, pszName, fFlags));
     Assert(pGlobals->cFactoryRefs > 0);

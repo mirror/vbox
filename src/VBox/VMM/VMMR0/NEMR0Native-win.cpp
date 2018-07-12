@@ -256,7 +256,7 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void
      * Input and output parameters are part of the VM CPU structure.
      */
     PVM          pVM  = pGVM->pVM;
-    size_t const cbVM = RT_UOFFSETOF(VM, aCpus[pGVM->cCpus]);
+    size_t const cbVM = RT_UOFFSETOF_DYN(VM, aCpus[pGVM->cCpus]);
     if (pvInput)
         AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
     if (pvOutput)
@@ -1532,7 +1532,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     pInput->Names[iReg++] = HvRegisterPendingEvent0;
     pInput->Names[iReg++] = HvRegisterPendingEvent1;
     size_t const cRegs   = iReg;
-    size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[cRegs]), 32);
+    size_t const cbInput = RT_ALIGN_Z(RT_UOFFSETOF_DYN(HV_INPUT_GET_VP_REGISTERS, Names[cRegs]), 32);
 
     HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
     Assert((uintptr_t)&paValues[cRegs] - (uintptr_t)pGVCpu->nem.s.HypercallData.pbPage < PAGE_SIZE); /* (max is around 168 registers) */
@@ -2261,7 +2261,7 @@ NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pc
     pInput->Names[0]    = HvX64RegisterTsc;
     pInput->Names[1]    = HvX64RegisterTscAux;
 
-    size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[2]), 32);
+    size_t const cbInput = RT_ALIGN_Z(RT_UOFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[2]), 32);
     HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
     RT_BZERO(paValues, sizeof(paValues[0]) * 2);
 
@@ -2546,7 +2546,7 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
             HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
             AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
 
-            size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[1]), 32);
+            size_t const cbInput = RT_ALIGN_Z(RT_UOFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[1]), 32);
             HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
             RT_BZERO(paValues, sizeof(paValues[0]) * 1);
 
@@ -2596,7 +2596,7 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
              */
             HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
             AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
-            RT_BZERO(pInput, RT_OFFSETOF(HV_INPUT_SET_VP_REGISTERS, Elements[1]));
+            RT_BZERO(pInput, RT_UOFFSETOF(HV_INPUT_SET_VP_REGISTERS, Elements[1]));
 
             pInput->PartitionId = pGVM->nem.s.idHvPartition;
             pInput->VpIndex     = pGVCpu->idCpu;

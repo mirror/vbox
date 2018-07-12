@@ -1190,7 +1190,7 @@ static const RTVFSSYMLINKOPS g_rtZipTarFssSymOps =
     0,
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
-        RT_OFFSETOF(RTVFSSYMLINKOPS, Obj) - RT_OFFSETOF(RTVFSSYMLINKOPS, ObjSet),
+        RT_UOFFSETOF(RTVFSSYMLINKOPS, ObjSet) - RT_UOFFSETOF(RTVFSSYMLINKOPS, Obj),
         rtZipTarFssSym_SetMode,
         rtZipTarFssSym_SetTimes,
         rtZipTarFssSym_SetOwner,

@@ -356,12 +356,12 @@ static int rtR0DbgKrnlNtInit(PRTDBGNTKRNLMODINFO pModInfo)
      *       the syscall ourselves, if we cared.
      */
     uint32_t                cModules = pModInfo ? 110 /*32KB*/ : 27 /*8KB*/;
-    ULONG                   cbInfo   = RT_OFFSETOF(RTL_PROCESS_MODULES, Modules[cModules]);
+    ULONG                   cbInfo   = RT_UOFFSETOF_DYN(RTL_PROCESS_MODULES, Modules[cModules]);
     PRTL_PROCESS_MODULES    pInfo    = (PRTL_PROCESS_MODULES)RTMemAllocZ(cbInfo);
     if (!pInfo)
     {
         cModules = cModules / 4;
-        cbInfo   = RT_OFFSETOF(RTL_PROCESS_MODULES, Modules[cModules]);
+        cbInfo   = RT_UOFFSETOF_DYN(RTL_PROCESS_MODULES, Modules[cModules]);
         pInfo    = (PRTL_PROCESS_MODULES)RTMemAllocZ(cbInfo);
         if (!pInfo)
         {

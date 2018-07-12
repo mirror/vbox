@@ -769,7 +769,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 break;
             }
 
-            size_t cbInfo = cbBuffer - RT_OFFSETOF(VRDEFEATURE, achInfo);
+            size_t cbInfo = cbBuffer - RT_UOFFSETOF(VRDEFEATURE, achInfo);
 
             VRDEFEATURE *pFeature = (VRDEFEATURE *)pvBuffer;
 

@@ -1319,7 +1319,7 @@ NEM_TMPL_STATIC int nemHCWinGetRegister(PVMCPU pVCpu, PGVMCPU pGVCpu, uint32_t e
     pInput->fFlags      = 0;
     pInput->Names[0]    = (HV_REGISTER_NAME)enmReg;
 
-    size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[1]), 32);
+    size_t const cbInput = RT_ALIGN_Z(RT_UOFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[1]), 32);
     HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
     RT_BZERO(paValues, sizeof(paValues[0]) * 1);
 

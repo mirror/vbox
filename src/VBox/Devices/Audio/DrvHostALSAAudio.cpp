@@ -68,7 +68,7 @@ RT_C_DECLS_END
 
 /** Makes DRVHOSTALSAAUDIO out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVHOSTALSAAUDIO(pInterface) \
-    ( (PDRVHOSTALSAAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTALSAAUDIO, IHostAudio)) )
+    ( (PDRVHOSTALSAAUDIO)((uintptr_t)pInterface - RT_UOFFSETOF(DRVHOSTALSAAUDIO, IHostAudio)) )
 
 
 /*********************************************************************************************************************************

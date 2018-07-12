@@ -1133,7 +1133,7 @@ static DECLCALLBACK(int) rtldrPE_QueryForwarderInfo(PRTLDRMODINTERNAL pMod, cons
                 /*
                  * Enough buffer?
                  */
-                uint32_t cbNeeded = RT_OFFSETOF(RTLDRIMPORTINFO, szModule[iImpOrdinal != UINT32_MAX ? offDot + 1 : off + 1]);
+                uint32_t cbNeeded = RT_UOFFSETOF_DYN(RTLDRIMPORTINFO, szModule[iImpOrdinal != UINT32_MAX ? offDot + 1 : off + 1]);
                 if (cbNeeded > cbInfo)
                     return VERR_BUFFER_OVERFLOW;
 
@@ -1518,7 +1518,7 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
                             else
                             {
                                 rc = RTUtf16ToUtf8Ex((PCRTUTF16)&pMisc->Data[0],
-                                                     (pMisc->Length - RT_OFFSETOF(IMAGE_DEBUG_MISC, Data)) / sizeof(RTUTF16),
+                                                     (pMisc->Length - RT_UOFFSETOF(IMAGE_DEBUG_MISC, Data)) / sizeof(RTUTF16),
                                                      &pszPath, RTPATH_MAX, NULL);
                                 if (RT_SUCCESS(rc))
                                     DbgInfo.pszExtFile = pszPath;
@@ -2140,13 +2140,13 @@ static int rtldrPe_CalcSpecialHashPlaces(PRTLDRMODPE pModPe, PRTLDRPEHASHSPECIAL
      */
     pPlaces->offCksum       = (uint32_t)pModPe->offNtHdrs
                             + (pModPe->f64Bit
-                               ? RT_OFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader.CheckSum)
-                               : RT_OFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.CheckSum));
+                               ? RT_UOFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader.CheckSum)
+                               : RT_UOFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.CheckSum));
     pPlaces->cbCksum        = RT_SIZEOFMEMB(IMAGE_NT_HEADERS32, OptionalHeader.CheckSum);
     pPlaces->offSecDir      = (uint32_t)pModPe->offNtHdrs
                             + (pModPe->f64Bit
-                               ? RT_OFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY])
-                               : RT_OFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]));
+                               ? RT_UOFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY])
+                               : RT_UOFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]));
     pPlaces->cbSecDir       = sizeof(IMAGE_DATA_DIRECTORY);
     pPlaces->offEndSpecial  = pPlaces->offSecDir + pPlaces->cbSecDir;
     return VINF_SUCCESS;
@@ -2459,7 +2459,7 @@ static int rtldrPE_VerifySignatureDecode(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE p
     RTASN1CURSORPRIMARY PrimaryCursor;
     RTAsn1CursorInitPrimary(&PrimaryCursor,
                             &pEntry->bCertificate[0],
-                            pEntry->dwLength - RT_OFFSETOF(WIN_CERTIFICATE, bCertificate),
+                            pEntry->dwLength - RT_UOFFSETOF(WIN_CERTIFICATE, bCertificate),
                             pErrInfo,
                             &g_RTAsn1DefaultAllocator,
                             0,
@@ -2984,9 +2984,9 @@ static void rtldrPEConvert32BitOptionalHeaderTo64Bit(PIMAGE_OPTIONAL_HEADER64 pO
     IMAGE_OPTIONAL_HEADER64 volatile *pOptHdr64 = pOptHdr;
 
     /* from LoaderFlags and out the difference is 4 * 32-bits. */
-    Assert(RT_OFFSETOF(IMAGE_OPTIONAL_HEADER32, LoaderFlags) + 16 == RT_OFFSETOF(IMAGE_OPTIONAL_HEADER64, LoaderFlags));
-    Assert(     RT_OFFSETOF(IMAGE_OPTIONAL_HEADER32, DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]) + 16
-           ==   RT_OFFSETOF(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]));
+    Assert(RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER32, LoaderFlags) + 16 == RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER64, LoaderFlags));
+    Assert(     RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER32, DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]) + 16
+           ==   RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]));
     uint32_t volatile       *pu32Dst     = (uint32_t *)&pOptHdr64->DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES] - 1;
     const uint32_t volatile *pu32Src     = (uint32_t *)&pOptHdr32->DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES] - 1;
     const uint32_t volatile *pu32SrcLast = (uint32_t *)&pOptHdr32->LoaderFlags;
@@ -3004,9 +3004,9 @@ static void rtldrPEConvert32BitOptionalHeaderTo64Bit(PIMAGE_OPTIONAL_HEADER64 pO
      * Thus, ImageBase needs some special treatment. It will probably work fine assigning one to the
      * other since this is all declared volatile, but taking now chances, we'll use a temp variable.
      */
-    Assert(RT_OFFSETOF(IMAGE_OPTIONAL_HEADER32, SizeOfStackReserve) == RT_OFFSETOF(IMAGE_OPTIONAL_HEADER64, SizeOfStackReserve));
-    Assert(RT_OFFSETOF(IMAGE_OPTIONAL_HEADER32, BaseOfData) == RT_OFFSETOF(IMAGE_OPTIONAL_HEADER64, ImageBase));
-    Assert(RT_OFFSETOF(IMAGE_OPTIONAL_HEADER32, SectionAlignment) == RT_OFFSETOF(IMAGE_OPTIONAL_HEADER64, SectionAlignment));
+    Assert(RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER32, SizeOfStackReserve) == RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER64, SizeOfStackReserve));
+    Assert(RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER32, BaseOfData)         == RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER64, ImageBase));
+    Assert(RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER32, SectionAlignment)   == RT_UOFFSETOF(IMAGE_OPTIONAL_HEADER64, SectionAlignment));
     uint32_t u32ImageBase = pOptHdr32->ImageBase;
     pOptHdr64->ImageBase = u32ImageBase;
 }
@@ -3065,8 +3065,8 @@ static void rtldrPEConvert32BitLoadConfigTo64Bit(PIMAGE_LOAD_CONFIG_DIRECTORY64 
     uint32_t u32DeCommitFreeBlockThreshold      = pLoadCfg32->DeCommitFreeBlockThreshold;
     pLoadCfg64->DeCommitFreeBlockThreshold      = u32DeCommitFreeBlockThreshold;
     /* the rest is equal. */
-    Assert(     RT_OFFSETOF(IMAGE_LOAD_CONFIG_DIRECTORY32, DeCommitFreeBlockThreshold)
-           ==   RT_OFFSETOF(IMAGE_LOAD_CONFIG_DIRECTORY64, DeCommitFreeBlockThreshold));
+    Assert(     RT_UOFFSETOF(IMAGE_LOAD_CONFIG_DIRECTORY32, DeCommitFreeBlockThreshold)
+           ==   RT_UOFFSETOF(IMAGE_LOAD_CONFIG_DIRECTORY64, DeCommitFreeBlockThreshold));
 }
 
 
@@ -3897,7 +3897,7 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                 {
                     pModPe->offPkcs7SignedData = Dir.VirtualAddress
                                                + (uint32_t)((uintptr_t)&pCur->bCertificate[0] - (uintptr_t)pFirst);
-                    pModPe->cbPkcs7SignedData  = pCur->dwLength - RT_OFFSETOF(WIN_CERTIFICATE, bCertificate);
+                    pModPe->cbPkcs7SignedData  = pCur->dwLength - RT_UOFFSETOF(WIN_CERTIFICATE, bCertificate);
                 }
 
                 /* next */

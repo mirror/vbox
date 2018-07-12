@@ -332,7 +332,7 @@ static PRTFUZZINPUTINT rtFuzzCtxInputPickRnd(PRTFUZZCTXINT pThis)
  */
 static PRTFUZZINPUTINT rtFuzzCtxInputClone(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf)
 {
-    PRTFUZZINPUTINT pInpClone = (PRTFUZZINPUTINT)RTMemAllocZ(RT_OFFSETOF(RTFUZZINPUTINT, abInput[cbBuf]));
+    PRTFUZZINPUTINT pInpClone = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbBuf]));
     if (RT_LIKELY(pInpClone))
     {
         pInpClone->cRefs    = 1;
@@ -354,7 +354,7 @@ static PRTFUZZINPUTINT rtFuzzCtxInputClone(PRTFUZZCTXINT pThis, const void *pvBu
  */
 static PRTFUZZINPUTINT rtFuzzCtxInputCreate(PRTFUZZCTXINT pThis, size_t cbInput)
 {
-    PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_OFFSETOF(RTFUZZINPUTINT, abInput[cbInput]));
+    PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbInput]));
     if (RT_LIKELY(pInput))
     {
         pInput->pFuzzer = pThis;
@@ -845,7 +845,7 @@ RTDECL(int) RTFuzzCtxCorpusInputAdd(RTFUZZCTX hFuzzCtx, const void *pvInput, siz
     PRTFUZZINPUTINT pInput = rtFuzzCtxInputLocate(pThis, &abDigest[0], true /*fExact*/, NULL /*ppIntermediate*/);
     if (!pInput)
     {
-        pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_OFFSETOF(RTFUZZINPUTINT, abInput[cbInput]));
+        pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbInput]));
         if (RT_LIKELY(pInput))
         {
             pInput->cRefs   = 1;
@@ -896,7 +896,7 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVf
     int rc = RTVfsFileGetSize(hVfsFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_OFFSETOF(RTFUZZINPUTINT, abInput[cbFile]));
+        PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbFile]));
         if (RT_LIKELY(pInput))
         {
             pInput->cRefs   = 1;

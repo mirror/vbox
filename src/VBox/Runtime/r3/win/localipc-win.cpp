@@ -400,7 +400,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
         /*
          * Allocate and initialize the instance data.
          */
-        size_t cbThis = RT_OFFSETOF(RTLOCALIPCSERVERINT, wszName[cwcFullName + 1]);
+        size_t cbThis = RT_UOFFSETOF_DYN(RTLOCALIPCSERVERINT, wszName[cwcFullName + 1]);
         PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)RTMemAllocVar(cbThis);
         AssertReturn(pThis, VERR_NO_MEMORY);
 

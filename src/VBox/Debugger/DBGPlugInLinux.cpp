@@ -2132,7 +2132,8 @@ static int dbgDiggerLinuxCfgParseVal(const char *pszCfg, const char **ppszCfgNex
 
         if (*pszCfgCur == '\"')
         {
-            pCfgItem = (PDBGDIGGERLINUXCFGITEM)RTMemAllocZ(RT_OFFSETOF(DBGDIGGERLINUXCFGITEM, u.aszString[pszCfgCur - pszCfg + 1]));
+            pCfgItem = (PDBGDIGGERLINUXCFGITEM)RTMemAllocZ(RT_UOFFSETOF_DYN(DBGDIGGERLINUXCFGITEM,
+                                                                            u.aszString[pszCfgCur - pszCfg + 1]));
             if (pCfgItem)
             {
                 pCfgItem->enmType = DBGDIGGERLINUXCFGITEMTYPE_STRING;

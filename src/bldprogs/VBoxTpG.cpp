@@ -219,7 +219,7 @@ static const char *strtabInsertN(const char *pch, size_t cch)
     /*
      * Create a new entry.
      */
-    pStr = (PVTGSTRING)RTMemAlloc(RT_OFFSETOF(VTGSTRING, szString[cch + 1]));
+    pStr = (PVTGSTRING)RTMemAlloc(RT_UOFFSETOF_DYN(VTGSTRING, szString[cch + 1]));
     if (!pStr)
         return NULL;
 

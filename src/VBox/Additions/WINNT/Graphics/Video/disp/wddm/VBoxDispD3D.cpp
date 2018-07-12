@@ -602,7 +602,7 @@ static void vboxResourceFree(PVBOXWDDMDISP_RESOURCE pRc)
 
 void vboxWddmResourceInit(PVBOXWDDMDISP_RESOURCE pRc, UINT cAllocs)
 {
-    memset(pRc, 0, RT_OFFSETOF(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
+    memset(pRc, 0, RT_UOFFSETOF_DYN(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
     pRc->cAllocations = cAllocs;
     for (UINT i = 0; i < cAllocs; ++i)
     {
@@ -613,7 +613,7 @@ void vboxWddmResourceInit(PVBOXWDDMDISP_RESOURCE pRc, UINT cAllocs)
 
 static PVBOXWDDMDISP_RESOURCE vboxResourceAlloc(UINT cAllocs)
 {
-    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)RTMemAlloc(RT_OFFSETOF(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)RTMemAlloc(RT_UOFFSETOF_DYN(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
     Assert(pRc);
     if (pRc)
     {
@@ -758,8 +758,8 @@ static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
         DdiEscape.hDevice = pDevice->hDevice;
     //    DdiEscape.Flags.Value = 0;
         DdiEscape.pPrivateDriverData = &Buf.SwapchainInfo;
-        DdiEscape.PrivateDriverDataSize = RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO,
-                                                      SwapchainInfo.ahAllocs[Buf.SwapchainInfo.SwapchainInfo.cAllocs]);
+        DdiEscape.PrivateDriverDataSize = RT_UOFFSETOF_DYN(VBOXDISPIFESCAPE_SWAPCHAININFO,
+                                                           SwapchainInfo.ahAllocs[Buf.SwapchainInfo.SwapchainInfo.cAllocs]);
         hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
 #ifdef DEBUG_misha
         Assert(hr == S_OK);
@@ -924,7 +924,7 @@ DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainRtForAlloc(PVBOXWDDMDISP_SW
 
 DECLINLINE(UINT) vboxWddmSwapchainRtIndex(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, PVBOXWDDMDISP_RENDERTGT pRT)
 {
-    UINT offFirst = RT_OFFSETOF(VBOXWDDMDISP_SWAPCHAIN, aRTs);
+    UINT offFirst = RT_UOFFSETOF(VBOXWDDMDISP_SWAPCHAIN, aRTs);
     UINT offRT = UINT((uintptr_t)pRT - (uintptr_t)pSwapchain);
     Assert(offRT < sizeof (VBOXWDDMDISP_SWAPCHAIN));
     Assert(offRT >= offFirst);
@@ -2013,7 +2013,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 DDRAW_MODE_SPECIFIC_CAPS * pCaps = (DDRAW_MODE_SPECIFIC_CAPS*)pData->pData;
                 memset(&pCaps->Caps /* do not cleanup the first "Head" field,
                                     zero starting with the one following "Head", i.e. Caps */,
-                        0, sizeof (DDRAW_MODE_SPECIFIC_CAPS) - RT_OFFSETOF(DDRAW_MODE_SPECIFIC_CAPS, Caps));
+                        0, sizeof(DDRAW_MODE_SPECIFIC_CAPS) - RT_UOFFSETOF(DDRAW_MODE_SPECIFIC_CAPS, Caps));
 #ifdef VBOX_WITH_VIDEOHWACCEL
                 if (!VBOXDISPMODE_IS_3D(pAdapter))
                 {
@@ -2189,13 +2189,13 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         }
         case D3DDDICAPS_GETD3D8CAPS:
         {
-            Assert(pData->DataSize == RT_OFFSETOF(D3DCAPS9, DevCaps2));
-            if (pData->DataSize == RT_OFFSETOF(D3DCAPS9, DevCaps2))
+            Assert(pData->DataSize == RT_UOFFSETOF(D3DCAPS9, DevCaps2));
+            if (pData->DataSize == RT_UOFFSETOF(D3DCAPS9, DevCaps2))
             {
                 Assert(VBOXDISPMODE_IS_3D(pAdapter));
                 if (VBOXDISPMODE_IS_3D(pAdapter))
                 {
-                    memcpy(pData->pData, &pAdapter->D3D.Caps, RT_OFFSETOF(D3DCAPS9, DevCaps2));
+                    memcpy(pData->pData, &pAdapter->D3D.Caps, RT_UOFFSETOF(D3DCAPS9, DevCaps2));
                     hr = S_OK;
                     break;
                 }
@@ -6219,8 +6219,8 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 //    Assert(0);
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
 
-    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_DEVICE,
-                                                                                 apRTs[pAdapter->D3D.cMaxSimRTs]));
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(RT_UOFFSETOF_DYN(VBOXWDDMDISP_DEVICE,
+                                                                                      apRTs[pAdapter->D3D.cMaxSimRTs]));
     if (pDevice)
     {
         pDevice->cRTs = pAdapter->D3D.cMaxSimRTs;
@@ -6558,8 +6558,8 @@ static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXW
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
     Assert(pAdapterInfo->cInfos >= 1);
-    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_ADAPTER,
-                                                                                    aHeads[pAdapterInfo->cInfos]));
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_UOFFSETOF_DYN(VBOXWDDMDISP_ADAPTER,
+                                                                                         aHeads[pAdapterInfo->cInfos]));
 #else
     Assert(pAdapterInfo->cInfos == 0);
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof(VBOXWDDMDISP_ADAPTER));

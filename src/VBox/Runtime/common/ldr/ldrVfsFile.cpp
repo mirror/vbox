@@ -188,7 +188,7 @@ static int rtldrVfsFileCreate(const char *pszFilename, PRTLDRREADER *ppReader, u
 {
     size_t cbFilename = strlen(pszFilename) + 1;
     int rc = VERR_NO_MEMORY;
-    PRTLDRREADERVFSFILE pFileReader = (PRTLDRREADERVFSFILE)RTMemAlloc(RT_OFFSETOF(RTLDRREADERVFSFILE, szFilename[cbFilename]));
+    PRTLDRREADERVFSFILE pFileReader = (PRTLDRREADERVFSFILE)RTMemAlloc(RT_UOFFSETOF_DYN(RTLDRREADERVFSFILE, szFilename[cbFilename]));
     if (pFileReader)
     {
         memcpy(pFileReader->szFilename, pszFilename, cbFilename);

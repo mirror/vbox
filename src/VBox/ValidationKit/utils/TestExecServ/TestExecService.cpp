@@ -210,7 +210,7 @@ uint32_t                    g_cVerbose = 1;
 static int txsSendPkt(PTXSPKTHDR pPkt)
 {
     Assert(pPkt->cb >= sizeof(*pPkt));
-    pPkt->uCrc32 = RTCrc32(pPkt->achOpcode, pPkt->cb - RT_OFFSETOF(TXSPKTHDR, achOpcode));
+    pPkt->uCrc32 = RTCrc32(pPkt->achOpcode, pPkt->cb - RT_UOFFSETOF(TXSPKTHDR, achOpcode));
     if (pPkt->cb != RT_ALIGN_32(pPkt->cb, TXSPKT_ALIGNMENT))
         memset((uint8_t *)pPkt + pPkt->cb, '\0', RT_ALIGN_32(pPkt->cb, TXSPKT_ALIGNMENT) - pPkt->cb);
 
@@ -267,7 +267,7 @@ static int txsRecvPkt(PPTXSPKTHDR ppPktHdr, bool fAutoRetryOnFailure)
                       "%.*Rhxd\n",
                       pPktHdr, pPktHdr->cb, pPktHdr->uCrc32, pPktHdr->achOpcode, RT_MIN(pPktHdr->cb, 256), pPktHdr));
                 uint32_t uCrc32Calc = pPktHdr->uCrc32 != 0
-                                    ? RTCrc32(&pPktHdr->achOpcode[0], pPktHdr->cb - RT_OFFSETOF(TXSPKTHDR, achOpcode))
+                                    ? RTCrc32(&pPktHdr->achOpcode[0], pPktHdr->cb - RT_UOFFSETOF(TXSPKTHDR, achOpcode))
                                     : 0;
                 if (pPktHdr->uCrc32 == uCrc32Calc)
                 {

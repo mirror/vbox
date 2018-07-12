@@ -78,7 +78,7 @@
 
 /** Makes DRVHOSTDSOUND out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface) \
-    ( (PDRVHOSTDSOUND)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTDSOUND, IHostAudio)) )
+    ( (PDRVHOSTDSOUND)((uintptr_t)pInterface - RT_UOFFSETOF(DRVHOSTDSOUND, IHostAudio)) )
 
 
 /*********************************************************************************************************************************

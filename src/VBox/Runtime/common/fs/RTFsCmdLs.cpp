@@ -781,10 +781,10 @@ static RTEXITCODE rtCmdLsDisplayCollectionInLongFormat(PRTCMDLSOPTS pOpts, PRTCM
     switch (pOpts->enmTime)
     {
         default: AssertFailed(); RT_FALL_THRU();
-        case RTCMDLSTIME_MTIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.ModificationTime); break;
-        case RTCMDLSTIME_BTIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.BirthTime); break;
-        case RTCMDLSTIME_CTIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.ChangeTime); break;
-        case RTCMDLSTIME_ATIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.AccessTime); break;
+        case RTCMDLSTIME_MTIME: offTime = RT_UOFFSETOF(RTCMDLSENTRY, Info.ModificationTime); break;
+        case RTCMDLSTIME_BTIME: offTime = RT_UOFFSETOF(RTCMDLSENTRY, Info.BirthTime); break;
+        case RTCMDLSTIME_CTIME: offTime = RT_UOFFSETOF(RTCMDLSENTRY, Info.ChangeTime); break;
+        case RTCMDLSTIME_ATIME: offTime = RT_UOFFSETOF(RTCMDLSENTRY, Info.AccessTime); break;
     }
 
     /*
@@ -1026,7 +1026,7 @@ static PRTCMDLSCOLLECTION rtCmdLsNewCollection(PRTCMDLSOPTS pOpts, const char *p
         if (   pOpts->cCollections == 0
             && *pszName)
         {
-            PRTCMDLSCOLLECTION pCollection = (PRTCMDLSCOLLECTION)RTMemAllocZ(RT_OFFSETOF(RTCMDLSCOLLECTION, szName[1]));
+            PRTCMDLSCOLLECTION pCollection = (PRTCMDLSCOLLECTION)RTMemAllocZ(RT_UOFFSETOF(RTCMDLSCOLLECTION, szName[1]));
             if (!pCollection)
             {
                 RTMsgError("Out of memory! (collection)");
@@ -1039,7 +1039,7 @@ static PRTCMDLSCOLLECTION rtCmdLsNewCollection(PRTCMDLSOPTS pOpts, const char *p
 
     /* Add new collection. */
     size_t cbName = strlen(pszName) + 1;
-    PRTCMDLSCOLLECTION pCollection = (PRTCMDLSCOLLECTION)RTMemAllocZ(RT_OFFSETOF(RTCMDLSCOLLECTION, szName[cbName]));
+    PRTCMDLSCOLLECTION pCollection = (PRTCMDLSCOLLECTION)RTMemAllocZ(RT_UOFFSETOF_DYN(RTCMDLSCOLLECTION, szName[cbName]));
     if (pCollection)
     {
         memcpy(pCollection->szName, pszName, cbName);
@@ -1082,7 +1082,7 @@ static RTEXITCODE rtCmdLsAddOne(PRTCMDLSCOLLECTION pCollection, const char *pszE
     size_t const cbOwner  = pszOwner  ? strlen(pszOwner)  + 1 : 0;
     size_t const cbGroup  = pszGroup  ? strlen(pszGroup)  + 1 : 0;
     size_t const cbTarget = pszTarget ? strlen(pszTarget) + 1 : 0;
-    size_t const cbEntry  = RT_OFFSETOF(RTCMDLSENTRY, szName[cchEntry + 1 + cbOwner + cbGroup + cbTarget]);
+    size_t const cbEntry  = RT_UOFFSETOF_DYN(RTCMDLSENTRY, szName[cchEntry + 1 + cbOwner + cbGroup + cbTarget]);
     PRTCMDLSENTRY pEntry = (PRTCMDLSENTRY)RTMemAlloc(cbEntry);
     if (pEntry)
     {

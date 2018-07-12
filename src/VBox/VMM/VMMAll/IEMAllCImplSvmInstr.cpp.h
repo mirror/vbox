@@ -1205,7 +1205,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     }
 
     SVMVMCBSTATESAVE VmcbNstGst;
-    VBOXSTRICTRC rcStrict = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcbNstGst, GCPhysVmcb + RT_OFFSETOF(SVMVMCB, guest),
+    VBOXSTRICTRC rcStrict = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcbNstGst, GCPhysVmcb + RT_UOFFSETOF(SVMVMCB, guest),
                                                     sizeof(SVMVMCBSTATESAVE));
     if (rcStrict == VINF_SUCCESS)
     {
@@ -1260,7 +1260,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     }
 
     SVMVMCBSTATESAVE VmcbNstGst;
-    VBOXSTRICTRC rcStrict = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcbNstGst, GCPhysVmcb + RT_OFFSETOF(SVMVMCB, guest),
+    VBOXSTRICTRC rcStrict = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcbNstGst, GCPhysVmcb + RT_UOFFSETOF(SVMVMCB, guest),
                                                     sizeof(SVMVMCBSTATESAVE));
     if (rcStrict == VINF_SUCCESS)
     {
@@ -1283,7 +1283,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
         VmcbNstGst.u64SysEnterESP   = pVCpu->cpum.GstCtx.SysEnter.esp;
         VmcbNstGst.u64SysEnterEIP   = pVCpu->cpum.GstCtx.SysEnter.eip;
 
-        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcb + RT_OFFSETOF(SVMVMCB, guest), &VmcbNstGst,
+        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcb + RT_UOFFSETOF(SVMVMCB, guest), &VmcbNstGst,
                                             sizeof(SVMVMCBSTATESAVE));
         if (rcStrict == VINF_SUCCESS)
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);

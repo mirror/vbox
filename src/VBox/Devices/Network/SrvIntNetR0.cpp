@@ -2107,7 +2107,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunk(PINTNETNETWORK pNetwork, uint
 DECLINLINE(int) intnetR0AllocDstTab(uint32_t cEntries, PINTNETDSTTAB *ppDstTab)
 {
     PINTNETDSTTAB pDstTab;
-    *ppDstTab = pDstTab = (PINTNETDSTTAB)RTMemAlloc(RT_OFFSETOF(INTNETDSTTAB, aIfs[cEntries]));
+    *ppDstTab = pDstTab = (PINTNETDSTTAB)RTMemAlloc(RT_UOFFSETOF_DYN(INTNETDSTTAB, aIfs[cEntries]));
     if (RT_UNLIKELY(!pDstTab))
         return VERR_NO_MEMORY;
     return VINF_SUCCESS;
@@ -2522,7 +2522,7 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
             else
             {
                 /* check if the protocol is UDP */
-                if (    intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_p))
+                if (    intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETIPV4, ip_p))
                     !=  RTNETIPV4_PROT_UDP)
                     return;
 
@@ -2546,23 +2546,23 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
             else
             {
                 /* get the lower byte of the UDP source port number. */
-                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport) + 1);
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_UOFFSETOF(RTNETUDP, uh_sport) + 1);
                 if (    b != RTNETIPV4_PORT_BOOTPS
                     &&  b != RTNETIPV4_PORT_BOOTPC)
                     return;
                 uint8_t SrcPort = b;
-                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_sport));
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_UOFFSETOF(RTNETUDP, uh_sport));
                 if (b)
                     return;
 
                 /* get the lower byte of the UDP destination port number. */
-                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport) + 1);
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_UOFFSETOF(RTNETUDP, uh_dport) + 1);
                 if (    b != RTNETIPV4_PORT_BOOTPS
                     &&  b != RTNETIPV4_PORT_BOOTPC)
                     return;
                 if (b == SrcPort)
                     return;
-                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_OFFSETOF(RTNETUDP, uh_dport));
+                b = intnetR0SgReadByte(pSG, sizeof(RTNETETHERHDR) + cbIpHdr + RT_UOFFSETOF(RTNETUDP, uh_dport));
                 if (b)
                     return;
             }
@@ -3222,7 +3222,7 @@ static bool intnetR0NetworkSharedMacDetectAndFixBroadcast(PINTNETNETWORK pNetwor
         case RT_H2N_U16_C(RTNET_ETHERTYPE_ARP):
         {
             uint16_t ar_oper;
-            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETARPHDR, ar_oper),
+            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETARPHDR, ar_oper),
                                     sizeof(ar_oper), &ar_oper))
                 return false;
 
@@ -3241,7 +3241,7 @@ static bool intnetR0NetworkSharedMacDetectAndFixBroadcast(PINTNETNETWORK pNetwor
         case RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4):
         {
             RTNETADDRIPV4 ip_dst;
-            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_dst),
+            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETIPV4, ip_dst),
                                     sizeof(ip_dst), &ip_dst))
                 return false;
 
@@ -3271,7 +3271,7 @@ static bool intnetR0NetworkSharedMacDetectAndFixBroadcast(PINTNETNETWORK pNetwor
         case RT_H2N_U16_C(RTNET_ETHERTYPE_IPV6):
         {
             RTNETADDRIPV6 ip6_dst;
-            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV6, ip6_dst),
+            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETIPV6, ip6_dst),
                                     sizeof(ip6_dst), &ip6_dst))
                 return false;
 
@@ -3294,7 +3294,7 @@ static bool intnetR0NetworkSharedMacDetectAndFixBroadcast(PINTNETNETWORK pNetwor
     /*
      * Update ethernet destination in the segment.
      */
-    intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(pEthHdr->DstMac), &pEthHdr->DstMac);
+    intnetR0SgWritePart(pSG, RT_UOFFSETOF(RTNETETHERHDR, DstMac), sizeof(pEthHdr->DstMac), &pEthHdr->DstMac);
 
     return true;
 }
@@ -3423,7 +3423,7 @@ static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
                 Log6(("fw: DstMac %.6Rhxs -> %.6Rhxs\n", &pEthHdr->DstMac, &pIf->MacAddr));
                 pEthHdr->DstMac = pIf->MacAddr;
                 if ((void *)pEthHdr != pSG->aSegs[0].pv)
-                    intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &pIf->MacAddr);
+                    intnetR0SgWritePart(pSG, RT_UOFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &pIf->MacAddr);
             }
             intnetR0BusyDecIf(pIf);
 
@@ -3556,7 +3556,7 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
 
                 Log(("intnetR0NetworkEditDhcpFromIntNet: cleared ip_tos (was %#04x); ip_sum=%#06x -> %#06x\n",
                      uTos, RT_BE2H_U16(pIpHdr->ip_sum), RT_BE2H_U16(uChecksum) ));
-                intnetR0SgWritePart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_sum),
+                intnetR0SgWritePart(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETIPV4, ip_sum),
                                     sizeof(pIpHdr->ip_sum), &uChecksum);
             }
 #endif
@@ -3749,7 +3749,7 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchUnicast(PINTNETNETWO
     switch (RT_BE2H_U16(pEthHdr->EtherType))
     {
         case RTNET_ETHERTYPE_IPV4:
-            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_dst), sizeof(Addr.IPv4), &Addr)))
+            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETIPV4, ip_dst), sizeof(Addr.IPv4), &Addr)))
             {
                 Log(("intnetshareduni: failed to read ip_dst! cbTotal=%#x\n", pSG->cbTotal));
                 return intnetR0NetworkSwitchTrunk(pNetwork, INTNETTRUNKDIR_WIRE, pDstTab);
@@ -3760,7 +3760,7 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchUnicast(PINTNETNETWO
             break;
 
         case RTNET_ETHERTYPE_IPV6:
-            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr)))
+            if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_UOFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr)))
             {
                 Log(("intnetshareduni: failed to read ip6_dst! cbTotal=%#x\n", pSG->cbTotal));
                 return intnetR0NetworkSwitchTrunk(pNetwork, INTNETTRUNKDIR_WIRE, pDstTab);
@@ -5773,7 +5773,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
      * time calls.
      */
     RTCPUID         cCpus    = RTMpGetCount(); Assert(cCpus > 0);
-    PINTNETTRUNKIF  pTrunk = (PINTNETTRUNKIF)RTMemAllocZ(RT_OFFSETOF(INTNETTRUNKIF, apIntDstTabs[cCpus]));
+    PINTNETTRUNKIF  pTrunk = (PINTNETTRUNKIF)RTMemAllocZ(RT_UOFFSETOF_DYN(INTNETTRUNKIF, apIntDstTabs[cCpus]));
     if (!pTrunk)
         return VERR_NO_MEMORY;
 

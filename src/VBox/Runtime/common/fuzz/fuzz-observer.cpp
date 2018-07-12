@@ -438,7 +438,7 @@ static int rtFuzzObsExecCtxArgvPrepare(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pE
 static int rtFuzzObsExecCtxCreate(PPRTFUZZOBSEXECCTX ppExecCtx, PRTFUZZOBSINT pThis)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZOBSEXECCTX pExecCtx = (PRTFUZZOBSEXECCTX)RTMemAllocZ(RT_OFFSETOF(RTFUZZOBSEXECCTX, apszArgs[pThis->cArgs + 1]));
+    PRTFUZZOBSEXECCTX pExecCtx = (PRTFUZZOBSEXECCTX)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZOBSEXECCTX, apszArgs[pThis->cArgs + 1]));
     if (RT_LIKELY(pExecCtx))
     {
         pExecCtx->hPipeStdoutR     = NIL_RTPIPE;

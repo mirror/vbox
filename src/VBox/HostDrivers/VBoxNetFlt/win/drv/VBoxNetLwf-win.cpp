@@ -1596,7 +1596,7 @@ static PINTNETSG vboxNetLwfWinNBtoSG(PVBOXNETLWF_MODULE pModule, PNET_BUFFER pNe
     UINT cSegs = vboxNetLwfWinCalcSegments(pNetBuf);
     /* Allocate and initialize SG */
     PINTNETSG pSG = (PINTNETSG)NdisAllocateMemoryWithTagPriority(pModule->hFilter,
-                                                                 RT_OFFSETOF(INTNETSG, aSegs[cSegs]),
+                                                                 RT_UOFFSETOF_DYN(INTNETSG, aSegs[cSegs]),
                                                                  VBOXNETLWF_MEM_TAG,
                                                                  NormalPoolPriority);
     AssertReturn(pSG, pSG);

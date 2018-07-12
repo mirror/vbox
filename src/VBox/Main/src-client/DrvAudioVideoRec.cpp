@@ -272,7 +272,7 @@ typedef struct DRVAUDIOVIDEOREC
 
 /** Makes DRVAUDIOVIDEOREC out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface) \
-    ( (PDRVAUDIOVIDEOREC)((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIOVIDEOREC, IHostAudio)) )
+    ( (PDRVAUDIOVIDEOREC)((uintptr_t)pInterface - RT_UOFFSETOF(DRVAUDIOVIDEOREC, IHostAudio)) )
 
 /**
  * Initializes a recording sink.

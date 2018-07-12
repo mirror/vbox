@@ -144,7 +144,7 @@ typedef struct DRVAUDIO
 
 /** Makes a PDRVAUDIO out of a PPDMIAUDIOCONNECTOR. */
 #define PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface) \
-    ( (PDRVAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIO, IAudioConnector)) )
+    ( (PDRVAUDIO)((uintptr_t)pInterface - RT_UOFFSETOF(DRVAUDIO, IAudioConnector)) )
 
 
 bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt);

@@ -763,14 +763,14 @@ static void rtfsNtfsMftRec_Log(PRTFSNTFSMFTREC pRec, uint32_t cbMftRecord)
                                         Log2(("NTFS:     cbPackedEas        %#RX16\n", RT_LE2H_U16(pInfo->u.cbPackedEas) ));
                                     Log2(("NTFS:     cwcFilename        %#x\n", pInfo->cwcFilename));
                                     Log2(("NTFS:     fFilenameType      %#x\n", pInfo->fFilenameType));
-                                    if (RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pInfo->cwcFilename]) <= cbValue)
+                                    if (RT_UOFFSETOF_DYN(NTFSATFILENAME, wszFilename[pInfo->cwcFilename]) <= cbValue)
                                         Log2(("NTFS:     wszFilename       '%.*ls'\n", pInfo->cwcFilename, pInfo->wszFilename ));
                                     else
                                         Log2(("NTFS:     Error! Truncated filename!!\n"));
                                 }
                                 else
-                                    Log2(("NTFS:     Error! cbValue=%#x is smaller than expected (%#x) for NTFSATFILENAME!\n",
-                                          cbValue, RT_OFFSETOF(NTFSATFILENAME, wszFilename) ));
+                                    Log2(("NTFS:     Error! cbValue=%#x is smaller than expected (%#zx) for NTFSATFILENAME!\n",
+                                          cbValue, RT_UOFFSETOF(NTFSATFILENAME, wszFilename) ));
                                 break;
                             }
 
@@ -2137,7 +2137,7 @@ static RTFMODE rtFsNtfsConvertFileattribsToMode(uint32_t fFileAttribs, PCNTFSATF
         fMode |= RTFS_TYPE_FILE;
         if (   pFilename
             && pFilename->cwcFilename >= 4
-            && RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= cbFilename)
+            && RT_UOFFSETOF_DYN(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= cbFilename)
         {
             PCRTUTF16 pwcExt = &pFilename->wszFilename[pFilename->cwcFilename - 4];
             if ( *pwcExt++ == '.')
@@ -2617,7 +2617,7 @@ static const RTVFSFILEOPS g_rtFsNtfsFileOps =
     0,
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
-        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        RT_UOFFSETOF(RTVFSFILEOPS, ObjSet) - RT_UOFFSETOF(RTVFSFILEOPS, Stream.Obj),
         rtFsNtfsFile_SetMode,
         rtFsNtfsFile_SetTimes,
         rtFsNtfsFile_SetOwner,
@@ -2819,7 +2819,7 @@ static void rtFsNtfsVol_LogIndexHdrAndEntries(PCNTFSINDEXHDR pIdxHdr, uint32_t c
                 Log2(("NTFS:             cbPackedEas        %#RX16\n", RT_LE2H_U16(pFilename->u.cbPackedEas) ));
             Log2(("NTFS:             cwcFilename        %#x\n", pFilename->cwcFilename));
             Log2(("NTFS:             fFilenameType      %#x\n", pFilename->fFilenameType));
-            if (RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= RT_LE2H_U16(pEntryHdr->cbKey))
+            if (RT_UOFFSETOF_DYN(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) <= RT_LE2H_U16(pEntryHdr->cbKey))
                 Log2(("NTFS:             wszFilename       '%.*ls'\n", pFilename->cwcFilename, pFilename->wszFilename ));
             else
                 Log2(("NTFS:             Error! Truncated filename!!\n"));
@@ -2979,11 +2979,11 @@ static int rtFsNtfsVol_LoadIndexNodeInfo(PCRTFSNTFSIDXROOTINFO pRootInfo, PRTFSN
             && uType == NTFSATINDEXROOT_TYPE_DIR)
         {
             PCNTFSATFILENAME pFilename = (PCNTFSATFILENAME)(pEntryHdr + 1);
-            if (RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) > cbKey)
+            if (RT_UOFFSETOF_DYN(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]) > cbKey)
                 return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                                "%s: Entry #%u filename is out of bounds: cwcFilename=%#x -> %#x key, max %#x",
                                                pszWhat, iEntry, pFilename->cwcFilename,
-                                               RT_UOFFSETOF(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]), cbKey);
+                                               RT_UOFFSETOF_DYN(NTFSATFILENAME, wszFilename[pFilename->cwcFilename]), cbKey);
         }
 
         if (pEntryHdr->fFlags & NTFSIDXENTRYHDR_F_INTERNAL)
@@ -4162,7 +4162,7 @@ static DECLCALLBACK(int) rtFsNtfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEnt
         if (pThis->paEnumStack[0].iNext <= 1)
         {
 
-            *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName[pThis->paEnumStack[0].iNext + 2]);
+            *pcbDirEntry = RT_UOFFSETOF_DYN(RTDIRENTRYEX, szName[pThis->paEnumStack[0].iNext + 2]);
             if (*pcbDirEntry > cbDirEntry)
                 return VERR_BUFFER_OVERFLOW;
 
@@ -4254,7 +4254,7 @@ static DECLCALLBACK(int) rtFsNtfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEnt
                         LogRel(("rtFsNtfsDir_ReadDir: Bad filename (%Rrc) %.*Rhxs\n",
                                 rc, pFilename->cwcFilename * sizeof(RTUTF16), pFilename->wszFilename));
                     }
-                    *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName[cchFilename + 1]);
+                    *pcbDirEntry = RT_UOFFSETOF_DYN(RTDIRENTRYEX, szName[cchFilename + 1]);
                     if (*pcbDirEntry > cbDirEntry)
                     {
                         Log5(("rtFsNtfsDir_ReadDir: returns VERR_BUFFER_OVERFLOW (for '%.*ls')\n",
@@ -4402,7 +4402,7 @@ static const RTVFSDIROPS g_rtFsNtfsDirOps =
     0,
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
-        RT_OFFSETOF(RTVFSDIROPS, Obj) - RT_OFFSETOF(RTVFSDIROPS, ObjSet),
+        RT_UOFFSETOF(RTVFSDIROPS, ObjSet) - RT_UOFFSETOF(RTVFSDIROPS, Obj),
         rtFsNtfsDir_SetMode,
         rtFsNtfsDir_SetTimes,
         rtFsNtfsDir_SetOwner,

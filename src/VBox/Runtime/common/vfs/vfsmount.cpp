@@ -237,7 +237,7 @@ static bool rtVfsMountIsFat(PCFATBOOTSECTOR pBootSector, uint8_t const *pbRaw, s
         uint32_t const offFirstZero = 2 /*jmp */ + 3 * 2 /* words */ + 9 /* date string */;
         Assert(offFirstZero >= RT_UOFFSETOF(FATBOOTSECTOR, Bpb));
         uint32_t const cbZeroPad    = RT_MIN(offJump - offFirstZero,
-                                             sizeof(pBootSector->Bpb.Bpb20) - (offFirstZero - RT_OFFSETOF(FATBOOTSECTOR, Bpb)));
+                                             sizeof(pBootSector->Bpb.Bpb20) - (offFirstZero - RT_UOFFSETOF(FATBOOTSECTOR, Bpb)));
 
         if (!ASMMemIsAllU8((uint8_t const *)pBootSector + offFirstZero, cbZeroPad, 0))
         {
@@ -265,7 +265,7 @@ static bool rtVfsMountIsFat(PCFATBOOTSECTOR pBootSector, uint8_t const *pbRaw, s
         else if (   pBootSector->abJmp[0] == 0xe9
                  && pBootSector->abJmp[2] <= 0x7f)
             offJmp = RT_MIN(127, RT_MAKE_U16(pBootSector->abJmp[1], pBootSector->abJmp[2]));
-        uint8_t const cbMaxBpb = offJmp - RT_OFFSETOF(FATBOOTSECTOR, Bpb);
+        uint8_t const cbMaxBpb = offJmp - RT_UOFFSETOF(FATBOOTSECTOR, Bpb);
         if (cbMaxBpb < sizeof(FATBPB20))
         {
             Log2(("rtVfsMountIsFat: DOS signature, but jmp too short for any BPB: %#x (max %#x BPB)\n", offJmp, cbMaxBpb));
