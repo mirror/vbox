@@ -1543,7 +1543,7 @@ int pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
                     {
                         X86PDEPAE Pde;
                         Pde.u = pWalk->u.Amd64.pPde[1].u;
-                        if (   (Pde.u & fPdeSame) == (Pde.u & fPdeSame)
+                        if (   (Pde.u & fPdeSame) == (pWalk->u.Amd64.Pde.u & fPdeSame)
                             && !(Pde.u & (pVCpu)->pgm.s.fGstAmd64MbzPdeMask))
                         {
                             /* Get the new PTE and check out the first entry. */
