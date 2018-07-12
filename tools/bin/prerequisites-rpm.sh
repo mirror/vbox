@@ -29,15 +29,13 @@ documentation.  It will also be implemented per distribution as needed."
 # To repeat: there are no plans to add support for or to accept patches
 # for distributions we do not package.
 
-unset WITHDOCS
-egrepignore=\
-"Setting up Install Process|already installed and latest version|Nothing to do"
-
 usage()
 {
     echo "${usage_msg}"
     exit "${1}"
 }
+
+unset WITHDOCS
 
 while test -n "${1}"; do
     case "${1}" in
@@ -64,80 +62,94 @@ device-mapper-devel wget kernel-default-devel tar glibc-devel-32bit \
 libstdc++-devel-32bit libpng16-devel libqt5-qtx11extras-devel \
 libXcursor-devel libXinerama-devel libXrandr-devel alsa-devel gcc-c++-32bit \
 libQt5Widgets-devel libQt5OpenGL-devel libQt5PrintSupport-devel \
-libqt5-linguist"
+libqt5-linguist libopus-devel"
 
 if test -f /etc/SUSE-brand; then
     zypper install -y ${PACKAGES_OPENSUSE}
     exit 0
 fi
+
+PACKAGES_EL="bzip2 gcc-c++ glibc-devel gzip libcap-devel libIDL-devel \
+    libxslt-devel libXmu-devel make openssl-devel pam-devel python-devel \
+    rpm-build wget kernel kernel-devel tar libpng-devel"
+PACKAGES_EL5="curl-devel SDL-devel libstdc++-devel.i386 openssh-clients \
+    which gcc44-c++"
+PACKAGES_EPEL5_ARCH="/usr/bin/python2.6:python26-2.6.8-2.el5 \
+    /usr/bin/python2.6:python26-libs-2.6.8-2.el5 \
+    /usr/bin/python2.6:python26-devel-2.6.8-2.el5 \
+    /usr/bin/python2.6:libffi-3.0.5-1.el5 \
+    /usr/share/doc/SDL_ttf-2.0.8/README:SDL_ttf-2.0.8-3.el5 \
+    /usr/share/doc/SDL_ttf-2.0.8/README:SDL_ttf-devel-2.0.8-3.el5"
+LOCAL_EL5="\
+    /usr/local/include/pulse:\
+https://freedesktop.org/software/pulseaudio/releases/pulseaudio-11.1.tar.gz"
+PACKAGES_EL6_PLUS="libcurl-devel libstdc++-static libvpx-devel \
+    pulseaudio-libs-devel SDL-static device-mapper-devel glibc-static \
+    zlib-static glibc-devel.i686 libstdc++.i686 qt5-qttools-devel \
+    qt5-qtx11extras-devel"
+PACKAGES_EL7_PLUS="opus-devel"
+DOCS_EL="texlive-latex texlive-latex-bin texlive-ec texlive-pdftex-def \
+    texlive-fancybox"
+
 if test -f /etc/redhat-release; then
-  yum install -y bzip2 gcc-c++ glibc-devel gzip libcap-devel \
-    libIDL-devel libxslt-devel libXmu-devel \
-    make mkisofs openssl-devel pam-devel \
-    python-devel qt-devel rpm-build \
-    wget kernel kernel-devel \
-    tar libpng-devel | egrep -v  "${egrepignore}"
-  # Not EL5
-  if ! grep -q "release 5" /etc/redhat-release; then
-    yum install libcurl-devel libstdc++-static libvpx-devel \
-      pulseaudio-libs-devel SDL-static texlive-latex texlive-latex-bin \
-      texlive-ec texlive-collection-fontsrecommended
-      texlive-pdftex-def texlive-fancybox device-mapper-devel \
-      glibc-static zlib-static glibc-devel.i686 libstdc++.i686 \
-      qt5-qttools-devel qt5-qtx11extras-devel | egrep -v  "${egrepignore}"
-    if test -n "$WITHDOCS"; then
-      yum install texlive-latex texlive-latex-bin texlive-ec \
-        texlive-pdftex-def texlive-fancybox device-mapper-devel |
-        egrep -v  "${egrepignore}"
-      if test ! -f /usr/share/texmf/tex/latex/bera/beramono.sty; then
-        mkdir -p /usr/share/texmf/tex/latex/bera
-        pushd /usr/share/texmf/tex/latex/bera
-        wget http://www.tug.org/texlive/devsrc/Master/texmf-dist/tex/latex/bera/beramono.sty
-        texhash
-        popd
-      fi
-    fi
-  fi
-  # EL5
-  if grep -q "release 5" /etc/redhat-release; then
-    yum install -y curl-devel SDL-devel libstdc++-devel.i386 \
-      openssh-clients which gcc44-c++ | egrep -v  "${egrepignore}"
-    ln -sf /usr/bin/gcc44 /usr/local/bin/gcc
-    ln -sf /usr/bin/g++44 /usr/local/bin/g++
-    if ! rpm -q python26 > /dev/null; then
-      pythonpkgs="\
-http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/python26-2.6.8-2.el5.x86_64.rpm \
-http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/python26-libs-2.6.8-2.el5.x86_64.rpm \
-http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/python26-devel-2.6.8-2.el5.x86_64.rpm
-http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/libffi-3.0.5-1.el5.x86_64.rpm"
-      tmpdir=`mktemp -d`
-      pushd ${tmpdir}
-      wget ${pythonpkgs}
-      rpm -i *.rpm
-      popd
-      rm -r ${tmpdir}
-      ln -sf /usr/bin/python2.6 /usr/local/bin/python
-    fi
-    if ! rpm -q SDL_ttf-devel > /dev/null; then
-      sdlpkgs="\
-http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/SDL_ttf-2.0.8-3.el5.x86_64.rpm \
-http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/SDL_ttf-devel-2.0.8-3.el5.x86_64.rpm"
-      tmpdir=`mktemp -d`
-      pushd ${tmpdir}
-      wget ${sdlpkgs}
-      rpm -i *.rpm
-      popd
-      rm -r ${tmpdir}
-    fi
-    if test ! -f /usr/local/include/pulse/pulseaudio.h; then
-      tmpdir=`mktemp -d`
-      pushd ${tmpdir}
-      wget --no-check-certificate https://freedesktop.org/software/pulseaudio/releases/pulseaudio-11.1.tar.gz
-      tar -x -z -f pulseaudio-11.1.tar.gz pulseaudio-11.1/src/pulse
-      mkdir -p /usr/local/include/pulse
-      cp pulseaudio-11.1/src/pulse/*.h /usr/local/include/pulse
-      popd
-      rm -r ${tmpdir}
-    fi
-  fi
+    read elrelease < /etc/redhat-release
+    case "${elrelease}" in
+    *"release 5."*|*"release 6."*|*"release 7."*)
+        INSTALL="yum install -y" ;;
+    *)
+        INSTALL="dnf install -y" ;;
+    esac
+    case "`uname -m`" in
+    x86_64) ARCH=x86_64 ;;
+    *) ARCH=i386 ;;
+    esac
+    egrepignore=\
+"Setting up Install Process|already installed and latest version\
+|Nothing to do"
+    ${INSTALL} ${PACKAGES_EL} | egrep -v  "${egrepignore}"
+    case "${elrelease}" in
+    *"release 5."*)
+        # Packages missing in EL5
+        ${INSTALL} ${PACKAGES_EL5} | egrep -v  "${egrepignore}"
+        for i in ${PACKAGES_EPEL5_ARCH}; do
+            if test ! -r "${i%%:*}"; then
+                wget "http://archives.fedoraproject.org/pub/archive/epel/5/\
+${ARCH}/${i#*:}.${ARCH}.rpm" -P /tmp
+                rpm -i "/tmp/${i#*:}.${ARCH}.rpm"
+                rm "/tmp/${i#*:}.${ARCH}.rpm"
+            fi
+        done
+        for i in ${LOCAL_EL5}; do
+            if test ! -r "${i%%:*}"; then
+                {
+                    ARCHIVE="${i#*:}"
+                    TMPNAME=`/tmp/date +'%s'`
+                    mkdir -p "${TMPNAME}"
+                    cd "${TMPNAME}"
+                    wget "${ARCHIVE}"
+                    case "${ARCHIVE}" in
+                    *.tar.gz)
+                        tar xzf "${ARCHIVE}" --strip-components 1 ;;
+                    *)
+                        echo Error: unknown archive type "${ARCHIVE}"
+                        exit 1
+                    esac
+                    ./configure
+                    make
+                    make install
+                    cd /tmp
+                    rm -r "${TMPNAME}"
+                }
+            fi
+        done ;;
+    *)
+        ${INSTALL} ${PACKAGES_EL6_PLUS} | egrep -v  "${egrepignore}"
+        case "${elrelease}" in
+        *"release 6."*) ;;
+        *)
+            ${INSTALL} ${PACKAGES_EL7_PLUS} | egrep -v  "${egrepignore}"
+            test -n "${WITHDOCS}" &&
+                ${INSTALL} ${DOCS_EL} | egrep -v  "${egrepignore}"
+        esac
+    esac
 fi
