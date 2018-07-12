@@ -138,6 +138,11 @@ typedef struct DRVDISKAIOREQACTIVE
  * Disk integrity driver instance data.
  *
  * @implements  PDMIMEDIA
+ * @implements  PDMIMEDIAPORT
+ * @implements  PDMIMEDIAEX
+ * @implements  PDMIMEDIAEXPORT
+ * @implements  PDMIMEDIAMOUNT
+ * @implements  PDMIMEDIAMOUNTNOTIFY
  */
 typedef struct DRVDISKINTEGRITY
 {
@@ -163,6 +168,16 @@ typedef struct DRVDISKINTEGRITY
     PPDMIMEDIAEX            pDrvMediaEx;
     /** Our extended media interface */
     PDMIMEDIAEX             IMediaEx;
+
+    /** The mount interface below. */
+    PPDMIMOUNT              pDrvMount;
+    /** Our mount interface */
+    PDMIMOUNT               IMount;
+
+    /** The mount notify interface above. */
+    PPDMIMOUNTNOTIFY        pDrvMountNotify;
+    /** Our mount notify interface. */
+    PDMIMOUNTNOTIFY         IMountNotify;
 
     /** Flag whether consistency checks are enabled. */
     bool                    fCheckConsistency;
@@ -1622,6 +1637,59 @@ static DECLCALLBACK(int) drvdiskintIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, P
     return pThis->pDrvMediaEx->pfnIoReqSuspendedLoad(pThis->pDrvMediaEx, pSSM, hIoReq);
 }
 
+/* -=-=-=-=- IMount -=-=-=-=- */
+
+/** @interface_method_impl{PDMIMOUNT,pfnUnmount} */
+static DECLCALLBACK(int) drvdiskintUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMount);
+    return pThis->pDrvMount->pfnUnmount(pThis->pDrvMount, fForce, fEject);
+}
+
+/** @interface_method_impl{PDMIMOUNT,pfnIsMounted} */
+static DECLCALLBACK(bool) drvdiskintIsMounted(PPDMIMOUNT pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMount);
+    return pThis->pDrvMount->pfnIsMounted(pThis->pDrvMount);
+}
+
+/** @interface_method_impl{PDMIMOUNT,pfnLock} */
+static DECLCALLBACK(int) drvdiskintLock(PPDMIMOUNT pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMount);
+    return pThis->pDrvMount->pfnLock(pThis->pDrvMount);
+}
+
+/** @interface_method_impl{PDMIMOUNT,pfnUnlock} */
+static DECLCALLBACK(int) drvdiskintUnlock(PPDMIMOUNT pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMount);
+    return pThis->pDrvMount->pfnUnlock(pThis->pDrvMount);
+}
+
+/** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
+static DECLCALLBACK(bool) drvdiskintIsLocked(PPDMIMOUNT pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMount);
+    return pThis->pDrvMount->pfnIsLocked(pThis->pDrvMount);
+}
+
+/* -=-=-=-=- IMountNotify -=-=-=-=- */
+
+/** @interface_method_impl{PDMIMOUNTNOTIFY,pfnMountNotify} */
+static DECLCALLBACK(void) drvdiskintMountNotify(PPDMIMOUNTNOTIFY pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMountNotify);
+    pThis->pDrvMountNotify->pfnMountNotify(pThis->pDrvMountNotify);
+}
+
+/** @interface_method_impl{PDMIMOUNTNOTIFY,pfnUnmountNotify} */
+static DECLCALLBACK(void) drvdiskintUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMountNotify);
+    pThis->pDrvMountNotify->pfnUnmountNotify(pThis->pDrvMountNotify);
+}
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -1637,6 +1705,8 @@ static DECLCALLBACK(void *)  drvdiskintQueryInterface(PPDMIBASE pInterface, cons
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IMediaPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pThis->IMediaExPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDrvMediaEx ? &pThis->IMediaEx : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->pDrvMount ? &pThis->IMount : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pThis->IMountNotify);
     return NULL;
 }
 
@@ -1840,6 +1910,17 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMediaExPort.pfnIoReqQueryDiscardRanges = drvdiskintIoReqQueryDiscardRanges;
     pThis->IMediaExPort.pfnIoReqStateChanged       = drvdiskintIoReqStateChanged;
 
+    /* IMount */
+    pThis->IMount.pfnUnmount                       = drvdiskintUnmount;
+    pThis->IMount.pfnIsMounted                     = drvdiskintIsMounted;
+    pThis->IMount.pfnLock                          = drvdiskintLock;
+    pThis->IMount.pfnUnlock                        = drvdiskintUnlock;
+    pThis->IMount.pfnIsLocked                      = drvdiskintIsLocked;
+
+    /* IMountNotify */
+    pThis->IMountNotify.pfnMountNotify             = drvdiskintMountNotify;
+    pThis->IMountNotify.pfnUnmountNotify           = drvdiskintUnmountNotify;
+
     /* Query the media port interface above us. */
     pThis->pDrvMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
     if (!pThis->pDrvMediaPort)
@@ -1870,6 +1951,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                 N_("No media or async media interface below"));
 
     pThis->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAEX);
+    pThis->pDrvMount   = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
 
     if (pThis->pDrvMedia->pfnDiscard)
         pThis->IMedia.pfnDiscard = drvdiskintDiscard;
