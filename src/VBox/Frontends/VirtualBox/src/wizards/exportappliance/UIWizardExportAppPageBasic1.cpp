@@ -201,9 +201,3 @@ bool UIWizardExportAppPageBasic1::validatePage()
     /* Return result: */
     return fResult;
 }
-
-int UIWizardExportAppPageBasic1::nextId() const
-{
-    /* Skip next (2nd, storage-type) page for now! */
-    return UIWizardExportApp::Page3;
-}
