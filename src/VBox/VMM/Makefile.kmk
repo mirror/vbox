@@ -959,7 +959,7 @@ if1of ($(SYSMODS),VMMRC)
  ifn1of ($(KBUILD_TARGET), linux solaris)
  else
 	$(call MSG_L1,VMM: Testing for undefined symbols in VMMRC using nm...)
-	$(QUIET)$(VBOX_NM) $^  2> /dev/null \
+	$(QUIET)$(VBOX_NM) $(VMMRC_1_TARGET)  2> /dev/null \
 		| $(SED) -n \
 			-e '/^ *U .*/!d' \
 			-e 's/ *U //' \
