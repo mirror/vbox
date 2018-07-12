@@ -4851,24 +4851,23 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 
         if (uVersion > LSILOGIC_SAVED_STATE_VERSION_PRE_DIAG_MEM)
         {
-            uint32_t cMemRegions = 0;
 
             /* Save diagnostic memory register and data regions. */
-            SSMR3GetU32   (pSSM, &pThis->u32DiagMemAddr);
-            SSMR3GetU32   (pSSM, &cMemRegions);
+            SSMR3GetU32(pSSM, &pThis->u32DiagMemAddr);
+            uint32_t cMemRegions = 0;
+            rc = SSMR3GetU32(pSSM, &cMemRegions);
+            AssertLogRelReturn(rc, rc);
 
             while (cMemRegions)
             {
                 uint32_t u32AddrStart = 0;
-                uint32_t u32AddrEnd = 0;
-                uint32_t cRegion = 0;
-                PLSILOGICMEMREGN pRegion = NULL;
-
                 SSMR3GetU32(pSSM, &u32AddrStart);
-                SSMR3GetU32(pSSM, &u32AddrEnd);
+                uint32_t u32AddrEnd = 0;
+                rc = SSMR3GetU32(pSSM, &u32AddrEnd);
+                AssertLogRelReturn(rc, rc);
 
-                cRegion = u32AddrEnd - u32AddrStart + 1;
-                pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_OFFSETOF(LSILOGICMEMREGN, au32Data[cRegion]));
+                uint32_t         cRegion = u32AddrEnd - u32AddrStart + 1;
+                PLSILOGICMEMREGN pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_OFFSETOF(LSILOGICMEMREGN, au32Data[cRegion]));
                 if (pRegion)
                 {
                     pRegion->u32AddrStart = u32AddrStart;
