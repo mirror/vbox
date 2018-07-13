@@ -7839,19 +7839,15 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
-#ifdef VBOX_STRICT
-    PCSVMVMCB pVmcbTmp = hmR0SvmGetCurrentVmcb(pVCpu);
-    Assert(pVmcbTmp);
-    Assert(!pVmcbTmp->ctrl.IntCtrl.n.u1VGifEnable);
-    RT_NOREF(pVmcbTmp);
-#endif
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
+    Assert(pVmcb);
+    Assert(!pVmcb->ctrl.IntCtrl.n.u1VGifEnable);
 
     VBOXSTRICTRC   rcStrict;
     bool const     fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
     uint64_t const fImport = CPUMCTX_EXTRN_HWVIRT;
     if (fSupportsNextRipSave)
     {
-        PCSVMVMCB     pVmcb   = hmR0SvmGetCurrentVmcb(pVCpu);
         uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pVCpu->cpum.GstCtx.rip;
         rcStrict = IEMExecDecodedClgi(pVCpu, cbInstr);
     }
@@ -7921,12 +7917,9 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
-#ifdef VBOX_STRICT
     PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     Assert(pVmcb);
     Assert(!pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload);
-    RT_NOREF(pVmcb);
-#endif
 
     VBOXSTRICTRC   rcStrict;
     bool const     fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
@@ -7968,12 +7961,9 @@ HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
-#ifdef VBOX_STRICT
     PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
-    Assert(pVmcb);
     Assert(!pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload);
-    RT_NOREF(pVmcb);
-#endif
+
     VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
     if (fSupportsNextRipSave)
