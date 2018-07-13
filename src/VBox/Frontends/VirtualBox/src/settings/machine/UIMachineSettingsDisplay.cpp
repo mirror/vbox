@@ -36,6 +36,8 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#define VIDEO_CAPTURE_BIT_RATE_MIN 32
+#define VIDEO_CAPTURE_BIT_RATE_MAX 2048
 
 /** Machine settings: Display page data structure. */
 struct UIDataSettingsMachineDisplay
@@ -103,7 +105,8 @@ struct UIDataSettingsMachineDisplay
     {
         VideoCaptureOption_Unknown,
         VideoCaptureOption_AC,
-        VideoCaptureOption_VC
+        VideoCaptureOption_VC,
+        VideoCaptureOption_AC_Profile
     };
 
     enum CaptureMode
@@ -120,6 +123,7 @@ struct UIDataSettingsMachineDisplay
         QMap<QString, VideoCaptureOption> keys;
         keys["ac_enabled"] = VideoCaptureOption_AC;
         keys["vc_enabled"] = VideoCaptureOption_VC;
+        keys["ac_profile"] = VideoCaptureOption_AC_Profile;
         /* Return known value or VideoCaptureOption_Unknown otherwise: */
         return keys.value(strKey, VideoCaptureOption_Unknown);
     }
@@ -131,6 +135,7 @@ struct UIDataSettingsMachineDisplay
         QMap<VideoCaptureOption, QString> values;
         values[VideoCaptureOption_AC] = "ac_enabled";
         values[VideoCaptureOption_VC] = "vc_enabled";
+        values[VideoCaptureOption_AC_Profile] = "ac_profile";
         /* Return known value or QString() otherwise: */
         return values.value(enmKey);
     }
@@ -187,43 +192,19 @@ struct UIDataSettingsMachineDisplay
         return false;
     }
 
-    /** Defines whether passed Video Capture @a enmOption is @a fEnabled. */
-    static QString setVideoCaptureOptionEnabled(const QString &strOptions,
-                                                VideoCaptureOption enmOption,
-                                                bool fEnabled)
-    {
-        QList<VideoCaptureOption> aKeys;
-        QStringList aValues;
-        parseVideoCaptureOptions(strOptions, aKeys, aValues);
-        int iIndex = aKeys.indexOf(enmOption);
-        QString strValue = fEnabled ? "true" : "false";
-        if (iIndex == -1)
-        {
-            aKeys << enmOption;
-            aValues << strValue;
-        }
-        else
-        {
-            aValues[iIndex] = strValue;
-        }
-        QString strResult;
-        serializeVideoCaptureOptions(aKeys, aValues, strResult);
-        return strResult;
-    }
-
     /** Defines whether passed Video Capture Options @a enmOptions is @a flags (enabled). */
     static QString setVideoCaptureOptionEnabled(const QString &strOptions,
                                                 const QVector<VideoCaptureOption> &enmOptions,
-                                                const QVector<bool> &flags)
+                                                const QStringList &values)
     {
-        if (enmOptions.size() != flags.size())
+        if (enmOptions.size() != values.size())
             return QString();
         QList<VideoCaptureOption> aKeys;
         QStringList aValues;
         parseVideoCaptureOptions(strOptions, aKeys, aValues);
-        for(int i = 0; i < flags.size(); ++i)
+        for(int i = 0; i < values.size(); ++i)
         {
-            QString strValue = flags[i] ? "true" : "false";
+            QString strValue = values[i];
             int iIndex = aKeys.indexOf(enmOptions[i]);
             if (iIndex == -1)
             {
@@ -493,22 +474,22 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
     newDisplayData.m_screens = m_pScrollerVideoCaptureScreens->value();
 
-    QVector<bool> flagsVector;
-    flagsVector.push_back(
-                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio) ||
-                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly));
-
-    flagsVector.push_back(
-                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio) ||
-                          m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_AudioOnly));
+    /* Update  video capture options */
+    QStringList optionValues;
+    optionValues.push_back((m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio) ||
+                            m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly)) ? "true" : "false");
+    optionValues.push_back((m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio) ||
+                            m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_AudioOnly)) ? "true" : "false");
+    optionValues.push_back("low");
 
     QVector<UIDataSettingsMachineDisplay::VideoCaptureOption> videoCaptureOptionVector;
     videoCaptureOptionVector.push_back(UIDataSettingsMachineDisplay::VideoCaptureOption_VC);
     videoCaptureOptionVector.push_back(UIDataSettingsMachineDisplay::VideoCaptureOption_AC);
+    videoCaptureOptionVector.push_back(UIDataSettingsMachineDisplay::VideoCaptureOption_AC_Profile);
 
     newDisplayData.m_strVideoCaptureOptions = UIDataSettingsMachineDisplay::setVideoCaptureOptionEnabled(m_pCache->base().m_strVideoCaptureOptions,
                                                                                                          videoCaptureOptionVector,
-                                                                                                         flagsVector);
+                                                                                                         optionValues);
 
     /* Cache new display data: */
     m_pCache->cacheCurrentData(newDisplayData);
@@ -1147,7 +1128,7 @@ void UIMachineSettingsDisplay::prepareTabVideoCapture()
         AssertPtrReturnVoid(m_pContainerLayoutSliderVideoCaptureQuality);
         AssertPtrReturnVoid(m_pSliderVideoCaptureQuality);
         {
-            /* Configure combo-box: */
+            /* Configure quality related widget: */
             m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(1, 4);
             m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(3, 5);
             m_pSliderVideoCaptureQuality->setMinimum(1);
@@ -1166,8 +1147,8 @@ void UIMachineSettingsDisplay::prepareTabVideoCapture()
         {
             /* Configure editor: */
             vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
-            m_pEditorVideoCaptureBitRate->setMinimum(32);
-            m_pEditorVideoCaptureBitRate->setMaximum(2048);
+            m_pEditorVideoCaptureBitRate->setMinimum(VIDEO_CAPTURE_BIT_RATE_MIN);
+            m_pEditorVideoCaptureBitRate->setMaximum(VIDEO_CAPTURE_BIT_RATE_MAX);
         }
     }
 }
