@@ -71,7 +71,8 @@ public:
     /** Defines the VM OS @a enmType. */
     void setType(const CGuestOSType &enmType);
 
-    void setNameFieldValidator(const QString &strValidatorString);
+    /** Defines the name-field @a strValidator. */
+    void setNameFieldValidator(const QString &strValidator);
 
 protected:
 

@@ -136,17 +136,18 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     m_pComboType->blockSignals(true);
     m_pComboType->clear();
 
-    /* Populate combo-box with OS types related to currently selected family id: */
+    /* Acquire family ID: */
     const QString strFamilyId = m_pComboFamily->itemData(iIndex, TypeID).toString();
-    const QList<CGuestOSType> types = vboxGlobal().vmGuestOSTypeList(strFamilyId);
-    for (int i = 0; i < types.size(); ++i)
+
+    /* Populate combo-box with OS types related to currently selected family id: */
+    foreach (const CGuestOSType &comType, vboxGlobal().vmGuestOSTypeList(strFamilyId))
     {
-        /* Skip 64bit OS types is hardware virtualization or long mode is not supported: */
-        if (types.at(i).GetIs64Bit() && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
+        /* Skip 64bit OS types if hardware virtualization or long mode is not supported: */
+        if (comType.GetIs64Bit() && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
             continue;
         const int iIndex = m_pComboType->count();
-        m_pComboType->insertItem(iIndex, types[i].GetDescription());
-        m_pComboType->setItemData(iIndex, types[i].GetId(), TypeID);
+        m_pComboType->insertItem(iIndex, comType.GetDescription());
+        m_pComboType->setItemData(iIndex, comType.GetId(), TypeID);
     }
 
     /* Select the most recently chosen item: */
@@ -190,13 +191,18 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 {
+    /* Acquire type/family IDs: */
+    const QString strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
+    const QString strFamilyId = m_pComboFamily->itemData(m_pComboFamily->currentIndex(), TypeID).toString();
+
     /* Save the new selected OS type: */
-    m_enmType = vboxGlobal().vmGuestOSType(m_pComboType->itemData(iIndex, TypeID).toString(),
-                                        m_pComboFamily->itemData(m_pComboFamily->currentIndex(), TypeID).toString());
-    m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(m_enmType.GetId()));
+    m_enmType = vboxGlobal().vmGuestOSType(strTypeId, strFamilyId);
+
+    /* Update selected type pixmap: */
+    m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(strTypeId));
 
     /* Save the most recently used item: */
-    m_currentIds[m_enmType.GetFamilyId()] = m_enmType.GetId();
+    m_currentIds[strFamilyId] = strTypeId;
 
     /* Notifies listeners about OS type change: */
     emit sigOsTypeChanged();
@@ -210,7 +216,7 @@ void UINameAndSystemEditor::prepare()
     prepareWidgets();
     /* Prepare connections: */
     prepareConnections();
-    /* Retranslate: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -228,86 +234,105 @@ void UINameAndSystemEditor::prepareWidgets()
     QGridLayout *pMainLayout = new QGridLayout(this);
     if (pMainLayout)
     {
-        /* Configure main-layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-        m_pNameLabel = new QLabel;
         int iRow = 0;
+
+        /* Create name label: */
+        m_pNameLabel = new QLabel;
         if (m_pNameLabel)
         {
             m_pNameLabel->setAlignment(Qt::AlignRight);
             m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+
+            /* Add into layout: */
             pMainLayout->addWidget(m_pNameLabel, iRow, 0, 1, 1);
         }
+        /* Create name editor: */
         m_pNameLineEdit = new QILineEdit;
         if (m_pNameLineEdit)
         {
-            pMainLayout->addWidget(m_pNameLineEdit, iRow++, 1, 1, 2);
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pNameLineEdit, iRow, 1, 1, 2);
         }
+
+        ++iRow;
 
         if (m_fChooseLocation)
         {
+            /* Create path label: */
             m_pPathLabel = new QLabel;
             if (m_pPathLabel)
             {
                 m_pPathLabel->setAlignment(Qt::AlignRight);
                 m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+
+                /* Add into layout: */
                 pMainLayout->addWidget(m_pPathLabel, iRow, 0, 1, 1);
             }
-
+            /* Create path selector: */
             m_pPathSelector = new UIFilePathSelector;
             if (m_pPathSelector)
             {
-                pMainLayout->addWidget(m_pPathSelector, iRow++, 1, 1, 2);
                 QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
                 m_pPathSelector->setPath(strDefaultMachineFolder);
                 m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
+
+                /* Add into layout: */
+                pMainLayout->addWidget(m_pPathSelector, iRow, 1, 1, 2);
             }
+
+            ++iRow;
         }
 
         /* Create VM OS family label: */
         m_pLabelFamily = new QLabel;
         if (m_pLabelFamily)
         {
-            /* Configure VM OS family label: */
             m_pLabelFamily->setAlignment(Qt::AlignRight);
             m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            /* Add VM OS family label into main-layout: */
+
+            /* Add into layout: */
             pMainLayout->addWidget(m_pLabelFamily, iRow, 0);
         }
+
         int iIconRow = iRow;
+
         /* Create VM OS family combo: */
         m_pComboFamily = new QComboBox;
         if (m_pComboFamily)
         {
-            /* Configure VM OS family combo: */
             m_pComboFamily->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pLabelFamily->setBuddy(m_pComboFamily);
-            /* Add VM OS family combo into main-layout: */
-            pMainLayout->addWidget(m_pComboFamily, iRow++, 1);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pComboFamily, iRow, 1);
         }
+
+        ++iRow;
 
         /* Create VM OS type label: */
         m_pLabelType = new QLabel;
         if (m_pLabelType)
         {
-            /* Configure VM OS type label: */
             m_pLabelType->setAlignment(Qt::AlignRight);
             m_pLabelType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            /* Add VM OS type label into main-layout: */
+
+            /* Add into layout: */
             pMainLayout->addWidget(m_pLabelType, iRow, 0);
         }
-
         /* Create VM OS type combo: */
         m_pComboType = new QComboBox;
         if (m_pComboType)
         {
-            /* Configure VM OS type combo: */
             m_pComboType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pLabelType->setBuddy(m_pComboType);
-            /* Add VM OS type combo into main-layout: */
-            pMainLayout->addWidget(m_pComboType, iRow++, 1);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pComboType, iRow, 1);
         }
+
+        ++iRow;
 
         /* Create sub-layout: */
         QVBoxLayout *pLayoutIcon = new QVBoxLayout;
@@ -317,14 +342,16 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pIconType = new QLabel;
             if (m_pIconType)
             {
-                /* Configure VM OS type icon: */
                 m_pIconType->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                /* Add VM OS type icon into sub-layout: */
+
+                /* Add into layout: */
                 pLayoutIcon->addWidget(m_pIconType);
             }
+
             /* Add stretch to sub-layout: */
             pLayoutIcon->addStretch();
-            /* Add sub-layout into main-layout: */
+
+            /* Add into layout: */
             pMainLayout->addLayout(pLayoutIcon, iIconRow, 2, 2, 1);
         }
     }
@@ -365,9 +392,9 @@ void UINameAndSystemEditor::prepareConnections()
             this, &UINameAndSystemEditor::sltTypeChanged);
 }
 
-void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidatorString)
+void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
 {
     if (!m_pNameLineEdit)
         return;
-    m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidatorString), this));
+    m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidator), this));
 }
