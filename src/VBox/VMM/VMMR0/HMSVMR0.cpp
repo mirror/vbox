@@ -6632,9 +6632,8 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
  */
 static VBOXSTRICTRC hmR0SvmExitReadMsr(PVMCPU pVCpu, PSVMVMCB pVmcb)
 {
-    PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
-    Log4Func(("idMsr=%#RX32\n", pCtx->ecx));
+    Log4Func(("idMsr=%#RX32\n", pVCpu->cpum.GstCtx.ecx));
 
     VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
