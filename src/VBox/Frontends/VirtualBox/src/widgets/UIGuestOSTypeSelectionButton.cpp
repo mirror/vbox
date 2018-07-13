@@ -83,15 +83,14 @@ void UIGuestOSTypeSelectionButton::retranslateUi()
 
 void UIGuestOSTypeSelectionButton::populateMenu()
 {
+    /* Clea initially: */
     m_pMainMenu->clear();
 
-    /* Create a list of all possible OS types */
-    QList<CGuestOSType> families = vboxGlobal().vmGuestOSFamilyList();
-    foreach(const CGuestOSType &comFamily, families)
+    /* Create a list of all possible OS types: */
+    foreach(const QString &strFamilyId, vboxGlobal().vmGuestOSFamilyIDs())
     {
-        QMenu *pSubMenu = m_pMainMenu->addMenu(comFamily.GetFamilyDescription());
-        QList<CGuestOSType> types = vboxGlobal().vmGuestOSTypeList(comFamily.GetFamilyId());
-        foreach (const CGuestOSType &comType, types)
+        QMenu *pSubMenu = m_pMainMenu->addMenu(vboxGlobal().vmGuestOSFamilyDescription(strFamilyId));
+        foreach (const CGuestOSType &comType, vboxGlobal().vmGuestOSTypeList(strFamilyId))
         {
             QAction *pAction = pSubMenu->addAction(vboxGlobal().vmGuestOSTypePixmapDefault(comType.GetId()),
                                                    comType.GetDescription());

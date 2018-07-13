@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QFileIconProvider>
+#include <QMap>
 #include <QReadWriteLock>
 
 /* GUI includes: */
@@ -441,18 +442,18 @@ public:
 
     /** @name COM: Guest OS Type.
      * @{ */
-        /** Returns the list of few guest OS types, queried from
-          * IVirtualBox corresponding to every family id. */
-        QList<CGuestOSType> vmGuestOSFamilyList() const;
-        /** Returns the list of all guest OS types, queried from
-          * IVirtualBox corresponding to passed family id. */
+        /** Returns the list of family IDs. */
+        QList<QString> vmGuestOSFamilyIDs() const { return m_guestOSFamilyIDs; }
+
+        /** Returns a family description with passed @a strFamilyId. */
+        QString vmGuestOSFamilyDescription(const QString &strFamilyId) const;
+        /** Returns a list of all guest OS types with passed @a strFamilyId. */
         QList<CGuestOSType> vmGuestOSTypeList(const QString &strFamilyId) const;
 
-        /** Returns the guest OS type object corresponding to the given type id of list
-          * containing OS types related to OS family determined by family id attribute.
-          * If the index is invalid a null object is returned. */
+        /** Returns the guest OS type for passed @a strTypeId.
+          * It is being serached through the list of family with passed @a strFamilyId if specified. */
         CGuestOSType vmGuestOSType(const QString &strTypeId, const QString &strFamilyId = QString()) const;
-        /** Returns the description corresponding to the given guest OS type id. */
+        /** Returns a type description with passed @a strTypeId. */
         QString vmGuestOSTypeDescription(const QString &strTypeId) const;
 
         /** Returns whether guest type with passed @a strOSTypeId is one of DOS types. */
@@ -832,6 +833,8 @@ private:
 
         /** Holds the guest OS family IDs. */
         QList<QString>               m_guestOSFamilyIDs;
+        /** Holds the guest OS family descriptions. */
+        QMap<QString, QString>       m_guestOSFamilyDescriptions;
         /** Holds the guest OS types for each family ID. */
         QList<QList<CGuestOSType> >  m_guestOSTypes;
     /** @} */
