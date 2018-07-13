@@ -6254,6 +6254,24 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
+/** CPUID(0x8000000a,0).EDX field descriptions.   */
+static DBGFREGSUBFIELD const g_aExtLeafAEdxSubFields[] =
+{
+    DBGFREGSUBFIELD_RO("NP\0"             "Nested Paging",                               0, 1, 0),
+    DBGFREGSUBFIELD_RO("LbrVirt\0"        "Last Branch Record Virtualization",           1, 1, 0),
+    DBGFREGSUBFIELD_RO("SVML\0"           "SVM Lock",                                    2, 1, 0),
+    DBGFREGSUBFIELD_RO("NRIPS\0"          "NextRIP Save",                                3, 1, 0),
+    DBGFREGSUBFIELD_RO("TscRateMsr\0"     "MSR based TSC rate control",                  4, 1, 0),
+    DBGFREGSUBFIELD_RO("VmcbClean\0"      "VMCB clean bits",                             5, 1, 0),
+    DBGFREGSUBFIELD_RO("FlushByASID\0"    "Flush by ASID",                               6, 1, 0),
+    DBGFREGSUBFIELD_RO("DecodeAssists\0"  "Decode Assists",                              7, 1, 0),
+    DBGFREGSUBFIELD_RO("PauseFilter\0"    "Pause intercept filter",                     10, 1, 0),
+    DBGFREGSUBFIELD_RO("PauseFilterThreshold\0" "Pause filter threshold",               12, 1, 0),
+    DBGFREGSUBFIELD_RO("AVIC\0"           "Advanced Virtual Interrupt Controller",      13, 1, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
 /** CPUID(0x80000007,0).EDX field descriptions.   */
 static DBGFREGSUBFIELD const g_aExtLeaf7EdxSubFields[] =
 {
@@ -6856,6 +6874,14 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                 pHlp->pfnPrintf(pHlp, "  Mnemonic - Description                                  = guest (host)\n");
                 cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEdx, Host.uEdx, g_aExtLeaf1EdxSubFields, 56);
                 cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEcx, Host.uEcx, g_aExtLeaf1EcxSubFields, 56);
+                if (Host.uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                {
+                    pHlp->pfnPrintf(pHlp, "SVM Feature Identification (leaf A):\n");
+                    ASMCpuIdExSlow(0x8000000a, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+                    pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x8000000a), 0);
+                    uint32_t const uGstEdx = pCurLeaf ? pCurLeaf->uEdx : 0;
+                    cpumR3CpuIdInfoVerboseCompareListU32(pHlp, uGstEdx, Host.uEdx, g_aExtLeafAEdxSubFields, 56);
+                }
             }
         }
 
