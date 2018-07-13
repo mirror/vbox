@@ -1538,7 +1538,7 @@ int pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
                 }
                 else if ((GCPtr >> X86_PDPT_SHIFT) == (pWalk->u.Core.GCPtr >> X86_PDPT_SHIFT))
                 {
-                    Assert(!((GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK)); /* Must be first PT entry. */
+                    Assert(!((GCPtr >> X86_PT_PAE_SHIFT) & X86_PT|_PAE_MASK)); /* Must be first PT entry. */
                     if (pWalk->u.Amd64.pPde)
                     {
                         X86PDEPAE Pde;
