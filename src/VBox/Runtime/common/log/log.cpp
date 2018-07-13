@@ -2694,7 +2694,7 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup)
             if (   iGroup != UINT16_MAX
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED))
                      != (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED)))
-            pLogger = NULL;
+                pLogger = NULL;
         }
     }
     return pLogger;
@@ -2750,7 +2750,7 @@ RTDECL(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
             if (   iGroup != UINT16_MAX
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
                      != (fFlags | RTLOGGRPFLAGS_ENABLED)))
-            pLogger = NULL;
+                pLogger = NULL;
         }
     }
     return pLogger;
