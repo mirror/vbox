@@ -642,7 +642,7 @@
 //#include "VBoxIChatTheaterWrapper.h"
 #include "VBoxLicenseViewer.h"
 #include "UIMediaComboBox.h"
-#include "VBoxOSTypeSelectorButton.h"
+#include "UIGuestOSTypeSelectionButton.h"
 #include "UISettingsSelector.h"
 #include "UISnapshotDetailsWidget.h"
 #include "UISnapshotPane.h"

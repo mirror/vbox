@@ -33,7 +33,7 @@
 /* GUI includes: */
 # include "QITreeView.h"
 # include "VBoxGlobal.h"
-# include "VBoxOSTypeSelectorButton.h"
+# include "UIGuestOSTypeSelectionButton.h"
 # include "UIApplianceEditorWidget.h"
 # include "UIConverter.h"
 # include "UIFilePathSelector.h"
@@ -590,7 +590,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
         {
             case KVirtualSystemDescriptionType_OS:
             {
-                VBoxOSTypeSelectorButton *pButton = new VBoxOSTypeSelectorButton(pParent);
+                UIGuestOSTypeSelectionButton *pButton = new UIGuestOSTypeSelectionButton(pParent);
                 /* Fill the background with the highlight color in the case
                  * the button hasn't a rectangle shape. This prevents the
                  * display of parts from the current text on the Mac. */
@@ -721,7 +721,7 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
     {
         case KVirtualSystemDescriptionType_OS:
         {
-            if (VBoxOSTypeSelectorButton *pButton = qobject_cast<VBoxOSTypeSelectorButton*>(pEditor))
+            if (UIGuestOSTypeSelectionButton *pButton = qobject_cast<UIGuestOSTypeSelectionButton*>(pEditor))
             {
                 pButton->setOSTypeId(m_strConfigValue);
                 fDone = true;
@@ -817,7 +817,7 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
     {
         case KVirtualSystemDescriptionType_OS:
         {
-            if (VBoxOSTypeSelectorButton *pButton = qobject_cast<VBoxOSTypeSelectorButton*>(pEditor))
+            if (UIGuestOSTypeSelectionButton *pButton = qobject_cast<UIGuestOSTypeSelectionButton*>(pEditor))
             {
                 m_strConfigValue = pButton->osTypeId();
                 fDone = true;
@@ -1283,7 +1283,7 @@ bool UIApplianceDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
         /* On Mac OS X Cocoa the OS type selector widget loses it focus when
          * the popup menu is shown. Prevent this here, cause otherwise the new
          * selected OS will not be updated. */
-        VBoxOSTypeSelectorButton *pButton = qobject_cast<VBoxOSTypeSelectorButton*>(pObject);
+        UIGuestOSTypeSelectionButton *pButton = qobject_cast<UIGuestOSTypeSelectionButton*>(pObject);
         if (pButton && pButton->isMenuShown())
             return false;
         /* The same counts for the text edit buttons of the license or
