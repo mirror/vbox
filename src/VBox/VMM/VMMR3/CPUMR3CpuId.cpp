@@ -6268,6 +6268,8 @@ static DBGFREGSUBFIELD const g_aExtLeafAEdxSubFields[] =
     DBGFREGSUBFIELD_RO("PauseFilter\0"    "Pause intercept filter",                     10, 1, 0),
     DBGFREGSUBFIELD_RO("PauseFilterThreshold\0" "Pause filter threshold",               12, 1, 0),
     DBGFREGSUBFIELD_RO("AVIC\0"           "Advanced Virtual Interrupt Controller",      13, 1, 0),
+    DBGFREGSUBFIELD_RO("VMSAVEVirt\0"     "VMSAVE and VMLOAD Virtualization",           15, 1, 0),
+    DBGFREGSUBFIELD_RO("VGIF\0"           "Virtual Global-Interrupt Flag",              16, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
