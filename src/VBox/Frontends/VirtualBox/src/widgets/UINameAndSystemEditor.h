@@ -43,6 +43,14 @@ class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public QIWithRetranslateUI<QW
     Q_PROPERTY(QString name READ name WRITE setName);
     Q_PROPERTY(CGuestOSType type READ type WRITE setType);
 
+    /** Simple struct representing CGuestOSType cache. */
+    struct UIGuestOSType
+    {
+        QString typeId;
+        QString typeDescription;
+        bool is64bit;
+    };
+
 signals:
 
     /** Notifies listeners about VM name change. */
@@ -65,6 +73,13 @@ public:
 
     /** Defines the VM @a strName. */
     void setName(const QString &strName);
+
+    /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
+    void setTypeId(const QString &strTypeId, const QString &strFamilyId = QString());
+    /** Returns the VM OS type ID. */
+    QString typeId() const;
+    /** Returns the VM OS family ID. */
+    QString familyId() const;
 
     /** Returns the VM OS type. */
     CGuestOSType type() const;
@@ -103,8 +118,17 @@ private:
         void prepareConnections();
     /** @} */
 
-    /** Holds the VM OS type. */
-    CGuestOSType            m_enmType;
+    /** Holds the current family ID list. */
+    QStringList  m_familyIDs;
+
+    /** Holds the current type cache. */
+    QMap<QString, QList<UIGuestOSType> >  m_types;
+
+    /** Holds the VM OS type ID. */
+    QString  m_strTypeId;
+    /** Holds the VM OS family ID. */
+    QString  m_strFamilyId;
+
     /** Holds the currently chosen OS type IDs on per-family basis. */
     QMap<QString, QString>  m_currentIds;
     /** Holds whether we should propose to choose a full path. */

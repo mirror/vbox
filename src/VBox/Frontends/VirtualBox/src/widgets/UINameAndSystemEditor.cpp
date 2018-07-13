@@ -84,9 +84,97 @@ void UINameAndSystemEditor::setName(const QString &strName)
     m_pNameLineEdit->setText(strName);
 }
 
+void UINameAndSystemEditor::setTypeId(const QString &strTypeId, const QString &strFamilyId /* = QString() */)
+{
+    AssertMsgReturnVoid(!strTypeId.isNull(), ("Null guest OS type ID"));
+
+    /* Save values: */
+    m_strTypeId = strTypeId;
+    m_strFamilyId = strFamilyId;
+
+    /* If family ID isn't null: */
+    if (!m_strFamilyId.isNull())
+    {
+        /* Serch for corresponding family ID index: */
+        int iFamilyIndex = m_pComboFamily->findData(m_strFamilyId, TypeID);
+
+        /* If that family ID isn't present, we have to add it: */
+        if (iFamilyIndex == -1)
+        {
+            /* Append family ID to corresponding combo: */
+            m_pComboFamily->addItem(m_strFamilyId);
+            m_pComboFamily->setItemData(m_pComboFamily->count() - 1, m_strFamilyId, TypeID);
+
+            /* Serch for corresponding family ID index again: */
+            iFamilyIndex = m_pComboFamily->findData(m_strFamilyId, TypeID);
+
+            /* Append the type cache: */
+            m_types[m_strFamilyId] = QList<UIGuestOSType>();
+            UIGuestOSType guiType;
+            guiType.typeId = m_strTypeId;
+            guiType.typeDescription = m_strTypeId;
+            guiType.is64bit = false;
+            m_types[m_strFamilyId] << guiType;
+        }
+
+        /* Choose if we have something to: */
+        if (iFamilyIndex != -1)
+        {
+            m_pComboFamily->setCurrentIndex(iFamilyIndex);
+            sltFamilyChanged(m_pComboFamily->currentIndex());
+        }
+    }
+
+    /* Serch for corresponding type ID index: */
+    int iTypeIndex = m_pComboType->findData(m_strTypeId, TypeID);
+
+    /* If that type ID isn't present, we have to add it: */
+    if (iTypeIndex == -1)
+    {
+        /* Serch for "Other" family ID index: */
+        m_strFamilyId = "Other";
+        int iFamilyIndex = m_pComboFamily->findData(m_strFamilyId, TypeID);
+
+        /* If that family ID is present: */
+        if (iFamilyIndex != -1)
+        {
+            /* Append the type cache: */
+            UIGuestOSType guiType;
+            guiType.typeId = m_strTypeId;
+            guiType.typeDescription = m_strTypeId;
+            guiType.is64bit = false;
+            m_types[m_strFamilyId] << guiType;
+
+            /* Choose required element: */
+            m_pComboFamily->setCurrentIndex(iFamilyIndex);
+            sltFamilyChanged(m_pComboFamily->currentIndex());
+        }
+
+        /* Serch for corresponding type ID index again: */
+        iTypeIndex = m_pComboType->findData(m_strTypeId, TypeID);
+    }
+
+    /* Choose if we have something to: */
+    if (iTypeIndex != -1)
+    {
+        m_pComboType->setCurrentIndex(iTypeIndex);
+        sltTypeChanged(m_pComboType->currentIndex());
+    }
+}
+
+QString UINameAndSystemEditor::typeId() const
+{
+    return m_strTypeId;
+}
+
+QString UINameAndSystemEditor::familyId() const
+{
+    return m_strFamilyId;
+}
+
 CGuestOSType UINameAndSystemEditor::type() const
 {
-    return m_enmType;
+    return vboxGlobal().vmGuestOSType(typeId(), familyId());
 }
 
 void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
@@ -98,21 +186,8 @@ void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
     if (enmType.isNull())
         return;
 
-    /* Initialize variables: */
-    const QString strFamilyId = enmType.GetFamilyId();
-    const QString strTypeId = enmType.GetId();
-
-    /* Get/check family index: */
-    const int iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
-    AssertMsg(iFamilyIndex != -1, ("Invalid family ID: '%s'", strFamilyId.toLatin1().constData()));
-    if (iFamilyIndex != -1)
-        m_pComboFamily->setCurrentIndex(iFamilyIndex);
-
-    /* Get/check type index: */
-    const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
-    AssertMsg(iTypeIndex != -1, ("Invalid type ID: '%s'", strTypeId.toLatin1().constData()));
-    if (iTypeIndex != -1)
-        m_pComboType->setCurrentIndex(iTypeIndex);
+    /* Pass to function above: */
+    setTypeId(enmType.GetId(), enmType.GetFamilyId());
 }
 
 void UINameAndSystemEditor::retranslateUi()
@@ -140,14 +215,14 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     const QString strFamilyId = m_pComboFamily->itemData(iIndex, TypeID).toString();
 
     /* Populate combo-box with OS types related to currently selected family id: */
-    foreach (const CGuestOSType &comType, vboxGlobal().vmGuestOSTypeList(strFamilyId))
+    foreach (const UIGuestOSType &guiType, m_types.value(strFamilyId))
     {
         /* Skip 64bit OS types if hardware virtualization or long mode is not supported: */
-        if (comType.GetIs64Bit() && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
+        if (guiType.is64bit && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
             continue;
         const int iIndex = m_pComboType->count();
-        m_pComboType->insertItem(iIndex, comType.GetDescription());
-        m_pComboType->setItemData(iIndex, comType.GetId(), TypeID);
+        m_pComboType->insertItem(iIndex, guiType.typeDescription);
+        m_pComboType->setItemData(iIndex, guiType.typeId, TypeID);
     }
 
     /* Select the most recently chosen item: */
@@ -194,9 +269,6 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
     /* Acquire type/family IDs: */
     const QString strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
     const QString strFamilyId = m_pComboFamily->itemData(m_pComboFamily->currentIndex(), TypeID).toString();
-
-    /* Save the new selected OS type: */
-    m_enmType = vboxGlobal().vmGuestOSType(strTypeId, strFamilyId);
 
     /* Update selected type pixmap: */
     m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(strTypeId));
@@ -363,13 +435,28 @@ void UINameAndSystemEditor::prepareWidgets()
 
 void UINameAndSystemEditor::prepareFamilyCombo()
 {
-    /* Populate VM OS family combo: */
-    const QList<QString> &familyIDs = vboxGlobal().vmGuestOSFamilyIDs();
-    for (int i = 0; i < familyIDs.size(); ++i)
+    /* Acquire family IDs: */
+    m_familyIDs = vboxGlobal().vmGuestOSFamilyIDs();
+
+    /* For each known family ID: */
+    for (int i = 0; i < m_familyIDs.size(); ++i)
     {
-        const QString &strFamilyId = familyIDs.at(i);
+        const QString &strFamilyId = m_familyIDs.at(i);
+
+        /* Append VM OS family combo: */
         m_pComboFamily->insertItem(i, vboxGlobal().vmGuestOSFamilyDescription(strFamilyId));
         m_pComboFamily->setItemData(i, strFamilyId, TypeID);
+
+        /* Fill in the type cache: */
+        m_types[strFamilyId] = QList<UIGuestOSType>();
+        foreach (const CGuestOSType &comType, vboxGlobal().vmGuestOSTypeList(strFamilyId))
+        {
+            UIGuestOSType guiType;
+            guiType.typeId = comType.GetId();
+            guiType.typeDescription = comType.GetDescription();
+            guiType.is64bit = comType.GetIs64Bit();
+            m_types[strFamilyId] << guiType;
+        }
     }
 
     /* Choose the 1st item to be the current: */
