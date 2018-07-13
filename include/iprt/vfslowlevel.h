@@ -315,8 +315,8 @@ typedef struct RTVFSOBJSETOPS
 {
     /** The structure version (RTVFSOBJSETOPS_VERSION). */
     uint32_t                uVersion;
-    /** The offset to the RTVFSOBJOPS structure. */
-    int32_t                 offObjOps;
+    /** The offset back to the RTVFSOBJOPS structure. */
+    uint32_t                offObjOps;
 
     /**
      * Set the unix style owner and group.
