@@ -133,7 +133,7 @@ HRESULT Appliance::interpret()
                         tr("Cannot interpret appliance without reading it first (call read() before interpret())"));
 
     // Change the appliance state so we can safely leave the lock while doing time-consuming
-    // disk imports; also the below method calls do all kinds of locking which conflicts with
+    // medium imports; also the below method calls do all kinds of locking which conflicts with
     // the appliance object lock
     m->state = Data::ApplianceImporting;
     alock.release();
@@ -548,12 +548,12 @@ HRESULT Appliance::interpret()
             if (fDVD)
                 pNewDesc->i_addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
-            /* Hard disk Controller */
+            /* Storage Controller */
             uint16_t cIDEused = 0;
             uint16_t cSATAused = 0; NOREF(cSATAused);
             uint16_t cSCSIused = 0; NOREF(cSCSIused);
             ovf::ControllersMap::const_iterator hdcIt;
-            /* Iterate through all hard disk controllers */
+            /* Iterate through all storage controllers */
             for (hdcIt = vsysThis.mapControllers.begin();
                  hdcIt != vsysThis.mapControllers.end();
                  ++hdcIt)
@@ -643,17 +643,17 @@ HRESULT Appliance::interpret()
                 }
             }
 
-            /* Hard disks */
+            /* Storage devices (hard disks/DVDs/...) */
             if (vsysThis.mapVirtualDisks.size() > 0)
             {
                 ovf::VirtualDisksMap::const_iterator itVD;
-                /* Iterate through all hard disks ()*/
+                /* Iterate through all storage devices */
                 for (itVD = vsysThis.mapVirtualDisks.begin();
                      itVD != vsysThis.mapVirtualDisks.end();
                      ++itVD)
                 {
                     const ovf::VirtualDisk &hd = itVD->second;
-                    /* Get the associated disk image */
+                    /* Get the associated image */
                     ovf::DiskImage di;
                     std::map<RTCString, ovf::DiskImage>::iterator foundDisk;
 
@@ -666,10 +666,9 @@ HRESULT Appliance::interpret()
                     }
 
                     /*
-                     * Figure out from URI which format the image of disk has.
-                     * URI must have inside section <Disk>                   .
-                     * But there aren't strong requirements about correspondence one URI for one disk virtual format.
-                     * So possibly, we aren't able to recognize some URIs.
+                     * Figure out from URI which format the image has.
+                     * There is no strict mapping of image URI to image format.
+                     * It's possible we aren't able to recognize some URIs.
                      */
 
                     ComObjPtr<MediumFormat> mediumFormat;
@@ -689,17 +688,20 @@ HRESULT Appliance::interpret()
                     //  - we need a url specifier for the vdi format
 
                     Utf8Str strFilename = di.strHref;
+                    DeviceType_T devType = DeviceType_Null;
                     if (vdf.compare("VMDK", Utf8Str::CaseInsensitive) == 0)
                     {
                         /* If the href is empty use the VM name as filename */
                         if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.vmdk", hd.strDiskId.c_str());
+                        devType = DeviceType_HardDisk;
                     }
                     else if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                     {
                         /* If the href is empty use the VM name as filename */
                         if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.iso", hd.strDiskId.c_str());
+                        devType = DeviceType_DVD;
                     }
                     else
                         throw setError(VBOX_E_FILE_ERROR,
@@ -713,15 +715,15 @@ HRESULT Appliance::interpret()
                     if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
                         strFilename.stripSuffix();
 
-                    i_searchUniqueDiskImageFilePath(strMachineFolder, strFilename);
+                    i_searchUniqueImageFilePath(strMachineFolder, devType, strFilename);
 
-                    /* find the description for the hard disk controller
+                    /* find the description for the storage controller
                      * that has the same ID as hd.idController */
                     const VirtualSystemDescriptionEntry *pController;
                     if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
                         throw setError(E_FAIL,
-                                       tr("Cannot find hard disk controller with OVF instance ID %RI32 "
-                                          "to which disk \"%s\" should be attached"),
+                                       tr("Cannot find storage controller with OVF instance ID %RI32 "
+                                          "to which medium \"%s\" should be attached"),
                                        hd.idController,
                                        di.strHref.c_str());
 
@@ -2031,7 +2033,7 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     /* Change the appliance state so we can safely leave the lock while doing
-     * time-consuming disk imports; also the below method calls do all kinds of
+     * time-consuming image imports; also the below method calls do all kinds of
      * locking which conflicts with the appliance object lock. */
     AutoWriteLock writeLock(this COMMA_LOCKVAL_SRC_POS);
     /* Check if the appliance is currently busy. */
@@ -2052,7 +2054,7 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
     if (FAILED(rc))
     {
         /* With _whatever_ error we've had, do a complete roll-back of
-         * machines and disks we've created */
+         * machines and images we've created */
         writeLock.release();
         ErrorInfoKeeper eik;
         for (list<Guid>::iterator itID = m->llGuidsMachinesCreated.begin();
@@ -2273,7 +2275,7 @@ HRESULT Appliance::i_verifyManifestFile(ImportStack &stack)
  *
  * @param hdc in: the HardDiskController structure to attach to.
  * @param ulAddressOnParent in: the AddressOnParent parameter from OVF.
- * @param controllerName out: the name of the hard disk controller to attach to (e.g. "IDE").
+ * @param controllerName out: the name of the storage controller to attach to (e.g. "IDE").
  * @param lControllerPort out: the channel (controller port) of the controller to attach to.
  * @param lDevice out: the device number to attach to.
  */
@@ -2371,7 +2373,7 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
 }
 
 /**
- * Imports one disk image.
+ * Imports one image.
  *
  * This is common code shared between
  *  --  i_importMachineGeneric() for the OVF case; in that case the information comes from
@@ -2382,20 +2384,20 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
  * Both ways of describing machines use the OVF disk references section, so in both cases
  * the caller needs to pass in the ovf::DiskImage structure from ovfreader.cpp.
  *
- * As a result, in both cases, if di.strHref is empty, we create a new disk as per the OVF
+ * As a result, in both cases, if di.strHref is empty, we create a new image as per the OVF
  * spec, even though this cannot really happen in the vbox:Machine case since such data
  * would never have been exported.
  *
- * This advances stack.pProgress by one operation with the disk's weight.
+ * This advances stack.pProgress by one operation with the image's weight.
  *
- * @param di ovfreader.cpp structure describing the disk image from the OVF that is to be imported
+ * @param di ovfreader.cpp structure describing the image from the OVF that is to be imported
  * @param strDstPath Where to create the target image.
- * @param pTargetHD out: The newly created target disk. This also gets pushed on stack.llHardDisksCreated for cleanup.
+ * @param pTargetMedium out: The newly created target medium. This also gets pushed on stack.llHardDisksCreated for cleanup.
  * @param stack
  */
 void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                      const Utf8Str &strDstPath,
-                                     ComObjPtr<Medium> &pTargetHD,
+                                     ComObjPtr<Medium> &pTargetMedium,
                                      ImportStack &stack)
 {
     char *pszAbsDstPath = RTPathAbsExDup(stack.strMachineFolder.c_str(),
@@ -2431,13 +2433,17 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
     }
 
     /* First of all check if the original (non-absolute) destination path is
-     * a valid hard disk UUID. If so, the user wants to import the disk into
+     * a valid medium UUID. If so, the user wants to import the image into
      * an existing path. This is useful for iSCSI for example. */
+    /** @todo r=klaus the code structure after this point is totally wrong,
+     * full of unnecessary code duplication and other issues. 4.2 still had
+     * the right structure for importing into existing medium objects, which
+     * the current code can't possibly handle. */
     RTUUID uuid;
     int vrc = RTUuidFromStr(&uuid, strDstPath.c_str());
     if (vrc == VINF_SUCCESS)
     {
-        rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetHD);
+        rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetMedium);
         if (FAILED(rc)) throw rc;
     }
     else
@@ -2445,7 +2451,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
         RTVFSIOSTREAM hVfsIosSrc = NIL_RTVFSIOSTREAM;
 
         /* check read file to GZIP compression */
-        bool const fGzipped = di.strCompression.compare("gzip",Utf8Str::CaseInsensitive) == 0;
+        bool const fGzipped = di.strCompression.compare("gzip", Utf8Str::CaseInsensitive) == 0;
         Utf8Str strDeleteTemp;
         try
         {
@@ -2513,9 +2519,6 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                strAbsDstPath.c_str(), VERR_INVALID_NAME);
             }
 
-            /* Create an IMedium object. */
-            pTargetHD.createObject();
-
             /*CD/DVD case*/
             if (strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) == 0)
             {
@@ -2525,6 +2528,18 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                         i_importDecompressFile(stack, strSrcFilePath, strAbsDstPath, strSourceOVF.c_str());
                     else
                         i_importCopyFile(stack, strSrcFilePath, strAbsDstPath, strSourceOVF.c_str());
+
+                    ComPtr<IMedium> pTmp;
+                    rc = mVirtualBox->OpenMedium(Bstr(strAbsDstPath).raw(),
+                                                 DeviceType_DVD,
+                                                 AccessMode_ReadWrite,
+                                                 false,
+                                                 pTmp.asOutParam());
+                    if (FAILED(rc))
+                        throw rc;
+
+                    IMedium *iM = pTmp;
+                    pTargetMedium = static_cast<Medium*>(iM);
                 }
                 catch (HRESULT /*arc*/)
                 {
@@ -2539,18 +2554,14 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
             }
             else/* HDD case*/
             {
-                rc = pTargetHD->init(mVirtualBox,
-                                     strTrgFormat,
-                                     strAbsDstPath,
-                                     Guid::Empty /* media registry: none yet */,
-                                     DeviceType_HardDisk);
-                if (FAILED(rc)) throw rc;
+                /* Create an IMedium object. */
+                pTargetMedium.createObject();
 
-                /* Now create an empty hard disk. */
-                rc = mVirtualBox->CreateMedium(Bstr(strTrgFormat).raw(),
-                                               Bstr(strAbsDstPath).raw(),
-                                               AccessMode_ReadWrite, DeviceType_HardDisk,
-                                               ComPtr<IMedium>(pTargetHD).asOutParam());
+                rc = pTargetMedium->init(mVirtualBox,
+                                         strTrgFormat,
+                                         strAbsDstPath,
+                                         Guid::Empty /* media registry: none yet */,
+                                         DeviceType_HardDisk);
                 if (FAILED(rc)) throw rc;
 
                 /* If strHref is empty we have to create a new file. */
@@ -2559,8 +2570,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     com::SafeArray<MediumVariant_T>  mediumVariant;
                     mediumVariant.push_back(MediumVariant_Standard);
 
-                    /* Kick of the creation of a dynamic growing disk image with the given capacity. */
-                    rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M,
+                    /* Kick off the creation of a dynamic growing disk image with the given capacity. */
+                    rc = pTargetMedium->CreateBaseStorage(di.iCapacity / _1M,
                                                       ComSafeArrayAsInParam(mediumVariant),
                                                       ComPtr<IProgress>(pProgress).asOutParam());
                     if (FAILED(rc)) throw rc;
@@ -2621,12 +2632,12 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                     /* Start the source image cloning operation. */
                     ComObjPtr<Medium> nullParent;
-                    rc = pTargetHD->i_importFile(strSrcFilePath.c_str(),
-                                                 srcFormat,
-                                                 MediumVariant_Standard,
-                                                 hVfsIosReadAhead,
-                                                 nullParent,
-                                                 pProgress);
+                    rc = pTargetMedium->i_importFile(strSrcFilePath.c_str(),
+                                                     srcFormat,
+                                                     MediumVariant_Standard,
+                                                     hVfsIosReadAhead,
+                                                     nullParent,
+                                                     pProgress);
                     RTVfsIoStrmRelease(hVfsIosReadAhead);
                     hVfsIosSrc = NIL_RTVFSIOSTREAM;
                     if (FAILED(rc))
@@ -2639,7 +2650,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                                       di.ulSuggestedSizeMB);
                 }
 
-                /* Now wait for the background disk operation to complete; this throws
+                /* Now wait for the background import operation to complete; this throws
                  * HRESULTs on error. */
                 ComPtr<IProgress> pp(pProgress);
                 i_waitForAsyncProgress(stack.pProgress, pp);
@@ -2929,7 +2940,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
     }
 
-    // IDE Hard disk controller
+    // Storage controller IDE
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE =
         vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
     /*
@@ -2962,7 +2973,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         if (FAILED(rc)) throw rc;
     }
 
-    /* Hard disk controller SATA */
+    /* Storage controller SATA */
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA =
         vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
     if (vsdeHDCSATA.size() > 1)
@@ -2985,7 +2996,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                            hdcVBox.c_str());
     }
 
-    /* Hard disk controller SCSI */
+    /* Storage controller SCSI */
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI =
         vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
     if (vsdeHDCSCSI.size() > 1)
@@ -3020,7 +3031,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         if (FAILED(rc)) throw rc;
     }
 
-    /* Hard disk controller SAS */
+    /* Storage controller SAS */
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSAS =
         vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerSAS);
     if (vsdeHDCSAS.size() > 1)
@@ -3037,7 +3048,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         if (FAILED(rc)) throw rc;
     }
 
-    /* Now its time to register the machine before we add any hard disks */
+    /* Now its time to register the machine before we add any storage devices */
     rc = mVirtualBox->RegisterMachine(pNewMachine);
     if (FAILED(rc)) throw rc;
 
@@ -3107,7 +3118,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             rc = sMachine->SaveSettings();
             if (FAILED(rc)) throw rc;
 
-            // only now that we're done with all disks, close the session
+            // only now that we're done with all storage devices, close the session
             rc = stack.pSession->UnlockMachine();
             if (FAILED(rc)) throw rc;
             stack.fSessionOpen = false;
@@ -3126,7 +3137,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
     }
 
-    // create the hard disks & connect them to the appropriate controllers
+    // create the storage devices & connect them to the appropriate controllers
     std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
     if (!avsdeHDs.empty())
     {
@@ -3172,8 +3183,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 ovf::DiskImage diCurrent = oit->second;
 
                 Log(("diCurrent.strDiskId=%s diCurrent.strHref=%s\n", diCurrent.strDiskId.c_str(), diCurrent.strHref.c_str()));
-                /* Iterate over all given disk images of the virtual system
-                 * disks description. We need to find the target disk path,
+                /* Iterate over all given images of the virtual system
+                 * description. We need to find the target image path,
                  * which could be changed by the user. */
                 VirtualSystemDescriptionEntry *vsdeTargetHD = NULL;
                 for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
@@ -3189,7 +3200,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 }
                 if (!vsdeTargetHD)
                 {
-                    /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
+                    /* possible case if an image belongs to other virtual system (OVF package with multiple VMs inside) */
                     Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
                                  oit->first.c_str(), vmNameEntry->strOvf.c_str()));
                     NOREF(vmNameEntry);
@@ -3197,8 +3208,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                     continue;
                 }
 
-                //diCurrent.strDiskId contains the disk identifier (e.g. "vmdisk1"), which should exist
-                //in the virtual system's disks map under that ID and also in the global images map
+                //diCurrent.strDiskId contains the image identifier (e.g. "vmdisk1"), which should exist
+                //in the virtual system's images map under that ID and also in the global images map
                 ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
                 if (itVDisk == vsysThis.mapVirtualDisks.end())
                     throw setError(E_FAIL,
@@ -3215,7 +3226,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                     std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
                     if (h != disksResolvedNames.end())
                     {
-                        /* Yes, disk name was found, we can skip it*/
+                        /* Yes, image name was found, we can skip it*/
                         ++oit;
                         continue;
                     }
@@ -3226,9 +3237,9 @@ l_skipped:
                         /* current opened file isn't the same as passed one */
                         if (RTStrICmp(diCurrent.strHref.c_str(), stack.pszOvaLookAheadName) != 0)
                         {
-                            /* availableImage contains the disk file reference (e.g. "disk1.vmdk"), which should
+                            /* availableImage contains the image file reference (e.g. "disk1.vmdk"), which should
                              * exist in the global images map.
-                             * And find the disk from the OVF's disk list */
+                             * And find the image from the OVF's disk list */
                             ovf::DiskImagesMap::const_iterator itDiskImage;
                             for (itDiskImage = stack.mapDisks.begin();
                                  itDiskImage != stack.mapDisks.end();
@@ -3243,12 +3254,12 @@ l_skipped:
                                 goto l_skipped;
                             }
 
-                            /* replace with a new found disk image */
+                            /* replace with a new found image */
                             diCurrent = *(&itDiskImage->second);
 
                             /*
-                             * Again iterate over all given disk images of the virtual system
-                             * disks description using the found disk image
+                             * Again iterate over all given images of the virtual system
+                             * description using the found image
                              */
                             for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
                                  itHD != avsdeHDs.end();
@@ -3294,21 +3305,18 @@ l_skipped:
                     ++oit;
                 }
 
-                /* very important to store disk name for the next checks */
+                /* very important to store image name for the next checks */
                 disksResolvedNames.insert(diCurrent.strHref);
 ////// end of duplicated code.
                 const ovf::VirtualDisk &ovfVdisk = itVDisk->second;
 
-                ComObjPtr<Medium> pTargetHD;
-
-                Utf8Str savedVBoxCurrent = vsdeTargetHD->strVBoxCurrent;
-
+                ComObjPtr<Medium> pTargetMedium;
                 i_importOneDiskImage(diCurrent,
                                      vsdeTargetHD->strVBoxCurrent,
-                                     pTargetHD,
+                                     pTargetMedium,
                                      stack);
 
-                // now use the new uuid to attach the disk image to our new machine
+                // now use the new uuid to attach the medium to our new machine
                 ComPtr<IMachine> sMachine;
                 rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
                 if (FAILED(rc))
@@ -3330,59 +3338,24 @@ l_skipped:
                 Log(("Attaching disk %s to port %d on device %d\n",
                      vsdeTargetHD->strVBoxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
-                ComObjPtr<MediumFormat> mediumFormat;
-                rc = i_findMediumFormatFromDiskImage(diCurrent, mediumFormat);
+                DeviceType_T devType = DeviceType_Null;
+                rc = pTargetMedium->COMGETTER(DeviceType)(&devType);
                 if (FAILED(rc))
                     throw rc;
 
-                Bstr bstrFormatName;
-                rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
+                                            mhda.lControllerPort,     // long controllerPort
+                                            mhda.lDevice,             // long device
+                                            devType,                  // DeviceType_T type
+                                            pTargetMedium);
                 if (FAILED(rc))
                     throw rc;
-
-                Utf8Str vdf = Utf8Str(bstrFormatName);
-
-                if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
-                {
-                    ComPtr<IMedium> dvdImage(pTargetHD);
-
-                    rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVBoxCurrent).raw(),
-                                                 DeviceType_DVD,
-                                                 AccessMode_ReadWrite,
-                                                 false,
-                                                 dvdImage.asOutParam());
-
-                    if (FAILED(rc))
-                        throw rc;
-
-                    rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
-                                                mhda.lControllerPort,     // long controllerPort
-                                                mhda.lDevice,             // long device
-                                                DeviceType_DVD,           // DeviceType_T type
-                                                dvdImage);
-                    if (FAILED(rc))
-                        throw rc;
-                }
-                else
-                {
-                    rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
-                                                mhda.lControllerPort,     // long controllerPort
-                                                mhda.lDevice,             // long device
-                                                DeviceType_HardDisk,      // DeviceType_T type
-                                                pTargetHD);
-
-                    if (FAILED(rc))
-                        throw rc;
-                }
 
                 stack.llHardDiskAttachments.push_back(mhda);
 
                 rc = sMachine->SaveSettings();
                 if (FAILED(rc))
                     throw rc;
-
-                /* restore */
-                vsdeTargetHD->strVBoxCurrent = savedVBoxCurrent;
 
                 ++cImportedDisks;
 
@@ -3816,25 +3789,6 @@ l_skipped:
         {
             settings::StorageController &sc = *sit;
 
-            // find the OVF virtual system description entry for this storage controller
-/** @todo
- * r=bird: What on earh this is switch supposed to do?  (I've added the default:break;, so don't
- * get confused by it.)  Kind of looks like it's supposed to do something error handling related
- * in the default case...
- */
-            switch (sc.storageBus)
-            {
-                case StorageBus_SATA:
-                    break;
-                case StorageBus_SCSI:
-                    break;
-                case StorageBus_IDE:
-                    break;
-                case StorageBus_SAS:
-                    break;
-                default: break; /* Shut up MSC. */
-            }
-
             // for each medium attachment to this controller...
             for (settings::AttachedDevicesList::iterator dit = sc.llAttachedDevices.begin();
                  dit != sc.llAttachedDevices.end();
@@ -3872,55 +3826,17 @@ l_skipped:
                 /*
                  * step 3: import disk
                  */
-                Utf8Str savedVBoxCurrent = vsdeTargetHD->strVBoxCurrent;
-                ComObjPtr<Medium> pTargetHD;
-
+                ComObjPtr<Medium> pTargetMedium;
                 i_importOneDiskImage(diCurrent,
                                      vsdeTargetHD->strVBoxCurrent,
-                                     pTargetHD,
+                                     pTargetMedium,
                                      stack);
 
+                // ... and replace the old UUID in the machine config with the one of
+                // the imported disk that was just created
                 Bstr hdId;
-
-                ComObjPtr<MediumFormat> mediumFormat;
-                rc = i_findMediumFormatFromDiskImage(diCurrent, mediumFormat);
-                if (FAILED(rc))
-                    throw rc;
-
-                Bstr bstrFormatName;
-                rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-                if (FAILED(rc))
-                    throw rc;
-
-                Utf8Str vdf = Utf8Str(bstrFormatName);
-
-                if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
-                {
-                    ComPtr<IMedium> dvdImage(pTargetHD);
-
-                    rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVBoxCurrent).raw(),
-                                                 DeviceType_DVD,
-                                                 AccessMode_ReadWrite,
-                                                 false,
-                                                 dvdImage.asOutParam());
-
-                    if (FAILED(rc)) throw rc;
-
-                    // ... and replace the old UUID in the machine config with the one of
-                    // the imported disk that was just created
-                    rc = dvdImage->COMGETTER(Id)(hdId.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                }
-                else
-                {
-                    // ... and replace the old UUID in the machine config with the one of
-                    // the imported disk that was just created
-                    rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                }
-
-                /* restore */
-                vsdeTargetHD->strVBoxCurrent = savedVBoxCurrent;
+                rc = pTargetMedium->COMGETTER(Id)(hdId.asOutParam());
+                if (FAILED(rc)) throw rc;
 
                 /*
                  * 1. saving original UUID for restoring in case of failure.

@@ -895,7 +895,6 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
     IMachine *machine = NULL;
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
-    /** @todo Maybe too cost-intensive; try to find a lighter way */
     while (mVirtualBox->FindMachine(Bstr(tmpName).raw(), &machine) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
@@ -908,18 +907,16 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
     return S_OK;
 }
 
-HRESULT Appliance::i_searchUniqueDiskImageFilePath(const Utf8Str &aMachineFolder, Utf8Str &aName) const
+HRESULT Appliance::i_searchUniqueImageFilePath(const Utf8Str &aMachineFolder, DeviceType_T aDeviceType, Utf8Str &aName) const
 {
-    IMedium *harddisk = NULL;
+    IMedium *pMedium = NULL;
     char *tmpName = RTStrDup(aName.c_str());
     char *tmpAbsName = RTPathAbsExDup(aMachineFolder.c_str(), tmpName);
     int i = 1;
-    /* Check if the file exists or if a file with this path is registered
-     * already */
-    /** @todo Maybe too cost-intensive; try to find a lighter way */
+    /* Check if the file exists or if a medium with this path is registered already */
     while (    RTPathExists(tmpAbsName)
-            || mVirtualBox->OpenMedium(Bstr(tmpAbsName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite,
-                                       FALSE /* fForceNewUuid */,  &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
+            || mVirtualBox->OpenMedium(Bstr(tmpAbsName).raw(), aDeviceType, AccessMode_ReadWrite,
+                                       FALSE /* fForceNewUuid */,  &pMedium) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpAbsName);
         char *tmpDir = RTStrDup(aName.c_str());
@@ -927,7 +924,10 @@ HRESULT Appliance::i_searchUniqueDiskImageFilePath(const Utf8Str &aMachineFolder
         char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
         RTPathStripSuffix(tmpFile);
         const char *pszTmpSuff = RTPathSuffix(aName.c_str());
-        RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, pszTmpSuff);
+        if (!strcmp(tmpDir, "."))
+            RTStrAPrintf(&tmpName, "%s_%d%s", tmpFile, i, pszTmpSuff);
+        else
+            RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, pszTmpSuff);
         tmpAbsName = RTPathAbsExDup(aMachineFolder.c_str(), tmpName);
         RTStrFree(tmpFile);
         RTStrFree(tmpDir);
@@ -1156,7 +1156,7 @@ void Appliance::i_disksWeight()
          ++it)
     {
         ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-        /* One for every hard disk of the Virtual System */
+        /* One for every medium of the Virtual System */
         std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
         std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
         for (itH = avsdeHDs.begin();
@@ -1549,7 +1549,7 @@ HRESULT VirtualSystemDescription::addDescription(VirtualSystemDescriptionType_T 
 /**
  * Internal method; adds a new description item to the member list.
  * @param aType Type of description for the new item.
- * @param strRef Reference item; only used with hard disk controllers.
+ * @param strRef Reference item; only used with storage controllers.
  * @param aOvfValue Corresponding original value from OVF.
  * @param aVBoxValue Initial configuration value (can be overridden by caller with setFinalValues).
  * @param ulSizeMB Weight for IProgress
