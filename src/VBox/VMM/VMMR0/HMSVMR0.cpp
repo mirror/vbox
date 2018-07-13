@@ -6353,9 +6353,7 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
     if (   rcStrict == VINF_EM_HALT
         || rcStrict == VINF_SUCCESS)
-    {
         rcStrict = EMShouldContinueAfterHalt(pVCpu, &pVCpu->cpum.GstCtx) ? VINF_SUCCESS : VINF_EM_HALT;
-    }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
