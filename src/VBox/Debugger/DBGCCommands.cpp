@@ -52,6 +52,7 @@ static FNDBGCCMD dbgcCmdQuit;
 static FNDBGCCMD dbgcCmdStop;
 static FNDBGCCMD dbgcCmdDetect;
 static FNDBGCCMD dbgcCmdDmesg;
+extern FNDBGCCMD dbgcCmdDumpImage;
 static FNDBGCCMD dbgcCmdCpu;
 static FNDBGCCMD dbgcCmdInfo;
 static FNDBGCCMD dbgcCmdLog;
@@ -113,6 +114,14 @@ static const DBGCVARDESC    g_aArgDmesg[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,     DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                              "messages",     "Limit the output to the last N messages. (optional)" },
+};
+
+
+/** 'dumpimage' arguments. */
+static const DBGCVARDESC    g_aArgDumpImage[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           ~0U,        DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of image to dump." },
 };
 
 
@@ -240,6 +249,7 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "format",     1,        1,        &g_aArgAny[0],       RT_ELEMENTS(g_aArgAny),       0, dbgcCmdFormat,    "",                     "Evaluates an expression and formats it." },
     { "detect",     0,        0,        NULL,                0,                            0, dbgcCmdDetect,    "",                     "Detects or re-detects the guest os and starts the OS specific digger." },
     { "dmesg",      0,        1,        &g_aArgDmesg[0],     RT_ELEMENTS(g_aArgDmesg),     0, dbgcCmdDmesg,     "[N last messages]",    "Displays the guest os kernel messages, if available." },
+    { "dumpimage",  1,        ~0U,      &g_aArgDumpImage[0], RT_ELEMENTS(g_aArgDumpImage), 0, dbgcCmdDumpImage, "<addr1> [addr2..[addrN]]", "Dumps executable images." },
     { "harakiri",   0,        0,        NULL,                0,                            0, dbgcCmdHarakiri,  "",                     "Kills debugger process." },
     { "help",       0,        ~0U,      &g_aArgHelp[0],      RT_ELEMENTS(g_aArgHelp),      0, dbgcCmdHelp,      "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
     { "info",       1,        2,        &g_aArgInfo[0],      RT_ELEMENTS(g_aArgInfo),      0, dbgcCmdInfo,      "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },

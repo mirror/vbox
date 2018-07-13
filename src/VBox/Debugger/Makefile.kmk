@@ -44,6 +44,7 @@ Debugger_SOURCES   = \
 	DBGCCmdHlp.cpp \
 	DBGCCmdWorkers.cpp \
 	DBGCCommands.cpp \
+	DBGCDumpImage.cpp \
 	DBGCFunctions.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
