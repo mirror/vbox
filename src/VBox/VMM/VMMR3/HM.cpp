@@ -3248,7 +3248,8 @@ VMMR3DECL(bool) HMR3IsUXActive(PUVM pUVM)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return pVM->hm.s.vmx.fUnrestrictedGuest;
+    return pVM->hm.s.vmx.fUnrestrictedGuest
+        || pVM->hm.s.svm.fSupported;
 }
 
 
