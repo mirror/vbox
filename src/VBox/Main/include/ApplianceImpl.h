@@ -184,7 +184,7 @@ private:
 
     void i_importOneDiskImage(const ovf::DiskImage &di,
                               const Utf8Str &strDstPath,
-                              ComObjPtr<Medium> &pTargetHD,
+                              ComObjPtr<Medium> &pTargetMedium,
                               ImportStack &stack);
 
     void i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
