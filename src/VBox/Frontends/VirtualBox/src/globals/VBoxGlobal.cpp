@@ -2173,7 +2173,6 @@ CGuestOSType VBoxGlobal::vmGuestOSType(const QString &strTypeId,
     for (int j = 0; j < list.size(); ++j)
         if (!list.at(j).GetId().compare(strTypeId))
             return list.at(j);
-    AssertMsgFailed(("Type ID incorrect: '%s'.", strTypeId.toLatin1().constData()));
     return CGuestOSType();
 }
 
