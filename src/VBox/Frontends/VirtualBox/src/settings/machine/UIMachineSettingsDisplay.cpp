@@ -124,17 +124,6 @@ struct UIDataSettingsMachineDisplay
         return keys.value(strKey, VideoCaptureOption_Unknown);
     }
 
-    /** Returns bool value corresponding to passed @a strValue. */
-    static bool toVideoCaptureOptionValue(const QString &strValue)
-    {
-        /* Compare case-sensitive: */
-        QMap<QString, bool> values;
-        values["true"] = true;
-        values["false"] = false;
-        /* Return known value or true otherwise: */
-        return values.value(strValue, false);
-    }
-
     /** Returns string representation for passed enum @a enmKey. */
     static QString fromVideoCaptureOptionKey(VideoCaptureOption enmKey)
     {
@@ -146,21 +135,10 @@ struct UIDataSettingsMachineDisplay
         return values.value(enmKey);
     }
 
-    /** Returns string representation for passed bool @a fValue. */
-    static QString fromVideoCaptureOptionValue(bool fValue)
-    {
-        /* Compare case-sensitive: */
-        QMap<bool, QString> values;
-        values[true] = "true";
-        values[false] = "false";
-        /* Return known value or "false" otherwise: */
-        return values.value(fValue, "false");
-    }
-
     /** Parses Video Capture Options. */
     static void parseVideoCaptureOptions(const QString &strOptions,
                                          QList<VideoCaptureOption> &outKeys,
-                                         QList<bool> &outValues)
+                                         QStringList &outValues)
     {
         outKeys.clear();
         outValues.clear();
@@ -168,18 +146,19 @@ struct UIDataSettingsMachineDisplay
         foreach (const QString &strPair, aPairs)
         {
             const QStringList aPair = strPair.split('=');
+            if (aPair.size() != 2)
+                continue;
             const VideoCaptureOption enmKey = toVideoCaptureOptionKey(aPair.value(0));
-            const bool fValue = toVideoCaptureOptionValue(aPair.value(1));
             if (enmKey == VideoCaptureOption_Unknown)
                 continue;
             outKeys << enmKey;
-            outValues << fValue;
+            outValues << aPair.value(1);
         }
     }
 
     /** Serializes Video Capture Options. */
     static void serializeVideoCaptureOptions(const QList<VideoCaptureOption> &inKeys,
-                                             const QList<bool> &inValues,
+                                             const QStringList &inValues,
                                              QString &strOptions)
     {
         QStringList aPairs;
@@ -187,7 +166,7 @@ struct UIDataSettingsMachineDisplay
         {
             QStringList aPair;
             aPair << fromVideoCaptureOptionKey(inKeys.value(i));
-            aPair << fromVideoCaptureOptionValue(inValues.value(i));
+            aPair << inValues.value(i);
             aPairs << aPair.join('=');
         }
         strOptions = aPairs.join(',');
@@ -198,12 +177,14 @@ struct UIDataSettingsMachineDisplay
                                             VideoCaptureOption enmOption)
     {
         QList<VideoCaptureOption> aKeys;
-        QList<bool> aValues;
+        QStringList aValues;
         parseVideoCaptureOptions(strOptions, aKeys, aValues);
         int iIndex = aKeys.indexOf(enmOption);
         if (iIndex == -1)
             return false; /* If option is missing, assume disabled (false). */
-        return aValues.value(iIndex);
+        if (aValues.value(iIndex).compare("true", Qt::CaseInsensitive) == 0)
+            return true;
+        return false;
     }
 
     /** Defines whether passed Video Capture @a enmOption is @a fEnabled. */
@@ -212,17 +193,18 @@ struct UIDataSettingsMachineDisplay
                                                 bool fEnabled)
     {
         QList<VideoCaptureOption> aKeys;
-        QList<bool> aValues;
+        QStringList aValues;
         parseVideoCaptureOptions(strOptions, aKeys, aValues);
         int iIndex = aKeys.indexOf(enmOption);
+        QString strValue = fEnabled ? "true" : "false";
         if (iIndex == -1)
         {
             aKeys << enmOption;
-            aValues << fEnabled;
+            aValues << strValue;
         }
         else
         {
-            aValues[iIndex] = fEnabled;
+            aValues[iIndex] = strValue;
         }
         QString strResult;
         serializeVideoCaptureOptions(aKeys, aValues, strResult);
@@ -237,19 +219,20 @@ struct UIDataSettingsMachineDisplay
         if (enmOptions.size() != flags.size())
             return QString();
         QList<VideoCaptureOption> aKeys;
-        QList<bool> aValues;
+        QStringList aValues;
         parseVideoCaptureOptions(strOptions, aKeys, aValues);
         for(int i = 0; i < flags.size(); ++i)
         {
+            QString strValue = flags[i] ? "true" : "false";
             int iIndex = aKeys.indexOf(enmOptions[i]);
             if (iIndex == -1)
             {
                 aKeys << enmOptions[i];
-                aValues << flags[i];
+                aValues << strValue;
             }
             else
             {
-                aValues[iIndex] = flags[i];
+                aValues[iIndex] = strValue;
             }
         }
         QString strResult;
