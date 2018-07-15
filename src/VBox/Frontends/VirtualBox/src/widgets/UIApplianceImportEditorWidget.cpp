@@ -26,6 +26,7 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QIRichTextLabel.h"
 # include "QITreeView.h"
 # include "UIApplianceImportEditorWidget.h"
 # include "UIFilePathSelector.h"
@@ -69,8 +70,7 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
 
 void UIApplianceImportEditorWidget::prepareWidgets()
 {
-
-    m_pPathSelectorLabel = new QLabel(this);
+    m_pPathSelectorLabel = new QIRichTextLabel(this);
     if (m_pPathSelectorLabel)
     {
         m_pLayout->addWidget(m_pPathSelectorLabel);
@@ -94,6 +94,7 @@ void UIApplianceImportEditorWidget::prepareWidgets()
         m_pLayout->addWidget(m_pImportHDsAsVDI);
         m_pImportHDsAsVDI->setCheckState(Qt::Checked);
     }
+
     retranslateUi();
 }
 
@@ -247,9 +248,8 @@ void UIApplianceImportEditorWidget::retranslateUi()
 {
     UIApplianceEditorWidget::retranslateUi();
     if (m_pPathSelectorLabel)
-        m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host "
-                                                            "all the virtual machines. Virtual home folders "
-                                                            "can also be individually modified."));
+        m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host all the virtual machines.\n"
+                                                            "Home folders can also be individually (per virtual machine)  modified."));
     if (m_pCheckBoxReinitMACs)
     {
         m_pCheckBoxReinitMACs->setText(tr("&Reinitialize the MAC address of all network cards"));

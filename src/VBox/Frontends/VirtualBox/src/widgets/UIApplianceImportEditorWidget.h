@@ -23,6 +23,7 @@
 
 /* Forward declarations: */
 class UIFilePathSelector;
+class QIRichTextLabel;
 
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 {
@@ -48,7 +49,7 @@ private slots:
 private:
 
     void      prepareWidgets();
-    QLabel    *m_pPathSelectorLabel;
+    QIRichTextLabel    *m_pPathSelectorLabel;
     UIFilePathSelector *m_pPathSelector;
 
     /** Holds the 'reinit MACs' check-box instance. */
