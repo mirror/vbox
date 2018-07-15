@@ -24,6 +24,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_SERIAL
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmserialifs.h>
+#include <VBox/vmm/vm.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
@@ -31,167 +32,12 @@
 #include <iprt/critsect.h>
 
 #include "VBoxDD.h"
+#include "UartCore.h"
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
-/** The RBR/DLL register index (from the base of the port range). */
-#define UART_REG_RBR_DLL_INDEX               0
-
-/** The THR/DLL register index (from the base of the port range). */
-#define UART_REG_THR_DLL_INDEX               0
-
-/** The IER/DLM register index (from the base of the port range). */
-#define UART_REG_IER_DLM_INDEX               1
-/** Enable received data available interrupt */
-# define UART_REG_IER_ERBFI                  RT_BIT(0)
-/** Enable transmitter holding register empty interrupt */
-# define UART_REG_IER_ETBEI                  RT_BIT(1)
-/** Enable receiver line status interrupt */
-# define UART_REG_IER_ELSI                   RT_BIT(2)
-/** Enable modem status interrupt. */
-# define UART_REG_IER_EDSSI                  RT_BIT(3)
-/** Mask of writeable bits. */
-# define UART_REG_IER_MASK_WR                0x0f
-
-/** The IIR register index (from the base of the port range). */
-#define UART_REG_IIR_INDEX                   2
-/** Interrupt Pending - high means no interrupt pending. */
-# define UART_REG_IIR_IP_NO_INT              RT_BIT(0)
-/** Interrupt identification mask. */
-# define UART_REG_IIR_ID_MASK                0x0e
-/** Sets the interrupt identification to the given value. */
-# define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) << 1) & UART_REG_IIR_ID_MASK)
-/** Receiver Line Status interrupt. */
-#  define UART_REG_IIR_ID_RCL                0x3
-/** Received Data Available interrupt. */
-#  define UART_REG_IIR_ID_RDA                0x2
-/** Character Timeou Indicator interrupt. */
-#  define UART_REG_IIR_ID_CTI                0x6
-/** Transmitter Holding Register Empty interrupt. */
-#  define UART_REG_IIR_ID_THRE               0x1
-/** Modem Status interrupt. */
-#  define UART_REG_IIR_ID_MS                 0x0
-/** FIFOs enabled. */
-# define UART_REG_IIR_FIFOS_EN               0xc0
-/** Bits relevant for checking whether the interrupt status has changed. */
-# define UART_REG_IIR_CHANGED_MASK           0x0f
-
-/** The FCR register index (from the base of the port range). */
-#define UART_REG_FCR_INDEX                   2
-/** Enable the TX/RX FIFOs. */
-# define UART_REG_FCR_FIFO_EN                RT_BIT(0)
-/** Reset the receive FIFO. */
-# define UART_REG_FCR_RCV_FIFO_RST           RT_BIT(1)
-/** Reset the transmit FIFO. */
-# define UART_REG_FCR_XMIT_FIFO_RST          RT_BIT(2)
-/** DMA Mode Select. */
-# define UART_REG_FCR_DMA_MODE_SEL           RT_BIT(3)
-/** Receiver level interrupt trigger. */
-# define UART_REG_FCR_RCV_LVL_IRQ_MASK       0xc0
-/** Returns the receive level trigger value from the given FCR register. */
-# define UART_REG_FCR_RCV_LVL_IRQ_GET(a_Fcr) (((a_Fcr) & UART_REG_FCR_RCV_LVL_IRQ_MASK) >> 6)
-/** RCV Interrupt trigger level - 1 byte. */
-# define UART_REG_FCR_RCV_LVL_IRQ_1          0x0
-/** RCV Interrupt trigger level - 4 bytes. */
-# define UART_REG_FCR_RCV_LVL_IRQ_4          0x1
-/** RCV Interrupt trigger level - 8 bytes. */
-# define UART_REG_FCR_RCV_LVL_IRQ_8          0x2
-/** RCV Interrupt trigger level - 14 bytes. */
-# define UART_REG_FCR_RCV_LVL_IRQ_14         0x3
-/** Mask of writeable bits. */
-# define UART_REG_FCR_MASK_WR                0xcf
-/** Mask of sticky bits. */
-# define UART_REG_FCR_MASK_STICKY            0xc9
-
-/** The LCR register index (from the base of the port range). */
-#define UART_REG_LCR_INDEX                   3
-/** Word Length Select Mask. */
-# define UART_REG_LCR_WLS_MASK               0x3
-/** Returns the WLS value form the given LCR register value. */
-# define UART_REG_LCR_WLS_GET(a_Lcr)         ((a_Lcr) & UART_REG_LCR_WLS_MASK)
-/** Number of stop bits. */
-# define UART_REG_LCR_STB                    RT_BIT(2)
-/** Parity Enable. */
-# define UART_REG_LCR_PEN                    RT_BIT(3)
-/** Even Parity. */
-# define UART_REG_LCR_EPS                    RT_BIT(4)
-/** Stick parity. */
-# define UART_REG_LCR_PAR_STICK              RT_BIT(5)
-/** Set Break. */
-# define UART_REG_LCR_BRK_SET                RT_BIT(6)
-/** Divisor Latch Access Bit. */
-# define UART_REG_LCR_DLAB                   RT_BIT(7)
-
-/** The MCR register index (from the base of the port range). */
-#define UART_REG_MCR_INDEX                   4
-/** Data Terminal Ready. */
-# define UART_REG_MCR_DTR                    RT_BIT(0)
-/** Request To Send. */
-# define UART_REG_MCR_RTS                    RT_BIT(1)
-/** Out1. */
-# define UART_REG_MCR_OUT1                   RT_BIT(2)
-/** Out2. */
-# define UART_REG_MCR_OUT2                   RT_BIT(3)
-/** Loopback connection. */
-# define UART_REG_MCR_LOOP                   RT_BIT(4)
-/** Mask of writeable bits. */
-# define UART_REG_MCR_MASK_WR                0x1f
-
-/** The LSR register index (from the base of the port range). */
-#define UART_REG_LSR_INDEX                   5
-/** Data Ready. */
-# define UART_REG_LSR_DR                     RT_BIT(0)
-/** Overrun Error. */
-# define UART_REG_LSR_OE                     RT_BIT(1)
-/** Parity Error. */
-# define UART_REG_LSR_PE                     RT_BIT(2)
-/** Framing Error. */
-# define UART_REG_LSR_FE                     RT_BIT(3)
-/** Break Interrupt. */
-# define UART_REG_LSR_BI                     RT_BIT(4)
-/** Transmitter Holding Register. */
-# define UART_REG_LSR_THRE                   RT_BIT(5)
-/** Transmitter Empty. */
-# define UART_REG_LSR_TEMT                   RT_BIT(6)
-/** Error in receiver FIFO. */
-# define UART_REG_LSR_RCV_FIFO_ERR           RT_BIT(7)
-/** The bits to check in this register when checking for the RCL interrupt. */
-# define UART_REG_LSR_BITS_IIR_RCL           0x1e
-
-/** The MSR register index (from the base of the port range). */
-#define UART_REG_MSR_INDEX                   6
-/** Delta Clear to Send. */
-# define UART_REG_MSR_DCTS                   RT_BIT(0)
-/** Delta Data Set Ready. */
-# define UART_REG_MSR_DDSR                   RT_BIT(1)
-/** Trailing Edge Ring Indicator. */
-# define UART_REG_MSR_TERI                   RT_BIT(2)
-/** Delta Data Carrier Detect. */
-# define UART_REG_MSR_DDCD                   RT_BIT(3)
-/** Clear to Send. */
-# define UART_REG_MSR_CTS                    RT_BIT(4)
-/** Data Set Ready. */
-# define UART_REG_MSR_DSR                    RT_BIT(5)
-/** Ring Indicator. */
-# define UART_REG_MSR_RI                     RT_BIT(6)
-/** Data Carrier Detect. */
-# define UART_REG_MSR_DCD                    RT_BIT(7)
-/** The bits to check in this register when checking for the MS interrupt. */
-# define UART_REG_MSR_BITS_IIR_MS            0x0f
-
-/** The SCR register index (from the base of the port range). */
-#define UART_REG_SCR_INDEX                   7
-
-/** Set the specified bits in the given register. */
-#define UART_REG_SET(a_Reg, a_Set)           ((a_Reg) |= (a_Set))
-/** Clear the specified bits in the given register. */
-#define UART_REG_CLR(a_Reg, a_Clr)           ((a_Reg) &= ~(a_Clr))
-
-/** Size of a FIFO. */
-#define UART_FIFO_LENGTH                     16
 
 
 /*********************************************************************************************************************************
@@ -199,35 +45,10 @@
 *********************************************************************************************************************************/
 
 /**
- * Serial FIFO.
- */
-typedef struct SERIALFIFO
-{
-    /** Current amount of bytes used. */
-    uint8_t                         cbUsed;
-    /** Next index to write to. */
-    uint8_t                         offWrite;
-    /** Next index to read from. */
-    uint8_t                         offRead;
-    /** The interrupt trigger level (only used for the receive FIFO). */
-    uint8_t                         cbItl;
-    /** The data in the FIFO. */
-    uint8_t                         abBuf[UART_FIFO_LENGTH];
-} SERIALFIFO;
-/** Pointer to a FIFO. */
-typedef SERIALFIFO *PSERIALFIFO;
-
-
-/**
  * Serial device.
- *
- * @implements  PDMIBASE
- * @implements  PDMISERIALPORT
  */
 typedef struct DEVSERIAL
 {
-    /** Access critical section. */
-    PDMCRITSECT                     CritSect;
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the device instance - R0 Ptr. */
@@ -236,58 +57,19 @@ typedef struct DEVSERIAL
     PPDMDEVINSRC                    pDevInsRC;
     /** Alignment. */
     RTRCPTR                         Alignment0;
-    /** LUN\#0: The base interface. */
-    PDMIBASE                        IBase;
-    /** LUN\#0: The serial port interface. */
-    PDMISERIALPORT                  ISerialPort;
-    /** Pointer to the attached base driver. */
-    R3PTRTYPE(PPDMIBASE)            pDrvBase;
-    /** Pointer to the attached serial driver. */
-    R3PTRTYPE(PPDMISERIALCONNECTOR) pDrvSerial;
     /** Flag whether the R0 portion of this device is enabled. */
     bool                            fR0Enabled;
     /** Flag whether the RC portion of this device is enabled. */
     bool                            fRCEnabled;
-    /** Flag whether an 16550A (with FIFO) or a plain 16450 is emulated. */
-    bool                            f16550AEnabled;
-    /** Flag whether to yield on an guest LSR read. */
-    bool                            fYieldOnLSRRead;
+    /** Alignment. */
+    bool                            afAlignment1[2];
     /** The IRQ value. */
     uint8_t                         uIrq;
     /** The base I/O port the device is registered at. */
     RTIOPORT                        PortBase;
 
-    /** The divisor register (DLAB = 1). */
-    uint16_t                        uRegDivisor;
-    /** The Receiver Buffer Register (RBR, DLAB = 0). */
-    uint8_t                         uRegRbr;
-    /** The Transmitter Holding Register (THR, DLAB = 0). */
-    uint8_t                         uRegThr;
-    /** The Interrupt Enable Register (IER, DLAB = 0). */
-    uint8_t                         uRegIer;
-    /** The Interrupt Identification Register (IIR). */
-    uint8_t                         uRegIir;
-    /** The FIFO Control Register (FCR). */
-    uint8_t                         uRegFcr;
-    /** The Line Control Register (LCR). */
-    uint8_t                         uRegLcr;
-    /** The Modem Control Register (MCR). */
-    uint8_t                         uRegMcr;
-    /** The Line Status Register (LSR). */
-    uint8_t                         uRegLsr;
-    /** The Modem Status Register (MSR). */
-    uint8_t                         uRegMsr;
-    /** The Scratch Register (SCR). */
-    uint8_t                         uRegScr;
-
-    /** The transmit FIFO. */
-    SERIALFIFO                      FifoXmit;
-    /** The receive FIFO. */
-    SERIALFIFO                      FifoRecv;
-
-    /** Number of bytes available for reading from the layer below. */
-    volatile uint32_t               cbAvailRdr;
-
+    /** The UART core. */
+    UARTCORE                        UartCore;
 } DEVSERIAL;
 /** Pointer to the serial device state. */
 typedef DEVSERIAL *PDEVSERIAL;
@@ -298,34 +80,6 @@ typedef DEVSERIAL *PDEVSERIAL;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef IN_RING3
-/**
- * String versions of the parity enum.
- */
-static const char *s_aszParity[] =
-{
-    "INVALID",
-    "NONE",
-    "EVEN",
-    "ODD",
-    "MARK",
-    "SPACE",
-    "INVALID"
-};
-
-
-/**
- * String versions of the stop bits enum.
- */
-static const char *s_aszStopBits[] =
-{
-    "INVALID",
-    "1",
-    "1.5",
-    "2",
-    "INVALID"
-};
-#endif
 
 
 /*********************************************************************************************************************************
@@ -333,866 +87,13 @@ static const char *s_aszStopBits[] =
 *********************************************************************************************************************************/
 
 
-/**
- * Updates the IRQ state based on the current device state.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- */
-static void serialIrqUpdate(PDEVSERIAL pThis)
+PDMBOTHCBDECL(void) serialIrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
 {
-    LogFlowFunc(("pThis=%#p\n", pThis));
-
-    /*
-     * The interrupt uses a priority scheme, only the interrupt with the
-     * highest priority is indicated in the interrupt identification register.
-     *
-     * The priorities are as follows (high to low):
-     *      * Receiver line status
-     *      * Received data available
-     *      * Character timeout indication (only in FIFO mode).
-     *      * Transmitter holding register empty
-     *      * Modem status change.
-     */
-    uint8_t uRegIirNew = UART_REG_IIR_IP_NO_INT;
-    if (   (pThis->uRegLsr & UART_REG_LSR_BITS_IIR_RCL)
-        && (pThis->uRegIer & UART_REG_IER_ELSI))
-        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RCL);
-    else if (   (pThis->uRegLsr & UART_REG_LSR_DR)
-             && (pThis->uRegIer & UART_REG_IER_ERBFI)
-             && (   !(pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-                 || pThis->FifoRecv.cbUsed >= pThis->FifoRecv.cbItl))
-        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RDA);
-    else if (   (pThis->uRegLsr & UART_REG_LSR_THRE)
-             && (pThis->uRegIer & UART_REG_IER_ETBEI))
-        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_THRE);
-    else if (   (pThis->uRegMsr & UART_REG_MSR_BITS_IIR_MS)
-             && (pThis->uRegIer & UART_REG_IER_EDSSI))
-        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_MS);
-
-    /** @todo Character timeout indication for FIFO mode. */
-
-    LogFlowFunc(("    uRegIirNew=%#x uRegIir=%#x\n", uRegIirNew, pThis->uRegIir));
-
-    /* Change interrupt only if the interrupt status really changed from the previous value. */
-    if (uRegIirNew != (pThis->uRegIir & UART_REG_IIR_CHANGED_MASK))
-    {
-        LogFlow(("    Interrupt source changed from %#x -> %#x (IRQ %d -> %d)\n",
-                 pThis->uRegIir, uRegIirNew,
-                 pThis->uRegIir == UART_REG_IIR_IP_NO_INT ? 0 : 1,
-                 uRegIirNew == UART_REG_IIR_IP_NO_INT ? 0 : 1));
-        if (uRegIirNew == UART_REG_IIR_IP_NO_INT)
-            PDMDevHlpISASetIrqNoWait(pThis->CTX_SUFF(pDevIns), pThis->uIrq, 0);
-        else
-            PDMDevHlpISASetIrqNoWait(pThis->CTX_SUFF(pDevIns), pThis->uIrq, 1);
-    }
-    else
-        LogFlow(("    No change in interrupt source\n"));
-
-    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        uRegIirNew |= UART_REG_IIR_FIFOS_EN;
-
-    pThis->uRegIir = uRegIirNew;
+    RT_NOREF(pUart, iLUN);
+    PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDMDevHlpISASetIrqNoWait(pDevIns, pThis->uIrq, iLvl);
 }
 
-
-/**
- * Clears the given FIFO.
- *
- * @returns nothing.
- * @param   pFifo               The FIFO to clear.
- */
-DECLINLINE(void) serialFifoClear(PSERIALFIFO pFifo)
-{
-    memset(&pFifo->abBuf[0], 0, sizeof(pFifo->abBuf));
-    pFifo->cbUsed   = 0;
-    pFifo->offWrite = 0;
-    pFifo->offRead  = 0;
-}
-
-
-/**
- * Returns the amount of free bytes in the given FIFO.
- *
- * @returns The amount of bytes free in the given FIFO.
- * @param   pFifo               The FIFO.
- */
-DECLINLINE(size_t) serialFifoFreeGet(PSERIALFIFO pFifo)
-{
-    return UART_FIFO_LENGTH - pFifo->cbUsed;
-}
-
-
-/**
- * Puts a new character into the given FIFO.
- *
- * @returns Flag whether the FIFO overflowed.
- * @param   pFifo               The FIFO to put the data into.
- * @param   fOvrWr              Flag whether to overwrite data if the FIFO is full.
- * @param   bData               The data to add.
- */
-DECLINLINE(bool) serialFifoPut(PSERIALFIFO pFifo, bool fOvrWr, uint8_t bData)
-{
-    if (fOvrWr || pFifo->cbUsed < UART_FIFO_LENGTH)
-    {
-        pFifo->abBuf[pFifo->offWrite] = bData;
-        pFifo->offWrite = (pFifo->offWrite + 1) % UART_FIFO_LENGTH;
-    }
-
-    bool fOverFlow = false;
-    if (pFifo->cbUsed < UART_FIFO_LENGTH)
-        pFifo->cbUsed++;
-    else
-    {
-        fOverFlow = true;
-        if (fOvrWr) /* Advance the read position to account for the lost character. */
-           pFifo->offRead = (pFifo->offRead + 1) % UART_FIFO_LENGTH;
-    }
-
-    return fOverFlow;
-}
-
-
-/**
- * Returns the next character in the FIFO.
- *
- * @return Next byte in the FIFO.
- * @param   pFifo               The FIFO to get data from.
- */
-DECLINLINE(uint8_t) serialFifoGet(PSERIALFIFO pFifo)
-{
-    uint8_t bRet = 0;
-
-    if (pFifo->cbUsed)
-    {
-        bRet = pFifo->abBuf[pFifo->offRead];
-        pFifo->offRead = (pFifo->offRead + 1) % UART_FIFO_LENGTH;
-        pFifo->cbUsed--;
-    }
-
-    return bRet;
-}
-
-
-/**
- * Tries to copy the requested amount of data from the given FIFO into the provided buffer.
- *
- * @returns Amount of bytes actually copied.
- * @param   pFifo               The FIFO to copy data from.
- * @param   pvDst               Where to copy the data to.
- * @param   cbCopy              How much to copy.
- */
-DECLINLINE(size_t) serialFifoCopyTo(PSERIALFIFO pFifo, void *pvDst, size_t cbCopy)
-{
-    size_t cbCopied = 0;
-    uint8_t *pbDst = (uint8_t *)pvDst;
-
-    cbCopy = RT_MIN(cbCopy, pFifo->cbUsed);
-    while (cbCopy)
-    {
-        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(UART_FIFO_LENGTH - pFifo->offRead));
-        memcpy(pbDst, &pFifo->abBuf[pFifo->offRead], cbThisCopy);
-
-        pFifo->offRead = (pFifo->offRead + cbThisCopy) % UART_FIFO_LENGTH;
-        pFifo->cbUsed -= cbThisCopy;
-        pbDst    += cbThisCopy;
-        cbCopied += cbThisCopy;
-        cbCopy   -= cbThisCopy;
-    }
-
-    return cbCopied;
-}
-
-
-/**
- * Tries to copy the requested amount of data from the provided buffer into the given FIFO.
- *
- * @returns Amount of bytes actually copied.
- * @param   pFifo               The FIFO to copy data to.
- * @param   pvSrc               Where to copy the data from.
- * @param   cbCopy              How much to copy.
- */
-DECLINLINE(size_t) serialFifoCopyFrom(PSERIALFIFO pFifo, void *pvSrc, size_t cbCopy)
-{
-    size_t cbCopied = 0;
-    uint8_t *pbSrc = (uint8_t *)pvSrc;
-
-    cbCopy = RT_MIN(cbCopy, serialFifoFreeGet(pFifo));
-    while (cbCopy)
-    {
-        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(UART_FIFO_LENGTH - pFifo->offWrite));
-        memcpy(&pFifo->abBuf[pFifo->offWrite], pbSrc, cbThisCopy);
-
-        pFifo->offWrite = (pFifo->offWrite + cbThisCopy) % UART_FIFO_LENGTH;
-        pFifo->cbUsed += cbThisCopy;
-        pbSrc    += cbThisCopy;
-        cbCopied += cbThisCopy;
-        cbCopy   -= cbThisCopy;
-    }
-
-    return cbCopied;
-}
-
-
-#ifdef IN_RING3
-/**
- * Updates the delta bits for the given MSR register value which has the status line
- * bits set.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- * @param   uMsrSts             MSR value with the appropriate status bits set.
- */
-static void serialR3MsrUpdate(PDEVSERIAL pThis, uint8_t uMsrSts)
-{
-    /* Compare current and new states and set remaining bits accordingly. */
-    if ((uMsrSts & UART_REG_MSR_CTS) != (pThis->uRegMsr & UART_REG_MSR_CTS))
-        uMsrSts |= UART_REG_MSR_DCTS;
-    if ((uMsrSts & UART_REG_MSR_DSR) != (pThis->uRegMsr & UART_REG_MSR_DSR))
-        uMsrSts |= UART_REG_MSR_DDSR;
-    if ((uMsrSts & UART_REG_MSR_RI) != 0 && (pThis->uRegMsr & UART_REG_MSR_RI) == 0)
-        uMsrSts |= UART_REG_MSR_TERI;
-    if ((uMsrSts & UART_REG_MSR_DCD) != (pThis->uRegMsr & UART_REG_MSR_DCD))
-        uMsrSts |= UART_REG_MSR_DDCD;
-
-    pThis->uRegMsr = uMsrSts;
-
-    serialIrqUpdate(pThis);
-}
-
-
-/**
- * Updates the serial port parameters of the attached driver with the current configuration.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- */
-static void serialR3ParamsUpdate(PDEVSERIAL pThis)
-{
-    if (   pThis->uRegDivisor != 0
-        && pThis->pDrvSerial)
-    {
-        uint32_t uBps = 115200 / pThis->uRegDivisor; /* This is for PC compatible serial port with a 1.8432 MHz crystal. */
-        unsigned cDataBits = UART_REG_LCR_WLS_GET(pThis->uRegLcr) + 5;
-        PDMSERIALSTOPBITS enmStopBits = PDMSERIALSTOPBITS_ONE;
-        PDMSERIALPARITY enmParity = PDMSERIALPARITY_NONE;
-
-        if (pThis->uRegLcr & UART_REG_LCR_STB)
-        {
-            enmStopBits = cDataBits == 5 ? PDMSERIALSTOPBITS_ONEPOINTFIVE : PDMSERIALSTOPBITS_TWO;
-        }
-
-        if (pThis->uRegLcr & UART_REG_LCR_PEN)
-        {
-            /* Select the correct parity mode based on the even and stick parity bits. */
-            switch (pThis->uRegLcr & (UART_REG_LCR_EPS | UART_REG_LCR_PAR_STICK))
-            {
-                case 0:
-                    enmParity = PDMSERIALPARITY_ODD;
-                    break;
-                case UART_REG_LCR_EPS:
-                    enmParity = PDMSERIALPARITY_EVEN;
-                    break;
-                case UART_REG_LCR_EPS | UART_REG_LCR_PAR_STICK:
-                    enmParity = PDMSERIALPARITY_SPACE;
-                    break;
-                case UART_REG_LCR_PAR_STICK:
-                    enmParity = PDMSERIALPARITY_MARK;
-                    break;
-                default:
-                    /* We should never get here as all cases where caught earlier. */
-                    AssertMsgFailed(("This shouldn't happen at all: %#x\n",
-                                     pThis->uRegLcr & (UART_REG_LCR_EPS | UART_REG_LCR_PAR_STICK)));
-            }
-        }
-
-        LogFlowFunc(("Changing parameters to: %u,%s,%u,%s\n",
-                     uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits]));
-
-        int rc = pThis->pDrvSerial->pfnChgParams(pThis->pDrvSerial, uBps, enmParity, cDataBits, enmStopBits);
-        if (RT_FAILURE(rc))
-            LogRelMax(10, ("Serial#%d: Failed to change parameters to %u,%s,%u,%s -> %Rrc\n",
-                           pThis->pDevInsR3->iInstance, uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits], rc));
-    }
-}
-
-
-/**
- * Updates the internal device state with the given PDM status line states.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- * @param   fStsLines           The PDM status line states.
- */
-static void serialR3StsLinesUpdate(PDEVSERIAL pThis, uint32_t fStsLines)
-{
-    uint8_t uRegMsrNew = 0; /* The new MSR value. */
-
-    if (fStsLines & PDMISERIALPORT_STS_LINE_DCD)
-        uRegMsrNew |= UART_REG_MSR_DCD;
-    if (fStsLines & PDMISERIALPORT_STS_LINE_RI)
-        uRegMsrNew |= UART_REG_MSR_RI;
-    if (fStsLines & PDMISERIALPORT_STS_LINE_DSR)
-        uRegMsrNew |= UART_REG_MSR_DSR;
-    if (fStsLines & PDMISERIALPORT_STS_LINE_CTS)
-        uRegMsrNew |= UART_REG_MSR_CTS;
-
-    serialR3MsrUpdate(pThis, uRegMsrNew);
-}
-
-
-/**
- * Fills up the receive FIFO with as much data as possible.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- */
-static void serialR3RecvFifoFill(PDEVSERIAL pThis)
-{
-    LogFlowFunc(("pThis=%#p\n", pThis));
-
-    PSERIALFIFO pFifo = &pThis->FifoRecv;
-    size_t cbFill = RT_MIN(serialFifoFreeGet(pFifo),
-                           ASMAtomicReadU32(&pThis->cbAvailRdr));
-    size_t cbFilled = 0;
-
-    while (cbFilled < cbFill)
-    {
-        size_t cbThisRead = RT_MIN(cbFill, (uint8_t)(UART_FIFO_LENGTH - pFifo->offWrite));
-        size_t cbRead = 0;
-        int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
-        /*Assert(RT_SUCCESS(rc) && cbRead == cbThisRead);*/ RT_NOREF(rc);
-
-        pFifo->offWrite = (pFifo->offWrite + cbRead) % UART_FIFO_LENGTH;
-        pFifo->cbUsed   += cbRead;
-        cbFilled        += cbRead;
-
-        if (cbRead < cbThisRead)
-            break;
-    }
-
-    if (cbFilled)
-    {
-        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
-        serialIrqUpdate(pThis);
-    }
-
-    ASMAtomicSubU32(&pThis->cbAvailRdr, cbFilled);
-}
-
-
-/**
- * Fetches a single byte and writes it to RBR.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- */
-static void serialR3ByteFetch(PDEVSERIAL pThis)
-{
-    if (ASMAtomicReadU32(&pThis->cbAvailRdr))
-    {
-        AssertPtr(pThis->pDrvSerial);
-        size_t cbRead = 0;
-        int rc2 = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
-        AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n"));
-        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
-        serialIrqUpdate(pThis);
-    }
-}
-
-
-/**
- * Fetches a ready data based on the FIFO setting.
- *
- * @returns nothing.
- * @param   pThis               The serial port instance.
- */
-static void serialR3DataFetch(PDEVSERIAL pThis)
-{
-    if (pThis->uRegFcr % UART_REG_FCR_FIFO_EN)
-        serialR3RecvFifoFill(pThis);
-    else
-        serialR3ByteFetch(pThis);
-}
-#endif
-
-
-/**
- * Write handler for the THR/DLL register (depending on the DLAB bit in LCR).
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   uVal                The value to write.
- */
-DECLINLINE(int) serialRegThrDllWrite(PDEVSERIAL pThis, uint8_t uVal)
-{
-    int rc = VINF_SUCCESS;
-
-    /* A set DLAB causes a write to the lower 8bits of the divisor latch. */
-    if (pThis->uRegLcr & UART_REG_LCR_DLAB)
-    {
-        if (uVal != (pThis->uRegDivisor & 0xff))
-        {
-#ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-            pThis->uRegDivisor = (pThis->uRegDivisor & 0xff00) | uVal;
-            serialR3ParamsUpdate(pThis);
-#endif
-        }
-    }
-    else
-    {
-        if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        {
-#ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-            serialFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, uVal);
-            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
-            serialIrqUpdate(pThis);
-            if (pThis->pDrvSerial)
-            {
-                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
-                if (RT_FAILURE(rc2))
-                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", rc2));
-            }
-#endif
-        }
-        else
-        {
-            /* Notify the lower driver about available data only if the register was empty before. */
-            if (pThis->uRegLsr & UART_REG_LSR_THRE)
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-                pThis->uRegThr = uVal;
-                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
-                serialIrqUpdate(pThis);
-                if (pThis->pDrvSerial)
-                {
-                    int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
-                    if (RT_FAILURE(rc2))
-                        LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", rc2));
-                }
-#endif
-            }
-            else
-                pThis->uRegThr = uVal;
-        }
-    }
-
-    return rc;
-}
-
-
-/**
- * Write handler for the IER/DLM register (depending on the DLAB bit in LCR).
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   uVal                The value to write.
- */
-DECLINLINE(int) serialRegIerDlmWrite(PDEVSERIAL pThis, uint8_t uVal)
-{
-    int rc = VINF_SUCCESS;
-
-    /* A set DLAB causes a write to the higher 8bits of the divisor latch. */
-    if (pThis->uRegLcr & UART_REG_LCR_DLAB)
-    {
-        if (uVal != (pThis->uRegDivisor & 0xff00) >> 8)
-        {
-#ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-            pThis->uRegDivisor = (pThis->uRegDivisor & 0xff) | (uVal << 8);
-            serialR3ParamsUpdate(pThis);
-#endif
-        }
-    }
-    else
-    {
-        pThis->uRegIer = uVal & UART_REG_IER_MASK_WR;
-        serialIrqUpdate(pThis);
-    }
-
-    return rc;
-}
-
-
-/**
- * Write handler for the FCR register.
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   uVal                The value to write.
- */
-DECLINLINE(int) serialRegFcrWrite(PDEVSERIAL pThis, uint8_t uVal)
-{
-    int rc = VINF_SUCCESS;
-
-    if (   pThis->f16550AEnabled
-        && uVal != pThis->uRegFcr)
-    {
-        /* A change in the FIFO enable bit clears both FIFOs automatically. */
-        if ((uVal ^ pThis->uRegFcr) & UART_REG_FCR_FIFO_EN)
-        {
-            serialFifoClear(&pThis->FifoXmit);
-            serialFifoClear(&pThis->FifoRecv);
-
-            /* Fill in the next data. */
-            if (ASMAtomicReadU32(&pThis->cbAvailRdr))
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-                serialR3DataFetch(pThis);
-#endif
-            }
-        }
-
-        if (rc == VINF_SUCCESS)
-        {
-            if (uVal & UART_REG_FCR_RCV_FIFO_RST)
-                serialFifoClear(&pThis->FifoRecv);
-            if (uVal & UART_REG_FCR_XMIT_FIFO_RST)
-                serialFifoClear(&pThis->FifoXmit);
-
-            if (uVal & UART_REG_FCR_FIFO_EN)
-            {
-                switch (UART_REG_FCR_RCV_LVL_IRQ_GET(uVal))
-                {
-                    case UART_REG_FCR_RCV_LVL_IRQ_1:
-                        pThis->FifoRecv.cbItl = 1;
-                        break;
-                    case UART_REG_FCR_RCV_LVL_IRQ_4:
-                        pThis->FifoRecv.cbItl = 4;
-                        break;
-                    case UART_REG_FCR_RCV_LVL_IRQ_8:
-                        pThis->FifoRecv.cbItl = 8;
-                        break;
-                    case UART_REG_FCR_RCV_LVL_IRQ_14:
-                        pThis->FifoRecv.cbItl = 14;
-                        break;
-                    default:
-                        /* Should never occur as all cases are handled earlier. */
-                        AssertMsgFailed(("Impossible to hit!\n"));
-                }
-            }
-
-            /* The FIFO reset bits are self clearing. */
-            pThis->uRegFcr = uVal & UART_REG_FCR_MASK_STICKY;
-            serialIrqUpdate(pThis);
-        }
-    }
-
-    return rc;
-}
-
-
-/**
- * Write handler for the LCR register.
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   uVal                The value to write.
- */
-DECLINLINE(int) serialRegLcrWrite(PDEVSERIAL pThis, uint8_t uVal)
-{
-    int rc = VINF_SUCCESS;
-
-    /* Any change except the DLAB bit causes a switch to R3. */
-    if ((pThis->uRegLcr & ~UART_REG_LCR_DLAB) != (uVal & ~UART_REG_LCR_DLAB))
-    {
-#ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-        /* Check whether the BREAK bit changed before updating the LCR value. */
-        bool fBrkEn = RT_BOOL(uVal & UART_REG_LCR_BRK_SET);
-        bool fBrkChg = fBrkEn != RT_BOOL(pThis->uRegLcr & UART_REG_LCR_BRK_SET);
-        pThis->uRegLcr = uVal;
-        serialR3ParamsUpdate(pThis);
-
-        if (   fBrkChg
-            && pThis->pDrvSerial)
-            pThis->pDrvSerial->pfnChgBrk(pThis->pDrvSerial, fBrkEn);
-#endif
-    }
-    else
-        pThis->uRegLcr = uVal;
-
-    return rc;
-}
-
-
-/**
- * Write handler for the MCR register.
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   uVal                The value to write.
- */
-DECLINLINE(int) serialRegMcrWrite(PDEVSERIAL pThis, uint8_t uVal)
-{
-    int rc = VINF_SUCCESS;
-
-    uVal &= UART_REG_MCR_MASK_WR;
-    if (pThis->uRegMcr != uVal)
-    {
-#ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-        /*
-         * When loopback mode is activated the RTS, DTR, OUT1 and OUT2 lines are
-         * disconnected and looped back to MSR.
-         */
-        if (   (uVal & UART_REG_MCR_LOOP)
-            && !(pThis->uRegMcr & UART_REG_MCR_LOOP)
-            && pThis->pDrvSerial)
-            pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
-
-        pThis->uRegMcr = uVal;
-        if (uVal & UART_REG_MCR_LOOP)
-        {
-            uint8_t uRegMsrSts = 0;
-
-            if (uVal & UART_REG_MCR_RTS)
-                uRegMsrSts |= UART_REG_MSR_CTS;
-            if (uVal & UART_REG_MCR_DTR)
-                uRegMsrSts |= UART_REG_MSR_DSR;
-            if (uVal & UART_REG_MCR_OUT1)
-                uRegMsrSts |= UART_REG_MSR_RI;
-            if (uVal & UART_REG_MCR_OUT2)
-                uRegMsrSts |= UART_REG_MSR_DCD;
-            serialR3MsrUpdate(pThis, uRegMsrSts);
-        }
-        else if (pThis->pDrvSerial)
-            pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial,
-                                                RT_BOOL(uVal & UART_REG_MCR_RTS),
-                                                RT_BOOL(uVal & UART_REG_MCR_DTR));
-#endif
-    }
-
-    return rc;
-}
-
-
-/**
- * Read handler for the RBR/DLL register (depending on the DLAB bit in LCR).
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   puVal               Where to store the read value on success.
- */
-DECLINLINE(int) serialRegRbrDllRead(PDEVSERIAL pThis, uint32_t *puVal)
-{
-    int rc = VINF_SUCCESS;
-
-    /* A set DLAB causes a read from the lower 8bits of the divisor latch. */
-    if (pThis->uRegLcr & UART_REG_LCR_DLAB)
-        *puVal = pThis->uRegDivisor & 0xff;
-    else
-    {
-        if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        {
-            /*
-             * Only go back to R3 if there is new data available for the FIFO
-             * and we would clear the interrupt to fill it up again.
-             */
-            if (   pThis->FifoRecv.cbUsed <= pThis->FifoRecv.cbItl
-                && ASMAtomicReadU32(&pThis->cbAvailRdr) > 0)
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_READ;
-#else
-                serialR3RecvFifoFill(pThis);
-#endif
-            }
-
-            if (rc == VINF_SUCCESS)
-            {
-                *puVal = serialFifoGet(&pThis->FifoRecv);
-                if (!pThis->FifoRecv.cbUsed)
-                    UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
-                serialIrqUpdate(pThis);
-            }
-        }
-        else
-        {
-            *puVal = pThis->uRegRbr;
-
-            if (pThis->uRegLsr & UART_REG_LSR_DR)
-            {
-                uint32_t cbAvail = ASMAtomicDecU32(&pThis->cbAvailRdr);
-                if (!cbAvail)
-                {
-                    UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
-                    serialIrqUpdate(pThis);
-                }
-                else
-                {
-#ifndef IN_RING3
-                    /* Restore state and go back to R3. */
-                    ASMAtomicIncU32(&pThis->cbAvailRdr);
-                    rc = VINF_IOM_R3_IOPORT_READ;
-#else
-                    /* Fetch new data and keep the DR bit set. */
-                    serialR3DataFetch(pThis);
-#endif
-                }
-            }
-        }
-    }
-
-    return rc;
-}
-
-
-/**
- * Read handler for the IER/DLM register (depending on the DLAB bit in LCR).
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   puVal               Where to store the read value on success.
- */
-DECLINLINE(int) serialRegIerDlmRead(PDEVSERIAL pThis, uint32_t *puVal)
-{
-    int rc = VINF_SUCCESS;
-
-    /* A set DLAB causes a read from the upper 8bits of the divisor latch. */
-    if (pThis->uRegLcr & UART_REG_LCR_DLAB)
-        *puVal = (pThis->uRegDivisor & 0xff00) >> 8;
-    else
-        *puVal = pThis->uRegIer;
-
-    return rc;
-}
-
-
-/**
- * Read handler for the IIR register.
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   puVal               Where to store the read value on success.
- */
-DECLINLINE(int) serialRegIirRead(PDEVSERIAL pThis, uint32_t *puVal)
-{
-    *puVal = pThis->uRegIir;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Read handler for the LSR register.
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   puVal               Where to store the read value on success.
- */
-DECLINLINE(int) serialRegLsrRead(PDEVSERIAL pThis, uint32_t *puVal)
-{
-    int rc = VINF_SUCCESS;
-
-    /* Yield if configured and there is no data available. */
-    if (   !(pThis->uRegLsr & UART_REG_LSR_DR)
-        && pThis->fYieldOnLSRRead)
-    {
-#ifndef IN_RING3
-        return VINF_IOM_R3_IOPORT_READ;
-#else
-        RTThreadYield();
-#endif
-    }
-
-    *puVal = pThis->uRegLsr;
-    /*
-     * Reading this register clears the Overrun (OE), Parity (PE) and Framing (FE) error
-     * as well as the Break Interrupt (BI).
-     */
-    UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_BITS_IIR_RCL);
-    serialIrqUpdate(pThis);
-
-    return rc;
-}
-
-
-/**
- * Read handler for the MSR register.
- *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
- * @param   puVal               Where to store the read value on success.
- */
-DECLINLINE(int) serialRegMsrRead(PDEVSERIAL pThis, uint32_t *puVal)
-{
-    *puVal = pThis->uRegMsr;
-
-    /* Clear any of the delta bits. */
-    UART_REG_CLR(pThis->uRegMsr, UART_REG_MSR_BITS_IIR_MS);
-    serialIrqUpdate(pThis);
-    return VINF_SUCCESS;
-}
-
-
-#ifdef LOG_ENABLED
-/**
- * Converts the register index into a sensible memnonic.
- *
- * @returns Register memnonic.
- * @param   pThis               The serial port instance.
- * @param   idxReg              Register index.
- * @param   fWrite              Flag whether the register gets written.
- */
-DECLINLINE(const char *) serialRegIdx2Str(PDEVSERIAL pThis, uint8_t idxReg, bool fWrite)
-{
-    const char *psz = "INV";
-
-    switch (idxReg)
-    {
-        /*case UART_REG_THR_DLL_INDEX:*/
-        case UART_REG_RBR_DLL_INDEX:
-            if (pThis->uRegLcr & UART_REG_LCR_DLAB)
-                psz = "DLL";
-            else if (fWrite)
-                psz = "THR";
-            else
-                psz = "RBR";
-            break;
-        case UART_REG_IER_DLM_INDEX:
-            if (pThis->uRegLcr & UART_REG_LCR_DLAB)
-                psz = "DLM";
-            else
-                psz = "IER";
-            break;
-        /*case UART_REG_IIR_INDEX:*/
-        case UART_REG_FCR_INDEX:
-            if (fWrite)
-                psz = "FCR";
-            else
-                psz = "IIR";
-            break;
-        case UART_REG_LCR_INDEX:
-            psz = "LCR";
-            break;
-        case UART_REG_MCR_INDEX:
-            psz = "MCR";
-            break;
-        case UART_REG_LSR_INDEX:
-            psz = "LSR";
-            break;
-        case UART_REG_MSR_INDEX:
-            psz = "MSR";
-            break;
-        case UART_REG_SCR_INDEX:
-            psz = "SCR";
-            break;
-    }
-
-    return psz;
-}
-#endif
 
 /* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
 
@@ -1202,43 +103,9 @@ DECLINLINE(const char *) serialRegIdx2Str(PDEVSERIAL pThis, uint8_t idxReg, bool
 PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
-    uint8_t idxReg = uPort & 0x7;
-    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop{%s} u32=%#x cb=%u\n",
-                 pDevIns, pvUser, uPort, serialRegIdx2Str(pThis, idxReg, true /*fWrite*/), u32, cb));
-
-    AssertMsgReturn(cb == 1, ("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32), VINF_SUCCESS);
-
-    int rc = VINF_SUCCESS;
-    uint8_t uVal = (uint8_t)u32;
-    switch (idxReg)
-    {
-        case UART_REG_THR_DLL_INDEX:
-            rc = serialRegThrDllWrite(pThis, uVal);
-            break;
-        case UART_REG_IER_DLM_INDEX:
-            rc = serialRegIerDlmWrite(pThis, uVal);
-            break;
-        case UART_REG_FCR_INDEX:
-            rc = serialRegFcrWrite(pThis, uVal);
-            break;
-        case UART_REG_LCR_INDEX:
-            rc = serialRegLcrWrite(pThis, uVal);
-            break;
-        case UART_REG_MCR_INDEX:
-            rc = serialRegMcrWrite(pThis, uVal);
-            break;
-        case UART_REG_SCR_INDEX:
-            pThis->uRegScr = u32;
-            break;
-        default:
-            break;
-    }
-
-    LogFlowFunc(("-> %Rrc\n", rc));
-    return rc;
+    return uartRegWrite(&pThis->UartCore, uPort - pThis->PortBase, u32, cb);
 }
 
 
@@ -1248,184 +115,13 @@ PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
-    if (cb != 1)
-        return VERR_IOM_IOPORT_UNUSED;
-
-    uint8_t idxReg = uPort & 0x7;
-    int rc = VINF_SUCCESS;
-    switch (idxReg)
-    {
-        case UART_REG_RBR_DLL_INDEX:
-            rc = serialRegRbrDllRead(pThis, pu32);
-            break;
-        case UART_REG_IER_DLM_INDEX:
-            rc = serialRegIerDlmRead(pThis, pu32);
-            break;
-        case UART_REG_IIR_INDEX:
-            rc = serialRegIirRead(pThis, pu32);
-            break;
-        case UART_REG_LCR_INDEX:
-            *pu32 = pThis->uRegLcr;
-            break;
-        case UART_REG_MCR_INDEX:
-            *pu32 = pThis->uRegMcr;
-            break;
-        case UART_REG_LSR_INDEX:
-            rc = serialRegLsrRead(pThis, pu32);
-            break;
-        case UART_REG_MSR_INDEX:
-            rc = serialRegMsrRead(pThis, pu32);
-            break;
-        case UART_REG_SCR_INDEX:
-            *pu32 = pThis->uRegScr;
-            break;
-        default:
-            rc = VERR_IOM_IOPORT_UNUSED;
-    }
-
-    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop{%s} u32=%#x cb=%u -> %Rrc\n",
-                 pDevIns, pvUser, uPort, serialRegIdx2Str(pThis, idxReg, false /*fWrite*/), *pu32, cb, rc));
-    return rc;
+    return uartRegRead(&pThis->UartCore, uPort - pThis->PortBase, pu32, cb);
 }
 
 
 #ifdef IN_RING3
-
-/* -=-=-=-=-=-=-=-=- PDMISERIALPORT on LUN#0 -=-=-=-=-=-=-=-=- */
-
-
-/**
- * @interface_method_impl{PDMISERIALPORT,pfnDataAvailRdrNotify}
- */
-static DECLCALLBACK(int) serialR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, size_t cbAvail)
-{
-    LogFlowFunc(("pInterface=%#p cbAvail=%zu\n", pInterface, cbAvail));
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
-
-    AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
-
-    uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
-    LogFlow(("    cbAvailRdr=%zu -> cbAvailRdr=%zu\n", cbAvailOld, cbAvail + cbAvailOld));
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        serialR3RecvFifoFill(pThis);
-    else if (!cbAvailOld)
-    {
-        size_t cbRead = 0;
-        int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
-        AssertMsg(RT_SUCCESS(rc) && cbRead == 1, ("This shouldn't fail and always return one byte!\n"));
-        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
-        serialIrqUpdate(pThis);
-    }
-    PDMCritSectLeave(&pThis->CritSect);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMISERIALPORT,pfnDataSentNotify}
- */
-static DECLCALLBACK(int) serialR3DataSentNotify(PPDMISERIALPORT pInterface)
-{
-    LogFlowFunc(("pInterface=%#p\n", pInterface));
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
-
-    /* Set the transmitter empty bit because everything was sent. */
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
-    serialIrqUpdate(pThis);
-    PDMCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMISERIALPORT,pfnReadWr}
- */
-static DECLCALLBACK(int) serialR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
-{
-    LogFlowFunc(("pInterface=%#p pvBuf=%#p cbRead=%zu pcbRead=%#p\n", pInterface, pvBuf, cbRead, pcbRead));
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
-
-    AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
-
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-    {
-        *pcbRead = serialFifoCopyTo(&pThis->FifoXmit, pvBuf, cbRead);
-        if (!pThis->FifoXmit.cbUsed)
-            UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
-        if (*pcbRead)
-            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
-        serialIrqUpdate(pThis);
-    }
-    else if (!(pThis->uRegLsr & UART_REG_LSR_THRE))
-    {
-        *(uint8_t *)pvBuf = pThis->uRegThr;
-        *pcbRead = 1;
-        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
-        UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
-        serialIrqUpdate(pThis);
-    }
-    else
-    {
-        AssertMsgFailed(("There is no data to read!\n"));
-        *pcbRead = 0;
-    }
-    PDMCritSectLeave(&pThis->CritSect);
-
-    LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMISERIALPORT,pfnNotifyStsLinesChanged}
- */
-static DECLCALLBACK(int) serialR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface, uint32_t fNewStatusLines)
-{
-    LogFlowFunc(("pInterface=%#p fNewStatusLines=%#x\n", pInterface, fNewStatusLines));
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
-
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    serialR3StsLinesUpdate(pThis, fNewStatusLines);
-    PDMCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{PDMISERIALPORT,pfnNotifyBrk}
- */
-static DECLCALLBACK(int) serialR3NotifyBrk(PPDMISERIALPORT pInterface)
-{
-    LogFlowFunc(("pInterface=%#p\n", pInterface));
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
-
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_BI);
-    serialIrqUpdate(pThis);
-    PDMCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
-}
-
-
-/* -=-=-=-=-=-=-=-=- PDMIBASE on LUN#0 -=-=-=-=-=-=-=-=- */
-
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
- */
-static DECLCALLBACK(void *) serialR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALPORT, &pThis->ISerialPort);
-    return NULL;
-}
 
 
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
@@ -1435,10 +131,8 @@ static DECLCALLBACK(void *) serialR3QueryInterface(PPDMIBASE pInterface, const c
  */
 static DECLCALLBACK(void) serialR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    RT_NOREF(offDelta);
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    uartR3Relocate(&pThis->UartCore, offDelta);
 }
 
 
@@ -1448,42 +142,7 @@ static DECLCALLBACK(void) serialR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
 static DECLCALLBACK(void) serialR3Reset(PPDMDEVINS pDevIns)
 {
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-
-    pThis->uRegDivisor = 0x0c; /* Default to 9600 Baud. */
-    pThis->uRegRbr     = 0;
-    pThis->uRegThr     = 0;
-    pThis->uRegIer     = 0;
-    pThis->uRegIir     = UART_REG_IIR_IP_NO_INT;
-    pThis->uRegFcr     = 0;
-    pThis->uRegLcr     = 0; /* 5 data bits, no parity, 1 stop bit. */
-    pThis->uRegMcr     = 0;
-    pThis->uRegLsr     = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
-    pThis->uRegMsr     = 0; /* Updated below. */
-    pThis->uRegScr     = 0;
-
-    serialFifoClear(&pThis->FifoXmit);
-    serialFifoClear(&pThis->FifoRecv);
-    pThis->FifoRecv.cbItl = 1;
-
-    serialR3ParamsUpdate(pThis);
-    serialIrqUpdate(pThis);
-
-    if (pThis->pDrvSerial)
-    {
-        /* Set the modem lines to reflect the current state. */
-        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
-        if (RT_FAILURE(rc))
-            LogRel(("Serial#%d: Failed to set modem lines with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
-
-        uint32_t fStsLines = 0;
-        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
-        if (RT_SUCCESS(rc))
-            serialR3StsLinesUpdate(pThis, fStsLines);
-        else
-            LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
-    }
+    uartR3Reset(&pThis->UartCore);
 }
 
 
@@ -1492,30 +151,9 @@ static DECLCALLBACK(void) serialR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) serialR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(iLUN, fFlags);
+    RT_NOREF(fFlags);
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
-    if (RT_SUCCESS(rc))
-    {
-        pThis->pDrvSerial = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMISERIALCONNECTOR);
-        if (!pThis->pDrvSerial)
-        {
-            AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pDevIns->iInstance));
-            return VERR_PDM_MISSING_INTERFACE;
-        }
-    }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        pThis->pDrvBase = NULL;
-        pThis->pDrvSerial = NULL;
-        rc = VINF_SUCCESS;
-        LogRel(("Serial#%d: no unit\n", pDevIns->iInstance));
-    }
-    else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
-        LogRel(("Serial#%d: Failed to attach to serial driver. rc=%Rrc\n", pDevIns->iInstance, rc));
-
-   return rc;
+    return uartR3Attach(&pThis->UartCore, iLUN);
 }
 
 
@@ -1526,10 +164,7 @@ static DECLCALLBACK(void) serialR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint
 {
     RT_NOREF(iLUN, fFlags);
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-
-    /* Zero out important members. */
-    pThis->pDrvBase   = NULL;
-    pThis->pDrvSerial = NULL;
+    uartR3Detach(&pThis->UartCore);
 }
 
 
@@ -1541,7 +176,7 @@ static DECLCALLBACK(int) serialR3Destruct(PPDMDEVINS pDevIns)
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-    PDMR3CritSectDelete(&pThis->CritSect);
+    uartR3Destruct(&pThis->UartCore);
     return VINF_SUCCESS;
 }
 
@@ -1564,16 +199,6 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    /* IBase */
-    pThis->IBase.pfnQueryInterface = serialR3QueryInterface;
-
-    /* ISerialPort */
-    pThis->ISerialPort.pfnDataAvailRdrNotify    = serialR3DataAvailRdrNotify;
-    pThis->ISerialPort.pfnDataSentNotify        = serialR3DataSentNotify;
-    pThis->ISerialPort.pfnReadWr                = serialR3ReadWr;
-    pThis->ISerialPort.pfnNotifyStsLinesChanged = serialR3NotifyStsLinesChanged;
-    pThis->ISerialPort.pfnNotifyBrk             = serialR3NotifyBrk;
 
     /*
      * Validate and read the configuration.
@@ -1600,7 +225,8 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "YieldOnLSRRead", &pThis->fYieldOnLSRRead, false);
+    bool fYieldOnLSRRead = false;
+    rc = CFGMR3QueryBoolDef(pCfg, "YieldOnLSRRead", &fYieldOnLSRRead, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"YieldOnLSRRead\" value"));
@@ -1636,7 +262,8 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "Enable16550A", &pThis->f16550AEnabled, true);
+    bool f16550AEnabled = true;
+    rc = CFGMR3QueryBoolDef(pCfg, "Enable16550A", &f16550AEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Enable16550A\" value"));
@@ -1645,22 +272,14 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     pThis->PortBase = uIoBase;
 
     LogRel(("Serial#%d: emulating %s (IOBase: %04x IRQ: %u)\n",
-            pDevIns->iInstance, pThis->f16550AEnabled ? "16550A" : "16450", uIoBase, uIrq));
+            pDevIns->iInstance, f16550AEnabled ? "16550A" : "16450", uIoBase, uIrq));
 
     /*
-     * Initialize critical section and the semaphore.  Change the default
-     * critical section to ours so that TM and IOM will enter it before
-     * calling us.
-     *
-     * Note! This must of be done BEFORE creating timers, registering I/O ports
-     *       and other things which might pick up the default CS or end up
-     *       calling back into the device.
+     * Init locks, using explicit locking where necessary.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "Serial#%d", iInstance);
-    AssertRCReturn(rc, rc);
-
-    rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
-    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Register the I/O ports.
@@ -1671,10 +290,18 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return rc;
 
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
+    RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
+
     if (pThis->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, uIoBase, 8, 0, "serialIoPortWrite",
                                       "serialIoPortRead", NULL, NULL, "SERIAL");
+        if (   RT_SUCCESS(rc)
+            && VM_IS_RAW_MODE_ENABLED(pVM))
+            rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->szRCMod, "serialIrqReq", &pfnSerialIrqReqRC);
+
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1683,6 +310,9 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, uIoBase, 8, 0, "serialIoPortWrite",
                                       "serialIoPortRead", NULL, NULL, "SERIAL");
+        if (RT_SUCCESS(rc))
+            rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->szR0Mod, "serialIrqReq", &pfnSerialIrqReqR0);
+
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1697,31 +327,10 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
 #endif
 
-    /*
-     * Attach the char driver and get the interfaces.
-     */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial");
-    if (RT_SUCCESS(rc))
-    {
-        pThis->pDrvSerial = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMISERIALCONNECTOR);
-        if (!pThis->pDrvSerial)
-        {
-            AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", iInstance));
-            return VERR_PDM_MISSING_INTERFACE;
-        }
-    }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        pThis->pDrvBase   = NULL;
-        pThis->pDrvSerial = NULL;
-        LogRel(("Serial#%d: no unit\n", iInstance));
-    }
-    else
-    {
-        AssertLogRelMsgFailed(("Serial#%d: Failed to attach to char driver. rc=%Rrc\n", iInstance, rc));
-        /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
-        return rc;
-    }
+
+    /* Init the UART core structure. */
+    rc = uartR3Init(&pThis->UartCore, pDevIns, f16550AEnabled ? UARTTYPE_16550A : UARTTYPE_16450, 0,
+                    fYieldOnLSRRead ? UART_CORE_YIELD_ON_LSR_READ : 0, serialIrqReq, pfnSerialIrqReqR0, pfnSerialIrqReqRC);
 
     serialR3Reset(pDevIns);
     return VINF_SUCCESS;

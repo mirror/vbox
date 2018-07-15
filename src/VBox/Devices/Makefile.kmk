@@ -128,7 +128,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
  	VBOX_WITH_DMI_CHASSIS \
  	VBOX_WITH_DMI_OEMSTRINGS \
-	$(if $(VBOX_WITH_NEW_LPC_DEVICE),VBOX_WITH_NEW_LPC_DEVICE,)
+	$(if $(VBOX_WITH_NEW_LPC_DEVICE),VBOX_WITH_NEW_LPC_DEVICE,) \
+	$(if $(VBOX_WITH_NEW_SERIAL),VBOX_WITH_NEW_SERIAL,)
  VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDD_DEFS.darwin     = VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -198,6 +199,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  if defined(VBOX_WITH_NEW_SERIAL)
   VBoxDD_SOURCES += \
  	Serial/DevSerialNew.cpp \
+ 	Serial/DevOxPcie958.cpp \
+ 	Serial/UartCore.cpp \
  	Serial/DrvCharNew.cpp \
  	Serial/DrvHostSerialNew.cpp
  else
@@ -1021,7 +1024,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   if defined(VBOX_WITH_NEW_SERIAL)
    VBoxDDRC_SOURCES := \
   	$(filter-out Serial/DevSerial.cpp, $(VBoxDDRC_SOURCES)) \
-  	Serial/DevSerialNew.cpp
+  	Serial/DevSerialNew.cpp \
+  	Serial/DevOxPcie958.cpp \
+  	Serial/UartCore.cpp
   endif
 
   if1of ($(VBOX_LDR_FMT32), pe lx)
@@ -1196,7 +1201,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  if defined(VBOX_WITH_NEW_SERIAL)
   VBoxDDR0_SOURCES := \
  	$(filter-out Serial/DevSerial.cpp, $(VBoxDDR0_SOURCES)) \
- 	Serial/DevSerialNew.cpp
+ 	Serial/DevSerialNew.cpp \
+ 	Serial/DevOxPcie958.cpp \
+  	Serial/UartCore.cpp
  endif
 
  ifdef VBOX_WITH_HGSMI

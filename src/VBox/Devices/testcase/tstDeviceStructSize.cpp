@@ -113,6 +113,7 @@
 # include "../Serial/DevSerial.cpp"
 #else
 # include "../Serial/DevSerialNew.cpp"
+# include "../Serial/DevOxPcie958.cpp"
 #endif
 #ifdef VBOX_WITH_AHCI
 # undef LOG_GROUP
@@ -399,7 +400,8 @@ int main()
 #ifndef VBOX_WITH_NEW_SERIAL
     CHECK_MEMBER_ALIGNMENT(SerialState, CritSect, 8);
 #else
-    CHECK_MEMBER_ALIGNMENT(DEVSERIAL, CritSect, 8);
+    CHECK_MEMBER_ALIGNMENT(DEVSERIAL, UartCore, 8);
+    CHECK_MEMBER_ALIGNMENT(UARTCORE, CritSect, 8);
 #endif
 #ifdef VBOX_WITH_VMSVGA
     CHECK_SIZE(VMSVGAState, RT_ALIGN_Z(sizeof(VMSVGAState), 8));

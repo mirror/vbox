@@ -112,6 +112,8 @@
 # include "../Serial/DevSerial.cpp"
 #else
 # include "../Serial/DevSerialNew.cpp"
+# include "../Serial/DevOxPcie958.cpp"
+# include "../Serial/UartCore.h"
 #endif
 #ifdef VBOX_WITH_AHCI
 # undef LOG_GROUP
@@ -1316,36 +1318,63 @@ int main()
     GEN_CHECK_OFF(SerialState, fYieldOnLSRRead);
     GEN_CHECK_OFF(SerialState, char_transmit_time);
 #else
+    /* Serial/UartCore.cpp */
+    GEN_CHECK_SIZE(UARTCORE);
+    GEN_CHECK_OFF(UARTCORE, CritSect);
+    GEN_CHECK_OFF(UARTCORE, pDevInsR3);
+    GEN_CHECK_OFF(UARTCORE, pDevInsR0);
+    GEN_CHECK_OFF(UARTCORE, pDevInsRC);
+    GEN_CHECK_OFF(UARTCORE, iLUN);
+    GEN_CHECK_OFF(UARTCORE, IBase);
+    GEN_CHECK_OFF(UARTCORE, ISerialPort);
+    GEN_CHECK_OFF(UARTCORE, pDrvBase);
+    GEN_CHECK_OFF(UARTCORE, pDrvSerial);
+    GEN_CHECK_OFF(UARTCORE, fFlags);
+    GEN_CHECK_OFF(UARTCORE, enmType);
+    GEN_CHECK_OFF(UARTCORE, pfnUartIrqReqR3);
+    GEN_CHECK_OFF(UARTCORE, pfnUartIrqReqR0);
+    GEN_CHECK_OFF(UARTCORE, pfnUartIrqReqRC);
+    GEN_CHECK_OFF(UARTCORE, uRegDivisor);
+    GEN_CHECK_OFF(UARTCORE, uRegRbr);
+    GEN_CHECK_OFF(UARTCORE, uRegThr);
+    GEN_CHECK_OFF(UARTCORE, uRegIer);
+    GEN_CHECK_OFF(UARTCORE, uRegIir);
+    GEN_CHECK_OFF(UARTCORE, uRegFcr);
+    GEN_CHECK_OFF(UARTCORE, uRegLcr);
+    GEN_CHECK_OFF(UARTCORE, uRegMcr);
+    GEN_CHECK_OFF(UARTCORE, uRegLsr);
+    GEN_CHECK_OFF(UARTCORE, uRegMsr);
+    GEN_CHECK_OFF(UARTCORE, uRegScr);
+    GEN_CHECK_OFF(UARTCORE, FifoXmit);
+    GEN_CHECK_OFF(UARTCORE, FifoRecv);
+    GEN_CHECK_OFF(UARTCORE, cbAvailRdr);
+
     /* Serial/DevSerialNew.cpp */
     GEN_CHECK_SIZE(DEVSERIAL);
-    GEN_CHECK_OFF(DEVSERIAL, CritSect);
     GEN_CHECK_OFF(DEVSERIAL, pDevInsR3);
     GEN_CHECK_OFF(DEVSERIAL, pDevInsR0);
     GEN_CHECK_OFF(DEVSERIAL, pDevInsRC);
-    GEN_CHECK_OFF(DEVSERIAL, IBase);
-    GEN_CHECK_OFF(DEVSERIAL, ISerialPort);
-    GEN_CHECK_OFF(DEVSERIAL, pDrvBase);
-    GEN_CHECK_OFF(DEVSERIAL, pDrvSerial);
     GEN_CHECK_OFF(DEVSERIAL, fR0Enabled);
     GEN_CHECK_OFF(DEVSERIAL, fRCEnabled);
-    GEN_CHECK_OFF(DEVSERIAL, f16550AEnabled);
-    GEN_CHECK_OFF(DEVSERIAL, fYieldOnLSRRead);
     GEN_CHECK_OFF(DEVSERIAL, uIrq);
     GEN_CHECK_OFF(DEVSERIAL, PortBase);
-    GEN_CHECK_OFF(DEVSERIAL, uRegDivisor);
-    GEN_CHECK_OFF(DEVSERIAL, uRegRbr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegThr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegIer);
-    GEN_CHECK_OFF(DEVSERIAL, uRegIir);
-    GEN_CHECK_OFF(DEVSERIAL, uRegFcr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegLcr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegMcr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegLsr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegMsr);
-    GEN_CHECK_OFF(DEVSERIAL, uRegScr);
-    GEN_CHECK_OFF(DEVSERIAL, FifoXmit);
-    GEN_CHECK_OFF(DEVSERIAL, FifoRecv);
-    GEN_CHECK_OFF(DEVSERIAL, cbAvailRdr);
+    GEN_CHECK_OFF(DEVSERIAL, UartCore);
+
+    /* Serial/DevOxPcie958.cpp */
+    GEN_CHECK_SIZE(DEVOX958);
+    GEN_CHECK_OFF(DEVOX958, PciDev);
+    GEN_CHECK_OFF(DEVOX958, pDevInsR3);
+    GEN_CHECK_OFF(DEVOX958, pDevInsR0);
+    GEN_CHECK_OFF(DEVOX958, pDevInsRC);
+    GEN_CHECK_OFF(DEVOX958, fR0Enabled);
+    GEN_CHECK_OFF(DEVOX958, fRCEnabled);
+    GEN_CHECK_OFF(DEVOX958, u32RegIrqStsGlob);
+    GEN_CHECK_OFF(DEVOX958, u32RegIrqEnGlob);
+    GEN_CHECK_OFF(DEVOX958, u32RegIrqEnWake);
+    GEN_CHECK_OFF(DEVOX958, cUarts);
+    GEN_CHECK_OFF(DEVOX958, GCPhysMMIO);
+    GEN_CHECK_OFF(DEVOX958, aUarts);
+    GEN_CHECK_OFF(DEVOX958, aUarts[OX958_UARTS_MAX - 1]);
 #endif
 
 #ifdef VBOX_WITH_AHCI
