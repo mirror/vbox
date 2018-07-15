@@ -201,6 +201,7 @@ DECLHIDDEN(int) uartRegRead(PUARTCORE pThis, uint32_t uReg, uint32_t *pu32, size
  *
  * @returns VBox status code.
  * @param   pThis               The UART core instance to initialize.
+ * @param   pDevInsR3           The R3 device instance pointer.
  * @param   enmType             The type of UART emulated.
  * @param   iLUN                The LUN the UART should look for attached drivers.
  * @param   fFlags              Additional flags controlling device behavior.
@@ -233,6 +234,7 @@ DECLHIDDEN(void) uartR3Detach(PUARTCORE pThis);
  *
  * @returns VBox status code.
  * @param   pThis               The UART core instance.
+ * @param   iLUN                The LUN being attached.
  */
 DECLHIDDEN(int) uartR3Attach(PUARTCORE pThis, unsigned iLUN);
 
