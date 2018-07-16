@@ -482,8 +482,8 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             if(m_uMaxGuestCPU > 1 && m_pSliderCPUCount->value() > 1)
             {
-                message.second << tr("Please consider lowering the number of CPU assigned to the virtual machine rather"
-                                     " than setting the processor execution cap");
+                message.second << tr("Please consider lowering the number of CPUs assigned to the virtual machine rather"
+                                     " than setting the processor execution cap.");
             }
             else if (m_uMaxGuestCPU > 1)
             {
