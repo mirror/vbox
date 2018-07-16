@@ -418,9 +418,9 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
     /* Translate group-boxes: */
     m_pSelectorCnt->setTitle(UIWizardExportApp::tr("Virtual &machines to export"));
-    m_pApplianceCnt->setTitle(UIWizardExportApp::tr("Appliance &settings"));
+    m_pApplianceCnt->setTitle(UIWizardExportApp::tr("Virtual &system settings"));
     m_pTypeCnt->setTitle(UIWizardExportApp::tr("&Destination"));
-    m_pSettingsCnt->setTitle(UIWizardExportApp::tr("&Storage settings"));
+    m_pSettingsCnt->setTitle(UIWizardExportApp::tr("&Appliance settings"));
 
     /* Translate radio-buttons: */
     m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&Local Filesystem"));
@@ -464,9 +464,9 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
-    m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+    m_pManifestCheckbox->setText(UIWizardExportApp::tr("&Write Manifest file"));
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
-    m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("Include &ISO image files"));
+    m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
     /* Translate Provider combo-box: */
     m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Cloud Service Provider:"));

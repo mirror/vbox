@@ -123,7 +123,7 @@ UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
 void UIWizardExportAppPageBasic4::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance settings"));
+    setTitle(UIWizardExportApp::tr("Virtual system settings"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added "

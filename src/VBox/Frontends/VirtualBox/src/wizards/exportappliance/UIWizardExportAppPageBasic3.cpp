@@ -651,7 +651,7 @@ bool UIWizardExportAppPageBasic3::event(QEvent *pEvent)
 void UIWizardExportAppPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Storage settings"));
+    setTitle(UIWizardExportApp::tr("Appliance settings"));
 
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
@@ -694,9 +694,9 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
-    m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+    m_pManifestCheckbox->setText(UIWizardExportApp::tr("&Write Manifest file"));
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
-    m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("Include &ISO image files"));
+    m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
     /* Translate Provider combo-box: */
     m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Provider:"));
