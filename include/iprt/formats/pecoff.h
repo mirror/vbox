@@ -1404,17 +1404,23 @@ typedef IMAGE_DEBUG_DIRECTORY const *PCIMAGE_DEBUG_DIRECTORY;
 /** @name IMAGE_DEBUG_TYPE_XXX - Debug format types.
  * Used by IMAGE_DEBUG_DIRECTORY::Type.
  * @{  */
-#define IMAGE_DEBUG_TYPE_UNKNOWN            UINT32_C(0x0)
-#define IMAGE_DEBUG_TYPE_COFF               UINT32_C(0x1)
-#define IMAGE_DEBUG_TYPE_CODEVIEW           UINT32_C(0x2)
-#define IMAGE_DEBUG_TYPE_FPO                UINT32_C(0x3)
-#define IMAGE_DEBUG_TYPE_MISC               UINT32_C(0x4)
-#define IMAGE_DEBUG_TYPE_EXCEPTION          UINT32_C(0x5)
-#define IMAGE_DEBUG_TYPE_FIXUP              UINT32_C(0x6)
-#define IMAGE_DEBUG_TYPE_OMAP_TO_SRC        UINT32_C(0x7)
-#define IMAGE_DEBUG_TYPE_OMAP_FROM_SRC      UINT32_C(0x8)
-#define IMAGE_DEBUG_TYPE_BORLAND            UINT32_C(0x9)
-#define IMAGE_DEBUG_TYPE_RESERVED10         UINT32_C(0x10)
+#define IMAGE_DEBUG_TYPE_UNKNOWN            UINT32_C(0x00)
+#define IMAGE_DEBUG_TYPE_COFF               UINT32_C(0x01)
+#define IMAGE_DEBUG_TYPE_CODEVIEW           UINT32_C(0x02)
+#define IMAGE_DEBUG_TYPE_FPO                UINT32_C(0x03)
+#define IMAGE_DEBUG_TYPE_MISC               UINT32_C(0x04)
+#define IMAGE_DEBUG_TYPE_EXCEPTION          UINT32_C(0x05)
+#define IMAGE_DEBUG_TYPE_FIXUP              UINT32_C(0x06)
+#define IMAGE_DEBUG_TYPE_OMAP_TO_SRC        UINT32_C(0x07)
+#define IMAGE_DEBUG_TYPE_OMAP_FROM_SRC      UINT32_C(0x08)
+#define IMAGE_DEBUG_TYPE_BORLAND            UINT32_C(0x09)
+#define IMAGE_DEBUG_TYPE_RESERVED10         UINT32_C(0x0a)
+#define IMAGE_DEBUG_TYPE_CLSID              UINT32_C(0x0b)
+#define IMAGE_DEBUG_TYPE_VC_FEATURE         UINT32_C(0x0c)
+#define IMAGE_DEBUG_TYPE_POGO               UINT32_C(0x0d)
+#define IMAGE_DEBUG_TYPE_ILTCG              UINT32_C(0x0e)
+#define IMAGE_DEBUG_TYPE_MPX                UINT32_C(0x0f)
+#define IMAGE_DEBUG_TYPE_REPRO              UINT32_C(0x10)
 /** @} */
 
 /** @name IMAGE_DEBUG_MISC_XXX - Misc debug data type.
