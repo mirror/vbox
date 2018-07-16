@@ -905,6 +905,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Panic_IOAPICDoesntWork,                   'IO-APIC + timer doesn''t work' ),
         ( True,  ktReason_Panic_TxUnitHang,                         'Detected Tx Unit Hang' ),
         ( True,  ktReason_GuestBug_CompizVBoxQt,                    'error 4 in libQt5CoreVBox' ),
+        ( True,  ktReason_GuestBug_CompizVBoxQt,                    'error 4 in libgtk-3' ),
     ];
 
     ## Things we search the _RIGHT_ _STRIPPED_ vgatext for.
