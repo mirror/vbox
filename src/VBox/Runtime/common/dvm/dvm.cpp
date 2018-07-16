@@ -120,15 +120,30 @@ static const char * const g_apszDvmVolTypes[] =
     "FAT12",
     "FAT16",
     "FAT32",
+
+    "EFI system partition",
+
+    "Mac OS X HFS or HFS+",
+    "Mac OS X APFS",
+
     "Linux swap",
     "Linux native",
     "Linux LVM",
     "Linux SoftRaid",
+
     "FreeBSD",
     "NetBSD",
     "OpenBSD",
-    "Mac OS X HFS or HFS+",
-    "Solaris"
+    "Solaris",
+
+    "Basic data partition",
+    "Microsoft reserved partition",
+    "Windows LDM metadata",
+    "Windows LDM data",
+    "Windows recovery partition",
+    "Windows storage spaces",
+
+    "IBM GPFS",
 };
 AssertCompile(RT_ELEMENTS(g_apszDvmVolTypes) == RTDVMVOLTYPE_END);
 

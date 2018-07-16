@@ -47,41 +47,8 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/**
- * A volume manager VFS for use in chains (thing pseudo/devfs).
- */
-typedef struct RTDVMVFSVOL
-{
-    /** The volume manager. */
-    RTDVM           hVolMgr;
-    /** Whether to close it on success. */
-    bool            fCloseDvm;
-    /** Whether the access is read-only. */
-    bool            fReadOnly;
-    /** Number of volumes. */
-    uint32_t        cVolumes;
-    /** Self reference. */
-    RTVFS           hVfsSelf;
-} RTDVMVFSVOL;
-/** Poitner to a volume manager VFS. */
-typedef RTDVMVFSVOL *PRTDVMVFSVOL;
-
-/**
- * The volume manager VFS (root) dir data.
- */
-typedef struct RTDVMVFSDIR
-{
-    /** Pointer to the VFS volume. */
-    PRTDVMVFSVOL    pVfsVol;
-    /** The current directory offset. */
-    uint32_t        offDir;
-    /** Set if we need to try return hCurVolume again because of buffer overflow. */
-    bool            fReturnCurrent;
-    /** The current DVM volume. */
-    RTDVMVOLUME     hCurVolume;
-} RTDVMVFSDIR;
-/** Poitner to a volume manager VFS (root) dir. */
-typedef RTDVMVFSDIR *PRTDVMVFSDIR;
+/** Pointer to a volume manager VFS. */
+typedef struct RTDVMVFSVOL *PRTDVMVFSVOL;
 
 /**
  * The internal data of a DVM volume I/O stream.
@@ -101,6 +68,59 @@ typedef struct RTVFSDVMFILE
 } RTVFSDVMFILE;
 /** Pointer to a the internal data of a DVM volume file. */
 typedef RTVFSDVMFILE *PRTVFSDVMFILE;
+
+/**
+ * The internal data of a DVM volume symlink.
+ */
+typedef struct RTVFSDVMSYMLINK
+{
+    /** The DVM volume the symlink represent. */
+    RTDVMVOLUME     hVol;
+    /** The DVM volume manager @a hVol belongs to. */
+    RTDVM           hVolMgr;
+    /** The symlink name. */
+    char           *pszSymlink;
+    /** The symlink target (volXX). */
+    char            szTarget[16];
+} RTVFSDVMSYMLINK;
+/** Pointer to a the internal data of a DVM volume file. */
+typedef RTVFSDVMSYMLINK *PRTVFSDVMSYMLINK;
+
+/**
+ * The volume manager VFS (root) dir data.
+ */
+typedef struct RTDVMVFSDIR
+{
+    /** Pointer to the VFS volume. */
+    PRTDVMVFSVOL    pVfsVol;
+    /** The current directory offset. */
+    uint32_t        offDir;
+    /** Set if we need to try return hCurVolume again because of buffer overflow. */
+    bool            fReturnCurrent;
+    /** Pointer to name alias string (returned by RTDvmVolumeQueryName, free it). */
+    char           *pszNameAlias;
+    /** The current DVM volume. */
+    RTDVMVOLUME     hCurVolume;
+} RTDVMVFSDIR;
+/** Pointer to a volume manager VFS (root) dir. */
+typedef RTDVMVFSDIR *PRTDVMVFSDIR;
+
+/**
+ * A volume manager VFS for use in chains (thing pseudo/devfs).
+ */
+typedef struct RTDVMVFSVOL
+{
+    /** The volume manager. */
+    RTDVM           hVolMgr;
+    /** Whether to close it on success. */
+    bool            fCloseDvm;
+    /** Whether the access is read-only. */
+    bool            fReadOnly;
+    /** Number of volumes. */
+    uint32_t        cVolumes;
+    /** Self reference. */
+    RTVFS           hVfsSelf;
+} RTDVMVFSVOL;
 
 
 /*********************************************************************************************************************************
@@ -122,25 +142,11 @@ static DECLCALLBACK(int) rtDvmVfsFile_Close(void *pvThis)
 
 
 /**
- * Worker for rtDvmVfsFile_QueryInfo, rtDvmVfsDir_QueryEntryInfo, and
- * rtDvmVfsDir_ReadDir.
+ * Worker for rtDvmVfsFile_QueryInfoWorker and rtDvmVfsSym_QueryInfoWorker.
  */
-static int rtDvmVfsFile_QueryInfoWorker(RTDVMVOLUME hVolume, RTDVM hVolMgr, bool fReadOnly,
-                                        PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static int rtDvmVfsFileSym_QueryAddAttrWorker(RTDVMVOLUME hVolume, RTDVM hVolMgr,
+                                              PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
-
-    pObjInfo->cbObject    = RTDvmVolumeGetSize(hVolume);
-    pObjInfo->cbAllocated = pObjInfo->cbObject;
-    RTTimeSpecSetNano(&pObjInfo->AccessTime, 0);
-    RTTimeSpecSetNano(&pObjInfo->ModificationTime, 0);
-    RTTimeSpecSetNano(&pObjInfo->ChangeTime, 0);
-    RTTimeSpecSetNano(&pObjInfo->BirthTime, 0);
-    pObjInfo->Attr.fMode = RTFS_TYPE_FILE | RTFS_DOS_NT_NORMAL;
-    if (fReadOnly)
-        pObjInfo->Attr.fMode |= RTFS_DOS_READONLY | 0444;
-    else
-        pObjInfo->Attr.fMode |= 0666;
-
     switch (enmAddAttr)
     {
         case RTFSOBJATTRADD_NOTHING:
@@ -186,6 +192,30 @@ static int rtDvmVfsFile_QueryInfoWorker(RTDVMVOLUME hVolume, RTDVM hVolMgr, bool
             return VERR_INVALID_PARAMETER;
     }
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for rtDvmVfsFile_QueryInfo, rtDvmVfsDir_QueryEntryInfo, and
+ * rtDvmVfsDir_ReadDir.
+ */
+static int rtDvmVfsFile_QueryInfoWorker(RTDVMVOLUME hVolume, RTDVM hVolMgr, bool fReadOnly,
+                                        PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+
+    pObjInfo->cbObject    = RTDvmVolumeGetSize(hVolume);
+    pObjInfo->cbAllocated = pObjInfo->cbObject;
+    RTTimeSpecSetNano(&pObjInfo->AccessTime, 0);
+    RTTimeSpecSetNano(&pObjInfo->ModificationTime, 0);
+    RTTimeSpecSetNano(&pObjInfo->ChangeTime, 0);
+    RTTimeSpecSetNano(&pObjInfo->BirthTime, 0);
+    pObjInfo->Attr.fMode = RTFS_TYPE_FILE | RTFS_DOS_NT_NORMAL;
+    if (fReadOnly)
+        pObjInfo->Attr.fMode |= RTFS_DOS_READONLY | 0444;
+    else
+        pObjInfo->Attr.fMode |= 0666;
+
+    return rtDvmVfsFileSym_QueryAddAttrWorker(hVolume, hVolMgr, pObjInfo, enmAddAttr);
 }
 
 
@@ -532,6 +562,149 @@ RTDECL(int) RTDvmVolumeCreateVfsFile(RTDVMVOLUME hVol, uint64_t fOpen, PRTVFSFIL
 }
 
 
+/*********************************************************************************************************************************
+*   DVM Symbolic Link Objects                                                                                                    *
+*********************************************************************************************************************************/
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtDvmVfsSym_Close(void *pvThis)
+{
+    PRTVFSDVMSYMLINK pThis = (PRTVFSDVMSYMLINK)pvThis;
+    if (pThis->pszSymlink)
+    {
+        RTStrFree(pThis->pszSymlink);
+        pThis->pszSymlink = NULL;
+    }
+    if (pThis->hVol != NIL_RTDVMVOLUME)
+    {
+        RTDvmVolumeRelease(pThis->hVol);
+        pThis->hVol = NIL_RTDVMVOLUME;
+    }
+    if (pThis->hVolMgr != NIL_RTDVM)
+    {
+        RTDvmRelease(pThis->hVolMgr);
+        pThis->hVolMgr = NIL_RTDVM;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for rtDvmVfsSym_QueryInfo and rtDvmVfsDir_Read.
+ *
+ * @returns IPRT status code.
+ * @param   hVolume             The volume handle.
+ * @param   hVolMgr             The volume manager handle. Optional.
+ * @param   pszTarget           The link target.
+ * @param   pObjInfo            The object info structure to populate.
+ * @param   enmAddAttr          The additional attributes to supply.
+ */
+static int rtDvmVfsSym_QueryInfoWorker(RTDVMVOLUME hVolume, RTDVM hVolMgr, const char *pszTarget,
+                                       PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RT_ZERO(*pObjInfo);
+    pObjInfo->cbObject = pObjInfo->cbAllocated = pszTarget ? strlen(pszTarget) : 0;
+    pObjInfo->Attr.fMode = 0777 | RTFS_TYPE_SYMLINK | RTFS_DOS_NT_REPARSE_POINT;
+
+    return rtDvmVfsFileSym_QueryAddAttrWorker(hVolume, hVolMgr, pObjInfo, enmAddAttr);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtDvmVfsSym_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTVFSDVMSYMLINK pThis = (PRTVFSDVMSYMLINK)pvThis;
+    return rtDvmVfsSym_QueryInfoWorker(pThis->hVol, pThis->hVolMgr, pThis->szTarget, pObjInfo, enmAddAttr);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSSYMLINKOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtDvmVfsSym_Read(void *pvThis, char *pszTarget, size_t cbTarget)
+{
+    PRTVFSDVMSYMLINK pThis = (PRTVFSDVMSYMLINK)pvThis;
+    return RTStrCopy(pszTarget, cbTarget, pThis->szTarget);
+}
+
+
+/**
+ * DVM symbolic link operations.
+ */
+static const RTVFSSYMLINKOPS g_rtDvmVfsSymOps =
+{
+    { /* Obj */
+        RTVFSOBJOPS_VERSION,
+        RTVFSOBJTYPE_SYMLINK,
+        "DvmSymlink",
+        rtDvmVfsSym_Close,
+        rtDvmVfsSym_QueryInfo,
+        RTVFSOBJOPS_VERSION
+    },
+    RTVFSSYMLINKOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_UOFFSETOF(RTVFSSYMLINKOPS, ObjSet) - RT_UOFFSETOF(RTVFSSYMLINKOPS, Obj),
+        NULL /*rtDvmVfsSym_SetMode*/,
+        NULL /*rtDvmVfsSym_SetTimes*/,
+        NULL /*rtDvmVfsSym_SetOwner*/,
+        RTVFSOBJSETOPS_VERSION
+    },
+    rtDvmVfsSym_Read,
+    RTVFSSYMLINKOPS_VERSION
+};
+
+
+/**
+ * Internal worker for rtDvmVfsDir_OpenFile.
+ *
+ * @returns IPRT status code.
+ * @param   hVol                The volume handle (not consumed).
+ * @param   hVolMgr             The volume manager handle (not consumed).
+ * @param   iVol                The volume number.
+ * @param   pszSymlink          The volume name. Consumed on success.
+ * @param   phVfsSymlinkOut     Where to return the handle to the file.
+ */
+static int rtDvmVfsCreateSymlinkForVolume(RTDVMVOLUME hVol, RTDVM hVolMgr, uint32_t iVol, char *pszSymlink,
+                                          PRTVFSSYMLINK phVfsSymlinkOut)
+{
+    uint32_t cRefs = RTDvmVolumeRetain(hVol);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    cRefs = RTDvmRetain(hVolMgr);
+    AssertReturnStmt(cRefs != UINT32_MAX, RTDvmVolumeRelease(hVol), VERR_INVALID_HANDLE);
+
+    /*
+     * Create the symlink.
+     */
+    RTVFSSYMLINK        hVfsSym;
+    PRTVFSDVMSYMLINK    pThis;
+    int rc = RTVfsNewSymlink(&g_rtDvmVfsSymOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, &hVfsSym, (void **)&pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hVol       = hVol;
+        pThis->hVolMgr    = hVolMgr;
+        pThis->pszSymlink = pszSymlink;
+        RTStrPrintf(pThis->szTarget, sizeof(pThis->szTarget), "vol%u", iVol);
+
+        *phVfsSymlinkOut = hVfsSym;
+        return VINF_SUCCESS;
+    }
+    RTDvmRelease(hVolMgr);
+    RTDvmVolumeRelease(hVol);
+    return rc;
+}
+
+
+
+/*********************************************************************************************************************************
+*   DVM Directory Objects                                                                                                        *
+*********************************************************************************************************************************/
+
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnClose}
  */
@@ -543,6 +716,12 @@ static DECLCALLBACK(int) rtDvmVfsDir_Close(void *pvThis)
     {
         RTDvmVolumeRelease(pThis->hCurVolume);
         pThis->hCurVolume = NIL_RTDVMVOLUME;
+    }
+
+    if (pThis->pszNameAlias)
+    {
+        RTStrFree(pThis->pszNameAlias);
+        pThis->pszNameAlias = NULL;
     }
 
     pThis->pVfsVol = NULL;
@@ -636,8 +815,13 @@ static DECLCALLBACK(int) rtDvmVfsDir_SetOwner(void *pvThis, RTUID uid, RTGID gid
 }
 
 
-static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry, PRTDVMVOLUME phVolume)
+static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry,
+                                 PRTDVMVOLUME phVolume, uint32_t *piVol, char **ppszSymlink)
 {
+    *phVolume    = NIL_RTDVMVOLUME;
+    *ppszSymlink = NULL;
+    *piVol       = UINT32_MAX;
+
     /*
      * Enumerate the volumes and try match the volume name.
      */
@@ -658,6 +842,13 @@ static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry, PRTDV
             if (RT_SUCCESS(rc))
             {
                 fMatch = RTStrCmp(pszEntry, pszVolName) == 0 && *pszVolName != '\0';
+                if (fMatch)
+                {
+                    *phVolume    = hVol;
+                    *ppszSymlink = pszVolName;
+                    *piVol       = iVol;
+                    return VINF_SUCCESS;
+                }
                 RTStrFree(pszVolName);
             }
             else if (rc == VERR_NOT_SUPPORTED)
@@ -679,6 +870,7 @@ static int rtDvmVfsDir_FindEntry(PRTDVMVFSDIR pThis, const char *pszEntry, PRTDV
             if (fMatch)
             {
                 *phVolume = hVol;
+                *piVol    = iVol;
                 return VINF_SUCCESS;
             }
 
@@ -743,8 +935,10 @@ static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, ui
     /*
      * Open volume file.
      */
-    RTDVMVOLUME hVolume = NIL_RTDVMVOLUME;
-    int rc = rtDvmVfsDir_FindEntry(pThis, pszEntry, &hVolume);
+    RTDVMVOLUME hVolume    = NIL_RTDVMVOLUME;
+    uint32_t    iVol       = 0;
+    char       *pszSymlink = NULL;
+    int rc = rtDvmVfsDir_FindEntry(pThis, pszEntry, &hVolume, &iVol, &pszSymlink);
     if (RT_SUCCESS(rc))
     {
         if (   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN
@@ -753,20 +947,40 @@ static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, ui
         {
             if (fFlags & (RTVFSOBJ_F_OPEN_FILE | RTVFSOBJ_F_OPEN_DEV_BLOCK))
             {
-                if (   !(fOpen & RTFILE_O_WRITE)
-                    || !pThis->pVfsVol->fReadOnly)
+                if (!pszSymlink)
                 {
-                    RTVFSFILE hVfsFile;
-                    rc = rtDvmVfsCreateFileForVolume(pThis->pVfsVol, hVolume, fOpen, &hVfsFile);
-                    if (RT_SUCCESS(rc))
+                    if (   !(fOpen & RTFILE_O_WRITE)
+                        || !pThis->pVfsVol->fReadOnly)
                     {
-                        *phVfsObj = RTVfsObjFromFile(hVfsFile);
-                        RTVfsFileRelease(hVfsFile);
-                        AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        /* Create file object. */
+                        RTVFSFILE hVfsFile;
+                        rc = rtDvmVfsCreateFileForVolume(pThis->pVfsVol, hVolume, fOpen, &hVfsFile);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                            RTVfsFileRelease(hVfsFile);
+                            AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                        }
                     }
+                    else
+                        rc = VERR_WRITE_PROTECT;
                 }
                 else
-                    rc = VERR_WRITE_PROTECT;
+                    rc = VERR_IS_A_SYMLINK;
+            }
+            else if (fFlags & RTVFSOBJ_F_OPEN_SYMLINK)
+            {
+                /* Create symlink object */
+                RTVFSSYMLINK hVfsSym;
+                rc = rtDvmVfsCreateSymlinkForVolume(hVolume, pThis->pVfsVol ? pThis->pVfsVol->hVolMgr : NIL_RTDVM, iVol,
+                                                    pszSymlink, &hVfsSym);
+                if (RT_SUCCESS(rc))
+                {
+                    *phVfsObj = RTVfsObjFromSymlink(hVfsSym);
+                    RTVfsSymlinkRelease(hVfsSym);
+                    AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                    pszSymlink = NULL;
+                }
             }
             else
                 rc = VERR_IS_A_FILE;
@@ -774,6 +988,8 @@ static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, ui
         else
             rc = VERR_ALREADY_EXISTS;
         RTDvmVolumeRelease(hVolume);
+        if (pszSymlink)
+            RTStrFree(pszSymlink);
     }
     return rc;
 }
@@ -860,6 +1076,11 @@ static DECLCALLBACK(int) rtDvmVfsDir_RewindDir(void *pvThis)
     }
     pThis->fReturnCurrent = false;
     pThis->offDir         = 0;
+    if (pThis->pszNameAlias)
+    {
+        RTStrFree(pThis->pszNameAlias);
+        pThis->pszNameAlias = NULL;
+    }
 
     return VINF_SUCCESS;
 }
@@ -876,10 +1097,49 @@ static DECLCALLBACK(int) rtDvmVfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEnt
     int          rc;
 
     /*
-     * Get the volume to return info about.
+     * Format the volume name since we'll be needing it all but the final call.
      */
+    char         szVolNo[16];
+    size_t const cchVolNo = RTStrPrintf(szVolNo, sizeof(szVolNo), "vol%u", pThis->offDir);
+
     if (!pThis->fReturnCurrent)
     {
+        /*
+         * Do we have a pending name alias to return?
+         */
+        if (pThis->pszNameAlias)
+        {
+            size_t cchNameAlias = strlen(pThis->pszNameAlias);
+            size_t cbNeeded     = RT_UOFFSETOF_DYN(RTDIRENTRYEX, szName[cchNameAlias + 1]);
+            if (cbNeeded <= *pcbDirEntry)
+            {
+                *pcbDirEntry = cbNeeded;
+
+                /* Do the names. */
+                pDirEntry->cbName = (uint16_t)cchNameAlias;
+                memcpy(pDirEntry->szName, pThis->pszNameAlias, cchNameAlias + 1);
+                pDirEntry->cwcShortName = 0;
+                pDirEntry->wszShortName[0] = '\0';
+
+
+                /* Do the rest. */
+                rc = rtDvmVfsSym_QueryInfoWorker(pThis->hCurVolume, pVfsVol->hVolMgr, szVolNo, &pDirEntry->Info, enmAddAttr);
+                if (RT_SUCCESS(rc))
+                {
+                    RTStrFree(pThis->pszNameAlias);
+                    pThis->pszNameAlias = NULL;
+                    pThis->offDir      += 1;
+                }
+                return rc;
+            }
+
+            *pcbDirEntry = cbNeeded;
+            return VERR_BUFFER_OVERFLOW;
+        }
+
+        /*
+         * Get the next volume to return info about.
+         */
         if (pThis->offDir < pVfsVol->cVolumes)
         {
             RTDVMVOLUME hNextVolume;
@@ -891,6 +1151,16 @@ static DECLCALLBACK(int) rtDvmVfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEnt
                 return rc;
             RTDvmVolumeRelease(pThis->hCurVolume);
             pThis->hCurVolume = hNextVolume;
+
+            /* Check if we need to return a name alias later. */
+            rc = RTDvmVolumeQueryName(pThis->hCurVolume, &pThis->pszNameAlias);
+            if (RT_FAILURE(rc))
+                pThis->pszNameAlias = NULL;
+            else if (*pThis->pszNameAlias == '\0')
+            {
+                RTStrFree(pThis->pszNameAlias);
+                pThis->pszNameAlias = NULL;
+            }
         }
         else
         {
@@ -903,62 +1173,32 @@ static DECLCALLBACK(int) rtDvmVfsDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEnt
     /*
      * Figure out the name length.
      */
-    char szVolNo[16];
-    RTStrPrintf(szVolNo, sizeof(szVolNo), "vol%u", pThis->offDir);
-
-    char *pszVolName;
-    rc = RTDvmVolumeQueryName(pThis->hCurVolume, &pszVolName);
-    if (   RT_SUCCESS(rc)
-        || rc == VERR_NOT_SUPPORTED)
+    size_t cbNeeded = RT_UOFFSETOF_DYN(RTDIRENTRYEX, szName[cchVolNo + 1]);
+    if (cbNeeded <= *pcbDirEntry)
     {
-        if (rc == VERR_NOT_SUPPORTED)
-            pszVolName = szVolNo;
-        else if (*pszVolName == '\0')
+        *pcbDirEntry = cbNeeded;
+
+        /* Do the names. */
+        pDirEntry->cbName = (uint16_t)cchVolNo;
+        memcpy(pDirEntry->szName, szVolNo, cchVolNo + 1);
+        pDirEntry->cwcShortName = 0;
+        pDirEntry->wszShortName[0] = '\0';
+
+        /* Do the rest. */
+        rc = rtDvmVfsFile_QueryInfoWorker(pThis->hCurVolume, pVfsVol->hVolMgr, pVfsVol->fReadOnly, &pDirEntry->Info, enmAddAttr);
+        if (RT_SUCCESS(rc))
         {
-            RTStrFree(pszVolName);
-            pszVolName = szVolNo;
-        }
-
-        size_t cchVolName = strlen(pszVolName);
-        size_t cbNeeded   = RT_UOFFSETOF_DYN(RTDIRENTRYEX,  szName[cchVolName + 1]);
-        if (cbNeeded <= *pcbDirEntry)
-        {
-            *pcbDirEntry = cbNeeded;
-
-            /* Do the names. */
-            pDirEntry->cbName = (uint16_t)cchVolName;
-            memcpy(pDirEntry->szName, pszVolName, cchVolName + 1);
-            if (pszVolName != szVolNo)
-            {
-                RTStrFree(pszVolName);
-
-                PRTUTF16 pwszShortName = pDirEntry->wszShortName;
-                size_t   cwcShortName = 0;
-                rc = RTStrToUtf16Ex(szVolNo, RTSTR_MAX, &pwszShortName, RT_ELEMENTS(pDirEntry->wszShortName), &cwcShortName);
-                AssertRC(rc);
-                pDirEntry->cwcShortName = (uint16_t)cwcShortName;
-            }
-            else
-            {
-                pDirEntry->cwcShortName = 0;
-                pDirEntry->wszShortName[0] = '\0';
-            }
-
-            /* Do the rest. */
-            rc = rtDvmVfsFile_QueryInfoWorker(pThis->hCurVolume, pVfsVol->hVolMgr, pVfsVol->fReadOnly,
-                                              &pDirEntry->Info, enmAddAttr);
-            pThis->fReturnCurrent = !RT_SUCCESS(rc);
-            pThis->offDir        += RT_SUCCESS(rc);
+            pThis->fReturnCurrent = false;
+            if (!pThis->pszNameAlias)
+                pThis->offDir += 1;
             return rc;
         }
-
+    }
+    else
+    {
         *pcbDirEntry = cbNeeded;
         rc = VERR_BUFFER_OVERFLOW;
-
-        if (pszVolName != szVolNo)
-            RTStrFree(pszVolName);
     }
-
     pThis->fReturnCurrent = true;
     return rc;
 }
@@ -1046,6 +1286,7 @@ static DECLCALLBACK(int) rtDvmVfsVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
         pNewDir->offDir         = 0;
         pNewDir->pVfsVol        = pThis;
         pNewDir->fReturnCurrent = false;
+        pNewDir->pszNameAlias   = NULL;
         pNewDir->hCurVolume     = NIL_RTDVMVOLUME;
     }
     return rc;
