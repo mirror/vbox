@@ -35,6 +35,17 @@ class QIRichTextLabel;
 class UIEmptyFilePathSelector;
 
 
+/** MAC address policies. */
+enum MACAddressPolicy
+{
+    MACAddressPolicy_KeepAllMACs,
+    MACAddressPolicy_StripAllNonNATMACs,
+    MACAddressPolicy_StripAllMACs,
+    MACAddressPolicy_MAX
+};
+Q_DECLARE_METATYPE(MACAddressPolicy);
+
+
 /** UIWizardPageBase extension for 3rd page of the Export Appliance wizard. */
 class UIWizardExportAppPage3 : public UIWizardPageBase
 {
@@ -45,6 +56,8 @@ protected:
 
     /** Populates formats. */
     void populateFormats();
+    /** Populates MAC address policies. */
+    void populateMACAddressPolicies();
     /** Populates providers. */
     void populateProviders();
     /** Populates profiles. */
@@ -68,6 +81,8 @@ protected:
 
     /** Updates format combo tool-tips. */
     void updateFormatComboToolTip();
+    /** Updates MAC address policy combo tool-tips. */
+    void updateMACAddressPolicyComboToolTip();
     /** Updates provider combo tool-tips. */
     void updateProviderComboToolTip();
 
@@ -83,6 +98,11 @@ protected:
     QString format() const;
     /** Defines @a strFormat. */
     void setFormat(const QString &strFormat);
+
+    /** Returns MAC address policy. */
+    MACAddressPolicy macAddressPolicy() const;
+    /** Defines @a enmMACAddressPolicy. */
+    void setMACAddressPolicy(MACAddressPolicy enmMACAddressPolicy);
 
     /** Returns whether manifest selected. */
     bool isManifestSelected() const;
@@ -125,6 +145,11 @@ protected:
     /** Holds the format combo-box instance. */
     QComboBox *m_pFormatComboBox;
 
+    /** Holds the MAC address policy combo-box label instance. */
+    QLabel    *m_pMACComboBoxLabel;
+    /** Holds the MAC address policy check-box instance. */
+    QComboBox *m_pMACComboBox;
+
     /** Holds the additional label instance. */
     QLabel    *m_pAdditionalLabel;
     /** Holds the manifest check-box instance. */
@@ -152,6 +177,7 @@ class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAp
     Q_OBJECT;
     Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(QString format READ format WRITE setFormat);
+    Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString provider READ provider WRITE setProvider);
@@ -185,6 +211,9 @@ private slots:
 
     /** Handles change in format combo-box. */
     void sltHandleFormatComboChange();
+
+    /** Handles change in MAC address policy combo-box. */
+    void sltHandleMACAddressPolicyComboChange();
 
     /** Handles change in provider combo-box. */
     void sltHandleProviderComboChange();

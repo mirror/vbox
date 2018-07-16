@@ -52,6 +52,8 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
     , m_pFileSelector(0)
     , m_pFormatComboBoxLabel(0)
     , m_pFormatComboBox(0)
+    , m_pMACComboBoxLabel(0)
+    , m_pMACComboBox(0)
     , m_pAdditionalLabel(0)
     , m_pManifestCheckbox(0)
     , m_pIncludeISOsCheckbox(0)
@@ -81,6 +83,21 @@ void UIWizardExportAppPage3::populateFormats()
 
     /* Set default: */
     setFormat("ovf-1.0");
+}
+
+void UIWizardExportAppPage3::populateMACAddressPolicies()
+{
+    AssertReturnVoid(m_pMACComboBox->count() == 0);
+
+    /* Apply hardcoded policies list: */
+    for (int i = 0; i < (int)MACAddressPolicy_MAX; ++i)
+    {
+        m_pMACComboBox->addItem(QString::number(i));
+        m_pMACComboBox->setItemData(i, i);
+    }
+
+    /* Set default: */
+    setMACAddressPolicy(MACAddressPolicy_StripAllNonNATMACs);
 }
 
 void UIWizardExportAppPage3::populateProviders()
@@ -258,6 +275,14 @@ void UIWizardExportAppPage3::updateFormatComboToolTip()
     m_pFormatComboBox->setToolTip(strCurrentToolTip);
 }
 
+void UIWizardExportAppPage3::updateMACAddressPolicyComboToolTip()
+{
+    const int iCurrentIndex = m_pMACComboBox->currentIndex();
+    const QString strCurrentToolTip = m_pMACComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    m_pMACComboBox->setToolTip(strCurrentToolTip);
+}
+
 void UIWizardExportAppPage3::updateProviderComboToolTip()
 {
     const int iCurrentIndex = m_pProviderComboBox->currentIndex();
@@ -304,6 +329,19 @@ void UIWizardExportAppPage3::setFormat(const QString &strFormat)
     const int iIndex = m_pFormatComboBox->findData(strFormat);
     AssertMsg(iIndex != -1, ("Field not found!"));
     m_pFormatComboBox->setCurrentIndex(iIndex);
+}
+
+MACAddressPolicy UIWizardExportAppPage3::macAddressPolicy() const
+{
+    const int iIndex = m_pMACComboBox->currentIndex();
+    return (MACAddressPolicy)m_pMACComboBox->itemData(iIndex).toInt();
+}
+
+void UIWizardExportAppPage3::setMACAddressPolicy(MACAddressPolicy enmMACAddressPolicy)
+{
+    const int iIndex = m_pMACComboBox->findData((int)enmMACAddressPolicy);
+    AssertMsg(iIndex != -1, ("Field not found!"));
+    m_pMACComboBox->setCurrentIndex(iIndex);
 }
 
 bool UIWizardExportAppPage3::isManifestSelected() const
@@ -428,6 +466,24 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         pSettingsLayout1->addWidget(m_pFormatComboBoxLabel, 1, 0);
                     }
 
+                    /* Create MAC policy combo-box: */
+                    m_pMACComboBox = new QComboBox;
+                    if (m_pMACComboBox)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1);
+                    }
+                    /* Create format combo-box label: */
+                    m_pMACComboBoxLabel = new QLabel;
+                    if (m_pMACComboBoxLabel)
+                    {
+                        m_pMACComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
+
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 2, 0);
+                    }
+
                     /* Create advanced label: */
                     m_pAdditionalLabel = new QLabel;
                     if (m_pAdditionalLabel)
@@ -435,21 +491,21 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pAdditionalLabel, 2, 0);
+                        pSettingsLayout1->addWidget(m_pAdditionalLabel, 3, 0);
                     }
                     /* Create manifest check-box: */
                     m_pManifestCheckbox = new QCheckBox;
                     if (m_pManifestCheckbox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
+                        pSettingsLayout1->addWidget(m_pManifestCheckbox, 3, 1);
                     }
                     /* Create include ISOs check-box: */
                     m_pIncludeISOsCheckbox = new QCheckBox;
                     if (m_pIncludeISOsCheckbox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
+                        pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 4, 1);
                     }
 
                     /* Create placeholder: */
@@ -457,7 +513,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (pPlaceholder)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 2);
+                        pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 2);
                     }
                 }
 
@@ -544,6 +600,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
 
     /* Populate formats: */
     populateFormats();
+    /* Populate MAC address policies: */
+    populateMACAddressPolicies();
     /* Populate providers: */
     populateProviders();
     /* Populate profiles: */
@@ -555,6 +613,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
+    connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageBasic3::sltHandleMACAddressPolicyComboChange);
     connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic3::sltHandleProviderComboChange);
     connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -563,6 +623,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     /* Register fields: */
     registerField("path", this, "path");
     registerField("format", this, "format");
+    registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
 }
@@ -612,6 +673,24 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
 
+    /* Translate MAC address policy combo-box: */
+    m_pMACComboBoxLabel->setText(UIWizardExportApp::tr("MAC Address &Policy:"));
+    m_pMACComboBox->setItemText(MACAddressPolicy_KeepAllMACs,
+                                UIWizardExportApp::tr("Include all network adapter MAC addresses"));
+    m_pMACComboBox->setItemText(MACAddressPolicy_StripAllNonNATMACs,
+                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses"));
+    m_pMACComboBox->setItemText(MACAddressPolicy_StripAllMACs,
+                                UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
+    m_pMACComboBox->setItemData(MACAddressPolicy_KeepAllMACs,
+                                UIWizardExportApp::tr("Include all network adapter MAC addresses to exported "
+                                                      "appliance archive."), Qt::ToolTipRole);
+    m_pMACComboBox->setItemData(MACAddressPolicy_StripAllNonNATMACs,
+                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses to "
+                                                      "exported appliance archive."), Qt::ToolTipRole);
+    m_pMACComboBox->setItemData(MACAddressPolicy_StripAllMACs,
+                                UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported "
+                                                      "appliance archive."), Qt::ToolTipRole);
+
     /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
@@ -645,6 +724,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
 
     /* Update tool-tips: */
     updateFormatComboToolTip();
+    updateMACAddressPolicyComboToolTip();
     updateProviderComboToolTip();
 }
 
@@ -740,6 +820,12 @@ void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
+}
+
+void UIWizardExportAppPageBasic3::sltHandleMACAddressPolicyComboChange()
+{
+    /* Update tool-tip: */
+    updateMACAddressPolicyComboToolTip();
 }
 
 void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
