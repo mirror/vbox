@@ -61,6 +61,7 @@ static FNDBGCCMD dbgcCmdLogFlags;
 static FNDBGCCMD dbgcCmdLogFlush;
 static FNDBGCCMD dbgcCmdFormat;
 static FNDBGCCMD dbgcCmdLoadImage;
+static FNDBGCCMD dbgcCmdLoadInMem;
 static FNDBGCCMD dbgcCmdLoadMap;
 static FNDBGCCMD dbgcCmdLoadSeg;
 static FNDBGCCMD dbgcCmdUnload;
@@ -164,6 +165,15 @@ static const DBGCVARDESC    g_aArgLoadMap[] =
 };
 
 
+/** loadinmem arguments. */
+static const DBGCVARDESC    g_aArgLoadInMem[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "The module address." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "name",         "The module name. (optional)" },
+};
+
+
 /** loadseg arguments. */
 static const DBGCVARDESC    g_aArgLoadSeg[] =
 {
@@ -258,6 +268,7 @@ const DBGCCMD    g_aDbgcCmds[] =
                                                                                                                                                  /*"Optionally giving the module a name other than the file name stem."*/ }, /** @todo implement line breaks */
     { "loadimage32",2,        3,        &g_aArgLoadImage[0], RT_ELEMENTS(g_aArgLoadImage), 0, dbgcCmdLoadImage, "<filename> <address> [name]", "loadimage variant for selecting 32-bit images (mach-o)." },
     { "loadimage64",2,        3,        &g_aArgLoadImage[0], RT_ELEMENTS(g_aArgLoadImage), 0, dbgcCmdLoadImage, "<filename> <address> [name]", "loadimage variant for selecting 64-bit images (mach-o)." },
+    { "loadinmem",  1,        2,        &g_aArgLoadInMem[0], RT_ELEMENTS(g_aArgLoadInMem), 0, dbgcCmdLoadInMem, "<address> [name]",    "Tries to load a image mapped at the given address." },
     { "loadmap",    2,        5,        &g_aArgLoadMap[0],   RT_ELEMENTS(g_aArgLoadMap),   0, dbgcCmdLoadMap,   "<filename> <address> [name] [subtrahend] [seg]",
                                                                                                                                        "Loads the symbols from a map file, usually at a specified address. "
                                                                                                                                        /*"Optionally giving the module a name other than the file name stem "
@@ -1353,6 +1364,54 @@ static DECLCALLBACK(int) dbgcCmdLoadImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3ModuleLoadImage(,,'%s','%s',%Dv,)\n",
                                    pszFilename, pszModName, &paArgs[1]);
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'loadinmem' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdLoadInMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    /*
+     * Validate the parsing and make sense of the input.
+     * This is a mess as usual because we don't trust the parser yet.
+     */
+    AssertReturn(    cArgs >= 1
+                 &&  cArgs <= 2
+                 &&  DBGCVAR_ISPOINTER(paArgs[0].enmType)
+                 &&  (cArgs < 2 || paArgs[1].enmType == DBGCVAR_TYPE_STRING),
+                 VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+
+    RTLDRARCH       enmArch    = RTLDRARCH_WHATEVER;
+    const char     *pszModName = cArgs >= 2 ? paArgs[1].u.pszString : NULL;
+    DBGFADDRESS     ModAddress;
+    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[0], &ModAddress);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "pfnVarToDbgfAddr: %Dv\n", &paArgs[1]);
+
+    /*
+     * Try create a module for it.
+     */
+    uint32_t fFlags = DBGFMODINMEM_F_NO_CONTAINER_FALLBACK | DBGFMODINMEM_F_NO_READER_FALLBACK;
+    RTDBGMOD hDbgMod;
+    RTERRINFOSTATIC ErrInfo;
+    rc = DBGFR3ModInMem(pUVM, &ModAddress, fFlags, pszModName, enmArch, 0 /*cbImage*/, &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_FAILURE(rc))
+    {
+        if (RTErrInfoIsSet(&ErrInfo.Core))
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3ModInMem failed for %Dv: %s",  &ModAddress, ErrInfo.Core.pszMsg);
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3ModInMem failed for %Dv", &ModAddress);
+    }
+
+    /*
+     * Link the module into the appropriate address space.
+     */
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    rc = DBGFR3AsLinkModule(pUVM, pDbgc->hDbgAs, hDbgMod, &ModAddress, NIL_RTDBGSEGIDX, RTDBGASLINK_FLAGS_REPLACE);
+    RTDbgModRelease(hDbgMod);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3AsLinkModule failed for %Dv", &ModAddress);
     return VINF_SUCCESS;
 }
 

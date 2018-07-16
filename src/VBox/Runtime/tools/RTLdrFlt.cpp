@@ -256,7 +256,7 @@ int main(int argc, char **argv)
                 if (enmOpenMethod == kOpenMethod_FromImage)
                     rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, enmArch, hDbgCfg);
                 else
-                    rc = RTDbgModCreateFromPeImage(&hMod, pszModule, NULL, NIL_RTLDRMOD, cbImage, uTimestamp, hDbgCfg);
+                    rc = RTDbgModCreateFromPeImage(&hMod, pszModule, NULL, NULL, cbImage, uTimestamp, hDbgCfg);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgModCreateFromImage(,%s,,) -> %Rrc", pszModule, rc);
 

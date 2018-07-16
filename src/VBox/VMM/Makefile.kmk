@@ -98,6 +98,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/DBGFInfo.cpp \
 	VMMR3/DBGFLog.cpp \
 	VMMR3/DBGFMem.cpp \
+	VMMR3/DBGFR3ModInMem.cpp \
 	VMMR3/DBGFOS.cpp \
 	VMMR3/DBGFR3PlugIn.cpp \
 	VMMR3/DBGFReg.cpp \

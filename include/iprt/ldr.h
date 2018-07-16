@@ -351,6 +351,10 @@ typedef enum RTLDRARCH
     RTLDRARCH_X86_32,
     /** AMD64 (64-bit x86 if you like). */
     RTLDRARCH_AMD64,
+    /** 32-bit ARM. */
+    RTLDRARCH_ARM32,
+    /** 64-bit ARM. */
+    RTLDRARCH_ARM64,
     /** End of the valid values. */
     RTLDRARCH_END,
     /** Make sure the type is a full 32-bit. */
@@ -358,6 +362,22 @@ typedef enum RTLDRARCH
 } RTLDRARCH;
 /** Pointer to a RTLDRARCH. */
 typedef RTLDRARCH *PRTLDRARCH;
+
+/**
+ * Translates a RTLDRARCH value to a string.
+ *
+ * @returns Name corresponding to @a enmArch
+ * @param   enmArch             The value to name.
+ */
+RTDECL(const char *) RTLdrArchName(RTLDRARCH enmArch);
+
+/**
+ * Returns the host architecture.
+ *
+ * @returns Host architecture or RTLDRARCH_WHATEVER if no match.
+ */
+RTDECL(RTLDRARCH) RTLdrGetHostArch(void);
+
 
 /** @name RTLDR_O_XXX - RTLdrOpen flags.
  * @{ */
@@ -497,6 +517,7 @@ typedef FNRTLDRRDRMEMDTOR *PFNRTLDRRDRMEMDTOR;
  * @param   pvUser      The user argument or, if any of the callbacks are NULL,
  *                      a pointer to a memory block.
  * @param   phLdrMod    Where to return the module handle.
+ * @param   pErrInfo    Pointer to an error info buffer, optional.
  *
  * @remarks With the exception of invalid @a pfnDtor and/or @a pvUser
  *          parameters, the pfnDtor methods (or the default one if NULL) will
@@ -505,7 +526,7 @@ typedef FNRTLDRRDRMEMDTOR *PFNRTLDRRDRMEMDTOR;
  */
 RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH enmArch, size_t cbImage,
                               PFNRTLDRRDRMEMREAD pfnRead, PFNRTLDRRDRMEMDTOR pfnDtor, void *pvUser,
-                              PRTLDRMOD phLdrMod);
+                              PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo);
 
 /**
  * Closes a loader module handle.

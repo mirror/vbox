@@ -156,3 +156,21 @@ RTDECL(int) RTLdrClose(RTLDRMOD hLdrMod)
 }
 RT_EXPORT_SYMBOL(RTLdrClose);
 
+
+RTDECL(RTLDRARCH) RTLdrGetHostArch(void)
+{
+#if   defined(RT_ARCH_AMD64)
+    RTLDRARCH enmArch = RTLDRARCH_AMD64;
+#elif defined(RT_ARCH_X86)
+    RTLDRARCH enmArch = RTLDRARCH_X86_32;
+#elif defined(RT_ARCH_ARM) || defined(RT_ARCH_ARM32)
+    RTLDRARCH enmArch = RTLDRARCH_ARM32;
+#elif defined(RT_ARCH_ARM64)
+    RTLDRARCH enmArch = RTLDRARCH_ARM64;
+#else
+    RTLDRARCH enmArch = RTLDRARCH_WHATEVER;
+#endif
+    return enmArch;
+}
+RT_EXPORT_SYMBOL(RTLdrGetHostArch);
+

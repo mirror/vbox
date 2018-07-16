@@ -61,13 +61,7 @@ RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH
      * Resolve RTLDRARCH_HOST.
      */
     if (enmArch == RTLDRARCH_HOST)
-#if   defined(RT_ARCH_AMD64)
-        enmArch = RTLDRARCH_AMD64;
-#elif defined(RT_ARCH_X86)
-        enmArch = RTLDRARCH_X86_32;
-#else
-        enmArch = RTLDRARCH_WHATEVER;
-#endif
+        enmArch = RTLdrGetHostArch();
 
     /*
      * Read and verify the file signature.
@@ -743,7 +737,7 @@ DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, uint32_t iDbgInfo, RT
  * @returns Name corresponding to @a enmArch
  * @param   enmArch             The value to name.
  */
-DECLHIDDEN(const char *) rtLdrArchName(RTLDRARCH enmArch)
+RTDECL(const char *) RTLdrArchName(RTLDRARCH enmArch)
 {
     switch (enmArch)
     {
@@ -752,6 +746,8 @@ DECLHIDDEN(const char *) rtLdrArchName(RTLDRARCH enmArch)
         case RTLDRARCH_HOST:        return "HOST";
         case RTLDRARCH_AMD64:       return "AMD64";
         case RTLDRARCH_X86_32:      return "X86_32";
+        case RTLDRARCH_ARM32:       return "ARM32";
+        case RTLDRARCH_ARM64:       return "ARM64";
 
         case RTLDRARCH_END:
         case RTLDRARCH_32BIT_HACK:
@@ -759,3 +755,5 @@ DECLHIDDEN(const char *) rtLdrArchName(RTLDRARCH enmArch)
     }
     return "UNKNOWN";
 }
+RT_EXPORT_SYMBOL(RTLdrArchName);
+

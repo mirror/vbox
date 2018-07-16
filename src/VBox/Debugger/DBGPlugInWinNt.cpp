@@ -594,7 +594,7 @@ static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const ch
     RTLDRMOD hLdrMod;
     int rc = RTLdrOpenInMemory(pszName, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER, pRdr->cbImage,
                                dbgDiggerWinNtRdr_Read, dbgDiggerWinNtRdr_Dtor, pRdr,
-                               &hLdrMod);
+                               &hLdrMod, NULL);
     if (RT_SUCCESS(rc))
         *phLdrMod = hLdrMod;
     else
@@ -722,7 +722,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         hLdrMod = NIL_RTLDRMOD;
 
     RTDBGMOD hMod;
-    rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, hLdrMod,
+    rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, &hLdrMod,
                                    cbImageFromHdr, TimeDateStamp, DBGFR3AsGetConfig(pUVM));
     if (RT_FAILURE(rc))
     {
@@ -751,6 +751,8 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         rc = VERR_INTERNAL_ERROR;
     RTDbgModRelease(hMod);
     RTDbgAsRelease(hAs);
+    if (hLdrMod != NIL_RTLDRMOD)
+        RTLdrClose(hLdrMod);
 }
 
 

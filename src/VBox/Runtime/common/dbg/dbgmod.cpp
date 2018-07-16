@@ -1073,8 +1073,8 @@ static DECLCALLBACK(int) rtDbgModFromPeImageDeferredCallback(PRTDBGMODINT pDbgMo
 }
 
 
-RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTLDRMOD hLdrMod,
-                                      uint32_t cbImage, uint32_t uTimestamp, RTDBGCFG hDbgCfg)
+RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
+                                      PRTLDRMOD phLdrMod, uint32_t cbImage, uint32_t uTimestamp, RTDBGCFG hDbgCfg)
 {
     /*
      * Input validation and lazy initialization.
@@ -1086,6 +1086,8 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
     if (!pszName)
         pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(phLdrMod, VERR_INVALID_POINTER);
+    RTLDRMOD hLdrMod = phLdrMod ? *phLdrMod : NIL_RTLDRMOD;
     AssertReturn(hLdrMod == NIL_RTLDRMOD || RTLdrSize(hLdrMod) != ~(size_t)0, VERR_INVALID_HANDLE);
 
     int rc = rtDbgModLazyInit();
@@ -1133,6 +1135,10 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
                 }
                 if (RT_SUCCESS(rc))
                 {
+                    /* We now own the loader handle, so clear the caller variable. */
+                    if (phLdrMod)
+                        *phLdrMod = NIL_RTLDRMOD;
+
                     /*
                      * Do it now or procrastinate?
                      */

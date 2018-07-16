@@ -496,7 +496,6 @@ int rtldrMachoOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTF
 
 
 DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, uint32_t iDbgInfo, RTFOFF off, size_t cb);
-DECLHIDDEN(const char *) rtLdrArchName(RTLDRARCH enmArch);
 
 RT_C_DECLS_END
 

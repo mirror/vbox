@@ -1180,6 +1180,20 @@ VMMR3DECL(int)          DBGFR3AsLineByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDR
 VMMR3DECL(PRTDBGLINE)   DBGFR3AsLineByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
                                             PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
 
+/** @name DBGFMOD_PE_F_XXX - flags for
+ * @{  */
+/** NT 3.1 images were a little different, so make allowances for that. */
+#define DBGFMODINMEM_F_PE_NT31                  RT_BIT_32(0)
+/** No container fallback. */
+#define DBGFMODINMEM_F_NO_CONTAINER_FALLBACK    RT_BIT_32(1)
+/** No in-memory reader fallback. */
+#define DBGFMODINMEM_F_NO_READER_FALLBACK       RT_BIT_32(2)
+/** Valid flags. */
+#define DBGFMODINMEM_F_VALID_MASK               UINT32_C(0x00000007)
+/** @} */
+VMMR3DECL(int)          DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName,
+                                       RTLDRARCH enmArch, uint32_t cbImage, PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo);
+
 #endif /* IN_RING3 */
 
 #ifdef IN_RING3 /* The stack API only works in ring-3. */
