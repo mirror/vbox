@@ -1107,6 +1107,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         Assert(pVCpuCur->hm.s.fGIMTrapXcptUD == pVCpu->hm.s.fGIMTrapXcptUD);
     }
 
+    LogRel(("HM: fUseVGif=%RTbool fUseVirtVmsaveVmload=%RTbool fUsePauseFilter=%RTbool fUseLbrVirt=%RTbool\n", fUseVGif,
+            fUseVirtVmsaveVmload, fUsePauseFilter, fUseLbrVirt));
     return VINF_SUCCESS;
 }
 
