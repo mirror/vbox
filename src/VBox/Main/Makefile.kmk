@@ -454,6 +454,9 @@ VBoxSVC_SOURCES = \
 	src-server/BIOSSettingsImpl.cpp \
 	src-server/ClientWatcher.cpp \
 	src-server/ClientToken.cpp \
+	src-server/CloudClientImpl.cpp \
+	src-server/CloudUserProfileListImpl.cpp \
+	src-server/CloudUserProfileManagerImpl.cpp \
 	src-server/DHCPServerImpl.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \

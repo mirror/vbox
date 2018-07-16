@@ -1955,7 +1955,7 @@
     name="IVirtualBox" extends="$unknown"
     uuid="9570b9d5-f1a1-448a-10c5-e12f5285adad"
     wsmap="managed"
-    reservedMethods="8" reservedAttributes="12"
+    reservedMethods="7" reservedAttributes="12"
     >
     <desc>
       The IVirtualBox interface represents the main interface exposed by the
@@ -2450,6 +2450,15 @@
       </param>
     </method>
 
+    <method name="createCloudUserProfileManager">
+      <desc>
+        Creates a new cloud user profile manager object
+      </desc>
+      <param name="manager" type="ICloudUserProfileManager" dir="return">
+        <desc>New cloud user profile manager</desc>
+      </param>
+    </method>
+
     <method name="createMedium">
       <desc>
         Creates a new base medium object that will use the given storage
@@ -2937,6 +2946,7 @@
     <const name="Cloud" value="2" />
     <const name="S3" value="3" />
     <const name="WebDav" value="4" />
+    <const name="OCI" value="5" />
   </enum>
 
   <interface
@@ -24829,6 +24839,361 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
+
+  <!--
+  // ICloudClient
+  //////////////////////////////////////////////////////////////////////////
+  -->
+  <enum
+    name="CloudProfilePropertyType"
+    uuid="4c549e52-3ca6-4c6a-8c49-288e8c0890f6"
+    >
+    <const name="unknown" value="0"/>
+    <const name="stringT" value="1"/>
+    <const name="array" value="2"/>
+    <const name="flag" value="3"/>
+  </enum>
+
+  <enum
+    name="CloudProviderId"
+    uuid="c3856743-aa5d-404d-847d-14b6cf523677"
+    >
+    <const name="Unknown" value="0"/>
+    <const name="OCI" value="1"/>
+    <const name="GCP" value="2"/>
+    <const name="AWS" value="3"/>
+    <const name="MicrosoftAzure" value="4"/>
+    <const name="IBMCloud" value="5"/>
+    <const name="DigitalOcean" value="6"/>
+  </enum>
+
+  <enum
+    name="CloudOperation"
+    uuid="1c5cfa19-7754-4071-bf3e-6d21ad432655"
+    >
+    <const name="Unknown" value="0"/>
+
+    <const name="createInstance" value="0x1"/>
+    <const name="launchInstance" value="0x2"/>
+    <const name="pauseInstance" value="0x3"/>
+    <const name="stopInstance" value="0x4"/>
+    <const name="deleteInstance" value="0x5"/>
+    <const name="getInstanceProperties" value="0x6"/>
+    <const name="listOfInstances" value="0x7"/>
+
+    <const name="uploadFile" value="0x10"/>
+    <const name="downloadObject" value="0x11"/>
+    <const name="deleteObject" value="0x12"/>
+    <const name="getObjectProperties" value="0x13"/>
+    <const name="listObjects" value="0x14"/>
+
+    <const name="exportVM" value="0xf0"/>
+  </enum>
+
+  <enum
+    name="CloudOperationResult"
+    uuid="e33af696-255a-4f5a-8dba-d65d6ee2fe9a"
+    >
+    <const name="unknown" value="0"/>
+    <const name="success" value="1"/>
+    <const name="failed" value="2"/>
+    <const name="inProgress" value="3"/>
+  </enum>
+
+  <interface
+    name="ICloudClient" extends="$unknown"
+    uuid="f2b37b0c-e555-4d11-b90b-d517a194e469"
+    wsmap="managed" reservedMethods="4" reservedAttributes="4"
+    >
+
+    <method name="createOperation">
+      <desc>
+        Creates a cloud operation object for the passed profile
+	if profile name is NULL or empty string creates operation for the active profile.
+	if profile name is NULL or empty string and there is not the active profile 
+	returns "VERR_INVALID_PARAMETER"
+      </desc>
+      <param name="profileName" type="wstring" dir="in">
+        <desc>
+          The profile's name
+        </desc>
+      </param>
+      <param name="cloudOperation" type="CloudOperation" dir="in">
+        <desc>
+          The type of the supported cloud commands.
+        </desc>
+      </param>
+      <param name="opId" type="uuid" mod="string" dir="return">
+        <desc>
+	  UUID of the operation.
+	  It's used later when user chooses and runs this cloud operation
+	</desc>
+      </param>
+    </method>
+
+    <method name="runOperation">
+      <desc>
+        Runs a cloud operation by ID
+      </desc>
+      <param name="opId" type="uuid" mod="string" dir="in">
+        <desc>
+	  UUID of the operation.
+	</desc>
+      </param>
+      <param name="timeout" type="long long" dir="in">
+        <desc>
+          Timeout in seconds.
+        </desc>
+      </param>
+    </method>
+
+    <method name="checkOperationResult"  const="yes">
+      <desc>
+        Check a cloud operation result by ID
+      </desc>
+      <param name="opId" type="uuid" mod="string" dir="in">
+        <desc>
+	  UUID of the operation.
+	</desc>
+      </param>
+      <param name="startOpTime" type="long long" dir="out">
+        <desc>
+          Start time of operation.
+        </desc>
+      </param>
+      <param name="lastTime" type="long long" dir="out">
+        <desc>
+          Time of the last result.
+        </desc>
+      </param>
+      <param name="result" type="CloudOperationResult" dir="return">
+        <desc>
+          The last result of the cloud command.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getOperationParameterNames" const="yes">
+      <desc>
+        Returns the parameters names for this operation.
+      </desc>
+      <param name="cloudOperation" type="CloudOperation" dir="in">
+        <desc>
+          The type of the supported cloud commands.
+        </desc>
+      </param>
+      <param name="parameterNames" type="wstring" safearray="yes" dir="return">
+        <desc>Names of the parameters.</desc>
+      </param>
+    </method>
+
+    <method name="getOperationParameterProperties" const="yes">
+      <desc>
+        Returns the value/s for the passed parameter.
+      </desc>
+      <param name="opParameterName" type="wstring" dir="in">
+        <desc>Parameter name.</desc>
+      </param>
+      <param name="opParameterType" type="wstring" dir="out">
+        <desc>Parameter type.</desc>
+      </param>
+      <param name="opParameterDesc" type="wstring" dir="out">
+        <desc>Parameter description.</desc>
+      </param>
+      <param name="opParameterValues" type="wstring" safearray="yes" dir="return">
+        <desc>Possible values of the parameter.</desc>
+      </param>
+    </method>
+
+    <method name="getOperationParameters" const="yes">
+      <desc>
+        Returns the parameters with their values.
+      </desc>
+      <param name="cloudOperation" type="CloudOperation" dir="in">
+        <desc>
+          The type of the supported cloud commands.
+        </desc>
+      </param>
+      <param name="jsonString" type="wstring" dir="return">
+        <desc>the parameters with values in json format.</desc>
+      </param>
+    </method>
+
+    <method name="setParametersForOperation">
+      <desc>
+        Sets the parameters values for the particular operation by ID.
+      </desc>
+      <param name="opId" type="uuid" mod="string" dir="in">
+        <desc>
+	  UUID of the operation.
+	</desc>
+      </param>
+      <param name="values" type="wstring" safearray="yes" dir="in">
+        <desc>Values of the parameters.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+
+
+  <!--
+  // ICloudUserProfileList
+  //////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="ICloudUserProfileList" extends="$unknown"
+    uuid="cfadfecb-ef89-41a9-abbd-9772d41baddb"
+    wsmap="managed" reservedMethods="4" reservedAttributes="4"
+    >
+    <desc>
+        Cloud user profiles description
+    </desc>
+
+    <method name="getProvider">
+      <desc>
+        Returns provider Id tied with these profiles
+      </desc>
+      <param name="provider" type="CloudProviderId" dir="return">
+      </param>
+    </method>
+
+    <method name="createProfile">
+      <desc>
+        Creates an empty profile
+      </desc>
+      <param name="profileName" type="wstring" dir="in">
+        <desc>
+          The profile's name
+        </desc>
+      </param>
+      <param name="names" type="wstring" safearray="yes" dir="in">
+        <desc>Names of properties.</desc>
+      </param>
+      <param name="values" type="wstring" safearray="yes" dir="in">
+        <desc>Values of set properties.</desc>
+      </param>
+    </method>
+
+    <method name="updateProfile">
+      <desc>
+        Updates active profile in memory
+      </desc>
+      <param name="profileName" type="wstring" dir="in">
+        <desc>
+          The profile's name
+        </desc>
+      </param>
+      <param name="names" type="wstring" safearray="yes" dir="in">
+        <desc>Names of properties.</desc>
+      </param>
+      <param name="values" type="wstring" safearray="yes" dir="in">
+        <desc>Values of set properties.</desc>
+      </param>
+    </method>
+
+    <method name="getStoredProfilesNames" const="yes">
+      <desc>
+        Returns the names\IDs for the existing profiles in one call.
+      </desc>
+      <param name="profilesNames" type="wstring" safearray="yes" dir="return">
+        <desc>Names of the existing profiles.</desc>
+      </param>
+    </method>
+
+    <method name="getProfileProperties" const="yes">
+      <desc>
+        Returns values for a profile's properties in one call.
+
+        The list of all properties supported by the given profile.
+
+        The method returns two arrays, the array of property names corresponding
+        to the @a names argument and the current values of these properties.
+        Both arrays have the same number of elements with each element at the
+        given index in the first array corresponds to an element at the same
+        index in the second array.
+
+        For properties that do not have assigned values, an empty string is
+        returned at the appropriate index in the @a returnValues array.
+
+      </desc>
+      <param name="profileName" type="wstring" dir="in">
+        <desc>
+          Name of profile.
+        </desc>
+      </param>
+      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+        <desc>Names of returned properties.</desc>
+      </param>
+      <param name="returnValues" type="wstring" safearray="yes" dir="return">
+        <desc>Values of returned properties.</desc>
+      </param>
+    </method>
+
+    <method name="getPropertyDescription" const="yes">
+      <param name="name" type="wstring" dir="in">
+        <desc>Property name</desc>
+      </param>
+      <param name="description" type="wstring" dir="return">
+        <desc>Property description</desc>
+      </param>
+    </method>
+
+    <method name="createCloudClient">
+      <desc>
+        Creates a cloud client for this cloud provider
+      </desc>
+      <param name="profileName" type="wstring" dir="in">
+      </param>
+      <param name="cloudClient" type="ICloudClient" dir="return">
+        <desc>
+          returns interface to the cloud client object
+        </desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <!--
+  // ICloudUserProfileManager
+  //////////////////////////////////////////////////////////////////////////
+  -->
+  <interface
+    name="ICloudUserProfileManager" extends="$unknown"
+    uuid="64e276a7-cfd1-48ed-aad3-19368197f3b2"
+    wsmap="managed" reservedMethods="4" reservedAttributes="4"
+    >
+    <desc>
+        Cloud User Profile Manager description
+    </desc>
+
+    <attribute name="supportedProviders" type="CloudProviderId" readonly="yes" safearray="yes">
+      <desc>Returns a predefined list of all supported cloud providers.</desc>
+    </attribute>
+
+    <method name="getAllProfiles" const="yes">
+      <desc>
+        Returns the list of the ICloudUserProfileList in one call.
+      </desc>
+      <param name="profileList" type="ICloudUserProfileList" safearray="yes" dir="return">
+        <desc>Returns the list of ICloudUserProfileList.</desc>
+      </param>
+    </method>
+
+    <method name="getProfilesByProvider" const="yes">
+      <desc>
+        Returns the ICloudUserProfileList for the particular provider.
+      </desc>
+      <param name="providerId" type="CloudProviderId" dir="in">
+      </param>
+      <param name="profile" type="ICloudUserProfileList" dir="return">
+        <desc>Returns the ICloudUserProfileList.</desc>
+      </param>
+    </method>
+
+  </interface>
+
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
            namespace="virtualbox.org">
@@ -24992,7 +25357,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           <interface name="IVirtualBoxClientList" default="yes" />
       </class>
   </module>
-
 </application>
 
 </library>

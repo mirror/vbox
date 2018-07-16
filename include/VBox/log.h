@@ -359,6 +359,12 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_CERTIFICATE,
     /** Main group, IClipboardModeChangedEvent. */
     LOG_GROUP_MAIN_CLIPBOARDMODECHANGEDEVENT,
+    /** Main group, ICloudClient. */
+    LOG_GROUP_MAIN_CLOUDCLIENT,
+    /** Main group, ICloudUserProfileList. */
+    LOG_GROUP_MAIN_CLOUDUSERPROFILELIST,
+    /** Main group, ICloudUserProfileManager. */
+    LOG_GROUP_MAIN_CLOUDUSERPROFILEMANAGER,
     /** Main group, IConsole. */
     LOG_GROUP_MAIN_CONSOLE,
     /** Main group, ICPUChangedEvent. */
@@ -990,6 +996,9 @@ typedef enum LOGGROUP
     "MAIN_CANSHOWWINDOWEVENT", \
     "MAIN_CERTIFICATE", \
     "MAIN_CLIPBOARDMODECHANGEDEVENT", \
+    "MAIN_CLOUDCLIENT", \
+    "MAIN_CLOUDUSERPROFILELIST", \
+    "MAIN_CLOUDUSERPROFILEMANAGER", \
     "MAIN_CONSOLE", \
     "MAIN_CPUCHANGEDEVENT", \
     "MAIN_CPUEXECUTIONCAPCHANGEDEVENT", \
