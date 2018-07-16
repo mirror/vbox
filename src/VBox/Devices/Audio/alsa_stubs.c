@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,6 +50,12 @@ PROXY_STUB(snd_pcm_hw_params_any, int,
            (pcm, params))
 PROXY_STUB(snd_pcm_close, int, (snd_pcm_t *pcm), (pcm))
 PROXY_STUB(snd_pcm_avail_update, snd_pcm_sframes_t, (snd_pcm_t *pcm),
+           (pcm))
+PROXY_STUB(snd_pcm_nonblock, int, (snd_pcm_t *pcm, int *onoff),
+           (pcm, onoff))
+PROXY_STUB(snd_pcm_delay, int, (snd_pcm_t *pcm, snd_pcm_sframes_t *frames),
+           (pcm, frames))
+PROXY_STUB(snd_pcm_drain, int, (snd_pcm_t *pcm),
            (pcm))
 PROXY_STUB(snd_pcm_hw_params_set_channels_near, int,
            (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int *val),
@@ -137,7 +143,10 @@ static SHARED_FUNC SharedFuncs[] =
 
     ELEMENT(snd_pcm_hw_params_any),
     ELEMENT(snd_pcm_close),
+    ELEMENT(snd_pcm_delay),
+    ELEMENT(snd_pcm_drain),
     ELEMENT(snd_pcm_avail_update),
+    ELEMENT(snd_pcm_nonblock),
     ELEMENT(snd_pcm_hw_params_set_channels_near),
     ELEMENT(snd_pcm_hw_params_set_period_time_near),
     ELEMENT(snd_pcm_prepare),

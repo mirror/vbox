@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,10 @@
 
 #define snd_pcm_hw_params_any                   ALSA_MANGLER(snd_pcm_hw_params_any)
 #define snd_pcm_close                           ALSA_MANGLER(snd_pcm_close)
+#define snd_pcm_delay                           ALSA_MANGLER(snd_pcm_delay)
+#define snd_pcm_drain                           ALSA_MANGLER(snd_pcm_drain)
 #define snd_pcm_avail_update                    ALSA_MANGLER(snd_pcm_avail_update)
+#define snd_pcm_nonblock                        ALSA_MANGLER(snd_pcm_nonblock)
 #define snd_pcm_hw_params_set_channels_near     ALSA_MANGLER(snd_pcm_hw_params_set_channels_near)
 #define snd_pcm_hw_params_set_period_time_near  ALSA_MANGLER(snd_pcm_hw_params_set_period_time_near)
 #define snd_pcm_prepare                         ALSA_MANGLER(snd_pcm_prepare)
