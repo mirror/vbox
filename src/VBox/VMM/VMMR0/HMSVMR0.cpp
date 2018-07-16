@@ -1107,8 +1107,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         Assert(pVCpuCur->hm.s.fGIMTrapXcptUD == pVCpu->hm.s.fGIMTrapXcptUD);
     }
 
-    LogRel(("HM: fUseVGif=%RTbool fUseVirtVmsaveVmload=%RTbool fUsePauseFilter=%RTbool fUseLbrVirt=%RTbool\n", fUseVGif,
-            fUseVirtVmsaveVmload, fUsePauseFilter, fUseLbrVirt));
+    LogRel(("HM: fUsePauseFilter=%RTbool fUseLbrVirt=%RTbool\n", fUsePauseFilter, fUseLbrVirt));
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+    LogRel(("HM: fUseVGif=%RTbool fUseVirtVmsaveVmload=%RTbool\n", fUseVGif, fUseVirtVmsaveVmload));
+#endif
     return VINF_SUCCESS;
 }
 
