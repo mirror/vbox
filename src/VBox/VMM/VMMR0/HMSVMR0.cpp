@@ -840,7 +840,6 @@ DECLINLINE(bool) hmR0SvmSupportsDecodeAssists(PVMCPU pVCpu)
  */
 DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPU pVCpu)
 {
-#if 0
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
@@ -850,11 +849,6 @@ DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPU pVCpu)
     }
 #endif
     return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
-#endif
-
-    /** @todo Temporarily disabled NRIP_SAVE for testing. re-enable once its working. */
-    NOREF(pVCpu);
-    return false;
 }
 
 
@@ -7899,6 +7893,7 @@ HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     uint64_t const fImport = CPUMCTX_EXTRN_HWVIRT;
     if (fSupportsNextRipSave)
     {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | fImport);
         uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pVCpu->cpum.GstCtx.rip;
         rcStrict = IEMExecDecodedStgi(pVCpu, cbInstr);
     }
