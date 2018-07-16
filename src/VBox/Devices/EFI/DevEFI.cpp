@@ -1805,12 +1805,6 @@ static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmC
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
 
     /*
-     * Plant some structures in RAM.
-     */
-    if (pThis->u8IOAPIC)
-        FwCommonPlantMpsFloatPtr(pDevIns);
-
-    /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.
      */
     uint32_t    cPages = RT_ALIGN_64(pThis->cbEfiRom, PAGE_SIZE) >> PAGE_SHIFT;
@@ -2431,9 +2425,12 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                   pThis->cbDmiTables, pThis->cNumDmiTables);
 
     if (pThis->u8IOAPIC)
+    {
         FwCommonPlantMpsTable(pDevIns,
-                              pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE + VBOX_DMI_HDR_SIZE,
+                              pThis->au8DMIPage /* aka VBOX_DMI_TABLE_BASE */ + VBOX_DMI_TABLE_SIZE + VBOX_DMI_HDR_SIZE,
                               _4K - VBOX_DMI_TABLE_SIZE - VBOX_DMI_HDR_SIZE, pThis->cCpus);
+        FwCommonPlantMpsFloatPtr(pDevIns, VBOX_DMI_TABLE_BASE + VBOX_DMI_TABLE_SIZE + VBOX_DMI_HDR_SIZE);
+    }
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
