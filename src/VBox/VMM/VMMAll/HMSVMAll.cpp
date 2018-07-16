@@ -163,13 +163,12 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
      *
      * However, with nested-guests, the state -can- change on trips to ring-3 for we might
      * try to inject a nested-guest physical interrupt and cause a SVM_EXIT_INTR #VMEXIT for
-     * the nested-guest from ring-3. Hence we signal the required CPU state change here.
+     * the nested-guest from ring-3. Import the complete state here as we will be swapping
+     * to the guest VMCB after the #VMEXIT.
      */
-    /** @todo Figure out why using HM_CHANGED_SVM_VMEXIT_MASK instead of
-     *        HM_CHANGED_ALL_GUEST breaks nested guests (XP Pro, DSL etc.), see also
-     *        hmR0SvmHandleExitNested(). */
-    AssertMsg(!(pVCpu->cpum.GstCtx.fExtrn & IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK),
-              ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK));
+    CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_ALL);
+    AssertMsg(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL),
+              ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, CPUMCTX_EXTRN_ALL));
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 }
 #endif

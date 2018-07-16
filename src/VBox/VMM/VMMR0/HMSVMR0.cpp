@@ -157,7 +157,7 @@
         else if (     rc == VINF_EM_RESET \
                  &&   CPUMIsGuestSvmCtrlInterceptSet((a_pVCpu), &(a_pVCpu)->cpum.GstCtx, SVM_CTRL_INTERCEPT_SHUTDOWN)) \
         { \
-            HMSVM_CPUMCTX_IMPORT_STATE((a_pVCpu), IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK); \
+            HMSVM_CPUMCTX_IMPORT_STATE((a_pVCpu), HMSVM_CPUMCTX_EXTRN_ALL); \
             return VBOXSTRICTRC_TODO(IEMExecSvmVmexit((a_pVCpu), SVM_EXIT_SHUTDOWN, 0, 0)); \
         } \
         else \
@@ -3264,8 +3264,9 @@ static int hmR0SvmExitToRing3(PVMCPU pVCpu, int rcExit)
     /* Update the exit-to-ring 3 reason. */
     pVCpu->hm.s.rcLastExitToR3 = rcExit;
 
-    /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
-    if (rcExit != VINF_EM_RAW_INTERRUPT)
+    /* On our way back from ring-3, reload the guest-CPU state if it may change while in ring-3. */
+    if (   rcExit != VINF_EM_RAW_INTERRUPT
+        || CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
     {
         Assert(!(pVCpu->cpum.GstCtx.fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
@@ -3754,7 +3755,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
             if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_NMI))
             {
                 Log4(("Intercepting NMI -> #VMEXIT\n"));
-                HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
+                HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
                 return IEMExecSvmVmexit(pVCpu, SVM_EXIT_NMI, 0, 0);
             }
 
@@ -3795,7 +3796,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
             if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
             {
                 Log4(("Intercepting INTR -> #VMEXIT\n"));
-                HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
+                HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
                 return IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
             }
 
@@ -5172,9 +5173,11 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
-    /** @todo Figure out why using IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK instead of
-     *        HMSVM_CPUMCTX_EXTRN_ALL breaks nested guests (XP Pro, DSL etc.), see
-     *        also HMSvmNstGstVmExitNotify(). */
+    /*
+     * We import the complete state here because we use separate VMCBs for the guest and the
+     * nested-guest, and the guest's VMCB is used after the #VMEXIT. We can only save/restore
+     * the #VMEXIT specific state if we used the same VMCB for both guest and nested-guest.
+     */
 #define NST_GST_VMEXIT_CALL_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
     do { \
         HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL); \
@@ -5398,8 +5401,11 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
              * Although we don't intercept SMIs, the nested-guest might. Therefore, we might
              * get an SMI #VMEXIT here so simply ignore rather than causing a corresponding
              * nested-guest #VMEXIT.
+             *
+             * We shall import the complete state here as we may cause #VMEXITs from ring-3
+             * while trying to inject interrupts, see comment at the top of this function.
              */
-            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
+            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_ALL);
             return hmR0SvmExitIntr(pVCpu, pSvmTransient);
         }
 
