@@ -3717,15 +3717,16 @@ VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
    </sect1>
 
    <sect1 id="sse412passthrough">
-     <title>Experimental support for passing through SSE4.1 / SSE4.2 instructions</title>
+     <title>Passing through SSE4.1 / SSE4.2 instructions</title>
      <para>
        To provide SSE 4.1 / SSE 4.2 support to guests, the host CPU has to
-       implement these instruction sets. Starting with VirtualBox 4.3.8 it is
-       possible to enable these instructions for certain guests using the
-       following commands:</para><screen>VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.1 1
-VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
+       implement these instruction sets. The instruction sets are exposed
+       to guests by default, but it is possible to disable the instructions
+       for certain guests using the following commands:</para>
+<screen>VBoxManage setextradata "VM name" VBoxInternal/CPUM/IsaExts/SSE4.1 0
+VBoxManage setextradata "VM name" VBoxInternal/CPUM/IsaExts/SSE4.2 0</screen>
      <para>
-       These are a per-VM settings and they are turned off by default.
+       These are a per-VM settings which are turned on by default.
      </para>
    </sect1>
 
