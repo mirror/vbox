@@ -3104,9 +3104,9 @@ static int rtFsNtfsVol_NewSharedDirFromCore(PRTFSNTFSVOL pThis, PRTFSNTFSCORE pC
                                            "%s: INDEX_ALLOCATION size isn't aligned on node boundrary: %#RX64, cbIndexNode=%#x",
                                            pszWhat, pIndexAlloc->cbValue, cbIndexNode);
         uint64_t const cNodes = pIndexAlloc->cbValue / cbIndexNode;
-        if (pIndexBitmap->cbValue != (RT_ALIGN_64(cNodes, 64) >> 3))
+        if (pIndexBitmap->cbValue < (RT_ALIGN_64(cNodes, 64) >> 3))
             return RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
-                                           "%s: BITMAP size does not match INDEX_ALLOCATION: %#RX64, expected %#RX64 (cbIndexNode=%#x, cNodes=%#RX64)",
+                                           "%s: BITMAP size does not match INDEX_ALLOCATION: %#RX64, expected min %#RX64 (cbIndexNode=%#x, cNodes=%#RX64)",
                                            pszWhat, pIndexBitmap->cbValue, RT_ALIGN_64(cNodes, 64) >> 3, cbIndexNode, cNodes);
         uNodeAddressEnd = cNodes * pIdxRoot->cAddressesPerIndexNode;
     }
