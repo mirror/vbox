@@ -520,7 +520,7 @@ HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName, 
+HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
                                           const std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;
