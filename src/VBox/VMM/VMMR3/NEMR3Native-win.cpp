@@ -1170,6 +1170,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     /*
      * Some state init.
      */
+    pVM->nem.s.fA20Enabled = true;
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         PNEMCPU pNemCpu = &pVM->aCpus[iCpu].nem.s;
