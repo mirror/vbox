@@ -77,6 +77,8 @@ HRESULT SimpleConfigFile::parse()
 
             LogRel(("Content of the line %d is %s \n", i, strLineContent.c_str()));
 
+            //strips the white-space characters from the string. It's needed for strings on Windows with "\n\r".
+            strLineContent = strLineContent.strip();
             if ( strLineContent.startsWith("[") && strLineContent.endsWith("]") )
             {
                 LogRel(("Found section in the line %d\n", i));
