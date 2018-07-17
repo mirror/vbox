@@ -3730,20 +3730,20 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
    </sect1>
 
   <sect1 id="hidledssync">
-    <title>Support for keyboard indicators synchronization</title>
+    <title>Support for keyboard indicator synchronization</title>
 
     <para>
-      This feature makes the host keyboard lights match those of the virtual machine's virtual
-      keyboard when the machine window is selected. It is currently implemented for Mac OS X and
-      Windows hosts and available as of releases 4.2.24 and 4.3.8. The feature can be enabled using
-      the following command:
+      This feature makes the host keyboard indicators (LEDs) match those of the virtual machine's emulated
+      keyboard when the machine window is active. It is currently implemented for Mac OS X and
+      Windows hosts. The feature can be disabled using the following command:
     </para>
 
-    <screen>VBoxManage setextradata "VM name" GUI/HidLedsSync "1"</screen>
+    <screen>VBoxManage setextradata "VM name" GUI/HidLedsSync 0</screen>
 
     <para>
-      In order to disable it, use the same command but change "1" to "0", or use the VBoxManage
-      command to remove the extra data. This is a per-VM setting and it is disabled by default.
+      In order to enable the feature, use the same command but change "0" to "1", or use the VBoxManage
+      command to remove the extradata item. This is a per-VM setting and it is enabled by default on
+      supported host operating systems.
     </para>
   </sect1>
 
