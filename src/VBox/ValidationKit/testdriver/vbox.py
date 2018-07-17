@@ -2817,6 +2817,7 @@ class TestDriver(base.TestDriver):                                              
                                      ('fflags', ''),
                                      ('cpumguest', 'verbose all'),
                                      ('cpumguestinstr', 'symbol all'),
+                                     ('exits', ''),
                                      ('pic', ''),
                                      ('apic', ''),
                                      ('apiclvt', ''),
