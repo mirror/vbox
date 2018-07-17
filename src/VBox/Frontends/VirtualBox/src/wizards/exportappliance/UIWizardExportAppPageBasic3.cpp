@@ -132,20 +132,20 @@ void UIWizardExportAppPage3::populateProviders()
 
 void UIWizardExportAppPage3::populateProfiles()
 {
-    /* Acquire profile list: */
-    // Here goes the experiamental list with
-    // arbitrary contents for testing purposes.
-    QStringList profiles;
-    profiles << "Dummy Profile 1";
-    profiles << "Dummy Profile 2";
-    profiles << "Dummy Profile 3";
-    profiles << "Dummy Profile 4";
-    m_pProfileComboBox->clear();
-    m_pProfileComboBox->addItems(profiles);
+    /* Acquire Cloud User-profile List: */
+    CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
+    AssertMsgReturnVoid(m_comCloudUserProfileManager.isOk() && comProfiles.isNotNull(),
+                        ("Unable to acquire Cloud User-profile List"));
 
-    /* Duplicate non-translated names to data fields: */
-    for (int i = 0; i < m_pProfileComboBox->count(); ++i)
-        m_pProfileComboBox->setItemData(i, m_pProfileComboBox->itemText(i));
+    /* Clear combo initially: */
+    m_pProfileComboBox->clear();
+
+    /* Add non-translated provider names into combo: */
+    foreach (const QString &strProfileName, comProfiles.GetStoredProfilesNames())
+    {
+        m_pProfileComboBox->addItem(strProfileName);
+        m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName);
+    }
 }
 
 void UIWizardExportAppPage3::populateProfileSettings()
