@@ -61,9 +61,15 @@ void CloudUserProfileManager::FinalRelease()
 
 HRESULT CloudUserProfileManager::init(VirtualBox *aParent)
 {
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     unconst(mParent) = aParent;
     mSupportedProviders.clear();
     mSupportedProviders.push_back(CloudProviderId_OCI);
+
+    autoInitSpan.setSucceeded();
     return S_OK;
 }
 
