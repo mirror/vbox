@@ -97,11 +97,12 @@ public:
 
     HRESULT readProfiles(const Utf8Str &strConfigPath);
 
-    HRESULT createProfile(const com::Utf8Str &aProfileName,
+private:
+    HRESULT i_createProfile(const com::Utf8Str &aProfileName,
                           const std::map <Utf8Str, Utf8Str> &aProfile);
-    HRESULT updateProfile(const com::Utf8Str &aProfileName,
+    HRESULT i_updateProfile(const com::Utf8Str &aProfileName,
                           const std::map <Utf8Str, Utf8Str> &aProfile);
-    HRESULT getProfileProperties(const com::Utf8Str &aName,
+    HRESULT i_getProfileProperties(const com::Utf8Str &aName,
                                  std::map <Utf8Str, Utf8Str> &aProfileName);
 private:
     Utf8Str mStrConfigPath;

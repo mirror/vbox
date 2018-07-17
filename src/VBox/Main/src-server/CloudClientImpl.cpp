@@ -50,12 +50,12 @@ CloudClient::~CloudClient()
     LogRel(("CloudClient::~CloudClient()\n"));
 }
 
-CloudClient::CloudClient(CloudProviderId_T aCloudProvider)
-    : mParent(NULL)
-{
-    LogRel(("CloudClient::CloudClient(CloudProviderId_T %d)\n", mCloudProvider));
-    mCloudProvider = aCloudProvider;
-}
+//CloudClient::CloudClient(CloudProviderId_T aCloudProvider)
+//    : mParent(NULL)
+//{
+//    LogRel(("CloudClient::CloudClient(CloudProviderId_T %d)\n", mCloudProvider));
+//    mCloudProvider = aCloudProvider;
+//}
 
 HRESULT CloudClient::FinalConstruct()
 {
@@ -78,7 +78,6 @@ void CloudClient::uninit()
         return;
 
     unconst(mParent) = NULL;
-    mMachine.setNull();
 }
 
 HRESULT CloudClient::init(VirtualBox *aParent)
@@ -244,4 +243,3 @@ HRESULT CloudClient::setParametersForOperation(const com::Guid &aOpId,
     HRESULT hrc = VERR_NOT_IMPLEMENTED;
     return hrc;
 }
-

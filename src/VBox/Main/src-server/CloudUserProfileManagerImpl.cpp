@@ -127,7 +127,9 @@ HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProvid
                 hrc = ptrOCIUserProfileList->init(mParent);
                 if (SUCCEEDED(hrc))
                 {
-                    Utf8Str strConfigPath = mParent->i_homeDir();
+                    char szHomeDir[RTPATH_MAX];
+                    int vrc = RTPathUserHome(szHomeDir, sizeof(szHomeDir));
+                    Utf8Str strConfigPath(szHomeDir);
                     strConfigPath.append(RTPATH_SLASH_STR)
                                  .append(".oci")
                                  .append(RTPATH_SLASH_STR)

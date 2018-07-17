@@ -31,7 +31,7 @@ class CloudClient :
 {
 public:
     DECLARE_EMPTY_CTOR_DTOR(CloudClient)
-    explicit CloudClient(CloudProviderId_T aCloudProvider);
+//  explicit CloudClient(CloudProviderId_T aCloudProvider);
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -43,9 +43,8 @@ public:
                             const com::Utf8Str &aProfileName);
     void uninit();
 
-private:
+protected:
     ComPtr<VirtualBox> const mParent;       /**< Strong reference to the parent object (VirtualBox/IMachine). */
-    ComPtr<Machine> mMachine;               /**< Strong reference to the machine object (Machine/IMachine). */
     CloudProviderId_T mCloudProvider;
     std::map <Utf8Str, Utf8Str> userProfile;
 
@@ -70,6 +69,7 @@ private:
     HRESULT setParametersForOperation(const com::Guid &aOpId,
                                       const std::vector<com::Utf8Str> &aValues);
 };
+
 #endif // !____H_CLOUDCLIENTIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
 

@@ -235,13 +235,23 @@ void CloudUserProfileList::FinalRelease()
 
 void CloudUserProfileList::uninit()
 {
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan(this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
+    unconst(mParent) = NULL;
 }
 
 HRESULT CloudUserProfileList::init(VirtualBox *aParent)
 {
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     unconst(mParent) = aParent;
 
+    autoInitSpan.setSucceeded();
     return S_OK;
 }
 
@@ -359,8 +369,9 @@ OCIUserProfileList::~OCIUserProfileList()
 HRESULT OCIUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
                                               ComPtr<ICloudClient> &aCloudClient)
 {
+    HRESULT hrc = S_OK;
     CloudProviderId_T providerId;
-    HRESULT hrc = getProvider(&providerId);
+    hrc = getProvider(&providerId);
 
     ComObjPtr<CloudClient> ptrCloudClient;
     hrc = ptrCloudClient.createObject();
@@ -471,7 +482,7 @@ HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileNam
     if (mpProfiles->isSectionExist(aProfileName))
     {
         std::map <Utf8Str, Utf8Str> profile;
-        hrc = getProfileProperties(aProfileName, profile);
+        hrc = i_getProfileProperties(aProfileName, profile);
         if (SUCCEEDED(hrc))
         {
             aReturnNames.clear();
@@ -481,6 +492,7 @@ HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileNam
             {
                 aReturnNames.push_back(cit->first);
                 aReturnValues.push_back(cit->second);
+                ++cit;
             }
         }
     }
@@ -510,8 +522,8 @@ HRESULT OCIUserProfileList::getPropertyDescription(const com::Utf8Str &aName, co
 }
 
 
-HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
-                                          const std::map <Utf8Str, Utf8Str> &aProfile)
+HRESULT OCIUserProfileList::i_createProfile(const com::Utf8Str &aProfileName,
+                                           const std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;
 
@@ -520,8 +532,8 @@ HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
-                                          const std::map <Utf8Str, Utf8Str> &aProfile)
+HRESULT OCIUserProfileList::i_updateProfile(const com::Utf8Str &aProfileName,
+                                           const std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;
     if (mpProfiles->isSectionExist(aProfileName))
@@ -532,8 +544,8 @@ HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileName,
-                                                 std::map <Utf8Str, Utf8Str> &aProfile)
+HRESULT OCIUserProfileList::i_getProfileProperties(const com::Utf8Str &aProfileName,
+                                                  std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;
     std::map <Utf8Str, Utf8Str> defProfile = mpProfiles->getSectionByName("DEFAULT");
