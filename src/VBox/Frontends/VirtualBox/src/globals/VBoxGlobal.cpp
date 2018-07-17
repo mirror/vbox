@@ -3825,12 +3825,14 @@ void VBoxGlobal::prepare()
     {
         const QByteArray &argBytes = arguments.at(i).toUtf8();
         const char *arg = argBytes.constData();
+        enum { OptType_Unknown, OptType_VMRunner, OptType_VMSelector } enmOptType = OptType_Unknown;
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
          * otherwise there will be weird error messages. */
         if (   !::strcmp(arg, "--startvm")
             || !::strcmp(arg, "-startvm"))
         {
+            enmOptType = OptType_VMRunner;
             if (++i < argc)
             {
                 vmNameOrUuid = arguments.at(i);
@@ -3839,6 +3841,7 @@ void VBoxGlobal::prepare()
         }
         else if (!::strcmp(arg, "-separate") || !::strcmp(arg, "--separate"))
         {
+            enmOptType = OptType_VMRunner;
             fSeparateProcess = true;
         }
 #ifdef VBOX_GUI_WITH_PIDFILE
@@ -3905,48 +3908,79 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "-comment") || !::strcmp(arg, "--comment"))
             ++i;
         else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fShowStartVMErrors = false;
+        }
         else if (!::strcmp(arg, "--aggressive-caching"))
             m_fAgressiveCaching = true;
         else if (!::strcmp(arg, "--no-aggressive-caching"))
             m_fAgressiveCaching = false;
         else if (!::strcmp(arg, "--restore-current"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fRestoreCurrentSnapshot = true;
+        }
         /* Ad hoc VM reconfig options: */
         else if (!::strcmp(arg, "--fda"))
         {
+            enmOptType = OptType_VMRunner;
             if (++i < argc)
                 m_strFloppyImage = arguments.at(i);
         }
         else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
         {
+            enmOptType = OptType_VMRunner;
             if (++i < argc)
                 m_strDvdImage = arguments.at(i);
         }
         /* VMM Options: */
         else if (!::strcmp(arg, "--disable-patm"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fDisablePatm = true;
+        }
         else if (!::strcmp(arg, "--disable-csam"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fDisableCsam = true;
+        }
         else if (!::strcmp(arg, "--recompile-supervisor"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fRecompileSupervisor = true;
+        }
         else if (!::strcmp(arg, "--recompile-user"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fRecompileUser = true;
+        }
         else if (!::strcmp(arg, "--recompile-all"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fDisablePatm = m_fDisableCsam = m_fRecompileSupervisor = m_fRecompileUser = true;
+        }
         else if (!::strcmp(arg, "--execute-all-in-iem"))
+        {
+            enmOptType = OptType_VMRunner;
             m_fDisablePatm = m_fDisableCsam = m_fExecuteAllInIem = true;
+        }
         else if (!::strcmp(arg, "--warp-pct"))
         {
+            enmOptType = OptType_VMRunner;
             if (++i < argc)
                 m_uWarpPct = RTStrToUInt32(arguments.at(i).toLocal8Bit().constData());
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /* Debugger/Debugging options: */
         else if (!::strcmp(arg, "-dbg") || !::strcmp(arg, "--dbg"))
+        {
+            enmOptType = OptType_VMRunner;
             setDebuggerVar(&m_fDbgEnabled, true);
+        }
         else if (!::strcmp( arg, "-debug") || !::strcmp(arg, "--debug"))
         {
+            enmOptType = OptType_VMRunner;
             setDebuggerVar(&m_fDbgEnabled, true);
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
@@ -3954,18 +3988,21 @@ void VBoxGlobal::prepare()
         }
         else if (!::strcmp(arg, "--debug-command-line"))
         {
+            enmOptType = OptType_VMRunner;
             setDebuggerVar(&m_fDbgEnabled, true);
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
         }
         else if (!::strcmp(arg, "--debug-statistics"))
         {
+            enmOptType = OptType_VMRunner;
             setDebuggerVar(&m_fDbgEnabled, true);
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowStatistics, true);
         }
         else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
         {
+            enmOptType = OptType_VMRunner;
             setDebuggerVar(&m_fDbgEnabled, false);
             setDebuggerVar(&m_fDbgAutoShow, false);
             setDebuggerVar(&m_fDbgAutoShowCommandLine, false);
@@ -3973,11 +4010,27 @@ void VBoxGlobal::prepare()
         }
         /* Not quite debug options, but they're only useful with the debugger bits. */
         else if (!::strcmp(arg, "--start-paused"))
+        {
+            enmOptType = OptType_VMRunner;
             m_enmLaunchRunning = LaunchRunning_No;
+        }
         else if (!::strcmp(arg, "--start-running"))
+        {
+            enmOptType = OptType_VMRunner;
             m_enmLaunchRunning = LaunchRunning_Yes;
+        }
 #endif
-        /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
+#ifdef RT_OS_WINDOWS /** @todo add more here, please... */
+        else
+            msgCenter().error(0, MessageType_Error, tr("Unknown option <b>%1</b>.").arg(arguments.at(i)), "");
+#endif
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+        if (enmOptType == OptType_VMRunner && m_enmType != UIType_RuntimeUI)
+            msgCenter().error(0, MessageType_Error,
+                              tr("<b>%1</b> is an option for the VirtualBox VM runner (VirtualBoxVM) application, not the selector")
+                              .arg(arg), "");
+#endif
+
         i++;
     }
 
