@@ -128,7 +128,7 @@ HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProvid
                 if (SUCCEEDED(hrc))
                 {
                     char szHomeDir[RTPATH_MAX];
-                    int vrc = RTPathUserHome(szHomeDir, sizeof(szHomeDir));
+                    RTPathUserHome(szHomeDir, sizeof(szHomeDir));
                     Utf8Str strConfigPath(szHomeDir);
                     strConfigPath.append(RTPATH_SLASH_STR)
                                  .append(".oci")
