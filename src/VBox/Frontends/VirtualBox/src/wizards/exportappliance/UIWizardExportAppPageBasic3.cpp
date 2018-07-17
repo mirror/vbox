@@ -690,10 +690,10 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pMACComboBox->setItemText(MACAddressPolicy_StripAllMACs,
                                 UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
     m_pMACComboBox->setItemData(MACAddressPolicy_KeepAllMACs,
-                                UIWizardExportApp::tr("Include all network adapter MAC addresses to exported "
+                                UIWizardExportApp::tr("Include all network adapter MAC addresses in exported "
                                                       "appliance archive."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressPolicy_StripAllNonNATMACs,
-                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses to "
+                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in "
                                                       "exported appliance archive."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressPolicy_StripAllMACs,
                                 UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported "
@@ -703,7 +703,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("&Write Manifest file"));
-    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
+    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files in exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
     /* Translate Provider combo-box: */
