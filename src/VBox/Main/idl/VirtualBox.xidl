@@ -24909,9 +24909,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="createOperation">
       <desc>
         Creates a cloud operation object for the passed profile
-	if profile name is NULL or empty string creates operation for the active profile.
-	if profile name is NULL or empty string and there is not the active profile 
-	returns "VERR_INVALID_PARAMETER"
+        if profile name is NULL or empty string creates operation for the active profile.
+        if profile name is NULL or empty string and there is not the active profile 
+        returns "VERR_INVALID_PARAMETER"
       </desc>
       <param name="profileName" type="wstring" dir="in">
         <desc>
@@ -24925,8 +24925,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="opId" type="uuid" mod="string" dir="return">
         <desc>
-	  UUID of the operation.
-	  It's used later when user chooses and runs this cloud operation
+          UUID of the operation.
+          It's used later when user chooses and runs this cloud operation
 	</desc>
       </param>
     </method>
@@ -24937,7 +24937,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="opId" type="uuid" mod="string" dir="in">
         <desc>
-	  UUID of the operation.
+          UUID of the operation.
 	</desc>
       </param>
       <param name="timeout" type="long long" dir="in">
@@ -24953,7 +24953,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="opId" type="uuid" mod="string" dir="in">
         <desc>
-	  UUID of the operation.
+          UUID of the operation.
 	</desc>
       </param>
       <param name="startOpTime" type="long long" dir="out">
@@ -25025,7 +25025,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="opId" type="uuid" mod="string" dir="in">
         <desc>
-	  UUID of the operation.
+          UUID of the operation.
 	</desc>
       </param>
       <param name="values" type="wstring" safearray="yes" dir="in">

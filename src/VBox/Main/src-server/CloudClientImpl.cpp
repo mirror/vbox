@@ -154,7 +154,7 @@ HRESULT CloudClient::initCloudClient(CloudUserProfileList *aProfiles,
     {
         hrc = arc;
         LogRel(("Get cought an exception %d\n", hrc));
-    } 
+    }
     catch (std::bad_alloc)
     {
         return E_OUTOFMEMORY;
@@ -172,10 +172,7 @@ HRESULT CloudClient::getOperationParameters(CloudOperation_T aCloudOperation, co
 {
     LogRel(("CloudClient::getOperationParameters: %d, %s\n", aCloudOperation, aJsonString.c_str()));
     HRESULT hrc = VERR_NOT_IMPLEMENTED;
-    /*
-     
-    createCloudAPI
-    */
+
     return hrc;
 }
 

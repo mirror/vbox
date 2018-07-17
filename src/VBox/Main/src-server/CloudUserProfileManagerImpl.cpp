@@ -103,7 +103,7 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
     return hrc;
 }
 
-HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProviderType, 
+HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProviderType,
                                                        ComPtr<ICloudUserProfileList> &aProfiles)
 {
     ComObjPtr<CloudUserProfileList> ptrCloudUserProfileList;

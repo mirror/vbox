@@ -41,7 +41,7 @@ SimpleConfigFile::SimpleConfigFile(VirtualBoxBase *pSetError, const char *pszFil
     LogRel(("SimpleConfigFile::SimpleConfigFile(VirtualBoxBase *pSetError,...)\n"));
 }
 
-SimpleConfigFile::~SimpleConfigFile() 
+SimpleConfigFile::~SimpleConfigFile()
 {
     LogRel(("SimpleConfigFile::~SimpleConfigFile()\n"));
 }
@@ -366,10 +366,13 @@ HRESULT OCIUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
     hrc = ptrCloudClient.createObject();
     if (SUCCEEDED(hrc))
     {
+        ComObjPtr<CloudClientOCI> ptrCloudClientOCI;
+        hrc = ptrCloudClientOCI.createObject();
         AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = ptrCloudClient->initCloudClient(this, mParent, providerId, aProfileName);
+        hrc = ptrCloudClientOCI->initCloudClient(this, mParent, providerId, aProfileName);
         if (SUCCEEDED(hrc))
         {
+            ptrCloudClient = ptrCloudClientOCI;
             hrc = ptrCloudClient.queryInterfaceTo(aCloudClient.asOutParam());
         }
     }
@@ -429,7 +432,7 @@ HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName, 
+HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
                                           const std::vector<com::Utf8Str> &aNames,
                                           const std::vector<com::Utf8Str> &aValues)
 {
