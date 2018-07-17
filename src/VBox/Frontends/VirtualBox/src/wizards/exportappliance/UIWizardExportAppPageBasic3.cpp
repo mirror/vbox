@@ -40,6 +40,9 @@
 # include "UIWizardExportAppDefs.h"
 # include "UIWizardExportAppPageBasic3.h"
 
+/* COM includes: */
+# include "CCloudUserProfileList.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -64,6 +67,11 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
     , m_pProfileComboBox(0)
     , m_pProfileSettingsTable(0)
 {
+    /* Init Cloud User-profile Manager: */
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    m_comCloudUserProfileManager = comVBox.CreateCloudUserProfileManager();
+    AssertMsg(comVBox.isOk() && m_comCloudUserProfileManager.isNotNull(),
+              ("Unable to acquire Cloud User-profile Manager"));
 }
 
 void UIWizardExportAppPage3::populateFormats()
@@ -107,15 +115,9 @@ void UIWizardExportAppPage3::populateProviders()
     AssertReturnVoid(m_pProviderComboBox->count() == 0);
 
     /* Acquire provider ID list: */
-    // Here goes the experiamental list with
-    // arbitrary contents for testing purposes.
-    QVector<KCloudProviderId> providerIds;
-    providerIds << KCloudProviderId_OCI;
-    providerIds << KCloudProviderId_GCP;
-    providerIds << KCloudProviderId_AWS;
-    providerIds << KCloudProviderId_MicrosoftAzure;
-    providerIds << KCloudProviderId_IBMCloud;
-    providerIds << KCloudProviderId_DigitalOcean;
+    QVector<KCloudProviderId> providerIds = m_comCloudUserProfileManager.GetSupportedProviders();
+    /* Make sure at least one provider is supported: */
+    AssertReturnVoid(!providerIds.isEmpty());
 
     /* Add non-translated provider names into combo: */
     foreach (KCloudProviderId enmType, providerIds)

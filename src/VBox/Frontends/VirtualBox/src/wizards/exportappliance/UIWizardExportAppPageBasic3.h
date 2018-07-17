@@ -26,6 +26,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudUserProfileManager.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -126,6 +127,9 @@ protected:
     QString profile() const;
     /** Defines @a strProfile. */
     void setProfile(const QString &strProfile);
+
+    /** Holds the Cloud User-profile Manager reference. */
+    CCloudUserProfileManager  m_comCloudUserProfileManager;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
