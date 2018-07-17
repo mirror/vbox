@@ -34,6 +34,7 @@
 /* GUI includes: */
 # include "QIRichTextLabel.h"
 # include "VBoxGlobal.h"
+# include "UIConverter.h"
 # include "UIEmptyFilePathSelector.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
@@ -102,24 +103,29 @@ void UIWizardExportAppPage3::populateMACAddressPolicies()
 
 void UIWizardExportAppPage3::populateProviders()
 {
+    /* Make sure this combo isn't filled yet: */
     AssertReturnVoid(m_pProviderComboBox->count() == 0);
 
-    /* Acquire provider list: */
+    /* Acquire provider ID list: */
     // Here goes the experiamental list with
     // arbitrary contents for testing purposes.
-    QStringList providers;
-    providers << "OCI";
-    providers << "Dummy Provider 2";
-    providers << "Dummy Provider 3";
-    providers << "Dummy Provider 4";
-    m_pProviderComboBox->addItems(providers);
+    QVector<KCloudProviderId> providerIds;
+    providerIds << KCloudProviderId_OCI;
+    providerIds << KCloudProviderId_GCP;
+    providerIds << KCloudProviderId_AWS;
+    providerIds << KCloudProviderId_MicrosoftAzure;
+    providerIds << KCloudProviderId_IBMCloud;
+    providerIds << KCloudProviderId_DigitalOcean;
 
-    /* Duplicate non-translated names to data fields: */
-    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
-        m_pProviderComboBox->setItemData(i, m_pProviderComboBox->itemText(i));
+    /* Add non-translated provider names into combo: */
+    foreach (KCloudProviderId enmType, providerIds)
+    {
+        m_pProviderComboBox->addItem(gpConverter->toInternalString(enmType));
+        m_pProviderComboBox->setItemData(m_pProviderComboBox->count() - 1, (int)enmType);
+    }
 
     /* Set default: */
-    setProvider("OCI");
+    setProvider(KCloudProviderId_OCI);
 }
 
 void UIWizardExportAppPage3::populateProfiles()
@@ -364,15 +370,15 @@ void UIWizardExportAppPage3::setIncludeISOsSelected(bool fChecked)
     m_pIncludeISOsCheckbox->setChecked(fChecked);
 }
 
-QString UIWizardExportAppPage3::provider() const
+KCloudProviderId UIWizardExportAppPage3::provider() const
 {
     const int iIndex = m_pProviderComboBox->currentIndex();
-    return m_pProviderComboBox->itemData(iIndex).toString();
+    return (KCloudProviderId)m_pProviderComboBox->itemData(iIndex).toInt();
 }
 
-void UIWizardExportAppPage3::setProvider(const QString &strProvider)
+void UIWizardExportAppPage3::setProvider(KCloudProviderId enmProvider)
 {
-    const int iIndex = m_pProviderComboBox->findData(strProvider);
+    const int iIndex = m_pProviderComboBox->findData((int)enmProvider);
     AssertMsg(iIndex != -1, ("Field not found!"));
     m_pProviderComboBox->setCurrentIndex(iIndex);
 }

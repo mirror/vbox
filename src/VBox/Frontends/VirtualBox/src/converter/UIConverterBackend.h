@@ -135,6 +135,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageBus>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageControllerType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KChipsetType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KNATProtocol>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<KCloudProviderId>();
 
 
 /* Declare global conversion specializations: */
@@ -252,6 +253,7 @@ template<> SHARED_LIBRARY_STUFF QString toString(const KChipsetType &type);
 template<> SHARED_LIBRARY_STUFF QString toString(const KNATProtocol &protocol);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const KNATProtocol &protocol);
 template<> SHARED_LIBRARY_STUFF KNATProtocol fromInternalString<KNATProtocol>(const QString &strProtocol);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const KCloudProviderId &enmProvider);
 
 
 #endif /* !___UIConverterBackend_h___ */
