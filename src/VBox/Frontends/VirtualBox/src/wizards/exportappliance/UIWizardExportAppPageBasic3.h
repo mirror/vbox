@@ -89,6 +89,8 @@ protected:
     void updateMACAddressPolicyComboToolTip();
     /** Updates provider combo tool-tips. */
     void updateProviderComboToolTip();
+    /** Updates profile property tool-tips. */
+    void updateProfilePropertyTableToolTips();
 
     /** Adjusts profile settings table. */
     void adjustProfileSettingsTable();

@@ -134,8 +134,9 @@ void UIWizardExportAppPage3::populateProfiles()
 {
     /* Acquire Cloud User-profile List: */
     CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
-    AssertMsgReturnVoid(m_comCloudUserProfileManager.isOk() && comProfiles.isNotNull(),
-                        ("Unable to acquire Cloud User-profile List"));
+    /* Return if we have nothing to populate (file missing?): */
+    if (comProfiles.isNull())
+        return;
 
     /* Clear combo initially: */
     m_pProfileComboBox->clear();
@@ -150,35 +151,62 @@ void UIWizardExportAppPage3::populateProfiles()
 
 void UIWizardExportAppPage3::populateProfileSettings()
 {
-    /* Acquire current profile table: */
-    // Here goes the experiamental lists with
-    // arbitrary contents for testing purposes.
-    QStringList keys;
-    QStringList values;
-    keys << "Dummy Key 1";
-    keys << "Dummy Key 2";
-    keys << "Dummy Key 3";
-    keys << "Dummy Key 4";
-    values << "Dummy Value 1";
-    values << "Dummy Value 2";
-    values << "Dummy Value 3";
-    values << "Dummy Value 4";
+    /* Acquire Cloud User-profile List: */
+    CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
+    /* Return if we have nothing to populate (file missing?): */
+    if (comProfiles.isNull())
+        return;
+
+    /* Clear table initially: */
     m_pProfileSettingsTable->clear();
-    m_pProfileSettingsTable->setRowCount(4);
+
+    /* Acquire profile properties: */
+    QVector<QString> keys;
+    QVector<QString> values;
+    values = comProfiles.GetProfileProperties(profile(), keys);
+
+    /* Configure profile table: */
+    m_pProfileSettingsTable->setRowCount(keys.size());
     m_pProfileSettingsTable->setColumnCount(2);
 
     /* Push acquired keys/values to data fields: */
     for (int i = 0; i < m_pProfileSettingsTable->rowCount(); ++i)
     {
-        QTableWidgetItem *pItem1 = new QTableWidgetItem(keys.at(i));
-        pItem1->setFlags(pItem1->flags() & ~Qt::ItemIsEditable);
-        pItem1->setFlags(pItem1->flags() & ~Qt::ItemIsSelectable);
-        QTableWidgetItem *pItem2 = new QTableWidgetItem(values.at(i));
-        pItem2->setFlags(pItem2->flags() & ~Qt::ItemIsEditable);
-        pItem2->setFlags(pItem2->flags() & ~Qt::ItemIsSelectable);
-        m_pProfileSettingsTable->setItem(i, 0, pItem1);
-        m_pProfileSettingsTable->setItem(i, 1, pItem2);
+        /* Create key item: */
+        QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
+        if (pItemK)
+        {
+            /* Non-editable for sure, but non-selectable? */
+            pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
+            pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
+
+            /* Use non-translated description as tool-tip: */
+            const QString strToolTip = comProfiles.GetPropertyDescription(keys.at(i));
+            pItemK->setData(Qt::UserRole, strToolTip);
+
+            /* Insert into table: */
+            m_pProfileSettingsTable->setItem(i, 0, pItemK);
+        }
+
+        /* Create value item: */
+        QTableWidgetItem *pItemV = new QTableWidgetItem(values.at(i));
+        if (pItemV)
+        {
+            /* Non-editable for sure, but non-selectable? */
+            pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsEditable);
+            pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsSelectable);
+
+            /* Use the value as tool-tip, there can be quite long values: */
+            const QString strToolTip = values.at(i);
+            pItemV->setToolTip(strToolTip);
+
+            /* Insert into table: */
+            m_pProfileSettingsTable->setItem(i, 1, pItemV);
+        }
     }
+
+    /* Update translateable tool-tips: */
+    updateProfilePropertyTableToolTips();
 
     /* Adjust the table: */
     adjustProfileSettingsTable();
@@ -297,6 +325,21 @@ void UIWizardExportAppPage3::updateProviderComboToolTip()
     const QString strCurrentToolTip = m_pProviderComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
     AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
     m_pProviderComboBox->setToolTip(strCurrentToolTip);
+}
+
+void UIWizardExportAppPage3::updateProfilePropertyTableToolTips()
+{
+    /* Iterate through all the key items: */
+    for (int i = 0; i < m_pProfileSettingsTable->rowCount(); ++i)
+    {
+        /* Acquire current key item: */
+        QTableWidgetItem *pItemK = m_pProfileSettingsTable->item(i, 0);
+        if (pItemK)
+        {
+            const QString strToolTip = pItemK->data(Qt::UserRole).toString();
+            pItemK->setToolTip(QApplication::translate("UIWizardExportAppPageBasic3", strToolTip.toUtf8().constData()));
+        }
+    }
 }
 
 void UIWizardExportAppPage3::adjustProfileSettingsTable()
@@ -734,6 +777,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     updateFormatComboToolTip();
     updateMACAddressPolicyComboToolTip();
     updateProviderComboToolTip();
+    updateProfilePropertyTableToolTips();
 }
 
 void UIWizardExportAppPageBasic3::initializePage()
