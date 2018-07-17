@@ -4148,12 +4148,20 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
          * to forget about it after an exit.)
          */
         if (      (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK))
-               !=                 (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK)
-            || pVCpu->nem.s.fDesiredInterruptWindows
-            || pVCpu->nem.s.fCurrentInterruptWindows != pVCpu->nem.s.fDesiredInterruptWindows)
+               !=                              (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK)
+            || (  (   pVCpu->nem.s.fDesiredInterruptWindows
+                   || pVCpu->nem.s.fCurrentInterruptWindows != pVCpu->nem.s.fDesiredInterruptWindows)
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
+                && pVCpu->nem.s.fHandleAndGetFlags != VID_MSHAGN_F_GET_NEXT_MESSAGE /* not running */
+# endif
+               )
+           )
         {
 # ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
-            Assert(pVCpu->nem.s.fHandleAndGetFlags != VID_MSHAGN_F_GET_NEXT_MESSAGE /* not running */);
+            AssertMsg(pVCpu->nem.s.fHandleAndGetFlags != VID_MSHAGN_F_GET_NEXT_MESSAGE /* not running */,
+                      ("%#x fExtrn=%#RX64 (%#RX64) fDesiredInterruptWindows=%d fCurrentInterruptWindows=%#x vs %#x\n",
+                       pVCpu->nem.s.fHandleAndGetFlags, pVCpu->cpum.GstCtx.fExtrn, ~pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK),
+                       pVCpu->nem.s.fDesiredInterruptWindows, pVCpu->nem.s.fCurrentInterruptWindows, pVCpu->nem.s.fDesiredInterruptWindows));
 # endif
 # ifdef IN_RING0
             int rc2 = nemR0WinExportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx);
