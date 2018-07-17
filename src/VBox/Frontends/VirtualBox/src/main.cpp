@@ -605,7 +605,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     return iResultCode;
 }
 
-#if !defined(VBOX_WITH_HARDENING) || defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI)
+#if !defined(VBOX_WITH_HARDENING) || (defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI))
 
 int main(int argc, char **argv, char **envp)
 {
@@ -615,8 +615,11 @@ int main(int argc, char **argv, char **envp)
         return 1;
 # endif /* VBOX_WS_X11 */
 
-    /* Initialize VBox Runtime.
-     * Initialize the SUPLib as well only if we are really about to start a VM.
+    /*
+     * Initialize VBox Runtime.
+     */
+# if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
+    /* Initialize the SUPLib as well only if we are really about to start a VM.
      * Don't do this if we are only starting the selector window or a separate VM process. */
     bool fStartVM = false;
     bool fSeparateProcess = false;
@@ -627,18 +630,16 @@ int main(int argc, char **argv, char **envp)
          * otherwise there will be weird error messages. */
         if (   !::strcmp(argv[i], "--startvm")
             || !::strcmp(argv[i], "-startvm"))
-        {
             fStartVM = true;
-        }
         else if (   !::strcmp(argv[i], "--separate")
                  || !::strcmp(argv[i], "-separate"))
-        {
             fSeparateProcess = true;
-        }
     }
 
     uint32_t fFlags = fStartVM && !fSeparateProcess ? RTR3INIT_FLAGS_SUPLIB : 0;
-
+#else
+    uint32_t fFlags = 0;
+#endif
     int rc = RTR3InitExe(argc, &argv, fFlags);
 
     /* Initialization failed: */
@@ -651,7 +652,7 @@ int main(int argc, char **argv, char **envp)
 
 # ifdef Q_OS_SOLARIS
         a.setStyle("fusion");
-# endif /* Q_OS_SOLARIS */
+# endif
 
         /* Prepare the error-message: */
         QString strTitle = QApplication::tr("VirtualBox - Runtime Error");
@@ -663,24 +664,24 @@ int main(int argc, char **argv, char **envp)
                 strText += QApplication::tr("<b>Cannot access the kernel driver!</b><br/><br/>");
 # ifdef RT_OS_LINUX
                 strText += g_QStrHintLinuxNoDriver;
-# else /* RT_OS_LINUX */
+# else
                 strText += g_QStrHintOtherNoDriver;
-# endif /* !RT_OS_LINUX */
+# endif
                 break;
 # ifdef RT_OS_LINUX
             case VERR_NO_MEMORY:
                 strText += g_QStrHintLinuxNoMemory;
                 break;
-# endif /* RT_OS_LINUX */
+# endif
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
                 strText += QApplication::tr("Kernel driver not accessible");
                 break;
             case VERR_VM_DRIVER_VERSION_MISMATCH:
 # ifdef RT_OS_LINUX
                 strText += g_QStrHintLinuxWrongDriverVersion;
-# else /* RT_OS_LINUX */
+# else
                 strText += g_QStrHintOtherWrongDriverVersion;
-# endif /* !RT_OS_LINUX */
+# endif
                 break;
             default:
                 strText += QApplication::tr("Unknown error %2 during initialization of the Runtime").arg(rc);
@@ -696,11 +697,13 @@ int main(int argc, char **argv, char **envp)
         return 1;
     }
 
-    /* Actual main function: */
+    /*
+     * Call actual main function:
+     */
     return TrustedMain(argc, argv, envp);
 }
 
-#endif
+#endif /* !VBOX_WITH_HARDENING || (VBOX_GUI_WITH_SHARED_LIBRARY && !VBOX_RUNTIME_UI) */
 
 #ifdef VBOX_WITH_HARDENING
 
