@@ -7025,9 +7025,13 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
             /* IN/OUT - I/O instruction. */
             Assert(!IoExitInfo.n.u1Rep);
 
+            uint8_t const cbInstr = pVmcb->ctrl.u64ExitInfo2 - pCtx->rip;
             if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
             {
                 rcStrict = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, cbValue);
+                if (    rcStrict == VINF_IOM_R3_IOPORT_WRITE
+                    && !pCtx->eflags.Bits.u1TF)
+                    rcStrict = EMRZSetPendingIoPortWrite(pVCpu, IoExitInfo.n.u16Port, cbInstr, cbValue, pCtx->eax & uAndVal);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
             }
             else
@@ -7040,11 +7044,9 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
                     /** @todo r=bird: 32-bit op size should clear high bits of rax! */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
                 }
-                else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
-                {
-                    HMR0SavePendingIOPortRead(pVCpu, pVCpu->cpum.GstCtx.rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port,
-                                              uAndVal, cbValue);
-                }
+                else if (    rcStrict == VINF_IOM_R3_IOPORT_READ
+                         && !pCtx->eflags.Bits.u1TF)
+                    rcStrict = EMRZSetPendingIoPortRead(pVCpu, IoExitInfo.n.u16Port, cbInstr, cbValue);
 
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
             }
@@ -7101,9 +7103,12 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         }
 
 #ifdef VBOX_STRICT
-        if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+        if (   rcStrict == VINF_IOM_R3_IOPORT_READ
+            || rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
             Assert(IoExitInfo.n.u1Type == SVM_IOIO_READ);
-        else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE)
+        else if (   rcStrict == VINF_IOM_R3_IOPORT_WRITE
+                 || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
+                 || rcStrict == VINF_EM_PENDING_R3_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == SVM_IOIO_WRITE);
         else
         {
