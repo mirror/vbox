@@ -12106,8 +12106,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * Use instruction-information if available, otherwise fall back on
              * interpreting the instruction.
              */
-            Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue,
-                  fIOWrite ? 'w' : 'r'));
+            Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
             AssertReturn(pCtx->dx == uIOPort, VERR_VMX_IPE_2);
             if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
             {
@@ -12142,8 +12141,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             /*
              * IN/OUT - I/O instruction.
              */
-            Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue,
-                  fIOWrite ? 'w' : 'r'));
+            Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
             uint32_t const uAndVal = s_aIOOpAnd[uIOWidth];
             Assert(!VMX_EXIT_QUAL_IO_IS_REP(pVmxTransient->uExitQualification));
             if (fIOWrite)
