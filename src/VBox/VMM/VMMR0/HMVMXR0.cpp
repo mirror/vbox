@@ -12150,6 +12150,9 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             {
                 rcStrict = IOMIOPortWrite(pVM, pVCpu, uIOPort, pCtx->eax & uAndVal, cbValue);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
+                if (    rcStrict == VINF_IOM_R3_IOPORT_WRITE
+                    && !pCtx->eflags.Bits.u1TF)
+                    rcStrict = EMRZSetPendingIoPortWrite(pVCpu, uIOPort, cbInstr, cbValue, pCtx->eax & uAndVal);
             }
             else
             {
@@ -12160,8 +12163,9 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     /* Save result of I/O IN instr. in AL/AX/EAX. */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Result & uAndVal);
                 }
-                else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
-                    HMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pCtx->rip + cbInstr, uIOPort, uAndVal, cbValue);
+                if (    rcStrict == VINF_IOM_R3_IOPORT_READ
+                    && !pCtx->eflags.Bits.u1TF)
+                    rcStrict = EMRZSetPendingIoPortRead(pVCpu, uIOPort, cbInstr, cbValue);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
             }
         }
@@ -12240,9 +12244,12 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         }
 
 #ifdef VBOX_STRICT
-        if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+        if (   rcStrict == VINF_IOM_R3_IOPORT_READ
+            || rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
             Assert(!fIOWrite);
-        else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE)
+        else if (   rcStrict == VINF_IOM_R3_IOPORT_WRITE
+                 || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
+                 || rcStrict == VINF_EM_PENDING_R3_IOPORT_WRITE)
             Assert(fIOWrite);
         else
         {
