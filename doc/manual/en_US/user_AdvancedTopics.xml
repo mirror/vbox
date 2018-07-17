@@ -3736,15 +3736,14 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/IsaExts/SSE4.2 0</screen>
     <para>
       This feature makes the host keyboard indicators (LEDs) match those of the virtual machine's emulated
       keyboard when the machine window is active. It is currently implemented for Mac OS X and
-      Windows hosts. The feature can be disabled using the following command:
+      Windows hosts. The feature is enabled by default (on a supported host OS), but can be disabled
+      using the following command:
     </para>
 
     <screen>VBoxManage setextradata "VM name" GUI/HidLedsSync 0</screen>
 
     <para>
-      In order to enable the feature, use the same command but change "0" to "1", or use the VBoxManage
-      command to remove the extradata item. This is a per-VM setting and it is enabled by default on
-      supported host operating systems.
+      This is a per-VM setting and it is enabled by default.
     </para>
   </sect1>
 
