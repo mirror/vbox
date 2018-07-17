@@ -212,10 +212,10 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     m_pComboType->clear();
 
     /* Acquire family ID: */
-    const QString strFamilyId = m_pComboFamily->itemData(iIndex, TypeID).toString();
+    m_strFamilyId = m_pComboFamily->itemData(iIndex, TypeID).toString();
 
     /* Populate combo-box with OS types related to currently selected family id: */
-    foreach (const UIGuestOSType &guiType, m_types.value(strFamilyId))
+    foreach (const UIGuestOSType &guiType, m_types.value(m_strFamilyId))
     {
         /* Skip 64bit OS types if hardware virtualization or long mode is not supported: */
         if (guiType.is64bit && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
@@ -226,15 +226,15 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     }
 
     /* Select the most recently chosen item: */
-    if (m_currentIds.contains(strFamilyId))
+    if (m_currentIds.contains(m_strFamilyId))
     {
-        const QString strTypeId = m_currentIds.value(strFamilyId);
+        const QString strTypeId = m_currentIds.value(m_strFamilyId);
         const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
         if (iTypeIndex != -1)
             m_pComboType->setCurrentIndex(iTypeIndex);
     }
     /* Or select Windows 7 item for Windows family as default: */
-    else if (strFamilyId == "Windows")
+    else if (m_strFamilyId == "Windows")
     {
         QString strDefaultID = "Windows7";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
@@ -244,7 +244,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
             m_pComboType->setCurrentIndex(iIndexWin7);
     }
     /* Or select Oracle Linux item for Linux family as default: */
-    else if (strFamilyId == "Linux")
+    else if (m_strFamilyId == "Linux")
     {
         QString strDefaultID = "Oracle";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
@@ -267,14 +267,13 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 {
     /* Acquire type/family IDs: */
-    const QString strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
-    const QString strFamilyId = m_pComboFamily->itemData(m_pComboFamily->currentIndex(), TypeID).toString();
+    m_strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
 
     /* Update selected type pixmap: */
-    m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(strTypeId));
+    m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(m_strTypeId));
 
     /* Save the most recently used item: */
-    m_currentIds[strFamilyId] = strTypeId;
+    m_currentIds[m_strFamilyId] = m_strTypeId;
 
     /* Notifies listeners about OS type change: */
     emit sigOsTypeChanged();
