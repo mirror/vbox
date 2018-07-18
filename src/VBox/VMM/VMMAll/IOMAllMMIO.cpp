@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -805,7 +805,8 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
 
         /* Check the return code. */
 #ifdef IN_RING3
-        AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc - %RGp - %s\n", VBOXSTRICTRC_VAL(rcStrict), GCPhysFault, pRange->pszDesc));
+        AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc -  Access type %d - %RGp - %s\n",
+                                             VBOXSTRICTRC_VAL(rcStrict), enmAccessType, GCPhysFault, pRange->pszDesc));
 #else
         AssertMsg(   rcStrict == VINF_SUCCESS
                   || rcStrict == (enmAccessType == PGMACCESSTYPE_READ ? VINF_IOM_R3_MMIO_READ :  VINF_IOM_R3_MMIO_WRITE)
@@ -819,7 +820,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
                   || rcStrict == VINF_EM_RESET
                   //|| rcStrict == VINF_EM_HALT       /* ?? */
                   //|| rcStrict == VINF_EM_NO_MEMORY  /* ?? */
-                  , ("%Rrc - %RGp - %p\n", VBOXSTRICTRC_VAL(rcStrict), GCPhysFault, pDevIns));
+                  , ("%Rrc - Access type %d - %RGp - %p\n", VBOXSTRICTRC_VAL(rcStrict), enmAccessType, GCPhysFault, pDevIns));
 #endif
 
         iomMmioReleaseRange(pVM, pRange);
