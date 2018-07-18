@@ -3754,7 +3754,6 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_BLIT_GMRFB_TO_SCREEN:
             {
-                uint32_t width, height;
                 SVGAFifoCmdBlitGMRFBToScreen *pCmd;
                 VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdBlitGMRFBToScreen, sizeof(*pCmd));
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdBlitGmrFbToScreen);
@@ -3769,16 +3768,16 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                 /* Clip destRect to the screen dimensions. */
                 SVGASignedRect screenRect;
-                screenRect.left  = 0;
-                screenRect.top   = 0;
-                screenRect.right = pThis->svga.uWidth;
-                screenRect.top   = pThis->svga.uHeight;
+                screenRect.left   = 0;
+                screenRect.top    = 0;
+                screenRect.right  = pThis->svga.uWidth;
+                screenRect.bottom = pThis->svga.uHeight;
                 SVGASignedRect clipRect = pCmd->destRect;
                 vmsvgaClipRect(&screenRect, &clipRect);
                 RT_UNTRUSTED_VALIDATED_FENCE();
 
-                width  = clipRect.right - clipRect.left;
-                height = clipRect.bottom - clipRect.top;
+                uint32_t const width  = clipRect.right - clipRect.left;
+                uint32_t const height = clipRect.bottom - clipRect.top;
 
                 if (   width == 0
                     || height == 0)
@@ -3825,8 +3824,61 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdBlitScreentoGmrFb);
 
                 /* Note! This can fetch 3d render results as well!! */
-                Log(("vmsvgaFIFOLoop: SVGA_CMD_BLIT_SCREEN_TO_GMRFB dest=(%d,%d) src id=%d (%d,%d)(%d,%d)\n", pCmd->destOrigin.x, pCmd->destOrigin.y, pCmd->srcScreenId, pCmd->srcRect.left, pCmd->srcRect.top, pCmd->srcRect.right, pCmd->srcRect.bottom));
-                AssertFailed();
+                LogFunc(("SVGA_CMD_BLIT_SCREEN_TO_GMRFB dest=(%d,%d) src id=%d (%d,%d)(%d,%d)\n",
+                         pCmd->destOrigin.x, pCmd->destOrigin.y, pCmd->srcScreenId, pCmd->srcRect.left, pCmd->srcRect.top, pCmd->srcRect.right, pCmd->srcRect.bottom));
+
+                /** @todo Support GMRFB.format.s.bitsPerPixel != pThis->svga.uBpp?   */
+                AssertBreak(pSVGAState->GMRFB.format.s.bitsPerPixel == pThis->svga.uBpp);
+                /** @todo Multimonitor. */
+                AssertBreak(pCmd->srcScreenId == 0);
+
+                /* Clip destRect to the screen dimensions. */
+                SVGASignedRect screenRect;
+                screenRect.left   = 0;
+                screenRect.top    = 0;
+                screenRect.right  = pThis->svga.uWidth;
+                screenRect.bottom = pThis->svga.uHeight;
+                SVGASignedRect clipRect = pCmd->srcRect;
+                vmsvgaClipRect(&screenRect, &clipRect);
+                RT_UNTRUSTED_VALIDATED_FENCE();
+
+                uint32_t const width  = clipRect.right - clipRect.left;
+                uint32_t const height = clipRect.bottom - clipRect.top;
+
+                if (   width == 0
+                    || height == 0)
+                    break;  /* Nothing to do. */
+
+                int32_t const dstx = pCmd->destOrigin.x + (clipRect.left - pCmd->srcRect.left);
+                int32_t const dsty = pCmd->destOrigin.y + (clipRect.top - pCmd->srcRect.top);
+
+                /* Copy the defined by GMRFB image to the screen 0 VRAM area.
+                 * Prepare parameters for vmsvgaGMRTransfer.
+                 */
+                AssertBreak(pThis->svga.uScreenOffset < pThis->vram_size); /* Paranoia. Ensured by SVGA_CMD_DEFINE_SCREEN. */
+
+                /* Source: host buffer which describes the screen 0 VRAM.
+                 * Important are pbHstBuf and cbHstBuf. offHst and cbHstPitch are verified by vmsvgaGMRTransfer.
+                 */
+                uint8_t * const pbHstBuf = (uint8_t *)pThis->CTX_SUFF(vram_ptr) + pThis->svga.uScreenOffset;
+                uint32_t cbHstBuf = pThis->svga.cbScanline * pThis->svga.uHeight;
+                if (cbHstBuf > pThis->vram_size - pThis->svga.uScreenOffset)
+                   cbHstBuf = pThis->vram_size - pThis->svga.uScreenOffset; /* Paranoia. */
+                uint32_t const offHst =   (clipRect.left * RT_ALIGN(pThis->svga.uBpp, 8)) / 8
+                                        + pThis->svga.cbScanline * clipRect.top;
+                int32_t const cbHstPitch = pThis->svga.cbScanline;
+
+                /* Destination: GMRFB. vmsvgaGMRTransfer ensures that no memory outside the GMR is read. */
+                SVGAGuestPtr const gstPtr = pSVGAState->GMRFB.ptr;
+                uint32_t const offGst =  (dstx * RT_ALIGN(pSVGAState->GMRFB.format.s.bitsPerPixel, 8)) / 8
+                                       + pSVGAState->GMRFB.bytesPerLine * dsty;
+                int32_t const cbGstPitch = pSVGAState->GMRFB.bytesPerLine;
+
+                rc = vmsvgaGMRTransfer(pThis, SVGA3D_READ_HOST_VRAM,
+                                       pbHstBuf, cbHstBuf, offHst, cbHstPitch,
+                                       gstPtr, offGst, cbGstPitch,
+                                       (width * RT_ALIGN(pThis->svga.uBpp, 8)) / 8, height);
+                AssertRC(rc);
                 break;
             }
 # endif // VBOX_WITH_VMSVGA3D
