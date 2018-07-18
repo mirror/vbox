@@ -50,8 +50,10 @@
 
 /* DevVGA-SVGA.cpp: */
 void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR);
-int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType, uint8_t *pbHst, int32_t cbHstPitch,
-                      SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch, uint32_t cbWidth, uint32_t cHeight);
+int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
+                      uint8_t *pbHstBuf, uint32_t cbHstBuf, uint32_t offHst, int32_t cbHstPitch,
+                      SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch,
+                      uint32_t cbWidth, uint32_t cHeight);
 void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PVGASTATE pThis, uint32_t sid);
 
 
@@ -122,6 +124,8 @@ void vmsvga3dUpdateHeapBuffersForSurfaces(PVGASTATE pThis, uint32_t sid);
 void vmsvga3dInfoContextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t cid, bool fVerbose);
 void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose, uint32_t cxAscii, bool fInvY, const char *pszBitmapPath);
 
+void vmsvgaClipRect(SVGASignedRect const *pBound,
+                    SVGASignedRect *pRect);
 
 /* DevVGA-SVGA3d-shared.cpp: */
 

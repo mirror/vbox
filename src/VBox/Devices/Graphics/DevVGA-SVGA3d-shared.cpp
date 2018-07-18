@@ -1189,3 +1189,65 @@ void vmsvgaClipBox(const SVGA3dSize *pSize,
     if (pBox->d > pSize->depth - pBox->z)
         pBox->d = pSize->depth - pBox->z;
 }
+
+/** Clip.
+ *
+ * @param pBound    Bounding rectangle.
+ * @param pRect     Rectangle to be clipped.
+ */
+void vmsvgaClipRect(SVGASignedRect const *pBound,
+                    SVGASignedRect *pRect)
+{
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
+
+    /* Right order. */
+    Assert(pBound->left <= pBound->right && pBound->top <= pBound->bottom);
+    if (pRect->left < pRect->right)
+    {
+        left = pRect->left;
+        right = pRect->right;
+    }
+    else
+    {
+        left = pRect->right;
+        right = pRect->left;
+    }
+    if (pRect->top < pRect->bottom)
+    {
+        top = pRect->top;
+        bottom = pRect->bottom;
+    }
+    else
+    {
+        top = pRect->bottom;
+        bottom = pRect->top;
+    }
+
+    if (left < pBound->left)
+        left = pBound->left;
+    if (right < pBound->left)
+        right = pBound->left;
+
+    if (left > pBound->right)
+        left = pBound->right;
+    if (right > pBound->right)
+        right = pBound->right;
+
+    if (top < pBound->top)
+        top = pBound->top;
+    if (bottom < pBound->top)
+        bottom = pBound->top;
+
+    if (top > pBound->bottom)
+        top = pBound->bottom;
+    if (bottom > pBound->bottom)
+        bottom = pBound->bottom;
+
+    pRect->left = left;
+    pRect->right = right;
+    pRect->top = top;
+    pRect->bottom = bottom;
+}

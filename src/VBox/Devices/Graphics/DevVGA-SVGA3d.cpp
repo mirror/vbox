@@ -493,6 +493,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     rc = vmsvga3dMipmapLevel(pSurface, host.face, host.mipmap, &pMipLevel);
     AssertRCReturn(rc, rc);
 
+    PVMSVGA3DCONTEXT pContext = NULL;
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
     {
         /*
@@ -500,83 +501,130 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
          * the copy of the data we've got in VMSVGA3DMIMAPLEVEL::pSurfaceData.
          */
         AssertReturn(pMipLevel->pSurfaceData, VERR_INTERNAL_ERROR);
+    }
+    else
+    {
+#ifdef VMSVGA3D_DIRECT3D
+        /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
+        vmsvga3dSurfaceFlush(pThis, pSurface);
 
-        for (uint32_t i = 0; i < cCopyBoxes; ++i)
+#else /* VMSVGA3D_OPENGL */
+        pContext = &pState->SharedCtx;
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+#endif
+    }
+
+    /* SVGA_3D_CMD_SURFACE_DMA:
+     * "define the 'source' in each copyBox as the guest image and the
+     * 'destination' as the host image, regardless of transfer direction."
+     */
+    for (uint32_t i = 0; i < cCopyBoxes; ++i)
+    {
+        Log(("Copy box (%s) %d (%d,%d,%d)(%d,%d,%d) dest (%d,%d)\n",
+             VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface) ? "hw" : "mem",
+             i, paBoxes[i].srcx, paBoxes[i].srcy, paBoxes[i].srcz, paBoxes[i].w, paBoxes[i].h, paBoxes[i].d, paBoxes[i].x, paBoxes[i].y));
+
+        /* Apparently we're supposed to clip it (gmr test sample) */
+
+        /* The copybox's "dest" is coords in the host surface. Verify them against the surface's mipmap size. */
+        SVGA3dBox hostBox;
+        hostBox.x = paBoxes[i].x;
+        hostBox.y = paBoxes[i].y;
+        hostBox.z = paBoxes[i].z;
+        hostBox.w = paBoxes[i].w;
+        hostBox.h = paBoxes[i].h;
+        hostBox.d = paBoxes[i].d;
+        vmsvgaClipBox(&pMipLevel->mipmapSize, &hostBox);
+
+        if (   !hostBox.w
+            || !hostBox.h
+            || !hostBox.d)
         {
-            Log(("Copy box (mem) %d (%d,%d,%d)(%d,%d,%d) dest (%d,%d)\n",
-                  i, paBoxes[i].srcx, paBoxes[i].srcy, paBoxes[i].srcz, paBoxes[i].w, paBoxes[i].h, paBoxes[i].d, paBoxes[i].x, paBoxes[i].y));
+            Log(("Skip empty box\n"));
+            continue;
+        }
+        RT_UNTRUSTED_VALIDATED_FENCE();
 
-            /* Apparently we're supposed to clip it (gmr test sample) */
-            SVGA3dCopyBox clipBox = paBoxes[i];
-            vmsvgaClipCopyBox(&pMipLevel->mipmapSize, &pMipLevel->mipmapSize, &clipBox);
-            if (   !clipBox.w
-                || !clipBox.h
-                || !clipBox.d)
-            {
-                Log(("Skip empty box\n"));
-                continue;
-            }
+        /* Adjust the guest, i.e. "src", point.
+         * Do not try to verify them here because vmsvgaGMRTransfer takes care of this.
+         */
+        uint32_t const srcx = paBoxes[i].srcx + (hostBox.x - paBoxes[i].x);
+        uint32_t const srcy = paBoxes[i].srcy + (hostBox.y - paBoxes[i].y);
+        uint32_t const srcz = paBoxes[i].srcz + (hostBox.z - paBoxes[i].z);
 
-            /* Calculate memory addresses of the image blocks for the transfer. */
-            uint32_t u32HostBlockX;
-            uint32_t u32HostBlockY;
-            uint32_t u32GuestBlockX;
-            uint32_t u32GuestBlockY;
-            uint32_t cBlocksX;
-            uint32_t cBlocksY;
-            if (RT_LIKELY(pSurface->cxBlock == 1 && pSurface->cyBlock == 1))
-            {
-                u32HostBlockX = clipBox.x;
-                u32HostBlockY = clipBox.y;
+        /* Calculate offsets of the image blocks for the transfer. */
+        uint32_t u32HostBlockX;
+        uint32_t u32HostBlockY;
+        uint32_t u32GuestBlockX;
+        uint32_t u32GuestBlockY;
+        uint32_t cBlocksX;
+        uint32_t cBlocksY;
+        if (RT_LIKELY(pSurface->cxBlock == 1 && pSurface->cyBlock == 1))
+        {
+            u32HostBlockX = hostBox.x;
+            u32HostBlockY = hostBox.y;
 
-                u32GuestBlockX = clipBox.srcx;
-                u32GuestBlockY = clipBox.srcy;
+            u32GuestBlockX = srcx;
+            u32GuestBlockY = srcy;
 
-                cBlocksX = clipBox.w;
-                cBlocksY = clipBox.h;
-            }
-            else
-            {
-                /* Pixels to blocks. */
-                u32HostBlockX = clipBox.x / pSurface->cxBlock;
-                u32HostBlockY = clipBox.y / pSurface->cyBlock;
-                Assert(u32HostBlockX * pSurface->cxBlock == clipBox.x);
-                Assert(u32HostBlockY * pSurface->cyBlock == clipBox.y);
+            cBlocksX = hostBox.w;
+            cBlocksY = hostBox.h;
+        }
+        else
+        {
+            /* Pixels to blocks. */
+            u32HostBlockX = hostBox.x / pSurface->cxBlock;
+            u32HostBlockY = hostBox.y / pSurface->cyBlock;
+            Assert(u32HostBlockX * pSurface->cxBlock == hostBox.x);
+            Assert(u32HostBlockY * pSurface->cyBlock == hostBox.y);
 
-                u32GuestBlockX = clipBox.srcx / pSurface->cxBlock;
-                u32GuestBlockY = clipBox.srcy / pSurface->cyBlock;
-                Assert(u32GuestBlockX * pSurface->cxBlock == clipBox.srcx);
-                Assert(u32GuestBlockY * pSurface->cyBlock == clipBox.srcy);
+            u32GuestBlockX = srcx / pSurface->cxBlock;
+            u32GuestBlockY = srcy / pSurface->cyBlock;
+            Assert(u32GuestBlockX * pSurface->cxBlock == srcx);
+            Assert(u32GuestBlockY * pSurface->cyBlock == srcy);
 
-                cBlocksX = (clipBox.w + pSurface->cxBlock - 1) / pSurface->cxBlock;
-                cBlocksY = (clipBox.h + pSurface->cyBlock - 1) / pSurface->cyBlock;
-            }
+            cBlocksX = (hostBox.w + pSurface->cxBlock - 1) / pSurface->cxBlock;
+            cBlocksY = (hostBox.h + pSurface->cyBlock - 1) / pSurface->cyBlock;
+        }
 
-            uint32_t cbGuestPitch;
-            if (guest.pitch == 0)
-                cbGuestPitch = cBlocksX * pSurface->cbBlock;
-            else
-            {
-                cbGuestPitch = guest.pitch; /* vmsvgaGMRTransfer will verify the value. */
-                AssertReturn(cbGuestPitch <= SVGA3D_MAX_SURFACE_MEM_SIZE, VERR_INVALID_PARAMETER);
-            }
+        uint32_t cbGuestPitch = guest.pitch;
+        if (cbGuestPitch == 0)
+            cbGuestPitch = cBlocksX * pSurface->cbBlock; /* Have to calculate. */
+        else
+        {
+            /* vmsvgaGMRTransfer will verify the value, just check it is sane. */
+            AssertReturn(cbGuestPitch <= SVGA3D_MAX_SURFACE_MEM_SIZE, VERR_INVALID_PARAMETER);
+            RT_UNTRUSTED_VALIDATED_FENCE();
+        }
 
+        /* srcx, srcy and srcz values are used to calculate the guest offset.
+         * The offset will be verified by vmsvgaGMRTransfer, so just check for overflows here.
+         */
+        AssertReturn(srcz < UINT32_MAX / pMipLevel->mipmapSize.height / cbGuestPitch, VERR_INVALID_PARAMETER);
+        AssertReturn(u32GuestBlockY < UINT32_MAX / cbGuestPitch, VERR_INVALID_PARAMETER);
+        AssertReturn(u32GuestBlockX < UINT32_MAX / pSurface->cbBlock, VERR_INVALID_PARAMETER);
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
+        if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
+        {
             uint64_t uGuestOffset = u32GuestBlockX * pSurface->cbBlock +
                                     u32GuestBlockY * cbGuestPitch +
-                                    clipBox.srcz * pMipLevel->mipmapSize.height * cbGuestPitch;
+                                    srcz * pMipLevel->mipmapSize.height * cbGuestPitch;
             AssertReturn(uGuestOffset < UINT32_MAX, VERR_INVALID_PARAMETER);
 
             /* vmsvga3dSurfaceDefine verifies the surface dimensions and clipBox is within them. */
             uint32_t uHostOffset = u32HostBlockX * pSurface->cbBlock +
                                    u32HostBlockY * pMipLevel->cbSurfacePitch +
-                                   clipBox.z * pMipLevel->cbSurfacePlane;
+                                   hostBox.z * pMipLevel->cbSurfacePlane;
             AssertReturn(uHostOffset < pMipLevel->cbSurface, VERR_INTERNAL_ERROR);
 
-            for (uint32_t z = 0; z < clipBox.d; ++z)
+            for (uint32_t z = 0; z < hostBox.d; ++z)
             {
                 rc = vmsvgaGMRTransfer(pThis,
                                        transfer,
-                                       (uint8_t *)pMipLevel->pSurfaceData + uHostOffset,
+                                       (uint8_t *)pMipLevel->pSurfaceData,
+                                       pMipLevel->cbSurface,
+                                       uHostOffset,
                                        (int32_t)pMipLevel->cbSurfacePitch,
                                        guest.ptr,
                                        (uint32_t)uGuestOffset,
@@ -590,94 +638,32 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
 
                 uHostOffset += pMipLevel->cbSurfacePlane;
                 uGuestOffset += pMipLevel->mipmapSize.height * cbGuestPitch;
+                AssertReturn(uGuestOffset < UINT32_MAX, VERR_INVALID_PARAMETER);
             }
         }
-
-        pMipLevel->fDirty = true;
-        pSurface->fDirty = true;
-    }
-    else
-    {
-        /*
-         * Because of the clipping below, we're doing a little more
-         * here before calling the backend specific code.
-         */
-#ifdef VMSVGA3D_DIRECT3D
-        /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
-        vmsvga3dSurfaceFlush(pThis, pSurface);
-        PVMSVGA3DCONTEXT pContext = NULL;
-
-#else /* VMSVGA3D_OPENGL */
-        PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
-        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
-#endif
-
-        for (uint32_t i = 0; i < cCopyBoxes; ++i)
+        else
         {
-            /** @todo Identical code to the above no-hw branch. Think about merging. */
-            Log(("Copy box (hw) %d (%d,%d,%d)(%d,%d,%d) dest (%d,%d)\n",
-                  i, paBoxes[i].srcx, paBoxes[i].srcy, paBoxes[i].srcz, paBoxes[i].w, paBoxes[i].h, paBoxes[i].d, paBoxes[i].x, paBoxes[i].y));
-
-            /* Apparently we're supposed to clip it (gmr test sample) */
-            SVGA3dCopyBox clipBox = paBoxes[i];
-            vmsvgaClipCopyBox(&pMipLevel->mipmapSize, &pMipLevel->mipmapSize, &clipBox);
-            if (   !clipBox.w
-                || !clipBox.h
-                || !clipBox.d)
-            {
-                Log(("Skip empty box\n"));
-                continue;
-            }
-
-            /* Calculate memory addresses of the image blocks for the transfer. */
-            uint32_t u32HostBlockX;
-            uint32_t u32HostBlockY;
-            uint32_t u32GuestBlockX;
-            uint32_t u32GuestBlockY;
-            uint32_t cBlocksX;
-            uint32_t cBlocksY;
-            if (RT_LIKELY(pSurface->cxBlock == 1 && pSurface->cyBlock == 1))
-            {
-                u32HostBlockX = clipBox.x;
-                u32HostBlockY = clipBox.y;
-
-                u32GuestBlockX = clipBox.srcx;
-                u32GuestBlockY = clipBox.srcy;
-
-                cBlocksX = clipBox.w;
-                cBlocksY = clipBox.h;
-            }
-            else
-            {
-                /* Pixels to blocks. */
-                u32HostBlockX = clipBox.x / pSurface->cxBlock;
-                u32HostBlockY = clipBox.y / pSurface->cyBlock;
-                Assert(u32HostBlockX * pSurface->cxBlock == clipBox.x);
-                Assert(u32HostBlockY * pSurface->cyBlock == clipBox.y);
-
-                u32GuestBlockX = clipBox.srcx / pSurface->cxBlock;
-                u32GuestBlockY = clipBox.srcy / pSurface->cyBlock;
-                Assert(u32GuestBlockX * pSurface->cxBlock == clipBox.srcx);
-                Assert(u32GuestBlockY * pSurface->cyBlock == clipBox.srcy);
-
-                cBlocksX = (clipBox.w + pSurface->cxBlock - 1) / pSurface->cxBlock;
-                cBlocksY = (clipBox.h + pSurface->cyBlock - 1) / pSurface->cyBlock;
-            }
-
-            uint32_t cbGuestPitch;
-            if (guest.pitch == 0)
-                cbGuestPitch = cBlocksX * pSurface->cbBlock;
-            else
-            {
-                cbGuestPitch = guest.pitch; /* vmsvgaGMRTransfer will verify the value. */
-                AssertReturn(cbGuestPitch <= SVGA3D_MAX_SURFACE_MEM_SIZE, VERR_INVALID_PARAMETER);
-            }
-
+            SVGA3dCopyBox clipBox;
+            clipBox.x = hostBox.x;
+            clipBox.y = hostBox.y;
+            clipBox.z = hostBox.z;
+            clipBox.w = hostBox.w;
+            clipBox.h = hostBox.h;
+            clipBox.d = hostBox.d;
+            clipBox.srcx = srcx;
+            clipBox.srcy = srcy;
+            clipBox.srcz = srcz;
             rc = vmsvga3dBackSurfaceDMACopyBox(pThis, pState, pSurface, pMipLevel, host.face, host.mipmap,
                                                guest.ptr, cbGuestPitch, transfer,
                                                &clipBox, pContext, rc, i);
             AssertRC(rc);
         }
+    }
+
+    if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
+    {
+        pMipLevel->fDirty = true;
+        pSurface->fDirty = true;
     }
 
     return rc;
@@ -690,7 +676,8 @@ static int vmsvga3dQueryWriteResult(PVGASTATE pThis, SVGAGuestPtr guestResult, S
     queryResult.state = enmState;                   /* Set by host or guest. See SVGA3dQueryState. */
     queryResult.result32 = u32Result;
 
-    int rc = vmsvgaGMRTransfer(pThis, SVGA3D_READ_HOST_VRAM, (uint8_t *)&queryResult, sizeof(queryResult),
+    int rc = vmsvgaGMRTransfer(pThis, SVGA3D_READ_HOST_VRAM,
+                               (uint8_t *)&queryResult, sizeof(queryResult), 0, sizeof(queryResult),
                                guestResult, 0, sizeof(queryResult), sizeof(queryResult), 1);
     AssertRC(rc);
     return rc;

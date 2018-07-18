@@ -2348,7 +2348,7 @@ void vmsvga3dOglRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
  * @param   GuestPtr            The guest pointer.
  * @param   cbGuestPitch        The guest pitch.
  * @param   transfer            The transfer direction.
- * @param   pBox                The box to copy.
+ * @param   pBox                The box to copy (clipped, valid, except for guest's srcx, srcy, srcz).
  * @param   pContext            The context (for OpenGL).
  * @param   rc                  The current rc for all boxes.
  * @param   iBox                The current box number (for Direct 3D).
@@ -2368,8 +2368,8 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
     case SVGA3D_SURFACE_HINT_RENDERTARGET:
     {
         uint32_t cbSurfacePitch;
-        uint8_t *pDoubleBuffer, *pBufferStart;
-        unsigned uDestOffset = 0;
+        uint8_t *pDoubleBuffer;
+        uint32_t offHst;
 
         pDoubleBuffer = (uint8_t *)RTMemAlloc(pMipLevel->cbSurface);
         AssertReturn(pDoubleBuffer, VERR_NO_MEMORY);
@@ -2402,12 +2402,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             glBindTexture(GL_TEXTURE_2D, activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-            uDestOffset = pBox->x * pSurface->cbBlock + pBox->y * pMipLevel->cbSurfacePitch;
-            AssertReturnStmt(   uDestOffset + pBox->w * pSurface->cbBlock + (pBox->h - 1) * pMipLevel->cbSurfacePitch
-                             <= pMipLevel->cbSurface,
-                             RTMemFree(pDoubleBuffer),
-                             VERR_INTERNAL_ERROR);
-
+            offHst = pBox->x * pSurface->cbBlock + pBox->y * pMipLevel->cbSurfacePitch;
             cbSurfacePitch = pMipLevel->cbSurfacePitch;
 
 #ifdef MANUAL_FLIP_SURFACE_DATA
@@ -2416,29 +2411,33 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                            + pMipLevel->cbSurface - pBox->y * cbSurfacePitch
                            - cbSurfacePitch;      /* flip image during copy */
 #else
-            pBufferStart = pDoubleBuffer + uDestOffset;
 #endif
         }
         else
         {
+            /* The buffer will contain only the copied rectangle. */
+            offHst = 0;
             cbSurfacePitch = pBox->w * pSurface->cbBlock;
 #ifdef MANUAL_FLIP_SURFACE_DATA
             pBufferStart = pDoubleBuffer + cbSurfacePitch * pBox->h - cbSurfacePitch;      /* flip image during copy */
 #else
-            pBufferStart = pDoubleBuffer;
 #endif
         }
 
+        uint32_t const offGst = pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch; /// @todo compressed fmts
+
         rc = vmsvgaGMRTransfer(pThis,
                                transfer,
-                               pBufferStart,
+                               pDoubleBuffer,
+                               pMipLevel->cbSurface,
+                               offHst,
 #ifdef MANUAL_FLIP_SURFACE_DATA
                                -(int32_t)cbSurfacePitch,
 #else
-                               (int32_t)cbSurfacePitch,
+                               cbSurfacePitch,
 #endif
                                GuestPtr,
-                               pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch, /// @todo compressed fmts
+                               offGst,
                                cbGuestPitch,
                                pBox->w * pSurface->cbBlock,
                                pBox->h);
@@ -2497,7 +2496,8 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
     {
-        Assert(pBox->h == 1);
+        /* Caller already clipped pBox and buffers are 1-dimensional. */
+        Assert(pBox->y == 0 && pBox->h == 1 && pBox->z == 0 && pBox->d == 1);
 
         VMSVGA3D_CLEAR_GL_ERRORS();
         pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pSurface->oglId.buffer);
@@ -2514,34 +2514,27 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                 AssertMsg(cbStrictBufSize >= (int32_t)pMipLevel->cbSurface,
                           ("cbStrictBufSize=%#x cbSurface=%#x pContext->id=%#x\n", (uint32_t)cbStrictBufSize, pMipLevel->cbSurface, pContext->id));
 #endif
+                Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n",
+                     (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_VERTEXBUFFER ? "vertex" :
+                       (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_INDEXBUFFER ? "index" : "buffer",
+                     pBox->x, pBox->y, pBox->x + pBox->w, pBox->y + pBox->h));
 
-                unsigned offDst = pBox->x * pSurface->cbBlock + pBox->y * pMipLevel->cbSurfacePitch;
-                if (RT_LIKELY(   offDst + pBox->w * pSurface->cbBlock  + (pBox->h - 1) * pMipLevel->cbSurfacePitch
-                              <= pMipLevel->cbSurface))
-                {
-                    Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n",
-                         (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_VERTEXBUFFER ? "vertex" :
-                           (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_INDEXBUFFER ? "index" : "buffer",
-                         pBox->x, pBox->y, pBox->x + pBox->w, pBox->y + pBox->h));
+                uint32_t const offHst = pBox->x * pSurface->cbBlock;
 
-                    rc = vmsvgaGMRTransfer(pThis,
-                                           transfer,
-                                           pbData + offDst,
-                                           pMipLevel->cbSurfacePitch,
-                                           GuestPtr,
-                                           pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch,
-                                           cbGuestPitch,
-                                           pBox->w * pSurface->cbBlock,
-                                           pBox->h);
-                    AssertRC(rc);
+                rc = vmsvgaGMRTransfer(pThis,
+                                       transfer,
+                                       pbData,
+                                       pMipLevel->cbSurface,
+                                       offHst,
+                                       pMipLevel->cbSurfacePitch,
+                                       GuestPtr,
+                                       pBox->srcx * pSurface->cbBlock,
+                                       cbGuestPitch,
+                                       pBox->w * pSurface->cbBlock,
+                                       pBox->h);
+                AssertRC(rc);
 
-                    Log4(("first line:\n%.*Rhxd\n", cbGuestPitch, pbData + offDst));
-                }
-                else
-                {
-                    AssertFailed();
-                    rc = VERR_INTERNAL_ERROR;
-                }
+                Log4(("first line:\n%.*Rhxd\n", cbGuestPitch, pbData + offHst));
 
                 pState->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
