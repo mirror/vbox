@@ -589,7 +589,10 @@ typedef enum PDMAUDIOSTREAMCMD
     PDMAUDIOSTREAMCMD_UNKNOWN = 0,
     /** Enables the stream. */
     PDMAUDIOSTREAMCMD_ENABLE,
-    /** Disables the stream. */
+    /** Disables the stream.
+     *  For output streams this stops the stream after playing the remaining (buffered) audio data.
+     *  For input streams this will deliver the remaining (captured) audio data and not accepting
+     *  any new audio input data afterwards. */
     PDMAUDIOSTREAMCMD_DISABLE,
     /** Pauses the stream. */
     PDMAUDIOSTREAMCMD_PAUSE,
@@ -1261,7 +1264,7 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamSetVolume, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOVOLUME pVol));
 
     /**
-     * Plays (transfers) available audio frames via the host backend. Only works with output streams.
+     * Plays (transfers) available audio frames to the host backend. Only works with output streams.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
