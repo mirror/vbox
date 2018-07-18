@@ -3577,6 +3577,12 @@
         selection of the VM folder. Additional groups may be configured later
         using <link to="IMachine::groups"/>, after importing.</desc>
     </const>
+    <const name="CloudOCIInstanceShape" value="27" />
+    <const name="CloudOCIDomain" value="28" />
+    <const name="CloudOCIBootDiskSize" value="29" />
+    <const name="CloudOCIBucket" value="30" />
+    <const name="CloudOCIVCN" value="31" />
+    <const name="CloudOCIPublicIP" value="32" />
   </enum>
 
   <enum

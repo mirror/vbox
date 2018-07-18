@@ -379,10 +379,13 @@ HRESULT OCIUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
     hrc = ptrCloudClient.createObject();
     if (SUCCEEDED(hrc))
     {
+        ComObjPtr<CloudClientOCI> ptrCloudClientOCI;
+        hrc = ptrCloudClientOCI.createObject();
         AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = ptrCloudClient->initCloudClient(this, mParent, providerId, aProfileName);
+        hrc = ptrCloudClientOCI->initCloudClient(this, mParent, providerId, aProfileName);
         if (SUCCEEDED(hrc))
         {
+            ptrCloudClient = ptrCloudClientOCI;
             hrc = ptrCloudClient.queryInterfaceTo(aCloudClient.asOutParam());
         }
     }
