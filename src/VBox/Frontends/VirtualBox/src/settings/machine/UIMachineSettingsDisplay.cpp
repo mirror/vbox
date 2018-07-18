@@ -1648,7 +1648,6 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
             /* Save video capture options: */
             if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
             {
-                printf("%s\n", qPrintable(newDisplayData.m_strVideoCaptureOptions));
                 m_machine.SetVideoCaptureOptions(newDisplayData.m_strVideoCaptureOptions);
                 fSuccess = m_machine.isOk();
             }
