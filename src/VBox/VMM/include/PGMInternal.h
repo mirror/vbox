@@ -2979,7 +2979,6 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_GST_NAME_AMD64(name)        PGM_CTX(pgm,GstAMD64##name)
 #define PGM_GST_NAME_RC_AMD64_STR(name) "pgmRCGstAMD64" #name
 #define PGM_GST_NAME_R0_AMD64_STR(name) "pgmR0GstAMD64" #name
-#define PGM_GST_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Gst##name))
 #define PGM_GST_DECL(type, name)        PGM_CTX_DECL(type) PGM_GST_NAME(name)
 
 #define PGM_SHW_NAME_32BIT(name)        PGM_CTX(pgm,Shw32Bit##name)
@@ -3063,6 +3062,32 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Bth##name))
 /** @} */
 
+
+/**
+ * Function pointers for guest paging.
+ */
+typedef struct PGMMODEDATAGST
+{
+    /** The guest mode type. */
+    uint32_t                        uType;
+    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
+    DECLCALLBACKMEMBER(int,         pfnGetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde);
+    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPU pVCpu);
+    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+} PGMMODEDATAGST;
+
+/** The length of g_aPgmGuestModeData. */
+#if defined(VBOX_WITH_64_BITS_GUESTS) && !defined(IN_RC)
+# define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_AMD64 + 1)
+#else
+# define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_PAE + 1)
+#endif
+/** The guest mode data array. */
+extern PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE];
+
+
 /**
  * Data for each paging mode.
  */
@@ -3086,22 +3111,6 @@ typedef struct PGMMODEDATA
 
     DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-    /** @} */
-
-    /** @name Function pointers for Guest paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -3918,6 +3927,14 @@ typedef struct PGMCPU
     PGMMODE                         enmShadowMode;
     /** The guest paging mode. */
     PGMMODE                         enmGuestMode;
+    /** Guest mode data table index (PGM_TYPE_XXX). */
+    uint8_t volatile                idxGuestModeData;
+    /** Shadow mode data table index (PGM_TYPE_XXX). */
+    uint8_t volatile                idxShadowModeData;
+    /** Both mode data table index (complicated). */
+    uint8_t volatile                idxBothModeData;
+    /** Alignment padding. */
+    uint8_t                         abPadding[5];
 
     /** The current physical address represented in the guest CR3 register. */
     RTGCPHYS                        GCPhysCR3;
@@ -4046,26 +4063,6 @@ typedef struct PGMCPU
     DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
 
-    /** @} */
-
-    /** @name Function pointers for Guest paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         alignment3; /**< structure size alignment. */
-#endif
-
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.

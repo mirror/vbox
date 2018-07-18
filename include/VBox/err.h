@@ -603,6 +603,8 @@
 /** Internal processing error in the PGM physcal page handling code related to
  *  MMIO/MMIO2. */
 #define VERR_PGM_PHYS_MMIO_EX_IPE               (-1685)
+/** Mode table internal error. */
+#define VERR_PGM_MODE_IPE                       (-1686)
 /** @} */
 
 

@@ -394,6 +394,83 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
 #endif /* !IN_RC */
 
 
+/**
+ * Guest mode data array.
+ */
+PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
+{
+    /* NULL entry. */
+    { UINT32_MAX, NULL, NULL, NULL, NULL, NULL },
+    {
+        PGM_TYPE_REAL,
+        PGM_GST_NAME_REAL(GetPage),
+        PGM_GST_NAME_REAL(ModifyPage),
+        PGM_GST_NAME_REAL(GetPDE),
+#ifdef IN_RING3
+        PGM_GST_NAME_REAL(Enter),
+        PGM_GST_NAME_REAL(Exit),
+        PGM_GST_NAME_REAL(Relocate),
+#else
+        NULL, NULL, NULL,
+#endif
+    },
+    {
+        PGM_TYPE_PROT,
+        PGM_GST_NAME_PROT(GetPage),
+        PGM_GST_NAME_PROT(ModifyPage),
+        PGM_GST_NAME_PROT(GetPDE),
+#ifdef IN_RING3
+        PGM_GST_NAME_PROT(Enter),
+        PGM_GST_NAME_PROT(Exit),
+        PGM_GST_NAME_PROT(Relocate),
+#else
+        NULL, NULL, NULL,
+#endif
+    },
+    {
+        PGM_TYPE_32BIT,
+        PGM_GST_NAME_32BIT(GetPage),
+        PGM_GST_NAME_32BIT(ModifyPage),
+        PGM_GST_NAME_32BIT(GetPDE),
+#ifdef IN_RING3
+        PGM_GST_NAME_32BIT(Enter),
+        PGM_GST_NAME_32BIT(Exit),
+        PGM_GST_NAME_32BIT(Relocate),
+#else
+        NULL, NULL, NULL,
+#endif
+    },
+    {
+        PGM_TYPE_PAE,
+        PGM_GST_NAME_PAE(GetPage),
+        PGM_GST_NAME_PAE(ModifyPage),
+        PGM_GST_NAME_PAE(GetPDE),
+#ifdef IN_RING3
+        PGM_GST_NAME_PAE(Enter),
+        PGM_GST_NAME_PAE(Exit),
+        PGM_GST_NAME_PAE(Relocate),
+#else
+        NULL, NULL, NULL,
+#endif
+    },
+#if defined(VBOX_WITH_64_BITS_GUESTS) && !defined(IN_RC)
+    {
+        PGM_TYPE_AMD64,
+        PGM_GST_NAME_AMD64(GetPage),
+        PGM_GST_NAME_AMD64(ModifyPage),
+        PGM_GST_NAME_AMD64(GetPDE),
+# ifdef IN_RING3
+        PGM_GST_NAME_AMD64(Enter),
+        PGM_GST_NAME_AMD64(Exit),
+        PGM_GST_NAME_AMD64(Relocate),
+# else
+        NULL, NULL, NULL,
+# endif
+    },
+#endif
+};
+
+
 #ifndef IN_RING3
 /**
  * #PF Handler.
@@ -1412,7 +1489,10 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t cPages, P
 VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    return PGM_GST_PFN(GetPage, pVCpu)(pVCpu, GCPtr, pfFlags, pGCPhys);
+    intptr_t idx = pVCpu->pgm.s.idxGuestModeData;
+    AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmGuestModeData[idx].pfnGetPage, VERR_PGM_MODE_IPE);
+    return g_aPgmGuestModeData[idx].pfnGetPage(pVCpu, GCPtr, pfFlags, pGCPhys);
 }
 
 
@@ -1662,7 +1742,10 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
     /*
      * Call worker.
      */
-    int rc = PGM_GST_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, cb, fFlags, fMask);
+    intptr_t idx = pVCpu->pgm.s.idxGuestModeData;
+    AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmGuestModeData[idx].pfnModifyPage, VERR_PGM_MODE_IPE);
+    int rc = g_aPgmGuestModeData[idx].pfnModifyPage(pVCpu, GCPtr, cb, fFlags, fMask);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,GstModifyPage), a);
     return rc;

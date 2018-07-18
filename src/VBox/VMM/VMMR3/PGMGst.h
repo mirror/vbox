@@ -21,7 +21,6 @@
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 /* r3 */
-PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
 PGM_GST_DECL(int, Exit)(PVMCPU pVCpu);
@@ -31,57 +30,6 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
 PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 RT_C_DECLS_END
-
-
-/**
- * Initializes the guest bit of the paging mode data.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pModeData       The pointer table to initialize (our members only).
- * @param   fResolveGCAndR0 Indicate whether or not GC and Ring-0 symbols can be resolved now.
- *                          This is used early in the init process to avoid trouble with PDM
- *                          not being initialized yet.
- */
-PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0)
-{
-    Assert(pModeData->uGstType == PGM_GST_TYPE);
-
-    /* Ring-3 */
-    pModeData->pfnR3GstRelocate           = PGM_GST_NAME(Relocate);
-    pModeData->pfnR3GstExit               = PGM_GST_NAME(Exit);
-    pModeData->pfnR3GstGetPDE             = PGM_GST_NAME(GetPDE);
-    pModeData->pfnR3GstGetPage            = PGM_GST_NAME(GetPage);
-    pModeData->pfnR3GstModifyPage         = PGM_GST_NAME(ModifyPage);
-
-    if (fResolveGCAndR0)
-    {
-        int rc;
-
-        if (VM_IS_RAW_MODE_ENABLED(pVM))
-        {
-#if PGM_SHW_TYPE != PGM_TYPE_AMD64 /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
-            /* RC */
-            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPage),          &pModeData->pfnRCGstGetPage);
-            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPage),  rc), rc);
-            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(ModifyPage),       &pModeData->pfnRCGstModifyPage);
-            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(ModifyPage),  rc), rc);
-            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPDE),           &pModeData->pfnRCGstGetPDE);
-            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPDE), rc), rc);
-#endif /* Not AMD64 shadow paging. */
-        }
-
-        /* Ring-0 */
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(GetPage),          &pModeData->pfnR0GstGetPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(GetPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(ModifyPage),       &pModeData->pfnR0GstModifyPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(ModifyPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(GetPDE),           &pModeData->pfnR0GstGetPDE);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_R0_STR(GetPDE), rc), rc);
-    }
-
-    return VINF_SUCCESS;
-}
 
 
 /**

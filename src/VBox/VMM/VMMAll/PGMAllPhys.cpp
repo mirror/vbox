@@ -2243,7 +2243,7 @@ int pgmPhysCr3ToHCPtr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
  */
 VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
-    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
+    int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
     if (pGCPhys && RT_SUCCESS(rc))
         *pGCPhys |= (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
     return rc;
@@ -2264,7 +2264,7 @@ VMM_INT_DECL(int) PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHC
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     RTGCPHYS GCPhys;
-    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
+    int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPhys);
     return rc;
@@ -3672,7 +3672,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrS
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrSrc), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK;
 
@@ -3692,7 +3692,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrS
     for (;;)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrSrc), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK;
 
@@ -3763,7 +3763,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const vo
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK;
 
@@ -3787,7 +3787,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const vo
     for (;;)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK;
 
@@ -3873,7 +3873,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
          */
         RTGCPHYS GCPhys;
         uint64_t fFlags;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, GCPtrSrc, &fFlags, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
@@ -3915,10 +3915,10 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
         RTGCPHYS GCPhys1;
         uint64_t fFlags2;
         RTGCPHYS GCPhys2;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
+        rc = PGMGstGetPage(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
         {
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
+            rc = PGMGstGetPage(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
             if (RT_SUCCESS(rc))
             {
                 /** @todo we should check reserved bits ... */
@@ -4051,7 +4051,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
          */
         RTGCPHYS    GCPhys;
         uint64_t    fFlags;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, GCPtrSrc, &fFlags, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             if (1) /** @todo we should check reserved bits ... */
@@ -4097,10 +4097,10 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
         RTGCPHYS    GCPhys1;
         uint64_t    fFlags2;
         RTGCPHYS    GCPhys2;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
+        rc = PGMGstGetPage(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
         {
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
+            rc = PGMGstGetPage(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
             if (RT_SUCCESS(rc))
             {
                 if (1) /** @todo we should check reserved bits ... */
@@ -4247,7 +4247,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
          */
         RTGCPHYS    GCPhys;
         uint64_t    fFlags;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrDst, &fFlags, &GCPhys);
+        rc = PGMGstGetPage(pVCpu, GCPtrDst, &fFlags, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             if (    (fFlags & X86_PTE_RW)                   /** @todo Also check reserved bits. */
@@ -4296,10 +4296,10 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
         RTGCPHYS    GCPhys1;
         uint64_t    fFlags2;
         RTGCPHYS    GCPhys2;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrDst, &fFlags1, &GCPhys1);
+        rc = PGMGstGetPage(pVCpu, GCPtrDst, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
         {
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrDst + cb1, &fFlags2, &GCPhys2);
+            rc = PGMGstGetPage(pVCpu, GCPtrDst + cb1, &fFlags2, &GCPhys2);
             if (RT_SUCCESS(rc))
             {
                 if (    (   (fFlags1 & X86_PTE_RW)  /** @todo Also check reserved bits. */

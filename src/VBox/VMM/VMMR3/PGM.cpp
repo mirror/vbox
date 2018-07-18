@@ -1278,21 +1278,24 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pPGM->offVCpu    = RT_UOFFSETOF(VMCPU, pgm.s);
         pPGM->offPGM     = (uintptr_t)&pVCpu->pgm.s - (uintptr_t)&pVM->pgm.s;
 
-        pPGM->enmShadowMode    = PGMMODE_INVALID;
-        pPGM->enmGuestMode     = PGMMODE_INVALID;
+        pPGM->enmShadowMode     = PGMMODE_INVALID;
+        pPGM->enmGuestMode      = PGMMODE_INVALID;
+        pPGM->idxGuestModeData  = UINT8_MAX;
+        pPGM->idxShadowModeData = UINT8_MAX;
+        pPGM->idxBothModeData   = UINT8_MAX;
 
-        pPGM->GCPhysCR3        = NIL_RTGCPHYS;
+        pPGM->GCPhysCR3         = NIL_RTGCPHYS;
 
-        pPGM->pGst32BitPdR3    = NULL;
-        pPGM->pGstPaePdptR3    = NULL;
-        pPGM->pGstAmd64Pml4R3  = NULL;
+        pPGM->pGst32BitPdR3     = NULL;
+        pPGM->pGstPaePdptR3     = NULL;
+        pPGM->pGstAmd64Pml4R3   = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-        pPGM->pGst32BitPdR0    = NIL_RTR0PTR;
-        pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
-        pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
+        pPGM->pGst32BitPdR0     = NIL_RTR0PTR;
+        pPGM->pGstPaePdptR0     = NIL_RTR0PTR;
+        pPGM->pGstAmd64Pml4R0   = NIL_RTR0PTR;
 #endif
-        pPGM->pGst32BitPdRC    = NIL_RTRCPTR;
-        pPGM->pGstPaePdptRC    = NIL_RTRCPTR;
+        pPGM->pGst32BitPdRC     = NIL_RTRCPTR;
+        pPGM->pGstPaePdptRC     = NIL_RTRCPTR;
         for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsR3); i++)
         {
             pPGM->apGstPaePDsR3[i]             = NULL;
@@ -1564,8 +1567,11 @@ static int pgmR3InitPaging(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
-        pVCpu->pgm.s.enmGuestMode  = PGMMODE_INVALID;
+        pVCpu->pgm.s.enmShadowMode     = PGMMODE_INVALID;
+        pVCpu->pgm.s.enmGuestMode      = PGMMODE_INVALID;
+        pVCpu->pgm.s.idxGuestModeData  = UINT8_MAX;
+        pVCpu->pgm.s.idxShadowModeData = UINT8_MAX;
+        pVCpu->pgm.s.idxBothModeData   = UINT8_MAX;
     }
 
     pVM->pgm.s.enmHostMode   = SUPPAGINGMODE_INVALID;
@@ -2349,7 +2355,12 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pgmR3ModeDataSwitch(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
 
         PGM_SHW_PFN(Relocate, pVCpu)(pVCpu, offDelta);
-        PGM_GST_PFN(Relocate, pVCpu)(pVCpu, offDelta);
+
+        uintptr_t const idxGst = pVCpu->pgm.s.idxGuestModeData;
+        if (   idxGst < RT_ELEMENTS(g_aPgmGuestModeData)
+            && g_aPgmGuestModeData[idxGst].pfnRelocate)
+            g_aPgmGuestModeData[idxGst].pfnRelocate(pVCpu, offDelta);
+
         PGM_BTH_PFN(Relocate, pVCpu)(pVCpu, offDelta);
     }
 
@@ -2546,12 +2557,17 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
  */
 VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 {
-    int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
-    AssertRC(rc);
+    uintptr_t const idxGst = pVCpu->pgm.s.idxGuestModeData;
+    if (   idxGst < RT_ELEMENTS(g_aPgmGuestModeData)
+        && g_aPgmGuestModeData[idxGst].pfnExit)
+    {
+        int rc = g_aPgmGuestModeData[idxGst].pfnExit(pVCpu);
+        AssertReleaseRC(rc);
+    }
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
 
-    rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
-    AssertRC(rc);
+    int rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
+    AssertReleaseRC(rc);
 
     STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
 
@@ -2600,9 +2616,14 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU  pVCpu = &pVM->aCpus[i];
-        int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
-        AssertReleaseRC(rc);
+        PVMCPU          pVCpu  = &pVM->aCpus[i];
+        uintptr_t const idxGst = pVCpu->pgm.s.idxGuestModeData;
+        if (   idxGst < RT_ELEMENTS(g_aPgmGuestModeData)
+            && g_aPgmGuestModeData[idxGst].pfnExit)
+        {
+            int rc = g_aPgmGuestModeData[idxGst].pfnExit(pVCpu);
+            AssertReleaseRC(rc);
+        }
         pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
     }
 
@@ -2612,7 +2633,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
 #endif
 
     /*
-     * Switch mode back to real mode. (before resetting the pgm pool!)
+     * Switch mode back to real mode. (Before resetting the pgm pool!)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -2782,7 +2803,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
             case SUPPAGINGMODE_AMD64_GLOBAL_NX:     psz = "AMD64+G+NX"; break;
             default:                                psz = "unknown"; break;
         }
-        pHlp->pfnPrintf(pHlp, "Host paging mode:              %s\n", psz);
+        pHlp->pfnPrintf(pHlp, "Host paging mode:             %s\n", psz);
     }
 }
 
@@ -3057,49 +3078,42 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     pModeData->uShwType = PGM_TYPE_32BIT;
     pModeData->uGstType = PGM_TYPE_REAL;
     rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_REAL(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_32BIT_REAL(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_32BIT, PGMMODE_PROTECTED)];
     pModeData->uShwType = PGM_TYPE_32BIT;
     pModeData->uGstType = PGM_TYPE_PROT;
     rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_PROT(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_32BIT_PROT(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_32BIT, PGM_TYPE_32BIT)];
     pModeData->uShwType = PGM_TYPE_32BIT;
     pModeData->uGstType = PGM_TYPE_32BIT;
     rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_32BIT_32BIT(InitData)(pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_PAE, PGM_TYPE_REAL)];
     pModeData->uShwType = PGM_TYPE_PAE;
     pModeData->uGstType = PGM_TYPE_REAL;
     rc = PGM_SHW_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_REAL(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_PAE_REAL(InitData)(   pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_PAE, PGM_TYPE_PROT)];
     pModeData->uShwType = PGM_TYPE_PAE;
     pModeData->uGstType = PGM_TYPE_PROT;
     rc = PGM_SHW_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_PROT(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_PAE_PROT(InitData)(   pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_PAE, PGM_TYPE_32BIT)];
     pModeData->uShwType = PGM_TYPE_PAE;
     pModeData->uGstType = PGM_TYPE_32BIT;
     rc = PGM_SHW_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_PAE_32BIT(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_PAE, PGM_TYPE_PAE)];
     pModeData->uShwType = PGM_TYPE_PAE;
     pModeData->uGstType = PGM_TYPE_PAE;
     rc = PGM_SHW_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_PAE_PAE(InitData)(    pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
@@ -3107,7 +3121,6 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     pModeData->uShwType = PGM_TYPE_AMD64;
     pModeData->uGstType = PGM_TYPE_AMD64;
     rc = PGM_SHW_NAME_AMD64(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_AMD64(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_AMD64_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 #endif
 
@@ -3115,32 +3128,27 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_REAL)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_REAL;
-    rc = PGM_GST_NAME_REAL(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_REAL(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGMMODE_PROTECTED)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_PROT;
-    rc = PGM_GST_NAME_PROT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_PROT(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_32BIT)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_32BIT;
-    rc = PGM_GST_NAME_32BIT(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_32BIT(InitData)(pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_PAE)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_PAE;
-    rc = PGM_GST_NAME_PAE(InitData)(         pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_PAE(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_AMD64)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_AMD64;
-    rc = PGM_GST_NAME_AMD64(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 #endif
 
@@ -3204,28 +3212,24 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     pModeData->uShwType = PGM_TYPE_EPT;
     pModeData->uGstType = PGM_TYPE_REAL;
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_REAL(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_REAL(InitData)(   pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_EPT, PGM_TYPE_PROT)];
     pModeData->uShwType = PGM_TYPE_EPT;
     pModeData->uGstType = PGM_TYPE_PROT;
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_PROT(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_PROT(InitData)(   pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_EPT, PGM_TYPE_32BIT)];
     pModeData->uShwType = PGM_TYPE_EPT;
     pModeData->uGstType = PGM_TYPE_32BIT;
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_32BIT(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_EPT, PGM_TYPE_PAE)];
     pModeData->uShwType = PGM_TYPE_EPT;
     pModeData->uGstType = PGM_TYPE_PAE;
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_PAE(InitData)(    pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
@@ -3233,7 +3237,6 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     pModeData->uShwType = PGM_TYPE_EPT;
     pModeData->uGstType = PGM_TYPE_AMD64;
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_GST_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_AMD64(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 #endif
     return VINF_SUCCESS;
@@ -3250,6 +3253,25 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
  */
 static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst)
 {
+    /*
+     * Update the indexes.
+     */
+    uintptr_t idxGst = pVCpu->pgm.s.idxGuestModeData = pgmModeToType(enmGst);
+    Assert(g_aPgmGuestModeData[idxGst].uType == idxGst);
+    AssertPtr(g_aPgmGuestModeData[idxGst].pfnGetPage);
+    AssertPtr(g_aPgmGuestModeData[idxGst].pfnModifyPage);
+    AssertPtr(g_aPgmGuestModeData[idxGst].pfnGetPDE);
+    AssertPtr(g_aPgmGuestModeData[idxGst].pfnExit);
+    AssertPtr(g_aPgmGuestModeData[idxGst].pfnEnter);
+    AssertPtr(g_aPgmGuestModeData[idxGst].pfnRelocate);
+    NOREF(idxGst);
+
+    pVCpu->pgm.s.idxShadowModeData = pgmModeToType(enmShw);
+    pVCpu->pgm.s.idxBothModeData   = pgmModeDataIndexByMode(enmShw, enmGst);
+
+    /*
+     * The following code will be gradually reduced and finally removed:
+     */
     PPGMMODEDATA pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndexByMode(enmShw, enmGst)];
 
     Assert(pModeData->uGstType == pgmModeToType(enmGst));
@@ -3267,21 +3289,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE e
 
     pVCpu->pgm.s.pfnR0ShwGetPage              = pModeData->pfnR0ShwGetPage;
     pVCpu->pgm.s.pfnR0ShwModifyPage           = pModeData->pfnR0ShwModifyPage;
-
-
-    /* guest */
-    pVCpu->pgm.s.pfnR3GstRelocate             = pModeData->pfnR3GstRelocate;
-    pVCpu->pgm.s.pfnR3GstExit                 = pModeData->pfnR3GstExit;
-    pVCpu->pgm.s.pfnR3GstGetPage              = pModeData->pfnR3GstGetPage;
-    pVCpu->pgm.s.pfnR3GstModifyPage           = pModeData->pfnR3GstModifyPage;
-    pVCpu->pgm.s.pfnR3GstGetPDE               = pModeData->pfnR3GstGetPDE;
-    pVCpu->pgm.s.pfnRCGstGetPage              = pModeData->pfnRCGstGetPage;
-    pVCpu->pgm.s.pfnRCGstModifyPage           = pModeData->pfnRCGstModifyPage;
-    pVCpu->pgm.s.pfnRCGstGetPDE               = pModeData->pfnRCGstGetPDE;
-    pVCpu->pgm.s.pfnR0GstGetPage              = pModeData->pfnR0GstGetPage;
-    pVCpu->pgm.s.pfnR0GstModifyPage           = pModeData->pfnR0GstModifyPage;
-    pVCpu->pgm.s.pfnR0GstGetPDE               = pModeData->pfnR0GstGetPDE;
-    Assert(pVCpu->pgm.s.pfnR3GstGetPage);
 
     /* both */
     pVCpu->pgm.s.pfnR3BthRelocate             = pModeData->pfnR3BthRelocate;
@@ -3595,14 +3602,12 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
         LogFlow(("PGMR3ChangeMode: Shadow mode remains: %s\n",  PGMGetModeName(pVCpu->pgm.s.enmShadowMode)));
 
     /* guest */
-    if (PGM_GST_PFN(Exit, pVCpu))
+    uintptr_t const idxOldGst = pVCpu->pgm.s.idxGuestModeData;
+    if (   idxOldGst < RT_ELEMENTS(g_aPgmGuestModeData)
+        && g_aPgmGuestModeData[idxOldGst].pfnExit)
     {
-        int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("Exit failed for guest mode %d: %Rrc\n", pVCpu->pgm.s.enmGuestMode, rc));
-            return rc;
-        }
+        int rc = g_aPgmGuestModeData[idxOldGst].pfnExit(pVCpu);
+        AssertMsgReturn(RT_SUCCESS(rc), ("Exit failed for guest mode %d: %Rrc\n", pVCpu->pgm.s.enmGuestMode, rc), rc);
     }
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
 
