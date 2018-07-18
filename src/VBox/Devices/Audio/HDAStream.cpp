@@ -64,9 +64,6 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     int rc = RTCritSectInit(&pStream->CritSect);
     AssertRCReturn(rc, rc);
 
-    rc = RTCircBufCreate(&pStream->State.pCircBuf, _64K); /** @todo Make this configurable. */
-    AssertRCReturn(rc, rc);
-
     rc = hdaR3StreamPeriodCreate(&pStream->State.Period);
     AssertRCReturn(rc, rc);
 
@@ -196,6 +193,17 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         LogRel(("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
         return rc;
     }
+
+    /* (Re-)Allocate the stream's internal DMA buffer, based on the PCM  properties we just got above. */
+    if (pStream->State.pCircBuf)
+    {
+        RTCircBufDestroy(pStream->State.pCircBuf);
+        pStream->State.pCircBuf = NULL;
+    }
+
+    /* By default we allocate an internal buffer of 100ms. */
+    rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMsToBytes(&pCfg->Props, 100 /* ms */)); /** @todo Make this configurable. */
+    AssertRCReturn(rc, rc);
 
     /* Set the stream's direction. */
     pCfg->enmDir = hdaGetDirFromSD(pStream->u8SD);
