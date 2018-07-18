@@ -27,7 +27,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -906,6 +906,8 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
         RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
         {
             const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
+
+            Log3Func(("[%s] Stream '%s' cbWritableStream=%RU32\n", pSink->pszName, pMixStream->pszName, cbWritableStream));
 
             if (cbWritableStream < cbWritable)
                 cbWritable = cbWritableStream;
