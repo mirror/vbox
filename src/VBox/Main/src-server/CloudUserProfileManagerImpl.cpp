@@ -146,11 +146,8 @@ HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProvid
                             hrc = ptrCloudUserProfileList.queryInterfaceTo(aProfiles.asOutParam());
                         }
                         else
-                            /** @todo r=bird: You are constantly mixing up status codes.
-                             * VERR_FILE_NOT_FOUND, VERR_INVALID_PARAMETER and VERR_NOT_FOUND are all VBox
-                             * status codes.  They don't work for HRESULT types, because that's for
-                             * COM/XPCOM status codes.   Here you should use setErrorBoth or setErrorVrc. */
-                            hrc = setError(VERR_FILE_NOT_FOUND, tr("Could not locate the config file '%s'"), szOciConfigPath);
+                            hrc = setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the config file '%s'"),
+                                               szOciConfigPath);
                     }
                     else
                         hrc = setErrorVrc(vrc);

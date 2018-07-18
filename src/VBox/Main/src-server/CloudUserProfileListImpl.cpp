@@ -131,7 +131,7 @@ HRESULT SimpleConfigFile::parse()
         if (fInSection == false)//there is not any section
         {
             LogRel(("There are not any sections in the config\n"));
-            hrc = VWRN_NOT_FOUND;
+            hrc = E_FAIL;
         }
         else //the last section hasn't a close tag (the close tag is just the beginning of next section)
         {
@@ -148,7 +148,7 @@ HRESULT SimpleConfigFile::addSection(const Utf8Str &aSectionName, const std::map
 {
     HRESULT hrc = S_OK;
     if (aSectionName.isEmpty())
-        hrc = VERR_INVALID_PARAMETER; /** @todo r=bird: You're mixing error codes... */
+        hrc = E_FAIL;
     else
         mSections.insert(make_pair(aSectionName, section));
 
@@ -262,20 +262,20 @@ HRESULT CloudUserProfileList::getSupportedPropertiesNames(std::vector<com::Utf8S
 {
     LogRel(("CloudUserProfileList::getSupportedPropertiesNames:\n"));
     aPropertiesNames.clear();
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::readProfiles(const Utf8Str &strConfigPath)
 {
     LogRel(("CloudUserProfileList::readProfiles: %s\n", strConfigPath.c_str()));
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::getProvider(CloudProviderId_T *aProvider)
 {
     *aProvider = CloudProviderId_Unknown;
     LogRel(("CloudUserProfileList::getProvider: %d\n", *aProvider));
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::createProfile(const com::Utf8Str &aProfileName,
@@ -283,7 +283,7 @@ HRESULT CloudUserProfileList::createProfile(const com::Utf8Str &aProfileName,
                                             const std::vector<com::Utf8Str> &aValues)
 {
     LogRel(("CloudUserProfileList::createProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
@@ -291,7 +291,7 @@ HRESULT CloudUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
                                             const std::vector<com::Utf8Str> &aValues)
 {
     LogRel(("CloudUserProfileList::updateProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
@@ -299,7 +299,7 @@ HRESULT CloudUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &
 
     LogRel(("CloudUserProfileList::getStoredProfilesNames:\n"));
     aProfilesNames.clear();
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::getProfileProperties(const com::Utf8Str &aProfileName,
@@ -309,14 +309,14 @@ HRESULT CloudUserProfileList::getProfileProperties(const com::Utf8Str &aProfileN
     LogRel(("CloudUserProfileList::getProfileProperties: %s\n", aProfileName.c_str()));
     aReturnNames.clear();
     aReturnValues.clear();
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::getPropertyDescription(const com::Utf8Str &aName,
                                                      com::Utf8Str &aDescription)
 {
     LogRel(("CloudUserProfileList::getPropertyDescription: %s, %s\n", aName.c_str(), aDescription.c_str()));
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 HRESULT CloudUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
@@ -329,7 +329,7 @@ HRESULT CloudUserProfileList::createCloudClient(const com::Utf8Str &aProfileName
         LogRel(("aCloudClient is NULL\n"));
     }
 
-    return VERR_NOT_IMPLEMENTED;
+    return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -407,7 +407,7 @@ HRESULT OCIUserProfileList::readProfiles(const Utf8Str &strConfigPath)
             hrc = mpProfiles->parse();
             if (FAILED(hrc))
             {
-                throw hrc; /** @todo r=bird: WTF? Try return it! */
+                return hrc;
             }
             LogRel(("Successfully parsed %d profiles\n", mpProfiles->getNumberOfSections()));
         }
@@ -415,7 +415,7 @@ HRESULT OCIUserProfileList::readProfiles(const Utf8Str &strConfigPath)
     else
     {
         LogRel(("Empty path to config file\n"));
-        hrc = VERR_INVALID_PARAMETER; /** @todo r=bird: You're mixing error codes... */
+        hrc = setErrorBoth(E_FAIL, VERR_INVALID_PARAMETER, tr("Empty path to config file"));
     }
 
     return hrc;
@@ -440,7 +440,7 @@ HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
         hrc = mpProfiles->addSection(aProfileName, newProfile);
     }
     else
-        hrc = VERR_ALREADY_EXISTS;
+        hrc = setErrorBoth(E_FAIL, VERR_ALREADY_EXISTS, tr("Profile '%s' has already exested"), aProfileName.c_str());
 
     return hrc;
 }
@@ -463,7 +463,7 @@ HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
         hrc = mpProfiles->updateSection(aProfileName, newProfile);
     }
     else
-        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
+        hrc = setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Profile '%s' wasn't found"), aProfileName.c_str());
 
     return hrc;
 }
@@ -473,7 +473,7 @@ HRESULT OCIUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &aP
     HRESULT hrc = S_OK;
     aProfilesNames = mpProfiles->getSectionsNames();
     if (aProfilesNames.empty())
-        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
+        hrc = setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("There aren't any profiles in the config"));
 
     return hrc;
 }
@@ -502,7 +502,7 @@ HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileNam
         }
     }
     else
-        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
+        hrc = setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Profile '%s' wasn't found"), aProfileName.c_str());
 
     return hrc;
 }
@@ -544,7 +544,8 @@ HRESULT OCIUserProfileList::i_updateProfile(const com::Utf8Str &aProfileName,
     if (mpProfiles->isSectionExist(aProfileName))
         hrc = mpProfiles->updateSection(aProfileName, aProfile);
     else
-        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
+        hrc = setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Profile '%s' wasn't found"), aProfileName.c_str());
+
 
     return hrc;
 }
@@ -571,7 +572,7 @@ HRESULT OCIUserProfileList::i_getProfileProperties(const com::Utf8Str &aProfileN
     if (!reqProfile.empty())
         aProfile = reqProfile;
     else
-        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
+        hrc = setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Profile '%s' wasn't found"), aProfileName.c_str());
 
     return hrc;
 }

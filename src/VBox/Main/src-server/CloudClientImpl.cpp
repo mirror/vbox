@@ -50,13 +50,6 @@ CloudClient::~CloudClient()
     LogRel(("CloudClient::~CloudClient()\n"));
 }
 
-//CloudClient::CloudClient(CloudProviderId_T aCloudProvider)
-//    : mParent(NULL)
-//{
-//    LogRel(("CloudClient::CloudClient(CloudProviderId_T %d)\n", mCloudProvider));
-//    mCloudProvider = aCloudProvider;
-//}
-
 HRESULT CloudClient::FinalConstruct()
 {
     return BaseFinalConstruct();
@@ -129,7 +122,7 @@ HRESULT CloudClient::initCloudClient(CloudUserProfileList *aProfiles,
         hrc = lProfiles->getProfileProperties(aProfileName, lNames, lValues);
         if (FAILED(hrc))
         {
-            throw hrc;
+            return hrc;
         }
 
         for (size_t i=0;i<lNames.size();++i)
@@ -170,8 +163,7 @@ HRESULT CloudClient::initCloudClient(CloudUserProfileList *aProfiles,
 HRESULT CloudClient::getOperationParameters(CloudOperation_T aCloudOperation, com::Utf8Str &aJsonString)
 {
     LogRel(("CloudClient::getOperationParameters: %d, %s\n", aCloudOperation, aJsonString.c_str()));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
-
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -182,7 +174,7 @@ HRESULT CloudClient::createOperation(const com::Utf8Str &aProfileName,
     LogRel(("CloudClient::createOperation: %s, %d, %s\n", aProfileName.c_str(),
             aCloudOperation,
             aOpId.toString().c_str()));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -190,7 +182,7 @@ HRESULT CloudClient::runOperation(const com::Guid &aOpId,
                                   LONG64 aTimeout)
 {
     LogRel(("CloudClient::runOperation: %s, %d\n", aOpId.toString().c_str(), aTimeout));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -204,7 +196,7 @@ HRESULT CloudClient::checkOperationResult(const com::Guid &aOpId,
             *aStartOpTime,
             *aLastTime,
             *aResult));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -213,7 +205,7 @@ HRESULT CloudClient::getOperationParameterNames(CloudOperation_T aCloudOperation
 {
     LogRel(("CloudClient::getOperationParameterNames: %d\n", aCloudOperation));
     aParameterNames.clear();
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -227,7 +219,7 @@ HRESULT CloudClient::getOperationParameterProperties(const com::Utf8Str &aOpPara
             aOpParameterType.c_str(),
             aOpParameterDesc.c_str()));
     aOpParameterValues.clear();
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -240,7 +232,7 @@ HRESULT CloudClient::setParametersForOperation(const com::Guid &aOpId,
         LogRel(("value %d: %s\n", i, aValues.at(i).c_str()));
     }
 
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -285,7 +277,7 @@ HRESULT CloudClientOCI::initCloudClient(CloudUserProfileList *aProfiles,
         hrc = lProfiles->getProfileProperties(aProfileName, lNames, lValues);
         if (FAILED(hrc))
         {
-            throw hrc;
+            return hrc;
         }
 
         for (size_t i=0;i<lNames.size();++i)
@@ -426,7 +418,7 @@ HRESULT CloudClientOCI::getOperationParameters(CloudOperation_T aCloudOperation,
     if (aCloudOperation == CloudOperation_exportVM)
         aJsonString = strExportParametersToOCI;
     else
-        hrc = VERR_NOT_IMPLEMENTED;
+        hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -437,7 +429,7 @@ HRESULT CloudClientOCI::createOperation(const com::Utf8Str &aProfileName,
     LogRel(("CloudClientOCI::createOperation: %s, %d, %s\n", aProfileName.c_str(),
             aCloudOperation,
             aOpId.toString().c_str()));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -445,7 +437,7 @@ HRESULT CloudClientOCI::runOperation(const com::Guid &aOpId,
                                   LONG64 aTimeout)
 {
     LogRel(("CloudClientOCI::runOperation: %s, %d\n", aOpId.toString().c_str(), aTimeout));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -459,7 +451,7 @@ HRESULT CloudClientOCI::checkOperationResult(const com::Guid &aOpId,
             *aStartOpTime,
             *aLastTime,
             *aResult));
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -468,7 +460,7 @@ HRESULT CloudClientOCI::getOperationParameterNames(CloudOperation_T aCloudOperat
 {
     LogRel(("CloudClientOCI::getOperationParameterNames: %d\n", aCloudOperation));
     aParameterNames.clear();
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -482,7 +474,7 @@ HRESULT CloudClientOCI::getOperationParameterProperties(const com::Utf8Str &aOpP
             aOpParameterType.c_str(),
             aOpParameterDesc.c_str()));
     aOpParameterValues.clear();
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
@@ -495,7 +487,7 @@ HRESULT CloudClientOCI::setParametersForOperation(const com::Guid &aOpId,
         LogRel(("value %d: %s\n", i, aValues.at(i).c_str()));
     }
 
-    HRESULT hrc = VERR_NOT_IMPLEMENTED;
+    HRESULT hrc = setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
     return hrc;
 }
 
