@@ -887,10 +887,10 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
     if (cbToProcess > cbToProcessMax)
     {
         if (pStream->State.Cfg.enmDir == PDMAUDIODIR_IN)
-            LogRelMax2(64, ("HDA: Warning: FIFO underflow for stream #%RU8 (still %RU32 bytes needed)\n",
+            LogRelMax2(64, ("HDA: Warning: DMA buffer underflow for stream #%RU8 (still %RU32 bytes needed)\n",
                             pStream->u8SD, cbToProcess - cbToProcessMax));
         else
-            LogRelMax2(64, ("HDA: Warning: FIFO overflow for stream #%RU8 (%RU32 bytes outstanding)\n",
+            LogRelMax2(64, ("HDA: Warning: DMA buffer overflow for stream #%RU8 (%RU32 bytes outstanding)\n",
                             pStream->u8SD, cbToProcess - cbToProcessMax));
 
         LogFunc(("[SD%RU8] Warning: Limiting transfer (cbToProcess=%RU32, cbToProcessMax=%RU32)\n",
@@ -976,6 +976,12 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
             rc = hdaR3DMARead(pThis, pStream, abChunk, cbChunk, &cbDMA /* pcbRead */);
             if (RT_SUCCESS(rc))
             {
+                const uint32_t cbDMAFree = (uint32_t)RTCircBufFree(pCircBuf);
+
+                if (cbDMAFree < cbDMA)
+                    LogRelMax2(64, ("HDA: Warning: DMA buffer overflow of stream #%RU8 (discarding %RU32 bytes)\n",
+                               pStream->u8SD, cbDMA - cbDMAFree));
+
 #ifndef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
                 /*
                  * Most guests don't use different stream frame sizes than
@@ -987,7 +993,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                 if (pStream->State.cbFrameSize == HDA_FRAME_SIZE)
                 {
                     uint32_t cbDMARead = 0;
-                    uint32_t cbDMALeft = RT_MIN(cbDMA, (uint32_t)RTCircBufFree(pCircBuf));
+                    uint32_t cbDMALeft = RT_MIN(cbDMA, cbDMAFree);
 
                     while (cbDMALeft)
                     {
@@ -1020,7 +1026,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                      */
                     /** @todo Optimize this stuff -- copying only one frame a time is expensive. */
                     uint32_t cbDMARead = pStream->State.cbDMALeft ? pStream->State.cbFrameSize - pStream->State.cbDMALeft : 0;
-                    uint32_t cbDMALeft = RT_MIN(cbDMA, (uint32_t)RTCircBufFree(pCircBuf));
+                    uint32_t cbDMALeft = RT_MIN(cbDMA, cbDMAFree);
 
                     while (cbDMALeft >= pStream->State.cbFrameSize)
                     {
@@ -1042,10 +1048,6 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                     pStream->State.cbDMALeft = cbDMALeft;
                     Assert(pStream->State.cbDMALeft < pStream->State.cbFrameSize);
                 }
-
-                const size_t cbFree = RTCircBufFree(pCircBuf);
-                if (!cbFree)
-                    LogRel2(("HDA: FIFO of stream #%RU8 full, discarding audio data\n", pStream->u8SD));
 #else
                 /** @todo This needs making use of HDAStreamMap + HDAStreamChannel. */
 # error "Implement reading interleaving streams support here."
@@ -1063,7 +1065,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         if (cbDMA)
         {
             /* We always increment the position of DMA buffer counter because we're always reading
-             * into an intermediate buffer. */
+             * into an intermediate DMA buffer. */
             pBDLE->State.u32BufOff += (uint32_t)cbDMA;
             Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
 
