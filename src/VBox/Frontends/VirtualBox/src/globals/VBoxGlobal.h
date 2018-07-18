@@ -801,7 +801,7 @@ private:
         enum LaunchRunning  m_enmLaunchRunning;
 #endif
 
-        /** Holds the --settingspw option value. */
+        /** Holds the --settingspw option value or the content of --settingspwfile. */
         char  m_astrSettingsPw[256];
         /** Holds the --settingspwfile option value. */
         bool  m_fSettingsPwSet;

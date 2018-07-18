@@ -3813,6 +3813,14 @@ void VBoxGlobal::prepare()
     m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = m_fDbgAutoShow;
 #endif
 
+    /*
+     * Parse the command line options.
+     *
+     * This is a little sloppy but we're trying to tighten it up.  Unfortuately,
+     * both on X11 and darwin (IIRC) there might be additional arguments aimed
+     * for client libraries with GUI processes.  So, using RTGetOpt or similar
+     * is a bit hard since we have to cope with unknown options.
+     */
     m_fShowStartVMErrors = true;
     bool startVM = false;
     bool fSeparateProcess = false;
@@ -3825,7 +3833,7 @@ void VBoxGlobal::prepare()
     {
         const QByteArray &argBytes = arguments.at(i).toUtf8();
         const char *arg = argBytes.constData();
-        enum { OptType_Unknown, OptType_VMRunner, OptType_VMSelector } enmOptType = OptType_Unknown;
+        enum { OptType_Unknown, OptType_VMRunner, OptType_VMSelector, OptType_MaybeBoth } enmOptType = OptType_Unknown;
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
          * otherwise there will be weird error messages. */
@@ -3847,22 +3855,36 @@ void VBoxGlobal::prepare()
 #ifdef VBOX_GUI_WITH_PIDFILE
         else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
         {
+            enmOptType = OptType_MaybeBoth;
             if (++i < argc)
                 m_strPidFile = arguments.at(i);
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
         /* Visual state type options: */
         else if (!::strcmp(arg, "-normal") || !::strcmp(arg, "--normal"))
+        {
+            enmOptType = OptType_MaybeBoth;
             visualStateType = UIVisualStateType_Normal;
+        }
         else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
+        {
+            enmOptType = OptType_MaybeBoth;
             visualStateType = UIVisualStateType_Fullscreen;
+        }
         else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
+        {
+            enmOptType = OptType_MaybeBoth;
             visualStateType = UIVisualStateType_Seamless;
+        }
         else if (!::strcmp(arg, "-scale") || !::strcmp(arg, "--scale"))
+        {
+            enmOptType = OptType_MaybeBoth;
             visualStateType = UIVisualStateType_Scale;
+        }
         /* Passwords: */
         else if (!::strcmp(arg, "--settingspw"))
         {
+            enmOptType = OptType_MaybeBoth;
             if (++i < argc)
             {
                 RTStrCopy(m_astrSettingsPw, sizeof(m_astrSettingsPw), arguments.at(i).toLocal8Bit().constData());
@@ -3871,9 +3893,9 @@ void VBoxGlobal::prepare()
         }
         else if (!::strcmp(arg, "--settingspwfile"))
         {
+            enmOptType = OptType_MaybeBoth;
             if (++i < argc)
             {
-                size_t cbFile;
                 const QByteArray &argFileBytes = arguments.at(i).toLocal8Bit();
                 const char *pszFile = argFileBytes.constData();
                 bool fStdIn = !::strcmp(pszFile, "stdin");
@@ -3885,19 +3907,17 @@ void VBoxGlobal::prepare()
                     pStrm = g_pStdIn;
                 if (RT_SUCCESS(vrc))
                 {
-                    vrc = RTStrmReadEx(pStrm, m_astrSettingsPw, sizeof(m_astrSettingsPw)-1, &cbFile);
+                    size_t cbFile;
+                    vrc = RTStrmReadEx(pStrm, m_astrSettingsPw, sizeof(m_astrSettingsPw) - 1, &cbFile);
                     if (RT_SUCCESS(vrc))
                     {
-                        if (cbFile >= sizeof(m_astrSettingsPw)-1)
-                            continue;
-                        else
-                        {
-                            unsigned i;
-                            for (i = 0; i < cbFile && !RT_C_IS_CNTRL(m_astrSettingsPw[i]); i++)
-                                ;
-                            m_astrSettingsPw[i] = '\0';
-                            m_fSettingsPwSet = true;
-                        }
+                        if (cbFile >= sizeof(m_astrSettingsPw) - 1)
+                            cbFile = sizeof(m_astrSettingsPw) - 1;
+                        unsigned i;
+                        for (i = 0; i < cbFile && !RT_C_IS_CNTRL(m_astrSettingsPw[i]); i++)
+                            ;
+                        m_astrSettingsPw[i] = '\0';
+                        m_fSettingsPwSet = true;
                     }
                     if (!fStdIn)
                         RTStrmClose(pStrm);
@@ -3906,16 +3926,25 @@ void VBoxGlobal::prepare()
         }
         /* Misc options: */
         else if (!::strcmp(arg, "-comment") || !::strcmp(arg, "--comment"))
+        {
+            enmOptType = OptType_MaybeBoth;
             ++i;
+        }
         else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
         {
             enmOptType = OptType_VMRunner;
             m_fShowStartVMErrors = false;
         }
         else if (!::strcmp(arg, "--aggressive-caching"))
+        {
+            enmOptType = OptType_MaybeBoth;
             m_fAgressiveCaching = true;
+        }
         else if (!::strcmp(arg, "--no-aggressive-caching"))
+        {
+            enmOptType = OptType_MaybeBoth;
             m_fAgressiveCaching = false;
+        }
         else if (!::strcmp(arg, "--restore-current"))
         {
             enmOptType = OptType_VMRunner;
