@@ -148,7 +148,7 @@ HRESULT SimpleConfigFile::addSection(const Utf8Str &aSectionName, const std::map
 {
     HRESULT hrc = S_OK;
     if (aSectionName.isEmpty())
-        hrc = VERR_INVALID_PARAMETER;
+        hrc = VERR_INVALID_PARAMETER; /** @todo r=bird: You're mixing error codes... */
     else
         mSections.insert(make_pair(aSectionName, section));
 
@@ -407,7 +407,7 @@ HRESULT OCIUserProfileList::readProfiles(const Utf8Str &strConfigPath)
             hrc = mpProfiles->parse();
             if (FAILED(hrc))
             {
-                throw hrc;
+                throw hrc; /** @todo r=bird: WTF? Try return it! */
             }
             LogRel(("Successfully parsed %d profiles\n", mpProfiles->getNumberOfSections()));
         }
@@ -415,7 +415,7 @@ HRESULT OCIUserProfileList::readProfiles(const Utf8Str &strConfigPath)
     else
     {
         LogRel(("Empty path to config file\n"));
-        hrc = VERR_INVALID_PARAMETER;
+        hrc = VERR_INVALID_PARAMETER; /** @todo r=bird: You're mixing error codes... */
     }
 
     return hrc;
@@ -463,7 +463,7 @@ HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
         hrc = mpProfiles->updateSection(aProfileName, newProfile);
     }
     else
-        hrc = VERR_NOT_FOUND;
+        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
 
     return hrc;
 }
@@ -473,7 +473,7 @@ HRESULT OCIUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &aP
     HRESULT hrc = S_OK;
     aProfilesNames = mpProfiles->getSectionsNames();
     if (aProfilesNames.empty())
-        hrc = VERR_NOT_FOUND;
+        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
 
     return hrc;
 }
@@ -502,7 +502,7 @@ HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileNam
         }
     }
     else
-        hrc = VERR_NOT_FOUND;
+        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
 
     return hrc;
 }
@@ -544,7 +544,7 @@ HRESULT OCIUserProfileList::i_updateProfile(const com::Utf8Str &aProfileName,
     if (mpProfiles->isSectionExist(aProfileName))
         hrc = mpProfiles->updateSection(aProfileName, aProfile);
     else
-        hrc = VERR_NOT_FOUND;
+        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
 
     return hrc;
 }
@@ -571,7 +571,7 @@ HRESULT OCIUserProfileList::i_getProfileProperties(const com::Utf8Str &aProfileN
     if (!reqProfile.empty())
         aProfile = reqProfile;
     else
-        hrc = VERR_NOT_FOUND;
+        hrc = VERR_NOT_FOUND; /** @todo r=bird: You're mixing error codes... */
 
     return hrc;
 }

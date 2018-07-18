@@ -127,36 +127,30 @@ HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProvid
                 hrc = ptrOCIUserProfileList->init(mParent);
                 if (SUCCEEDED(hrc))
                 {
-                    char szHomeDir[RTPATH_MAX];
-                    int vrc = RTPathUserHome(szHomeDir, sizeof(szHomeDir));
+                    char szOciConfigPath[RTPATH_MAX];
+                    int vrc = RTPathUserHome(szOciConfigPath, sizeof(szOciConfigPath));
+                    if (RT_SUCCESS(vrc))
+                        vrc = RTPathAppend(szOciConfigPath, sizeof(szOciConfigPath), ".oci" RTPATH_SLASH_STR "config");
                     if (RT_SUCCESS(vrc))
                     {
-                        Utf8Str strConfigPath(szHomeDir);
-                        strConfigPath.append(RTPATH_SLASH_STR)
-                                     .append(".oci")
-                                     .append(RTPATH_SLASH_STR)
-                                     .append("config");
-                        LogRel(("config = %s\n", strConfigPath.c_str()));
-                        if (RTFileExists(strConfigPath.c_str()))
+                        LogRel(("config = %s\n", szOciConfigPath));
+                        if (RTFileExists(szOciConfigPath))
                         {
-                            hrc = ptrOCIUserProfileList->readProfiles(strConfigPath);
+                            hrc = ptrOCIUserProfileList->readProfiles(szOciConfigPath);
                             if (SUCCEEDED(hrc))
-                            {
-                                LogRel(("Reading profiles from %s has been done\n", strConfigPath.c_str()));
-                            }
+                                LogRel(("Reading profiles from %s has been done\n", szOciConfigPath));
                             else
-                            {
-                                LogRel(("Reading profiles from %s hasn't been done\n", strConfigPath.c_str()));
-                            }
+                                LogRel(("Reading profiles from %s hasn't been done\n", szOciConfigPath));
 
                             ptrCloudUserProfileList = ptrOCIUserProfileList;
                             hrc = ptrCloudUserProfileList.queryInterfaceTo(aProfiles.asOutParam());
                         }
                         else
-                        {
-                            hrc = setError(VERR_FILE_NOT_FOUND, tr("Could not locate the config file '%s'"),
-                                           strConfigPath.c_str());
-                        }
+                            /** @todo r=bird: You are constantly mixing up status codes.
+                             * VERR_FILE_NOT_FOUND, VERR_INVALID_PARAMETER and VERR_NOT_FOUND are all VBox
+                             * status codes.  They don't work for HRESULT types, because that's for
+                             * COM/XPCOM status codes.   Here you should use setErrorBoth or setErrorVrc. */
+                            hrc = setError(VERR_FILE_NOT_FOUND, tr("Could not locate the config file '%s'"), szOciConfigPath);
                     }
                     else
                         hrc = setErrorVrc(vrc);
