@@ -1489,7 +1489,7 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t cPages, P
 VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    intptr_t idx = pVCpu->pgm.s.idxGuestModeData;
+    uintptr_t idx = pVCpu->pgm.s.idxGuestModeData;
     AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmGuestModeData[idx].pfnGetPage, VERR_PGM_MODE_IPE);
     return g_aPgmGuestModeData[idx].pfnGetPage(pVCpu, GCPtr, pfFlags, pGCPhys);
@@ -1742,7 +1742,7 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
     /*
      * Call worker.
      */
-    intptr_t idx = pVCpu->pgm.s.idxGuestModeData;
+    uintptr_t idx = pVCpu->pgm.s.idxGuestModeData;
     AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmGuestModeData[idx].pfnModifyPage, VERR_PGM_MODE_IPE);
     int rc = g_aPgmGuestModeData[idx].pfnModifyPage(pVCpu, GCPtr, cb, fFlags, fMask);
