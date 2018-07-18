@@ -1083,7 +1083,7 @@ uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbByt
  * @param   pProps              PCM properties to calculate amount of bytes for.
  * @param   cbBytes             Amount of bytes to calculate time for.
  */
-uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cbBytes)
+uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1118,11 +1118,11 @@ uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFram
 /**
  * Returns the time (in ms) for given audio frames amount and PCM properties.
  *
- * @return  float               Calculated time (in ms).
+ * @return  uint64_t            Calculated time (in ms).
  * @param   pProps              PCM properties to calculate time (in ms) for.
  * @param   cFrames             Amount of audio frames to calculate time for.
  */
-float DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cFrames)
+uint64_t DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1132,7 +1132,7 @@ float DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cFrames)
     if (!pProps->uHz) /* Prevent division by zero. */
         return 0;
 
-    return float(cFrames / (pProps->uHz / 1000 /* ms */));
+    return cFrames / (pProps->uHz / 1000 /* ms */);
 }
 
 /**

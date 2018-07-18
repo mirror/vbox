@@ -154,9 +154,9 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t c
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps);
 uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes);
-uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cbBytes);
+uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes);
 uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-float DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cFrames);
+uint64_t DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 uint32_t DrvAudioHlpMsToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs);
 uint32_t DrvAudioHlpMsToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs);
 bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pPCMProps1, const PPDMAUDIOPCMPROPS pPCMProps2);
