@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1373,9 +1373,6 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
                 uint32_t cbRead;
                 rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbUsed, &cbRead);
                 AssertRC(rc2);
-
-                AssertMsg(cbUsed == cbRead, ("[SD%RU8] %RU32 bytes announced to be ready to read but %RU32 bytes read\n",
-                                             pStream->u8SD, cbUsed, cbRead));
             }
 
             /* When running synchronously, update the associated sink here.
