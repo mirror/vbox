@@ -384,6 +384,20 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
     return fRc;
 }
 
+void UIMessageCenter::warnAboutUnknownOptionType(const QString &strOption)
+{
+    alert(0, MessageType_Error,
+          tr("Unknown option <b>%1</b>.")
+             .arg(strOption));
+}
+
+void UIMessageCenter::warnAboutUnrelatedOptionType(const QString &strOption)
+{
+    alert(0, MessageType_Error,
+          tr("<b>%1</b> is an option for the VirtualBox VM runner (VirtualBoxVM) application, not the VirtualBox Manager.")
+             .arg(strOption));
+}
+
 #ifdef RT_OS_LINUX
 void UIMessageCenter::warnAboutWrongUSBMounted() const
 {

@@ -230,6 +230,8 @@ public:
                                  int cMinDuration = 2000);
 
     /* API: Main (startup) warnings: */
+    void warnAboutUnknownOptionType(const QString &strOption);
+    void warnAboutUnrelatedOptionType(const QString &strOption);
 #ifdef RT_OS_LINUX
     void warnAboutWrongUSBMounted() const;
 #endif /* RT_OS_LINUX */

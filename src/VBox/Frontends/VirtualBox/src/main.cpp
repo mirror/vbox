@@ -337,21 +337,19 @@ static void ShowHelp()
              s_szTitle, RTBldCfgVersion(), s_szUsage);
 
 #ifdef RT_OS_WINDOWS
-    /*
-     * Show message box.  We modify the option list a little to better
-     * make it fit in the dialog.
-     */
-    char        szTitleWithVersion[sizeof(s_szTitle) + 128];
-    char        szMsg[sizeof(s_szUsage) + 128];
-    char       *pszDst = szMsg;
-    size_t      offSrc = 0;
+    /* Show message box. Modify the option list a little
+     * to better make it fit in the upcoming dialog. */
+    char szTitleWithVersion[sizeof(s_szTitle) + 128];
+    char szMsg[sizeof(s_szUsage) + 128];
+    char *pszDst = szMsg;
+    size_t offSrc = 0;
     while (offSrc < sizeof(s_szUsage) - 1U)
     {
         char ch;
         if (   s_szUsage[offSrc]     == ' '
             && s_szUsage[offSrc + 1] == ' '
             && (   (ch = s_szUsage[offSrc + 2]) == '-' /* option line */
-                || ch == 'V' /* env.var. line*/ ) )
+                || ch == 'V' /* env.var. line */))
         {
             /* Split option lines: */
             if (ch == '-')
@@ -360,11 +358,11 @@ static void ShowHelp()
                 size_t cchOption = 0;
                 while (   s_szUsage[offSrc + cchOption] != ' '
                        || s_szUsage[offSrc + cchOption + 1] != ' ')
-                    cchOption++;
+                    ++cchOption;
 
                 memcpy(pszDst, &s_szUsage[offSrc], cchOption);
-                offSrc   += cchOption + 2;
-                pszDst   += cchOption;
+                offSrc += cchOption + 2;
+                pszDst += cchOption;
             }
             /* Change environment variable indentation: */
             else
@@ -372,7 +370,7 @@ static void ShowHelp()
                 offSrc += 2;
                 size_t cchLine = 0;
                 while ((ch = s_szUsage[offSrc + cchLine]) != '\n' && ch != '\0')
-                    cchLine++;
+                    ++cchLine;
 
                 memcpy(pszDst, &s_szUsage[offSrc], cchLine);
                 offSrc += cchLine + 1;
@@ -382,10 +380,10 @@ static void ShowHelp()
             *pszDst++ = '\t';
 
             while (s_szUsage[offSrc] == ' ')
-                offSrc++;
+                ++offSrc;
         }
 
-        /* Copy up to and including end of line. */
+        /* Copy up to and including end of line: */
         while ((ch = s_szUsage[offSrc++]) != '\n' && ch != '\0')
             *pszDst++ = ch;
         *pszDst++ = ch;
@@ -615,9 +613,7 @@ int main(int argc, char **argv, char **envp)
         return 1;
 # endif /* VBOX_WS_X11 */
 
-    /*
-     * Initialize VBox Runtime.
-     */
+    /* Initialize VBox Runtime: */
 # if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
     /* Initialize the SUPLib as well only if we are really about to start a VM.
      * Don't do this if we are only starting the selector window or a separate VM process. */
@@ -697,9 +693,7 @@ int main(int argc, char **argv, char **envp)
         return 1;
     }
 
-    /*
-     * Call actual main function:
-     */
+    /* Call to actual main function: */
     return TrustedMain(argc, argv, envp);
 }
 
