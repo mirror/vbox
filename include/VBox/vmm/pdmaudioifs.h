@@ -598,6 +598,14 @@ typedef enum PDMAUDIOSTREAMCMD
     PDMAUDIOSTREAMCMD_PAUSE,
     /** Resumes the stream. */
     PDMAUDIOSTREAMCMD_RESUME,
+    /** Tells the stream to drain itself.
+     *  For output streams this plays all remaining (buffered) audio frames,
+     *  for input streams this permits receiving any new audio frames.
+     *  No supported by all backends. */
+    PDMAUDIOSTREAMCMD_DRAIN,
+    /** Tells the stream to drop all (buffered) audio data immediately.
+     *  No supported by all backends. */
+    PDMAUDIOSTREAMCMD_DROP,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMCMD_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCMD;

@@ -1024,6 +1024,8 @@ const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd)
         case PDMAUDIOSTREAMCMD_DISABLE: return "Disable";
         case PDMAUDIOSTREAMCMD_PAUSE:   return "Pause";
         case PDMAUDIOSTREAMCMD_RESUME:  return "Resume";
+        case PDMAUDIOSTREAMCMD_DRAIN:   return "Drain";
+        case PDMAUDIOSTREAMCMD_DROP:    return "Drop";
         default:                        break;
     }
 
