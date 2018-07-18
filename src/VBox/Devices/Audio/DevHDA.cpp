@@ -2027,7 +2027,6 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3 /** @todo this can be done from R0 & RC, even the logging. */
     DEVHDA_LOCK(pThis);
 
 # ifdef LOG_ENABLED
@@ -2049,10 +2048,6 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Never return failure. */
-#else /* !IN_RING3 */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
-#endif
 }
 
 /* Note: Will be called for both, BDPL and BDPU, registers. */
