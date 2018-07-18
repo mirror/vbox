@@ -1450,48 +1450,6 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
         /* standard VGA latched access */
         VERIFY_VRAM_WRITE_OFF_RETURN(pThis, addr * 4 + 3);
 
-#if 0
-/* This code does not work reliably (@bugref{8123}) and no longer helps performance either. */
-#ifdef IN_RING0
-        if (((++pThis->cLatchAccesses) & pThis->uMaskLatchAccess) == pThis->uMaskLatchAccess)
-        {
-            static uint32_t const s_aMask[5]  = {   0x3ff,   0x1ff,    0x7f,    0x3f,   0x1f};
-            static uint64_t const s_aDelta[5] = {10000000, 5000000, 2500000, 1250000, 625000};
-            if (PDMDevHlpCanEmulateIoBlock(pThis->CTX_SUFF(pDevIns)))
-            {
-                uint64_t u64CurTime = RTTimeSystemNanoTS();
-
-                /* About 1000 (or more) accesses per 10 ms will trigger a reschedule
-                * to the recompiler
-                */
-                if (u64CurTime - pThis->u64LastLatchedAccess < s_aDelta[pThis->iMask])
-                {
-                    pThis->u64LastLatchedAccess = 0;
-                    pThis->iMask                = RT_MIN(pThis->iMask + 1U, RT_ELEMENTS(s_aMask) - 1U);
-                    pThis->uMaskLatchAccess     = s_aMask[pThis->iMask];
-                    pThis->cLatchAccesses       = pThis->uMaskLatchAccess - 1;
-                    return VINF_EM_RAW_EMULATE_IO_BLOCK;
-                }
-                if (pThis->u64LastLatchedAccess)
-                {
-                    Log2(("Reset mask (was %d) delta %RX64 (limit %x)\n", pThis->iMask, u64CurTime - pThis->u64LastLatchedAccess, s_aDelta[pThis->iMask]));
-                    if (pThis->iMask)
-                        pThis->iMask--;
-                    pThis->uMaskLatchAccess     = s_aMask[pThis->iMask];
-                }
-                pThis->u64LastLatchedAccess = u64CurTime;
-            }
-            else
-            {
-                pThis->u64LastLatchedAccess = 0;
-                pThis->iMask                = 0;
-                pThis->uMaskLatchAccess     = s_aMask[pThis->iMask];
-                pThis->cLatchAccesses       = 0;
-            }
-        }
-#endif
-#endif
-
         write_mode = pThis->gr[5] & 3;
         switch(write_mode) {
         default:

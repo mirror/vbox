@@ -13609,7 +13609,6 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
                       || rcStrict == VINF_CPUM_R3_MSR_WRITE
                       || rcStrict == VINF_EM_RAW_EMULATE_INSTR
                       || rcStrict == VINF_EM_RAW_TO_R3
-                      || rcStrict == VINF_EM_RAW_EMULATE_IO_BLOCK
                       || rcStrict == VINF_EM_TRIPLE_FAULT
                       || rcStrict == VINF_GIM_R3_HYPERCALL
                       /* raw-mode / virt handlers only: */

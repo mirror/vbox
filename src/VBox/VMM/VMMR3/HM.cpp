@@ -2783,33 +2783,6 @@ static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
 
 
 /**
- * Force execution of the current IO code in the recompiler.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pCtx        Partial VM execution context.
- */
-VMMR3_INT_DECL(int) HMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
-{
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-
-    Assert(HMIsEnabled(pVM));
-    Log(("HMR3EmulateIoBlock\n"));
-
-    /* This is primarily intended to speed up Grub, so we don't care about paged protected mode. */
-    if (HMCanEmulateIoBlockEx(pCtx))
-    {
-        Log(("HMR3EmulateIoBlock -> enabled\n"));
-        pVCpu->hm.s.EmulateIoBlock.fEnabled         = true;
-        pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip = pCtx->rip;
-        pVCpu->hm.s.EmulateIoBlock.cr0              = pCtx->cr0;
-        return VINF_EM_RESCHEDULE_REM;
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Checks if we can currently use hardware accelerated raw mode.
  *
  * @returns true if we can currently use hardware acceleration, otherwise false.
@@ -2829,15 +2802,6 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         return false;
     }
 #endif
-
-    /* If we're still executing the IO code, then return false. */
-    if (   RT_UNLIKELY(pVCpu->hm.s.EmulateIoBlock.fEnabled)
-        && pCtx->rip <  pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip + 0x200
-        && pCtx->rip >  pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip - 0x200
-        && pCtx->cr0 == pVCpu->hm.s.EmulateIoBlock.cr0)
-        return false;
-
-    pVCpu->hm.s.EmulateIoBlock.fEnabled = false;
 
     /* AMD-V supports real & protected mode with or without paging. */
     if (pVM->hm.s.svm.fEnabled)
@@ -3276,95 +3240,6 @@ VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
     return HMIsEnabled(pVM)
         && pVM->hm.s.vmx.fEnabled
         && pVM->hm.s.vmx.fUsePreemptTimer;
-}
-
-
-/**
- * Checks if there is an I/O instruction pending.
- *
- * @returns true if pending, false if not.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMR3_INT_DECL(bool) HMR3HasPendingIOInstr(PVMCPU pVCpu)
-{
-    return pVCpu->hm.s.PendingIO.enmType != HMPENDINGIO_INVALID
-        && pVCpu->hm.s.PendingIO.GCPtrRip == pVCpu->cpum.GstCtx.rip;
-}
-
-
-/**
- * Restart an I/O instruction that was refused in ring-0
- *
- * @returns Strict VBox status code. Informational status codes other than the one documented
- *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
- * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
- *                                      status code must be passed on to EM.
- * @retval  VERR_NOT_FOUND if no pending I/O instruction.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest CPU context.
- */
-VMMR3_INT_DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    /*
-     * Check if we've got relevant data pending.
-     */
-    HMPENDINGIO enmType = pVCpu->hm.s.PendingIO.enmType;
-    if (enmType == HMPENDINGIO_INVALID)
-        return VERR_NOT_FOUND;
-    pVCpu->hm.s.PendingIO.enmType = HMPENDINGIO_INVALID;
-    if (pVCpu->hm.s.PendingIO.GCPtrRip != pCtx->rip)
-        return VERR_NOT_FOUND;
-
-    /*
-     * Execute pending I/O.
-     */
-    VBOXSTRICTRC rcStrict;
-    switch (enmType)
-    {
-        case HMPENDINGIO_PORT_READ:
-        {
-            uint32_t uAndVal = pVCpu->hm.s.PendingIO.s.Port.uAndVal;
-            uint32_t u32Val  = 0;
-
-            rcStrict = IOMIOPortRead(pVM, pVCpu, pVCpu->hm.s.PendingIO.s.Port.uPort, &u32Val,
-                                     pVCpu->hm.s.PendingIO.s.Port.cbSize);
-            if (IOM_SUCCESS(rcStrict))
-            {
-                /* Write back to the EAX register. */
-                pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
-                pCtx->rip = pVCpu->hm.s.PendingIO.GCPtrRipNext;
-            }
-            break;
-        }
-
-        default:
-            AssertLogRelFailedReturn(VERR_HM_UNKNOWN_IO_INSTRUCTION);
-    }
-
-    if (IOM_SUCCESS(rcStrict))
-    {
-        /*
-         * Check for I/O breakpoints.
-         */
-        uint32_t const uDr7 = pCtx->dr[7];
-        if (   (   (uDr7 & X86_DR7_ENABLED_MASK)
-                && X86_DR7_ANY_RW_IO(uDr7)
-                && (pCtx->cr4 & X86_CR4_DE))
-            || DBGFBpIsHwIoArmed(pVM))
-        {
-            VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pCtx, pVCpu->hm.s.PendingIO.s.Port.uPort,
-                                                   pVCpu->hm.s.PendingIO.s.Port.cbSize);
-            if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
-                rcStrict2 = TRPMAssertTrap(pVCpu, X86_XCPT_DB, TRPM_TRAP);
-            /* rcStrict is VINF_SUCCESS or in [VINF_EM_FIRST..VINF_EM_LAST]. */
-            else if (rcStrict2 != VINF_SUCCESS && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
-                rcStrict = rcStrict2;
-        }
-    }
-    return rcStrict;
 }
 
 

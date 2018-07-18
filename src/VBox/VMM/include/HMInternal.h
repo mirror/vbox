@@ -908,18 +908,6 @@ typedef struct HMCPU
         RTGCUINTPTR                 GCPtrFaultAddress;
     } Event;
 
-    /** IO Block emulation state. */
-    struct
-    {
-        bool                    fEnabled;
-        uint8_t                 u8Align[7];
-
-        /** RIP at the start of the io code we wish to emulate in the recompiler. */
-        RTGCPTR                 GCPtrFunctionEip;
-
-        uint64_t                cr0;
-    } EmulateIoBlock;
-
     /* Pending IO operation. */
     struct
     {

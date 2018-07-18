@@ -3950,14 +3950,6 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
 
     /**
-     * Checks if our current CPU state allows for IO block emulation fallback to the recompiler
-     *
-     * @returns true = yes, false = no
-     * @param   pDevIns         Device instance.
-     */
-    DECLR0CALLBACKMEMBER(bool, pfnCanEmulateIoBlock,(PPDMDEVINS pDevIns));
-
-    /**
      * Gets the VMCPU handle. Restricted API.
      *
      * @returns VMCPU Handle.
@@ -4032,7 +4024,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 7, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 8, 0)
 
 
 
@@ -5380,20 +5372,6 @@ DECLINLINE(void *) PDMDevHlpQueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID 
 }
 
 #endif /* IN_RING3 */
-#ifdef IN_RING0
-
-/**
- * @copydoc PDMDEVHLPR0::pfnCanEmulateIoBlock
- */
-DECLINLINE(bool) PDMDevHlpCanEmulateIoBlock(PPDMDEVINS pDevIns)
-{
-    return pDevIns->CTX_SUFF(pHlp)->pfnCanEmulateIoBlock(pDevIns);
-}
-
-#endif /* IN_RING0 */
-
-
-
 
 /** Pointer to callbacks provided to the VBoxDeviceRegister() call. */
 typedef struct PDMDEVREGCB *PPDMDEVREGCB;

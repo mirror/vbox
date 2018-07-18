@@ -253,6 +253,7 @@ DECLINLINE(int) emR3HmExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszP
  */
 static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
+    RT_NOREF(pVM);
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
     VBOXSTRICTRC rcStrict;
@@ -260,19 +261,6 @@ static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     if (idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
     {
-        /*
-         * Try to restart the io instruction that was refused in ring-0.
-         */
-        rcStrict = HMR3RestartPendingIOInstr(pVM, pVCpu, &pVCpu->cpum.GstCtx);
-        if (IOM_SUCCESS(rcStrict))
-        {
-            STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
-            STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            return VBOXSTRICTRC_TODO(rcStrict);     /* rip already updated. */
-        }
-        AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
-                        RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
-
         /*
          * Hand it over to the interpreter.
          */
@@ -284,7 +272,6 @@ static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     {
         RT_UNTRUSTED_VALIDATED_FENCE();
         CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
-        Assert(!HMR3HasPendingIOInstr(pVCpu));
         rcStrict = EMHistoryExec(pVCpu, &pVCpu->em.s.aExitRecords[idxContinueExitRec], 0);
         LogFlow(("emR3HmExecuteIOInstruction: %Rrc (EMHistoryExec)\n", VBOXSTRICTRC_VAL(rcStrict)));
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);

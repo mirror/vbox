@@ -228,8 +228,6 @@
 #define VINF_EM_RAW_STALE_SELECTOR          1138
 /** Reason for leaving RC: The IRET resuming guest code trapped. */
 #define VINF_EM_RAW_IRET_TRAP               1139
-/** Reason for leaving RC: Emulate (MM)IO intensive code in the recompiler. */
-#define VINF_EM_RAW_EMULATE_IO_BLOCK        1140
 /** The interpreter was unable to deal with the instruction at hand. */
 #define VERR_EM_INTERPRETER                 (-1148)
 /** Internal EM error caused by an unknown warning or informational status code. */

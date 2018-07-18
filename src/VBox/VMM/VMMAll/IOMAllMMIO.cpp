@@ -817,7 +817,6 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
                   || rcStrict == VINF_EM_OFF
                   || rcStrict == VINF_EM_SUSPEND
                   || rcStrict == VINF_EM_RESET
-                  || rcStrict == VINF_EM_RAW_EMULATE_IO_BLOCK
                   //|| rcStrict == VINF_EM_HALT       /* ?? */
                   //|| rcStrict == VINF_EM_NO_MEMORY  /* ?? */
                   , ("%Rrc - %RGp - %p\n", VBOXSTRICTRC_VAL(rcStrict), GCPhysFault, pDevIns));

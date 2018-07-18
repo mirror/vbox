@@ -74,24 +74,6 @@ RT_C_DECLS_BEGIN
 # define HMIsRawModeCtxNeeded(a_pVM)        (!HMIsEnabled(a_pVM) || (a_pVM)->fHMNeedRawModeCtx)
 #endif
 
- /**
- * Check if the current CPU state is valid for emulating IO blocks in the recompiler
- *
- * @returns boolean
- * @param   a_pVCpu     Pointer to the shared virtual CPU structure.
- * @internal
- */
-#define HMCanEmulateIoBlock(a_pVCpu)        (!CPUMIsGuestInPagedProtectedMode(a_pVCpu))
-
- /**
- * Check if the current CPU state is valid for emulating IO blocks in the recompiler
- *
- * @returns boolean
- * @param   a_pCtx      Pointer to the CPU context (within PVM).
- * @internal
- */
-#define HMCanEmulateIoBlockEx(a_pCtx)       (!CPUMIsGuestInPagedProtectedModeEx(a_pCtx))
-
 /**
  * Checks whether we're in the special hardware virtualization context.
  * @returns true / false.
@@ -255,9 +237,6 @@ VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChanged(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool)            HMR3IsActive(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
-VMMR3_INT_DECL(int)             HMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
-VMMR3_INT_DECL(bool)            HMR3HasPendingIOInstr(PVMCPU pVCpu);
-VMMR3_INT_DECL(VBOXSTRICTRC)    HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR3_INT_DECL(int)             HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3_INT_DECL(int)             HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3_INT_DECL(int)             HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu);
