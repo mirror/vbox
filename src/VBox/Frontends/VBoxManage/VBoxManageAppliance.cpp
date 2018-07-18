@@ -909,6 +909,13 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         a, bstrFinalValue.raw(), i);
                             break;
 
+
+                        case VirtualSystemDescriptionType_CloudOCIInstanceShape:
+                        case VirtualSystemDescriptionType_CloudOCIDomain:
+                        case VirtualSystemDescriptionType_CloudOCIBootDiskSize:
+                        case VirtualSystemDescriptionType_CloudOCIBucket:
+                        case VirtualSystemDescriptionType_CloudOCIVCN:
+                        case VirtualSystemDescriptionType_CloudOCIPublicIP:
                         case VirtualSystemDescriptionType_Miscellaneous:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
