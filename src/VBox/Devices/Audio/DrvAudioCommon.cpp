@@ -868,6 +868,17 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIO
 }
 
 /**
+ * Returns the bytes per frame for given PCM properties.
+ *
+ * @return Bytes per (audio) frame.
+ * @param  pProps               PCM properties to retrieve bytes per frame for.
+ */
+uint32_t DrvAudioHlpPCMPropsBytesPerFrame(const PPDMAUDIOPCMPROPS pProps)
+{
+    return (pProps->cBits / 8) * pProps->cChannels;
+}
+
+/**
  * Prints PCM properties to the debug log.
  *
  * @param   pProps              Stream configuration to log.
@@ -1052,6 +1063,20 @@ uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
+ * Returns the number of audio frames for a given amount of bytes.
+ *
+ * @return Calculated audio frames for given bytes.
+ * @param  pProps               PCM properties to calulate frames for.
+ * @param  cbBytes              Bytes to convert to audio frames.
+ */
+uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes)
+{
+    AssertPtrReturn(pProps, 0);
+
+    return cbBytes / ((pProps->cBits / 8) * pProps->cChannels);
+}
+
+/**
  * Returns the time (in ms) for given byte amount and PCM properties.
  *
  * @return  uint64_t            Calculated time (in ms).
@@ -1071,6 +1096,23 @@ uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cbBytes)
         return 0;
 
     return cbBytes / dbBytesPerMs;
+}
+
+/**
+ * Returns the bytes for a given audio frames amount and PCM properties.
+ *
+ * @return Calculated bytes for given audio frames.
+ * @param  pProps               PCM properties to calculate bytes for.
+ * @param  cFrames              Amount of audio frames to calculate bytes for.
+ */
+uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!cFrames)
+        return 0;
+
+    return cFrames * ((pProps->cBits / 2) * pProps->cChannels);
 }
 
 /**
