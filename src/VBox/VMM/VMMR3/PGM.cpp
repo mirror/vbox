@@ -3514,7 +3514,21 @@ static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE e
     AssertPtr(g_aPgmShadowModeData[idxShw].pfnRelocate);
     NOREF(idxShw);
 
-    pVCpu->pgm.s.idxBothModeData   = pgmModeDataIndexByMode(enmShw, enmGst);
+    uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData = (idxShw - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END + idxGst;
+    Assert(g_aPgmBothModeData[idxBth].uShwType == idxShw);
+    Assert(g_aPgmBothModeData[idxBth].uGstType == idxGst);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnInvalidatePage);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnSyncCR3);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnPrefetchPage);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnVerifyAccessSyncPage);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnMapCR3);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnUnmapCR3);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnEnter);
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnRelocate);
+#ifdef VBOX_STRICT
+    AssertPtr(g_aPgmBothModeData[idxBth].pfnAssertCR3);
+#endif
+    NOREF(idxBth);
 
     /*
      * The following code will be gradually reduced and finally removed:

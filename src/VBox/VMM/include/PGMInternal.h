@@ -214,6 +214,8 @@
 #define PGM_TYPE_NESTED_AMD64           8
 #define PGM_TYPE_EPT                    9
 #define PGM_TYPE_MAX                    PGM_TYPE_EPT
+#define PGM_TYPE_END                    (PGM_TYPE_EPT + 1)
+#define PGM_TYPE_FIRST_SHADOW           PGM_TYPE_32BIT /**< The first type used by shadow paging. */
 /** @} */
 
 /** Macro for checking if the guest is using paging.
@@ -3157,14 +3159,51 @@ typedef struct PGMMODEDATASHW
     DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
 } PGMMODEDATASHW;
 
-/** The length of g_aPgmGuestModeData. */
+/** The length of g_aPgmShadowModeData. */
 #ifndef IN_RC
-# define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    (PGM_TYPE_MAX + 1)
+# define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    PGM_TYPE_END
 #else
 # define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    (PGM_TYPE_PAE + 1)
 #endif
 /** The shadow mode data array. */
 extern PGMMODEDATASHW const g_aPgmShadowModeData[PGM_SHADOW_MODE_DATA_ARRAY_SIZE];
+
+
+/**
+ * Function pointers for guest+shadow paging.
+ */
+typedef struct PGMMODEDATABTH
+{
+    /** The shadow mode type. */
+    uint32_t                        uShwType;
+    /** The guest mode type. */
+    uint32_t                        uGstType;
+
+    DECLCALLBACKMEMBER(int,         pfnInvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
+    DECLCALLBACKMEMBER(int,         pfnSyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
+    DECLCALLBACKMEMBER(int,         pfnPrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
+    DECLCALLBACKMEMBER(int,         pfnVerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError);
+    DECLCALLBACKMEMBER(int,         pfnMapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+    DECLCALLBACKMEMBER(int,         pfnUnmapCR3)(PVMCPU pVCpu);
+    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+#ifdef IN_RING3
+    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta);
+#else
+    DECLCALLBACKMEMBER(int,         pfnTrap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
+#endif
+#ifdef VBOX_STRICT
+    DECLCALLBACKMEMBER(unsigned,    pfnAssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb);
+#endif
+} PGMMODEDATABTH;
+
+/** The length of g_aPgmBothModeData. */
+#ifndef IN_RC
+# define PGM_BOTH_MODE_DATA_ARRAY_SIZE      ((PGM_TYPE_END     - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END)
+#else
+# define PGM_BOTH_MODE_DATA_ARRAY_SIZE      ((PGM_TYPE_PAE + 1 - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END)
+#endif
+/** The guest+shadow mode data array. */
+extern PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE];
 
 
 
