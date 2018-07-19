@@ -61,11 +61,9 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
     , m_pAdditionalLabel(0)
     , m_pManifestCheckbox(0)
     , m_pIncludeISOsCheckbox(0)
-    , m_pProviderComboBoxLabel(0)
-    , m_pProviderComboBox(0)
-    , m_pProfileComboBoxLabel(0)
-    , m_pProfileComboBox(0)
-    , m_pProfileSettingsTable(0)
+    , m_pAccountComboBoxLabel(0)
+    , m_pAccountComboBox(0)
+    , m_pAccountPropertyTable(0)
 {
     /* Init Cloud User-profile Manager: */
     CVirtualBox comVBox = vboxGlobal().virtualBox();
@@ -109,47 +107,39 @@ void UIWizardExportAppPage3::populateMACAddressPolicies()
     setMACAddressPolicy(MACAddressPolicy_StripAllNonNATMACs);
 }
 
-void UIWizardExportAppPage3::populateProviders()
+void UIWizardExportAppPage3::populateAccounts()
 {
     /* Make sure this combo isn't filled yet: */
-    AssertReturnVoid(m_pProviderComboBox->count() == 0);
+    AssertReturnVoid(m_pAccountComboBox->count() == 0);
 
     /* Acquire provider ID list: */
     QVector<KCloudProviderId> providerIds = m_comCloudUserProfileManager.GetSupportedProviders();
     /* Make sure at least one provider is supported: */
     AssertReturnVoid(!providerIds.isEmpty());
 
-    /* Add non-translated provider names into combo: */
+    /* Iterate through provider types: */
     foreach (KCloudProviderId enmType, providerIds)
     {
-        m_pProviderComboBox->addItem(gpConverter->toInternalString(enmType));
-        m_pProviderComboBox->setItemData(m_pProviderComboBox->count() - 1, (int)enmType);
+        /* Acquire Cloud User-profile List: */
+        CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(enmType);
+        /* Skip if we have nothing to populate (file missing?): */
+        if (comProfiles.isNull())
+            continue;
+
+        /* Iterate through profile names: */
+        foreach (const QString &strProfileName, comProfiles.GetStoredProfilesNames())
+        {
+            m_pAccountComboBox->addItem(QString());
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, (int)enmType, ProviderID);
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, ProfileName);
+        }
     }
 
     /* Set default: */
     setProvider(KCloudProviderId_OCI);
 }
 
-void UIWizardExportAppPage3::populateProfiles()
-{
-    /* Acquire Cloud User-profile List: */
-    CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
-    /* Return if we have nothing to populate (file missing?): */
-    if (comProfiles.isNull())
-        return;
-
-    /* Clear combo initially: */
-    m_pProfileComboBox->clear();
-
-    /* Add non-translated provider names into combo: */
-    foreach (const QString &strProfileName, comProfiles.GetStoredProfilesNames())
-    {
-        m_pProfileComboBox->addItem(strProfileName);
-        m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName);
-    }
-}
-
-void UIWizardExportAppPage3::populateProfileSettings()
+void UIWizardExportAppPage3::populateAccountProperties()
 {
     /* Acquire Cloud User-profile List: */
     CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
@@ -158,19 +148,19 @@ void UIWizardExportAppPage3::populateProfileSettings()
         return;
 
     /* Clear table initially: */
-    m_pProfileSettingsTable->clear();
+    m_pAccountPropertyTable->clear();
 
-    /* Acquire profile properties: */
+    /* Acquire properties: */
     QVector<QString> keys;
     QVector<QString> values;
     values = comProfiles.GetProfileProperties(profile(), keys);
 
-    /* Configure profile table: */
-    m_pProfileSettingsTable->setRowCount(keys.size());
-    m_pProfileSettingsTable->setColumnCount(2);
+    /* Configure table: */
+    m_pAccountPropertyTable->setRowCount(keys.size());
+    m_pAccountPropertyTable->setColumnCount(2);
 
     /* Push acquired keys/values to data fields: */
-    for (int i = 0; i < m_pProfileSettingsTable->rowCount(); ++i)
+    for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
     {
         /* Create key item: */
         QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
@@ -185,7 +175,7 @@ void UIWizardExportAppPage3::populateProfileSettings()
             pItemK->setData(Qt::UserRole, strToolTip);
 
             /* Insert into table: */
-            m_pProfileSettingsTable->setItem(i, 0, pItemK);
+            m_pAccountPropertyTable->setItem(i, 0, pItemK);
         }
 
         /* Create value item: */
@@ -201,15 +191,15 @@ void UIWizardExportAppPage3::populateProfileSettings()
             pItemV->setToolTip(strToolTip);
 
             /* Insert into table: */
-            m_pProfileSettingsTable->setItem(i, 1, pItemV);
+            m_pAccountPropertyTable->setItem(i, 1, pItemV);
         }
     }
 
-    /* Update translateable tool-tips: */
-    updateProfilePropertyTableToolTips();
+    /* Update table tool-tips: */
+    updateAccountPropertyTableToolTips();
 
     /* Adjust the table: */
-    adjustProfileSettingsTable();
+    adjustAccountPropertyTable();
 }
 
 void UIWizardExportAppPage3::updatePageAppearance()
@@ -319,21 +309,13 @@ void UIWizardExportAppPage3::updateMACAddressPolicyComboToolTip()
     m_pMACComboBox->setToolTip(strCurrentToolTip);
 }
 
-void UIWizardExportAppPage3::updateProviderComboToolTip()
-{
-    const int iCurrentIndex = m_pProviderComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pProviderComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pProviderComboBox->setToolTip(strCurrentToolTip);
-}
-
-void UIWizardExportAppPage3::updateProfilePropertyTableToolTips()
+void UIWizardExportAppPage3::updateAccountPropertyTableToolTips()
 {
     /* Iterate through all the key items: */
-    for (int i = 0; i < m_pProfileSettingsTable->rowCount(); ++i)
+    for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
     {
         /* Acquire current key item: */
-        QTableWidgetItem *pItemK = m_pProfileSettingsTable->item(i, 0);
+        QTableWidgetItem *pItemK = m_pAccountPropertyTable->item(i, 0);
         if (pItemK)
         {
             const QString strToolTip = pItemK->data(Qt::UserRole).toString();
@@ -342,21 +324,21 @@ void UIWizardExportAppPage3::updateProfilePropertyTableToolTips()
     }
 }
 
-void UIWizardExportAppPage3::adjustProfileSettingsTable()
+void UIWizardExportAppPage3::adjustAccountPropertyTable()
 {
     /* Disable last column stretching temporary: */
-    m_pProfileSettingsTable->horizontalHeader()->setStretchLastSection(false);
+    m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(false);
 
     /* Resize both columns to contents: */
-    m_pProfileSettingsTable->resizeColumnsToContents();
+    m_pAccountPropertyTable->resizeColumnsToContents();
     /* Then acquire full available width: */
-    const int iFullWidth = m_pProfileSettingsTable->viewport()->width();
+    const int iFullWidth = m_pAccountPropertyTable->viewport()->width();
     /* First column should not be less than it's minimum size, last gets the rest: */
-    const int iMinimumWidth0 = qMin(m_pProfileSettingsTable->horizontalHeader()->sectionSize(0), iFullWidth / 2);
-    m_pProfileSettingsTable->horizontalHeader()->resizeSection(0, iMinimumWidth0);
+    const int iMinimumWidth0 = qMin(m_pAccountPropertyTable->horizontalHeader()->sectionSize(0), iFullWidth / 2);
+    m_pAccountPropertyTable->horizontalHeader()->resizeSection(0, iMinimumWidth0);
 
     /* Enable last column stretching again: */
-    m_pProfileSettingsTable->horizontalHeader()->setStretchLastSection(true);
+    m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 QString UIWizardExportAppPage3::path() const
@@ -415,30 +397,23 @@ void UIWizardExportAppPage3::setIncludeISOsSelected(bool fChecked)
     m_pIncludeISOsCheckbox->setChecked(fChecked);
 }
 
-KCloudProviderId UIWizardExportAppPage3::provider() const
-{
-    const int iIndex = m_pProviderComboBox->currentIndex();
-    return (KCloudProviderId)m_pProviderComboBox->itemData(iIndex).toInt();
-}
-
 void UIWizardExportAppPage3::setProvider(KCloudProviderId enmProvider)
 {
-    const int iIndex = m_pProviderComboBox->findData((int)enmProvider);
+    const int iIndex = m_pAccountComboBox->findData((int)enmProvider, ProviderID);
     AssertMsg(iIndex != -1, ("Field not found!"));
-    m_pProviderComboBox->setCurrentIndex(iIndex);
+    m_pAccountComboBox->setCurrentIndex(iIndex);
+}
+
+KCloudProviderId UIWizardExportAppPage3::provider() const
+{
+    const int iIndex = m_pAccountComboBox->currentIndex();
+    return (KCloudProviderId)m_pAccountComboBox->itemData(iIndex, ProviderID).toInt();
 }
 
 QString UIWizardExportAppPage3::profile() const
 {
-    const int iIndex = m_pProfileComboBox->currentIndex();
-    return m_pProfileComboBox->itemData(iIndex).toString();
-}
-
-void UIWizardExportAppPage3::setProfile(const QString &strProfile)
-{
-    const int iIndex = m_pProfileComboBox->findData(strProfile);
-    AssertMsg(iIndex != -1, ("Field not found!"));
-    m_pProfileComboBox->setCurrentIndex(iIndex);
+    const int iIndex = m_pAccountComboBox->currentIndex();
+    return m_pAccountComboBox->itemData(iIndex, ProfileName).toString();
 }
 
 
@@ -492,7 +467,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     m_pFileSelectorLabel = new QLabel;
                     if (m_pFileSelectorLabel)
                     {
-                        m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pFileSelectorLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                         m_pFileSelectorLabel->setBuddy(m_pFileSelector);
 
                         /* Add into layout: */
@@ -510,7 +485,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     m_pFormatComboBoxLabel = new QLabel;
                     if (m_pFormatComboBoxLabel)
                     {
-                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                         m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
 
                         /* Add into layout: */
@@ -528,7 +503,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     m_pMACComboBoxLabel = new QLabel;
                     if (m_pMACComboBoxLabel)
                     {
-                        m_pMACComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                         m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
 
                         /* Add into layout: */
@@ -539,7 +514,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     m_pAdditionalLabel = new QLabel;
                     if (m_pAdditionalLabel)
                     {
-                        m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pAdditionalLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                         /* Add into layout: */
                         pSettingsLayout1->addWidget(m_pAdditionalLabel, 3, 0);
@@ -585,58 +560,40 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     pSettingsLayout2->setColumnStretch(1, 1);
 
                     /* Create provider combo-box: */
-                    m_pProviderComboBox = new QComboBox;
-                    if (m_pProviderComboBox)
+                    m_pAccountComboBox = new QComboBox;
+                    if (m_pAccountComboBox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pProviderComboBox, 0, 1);
+                        pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
                     }
                     /* Create provider label: */
-                    m_pProviderComboBoxLabel = new QLabel;
-                    if (m_pProviderComboBoxLabel)
+                    m_pAccountComboBoxLabel = new QLabel;
+                    if (m_pAccountComboBoxLabel)
                     {
-                        m_pProviderComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                        m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
+                        m_pAccountComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                        m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
 
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pProviderComboBoxLabel, 0, 0);
+                        pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
                     }
-
-                    /* Create profile combo-box: */
-                    m_pProfileComboBox = new QComboBox;
-                    if (m_pProfileComboBox)
+                    /* Create profile property table: */
+                    m_pAccountPropertyTable = new QTableWidget;
+                    if (m_pAccountPropertyTable)
                     {
-                        /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pProfileComboBox, 1, 1);
-                    }
-                    /* Create profile label: */
-                    m_pProfileComboBoxLabel = new QLabel;
-                    if (m_pProfileComboBoxLabel)
-                    {
-                        m_pProfileComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                        m_pProfileComboBoxLabel->setBuddy(m_pProfileComboBox);
-
-                        /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
-                    }
-                    /* Create profile settings table: */
-                    m_pProfileSettingsTable = new QTableWidget;
-                    if (m_pProfileSettingsTable)
-                    {
-                        const QFontMetrics fm(m_pProfileSettingsTable->font());
+                        const QFontMetrics fm(m_pAccountPropertyTable->font());
                         const int iFontWidth = fm.width('x');
                         const int iTotalWidth = 50 * iFontWidth;
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;
-                        m_pProfileSettingsTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        m_pProfileSettingsTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pProfileSettingsTable->setAlternatingRowColors(true);
-                        m_pProfileSettingsTable->horizontalHeader()->setVisible(false);
-                        m_pProfileSettingsTable->verticalHeader()->setVisible(false);
-                        m_pProfileSettingsTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+                        m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                        m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pAccountPropertyTable->setAlternatingRowColors(true);
+                        m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
+                        m_pAccountPropertyTable->verticalHeader()->setVisible(false);
+                        m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pProfileSettingsTable, 2, 1);
+                        pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
                     }
                 }
 
@@ -654,11 +611,9 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     /* Populate MAC address policies: */
     populateMACAddressPolicies();
     /* Populate providers: */
-    populateProviders();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile settings: */
-    populateProfileSettings();
+    populateAccounts();
+    /* Populate profile properties: */
+    populateAccountProperties();
 
     /* Setup connections: */
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
@@ -666,10 +621,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic3::sltHandleMACAddressPolicyComboChange);
-    connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic3::sltHandleProviderComboChange);
-    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic3::sltHandleProfileComboChange);
+    connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageBasic3::sltHandleAccountComboChange);
 
     /* Register fields: */
     registerField("path", this, "path");
@@ -687,8 +640,8 @@ bool UIWizardExportAppPageBasic3::event(QEvent *pEvent)
         case QEvent::Show:
         case QEvent::Resize:
         {
-            /* Adjust profile settings table: */
-            adjustProfileSettingsTable();
+            /* Adjust profile property table: */
+            adjustAccountPropertyTable();
             break;
         }
         default:
@@ -749,23 +702,22 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files in exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
-    /* Translate Provider combo-box: */
-    m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Provider:"));
-    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+    /* Translate Account combo-box: */
+    m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
+    for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
-        if (m_pProviderComboBox->itemText(i) == "OCI")
+        if (m_pAccountComboBox->itemData(i, ProviderID).toInt() == KCloudProviderId_OCI)
         {
-            m_pProviderComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure"));
-            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to Oracle Cloud Infrastructure"), Qt::ToolTipRole);
+            m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure: %1", "provider: profile")
+                .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
         }
         else
         {
-            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to %1").arg(m_pProviderComboBox->itemText(i)), Qt::ToolTipRole);
+            m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
+                .arg(gpConverter->toInternalInteger((KCloudProviderId)m_pAccountComboBox->itemData(i, ProviderID).toInt()))
+                .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
         }
     }
-
-    /* Translate Profile combo-box: */
-    m_pProfileComboBoxLabel->setText(UIWizardExportApp::tr("P&rofile:"));
 
     /* Refresh file selector name: */
     refreshFileSelectorName();
@@ -776,8 +728,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Update tool-tips: */
     updateFormatComboToolTip();
     updateMACAddressPolicyComboToolTip();
-    updateProviderComboToolTip();
-    updateProfilePropertyTableToolTips();
+    updateAccountPropertyTableToolTips();
 }
 
 void UIWizardExportAppPageBasic3::initializePage()
@@ -857,7 +808,7 @@ void UIWizardExportAppPageBasic3::updatePageAppearance()
                                  "<p>Make sure profile settings reflected in the underlying table are valid. "
                                  "They will be used to establish network connection required to upload your virtual machine "
                                  "files to remote cloud facility."));
-            m_pProfileComboBox->setFocus();
+            m_pAccountComboBox->setFocus();
             break;
         }
     }
@@ -880,17 +831,8 @@ void UIWizardExportAppPageBasic3::sltHandleMACAddressPolicyComboChange()
     updateMACAddressPolicyComboToolTip();
 }
 
-void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
-{
-    /* Update tool-tip: */
-    updateProviderComboToolTip();
-
-    /* Refresh required settings: */
-    populateProfiles();
-}
-
-void UIWizardExportAppPageBasic3::sltHandleProfileComboChange()
+void UIWizardExportAppPageBasic3::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
-    populateProfileSettings();
+    populateAccountProperties();
 }

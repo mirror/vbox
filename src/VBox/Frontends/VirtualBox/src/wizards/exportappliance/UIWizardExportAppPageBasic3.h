@@ -49,6 +49,13 @@ enum MACAddressPolicy
 };
 Q_DECLARE_METATYPE(MACAddressPolicy);
 
+/** Account combo data fields. */
+enum
+{
+    ProviderID  = Qt::UserRole + 1,
+    ProfileName = Qt::UserRole + 2
+};
+
 
 /** UIWizardPageBase extension for 3rd page of the Export Appliance wizard. */
 class UIWizardExportAppPage3 : public UIWizardPageBase
@@ -62,12 +69,10 @@ protected:
     void populateFormats();
     /** Populates MAC address policies. */
     void populateMACAddressPolicies();
-    /** Populates providers. */
-    void populateProviders();
-    /** Populates profiles. */
-    void populateProfiles();
-    /** Populates profile settings. */
-    void populateProfileSettings();
+    /** Populates accounts. */
+    void populateAccounts();
+    /** Populates account properties. */
+    void populateAccountProperties();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -87,13 +92,10 @@ protected:
     void updateFormatComboToolTip();
     /** Updates MAC address policy combo tool-tips. */
     void updateMACAddressPolicyComboToolTip();
-    /** Updates provider combo tool-tips. */
-    void updateProviderComboToolTip();
-    /** Updates profile property tool-tips. */
-    void updateProfilePropertyTableToolTips();
-
-    /** Adjusts profile settings table. */
-    void adjustProfileSettingsTable();
+    /** Updates account property table tool-tips. */
+    void updateAccountPropertyTableToolTips();
+    /** Adjusts account property table. */
+    void adjustAccountPropertyTable();
 
     /** Returns path. */
     QString path() const;
@@ -120,15 +122,12 @@ protected:
     /** Defines whether include ISOs @a fSelected. */
     void setIncludeISOsSelected(bool fChecked);
 
-    /** Returns provider. */
-    KCloudProviderId provider() const;
     /** Defines @a strProvider. */
     void setProvider(KCloudProviderId enmProvider);
-
+    /** Returns provider. */
+    KCloudProviderId provider() const;
     /** Returns profile. */
     QString profile() const;
-    /** Defines @a strProfile. */
-    void setProfile(const QString &strProfile);
 
     /** Holds the Cloud User-profile Manager reference. */
     CCloudUserProfileManager  m_comCloudUserProfileManager;
@@ -166,17 +165,12 @@ protected:
     /** Holds the include ISOs check-box instance. */
     QCheckBox *m_pIncludeISOsCheckbox;
 
-    /** Holds the provider combo-box label instance. */
-    QLabel    *m_pProviderComboBoxLabel;
-    /** Holds the provider combo-box instance. */
-    QComboBox *m_pProviderComboBox;
-
-    /** Holds the profile combo-box label instance. */
-    QLabel       *m_pProfileComboBoxLabel;
-    /** Holds the profile combo-box instance. */
-    QComboBox    *m_pProfileComboBox;
-    /** Holds the profile settings table-widget instance. */
-    QTableWidget *m_pProfileSettingsTable;
+    /** Holds the account combo-box label instance. */
+    QLabel       *m_pAccountComboBoxLabel;
+    /** Holds the account combo-box instance. */
+    QComboBox    *m_pAccountComboBox;
+    /** Holds the account property table instance. */
+    QTableWidget *m_pAccountPropertyTable;
 };
 
 
@@ -189,7 +183,6 @@ class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(KCloudProviderId provider READ provider WRITE setProvider);
 
 public:
 
@@ -224,11 +217,8 @@ private slots:
     /** Handles change in MAC address policy combo-box. */
     void sltHandleMACAddressPolicyComboChange();
 
-    /** Handles change in provider combo-box. */
-    void sltHandleProviderComboChange();
-
-    /** Handles change in profile combo-box. */
-    void sltHandleProfileComboChange();
+    /** Handles change in account combo-box. */
+    void sltHandleAccountComboChange();
 
 private:
 

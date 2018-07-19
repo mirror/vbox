@@ -35,6 +35,7 @@
 /* GUI includes: */
 # include "VBoxGlobal.h"
 # include "UIApplianceExportEditorWidget.h"
+# include "UIConverter.h"
 # include "UIEmptyFilePathSelector.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
@@ -270,65 +271,47 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             pSettingsLayout2->setColumnStretch(0, 0);
                             pSettingsLayout2->setColumnStretch(1, 1);
 
-                            /* Create provider combo-box: */
-                            m_pProviderComboBox = new QComboBox;
-                            if (m_pProviderComboBox)
+                            /* Create account combo-box: */
+                            m_pAccountComboBox = new QComboBox;
+                            if (m_pAccountComboBox)
                             {
                                 /* Hide it for now: */
-                                m_pProviderComboBox->hide();
+                                m_pAccountComboBox->hide();
 
                                 /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pProviderComboBox, 0, 1);
+                                pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
                             }
-                            /* Create provider label: */
-                            m_pProviderComboBoxLabel = new QLabel;
-                            if (m_pProviderComboBoxLabel)
+                            /* Create account label: */
+                            m_pAccountComboBoxLabel = new QLabel;
+                            if (m_pAccountComboBoxLabel)
                             {
                                 /* Hide it for now: */
-                                m_pProviderComboBoxLabel->hide();
+                                m_pAccountComboBoxLabel->hide();
 
-                                m_pProviderComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                                m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
-
-                                /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pProviderComboBoxLabel, 0, 0);
-                            }
-
-                            /* Create profile combo-box: */
-                            m_pProfileComboBox = new QComboBox;
-                            if (m_pProfileComboBox)
-                            {
-                                /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pProfileComboBox, 1, 1);
-                            }
-                            /* Create profile label: */
-                            m_pProfileComboBoxLabel = new QLabel;
-                            if (m_pProfileComboBoxLabel)
-                            {
-                                m_pProfileComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                                m_pProfileComboBoxLabel->setBuddy(m_pProviderComboBox);
+                                m_pAccountComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                                m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
 
                                 /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
+                                pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
                             }
-                            /* Create profile settings table: */
-                            m_pProfileSettingsTable = new QTableWidget;
-                            if (m_pProfileSettingsTable)
+                            /* Create account property table: */
+                            m_pAccountPropertyTable = new QTableWidget;
+                            if (m_pAccountPropertyTable)
                             {
-                                const QFontMetrics fm(m_pProfileSettingsTable->font());
+                                const QFontMetrics fm(m_pAccountPropertyTable->font());
                                 const int iFontWidth = fm.width('x');
                                 const int iTotalWidth = 50 * iFontWidth;
                                 const int iFontHeight = fm.height();
                                 const int iTotalHeight = 4 * iFontHeight;
-                                m_pProfileSettingsTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                                m_pProfileSettingsTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                                m_pProfileSettingsTable->setAlternatingRowColors(true);
-                                m_pProfileSettingsTable->horizontalHeader()->setVisible(false);
-                                m_pProfileSettingsTable->verticalHeader()->setVisible(false);
-                                m_pProfileSettingsTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+                                m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                                m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                                m_pAccountPropertyTable->setAlternatingRowColors(true);
+                                m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
+                                m_pAccountPropertyTable->verticalHeader()->setVisible(false);
+                                m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                                     /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pProfileSettingsTable, 2, 1);
+                                pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
                             }
                         }
 
@@ -354,12 +337,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateFormats();
     /* Populate MAC address policies: */
     populateMACAddressPolicies();
-    /* Populate providers: */
-    populateProviders();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile settings: */
-    populateProfileSettings();
+    /* Populate accounts: */
+    populateAccounts();
+    /* Populate account properties: */
+    populateAccountProperties();
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
@@ -370,10 +351,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleMACAddressPolicyComboChange);
-    connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageExpert::sltHandleProviderComboChange);
-    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageExpert::sltHandleProfileComboChange);
+    connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageExpert::sltHandleAccountComboChange);
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();
@@ -399,8 +378,8 @@ bool UIWizardExportAppPageExpert::event(QEvent *pEvent)
         case QEvent::Show:
         case QEvent::Resize:
         {
-            /* Adjust profile settings table: */
-            adjustProfileSettingsTable();
+            /* Adjust profile property table: */
+            adjustAccountPropertyTable();
             break;
         }
         default:
@@ -468,23 +447,22 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
-    /* Translate Provider combo-box: */
-    m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Cloud Service Provider:"));
-    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+    /* Translate Account combo-box: */
+    m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
+    for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
-        if (m_pProviderComboBox->itemText(i) == "OCI")
+        if (m_pAccountComboBox->itemData(i, Qt::UserRole + 1).toInt() == KCloudProviderId_OCI)
         {
-            m_pProviderComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure"));
-            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to Oracle Cloud Infrastructure"), Qt::ToolTipRole);
+            m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure: %1", "provider: profile")
+                .arg(m_pAccountComboBox->itemData(i, Qt::UserRole + 2).toString()));
         }
         else
         {
-            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to %1").arg(m_pProviderComboBox->itemText(i)), Qt::ToolTipRole);
+            m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
+                .arg(gpConverter->toInternalInteger((KCloudProviderId)m_pAccountComboBox->itemData(i, Qt::UserRole + 1).toInt()))
+                .arg(m_pAccountComboBox->itemData(i, Qt::UserRole + 2).toString()));
         }
     }
-
-    /* Translate Profile combo-box: */
-    m_pProfileComboBoxLabel->setText(UIWizardExportApp::tr("&Profile:"));
 
     /* Refresh file selector name: */
     refreshFileSelectorName();
@@ -492,7 +470,6 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Update tool-tips: */
     updateFormatComboToolTip();
     updateMACAddressPolicyComboToolTip();
-    updateProviderComboToolTip();
 }
 
 void UIWizardExportAppPageExpert::initializePage()
@@ -605,17 +582,8 @@ void UIWizardExportAppPageExpert::sltHandleMACAddressPolicyComboChange()
     updateMACAddressPolicyComboToolTip();
 }
 
-void UIWizardExportAppPageExpert::sltHandleProviderComboChange()
-{
-    /* Update tool-tip: */
-    updateProviderComboToolTip();
-
-    /* Refresh required settings: */
-    populateProfiles();
-}
-
-void UIWizardExportAppPageExpert::sltHandleProfileComboChange()
+void UIWizardExportAppPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
-    populateProfileSettings();
+    populateAccountProperties();
 }
