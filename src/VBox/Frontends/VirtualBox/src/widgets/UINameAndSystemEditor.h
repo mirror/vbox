@@ -75,7 +75,7 @@ public:
     void setName(const QString &strName);
 
     /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
-    void setTypeId(const QString &strTypeId, const QString &strFamilyId = QString());
+    void setTypeId(QString strTypeId, QString strFamilyId = QString());
     /** Returns the VM OS type ID. */
     QString typeId() const;
     /** Returns the VM OS family ID. */

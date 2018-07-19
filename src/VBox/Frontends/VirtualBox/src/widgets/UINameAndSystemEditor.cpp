@@ -84,82 +84,90 @@ void UINameAndSystemEditor::setName(const QString &strName)
     m_pNameLineEdit->setText(strName);
 }
 
-void UINameAndSystemEditor::setTypeId(const QString &strTypeId, const QString &strFamilyId /* = QString() */)
+void UINameAndSystemEditor::setTypeId(QString strTypeId, QString strFamilyId /* = QString() */)
 {
     AssertMsgReturnVoid(!strTypeId.isNull(), ("Null guest OS type ID"));
 
-    /* Save values: */
-    m_strTypeId = strTypeId;
-    m_strFamilyId = strFamilyId;
+    /* Initialize indexes: */
+    int iTypeIndex = -1;
+    int iFamilyIndex = -1;
 
-    /* If family ID isn't null: */
-    if (!m_strFamilyId.isNull())
+    /* If family ID isn't empty: */
+    if (!strFamilyId.isEmpty())
     {
-        /* Serch for corresponding family ID index: */
-        int iFamilyIndex = m_pComboFamily->findData(m_strFamilyId, TypeID);
+        /* Search for corresponding family ID index: */
+        iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
 
         /* If that family ID isn't present, we have to add it: */
         if (iFamilyIndex == -1)
         {
             /* Append family ID to corresponding combo: */
-            m_pComboFamily->addItem(m_strFamilyId);
-            m_pComboFamily->setItemData(m_pComboFamily->count() - 1, m_strFamilyId, TypeID);
+            m_pComboFamily->addItem(strFamilyId);
+            m_pComboFamily->setItemData(m_pComboFamily->count() - 1, strFamilyId, TypeID);
+            /* Append family ID to type cache: */
+            m_types[strFamilyId] = QList<UIGuestOSType>();
 
-            /* Serch for corresponding family ID index again: */
-            iFamilyIndex = m_pComboFamily->findData(m_strFamilyId, TypeID);
-
-            /* Append the type cache: */
-            m_types[m_strFamilyId] = QList<UIGuestOSType>();
-            UIGuestOSType guiType;
-            guiType.typeId = m_strTypeId;
-            guiType.typeDescription = m_strTypeId;
-            guiType.is64bit = false;
-            m_types[m_strFamilyId] << guiType;
-        }
-
-        /* Choose if we have something to: */
-        if (iFamilyIndex != -1)
-        {
-            m_pComboFamily->setCurrentIndex(iFamilyIndex);
-            sltFamilyChanged(m_pComboFamily->currentIndex());
+            /* Search for corresponding family ID index finally: */
+            iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
         }
     }
+    /* If family ID is empty: */
+    else
+    {
+        /* We'll try to find it by type ID: */
+        foreach (const QString &strKnownFamilyId, m_types.keys())
+        {
+            foreach (const UIGuestOSType &guiType, m_types.value(strKnownFamilyId))
+            {
+                if (guiType.typeId == strTypeId)
+                    strFamilyId = strKnownFamilyId;
+                if (!strFamilyId.isNull())
+                    break;
+            }
+            if (!strFamilyId.isNull())
+                break;
+        }
 
-    /* Serch for corresponding type ID index: */
-    int iTypeIndex = m_pComboType->findData(m_strTypeId, TypeID);
+        /* If we were unable to find it => use "Other": */
+        if (strFamilyId.isNull())
+            strFamilyId = "Other";
+
+        /* Search for corresponding family ID index finally: */
+        iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
+    }
+
+    /* To that moment family ID index should be always found: */
+    AssertReturnVoid(iFamilyIndex != -1);
+    /* So we choose it: */
+    m_pComboFamily->setCurrentIndex(iFamilyIndex);
+    sltFamilyChanged(m_pComboFamily->currentIndex());
+
+    /* Search for corresponding type ID index: */
+    iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
 
     /* If that type ID isn't present, we have to add it: */
     if (iTypeIndex == -1)
     {
-        /* Serch for "Other" family ID index: */
-        m_strFamilyId = "Other";
-        int iFamilyIndex = m_pComboFamily->findData(m_strFamilyId, TypeID);
+        /* Append type ID to type cache: */
+        UIGuestOSType guiType;
+        guiType.typeId = strTypeId;
+        guiType.typeDescription = strTypeId;
+        guiType.is64bit = false;
+        m_types[strFamilyId] << guiType;
 
-        /* If that family ID is present: */
-        if (iFamilyIndex != -1)
-        {
-            /* Append the type cache: */
-            UIGuestOSType guiType;
-            guiType.typeId = m_strTypeId;
-            guiType.typeDescription = m_strTypeId;
-            guiType.is64bit = false;
-            m_types[m_strFamilyId] << guiType;
+        /* So we re-choose family again: */
+        m_pComboFamily->setCurrentIndex(iFamilyIndex);
+        sltFamilyChanged(m_pComboFamily->currentIndex());
 
-            /* Choose required element: */
-            m_pComboFamily->setCurrentIndex(iFamilyIndex);
-            sltFamilyChanged(m_pComboFamily->currentIndex());
-        }
-
-        /* Serch for corresponding type ID index again: */
-        iTypeIndex = m_pComboType->findData(m_strTypeId, TypeID);
+        /* Search for corresponding type ID index finally: */
+        iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
     }
 
-    /* Choose if we have something to: */
-    if (iTypeIndex != -1)
-    {
-        m_pComboType->setCurrentIndex(iTypeIndex);
-        sltTypeChanged(m_pComboType->currentIndex());
-    }
+    /* To that moment type ID index should be always found: */
+    AssertReturnVoid(iTypeIndex != -1);
+    /* So we choose it: */
+    m_pComboType->setCurrentIndex(iTypeIndex);
+    sltTypeChanged(m_pComboType->currentIndex());
 }
 
 QString UINameAndSystemEditor::typeId() const
@@ -266,7 +274,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 {
-    /* Acquire type/family IDs: */
+    /* Acquire type ID: */
     m_strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
 
     /* Update selected type pixmap: */
