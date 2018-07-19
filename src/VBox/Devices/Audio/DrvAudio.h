@@ -74,6 +74,32 @@ typedef struct DRVAUDIOSTATS
 #endif
 
 /**
+ * Audio driver configuration data, tweakable via CFGM.
+ */
+typedef struct DRVAUDIOCFG
+{
+    /** Configures the period size (in audio frames).
+     *  This value reflects the number of audio frames in between each hardware interrupt on the
+     *  backend (host) side. */
+    uint32_t             cfPeriod;
+    /** Configures the (ring) buffer size (in audio frames). Often is a multiple of cfPeriod. */
+    uint32_t             cfBufferSize;
+    /** Configures the pre-buffering size (in audio frames).
+     *  Frames needed in buffer before the stream becomes active (pre buffering).
+     *  The bigger this value is, the more latency for the stream will occur. */
+    uint32_t             cfPreBuf;
+    /** The driver's debugging configuration. */
+    struct
+    {
+        /** Whether audio debugging is enabled or not. */
+        bool             fEnabled;
+        /** Where to store the debugging files.
+         *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH if not set. */
+        char             szPathOut[RTPATH_MAX + 1];
+    } Dbg;
+} DRVAUDIOCFG, *PDRVAUDIOCFG;
+
+/**
  * Audio driver instance data.
  *
  * @implements PDMIAUDIOCONNECTOR
@@ -119,6 +145,8 @@ typedef struct DRVAUDIO
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
         RTLISTANCHOR        lstCB;
 #endif
+        /** The driver's input confguration (tweakable via CFGM). */
+        DRVAUDIOCFG         Cfg;
     } In;
     struct
     {
@@ -131,15 +159,9 @@ typedef struct DRVAUDIO
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
         RTLISTANCHOR        lstCB;
 #endif
+        /** The driver's output confguration (tweakable via CFGM). */
+        DRVAUDIOCFG         Cfg;
     } Out;
-    struct
-    {
-        /** Whether audio debugging is enabled or not. */
-        bool                    fEnabled;
-        /** Where to store the debugging files.
-         *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH if not set. */
-        char                    szPathOut[RTPATH_MAX + 1];
-    } Dbg;
 } DRVAUDIO, *PDRVAUDIO;
 
 /** Makes a PDRVAUDIO out of a PPDMIAUDIOCONNECTOR. */
