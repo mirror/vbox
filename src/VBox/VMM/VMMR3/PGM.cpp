@@ -3254,47 +3254,6 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
 
 
 /**
- * Gets the index into the paging mode data array of a SHW+GST mode.
- *
- * @returns PGM::paPagingData index.
- * @param   uShwType      The shadow paging mode type.
- * @param   uGstType      The guest paging mode type.
- */
-DECLINLINE(unsigned) pgmModeDataIndex(unsigned uShwType, unsigned uGstType)
-{
-    Assert(uShwType >= PGM_TYPE_32BIT && uShwType <= PGM_TYPE_MAX);
-    Assert(uGstType >= PGM_TYPE_REAL  && uGstType <= PGM_TYPE_AMD64);
-    return (uShwType - PGM_TYPE_32BIT) * (PGM_TYPE_AMD64 - PGM_TYPE_REAL + 1)
-         + (uGstType - PGM_TYPE_REAL);
-}
-
-
-/**
- * Gets the index into the paging mode data array of a SHW+GST mode.
- *
- * @returns PGM::paPagingData index.
- * @param   enmShw      The shadow paging mode.
- * @param   enmGst      The guest paging mode.
- */
-DECLINLINE(unsigned) pgmModeDataIndexByMode(PGMMODE enmShw, PGMMODE enmGst)
-{
-    Assert(enmShw >= PGMMODE_32_BIT && enmShw <= PGMMODE_MAX);
-    Assert(enmGst > PGMMODE_INVALID && enmGst < PGMMODE_MAX);
-    return pgmModeDataIndex(pgmModeToType(enmShw), pgmModeToType(enmGst));
-}
-
-
-/**
- * Calculates the max data index.
- * @returns The number of entries in the paging data array.
- */
-DECLINLINE(unsigned) pgmModeDataMaxIndex(void)
-{
-    return pgmModeDataIndex(PGM_TYPE_MAX, PGM_TYPE_AMD64) + 1;
-}
-
-
-/**
  * Switch to different (or relocated in the relocate case) mode data.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
