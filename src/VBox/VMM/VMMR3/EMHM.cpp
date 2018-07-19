@@ -244,6 +244,7 @@ DECLINLINE(int) emR3HmExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszP
 #endif
 }
 
+
 /**
  * Executes one (or perhaps a few more) IO instruction(s).
  *
