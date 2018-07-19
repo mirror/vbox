@@ -1152,10 +1152,29 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_CORE_THREAD_COUNT               0x35
 
 /** CPU Feature control. */
-#define MSR_IA32_FEATURE_CONTROL            0x3A
-#define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT_32(0)
-#define MSR_IA32_FEATURE_CONTROL_SMX_VMXON  RT_BIT_32(1)
-#define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT_32(2)
+#define MSR_IA32_FEATURE_CONTROL                      0x3A
+/** Feature control - Lock MSR from writes (R/W0). */
+#define MSR_IA32_FEATURE_CONTROL_LOCK                 RT_BIT_64(0)
+/** Feature control - Enable VMX inside SMX operation (R/WL). */
+#define MSR_IA32_FEATURE_CONTROL_SMX_VMXON            RT_BIT_64(1)
+/** Feature control - Enable VMX outside SMX operationr (R/WL). */
+#define MSR_IA32_FEATURE_CONTROL_VMXON                RT_BIT_64(2)
+/** Feature control - SENTER local functions enable (R/WL).  */
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_0    RT_BIT_64(8)
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_1    RT_BIT_64(9)
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_2    RT_BIT_64(10)
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_3    RT_BIT_64(11)
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_4    RT_BIT_64(12)
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_5    RT_BIT_64(13)
+#define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_6    RT_BIT_64(14)
+/** Feature control - SENTER global enable (R/WL). */
+#define MSR_IA32_FEATURE_CONTROL_SENTER_GLOBAL_EN     RT_BIT_64(15)
+/** Feature control - SGX launch control enable (R/WL). */
+#define MSR_IA32_FEATURE_CONTROL_SGX_LAUNCH_EN        RT_BIT_64(17)
+/** Feature control - SGX global enable (R/WL). */
+#define MSR_IA32_FEATURE_CONTROL_SGX_GLOBAL_EN        RT_BIT_64(18)
+/** Feature control - LMCE on (R/WL). */
+#define MSR_IA32_FEATURE_CONTROL_LMCE                 RT_BIT_64(20)
 
 /** Per-processor TSC adjust MSR. */
 #define MSR_IA32_TSC_ADJUST                 0x3B
