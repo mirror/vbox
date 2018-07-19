@@ -22,6 +22,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_SERIAL
+#include <VBox/vmm/tm.h>
 #include <iprt/uuid.h>
 #include <iprt/assert.h>
 
@@ -49,8 +50,14 @@
 # define UART_REG_IER_ELSI                   RT_BIT(2)
 /** Enable modem status interrupt. */
 # define UART_REG_IER_EDSSI                  RT_BIT(3)
+/** Sleep mode enable. */
+# define UART_REG_IER_SLEEP_MODE_EN          RT_BIT(4)
+/** Low power mode enable. */
+# define UART_REG_IER_LP_MODE_EN             RT_BIT(5)
 /** Mask of writeable bits. */
 # define UART_REG_IER_MASK_WR                0x0f
+/** Mask of writeable bits for 16750+. */
+# define UART_REG_IER_MASK_WR_16750          0x3f
 
 /** The IIR register index (from the base of the port range). */
 #define UART_REG_IIR_INDEX                   2
@@ -70,6 +77,8 @@
 #  define UART_REG_IIR_ID_THRE               0x1
 /** Modem Status interrupt. */
 #  define UART_REG_IIR_ID_MS                 0x0
+/** 64 byte FIFOs enabled (15750+ only). */
+# define UART_REG_IIR_64BYTE_FIFOS_EN        RT_BIT(5)
 /** FIFOs enabled. */
 # define UART_REG_IIR_FIFOS_EN               0xc0
 /** Bits relevant for checking whether the interrupt status has changed. */
@@ -85,6 +94,8 @@
 # define UART_REG_FCR_XMIT_FIFO_RST          RT_BIT(2)
 /** DMA Mode Select. */
 # define UART_REG_FCR_DMA_MODE_SEL           RT_BIT(3)
+/** 64 Byte FIFO enable (15750+ only). */
+# define UART_REG_FCR_64BYTE_FIFO_EN         RT_BIT(5)
 /** Receiver level interrupt trigger. */
 # define UART_REG_FCR_RCV_LVL_IRQ_MASK       0xc0
 /** Returns the receive level trigger value from the given FCR register. */
@@ -100,7 +111,7 @@
 /** Mask of writeable bits. */
 # define UART_REG_FCR_MASK_WR                0xcf
 /** Mask of sticky bits. */
-# define UART_REG_FCR_MASK_STICKY            0xc9
+# define UART_REG_FCR_MASK_STICKY            0xe9
 
 /** The LCR register index (from the base of the port range). */
 #define UART_REG_LCR_INDEX                   3
@@ -133,8 +144,12 @@
 # define UART_REG_MCR_OUT2                   RT_BIT(3)
 /** Loopback connection. */
 # define UART_REG_MCR_LOOP                   RT_BIT(4)
-/** Mask of writeable bits. */
+/** Flow Control Enable (15750+ only). */
+# define UART_REG_MCR_AFE                    RT_BIT(5)
+/** Mask of writeable bits (15450 and 15550A). */
 # define UART_REG_MCR_MASK_WR                0x1f
+/** Mask of writeable bits (15750+). */
+# define UART_REG_MCR_MASK_WR_15750          0x3f
 
 /** The LSR register index (from the base of the port range). */
 #define UART_REG_LSR_INDEX                   5
@@ -197,7 +212,27 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+
 #ifdef IN_RING3
+/**
+ * FIFO ITL levels.
+ */
+static struct
+{
+    /** ITL level for a 16byte FIFO. */
+    uint8_t                     cbItl16;
+    /** ITL level for a 64byte FIFO. */
+    uint8_t                     cbItl64;
+} s_aFifoItl[] =
+{
+    /* cbItl16     cbItl64 */
+    {     1,          1    },
+    {     4,         16    },
+    {     8,         32    },
+    {    14,         56    }
+};
+
+
 /**
  * String versions of the parity enum.
  */
@@ -257,6 +292,9 @@ static void uartIrqUpdate(PUARTCORE pThis)
     if (   (pThis->uRegLsr & UART_REG_LSR_BITS_IIR_RCL)
         && (pThis->uRegIer & UART_REG_IER_ELSI))
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RCL);
+    else if (   (pThis->uRegIer & UART_REG_IER_ERBFI)
+             && pThis->fIrqCtiPending)
+        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_CTI);
     else if (   (pThis->uRegLsr & UART_REG_LSR_DR)
              && (pThis->uRegIer & UART_REG_IER_ERBFI)
              && (   !(pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
@@ -268,8 +306,6 @@ static void uartIrqUpdate(PUARTCORE pThis)
     else if (   (pThis->uRegMsr & UART_REG_MSR_BITS_IIR_MS)
              && (pThis->uRegIer & UART_REG_IER_EDSSI))
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_MS);
-
-    /** @todo Character timeout indication for FIFO mode. */
 
     LogFlowFunc(("    uRegIirNew=%#x uRegIir=%#x\n", uRegIirNew, pThis->uRegIir));
 
@@ -290,6 +326,8 @@ static void uartIrqUpdate(PUARTCORE pThis)
 
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         uRegIirNew |= UART_REG_IIR_FIFOS_EN;
+    if (pThis->uRegFcr & UART_REG_FCR_64BYTE_FIFO_EN)
+        uRegIirNew |= UART_REG_IIR_64BYTE_FIFOS_EN;
 
     pThis->uRegIir = uRegIirNew;
 }
@@ -318,7 +356,7 @@ DECLINLINE(void) uartFifoClear(PUARTFIFO pFifo)
  */
 DECLINLINE(size_t) uartFifoFreeGet(PUARTFIFO pFifo)
 {
-    return UART_FIFO_LENGTH - pFifo->cbUsed;
+    return pFifo->cbMax - pFifo->cbUsed;
 }
 
 
@@ -332,20 +370,20 @@ DECLINLINE(size_t) uartFifoFreeGet(PUARTFIFO pFifo)
  */
 DECLINLINE(bool) uartFifoPut(PUARTFIFO pFifo, bool fOvrWr, uint8_t bData)
 {
-    if (fOvrWr || pFifo->cbUsed < UART_FIFO_LENGTH)
+    if (fOvrWr || pFifo->cbUsed < pFifo->cbMax)
     {
         pFifo->abBuf[pFifo->offWrite] = bData;
-        pFifo->offWrite = (pFifo->offWrite + 1) % UART_FIFO_LENGTH;
+        pFifo->offWrite = (pFifo->offWrite + 1) % pFifo->cbMax;
     }
 
     bool fOverFlow = false;
-    if (pFifo->cbUsed < UART_FIFO_LENGTH)
+    if (pFifo->cbUsed < pFifo->cbMax)
         pFifo->cbUsed++;
     else
     {
         fOverFlow = true;
         if (fOvrWr) /* Advance the read position to account for the lost character. */
-           pFifo->offRead = (pFifo->offRead + 1) % UART_FIFO_LENGTH;
+           pFifo->offRead = (pFifo->offRead + 1) % pFifo->cbMax;
     }
 
     return fOverFlow;
@@ -365,7 +403,7 @@ DECLINLINE(uint8_t) uartFifoGet(PUARTFIFO pFifo)
     if (pFifo->cbUsed)
     {
         bRet = pFifo->abBuf[pFifo->offRead];
-        pFifo->offRead = (pFifo->offRead + 1) % UART_FIFO_LENGTH;
+        pFifo->offRead = (pFifo->offRead + 1) % pFifo->cbMax;
         pFifo->cbUsed--;
     }
 
@@ -389,10 +427,10 @@ DECLINLINE(size_t) uartFifoCopyTo(PUARTFIFO pFifo, void *pvDst, size_t cbCopy)
     cbCopy = RT_MIN(cbCopy, pFifo->cbUsed);
     while (cbCopy)
     {
-        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(UART_FIFO_LENGTH - pFifo->offRead));
+        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offRead));
         memcpy(pbDst, &pFifo->abBuf[pFifo->offRead], cbThisCopy);
 
-        pFifo->offRead = (pFifo->offRead + cbThisCopy) % UART_FIFO_LENGTH;
+        pFifo->offRead = (pFifo->offRead + cbThisCopy) % pFifo->cbMax;
         pFifo->cbUsed -= cbThisCopy;
         pbDst    += cbThisCopy;
         cbCopied += cbThisCopy;
@@ -419,10 +457,10 @@ DECLINLINE(size_t) uartFifoCopyFrom(PUARTFIFO pFifo, void *pvSrc, size_t cbCopy)
     cbCopy = RT_MIN(cbCopy, uartFifoFreeGet(pFifo));
     while (cbCopy)
     {
-        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(UART_FIFO_LENGTH - pFifo->offWrite));
+        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
         memcpy(&pFifo->abBuf[pFifo->offWrite], pbSrc, cbThisCopy);
 
-        pFifo->offWrite = (pFifo->offWrite + cbThisCopy) % UART_FIFO_LENGTH;
+        pFifo->offWrite = (pFifo->offWrite + cbThisCopy) % pFifo->cbMax;
         pFifo->cbUsed += cbThisCopy;
         pbSrc    += cbThisCopy;
         cbCopied += cbThisCopy;
@@ -473,13 +511,17 @@ static void uartR3ParamsUpdate(PUARTCORE pThis)
     {
         uint32_t uBps = 115200 / pThis->uRegDivisor; /* This is for PC compatible serial port with a 1.8432 MHz crystal. */
         unsigned cDataBits = UART_REG_LCR_WLS_GET(pThis->uRegLcr) + 5;
+        uint32_t cFrameBits = cDataBits;
         PDMSERIALSTOPBITS enmStopBits = PDMSERIALSTOPBITS_ONE;
         PDMSERIALPARITY enmParity = PDMSERIALPARITY_NONE;
 
         if (pThis->uRegLcr & UART_REG_LCR_STB)
         {
             enmStopBits = cDataBits == 5 ? PDMSERIALSTOPBITS_ONEPOINTFIVE : PDMSERIALSTOPBITS_TWO;
+            cFrameBits += 2;
         }
+        else
+            cFrameBits++;
 
         if (pThis->uRegLcr & UART_REG_LCR_PEN)
         {
@@ -503,7 +545,12 @@ static void uartR3ParamsUpdate(PUARTCORE pThis)
                     AssertMsgFailed(("This shouldn't happen at all: %#x\n",
                                      pThis->uRegLcr & (UART_REG_LCR_EPS | UART_REG_LCR_PAR_STICK)));
             }
+
+            cFrameBits++;
         }
+
+        uint64_t uTimerFreq = TMTimerGetFreq(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
+        pThis->cSymbolXferTicks = (uTimerFreq / uBps) * cFrameBits;
 
         LogFlowFunc(("Changing parameters to: %u,%s,%u,%s\n",
                      uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits]));
@@ -512,6 +559,10 @@ static void uartR3ParamsUpdate(PUARTCORE pThis)
         if (RT_FAILURE(rc))
             LogRelMax(10, ("Serial#%d: Failed to change parameters to %u,%s,%u,%s -> %Rrc\n",
                            pThis->pDevInsR3->iInstance, uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits], rc));
+
+        /* Changed parameters will flush all receive queues, so there won't be any data to read even if indicated. */
+        ASMAtomicWriteU32(&pThis->cbAvailRdr, 0);
+        UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
     }
 }
 
@@ -557,12 +608,12 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
 
     while (cbFilled < cbFill)
     {
-        size_t cbThisRead = RT_MIN(cbFill, (uint8_t)(UART_FIFO_LENGTH - pFifo->offWrite));
+        size_t cbThisRead = RT_MIN(cbFill - cbFilled, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
         size_t cbRead = 0;
         int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
         /*Assert(RT_SUCCESS(rc) && cbRead == cbThisRead);*/ RT_NOREF(rc);
 
-        pFifo->offWrite = (pFifo->offWrite + cbRead) % UART_FIFO_LENGTH;
+        pFifo->offWrite = (pFifo->offWrite + cbRead) % pFifo->cbMax;
         pFifo->cbUsed   += cbRead;
         cbFilled        += cbRead;
 
@@ -576,6 +627,7 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
         uartIrqUpdate(pThis);
     }
 
+    Assert(cbFilled <= pThis->cbAvailRdr);
     ASMAtomicSubU32(&pThis->cbAvailRdr, cbFilled);
 }
 
@@ -608,7 +660,7 @@ static void uartR3ByteFetch(PUARTCORE pThis)
  */
 static void uartR3DataFetch(PUARTCORE pThis)
 {
-    if (pThis->uRegFcr % UART_REG_FCR_FIFO_EN)
+    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         uartR3RecvFifoFill(pThis);
     else
         uartR3ByteFetch(pThis);
@@ -712,7 +764,10 @@ DECLINLINE(int) uartRegIerDlmWrite(PUARTCORE pThis, uint8_t uVal)
     }
     else
     {
-        pThis->uRegIer = uVal & UART_REG_IER_MASK_WR;
+        if (pThis->enmType < UARTTYPE_16750)
+            pThis->uRegIer = uVal & UART_REG_IER_MASK_WR;
+        else
+            pThis->uRegIer = uVal & UART_REG_IER_MASK_WR_16750;
         uartIrqUpdate(pThis);
     }
 
@@ -729,8 +784,11 @@ DECLINLINE(int) uartRegIerDlmWrite(PUARTCORE pThis, uint8_t uVal)
  */
 DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
 {
+#ifndef IN_RING3
+    RT_NOREF(pThis, uVal);
+    return VINF_IOM_R3_IOPORT_WRITE;
+#else
     int rc = VINF_SUCCESS;
-
     if (   pThis->enmType >= UARTTYPE_16550A
         && uVal != pThis->uRegFcr)
     {
@@ -740,53 +798,71 @@ DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
             uartFifoClear(&pThis->FifoXmit);
             uartFifoClear(&pThis->FifoRecv);
 
-            /* Fill in the next data. */
-            if (ASMAtomicReadU32(&pThis->cbAvailRdr))
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-                uartR3DataFetch(pThis);
-#endif
-            }
+            /*
+             * If the FIFO is about to be enabled and the DR bit is ready we have an unacknowledged
+             * byte in the RBR register which will be lost so we have to adjust the available bytes.
+             */
+            if (   ASMAtomicReadU32(&pThis->cbAvailRdr) > 0
+                && (pThis->uRegFcr & UART_REG_FCR_FIFO_EN))
+                ASMAtomicDecU32(&pThis->cbAvailRdr);
+
+            /* Clear the DR bit too. */
+            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
         }
 
         if (rc == VINF_SUCCESS)
         {
             if (uVal & UART_REG_FCR_RCV_FIFO_RST)
+            {
+                TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
+                pThis->fIrqCtiPending = false;
                 uartFifoClear(&pThis->FifoRecv);
+            }
             if (uVal & UART_REG_FCR_XMIT_FIFO_RST)
                 uartFifoClear(&pThis->FifoXmit);
 
+            /*
+             * The 64byte FIFO enable bit is only changeable for 16750
+             * and if the DLAB bit in LCR is set.
+             */
+            if (   pThis->enmType < UARTTYPE_16750
+                || !(pThis->uRegLcr & UART_REG_LCR_DLAB))
+                uVal &= ~UART_REG_FCR_64BYTE_FIFO_EN;
+            else /* Use previous value. */
+                uVal |= pThis->uRegFcr & UART_REG_FCR_64BYTE_FIFO_EN;
+
+            if (uVal & UART_REG_FCR_64BYTE_FIFO_EN)
+            {
+                pThis->FifoRecv.cbMax = 64;
+                pThis->FifoXmit.cbMax = 64;
+            }
+            else
+            {
+                pThis->FifoRecv.cbMax = 16;
+                pThis->FifoXmit.cbMax = 16;
+            }
+
             if (uVal & UART_REG_FCR_FIFO_EN)
             {
-                switch (UART_REG_FCR_RCV_LVL_IRQ_GET(uVal))
-                {
-                    case UART_REG_FCR_RCV_LVL_IRQ_1:
-                        pThis->FifoRecv.cbItl = 1;
-                        break;
-                    case UART_REG_FCR_RCV_LVL_IRQ_4:
-                        pThis->FifoRecv.cbItl = 4;
-                        break;
-                    case UART_REG_FCR_RCV_LVL_IRQ_8:
-                        pThis->FifoRecv.cbItl = 8;
-                        break;
-                    case UART_REG_FCR_RCV_LVL_IRQ_14:
-                        pThis->FifoRecv.cbItl = 14;
-                        break;
-                    default:
-                        /* Should never occur as all cases are handled earlier. */
-                        AssertMsgFailed(("Impossible to hit!\n"));
-                }
+                uint8_t idxItl = UART_REG_FCR_RCV_LVL_IRQ_GET(uVal);
+                if (uVal & UART_REG_FCR_64BYTE_FIFO_EN)
+                    pThis->FifoRecv.cbItl = s_aFifoItl[idxItl].cbItl64;
+                else
+                    pThis->FifoRecv.cbItl = s_aFifoItl[idxItl].cbItl16;
             }
 
             /* The FIFO reset bits are self clearing. */
             pThis->uRegFcr = uVal & UART_REG_FCR_MASK_STICKY;
             uartIrqUpdate(pThis);
         }
+
+        /* Fill in the next data. */
+        if (ASMAtomicReadU32(&pThis->cbAvailRdr))
+            uartR3DataFetch(pThis);
     }
 
     return rc;
+#endif
 }
 
 
@@ -836,7 +912,10 @@ DECLINLINE(int) uartRegMcrWrite(PUARTCORE pThis, uint8_t uVal)
 {
     int rc = VINF_SUCCESS;
 
-    uVal &= UART_REG_MCR_MASK_WR;
+    if (pThis->enmType < UARTTYPE_16750)
+        uVal &= UART_REG_MCR_MASK_WR;
+    else
+        uVal &= UART_REG_MCR_MASK_WR_15750;
     if (pThis->uRegMcr != uVal)
     {
 #ifndef IN_RING3
@@ -912,8 +991,17 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
             if (rc == VINF_SUCCESS)
             {
                 *puVal = uartFifoGet(&pThis->FifoRecv);
+                pThis->fIrqCtiPending = false;
                 if (!pThis->FifoRecv.cbUsed)
+                {
+                    TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
                     UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
+                }
+                else
+                {
+                    uint64_t tsCtiFire = TMTimerGet(pThis->CTX_SUFF(pTimerRcvFifoTimeout)) + pThis->cSymbolXferTicks * 4;
+                    TMTimerSet(pThis->CTX_SUFF(pTimerRcvFifoTimeout), tsCtiFire);
+                }
                 uartIrqUpdate(pThis);
             }
         }
@@ -923,6 +1011,7 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
 
             if (pThis->uRegLsr & UART_REG_LSR_DR)
             {
+                Assert(pThis->cbAvailRdr);
                 uint32_t cbAvail = ASMAtomicDecU32(&pThis->cbAvailRdr);
                 if (!cbAvail)
                 {
@@ -1096,6 +1185,8 @@ DECLINLINE(const char *) uartRegIdx2Str(PUARTCORE pThis, uint8_t idxReg, bool fW
 
 DECLHIDDEN(int) uartRegWrite(PUARTCORE pThis, uint32_t uReg, uint32_t u32, size_t cb)
 {
+    AssertMsgReturn(cb == 1, ("uReg=%#x cb=%d u32=%#x\n", uReg, cb, u32), VINF_SUCCESS);
+
     int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
@@ -1103,8 +1194,6 @@ DECLHIDDEN(int) uartRegWrite(PUARTCORE pThis, uint32_t uReg, uint32_t u32, size_
     uint8_t idxReg = uReg & 0x7;
     LogFlowFunc(("pThis=%#p uReg=%u{%s} u32=%#x cb=%u\n",
                  pThis, uReg, uartRegIdx2Str(pThis, idxReg, true /*fWrite*/), u32, cb));
-
-    AssertMsgReturn(cb == 1, ("uReg=%#x cb=%d u32=%#x\n", uReg, cb, u32), VINF_SUCCESS);
 
     uint8_t uVal = (uint8_t)u32;
     switch (idxReg)
@@ -1186,6 +1275,24 @@ DECLHIDDEN(int) uartRegRead(PUARTCORE pThis, uint32_t uReg, uint32_t *pu32, size
 
 #ifdef IN_RING3
 
+/* -=-=-=-=-=-=-=-=- Timer callbacks -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNTMTIMERDEV, Fifo timer function.}
+ */
+static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    RT_NOREF(pDevIns, pTimer);
+    PUARTCORE pThis = (PUARTCORE)pvUser;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    if (pThis->FifoRecv.cbUsed)
+    {
+        pThis->fIrqCtiPending = true;
+        uartIrqUpdate(pThis);
+    }
+}
+
+
 /* -=-=-=-=-=-=-=-=- PDMISERIALPORT on LUN#0 -=-=-=-=-=-=-=-=- */
 
 
@@ -1265,7 +1372,10 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
     }
     else
     {
-        AssertMsgFailed(("There is no data to read!\n"));
+        /*
+         * This can happen if there was data in the FIFO when the connection was closed,
+         * idicate this condition to the lower driver by returning 0 bytes.
+         */
         *pcbRead = 0;
     }
     PDMCritSectLeave(&pThis->CritSect);
@@ -1323,24 +1433,29 @@ static DECLCALLBACK(void *) uartR3QueryInterface(PPDMIBASE pInterface, const cha
 DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta)
 {
     RT_NOREF(offDelta);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pThis->pDevInsR3);
+    pThis->pDevInsRC              = PDMDEVINS_2_RCPTR(pThis->pDevInsR3);
+    pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
 }
 
 
 DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis)
 {
-    pThis->uRegDivisor = 0x0c; /* Default to 9600 Baud. */
-    pThis->uRegRbr     = 0;
-    pThis->uRegThr     = 0;
-    pThis->uRegIer     = 0;
-    pThis->uRegIir     = UART_REG_IIR_IP_NO_INT;
-    pThis->uRegFcr     = 0;
-    pThis->uRegLcr     = 0; /* 5 data bits, no parity, 1 stop bit. */
-    pThis->uRegMcr     = 0;
-    pThis->uRegLsr     = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
-    pThis->uRegMsr     = 0; /* Updated below. */
-    pThis->uRegScr     = 0;
+    pThis->uRegDivisor    = 0x0c; /* Default to 9600 Baud. */
+    pThis->uRegRbr        = 0;
+    pThis->uRegThr        = 0;
+    pThis->uRegIer        = 0;
+    pThis->uRegIir        = UART_REG_IIR_IP_NO_INT;
+    pThis->uRegFcr        = 0;
+    pThis->uRegLcr        = 0; /* 5 data bits, no parity, 1 stop bit. */
+    pThis->uRegMcr        = 0;
+    pThis->uRegLsr        = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
+    pThis->uRegMsr        = 0; /* Updated below. */
+    pThis->uRegScr        = 0;
+    pThis->fIrqCtiPending = false;
 
+    /* Standard FIFO size for 15550A. */
+    pThis->FifoXmit.cbMax = 16;
+    pThis->FifoRecv.cbMax = 16;
     uartFifoClear(&pThis->FifoXmit);
     uartFifoClear(&pThis->FifoRecv);
     pThis->FifoRecv.cbItl = 1;
@@ -1437,7 +1552,8 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
     pThis->ISerialPort.pfnNotifyStsLinesChanged = uartR3NotifyStsLinesChanged;
     pThis->ISerialPort.pfnNotifyBrk             = uartR3NotifyBrk;
 
-    rc = PDMDevHlpCritSectInit(pDevInsR3, &pThis->CritSect, RT_SRC_POS, "Serial#%d", iLUN);
+    rc = PDMDevHlpCritSectInit(pDevInsR3, &pThis->CritSect, RT_SRC_POS, "Uart{%s#%d}#%d",
+                               pDevInsR3->pReg->szName, pDevInsR3->iInstance, iLUN);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1465,6 +1581,20 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
         /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
         return rc;
     }
+
+    /*
+     * Create the receive FIFO character timeout indicator timer.
+     */
+    rc = PDMDevHlpTMTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "UART Rcv FIFO Timer",
+                                &pThis->pTimerRcvFifoTimeoutR3);
+    AssertRCReturn(rc, rc);
+
+    rc = TMR3TimerSetCritSect(pThis->pTimerRcvFifoTimeoutR3, &pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    pThis->pTimerRcvFifoTimeoutR0 = TMTimerR0Ptr(pThis->pTimerRcvFifoTimeoutR3);
+    pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
 
     uartR3Reset(pThis);
     return VINF_SUCCESS;

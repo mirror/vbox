@@ -399,29 +399,40 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                                                           &cbFetched);
                     AssertRC(rc);
 
-                    ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
-                    pThis->cbTxUsed += cbFetched;
-                }
-
-                size_t cbProcessed = 0;
-                rc = RTSerialPortWriteNB(pThis->hSerialPort, &pThis->abTxBuf[0], pThis->cbTxUsed, &cbProcessed);
-                if (RT_SUCCESS(rc))
-                {
-                    pThis->cbTxUsed -= cbProcessed;
-                    if (pThis->cbTxUsed)
+                    if (cbFetched > 0)
                     {
-                        /* Move the data in the TX buffer to the front to fill the end again. */
-                        memmove(&pThis->abTxBuf[0], &pThis->abTxBuf[cbProcessed], pThis->cbTxUsed);
+                        ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
+                        pThis->cbTxUsed += cbFetched;
                     }
                     else
-                        pThis->pDrvSerialPort->pfnDataSentNotify(pThis->pDrvSerialPort);
-                    STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbProcessed);
+                    {
+                        /* The guest reset the send queue and there is no data available anymore. */
+                        pThis->cbAvailWr = 0;
+                    }
                 }
-                else
+
+                if (pThis->cbTxUsed)
                 {
-                    LogRelMax(10, ("HostSerial#%d: Sending data failed even though the serial port is marked as writeable (rc=%Rrc)\n",
-                                   pThis->pDrvIns->iInstance, rc));
-                    break;
+                    size_t cbProcessed = 0;
+                    rc = RTSerialPortWriteNB(pThis->hSerialPort, &pThis->abTxBuf[0], pThis->cbTxUsed, &cbProcessed);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pThis->cbTxUsed -= cbProcessed;
+                        if (pThis->cbTxUsed)
+                        {
+                            /* Move the data in the TX buffer to the front to fill the end again. */
+                            memmove(&pThis->abTxBuf[0], &pThis->abTxBuf[cbProcessed], pThis->cbTxUsed);
+                        }
+                        else
+                            pThis->pDrvSerialPort->pfnDataSentNotify(pThis->pDrvSerialPort);
+                        STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbProcessed);
+                    }
+                    else
+                    {
+                        LogRelMax(10, ("HostSerial#%d: Sending data failed even though the serial port is marked as writeable (rc=%Rrc)\n",
+                                       pThis->pDrvIns->iInstance, rc));
+                        break;
+                    }
                 }
             }
 

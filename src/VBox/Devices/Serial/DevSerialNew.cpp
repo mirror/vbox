@@ -124,6 +124,26 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
 #ifdef IN_RING3
 
 
+/**
+ * Returns the matching UART type from the given string.
+ *
+ * @returns UART type based on the given string or UARTTYPE_INVALID if an invalid type was passed.
+ * @param   pszUartType         The UART type.
+ */
+static UARTTYPE serialR3GetUartTypeFromString(const char *pszUartType)
+{
+    if (!RTStrCmp(pszUartType, "15450"))
+        return UARTTYPE_16450;
+    else if (!RTStrCmp(pszUartType, "15550A"))
+        return UARTTYPE_16550A;
+    else if (!RTStrCmp(pszUartType, "16750"))
+        return UARTTYPE_16750;
+
+    AssertLogRelMsgFailedReturn(("Unknown UART type \"%s\" specified", pszUartType),
+                                UARTTYPE_INVALID);
+}
+
+
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
 
 /**
@@ -208,7 +228,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
                                     "GCEnabled\0"
                                     "R0Enabled\0"
                                     "YieldOnLSRRead\0"
-                                    "Enable16550A\0"
+                                    "UartType\0"
                                     ))
     {
         AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
@@ -262,17 +282,26 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
-    bool f16550AEnabled = true;
-    rc = CFGMR3QueryBoolDef(pCfg, "Enable16550A", &f16550AEnabled, true);
+    char *pszUartType;
+    rc = CFGMR3QueryStringAllocDef(pCfg, "UartType", &pszUartType, "16550A");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"Enable16550A\" value"));
+                                N_("Configuration error: failed to read \"UartType\" as string"));
+
+    UARTTYPE enmUartType = serialR3GetUartTypeFromString(pszUartType);
+
+    if (enmUartType != UARTTYPE_INVALID)
+        LogRel(("Serial#%d: emulating %s (IOBase: %04x IRQ: %u)\n",
+                pDevIns->iInstance, pszUartType, uIoBase, uIrq));
+
+    MMR3HeapFree(pszUartType);
+
+    if (enmUartType == UARTTYPE_INVALID)
+        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                N_("Configuration error: \"UartType\" contains invalid type"));
 
     pThis->uIrq     = uIrq;
     pThis->PortBase = uIoBase;
-
-    LogRel(("Serial#%d: emulating %s (IOBase: %04x IRQ: %u)\n",
-            pDevIns->iInstance, f16550AEnabled ? "16550A" : "16450", uIoBase, uIrq));
 
     /*
      * Init locks, using explicit locking where necessary.
@@ -329,7 +358,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
 
     /* Init the UART core structure. */
-    rc = uartR3Init(&pThis->UartCore, pDevIns, f16550AEnabled ? UARTTYPE_16550A : UARTTYPE_16450, 0,
+    rc = uartR3Init(&pThis->UartCore, pDevIns, enmUartType, 0,
                     fYieldOnLSRRead ? UART_CORE_YIELD_ON_LSR_READ : 0, serialIrqReq, pfnSerialIrqReqR0, pfnSerialIrqReqRC);
 
     serialR3Reset(pDevIns);

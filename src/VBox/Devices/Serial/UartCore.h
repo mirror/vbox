@@ -19,6 +19,7 @@
 #ifndef ___UartCore_h
 #define ___UartCore_h
 
+#include <VBox/types.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmserialifs.h>
 #include <iprt/assert.h>
@@ -29,8 +30,8 @@ RT_C_DECLS_BEGIN
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-/** Size of a FIFO. */
-#define UART_FIFO_LENGTH                     16
+/** Maximum size of a FIFO. */
+#define UART_FIFO_LENGTH_MAX                 128
 
 
 /*********************************************************************************************************************************
@@ -66,7 +67,9 @@ typedef enum UARTTYPE
     UARTTYPE_16450,
     /** 16550A UART type. */
     UARTTYPE_16550A,
-    /** 32bit hack. */
+    /** 16750 UART type. */
+    UARTTYPE_16750,
+        /** 32bit hack. */
     UARTTYPE_32BIT_HACK = 0x7fffffff
 } UARTTYPE;
 
@@ -76,6 +79,8 @@ typedef enum UARTTYPE
  */
 typedef struct UARTFIFO
 {
+    /** Fifo size configured. */
+    uint8_t                         cbMax;
     /** Current amount of bytes used. */
     uint8_t                         cbUsed;
     /** Next index to write to. */
@@ -85,7 +90,9 @@ typedef struct UARTFIFO
     /** The interrupt trigger level (only used for the receive FIFO). */
     uint8_t                         cbItl;
     /** The data in the FIFO. */
-    uint8_t                         abBuf[UART_FIFO_LENGTH];
+    uint8_t                         abBuf[UART_FIFO_LENGTH_MAX];
+    /** Alignment to a 4 byte boundary. */
+    uint8_t                         au8Alignment0[3];
 } UARTFIFO;
 /** Pointer to a FIFO. */
 typedef UARTFIFO *PUARTFIFO;
@@ -122,11 +129,17 @@ typedef struct UARTCORE
     /** The selected UART type. */
     UARTTYPE                        enmType;
 
+    /** R3 timer pointer fo the character timeout indication. */
+    PTMTIMERR3                      pTimerRcvFifoTimeoutR3;
     /** R3 interrupt request callback of the owning device. */
     R3PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR3;
+    /** R0 timer pointer fo the character timeout indication. */
+    PTMTIMERR0                      pTimerRcvFifoTimeoutR0;
     /** R0 interrupt request callback of the owning device. */
     R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR0;
-    /** RC interrupt request callback of the owning device. */
+    /** RC timer pointer fo the character timeout indication. */
+    PTMTIMERRC                      pTimerRcvFifoTimeoutRC;
+        /** RC interrupt request callback of the owning device. */
     RCPTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqRC;
 
     /** The divisor register (DLAB = 1). */
@@ -152,11 +165,20 @@ typedef struct UARTCORE
     /** The Scratch Register (SCR). */
     uint8_t                         uRegScr;
 
-    /** The transmit FIFO. */
+    /** Flag whether a character timeout interrupt is pending
+     * (no symbols were inserted or removed from the receive FIFO
+     * during an 4 times the character transmit/receive period and the FIFO
+     * is not empty). */
+    bool                            fIrqCtiPending;
+    /** Alignment. */
+    bool                            afAlignment[3];
+        /** The transmit FIFO. */
     UARTFIFO                        FifoXmit;
     /** The receive FIFO. */
     UARTFIFO                        FifoRecv;
 
+    /** Time it takes to transmit/receive a single symbol in timer ticks. */
+    uint64_t                        cSymbolXferTicks;
     /** Number of bytes available for reading from the layer below. */
     volatile uint32_t               cbAvailRdr;
 
