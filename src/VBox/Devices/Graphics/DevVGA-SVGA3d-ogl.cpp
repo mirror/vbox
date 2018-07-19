@@ -848,6 +848,11 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
                                    pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
                                                                  &pState->caps.maxVertexShaderTemps));
+#ifdef DEBUG_sunlover
+        /// @todo Fix properly!!! Some Windows host drivers return 31 for the compatible OGL context (wglCreateContext).
+        if (pState->caps.maxVertexShaderTemps < 32)
+            pState->caps.maxVertexShaderTemps = 32;
+#endif
         VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
                                    pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
                                                                  &pState->caps.maxVertexShaderInstructions));
@@ -1576,6 +1581,12 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         AssertMsgFailed(("Test me - SVGA3D_A4R4G4B4\n"));
         break;
 
+    case SVGA3D_R8G8B8A8_UNORM:
+        pSurface->internalFormatGL = GL_RGBA8;
+        pSurface->formatGL = GL_RGBA;
+        pSurface->typeGL = GL_UNSIGNED_INT_8_8_8_8_REV;
+        break;
+
     case SVGA3D_Z_D32:                  /* D3DFMT_D32 - WINED3DFMT_D32_UNORM */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT32;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
@@ -1636,6 +1647,10 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 #endif
         break;
 
+    case SVGA3D_DXT2:                   /* D3DFMT_DXT2 */
+        AssertMsgFailed(("Test me - SVGA3D_DXT2\n"));
+        break;
+
     case SVGA3D_DXT3:                   /* D3DFMT_DXT3 - WINED3DFMT_DXT3 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 #if 0 /** @todo this needs testing... */
@@ -1646,6 +1661,10 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_UNSIGNED_BYTE;
         AssertMsgFailed(("Test me - SVGA3D_DXT3\n"));
 #endif
+        break;
+
+    case SVGA3D_DXT4:                   /* D3DFMT_DXT4 */
+        AssertMsgFailed(("Test me - SVGA3D_DXT4\n"));
         break;
 
     case SVGA3D_DXT5:                   /* D3DFMT_DXT5 - WINED3DFMT_DXT5 */
@@ -2098,10 +2117,10 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     VMSVGAPACKPARAMS SavedParams;
     vmsvga3dOglSetUnpackParams(pState, pContext, pSurface, &SavedParams);
 
-    /* Set the mipmap base and max level paramters. */
+    /* Set the mipmap base and max level parameters. */
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, pSurface->faces[0].numMipLevels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, pSurface->faces[0].numMipLevels - 1);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     if (pSurface->fDirty)
@@ -5271,12 +5290,12 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         }
 
         case SVGA3D_TS_TEXTURE_LOD_BIAS:            /* float */
-            glTexParameterf(GL_TEXTURE_2D /** @todo flexible type */, GL_TEXTURE_LOD_BIAS, pTextureState[i].value);   /* Identical; default 0.0 identical too */
+            glTexParameterf(GL_TEXTURE_2D /** @todo flexible type */, GL_TEXTURE_LOD_BIAS, pTextureState[i].floatValue);   /* Identical; default 0.0 identical too */
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
 
         case SVGA3D_TS_TEXTURE_MIPMAP_LEVEL:        /* uint32_t */
-            textureType = GL_TEXTURE_BASE_LEVEL;
+            textureType = GL_TEXTURE_MAX_LEVEL;
             val = pTextureState[i].value;
             break;
 
@@ -6455,6 +6474,18 @@ internal_error:
         rect.w = pContext->state.RectViewPort.w;
         rect.h = pContext->state.RectViewPort.h;
         vmsvga3dCommandPresent(pThis, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], 0, NULL);
+    }
+#endif
+
+#if 0
+    /* Dump render target to a bitmap. */
+    if (pContext->state.aRenderTargets[SVGA3D_RT_COLOR0] != SVGA3D_INVALID_ID)
+    {
+        vmsvga3dUpdateHeapBuffersForSurfaces(pThis, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0]);
+        PVMSVGA3DSURFACE pSurface;
+        int rc2 = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pSurface);
+        if (RT_SUCCESS(rc2))
+            vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmp", "rt", "-post");
     }
 #endif
 
