@@ -2144,6 +2144,10 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     if (RT_FAILURE(rc))
         return rc;
 
+    /* Set scheduling hint (if available). */
+    if (pThis->cTimerTicksIO)
+        pThis->Out.Cfg.Device.uSchedulingHintMs = 1000 /* ms */ / (TMTimerGetFreq(pThis->pTimerIO) / pThis->cTimerTicksIO);
+
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {

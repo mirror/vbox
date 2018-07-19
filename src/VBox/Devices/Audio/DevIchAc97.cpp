@@ -311,7 +311,8 @@ typedef struct AC97STREAMSTATE
     uint32_t              Padding;
 #endif
     /** The stream's current configuration. */
-    PDMAUDIOSTREAMCFG     Cfg; //+96
+    PDMAUDIOSTREAMCFG     Cfg; //+100
+    uint32_t              Padding;
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO    AIO;
@@ -1685,6 +1686,10 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
     PPDMAUDIOSTREAMCFG pCfg     = &pStream->State.Cfg;
     PAUDMIXSINK        pMixSink = NULL;
     AssertCompile(sizeof(pCfg->szName) >= 8);
+
+    /* Set scheduling hint (if available). */
+    if (pThis->cTimerTicks)
+        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / (TMTimerGetFreq(pThis->pTimerR3) / pThis->cTimerTicks);
 
     switch (pStream->u8SD)
     {

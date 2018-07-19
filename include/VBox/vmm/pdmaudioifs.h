@@ -534,9 +534,30 @@ typedef struct PDMAUDIOSTREAMCFG
      *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
      *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done. */
     PDMAUDIOSTREAMLAYOUT     enmLayout;
-    /** Hint about the optimal frame buffer size (in audio frames).
-     *  0 if no hint is given. */
-    uint32_t                 cFrameBufferHint;
+    struct
+    {
+        /** Scheduling hint given from the device emulation about when this stream is being served on average.
+         *  Can be 0 if not hint given or some other mechanism (e.g. callbacks) is being used. */
+        uint32_t             uSchedulingHintMs;
+    } Device;
+    /**
+     * Backend-specific data for the stream.
+     * Set by the backend on return. Not all backends support all values / features.
+     */
+    struct
+    {
+        /** Period size of the stream (in audio frames).
+         *  This value reflects the number of audio frames in between each hardware interrupt on the
+         *  backend (host) side. 0 if not set / available by the backend. */
+        uint32_t             cfPeriod;
+        /** (Ring) buffer size (in audio frames). Often is a multiple of cfPeriod.
+         *  0 if not set / available by the backend. */
+        uint32_t             cfBufferSize;
+        /** Pre-buffering size (in audio frames). Frames needed in buffer before the stream becomes active (pre buffering).
+         *  The bigger this value is, the more latency for the stream will occur.
+         *  0 if not set / available by the backend. */
+        uint32_t             cfPreBuf;
+    } Backend;
 } PDMAUDIOSTREAMCFG;
 AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
 /** Pointer to audio stream configuration keeper. */

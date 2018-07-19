@@ -194,6 +194,10 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         return rc;
     }
 
+    /* Set scheduling hint (if available). */
+    if (pThis->u16TimerHz)
+        pCfg->Device.uSchedulingHintMs = 1000 /*ms */ / pThis->u16TimerHz;
+
     /* (Re-)Allocate the stream's internal DMA buffer, based on the PCM  properties we just got above. */
     if (pStream->State.pCircBuf)
     {
