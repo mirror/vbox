@@ -148,6 +148,9 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             if (pSettingsCntLayout)
             {
                 pSettingsCntLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+                pSettingsCntLayout->setSpacing(5);
+#endif
 
                 /* Create settings widget: */
                 m_pSettingsWidget = new QStackedWidget;
@@ -161,6 +164,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                         QGridLayout *pSettingsLayout1 = new QGridLayout(pSettingsPane1);
                         if (pSettingsLayout1)
                         {
+#ifdef VBOX_WS_MAC
+                            pSettingsLayout1->setSpacing(10);
+#endif
+                            pSettingsLayout1->setContentsMargins(0, 0, 0, 0);
                             pSettingsLayout1->setColumnStretch(0, 0);
                             pSettingsLayout1->setColumnStretch(1, 1);
 
@@ -174,7 +181,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pFileSelector->setDefaultSaveExt("ova");
 
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pFileSelector, 0, 1);
+                                pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
                             }
                             /* Create file selector label: */
                             m_pFileSelectorLabel = new QLabel;
@@ -192,7 +199,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             if (m_pFormatComboBox)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1);
+                                pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1, 1, 2);
                             }
                             /* Create format combo-box label: */
                             m_pFormatComboBoxLabel = new QLabel;
@@ -210,7 +217,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             if (m_pMACComboBox)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1);
+                                pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1, 1, 2);
                             }
                             /* Create format combo-box label: */
                             m_pMACComboBoxLabel = new QLabel;
@@ -252,7 +259,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             if (pPlaceholder)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 2);
+                                pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 3);
                             }
                         }
 
@@ -268,6 +275,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                         QGridLayout *pSettingsLayout2 = new QGridLayout(pSettingsPane2);
                         if (pSettingsLayout2)
                         {
+#ifdef VBOX_WS_MAC
+                            pSettingsLayout2->setSpacing(10);
+#endif
+                            pSettingsLayout2->setContentsMargins(0, 0, 0, 0);
                             pSettingsLayout2->setColumnStretch(0, 0);
                             pSettingsLayout2->setColumnStretch(1, 1);
 
@@ -310,7 +321,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pAccountPropertyTable->verticalHeader()->setVisible(false);
                                 m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-                                    /* Add into layout: */
+                                /* Add into layout: */
                                 pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
                             }
                         }

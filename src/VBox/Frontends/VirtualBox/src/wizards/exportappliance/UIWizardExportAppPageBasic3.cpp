@@ -424,6 +424,7 @@ QString UIWizardExportAppPage3::profile() const
 *********************************************************************************************************************************/
 
 UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
+    : m_pLabel(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -449,7 +450,13 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 QGridLayout *pSettingsLayout1 = new QGridLayout(pSettingsPane1);
                 if (pSettingsLayout1)
                 {
-                    pSettingsLayout1->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+                    pSettingsLayout1->setContentsMargins(0, 10, 0, 10);
+                    pSettingsLayout1->setSpacing(10);
+#else
+                    pSettingsLayout1->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                                         0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+#endif
                     pSettingsLayout1->setColumnStretch(0, 0);
                     pSettingsLayout1->setColumnStretch(1, 1);
 
@@ -463,7 +470,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pFileSelector->setDefaultSaveExt("ova");
 
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pFileSelector, 0, 1);
+                        pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
                     }
                     /* Create file selector label: */
                     m_pFileSelectorLabel = new QLabel;
@@ -481,7 +488,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (m_pFormatComboBox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1);
+                        pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1, 1, 2);
                     }
                     /* Create format combo-box label: */
                     m_pFormatComboBoxLabel = new QLabel;
@@ -499,7 +506,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (m_pMACComboBox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1);
+                        pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1, 1, 2);
                     }
                     /* Create format combo-box label: */
                     m_pMACComboBoxLabel = new QLabel;
@@ -541,7 +548,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (pPlaceholder)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 2);
+                        pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 3);
                     }
                 }
 
@@ -557,7 +564,14 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 QGridLayout *pSettingsLayout2 = new QGridLayout(pSettingsPane2);
                 if (pSettingsLayout2)
                 {
-                    pSettingsLayout2->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+                    pSettingsLayout2->setContentsMargins(0, 10, 0, 10);
+                    pSettingsLayout2->setSpacing(10);
+
+#else
+                    pSettingsLayout2->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                                         0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+#endif
                     pSettingsLayout2->setColumnStretch(0, 0);
                     pSettingsLayout2->setColumnStretch(1, 1);
 
