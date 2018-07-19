@@ -7199,6 +7199,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     /*
      * Determine the nested paging mode.
      */
+/** @todo r=bird: Gotta love this nested paging hacking we're still carrying with us... (Split PGM_TYPE_NESTED.) */
     PGMMODE enmNestedPagingMode;
 #if HC_ARCH_BITS == 32
     if (CPUMIsGuestInLongModeEx(pCtx))

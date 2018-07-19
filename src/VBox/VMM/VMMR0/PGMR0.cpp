@@ -36,6 +36,7 @@
 /*
  * Instantiate the ring-0 header/code templates.
  */
+/** @todo r=bird: Gotta love this nested paging hacking we're still carrying with us... (Split PGM_TYPE_NESTED.) */
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
@@ -508,6 +509,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
      * Note! We pretend the guest is in protected mode without paging, so we
      *       can use existing code to build the nested page tables.
      */
+/** @todo r=bird: Gotta love this nested paging hacking we're still carrying with us... (Split PGM_TYPE_NESTED.) */
     bool fLockTaken = false;
     switch (enmShwPagingMode)
     {
