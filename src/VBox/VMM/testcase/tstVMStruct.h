@@ -666,12 +666,6 @@
     GEN_CHECK_OFF(PGMCPU, pShwPageCR3R3);
     GEN_CHECK_OFF(PGMCPU, pShwPageCR3R0);
     GEN_CHECK_OFF(PGMCPU, pShwPageCR3RC);
-    GEN_CHECK_OFF(PGMCPU, pfnR3ShwRelocate);
-    GEN_CHECK_OFF(PGMCPU, pfnR3ShwExit);
-    GEN_CHECK_OFF(PGMCPU, pfnR3ShwGetPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR3ShwModifyPage);
-    GEN_CHECK_OFF(PGMCPU, pfnRCShwGetPage);
-    GEN_CHECK_OFF(PGMCPU, pfnRCShwModifyPage);
     GEN_CHECK_OFF(PGMCPU, pfnR3BthMapCR3);
     GEN_CHECK_OFF(PGMCPU, pfnR3BthUnmapCR3);
     GEN_CHECK_OFF(PGMCPU, pfnR3BthRelocate);

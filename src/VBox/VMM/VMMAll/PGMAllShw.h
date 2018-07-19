@@ -52,7 +52,7 @@
 #undef SHW_PDPT_MASK
 #undef SHW_PDPE_PG_MASK
 
-#if PGM_SHW_TYPE == PGM_TYPE_32BIT
+#if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT
 # define SHWPT                          X86PT
 # define PSHWPT                         PX86PT
 # define SHWPTE                         X86PTE
@@ -150,18 +150,20 @@
 # define SHW_PT_SHIFT                   X86_PT_PAE_SHIFT
 # define SHW_PT_MASK                    X86_PT_PAE_MASK
 
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_NESTED_AMD64
 #  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
 #  define SHW_PDPT_MASK                 X86_PDPT_MASK_AMD64
 #  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES          (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
 
-# else /* 32 bits PAE mode */
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED_PAE
 #  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
 #  define SHW_PDPT_MASK                 X86_PDPT_MASK_PAE
 #  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES          (X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES)
 
+# else
+#  error "Misconfigured PGM_SHW_TYPE or something..."
 # endif
 #endif
 
@@ -173,6 +175,11 @@
 RT_C_DECLS_BEGIN
 PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags);
+#ifdef IN_RING3  /* for now */
+PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
+PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu);
+PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
+#endif
 RT_C_DECLS_END
 
 
@@ -190,11 +197,6 @@ RT_C_DECLS_END
  */
 PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
-    NOREF(pVCpu); NOREF(GCPtr); NOREF(pfFlags); NOREF(pHCPhys);
-    return VERR_PAGE_TABLE_NOT_PRESENT;
-
-#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     PGM_LOCK_ASSERT_OWNER(pVM);
@@ -202,7 +204,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     /*
      * Get the PDE.
      */
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+#if PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_NESTED_AMD64
     X86PDEPAE Pde;
 
     /* PML4 */
@@ -234,10 +236,10 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     Pde.n.u1User      &= Pml4e.n.u1User & Pdpe.lm.u1User;
     Pde.n.u1NoExecute |= Pml4e.n.u1NoExecute | Pdpe.lm.u1NoExecute;
 
-# elif PGM_SHW_TYPE == PGM_TYPE_PAE
+#elif PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED_PAE
     X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
-# elif PGM_SHW_TYPE == PGM_TYPE_EPT
+#elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PEPTPD          pPDDst;
     EPTPDE          Pde;
@@ -251,13 +253,15 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     Assert(pPDDst);
     Pde = pPDDst->a[iPd];
 
-# else /* PGM_TYPE_32BIT */
+#elif PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT
     X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);
-# endif
+#else
+# error "Misconfigured PGM_SHW_TYPE or something..."
+#endif
     if (!Pde.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
-    /** Deal with large pages. */
+    /* Deal with large pages. */
     if (Pde.b.u1Size)
     {
         /*
@@ -268,10 +272,14 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
         if (pfFlags)
         {
             *pfFlags = (Pde.u & ~SHW_PDE_PG_MASK);
-# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)    /** @todo why do we have to check the guest state here? */
-            if ((Pde.u & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
-                *pfFlags |= X86_PTE_PAE_NX;
+#if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE) || PGM_SHW_TYPE == PGM_TYPE_NESTED_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED_AMD64
+            if (   (Pde.u & X86_PTE_PAE_NX)
+# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
+                && CPUMIsGuestNXEnabled(pVCpu) /** @todo why do we have to check the guest state here? */
 # endif
+               )
+                *pfFlags |= X86_PTE_PAE_NX;
+#endif
         }
 
         if (pHCPhys)
@@ -292,22 +300,22 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     }
     else /* mapping: */
     {
-# if    PGM_SHW_TYPE == PGM_TYPE_AMD64 \
-     || PGM_SHW_TYPE == PGM_TYPE_EPT \
-     || defined(PGM_WITHOUT_MAPPINGS)
+#if  PGM_SHW_TYPE == PGM_TYPE_AMD64 \
+  || PGM_SHW_TYPE == PGM_TYPE_EPT \
+  || defined(PGM_WITHOUT_MAPPINGS)
         AssertFailed(); /* can't happen */
         pPT = NULL;     /* shut up MSC */
-# else
+#else
         Assert(pgmMapAreMappingsEnabled(pVM));
 
         PPGMMAPPING pMap = pgmGetMapping(pVM, (RTGCPTR)GCPtr);
         AssertMsgReturn(pMap, ("GCPtr=%RGv\n", GCPtr), VERR_PGM_MAPPING_IPE);
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+# if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTX_SUFF(pPT);
-#  else /* PAE */
+# else /* PAE */
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTX_SUFF(paPaePTs);
-#  endif
 # endif
+#endif
     }
     const unsigned  iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
     SHWPTE          Pte = pPT->a[iPt];
@@ -323,18 +331,22 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     {
         *pfFlags = (SHW_PTE_GET_U(Pte) & ~SHW_PTE_PG_MASK)
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
-# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE) /** @todo why do we have to check the guest state here? */
+
+#if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE) || PGM_SHW_TYPE == PGM_TYPE_NESTED_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED_AMD64
         /* The NX bit is determined by a bitwise OR between the PT and PD */
-        if (((SHW_PTE_GET_U(Pte) | Pde.u) & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
-            *pfFlags |= X86_PTE_PAE_NX;
+        if (   ((SHW_PTE_GET_U(Pte) | Pde.u) & X86_PTE_PAE_NX)
+# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
+            && CPUMIsGuestNXEnabled(pVCpu) /** @todo why do we have to check the guest state here? */
 # endif
+           )
+            *pfFlags |= X86_PTE_PAE_NX;
+#endif
     }
 
     if (pHCPhys)
         *pHCPhys = SHW_PTE_GET_HCPHYS(Pte);
 
     return VINF_SUCCESS;
-#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 }
 
 
@@ -355,11 +367,6 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
  */
 PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
 {
-# if PGM_SHW_TYPE == PGM_TYPE_NESTED
-    NOREF(pVCpu); NOREF(GCPtr); NOREF(cb); NOREF(fFlags); NOREF(fMask); NOREF(fOpFlags);
-    return VERR_PAGE_TABLE_NOT_PRESENT;
-
-# else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
@@ -373,7 +380,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         /*
          * Get the PDE.
          */
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+#if PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_NESTED_AMD64
         X86PDEPAE       Pde;
         /* PML4 */
         X86PML4E        Pml4e = pgmShwGetLongModePML4E(pVCpu, GCPtr);
@@ -398,10 +405,10 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
         Pde = pPd->a[iPd];
 
-# elif PGM_SHW_TYPE == PGM_TYPE_PAE
+#elif PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED_PAE
         X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
-# elif PGM_SHW_TYPE == PGM_TYPE_EPT
+#elif PGM_SHW_TYPE == PGM_TYPE_EPT
         const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PEPTPD          pPDDst;
         EPTPDE          Pde;
@@ -415,9 +422,9 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         Assert(pPDDst);
         Pde = pPDDst->a[iPd];
 
-# else /* PGM_TYPE_32BIT */
+#else /* PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT */
         X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);
-# endif
+#endif
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -473,11 +480,11 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
                 }
 
                 SHW_PTE_ATOMIC_SET2(pPT->a[iPTE], NewPte);
-# if PGM_SHW_TYPE == PGM_TYPE_EPT
+#if PGM_SHW_TYPE == PGM_TYPE_EPT
                 HMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
-# else
+#else
                 PGM_INVL_PG_ALL_VCPU(pVM, GCPtr);
-# endif
+#endif
             }
 
             /* next page */
@@ -488,6 +495,5 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
             iPTE++;
         }
     }
-# endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 }
 

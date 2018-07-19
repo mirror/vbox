@@ -131,6 +131,8 @@ VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
+VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
+VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -156,7 +158,6 @@ VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
 VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM);
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
-VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
 VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM

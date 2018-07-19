@@ -67,7 +67,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 
         if (VM_IS_RAW_MODE_ENABLED(pVM))
         {
-#if PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
+#if PGM_SHW_TYPE != PGM_TYPE_AMD64 && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
             /* RC */
             rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(Trap0eHandler),       &pModeData->pfnRCBthTrap0eHandler);
             AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_RC_STR(Trap0eHandler),  rc), rc);
@@ -87,7 +87,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
             AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_RC_STR(MapCR3), rc), rc);
             rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(UnmapCR3),            &pModeData->pfnRCBthUnmapCR3);
             AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_BTH_NAME_RC_STR(UnmapCR3), rc), rc);
-#endif /* Not AMD64 shadow paging. */
+#endif /* Not AMD64 or nested/ept shadow paging. */
         }
 
         /* Ring 0 */

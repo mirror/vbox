@@ -148,6 +148,7 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 
 #endif /* IN_RING0 */
 #ifndef IN_RC
+
 /**
  * Flushes the guest TLB.
  *
@@ -370,22 +371,33 @@ VMM_INT_DECL(bool) HMAreMsrBitmapsAvailable(PVM pVM)
 
 
 /**
- * Return the shadow paging mode for nested paging/ept
+ * Checks if AMD-V is active.
  *
- * @returns shadow paging mode
+ * @returns true if AMD-V is active.
  * @param   pVM         The cross context VM structure.
+ *
+ * @remarks Works before hmR3InitFinalizeR0.
  */
-VMM_INT_DECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
+VMM_INT_DECL(bool) HMIsSvmActive(PVM pVM)
 {
-    Assert(HMIsNestedPagingActive(pVM));
-    if (pVM->hm.s.svm.fSupported)
-        return PGMMODE_NESTED;
-
-    Assert(pVM->hm.s.vmx.fSupported);
-    return PGMMODE_EPT;
+    return pVM->hm.s.svm.fSupported && HMIsEnabled(pVM);
 }
-#endif /* !IN_RC */
 
+
+/**
+ * Checks if VT-x is active.
+ *
+ * @returns true if AMD-V is active.
+ * @param   pVM         The cross context VM structure.
+ *
+ * @remarks Works before hmR3InitFinalizeR0.
+ */
+VMM_INT_DECL(bool) HMIsVmxActive(PVM pVM)
+{
+    return pVM->hm.s.vmx.fSupported && HMIsEnabled(pVM);
+}
+
+#endif /* !IN_RC */
 
 /**
  * Checks if an interrupt event is currently pending.

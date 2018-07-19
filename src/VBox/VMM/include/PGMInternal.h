@@ -209,8 +209,10 @@
 #define PGM_TYPE_32BIT                  3
 #define PGM_TYPE_PAE                    4
 #define PGM_TYPE_AMD64                  5
-#define PGM_TYPE_NESTED                 6
-#define PGM_TYPE_EPT                    7
+#define PGM_TYPE_NESTED_32BIT           6
+#define PGM_TYPE_NESTED_PAE             7
+#define PGM_TYPE_NESTED_AMD64           8
+#define PGM_TYPE_EPT                    9
 #define PGM_TYPE_MAX                    PGM_TYPE_EPT
 /** @} */
 
@@ -221,8 +223,7 @@
  */
 #define PGM_WITH_PAGING(uGstType, uShwType)  \
     (   (uGstType) >= PGM_TYPE_32BIT \
-     && (uShwType) != PGM_TYPE_NESTED \
-     && (uShwType) != PGM_TYPE_EPT)
+     && (uShwType) < PGM_TYPE_NESTED_32BIT)
 
 /** Macro for checking if the guest supports the NX bit.
  * @param   uGstType   PGM_TYPE_*
@@ -231,8 +232,25 @@
  */
 #define PGM_WITH_NX(uGstType, uShwType)  \
     (   (uGstType) >= PGM_TYPE_PAE \
-     && (uShwType) != PGM_TYPE_NESTED \
-     && (uShwType) != PGM_TYPE_EPT)
+     && (uShwType) < PGM_TYPE_NESTED_32BIT)
+
+/** Macro for checking for nested or EPT.
+ * @param   uType   PGM_TYPE_*
+ */
+#define PGM_TYPE_IS_NESTED(uType) \
+     (   (uType) == PGM_TYPE_NESTED_32BIT \
+      || (uType) == PGM_TYPE_NESTED_PAE \
+      || (uType) == PGM_TYPE_NESTED_AMD64)
+
+/** Macro for checking for nested or EPT.
+ * @param   uType   PGM_TYPE_*
+ */
+#define PGM_TYPE_IS_NESTED_OR_EPT(uType) \
+      (   (uType) == PGM_TYPE_NESTED_32BIT \
+       || (uType) == PGM_TYPE_NESTED_PAE \
+       || (uType) == PGM_TYPE_NESTED_AMD64 \
+       || (uType) == PGM_TYPE_EPT)
+
 
 
 /** @def PGM_HCPHYS_2_PTR
@@ -2964,99 +2982,135 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 # endif
 #endif
 
-#define PGM_GST_NAME_REAL(name)         PGM_CTX(pgm,GstReal##name)
-#define PGM_GST_NAME_RC_REAL_STR(name)  "pgmRCGstReal" #name
-#define PGM_GST_NAME_R0_REAL_STR(name)  "pgmR0GstReal" #name
-#define PGM_GST_NAME_PROT(name)         PGM_CTX(pgm,GstProt##name)
-#define PGM_GST_NAME_RC_PROT_STR(name)  "pgmRCGstProt" #name
-#define PGM_GST_NAME_R0_PROT_STR(name)  "pgmR0GstProt" #name
-#define PGM_GST_NAME_32BIT(name)        PGM_CTX(pgm,Gst32Bit##name)
-#define PGM_GST_NAME_RC_32BIT_STR(name) "pgmRCGst32Bit" #name
-#define PGM_GST_NAME_R0_32BIT_STR(name) "pgmR0Gst32Bit" #name
-#define PGM_GST_NAME_PAE(name)          PGM_CTX(pgm,GstPAE##name)
-#define PGM_GST_NAME_RC_PAE_STR(name)   "pgmRCGstPAE" #name
-#define PGM_GST_NAME_R0_PAE_STR(name)   "pgmR0GstPAE" #name
-#define PGM_GST_NAME_AMD64(name)        PGM_CTX(pgm,GstAMD64##name)
-#define PGM_GST_NAME_RC_AMD64_STR(name) "pgmRCGstAMD64" #name
-#define PGM_GST_NAME_R0_AMD64_STR(name) "pgmR0GstAMD64" #name
-#define PGM_GST_DECL(type, name)        PGM_CTX_DECL(type) PGM_GST_NAME(name)
+#define PGM_GST_NAME_REAL(name)                         PGM_CTX(pgm,GstReal##name)
+#define PGM_GST_NAME_RC_REAL_STR(name)                  "pgmRCGstReal" #name
+#define PGM_GST_NAME_R0_REAL_STR(name)                  "pgmR0GstReal" #name
+#define PGM_GST_NAME_PROT(name)                         PGM_CTX(pgm,GstProt##name)
+#define PGM_GST_NAME_RC_PROT_STR(name)                  "pgmRCGstProt" #name
+#define PGM_GST_NAME_R0_PROT_STR(name)                  "pgmR0GstProt" #name
+#define PGM_GST_NAME_32BIT(name)                        PGM_CTX(pgm,Gst32Bit##name)
+#define PGM_GST_NAME_RC_32BIT_STR(name)                 "pgmRCGst32Bit" #name
+#define PGM_GST_NAME_R0_32BIT_STR(name)                 "pgmR0Gst32Bit" #name
+#define PGM_GST_NAME_PAE(name)                          PGM_CTX(pgm,GstPAE##name)
+#define PGM_GST_NAME_RC_PAE_STR(name)                   "pgmRCGstPAE" #name
+#define PGM_GST_NAME_R0_PAE_STR(name)                   "pgmR0GstPAE" #name
+#define PGM_GST_NAME_AMD64(name)                        PGM_CTX(pgm,GstAMD64##name)
+#define PGM_GST_NAME_RC_AMD64_STR(name)                 "pgmRCGstAMD64" #name
+#define PGM_GST_NAME_R0_AMD64_STR(name)                 "pgmR0GstAMD64" #name
+#define PGM_GST_DECL(type, name)                        PGM_CTX_DECL(type) PGM_GST_NAME(name)
 
-#define PGM_SHW_NAME_32BIT(name)        PGM_CTX(pgm,Shw32Bit##name)
-#define PGM_SHW_NAME_RC_32BIT_STR(name) "pgmRCShw32Bit" #name
-#define PGM_SHW_NAME_R0_32BIT_STR(name) "pgmR0Shw32Bit" #name
-#define PGM_SHW_NAME_PAE(name)          PGM_CTX(pgm,ShwPAE##name)
-#define PGM_SHW_NAME_RC_PAE_STR(name)   "pgmRCShwPAE" #name
-#define PGM_SHW_NAME_R0_PAE_STR(name)   "pgmR0ShwPAE" #name
-#define PGM_SHW_NAME_AMD64(name)        PGM_CTX(pgm,ShwAMD64##name)
-#define PGM_SHW_NAME_RC_AMD64_STR(name) "pgmRCShwAMD64" #name
-#define PGM_SHW_NAME_R0_AMD64_STR(name) "pgmR0ShwAMD64" #name
-#define PGM_SHW_NAME_NESTED(name)        PGM_CTX(pgm,ShwNested##name)
-#define PGM_SHW_NAME_RC_NESTED_STR(name) "pgmRCShwNested" #name
-#define PGM_SHW_NAME_R0_NESTED_STR(name) "pgmR0ShwNested" #name
-#define PGM_SHW_NAME_EPT(name)          PGM_CTX(pgm,ShwEPT##name)
-#define PGM_SHW_NAME_RC_EPT_STR(name)   "pgmRCShwEPT" #name
-#define PGM_SHW_NAME_R0_EPT_STR(name)   "pgmR0ShwEPT" #name
-#define PGM_SHW_DECL(type, name)        PGM_CTX_DECL(type) PGM_SHW_NAME(name)
-#define PGM_SHW_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Shw##name))
+#define PGM_SHW_NAME_32BIT(name)                        PGM_CTX(pgm,Shw32Bit##name)
+#define PGM_SHW_NAME_RC_32BIT_STR(name)                 "pgmRCShw32Bit" #name
+#define PGM_SHW_NAME_R0_32BIT_STR(name)                 "pgmR0Shw32Bit" #name
+#define PGM_SHW_NAME_PAE(name)                          PGM_CTX(pgm,ShwPAE##name)
+#define PGM_SHW_NAME_RC_PAE_STR(name)                   "pgmRCShwPAE" #name
+#define PGM_SHW_NAME_R0_PAE_STR(name)                   "pgmR0ShwPAE" #name
+#define PGM_SHW_NAME_AMD64(name)                        PGM_CTX(pgm,ShwAMD64##name)
+#define PGM_SHW_NAME_RC_AMD64_STR(name)                 "pgmRCShwAMD64" #name
+#define PGM_SHW_NAME_R0_AMD64_STR(name)                 "pgmR0ShwAMD64" #name
+#define PGM_SHW_NAME_NESTED_32BIT(name)                 PGM_CTX(pgm,ShwNested32Bit##name)
+#define PGM_SHW_NAME_RC_NESTED_32BIT_STR(name)          "pgmRCShwNested32Bit" #name
+#define PGM_SHW_NAME_R0_NESTED_32BIT_STR(name)          "pgmR0ShwNested32Bit" #name
+#define PGM_SHW_NAME_NESTED_PAE(name)                   PGM_CTX(pgm,ShwNestedPAE##name)
+#define PGM_SHW_NAME_RC_NESTED_PAE_STR(name)            "pgmRCShwNestedPAE" #name
+#define PGM_SHW_NAME_R0_NESTED_PAE_STR(name)            "pgmR0ShwNestedPAE" #name
+#define PGM_SHW_NAME_NESTED_AMD64(name)                 PGM_CTX(pgm,ShwNestedAMD64##name)
+#define PGM_SHW_NAME_RC_NESTED_AMD64_STR(name)          "pgmRCShwNestedAMD64" #name
+#define PGM_SHW_NAME_R0_NESTED_AMD64_STR(name)          "pgmR0ShwNestedAMD64" #name
+#define PGM_SHW_NAME_EPT(name)                          PGM_CTX(pgm,ShwEPT##name)
+#define PGM_SHW_NAME_RC_EPT_STR(name)                   "pgmRCShwEPT" #name
+#define PGM_SHW_NAME_R0_EPT_STR(name)                   "pgmR0ShwEPT" #name
+#define PGM_SHW_DECL(type, name)                        PGM_CTX_DECL(type) PGM_SHW_NAME(name)
 
 /*                   Shw_Gst */
-#define PGM_BTH_NAME_32BIT_REAL(name)   PGM_CTX(pgm,Bth32BitReal##name)
-#define PGM_BTH_NAME_32BIT_PROT(name)   PGM_CTX(pgm,Bth32BitProt##name)
-#define PGM_BTH_NAME_32BIT_32BIT(name)  PGM_CTX(pgm,Bth32Bit32Bit##name)
-#define PGM_BTH_NAME_PAE_REAL(name)     PGM_CTX(pgm,BthPAEReal##name)
-#define PGM_BTH_NAME_PAE_PROT(name)     PGM_CTX(pgm,BthPAEProt##name)
-#define PGM_BTH_NAME_PAE_32BIT(name)    PGM_CTX(pgm,BthPAE32Bit##name)
-#define PGM_BTH_NAME_PAE_PAE(name)      PGM_CTX(pgm,BthPAEPAE##name)
-#define PGM_BTH_NAME_AMD64_PROT(name)   PGM_CTX(pgm,BthAMD64Prot##name)
-#define PGM_BTH_NAME_AMD64_AMD64(name)  PGM_CTX(pgm,BthAMD64AMD64##name)
-#define PGM_BTH_NAME_NESTED_REAL(name)  PGM_CTX(pgm,BthNestedReal##name)
-#define PGM_BTH_NAME_NESTED_PROT(name)  PGM_CTX(pgm,BthNestedProt##name)
-#define PGM_BTH_NAME_NESTED_32BIT(name) PGM_CTX(pgm,BthNested32Bit##name)
-#define PGM_BTH_NAME_NESTED_PAE(name)   PGM_CTX(pgm,BthNestedPAE##name)
-#define PGM_BTH_NAME_NESTED_AMD64(name) PGM_CTX(pgm,BthNestedAMD64##name)
-#define PGM_BTH_NAME_EPT_REAL(name)     PGM_CTX(pgm,BthEPTReal##name)
-#define PGM_BTH_NAME_EPT_PROT(name)     PGM_CTX(pgm,BthEPTProt##name)
-#define PGM_BTH_NAME_EPT_32BIT(name)    PGM_CTX(pgm,BthEPT32Bit##name)
-#define PGM_BTH_NAME_EPT_PAE(name)      PGM_CTX(pgm,BthEPTPAE##name)
-#define PGM_BTH_NAME_EPT_AMD64(name)    PGM_CTX(pgm,BthEPTAMD64##name)
+#define PGM_BTH_NAME_32BIT_REAL(name)                   PGM_CTX(pgm,Bth32BitReal##name)
+#define PGM_BTH_NAME_32BIT_PROT(name)                   PGM_CTX(pgm,Bth32BitProt##name)
+#define PGM_BTH_NAME_32BIT_32BIT(name)                  PGM_CTX(pgm,Bth32Bit32Bit##name)
+#define PGM_BTH_NAME_PAE_REAL(name)                     PGM_CTX(pgm,BthPAEReal##name)
+#define PGM_BTH_NAME_PAE_PROT(name)                     PGM_CTX(pgm,BthPAEProt##name)
+#define PGM_BTH_NAME_PAE_32BIT(name)                    PGM_CTX(pgm,BthPAE32Bit##name)
+#define PGM_BTH_NAME_PAE_PAE(name)                      PGM_CTX(pgm,BthPAEPAE##name)
+#define PGM_BTH_NAME_AMD64_PROT(name)                   PGM_CTX(pgm,BthAMD64Prot##name)
+#define PGM_BTH_NAME_AMD64_AMD64(name)                  PGM_CTX(pgm,BthAMD64AMD64##name)
+#define PGM_BTH_NAME_NESTED_32BIT_REAL(name)            PGM_CTX(pgm,BthNested32BitReal##name)
+#define PGM_BTH_NAME_NESTED_32BIT_PROT(name)            PGM_CTX(pgm,BthNested32BitProt##name)
+#define PGM_BTH_NAME_NESTED_32BIT_32BIT(name)           PGM_CTX(pgm,BthNested32Bit32Bit##name)
+#define PGM_BTH_NAME_NESTED_32BIT_PAE(name)             PGM_CTX(pgm,BthNested32BitPAE##name)
+#define PGM_BTH_NAME_NESTED_32BIT_AMD64(name)           PGM_CTX(pgm,BthNested32BitAMD64##name)
+#define PGM_BTH_NAME_NESTED_PAE_REAL(name)              PGM_CTX(pgm,BthNestedPAEReal##name)
+#define PGM_BTH_NAME_NESTED_PAE_PROT(name)              PGM_CTX(pgm,BthNestedPAEProt##name)
+#define PGM_BTH_NAME_NESTED_PAE_32BIT(name)             PGM_CTX(pgm,BthNestedPAE32Bit##name)
+#define PGM_BTH_NAME_NESTED_PAE_PAE(name)               PGM_CTX(pgm,BthNestedPAEPAE##name)
+#define PGM_BTH_NAME_NESTED_PAE_AMD64(name)             PGM_CTX(pgm,BthNestedPAEAMD64##name)
+#define PGM_BTH_NAME_NESTED_AMD64_REAL(name)            PGM_CTX(pgm,BthNestedAMD64Real##name)
+#define PGM_BTH_NAME_NESTED_AMD64_PROT(name)            PGM_CTX(pgm,BthNestedAMD64Prot##name)
+#define PGM_BTH_NAME_NESTED_AMD64_32BIT(name)           PGM_CTX(pgm,BthNestedAMD6432Bit##name)
+#define PGM_BTH_NAME_NESTED_AMD64_PAE(name)             PGM_CTX(pgm,BthNestedAMD64PAE##name)
+#define PGM_BTH_NAME_NESTED_AMD64_AMD64(name)           PGM_CTX(pgm,BthNestedAMD64AMD64##name)
+#define PGM_BTH_NAME_EPT_REAL(name)                     PGM_CTX(pgm,BthEPTReal##name)
+#define PGM_BTH_NAME_EPT_PROT(name)                     PGM_CTX(pgm,BthEPTProt##name)
+#define PGM_BTH_NAME_EPT_32BIT(name)                    PGM_CTX(pgm,BthEPT32Bit##name)
+#define PGM_BTH_NAME_EPT_PAE(name)                      PGM_CTX(pgm,BthEPTPAE##name)
+#define PGM_BTH_NAME_EPT_AMD64(name)                    PGM_CTX(pgm,BthEPTAMD64##name)
 
-#define PGM_BTH_NAME_RC_32BIT_REAL_STR(name)    "pgmRCBth32BitReal" #name
-#define PGM_BTH_NAME_RC_32BIT_PROT_STR(name)    "pgmRCBth32BitProt" #name
-#define PGM_BTH_NAME_RC_32BIT_32BIT_STR(name)   "pgmRCBth32Bit32Bit" #name
-#define PGM_BTH_NAME_RC_PAE_REAL_STR(name)      "pgmRCBthPAEReal" #name
-#define PGM_BTH_NAME_RC_PAE_PROT_STR(name)      "pgmRCBthPAEProt" #name
-#define PGM_BTH_NAME_RC_PAE_32BIT_STR(name)     "pgmRCBthPAE32Bit" #name
-#define PGM_BTH_NAME_RC_PAE_PAE_STR(name)       "pgmRCBthPAEPAE" #name
-#define PGM_BTH_NAME_RC_AMD64_AMD64_STR(name)   "pgmRCBthAMD64AMD64" #name
-#define PGM_BTH_NAME_RC_NESTED_REAL_STR(name)   "pgmRCBthNestedReal" #name
-#define PGM_BTH_NAME_RC_NESTED_PROT_STR(name)   "pgmRCBthNestedProt" #name
-#define PGM_BTH_NAME_RC_NESTED_32BIT_STR(name)  "pgmRCBthNested32Bit" #name
-#define PGM_BTH_NAME_RC_NESTED_PAE_STR(name)    "pgmRCBthNestedPAE" #name
-#define PGM_BTH_NAME_RC_NESTED_AMD64_STR(name)  "pgmRCBthNestedAMD64" #name
-#define PGM_BTH_NAME_RC_EPT_REAL_STR(name)      "pgmRCBthEPTReal" #name
-#define PGM_BTH_NAME_RC_EPT_PROT_STR(name)      "pgmRCBthEPTProt" #name
-#define PGM_BTH_NAME_RC_EPT_32BIT_STR(name)     "pgmRCBthEPT32Bit" #name
-#define PGM_BTH_NAME_RC_EPT_PAE_STR(name)       "pgmRCBthEPTPAE" #name
-#define PGM_BTH_NAME_RC_EPT_AMD64_STR(name)     "pgmRCBthEPTAMD64" #name
-#define PGM_BTH_NAME_R0_32BIT_REAL_STR(name)    "pgmR0Bth32BitReal" #name
-#define PGM_BTH_NAME_R0_32BIT_PROT_STR(name)    "pgmR0Bth32BitProt" #name
-#define PGM_BTH_NAME_R0_32BIT_32BIT_STR(name)   "pgmR0Bth32Bit32Bit" #name
-#define PGM_BTH_NAME_R0_PAE_REAL_STR(name)      "pgmR0BthPAEReal" #name
-#define PGM_BTH_NAME_R0_PAE_PROT_STR(name)      "pgmR0BthPAEProt" #name
-#define PGM_BTH_NAME_R0_PAE_32BIT_STR(name)     "pgmR0BthPAE32Bit" #name
-#define PGM_BTH_NAME_R0_PAE_PAE_STR(name)       "pgmR0BthPAEPAE" #name
-#define PGM_BTH_NAME_R0_AMD64_PROT_STR(name)    "pgmR0BthAMD64Prot" #name
-#define PGM_BTH_NAME_R0_AMD64_AMD64_STR(name)   "pgmR0BthAMD64AMD64" #name
-#define PGM_BTH_NAME_R0_NESTED_REAL_STR(name)   "pgmR0BthNestedReal" #name
-#define PGM_BTH_NAME_R0_NESTED_PROT_STR(name)   "pgmR0BthNestedProt" #name
-#define PGM_BTH_NAME_R0_NESTED_32BIT_STR(name)  "pgmR0BthNested32Bit" #name
-#define PGM_BTH_NAME_R0_NESTED_PAE_STR(name)    "pgmR0BthNestedPAE" #name
-#define PGM_BTH_NAME_R0_NESTED_AMD64_STR(name)  "pgmR0BthNestedAMD64" #name
-#define PGM_BTH_NAME_R0_EPT_REAL_STR(name)      "pgmR0BthEPTReal" #name
-#define PGM_BTH_NAME_R0_EPT_PROT_STR(name)      "pgmR0BthEPTProt" #name
-#define PGM_BTH_NAME_R0_EPT_32BIT_STR(name)     "pgmR0BthEPT32Bit" #name
-#define PGM_BTH_NAME_R0_EPT_PAE_STR(name)       "pgmR0BthEPTPAE" #name
-#define PGM_BTH_NAME_R0_EPT_AMD64_STR(name)     "pgmR0BthEPTAMD64" #name
+#define PGM_BTH_NAME_RC_32BIT_REAL_STR(name)            "pgmRCBth32BitReal" #name
+#define PGM_BTH_NAME_RC_32BIT_PROT_STR(name)            "pgmRCBth32BitProt" #name
+#define PGM_BTH_NAME_RC_32BIT_32BIT_STR(name)           "pgmRCBth32Bit32Bit" #name
+#define PGM_BTH_NAME_RC_PAE_REAL_STR(name)              "pgmRCBthPAEReal" #name
+#define PGM_BTH_NAME_RC_PAE_PROT_STR(name)              "pgmRCBthPAEProt" #name
+#define PGM_BTH_NAME_RC_PAE_32BIT_STR(name)             "pgmRCBthPAE32Bit" #name
+#define PGM_BTH_NAME_RC_PAE_PAE_STR(name)               "pgmRCBthPAEPAE" #name
+#define PGM_BTH_NAME_RC_AMD64_AMD64_STR(name)           "pgmRCBthAMD64AMD64" #name
+#define PGM_BTH_NAME_RC_NESTED_32BIT_REAL_STR(name)     "pgmRCBthNested32BitReal" #name
+#define PGM_BTH_NAME_RC_NESTED_32BIT_PROT_STR(name)     "pgmRCBthNested32BitProt" #name
+#define PGM_BTH_NAME_RC_NESTED_32BIT_32BIT_STR(name)    "pgmRCBthNested32Bit32Bit" #name
+#define PGM_BTH_NAME_RC_NESTED_32BIT_PAE_STR(name)      "pgmRCBthNested32BitPAE" #name
+#define PGM_BTH_NAME_RC_NESTED_32BIT_AMD64_STR(name)    "pgmRCBthNested32BitAMD64" #name
+#define PGM_BTH_NAME_RC_NESTED_PAE_REAL_STR(name)       "pgmRCBthNestedPAEReal" #name
+#define PGM_BTH_NAME_RC_NESTED_PAE_PROT_STR(name)       "pgmRCBthNestedPAEProt" #name
+#define PGM_BTH_NAME_RC_NESTED_PAE_32BIT_STR(name)      "pgmRCBthNestedPAE32Bit" #name
+#define PGM_BTH_NAME_RC_NESTED_PAE_PAE_STR(name)        "pgmRCBthNestedPAEPAE" #name
+#define PGM_BTH_NAME_RC_NESTED_PAE_AMD64_STR(name)      "pgmRCBthNestedPAEAMD64" #name
+#define PGM_BTH_NAME_RC_NESTED_AMD64_REAL_STR(name)     "pgmRCBthNestedAMD64Real" #name
+#define PGM_BTH_NAME_RC_NESTED_AMD64_PROT_STR(name)     "pgmRCBthNestedAMD64Prot" #name
+#define PGM_BTH_NAME_RC_NESTED_AMD64_32BIT_STR(name)    "pgmRCBthNestedAMD6432Bit" #name
+#define PGM_BTH_NAME_RC_NESTED_AMD64_PAE_STR(name)      "pgmRCBthNestedAMD64PAE" #name
+#define PGM_BTH_NAME_RC_NESTED_AMD64_AMD64_STR(name)    "pgmRCBthNestedAMD64AMD64" #name
+#define PGM_BTH_NAME_RC_EPT_REAL_STR(name)              "pgmRCBthEPTReal" #name
+#define PGM_BTH_NAME_RC_EPT_PROT_STR(name)              "pgmRCBthEPTProt" #name
+#define PGM_BTH_NAME_RC_EPT_32BIT_STR(name)             "pgmRCBthEPT32Bit" #name
+#define PGM_BTH_NAME_RC_EPT_PAE_STR(name)               "pgmRCBthEPTPAE" #name
+#define PGM_BTH_NAME_RC_EPT_AMD64_STR(name)             "pgmRCBthEPTAMD64" #name
+
+#define PGM_BTH_NAME_R0_32BIT_REAL_STR(name)            "pgmR0Bth32BitReal" #name
+#define PGM_BTH_NAME_R0_32BIT_PROT_STR(name)            "pgmR0Bth32BitProt" #name
+#define PGM_BTH_NAME_R0_32BIT_32BIT_STR(name)           "pgmR0Bth32Bit32Bit" #name
+#define PGM_BTH_NAME_R0_PAE_REAL_STR(name)              "pgmR0BthPAEReal" #name
+#define PGM_BTH_NAME_R0_PAE_PROT_STR(name)              "pgmR0BthPAEProt" #name
+#define PGM_BTH_NAME_R0_PAE_32BIT_STR(name)             "pgmR0BthPAE32Bit" #name
+#define PGM_BTH_NAME_R0_PAE_PAE_STR(name)               "pgmR0BthPAEPAE" #name
+#define PGM_BTH_NAME_R0_AMD64_PROT_STR(name)            "pgmR0BthAMD64Prot" #name
+#define PGM_BTH_NAME_R0_AMD64_AMD64_STR(name)           "pgmR0BthAMD64AMD64" #name
+#define PGM_BTH_NAME_R0_NESTED_32BIT_REAL_STR(name)     "pgmR0BthNested32BitReal" #name
+#define PGM_BTH_NAME_R0_NESTED_32BIT_PROT_STR(name)     "pgmR0BthNested32BitProt" #name
+#define PGM_BTH_NAME_R0_NESTED_32BIT_32BIT_STR(name)    "pgmR0BthNested32Bit32Bit" #name
+#define PGM_BTH_NAME_R0_NESTED_32BIT_PAE_STR(name)      "pgmR0BthNested32BitPAE" #name
+#define PGM_BTH_NAME_R0_NESTED_32BIT_AMD64_STR(name)    "pgmR0BthNested32BitAMD64" #name
+#define PGM_BTH_NAME_R0_NESTED_PAE_REAL_STR(name)       "pgmR0BthNestedPAEReal" #name
+#define PGM_BTH_NAME_R0_NESTED_PAE_PROT_STR(name)       "pgmR0BthNestedPAEProt" #name
+#define PGM_BTH_NAME_R0_NESTED_PAE_32BIT_STR(name)      "pgmR0BthNestedPAE32Bit" #name
+#define PGM_BTH_NAME_R0_NESTED_PAE_PAE_STR(name)        "pgmR0BthNestedPAEPAE" #name
+#define PGM_BTH_NAME_R0_NESTED_PAE_AMD64_STR(name)      "pgmR0BthNestedPAEAMD64" #name
+#define PGM_BTH_NAME_R0_NESTED_AMD64_REAL_STR(name)     "pgmR0BthNestedAMD64Real" #name
+#define PGM_BTH_NAME_R0_NESTED_AMD64_PROT_STR(name)     "pgmR0BthNestedAMD64Prot" #name
+#define PGM_BTH_NAME_R0_NESTED_AMD64_32BIT_STR(name)    "pgmR0BthNestedAMD6432Bit" #name
+#define PGM_BTH_NAME_R0_NESTED_AMD64_PAE_STR(name)      "pgmR0BthNestedAMD64PAE" #name
+#define PGM_BTH_NAME_R0_NESTED_AMD64_AMD64_STR(name)    "pgmR0BthNestedAMD64AMD64" #name
+#define PGM_BTH_NAME_R0_EPT_REAL_STR(name)              "pgmR0BthEPTReal" #name
+#define PGM_BTH_NAME_R0_EPT_PROT_STR(name)              "pgmR0BthEPTProt" #name
+#define PGM_BTH_NAME_R0_EPT_32BIT_STR(name)             "pgmR0BthEPT32Bit" #name
+#define PGM_BTH_NAME_R0_EPT_PAE_STR(name)               "pgmR0BthEPTPAE" #name
+#define PGM_BTH_NAME_R0_EPT_AMD64_STR(name)             "pgmR0BthEPTAMD64" #name
 
 #define PGM_BTH_DECL(type, name)        PGM_CTX_DECL(type) PGM_BTH_NAME(name)
 #define PGM_BTH_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Bth##name))
@@ -3089,6 +3143,32 @@ extern PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE];
 
 
 /**
+ * Function pointers for shadow paging.
+ */
+typedef struct PGMMODEDATASHW
+{
+    /** The shadow mode type. */
+    uint32_t                        uType;
+    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags,
+                                                   uint64_t fMask, uint32_t fOpFlags);
+    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
+    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPU pVCpu);
+    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+} PGMMODEDATASHW;
+
+/** The length of g_aPgmGuestModeData. */
+#ifndef IN_RC
+# define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    (PGM_TYPE_MAX + 1)
+#else
+# define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    (PGM_TYPE_PAE + 1)
+#endif
+/** The shadow mode data array. */
+extern PGMMODEDATASHW const g_aPgmShadowModeData[PGM_SHADOW_MODE_DATA_ARRAY_SIZE];
+
+
+
+/**
  * Data for each paging mode.
  */
 typedef struct PGMMODEDATA
@@ -3097,21 +3177,6 @@ typedef struct PGMMODEDATA
     uint32_t                        uGstType;
     /** The shadow mode type. */
     uint32_t                        uShwType;
-
-    /** @name Function pointers for Shadow paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-    /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
      * @{
@@ -4046,22 +4111,6 @@ typedef struct PGMCPU
     RCPTRTYPE(PPGMPOOLPAGE)         pShwPageCR3RC;
     /** Explicit alignment. */
     RTRCPTR                         alignment6;
-    /** @} */
-
-    /** @name Function pointers for Shadow paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags));
-
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.

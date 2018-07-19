@@ -490,7 +490,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
     /** @todo change the pool to handle ROOT page allocations specially when
      *        required. */
     bool fCanUseHighMemory = HMIsNestedPagingActive(pVM)
-                          && HMGetShwPagingMode(pVM) == PGMMODE_EPT;
+                          && HMIsVmxActive(pVM);
 
     pgmLock(pVM);
 

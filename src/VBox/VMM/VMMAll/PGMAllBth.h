@@ -2,13 +2,9 @@
 /** @file
  * VBox - Page Manager, Shadow+Guest Paging Template - All context code.
  *
- * @remarks The nested page tables on AMD makes use of PGM_SHW_TYPE in
- *          {PGM_TYPE_AMD64, PGM_TYPE_PAE and PGM_TYPE_32BIT} and PGM_GST_TYPE
- *          set to PGM_TYPE_PROT.  Half of the code in this file is not
- *          exercised with PGM_SHW_TYPE set to PGM_TYPE_NESTED.
- *
  * @remarks Extended page tables (intel) are built with PGM_GST_TYPE set to
  *          PGM_TYPE_PROT (and PGM_SHW_TYPE set to PGM_TYPE_EPT).
+ *          bird: WTF does this mean these days?  Looking at PGMAll.cpp it's
  *
  * @remarks This file is one big \#ifdef-orgy!
  *
@@ -61,21 +57,21 @@ RT_C_DECLS_END
  * Filter out some illegal combinations of guest and shadow paging, so we can
  * remove redundant checks inside functions.
  */
-#if      PGM_GST_TYPE == PGM_TYPE_PAE && PGM_SHW_TYPE != PGM_TYPE_PAE && PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT
+#if      PGM_GST_TYPE == PGM_TYPE_PAE && PGM_SHW_TYPE != PGM_TYPE_PAE && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 # error "Invalid combination; PAE guest implies PAE shadow"
 #endif
 
 #if     (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
-    && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT)
+    && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE))
 # error "Invalid combination; real or protected mode without paging implies 32 bits or PAE shadow paging."
 #endif
 
 #if     (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) \
-    && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT)
+    && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE))
 # error "Invalid combination; 32 bits guest paging or PAE implies 32 bits or PAE shadow paging."
 #endif
 
-#if    (PGM_GST_TYPE == PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT) \
+#if    (PGM_GST_TYPE == PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_AMD64 && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)) \
     || (PGM_SHW_TYPE == PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_PROT)
 # error "Invalid combination; AMD64 guest implies AMD64 shadow and vice versa"
 #endif
@@ -137,6 +133,7 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
 # endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
 
+#if !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE)
 /**
  * Deal with a guest page fault.
  *
@@ -436,6 +433,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndUnhandled; });
     return rcStrict;
 } /* if any kind of handler */
+# endif /* !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) */
 
 
 /**
@@ -457,7 +455,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
 # if  (   PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT \
        || PGM_GST_TYPE == PGM_TYPE_PAE   || PGM_GST_TYPE == PGM_TYPE_AMD64) \
-    && PGM_SHW_TYPE != PGM_TYPE_NESTED \
+    && !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) \
     && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT)
     int rc;
 
@@ -1212,8 +1210,7 @@ rc=0
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
 #if    PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)   \
-    && PGM_SHW_TYPE != PGM_TYPE_NESTED \
-    && PGM_SHW_TYPE != PGM_TYPE_EPT
+    && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     int rc;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -1935,11 +1932,10 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
 
     PGM_LOCK_ASSERT_OWNER(pVM);
 
-#if    (   PGM_GST_TYPE == PGM_TYPE_32BIT  \
-        || PGM_GST_TYPE == PGM_TYPE_PAE    \
+#if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
+        || PGM_GST_TYPE == PGM_TYPE_PAE \
         || PGM_GST_TYPE == PGM_TYPE_AMD64) \
-    && PGM_SHW_TYPE != PGM_TYPE_NESTED     \
-    && PGM_SHW_TYPE != PGM_TYPE_EPT
+    && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 
     /*
      * Assert preconditions.
@@ -2275,7 +2271,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
 
 
 #elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
-    && PGM_SHW_TYPE != PGM_TYPE_NESTED \
+    && !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) \
     && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT) \
     && !defined(IN_RC)
     NOREF(PdeSrc);
@@ -2686,9 +2682,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 #if (   PGM_GST_TYPE == PGM_TYPE_32BIT \
      || PGM_GST_TYPE == PGM_TYPE_PAE \
      || PGM_GST_TYPE == PGM_TYPE_AMD64) \
- && PGM_SHW_TYPE != PGM_TYPE_NESTED \
- && PGM_SHW_TYPE != PGM_TYPE_EPT
-
+ && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     int             rc       = VINF_SUCCESS;
 
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
@@ -3150,7 +3144,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     return rc;
 
 #elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
-    && PGM_SHW_TYPE != PGM_TYPE_NESTED \
+    && !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) \
     && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT) \
     && !defined(IN_RC)
     NOREF(iPDSrc); NOREF(pPDSrc);
@@ -3390,9 +3384,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      || PGM_GST_TYPE == PGM_TYPE_PROT \
      || PGM_GST_TYPE == PGM_TYPE_PAE \
      || PGM_GST_TYPE == PGM_TYPE_AMD64 ) \
- && PGM_SHW_TYPE != PGM_TYPE_NESTED \
- && PGM_SHW_TYPE != PGM_TYPE_EPT
-
+ && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     /*
      * Check that all Guest levels thru the PDE are present, getting the
      * PD and PDE in the processes.
@@ -3505,7 +3497,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     }
     return rc;
 
-#elif PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+#elif PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     NOREF(pVCpu); NOREF(GCPtrPage);
     return VINF_SUCCESS; /* ignore */
 #else
@@ -3540,8 +3532,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
        || PGM_GST_TYPE == PGM_TYPE_PROT \
        || PGM_GST_TYPE == PGM_TYPE_PAE \
        || PGM_GST_TYPE == PGM_TYPE_AMD64 ) \
-    && PGM_SHW_TYPE != PGM_TYPE_NESTED \
-    && PGM_SHW_TYPE != PGM_TYPE_EPT
+    && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 
 # ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (!(fPage & X86_PTE_US))
@@ -3699,11 +3690,11 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
     pgmUnlock(pVM);
     return rc;
 
-#else  /* PGM_SHW_TYPE == PGM_TYPE_EPT || PGM_SHW_TYPE == PGM_TYPE_NESTED */
+#else  /* PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) */
 
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_GST_TYPE, PGM_SHW_TYPE));
     return VERR_PGM_NOT_USED_IN_MODE;
-#endif /* PGM_SHW_TYPE == PGM_TYPE_EPT || PGM_SHW_TYPE == PGM_TYPE_NESTED */
+#endif /* PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) */
 }
 
 
@@ -3728,7 +3719,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 
     LogFlow(("SyncCR3 FF=%d fGlobal=%d\n", !!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), fGlobal));
 
-#if PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT
+#if !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 
     pgmLock(pVM);
 
@@ -3753,7 +3744,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     pgmUnlock(pVM);
 #endif /* !NESTED && !EPT */
 
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+#if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     /*
      * Nested / EPT - almost no work.
      */
@@ -3768,7 +3759,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     Assert(!pgmMapAreMappingsEnabled(pVM));
     return VINF_SUCCESS;
 
-#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
+#else /* !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 
 #  ifndef PGM_WITHOUT_MAPPINGS
     /*
@@ -3795,7 +3786,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     Assert(!pgmMapAreMappingsEnabled(pVM));
 #  endif
     return VINF_SUCCESS;
-#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
+#endif /* !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 }
 
 
@@ -3820,7 +3811,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb)
 {
     NOREF(pVCpu); NOREF(cr3); NOREF(cr4); NOREF(GCPtr); NOREF(cb);
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+#if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     return 0;
 #else
     unsigned cErrors = 0;
@@ -4562,7 +4553,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #  endif
 # endif /* GST is in {32BIT, PAE, AMD64} */
     return cErrors;
-#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
+#endif /* !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) */
 }
 #endif /* VBOX_STRICT */
 
@@ -4892,3 +4883,4 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
 
     return rc;
 }
+

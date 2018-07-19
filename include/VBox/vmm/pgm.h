@@ -350,8 +350,12 @@ typedef enum PGMMODE
     PGMMODE_AMD64,
     /** 64-bit AMD paging (long mode) with NX enabled. */
     PGMMODE_AMD64_NX,
-    /** Nested paging mode (shadow only; guest physical to host physical). */
-    PGMMODE_NESTED,
+    /** 32-bit nested paging mode (shadow only; guest physical to host physical). */
+    PGMMODE_NESTED_32BIT,
+    /** PAE nested paging mode (shadow only; guest physical to host physical). */
+    PGMMODE_NESTED_PAE,
+    /** AMD64 nested paging mode (shadow only; guest physical to host physical). */
+    PGMMODE_NESTED_AMD64,
     /** Extended paging (Intel) mode. */
     PGMMODE_EPT,
     /** The max number of modes */
@@ -370,6 +374,13 @@ typedef enum PGMMODE
  * @param enmMode   PGMMODE_*.
  */
 #define PGMMODE_IS_LONG_MODE(enmMode) ((enmMode) == PGMMODE_AMD64_NX || (enmMode) == PGMMODE_AMD64)
+
+/** Macro for checking if it's one of the AMD64 nested modes.
+ * @param enmMode   PGMMODE_*.
+ */
+#define PGMMODE_IS_NESTED(enmMode)  (   (enmMode) == PGMMODE_NESTED_32BIT \
+                                     || (enmMode) == PGMMODE_NESTED_PAE \
+                                     || (enmMode) == PGMMODE_NESTED_AMD64)
 
 /**
  * Is the ROM mapped (true) or is the shadow RAM mapped (false).

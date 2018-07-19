@@ -543,8 +543,12 @@ static uint32_t dbgfR3PagingDumpModeToFlags(PGMMODE enmMode)
             return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME;
         case PGMMODE_AMD64_NX:
             return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NXE;
-        case PGMMODE_NESTED:
-            return DBGFPGDMP_FLAGS_NP;
+        case PGMMODE_NESTED_32BIT:
+            return DBGFPGDMP_FLAGS_NP; /** @todo fix nested paging dumping*/
+        case PGMMODE_NESTED_PAE:
+            return DBGFPGDMP_FLAGS_NP; /** @todo fix nested paging dumping*/
+        case PGMMODE_NESTED_AMD64:
+            return DBGFPGDMP_FLAGS_NP; /** @todo fix nested paging dumping*/
         case PGMMODE_EPT:
             return DBGFPGDMP_FLAGS_EPT;
         default:

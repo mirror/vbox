@@ -110,7 +110,6 @@
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 /* r3 */
-PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
 PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
 PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu);
@@ -122,54 +121,6 @@ RT_C_DECLS_END
 
 
 /**
- * Initializes the guest bit of the paging mode data.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pModeData       The pointer table to initialize (our members only).
- * @param   fResolveGCAndR0 Indicate whether or not GC and Ring-0 symbols can be resolved now.
- *                          This is used early in the init process to avoid trouble with PDM
- *                          not being initialized yet.
- */
-PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0)
-{
-#if PGM_SHW_TYPE != PGM_TYPE_NESTED
-    Assert(pModeData->uShwType == PGM_SHW_TYPE || pModeData->uShwType == PGM_TYPE_NESTED);
-#else
-    Assert(pModeData->uShwType == PGM_SHW_TYPE);
-#endif
-
-    /* Ring-3 */
-    pModeData->pfnR3ShwRelocate          = PGM_SHW_NAME(Relocate);
-    pModeData->pfnR3ShwExit              = PGM_SHW_NAME(Exit);
-    pModeData->pfnR3ShwGetPage           = PGM_SHW_NAME(GetPage);
-    pModeData->pfnR3ShwModifyPage        = PGM_SHW_NAME(ModifyPage);
-
-    if (fResolveGCAndR0)
-    {
-        int rc;
-
-        if (VM_IS_RAW_MODE_ENABLED(pVM))
-        {
-#if PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
-            /* GC */
-            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_SHW_NAME_RC_STR(GetPage),    &pModeData->pfnRCShwGetPage);
-            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_SHW_NAME_RC_STR(GetPage),  rc), rc);
-            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_SHW_NAME_RC_STR(ModifyPage), &pModeData->pfnRCShwModifyPage);
-            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_SHW_NAME_RC_STR(ModifyPage), rc), rc);
-#endif /* Not AMD64 shadow paging. */
-        }
-
-        /* Ring-0 */
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_SHW_NAME_R0_STR(GetPage),    &pModeData->pfnR0ShwGetPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_SHW_NAME_R0_STR(GetPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_SHW_NAME_R0_STR(ModifyPage), &pModeData->pfnR0ShwModifyPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_SHW_NAME_R0_STR(ModifyPage), rc), rc);
-    }
-    return VINF_SUCCESS;
-}
-
-/**
  * Enters the shadow mode.
  *
  * @returns VBox status code.
@@ -178,9 +129,9 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  */
 PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+#if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 
-# if PGM_SHW_TYPE == PGM_TYPE_NESTED && HC_ARCH_BITS == 32
+# if PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) && HC_ARCH_BITS == 32
     /* Must distinguish between 32 and 64 bits guest paging modes as we'll use
        a different shadow paging root/mode in both cases. */
     RTGCPHYS     GCPhysCR3 = (fIs64BitsPagingMode) ? RT_BIT_64(63) : RT_BIT_64(62);
@@ -238,11 +189,9 @@ PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 {
+#if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     PVM pVM = pVCpu->pVMR3;
-
-    if (    (   pVCpu->pgm.s.enmShadowMode == PGMMODE_NESTED
-             || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT)
-        &&  pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
+    if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
@@ -264,6 +213,9 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 
         Log(("Leave nested shadow paging mode\n"));
     }
+#else
+    RT_NOREF_PV(pVCpu);
+#endif
     return VINF_SUCCESS;
 }
 
