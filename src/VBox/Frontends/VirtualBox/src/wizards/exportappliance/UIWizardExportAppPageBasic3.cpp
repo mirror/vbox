@@ -51,11 +51,14 @@
 *********************************************************************************************************************************/
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
-    : m_pSettingsWidget(0)
-    , m_pFileSelectorLabel(0)
-    , m_pFileSelector(0)
+    : m_pFormatLayout(0)
+    , m_pSettingsLayout1(0)
+    , m_pSettingsLayout2(0)
     , m_pFormatComboBoxLabel(0)
     , m_pFormatComboBox(0)
+    , m_pSettingsWidget(0)
+    , m_pFileSelectorLabel(0)
+    , m_pFileSelector(0)
     , m_pMACComboBoxLabel(0)
     , m_pMACComboBox(0)
     , m_pAdditionalLabel(0)
@@ -82,6 +85,7 @@ void UIWizardExportAppPage3::populateFormats()
     formats << "ovf-1.0";
     formats << "ovf-2.0";
     formats << "opc-1.0";
+    formats << "csp-1.0";
     m_pFormatComboBox->addItems(formats);
 
     /* Duplicate non-translated names to data fields: */
@@ -206,8 +210,8 @@ void UIWizardExportAppPage3::populateAccountProperties()
 void UIWizardExportAppPage3::updatePageAppearance()
 {
     /* Update page appearance according to chosen storage-type: */
-    const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
-    m_pSettingsWidget->setCurrentIndex((int)enmStorageType);
+    const bool fCSP = fieldImp("format").toString() == "csp-1.0";
+    m_pSettingsWidget->setCurrentIndex((int)fCSP);
 }
 
 void UIWizardExportAppPage3::refreshFileSelectorName()
@@ -225,8 +229,17 @@ void UIWizardExportAppPage3::refreshFileSelectorName()
 
 void UIWizardExportAppPage3::refreshFileSelectorExtension()
 {
-    /* If the format is set to OPC: */
-    if (fieldImp("format").toString() == "opc-1.0")
+    /* If the format is set to CSP: */
+    if (fieldImp("format").toString() == "csp-1.0")
+    {
+        /* We use no extension: */
+        m_strFileSelectorExt.clear();
+
+        /* Update file chooser accordingly: */
+        m_pFileSelector->setFileFilters(QString());
+    }
+    /* Else if the format is set to OPC: */
+    else if (fieldImp("format").toString() == "opc-1.0")
     {
         /* We use .tar.gz extension: */
         m_strFileSelectorExt = ".tar.gz";
@@ -262,8 +275,9 @@ void UIWizardExportAppPage3::refreshFileSelectorPath()
 
 void UIWizardExportAppPage3::refreshManifestCheckBoxAccess()
 {
-    /* If the format is set to OPC: */
-    if (fieldImp("format").toString() == "opc-1.0")
+    /* If the format is set to CSP || OPC: */
+    if (   fieldImp("format").toString() == "csp-1.0"
+        || fieldImp("format").toString() == "opc-1.0")
     {
         /* Disable manifest check-box: */
         m_pManifestCheckbox->setChecked(false);
@@ -280,8 +294,9 @@ void UIWizardExportAppPage3::refreshManifestCheckBoxAccess()
 
 void UIWizardExportAppPage3::refreshIncludeISOsCheckBoxAccess()
 {
-    /* If the format is set to OPC: */
-    if (fieldImp("format").toString() == "opc-1.0")
+    /* If the format is set to CSP || OPC: */
+    if (   fieldImp("format").toString() == "csp-1.0"
+        || fieldImp("format").toString() == "opc-1.0")
     {
         /* Disable include ISO check-box: */
         m_pIncludeISOsCheckbox->setChecked(false);
@@ -343,16 +358,6 @@ void UIWizardExportAppPage3::adjustAccountPropertyTable()
     m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(true);
 }
 
-QString UIWizardExportAppPage3::path() const
-{
-    return m_pFileSelector->path();
-}
-
-void UIWizardExportAppPage3::setPath(const QString &strPath)
-{
-    m_pFileSelector->setPath(strPath);
-}
-
 QString UIWizardExportAppPage3::format() const
 {
     const int iIndex = m_pFormatComboBox->currentIndex();
@@ -364,6 +369,16 @@ void UIWizardExportAppPage3::setFormat(const QString &strFormat)
     const int iIndex = m_pFormatComboBox->findData(strFormat);
     AssertMsg(iIndex != -1, ("Field not found!"));
     m_pFormatComboBox->setCurrentIndex(iIndex);
+}
+
+QString UIWizardExportAppPage3::path() const
+{
+    return m_pFileSelector->path();
+}
+
+void UIWizardExportAppPage3::setPath(const QString &strPath)
+{
+    m_pFileSelector->setPath(strPath);
 }
 
 MACAddressPolicy UIWizardExportAppPage3::macAddressPolicy() const
@@ -424,18 +439,63 @@ QString UIWizardExportAppPage3::profile() const
 *********************************************************************************************************************************/
 
 UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
-    : m_pLabel(0)
+    : m_pLabelFormat(0)
+    , m_pLabelSettings(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create label: */
-        m_pLabel = new QIRichTextLabel;
-        if (m_pLabel)
+        /* Create format label: */
+        m_pLabelFormat = new QIRichTextLabel;
+        if (m_pLabelFormat)
         {
             /* Add into layout: */
-            pMainLayout->addWidget(m_pLabel);
+            pMainLayout->addWidget(m_pLabelFormat);
+        }
+
+        /* Create format layout: */
+        m_pFormatLayout = new QGridLayout;
+        if (m_pFormatLayout)
+        {
+#ifdef VBOX_WS_MAC
+            m_pFormatLayout->setContentsMargins(0, 10, 0, 10);
+            m_pFormatLayout->setSpacing(10);
+#else
+            m_pFormatLayout->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                                0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+#endif
+            m_pFormatLayout->setColumnStretch(0, 0);
+            m_pFormatLayout->setColumnStretch(1, 1);
+
+            /* Create format combo-box: */
+            m_pFormatComboBox = new QComboBox;
+            if (m_pFormatComboBox)
+            {
+                /* Add into layout: */
+                m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
+            }
+            /* Create format combo-box label: */
+            m_pFormatComboBoxLabel = new QLabel;
+            if (m_pFormatComboBoxLabel)
+            {
+                m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+
+                /* Add into layout: */
+                m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
+            }
+
+            /* Add into layout: */
+            pMainLayout->addLayout(m_pFormatLayout);
+        }
+
+        /* Create settings label: */
+        m_pLabelSettings = new QIRichTextLabel;
+        if (m_pLabelSettings)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabelSettings);
         }
 
         /* Create settings layout: */
@@ -447,18 +507,18 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             if (pSettingsPane1)
             {
                 /* Create settings layout 1: */
-                QGridLayout *pSettingsLayout1 = new QGridLayout(pSettingsPane1);
-                if (pSettingsLayout1)
+                m_pSettingsLayout1 = new QGridLayout(pSettingsPane1);
+                if (m_pSettingsLayout1)
                 {
 #ifdef VBOX_WS_MAC
-                    pSettingsLayout1->setContentsMargins(0, 10, 0, 10);
-                    pSettingsLayout1->setSpacing(10);
+                    m_pSettingsLayout1->setContentsMargins(0, 10, 0, 10);
+                    m_pSettingsLayout1->setSpacing(10);
 #else
-                    pSettingsLayout1->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
-                                                         0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+                    m_pSettingsLayout1->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                                           0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
 #endif
-                    pSettingsLayout1->setColumnStretch(0, 0);
-                    pSettingsLayout1->setColumnStretch(1, 1);
+                    m_pSettingsLayout1->setColumnStretch(0, 0);
+                    m_pSettingsLayout1->setColumnStretch(1, 1);
 
                     /* Create file selector: */
                     m_pFileSelector = new UIEmptyFilePathSelector;
@@ -470,7 +530,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pFileSelector->setDefaultSaveExt("ova");
 
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
+                        m_pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
                     }
                     /* Create file selector label: */
                     m_pFileSelectorLabel = new QLabel;
@@ -480,25 +540,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pFileSelectorLabel->setBuddy(m_pFileSelector);
 
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
-                    }
-
-                    /* Create format combo-box: */
-                    m_pFormatComboBox = new QComboBox;
-                    if (m_pFormatComboBox)
-                    {
-                        /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1, 1, 2);
-                    }
-                    /* Create format combo-box label: */
-                    m_pFormatComboBoxLabel = new QLabel;
-                    if (m_pFormatComboBoxLabel)
-                    {
-                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                        m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
-
-                        /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pFormatComboBoxLabel, 1, 0);
+                        m_pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
                     }
 
                     /* Create MAC policy combo-box: */
@@ -506,7 +548,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (m_pMACComboBox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1, 1, 2);
+                        m_pSettingsLayout1->addWidget(m_pMACComboBox, 1, 1, 1, 2);
                     }
                     /* Create format combo-box label: */
                     m_pMACComboBoxLabel = new QLabel;
@@ -516,7 +558,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
 
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 2, 0);
+                        m_pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 1, 0);
                     }
 
                     /* Create advanced label: */
@@ -526,21 +568,21 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pAdditionalLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pAdditionalLabel, 3, 0);
+                        m_pSettingsLayout1->addWidget(m_pAdditionalLabel, 2, 0);
                     }
                     /* Create manifest check-box: */
                     m_pManifestCheckbox = new QCheckBox;
                     if (m_pManifestCheckbox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pManifestCheckbox, 3, 1);
+                        m_pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
                     }
                     /* Create include ISOs check-box: */
                     m_pIncludeISOsCheckbox = new QCheckBox;
                     if (m_pIncludeISOsCheckbox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 4, 1);
+                        m_pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
                     }
 
                     /* Create placeholder: */
@@ -548,7 +590,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (pPlaceholder)
                     {
                         /* Add into layout: */
-                        pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 3);
+                        m_pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 3);
                     }
                 }
 
@@ -561,26 +603,26 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             if (pSettingsPane2)
             {
                 /* Create settings layout 2: */
-                QGridLayout *pSettingsLayout2 = new QGridLayout(pSettingsPane2);
-                if (pSettingsLayout2)
+                m_pSettingsLayout2 = new QGridLayout(pSettingsPane2);
+                if (m_pSettingsLayout2)
                 {
 #ifdef VBOX_WS_MAC
-                    pSettingsLayout2->setContentsMargins(0, 10, 0, 10);
-                    pSettingsLayout2->setSpacing(10);
+                    m_pSettingsLayout2->setContentsMargins(0, 10, 0, 10);
+                    m_pSettingsLayout2->setSpacing(10);
 
 #else
-                    pSettingsLayout2->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
-                                                         0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+                    m_pSettingsLayout2->setContentsMargins(0, qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                                           0, qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
 #endif
-                    pSettingsLayout2->setColumnStretch(0, 0);
-                    pSettingsLayout2->setColumnStretch(1, 1);
+                    m_pSettingsLayout2->setColumnStretch(0, 0);
+                    m_pSettingsLayout2->setColumnStretch(1, 1);
 
                     /* Create provider combo-box: */
                     m_pAccountComboBox = new QComboBox;
                     if (m_pAccountComboBox)
                     {
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
+                        m_pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
                     }
                     /* Create provider label: */
                     m_pAccountComboBoxLabel = new QLabel;
@@ -590,7 +632,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
 
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
+                        m_pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
                     }
                     /* Create profile property table: */
                     m_pAccountPropertyTable = new QTableWidget;
@@ -602,14 +644,14 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;
                         m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+//                        m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
                         m_pAccountPropertyTable->setAlternatingRowColors(true);
                         m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
                         m_pAccountPropertyTable->verticalHeader()->setVisible(false);
                         m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
+                        m_pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
                     }
                 }
 
@@ -641,8 +683,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             this, &UIWizardExportAppPageBasic3::sltHandleAccountComboChange);
 
     /* Register fields: */
-    registerField("path", this, "path");
     registerField("format", this, "format");
+    registerField("path", this, "path");
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
@@ -676,6 +718,17 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
 
+    /* Translate format label: */
+    m_pLabelFormat->setText(tr("<p>Please choose a format to export the virtual appliance to.</p>"
+                               "<p>The <b>Open Virtualization Format</b> supports only <b>ovf</b> or <b>ova</b> extensions. "
+                               "If you use the <b>ovf</b> extension, several files will be written separately. "
+                               "If you use the <b>ova</b> extension, all the files will be combined into one Open "
+                               "Virtualization Format archive.</p>"
+                               "<p>The <b>Oracle Public Cloud Format</b> supports only the <b>tar.gz</b> extension. "
+                               "Each virtual disk file will be written separately.</p>"
+                               "<p>The <b>Cloud Service Provider Format</b> supports exporting to remote cloud services only. "
+                               "Main virtual disk of each selected machine will be uploaded to remote server.</p>"));
+
     /* Translate file selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
@@ -687,11 +740,13 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
     m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
+    m_pFormatComboBox->setItemText(4, UIWizardExportApp::tr("Cloud Service Provider"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(4, UIWizardExportApp::tr("Export to Cloud Service Provider."), Qt::ToolTipRole);
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardExportApp::tr("MAC Address &Policy:"));
@@ -735,6 +790,20 @@ void UIWizardExportAppPageBasic3::retranslateUi()
         }
     }
 
+    /* Adjust label widths: */
+    QList<QWidget*> labels;
+    labels << m_pFormatComboBoxLabel;
+    labels << m_pFileSelectorLabel;
+    labels << m_pMACComboBoxLabel;
+    labels << m_pAdditionalLabel;
+    labels << m_pAccountComboBoxLabel;
+    int iMaxWidth = 0;
+    foreach (QWidget *pLabel, labels)
+        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
+    m_pFormatLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pSettingsLayout1->setColumnMinimumWidth(0, iMaxWidth);
+    m_pSettingsLayout2->setColumnMinimumWidth(0, iMaxWidth);
+
     /* Refresh file selector name: */
     refreshFileSelectorName();
 
@@ -775,11 +844,13 @@ bool UIWizardExportAppPageBasic3::isComplete() const
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fOPC =    field("format").toString() == "opc-1.0";
+        const bool fCSP =    field("format").toString() == "csp-1.0";
 
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
                   || (   fOPC
-                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
+                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts))
+                  || fCSP;
     }
 
     return fResult;
@@ -791,31 +862,20 @@ void UIWizardExportAppPageBasic3::updatePageAppearance()
     UIWizardExportAppPage3::updatePageAppearance();
 
     /* Update page appearance according to chosen storage-type: */
-    const StorageType enmStorageType = field("storageType").value<StorageType>();
-    switch (enmStorageType)
+    if (field("format").toString() == "csp-1.0")
     {
-        case LocalFilesystem:
-        {
-            m_pLabel->setText(tr("<p>Please choose a filename to export the virtual appliance to.</p>"
-                                 "<p>The <b>Open Virtualization Format</b> supports only <b>ovf</b> or <b>ova</b> extensions. "
-                                 "If you use the <b>ovf</b> extension, several files will be written separately. "
-                                 "If you use the <b>ova</b> extension, all the files will be combined into one Open "
-                                 "Virtualization Format archive.</p>"
-                                 "<p>The <b>Oracle Public Cloud Format</b> supports only the <b>tar.gz</b> extension. "
-                                 "Each virtual disk file will be written separately.</p>"));
-            m_pFileSelector->setFocus();
-            break;
-        }
-        case CloudProvider:
-        {
-            m_pLabel->setText(tr("<p>Please choose a cloud service <b>provider</b> and one of its <b>profiles</b> you have "
-                                 "registered to export virtual machines to.</p>"
-                                 "<p>Make sure profile settings reflected in the underlying table are valid. "
-                                 "They will be used to establish network connection required to upload your virtual machine "
-                                 "files to remote cloud facility."));
-            m_pAccountComboBox->setFocus();
-            break;
-        }
+        m_pLabelSettings->setText(tr("<p>Please choose one of cloud service accounts you have registered to export virtual "
+                                     "machines to.  Make sure profile settings reflected in the underlying table are valid.  "
+                                     "They will be used to establish network connection required to upload your virtual machine "
+                                     "files to a remote cloud facility."));
+        m_pAccountComboBox->setFocus();
+    }
+    else
+    {
+        m_pLabelSettings->setText(tr("<p>Please choose a filename to export the virtual appliance to. Besides that you can "
+                                     "specify a certain amount of options which affects the size and content of resulting "
+                                     "archive.</p>"));
+        m_pFileSelector->setFocus();
     }
 }
 
@@ -825,6 +885,7 @@ void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
     updateFormatComboToolTip();
 
     /* Refresh required settings: */
+    updatePageAppearance();
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();

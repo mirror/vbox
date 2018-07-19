@@ -201,3 +201,9 @@ bool UIWizardExportAppPageBasic1::validatePage()
     /* Return result: */
     return fResult;
 }
+
+int UIWizardExportAppPageBasic1::nextId() const
+{
+    /* Skip 2nd page as we are merging 2nd and 3rd now: */
+    return UIWizardExportApp::Page3;
+}

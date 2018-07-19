@@ -74,6 +74,9 @@ private:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
+    /** Defines the ID of the next page. */
+    virtual int nextId() const /* override */;
+
 private:
 
     /** Holds the label instance. */

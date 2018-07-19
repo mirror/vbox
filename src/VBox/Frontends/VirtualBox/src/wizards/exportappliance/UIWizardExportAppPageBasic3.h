@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class QCheckBox;
 class QComboBox;
+class QGridLayout;
 class QLabel;
 class QLineEdit;
 class QStackedWidget;
@@ -97,15 +98,15 @@ protected:
     /** Adjusts account property table. */
     void adjustAccountPropertyTable();
 
-    /** Returns path. */
-    QString path() const;
-    /** Defines @a strPath. */
-    void setPath(const QString &strPath);
-
     /** Returns format. */
     QString format() const;
     /** Defines @a strFormat. */
     void setFormat(const QString &strFormat);
+
+    /** Returns path. */
+    QString path() const;
+    /** Defines @a strPath. */
+    void setPath(const QString &strPath);
 
     /** Returns MAC address policy. */
     MACAddressPolicy macAddressPolicy() const;
@@ -140,6 +141,18 @@ protected:
     /** Holds the file selector ext. */
     QString  m_strFileSelectorExt;
 
+    /** Holds the format layout. */
+    QGridLayout *m_pFormatLayout;
+    /** Holds the settings layout 1. */
+    QGridLayout *m_pSettingsLayout1;
+    /** Holds the settings layout 2. */
+    QGridLayout *m_pSettingsLayout2;
+
+    /** Holds the format combo-box label instance. */
+    QLabel    *m_pFormatComboBoxLabel;
+    /** Holds the format combo-box instance. */
+    QComboBox *m_pFormatComboBox;
+
     /** Holds the settings widget instance. */
     QStackedWidget *m_pSettingsWidget;
 
@@ -147,11 +160,6 @@ protected:
     QLabel    *m_pFileSelectorLabel;
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
-
-    /** Holds the format combo-box label instance. */
-    QLabel    *m_pFormatComboBoxLabel;
-    /** Holds the format combo-box instance. */
-    QComboBox *m_pFormatComboBox;
 
     /** Holds the MAC address policy combo-box label instance. */
     QLabel    *m_pMACComboBoxLabel;
@@ -178,8 +186,8 @@ protected:
 class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAppPage3
 {
     Q_OBJECT;
-    Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(QString format READ format WRITE setFormat);
+    Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
@@ -222,8 +230,11 @@ private slots:
 
 private:
 
-    /** Holds the label instance. */
-    QIRichTextLabel *m_pLabel;
+    /** Holds the format label instance. */
+    QIRichTextLabel *m_pLabelFormat;
+
+    /** Holds the settings label instance. */
+    QIRichTextLabel *m_pLabelSettings;
 };
 
 #endif /* !___UIWizardExportAppPageBasic3_h___ */

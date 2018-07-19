@@ -147,10 +147,42 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             QVBoxLayout *pSettingsCntLayout = new QVBoxLayout(m_pSettingsCnt);
             if (pSettingsCntLayout)
             {
-                pSettingsCntLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
                 pSettingsCntLayout->setSpacing(5);
 #endif
+
+                /* Create format layout: */
+                m_pFormatLayout = new QGridLayout;
+                if (m_pFormatLayout)
+                {
+                    m_pFormatLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+                    m_pFormatLayout->setSpacing(10);
+#endif
+                    m_pFormatLayout->setColumnStretch(0, 0);
+                    m_pFormatLayout->setColumnStretch(1, 1);
+
+                    /* Create format combo-box: */
+                    m_pFormatComboBox = new QComboBox;
+                    if (m_pFormatComboBox)
+                    {
+                        /* Add into layout: */
+                        m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
+                    }
+                    /* Create format combo-box label: */
+                    m_pFormatComboBoxLabel = new QLabel;
+                    if (m_pFormatComboBoxLabel)
+                    {
+                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                        m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+
+                        /* Add into layout: */
+                        m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
+                    }
+
+                    /* Add into layout: */
+                    pSettingsCntLayout->addLayout(m_pFormatLayout);
+                }
 
                 /* Create settings widget: */
                 m_pSettingsWidget = new QStackedWidget;
@@ -161,15 +193,15 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     if (pSettingsPane1)
                     {
                         /* Create settings layout 1: */
-                        QGridLayout *pSettingsLayout1 = new QGridLayout(pSettingsPane1);
-                        if (pSettingsLayout1)
+                        m_pSettingsLayout1 = new QGridLayout(pSettingsPane1);
+                        if (m_pSettingsLayout1)
                         {
 #ifdef VBOX_WS_MAC
-                            pSettingsLayout1->setSpacing(10);
+                            m_pSettingsLayout1->setSpacing(10);
 #endif
-                            pSettingsLayout1->setContentsMargins(0, 0, 0, 0);
-                            pSettingsLayout1->setColumnStretch(0, 0);
-                            pSettingsLayout1->setColumnStretch(1, 1);
+                            m_pSettingsLayout1->setContentsMargins(0, 0, 0, 0);
+                            m_pSettingsLayout1->setColumnStretch(0, 0);
+                            m_pSettingsLayout1->setColumnStretch(1, 1);
 
                             /* Create file selector: */
                             m_pFileSelector = new UIEmptyFilePathSelector;
@@ -181,7 +213,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pFileSelector->setDefaultSaveExt("ova");
 
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
+                                m_pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
                             }
                             /* Create file selector label: */
                             m_pFileSelectorLabel = new QLabel;
@@ -191,25 +223,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pFileSelectorLabel->setBuddy(m_pFileSelector);
 
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
-                            }
-
-                            /* Create format combo-box editor: */
-                            m_pFormatComboBox = new QComboBox;
-                            if (m_pFormatComboBox)
-                            {
-                                /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1, 1, 2);
-                            }
-                            /* Create format combo-box label: */
-                            m_pFormatComboBoxLabel = new QLabel;
-                            if (m_pFormatComboBoxLabel)
-                            {
-                                m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                                m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
-
-                                /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pFormatComboBoxLabel, 1, 0);
+                                m_pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
                             }
 
                             /* Create MAC policy combo-box: */
@@ -217,7 +231,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             if (m_pMACComboBox)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pMACComboBox, 2, 1, 1, 2);
+                                m_pSettingsLayout1->addWidget(m_pMACComboBox, 1, 1, 1, 2);
                             }
                             /* Create format combo-box label: */
                             m_pMACComboBoxLabel = new QLabel;
@@ -227,7 +241,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
 
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 2, 0);
+                                m_pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 1, 0);
                             }
 
                             /* Create advanced label: */
@@ -237,21 +251,21 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pAdditionalLabel, 3, 0);
+                                m_pSettingsLayout1->addWidget(m_pAdditionalLabel, 2, 0);
                             }
                             /* Create manifest check-box editor: */
                             m_pManifestCheckbox = new QCheckBox;
                             if (m_pManifestCheckbox)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pManifestCheckbox, 3, 1);
+                                m_pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
                             }
                             /* Create include ISOs check-box: */
                             m_pIncludeISOsCheckbox = new QCheckBox;
                             if (m_pIncludeISOsCheckbox)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 4, 1);
+                                m_pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
                             }
 
                             /* Create placeholder: */
@@ -259,7 +273,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             if (pPlaceholder)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout1->addWidget(pPlaceholder, 5, 0, 1, 3);
+                                m_pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 3);
                             }
                         }
 
@@ -272,38 +286,32 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     if (pSettingsPane2)
                     {
                         /* Create settings layout 2: */
-                        QGridLayout *pSettingsLayout2 = new QGridLayout(pSettingsPane2);
-                        if (pSettingsLayout2)
+                        m_pSettingsLayout2 = new QGridLayout(pSettingsPane2);
+                        if (m_pSettingsLayout2)
                         {
 #ifdef VBOX_WS_MAC
-                            pSettingsLayout2->setSpacing(10);
+                            m_pSettingsLayout2->setSpacing(10);
 #endif
-                            pSettingsLayout2->setContentsMargins(0, 0, 0, 0);
-                            pSettingsLayout2->setColumnStretch(0, 0);
-                            pSettingsLayout2->setColumnStretch(1, 1);
+                            m_pSettingsLayout2->setContentsMargins(0, 0, 0, 0);
+                            m_pSettingsLayout2->setColumnStretch(0, 0);
+                            m_pSettingsLayout2->setColumnStretch(1, 1);
 
                             /* Create account combo-box: */
                             m_pAccountComboBox = new QComboBox;
                             if (m_pAccountComboBox)
                             {
-                                /* Hide it for now: */
-                                m_pAccountComboBox->hide();
-
                                 /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
+                                m_pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
                             }
                             /* Create account label: */
                             m_pAccountComboBoxLabel = new QLabel;
                             if (m_pAccountComboBoxLabel)
                             {
-                                /* Hide it for now: */
-                                m_pAccountComboBoxLabel->hide();
-
                                 m_pAccountComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                                 m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
 
                                 /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
+                                m_pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
                             }
                             /* Create account property table: */
                             m_pAccountPropertyTable = new QTableWidget;
@@ -322,7 +330,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                                 /* Add into layout: */
-                                pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
+                                m_pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
                             }
                         }
 
@@ -373,8 +381,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
     registerField("storageType", this, "storageType");
-    registerField("path", this, "path");
     registerField("format", this, "format");
+    registerField("path", this, "path");
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
@@ -427,11 +435,13 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
     m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
+    m_pFormatComboBox->setItemText(4, UIWizardExportApp::tr("Cloud Service Provider"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(4, UIWizardExportApp::tr("Export to Cloud Service Provider."), Qt::ToolTipRole);
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardExportApp::tr("MAC Address &Policy:"));
@@ -474,6 +484,20 @@ void UIWizardExportAppPageExpert::retranslateUi()
                 .arg(m_pAccountComboBox->itemData(i, Qt::UserRole + 2).toString()));
         }
     }
+
+    /* Adjust label widths: */
+    QList<QWidget*> labels;
+    labels << m_pFormatComboBoxLabel;
+    labels << m_pFileSelectorLabel;
+    labels << m_pMACComboBoxLabel;
+    labels << m_pAdditionalLabel;
+    labels << m_pAccountComboBoxLabel;
+    int iMaxWidth = 0;
+    foreach (QWidget *pLabel, labels)
+        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
+    m_pFormatLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pSettingsLayout1->setColumnMinimumWidth(0, iMaxWidth);
+    m_pSettingsLayout2->setColumnMinimumWidth(0, iMaxWidth);
 
     /* Refresh file selector name: */
     refreshFileSelectorName();
@@ -518,11 +542,13 @@ bool UIWizardExportAppPageExpert::isComplete() const
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fOPC =    field("format").toString() == "opc-1.0";
+        const bool fCSP =    field("format").toString() == "csp-1.0";
 
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
                   || (   fOPC
-                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
+                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts))
+                  || fCSP;
     }
 
     return fResult;
@@ -571,6 +597,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     updateFormatComboToolTip();
 
     /* Refresh required settings: */
+    updatePageAppearance();
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
