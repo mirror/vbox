@@ -766,31 +766,20 @@ bool UIWizardExportAppPageBasic3::isComplete() const
 {
     bool fResult = true;
 
+    /* Check appliance settings: */
     if (fResult)
     {
-        /* Check storage-type attributes: */
-        const StorageType enmStorageType = field("storageType").value<StorageType>();
-        switch (enmStorageType)
-        {
-            case LocalFilesystem:
-            {
-                const QString &strFile = m_pFileSelector->path().toLower();
-                const bool fOVF =    field("format").toString() == "ovf-0.9"
-                                  || field("format").toString() == "ovf-1.0"
-                                  || field("format").toString() == "ovf-2.0";
-                const bool fOPC =    field("format").toString() == "opc-1.0";
-                fResult =    (   fOVF
-                              && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
-                          || (   fOPC
-                              && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
-                break;
-            }
-            case CloudProvider:
-            {
-                fResult = false;
-                break;
-            }
-        }
+        const QString &strFile = field("path").toString().toLower();
+
+        const bool fOVF =    field("format").toString() == "ovf-0.9"
+                          || field("format").toString() == "ovf-1.0"
+                          || field("format").toString() == "ovf-2.0";
+        const bool fOPC =    field("format").toString() == "opc-1.0";
+
+        fResult =    (   fOVF
+                      && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
+                  || (   fOPC
+                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
     }
 
     return fResult;

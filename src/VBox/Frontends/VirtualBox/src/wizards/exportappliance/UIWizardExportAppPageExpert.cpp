@@ -503,39 +503,28 @@ void UIWizardExportAppPageExpert::initializePage()
 
 bool UIWizardExportAppPageExpert::isComplete() const
 {
-    /* Initial result: */
     bool fResult = true;
 
     /* There should be at least one vm selected: */
     if (fResult)
         fResult = (m_pVMSelector->selectedItems().size() > 0);
 
-    /* Check storage-type attributes: */
+    /* Check appliance settings: */
     if (fResult)
     {
-        const QString &strFile = m_pFileSelector->path().toLower();
+        const QString &strFile = field("path").toString().toLower();
+
         const bool fOVF =    field("format").toString() == "ovf-0.9"
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fOPC =    field("format").toString() == "opc-1.0";
+
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
                   || (   fOPC
                       && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
-        if (fResult)
-        {
-            const StorageType enmStorageType = storageType();
-            switch (enmStorageType)
-            {
-                case LocalFilesystem:
-                    break;
-                case CloudProvider:
-                    break;
-            }
-        }
     }
 
-    /* Return result: */
     return fResult;
 }
 
