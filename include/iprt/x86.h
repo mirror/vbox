@@ -1431,6 +1431,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_TRUE_EXIT_CTLS         0x48F
 /** Allowed settings of all VMX entry controls. */
 #define MSR_IA32_VMX_TRUE_ENTRY_CTLS        0x490
+/** Allowed settings for the VM-function controls. */
+#define MSR_IA32_VMX_VMFUNC                 0x491
 
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600
