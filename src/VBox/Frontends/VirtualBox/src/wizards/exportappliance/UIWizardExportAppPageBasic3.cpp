@@ -136,7 +136,8 @@ void UIWizardExportAppPage3::populateAccounts()
     }
 
     /* Set default: */
-    setProvider(KCloudProviderId_OCI);
+    if (m_pAccountComboBox->count() != 0)
+        setProvider(KCloudProviderId_OCI);
 }
 
 void UIWizardExportAppPage3::populateAccountProperties()
