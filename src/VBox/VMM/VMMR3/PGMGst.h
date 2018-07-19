@@ -44,8 +44,10 @@ PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     /*
      * Map and monitor CR3
      */
-    int rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
-    return rc;
+    uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
+    return g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
 }
 
 
@@ -78,9 +80,9 @@ PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
  */
 PGM_GST_DECL(int, Exit)(PVMCPU pVCpu)
 {
-    int rc;
-
-    rc = PGM_BTH_PFN(UnmapCR3, pVCpu)(pVCpu);
-    return rc;
+    uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnUnmapCR3, VERR_PGM_MODE_IPE);
+    return g_aPgmBothModeData[idxBth].pfnUnmapCR3(pVCpu);
 }
 

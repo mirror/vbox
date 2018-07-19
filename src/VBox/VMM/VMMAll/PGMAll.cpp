@@ -897,8 +897,11 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
     /*
      * Call the worker.
      */
+    uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnTrap0eHandler, VERR_PGM_MODE_IPE);
     bool fLockTaken = false;
-    int rc = PGM_BTH_PFN(Trap0eHandler, pVCpu)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+    int rc = g_aPgmBothModeData[idxBth].pfnTrap0eHandler(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
     if (fLockTaken)
     {
         PGM_LOCK_ASSERT_OWNER(pVM);
@@ -952,7 +955,12 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
 VMMDECL(int) PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Prefetch), a);
-    int rc = PGM_BTH_PFN(PrefetchPage, pVCpu)(pVCpu, GCPtrPage);
+
+    uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnPrefetchPage, VERR_PGM_MODE_IPE);
+    int rc = g_aPgmBothModeData[idxBth].pfnPrefetchPage(pVCpu, GCPtrPage);
+
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Prefetch), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     return rc;
@@ -1094,8 +1102,11 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
              * Try to sync it!
              */
             Assert(X86_TRAP_PF_RW == X86_PTE_RW && X86_TRAP_PF_US == X86_PTE_US);
-            uint32_t uErr = fAccess & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
-            rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVCpu)(pVCpu, Addr, fPageGst, uErr);
+            uint32_t  const uErr   = fAccess & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
+            uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+            AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+            AssertReturn(g_aPgmBothModeData[idxBth].pfnVerifyAccessSyncPage, VERR_PGM_MODE_IPE);
+            rc = g_aPgmBothModeData[idxBth].pfnVerifyAccessSyncPage(pVCpu, Addr, fPageGst, uErr);
             if (rc != VINF_SUCCESS)
                 return rc;
         }
@@ -1204,7 +1215,12 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      */
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage), a);
     pgmLock(pVM);
-    rc = PGM_BTH_PFN(InvalidatePage, pVCpu)(pVCpu, GCPtrPage);
+
+    uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturnStmt(idxBth < RT_ELEMENTS(g_aPgmBothModeData), pgmUnlock(pVM), VERR_PGM_MODE_IPE);
+    AssertReturnStmt(g_aPgmBothModeData[idxBth].pfnInvalidatePage, pgmUnlock(pVM), VERR_PGM_MODE_IPE);
+    rc = g_aPgmBothModeData[idxBth].pfnInvalidatePage(pVCpu, GCPtrPage);
+
     pgmUnlock(pVM);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage), a);
 
@@ -2557,9 +2573,14 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
 
     if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
-        RTGCPHYS GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
-        pVCpu->pgm.s.GCPhysCR3  = GCPhysCR3;
-        rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
+        RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
+
+        uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+        AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+        AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
+
+        pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             if (pgmMapAreMappingsFloating(pVM))
@@ -2661,8 +2682,13 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
 
     if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
+        uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+        AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+        AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
+
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
+
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
 
@@ -2751,8 +2777,11 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
 
         if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
         {
+            uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+            AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+            AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
             pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-            rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
+            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
         }
 
         /* Make sure we check for pending pgm pool syncs as we clear VMCPU_FF_PGM_SYNC_CR3 later on! */
@@ -2776,7 +2805,12 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
      * Let the 'Bth' function do the work and we'll just keep track of the flags.
      */
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
-    rc = PGM_BTH_PFN(SyncCR3, pVCpu)(pVCpu, cr0, cr3, cr4, fGlobal);
+
+    uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnSyncCR3, VERR_PGM_MODE_IPE);
+    rc = g_aPgmBothModeData[idxBth].pfnSyncCR3(pVCpu, cr0, cr3, cr4, fGlobal);
+
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
@@ -3418,9 +3452,15 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 VMMDECL(unsigned) PGMAssertCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
+
+    uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), -VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnAssertCR3, -VERR_PGM_MODE_IPE);
+
     pgmLock(pVM);
-    unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVCpu)(pVCpu, cr3, cr4, 0, ~(RTGCPTR)0);
+    unsigned cErrors = g_aPgmBothModeData[idxBth].pfnAssertCR3(pVCpu, cr3, cr4, 0, ~(RTGCPTR)0);
     pgmUnlock(pVM);
+
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
 }

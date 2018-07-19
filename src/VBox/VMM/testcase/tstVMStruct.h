@@ -666,24 +666,6 @@
     GEN_CHECK_OFF(PGMCPU, pShwPageCR3R3);
     GEN_CHECK_OFF(PGMCPU, pShwPageCR3R0);
     GEN_CHECK_OFF(PGMCPU, pShwPageCR3RC);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthMapCR3);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthUnmapCR3);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthRelocate);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthSyncCR3);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthInvalidatePage);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthPrefetchPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthVerifyAccessSyncPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR3BthAssertCR3);
-    GEN_CHECK_OFF(PGMCPU, pfnRCBthTrap0eHandler);
-    GEN_CHECK_OFF(PGMCPU, pfnRCBthInvalidatePage);
-    GEN_CHECK_OFF(PGMCPU, pfnRCBthPrefetchPage);
-    GEN_CHECK_OFF(PGMCPU, pfnRCBthVerifyAccessSyncPage);
-    GEN_CHECK_OFF(PGMCPU, pfnRCBthAssertCR3);
-    GEN_CHECK_OFF(PGMCPU, pfnR0BthTrap0eHandler);
-    GEN_CHECK_OFF(PGMCPU, pfnR0BthInvalidatePage);
-    GEN_CHECK_OFF(PGMCPU, pfnR0BthPrefetchPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR0BthVerifyAccessSyncPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR0BthAssertCR3);
     GEN_CHECK_OFF(PGMCPU, DisState);
     GEN_CHECK_OFF(PGMCPU, cGuestModeChanges);
 #ifdef VBOX_WITH_STATISTICS
