@@ -534,6 +534,9 @@ typedef struct PDMAUDIOSTREAMCFG
      *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
      *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done. */
     PDMAUDIOSTREAMLAYOUT     enmLayout;
+    /** Hint about the optimal frame buffer size (in audio frames).
+     *  0 if no hint is given. */
+    uint32_t                 cFrameBufferHint;
     struct
     {
         /** Scheduling hint given from the device emulation about when this stream is being served on average.

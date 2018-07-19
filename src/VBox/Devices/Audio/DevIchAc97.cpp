@@ -311,8 +311,7 @@ typedef struct AC97STREAMSTATE
     uint32_t              Padding;
 #endif
     /** The stream's current configuration. */
-    PDMAUDIOSTREAMCFG     Cfg; //+100
-    uint32_t              Padding;
+    PDMAUDIOSTREAMCFG     Cfg; //+104
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO    AIO;
