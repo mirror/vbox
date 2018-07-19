@@ -55,9 +55,15 @@ UIEmptyFilePathSelector::UIEmptyFilePathSelector (QWidget *aParent /* = NULL */)
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 
     mMainLayout = new QHBoxLayout (this);
-    mMainLayout->setMargin (0);
+    mMainLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+    mMainLayout->setSpacing(5);
+#endif
 
-    mSelectButton = new QIToolButton(this);
+    mSelectButton = new QToolButton(this);
+#ifdef VBOX_WS_MAC
+    mSelectButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+#endif
     mSelectButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
     connect(mSelectButton, SIGNAL(clicked()), this, SLOT(choose()));
     mMainLayout->addWidget(mSelectButton);

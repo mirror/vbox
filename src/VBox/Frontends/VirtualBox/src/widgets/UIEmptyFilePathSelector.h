@@ -31,7 +31,7 @@ class QILineEdit;
 /* Qt forward declarations */
 class QHBoxLayout;
 class QAction;
-class QIToolButton;
+class QToolButton;
 
 
 class UIEmptyFilePathSelector: public QIWithRetranslateUI<QWidget>
@@ -107,7 +107,7 @@ private:
     QILabel *mLabel;
     UIEmptyFilePathSelector::Mode mMode;
     QILineEdit *mLineEdit;
-    QIToolButton *mSelectButton;
+    QToolButton *mSelectButton;
     bool m_fButtonToolTipSet;
     QString mFileDialogTitle;
     QString mFileFilters;
