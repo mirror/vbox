@@ -239,8 +239,14 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPU pVCpu, uint32_t 
  */
 VMM_INT_DECL(uint64_t) CPUMGetGuestIa32FeatureControl(PVMCPU pVCpu)
 {
-    RT_NOREF_PV(pVCpu);
-    return 1; /* Locked, no VT-X, no SYSENTER micromanagement. */
+    /* Always report the MSR lock bit as set, in order to prevent guests from modifiying this MSR. */
+    uint64_t fFeatCtl = MSR_IA32_FEATURE_CONTROL_LOCK;
+
+    /* Report VMX features. */
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        fFeatCtl |= MSR_IA32_FEATURE_CONTROL_VMXON;
+
+    return fFeatCtl;
 }
 
 /** @callback_method_impl{FNCPUMRDMSR} */
