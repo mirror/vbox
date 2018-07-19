@@ -1736,6 +1736,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         pFeatures->fMovCmpXchg16b       = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_CX16);
         pFeatures->fClFlush             = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_CLFSH);
         pFeatures->fPcid                = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_PCID);
+        pFeatures->fVmx                 = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_VMX);
 
         /* Structured extended features. */
         PCCPUMCPUIDLEAF const pSxfLeaf0 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 7, 0);
@@ -2670,7 +2671,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            /* Can't properly emulate monitor & mwait with guest SMP; force the guest to use hlt for idling VCPUs. */
                            | ((pConfig->enmMonitor && pVM->cCpus == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
                            //| X86_CPUID_FEATURE_ECX_CPLDS - no CPL qualified debug store.
-                           //| X86_CPUID_FEATURE_ECX_VMX   - not virtualized yet.
+                           | (pConfig->fNestedHWVirt ? X86_CPUID_FEATURE_ECX_VMX : 0)
                            //| X86_CPUID_FEATURE_ECX_SMX   - not virtualized yet.
                            //| X86_CPUID_FEATURE_ECX_EST   - no extended speed step.
                            //| X86_CPUID_FEATURE_ECX_TM2   - no thermal monitor 2.
@@ -2715,6 +2716,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, SSE4_2, X86_CPUID_FEATURE_ECX_SSE4_2, pConfig->enmSse42);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, MOVBE,  X86_CPUID_FEATURE_ECX_MOVBE,  pConfig->enmMovBe);
         PORTABLE_DISABLE_FEATURE_BIT(    1, pStdFeatureLeaf->uEcx, AES,    X86_CPUID_FEATURE_ECX_AES);
+        PORTABLE_DISABLE_FEATURE_BIT(    1, pStdFeatureLeaf->uEcx, VMX,    X86_CPUID_FEATURE_ECX_VMX);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, PCLMUL, X86_CPUID_FEATURE_ECX_PCLMUL, pConfig->enmPClMul);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, POPCNT, X86_CPUID_FEATURE_ECX_POPCNT, pConfig->enmPopCnt);
         PORTABLE_DISABLE_FEATURE_BIT(    1, pStdFeatureLeaf->uEcx, F16C,   X86_CPUID_FEATURE_ECX_F16C);
@@ -2738,6 +2740,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                           )));
         Assert(!(pStdFeatureLeaf->uEcx & (  X86_CPUID_FEATURE_ECX_DTES64
                                           | X86_CPUID_FEATURE_ECX_CPLDS
+                                          | X86_CPUID_FEATURE_ECX_AES
                                           | X86_CPUID_FEATURE_ECX_VMX
                                           | X86_CPUID_FEATURE_ECX_SMX
                                           | X86_CPUID_FEATURE_ECX_EST
@@ -2922,9 +2925,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 
         if (pCpum->u8PortableCpuIdLevel > 0)
         {
-            CPUMISAEXTCFG enmSvm = pConfig->fNestedHWVirt ? CPUMISAEXTCFG_ENABLED_SUPPORTED : CPUMISAEXTCFG_DISABLED;
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, CR8L,       X86_CPUID_AMD_FEATURE_ECX_CR8L);
-            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SVM,        X86_CPUID_AMD_FEATURE_ECX_SVM,       enmSvm);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, SVM,        X86_CPUID_AMD_FEATURE_ECX_SVM);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, ABM,        X86_CPUID_AMD_FEATURE_ECX_ABM,       pConfig->enmAbm);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SSE4A,      X86_CPUID_AMD_FEATURE_ECX_SSE4A,     pConfig->enmSse4A);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, MISALNSSE,  X86_CPUID_AMD_FEATURE_ECX_MISALNSSE, pConfig->enmMisAlnSse);
@@ -3933,7 +3935,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
     /** @cfgm{/CPUM/NestedHWVirt, bool, false}
      * Whether to expose the hardware virtualization (VMX/SVM) feature to the guest.
      * The default is false, and when enabled requires nested paging and AMD-V or
