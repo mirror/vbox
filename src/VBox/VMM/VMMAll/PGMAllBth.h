@@ -141,7 +141,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           NIL_PGMPOOL_IDX, UINT32_MAX, false /*fLockPage*/,
                           &pNewShwPageCR3);
-    if (rc == VERR_PGM_POOL_FLUSHED)
+    if (rc == VERR_PGM_POOL_FLUSHED) /** @todo r=bird: VERR_PGM_POOL_FLUSHED won't be returned */
     {
         Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
@@ -2951,7 +2951,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             return VINF_SUCCESS;
         }
-        else if (rc == VERR_PGM_POOL_FLUSHED)
+        else if (rc == VERR_PGM_POOL_FLUSHED) /** @todo r=bird: VERR_PGM_POOL_FLUSHED won't be returned */
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);

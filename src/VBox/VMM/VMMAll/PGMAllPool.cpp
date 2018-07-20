@@ -2919,7 +2919,8 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
- * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
+ * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
+ *          not returned anywhere anymore.
  * @param   pPool       The pool.
  * @param   iUser       The user index.
  */
@@ -2949,7 +2950,9 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
- * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
+ * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
+ *          not returned anywhere anymore.
+ *
  * @param   pPool       The pool.
  * @param   pPage       The cached page.
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.
@@ -3037,7 +3040,9 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
- * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
+ * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
+ *          not returned anywhere anymore.
+ *
  * @param   pPool       The pool.
  * @param   pPage       The cached page.
  * @param   iUser       The user index.
@@ -5098,7 +5103,8 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
+ * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
+ *          not returned anywhere anymore.
  *
  * @param   pPool       The pool.
  * @param   enmKind     Page table kind
@@ -5150,7 +5156,8 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if a NEW page was allocated.
  * @retval  VINF_PGM_CACHED_PAGE if a CACHED page was returned.
- * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
+ * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
+ *          not returned anywhere anymore.
  *
  * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.

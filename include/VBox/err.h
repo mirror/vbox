@@ -454,7 +454,8 @@
 #define VERR_PGM_NO_HYPERVISOR_ADDRESS      (-1619)
 /** The shadow page pool was flushed.
  * This means that a global CR3 sync was flagged. Anyone receiving this kind of status
- * will have to get down to a SyncCR3 ASAP. See also VINF_PGM_SYNC_CR3. */
+ * will have to get down to a SyncCR3 ASAP. See also VINF_PGM_SYNC_CR3.
+ * @todo r=bird: This error code isn't used anymore...  */
 #define VERR_PGM_POOL_FLUSHED               (-1620)
 /** The shadow page pool was cleared.
  * This is a error code internal to the shadow page pool, it will be
