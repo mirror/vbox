@@ -1,22 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+
 <book>
   <bookinfo>
-    <title>@VBOX_PRODUCT@<superscript>®</superscript></title>
+    <title>&VBOX_PRODUCT;</title>
 
     <subtitle>Programming Guide and Reference</subtitle>
 
-    <edition>Version @VBOX_VERSION_STRING@</edition>
+    <edition>Version &VBOX_VERSION_STRING;</edition>
 
-    <corpauthor>@VBOX_VENDOR@</corpauthor>
+    <corpauthor>&VBOX_VENDOR;</corpauthor>
 
     <address>http://www.virtualbox.org</address>
 
     <copyright>
-      <year>2004-@VBOX_C_YEAR@</year>
+      <year>2004-&VBOX_C_YEAR;</year>
 
-      <holder>@VBOX_VENDOR@</holder>
+      <holder>&VBOX_VENDOR;</holder>
     </copyright>
   </bookinfo>
 
@@ -1197,7 +1201,7 @@ version = webservice.IVirtualBox_getVersion(oVirtualBox);
 print version;</screen></para>
 
                 <para>And it will print
-                "@VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@".</para>
+                "&VBOX_VERSION_MAJOR;.&VBOX_VERSION_MINOR;.&VBOX_VERSION_BUILD;".</para>
               </listitem>
 
               <listitem>
@@ -3085,17 +3089,17 @@ es.unregisterListener(listener); </screen></para>
         and <computeroutput>VBox/VBoxGuest.h</computeroutput>).</para>
 
         <para><screen>
-DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo *pData);
+DECLR0VBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient);
           </screen> Connects to the service: <screen>
     VBoxGuestHGCMConnectInfo data;
 
-    memset (&amp;data, sizeof (VBoxGuestHGCMConnectInfo));
+    memset(&amp;data, sizeof(VBoxGuestHGCMConnectInfo));
 
     data.result   = VINF_SUCCESS;
     data.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     strcpy (data.Loc.u.host.achName, "VBoxSharedFolders");
 
-    rc = VbglHGCMConnect (&amp;handle, &amp;data);
+    rc = VbglHGCMConnect (&amp;handle, "VBoxSharedFolders"&amp;data);
 
     if (RT_SUCCESS (rc))
     {
@@ -3914,7 +3918,7 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
-      <title>Incompatible API changes with version 5.3</title>
+      <title>Incompatible API changes with version x.x</title>
 
       <itemizedlist>
 
@@ -3935,22 +3939,18 @@ AuthResult AUTHCALL AuthEntry(
               accordingly to match the rest of the API.</para>
             </listitem>
 
-            <listitem><para>The <link linkend="FileCopyFlag">FileCopyFlag</link> flags for
-              <link linkend="IGuestSession__directoryCopyFromGuest">IGuestSession::directoryCopyFromGuest()</link>
-              have been implemented.</para>
-            </listitem>
-
             <listitem>
               <para>The following methods have been implemented:
-                <link linkend="IGuestSession__directoryCopyFromGuest">IGuestSession::directoryCopyFromGuest()</link> and
-                <link linkend="IGuestSession__directoryCopyToGuest">IGuestSession::directoryCopyToGuest()</link>,
-                <link linkend="IFile__queryInfo">IGuestFile::queryInfo()</link>,
-                <link linkend="IFile__querySize">IGuestFile::querySize()</link>.
+                <computeroutput>IGuestSession::directoryCopyFromGuest()</computeroutput> and
+                <computeroutput>IGuestSession::directoryCopyToGuest()</computeroutput>.
               </para>
 
               <para>The following attributes have been implemented:
-                IGuestFsObjInfo::accessTime, IGuestFsObjInfo::birthTime, IGuestFsObjInfo::changeTime and
-                IGuestFsObjInfo::modificationTime.</para>
+                <computeroutput>IGuestFsObjInfo::accessTime</computeroutput>,
+                <computeroutput>IGuestFsObjInfo::birthTime</computeroutput>,
+                <computeroutput>IGuestFsObjInfo::changeTime</computeroutput> and
+                <computeroutput>IGuestFsObjInfo::modificationTime</computeroutput>.
+              </para>
 
             </listitem>
           </itemizedlist>

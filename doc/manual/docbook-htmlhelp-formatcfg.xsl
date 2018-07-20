@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
-<xsl:import href="@VBOX_PATH_DOCBOOK@/htmlhelp/htmlhelp.xsl"/>
-<xsl:import href="@VBOX_PATH_MANUAL_SRC@/common-formatcfg.xsl"/>
-<xsl:import href="@VBOX_PATH_MANUAL_SRC@/common-html-formatcfg.xsl"/>
+<xsl:import href="htmlhelp/htmlhelp.xsl"/>
+<xsl:import href="common-formatcfg.xsl"/>
+<xsl:import href="common-html-formatcfg.xsl"/>
 
-<xsl:include href="@VBOX_PATH_MANUAL_OUT_LANG@/titlepage-htmlhelp.xsl"/>
+<xsl:include href="titlepage-htmlhelp.xsl"/>
 
 <!-- Override the style sheet stuff from common-html-formatcfg.xsl, we don't
      the same as the html-chunks and html-one-page.  Also, the microsoft

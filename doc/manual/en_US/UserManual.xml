@@ -1,77 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-  "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
-<book>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<book id="VBOXU" lang="en">
+
+<!-- VBox bookinfo section -->
+
   <bookinfo>
-    <title>@VBOX_PRODUCT@<superscript>®</superscript></title>
+
+    <title>&VBOX_PRODUCT;</title>
 
     <subtitle>User Manual</subtitle>
 
     <edition>Version
-    @VBOX_VERSION_STRING@</edition>
+    &VBOX_VERSION_STRING;</edition>
 
-    <corpauthor>@VBOX_VENDOR@</corpauthor>
+    <corpauthor>Oracle Corporation</corpauthor>
 
-    <address>http://www.virtualbox.org</address>
+    <address>https://www.virtualbox.org</address>
 
     <copyright>
-      <year>2004-@VBOX_C_YEAR@</year>
 
-      <holder>@VBOX_VENDOR@</holder>
+      <year>2004-&VBOX_C_YEAR;</year>
+
+      <holder>Oracle Corporation</holder>
+
     </copyright>
+
   </bookinfo>
 
-  <xi:include href="user_Introduction.xml" xpointer="element(/1)"
+  <xi:include href="user_Introduction.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Installation.xml" xpointer="element(/1)"
+  <xi:include href="user_Installation.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_BasicConcepts.xml" xpointer="element(/1)"
+  <xi:include href="user_BasicConcepts.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_GuestAdditions.xml" xpointer="element(/1)"
+  <xi:include href="user_GuestAdditions.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Storage.xml" xpointer="element(/1)"
+  <xi:include href="user_Storage.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Networking.xml" xpointer="element(/1)"
+  <xi:include href="user_Networking.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Frontends.xml" xpointer="element(/1)"
+  <xi:include href="user_Frontends.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_VBoxManage.xml" xpointer="element(/1)"
+  <xi:include href="user_VBoxManage.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_AdvancedTopics.xml" xpointer="element(/1)"
+  <xi:include href="user_AdvancedTopics.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Technical.xml" xpointer="element(/1)"
+  <xi:include href="user_Technical.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_VirtualBoxAPI.xml" xpointer="element(/1)"
+  <xi:include href="user_VirtualBoxAPI.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Troubleshooting.xml" xpointer="element(/1)"
+  <xi:include href="user_Troubleshooting.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Security.xml" xpointer="element(/1)"
-              xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_KnownIssues.xml" xpointer="element(/1)"
+  <xi:include href="user_Security.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_ChangeLog.xml" xpointer="element(/1)"
+  <xi:include href="user_KnownIssues.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_ThirdParty.xml" xpointer="element(/1)"
+  <xi:include href="user_ChangeLog.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_PrivacyPolicy.xml" xpointer="element(/1)"
+  <xi:include href="user_ThirdParty.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_Glossary.xml" xpointer="element(/1)"
+  <xi:include href="user_PrivacyPolicy.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+  <xi:include href="user_Glossary.xml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
 </book>

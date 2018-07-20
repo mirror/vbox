@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-  "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<!DOCTYPE appendix PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+
 <appendix id="privacy">
-  <title>VirtualBox privacy information</title>
+  <title>VirtualBox Privacy Information</title>
 
   <para>Version 5, Dec 13, 2012</para>
 

@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-  "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<!DOCTYPE appendix PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+
 <appendix id="ThirdParty">
-  <title>Third-party materials and licenses</title>
+  <title>Third-Party Materials and Licenses</title>
 
   <para>VirtualBox incorporates materials from several Open Source software
   projects. Therefore the use of these materials by VirtualBox is governed by
@@ -17,8 +21,8 @@
   url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>, both as
   tarballs for particular releases and as a live SVN repository.</para>
 
-  <sect1>
-    <title>Materials</title>
+  <sect1 id="third-party-materials">
+    <title>Third-Party Materials</title>
 
     <itemizedlist>
       <listitem>
@@ -361,8 +365,8 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title>Licenses</title>
+  <sect1 id="third-party-licenses">
+    <title>Third-Party Licenses</title>
 
     <sect2 id="licGPL">
       <title>GNU General Public License (GPL)</title>
@@ -1607,7 +1611,7 @@
     </sect2>
 
     <sect2 id="licZLIB">
-      <title>zlib license</title>
+      <title>zlib License</title>
 
       <para>This software is provided 'as-is', without any express or implied
       warranty. In no event will the authors be held liable for any damages
@@ -1633,7 +1637,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licSSL">
-      <title>OpenSSL license</title>
+      <title>OpenSSL License</title>
 
       <para>This package is an SSL implementation written by Eric Young
       (eay@cryptsoft.com). The implementation was written so as to conform
@@ -1696,7 +1700,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licSlirp">
-      <title>Slirp license</title>
+      <title>Slirp License</title>
 
       <para>Copyright (c) 1995,1996 Danny Gasparovski.  All rights reserved.</para>
 
@@ -1730,7 +1734,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLZF">
-      <title>liblzf license</title>
+      <title>liblzf License</title>
 
       <para>Redistribution and use in source and binary forms, with or without
       modification, are permitted provided that the following conditions are
@@ -1761,8 +1765,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       POSSIBILITY OF SUCH DAMAGE.</para>
     </sect2>
 
-    <sect2>
-      <title>libpng license</title>
+    <sect2 id="liclibping">
+      <title>libpng License</title>
 
       <para>The PNG Reference Library is supplied "AS IS". The Contributing
       Authors and Group 42, Inc. disclaim all warranties, expressed or
@@ -1794,7 +1798,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLWIP">
-      <title>lwIP license</title>
+      <title>lwIP License</title>
 
       <para>Redistribution and use in source and binary forms, with or without
       modification, are permitted provided that the following conditions are
@@ -1826,7 +1830,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLibXML">
-      <title>libxml license</title>
+      <title>libxml License</title>
 
       <para>Except where otherwise noted in the source code (e.g. the files
       hash.c, list.c and the trio files, which are covered by a similar
@@ -1861,7 +1865,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLibXSLT">
-      <title>libxslt licenses</title>
+      <title>libxslt Licenses</title>
 
       <para>Licence for libxslt except libexslt:</para>
 
@@ -2342,10 +2346,10 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licChromium">
-      <title>Chromium licenses</title>
+      <title>Chromium Licenses</title>
 
       <sect3>
-        <title>Main license</title>
+        <title>Main License</title>
 
         <para>Copyright (c) 2002, Stanford University All rights
         reserved.</para>
@@ -2356,7 +2360,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
 
         <para>Redistribution and use in source and binary forms, with or
         without modification, are permitted provided that the following
-        conditions are met:<itemizedlist>
+        conditions are met:</para>
+        <itemizedlist>
             <listitem>
               <para>Redistributions of source code must retain the above
               copyright notice, this list of conditions and the following
@@ -2376,7 +2381,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
               derived from this software without specific prior written
               permission.</para>
             </listitem>
-          </itemizedlist></para>
+          </itemizedlist>
 
         <para>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
         CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
@@ -2393,7 +2398,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       </sect3>
 
       <sect3>
-        <title>COPYRIGHT.LLNL file</title>
+        <title>COPYRIGHT.LLNL File</title>
 
         <para>This Chromium distribution contains information and code which
         is covered under the following notice:</para>
@@ -2461,7 +2466,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       </sect3>
 
       <sect3>
-        <title>COPYRIGHT.REDHAT file</title>
+        <title>COPYRIGHT.REDHAT File</title>
 
         <para>This Chromium distribution contains information and code which
         is covered under the following notice:</para>
@@ -2493,7 +2498,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLibCurl">
-      <title>curl license</title>
+      <title>curl License</title>
 
       <para>COPYRIGHT AND PERMISSION NOTICE</para>
 
@@ -2522,7 +2527,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLibgd">
-      <title>libgd license</title>
+      <title>libgd License</title>
 
       <para>Portions copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
       2002 by Cold Spring Harbor Laboratory. Funded under Grant P41-RR02188 by
@@ -2578,7 +2583,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licBsdIntel">
-      <title>BSD license from Intel</title>
+      <title>BSD License from Intel</title>
 
       <para>All rights reserved.</para>
 
@@ -2680,7 +2685,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licJPEGSIMD">
-      <title>x86 SIMD extension for IJG JPEG library license</title>
+      <title>x86 SIMD Extension for IJG JPEG Library License</title>
 
       <para>Copyright 2009 Pierre Ossman &lt;ossman@cendio.se&gt; for Cendio AB</para>
       <para>Copyright 2010 D. R. Commander</para>
@@ -2708,7 +2713,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licFreeBsd">
-      <title>FreeBSD license</title>
+      <title>FreeBSD License</title>
 
       <para>The compilation of software known as FreeBSD is distributed under the
         following terms:</para>
@@ -2748,7 +2753,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licNetBsd">
-      <title>NetBSD license</title>
+      <title>NetBSD License</title>
 
       <para>Copyright (c) 1992, 1993 The Regents of the University of California.
         All rights reserved.</para>
@@ -2804,7 +2809,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licPcre">
-      <title>PCRE license</title>
+      <title>PCRE License</title>
 
       <para>
         PCRE is a library of functions to support regular expressions whose syntax
@@ -2883,7 +2888,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licLibffi">
-      <title>libffi license</title>
+      <title>libffi License</title>
 
       <para>
         Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc and others.
@@ -2911,7 +2916,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licFltk">
-      <title>FLTK license</title>
+      <title>FLTK License</title>
 
       <para>
         December 11, 2001
@@ -2980,7 +2985,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licExpat">
-      <title>Expat license</title>
+      <title>Expat License</title>
       <para>
         Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
         and Clark Cooper
@@ -3013,7 +3018,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licFontconfig">
-      <title>Fontconfig license</title>
+      <title>Fontconfig License</title>
       <para>
         Copyright (C) 2001, 2003 Keith Packard
       </para>
@@ -3040,7 +3045,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     </sect2>
 
     <sect2 id="licFreetype">
-      <title>Freetype license</title>
+      <title>Freetype License</title>
       <para>
         2006-Jan-27
       </para>
@@ -3111,8 +3116,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       </sect3>
       <sect3>
         <title>Legal Terms</title>
-        <sect4>
-          <title>0. Definitions</title>
+       
+          <para>0. Definitions</para>
           <para>
             Throughout this license,  the terms `package', `FreeType Project',
             and  `FreeType  archive' refer  to  the  set  of files  originally
@@ -3140,9 +3145,9 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             Robert Wilhelm, and Werner Lemberg.  All rights reserved except as
             specified below.
           </para>
-        </sect4>
-        <sect4>
-          <title>1. No Warranty</title>
+        
+       
+          <para>1. No Warranty</para>
           <para>
             THE FREETYPE PROJECT  IS PROVIDED `AS IS' WITHOUT  WARRANTY OF ANY
             KIND, EITHER  EXPRESS OR IMPLIED,  INCLUDING, BUT NOT  LIMITED TO,
@@ -3151,9 +3156,9 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             BE LIABLE  FOR ANY DAMAGES CAUSED  BY THE USE OR  THE INABILITY TO
             USE, OF THE FREETYPE PROJECT.
           </para>
-        </sect4>
-        <sect4>
-          <title>2. Redistribution</title>
+        
+       
+          <para>2. Redistribution</para>
           <para>
             This  license  grants  a  worldwide, royalty-free,  perpetual  and
             irrevocable right  and license to use,  execute, perform, compile,
@@ -3190,9 +3195,9 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             our work, you  must acknowledge us.  However, no  fee need be paid
             to us.
           </para>
-        </sect4>
-         <sect4>
-           <title>3. Advertising</title>
+        
+        
+           <para>3. Advertising</para>
            <para>
             Neither the  FreeType authors and  contributors nor you  shall use
             the name of the  other for commercial, advertising, or promotional
@@ -3213,9 +3218,9 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             Project, you indicate that you understand and accept all the terms
             of this license.
           </para>
-        </sect4>
-        <sect4>
-          <title>4. Contacts</title>
+        
+        
+          <para>4. Contacts</para>
           <para>
             There are two mailing lists related to FreeType:
           </para>
@@ -3247,7 +3252,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
           <para>
             http://www.freetype.org
           </para>
-        </sect4>
+        
       </sect3>
     </sect2>
     <sect2 id="licVPX">

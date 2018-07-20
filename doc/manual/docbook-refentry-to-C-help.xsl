@@ -22,8 +22,8 @@
   xmlns:str="http://xsltsl.org/string"
   >
 
-  <xsl:import href="@VBOX_PATH_MANUAL_SRC@/string.xsl"/>
-  <xsl:import href="@VBOX_PATH_MANUAL_SRC@/common-formatcfg.xsl"/>
+  <xsl:import href="string.xsl"/>
+  <xsl:import href="common-formatcfg.xsl"/>
 
   <xsl:output method="text" version="1.0" encoding="utf-8" indent="yes"/>
   <xsl:strip-space elements="*"/>

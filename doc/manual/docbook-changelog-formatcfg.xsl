@@ -2,8 +2,8 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <!-- Single html file template -->
-<xsl:import href="@VBOX_PATH_DOCBOOK@/html/docbook.xsl"/>
-<xsl:import href="@VBOX_PATH_MANUAL_SRC@/common-formatcfg.xsl"/>
+<xsl:import href="html/docbook.xsl"/>
+<xsl:import href="common-formatcfg.xsl"/>
 
 <!-- Adjust some params -->
 <!--

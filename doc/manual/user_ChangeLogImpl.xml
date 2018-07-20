@@ -27,7 +27,7 @@ are ordered as follows:
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
-   <sect1>
+  <sect1>
     <title>Version 5.3.0 (2018-xx-xx)</title>
 
     <para>This is a major update. The following major new features
@@ -40,8 +40,7 @@ are ordered as follows:
       </listitem>
 
     </itemizedlist>
-
-    <para>In addition, the following items were fixed and/or added:</para>
+  <para>In addition, the following items were fixed and/or added:</para>
 
     <itemizedlist>
 
@@ -52,12 +51,12 @@ are ordered as follows:
 
       <listitem>
         <para>Guest Control: various new APIs and features were implemented
-          (see SDK documentation for more)</para>
+        (see SDK documentation for more)</para>
       </listitem>
 
-      <listitem>
+    <listitem>
         <para>Networking: Added a workaround for older guests which do not enable
-          bus mastering for the virtio PCI device</para>
+        bus mastering for the virtio PCI device</para>
       </listitem>
 
     </itemizedlist>
@@ -72,8 +71,8 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>GUI: fixed occasional screen corruption when host screen
-          resolution is changed</para>
+        <para>GUI: fixed occasional screen corruption when host screen resolution
+          is changed</para>
       </listitem>
 
       <listitem>
@@ -431,7 +430,7 @@ are ordered as follows:
         <para>Audio: added HDA support for more exotic guests (e.g. Haiku)</para>
       </listitem>
 
-      <listitem>
+    <listitem>
         <para>Audio: fixed playback with ALSA backend (5.1.28 regression)</para>
       </listitem>
 

@@ -696,6 +696,11 @@
     </xsl:choose>
   </xsl:template>
 
+  <xsl:template match="trademark">
+    <xsl:apply-templates />
+    <xsl:text>\textsuperscript{\textregistered}</xsl:text>
+  </xsl:template>
+
   <!-- for some reason, DocBook insists of having image data nested this way always:
        mediaobject -> imageobject -> imagedata
        but only imagedata is interesting  -->
