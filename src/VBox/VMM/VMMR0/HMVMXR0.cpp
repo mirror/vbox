@@ -5975,7 +5975,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
         }
     }
     else if (   VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo)
-             && VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
+             && VMX_EXIT_INTERRUPTION_INFO_IS_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
              && uExitVector != X86_XCPT_DF
              && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
     {
@@ -7580,7 +7580,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
+                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_IS_ERROR_CODE_VALID(u32IntInfo),
                           ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
                 RT_FALL_THRU();
             default:
@@ -7717,12 +7717,12 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
     /* Validate. */
     Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(u32IntInfo));             /* Bit 31 (Valid bit) must be set by caller. */
-    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(u32IntInfo));    /* Bit 12 MBZ. */
+    Assert(!VMX_EXIT_INTERRUPTION_INFO_IS_NMI_UNBLOCK_IRET(u32IntInfo)); /* Bit 12 MBZ. */
     Assert(!(u32IntInfo & 0x7ffff000));                                  /* Bits 30:12 MBZ. */
 
     /* Inject. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);
-    if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo))
+    if (VMX_EXIT_INTERRUPTION_INFO_IS_ERROR_CODE_VALID(u32IntInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
     AssertRCReturn(rc, rc);
@@ -9247,7 +9247,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
                 case VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT:
                     if (idxVector <= (unsigned)(DBGFEVENT_XCPT_LAST - DBGFEVENT_XCPT_FIRST))
                     {
-                        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uExitIntInfo))
+                        if (VMX_EXIT_INTERRUPTION_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uExitIntInfo))
                         {
                             hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
                             uEventArg = pVmxTransient->uExitIntErrorCode;
