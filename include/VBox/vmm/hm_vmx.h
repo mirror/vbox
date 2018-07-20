@@ -1105,10 +1105,10 @@ typedef VMXMSRS *PVMXMSRS;
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
 /** Whether the processor provides additional information for exits due to
  *  INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                ((a) & RT_BIT_64(54))
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                (((a) >> 54) & 1)
 /** Whether default 1 bits in control MSRs (pin/proc/exit/entry) may be
  *  cleared to 0 and that 'true' control MSRs are supported. */
-#define MSR_IA32_VMX_BASIC_INFO_TRUE_CONTROLS(a)                ((a) & RT_BIT_64(55))
+#define MSR_IA32_VMX_BASIC_INFO_TRUE_CONTROLS(a)                (((a) >> 55) & 1)
 /** @} */
 
 
@@ -1522,7 +1522,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
  * @{
  */
-#define VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(a)                 RT_BOOL((a) & RT_BIT(31))
+#define VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(a)                 (((a) >> 31) & 1)
 #define VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT                  8
 #define VMX_ENTRY_INTERRUPTION_INFO_TYPE(a)                     ((a >> VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 /** @} */
@@ -1536,9 +1536,9 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                      (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID             RT_BIT(11)
 #define VMX_EXIT_INTERRUPTION_INFO_IS_ERROR_CODE_VALID(a)       RT_BOOL((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_NMI_UNBLOCK_IRET(a)       ((a) & RT_BIT(12))
+#define VMX_EXIT_INTERRUPTION_INFO_IS_NMI_UNBLOCK_IRET(a)       (((a) >> 12) & 1)
 #define VMX_EXIT_INTERRUPTION_INFO_VALID                        RT_BIT(31)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                  RT_BOOL((a) & RT_BIT(31))
+#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                  (((a) >> 31) & 1)
 /** Construct an irq event injection value from the exit interruption info value
  *  (same except that bit 12 is reserved). */
 #define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      ((a) & ~RT_BIT(12))
@@ -1564,7 +1564,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
-#define VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(a)           RT_BOOL((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
+#define VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(a)           (((a) >> 11) & 1)
 #define VMX_IDT_VECTORING_INFO_VALID(a)                         ((a) & RT_BIT(31))
 #define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                ((a) & ~RT_BIT(12))
 /** @} */
