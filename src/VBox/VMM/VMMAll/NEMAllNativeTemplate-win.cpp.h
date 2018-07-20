@@ -1020,8 +1020,8 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
         {
             Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
                   pVCpu->idCpu, uOldBase, aValues[iReg].Reg64, aValues[iReg].Reg64 ^ uOldBase));
-            VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, aValues[iReg].Reg64);
-            AssertLogRelMsg(rc2 == VINF_SUCCESS, ("%Rrc %RX64\n", VBOXSTRICTRC_VAL(rc2), aValues[iReg].Reg64));
+            int rc2 = APICSetBaseMsr(pVCpu, aValues[iReg].Reg64);
+            AssertLogRelMsg(rc2 == VINF_SUCCESS, ("%Rrc %RX64\n", rc2, aValues[iReg].Reg64));
         }
         iReg++;
 

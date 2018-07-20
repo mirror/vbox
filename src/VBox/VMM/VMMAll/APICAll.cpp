@@ -2170,21 +2170,193 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t 
 
 
 /**
+ * Resets the APIC base MSR.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+static void apicResetBaseMsr(PVMCPU pVCpu)
+{
+    /*
+     * Initialize the APIC base MSR. The APIC enable-bit is set upon power-up or reset[1].
+     *
+     * A Reset (in xAPIC and x2APIC mode) brings up the local APIC in xAPIC mode.
+     * An INIT IPI does -not- cause a transition between xAPIC and x2APIC mode[2].
+     *
+     * [1] See AMD spec. 14.1.3 "Processor Initialization State"
+     * [2] See Intel spec. 10.12.5.1 "x2APIC States".
+     */
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+
+    /* Construct. */
+    PAPICCPU pApicCpu     = VMCPU_TO_APICCPU(pVCpu);
+    PAPIC    pApic        = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    uint64_t uApicBaseMsr = MSR_IA32_APICBASE_ADDR;
+    if (pVCpu->idCpu == 0)
+        uApicBaseMsr |= MSR_IA32_APICBASE_BSP;
+
+    /* If the VM was configured with no APIC, don't enable xAPIC mode, obviously. */
+    if (pApic->enmMaxMode != PDMAPICMODE_NONE)
+    {
+        uApicBaseMsr |= MSR_IA32_APICBASE_EN;
+
+        /*
+         * While coming out of a reset the APIC is enabled and in xAPIC mode. If software had previously
+         * disabled the APIC (which results in the CPUID bit being cleared as well) we re-enable it here.
+         * See Intel spec. 10.12.5.1 "x2APIC States".
+         */
+        if (CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, true /*fVisible*/) == false)
+            LogRel(("APIC%u: Resetting mode to xAPIC\n", pVCpu->idCpu));
+    }
+
+    /* Commit. */
+    ASMAtomicWriteU64(&pApicCpu->uApicBaseMsr, uApicBaseMsr);
+}
+
+
+/**
+ * Initializes per-VCPU APIC to the state following an INIT reset
+ * ("Wait-for-SIPI" state).
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+void apicInitIpi(PVMCPU pVCpu)
+{
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+
+    /*
+     * See Intel spec. 10.4.7.3 "Local APIC State After an INIT Reset (Wait-for-SIPI State)"
+     * and AMD spec 16.3.2 "APIC Registers".
+     *
+     * The reason we don't simply zero out the entire APIC page and only set the non-zero members
+     * is because there are some registers that are not touched by the INIT IPI (e.g. version)
+     * operation and this function is only a subset of the reset operation.
+     */
+    RT_ZERO(pXApicPage->irr);
+    RT_ZERO(pXApicPage->irr);
+    RT_ZERO(pXApicPage->isr);
+    RT_ZERO(pXApicPage->tmr);
+    RT_ZERO(pXApicPage->icr_hi);
+    RT_ZERO(pXApicPage->icr_lo);
+    RT_ZERO(pXApicPage->ldr);
+    RT_ZERO(pXApicPage->tpr);
+    RT_ZERO(pXApicPage->ppr);
+    RT_ZERO(pXApicPage->timer_icr);
+    RT_ZERO(pXApicPage->timer_ccr);
+    RT_ZERO(pXApicPage->timer_dcr);
+
+    pXApicPage->dfr.u.u4Model        = XAPICDESTFORMAT_FLAT;
+    pXApicPage->dfr.u.u28ReservedMb1 = UINT32_C(0xfffffff);
+
+    /** @todo CMCI. */
+
+    RT_ZERO(pXApicPage->lvt_timer);
+    pXApicPage->lvt_timer.u.u1Mask = 1;
+
+#if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
+    RT_ZERO(pXApicPage->lvt_thermal);
+    pXApicPage->lvt_thermal.u.u1Mask = 1;
+#endif
+
+    RT_ZERO(pXApicPage->lvt_perf);
+    pXApicPage->lvt_perf.u.u1Mask = 1;
+
+    RT_ZERO(pXApicPage->lvt_lint0);
+    pXApicPage->lvt_lint0.u.u1Mask = 1;
+
+    RT_ZERO(pXApicPage->lvt_lint1);
+    pXApicPage->lvt_lint1.u.u1Mask = 1;
+
+    RT_ZERO(pXApicPage->lvt_error);
+    pXApicPage->lvt_error.u.u1Mask = 1;
+
+    RT_ZERO(pXApicPage->svr);
+    pXApicPage->svr.u.u8SpuriousVector = 0xff;
+
+    /* The self-IPI register is reset to 0. See Intel spec. 10.12.5.1 "x2APIC States" */
+    PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
+    RT_ZERO(pX2ApicPage->self_ipi);
+
+    /* Clear the pending-interrupt bitmaps. */
+    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    RT_BZERO(&pApicCpu->ApicPibLevel, sizeof(APICPIB));
+    RT_BZERO(pApicCpu->CTX_SUFF(pvApicPib), sizeof(APICPIB));
+
+    /* Clear the interrupt line states for LINT0 and LINT1 pins. */
+    pApicCpu->fActiveLint0 = false;
+    pApicCpu->fActiveLint1 = false;
+}
+
+
+/**
+ * Initializes per-VCPU APIC to the state following a power-up or hardware
+ * reset.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fResetApicBaseMsr   Whether to reset the APIC base MSR.
+ */
+void apicResetCpu(PVMCPU pVCpu, bool fResetApicBaseMsr)
+{
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+
+    LogFlow(("APIC%u: apicR3ResetCpu: fResetApicBaseMsr=%RTbool\n", pVCpu->idCpu, fResetApicBaseMsr));
+
+#ifdef VBOX_STRICT
+    /* Verify that the initial APIC ID reported via CPUID matches our VMCPU ID assumption. */
+    uint32_t uEax, uEbx, uEcx, uEdx;
+    uEax = uEbx = uEcx = uEdx = UINT32_MAX;
+    CPUMGetGuestCpuId(pVCpu, 1, 0, &uEax, &uEbx, &uEcx, &uEdx);
+    Assert(((uEbx >> 24) & 0xff) == pVCpu->idCpu);
+#endif
+
+    /*
+     * The state following a power-up or reset is a superset of the INIT state.
+     * See Intel spec. 10.4.7.3 "Local APIC State After an INIT Reset ('Wait-for-SIPI' State)"
+     */
+    apicInitIpi(pVCpu);
+
+    /*
+     * The APIC version register is read-only, so just initialize it here.
+     * It is not clear from the specs, where exactly it is initialized.
+     * The version determines the number of LVT entries and size of the APIC ID (8 bits for P4).
+     */
+    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+#if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
+    pXApicPage->version.u.u8MaxLvtEntry = XAPIC_MAX_LVT_ENTRIES_P4 - 1;
+    pXApicPage->version.u.u8Version     = XAPIC_HARDWARE_VERSION_P4;
+    AssertCompile(sizeof(pXApicPage->id.u8ApicId) >= XAPIC_APIC_ID_BIT_COUNT_P4 / 8);
+#else
+# error "Implement Pentium and P6 family APIC architectures"
+#endif
+
+    /** @todo It isn't clear in the spec. where exactly the default base address
+     *        is (re)initialized, atm we do it here in Reset. */
+    if (fResetApicBaseMsr)
+        apicResetBaseMsr(pVCpu);
+
+    /*
+     * Initialize the APIC ID register to xAPIC format.
+     */
+    ASMMemZero32(&pXApicPage->id, sizeof(pXApicPage->id));
+    pXApicPage->id.u8ApicId = pVCpu->idCpu;
+}
+
+
+/**
  * Sets the APIC base MSR.
  *
- * @returns Strict VBox status code.
+ * @returns VBox status code - no informational ones, esp. not
+ *          VINF_CPUM_R3_MSR_WRITE.  Only the following two:
  * @retval  VINF_SUCCESS
- * @retval  VINF_CPUM_R3_MSR_WRITE
  * @retval  VERR_CPUM_RAISE_GP_0
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   u64BaseMsr  The value to set.
  */
-VMM_INT_DECL(VBOXSTRICTRC) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
+VMM_INT_DECL(int) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
 {
     Assert(pVCpu);
 
-#ifdef IN_RING3
     PAPICCPU pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PAPIC    pApic      = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     APICMODE enmOldMode = apicGetMode(pApicCpu->uApicBaseMsr);
@@ -2212,8 +2384,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
     /* Don't allow enabling xAPIC/x2APIC if the VM is configured with the APIC disabled. */
     if (pApic->enmMaxMode == PDMAPICMODE_NONE)
     {
-        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM is configured with APIC disabled!\n",
-                pVCpu->idCpu));
+        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM is configured with APIC disabled!\n", pVCpu->idCpu));
         return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
     }
 
@@ -2236,7 +2407,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
                  * at the end of this function rather than updating it in apicR3ResetCpu. This means we also
                  * need to update the CPUID leaf ourselves.
                  */
-                apicR3ResetCpu(pVCpu, false /* fResetApicBaseMsr */);
+                apicResetCpu(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD);
                 CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, false /*fVisible*/);
                 LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
@@ -2307,12 +2478,6 @@ VMM_INT_DECL(VBOXSTRICTRC) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
 
     ASMAtomicWriteU64(&pApicCpu->uApicBaseMsr, uBaseMsr);
     return VINF_SUCCESS;
-
-#else  /* !IN_RING3 */
-    RT_NOREF_PV(pVCpu);
-    RT_NOREF_PV(u64BaseMsr);
-    return VINF_CPUM_R3_MSR_WRITE;
-#endif /* IN_RING3 */
 }
 
 

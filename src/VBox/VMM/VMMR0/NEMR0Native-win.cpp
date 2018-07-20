@@ -1989,14 +1989,15 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         {
             Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
                   pVCpu->idCpu, uOldBase, paValues[iReg].Reg64, paValues[iReg].Reg64 ^ uOldBase));
-            VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, paValues[iReg].Reg64);
+            int rc2 = APICSetBaseMsr(pVCpu, paValues[iReg].Reg64);
+            /** @todo fix me VINF_CPUM_R3_MSR_WRITE / APICSetBaseMsr */
             if (rc2 == VINF_CPUM_R3_MSR_WRITE)
             {
                 pVCpu->nem.s.uPendingApicBase = paValues[iReg].Reg64;
                 fUpdateApicBase = true;
             }
             else
-                AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", VBOXSTRICTRC_VAL(rc2), paValues[iReg].Reg64));
+                AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", rc2, paValues[iReg].Reg64));
         }
         iReg++;
 

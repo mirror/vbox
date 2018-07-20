@@ -176,7 +176,7 @@ VMM_INT_DECL(int)           APICGetTimerFreq(PVM pVM, uint64_t *pu64Value);
 VMM_INT_DECL(VBOXSTRICTRC)  APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
 VMM_INT_DECL(uint64_t)      APICGetBaseMsrNoCheck(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  APICGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Value);
-VMM_INT_DECL(VBOXSTRICTRC)  APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr);
+VMM_INT_DECL(int)           APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr);
 VMM_INT_DECL(int)           APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
 VMM_INT_DECL(int)           APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                                            uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
