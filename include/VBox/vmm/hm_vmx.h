@@ -1090,25 +1090,33 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** VMCS revision identifier used by the processor. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_ID(a)                      ((a) & 0x7FFFFFFF)
-/** Size of the VMCS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    (((a) >> 32) & 0x1FFF)
-/** Width of physical address used for the VMCS.
- *  0 -> limited to the available amount of physical ram
- *  1 -> within the first 4 GB
- */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(a)              (((a) >> 48) & 1)
-/** Whether the processor supports the dual-monitor treatment of
- *  system-management interrupts and system-management code. (always 1) */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(a)                (((a) >> 49) & 1)
-/** Memory type that must be used for the VMCS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
-/** Whether the processor provides additional information for exits due to
- *  INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                (((a) >> 54) & 1)
+#define MSR_IA32_VMX_BASIC_VMCS_ID(a)                      ((a) & 0x7FFFFFFF)
+/** Shift to get the VMCS size. */
+#define MSR_IA32_VMX_BASIC_VMCS_SIZE_SHIFT                 32
+/** VMCS size in bytes. */
+#define MSR_IA32_VMX_BASIC_VMCS_SIZE(a)                    (((a) >> 32) & 0x1FFF)
+/** Shift to get the width of physical addresses and associated memory regions. */
+#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT           48
+/** Width of physical addresses used for the VMCS and associated memory regions. */
+#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(a)              (((a) >> 48) & 1)
+/** Shift to get the dual-monitor treatment of SMI and SMM. */
+#define MSR_IA32_VMX_BASIC_DUAL_MON_SHIFT                  49
+/** Dual-monitor treatment of SMI and SMM supported. */
+#define MSR_IA32_VMX_BASIC_DUAL_MON(a)                     (((a) >> 49) & 1)
+/** Shift to get the memory type that must be used for the VMCS and associated
+ *  memory regions. */
+#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT             50
+/** Memory type that must be used for the VMCS and associated memory regions. */
+#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
+/** Shift to get the additional VM-exit information for INS/OUTS. */
+#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT             54
+/** Additional VM-exit information for INS/OUTS. */
+#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(a)                (((a) >> 54) & 1)
+/** Shift to get the VMCS true controls. */
+#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS_SHIFT             55
 /** Whether default 1 bits in control MSRs (pin/proc/exit/entry) may be
  *  cleared to 0 and that 'true' control MSRs are supported. */
-#define MSR_IA32_VMX_BASIC_INFO_TRUE_CONTROLS(a)                (((a) >> 55) & 1)
+#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS(a)                (((a) >> 55) & 1)
 /** @} */
 
 
@@ -1117,7 +1125,7 @@ typedef VMXMSRS *PVMXMSRS;
  */
 /** Relationship between the preemption timer and tsc; count down every time bit
  *  x of the tsc changes. */
-#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1f)
+#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1F)
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
 #define MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(a)               (((a) >> 5) & 1)
 /** Activity states supported by the implementation. */
@@ -1515,7 +1523,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
-#define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
+#define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xFFFF)
 /** @} */
 
 
@@ -1531,7 +1539,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                    ((a) & 0xff)
+#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                    ((a) & 0xFF)
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                   8
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                      (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID             RT_BIT(11)
@@ -1560,7 +1568,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
  * @{
  */
-#define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
+#define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xFF)
 #define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
@@ -1726,7 +1734,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_EXIT_QUAL_TASK_SWITCH
  * @{
  */
-#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)          ((a) & 0xffff)
+#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)          ((a) & 0xFFFF)
 #define VMX_EXIT_QUAL_TASK_SWITCH_TYPE(a)              (((a) >> 30) & 0x3)
 /** Task switch caused by a call instruction. */
 #define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_CALL            0
@@ -1778,7 +1786,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** 6:     Operand encoding. */
 #define VMX_EXIT_QUAL_IO_ENCODING(a)                   (((a) >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
-#define VMX_EXIT_QUAL_IO_PORT(a)                       (((a) >> 16) & 0xffff)
+#define VMX_EXIT_QUAL_IO_PORT(a)                       (((a) >> 16) & 0xFFFF)
 /* Rest reserved. */
 /** @} */
 
@@ -2000,6 +2008,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_HOST_RSP                                       0x6C14
 #define VMX_VMCS_HOST_RIP                                       0x6C16
 /** @} */
+
+
+/** VMCS revision identifier used for emulating VMX (bit 31 MBZ). Bump this
+ *  arbitarily chosen identifier if incompatible changes to the layout of our VMCS
+ *  structure is done. */
+#define VMX_VMCS_REVISION_ID                                    UINT32_C(0x1d000001)
+AssertCompile(!(VMX_VMCS_REVISION_ID & RT_BIT(31)));
+/** VMCS (and related regions) memory type - Uncacheable. */
+#define VMX_VMCS_MEM_TYPE_UC                                    0
+/** VMCS (and related regions) memory type - Write back. */
+#define VMX_VMCS_MEM_TYPE_WB                                    6
 
 
 /** @defgroup grp_hm_vmx_asm    VMX Assembly Helpers

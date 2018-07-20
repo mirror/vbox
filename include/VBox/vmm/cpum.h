@@ -1117,7 +1117,9 @@ typedef struct CPUMFEATURES
     uint32_t        uSvmMaxAsid;
 
     /** @todo VMX features. */
-    uint32_t        auPadding[1];
+    /** VMX: INS/OUTS VM-exit instruction info. */
+    uint32_t        fVmxInsOutInfo : 1;
+    uint32_t        fVmxPadding0 : 31;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMFEATURES, 32);

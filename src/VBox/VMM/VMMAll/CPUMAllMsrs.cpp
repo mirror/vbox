@@ -23,6 +23,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/hm.h>
+#include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
 #include "CPUMInternal.h"
@@ -1289,8 +1290,22 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+    {
+        uint64_t const fVmcsRevisionId  = VMX_VMCS_REVISION_ID;
+        uint64_t const f32BitAddrLimit  = 0;
+        uint64_t const fDualMonSmiSmm   = 0;
+        uint64_t const fVmcsMemType     = VMX_VMCS_MEM_TYPE_WB;
+        uint64_t const fVmcsInsOutsInfo = pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmxInsOutInfo;
+        *puValue = fVmcsRevisionId
+                 | (f32BitAddrLimit  << MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT)
+                 | (fDualMonSmiSmm   << MSR_IA32_VMX_BASIC_DUAL_MON_SHIFT)
+                 | (fVmcsMemType     << MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT)
+                 | (fVmcsInsOutsInfo << MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT);
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
