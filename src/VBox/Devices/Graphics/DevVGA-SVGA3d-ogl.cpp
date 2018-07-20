@@ -1935,17 +1935,6 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
 
 int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src, uint32_t cCopyBoxes, SVGA3dCopyBox *pBox)
 {
-    PVMSVGA3DSTATE      pState = pThis->svga.p3dState;
-    uint32_t            sidSrc = src.sid;
-    uint32_t            sidDest = dest.sid;
-    int                 rc = VINF_SUCCESS;
-
-    AssertReturn(pState, VERR_NO_MEMORY);
-    Assert(sidSrc < SVGA3D_MAX_SURFACE_IDS);
-    AssertReturn(sidSrc < pState->cSurfaces && pState->papSurfaces[sidSrc]->id == sidSrc, VERR_INVALID_PARAMETER);
-    Assert(sidDest < SVGA3D_MAX_SURFACE_IDS);
-    AssertReturn(sidDest < pState->cSurfaces && pState->papSurfaces[sidDest]->id == sidDest, VERR_INVALID_PARAMETER);
-
     for (uint32_t i = 0; i < cCopyBoxes; i++)
     {
         SVGA3dBox destBox, srcBox;
@@ -1964,7 +1953,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         destBox.h = pBox[i].h;
         destBox.d = pBox[i].d;
 
-        rc = vmsvga3dSurfaceStretchBlt(pThis, &dest, &destBox, &src, &srcBox, SVGA3D_STRETCH_BLT_LINEAR);
+        int rc = vmsvga3dSurfaceStretchBlt(pThis, &dest, &destBox, &src, &srcBox, SVGA3D_STRETCH_BLT_LINEAR);
         AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
@@ -2205,8 +2194,10 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
                                        pDstSurface->oglId.texture, uDstMipmap);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-    Log(("src conv. (%d,%d)(%d,%d); dest conv (%d,%d)(%d,%d)\n", pSrcBox->x, D3D_TO_OGL_Y_COORD(pSrcSurface, pSrcBox->y + pSrcBox->h),
-         pSrcBox->x + pSrcBox->w, D3D_TO_OGL_Y_COORD(pSrcSurface, pSrcBox->y), pDstBox->x, D3D_TO_OGL_Y_COORD(pDstSurface, pDstBox->y + pDstBox->h),
+    Log(("src conv. (%d,%d)(%d,%d); dest conv (%d,%d)(%d,%d)\n",
+         pSrcBox->x, D3D_TO_OGL_Y_COORD(pSrcSurface, pSrcBox->y + pSrcBox->h),
+         pSrcBox->x + pSrcBox->w, D3D_TO_OGL_Y_COORD(pSrcSurface, pSrcBox->y),
+         pDstBox->x, D3D_TO_OGL_Y_COORD(pDstSurface, pDstBox->y + pDstBox->h),
          pDstBox->x + pDstBox->w, D3D_TO_OGL_Y_COORD(pDstSurface, pDstBox->y)));
 
     pState->ext.glBlitFramebuffer(pSrcBox->x,
@@ -5295,7 +5286,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             break;
 
         case SVGA3D_TS_TEXTURE_MIPMAP_LEVEL:        /* uint32_t */
-            textureType = GL_TEXTURE_MAX_LEVEL;
+            textureType = GL_TEXTURE_BASE_LEVEL;
             val = pTextureState[i].value;
             break;
 
