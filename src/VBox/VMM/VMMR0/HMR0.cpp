@@ -1690,29 +1690,6 @@ VMMR0_INT_DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void)
 
 
 /**
- * Save a pending IO read.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   GCPtrRip        Address of IO instruction.
- * @param   GCPtrRipNext    Address of the next instruction.
- * @param   uPort           Port address.
- * @param   uAndVal         AND mask for saving the result in eax.
- * @param   cbSize          Read size.
- */
-VMMR0_INT_DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
-                                               unsigned uPort, unsigned uAndVal, unsigned cbSize)
-{
-    pVCpu->hm.s.PendingIO.enmType         = HMPENDINGIO_PORT_READ;
-    pVCpu->hm.s.PendingIO.GCPtrRip        = GCPtrRip;
-    pVCpu->hm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
-    pVCpu->hm.s.PendingIO.s.Port.uPort    = uPort;
-    pVCpu->hm.s.PendingIO.s.Port.uAndVal  = uAndVal;
-    pVCpu->hm.s.PendingIO.s.Port.cbSize   = cbSize;
-    return;
-}
-
-
-/**
  * Interface for importing state on demand (used by IEM).
  *
  * @returns VBox status code.

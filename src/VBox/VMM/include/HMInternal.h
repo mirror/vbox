@@ -908,26 +908,6 @@ typedef struct HMCPU
         RTGCUINTPTR                 GCPtrFaultAddress;
     } Event;
 
-    /* Pending IO operation. */
-    struct
-    {
-        /** Pending IO operation type. */
-        HMPENDINGIO             enmType;
-        uint32_t                u32Alignment0;
-        RTGCPTR                 GCPtrRip;
-        RTGCPTR                 GCPtrRipNext;
-        union
-        {
-            struct
-            {
-                uint32_t        uPort;
-                uint32_t        uAndVal;
-                uint32_t        cbSize;
-            } Port;
-            uint64_t            aRaw[2];
-        } s;
-    } PendingIO;
-
     /** The PAE PDPEs used with Nested Paging (only valid when
      *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
     X86PDPE                 aPdpes[4];
