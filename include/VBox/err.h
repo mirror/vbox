@@ -2826,14 +2826,8 @@
 #define VERR_NEM_FLUSH_TLB                          (-6809)
 /** Get register caller must flush the TLB. */
 #define VINF_NEM_FLUSH_TLB                          (6809)
-/** Get register caller must change the CPU mode (not an error). */
-#define VERR_NEM_CHANGE_PGM_MODE                    (-6810)
-/** Get register caller must change the CPU mode. */
-#define VINF_NEM_CHANGE_PGM_MODE                    (6810)
-/** Get register caller must update the APIC base (not an error). */
-#define VERR_NEM_UPDATE_APIC_BASE                   (-6811)
-/** Get register caller must update the APIC base. */
-#define VINF_NEM_UPDATE_APIC_BASE                   (6811)
+
+
 /** NEM failed to set TSC. */
 #define VERR_NEM_SET_TSC                            (-6812)
 

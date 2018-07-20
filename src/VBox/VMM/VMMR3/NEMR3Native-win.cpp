@@ -1171,11 +1171,12 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
      * Some state init.
      */
     pVM->nem.s.fA20Enabled = true;
+#if 0
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         PNEMCPU pNemCpu = &pVM->aCpus[iCpu].nem.s;
-        pNemCpu->uPendingApicBase = UINT64_MAX;
     }
+#endif
 
     /*
      * Error state.
@@ -1663,52 +1664,18 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             if (RT_SUCCESS(rcStrict))
             {
                 /*
-                 * We deal with VINF_NEM_CHANGE_PGM_MODE, VINF_NEM_FLUSH_TLB and
-                 * VINF_NEM_UPDATE_APIC_BASE  here, since we're running the risk of
+                 * We deal with VINF_NEM_FLUSH_TLB here, since we're running the risk of
                  * getting these while we already got another RC (I/O ports).
-                 *
-                 * The APIC base update and a PGM update can happen at the same time, so
-                 * we don't depend on the status code for that and always checks it first.
                  */
-                /* APIC base: */
-                if (pVCpu->nem.s.uPendingApicBase != UINT64_MAX)
-                {
-                    LogFlow(("nemR3NativeRunGC: calling APICSetBaseMsr(,%RX64)...\n", pVCpu->nem.s.uPendingApicBase));
-                    int rc2 = APICSetBaseMsr(pVCpu, pVCpu->nem.s.uPendingApicBase);
-                    AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", rc2, pVCpu->nem.s.uPendingApicBase));
-                    pVCpu->nem.s.uPendingApicBase = UINT64_MAX;
-                }
-
                 /* Status codes: */
                 VBOXSTRICTRC rcPending = pVCpu->nem.s.rcPending;
                 pVCpu->nem.s.rcPending = VINF_SUCCESS;
-                if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
-                    || rcStrict == VINF_PGM_CHANGE_MODE
-                    || rcPending == VINF_NEM_CHANGE_PGM_MODE )
-                {
-                    LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
-                    int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
-                    AssertRCReturn(rc, rc);
-                    if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
-                        || rcStrict == VINF_PGM_CHANGE_MODE
-                        || rcStrict == VINF_NEM_FLUSH_TLB)
-                    {
-                        if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
-                            && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
-                                                           & ~VMCPU_FF_RESUME_GUEST_MASK))
-                        {
-                            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-                            continue;
-                        }
-                        rcStrict = VINF_SUCCESS;
-                    }
-                }
-                else if (rcStrict == VINF_NEM_FLUSH_TLB || rcPending == VINF_NEM_FLUSH_TLB)
+                if (rcStrict == VINF_NEM_FLUSH_TLB || rcPending == VINF_NEM_FLUSH_TLB)
                 {
                     LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
                     int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true);
                     AssertRCReturn(rc, rc);
-                    if (rcStrict == VINF_NEM_FLUSH_TLB || rcStrict == VINF_NEM_CHANGE_PGM_MODE)
+                    if (rcStrict == VINF_NEM_FLUSH_TLB)
                     {
                         if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
                             && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
@@ -1720,8 +1687,6 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                         rcStrict = VINF_SUCCESS;
                     }
                 }
-                else if (rcStrict == VINF_NEM_UPDATE_APIC_BASE || rcPending == VERR_NEM_UPDATE_APIC_BASE)
-                    continue;
                 else
                     AssertMsg(rcPending == VINF_SUCCESS, ("rcPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPending) ));
             }

@@ -496,8 +496,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
             return rc;
         if (rc == VERR_NEM_FLUSH_TLB)
             return PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /*fGlobal*/);
-        if (rc == VERR_NEM_CHANGE_PGM_MODE)
-            return PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
         AssertLogRelRCReturn(rc, rc);
         return rc;
     }
@@ -1833,8 +1831,8 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
 
 #if defined(IN_RING0) && defined(NEM_WIN_TEMPLATE_MODE_OWN_RUN_API)
 /**
- * Wrapper around nemR0WinImportState that converts VERR_NEM_CHANGE_PGM_MODE and
- * VERR_NEM_FLUSH_TBL into informational status codes and logs+asserts statuses.
+ * Wrapper around nemR0WinImportState that converts VERR_NEM_FLUSH_TLB
+ * into informational status codes and logs+asserts statuses.
  *
  * @returns VBox strict status code.
  * @param   pGVM            The global (ring-0) VM structure.
@@ -1852,7 +1850,7 @@ DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PV
         return VINF_SUCCESS;
     }
 
-    if (rc == VERR_NEM_CHANGE_PGM_MODE || rc == VERR_NEM_FLUSH_TLB || rc == VERR_NEM_UPDATE_APIC_BASE)
+    if (rc == VERR_NEM_FLUSH_TLB)
     {
         Log4(("%s/%u: nemR0WinImportState -> %Rrc\n", pszCaller, pGVCpu->idCpu, -rc));
         return -rc;
@@ -4362,7 +4360,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
             int rc2 = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
             if (RT_SUCCESS(rc2))
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
-            else if (rc2 == VERR_NEM_CHANGE_PGM_MODE || rc2 == VERR_NEM_FLUSH_TLB || rc2 == VERR_NEM_UPDATE_APIC_BASE)
+            else if (rc2 == VERR_NEM_FLUSH_TLB)
             {
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
                 if (rcStrict == VINF_SUCCESS || rcStrict == -rc2)

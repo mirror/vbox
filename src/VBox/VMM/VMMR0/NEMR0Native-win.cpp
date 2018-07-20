@@ -1980,7 +1980,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtx->msrSFMASK = paValues[iReg].Reg64;
         iReg++;
     }
-    bool fUpdateApicBase = false;
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterApicBase);
@@ -1990,14 +1989,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
                   pVCpu->idCpu, uOldBase, paValues[iReg].Reg64, paValues[iReg].Reg64 ^ uOldBase));
             int rc2 = APICSetBaseMsr(pVCpu, paValues[iReg].Reg64);
-            /** @todo fix me VINF_CPUM_R3_MSR_WRITE / APICSetBaseMsr */
-            if (rc2 == VINF_CPUM_R3_MSR_WRITE)
-            {
-                pVCpu->nem.s.uPendingApicBase = paValues[iReg].Reg64;
-                fUpdateApicBase = true;
-            }
-            else
-                AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", rc2, paValues[iReg].Reg64));
+            AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", rc2, paValues[iReg].Reg64));
         }
         iReg++;
 
@@ -2165,7 +2157,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtx->fExtrn = 0;
 
     /* Typical. */
-    if (!fMaybeChangedMode && !fFlushTlb && !fUpdateApicBase)
+    if (!fMaybeChangedMode && !fFlushTlb)
         return VINF_SUCCESS;
 
     /*
@@ -2175,24 +2167,14 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     if (fMaybeChangedMode)
     {
         rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-        if (rc == VINF_PGM_CHANGE_MODE)
-        {
-            LogFlow(("nemR0WinImportState: -> VERR_NEM_CHANGE_PGM_MODE!\n"));
-            return VERR_NEM_CHANGE_PGM_MODE;
-        }
         AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
     }
 
     if (fFlushTlb)
     {
         LogFlow(("nemR0WinImportState: -> VERR_NEM_FLUSH_TLB!\n"));
+        /** @todo eliminate the VERR_NEM_FLUSH_TLB/VINF_NEM_FLUSH_TLB complication */
         rc = VERR_NEM_FLUSH_TLB; /* Calling PGMFlushTLB w/o long jump setup doesn't work, ring-3 does it. */
-    }
-
-    if (fUpdateApicBase && rc == VINF_SUCCESS)
-    {
-        LogFlow(("nemR0WinImportState: -> VERR_NEM_UPDATE_APIC_BASE!\n"));
-        rc = VERR_NEM_UPDATE_APIC_BASE;
     }
 
     return rc;
