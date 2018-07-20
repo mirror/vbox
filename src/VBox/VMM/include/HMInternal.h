@@ -932,7 +932,7 @@ typedef struct HMCPU
      *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
     X86PDPE                 aPdpes[4];
 
-    /** Current shadow paging mode. */
+    /** Current shadow paging mode for updating CR4. */
     PGMMODE                 enmShadowMode;
 
     /** The CPU ID of the CPU currently owning the VMCS. Set in

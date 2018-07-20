@@ -680,7 +680,6 @@ static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNod
 #ifdef VBOX_STRICT
 static FNVMATSTATE        pgmR3ResetNoMorePhysWritesFlag;
 #endif
-static void               pgmR3ModeDataSwitch(PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst);
 static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
 
 #ifdef VBOX_WITH_DEBUGGER
@@ -2589,22 +2588,26 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
 
-        pgmR3ModeDataSwitch(pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
-
         uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
         if (   idxShw < RT_ELEMENTS(g_aPgmShadowModeData)
             && g_aPgmShadowModeData[idxShw].pfnRelocate)
             g_aPgmShadowModeData[idxShw].pfnRelocate(pVCpu, offDelta);
+        else
+            AssertFailed();
 
         uintptr_t const idxGst = pVCpu->pgm.s.idxGuestModeData;
         if (   idxGst < RT_ELEMENTS(g_aPgmGuestModeData)
             && g_aPgmGuestModeData[idxGst].pfnRelocate)
             g_aPgmGuestModeData[idxGst].pfnRelocate(pVCpu, offDelta);
+        else
+            AssertFailed();
 
         uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
         if (    idxBth < RT_ELEMENTS(g_aPgmBothModeData)
             && g_aPgmBothModeData[idxBth].pfnRelocate)
             g_aPgmBothModeData[idxBth].pfnRelocate(pVCpu, offDelta);
+        else
+            AssertFailed();
     }
 
     /*
@@ -3254,55 +3257,6 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
 
 
 /**
- * Switch to different (or relocated in the relocate case) mode data.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   enmShw      The shadow paging mode.
- * @param   enmGst      The guest paging mode.
- */
-static void pgmR3ModeDataSwitch(PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst)
-{
-    /*
-     * Update the indexes.
-     */
-    uintptr_t idxGst = pVCpu->pgm.s.idxGuestModeData = pgmModeToType(enmGst);
-    Assert(g_aPgmGuestModeData[idxGst].uType == idxGst);
-    AssertPtr(g_aPgmGuestModeData[idxGst].pfnGetPage);
-    AssertPtr(g_aPgmGuestModeData[idxGst].pfnModifyPage);
-    AssertPtr(g_aPgmGuestModeData[idxGst].pfnGetPDE);
-    AssertPtr(g_aPgmGuestModeData[idxGst].pfnExit);
-    AssertPtr(g_aPgmGuestModeData[idxGst].pfnEnter);
-    AssertPtr(g_aPgmGuestModeData[idxGst].pfnRelocate);
-    NOREF(idxGst);
-
-    uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData = pgmModeToType(enmShw);
-    Assert(g_aPgmShadowModeData[idxShw].uType == idxShw);
-    AssertPtr(g_aPgmShadowModeData[idxShw].pfnGetPage);
-    AssertPtr(g_aPgmShadowModeData[idxShw].pfnModifyPage);
-    AssertPtr(g_aPgmShadowModeData[idxShw].pfnExit);
-    AssertPtr(g_aPgmShadowModeData[idxShw].pfnEnter);
-    AssertPtr(g_aPgmShadowModeData[idxShw].pfnRelocate);
-    NOREF(idxShw);
-
-    uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData = (idxShw - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END + idxGst;
-    Assert(g_aPgmBothModeData[idxBth].uShwType == idxShw);
-    Assert(g_aPgmBothModeData[idxBth].uGstType == idxGst);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnInvalidatePage);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnSyncCR3);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnPrefetchPage);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnVerifyAccessSyncPage);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnMapCR3);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnUnmapCR3);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnEnter);
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnRelocate);
-#ifdef VBOX_STRICT
-    AssertPtr(g_aPgmBothModeData[idxBth].pfnAssertCR3);
-#endif
-    NOREF(idxBth);
-}
-
-
-/**
  * Calculates the shadow paging mode.
  *
  * @returns The shadow paging mode.
@@ -3479,7 +3433,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
 
 
         default:
-            AssertReleaseMsgFailed(("enmGuestMode=%d\n", enmGuestMode));
+            AssertLogRelMsgFailed(("enmGuestMode=%d\n", enmGuestMode));
             *penmSwitcher = VMMSWITCHER_INVALID;
             return PGMMODE_INVALID;
     }
@@ -3574,11 +3528,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
          * Select new switcher.
          */
         int rc = VMMR3SelectSwitcher(pVM, enmSwitcher);
-        if (RT_FAILURE(rc))
-        {
-            AssertReleaseMsgFailed(("VMMR3SelectSwitcher(%d) -> %Rrc\n", enmSwitcher, rc));
-            return rc;
-        }
+        AssertLogRelMsgRCReturn(rc,("VMMR3SelectSwitcher(%d) -> %Rrc\n", enmSwitcher, rc), rc);
     }
 #endif
 
@@ -3611,55 +3561,57 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
 
     /*
-     * Load new paging mode data.
+     * Change the paging mode data indexes.
      */
-    pgmR3ModeDataSwitch(pVCpu, enmShadowMode, enmGuestMode);
+    uintptr_t idxNewGst = pVCpu->pgm.s.idxGuestModeData = pgmModeToType(enmGuestMode);
+    AssertReturn(idxNewGst < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmGuestModeData[idxNewGst].uType == idxNewGst, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnGetPage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnModifyPage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnGetPDE, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnExit, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnEnter, VERR_PGM_MODE_IPE);
+#ifdef IN_RING3
+    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnRelocate, VERR_PGM_MODE_IPE);
+#endif
+
+    uintptr_t const idxNewShw = pVCpu->pgm.s.idxShadowModeData = pgmModeToType(enmShadowMode);
+    AssertReturn(idxNewShw < RT_ELEMENTS(g_aPgmShadowModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmShadowModeData[idxNewShw].uType == idxNewShw, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmShadowModeData[idxNewShw].pfnGetPage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmShadowModeData[idxNewShw].pfnModifyPage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmShadowModeData[idxNewShw].pfnExit, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmShadowModeData[idxNewShw].pfnEnter, VERR_PGM_MODE_IPE);
+#ifdef IN_RING3
+    AssertPtrReturn(g_aPgmShadowModeData[idxNewShw].pfnRelocate, VERR_PGM_MODE_IPE);
+#endif
+
+    uintptr_t const idxNewBth = pVCpu->pgm.s.idxBothModeData = (idxNewShw - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END + idxNewGst;
+    AssertReturn(g_aPgmBothModeData[idxNewBth].uShwType == idxNewShw, VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxNewBth].uGstType == idxNewGst, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnInvalidatePage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnSyncCR3, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnPrefetchPage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnVerifyAccessSyncPage, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnMapCR3, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnUnmapCR3, VERR_PGM_MODE_IPE);
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnEnter, VERR_PGM_MODE_IPE);
+#ifdef IN_RING3
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnRelocate, VERR_PGM_MODE_IPE);
+#endif
+#ifdef VBOX_STRICT
+    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnAssertCR3, VERR_PGM_MODE_IPE);
+#endif
 
     /*
      * Enter new shadow mode (if changed).
      */
     if (enmShadowMode != pVCpu->pgm.s.enmShadowMode)
     {
-        int rc;
-        bool const fIsNewGuestPagingMode64Bits = enmGuestMode >= PGMMODE_AMD64;
         pVCpu->pgm.s.enmShadowMode = enmShadowMode;
-        switch (enmShadowMode)
-        {
-            case PGMMODE_32_BIT:
-                rc = PGM_SHW_NAME_32BIT(Enter)(pVCpu, false);
-                break;
-            case PGMMODE_PAE:
-            case PGMMODE_PAE_NX:
-                rc = PGM_SHW_NAME_PAE(Enter)(pVCpu, false);
-                break;
-            case PGMMODE_AMD64:
-            case PGMMODE_AMD64_NX:
-                rc = PGM_SHW_NAME_AMD64(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
-                break;
-            case PGMMODE_NESTED_32BIT:
-                rc = PGM_SHW_NAME_NESTED_32BIT(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
-                break;
-            case PGMMODE_NESTED_PAE:
-                rc = PGM_SHW_NAME_NESTED_PAE(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
-                break;
-            case PGMMODE_NESTED_AMD64:
-                rc = PGM_SHW_NAME_NESTED_AMD64(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
-                break;
-            case PGMMODE_EPT:
-                rc = PGM_SHW_NAME_EPT(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
-                break;
-            case PGMMODE_REAL:
-            case PGMMODE_PROTECTED:
-            default:
-                AssertReleaseMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
-                return VERR_INTERNAL_ERROR;
-        }
-        if (RT_FAILURE(rc))
-        {
-            AssertReleaseMsgFailed(("Entering enmShadowMode=%d failed: %Rrc\n", enmShadowMode, rc));
-            pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
-            return rc;
-        }
+        int rc = g_aPgmShadowModeData[idxNewShw].pfnEnter(pVCpu, enmGuestMode >= PGMMODE_AMD64);
+        AssertLogRelMsgRCReturnStmt(rc, ("Entering enmShadowMode=%s failed: %Rrc\n", PGMGetModeName(enmShadowMode), rc),
+                                    pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID, rc);
     }
 
     /*
@@ -3670,179 +3622,40 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Enter the new guest and shadow+guest modes.
      */
-    int rc = -1;
-    int rc2 = -1;
-    RTGCPHYS GCPhysCR3 = NIL_RTGCPHYS;
-    pVCpu->pgm.s.enmGuestMode = enmGuestMode;
+    RTGCPHYS GCPhysCR3;
     switch (enmGuestMode)
     {
         case PGMMODE_REAL:
-            rc = PGM_GST_NAME_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-            switch (pVCpu->pgm.s.enmShadowMode)
-            {
-                case PGMMODE_32_BIT:
-                    rc2 = PGM_BTH_NAME_32BIT_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_PAE:
-                case PGMMODE_PAE_NX:
-                    rc2 = PGM_BTH_NAME_PAE_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_NESTED_32BIT:
-                    rc2 = PGM_BTH_NAME_NESTED_32BIT_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_NESTED_PAE:
-                    rc2 = PGM_BTH_NAME_NESTED_PAE_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_NESTED_AMD64:
-                    rc2 = PGM_BTH_NAME_NESTED_AMD64_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_EPT:
-                    rc2 = PGM_BTH_NAME_EPT_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_AMD64:
-                case PGMMODE_AMD64_NX:
-                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
-                default: AssertFailedBreak();
-            }
-            break;
-
         case PGMMODE_PROTECTED:
-            rc = PGM_GST_NAME_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-            switch (pVCpu->pgm.s.enmShadowMode)
-            {
-                case PGMMODE_32_BIT:
-                    rc2 = PGM_BTH_NAME_32BIT_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_PAE:
-                case PGMMODE_PAE_NX:
-                    rc2 = PGM_BTH_NAME_PAE_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_NESTED_32BIT:
-                    rc2 = PGM_BTH_NAME_NESTED_32BIT_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_NESTED_PAE:
-                    rc2 = PGM_BTH_NAME_NESTED_PAE_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_NESTED_AMD64:
-                    rc2 = PGM_BTH_NAME_NESTED_AMD64_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_EPT:
-                    rc2 = PGM_BTH_NAME_EPT_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
-                    break;
-                case PGMMODE_AMD64:
-                case PGMMODE_AMD64_NX:
-                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
-                default: AssertFailedBreak();
-            }
+            GCPhysCR3 = NIL_RTGCPHYS;
             break;
 
         case PGMMODE_32_BIT:
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_PAGE_MASK;
-            rc = PGM_GST_NAME_32BIT(Enter)(pVCpu, GCPhysCR3);
-            switch (pVCpu->pgm.s.enmShadowMode)
-            {
-                case PGMMODE_32_BIT:
-                    rc2 = PGM_BTH_NAME_32BIT_32BIT(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_PAE:
-                case PGMMODE_PAE_NX:
-                    rc2 = PGM_BTH_NAME_PAE_32BIT(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_32BIT:
-                    rc2 = PGM_BTH_NAME_NESTED_32BIT_32BIT(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_PAE:
-                    rc2 = PGM_BTH_NAME_NESTED_PAE_32BIT(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_AMD64:
-                    rc2 = PGM_BTH_NAME_NESTED_AMD64_32BIT(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_EPT:
-                    rc2 = PGM_BTH_NAME_EPT_32BIT(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_AMD64:
-                case PGMMODE_AMD64_NX:
-                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
-                default: AssertFailedBreak();
-            }
             break;
 
         case PGMMODE_PAE_NX:
         case PGMMODE_PAE:
-        {
-            uint32_t u32Dummy, u32Features;
-
-            CPUMGetGuestCpuId(pVCpu, 1, 0, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-            if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
+            if (!pVM->cpum.ro.GuestFeatures.fPae)
                 return VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_FATAL, "PAEmode",
                                          N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (System/Processor)"));
-
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_PAE_PAGE_MASK;
-            rc = PGM_GST_NAME_PAE(Enter)(pVCpu, GCPhysCR3);
-            switch (pVCpu->pgm.s.enmShadowMode)
-            {
-                case PGMMODE_PAE:
-                case PGMMODE_PAE_NX:
-                    rc2 = PGM_BTH_NAME_PAE_PAE(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_32BIT:
-                    rc2 = PGM_BTH_NAME_NESTED_32BIT_PAE(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_PAE:
-                    rc2 = PGM_BTH_NAME_NESTED_PAE_PAE(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_AMD64:
-                    rc2 = PGM_BTH_NAME_NESTED_AMD64_PAE(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_EPT:
-                    rc2 = PGM_BTH_NAME_EPT_PAE(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_32_BIT:
-                case PGMMODE_AMD64:
-                case PGMMODE_AMD64_NX:
-                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
-                default: AssertFailedBreak();
-            }
             break;
-        }
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
         case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_AMD64_PAGE_MASK;
-            rc = PGM_GST_NAME_AMD64(Enter)(pVCpu, GCPhysCR3);
-            switch (pVCpu->pgm.s.enmShadowMode)
-            {
-                case PGMMODE_AMD64:
-                case PGMMODE_AMD64_NX:
-                    rc2 = PGM_BTH_NAME_AMD64_AMD64(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_32BIT:
-                    rc2 = PGM_BTH_NAME_NESTED_32BIT_AMD64(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_PAE:
-                    rc2 = PGM_BTH_NAME_NESTED_PAE_AMD64(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_NESTED_AMD64:
-                    rc2 = PGM_BTH_NAME_NESTED_AMD64_AMD64(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_EPT:
-                    rc2 = PGM_BTH_NAME_EPT_AMD64(Enter)(pVCpu, GCPhysCR3);
-                    break;
-                case PGMMODE_32_BIT:
-                case PGMMODE_PAE:
-                case PGMMODE_PAE_NX:
-                    AssertMsgFailedBreak(("Should use AMD64 shadow mode!\n"));
-                default: AssertFailedBreak();
-            }
             break;
 #endif
-
         default:
-            AssertReleaseMsgFailed(("enmGuestMode=%d\n", enmGuestMode));
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
+            AssertLogRelMsgFailedReturn(("enmGuestMode=%d\n", enmGuestMode), VERR_NOT_IMPLEMENTED);
     }
+
+    pVCpu->pgm.s.enmGuestMode = enmGuestMode;
+
+    int rc = g_aPgmGuestModeData[idxNewGst].pfnEnter(pVCpu, GCPhysCR3);
+    int rc2 = g_aPgmBothModeData[idxNewBth].pfnEnter(pVCpu, GCPhysCR3);
 
     /* Set the new guest CR3. */
     pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
@@ -3857,7 +3670,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
             rc = VINF_SUCCESS;
     }
 
-    /* Notify HM as well. */
+    /*
+     * Notify HM.
+     */
     HMR3PagingModeChanged(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
     return rc;
 }
