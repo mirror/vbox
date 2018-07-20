@@ -32,6 +32,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
+PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 #ifndef IN_RING3
 PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
 #endif
@@ -53,8 +54,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu);
 
-/* currently ring-3 */
-PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 #ifdef IN_RING3
 PGM_BTH_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
 #endif
@@ -85,6 +84,94 @@ RT_C_DECLS_END
     || (PGM_SHW_TYPE == PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_PROT)
 # error "Invalid combination; AMD64 guest implies AMD64 shadow and vice versa"
 #endif
+
+
+/**
+ * Enters the shadow+guest mode.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   GCPhysCR3   The physical address from the CR3 register.
+ */
+PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
+{
+    /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
+     * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables.
+     */
+#if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
+          || PGM_SHW_TYPE == PGM_TYPE_PAE    \
+          || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
+      && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
+          || PGM_GST_TYPE == PGM_TYPE_PROT))
+
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+    Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
+    Assert(!pVM->pgm.s.fNestedPaging);
+
+    pgmLock(pVM);
+    /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
+     *       but any calls to GC need a proper shadow page setup as well.
+     */
+    /* Free the previous root mapping if still active. */
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PPGMPOOLPAGE pOldShwPageCR3 = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
+    if (pOldShwPageCR3)
+    {
+        Assert(pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE);
+
+        /* Mark the page as unlocked; allow flushing again. */
+        pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+
+# ifndef PGM_WITHOUT_MAPPINGS
+        /* Remove the hypervisor mappings from the shadow page table. */
+        pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+# endif
+
+        pgmPoolFreeByPage(pPool, pOldShwPageCR3, NIL_PGMPOOL_IDX, UINT32_MAX);
+        pVCpu->pgm.s.pShwPageCR3R3 = NIL_RTR3PTR;
+        pVCpu->pgm.s.pShwPageCR3RC = NIL_RTRCPTR;
+        pVCpu->pgm.s.pShwPageCR3R0 = NIL_RTR0PTR;
+    }
+
+    /* construct a fake address. */
+    GCPhysCR3 = RT_BIT_64(63);
+    PPGMPOOLPAGE pNewShwPageCR3;
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          NIL_PGMPOOL_IDX, UINT32_MAX, false /*fLockPage*/,
+                          &pNewShwPageCR3);
+    if (rc == VERR_PGM_POOL_FLUSHED)
+    {
+        Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
+        Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+        pgmUnlock(pVM);
+        return VINF_PGM_SYNC_CR3;
+    }
+    AssertRCReturn(rc, rc);
+
+    pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3RC = (RCPTRTYPE(PPGMPOOLPAGE))MMHyperCCToRC(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R0 = (R0PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR0(pVM, pNewShwPageCR3);
+
+    /* Mark the page as locked; disallow flushing. */
+    pgmPoolLockPage(pPool, pNewShwPageCR3);
+
+    /* Set the current hypervisor CR3. */
+    CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
+
+# ifndef PGM_WITHOUT_MAPPINGS
+    /* Apply all hypervisor mappings to the new CR3. */
+    rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
+# endif
+
+    pgmUnlock(pVM);
+    return rc;
+#else
+    NOREF(pVCpu); NOREF(GCPhysCR3);
+    return VINF_SUCCESS;
+#endif
+}
+
 
 #ifndef IN_RING3
 
