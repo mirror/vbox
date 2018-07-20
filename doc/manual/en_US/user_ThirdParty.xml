@@ -3116,7 +3116,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       </sect3>
       <sect3>
         <title>Legal Terms</title>
-       
+
           <para>0. Definitions</para>
           <para>
             Throughout this license,  the terms `package', `FreeType Project',
@@ -3145,8 +3145,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             Robert Wilhelm, and Werner Lemberg.  All rights reserved except as
             specified below.
           </para>
-        
-       
+
+
           <para>1. No Warranty</para>
           <para>
             THE FREETYPE PROJECT  IS PROVIDED `AS IS' WITHOUT  WARRANTY OF ANY
@@ -3156,8 +3156,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             BE LIABLE  FOR ANY DAMAGES CAUSED  BY THE USE OR  THE INABILITY TO
             USE, OF THE FREETYPE PROJECT.
           </para>
-        
-       
+
+
           <para>2. Redistribution</para>
           <para>
             This  license  grants  a  worldwide, royalty-free,  perpetual  and
@@ -3195,8 +3195,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             our work, you  must acknowledge us.  However, no  fee need be paid
             to us.
           </para>
-        
-        
+
+
            <para>3. Advertising</para>
            <para>
             Neither the  FreeType authors and  contributors nor you  shall use
@@ -3218,8 +3218,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
             Project, you indicate that you understand and accept all the terms
             of this license.
           </para>
-        
-        
+
+
           <para>4. Contacts</para>
           <para>
             There are two mailing lists related to FreeType:
@@ -3252,7 +3252,7 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
           <para>
             http://www.freetype.org
           </para>
-        
+
       </sect3>
     </sect2>
     <sect2 id="licVPX">

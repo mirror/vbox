@@ -2385,7 +2385,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             <computeroutput>--vrdeauthlibrary
             default|&lt;name&gt;</computeroutput>: This specifies the
             library used for RDP authentication. See
-            <xref 
+            <xref
             linkend="vbox-auth" />.
           </para>
         </listitem>
@@ -2395,7 +2395,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             <computeroutput>--vrdemulticon on|off</computeroutput>: This
             enables multiple connections to be made to the same VRDE
             server, if the server supports this feature. See
-            <xref 
+            <xref
             linkend="vrde-multiconnection" />.
           </para>
         </listitem>
@@ -2425,7 +2425,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             <computeroutput>--vrdevideochannelquality
             &lt;percent&gt;</computeroutput>: Specifies the image
             quality for video redirection. See
-            <xref 
+            <xref
             linkend="vrde-videochannel" />.
           </para>
         </listitem>
@@ -3605,7 +3605,7 @@ Virtual system 0:
           <computeroutput>vrdevideochannelquality
           &lt;percent&gt;</computeroutput>: Sets the image quality for
           video redirection. See
-          <xref 
+          <xref
         linkend="vrde-videochannel" />.
         </para>
       </listitem>
@@ -7890,7 +7890,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
           already installed Guest Additions 4.0 and later).
         </para>
 
-<screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; updatega|updateadditions|updateguestadditions 
+<screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; updatega|updateadditions|updateguestadditions
            [common-options]
            [--source &lt;New .ISO path&gt;]
            [--wait-start]
