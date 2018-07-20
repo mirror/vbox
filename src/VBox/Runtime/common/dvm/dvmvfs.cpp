@@ -971,7 +971,7 @@ static DECLCALLBACK(int) rtDvmVfsDir_Open(void *pvThis, const char *pszEntry, ui
             else if (fFlags & RTVFSOBJ_F_OPEN_SYMLINK)
             {
                 /* Create symlink object */
-                RTVFSSYMLINK hVfsSym;
+                RTVFSSYMLINK hVfsSym = NIL_RTVFSSYMLINK; /* (older gcc maybe used uninitialized) */
                 rc = rtDvmVfsCreateSymlinkForVolume(hVolume, pThis->pVfsVol ? pThis->pVfsVol->hVolMgr : NIL_RTDVM, iVol,
                                                     pszSymlink, &hVfsSym);
                 if (RT_SUCCESS(rc))
