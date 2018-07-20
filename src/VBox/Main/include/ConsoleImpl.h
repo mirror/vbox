@@ -620,6 +620,9 @@ private:
     HRESULT i_suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *pfResume);
     void    i_resumeAfterConfigChange(PUVM pUVM);
 
+    uint32_t i_getAudioDriverValU32(IVirtualBox *pVirtualBox, IMachine *pMachine,
+                                    const char *pszDriverName, const char *pszValue, uint32_t uDefault);
+
     static DECLCALLBACK(int) i_configConstructor(PUVM pUVM, PVM pVM, void *pvConsole);
     int i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVirtualBox, IMachine *pMachine,
                             PCFGMNODE pLUN, const char *pszDriverName);

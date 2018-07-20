@@ -3427,8 +3427,43 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     return rc;
 }
 
+/**
+ * Retrieves an uint32_t value from audio's extra data branch and returns a default value
+ * if not found or an invalid value is found.
+ *
+ * @return VBox status code.
+ * @param  pVirtualBox          Pointer to IVirtualBox instance.
+ * @param  pMachine             Pointer to IMachine instance.
+ * @param  pszDriverName        Audio driver name to retrieve value for.
+ * @param  pszValue             Value name to retrieve.
+ * @param  uDefault             Default value to return if value not found / invalid.
+ */
+uint32_t Console::i_getAudioDriverValU32(IVirtualBox *pVirtualBox, IMachine *pMachine,
+                                         const char *pszDriverName, const char *pszValue, uint32_t uDefault)
+{
+    Utf8StrFmt strPath("VBoxInternal2/Audio/%s/%s", pszDriverName, pszValue);
+
+    Utf8Str strTmp;
+    GetExtraDataBoth(pVirtualBox, pMachine, strPath.c_str(), &strTmp);
+
+    if (strTmp.isNotEmpty())
+        return strTmp.toUInt32();
+
+    return uDefault;
+}
+
+/**
+ * Configures an audio driver via CFGM by getting (optional) values from extra data.
+ *
+ * @return VBox status code.
+ * @param  pAudioAdapter        Pointer to audio adapter instance. Needed for the driver's input / output configuration.
+ * @param  pVirtualBox          Pointer to IVirtualBox instance.
+ * @param  pMachine             Pointer to IMachine instance.
+ * @param  pLUN                 Pointer to CFGM node of LUN (the driver) to configure.
+ * @param  pszDrvName           Name of the driver to configure.
+ */
 int Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVirtualBox, IMachine *pMachine,
-                                 PCFGMNODE pLUN, const char *pszDriverName)
+                                 PCFGMNODE pLUN, const char *pszDrvName)
 {
 #define H()         AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
 
@@ -3437,9 +3472,6 @@ int Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVir
     Utf8Str strTmp;
     GetExtraDataBoth(pVirtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
     const uint64_t fDebugEnabled = (strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1")) ? 1 : 0;
-
-    Utf8Str strDebugPathOut;
-    GetExtraDataBoth(pVirtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
 
     BOOL fAudioEnabledIn = FALSE;
     hrc = pAudioAdapter->COMGETTER(EnabledIn)(&fAudioEnabledIn);                             H();
@@ -3450,11 +3482,25 @@ int Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVir
 
     PCFGMNODE pCfg;
     InsertConfigNode(pLUN,   "Config", &pCfg);
-        InsertConfigString (pCfg, "DriverName",    pszDriverName);
+        InsertConfigString (pCfg, "DriverName",    pszDrvName);
         InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
         InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
-        InsertConfigInteger(pCfg, "DebugEnabled",  fDebugEnabled);
-        InsertConfigString (pCfg, "DebugPathOut",  strDebugPathOut.c_str());
+
+        if (fDebugEnabled)
+        {
+            InsertConfigInteger(pCfg, "DebugEnabled",  fDebugEnabled);
+
+            Utf8Str strDebugPathOut;
+            GetExtraDataBoth(pVirtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
+            InsertConfigString(pCfg, "DebugPathOut",  strDebugPathOut.c_str());
+        }
+
+        InsertConfigInteger(pCfg, "PeriodMs",
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PeriodMs", 0 /* Default */));
+        InsertConfigInteger(pCfg, "BufferSizeMs",
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "BufferSizeMs", 0 /* Default */));
+        InsertConfigInteger(pCfg, "PreBufferMs",
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PreBufferMs", UINT32_MAX /* Default */));
 
     PCFGMNODE pLunL1;
     InsertConfigNode(pLUN, "AttachedDriver", &pLunL1);
@@ -3465,9 +3511,9 @@ int Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVir
             hrc = pMachine->COMGETTER(Name)(bstrTmp.asOutParam());                           H();
             InsertConfigString(pCfg, "StreamName", bstrTmp);
 
-        InsertConfigString(pLunL1, "Driver", pszDriverName);
+        InsertConfigString(pLunL1, "Driver", pszDrvName);
 
-    LogFlowFunc(("szDrivName=%s, hrc=%Rhrc\n", pszDriverName, hrc));
+    LogFlowFunc(("szDrivName=%s, hrc=%Rhrc\n", pszDrvName, hrc));
     return hrc;
 
 #undef H
