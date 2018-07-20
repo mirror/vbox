@@ -167,7 +167,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_Duo_T2600_2_16GHz[] =
     MFZ(0x000002ff, "IA32_MTRR_DEF_TYPE", Ia32MtrrDefType, Ia32MtrrDefType, GuestMsrs.msr.MtrrDefType, 0, UINT64_C(0xfffffffffffff3f8)),
     MFX(0x00000345, "IA32_PERF_CAPABILITIES", Ia32PerfCapabilities, ReadOnly, 0, 0, 0), /* value=0x0 */
     RFN(0x00000400, 0x00000417, "IA32_MCi_CTL_STATUS_ADDR_MISC", Ia32McCtlStatusAddrMiscN, Ia32McCtlStatusAddrMiscN),
-    MFX(0x00000480, "IA32_VMX_BASIC", Ia32VmxBase, ReadOnly, UINT64_C(0x1b040000000005), 0, 0), /* value=0x1b0400`00000005 */
+    MFX(0x00000480, "IA32_VMX_BASIC", Ia32VmxBasic, ReadOnly, UINT64_C(0x1b040000000005), 0, 0), /* value=0x1b0400`00000005 */
     MFX(0x00000481, "IA32_VMX_PINBASED_CTLS", Ia32VmxPinbasedCtls, ReadOnly, UINT64_C(0x1f00000016), 0, 0), /* value=0x1f`00000016 */
     MFX(0x00000482, "IA32_VMX_PROCBASED_CTLS", Ia32VmxProcbasedCtls, ReadOnly, UINT64_C(0x7781fffe0401e172), 0, 0), /* value=0x7781fffe`0401e172 */
     MFX(0x00000483, "IA32_VMX_EXIT_CTLS", Ia32VmxExitCtls, ReadOnly, UINT64_C(0x3edff00036dff), 0, 0), /* value=0x3edff`00036dff */

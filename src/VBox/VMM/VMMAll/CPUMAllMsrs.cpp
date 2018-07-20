@@ -1287,7 +1287,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uin
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
@@ -5042,7 +5042,7 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Ia32TscDeadline,
     cpumMsrRd_Ia32X2ApicN,
     cpumMsrRd_Ia32DebugInterface,
-    cpumMsrRd_Ia32VmxBase,
+    cpumMsrRd_Ia32VmxBasic,
     cpumMsrRd_Ia32VmxPinbasedCtls,
     cpumMsrRd_Ia32VmxProcbasedCtls,
     cpumMsrRd_Ia32VmxExitCtls,
@@ -5759,7 +5759,7 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Ia32TscDeadline);
     CPUM_ASSERT_RD_MSR_FN(Ia32X2ApicN);
     CPUM_ASSERT_RD_MSR_FN(Ia32DebugInterface);
-    CPUM_ASSERT_RD_MSR_FN(Ia32VmxBase);
+    CPUM_ASSERT_RD_MSR_FN(Ia32VmxBasic);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxPinbasedCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxProcbasedCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxExitCtls);

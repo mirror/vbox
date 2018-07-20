@@ -179,7 +179,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
     MFX(0x000003f1, "IA32_PEBS_ENABLE", Ia32PebsEnable, Ia32PebsEnable, 0, UINT64_C(0xfffffffffffffffe), 0), /* value=0x0 */
     RFN(0x00000400, 0x00000417, "IA32_MCi_CTL_STATUS_ADDR_MISC", Ia32McCtlStatusAddrMiscN, Ia32McCtlStatusAddrMiscN),
     MFN(0x00000478, "CPUID1_FEATURE_MASK", IntelCpuId1FeatureMaskEcdx, IntelCpuId1FeatureMaskEcdx), /* value=0xffffffff`ffffffff */
-    MFX(0x00000480, "IA32_VMX_BASIC", Ia32VmxBase, ReadOnly, UINT64_C(0x5a08000000000d), 0, 0), /* value=0x5a0800`0000000d */
+    MFX(0x00000480, "IA32_VMX_BASIC", Ia32VmxBasic, ReadOnly, UINT64_C(0x5a08000000000d), 0, 0), /* value=0x5a0800`0000000d */
     MFX(0x00000481, "IA32_VMX_PINBASED_CTLS", Ia32VmxPinbasedCtls, ReadOnly, UINT64_C(0x3f00000016), 0, 0), /* value=0x3f`00000016 */
     MFX(0x00000482, "IA32_VMX_PROCBASED_CTLS", Ia32VmxProcbasedCtls, ReadOnly, UINT64_C(0xf7f9fffe0401e172), 0, 0), /* value=0xf7f9fffe`0401e172 */
     MFX(0x00000483, "IA32_VMX_EXIT_CTLS", Ia32VmxExitCtls, ReadOnly, UINT64_C(0x3ffff00036dff), 0, 0), /* value=0x3ffff`00036dff */

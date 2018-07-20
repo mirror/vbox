@@ -453,7 +453,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Ia32TscDeadline,
     kCpumMsrRdFn_Ia32X2ApicN,
     kCpumMsrRdFn_Ia32DebugInterface,
-    kCpumMsrRdFn_Ia32VmxBase,               /**< Takes real value as reference. */
+    kCpumMsrRdFn_Ia32VmxBasic,              /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxPinbasedCtls,       /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxProcbasedCtls,      /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxExitCtls,           /**< Takes real value as reference. */
