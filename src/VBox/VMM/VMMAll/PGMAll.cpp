@@ -2548,10 +2548,9 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
     }
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
 
-    if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
+    RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
+    if (GCPhysOldCR3 != GCPhysCR3)
     {
-        RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
-
         uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
         AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
@@ -2831,8 +2830,8 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
  * @returns VBox status code, with the following informational code for
  *          VM scheduling.
  * @retval  VINF_SUCCESS if the was no change, or it was successfully dealt with.
- * @retval  VINF_PGM_CHANGE_MODE if we're in RC or R0 and the mode changes.
- *          (I.e. not in R3.)
+ * @retval  VINF_PGM_CHANGE_MODE if we're in RC the mode changes.  This will
+ *          NOT be returned in ring-3 or ring-0.
  * @retval  VINF_EM_SUSPEND or VINF_EM_OFF on a fatal runtime error. (R3 only)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -2890,7 +2889,7 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
     /* Flush the TLB */
     PGM_INVL_VCPU_TLBS(pVCpu);
 
-#if defined(IN_RING3) || defined(IN_RING0)
+#ifndef IN_RC
     return PGMHCChangeMode(pVCpu->CTX_SUFF(pVM), pVCpu, enmGuestMode);
 #else
     LogFlow(("PGMChangeMode: returns VINF_PGM_CHANGE_MODE.\n"));

@@ -6518,7 +6518,6 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
     VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
     AssertMsg(   rcStrict == VINF_SUCCESS
-              || rcStrict == VINF_PGM_CHANGE_MODE
               || rcStrict == VINF_PGM_SYNC_CR3
               || rcStrict == VINF_IEM_RAISED_XCPT,
               ("hmR0SvmExitReadCRx: IEMExecOne failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -6622,7 +6621,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     }
     else
-        Assert(rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_PGM_CHANGE_MODE || rcStrict == VINF_PGM_SYNC_CR3);
+        Assert(rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_PGM_SYNC_CR3);
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 

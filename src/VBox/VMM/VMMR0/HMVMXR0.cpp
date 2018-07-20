@@ -11881,7 +11881,6 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PVMXTRANSIENT pV
  * VM-exit.
  *
  * @retval VINF_SUCCESS when guest execution can continue.
- * @retval VINF_PGM_CHANGE_MODE when shadow paging mode changed, back to ring-3.
  * @retval VINF_PGM_SYNC_CR3 CR3 sync is required, back to ring-3.
  * @retval VERR_EM_INTERPRETER when something unexpected happened, fallback to
  *         interpreter.
@@ -11910,7 +11909,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                                                  VMX_EXIT_QUAL_CRX_GENREG(uExitQualification));
             AssertMsg(   rcStrict == VINF_SUCCESS
                       || rcStrict == VINF_IEM_RAISED_XCPT
-                      || rcStrict == VINF_PGM_CHANGE_MODE
                       || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
             switch (VMX_EXIT_QUAL_CRX_REGISTER(uExitQualification))
@@ -12037,12 +12035,12 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
         case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
+            /* Note! LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here. */
             rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr,
                                           VMX_EXIT_QUAL_CRX_LMSW_DATA(uExitQualification));
             AssertMsg(   rcStrict == VINF_SUCCESS
                       || rcStrict == VINF_IEM_RAISED_XCPT
-                      || rcStrict == VINF_PGM_CHANGE_MODE,
-                      ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                      , ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
@@ -13186,7 +13184,6 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
               || rc == VERR_EM_INTERPRETER
               || rc == VINF_EM_HALT
               || rc == VINF_EM_RESCHEDULE
-              || rc == VINF_PGM_CHANGE_MODE
               , ("#GP Unexpected rc=%Rrc\n", rc));
     return rc;
 }
