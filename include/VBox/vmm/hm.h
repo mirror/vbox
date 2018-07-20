@@ -133,6 +133,7 @@ VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family,
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
+VMM_INT_DECL(void)              HMPagingModeChanged(PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -237,7 +238,6 @@ VMMR3DECL(bool)                 HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChanged(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool)            HMR3IsActive(PVMCPU pVCpu);
-VMMR3_INT_DECL(void)            HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMMR3_INT_DECL(int)             HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3_INT_DECL(int)             HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3_INT_DECL(int)             HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu);

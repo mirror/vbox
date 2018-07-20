@@ -680,7 +680,6 @@ static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNod
 #ifdef VBOX_STRICT
 static FNVMATSTATE        pgmR3ResetNoMorePhysWritesFlag;
 #endif
-static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
 
 #ifdef VBOX_WITH_DEBUGGER
 static FNDBGCCMD          pgmR3CmdError;
@@ -3267,7 +3266,8 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
  * @param   penmSwitcher    Where to store the switcher to use.
  *                          VMMSWITCHER_INVALID means no change.
  */
-static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher)
+static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode,
+                                 VMMSWITCHER *penmSwitcher)
 {
     VMMSWITCHER enmSwitcher = VMMSWITCHER_INVALID;
     switch (enmGuestMode)
@@ -3300,13 +3300,6 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
-#ifdef DEBUG_bird
-                    if (RTEnvExist("VBOX_32BIT"))
-                    {
-                        enmShadowMode = PGMMODE_32_BIT;
-                        enmSwitcher = VMMSWITCHER_PAE_TO_32;
-                    }
-#endif
                     break;
 
                 case SUPPAGINGMODE_AMD64:
@@ -3315,16 +3308,11 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                 case SUPPAGINGMODE_AMD64_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
-#ifdef DEBUG_bird
-                    if (RTEnvExist("VBOX_32BIT"))
-                    {
-                        enmShadowMode = PGMMODE_32_BIT;
-                        enmSwitcher = VMMSWITCHER_AMD64_TO_32;
-                    }
-#endif
                     break;
 
-                default: AssertMsgFailed(("enmHostMode=%d\n", enmHostMode)); break;
+                default:
+                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
+                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
             }
             break;
 
@@ -3343,13 +3331,6 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
-#ifdef DEBUG_bird
-                    if (RTEnvExist("VBOX_32BIT"))
-                    {
-                        enmShadowMode = PGMMODE_32_BIT;
-                        enmSwitcher = VMMSWITCHER_PAE_TO_32;
-                    }
-#endif
                     break;
 
                 case SUPPAGINGMODE_AMD64:
@@ -3358,16 +3339,11 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                 case SUPPAGINGMODE_AMD64_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
-#ifdef DEBUG_bird
-                    if (RTEnvExist("VBOX_32BIT"))
-                    {
-                        enmShadowMode = PGMMODE_32_BIT;
-                        enmSwitcher = VMMSWITCHER_AMD64_TO_32;
-                    }
-#endif
                     break;
 
-                default: AssertMsgFailed(("enmHostMode=%d\n", enmHostMode)); break;
+                default:
+                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
+                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
             }
             break;
 
@@ -3397,7 +3373,9 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                     enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
                     break;
 
-                default: AssertMsgFailed(("enmHostMode=%d\n", enmHostMode)); break;
+                default:
+                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
+                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
             }
             break;
 
@@ -3427,15 +3405,15 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                     enmSwitcher = VMMSWITCHER_AMD64_TO_AMD64;
                     break;
 
-                default: AssertMsgFailed(("enmHostMode=%d\n", enmHostMode)); break;
+                default:
+                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
+                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
             }
             break;
 
-
         default:
-            AssertLogRelMsgFailed(("enmGuestMode=%d\n", enmGuestMode));
-            *penmSwitcher = VMMSWITCHER_INVALID;
-            return PGMMODE_INVALID;
+            AssertLogRelMsgFailedReturnStmt(("enmGuestMode=%d\n", enmGuestMode),
+                                            *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
     }
 
     /*
@@ -3485,7 +3463,8 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                             break;
 #endif
                         default:
-                            AssertLogRelFailedReturn(PGMMODE_INVALID);
+                            AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode),
+                                                            *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
                     }
             }
         }
@@ -3518,9 +3497,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
      */
     VMMSWITCHER enmSwitcher   = VMMSWITCHER_INVALID;
     PGMMODE     enmShadowMode = PGMMODE_INVALID;
-    enmShadowMode = pgmR3CalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode, &enmSwitcher);
+    enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode, &enmSwitcher);
 
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (   enmSwitcher != VMMSWITCHER_INVALID
         && VM_IS_RAW_MODE_ENABLED(pVM))
     {
@@ -3673,7 +3652,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Notify HM.
      */
-    HMR3PagingModeChanged(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
+    HMPagingModeChanged(pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
     return rc;
 }
 

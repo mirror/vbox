@@ -1918,39 +1918,6 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
 
 
 /**
- * Notification callback which is called whenever there is a chance that a CR3
- * value might have changed.
- *
- * This is called by PGM.
- *
- * @param   pVM            The cross context VM structure.
- * @param   pVCpu          The cross context virtual CPU structure.
- * @param   enmShadowMode  New shadow paging mode.
- * @param   enmGuestMode   New guest paging mode.
- */
-VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
-{
-    RT_NOREF_PV(pVM);
-
-    /* Ignore page mode changes during state loading. */
-    if (VMR3GetState(pVCpu->pVMR3) == VMSTATE_LOADING)
-        return;
-
-    pVCpu->hm.s.enmShadowMode = enmShadowMode;
-
-    /*
-     * If the guest left protected mode VMX execution, we'll have to be
-     * extra careful if/when the guest switches back to protected mode.
-     */
-    if (enmGuestMode == PGMMODE_REAL)
-        pVCpu->hm.s.vmx.fWasInRealMode = true;
-
-    Log4(("HMR3PagingModeChanged: Guest paging mode '%s', shadow paging mode '%s'\n", PGMGetModeName(enmGuestMode),
-          PGMGetModeName(enmShadowMode)));
-}
-
-
-/**
  * Terminates the HM.
  *
  * Termination means cleaning up and freeing all resources,
