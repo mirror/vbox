@@ -33,18 +33,3 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu);
 RT_C_DECLS_END
 
-
-/**
- * Relocate any GC pointers related to shadow mode paging.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offDelta    The relocation offset.
- */
-PGM_BTH_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
-{
-    /* nothing special to do here - InitData does the job. */
-    NOREF(pVCpu); NOREF(offDelta);
-    return VINF_SUCCESS;
-}
-
