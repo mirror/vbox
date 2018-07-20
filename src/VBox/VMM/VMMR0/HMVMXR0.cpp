@@ -5904,7 +5904,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             case IEMXCPTRAISE_PREV_EVENT:
             {
                 uint32_t u32ErrCode;
-                if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo))
+                if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
                     rc2 = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
                     AssertRCReturn(rc2, rc2);
@@ -6705,7 +6705,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
 
     uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
     uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo);
-    bool     fErrorCodeValid = VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntInfo);
+    bool     fErrorCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVCpu->hm.s.Event.u64IntInfo);
     uint32_t uErrorCode      = pVCpu->hm.s.Event.u32ErrCode;
 
     /* If a trap was already pending, we did something wrong! */
@@ -12312,7 +12312,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             RTGCUINTPTR    GCPtrFaultAddress;
             uint32_t const uIntType        = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
             uint32_t const uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
-            bool const     fErrorCodeValid = VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo);
+            bool const     fErrorCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo);
             if (fErrorCodeValid)
             {
                 rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
