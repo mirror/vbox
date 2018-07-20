@@ -986,9 +986,7 @@ include $(FILE_KBUILD_SUB_FOOTER)
 
 
 # Alias the PGM templates to the object in which they are defined.
-PGMInternal.o \
-PGMBth.o   	PGMGst.o   	PGMShw.o \
-PGMBth.obj 	PGMGst.obj 	PGMShw.obj: 	PGM.o
+PGMInternal.o: 	PGM.o
 
 PGMAllBth.o   	PGMAllGst.o   	PGMAllShw.o \
 PGMAllBth.obj 	PGMAllGst.obj 	PGMAllShw.obj: 	PGMAll.o
