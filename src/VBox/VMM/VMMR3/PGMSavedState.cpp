@@ -3226,7 +3226,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
             {
                 PVMCPU pVCpu = &pVM->aCpus[i];
 
-                rc = PGMR3ChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
+                rc = PGMHCChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
                 AssertLogRelRCReturn(rc, rc);
 
                 /* Update the PSE, NX flags and validity masks. */

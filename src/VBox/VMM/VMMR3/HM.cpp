@@ -1184,11 +1184,12 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  */
 static void hmR3DisableRawMode(PVM pVM)
 {
+/** @todo r=bird: HM shouldn't be doing this crap. */
     /* Reinit the paging mode to force the new shadow mode. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
+        PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL);
     }
 }
 

@@ -444,6 +444,7 @@ VMMDECL(int)        PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal);
 VMMDECL(int)        PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 VMMDECL(int)        PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3);
 VMMDECL(int)        PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer);
+VMM_INT_DECL(int)   PGMHCChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode);
 VMMDECL(void)       PGMCr0WpEnabled(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetShadowMode(PVMCPU pVCpu);
@@ -809,7 +810,6 @@ VMMR3_INT_DECL(void)    PGMR3ResetNoMorePhysWritesFlag(PVM pVM);
 VMMR3_INT_DECL(void)    PGMR3MemSetup(PVM pVM, bool fReset);
 VMMR3DECL(int)      PGMR3Term(PVM pVM);
 VMMR3DECL(int)      PGMR3LockCall(PVM pVM);
-VMMR3DECL(int)      PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode);
 
 VMMR3DECL(int)      PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage);

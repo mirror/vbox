@@ -133,7 +133,7 @@ VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family,
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
-VMM_INT_DECL(void)              HMPagingModeChanged(PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
+VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 /** @} */
 
 /** @name All-context SVM helpers.

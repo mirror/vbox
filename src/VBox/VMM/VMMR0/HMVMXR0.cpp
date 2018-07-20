@@ -11904,6 +11904,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     {
         case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:       /* MOV to CRx */
         {
+            uint32_t const uOldCr0 = pVCpu->cpum.GstCtx.cr0;
             rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, pVmxTransient->cbInstr,
                                                  VMX_EXIT_QUAL_CRX_REGISTER(uExitQualification),
                                                  VMX_EXIT_QUAL_CRX_GENREG(uExitQualification));
@@ -11920,6 +11921,27 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                                      HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Write);
                     Log4(("CRX CR0 write rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr0));
+
+                    /*
+                     * This is a kludge for handling switches back to real mode when we try to use
+                     * V86 mode to run real mode code directly.  Problem is that V86 mode cannot
+                     * deal with special selector values, so we have to return to ring-3 and run
+                     * there till the selector values are V86 mode compatible.
+                     *
+                     * Note! Using VINF_EM_RESCHEDULE_REM here rather than VINF_EM_RESCHEDULE since the
+                     *       latter is an alias for VINF_IEM_RAISED_XCPT which is converted to VINF_SUCCESs
+                     *       at the end of this function.
+                     */
+                    if (   rc == VINF_SUCCESS
+                        && !pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest
+                        && CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx)
+                        && (uOldCr0 & X86_CR0_PE)
+                        && !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE) )
+                    {
+                        /** @todo check selectors rather than returning all the time.  */
+                        Log4(("CRx CR0 write: back to real mode -> VINF_EM_RESCHEDULE_REM\n"));
+                        rcStrict = VINF_EM_RESCHEDULE_REM;
+                    }
                     break;
                 }
 
@@ -13139,6 +13161,19 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
                 /** @todo We have to set pending-debug exceptions here when the guest is
                  *        single-stepping depending on the instruction that was interpreted. */
+
+                /*
+                 * HACK ALERT! Detect mode change and go to ring-3 to properly exit this
+                 *             real mode emulation stuff.
+                 */
+                if (   rc == VINF_SUCCESS
+                    && (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE))
+                {
+                    Log4(("hmR0VmxExitXcptGP: mode changed -> VINF_EM_RESCHEDULE\n"));
+                    /** @todo Exit fRealOnV86Active here w/o dropping back to ring-3. */
+                    rc = VINF_EM_RESCHEDULE;
+                }
+
                 Log4Func(("#GP rc=%Rrc\n", rc));
                 break;
             }
@@ -13147,8 +13182,12 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     else
         rc = VERR_EM_INTERPRETER;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT,
-              ("#GP Unexpected rc=%Rrc\n", rc));
+    AssertMsg(   rc == VINF_SUCCESS
+              || rc == VERR_EM_INTERPRETER
+              || rc == VINF_EM_HALT
+              || rc == VINF_EM_RESCHEDULE
+              || rc == VINF_PGM_CHANGE_MODE
+              , ("#GP Unexpected rc=%Rrc\n", rc));
     return rc;
 }
 

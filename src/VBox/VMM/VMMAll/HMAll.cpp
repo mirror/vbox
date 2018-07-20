@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_HM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
 #include "HMInternal.h"
@@ -542,23 +543,25 @@ VMM_INT_DECL(void) HMNstGstVmxVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason)
 }
 
 
+#ifndef IN_RC
 /**
  * Notification callback which is called whenever there is a chance that a CR3
  * value might have changed.
  *
  * This is called by PGM.
  *
- * @param   pVCpu          The cross context virtual CPU structure.
- * @param   enmShadowMode  New shadow paging mode.
- * @param   enmGuestMode   New guest paging mode.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   enmShadowMode   New shadow paging mode.
+ * @param   enmGuestMode    New guest paging mode.
  */
-VMM_INT_DECL(void) HMPagingModeChanged(PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
+VMM_INT_DECL(void) HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
-#ifdef IN_RING3
+# ifdef IN_RING3
     /* Ignore page mode changes during state loading. */
-    if (VMR3GetState(pVCpu->pVMR3) == VMSTATE_LOADING)
+    if (VMR3GetState(pVM) == VMSTATE_LOADING)
         return;
-#endif
+# endif
 
     pVCpu->hm.s.enmShadowMode = enmShadowMode;
 
@@ -569,7 +572,26 @@ VMM_INT_DECL(void) HMPagingModeChanged(PVMCPU pVCpu, PGMMODE enmShadowMode, PGMM
     if (enmGuestMode == PGMMODE_REAL)
         pVCpu->hm.s.vmx.fWasInRealMode = true;
 
-    Log4(("HMR3PagingModeChanged: Guest paging mode '%s', shadow paging mode '%s'\n", PGMGetModeName(enmGuestMode),
+# ifdef IN_RING0
+    /*
+     * We need to tickle SVM and VT-x state updates.
+     *
+     * Note! We could probably reduce this depending on what exactly changed.
+     */
+    if (VM_IS_HM_ENABLED(pVM))
+    {
+        CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER); /* No recursion! */
+        uint64_t fChanged = HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_CR3 | HM_CHANGED_GUEST_CR4 | HM_CHANGED_GUEST_EFER_MSR;
+        if (pVM->hm.s.svm.fSupported)
+            fChanged |= HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS;
+        else
+            fChanged |= HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS | HM_CHANGED_VMX_ENTRY_CTLS | HM_CHANGED_VMX_EXIT_CTLS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, fChanged);
+    }
+# endif
+
+    Log4(("HMHCPagingModeChanged: Guest paging mode '%s', shadow paging mode '%s'\n", PGMGetModeName(enmGuestMode),
           PGMGetModeName(enmShadowMode)));
 }
+#endif /* !IN_RC */
 
