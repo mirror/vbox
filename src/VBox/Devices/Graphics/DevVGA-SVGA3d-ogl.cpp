@@ -87,7 +87,6 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 #define D3D_TO_OGL_Y_COORD(ptrSurface, y_coordinate)                (ptrSurface->pMipmapLevels[0].mipmapSize.height - (y_coordinate))
 #define D3D_TO_OGL_Y_COORD_MIPLEVEL(ptrMipLevel, y_coordinate)      (ptrMipLevel->size.height - (y_coordinate))
 
-//#define MANUAL_FLIP_SURFACE_DATA
 /* Enable to render the result of DrawPrimitive in a seperate window. */
 //#define DEBUG_GFX_WINDOW
 
@@ -2201,29 +2200,13 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
          pDstBox->x + pDstBox->w, D3D_TO_OGL_Y_COORD(pDstSurface, pDstBox->y)));
 
     pState->ext.glBlitFramebuffer(pSrcBox->x,
-#ifdef MANUAL_FLIP_SURFACE_DATA
-                                  D3D_TO_OGL_Y_COORD(pSrcSurface, pSrcBox->y + pSrcBox->h), /* inclusive */
-#else
                                   pSrcBox->y,
-#endif
                                   pSrcBox->x + pSrcBox->w,                                  /* exclusive. */
-#ifdef MANUAL_FLIP_SURFACE_DATA
-                                  D3D_TO_OGL_Y_COORD(pSrcSurface, pSrcBox->y),              /* exclusive */
-#else
                                   pSrcBox->y + pSrcBox->h,
-#endif
                                   pDstBox->x,
-#ifdef MANUAL_FLIP_SURFACE_DATA
-                                  D3D_TO_OGL_Y_COORD(pDstSurface, pDstBox->y + pDstBox->h), /* inclusive. */
-#else
                                   pDstBox->y,
-#endif
                                   pDstBox->x + pDstBox->w,                                  /* exclusive. */
-#ifdef MANUAL_FLIP_SURFACE_DATA
-                                  D3D_TO_OGL_Y_COORD(pDstSurface, pDstBox->y),              /* exclusive */
-#else
                                   pDstBox->y + pDstBox->h,
-#endif
                                   GL_COLOR_BUFFER_BIT,
                                   (enmMode == SVGA3D_STRETCH_BLT_POINT) ? GL_NEAREST : GL_LINEAR);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -2414,24 +2397,12 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
 
             offHst = pBox->x * pSurface->cbBlock + pBox->y * pMipLevel->cbSurfacePitch;
             cbSurfacePitch = pMipLevel->cbSurfacePitch;
-
-#ifdef MANUAL_FLIP_SURFACE_DATA
-            pBufferStart =   pDoubleBuffer
-                           + pBox->x * pSurface->cbBlock
-                           + pMipLevel->cbSurface - pBox->y * cbSurfacePitch
-                           - cbSurfacePitch;      /* flip image during copy */
-#else
-#endif
         }
         else
         {
             /* The buffer will contain only the copied rectangle. */
             offHst = 0;
             cbSurfacePitch = pBox->w * pSurface->cbBlock;
-#ifdef MANUAL_FLIP_SURFACE_DATA
-            pBufferStart = pDoubleBuffer + cbSurfacePitch * pBox->h - cbSurfacePitch;      /* flip image during copy */
-#else
-#endif
         }
 
         uint32_t const offGst = pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch; /// @todo compressed fmts
@@ -2441,11 +2412,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                pDoubleBuffer,
                                pMipLevel->cbSurface,
                                offHst,
-#ifdef MANUAL_FLIP_SURFACE_DATA
-                               -(int32_t)cbSurfacePitch,
-#else
                                cbSurfacePitch,
-#endif
                                GuestPtr,
                                offGst,
                                cbGuestPitch,
