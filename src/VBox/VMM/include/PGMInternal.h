@@ -3130,7 +3130,9 @@ typedef struct PGMMODEDATAGST
     DECLCALLBACKMEMBER(int,         pfnGetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde);
     DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
     DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPU pVCpu);
+#ifdef IN_RING3
     DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+#endif
 } PGMMODEDATAGST;
 
 /** The length of g_aPgmGuestModeData. */

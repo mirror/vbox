@@ -175,13 +175,97 @@
 RT_C_DECLS_BEGIN
 PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags);
-#ifdef IN_RING3  /* for now */
 PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
 PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu);
+#ifdef IN_RING3
 PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
 #endif
 RT_C_DECLS_END
 
+
+/**
+ * Enters the shadow mode.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu                   The cross context virtual CPU structure.
+ * @param   fIs64BitsPagingMode     New shadow paging mode is for 64 bits? (only relevant for 64 bits guests on a 32 bits AMD-V nested paging host)
+ */
+PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
+{
+#if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
+
+# if PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) && HC_ARCH_BITS == 32
+    /* Must distinguish between 32 and 64 bits guest paging modes as we'll use
+       a different shadow paging root/mode in both cases. */
+    RTGCPHYS     GCPhysCR3 = (fIs64BitsPagingMode) ? RT_BIT_64(63) : RT_BIT_64(62);
+# else
+    RTGCPHYS     GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
+# endif
+    PPGMPOOLPAGE pNewShwPageCR3;
+    PVM          pVM       = pVCpu->CTX_SUFF(pVM);
+
+    Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
+    Assert(pVM->pgm.s.fNestedPaging);
+    Assert(!pVCpu->pgm.s.pShwPageCR3R3);
+
+    pgmLock(pVM);
+
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_NESTED, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                          NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
+                          &pNewShwPageCR3);
+    AssertFatalRC(rc);
+
+    pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3RC = (RCPTRTYPE(PPGMPOOLPAGE))MMHyperCCToRC(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R0 = (R0PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR0(pVM, pNewShwPageCR3);
+
+    pgmUnlock(pVM);
+
+    Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVCpu->pgm.s.pShwPageCR3R3, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key));
+#else
+    NOREF(pVCpu); NOREF(fIs64BitsPagingMode);
+#endif
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Exits the shadow mode.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
+{
+#if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
+    {
+        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+        pgmLock(pVM);
+
+        /* Do *not* unlock this page as we have two of them floating around in the 32-bit host & 64-bit guest case.
+         * We currently assert when you try to free one of them; don't bother to really allow this.
+         *
+         * Note that this is two nested paging root pages max. This isn't a leak. They are reused.
+         */
+        /* pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)); */
+
+        pgmPoolFreeByPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), NIL_PGMPOOL_IDX, UINT32_MAX);
+        pVCpu->pgm.s.pShwPageCR3R3 = 0;
+        pVCpu->pgm.s.pShwPageCR3R0 = 0;
+        pVCpu->pgm.s.pShwPageCR3RC = 0;
+
+        pgmUnlock(pVM);
+
+        Log(("Leave nested shadow paging mode\n"));
+    }
+#else
+    RT_NOREF_PV(pVCpu);
+#endif
+    return VINF_SUCCESS;
+}
 
 
 /**
