@@ -1284,12 +1284,13 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
 {
     RT_NOREF(pDevIns, pTimer);
     PUARTCORE pThis = (PUARTCORE)pvUser;
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     if (pThis->FifoRecv.cbUsed)
     {
         pThis->fIrqCtiPending = true;
         uartIrqUpdate(pThis);
     }
+    PDMCritSectLeave(&pThis->CritSect);
 }
 
 
@@ -1427,6 +1428,142 @@ static DECLCALLBACK(void *) uartR3QueryInterface(PPDMIBASE pInterface, const cha
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALPORT, &pThis->ISerialPort);
     return NULL;
+}
+
+
+DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
+{
+    SSMR3PutU16(pSSM,  pThis->uRegDivisor);
+    SSMR3PutU8(pSSM,   pThis->uRegRbr);
+    SSMR3PutU8(pSSM,   pThis->uRegThr);
+    SSMR3PutU8(pSSM,   pThis->uRegIer);
+    SSMR3PutU8(pSSM,   pThis->uRegIir);
+    SSMR3PutU8(pSSM,   pThis->uRegFcr);
+    SSMR3PutU8(pSSM,   pThis->uRegLcr);
+    SSMR3PutU8(pSSM,   pThis->uRegMcr);
+    SSMR3PutU8(pSSM,   pThis->uRegLsr);
+    SSMR3PutU8(pSSM,   pThis->uRegMsr);
+    SSMR3PutU8(pSSM,   pThis->uRegScr);
+    SSMR3PutBool(pSSM, pThis->fIrqCtiPending);
+    SSMR3PutU8(pSSM,   pThis->FifoXmit.cbMax);
+    SSMR3PutU8(pSSM,   pThis->FifoXmit.cbItl);
+    SSMR3PutU8(pSSM,   pThis->FifoRecv.cbMax);
+    SSMR3PutU8(pSSM,   pThis->FifoRecv.cbItl);
+
+    return TMR3TimerSave(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+}
+
+
+DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
+                               uint8_t *puIrq, RTIOPORT *pPortBase)
+{
+    int rc = VINF_SUCCESS;
+
+    if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
+    {
+        SSMR3GetU16(pSSM,  &pThis->uRegDivisor);
+        SSMR3GetU8(pSSM,   &pThis->uRegRbr);
+        SSMR3GetU8(pSSM,   &pThis->uRegThr);
+        SSMR3GetU8(pSSM,   &pThis->uRegIer);
+        SSMR3GetU8(pSSM,   &pThis->uRegIir);
+        SSMR3GetU8(pSSM,   &pThis->uRegFcr);
+        SSMR3GetU8(pSSM,   &pThis->uRegLcr);
+        SSMR3GetU8(pSSM,   &pThis->uRegMcr);
+        SSMR3GetU8(pSSM,   &pThis->uRegLsr);
+        SSMR3GetU8(pSSM,   &pThis->uRegMsr);
+        SSMR3GetU8(pSSM,   &pThis->uRegScr);
+        SSMR3GetBool(pSSM, &pThis->fIrqCtiPending);
+        SSMR3GetU8(pSSM,   &pThis->FifoXmit.cbMax);
+        SSMR3GetU8(pSSM,   &pThis->FifoXmit.cbItl);
+        SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbMax);
+        SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbItl);
+
+        TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+    }
+    else
+    {
+        if (uVersion == UART_SAVED_STATE_VERSION_16450)
+        {
+            pThis->enmType = UARTTYPE_16450;
+            LogRel(("Serial#%d: falling back to 16450 mode from load state\n", pThis->pDevInsR3->iInstance));
+        }
+
+        int      uIrq;
+        uint32_t PortBase;
+
+        SSMR3GetU16(pSSM, &pThis->uRegDivisor);
+        SSMR3GetU8(pSSM, &pThis->uRegRbr);
+        SSMR3GetU8(pSSM, &pThis->uRegIer);
+        SSMR3GetU8(pSSM, &pThis->uRegLcr);
+        SSMR3GetU8(pSSM, &pThis->uRegMcr);
+        SSMR3GetU8(pSSM, &pThis->uRegLsr);
+        SSMR3GetU8(pSSM, &pThis->uRegMsr);
+        SSMR3GetU8(pSSM, &pThis->uRegScr);
+        if (uVersion > UART_SAVED_STATE_VERSION_16450)
+            SSMR3GetU8(pSSM, &pThis->uRegFcr);
+        SSMR3Skip(pSSM, sizeof(int32_t));
+        SSMR3GetS32(pSSM, &uIrq);
+        SSMR3Skip(pSSM, sizeof(int32_t));
+        SSMR3GetU32(pSSM, &PortBase);
+        rc = SSMR3Skip(pSSM, sizeof(int32_t));
+
+        if (   RT_SUCCESS(rc)
+            && uVersion > UART_SAVED_STATE_VERSION_MISSING_BITS)
+        {
+            SSMR3GetU8(pSSM, &pThis->uRegThr);
+            SSMR3Skip(pSSM, sizeof(uint8_t)); /* The old transmit shift register, not used anymore. */
+            SSMR3GetU8(pSSM, &pThis->uRegIir);
+
+            int iTimeoutPending = 0;
+            SSMR3GetS32(pSSM, &iTimeoutPending);
+            pThis->fIrqCtiPending = RT_BOOL(iTimeoutPending);
+
+            TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+            TMR3TimerSkip(pSSM, NULL);
+            SSMR3GetU8(pSSM, &pThis->FifoRecv.cbItl);
+            rc = SSMR3GetU8(pSSM, &pThis->FifoRecv.cbItl);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            AssertPtr(puIrq);
+            AssertPtr(pPortBase);
+            *puIrq     = (uint8_t)uIrq;
+            *pPortBase = (RTIOPORT)PortBase;
+        }
+    }
+
+    return rc;
+}
+
+
+DECLHIDDEN(int) uartR3LoadDone(PUARTCORE pThis, PSSMHANDLE pSSM)
+{
+    RT_NOREF(pSSM);
+
+    uartR3ParamsUpdate(pThis);
+    uartIrqUpdate(pThis);
+
+    if (pThis->pDrvSerial)
+    {
+        /* Set the modem lines to reflect the current state. */
+        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial,
+                                                     RT_BOOL(pThis->uRegMcr & UART_REG_MCR_RTS),
+                                                     RT_BOOL(pThis->uRegMcr & UART_REG_MCR_DTR));
+        if (RT_FAILURE(rc))
+            LogRel(("Serial#%d: Failed to set modem lines with %Rrc during saved state load\n",
+                    pThis->pDevInsR3->iInstance, rc));
+
+        uint32_t fStsLines = 0;
+        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
+        if (RT_SUCCESS(rc))
+            uartR3StsLinesUpdate(pThis, fStsLines);
+        else
+            LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
+                    pThis->pDevInsR3->iInstance, rc));
+    }
+
+    return VINF_SUCCESS;
 }
 
 

@@ -22,6 +22,7 @@
 #include <VBox/types.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmserialifs.h>
+#include <VBox/vmm/ssm.h>
 #include <iprt/assert.h>
 
 RT_C_DECLS_BEGIN
@@ -29,6 +30,15 @@ RT_C_DECLS_BEGIN
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+
+/** The current serial code saved state version. */
+#define UART_SAVED_STATE_VERSION              6
+/** Saved state version of the legacy code which got replaced after 5.2. */
+#define UART_SAVED_STATE_VERSION_LEGACY_CODE  5
+/** Includes some missing bits from the previous saved state. */
+#define UART_SAVED_STATE_VERSION_MISSING_BITS 4
+/** Saved state version when only the 16450 variant was implemented. */
+#define UART_SAVED_STATE_VERSION_16450        3
 
 /** Maximum size of a FIFO. */
 #define UART_FIFO_LENGTH_MAX                 128
@@ -276,6 +286,40 @@ DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis);
  * @param   offDelta            The delta to relocate RC pointers with.
  */
 DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta);
+
+/**
+ * Saves the UART state to the given SSM handle.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The UART core instance.
+ * @param   pSSM                The SSM handle to save to.
+ */
+DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM);
+
+/**
+ * Loads the UART state from the given SSM handle.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The UART core instance.
+ * @param   pSSM                The SSM handle to load from.
+ * @param   uVersion            Saved state version.
+ * @param   uPass               The SSM pass the call is done in.
+ * @param   puIrq               Where to store the IRQ value for legacy
+ *                              saved states - optional.
+ * @param   pPortBase           Where to store the I/O port base for legacy
+ *                              saved states - optional.
+ */
+DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
+                               uint8_t *puIrq, RTIOPORT *pPortBase);
+
+/**
+ * Called when loading the state completed, updates the parameters of any driver underneath.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The UART core instance.
+ * @param   pSSM                The SSM handle.
+ */
+DECLHIDDEN(int) uartR3LoadDone(PUARTCORE pThis, PSSMHANDLE pSSM);
 
 # endif
 

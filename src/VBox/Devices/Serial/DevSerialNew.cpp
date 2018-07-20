@@ -144,6 +144,106 @@ static UARTTYPE serialR3GetUartTypeFromString(const char *pszUartType)
 }
 
 
+/* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
+ */
+static DECLCALLBACK(int) serialR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    RT_NOREF(uPass);
+    PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+    SSMR3PutU8(pSSM, pThis->uIrq);
+    SSMR3PutIOPort(pSSM, pThis->PortBase);
+    SSMR3PutU32(pSSM, pThis->UartCore.enmType);
+
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) serialR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+
+    SSMR3PutU8(    pSSM, pThis->uIrq);
+    SSMR3PutIOPort(pSSM, pThis->PortBase);
+    SSMR3PutU32(   pSSM, pThis->UartCore.enmType);
+
+    uartR3SaveExec(&pThis->UartCore, pSSM);
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
+static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+    uint8_t    uIrq;
+    RTIOPORT   PortBase;
+    UARTTYPE   enmType;
+
+    AssertMsgReturn(uVersion >= UART_SAVED_STATE_VERSION_16450, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    if (uPass != SSM_PASS_FINAL)
+    {
+        SSMR3GetU8(pSSM, &uIrq);
+        SSMR3GetIOPort(pSSM, &PortBase);
+        int rc = SSMR3GetU32(pSSM, (uint32_t *)&enmType);
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        int rc = VINF_SUCCESS;
+
+        if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
+        {
+            SSMR3GetU8(    pSSM, &uIrq);
+            SSMR3GetIOPort(pSSM, &PortBase);
+            SSMR3GetU32(   pSSM, (uint32_t *)&enmType);
+            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
+        }
+        else
+            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, &uIrq, &PortBase);
+        if (RT_SUCCESS(rc))
+        {
+            /* The marker. */
+            uint32_t u32;
+            rc = SSMR3GetU32(pSSM, &u32);
+            if (RT_FAILURE(rc))
+                return rc;
+            AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        }
+    }
+
+    /*
+     * Check the config.
+     */
+    if (    pThis->uIrq     != uIrq
+        ||  pThis->PortBase != PortBase
+        ||  pThis->UartCore.enmType != enmType)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                N_("Config mismatch - saved IRQ=%#x PortBase=%#x Type=%d; configured IRQ=%#x PortBase=%#x Type=%d"),
+                                uIrq, PortBase, enmType, pThis->uIrq, pThis->PortBase, pThis->UartCore.enmType);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADDONE}
+ */
+static DECLCALLBACK(int) serialR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PDEVSERIAL  pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
+    return uartR3LoadDone(&pThis->UartCore, pSSM);
+}
+
+
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
 
 /**
@@ -346,16 +446,15 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             return rc;
     }
 
-#if 0 /** @todo Later */
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister3(pDevIns, SERIAL_SAVED_STATE_VERSION, sizeof (*pThis),
-                               serialR3LiveExec, serialR3SaveExec, serialR3LoadExec);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, UART_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
+                                NULL, serialR3LiveExec, NULL,
+                                NULL, serialR3SaveExec, NULL,
+                                NULL, serialR3LoadExec, serialR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
-#endif
-
 
     /* Init the UART core structure. */
     rc = uartR3Init(&pThis->UartCore, pDevIns, enmUartType, 0,
