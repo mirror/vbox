@@ -581,3 +581,19 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
     }
 }
 
+
+#ifdef IN_RING3
+/**
+ * Relocate any GC pointers related to shadow mode paging.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offDelta    The relocation offset.
+ */
+PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
+{
+    pVCpu->pgm.s.pShwPageCR3RC += offDelta;
+    return VINF_SUCCESS;
+}
+#endif
+

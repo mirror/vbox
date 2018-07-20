@@ -2600,13 +2600,6 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             g_aPgmGuestModeData[idxGst].pfnRelocate(pVCpu, offDelta);
         else
             AssertFailed();
-
-        uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
-        if (    idxBth < RT_ELEMENTS(g_aPgmBothModeData)
-            && g_aPgmBothModeData[idxBth].pfnRelocate)
-            g_aPgmBothModeData[idxBth].pfnRelocate(pVCpu, offDelta);
-        else
-            AssertFailed();
     }
 
     /*

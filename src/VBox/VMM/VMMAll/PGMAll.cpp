@@ -592,9 +592,9 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
  */
 PGMMODEDATASHW const g_aPgmShadowModeData[PGM_SHADOW_MODE_DATA_ARRAY_SIZE] =
 {
-    { UINT8_MAX, NULL, NULL, NULL, NULL, NULL }, /* 0 */
-    { UINT8_MAX, NULL, NULL, NULL, NULL, NULL }, /* PGM_TYPE_REAL */
-    { UINT8_MAX, NULL, NULL, NULL, NULL, NULL }, /* PGM_TYPE_PROT */
+    { UINT8_MAX, NULL, NULL, NULL, NULL }, /* 0 */
+    { UINT8_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_REAL */
+    { UINT8_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_PROT */
     {
         PGM_TYPE_32BIT,
         PGM_SHW_NAME_32BIT(GetPage),
@@ -688,12 +688,12 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
 #elif defined(IN_RING3) && !defined(VBOX_STRICT)
 # define PGMMODEDATABTH_NULL_ENTRY()    { UINT32_MAX, UINT32_MAX, NULL, NULL, NULL, NULL, NULL, NULL }
 # define PGMMODEDATABTH_ENTRY(uShwT, uGstT, Nm) \
-    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(Relocate), }
+    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), }
 
 #elif defined(IN_RING3) && defined(VBOX_STRICT)
 # define PGMMODEDATABTH_NULL_ENTRY()    { UINT32_MAX, UINT32_MAX, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 # define PGMMODEDATABTH_ENTRY(uShwT, uGstT, Nm) \
-    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(Relocate), Nm(AssertCR3) }
+    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(AssertCR3) }
 
 #else
 # error "Misconfig."
@@ -3247,9 +3247,6 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnMapCR3, VERR_PGM_MODE_IPE);
     AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnUnmapCR3, VERR_PGM_MODE_IPE);
     AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnEnter, VERR_PGM_MODE_IPE);
-#ifdef IN_RING3
-    AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnRelocate, VERR_PGM_MODE_IPE);
-#endif
 #ifdef VBOX_STRICT
     AssertPtrReturn(g_aPgmBothModeData[idxNewBth].pfnAssertCR3, VERR_PGM_MODE_IPE);
 #endif

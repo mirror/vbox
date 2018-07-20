@@ -32,23 +32,4 @@ PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
 RT_C_DECLS_END
 
 
-/**
- * Relocate any GC pointers related to guest mode paging.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offDelta    The relocation offset.
- */
-PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
-{
-    pVCpu->pgm.s.pGst32BitPdRC += offDelta;
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsRC); i++)
-    {
-        pVCpu->pgm.s.apGstPaePDsRC[i] += offDelta;
-    }
-    pVCpu->pgm.s.pGstPaePdptRC += offDelta;
-
-    return VINF_SUCCESS;
-}
 

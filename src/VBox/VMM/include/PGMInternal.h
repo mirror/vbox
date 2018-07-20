@@ -3157,7 +3157,9 @@ typedef struct PGMMODEDATASHW
                                                    uint64_t fMask, uint32_t fOpFlags);
     DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
     DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPU pVCpu);
+#ifdef IN_RING3
     DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+#endif
 } PGMMODEDATASHW;
 
 /** The length of g_aPgmShadowModeData. */
@@ -3187,9 +3189,7 @@ typedef struct PGMMODEDATABTH
     DECLCALLBACKMEMBER(int,         pfnMapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
     DECLCALLBACKMEMBER(int,         pfnUnmapCR3)(PVMCPU pVCpu);
     DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-#ifdef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta);
-#else
+#ifndef IN_RING3
     DECLCALLBACKMEMBER(int,         pfnTrap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
 #endif
 #ifdef VBOX_STRICT
