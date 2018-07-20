@@ -141,13 +141,6 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           NIL_PGMPOOL_IDX, UINT32_MAX, false /*fLockPage*/,
                           &pNewShwPageCR3);
-    if (rc == VERR_PGM_POOL_FLUSHED) /** @todo r=bird: VERR_PGM_POOL_FLUSHED won't be returned */
-    {
-        Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
-        Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-        pgmUnlock(pVM);
-        return VINF_PGM_SYNC_CR3;
-    }
     AssertRCReturn(rc, rc);
 
     pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
@@ -2950,12 +2943,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             ASMAtomicWriteSize(pPdeDst, PdeDst.u);
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             return VINF_SUCCESS;
-        }
-        else if (rc == VERR_PGM_POOL_FLUSHED) /** @todo r=bird: VERR_PGM_POOL_FLUSHED won't be returned */
-        {
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-            PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
-            return VINF_PGM_SYNC_CR3;
         }
         else
             AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS);

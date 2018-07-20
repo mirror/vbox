@@ -452,15 +452,8 @@
 #define VERR_PGM_PHYS_PAGE_RESERVED         (-1618)
 /** No page directory available for the hypervisor. */
 #define VERR_PGM_NO_HYPERVISOR_ADDRESS      (-1619)
-/** The shadow page pool was flushed.
- * This means that a global CR3 sync was flagged. Anyone receiving this kind of status
- * will have to get down to a SyncCR3 ASAP. See also VINF_PGM_SYNC_CR3.
- * @todo r=bird: This error code isn't used anymore...  */
-#define VERR_PGM_POOL_FLUSHED               (-1620)
-/** The shadow page pool was cleared.
- * This is a error code internal to the shadow page pool, it will be
- * converted to a VERR_PGM_POOL_FLUSHED before leaving the pool code. */
-#define VERR_PGM_POOL_CLEARED               (-1621)
+
+
 /** The returned shadow page is cached. */
 #define VINF_PGM_CACHED_PAGE                1622
 /** Returned by handler registration, modification and deregistration

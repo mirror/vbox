@@ -92,12 +92,10 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
 /**
  * Flushes a chain of pages sharing the same access monitor.
  *
- * @returns VBox status code suitable for scheduling.
  * @param   pPool       The pool.
  * @param   pPage       A page in the chain.
- * @todo VBOXSTRICTRC
  */
-int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+void pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     LogFlow(("pgmPoolMonitorChainFlush: Flush page %RGp type=%d\n", pPage->GCPhys, pPage->enmKind));
 
@@ -118,7 +116,6 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Iterate the list flushing each shadow page.
      */
-    int rc = VINF_SUCCESS;
     for (;;)
     {
         idx = pPage->iMonitoredNext;
@@ -133,7 +130,6 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
         pPage = &pPool->aPages[idx];
     }
-    return rc;
 }
 
 
@@ -867,19 +863,19 @@ static int pgmRZPoolAccessPfHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, 
     /*
      * First, do the flushing.
      */
-    int rc = pgmPoolMonitorChainFlush(pPool, pPage);
+    pgmPoolMonitorChainFlush(pPool, pPage);
 
     /*
      * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
      * Must do this in raw mode (!); XP boot will fail otherwise.
      */
+    int rc = VINF_SUCCESS;
     VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (rc2 == VINF_SUCCESS)
     { /* do nothing */ }
     else if (rc2 == VINF_EM_RESCHEDULE)
     {
-        if (rc == VINF_SUCCESS)
-            rc = VBOXSTRICTRC_VAL(rc2);
+        rc = VBOXSTRICTRC_VAL(rc2);
 # ifndef IN_RING3
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
 # endif
@@ -1485,10 +1481,7 @@ pgmPoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
             }
         }
         else
-        {
-            /* ASSUME that VERR_PGM_POOL_CLEARED can be ignored here and that FFs will deal with it in due time. */
             pgmPoolMonitorChainFlush(pPool, pPage);
-        }
 
         STAM_PROFILE_STOP_EX(&pPool->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,FlushPage), a);
     }
@@ -2919,8 +2912,7 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
- * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
- *          not returned anywhere anymore.
+ *
  * @param   pPool       The pool.
  * @param   iUser       The user index.
  */
@@ -2950,8 +2942,6 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
- * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
- *          not returned anywhere anymore.
  *
  * @param   pPool       The pool.
  * @param   pPage       The cached page.
@@ -3040,8 +3030,6 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if successfully added.
- * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
- *          not returned anywhere anymore.
  *
  * @param   pPool       The pool.
  * @param   pPage       The cached page.
@@ -5103,8 +5091,6 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
- * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
- *          not returned anywhere anymore.
  *
  * @param   pPool       The pool.
  * @param   enmKind     Page table kind
@@ -5156,8 +5142,6 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if a NEW page was allocated.
  * @retval  VINF_PGM_CACHED_PAGE if a CACHED page was returned.
- * @retval  <del>VERR_PGM_POOL_FLUSHED</del> if the pool was flushed - this is
- *          not returned anywhere anymore.
  *
  * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.
