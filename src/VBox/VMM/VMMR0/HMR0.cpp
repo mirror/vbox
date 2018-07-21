@@ -388,11 +388,11 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
              */
             g_HmR0.vmx.u64HostCr4           = ASMGetCR4();
             g_HmR0.vmx.u64HostEfer          = ASMRdMsr(MSR_K6_EFER);
-            g_HmR0.vmx.Msrs.u64BasicInfo    = ASMRdMsr(MSR_IA32_VMX_BASIC);
+            g_HmR0.vmx.Msrs.u64Basic        = ASMRdMsr(MSR_IA32_VMX_BASIC);
             /* KVM workaround: Intel SDM section 34.15.5 describes that MSR_IA32_SMM_MONITOR_CTL
              * depends on bit 49 of MSR_IA32_VMX_BASIC_INFO while table 35-2 says that this MSR
              * is available if either VMX or SMX is supported. */
-            if (MSR_IA32_VMX_BASIC_DUAL_MON(g_HmR0.vmx.Msrs.u64BasicInfo))
+            if (MSR_IA32_VMX_BASIC_DUAL_MON(g_HmR0.vmx.Msrs.u64Basic))
                 g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
             g_HmR0.vmx.Msrs.VmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
             g_HmR0.vmx.Msrs.VmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
@@ -435,7 +435,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 ASMMemZeroPage(pvScatchPage);
 
                 /* Set revision dword at the beginning of the structure. */
-                *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_VMCS_ID(g_HmR0.vmx.Msrs.u64BasicInfo);
+                *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_VMCS_ID(g_HmR0.vmx.Msrs.u64Basic);
 
                 /* Make sure we don't get rescheduled to another cpu during this probe. */
                 RTCCUINTREG const fEFlags = ASMIntDisableFlags();

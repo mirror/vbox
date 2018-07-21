@@ -789,7 +789,7 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     if (pVM)
     {
         /* Write the VMCS revision dword to the VMXON region. */
-        *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo);
+        *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64Basic);
     }
 
     /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with CR4. */
@@ -967,7 +967,7 @@ static int hmR0VmxStructsAlloc(PVM pVM)
 #undef VMXLOCAL_INIT_VM_MEMOBJ
 
     /* The VMCS size cannot be more than 4096 bytes. See Intel spec. Appendix A.1 "Basic VMX Information". */
-    AssertReturnStmt(MSR_IA32_VMX_BASIC_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64BasicInfo) <= PAGE_SIZE,
+    AssertReturnStmt(MSR_IA32_VMX_BASIC_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64Basic) <= PAGE_SIZE,
                      (&pVM->aCpus[0])->hm.s.u32HMError = VMX_UFC_INVALID_VMCS_SIZE,
                      VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO);
 
@@ -2784,7 +2784,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         Log4Func(("pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
 
         /* Set revision dword at the beginning of the VMCS structure. */
-        *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs = MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo);
+        *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs = MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64Basic);
 
         /* Initialize our VMCS region in memory, set the VMCS launch state to "clear". */
         rc  = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
@@ -12128,7 +12128,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              */
             Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
             AssertReturn(pCtx->dx == uIOPort, VERR_VMX_IPE_2);
-            if (MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
+            if (MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64Basic))
             {
                 int rc2  = hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
                 AssertRCReturn(rc2, rc2);

@@ -1391,14 +1391,14 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (!(pVM->hm.s.vmx.Msrs.u64FeatureCtrl & MSR_IA32_FEATURE_CONTROL_LOCK))
         LogRel(("HM:   MSR_IA32_FEATURE_CONTROL lock bit not set, possibly bad hardware!\n"));
 
-    LogRel(("HM: MSR_IA32_VMX_BASIC              = %#RX64\n", pVM->hm.s.vmx.Msrs.u64BasicInfo));
-    LogRel(("HM:   VMCS id                         = %#x\n",      MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   VMCS size                       = %u bytes\n", MSR_IA32_VMX_BASIC_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   VMCS physical address limit     = %s\n",       MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.Msrs.u64BasicInfo) ? "< 4 GB" : "None"));
-    LogRel(("HM:   VMCS memory type                = %s\n",       hmR3VmxGetMemTypeDesc(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   Dual-monitor treatment support  = %RTbool\n",  MSR_IA32_VMX_BASIC_DUAL_MON(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   OUTS & INS instruction-info     = %RTbool\n",  MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   Supports true capability MSRs   = %RTbool\n",  MSR_IA32_VMX_BASIC_TRUE_CONTROLS(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
+    LogRel(("HM: MSR_IA32_VMX_BASIC              = %#RX64\n", pVM->hm.s.vmx.Msrs.u64Basic));
+    LogRel(("HM:   VMCS id                         = %#x\n",      MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64Basic)));
+    LogRel(("HM:   VMCS size                       = %u bytes\n", MSR_IA32_VMX_BASIC_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64Basic)));
+    LogRel(("HM:   VMCS physical address limit     = %s\n",       MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.Msrs.u64Basic) ? "< 4 GB" : "None"));
+    LogRel(("HM:   VMCS memory type                = %s\n",       hmR3VmxGetMemTypeDesc(pVM->hm.s.vmx.Msrs.u64Basic)));
+    LogRel(("HM:   Dual-monitor treatment support  = %RTbool\n",  MSR_IA32_VMX_BASIC_DUAL_MON(pVM->hm.s.vmx.Msrs.u64Basic)));
+    LogRel(("HM:   OUTS & INS instruction-info     = %RTbool\n",  MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64Basic)));
+    LogRel(("HM:   Supports true capability MSRs   = %RTbool\n",  MSR_IA32_VMX_BASIC_TRUE_CONTROLS(pVM->hm.s.vmx.Msrs.u64Basic)));
     LogRel(("HM: Max resume loops                = %u\n", pVM->hm.s.cMaxResumeLoops));
 
     LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS      = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxPinCtls.u));

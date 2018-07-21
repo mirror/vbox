@@ -867,7 +867,7 @@ typedef const VMXTLBFLUSHTYPE *PCVMXTLBFLUSHTYPE;
 typedef struct VMXMSRS
 {
     uint64_t        u64FeatureCtrl;
-    uint64_t        u64BasicInfo;
+    uint64_t        u64Basic;
     VMXCAPABILITY   VmxPinCtls;
     VMXCAPABILITY   VmxProcCtls;
     VMXCAPABILITY   VmxProcCtls2;
