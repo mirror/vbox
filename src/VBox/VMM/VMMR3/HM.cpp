@@ -1229,7 +1229,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
         && !pVM->hm.s.svm.fSupported)
     {
         LogRel(("HM: Failed to initialize VT-x / AMD-V: %Rrc\n", pVM->hm.s.rcInit));
-        LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.vmx.Msrs.u64FeatureCtrl));
+        LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.vmx.Msrs.u64FeatCtrl));
         switch (pVM->hm.s.rcInit)
         {
             case VERR_VMX_IN_VMX_ROOT_MODE:
@@ -1352,28 +1352,14 @@ static const char *hmR3VmxGetMemTypeDesc(uint64_t uMsrVmxBasic)
 
 
 /**
- * Finish VT-x initialization (after ring-0 init).
+ * Reports MSR_IA32_FEATURE_CONTROL MSR to the log.
  *
- * @returns VBox status code.
- * @param   pVM                The cross context VM structure.
+ * @param   fFeatMsr    The feature control MSR value.
  */
-static int hmR3InitFinalizeR0Intel(PVM pVM)
+static void hmR3VmxReportFeatCtlMsr(uint64_t fFeatMsr)
 {
-    int rc;
-
-    Log(("pVM->hm.s.vmx.fSupported = %d\n", pVM->hm.s.vmx.fSupported));
-    AssertLogRelReturn(pVM->hm.s.vmx.Msrs.u64FeatureCtrl != 0, VERR_HM_IPE_4);
-
-    uint64_t val;
-    uint64_t zap;
-
-    LogRel(("HM: Using VT-x implementation 2.0\n"));
-    LogRel(("HM: Host CR4                        = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
-    LogRel(("HM: Host EFER                       = %#RX64\n", pVM->hm.s.vmx.u64HostEfer));
-    LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL        = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
-
-    val = pVM->hm.s.vmx.Msrs.u64FeatureCtrl;
-    LogRel(("HM: MSR_IA32_FEATURE_CONTROL        = %#RX64\n", val));
+    uint64_t const val = fFeatMsr;
+    LogRel(("HM: MSR_IA32_FEATURE_CONTROL          = %#RX64\n", val));
     HMVMX_REPORT_MSR_CAP(val, "LOCK",             MSR_IA32_FEATURE_CONTROL_LOCK);
     HMVMX_REPORT_MSR_CAP(val, "SMX_VMXON",        MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
     HMVMX_REPORT_MSR_CAP(val, "VMXON",            MSR_IA32_FEATURE_CONTROL_VMXON);
@@ -1388,31 +1374,58 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     HMVMX_REPORT_MSR_CAP(val, "SGX_LAUNCH_EN",    MSR_IA32_FEATURE_CONTROL_SGX_LAUNCH_EN);
     HMVMX_REPORT_MSR_CAP(val, "SGX_GLOBAL_EN",    MSR_IA32_FEATURE_CONTROL_SGX_GLOBAL_EN);
     HMVMX_REPORT_MSR_CAP(val, "LMCE",             MSR_IA32_FEATURE_CONTROL_LMCE);
-    if (!(pVM->hm.s.vmx.Msrs.u64FeatureCtrl & MSR_IA32_FEATURE_CONTROL_LOCK))
+    if (!(val & MSR_IA32_FEATURE_CONTROL_LOCK))
         LogRel(("HM:   MSR_IA32_FEATURE_CONTROL lock bit not set, possibly bad hardware!\n"));
+}
 
-    LogRel(("HM: MSR_IA32_VMX_BASIC              = %#RX64\n", pVM->hm.s.vmx.Msrs.u64Basic));
-    LogRel(("HM:   VMCS id                         = %#x\n",      MSR_IA32_VMX_BASIC_VMCS_ID(pVM->hm.s.vmx.Msrs.u64Basic)));
-    LogRel(("HM:   VMCS size                       = %u bytes\n", MSR_IA32_VMX_BASIC_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64Basic)));
-    LogRel(("HM:   VMCS physical address limit     = %s\n",       MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.Msrs.u64Basic) ? "< 4 GB" : "None"));
-    LogRel(("HM:   VMCS memory type                = %s\n",       hmR3VmxGetMemTypeDesc(pVM->hm.s.vmx.Msrs.u64Basic)));
-    LogRel(("HM:   Dual-monitor treatment support  = %RTbool\n",  MSR_IA32_VMX_BASIC_DUAL_MON(pVM->hm.s.vmx.Msrs.u64Basic)));
-    LogRel(("HM:   OUTS & INS instruction-info     = %RTbool\n",  MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64Basic)));
-    LogRel(("HM:   Supports true capability MSRs   = %RTbool\n",  MSR_IA32_VMX_BASIC_TRUE_CONTROLS(pVM->hm.s.vmx.Msrs.u64Basic)));
-    LogRel(("HM: Max resume loops                = %u\n", pVM->hm.s.cMaxResumeLoops));
 
-    LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS      = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxPinCtls.u));
-    val = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1;
-    zap = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0;
+/**
+ * Reports MSR_IA32_VMX_BASIC MSR to the log.
+ *
+ * @param   uBasicMsr    The VMX basic MSR value.
+ */
+static void hmR3VmxReportBasicMsr(uint64_t uBasicMsr)
+{
+    LogRel(("HM: MSR_IA32_VMX_BASIC                = %#RX64\n", uBasicMsr));
+    LogRel(("HM:   VMCS id                           = %#x\n",      MSR_IA32_VMX_BASIC_VMCS_ID(uBasicMsr)));
+    LogRel(("HM:   VMCS size                         = %u bytes\n", MSR_IA32_VMX_BASIC_VMCS_SIZE(uBasicMsr)));
+    LogRel(("HM:   VMCS physical address limit       = %s\n",       MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(uBasicMsr) ? "< 4 GB"
+                                                                                                                : "None"));
+    LogRel(("HM:   VMCS memory type                  = %s\n",       hmR3VmxGetMemTypeDesc(uBasicMsr)));
+    LogRel(("HM:   Dual-monitor treatment support    = %RTbool\n",  MSR_IA32_VMX_BASIC_DUAL_MON(uBasicMsr)));
+    LogRel(("HM:   OUTS & INS instruction-info       = %RTbool\n",  MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(uBasicMsr)));
+    LogRel(("HM:   Supports true capability MSRs     = %RTbool\n",  MSR_IA32_VMX_BASIC_TRUE_CONTROLS(uBasicMsr)));
+}
+
+
+/**
+ * Reports MSR_IA32_PINBASED_CTLS to the log.
+ *
+ * @param   pVmxMsr    Pointer to the VMX MSR.
+ */
+static void hmR3VmxReportPinBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
+{
+    uint64_t const val = pVmxMsr->n.allowed1;
+    uint64_t const zap = pVmxMsr->n.disallowed0;
+    LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS        = %#RX64\n", pVmxMsr->u));
     HMVMX_REPORT_FEAT(val, zap, "EXT_INT_EXIT",  VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "NMI_EXIT",      VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "VIRTUAL_NMI",   VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI);
     HMVMX_REPORT_FEAT(val, zap, "PREEMPT_TIMER", VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER);
     HMVMX_REPORT_FEAT(val, zap, "POSTED_INTR",   VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR);
+}
 
-    LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS     = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxProcCtls.u));
-    val = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1;
-    zap = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0;
+
+/**
+ * Reports MSR_IA32_VMX_PROCBASED_CTLS MSR to the log.
+ *
+ * @param   pVmxMsr    Pointer to the VMX MSR.
+ */
+static void hmR3VmxReportProcBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
+{
+    uint64_t const val = pVmxMsr->n.allowed1;
+    uint64_t const zap = pVmxMsr->n.disallowed0;
+    LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS       = %#RX64\n", pVmxMsr->u));
     HMVMX_REPORT_FEAT(val, zap, "INT_WINDOW_EXIT",         VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "USE_TSC_OFFSETTING",      VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING);
     HMVMX_REPORT_FEAT(val, zap, "HLT_EXIT",                VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT);
@@ -1434,38 +1447,54 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     HMVMX_REPORT_FEAT(val, zap, "MONITOR_EXIT",            VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "PAUSE_EXIT",              VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "USE_SECONDARY_EXEC_CTRL", VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL);
-    if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
-    {
-        LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS2    = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxProcCtls2.u));
-        val = pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1;
-        zap = pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0;
-        HMVMX_REPORT_FEAT(val, zap, "VIRT_APIC",             VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC);
-        HMVMX_REPORT_FEAT(val, zap, "EPT",                   VMX_VMCS_CTRL_PROC_EXEC2_EPT);
-        HMVMX_REPORT_FEAT(val, zap, "DESCRIPTOR_TABLE_EXIT", VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT);
-        HMVMX_REPORT_FEAT(val, zap, "RDTSCP",                VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP);
-        HMVMX_REPORT_FEAT(val, zap, "VIRT_X2APIC",           VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC);
-        HMVMX_REPORT_FEAT(val, zap, "VPID",                  VMX_VMCS_CTRL_PROC_EXEC2_VPID);
-        HMVMX_REPORT_FEAT(val, zap, "WBINVD_EXIT",           VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT);
-        HMVMX_REPORT_FEAT(val, zap, "UNRESTRICTED_GUEST",    VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST);
-        HMVMX_REPORT_FEAT(val, zap, "APIC_REG_VIRT",         VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT);
-        HMVMX_REPORT_FEAT(val, zap, "VIRT_INTR_DELIVERY",    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
-        HMVMX_REPORT_FEAT(val, zap, "PAUSE_LOOP_EXIT",       VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT);
-        HMVMX_REPORT_FEAT(val, zap, "RDRAND_EXIT",           VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT);
-        HMVMX_REPORT_FEAT(val, zap, "INVPCID",               VMX_VMCS_CTRL_PROC_EXEC2_INVPCID);
-        HMVMX_REPORT_FEAT(val, zap, "VMFUNC",                VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC);
-        HMVMX_REPORT_FEAT(val, zap, "VMCS_SHADOWING",        VMX_VMCS_CTRL_PROC_EXEC2_VMCS_SHADOWING);
-        HMVMX_REPORT_FEAT(val, zap, "ENCLS_EXIT",            VMX_VMCS_CTRL_PROC_EXEC2_ENCLS_EXIT);
-        HMVMX_REPORT_FEAT(val, zap, "RDSEED_EXIT",           VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT);
-        HMVMX_REPORT_FEAT(val, zap, "PML",                   VMX_VMCS_CTRL_PROC_EXEC2_PML);
-        HMVMX_REPORT_FEAT(val, zap, "EPT_VE",                VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE);
-        HMVMX_REPORT_FEAT(val, zap, "CONCEAL_FROM_PT",       VMX_VMCS_CTRL_PROC_EXEC2_CONCEAL_FROM_PT);
-        HMVMX_REPORT_FEAT(val, zap, "XSAVES_XRSTORS",        VMX_VMCS_CTRL_PROC_EXEC2_XSAVES_XRSTORS);
-        HMVMX_REPORT_FEAT(val, zap, "TSC_SCALING",           VMX_VMCS_CTRL_PROC_EXEC2_TSC_SCALING);
-    }
+}
 
-    LogRel(("HM: MSR_IA32_VMX_ENTRY_CTLS         = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxEntry.u));
-    val = pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1;
-    zap = pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0;
+
+/**
+ * Reports MSR_IA32_VMX_PROCBASED_CTLS2 MSR to the log.
+ *
+ * @param   pVmxMsr    Pointer to the VMX MSR.
+ */
+static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
+{
+    uint64_t const val = pVmxMsr->n.allowed1;
+    uint64_t const zap = pVmxMsr->n.disallowed0;
+    LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS2      = %#RX64\n", pVmxMsr->u));
+    HMVMX_REPORT_FEAT(val, zap, "VIRT_APIC",             VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC);
+    HMVMX_REPORT_FEAT(val, zap, "EPT",                   VMX_VMCS_CTRL_PROC_EXEC2_EPT);
+    HMVMX_REPORT_FEAT(val, zap, "DESCRIPTOR_TABLE_EXIT", VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT);
+    HMVMX_REPORT_FEAT(val, zap, "RDTSCP",                VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP);
+    HMVMX_REPORT_FEAT(val, zap, "VIRT_X2APIC",           VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC);
+    HMVMX_REPORT_FEAT(val, zap, "VPID",                  VMX_VMCS_CTRL_PROC_EXEC2_VPID);
+    HMVMX_REPORT_FEAT(val, zap, "WBINVD_EXIT",           VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT);
+    HMVMX_REPORT_FEAT(val, zap, "UNRESTRICTED_GUEST",    VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST);
+    HMVMX_REPORT_FEAT(val, zap, "APIC_REG_VIRT",         VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT);
+    HMVMX_REPORT_FEAT(val, zap, "VIRT_INTR_DELIVERY",    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
+    HMVMX_REPORT_FEAT(val, zap, "PAUSE_LOOP_EXIT",       VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT);
+    HMVMX_REPORT_FEAT(val, zap, "RDRAND_EXIT",           VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT);
+    HMVMX_REPORT_FEAT(val, zap, "INVPCID",               VMX_VMCS_CTRL_PROC_EXEC2_INVPCID);
+    HMVMX_REPORT_FEAT(val, zap, "VMFUNC",                VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC);
+    HMVMX_REPORT_FEAT(val, zap, "VMCS_SHADOWING",        VMX_VMCS_CTRL_PROC_EXEC2_VMCS_SHADOWING);
+    HMVMX_REPORT_FEAT(val, zap, "ENCLS_EXIT",            VMX_VMCS_CTRL_PROC_EXEC2_ENCLS_EXIT);
+    HMVMX_REPORT_FEAT(val, zap, "RDSEED_EXIT",           VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT);
+    HMVMX_REPORT_FEAT(val, zap, "PML",                   VMX_VMCS_CTRL_PROC_EXEC2_PML);
+    HMVMX_REPORT_FEAT(val, zap, "EPT_VE",                VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE);
+    HMVMX_REPORT_FEAT(val, zap, "CONCEAL_FROM_PT",       VMX_VMCS_CTRL_PROC_EXEC2_CONCEAL_FROM_PT);
+    HMVMX_REPORT_FEAT(val, zap, "XSAVES_XRSTORS",        VMX_VMCS_CTRL_PROC_EXEC2_XSAVES_XRSTORS);
+    HMVMX_REPORT_FEAT(val, zap, "TSC_SCALING",           VMX_VMCS_CTRL_PROC_EXEC2_TSC_SCALING);
+}
+
+
+/**
+ * Reports MSR_IA32_VMX_ENTRY_CTLS to the log.
+ *
+ * @param   pVmxMsr    Pointer to the VMX MSR.
+ */
+static void hmR3VmxReportEntryCtlsMsr(PCVMXCTLSMSR pVmxMsr)
+{
+    uint64_t const val = pVmxMsr->n.allowed1;
+    uint64_t const zap = pVmxMsr->n.disallowed0;
+    LogRel(("HM: MSR_IA32_VMX_ENTRY_CTLS           = %#RX64\n", pVmxMsr->u));
     HMVMX_REPORT_FEAT(val, zap, "LOAD_DEBUG",          VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG);
     HMVMX_REPORT_FEAT(val, zap, "IA32E_MODE_GUEST",    VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST);
     HMVMX_REPORT_FEAT(val, zap, "ENTRY_SMM",           VMX_VMCS_CTRL_ENTRY_ENTRY_SMM);
@@ -1473,10 +1502,19 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     HMVMX_REPORT_FEAT(val, zap, "LOAD_GUEST_PERF_MSR", VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR);
     HMVMX_REPORT_FEAT(val, zap, "LOAD_GUEST_PAT_MSR",  VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR);
     HMVMX_REPORT_FEAT(val, zap, "LOAD_GUEST_EFER_MSR", VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR);
+}
 
-    LogRel(("HM: MSR_IA32_VMX_EXIT_CTLS          = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxExit.u));
-    val = pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1;
-    zap = pVM->hm.s.vmx.Msrs.VmxExit.n.disallowed0;
+
+/**
+ * Reports MSR_IA32_VMX_EXIT_CTLS to the log.
+ *
+ * @param   pVmxMsr    Pointer to the VMX MSR.
+ */
+static void hmR3VmxReportExitCtlsMsr(PCVMXCTLSMSR pVmxMsr)
+{
+    uint64_t const val = pVmxMsr->n.allowed1;
+    uint64_t const zap = pVmxMsr->n.disallowed0;
+    LogRel(("HM: MSR_IA32_VMX_EXIT_CTLS            = %#RX64\n", pVmxMsr->u));
     HMVMX_REPORT_FEAT(val, zap, "SAVE_DEBUG",             VMX_VMCS_CTRL_EXIT_SAVE_DEBUG);
     HMVMX_REPORT_FEAT(val, zap, "HOST_ADDR_SPACE_SIZE",   VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE);
     HMVMX_REPORT_FEAT(val, zap, "LOAD_PERF_MSR",          VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR);
@@ -1486,97 +1524,180 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     HMVMX_REPORT_FEAT(val, zap, "SAVE_GUEST_EFER_MSR",    VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR);
     HMVMX_REPORT_FEAT(val, zap, "LOAD_HOST_EFER_MSR",     VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR);
     HMVMX_REPORT_FEAT(val, zap, "SAVE_VMX_PREEMPT_TIMER", VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER);
+}
 
-    if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps)
-    {
-        val = pVM->hm.s.vmx.Msrs.u64EptVpidCaps;
-        LogRel(("HM: MSR_IA32_VMX_EPT_VPID_CAP       = %#RX64\n", val));
-        HMVMX_REPORT_MSR_CAP(val, "RWX_X_ONLY",                            MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY);
-        HMVMX_REPORT_MSR_CAP(val, "PAGE_WALK_LENGTH_4",                    MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
-        HMVMX_REPORT_MSR_CAP(val, "EMT_UC",                                MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC);
-        HMVMX_REPORT_MSR_CAP(val, "EMT_WB",                                MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB);
-        HMVMX_REPORT_MSR_CAP(val, "PDE_2M",                                MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M);
-        HMVMX_REPORT_MSR_CAP(val, "PDPTE_1G",                              MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G);
-        HMVMX_REPORT_MSR_CAP(val, "INVEPT",                                MSR_IA32_VMX_EPT_VPID_CAP_INVEPT);
-        HMVMX_REPORT_MSR_CAP(val, "EPT_ACCESS_DIRTY",                      MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY);
-        HMVMX_REPORT_MSR_CAP(val, "INVEPT_SINGLE_CONTEXT",                 MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT);
-        HMVMX_REPORT_MSR_CAP(val, "INVEPT_ALL_CONTEXTS",                   MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
-        HMVMX_REPORT_MSR_CAP(val, "INVVPID",                               MSR_IA32_VMX_EPT_VPID_CAP_INVVPID);
-        HMVMX_REPORT_MSR_CAP(val, "INVVPID_INDIV_ADDR",                    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
-        HMVMX_REPORT_MSR_CAP(val, "INVVPID_SINGLE_CONTEXT",                MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT);
-        HMVMX_REPORT_MSR_CAP(val, "INVVPID_ALL_CONTEXTS",                  MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS);
-        HMVMX_REPORT_MSR_CAP(val, "INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS", MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS);
-    }
 
-    val = pVM->hm.s.vmx.Msrs.u64Misc;
-    LogRel(("HM: MSR_IA32_VMX_MISC               = %#RX64\n", val));
-    if (MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(val) == pVM->hm.s.vmx.cPreemptTimerShift)
-        LogRel(("HM:   PREEMPT_TSC_BIT                 = %#x\n", MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(val)));
+/**
+ * Reports MSR_IA32_VMX_EPT_VPID_CAP MSR to the log.
+ *
+ * @param   fCaps    The VMX EPT/VPID capability MSR value.
+ */
+static void hmR3VmxReportEptVpidCapsMsr(uint64_t fCaps)
+{
+    LogRel(("HM: MSR_IA32_VMX_EPT_VPID_CAP         = %#RX64\n", fCaps));
+    HMVMX_REPORT_MSR_CAP(fCaps, "RWX_X_ONLY",                            MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY);
+    HMVMX_REPORT_MSR_CAP(fCaps, "PAGE_WALK_LENGTH_4",                    MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
+    HMVMX_REPORT_MSR_CAP(fCaps, "EMT_UC",                                MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC);
+    HMVMX_REPORT_MSR_CAP(fCaps, "EMT_WB",                                MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB);
+    HMVMX_REPORT_MSR_CAP(fCaps, "PDE_2M",                                MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M);
+    HMVMX_REPORT_MSR_CAP(fCaps, "PDPTE_1G",                              MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVEPT",                                MSR_IA32_VMX_EPT_VPID_CAP_INVEPT);
+    HMVMX_REPORT_MSR_CAP(fCaps, "EPT_ACCESS_DIRTY",                      MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVEPT_SINGLE_CONTEXT",                 MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVEPT_ALL_CONTEXTS",                   MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVVPID",                               MSR_IA32_VMX_EPT_VPID_CAP_INVVPID);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVVPID_INDIV_ADDR",                    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVVPID_SINGLE_CONTEXT",                MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVVPID_ALL_CONTEXTS",                  MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS);
+    HMVMX_REPORT_MSR_CAP(fCaps, "INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS", MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS);
+}
+
+
+/**
+ * Reports MSR_IA32_VMX_MISC MSR to the log.
+ *
+ * @param   fMisc    The VMX misc. MSR value.
+ */
+static void hmR3VmxReportMiscMsr(PVM pVM, uint64_t fMisc)
+{
+    LogRel(("HM: MSR_IA32_VMX_MISC                 = %#RX64\n", fMisc));
+    if (MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(fMisc) == pVM->hm.s.vmx.cPreemptTimerShift)
+        LogRel(("HM:   PREEMPT_TSC_BIT                   = %#x\n", MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(fMisc)));
     else
+        LogRel(("HM:   PREEMPT_TSC_BIT                   = %#x - erratum detected, using %#x instead\n",
+                MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(fMisc), pVM->hm.s.vmx.cPreemptTimerShift));
+    LogRel(("HM:   STORE_EFERLMA_VMEXIT              = %RTbool\n", MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(fMisc)));
+    uint8_t const fActivityState = MSR_IA32_VMX_MISC_ACTIVITY_STATES(fMisc);
+    LogRel(("HM:   ACTIVITY_STATES                   = %#x\n",     fActivityState));
+    HMVMX_REPORT_MSR_CAP(fActivityState, "  HLT",       VMX_VMCS_GUEST_ACTIVITY_HLT);
+    HMVMX_REPORT_MSR_CAP(fActivityState, "  SHUTDOWN",  VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN);
+    HMVMX_REPORT_MSR_CAP(fActivityState, "  SIPI_WAIT", VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT);
+    LogRel(("HM:   CR3_TARGET                        = %#x\n",     MSR_IA32_VMX_MISC_CR3_TARGET(fMisc)));
+    LogRel(("HM:   MAX_MSR                           = %u\n",      MSR_IA32_VMX_MISC_MAX_MSR(fMisc)));
+    LogRel(("HM:   RDMSR_SMBASE_MSR_SMM              = %RTbool\n", MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(fMisc)));
+    LogRel(("HM:   SMM_MONITOR_CTL_B2                = %RTbool\n", MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(fMisc)));
+    LogRel(("HM:   VMWRITE_VMEXIT_INFO               = %RTbool\n", MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(fMisc)));
+    LogRel(("HM:   MSEG_ID                           = %#x\n",     MSR_IA32_VMX_MISC_MSEG_ID(fMisc)));
+}
+
+
+/**
+ * Reports MSR_IA32_VMX_VMCS_ENUM MSR to the log.
+ *
+ * @param   uVmcsEnum    The VMX VMCS enum MSR value.
+ */
+static void hmR3VmxReportVmcsEnumMsr(uint64_t uVmcsEnum)
+{
+    uint64_t const val = uVmcsEnum;
+    LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM            = %#RX64\n", val));
+    LogRel(("HM:   HIGHEST_INDEX                     = %#x\n", MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(val)));
+}
+
+
+/**
+ * Reports MSR_IA32_VMX_VMFUNC MSR to the log.
+ *
+ * @param   uVmFunc    The VMX VMFUNC MSR value.
+ */
+static void hmR3VmxReportVmfuncMsr(uint64_t uVmFunc)
+{
+    LogRel(("HM: MSR_IA32_VMX_VMFUNC               = %#RX64\n", uVmFunc));
+    HMVMX_REPORT_ALLOWED_FEAT(uVmFunc, "EPTP_SWITCHING", VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING);
+}
+
+
+/**
+ * Reports VMX CR0, CR4 fixed MSRs.
+ *
+ * @param   pMsrs    Pointer to the VMX MSRs.
+ */
+static void hmR3VmxReportCrFixedMsrs(PVMXMSRS pMsrs)
+{
+    LogRel(("HM: MSR_IA32_VMX_CR0_FIXED0           = %#RX64\n", pMsrs->u64Cr0Fixed0));
+    LogRel(("HM: MSR_IA32_VMX_CR0_FIXED1           = %#RX64\n", pMsrs->u64Cr0Fixed1));
+    LogRel(("HM: MSR_IA32_VMX_CR4_FIXED0           = %#RX64\n", pMsrs->u64Cr4Fixed0));
+    LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1           = %#RX64\n", pMsrs->u64Cr4Fixed1));
+}
+
+
+/**
+ * Finish VT-x initialization (after ring-0 init).
+ *
+ * @returns VBox status code.
+ * @param   pVM                The cross context VM structure.
+ */
+static int hmR3InitFinalizeR0Intel(PVM pVM)
+{
+    int rc;
+
+    Log(("pVM->hm.s.vmx.fSupported = %d\n", pVM->hm.s.vmx.fSupported));
+    AssertLogRelReturn(pVM->hm.s.vmx.Msrs.u64FeatCtrl != 0, VERR_HM_IPE_4);
+
+    LogRel(("HM: Using VT-x implementation 2.0\n"));
+    LogRel(("HM: Max resume loops                  = %u\n", pVM->hm.s.cMaxResumeLoops));
+    LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
+    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostEfer));
+    LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
+
+    hmR3VmxReportFeatCtlMsr(pVM->hm.s.vmx.Msrs.u64FeatCtrl);
+    hmR3VmxReportBasicMsr(pVM->hm.s.vmx.Msrs.u64Basic);
+
+    hmR3VmxReportPinBasedCtlsMsr(&pVM->hm.s.vmx.Msrs.PinCtls);
+    hmR3VmxReportProcBasedCtlsMsr(&pVM->hm.s.vmx.Msrs.ProcCtls);
+    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+        hmR3VmxReportProcBasedCtls2Msr(&pVM->hm.s.vmx.Msrs.ProcCtls2);
+
+    hmR3VmxReportEntryCtlsMsr(&pVM->hm.s.vmx.Msrs.EntryCtls);
+    hmR3VmxReportExitCtlsMsr(&pVM->hm.s.vmx.Msrs.ExitCtls);
+
+    if (MSR_IA32_VMX_BASIC_TRUE_CONTROLS(pVM->hm.s.vmx.Msrs.u64Basic))
     {
-        LogRel(("HM:   PREEMPT_TSC_BIT                 = %#x - erratum detected, using %#x instead\n",
-                MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(val), pVM->hm.s.vmx.cPreemptTimerShift));
+        /* We don't do extensive dumping of the true capability MSRs as we don't use them yet. */
+        /** @todo Consider using true capability MSRs and dumping them extensively. */
+        LogRel(("HM: MSR_IA32_VMX_TRUE_PINBASED_CTLS   = %#RX64\n", pVM->hm.s.vmx.Msrs.TruePinCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_PROCBASED_CTLS  = %#RX64\n", pVM->hm.s.vmx.Msrs.TrueProcCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_ENTRY_CTLS      = %#RX64\n", pVM->hm.s.vmx.Msrs.TrueEntryCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_EXIT_CTLS       = %#RX64\n", pVM->hm.s.vmx.Msrs.TrueExitCtls));
     }
 
-    LogRel(("HM:   STORE_EFERLMA_VMEXIT            = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(val))));
-    LogRel(("HM:   ACTIVITY_STATES                 = %#x\n",     MSR_IA32_VMX_MISC_ACTIVITY_STATES(val)));
-    LogRel(("HM:   CR3_TARGET                      = %#x\n",     MSR_IA32_VMX_MISC_CR3_TARGET(val)));
-    LogRel(("HM:   MAX_MSR                         = %u\n",      MSR_IA32_VMX_MISC_MAX_MSR(val)));
-    LogRel(("HM:   RDMSR_SMBASE_MSR_SMM            = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(val))));
-    LogRel(("HM:   SMM_MONITOR_CTL_B2              = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(val))));
-    LogRel(("HM:   VMWRITE_VMEXIT_INFO             = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(val))));
-    LogRel(("HM:   MSEG_ID                         = %#x\n",     MSR_IA32_VMX_MISC_MSEG_ID(val)));
+    hmR3VmxReportMiscMsr(pVM, pVM->hm.s.vmx.Msrs.u64Misc);
+    hmR3VmxReportVmcsEnumMsr(pVM->hm.s.vmx.Msrs.u64VmcsEnum);
+    if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps)
+        hmR3VmxReportEptVpidCapsMsr(pVM->hm.s.vmx.Msrs.u64EptVpidCaps);
+    if (pVM->hm.s.vmx.Msrs.u64Vmfunc)
+        hmR3VmxReportVmfuncMsr(pVM->hm.s.vmx.Msrs.u64Vmfunc);
+    hmR3VmxReportCrFixedMsrs(&pVM->hm.s.vmx.Msrs);
 
-    /* Paranoia */
-    AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.Msrs.u64Misc) >= 512);
-
-    LogRel(("HM: MSR_IA32_VMX_CR0_FIXED0         = %#RX64\n", pVM->hm.s.vmx.Msrs.u64Cr0Fixed0));
-    LogRel(("HM: MSR_IA32_VMX_CR0_FIXED1         = %#RX64\n", pVM->hm.s.vmx.Msrs.u64Cr0Fixed1));
-    LogRel(("HM: MSR_IA32_VMX_CR4_FIXED0         = %#RX64\n", pVM->hm.s.vmx.Msrs.u64Cr4Fixed0));
-    LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1         = %#RX64\n", pVM->hm.s.vmx.Msrs.u64Cr4Fixed1));
-
-    val = pVM->hm.s.vmx.Msrs.u64VmcsEnum;
-    LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM          = %#RX64\n", val));
-    LogRel(("HM:   HIGHEST_INDEX                   = %#x\n", MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(val)));
-
-    val = pVM->hm.s.vmx.Msrs.u64Vmfunc;
-    if (val)
-    {
-        LogRel(("HM: MSR_IA32_VMX_VMFUNC             = %#RX64\n", val));
-        HMVMX_REPORT_ALLOWED_FEAT(val, "EPTP_SWITCHING", VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING);
-    }
-
-    LogRel(("HM: APIC-access page physaddr       = %#RHp\n", pVM->hm.s.vmx.HCPhysApicAccess));
-
+    LogRel(("HM: APIC-access page physaddr         = %#RHp\n",  pVM->hm.s.vmx.HCPhysApicAccess));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        LogRel(("HM: VCPU%3d: MSR bitmap physaddr    = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
-        LogRel(("HM: VCPU%3d: VMCS physaddr          = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
+        LogRel(("HM: VCPU%3d: MSR bitmap physaddr      = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
+        LogRel(("HM: VCPU%3d: VMCS physaddr            = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
     }
 
     /*
      * EPT and unhampered guest execution are determined in HMR3Init, verify the sanity of that.
      */
     AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
-                       || (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT),
+                       || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT),
                        VERR_HM_IPE_1);
     AssertLogRelReturn(   !pVM->hm.s.vmx.fUnrestrictedGuest
-                       || (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
+                       || (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
                            && pVM->hm.s.fNestedPaging),
                        VERR_HM_IPE_1);
 
     /*
      * Enable VPID if configured and supported.
      */
-    if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
+    if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
         pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid;
 
 #if 0
     /*
      * Enable APIC register virtualization and virtual-interrupt delivery if supported.
      */
-    if (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT)
-        && (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY))
+    if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT)
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY))
         pVM->hm.s.fVirtApicRegs = true;
 
     /*
@@ -1584,8 +1705,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      */
     /** @todo Add and query IPRT API for host OS support for posted-interrupt IPI
      *        here. */
-    if (   (pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR)
-        && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT))
+    if (   (pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1  & VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR)
+        && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT))
         pVM->hm.s.fPostedIntrs = true;
 #endif
 
@@ -1594,7 +1715,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      * RDTSCP would cause a #UD. There might be no CPUs out there where this happens, as RDTSCP was introduced
      * in Nehalems and secondary VM exec. controls should be supported in all of them, but nonetheless it's Intel...
      */
-    if (   !(pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+    if (   !(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
         && CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
     {
         CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
@@ -1643,11 +1764,11 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
                 RTGCPHYS GCPhys;
                 rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pRealModeTSS, &GCPhys);
                 AssertRCReturn(rc, rc);
-                LogRel(("HM: Real Mode TSS guest physaddr    = %#RGp\n", GCPhys));
+                LogRel(("HM: Real Mode TSS guest physaddr      = %#RGp\n", GCPhys));
 
                 rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
                 AssertRCReturn(rc, rc);
-                LogRel(("HM: Non-Paging Mode EPT CR3         = %#RGp\n", GCPhys));
+                LogRel(("HM: Non-Paging Mode EPT CR3           = %#RGp\n", GCPhys));
             }
         }
         else
@@ -1682,7 +1803,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS, "VT-x setup failed: %Rrc", rc);
     }
 
-    LogRel(("HM: Supports VMCS EFER fields       = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEfer));
+    LogRel(("HM: Supports VMCS EFER fields         = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEfer));
     LogRel(("HM: Enabled VMX\n"));
     pVM->hm.s.vmx.fEnabled = true;
 
@@ -1718,13 +1839,13 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     {
         LogRel(("HM: Enabled nested paging\n"));
         if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_SINGLE_CONTEXT)
-            LogRel(("HM:   EPT flush type                = Single context\n"));
+            LogRel(("HM:   EPT flush type                  = Single context\n"));
         else if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_ALL_CONTEXTS)
-            LogRel(("HM:   EPT flush type                = All contexts\n"));
+            LogRel(("HM:   EPT flush type                  = All contexts\n"));
         else if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_NOT_SUPPORTED)
-            LogRel(("HM:   EPT flush type                = Not supported\n"));
+            LogRel(("HM:   EPT flush type                  = Not supported\n"));
         else
-            LogRel(("HM:   EPT flush type                = %#x\n", pVM->hm.s.vmx.enmTlbFlushEpt));
+            LogRel(("HM:   EPT flush type                  = %#x\n", pVM->hm.s.vmx.enmTlbFlushEpt));
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             LogRel(("HM: Enabled unrestricted guest execution\n"));
@@ -1751,15 +1872,15 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     {
         LogRel(("HM: Enabled VPID\n"));
         if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_INDIV_ADDR)
-            LogRel(("HM:   VPID flush type               = Individual addresses\n"));
+            LogRel(("HM:   VPID flush type                 = Individual addresses\n"));
         else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
-            LogRel(("HM:   VPID flush type               = Single context\n"));
+            LogRel(("HM:   VPID flush type                 = Single context\n"));
         else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_ALL_CONTEXTS)
-            LogRel(("HM:   VPID flush type               = All contexts\n"));
+            LogRel(("HM:   VPID flush type                 = All contexts\n"));
         else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-            LogRel(("HM:   VPID flush type               = Single context retain globals\n"));
+            LogRel(("HM:   VPID flush type                 = Single context retain globals\n"));
         else
-            LogRel(("HM:   VPID flush type               = %#x\n", pVM->hm.s.vmx.enmTlbFlushVpid));
+            LogRel(("HM:   VPID flush type                 = %#x\n", pVM->hm.s.vmx.enmTlbFlushVpid));
     }
     else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_NOT_SUPPORTED)
         LogRel(("HM: Ignoring VPID capabilities of CPU\n"));
@@ -1791,8 +1912,6 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     if (HMAmdIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
         LogRel(("HM: AMD Cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
-    LogRel(("HM: CPUID 0x80000001.u32AMDFeatureECX = %#RX32\n", pVM->hm.s.cpuid.u32AMDFeatureECX));
-    LogRel(("HM: CPUID 0x80000001.u32AMDFeatureEDX = %#RX32\n", pVM->hm.s.cpuid.u32AMDFeatureEDX));
     LogRel(("HM: AMD HWCR MSR                      = %#RX64\n", pVM->hm.s.svm.u64MsrHwcr));
     LogRel(("HM: AMD-V revision                    = %#x\n",    pVM->hm.s.svm.u32Rev));
     LogRel(("HM: AMD-V max ASID                    = %RU32\n",  pVM->hm.s.uMaxAsid));
@@ -3398,8 +3517,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
     if (iStatusCode == VERR_VMX_UNABLE_TO_START_VM)
     {
-        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed    %#RX32\n", pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1));
-        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry disallowed %#RX32\n", pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed    %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry disallowed %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.disallowed0));
     }
     else if (iStatusCode == VERR_VMX_INVALID_VMXON_PTR)
         LogRel(("HM: HCPhysVmxEnableError         = %#RHp\n", pVM->hm.s.vmx.HCPhysVmxEnableError));

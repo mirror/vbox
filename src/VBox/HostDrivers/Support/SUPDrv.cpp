@@ -4325,7 +4325,7 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
                 rc = SUPR0GetVmxUsability(&fIsSmxModeAmbiguous);
                 if (rc == VINF_SUCCESS)
                 {
-                    VMXCAPABILITY vtCaps;
+                    VMXCTLSMSR vtCaps;
 
                     *pfCaps |= SUPVTCAPS_VT_X;
 

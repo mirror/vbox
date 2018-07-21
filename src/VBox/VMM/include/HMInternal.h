@@ -560,12 +560,6 @@ typedef struct HM
     uint32_t                        cPatches;
     HMTPRPATCH                      aPatches[64];
 
-    struct
-    {
-        uint32_t                    u32AMDFeatureECX;
-        uint32_t                    u32AMDFeatureEDX;
-    } cpuid;
-
     /** Last recorded error code during HM ring-0 init. */
     int32_t                 rcInit;
 

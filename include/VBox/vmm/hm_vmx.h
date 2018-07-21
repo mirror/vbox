@@ -830,7 +830,7 @@ typedef VMXAUTOMSR *PVMXAUTOMSR;
 typedef const VMXAUTOMSR *PCVMXAUTOMSR;
 
 /**
- * VMX-capability qword.
+ * VMX controls MSR.
  */
 typedef union
 {
@@ -843,8 +843,12 @@ typedef union
         uint32_t        allowed1;
     } n;
     uint64_t            u;
-} VMXCAPABILITY;
-AssertCompileSize(VMXCAPABILITY, 8);
+} VMXCTLSMSR;
+AssertCompileSize(VMXCTLSMSR, 8);
+/** Pointer to a VMXCTLSMSR union. */
+typedef VMXCTLSMSR *PVMXCTLSMSR;
+/** Pointer to a const VMXCTLSMSR union. */
+typedef const VMXCTLSMSR *PCVMXCTLSMSR;
 
 /**
  * VMX tagged-TLB flush types.
@@ -866,13 +870,17 @@ typedef const VMXTLBFLUSHTYPE *PCVMXTLBFLUSHTYPE;
  */
 typedef struct VMXMSRS
 {
-    uint64_t        u64FeatureCtrl;
+    uint64_t        u64FeatCtrl;
     uint64_t        u64Basic;
-    VMXCAPABILITY   VmxPinCtls;
-    VMXCAPABILITY   VmxProcCtls;
-    VMXCAPABILITY   VmxProcCtls2;
-    VMXCAPABILITY   VmxExit;
-    VMXCAPABILITY   VmxEntry;
+    VMXCTLSMSR      PinCtls;
+    VMXCTLSMSR      ProcCtls;
+    VMXCTLSMSR      ProcCtls2;
+    VMXCTLSMSR      ExitCtls;
+    VMXCTLSMSR      EntryCtls;
+    VMXCTLSMSR      TruePinCtls;
+    VMXCTLSMSR      TrueProcCtls;
+    VMXCTLSMSR      TrueEntryCtls;
+    VMXCTLSMSR      TrueExitCtls;
     uint64_t        u64Misc;
     uint64_t        u64Cr0Fixed0;
     uint64_t        u64Cr0Fixed1;

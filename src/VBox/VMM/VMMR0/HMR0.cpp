@@ -151,13 +151,6 @@ static struct
     /** Last recorded error code during HM ring-0 init. */
     int32_t                         rcInit;
 
-    /** CPUID 0x80000001 ecx:edx features */
-    struct
-    {
-        uint32_t                    u32AMDFeatureECX;
-        uint32_t                    u32AMDFeatureEDX;
-    } cpuid;
-
     /** If set, VT-x/AMD-V is enabled globally at init time, otherwise it's
      * enabled and disabled each time it's used to execute guest code. */
     bool                            fGlobalInit;
@@ -339,20 +332,21 @@ static bool hmR0InitIntelIsSubjectToVmxPreemptionTimerErratum(void)
  * Intel specific initialization code.
  *
  * @returns VBox status code (will only fail if out of memory).
+ * @param   uFeatEcx        Standard cpuid:1 feature ECX leaf.
+ * @param   uFeatEdx        Standard cpuid:1 feature EDX leaf.
  */
-static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
+static int hmR0InitIntel(uint32_t uFeatEcx, uint32_t uFeatEdx)
 {
     /*
      * Check that all the required VT-x features are present.
      * We also assume all VT-x-enabled CPUs support fxsave/fxrstor.
      */
-    if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
-         && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-         && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
-       )
+    if (    (uFeatEcx & X86_CPUID_FEATURE_ECX_VMX)
+         && (uFeatEdx & X86_CPUID_FEATURE_EDX_MSR)
+         && (uFeatEdx & X86_CPUID_FEATURE_EDX_FXSR))
     {
         /* Read this MSR now as it may be useful for error reporting when initializing VT-x fails. */
-        g_HmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+        g_HmR0.vmx.Msrs.u64FeatCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
         /*
          * First try use native kernel API for controlling VT-x.
@@ -381,7 +375,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
         if (RT_SUCCESS(g_HmR0.rcInit))
         {
             /* Reread in case it was changed by SUPR0GetVmxUsability(). */
-            g_HmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+            g_HmR0.vmx.Msrs.u64FeatCtrl     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
             /*
              * Read all relevant registers and MSRs.
@@ -390,30 +384,38 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
             g_HmR0.vmx.u64HostEfer          = ASMRdMsr(MSR_K6_EFER);
             g_HmR0.vmx.Msrs.u64Basic        = ASMRdMsr(MSR_IA32_VMX_BASIC);
             /* KVM workaround: Intel SDM section 34.15.5 describes that MSR_IA32_SMM_MONITOR_CTL
-             * depends on bit 49 of MSR_IA32_VMX_BASIC_INFO while table 35-2 says that this MSR
-             * is available if either VMX or SMX is supported. */
+             * depends on bit 49 of MSR_IA32_VMX_BASIC while table 35-2 says that this MSR is
+             * available if either VMX or SMX is supported. */
             if (MSR_IA32_VMX_BASIC_DUAL_MON(g_HmR0.vmx.Msrs.u64Basic))
                 g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
-            g_HmR0.vmx.Msrs.VmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-            g_HmR0.vmx.Msrs.VmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-            g_HmR0.vmx.Msrs.VmxExit.u       = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-            g_HmR0.vmx.Msrs.VmxEntry.u      = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+            g_HmR0.vmx.Msrs.PinCtls.u       = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+            g_HmR0.vmx.Msrs.ProcCtls.u      = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+            g_HmR0.vmx.Msrs.ExitCtls.u      = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+            g_HmR0.vmx.Msrs.EntryCtls.u     = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
             g_HmR0.vmx.Msrs.u64Misc         = ASMRdMsr(MSR_IA32_VMX_MISC);
             g_HmR0.vmx.Msrs.u64Cr0Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
             g_HmR0.vmx.Msrs.u64Cr0Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
             g_HmR0.vmx.Msrs.u64Cr4Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
             g_HmR0.vmx.Msrs.u64Cr4Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
             g_HmR0.vmx.Msrs.u64VmcsEnum     = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
-            /* VPID 16 bits ASID. */
-            g_HmR0.uMaxAsid                 = 0x10000; /* exclusive */
-
-            if (g_HmR0.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+            if (MSR_IA32_VMX_BASIC_TRUE_CONTROLS(g_HmR0.vmx.Msrs.u64Basic))
             {
-                g_HmR0.vmx.Msrs.VmxProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                if (g_HmR0.vmx.Msrs.VmxProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
+                g_HmR0.vmx.Msrs.TruePinCtls.u   = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
+                g_HmR0.vmx.Msrs.TrueProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
+                g_HmR0.vmx.Msrs.TrueEntryCtls.u = ASMRdMsr(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
+                g_HmR0.vmx.Msrs.TrueExitCtls.u  = ASMRdMsr(MSR_IA32_VMX_TRUE_EXIT_CTLS);
+            }
+
+            /* VPID 16 bits ASID. */
+            g_HmR0.uMaxAsid = 0x10000; /* exclusive */
+
+            if (g_HmR0.vmx.Msrs.ProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+            {
+                g_HmR0.vmx.Msrs.ProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                if (g_HmR0.vmx.Msrs.ProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
                     g_HmR0.vmx.Msrs.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
 
-                if (g_HmR0.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
+                if (g_HmR0.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
                     g_HmR0.vmx.Msrs.u64Vmfunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
             }
 
@@ -512,7 +514,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                  * Check for the VMX-Preemption Timer and adjust for the "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" erratum.
                  */
-                if (g_HmR0.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
+                if (g_HmR0.vmx.Msrs.PinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
                 {
                     g_HmR0.vmx.fUsePreemptTimer   = true;
                     g_HmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HmR0.vmx.Msrs.u64Misc);
@@ -536,20 +538,22 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
  * AMD-specific initialization code.
  *
  * @returns VBox status code.
+ * @param   uFeatEdx        Standard cpuid:1 feature EDX leaf.
+ * @param   uExtFeatEcx     Extended cpuid:0x80000001 feature ECX leaf.
+ * @param   uMaxExtLeaf     Extended cpuid:0x80000000 feature maximum valid leaf.
  */
-static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
+static int hmR0InitAmd(uint32_t uFeatEdx, uint32_t uExtFeatEcx, uint32_t uMaxExtLeaf)
 {
     /*
-     * Read all SVM MSRs if SVM is available. (same goes for RDMSR/WRMSR)
-     * We also assume all SVM-enabled CPUs support fxsave/fxrstor.
+     * Read all SVM MSRs if SVM is available.
+     * We also require all SVM-enabled CPUs to support rdmsr/wrmsr and fxsave/fxrstor.
      */
     int rc;
-    if (   (g_HmR0.cpuid.u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
-        && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-        && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+    if (   (uExtFeatEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
+        && (uFeatEdx    & X86_CPUID_FEATURE_EDX_MSR)
+        && (uFeatEdx    & X86_CPUID_FEATURE_EDX_FXSR)
         && ASMIsValidExtRange(uMaxExtLeaf)
-        && uMaxExtLeaf >= 0x8000000a
-       )
+        && uMaxExtLeaf >= 0x8000000a)
     {
         /* Call the global AMD-V initialization routine. */
         rc = SVMR0GlobalInit();
@@ -605,7 +609,8 @@ static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
     }
     else
     {
-        rc = VINF_SUCCESS;         /* Don't fail if AMD-V is not supported. See @bugref{6785}. */
+        /* Don't fail if AMD-V is not supported. See @bugref{6785}. */
+        rc = VINF_SUCCESS;
         g_HmR0.rcInit = VERR_SVM_NO_SVM;
     }
     return rc;
@@ -668,33 +673,32 @@ VMMR0_INT_DECL(int) HMR0Init(void)
     if (ASMHasCpuId())
     {
         /* Standard features. */
-        uint32_t uMaxLeaf, u32VendorEBX, u32VendorECX, u32VendorEDX;
-        ASMCpuId(0, &uMaxLeaf, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
+        uint32_t uMaxLeaf, uVendorEbx, uVendorEcx, uVendorEdx;
+        ASMCpuId(0, &uMaxLeaf, &uVendorEbx, &uVendorEcx, &uVendorEdx);
         if (ASMIsValidStdRange(uMaxLeaf))
         {
-            uint32_t u32FeaturesECX, u32FeaturesEDX, u32Dummy;
-            ASMCpuId(1, &u32Dummy, &u32Dummy,   &u32FeaturesECX, &u32FeaturesEDX);
-
-            /* Query AMD features. */
-            uint32_t uMaxExtLeaf = ASMCpuId_EAX(0x80000000);
-            if (ASMIsValidExtRange(uMaxExtLeaf))
-                ASMCpuId(0x80000001, &u32Dummy, &u32Dummy,
-                         &g_HmR0.cpuid.u32AMDFeatureECX,
-                         &g_HmR0.cpuid.u32AMDFeatureEDX);
-            else
-                g_HmR0.cpuid.u32AMDFeatureECX = g_HmR0.cpuid.u32AMDFeatureEDX = 0;
+            uint32_t uFeatEcx, uFeatEdx, uDummy;
+            ASMCpuId(1, &uDummy, &uDummy, &uFeatEcx, &uFeatEdx);
 
             /* Go to CPU specific initialization code. */
-            if (   ASMIsIntelCpuEx(u32VendorEBX, u32VendorECX, u32VendorEDX)
-                || ASMIsViaCentaurCpuEx(u32VendorEBX, u32VendorECX, u32VendorEDX))
+            if (   ASMIsIntelCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
+                || ASMIsViaCentaurCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
             {
-                rc = hmR0InitIntel(u32FeaturesECX, u32FeaturesEDX);
+                rc = hmR0InitIntel(uFeatEcx, uFeatEdx);
                 if (RT_FAILURE(rc))
                     return rc;
             }
-            else if (ASMIsAmdCpuEx(u32VendorEBX, u32VendorECX, u32VendorEDX))
+            else if (ASMIsAmdCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
             {
-                rc = hmR0InitAmd(u32FeaturesEDX, uMaxExtLeaf);
+                /* Query extended features for SVM capability. */
+                uint32_t       uExtFeatEcx;
+                uint32_t const uMaxExtLeaf = ASMCpuId_EAX(0x80000000);
+                if (ASMIsValidExtRange(uMaxExtLeaf))
+                    ASMCpuId(0x80000001, &uDummy, &uDummy, &uExtFeatEcx, &uDummy);
+                else
+                    uExtFeatEcx = 0;
+
+                rc = hmR0InitAmd(uFeatEdx, uExtFeatEcx, uMaxExtLeaf);
                 if (RT_FAILURE(rc))
                     return rc;
             }
@@ -1251,24 +1255,32 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     /*
      * Copy globals to the VM structure.
      */
-    pVM->hm.s.vmx.fSupported            = g_HmR0.vmx.fSupported;
-    pVM->hm.s.svm.fSupported            = g_HmR0.svm.fSupported;
+    pVM->hm.s.vmx.fSupported      = g_HmR0.vmx.fSupported;
+    pVM->hm.s.svm.fSupported      = g_HmR0.svm.fSupported;
+    Assert(!(pVM->hm.s.vmx.fSupported && pVM->hm.s.svm.fSupported));
+    if (pVM->hm.s.vmx.fSupported)
+    {
+        pVM->hm.s.vmx.fUsePreemptTimer     &= g_HmR0.vmx.fUsePreemptTimer;     /* Can be overridden by CFGM. See HMR3Init(). */
+        pVM->hm.s.vmx.cPreemptTimerShift    = g_HmR0.vmx.cPreemptTimerShift;
+        pVM->hm.s.vmx.u64HostCr4            = g_HmR0.vmx.u64HostCr4;
+        pVM->hm.s.vmx.u64HostEfer           = g_HmR0.vmx.u64HostEfer;
+        pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.vmx.u64HostSmmMonitorCtl;
+        pVM->hm.s.vmx.Msrs                  = g_HmR0.vmx.Msrs;
+    }
+    else if (pVM->hm.s.svm.fSupported)
+    {
+        pVM->hm.s.svm.u64MsrHwcr  = g_HmR0.svm.u64MsrHwcr;
+        pVM->hm.s.svm.u32Rev      = g_HmR0.svm.u32Rev;
+        pVM->hm.s.svm.u32Features = g_HmR0.svm.u32Features;
+    }
+    pVM->hm.s.rcInit              = g_HmR0.rcInit;
+    pVM->hm.s.uMaxAsid            = g_HmR0.uMaxAsid;
 
-    pVM->hm.s.vmx.fUsePreemptTimer     &= g_HmR0.vmx.fUsePreemptTimer;     /* Can be overridden by CFGM. See HMR3Init(). */
-    pVM->hm.s.vmx.cPreemptTimerShift    = g_HmR0.vmx.cPreemptTimerShift;
-    pVM->hm.s.vmx.u64HostCr4            = g_HmR0.vmx.u64HostCr4;
-    pVM->hm.s.vmx.u64HostEfer           = g_HmR0.vmx.u64HostEfer;
-    pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.vmx.u64HostSmmMonitorCtl;
-    pVM->hm.s.vmx.Msrs                  = g_HmR0.vmx.Msrs;
-    pVM->hm.s.svm.u64MsrHwcr            = g_HmR0.svm.u64MsrHwcr;
-    pVM->hm.s.svm.u32Rev                = g_HmR0.svm.u32Rev;
-    pVM->hm.s.svm.u32Features           = g_HmR0.svm.u32Features;
-    pVM->hm.s.cpuid.u32AMDFeatureECX    = g_HmR0.cpuid.u32AMDFeatureECX;
-    pVM->hm.s.cpuid.u32AMDFeatureEDX    = g_HmR0.cpuid.u32AMDFeatureEDX;
-    pVM->hm.s.rcInit                    = g_HmR0.rcInit;
-    pVM->hm.s.uMaxAsid                  = g_HmR0.uMaxAsid;
-
-    if (!pVM->hm.s.cMaxResumeLoops) /* allow ring-3 overrides */
+    /*
+     * Set default maximum inner loops in ring-0 before returning to ring-3.
+     * Can be overriden using CFGM.
+     */
+    if (!pVM->hm.s.cMaxResumeLoops)
     {
         pVM->hm.s.cMaxResumeLoops       = 1024;
         if (RTThreadPreemptIsPendingTrusty())
