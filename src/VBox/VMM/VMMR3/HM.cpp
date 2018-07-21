@@ -1556,6 +1556,7 @@ static void hmR3VmxReportEptVpidCapsMsr(uint64_t fCaps)
 /**
  * Reports MSR_IA32_VMX_MISC MSR to the log.
  *
+ * @param   pVM      Pointer to the VM.
  * @param   fMisc    The VMX misc. MSR value.
  */
 static void hmR3VmxReportMiscMsr(PVM pVM, uint64_t fMisc)
@@ -1676,7 +1677,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     }
 
     /*
-     * EPT and unhampered guest execution are determined in HMR3Init, verify the sanity of that.
+     * EPT and unrestricted guest execution are determined in HMR3Init, verify the sanity of that.
      */
     AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
                        || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT),
@@ -2906,11 +2907,11 @@ static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
 
 
 /**
- * Checks if we can currently use hardware accelerated raw mode.
+ * Checks if we can currently use hardware accelerated mode.
  *
  * @returns true if we can currently use hardware acceleration, otherwise false.
  * @param   pVM         The cross context VM structure.
- * @param   pCtx        Partial VM execution context.
+ * @param   pCtx        Pointer to the guest CPU context.
  */
 VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 {
@@ -3060,41 +3061,41 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     if (pVM->hm.s.vmx.fEnabled)
     {
-        uint32_t uCR0Mask;
+        uint32_t uCr0Mask;
 
         /* If bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
-        uCR0Mask = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
+        uCr0Mask = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
 
         /* We ignore the NE bit here on purpose; see HMR0.cpp for details. */
-        uCR0Mask &= ~X86_CR0_NE;
+        uCr0Mask &= ~X86_CR0_NE;
 
         if (fSupportsRealMode)
         {
             /* We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
-            uCR0Mask &= ~(X86_CR0_PG|X86_CR0_PE);
+            uCr0Mask &= ~(X86_CR0_PG|X86_CR0_PE);
         }
         else
         {
             /* We support protected mode without paging using identity mapping. */
-            uCR0Mask &= ~X86_CR0_PG;
+            uCr0Mask &= ~X86_CR0_PG;
         }
-        if ((pCtx->cr0 & uCR0Mask) != uCR0Mask)
+        if ((pCtx->cr0 & uCr0Mask) != uCr0Mask)
             return false;
 
         /* If bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
-        uCR0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
-        if ((pCtx->cr0 & uCR0Mask) != 0)
+        uCr0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
+        if ((pCtx->cr0 & uCr0Mask) != 0)
             return false;
 
         /* If bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
-        uCR0Mask  = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
-        uCR0Mask &= ~X86_CR4_VMXE;
-        if ((pCtx->cr4 & uCR0Mask) != uCR0Mask)
+        uCr0Mask  = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
+        uCr0Mask &= ~X86_CR4_VMXE;
+        if ((pCtx->cr4 & uCr0Mask) != uCr0Mask)
             return false;
 
         /* If bit N is cleared in cr4_fixed1, then it must be zero in the guest's cr4. */
-        uCR0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
-        if ((pCtx->cr4 & uCR0Mask) != 0)
+        uCr0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
+        if ((pCtx->cr4 & uCr0Mask) != 0)
             return false;
 
         pVCpu->hm.s.fActive = true;
@@ -3348,7 +3349,8 @@ VMMR3DECL(bool) HMR3IsUXActive(PUVM pUVM)
  */
 VMMR3_INT_DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
 {
-    return HMIsEnabled(pVCpu->pVMR3) && pVCpu->hm.s.Event.fPending;
+    return HMIsEnabled(pVCpu->pVMR3)
+        && pVCpu->hm.s.Event.fPending;
 }
 
 
