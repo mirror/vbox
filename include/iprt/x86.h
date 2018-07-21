@@ -1396,10 +1396,10 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_MC0_STATUS                 0x401
 
 /** Basic VMX information. */
-#define MSR_IA32_VMX_BASIC_INFO             0x480
-/** Allowed settings for pin-based VM execution controls */
+#define MSR_IA32_VMX_BASIC                  0x480
+/** Allowed settings for pin-based VM execution controls. */
 #define MSR_IA32_VMX_PINBASED_CTLS          0x481
-/** Allowed settings for proc-based VM execution controls */
+/** Allowed settings for proc-based VM execution controls. */
 #define MSR_IA32_VMX_PROCBASED_CTLS         0x482
 /** Allowed settings for the VMX exit controls. */
 #define MSR_IA32_VMX_EXIT_CTLS              0x483
@@ -1433,6 +1433,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_TRUE_ENTRY_CTLS        0x490
 /** Allowed settings for the VM-function controls. */
 #define MSR_IA32_VMX_VMFUNC                 0x491
+
 
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600
