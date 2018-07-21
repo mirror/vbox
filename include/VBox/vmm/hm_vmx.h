@@ -98,10 +98,10 @@ typedef struct VMXRESTOREHOST
 /** Pointer to VMXRESTOREHOST. */
 typedef VMXRESTOREHOST *PVMXRESTOREHOST;
 AssertCompileSize(X86XDTR64, 10);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr, 16);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr,   16);
 AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw.uAddr, 32);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 48);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    56);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr,   48);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,      56);
 AssertCompileSize(VMXRESTOREHOST, 72);
 AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 
@@ -890,7 +890,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** -1 Invalid exit code */
-#define VMX_EXIT_INVALID                                        -1
+#define VMX_EXIT_INVALID                                      (-1)
 /** 0 Exception or non-maskable interrupt (NMI). */
 #define VMX_EXIT_XCPT_OR_NMI                                    0
 /** 1 External interrupt. */
@@ -1090,11 +1090,11 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** VMCS revision identifier used by the processor. */
-#define MSR_IA32_VMX_BASIC_VMCS_ID(a)                      ((a) & 0x7FFFFFFF)
+#define MSR_IA32_VMX_BASIC_VMCS_ID(a)                      ((a) & 0x7fffffff)
 /** Shift to get the VMCS size. */
 #define MSR_IA32_VMX_BASIC_VMCS_SIZE_SHIFT                 32
 /** VMCS size in bytes. */
-#define MSR_IA32_VMX_BASIC_VMCS_SIZE(a)                    (((a) >> 32) & 0x1FFF)
+#define MSR_IA32_VMX_BASIC_VMCS_SIZE(a)                    (((a) >> 32) & 0x1fff)
 /** Shift to get the width of physical addresses and associated memory regions. */
 #define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT           48
 /** Width of physical addresses used for the VMCS and associated memory regions. */
@@ -1107,7 +1107,7 @@ typedef VMXMSRS *PVMXMSRS;
  *  memory regions. */
 #define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT             50
 /** Memory type that must be used for the VMCS and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
+#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xf)
 /** Shift to get the additional VM-exit information for INS/OUTS. */
 #define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT             54
 /** Additional VM-exit information for INS/OUTS. */
@@ -1125,13 +1125,13 @@ typedef VMXMSRS *PVMXMSRS;
  */
 /** Relationship between the preemption timer and tsc; count down every time bit
  *  x of the tsc changes. */
-#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1F)
+#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1f)
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
 #define MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(a)               (((a) >> 5) & 1)
 /** Activity states supported by the implementation. */
 #define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    (((a) >> 6) & 0x7)
 /** Number of CR3 target values supported by the processor. (0-256) */
-#define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         (((a) >> 16) & 0x1FF)
+#define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         (((a) >> 16) & 0x1ff)
 /** Maximum number of MSRs in the VMCS. (N+1)*512. */
 #define MSR_IA32_VMX_MISC_MAX_MSR(a)                            (((((a) >> 25) & 0x7) + 1) * 512)
 /** Whether RDMSR can be used to read IA32_SMBASE_MSR in SMM. */
@@ -1149,7 +1149,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** Highest field index. */
-#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 (((a) >> 1) & 0x1FF)
+#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 (((a) >> 1) & 0x1ff)
 /** @} */
 
 
@@ -1201,33 +1201,33 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS16_GUEST_SS_SEL                                 0x804
 #define VMX_VMCS16_GUEST_DS_SEL                                 0x806
 #define VMX_VMCS16_GUEST_FS_SEL                                 0x808
-#define VMX_VMCS16_GUEST_GS_SEL                                 0x80A
-#define VMX_VMCS16_GUEST_LDTR_SEL                               0x80C
-#define VMX_VMCS16_GUEST_TR_SEL                                 0x80E
+#define VMX_VMCS16_GUEST_GS_SEL                                 0x80a
+#define VMX_VMCS16_GUEST_LDTR_SEL                               0x80c
+#define VMX_VMCS16_GUEST_TR_SEL                                 0x80e
 #define VMX_VMCS16_GUEST_INTR_STATUS                            0x810
 /** @} */
 
 /** @name VMCS field encoding: 16-bits host fields.
  * @{
  */
-#define VMX_VMCS16_HOST_ES_SEL                                  0xC00
-#define VMX_VMCS16_HOST_CS_SEL                                  0xC02
-#define VMX_VMCS16_HOST_SS_SEL                                  0xC04
-#define VMX_VMCS16_HOST_DS_SEL                                  0xC06
-#define VMX_VMCS16_HOST_FS_SEL                                  0xC08
-#define VMX_VMCS16_HOST_GS_SEL                                  0xC0A
-#define VMX_VMCS16_HOST_TR_SEL                                  0xC0C
+#define VMX_VMCS16_HOST_ES_SEL                                  0xc00
+#define VMX_VMCS16_HOST_CS_SEL                                  0xc02
+#define VMX_VMCS16_HOST_SS_SEL                                  0xc04
+#define VMX_VMCS16_HOST_DS_SEL                                  0xc06
+#define VMX_VMCS16_HOST_FS_SEL                                  0xc08
+#define VMX_VMCS16_HOST_GS_SEL                                  0xc0a
+#define VMX_VMCS16_HOST_TR_SEL                                  0xc0c
 /** @}          */
 
 /** @name VMCS field encoding: 64-bit host fields.
  * @{
  */
-#define VMX_VMCS64_HOST_PAT_FULL                                0x2C00
-#define VMX_VMCS64_HOST_PAT_HIGH                                0x2C01
-#define VMX_VMCS64_HOST_EFER_FULL                               0x2C02
-#define VMX_VMCS64_HOST_EFER_HIGH                               0x2C03
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_PAT_FULL                                0x2c00
+#define VMX_VMCS64_HOST_PAT_HIGH                                0x2c01
+#define VMX_VMCS64_HOST_EFER_FULL                               0x2c02
+#define VMX_VMCS64_HOST_EFER_HIGH                               0x2c03
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2c04      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2c05      /**< MSR IA32_PERF_GLOBAL_CTRL */
 /** @}          */
 
 
@@ -1244,10 +1244,10 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH                     0x2007
 #define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL                      0x2008
 #define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH                      0x2009
-#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL                     0x200A
-#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                     0x200B
-#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                      0x200C
-#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                      0x200D
+#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL                     0x200a
+#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                     0x200b
+#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                      0x200c
+#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                      0x200d
 #define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                         0x2010
 #define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                         0x2011
 #define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                     0x2012
@@ -1258,12 +1258,12 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_POSTED_INTR_DESC_HIGH                   0x2017
 #define VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL                       0x2018
 #define VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH                       0x2019
-#define VMX_VMCS64_CTRL_EPTP_FULL                               0x201A
-#define VMX_VMCS64_CTRL_EPTP_HIGH                               0x201B
-#define VMX_VMCS64_CTRL_EOI_BITMAP_0_FULL                       0x201C
-#define VMX_VMCS64_CTRL_EOI_BITMAP_0_HIGH                       0x201D
-#define VMX_VMCS64_CTRL_EOI_BITMAP_1_FULL                       0x201E
-#define VMX_VMCS64_CTRL_EOI_BITMAP_1_HIGH                       0x201F
+#define VMX_VMCS64_CTRL_EPTP_FULL                               0x201a
+#define VMX_VMCS64_CTRL_EPTP_HIGH                               0x201b
+#define VMX_VMCS64_CTRL_EOI_BITMAP_0_FULL                       0x201c
+#define VMX_VMCS64_CTRL_EOI_BITMAP_0_HIGH                       0x201d
+#define VMX_VMCS64_CTRL_EOI_BITMAP_1_FULL                       0x201e
+#define VMX_VMCS64_CTRL_EOI_BITMAP_1_HIGH                       0x201f
 #define VMX_VMCS64_CTRL_EOI_BITMAP_2_FULL                       0x2020
 #define VMX_VMCS64_CTRL_EOI_BITMAP_2_HIGH                       0x2021
 #define VMX_VMCS64_CTRL_EOI_BITMAP_3_FULL                       0x2022
@@ -1274,10 +1274,10 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_VMREAD_BITMAP_HIGH                      0x2027
 #define VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL                     0x2028
 #define VMX_VMCS64_CTRL_VMWRITE_BITMAP_HIGH                     0x2029
-#define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL                 0x202A
-#define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH                 0x202B
-#define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL                 0x202C
-#define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH                 0x202D
+#define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL                 0x202a
+#define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH                 0x202b
+#define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL                 0x202c
+#define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH                 0x202d
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL                     0x2032
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH                     0x2033
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                    0x2400
@@ -1298,12 +1298,12 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_GUEST_EFER_HIGH                              0x2807
 #define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL                  0x2808      /**< MSR IA32_PERF_GLOBAL_CTRL */
 #define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH                  0x2809      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS64_GUEST_PDPTE0_FULL                            0x280A
-#define VMX_VMCS64_GUEST_PDPTE0_HIGH                            0x280B
-#define VMX_VMCS64_GUEST_PDPTE1_FULL                            0x280C
-#define VMX_VMCS64_GUEST_PDPTE1_HIGH                            0x280D
-#define VMX_VMCS64_GUEST_PDPTE2_FULL                            0x280E
-#define VMX_VMCS64_GUEST_PDPTE2_HIGH                            0x280F
+#define VMX_VMCS64_GUEST_PDPTE0_FULL                            0x280a
+#define VMX_VMCS64_GUEST_PDPTE0_HIGH                            0x280b
+#define VMX_VMCS64_GUEST_PDPTE1_FULL                            0x280c
+#define VMX_VMCS64_GUEST_PDPTE1_HIGH                            0x280d
+#define VMX_VMCS64_GUEST_PDPTE2_FULL                            0x280e
+#define VMX_VMCS64_GUEST_PDPTE2_HIGH                            0x280f
 #define VMX_VMCS64_GUEST_PDPTE3_FULL                            0x2810
 #define VMX_VMCS64_GUEST_PDPTE3_HIGH                            0x2811
 /** @} */
@@ -1317,17 +1317,17 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS32_CTRL_EXCEPTION_BITMAP                        0x4004
 #define VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK                    0x4006
 #define VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH                   0x4008
-#define VMX_VMCS32_CTRL_CR3_TARGET_COUNT                        0x400A
-#define VMX_VMCS32_CTRL_EXIT                                    0x400C
-#define VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT                    0x400E
+#define VMX_VMCS32_CTRL_CR3_TARGET_COUNT                        0x400a
+#define VMX_VMCS32_CTRL_EXIT                                    0x400c
+#define VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT                    0x400e
 #define VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT                     0x4010
 #define VMX_VMCS32_CTRL_ENTRY                                   0x4012
 #define VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT                    0x4014
 #define VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO                 0x4016
 #define VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE                 0x4018
-#define VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH                      0x401A
-#define VMX_VMCS32_CTRL_TPR_THRESHOLD                           0x401C
-#define VMX_VMCS32_CTRL_PROC_EXEC2                              0x401E
+#define VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH                      0x401a
+#define VMX_VMCS32_CTRL_TPR_THRESHOLD                           0x401c
+#define VMX_VMCS32_CTRL_PROC_EXEC2                              0x401e
 #define VMX_VMCS32_CTRL_PLE_GAP                                 0x4020
 #define VMX_VMCS32_CTRL_PLE_WINDOW                              0x4022
 /** @} */
@@ -1514,16 +1514,16 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                    0x4404
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE              0x4406
 #define VMX_VMCS32_RO_IDT_VECTORING_INFO                        0x4408
-#define VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE                  0x440A
-#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                         0x440C
-#define VMX_VMCS32_RO_EXIT_INSTR_INFO                           0x440E
+#define VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE                  0x440a
+#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                         0x440c
+#define VMX_VMCS32_RO_EXIT_INSTR_INFO                           0x440e
 /** @} */
 
 
 /** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
-#define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xFFFF)
+#define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
 /** @} */
 
 
@@ -1539,7 +1539,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                    ((a) & 0xFF)
+#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                    ((a) & 0xff)
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                   8
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                      (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID             RT_BIT(11)
@@ -1568,7 +1568,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
  * @{
  */
-#define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xFF)
+#define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
 #define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
@@ -1598,23 +1598,23 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS32_GUEST_SS_LIMIT                               0x4804
 #define VMX_VMCS32_GUEST_DS_LIMIT                               0x4806
 #define VMX_VMCS32_GUEST_FS_LIMIT                               0x4808
-#define VMX_VMCS32_GUEST_GS_LIMIT                               0x480A
-#define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480C
-#define VMX_VMCS32_GUEST_TR_LIMIT                               0x480E
+#define VMX_VMCS32_GUEST_GS_LIMIT                               0x480a
+#define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480c
+#define VMX_VMCS32_GUEST_TR_LIMIT                               0x480e
 #define VMX_VMCS32_GUEST_GDTR_LIMIT                             0x4810
 #define VMX_VMCS32_GUEST_IDTR_LIMIT                             0x4812
 #define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS                       0x4814
 #define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS                       0x4816
 #define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS                       0x4818
-#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481A
-#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481C
-#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481E
+#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481a
+#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481c
+#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481e
 #define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                     0x4820
 #define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                       0x4822
 #define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE                 0x4824
 #define VMX_VMCS32_GUEST_ACTIVITY_STATE                         0x4826
-#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482A  /**< MSR IA32_SYSENTER_CS */
-#define VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE                    0x482E
+#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482a  /**< MSR IA32_SYSENTER_CS */
+#define VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE                    0x482e
 /** @} */
 
 
@@ -1657,9 +1657,9 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_CR0_READ_SHADOW                           0x6004
 #define VMX_VMCS_CTRL_CR4_READ_SHADOW                           0x6006
 #define VMX_VMCS_CTRL_CR3_TARGET_VAL0                           0x6008
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL1                           0x600A
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600C
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600E
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL1                           0x600a
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600c
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600e
 /** @} */
 
 
@@ -1671,7 +1671,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_RO_IO_RSX                                      0x6404
 #define VMX_VMCS_RO_IO_RDI                                      0x6406
 #define VMX_VMCS_RO_IO_RIP                                      0x6408
-#define VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR                      0x640A
+#define VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR                      0x640a
 /** @} */
 
 
@@ -1687,7 +1687,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** 5-7:  Reserved; cleared to 0. */
 #define VMX_EXIT_QUAL_DRX_RES2(a)                               (((a) >> 5) & 7)
 /** 8-11: General purpose register number. */
-#define VMX_EXIT_QUAL_DRX_GENREG(a)                             (((a) >> 8) & 0xF)
+#define VMX_EXIT_QUAL_DRX_GENREG(a)                             (((a) >> 8) & 0xf)
 /** Rest: reserved. */
 /** @} */
 
@@ -1704,7 +1704,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
-#define VMX_EXIT_QUAL_CRX_REGISTER(a)                  ((a) & 0xF)
+#define VMX_EXIT_QUAL_CRX_REGISTER(a)                  ((a) & 0xf)
 /** 4-5:   Access type. */
 #define VMX_EXIT_QUAL_CRX_ACCESS(a)                    (((a) >> 4) & 3)
 /** 6:     LMSW operand type */
@@ -1712,11 +1712,11 @@ typedef VMXMSRS *PVMXMSRS;
 /** 7:     Reserved; cleared to 0. */
 #define VMX_EXIT_QUAL_CRX_RES1(a)                      (((a) >> 7) & 1)
 /** 8-11:  General purpose register number (0 for CLTS & LMSW). */
-#define VMX_EXIT_QUAL_CRX_GENREG(a)                    (((a) >> 8) & 0xF)
+#define VMX_EXIT_QUAL_CRX_GENREG(a)                    (((a) >> 8) & 0xf)
 /** 12-15: Reserved; cleared to 0. */
-#define VMX_EXIT_QUAL_CRX_RES2(a)                      (((a) >> 12) & 0xF)
+#define VMX_EXIT_QUAL_CRX_RES2(a)                      (((a) >> 12) & 0xf)
 /** 16-31: LMSW source data (else 0). */
-#define VMX_EXIT_QUAL_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xFFFF)
+#define VMX_EXIT_QUAL_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xffff)
 /* Rest: reserved. */
 /** @} */
 
@@ -1734,7 +1734,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_EXIT_QUAL_TASK_SWITCH
  * @{
  */
-#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)          ((a) & 0xFFFF)
+#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)          ((a) & 0xffff)
 #define VMX_EXIT_QUAL_TASK_SWITCH_TYPE(a)              (((a) >> 30) & 0x3)
 /** Task switch caused by a call instruction. */
 #define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_CALL            0
@@ -1786,7 +1786,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** 6:     Operand encoding. */
 #define VMX_EXIT_QUAL_IO_ENCODING(a)                   (((a) >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
-#define VMX_EXIT_QUAL_IO_PORT(a)                       (((a) >> 16) & 0xFFFF)
+#define VMX_EXIT_QUAL_IO_PORT(a)                       (((a) >> 16) & 0xffff)
 /* Rest reserved. */
 /** @} */
 
@@ -1955,17 +1955,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_GUEST_CR4                                      0x6804
 #define VMX_VMCS_GUEST_ES_BASE                                  0x6806
 #define VMX_VMCS_GUEST_CS_BASE                                  0x6808
-#define VMX_VMCS_GUEST_SS_BASE                                  0x680A
-#define VMX_VMCS_GUEST_DS_BASE                                  0x680C
-#define VMX_VMCS_GUEST_FS_BASE                                  0x680E
+#define VMX_VMCS_GUEST_SS_BASE                                  0x680a
+#define VMX_VMCS_GUEST_DS_BASE                                  0x680c
+#define VMX_VMCS_GUEST_FS_BASE                                  0x680e
 #define VMX_VMCS_GUEST_GS_BASE                                  0x6810
 #define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
 #define VMX_VMCS_GUEST_TR_BASE                                  0x6814
 #define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
 #define VMX_VMCS_GUEST_IDTR_BASE                                0x6818
-#define VMX_VMCS_GUEST_DR7                                      0x681A
-#define VMX_VMCS_GUEST_RSP                                      0x681C
-#define VMX_VMCS_GUEST_RIP                                      0x681E
+#define VMX_VMCS_GUEST_DR7                                      0x681a
+#define VMX_VMCS_GUEST_RSP                                      0x681c
+#define VMX_VMCS_GUEST_RIP                                      0x681e
 #define VMX_VMCS_GUEST_RFLAGS                                   0x6820
 #define VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS                 0x6822
 #define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
@@ -1995,18 +1995,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @name VMCS field encoding: Natural width host-state fields.
  * @{
  */
-#define VMX_VMCS_HOST_CR0                                       0x6C00
-#define VMX_VMCS_HOST_CR3                                       0x6C02
-#define VMX_VMCS_HOST_CR4                                       0x6C04
-#define VMX_VMCS_HOST_FS_BASE                                   0x6C06
-#define VMX_VMCS_HOST_GS_BASE                                   0x6C08
-#define VMX_VMCS_HOST_TR_BASE                                   0x6C0A
-#define VMX_VMCS_HOST_GDTR_BASE                                 0x6C0C
-#define VMX_VMCS_HOST_IDTR_BASE                                 0x6C0E
-#define VMX_VMCS_HOST_SYSENTER_ESP                              0x6C10
-#define VMX_VMCS_HOST_SYSENTER_EIP                              0x6C12
-#define VMX_VMCS_HOST_RSP                                       0x6C14
-#define VMX_VMCS_HOST_RIP                                       0x6C16
+#define VMX_VMCS_HOST_CR0                                       0x6c00
+#define VMX_VMCS_HOST_CR3                                       0x6c02
+#define VMX_VMCS_HOST_CR4                                       0x6c04
+#define VMX_VMCS_HOST_FS_BASE                                   0x6c06
+#define VMX_VMCS_HOST_GS_BASE                                   0x6c08
+#define VMX_VMCS_HOST_TR_BASE                                   0x6c0a
+#define VMX_VMCS_HOST_GDTR_BASE                                 0x6c0c
+#define VMX_VMCS_HOST_IDTR_BASE                                 0x6c0e
+#define VMX_VMCS_HOST_SYSENTER_ESP                              0x6c10
+#define VMX_VMCS_HOST_SYSENTER_EIP                              0x6c12
+#define VMX_VMCS_HOST_RSP                                       0x6c14
+#define VMX_VMCS_HOST_RIP                                       0x6c16
 /** @} */
 
 
@@ -2058,7 +2058,7 @@ DECLINLINE(int) VMXEnable(RTHCPHYS HCPhysVmxOn)
     __asm__ __volatile__ (
        "push     %3                                             \n\t"
        "push     %2                                             \n\t"
-       ".byte    0xF3, 0x0F, 0xC7, 0x34, 0x24  # VMXON [esp]    \n\t"
+       ".byte    0xf3, 0x0f, 0xc7, 0x34, 0x24  # VMXON [esp]    \n\t"
        "ja       2f                                             \n\t"
        "je       1f                                             \n\t"
        "movl     $" RT_XSTR(VERR_VMX_INVALID_VMXON_PTR)", %0    \n\t"
@@ -2087,9 +2087,9 @@ DECLINLINE(int) VMXEnable(RTHCPHYS HCPhysVmxOn)
     {
         push    dword ptr [HCPhysVmxOn + 4]
         push    dword ptr [HCPhysVmxOn]
-        _emit   0xF3
-        _emit   0x0F
-        _emit   0xC7
+        _emit   0xf3
+        _emit   0x0f
+        _emit   0xc7
         _emit   0x34
         _emit   0x24     /* VMXON [esp] */
         jnc     vmxon_good
@@ -2118,7 +2118,7 @@ DECLINLINE(void) VMXDisable(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (
-       ".byte 0x0F, 0x01, 0xC4  # VMXOFF                        \n\t"
+       ".byte 0x0f, 0x01, 0xc4  # VMXOFF                        \n\t"
        );
 
 # elif VMX_USE_MSC_INTRINSICS
@@ -2127,9 +2127,9 @@ DECLINLINE(void) VMXDisable(void)
 # else
     __asm
     {
-        _emit   0x0F
+        _emit   0x0f
         _emit   0x01
-        _emit   0xC4   /* VMXOFF */
+        _emit   0xc4   /* VMXOFF */
     }
 # endif
 }
@@ -2152,7 +2152,7 @@ DECLINLINE(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs)
     __asm__ __volatile__ (
        "push    %3                                              \n\t"
        "push    %2                                              \n\t"
-       ".byte   0x66, 0x0F, 0xC7, 0x34, 0x24  # VMCLEAR [esp]   \n\t"
+       ".byte   0x66, 0x0f, 0xc7, 0x34, 0x24  # VMCLEAR [esp]   \n\t"
        "jnc     1f                                              \n\t"
        "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
        "1:                                                      \n\t"
@@ -2178,8 +2178,8 @@ DECLINLINE(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs)
         push    dword ptr [HCPhysVmcs + 4]
         push    dword ptr [HCPhysVmcs]
         _emit   0x66
-        _emit   0x0F
-        _emit   0xC7
+        _emit   0x0f
+        _emit   0xc7
         _emit   0x34
         _emit   0x24     /* VMCLEAR [esp] */
         jnc     success
@@ -2209,7 +2209,7 @@ DECLINLINE(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs)
     __asm__ __volatile__ (
        "push    %3                                              \n\t"
        "push    %2                                              \n\t"
-       ".byte   0x0F, 0xC7, 0x34, 0x24  # VMPTRLD [esp]         \n\t"
+       ".byte   0x0f, 0xc7, 0x34, 0x24  # VMPTRLD [esp]         \n\t"
        "jnc     1f                                              \n\t"
        "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
        "1:                                                      \n\t"
@@ -2233,8 +2233,8 @@ DECLINLINE(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs)
     {
         push    dword ptr [HCPhysVmcs + 4]
         push    dword ptr [HCPhysVmcs]
-        _emit   0x0F
-        _emit   0xC7
+        _emit   0x0f
+        _emit   0xc7
         _emit   0x34
         _emit   0x24     /* VMPTRLD [esp] */
         jnc     success
@@ -2281,7 +2281,7 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
-       ".byte  0x0F, 0x79, 0xC2        # VMWRITE eax, edx       \n\t"
+       ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx       \n\t"
        "ja     2f                                               \n\t"
        "je     1f                                               \n\t"
        "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0       \n\t"
@@ -2308,7 +2308,7 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
     {
         push   dword ptr [u32Val]
         mov    eax, [idxField]
-        _emit  0x0F
+        _emit  0x0f
         _emit  0x79
         _emit  0x04
         _emit  0x24     /* VMWRITE eax, [esp] */
@@ -2410,7 +2410,7 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
     int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
        "movl   $" RT_XSTR(VINF_SUCCESS)", %0                     \n\t"
-       ".byte  0x0F, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
+       ".byte  0x0f, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
        "ja     2f                                                \n\t"
        "je     1f                                                \n\t"
        "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0        \n\t"
@@ -2445,7 +2445,7 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
         sub     esp, 4
         mov     dword ptr [esp], 0
         mov     eax, [idxField]
-        _emit   0x0F
+        _emit   0x0f
         _emit   0x78
         _emit   0x04
         _emit   0x24     /* VMREAD eax, [esp] */
