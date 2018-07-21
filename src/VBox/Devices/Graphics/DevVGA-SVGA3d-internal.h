@@ -539,6 +539,8 @@ typedef struct VMSVGA3DSURFACE
         GLuint              buffer;
         GLuint              renderbuffer;
     } oglId;
+    GLenum                  targetGL;  /* GL_TEXTURE_* */
+    GLenum                  bindingGL; /* GL_TEXTURE_BINDING_* */
 #endif
     SVGA3dSurfaceFace       faces[SVGA3D_MAX_SURFACE_FACES];
     uint32_t                cFaces;
@@ -1013,6 +1015,7 @@ typedef struct VMSVGA3DSTATE
         PFNGLBEGINQUERYPROC                             glBeginQuery;
         PFNGLENDQUERYPROC                               glEndQuery;
         PFNGLGETQUERYOBJECTUIVPROC                      glGetQueryObjectuiv;
+        PFNGLTEXIMAGE3DPROC                             glTexImage3D;
     } ext;
 
     struct
@@ -1218,7 +1221,23 @@ DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
     }
     return Face;
 }
-#endif /* VMSVGA3D_DIRECT3D */
+#else /* VMSVGA3D_OPENGL */
+DECLINLINE(GLenum) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    GLint Face;
+    switch (iFace)
+    {
+        case 0: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_X; break;
+        case 1: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_X; break;
+        case 2: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_Y; break;
+        case 3: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y; break;
+        case 4: Face = GL_TEXTURE_CUBE_MAP_POSITIVE_Z; break;
+        default:
+        case 5: Face = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+#endif
 
 int vmsvga3dOcclusionQueryCreate(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);
 int vmsvga3dOcclusionQueryDelete(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext);

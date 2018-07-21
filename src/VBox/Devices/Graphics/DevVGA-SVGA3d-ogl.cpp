@@ -798,6 +798,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         GLGETPROCOPT(PFNGLBEGINQUERYPROC                       , glBeginQuery);
         GLGETPROCOPT(PFNGLENDQUERYPROC                         , glEndQuery);
         GLGETPROCOPT(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv);
+        GLGETPROC   (PFNGLTEXIMAGE3DPROC                       , glTexImage3D);
 
 #undef GLGETPROCOPT
 #undef GLGETPROC
@@ -1892,10 +1893,6 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
 
     switch (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
     {
-    case SVGA3D_SURFACE_CUBEMAP:
-        AssertFailed(); /** @todo destroy SVGA3D_SURFACE_CUBEMAP */
-        break;
-
     case SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER:
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
@@ -1906,6 +1903,10 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
         }
         break;
 
+    case SVGA3D_SURFACE_CUBEMAP:
+    case SVGA3D_SURFACE_CUBEMAP | SVGA3D_SURFACE_HINT_TEXTURE:
+    case SVGA3D_SURFACE_CUBEMAP | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
+        /* Cubemap is a texture. */
     case SVGA3D_SURFACE_HINT_TEXTURE:
     case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
         if (pSurface->oglId.texture != OPENGL_INVALID_ID)
@@ -2070,7 +2071,6 @@ void vmsvga3dOglRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pCon
 #endif
 }
 
-
 /**
  * Create D3D/OpenGL texture object for the specified surface.
  *
@@ -2085,68 +2085,166 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                               PVMSVGA3DSURFACE pSurface)
 {
     RT_NOREF(idAssociatedContext);
-    GLint activeTexture = 0;
+
+    uint32_t const numMipLevels = pSurface->faces[0].numMipLevels;
+
+    /* Fugure out what kind of texture we are creating. */
+    GLenum binding;
+    GLenum target;
+    if (pSurface->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)
+    {
+        Assert(pSurface->cFaces == 6);
+
+        binding = GL_TEXTURE_BINDING_CUBE_MAP;
+        target = GL_TEXTURE_CUBE_MAP;
+    }
+    else
+    {
+        if (pSurface->pMipmapLevels[0].mipmapSize.depth > 1)
+        {
+            binding = GL_TEXTURE_BINDING_3D;
+            target = GL_TEXTURE_3D;
+        }
+        else
+        {
+            Assert(pSurface->cFaces == 1);
+
+            binding = GL_TEXTURE_BINDING_2D;
+            target = GL_TEXTURE_2D;
+        }
+    }
+
+    /* All textures are created in the SharedCtx. */
     uint32_t idPrevCtx = pState->idActiveContext;
     pContext = &pState->SharedCtx;
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
     glGenTextures(1, &pSurface->oglId.texture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    /** @todo Set the mip map generation filter settings. */
 
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+    GLint activeTexture = 0;
+    glGetIntegerv(binding, &activeTexture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Must bind texture to the current context in order to change it. */
-    glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
+    glBindTexture(target, pSurface->oglId.texture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Set the unpacking parameters. */
     VMSVGAPACKPARAMS SavedParams;
     vmsvga3dOglSetUnpackParams(pState, pContext, pSurface, &SavedParams);
 
+    /** @todo Set the mip map generation filter settings. */
+
     /* Set the mipmap base and max level parameters. */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, pSurface->faces[0].numMipLevels - 1);
+    glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, pSurface->faces[0].numMipLevels - 1);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     if (pSurface->fDirty)
-        Log(("vmsvga3dBackCreateTexture: sync dirty texture\n"));
+        LogFunc(("sync dirty texture\n"));
 
     /* Always allocate and initialize all mipmap levels; non-initialized mipmap levels used as render targets cause failures. */
-    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+    if (target == GL_TEXTURE_3D)
     {
-        /* Allocate and initialize texture memory.  Passing the zero filled pSurfaceData avoids
-            exposing random host memory to the guest and helps a with the fedora 21 surface
-            corruption issues (launchpad, background, search field, login). */
-        if (pSurface->pMipmapLevels[i].fDirty)
-            Log(("vmsvga3dBackCreateTexture: sync dirty texture mipmap level %d (pitch %x)\n", i, pSurface->pMipmapLevels[i].cbSurfacePitch));
+        for (uint32_t i = 0; i < numMipLevels; ++i)
+        {
+            /* Allocate and initialize texture memory.  Passing the zero filled pSurfaceData avoids
+             * exposing random host memory to the guest and helps a with the fedora 21 surface
+             * corruption issues (launchpad, background, search field, login).
+             */
+            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
 
-        glTexImage2D(GL_TEXTURE_2D,
-                        i,
-                        pSurface->internalFormatGL,
-                        pSurface->pMipmapLevels[i].mipmapSize.width,
-                        pSurface->pMipmapLevels[i].mipmapSize.height,
-                        0,
-                        pSurface->formatGL,
-                        pSurface->typeGL,
-                        pSurface->pMipmapLevels[i].pSurfaceData);
+            if (pMipLevel->fDirty)
+                LogFunc(("sync dirty texture mipmap level %d (pitch %x)\n", i, pMipLevel->fDirty, pMipLevel->cbSurfacePitch));
 
-        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+            pState->ext.glTexImage3D(GL_TEXTURE_3D,
+                                     i,
+                                     pSurface->internalFormatGL,
+                                     pMipLevel->mipmapSize.width,
+                                     pMipLevel->mipmapSize.height,
+                                     pMipLevel->mipmapSize.depth,
+                                     0, /* border */
+                                     pSurface->formatGL,
+                                     pSurface->typeGL,
+                                     pMipLevel->pSurfaceData);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-        pSurface->pMipmapLevels[i].fDirty = false;
+            pMipLevel->fDirty = false;
+        }
     }
+    else if (target == GL_TEXTURE_CUBE_MAP)
+    {
+        for (uint32_t iFace = 0; iFace < 6; ++iFace)
+        {
+            GLenum const Face = vmsvga3dCubemapFaceFromIndex(iFace);
+
+            for (uint32_t i = 0; i < numMipLevels; ++i)
+            {
+                PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[iFace * numMipLevels + i];
+                Assert(pMipLevel->mipmapSize.width == pMipLevel->mipmapSize.height);
+                Assert(pMipLevel->mipmapSize.depth == 1);
+
+                LogFunc(("sync texture face %d mipmap level %d (dirty %d)\n",
+                          iFace, i, pMipLevel->fDirty));
+
+                glTexImage2D(Face,
+                             i,
+                             pSurface->internalFormatGL,
+                             pMipLevel->mipmapSize.width,
+                             pMipLevel->mipmapSize.height,
+                             0,
+                             pSurface->formatGL,
+                             pSurface->typeGL,
+                             pMipLevel->pSurfaceData);
+                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                pMipLevel->fDirty = false;
+            }
+        }
+    }
+    else if (target == GL_TEXTURE_2D)
+    {
+        for (uint32_t i = 0; i < numMipLevels; ++i)
+        {
+            /* Allocate and initialize texture memory.  Passing the zero filled pSurfaceData avoids
+             * exposing random host memory to the guest and helps a with the fedora 21 surface
+             * corruption issues (launchpad, background, search field, login).
+             */
+            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
+            Assert(pMipLevel->mipmapSize.depth == 1);
+
+            if (pMipLevel->fDirty)
+                LogFunc(("sync dirty texture mipmap level %d (pitch %x)\n", i, pMipLevel->fDirty, pMipLevel->cbSurfacePitch));
+
+            glTexImage2D(GL_TEXTURE_2D,
+                         i,
+                         pSurface->internalFormatGL,
+                         pMipLevel->mipmapSize.width,
+                         pMipLevel->mipmapSize.height,
+                         0,
+                         pSurface->formatGL,
+                         pSurface->typeGL,
+                         pMipLevel->pSurfaceData);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+            pMipLevel->fDirty = false;
+        }
+    }
+
     pSurface->fDirty = false;
 
     /* Restore unpacking parameters. */
     vmsvga3dOglRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
 
     /* Restore the old active texture. */
-    glBindTexture(GL_TEXTURE_2D, activeTexture);
+    glBindTexture(target, activeTexture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     pSurface->surfaceFlags |= SVGA3D_SURFACE_HINT_TEXTURE;
+    pSurface->targetGL = target;
+    pSurface->bindingGL = binding;
 
     if (idPrevCtx < pState->cContexts && pState->papContexts[idPrevCtx]->id == idPrevCtx)
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pState->papContexts[idPrevCtx]);
@@ -2177,7 +2275,6 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
                                   SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext)
 {
     RT_NOREF(pThis);
-    RT_NOREF2(uDstFace, uSrcFace); /// @todo
 
     /* Activate the read and draw framebuffer objects. */
     pState->ext.glBindFramebuffer(GL_READ_FRAMEBUFFER, pContext->idReadFramebuffer);
@@ -2186,10 +2283,20 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Bind the source and destination objects to the right place. */
-    pState->ext.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+    GLenum textarget;
+    if (pSrcSurface->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)
+        textarget = vmsvga3dCubemapFaceFromIndex(uSrcFace);
+    else
+        textarget = GL_TEXTURE_2D;
+    pState->ext.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget,
                                        pSrcSurface->oglId.texture, uSrcMipmap);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    pState->ext.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+
+    if (pDstSurface->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)
+        textarget = vmsvga3dCubemapFaceFromIndex(uDstFace);
+    else
+        textarget = GL_TEXTURE_2D;
+    pState->ext.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textarget,
                                        pDstSurface->oglId.texture, uDstMipmap);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
@@ -2352,10 +2459,11 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox)
 {
     RT_NOREF(iBox);
-    RT_NOREF(uHostFace); /// @todo
 
     switch (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
     {
+    case SVGA3D_SURFACE_CUBEMAP | SVGA3D_SURFACE_HINT_TEXTURE:
+    case SVGA3D_SURFACE_CUBEMAP | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
     case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
     case SVGA3D_SURFACE_HINT_TEXTURE:
     case SVGA3D_SURFACE_HINT_RENDERTARGET:
@@ -2363,6 +2471,31 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         uint32_t cbSurfacePitch;
         uint8_t *pDoubleBuffer;
         uint32_t offHst;
+
+        uint32_t const u32HostBlockX = pBox->x / pSurface->cxBlock;
+        uint32_t const u32HostBlockY = pBox->y / pSurface->cyBlock;
+        Assert(u32HostBlockX * pSurface->cxBlock == pBox->x);
+        Assert(u32HostBlockY * pSurface->cyBlock == pBox->y);
+
+        uint32_t const u32GuestBlockX = pBox->srcx / pSurface->cxBlock;
+        uint32_t const u32GuestBlockY = pBox->srcy / pSurface->cyBlock;
+        Assert(u32GuestBlockX * pSurface->cxBlock == pBox->srcx);
+        Assert(u32GuestBlockY * pSurface->cyBlock == pBox->srcy);
+
+        uint32_t const cBlocksX = (pBox->w + pSurface->cxBlock - 1) / pSurface->cxBlock;
+        uint32_t const cBlocksY = (pBox->h + pSurface->cyBlock - 1) / pSurface->cyBlock;
+        AssertMsgReturn(cBlocksX && cBlocksY, ("Empty box %dx%d\n", pBox->w, pBox->h), VERR_INTERNAL_ERROR);
+
+        GLenum texImageTarget;
+        if (pSurface->targetGL == GL_TEXTURE_CUBE_MAP)
+        {
+            texImageTarget = vmsvga3dCubemapFaceFromIndex(uHostFace);
+        }
+        else
+        {
+            Assert(pSurface->targetGL == GL_TEXTURE_2D);
+            texImageTarget = GL_TEXTURE_2D;
+        }
 
         pDoubleBuffer = (uint8_t *)RTMemAlloc(pMipLevel->cbSurface);
         AssertReturn(pDoubleBuffer, VERR_NO_MEMORY);
@@ -2372,17 +2505,17 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             GLint activeTexture;
 
             /* Must bind texture to the current context in order to read it. */
-            glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+            glGetIntegerv(pSurface->bindingGL, &activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-            glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
+            glBindTexture(pSurface->targetGL, pSurface->oglId.texture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
             /* Set row length and alignment of the input data. */
             VMSVGAPACKPARAMS SavedParams;
             vmsvga3dOglSetPackParams(pState, pContext, pSurface, &SavedParams);
 
-            glGetTexImage(GL_TEXTURE_2D,
+            glGetTexImage(texImageTarget,
                           uHostMipmap,
                           pSurface->formatGL,
                           pSurface->typeGL,
@@ -2392,20 +2525,20 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             vmsvga3dOglRestorePackParams(pState, pContext, pSurface, &SavedParams);
 
             /* Restore the old active texture. */
-            glBindTexture(GL_TEXTURE_2D, activeTexture);
+            glBindTexture(pSurface->targetGL, activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-            offHst = pBox->x * pSurface->cbBlock + pBox->y * pMipLevel->cbSurfacePitch;
+            offHst = u32HostBlockX * pSurface->cbBlock + u32HostBlockY * pMipLevel->cbSurfacePitch;
             cbSurfacePitch = pMipLevel->cbSurfacePitch;
         }
         else
         {
             /* The buffer will contain only the copied rectangle. */
             offHst = 0;
-            cbSurfacePitch = pBox->w * pSurface->cbBlock;
+            cbSurfacePitch = cBlocksX * pSurface->cbBlock;
         }
 
-        uint32_t const offGst = pBox->srcx * pSurface->cbBlock + pBox->srcy * cbGuestPitch; /// @todo compressed fmts
+        uint32_t const offGst = u32GuestBlockX * pSurface->cbBlock + u32GuestBlockY * cbGuestPitch;
 
         rc = vmsvgaGMRTransfer(pThis,
                                transfer,
@@ -2416,49 +2549,47 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                GuestPtr,
                                offGst,
                                cbGuestPitch,
-                               pBox->w * pSurface->cbBlock,
-                               pBox->h);
+                               cBlocksX * pSurface->cbBlock,
+                               cBlocksY);
         AssertRC(rc);
 
         /* Update the opengl surface data. */
         if (transfer == SVGA3D_WRITE_HOST_VRAM)
         {
             GLint activeTexture = 0;
-
-            glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+            glGetIntegerv(pSurface->bindingGL, &activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
             /* Must bind texture to the current context in order to change it. */
-            glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
+            glBindTexture(pSurface->targetGL, pSurface->oglId.texture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-            Log(("vmsvga3dSurfaceDMA: copy texture mipmap level %d (pitch %x)\n", uHostMipmap, pMipLevel->cbSurfacePitch));
+            LogFunc(("copy texture mipmap level %d (pitch %x)\n", uHostMipmap, pMipLevel->cbSurfacePitch));
 
             /* Set row length and alignment of the input data. */
             VMSVGAPACKPARAMS SavedParams;
             vmsvga3dOglSetUnpackParams(pState, pContext, pSurface, &SavedParams); /** @todo do we need to set ROW_LENGTH to w here? */
 
-            glTexSubImage2D(GL_TEXTURE_2D,
+            glTexSubImage2D(texImageTarget,
                             uHostMipmap,
-                            pBox->x,
-                            pBox->y,
-                            pBox->w,
-                            pBox->h,
+                            u32HostBlockX,
+                            u32HostBlockY,
+                            cBlocksX,
+                            cBlocksY,
                             pSurface->formatGL,
                             pSurface->typeGL,
                             pDoubleBuffer);
-
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
             /* Restore old values. */
             vmsvga3dOglRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
 
             /* Restore the old active texture. */
-            glBindTexture(GL_TEXTURE_2D, activeTexture);
+            glBindTexture(pSurface->targetGL, activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
         }
 
-        Log4(("first line:\n%.*Rhxd\n", pBox->w * pSurface->cbBlock, pDoubleBuffer));
+        Log4(("first line:\n%.*Rhxd\n", cBlocksX * pSurface->cbBlock, pDoubleBuffer));
 
         /* Free the double buffer. */
         RTMemFree(pDoubleBuffer);
@@ -2473,6 +2604,9 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
     {
+        /* Buffers are uncompressed. */
+        AssertReturn(pSurface->cxBlock == 1 && pSurface->cyBlock == 1, VERR_INTERNAL_ERROR);
+
         /* Caller already clipped pBox and buffers are 1-dimensional. */
         Assert(pBox->y == 0 && pBox->h == 1 && pBox->z == 0 && pBox->d == 1);
 
@@ -2622,16 +2756,15 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
     GLint               activeTexture = 0;
 
     AssertReturn(pState, VERR_NO_MEMORY);
-    AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
-    AssertReturn(sid < pState->cSurfaces && pState->papSurfaces[sid]->id == sid, VERR_INVALID_PARAMETER);
 
-    pSurface = pState->papSurfaces[sid];
+    rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
+    AssertRCReturn(rc, rc);
 
     Assert(filter != SVGA3D_TEX_FILTER_FLATCUBIC);
     Assert(filter != SVGA3D_TEX_FILTER_GAUSSIANCUBIC);
     pSurface->autogenFilter = filter;
 
-    Log(("vmsvga3dGenerateMipmaps: sid=%x filter=%d\n", sid, filter));
+    LogFunc(("sid=%x filter=%d\n", sid, filter));
 
     cid = SVGA3D_INVALID_ID;
     pContext = &pState->SharedCtx;
@@ -2640,7 +2773,7 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
     if (pSurface->oglId.texture == OPENGL_INVALID_ID)
     {
         /* Unknown surface type; turn it into a texture. */
-        Log(("vmsvga3dGenerateMipmaps: unknown src surface id=%x type=%d format=%d -> create texture\n", sid, pSurface->surfaceFlags, pSurface->format));
+        LogFunc(("unknown src surface id=%x type=%d format=%d -> create texture\n", sid, pSurface->surfaceFlags, pSurface->format));
         rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
         AssertRCReturn(rc, rc);
     }
@@ -2650,19 +2783,19 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
         AssertFailed();
     }
 
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+    glGetIntegerv(pSurface->bindingGL, &activeTexture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Must bind texture to the current context in order to change it. */
-    glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
+    glBindTexture(pSurface->targetGL, pSurface->oglId.texture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Generate the mip maps. */
-    pState->ext.glGenerateMipmap(GL_TEXTURE_2D);
+    pState->ext.glGenerateMipmap(pSurface->targetGL);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Restore the old texture. */
-    glBindTexture(GL_TEXTURE_2D, activeTexture);
+    glBindTexture(pSurface->targetGL, activeTexture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     return VINF_SUCCESS;
@@ -2879,6 +3012,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
     /* Bind the source objects to the right place. */
+    Assert(pSurface->targetGL == GL_TEXTURE_2D);
     pState->ext.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pSurface->oglId.texture, 0 /* level 0 */);
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
@@ -4734,7 +4868,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(type < SVGA3D_RT_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(target.face == 0, VERR_INVALID_PARAMETER);
 
     Log(("vmsvga3dSetRenderTarget cid=%x type=%x surface id=%x\n", cid, type, target.sid));
 
@@ -4849,7 +4982,13 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
         pRenderTarget->surfaceFlags |= SVGA3D_SURFACE_HINT_RENDERTARGET;
 
-        pState->ext.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + type - SVGA3D_RT_COLOR0, GL_TEXTURE_2D, pRenderTarget->oglId.texture, target.mipmap);
+        GLenum textarget;
+        if (pRenderTarget->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)
+            textarget = vmsvga3dCubemapFaceFromIndex(target.face);
+        else
+            textarget = GL_TEXTURE_2D;
+        pState->ext.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + type - SVGA3D_RT_COLOR0,
+                                           textarget, pRenderTarget->oglId.texture, target.mipmap);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
 #ifdef DEBUG
@@ -5056,14 +5195,19 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
     pContext = pState->papContexts[cid];
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
-    for (unsigned i = 0; i < cTextureStates; i++)
+    /* Which texture is active for the current stage. Needed to use right OpenGL target when setting parameters. */
+    PVMSVGA3DSURFACE pCurrentTextureSurface = NULL;
+
+    for (uint32_t i = 0; i < cTextureStates; ++i)
     {
         GLenum textureType = ~(GLenum)0;
 #if 0
         GLenum samplerType = ~(GLenum)0;
 #endif
 
-        Log(("vmsvga3dSetTextureState: cid=%x stage=%d type=%s (%x) val=%x\n", cid, pTextureState[i].stage, vmsvga3dTextureStateToString(pTextureState[i].name), pTextureState[i].name, pTextureState[i].value));
+        LogFunc(("cid=%x stage=%d type=%s (%x) val=%x\n",
+                 cid, pTextureState[i].stage, vmsvga3dTextureStateToString(pTextureState[i].name), pTextureState[i].name, pTextureState[i].value));
+
         /* Record the texture state for vm state saving. */
         if (    pTextureState[i].stage < RT_ELEMENTS(pContext->state.aTextureStates)
             &&  pTextureState[i].name < RT_ELEMENTS(pContext->state.aTextureStates[0]))
@@ -5071,7 +5215,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             pContext->state.aTextureStates[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
         }
 
-        /* Active the right texture unit for subsequent texture state changes. */
+        /* Activate the right texture unit for subsequent texture state changes. */
         if (pTextureState[i].stage != currentStage || i == 0)
         {
             /** @todo Is this the appropriate limit for all kinds of textures?  It is the
@@ -5087,6 +5231,14 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 AssertMsgFailed(("pTextureState[%d].stage=%#x name=%#x\n", i, pTextureState[i].stage, pTextureState[i].name));
                 continue;
             }
+
+            if (pContext->aSidActiveTextures[currentStage] != SVGA3D_INVALID_ID)
+            {
+                int rc = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[currentStage], &pCurrentTextureSurface);
+                AssertRCReturn(rc, rc);
+            }
+            else
+                pCurrentTextureSurface = NULL; /* Make sure that no stale pointer is used. */
         }
 
         switch (pTextureState[i].name)
@@ -5125,48 +5277,60 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 #endif
 
         case SVGA3D_TS_BIND_TEXTURE:                /* SVGA3dSurfaceId */
-            if (pTextureState[i].value == SVGA3D_INVALID_ID)
+        {
+            uint32_t const sid = pTextureState[i].value;
+
+            Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture sid=%x replacing sid=%x\n",
+                 currentStage, sid, pContext->aSidActiveTextures[currentStage]));
+
+            /* Only is texture actually changed. */ /// @todo needs testing.
+            if (pContext->aSidActiveTextures[currentStage] != sid)
             {
-                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x replacing=%x\n",
-                     currentStage, pTextureState[i].value, pContext->aSidActiveTextures[currentStage]));
-
-                pContext->aSidActiveTextures[currentStage] = SVGA3D_INVALID_ID;
-                /* Unselect the currently associated texture. */
-                glBindTexture(GL_TEXTURE_2D, 0);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                /* Necessary for the fixed pipeline. */
-                glDisable(GL_TEXTURE_2D);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            }
-            else
-            {
-                uint32_t sid = pTextureState[i].value;
-
-                AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
-                AssertReturn(sid < pState->cSurfaces && pState->papSurfaces[sid]->id == sid, VERR_INVALID_PARAMETER);
-
-                PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
-
-                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d) replacing=%x\n",
-                     currentStage, pTextureState[i].value, pSurface->pMipmapLevels[0].mipmapSize.width,
-                     pSurface->pMipmapLevels[0].mipmapSize.height, pContext->aSidActiveTextures[currentStage]));
-
-                if (pSurface->oglId.texture == OPENGL_INVALID_ID)
+                if (pCurrentTextureSurface)
                 {
-                    Log(("CreateTexture (%d,%d) level=%d\n", pSurface->pMipmapLevels[0].mipmapSize.width, pSurface->pMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels));
-                    int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
-                    AssertRCReturn(rc, rc);
+                    /* Unselect the currently associated texture. */
+                    glBindTexture(pCurrentTextureSurface->targetGL, 0);
+                    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                    /* Necessary for the fixed pipeline. */
+                    glDisable(pCurrentTextureSurface->targetGL);
+                    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                    pCurrentTextureSurface = NULL;
                 }
 
-                glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-
-                /* Necessary for the fixed pipeline. */
-                glEnable(GL_TEXTURE_2D);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-
-                if (pContext->aSidActiveTextures[currentStage] != sid)
+                if (sid == SVGA3D_INVALID_ID)
                 {
+                    Assert(pCurrentTextureSurface == NULL);
+                }
+                else
+                {
+                    PVMSVGA3DSURFACE pSurface;
+                    int rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
+                    AssertRCReturn(rc, rc);
+
+                    Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture sid=%x (%d,%d) replacing sid=%x\n",
+                         currentStage, sid, pSurface->pMipmapLevels[0].mipmapSize.width,
+                         pSurface->pMipmapLevels[0].mipmapSize.height, pContext->aSidActiveTextures[currentStage]));
+
+                    if (pSurface->oglId.texture == OPENGL_INVALID_ID)
+                    {
+                        Log(("CreateTexture (%d,%d) levels=%d\n",
+                              pSurface->pMipmapLevels[0].mipmapSize.width, pSurface->pMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels));
+                        rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
+                        AssertRCReturn(rc, rc);
+                    }
+
+                    glBindTexture(pSurface->targetGL, pSurface->oglId.texture);
+                    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                    /* Necessary for the fixed pipeline. */
+                    glEnable(pSurface->targetGL);
+                    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+                    /* Remember the currently active texture. */
+                    pCurrentTextureSurface = pSurface;
+
                     /* Recreate the texture state as glBindTexture resets them all (sigh). */
                     for (uint32_t iStage = 0; iStage < RT_ELEMENTS(pContext->state.aTextureStates); iStage++)
                     {
@@ -5180,10 +5344,13 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                         }
                     }
                 }
+
                 pContext->aSidActiveTextures[currentStage] = sid;
             }
+
             /* Finished; continue with the next one. */
             continue;
+        }
 
         case SVGA3D_TS_ADDRESSW:                    /* SVGA3dTextureAddress */
             textureType = GL_TEXTURE_WRAP_R;    /* R = W */
@@ -5239,18 +5406,37 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         case SVGA3D_TS_BORDERCOLOR:                 /* SVGA3dColor */
         {
             GLfloat color[4]; /* red, green, blue, alpha */
-
             vmsvgaColor2GLFloatArray(pTextureState[i].value, &color[0], &color[1], &color[2], &color[3]);
 
-            glTexParameterfv(GL_TEXTURE_2D /** @todo flexible type */, GL_TEXTURE_BORDER_COLOR, color);   /* Identical; default 0.0 identical too */
+            GLenum targetGL;
+            if (pCurrentTextureSurface)
+                targetGL = pCurrentTextureSurface->targetGL;
+            else
+            {
+                /* No texture bound, assume 2D. */
+                targetGL = GL_TEXTURE_2D;
+            }
+
+            glTexParameterfv(targetGL, GL_TEXTURE_BORDER_COLOR, color);   /* Identical; default 0.0 identical too */
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
         }
 
         case SVGA3D_TS_TEXTURE_LOD_BIAS:            /* float */
-            glTexParameterf(GL_TEXTURE_2D /** @todo flexible type */, GL_TEXTURE_LOD_BIAS, pTextureState[i].floatValue);   /* Identical; default 0.0 identical too */
+        {
+            GLenum targetGL;
+            if (pCurrentTextureSurface)
+                targetGL = pCurrentTextureSurface->targetGL;
+            else
+            {
+                /* No texture bound, assume 2D. */
+                targetGL = GL_TEXTURE_2D;
+            }
+
+            glTexParameterf(targetGL, GL_TEXTURE_LOD_BIAS, pTextureState[i].floatValue);   /* Identical; default 0.0 identical too */
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
+        }
 
         case SVGA3D_TS_TEXTURE_MIPMAP_LEVEL:        /* uint32_t */
             textureType = GL_TEXTURE_BASE_LEVEL;
@@ -5284,7 +5470,16 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
         if (textureType != ~(GLenum)0)
         {
-            glTexParameteri(GL_TEXTURE_2D /** @todo flexible type */, textureType, val);
+            GLenum targetGL;
+            if (pCurrentTextureSurface)
+                targetGL = pCurrentTextureSurface->targetGL;
+            else
+            {
+                /* No texture bound, assume 2D. */
+                targetGL = GL_TEXTURE_2D;
+            }
+
+            glTexParameteri(targetGL, textureType, val);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         }
     }
@@ -6387,38 +6582,32 @@ internal_error:
         iCurrentVertex = iVertex;
     }
 #ifdef DEBUG
-    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); i++)
+    /* Check whether 'activeTexture' on texture unit 'i' matches what we expect. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); ++i)
     {
         if (pContext->aSidActiveTextures[i] != SVGA3D_INVALID_ID)
         {
-            GLint activeTexture = 0;
-            GLint activeTextureUnit = 0;
+            PVMSVGA3DSURFACE pTexture;
+            int rc2 = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[i], &pTexture);
+            AssertContinue(RT_SUCCESS(rc2));
 
+            GLint activeTextureUnit = 0;
             glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTextureUnit);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
             pState->ext.glActiveTexture(GL_TEXTURE0 + i);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-            glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+            GLint activeTexture = 0;
+            glGetIntegerv(pTexture->bindingGL, &activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
             pState->ext.glActiveTexture(activeTextureUnit);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-# if 0 /* Aren't we checking whether 'activeTexture' on texture unit 'i' matches what we expected?  This works if only one unit is active, but if both are it _will_ fail for one of them. */
-            if (pContext->aSidActiveTextures[activeTextureUnit - GL_TEXTURE0] != SVGA3D_INVALID_ID)
-            {
-                PVMSVGA3DSURFACE pTexture;
-                pTexture = pState->papSurfaces[pContext->aSidActiveTextures[activeTextureUnit - GL_TEXTURE0]];
-
-                AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture, ("%x vs %x unit %d - %d\n", pTexture->oglId.texture, activeTexture, i, activeTextureUnit - GL_TEXTURE0));
-            }
-# else
-            PVMSVGA3DSURFACE pTexture = pState->papSurfaces[pContext->aSidActiveTextures[i]];
-            AssertMsg(pTexture->id == pContext->aSidActiveTextures[i], ("%x vs %x\n", pTexture->id, pContext->aSidActiveTextures[i]));
             AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture,
                       ("%x vs %x unit %d (active unit %d) sid=%x\n", pTexture->oglId.texture, activeTexture, i,
                        activeTextureUnit - GL_TEXTURE0, pContext->aSidActiveTextures[i]));
-# endif
         }
     }
 #endif
