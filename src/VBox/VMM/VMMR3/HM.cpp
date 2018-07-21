@@ -246,10 +246,10 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_XCPT_23      ,   87, "Exception 23 (0x17)."),
     EXIT_REASON(SVM_EXIT_XCPT_24      ,   88, "Exception 24 (0x18)."),
     EXIT_REASON(SVM_EXIT_XCPT_25      ,   89, "Exception 25 (0x19)."),
-    EXIT_REASON(SVM_EXIT_XCPT_26      ,   90, "Exception 26 (0x1A)."),
-    EXIT_REASON(SVM_EXIT_XCPT_27      ,   91, "Exception 27 (0x1B)."),
-    EXIT_REASON(SVM_EXIT_XCPT_28      ,   92, "Exception 28 (0x1C)."),
-    EXIT_REASON(SVM_EXIT_XCPT_29      ,   93, "Exception 29 (0x1D)."),
+    EXIT_REASON(SVM_EXIT_XCPT_26      ,   90, "Exception 26 (0x1a)."),
+    EXIT_REASON(SVM_EXIT_XCPT_27      ,   91, "Exception 27 (0x1b)."),
+    EXIT_REASON(SVM_EXIT_XCPT_28      ,   92, "Exception 28 (0x1c)."),
+    EXIT_REASON(SVM_EXIT_XCPT_29      ,   93, "Exception 29 (0x1d)."),
     EXIT_REASON(SVM_EXIT_XCPT_30      ,   94, "Exception 30 (#SX)."),
     EXIT_REASON(SVM_EXIT_XCPT_31      ,   95, "Exception 31 (0x1F)."),
     EXIT_REASON(SVM_EXIT_INTR         ,   96, "Physical maskable interrupt (host)."),
@@ -1148,7 +1148,7 @@ static int hmR3InitCPU(PVM pVM)
 
         PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
         strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
-        pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
+        pCache->uMagic = UINT64_C(0xdeadbeefdeadbeef);
     }
 #endif
 
@@ -2039,7 +2039,7 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     /* Magic marker for searching in crash dumps. */
     strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
-    pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
+    pCache->uMagic = UINT64_C(0xdeadbeefdeadbeef);
 #endif
 }
 
@@ -2336,11 +2336,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
 
                 pPatch->cbOp = cbOpMmio + cbOp;
 
-                /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
-                abInstr[0] = 0xF0;
-                abInstr[1] = 0x0F;
+                /* 0xf0, 0x0f, 0x20, 0xc0 = mov eax, cr8 */
+                abInstr[0] = 0xf0;
+                abInstr[1] = 0x0f;
                 abInstr[2] = 0x20;
-                abInstr[3] = 0xC0 | pDis->Param1.Base.idxGenReg;
+                abInstr[3] = 0xc0 | pDis->Param1.Base.idxGenReg;
                 for (unsigned i = 4; i < pPatch->cbOp; i++)
                     abInstr[i] = 0x90;  /* nop */
 
@@ -2479,7 +2479,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
             if (!fUsesEax)
                 aPatch[off++] = 0x50;    /* push eax */
             aPatch[off++] = 0x31;    /* xor edx, edx */
-            aPatch[off++] = 0xD2;
+            aPatch[off++] = 0xd2;
             if (pDis->Param2.fUse == DISUSE_REG_GEN32)
             {
                 if (!fUsesEax)
@@ -2491,19 +2491,19 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
             else
             {
                 Assert(pDis->Param2.fUse == DISUSE_IMMEDIATE32);
-                aPatch[off++] = 0xB8;    /* mov eax, immediate */
+                aPatch[off++] = 0xb8;    /* mov eax, immediate */
                 *(uint32_t *)&aPatch[off] = pDis->Param2.uValue;
                 off += sizeof(uint32_t);
             }
-            aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
+            aPatch[off++] = 0xb9;    /* mov ecx, 0xc0000082 */
             *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
             off += sizeof(uint32_t);
 
-            aPatch[off++] = 0x0F;    /* wrmsr */
+            aPatch[off++] = 0x0f;    /* wrmsr */
             aPatch[off++] = 0x30;
             if (!fUsesEax)
                 aPatch[off++] = 0x58;    /* pop eax */
-            aPatch[off++] = 0x5A;    /* pop edx */
+            aPatch[off++] = 0x5a;    /* pop edx */
             aPatch[off++] = 0x59;    /* pop ecx */
         }
         else
@@ -2532,13 +2532,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
                 aPatch[off++] = 0x50;    /* push eax */
 
             aPatch[off++] = 0x31;    /* xor edx, edx */
-            aPatch[off++] = 0xD2;
+            aPatch[off++] = 0xd2;
 
-            aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
+            aPatch[off++] = 0xb9;    /* mov ecx, 0xc0000082 */
             *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
             off += sizeof(uint32_t);
 
-            aPatch[off++] = 0x0F;    /* rdmsr */
+            aPatch[off++] = 0x0f;    /* rdmsr */
             aPatch[off++] = 0x32;
 
             if (pDis->Param1.Base.idxGenReg != DISGREG_EAX)
@@ -2550,11 +2550,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
             if (pDis->Param1.Base.idxGenReg != DISGREG_EAX)
                 aPatch[off++] = 0x58;    /* pop eax */
             if (pDis->Param1.Base.idxGenReg != DISGREG_EDX )
-                aPatch[off++] = 0x5A;    /* pop edx */
+                aPatch[off++] = 0x5a;    /* pop edx */
             if (pDis->Param1.Base.idxGenReg != DISGREG_ECX)
                 aPatch[off++] = 0x59;    /* pop ecx */
         }
-        aPatch[off++] = 0xE9;    /* jmp return_address */
+        aPatch[off++] = 0xe9;    /* jmp return_address */
         *(RTRCUINTPTR *)&aPatch[off] = ((RTRCUINTPTR)pCtx->eip + cbOp) - ((RTRCUINTPTR)pVM->hm.s.pFreeGuestPatchMem + off + 4);
         off += sizeof(RTRCUINTPTR);
 
