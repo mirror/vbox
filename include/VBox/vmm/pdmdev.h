@@ -1208,7 +1208,9 @@ typedef struct PDMIOAPICREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     *
      * @remarks Caller enters the PDM critical section
+     *          Actually, as per 2018-07-21 this isn't true (bird).
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
 
@@ -1225,7 +1227,9 @@ typedef struct PDMIOAPICREG
      * @param   GCPhys          Request address.
      * @param   uValue          Request value.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     *
      * @remarks Caller enters the PDM critical section
+     *          Actually, as per 2018-07-21 this isn't true (bird).
      */
     DECLR3CALLBACKMEMBER(void, pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
 
@@ -1238,10 +1242,15 @@ typedef struct PDMIOAPICREG
     /**
      * Set the EOI for an interrupt vector.
      *
-     * @returns VBox status code.
+     * @returns Strict VBox status code - only the following informational status codes:
+     * @retval  VINF_IOM_R3_MMIO_WRITE if the I/O APIC lock is contenteded and we're in R0 or RC.2
+     * @retval  VINF_SUCCESS
+     *
      * @param   pDevIns         Device instance of the I/O APIC.
      * @param   u8Vector        The vector.
+     *
      * @remarks Caller enters the PDM critical section
+     *          Actually, as per 2018-07-21 this isn't true (bird).
      */
     DECLR3CALLBACKMEMBER(int, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 

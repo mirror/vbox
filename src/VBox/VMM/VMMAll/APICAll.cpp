@@ -196,52 +196,40 @@ DECLINLINE(void) apicAndVectorsToReg(volatile XAPIC256BITREG *pApicReg, size_t i
 /**
  * Reports and returns appropriate error code for invalid MSR accesses.
  *
- * @returns Strict VBox status code.
- * @retval  VINF_CPUM_R3_MSR_WRITE if the MSR write could not be serviced in the
- *          current context (raw-mode or ring-0).
- * @retval  VINF_CPUM_R3_MSR_READ if the MSR read could not be serviced in the
- *          current context (raw-mode or ring-0).
- * @retval  VERR_CPUM_RAISE_GP_0 on failure, the caller is expected to take the
- *          appropriate actions.
+ * @returns VERR_CPUM_RAISE_GP_0
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   u32Reg          The MSR being accessed.
  * @param   enmAccess       The invalid-access type.
  */
-static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACCESS enmAccess)
+static int apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACCESS enmAccess)
 {
     static struct
     {
         const char *pszBefore;   /* The error message before printing the MSR index */
         const char *pszAfter;    /* The error message after printing the MSR index */
-        int         rcRZ;        /* The RZ error code */
     } const s_aAccess[] =
     {
-        /* enmAccess  pszBefore                        pszAfter                        rcRZ */
-        /* 0 */     { "read MSR",                      " while not in x2APIC mode",    VINF_CPUM_R3_MSR_READ  },
-        /* 1 */     { "write MSR",                     " while not in x2APIC mode",    VINF_CPUM_R3_MSR_WRITE },
-        /* 2 */     { "read reserved/unknown MSR",     "",                             VINF_CPUM_R3_MSR_READ  },
-        /* 3 */     { "write reserved/unknown MSR",    "",                             VINF_CPUM_R3_MSR_WRITE },
-        /* 4 */     { "read write-only MSR",           "",                             VINF_CPUM_R3_MSR_READ  },
-        /* 5 */     { "write read-only MSR",           "",                             VINF_CPUM_R3_MSR_WRITE },
-        /* 6 */     { "read reserved bits of MSR",     "",                             VINF_CPUM_R3_MSR_READ  },
-        /* 7 */     { "write reserved bits of MSR",    "",                             VINF_CPUM_R3_MSR_WRITE },
-        /* 8 */     { "write an invalid value to MSR", "",                             VINF_CPUM_R3_MSR_WRITE },
-        /* 9 */     { "write MSR",                     " disallowed by configuration", VINF_CPUM_R3_MSR_WRITE },
-        /* 10 */    { "read MSR",                      " disallowed by configuration", VINF_CPUM_R3_MSR_READ }
+        /* enmAccess  pszBefore                        pszAfter */
+        /* 0 */     { "read MSR",                      " while not in x2APIC mode"    },
+        /* 1 */     { "write MSR",                     " while not in x2APIC mode"    },
+        /* 2 */     { "read reserved/unknown MSR",     ""                             },
+        /* 3 */     { "write reserved/unknown MSR",    ""                             },
+        /* 4 */     { "read write-only MSR",           ""                             },
+        /* 5 */     { "write read-only MSR",           ""                             },
+        /* 6 */     { "read reserved bits of MSR",     ""                             },
+        /* 7 */     { "write reserved bits of MSR",    ""                             },
+        /* 8 */     { "write an invalid value to MSR", ""                             },
+        /* 9 */     { "write MSR",                     " disallowed by configuration" },
+        /* 10 */    { "read MSR",                      " disallowed by configuration" },
     };
     AssertCompile(RT_ELEMENTS(s_aAccess) == APICMSRACCESS_COUNT);
 
     size_t const i = enmAccess;
     Assert(i < RT_ELEMENTS(s_aAccess));
-#ifdef IN_RING3
-    LogRelMax(5, ("APIC%u: Attempt to %s (%#x)%s -> #GP(0)\n", pVCpu->idCpu, s_aAccess[i].pszBefore, u32Reg,
-                  s_aAccess[i].pszAfter));
+    if (pVCpu->apic.s.cLogMaxAccessError++ < 5)
+        LogRel(("APIC%u: Attempt to %s (%#x)%s -> #GP(0)\n", pVCpu->idCpu, s_aAccess[i].pszBefore, u32Reg, s_aAccess[i].pszAfter));
     return VERR_CPUM_RAISE_GP_0;
-#else
-    RT_NOREF_PV(u32Reg); RT_NOREF_PV(pVCpu);
-    return s_aAccess[i].rcRZ;
-#endif
 }
 
 
@@ -548,11 +536,11 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
 /**
  * Sets the Spurious-Interrupt Vector Register (SVR).
  *
- * @returns Strict VBox status code.
+ * @returns VINF_SUCCESS or VERR_CPUM_RAISE_GP_0.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uSvr            The SVR value.
  */
-static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
+static int apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -1117,11 +1105,11 @@ static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
 /**
  * Sets the Error Status Register (ESR).
  *
- * @returns Strict VBox status code.
+ * @returns VINF_SUCCESS or VERR_CPUM_RAISE_GP_0.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uEsr            The ESR value.
  */
-static VBOXSTRICTRC apicSetEsr(PVMCPU pVCpu, uint32_t uEsr)
+static int apicSetEsr(PVMCPU pVCpu, uint32_t uEsr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -1192,13 +1180,13 @@ static uint8_t apicGetPpr(PVMCPU pVCpu)
 /**
  * Sets the Task Priority Register (TPR).
  *
- * @returns Strict VBox status code.
+ * @returns VINF_SUCCESS or VERR_CPUM_RAISE_GP_0.
  * @param   pVCpu                   The cross context virtual CPU structure.
  * @param   uTpr                    The TPR value.
  * @param   fForceX2ApicBehaviour   Pretend the APIC is in x2APIC mode during
  *                                  this write.
  */
-static VBOXSTRICTRC apicSetTprEx(PVMCPU pVCpu, uint32_t uTpr, bool fForceX2ApicBehaviour)
+static int apicSetTprEx(PVMCPU pVCpu, uint32_t uTpr, bool fForceX2ApicBehaviour)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -2376,8 +2364,9 @@ VMM_INT_DECL(int) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
     /** @todo Handle per-VCPU APIC base relocation. */
     if (MSR_IA32_APICBASE_GET_ADDR(uBaseMsr) != MSR_IA32_APICBASE_ADDR)
     {
-        LogRelMax(5, ("APIC%u: Attempt to relocate base to %#RGp, unsupported -> #GP(0)\n", pVCpu->idCpu,
-                      MSR_IA32_APICBASE_GET_ADDR(uBaseMsr)));
+        if (pVCpu->apic.s.cLogMaxSetApicBaseAddr++ < 5)
+            LogRel(("APIC%u: Attempt to relocate base to %#RGp, unsupported -> #GP(0)\n", pVCpu->idCpu,
+                    MSR_IA32_APICBASE_GET_ADDR(uBaseMsr)));
         return VERR_CPUM_RAISE_GP_0;
     }
 
@@ -2514,26 +2503,26 @@ VMM_INT_DECL(VBOXSTRICTRC) APICGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Value)
         return VINF_SUCCESS;
     }
 
-#ifdef IN_RING3
-    LogRelMax(5, ("APIC%u: Reading APIC base MSR (%#x) when there is no APIC -> #GP(0)\n", pVCpu->idCpu, MSR_IA32_APICBASE));
+    if (pVCpu->apic.s.cLogMaxGetApicBaseAddr++ < 5)
+        LogRel(("APIC%u: Reading APIC base MSR (%#x) when there is no APIC -> #GP(0)\n", pVCpu->idCpu, MSR_IA32_APICBASE));
     return VERR_CPUM_RAISE_GP_0;
-#else
-    return VINF_CPUM_R3_MSR_WRITE;
-#endif
 }
 
 
 /**
  * Sets the TPR (Task Priority Register).
  *
- * @returns VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_CPUM_RAISE_GP_0
+ * @retval  VERR_PDM_NO_APIC_INSTANCE
+ *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   u8Tpr       The TPR value to set.
  */
 VMMDECL(int) APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr)
 {
     if (APICIsEnabled(pVCpu))
-        return VBOXSTRICTRC_VAL(apicSetTprEx(pVCpu, u8Tpr, false /* fForceX2ApicBehaviour */));
+        return apicSetTprEx(pVCpu, u8Tpr, false /* fForceX2ApicBehaviour */);
     return VERR_PDM_NO_APIC_INSTANCE;
 }
 

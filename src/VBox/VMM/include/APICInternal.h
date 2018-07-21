@@ -1021,29 +1021,29 @@ AssertCompileMemberOffset(X2APICPAGE, self_ipi,    X2APIC_OFF_SELF_IPI);
  */
 typedef enum APICMSRACCESS
 {
-    /* MSR read while not in x2APIC. */
+    /** MSR read while not in x2APIC. */
     APICMSRACCESS_INVALID_READ_MODE = 0,
-    /* MSR write while not in x2APIC. */
+    /** MSR write while not in x2APIC. */
     APICMSRACCESS_INVALID_WRITE_MODE,
-    /* MSR read for a reserved/unknown/invalid MSR. */
+    /** MSR read for a reserved/unknown/invalid MSR. */
     APICMSRACCESS_READ_RSVD_OR_UNKNOWN,
-    /* MSR write for a reserved/unknown/invalid MSR. */
+    /** MSR write for a reserved/unknown/invalid MSR. */
     APICMSRACCESS_WRITE_RSVD_OR_UNKNOWN,
-    /* MSR read for a write-only MSR. */
+    /** MSR read for a write-only MSR. */
     APICMSRACCESS_READ_WRITE_ONLY,
-    /* MSR write for a read-only MSR. */
+    /** MSR write for a read-only MSR. */
     APICMSRACCESS_WRITE_READ_ONLY,
-    /* MSR read to reserved bits. */
+    /** MSR read to reserved bits. */
     APICMSRACCESS_READ_RSVD_BITS,
-    /* MSR write to reserved bits. */
+    /** MSR write to reserved bits. */
     APICMSRACCESS_WRITE_RSVD_BITS,
-    /* MSR write with invalid value. */
+    /** MSR write with invalid value. */
     APICMSRACCESS_WRITE_INVALID,
     /** MSR write disallowed due to incompatible config. */
     APICMSRACCESS_WRITE_DISALLOWED_CONFIG,
     /** MSR read disallowed due to incompatible config. */
     APICMSRACCESS_READ_DISALLOWED_CONFIG,
-    /* Count of enum members (don't use). */
+    /** Count of enum members (don't use). */
     APICMSRACCESS_COUNT
 } APICMSRACCESS;
 
@@ -1294,7 +1294,7 @@ typedef struct APICCPU
     /** Whether the LINT1 interrupt line is active. */
     bool volatile               fActiveLint1;
     /** Alignment padding. */
-    uint8_t                     auAlignment0[6];
+    uint8_t                     auAlignment2[6];
     /** The source tags corresponding to each interrupt vector (debugging). */
     uint32_t                    auSrcTags[256];
     /** @} */
@@ -1308,7 +1308,7 @@ typedef struct APICCPU
     /** The timer - RC ptr. */
     PTMTIMERRC                  pTimerRC;
     /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment2;
+    RTRCPTR                     RCPtrAlignment3;
     /** The timer critical sect protecting @a u64TimerInitial  */
     PDMCRITSECT                 TimerCritSect;
     /** The time stamp when the timer was initialized. */
@@ -1319,6 +1319,14 @@ typedef struct APICCPU
     uint32_t                    uHintedTimerShift;
     /** The timer description. */
     char                        szTimerDesc[32];
+    /** @} */
+
+    /** @name Log Max counters
+     * @{ */
+    uint32_t                    cLogMaxAccessError;
+    uint32_t                    cLogMaxSetApicBaseAddr;
+    uint32_t                    cLogMaxGetApicBaseAddr;
+    uint32_t                    uAlignment4;
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS
