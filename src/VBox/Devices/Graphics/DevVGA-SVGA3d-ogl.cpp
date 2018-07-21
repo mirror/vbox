@@ -1836,6 +1836,19 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 #endif
         break;
 
+    case SVGA3D_R8G8B8A8_SNORM:
+        pSurface->internalFormatGL = GL_RGB8;
+        pSurface->formatGL = GL_BGRA;
+        pSurface->typeGL = GL_UNSIGNED_INT_8_8_8_8_REV;
+        AssertMsgFailed(("test me - SVGA3D_R8G8B8A8_SNORM\n"));
+        break;
+    case SVGA3D_R16G16_UNORM:
+        pSurface->internalFormatGL = GL_RG16;
+        pSurface->formatGL = GL_RG;
+        pSurface->typeGL = GL_UNSIGNED_SHORT;
+        AssertMsgFailed(("test me - SVGA3D_R16G16_UNORM\n"));
+        break;
+
 #if 0
     /* Packed Video formats */
     case SVGA3D_UYVY:
@@ -2666,84 +2679,6 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
     }
 
     return rc;
-}
-
-
-int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t dest, SVGASignedRect destRect, SVGA3dSurfaceImageId src, SVGASignedRect srcRect, uint32_t cRects, SVGASignedRect *pRect)
-{
-    /* Requires SVGA_FIFO_CAP_SCREEN_OBJECT support */
-    Log(("vmsvga3dSurfaceBlitToScreen: dest=%d (%d,%d)(%d,%d) surface=%x (face=%d, mipmap=%d) (%d,%d)(%d,%d) cRects=%d\n", dest, destRect.left, destRect.top, destRect.right, destRect.bottom, src.sid, src.face, src.mipmap, srcRect.left, srcRect.top, srcRect.right, srcRect.bottom, cRects));
-    for (uint32_t i = 0; i < cRects; i++)
-    {
-        Log(("vmsvga3dSurfaceBlitToScreen: clipping rect %d (%d,%d)(%d,%d)\n", i, pRect[i].left, pRect[i].top, pRect[i].right, pRect[i].bottom));
-    }
-
-    /** @todo Only screen 0 for now. */
-    AssertReturn(dest == 0, VERR_INTERNAL_ERROR);
-    AssertReturn(src.mipmap == 0 && src.face == 0, VERR_INVALID_PARAMETER);
-    /** @todo scaling */
-    AssertReturn(destRect.right - destRect.left == srcRect.right - srcRect.left && destRect.bottom - destRect.top == srcRect.bottom - srcRect.top, VERR_INVALID_PARAMETER);
-
-    if (cRects == 0)
-    {
-        /* easy case; no clipping */
-        SVGA3dCopyBox        box;
-        SVGA3dGuestImage     dst;
-
-        box.x       = destRect.left;
-        box.y       = destRect.top;
-        box.z       = 0;
-        box.w       = destRect.right - destRect.left;
-        box.h       = destRect.bottom - destRect.top;
-        box.d       = 1;
-        box.srcx    = srcRect.left;
-        box.srcy    = srcRect.top;
-        box.srcz    = 0;
-
-        dst.ptr.gmrId  = SVGA_GMR_FRAMEBUFFER;
-        dst.ptr.offset = pThis->svga.uScreenOffset;
-        dst.pitch      = pThis->svga.cbScanline;
-
-        int rc = vmsvga3dSurfaceDMA(pThis, dst, src, SVGA3D_READ_HOST_VRAM, 1, &box);
-        AssertRCReturn(rc, rc);
-
-        vgaR3UpdateDisplay(pThis, box.x, box.y, box.w, box.h);
-        return VINF_SUCCESS;
-    }
-    else
-    {
-        SVGA3dGuestImage dst;
-        SVGA3dCopyBox    box;
-
-        box.srcz    = 0;
-        box.z       = 0;
-        box.d       = 1;
-
-        dst.ptr.gmrId  = SVGA_GMR_FRAMEBUFFER;
-        dst.ptr.offset = pThis->svga.uScreenOffset;
-        dst.pitch      = pThis->svga.cbScanline;
-
-        /** @todo merge into one SurfaceDMA call */
-        for (uint32_t i = 0; i < cRects; i++)
-        {
-            /* The clipping rectangle is relative to the top-left corner of srcRect & destRect. Adjust here. */
-            box.srcx = srcRect.left + pRect[i].left;
-            box.srcy = srcRect.top  + pRect[i].top;
-
-            box.x    = pRect[i].left + destRect.left;
-            box.y    = pRect[i].top  + destRect.top;
-            box.z    = 0;
-            box.w    = pRect[i].right - pRect[i].left;
-            box.h    = pRect[i].bottom - pRect[i].top;
-
-            int rc = vmsvga3dSurfaceDMA(pThis, dst, src, SVGA3D_READ_HOST_VRAM, 1, &box);
-            AssertRCReturn(rc, rc);
-
-            vgaR3UpdateDisplay(pThis, box.x, box.y, box.w, box.h);
-        }
-
-        return VINF_SUCCESS;
-    }
 }
 
 int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter filter)
