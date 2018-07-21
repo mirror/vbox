@@ -686,8 +686,8 @@ typedef struct HMCPU
     bool                        fLeaveDone;
     /** Whether we're using the hyper DR7 or guest DR7. */
     bool                        fUsingHyperDR7;
-    /** Set if XCR0 needs to be loaded and saved when entering and exiting guest
-     * code execution. */
+    /** Set if XCR0 needs to be saved/restored when entering/exiting guest code
+     *  execution. */
     bool                        fLoadSaveGuestXcr0;
 
     /** Whether we should use the debug loop because of single stepping or special
@@ -933,7 +933,6 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExportGuestState;
     STAMPROFILEADV          StatLoadGuestFpuState;
     STAMPROFILEADV          StatInGC;
-
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     STAMPROFILEADV          StatWorldSwitch3264;
 #endif
@@ -1001,7 +1000,9 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitTaskSwitch;
     STAMCOUNTER             StatExitMtf;
     STAMCOUNTER             StatExitApicAccess;
-    STAMCOUNTER             StatPendingHostIrq;
+    STAMCOUNTER             StatExitReasonNpf;
+
+    STAMCOUNTER             StatNestedExitReasonNpf;
 
     STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;
@@ -1018,6 +1019,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatTlbShootdown;
     STAMCOUNTER             StatTlbShootdownFlush;
 
+    STAMCOUNTER             StatSwitchPendingHostIrq;
     STAMCOUNTER             StatSwitchTprMaskedIrq;
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchHmToR3FF;
@@ -1033,7 +1035,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatTscOffset;
     STAMCOUNTER             StatTscIntercept;
 
-    STAMCOUNTER             StatExitReasonNpf;
     STAMCOUNTER             StatDRxArmed;
     STAMCOUNTER             StatDRxContextSwitch;
     STAMCOUNTER             StatDRxIoCheck;
@@ -1045,20 +1046,16 @@ typedef struct HMCPU
     STAMCOUNTER             StatVmxCheckBadRmSelBase;
     STAMCOUNTER             StatVmxCheckBadRmSelLimit;
     STAMCOUNTER             StatVmxCheckRmOk;
-
     STAMCOUNTER             StatVmxCheckBadSel;
     STAMCOUNTER             StatVmxCheckBadRpl;
     STAMCOUNTER             StatVmxCheckBadLdt;
     STAMCOUNTER             StatVmxCheckBadTr;
     STAMCOUNTER             StatVmxCheckPmOk;
 
-    STAMCOUNTER             StatNestedExitReasonNpf;
-
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     STAMCOUNTER             StatFpu64SwitchBack;
     STAMCOUNTER             StatDebug64SwitchBack;
 #endif
-
 #ifdef VBOX_WITH_STATISTICS
     R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
     R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;

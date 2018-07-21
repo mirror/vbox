@@ -4379,7 +4379,7 @@ static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     {
         ASMSetFlags(pSvmTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
     }
     return VINF_SUCCESS;
@@ -4492,7 +4492,7 @@ static int hmR0SvmPreRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     {
         ASMSetFlags(pSvmTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
     }
 

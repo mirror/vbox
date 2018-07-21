@@ -8333,7 +8333,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
             return VINF_SUCCESS;
         }
 
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPendingHostIrq);
         rcStrict = VINF_EM_RAW_INTERRUPT;
     }
     else

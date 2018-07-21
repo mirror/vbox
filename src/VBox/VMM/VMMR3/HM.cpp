@@ -1000,7 +1000,7 @@ static int hmR3InitCPU(PVM pVM)
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchTprMaskedIrq,     "/HM/CPU%d/Switch/TprMaskedIrq", "PDMGetInterrupt() signals TPR masks pending Irq.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending", "PDMGetInterrupt() cleared behind our back!?!.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatPendingHostIrq,         "/HM/CPU%d/Switch/PendingHostIrq", "Exit to ring-3 due to pending host interrupt before executing guest code.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPendingHostIrq,   "/HM/CPU%d/Switch/PendingHostIrq", "Exit to ring-3 due to pending host interrupt before executing guest code.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHmToR3FF,         "/HM/CPU%d/Switch/HmToR3FF", "Exit to ring-3 due to pending timers, EMT rendezvous, critical section etc.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchExitToR3,         "/HM/CPU%d/Switch/ExitToR3", "Exit to ring-3 (total).");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchLongJmpToR3,      "/HM/CPU%d/Switch/LongJmpToR3", "Longjump to ring-3.");
@@ -1040,9 +1040,9 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatDRxContextSwitch,       "/HM/CPU%d/Debug/ContextSwitch", "Loaded guest-debug state on MOV DRx.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatDRxIoCheck,             "/HM/CPU%d/Debug/IOCheck", "Checking for I/O breakpoint.");
 
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExportMinimal,          "/HM/CPU%d/Load/Minimal", "VM-entry exporting minimal guest-state.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExportFull,             "/HM/CPU%d/Load/Full", "VM-entry exporting the full guest-state.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadGuestFpu,           "/HM/CPU%d/Load/GuestFpu", "VM-entry loading the guest-FPU state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExportMinimal,          "/HM/CPU%d/Export/Minimal", "VM-entry exporting minimal guest-state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExportFull,             "/HM/CPU%d/Export/Full", "VM-entry exporting the full guest-state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadGuestFpu,           "/HM/CPU%d/Export/GuestFpu", "VM-entry loading the guest-FPU state.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelBase,   "/HM/CPU%d/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit,  "/HM/CPU%d/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");
