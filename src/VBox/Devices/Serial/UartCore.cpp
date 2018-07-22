@@ -617,7 +617,7 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
         AssertRC(rc); Assert(cbRead <= UINT8_MAX); RT_NOREF(rc);
 
         pFifo->offWrite = (pFifo->offWrite + (uint8_t)cbRead) % pFifo->cbMax;
-        pFifo->cbUsed   += cbRead;
+        pFifo->cbUsed   += (uint8_t)cbRead;
         cbFilled        += cbRead;
 
         if (cbRead < cbThisRead)
