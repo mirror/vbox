@@ -428,7 +428,7 @@ DECLINLINE(size_t) uartFifoCopyTo(PUARTFIFO pFifo, void *pvDst, size_t cbCopy)
     cbCopy = RT_MIN(cbCopy, pFifo->cbUsed);
     while (cbCopy)
     {
-        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offRead));
+        uint8_t cbThisCopy = (uint8_t)RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offRead));
         memcpy(pbDst, &pFifo->abBuf[pFifo->offRead], cbThisCopy);
 
         pFifo->offRead = (pFifo->offRead + cbThisCopy) % pFifo->cbMax;
@@ -458,7 +458,7 @@ DECLINLINE(size_t) uartFifoCopyFrom(PUARTFIFO pFifo, void *pvSrc, size_t cbCopy)
     cbCopy = RT_MIN(cbCopy, uartFifoFreeGet(pFifo));
     while (cbCopy)
     {
-        size_t cbThisCopy = RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
+        uint8_t cbThisCopy = (uint8_t)RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
         memcpy(&pFifo->abBuf[pFifo->offWrite], pbSrc, cbThisCopy);
 
         pFifo->offWrite = (pFifo->offWrite + cbThisCopy) % pFifo->cbMax;
@@ -612,9 +612,9 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
         size_t cbThisRead = RT_MIN(cbFill - cbFilled, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
         size_t cbRead = 0;
         int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
-        /*Assert(RT_SUCCESS(rc) && cbRead == cbThisRead);*/ RT_NOREF(rc);
+        AssertRC(rc); Assert(cbRead <= UINT8_MAX); RT_NOREF(rc);
 
-        pFifo->offWrite = (pFifo->offWrite + cbRead) % pFifo->cbMax;
+        pFifo->offWrite = (pFifo->offWrite + (uint8_t)cbRead) % pFifo->cbMax;
         pFifo->cbUsed   += cbRead;
         cbFilled        += cbRead;
 
@@ -628,7 +628,7 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
         uartIrqUpdate(pThis);
     }
 
-    Assert(cbFilled <= pThis->cbAvailRdr);
+    Assert(cbFilled <= (size_t)pThis->cbAvailRdr);
     ASMAtomicSubU32(&pThis->cbAvailRdr, cbFilled);
 }
 
