@@ -334,6 +334,7 @@ static void uartIrqUpdate(PUARTCORE pThis)
 }
 
 
+#ifdef IN_RING3
 /**
  * Clears the given FIFO.
  *
@@ -474,7 +475,6 @@ DECLINLINE(size_t) uartFifoCopyFrom(PUARTFIFO pFifo, void *pvSrc, size_t cbCopy)
 #endif
 
 
-#ifdef IN_RING3
 /**
  * Updates the delta bits for the given MSR register value which has the status line
  * bits set.
