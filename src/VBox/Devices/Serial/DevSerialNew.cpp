@@ -132,9 +132,9 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
  */
 static UARTTYPE serialR3GetUartTypeFromString(const char *pszUartType)
 {
-    if (!RTStrCmp(pszUartType, "15450"))
+    if (!RTStrCmp(pszUartType, "16450"))
         return UARTTYPE_16450;
-    else if (!RTStrCmp(pszUartType, "15550A"))
+    else if (!RTStrCmp(pszUartType, "16550A"))
         return UARTTYPE_16550A;
     else if (!RTStrCmp(pszUartType, "16750"))
         return UARTTYPE_16750;
