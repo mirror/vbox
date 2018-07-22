@@ -390,6 +390,7 @@ DECLINLINE(bool) uartFifoPut(PUARTFIFO pFifo, bool fOvrWr, uint8_t bData)
 
     return fOverFlow;
 }
+#endif
 
 
 /**
@@ -413,6 +414,7 @@ DECLINLINE(uint8_t) uartFifoGet(PUARTFIFO pFifo)
 }
 
 
+#ifdef IN_RING3
 /**
  * Tries to copy the requested amount of data from the given FIFO into the provided buffer.
  *
