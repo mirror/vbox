@@ -2689,6 +2689,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
 
             InsertConfigNode(pDev, Utf8StrFmt("%u", ulInstance).c_str(), &pInst);
+            InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst, "Config", &pCfg);
 
             ULONG ulIRQ;
