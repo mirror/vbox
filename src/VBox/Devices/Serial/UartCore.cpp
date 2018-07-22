@@ -23,6 +23,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_SERIAL
 #include <VBox/vmm/tm.h>
+#include <iprt/log.h>
 #include <iprt/uuid.h>
 #include <iprt/assert.h>
 
@@ -645,7 +646,7 @@ static void uartR3ByteFetch(PUARTCORE pThis)
         AssertPtr(pThis->pDrvSerial);
         size_t cbRead = 0;
         int rc2 = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
-        AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n"));
+        AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n")); RT_NOREF(rc2);
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
         uartIrqUpdate(pThis);
     }
@@ -1316,7 +1317,7 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
     {
         size_t cbRead = 0;
         int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
-        AssertMsg(RT_SUCCESS(rc) && cbRead == 1, ("This shouldn't fail and always return one byte!\n"));
+        AssertMsg(RT_SUCCESS(rc) && cbRead == 1, ("This shouldn't fail and always return one byte!\n")); RT_NOREF(rc);
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
         uartIrqUpdate(pThis);
     }
@@ -1457,6 +1458,7 @@ DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
 DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
                                uint8_t *puIrq, RTIOPORT *pPortBase)
 {
+    RT_NOREF(uPass);
     int rc = VINF_SUCCESS;
 
     if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)

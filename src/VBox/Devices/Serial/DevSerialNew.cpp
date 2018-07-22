@@ -208,7 +208,13 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
             rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
         }
         else
+        {
+            if (uVersion > UART_SAVED_STATE_VERSION_16450)
+                enmType = UARTTYPE_16550A;
+            else
+                enmType = UARTTYPE_16450;
             rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, &uIrq, &PortBase);
+        }
         if (RT_SUCCESS(rc))
         {
             /* The marker. */
