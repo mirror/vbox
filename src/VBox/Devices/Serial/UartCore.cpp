@@ -633,7 +633,7 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
     }
 
     Assert(cbFilled <= (size_t)pThis->cbAvailRdr);
-    ASMAtomicSubU32(&pThis->cbAvailRdr, cbFilled);
+    ASMAtomicSubU32(&pThis->cbAvailRdr, (uint32_t)cbFilled);
 }
 
 
