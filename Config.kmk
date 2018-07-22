@@ -580,6 +580,8 @@ VBOX_WITH_NVME_IMPL = 1
 VBOX_WITH_DRV_DISK_INTEGRITY = 1
 # Enables new LPC device implementation.
 VBOX_WITH_NEW_LPC_DEVICE = 1
+# Enables the new serial port implementation
+VBOX_WITH_NEW_SERIAL = 1
 ## @}
 
 # legacy
