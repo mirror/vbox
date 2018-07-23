@@ -1098,33 +1098,33 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** VMCS revision identifier used by the processor. */
-#define MSR_IA32_VMX_BASIC_VMCS_ID(a)                      ((a) & 0x7fffffff)
+#define MSR_IA32_VMX_BASIC_VMCS_ID(a)                           ((a) & 0x7fffffff)
 /** Shift to get the VMCS size. */
-#define MSR_IA32_VMX_BASIC_VMCS_SIZE_SHIFT                 32
+#define MSR_IA32_VMX_BASIC_VMCS_SIZE_SHIFT                      32
 /** VMCS size in bytes. */
-#define MSR_IA32_VMX_BASIC_VMCS_SIZE(a)                    (((a) >> 32) & 0x1fff)
+#define MSR_IA32_VMX_BASIC_VMCS_SIZE(a)                         (((a) >> 32) & 0x1fff)
 /** Shift to get the width of physical addresses and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT           48
+#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT                48
 /** Width of physical addresses used for the VMCS and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(a)              (((a) >> 48) & 1)
+#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(a)                   (((a) >> 48) & 1)
 /** Shift to get the dual-monitor treatment of SMI and SMM. */
-#define MSR_IA32_VMX_BASIC_DUAL_MON_SHIFT                  49
+#define MSR_IA32_VMX_BASIC_DUAL_MON_SHIFT                       49
 /** Dual-monitor treatment of SMI and SMM supported. */
-#define MSR_IA32_VMX_BASIC_DUAL_MON(a)                     (((a) >> 49) & 1)
+#define MSR_IA32_VMX_BASIC_DUAL_MON(a)                          (((a) >> 49) & 1)
 /** Shift to get the memory type that must be used for the VMCS and associated
  *  memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT             50
+#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT                  50
 /** Memory type that must be used for the VMCS and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xf)
+#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE(a)                     (((a) >> 50) & 0xf)
 /** Shift to get the additional VM-exit information for INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT             54
+#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT                  54
 /** Additional VM-exit information for INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(a)                (((a) >> 54) & 1)
+#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(a)                     (((a) >> 54) & 1)
 /** Shift to get the VMCS true controls. */
-#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS_SHIFT             55
+#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS_SHIFT                  55
 /** Whether default 1 bits in control MSRs (pin/proc/exit/entry) may be
  *  cleared to 0 and that 'true' control MSRs are supported. */
-#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS(a)                (((a) >> 55) & 1)
+#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS(a)                     (((a) >> 55) & 1)
 /** @} */
 
 
@@ -1164,20 +1164,20 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name MSR_IA32_VMX_EPT_VPID_CAPS; EPT capabilities MSR
  * @{
  */
-#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                             RT_BIT_64(0)
-#define MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4                     RT_BIT_64(6)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                                 RT_BIT_64(8)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB                                 RT_BIT_64(14)
-#define MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M                                 RT_BIT_64(16)
-#define MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G                               RT_BIT_64(17)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                                 RT_BIT_64(20)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY                       RT_BIT_64(21)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT                  RT_BIT_64(25)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS                    RT_BIT_64(26)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID                                RT_BIT_64(32)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR                     RT_BIT_64(40)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT                 RT_BIT_64(41)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS                   RT_BIT_64(42)
+#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                    RT_BIT_64(0)
+#define MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4            RT_BIT_64(6)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                        RT_BIT_64(8)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB                        RT_BIT_64(14)
+#define MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M                        RT_BIT_64(16)
+#define MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G                      RT_BIT_64(17)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                        RT_BIT_64(20)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY              RT_BIT_64(21)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT         RT_BIT_64(25)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS           RT_BIT_64(26)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID                       RT_BIT_64(32)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR            RT_BIT_64(40)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT        RT_BIT_64(41)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS          RT_BIT_64(42)
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS  RT_BIT_64(43)
 /** @} */
 
@@ -1202,7 +1202,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 #define VMX_VMCS16_VPID                                         0x000
-#define VMX_VMCS16_POSTED_INTR_NOTIFY_VECTOR                    0x002
+#define VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR                     0x002
 #define VMX_VMCS16_EPTP_INDEX                                   0x004
 #define VMX_VMCS16_GUEST_ES_SEL                                 0x800
 #define VMX_VMCS16_GUEST_CS_SEL                                 0x802
@@ -1213,7 +1213,9 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS16_GUEST_LDTR_SEL                               0x80c
 #define VMX_VMCS16_GUEST_TR_SEL                                 0x80e
 #define VMX_VMCS16_GUEST_INTR_STATUS                            0x810
+#define VMX_VMCS16_GUEST_PML_INDEX                              0x812
 /** @} */
+
 
 /** @name VMCS field encoding: 16-bits host fields.
  * @{
@@ -1225,18 +1227,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS16_HOST_FS_SEL                                  0xc08
 #define VMX_VMCS16_HOST_GS_SEL                                  0xc0a
 #define VMX_VMCS16_HOST_TR_SEL                                  0xc0c
-/** @}          */
-
-/** @name VMCS field encoding: 64-bit host fields.
- * @{
- */
-#define VMX_VMCS64_HOST_PAT_FULL                                0x2c00
-#define VMX_VMCS64_HOST_PAT_HIGH                                0x2c01
-#define VMX_VMCS64_HOST_EFER_FULL                               0x2c02
-#define VMX_VMCS64_HOST_EFER_HIGH                               0x2c03
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2c04      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2c05      /**< MSR IA32_PERF_GLOBAL_CTRL */
-/** @}          */
+/** @} */
 
 
 /** @name VMCS field encoding: 64-bit control fields.
@@ -1286,10 +1277,18 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH                 0x202b
 #define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL                 0x202c
 #define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH                 0x202d
+#define VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_FULL               0x202e
+#define VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_HIGH               0x202f
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL                     0x2032
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH                     0x2033
-#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                    0x2400
-#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_HIGH                    0x2401
+/** @} */
+
+
+/** @name VMCS field encoding: 64-bit read-only data fields.
+ * @{
+ */
+#define VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL                      0x2400
+#define VMX_VMCS64_RO_GUEST_PHYS_ADDR_HIGH                      0x2401
 /** @} */
 
 
@@ -1314,6 +1313,20 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_GUEST_PDPTE2_HIGH                            0x280f
 #define VMX_VMCS64_GUEST_PDPTE3_FULL                            0x2810
 #define VMX_VMCS64_GUEST_PDPTE3_HIGH                            0x2811
+#define VMX_VMCS64_GUEST_BNDCFGS_FULL                           0x2812
+#define VMX_VMCS64_GUEST_BNDCFGS_HIGH                           0x2813
+/** @} */
+
+
+/** @name VMCS field encoding: 64-bit host fields.
+ * @{
+ */
+#define VMX_VMCS64_HOST_PAT_FULL                                0x2c00
+#define VMX_VMCS64_HOST_PAT_HIGH                                0x2c01
+#define VMX_VMCS64_HOST_EFER_FULL                               0x2c02
+#define VMX_VMCS64_HOST_EFER_HIGH                               0x2c03
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2c04      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2c05      /**< MSR IA32_PERF_GLOBAL_CTRL */
 /** @} */
 
 
@@ -1338,6 +1351,125 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS32_CTRL_PROC_EXEC2                              0x401e
 #define VMX_VMCS32_CTRL_PLE_GAP                                 0x4020
 #define VMX_VMCS32_CTRL_PLE_WINDOW                              0x4022
+/** @} */
+
+
+/** @name VMCS field encoding: 32-bits read-only fields.
+ * @{
+ */
+#define VMX_VMCS32_RO_VM_INSTR_ERROR                            0x4400
+#define VMX_VMCS32_RO_EXIT_REASON                               0x4402
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                    0x4404
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE              0x4406
+#define VMX_VMCS32_RO_IDT_VECTORING_INFO                        0x4408
+#define VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE                  0x440a
+#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                         0x440c
+#define VMX_VMCS32_RO_EXIT_INSTR_INFO                           0x440e
+/** @} */
+
+
+/** @name VMCS field encoding: 32-bit guest-state fields.
+ * @{
+ */
+#define VMX_VMCS32_GUEST_ES_LIMIT                               0x4800
+#define VMX_VMCS32_GUEST_CS_LIMIT                               0x4802
+#define VMX_VMCS32_GUEST_SS_LIMIT                               0x4804
+#define VMX_VMCS32_GUEST_DS_LIMIT                               0x4806
+#define VMX_VMCS32_GUEST_FS_LIMIT                               0x4808
+#define VMX_VMCS32_GUEST_GS_LIMIT                               0x480a
+#define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480c
+#define VMX_VMCS32_GUEST_TR_LIMIT                               0x480e
+#define VMX_VMCS32_GUEST_GDTR_LIMIT                             0x4810
+#define VMX_VMCS32_GUEST_IDTR_LIMIT                             0x4812
+#define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS                       0x4814
+#define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS                       0x4816
+#define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS                       0x4818
+#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481a
+#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481c
+#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481e
+#define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                     0x4820
+#define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                       0x4822
+#define VMX_VMCS32_GUEST_INT_STATE                              0x4824
+#define VMX_VMCS32_GUEST_ACTIVITY_STATE                         0x4826
+#define VMX_VMCS32_GUEST_SMBASE                                 0x4828
+#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482a  /**< MSR IA32_SYSENTER_CS */
+#define VMX_VMCS32_PREEMPT_TIMER_VALUE                          0x482e
+/** @} */
+
+
+/** @name VMCS field encoding: 32-bit host-state fields.
+ * @{
+ */
+#define VMX_VMCS32_HOST_SYSENTER_CS                             0x4C00
+/** @} */
+
+
+/** @name Natural width control fields.
+ * @{
+ */
+#define VMX_VMCS_CTRL_CR0_MASK                                  0x6000
+#define VMX_VMCS_CTRL_CR4_MASK                                  0x6002
+#define VMX_VMCS_CTRL_CR0_READ_SHADOW                           0x6004
+#define VMX_VMCS_CTRL_CR4_READ_SHADOW                           0x6006
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL0                           0x6008
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL1                           0x600a
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600c
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600e
+/** @} */
+
+/** @name Natural width read-only data fields.
+ * @{
+ */
+#define VMX_VMCS_RO_EXIT_QUALIFICATION                          0x6400
+#define VMX_VMCS_RO_IO_RCX                                      0x6402
+#define VMX_VMCS_RO_IO_RSX                                      0x6404
+#define VMX_VMCS_RO_IO_RDI                                      0x6406
+#define VMX_VMCS_RO_IO_RIP                                      0x6408
+#define VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR                      0x640a
+/** @} */
+
+
+/** @name VMCS field encoding: Natural width guest-state fields.
+ * @{
+ */
+#define VMX_VMCS_GUEST_CR0                                      0x6800
+#define VMX_VMCS_GUEST_CR3                                      0x6802
+#define VMX_VMCS_GUEST_CR4                                      0x6804
+#define VMX_VMCS_GUEST_ES_BASE                                  0x6806
+#define VMX_VMCS_GUEST_CS_BASE                                  0x6808
+#define VMX_VMCS_GUEST_SS_BASE                                  0x680a
+#define VMX_VMCS_GUEST_DS_BASE                                  0x680c
+#define VMX_VMCS_GUEST_FS_BASE                                  0x680e
+#define VMX_VMCS_GUEST_GS_BASE                                  0x6810
+#define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
+#define VMX_VMCS_GUEST_TR_BASE                                  0x6814
+#define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
+#define VMX_VMCS_GUEST_IDTR_BASE                                0x6818
+#define VMX_VMCS_GUEST_DR7                                      0x681a
+#define VMX_VMCS_GUEST_RSP                                      0x681c
+#define VMX_VMCS_GUEST_RIP                                      0x681e
+#define VMX_VMCS_GUEST_RFLAGS                                   0x6820
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS                      0x6822
+#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
+#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
+/** @} */
+
+
+/** @name VMCS field encoding: Natural width host-state fields.
+ * @{
+ */
+#define VMX_VMCS_HOST_CR0                                       0x6c00
+#define VMX_VMCS_HOST_CR3                                       0x6c02
+#define VMX_VMCS_HOST_CR4                                       0x6c04
+#define VMX_VMCS_HOST_FS_BASE                                   0x6c06
+#define VMX_VMCS_HOST_GS_BASE                                   0x6c08
+#define VMX_VMCS_HOST_TR_BASE                                   0x6c0a
+#define VMX_VMCS_HOST_GDTR_BASE                                 0x6c0c
+#define VMX_VMCS_HOST_IDTR_BASE                                 0x6c0e
+#define VMX_VMCS_HOST_SYSENTER_ESP                              0x6c10
+#define VMX_VMCS_HOST_SYSENTER_EIP                              0x6c12
+#define VMX_VMCS_HOST_RSP                                       0x6c14
+#define VMX_VMCS_HOST_RIP                                       0x6c16
 /** @} */
 
 
@@ -1514,20 +1646,6 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMCS field encoding: 32-bits read-only fields.
- * @{
- */
-#define VMX_VMCS32_RO_VM_INSTR_ERROR                            0x4400
-#define VMX_VMCS32_RO_EXIT_REASON                               0x4402
-#define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                    0x4404
-#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE              0x4406
-#define VMX_VMCS32_RO_IDT_VECTORING_INFO                        0x4408
-#define VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE                  0x440a
-#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                         0x440c
-#define VMX_VMCS32_RO_EXIT_INSTR_INFO                           0x440e
-/** @} */
-
-
 /** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
@@ -1538,38 +1656,39 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
  * @{
  */
-#define VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(a)                 (((a) >> 31) & 1)
-#define VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT                  8
-#define VMX_ENTRY_INTERRUPTION_INFO_TYPE(a)                     ((a >> VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
+#define VMX_ENTRY_INT_INFO_IS_VALID(a)                          (((a) >> 31) & 1)
+#define VMX_ENTRY_INT_INFO_TYPE_SHIFT                           8
+#define VMX_ENTRY_INT_INFO_TYPE(a)                              (((a) >> 8) & 7)
 /** @} */
 
 
 /** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                    ((a) & 0xff)
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                   8
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                      (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID             RT_BIT(11)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_ERROR_CODE_VALID(a)       RT_BOOL((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_NMI_UNBLOCK_IRET(a)       (((a) >> 12) & 1)
-#define VMX_EXIT_INTERRUPTION_INFO_VALID                        RT_BIT(31)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                  (((a) >> 31) & 1)
+#define VMX_EXIT_INT_INFO_VECTOR(a)                             ((a) & 0xff)
+#define VMX_EXIT_INT_INFO_TYPE_SHIFT                            8
+#define VMX_EXIT_INT_INFO_TYPE(a)                               (((a) >> 8) & 7)
+#define VMX_EXIT_INT_INFO_ERROR_CODE_VALID                      RT_BIT(11)
+#define VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(a)                (((a) >> 11) & 1)
+#define VMX_EXIT_INT_INFO_NMI_UNBLOCK_IRET                      12
+#define VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
+#define VMX_EXIT_INT_INFO_VALID                                 RT_BIT(31)
+#define VMX_EXIT_INT_INFO_IS_VALID(a)                           (((a) >> 31) & 1)
 /** Construct an irq event injection value from the exit interruption info value
  *  (same except that bit 12 is reserved). */
-#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      ((a) & ~RT_BIT(12))
+#define VMX_VMCS_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)           ((a) & ~RT_BIT(12))
 /** @} */
 
 
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT                 0
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI                     2
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT                 3
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT                  4
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT            5
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT                 6
+#define VMX_EXIT_INT_INFO_TYPE_EXT_INT                          0
+#define VMX_EXIT_INT_INFO_TYPE_NMI                              2
+#define VMX_EXIT_INT_INFO_TYPE_HW_XCPT                          3
+#define VMX_EXIT_INT_INFO_TYPE_SW_INT                           4
+#define VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT                     5
+#define VMX_EXIT_INT_INFO_TYPE_SW_XCPT                          6
 /** @} */
 
 
@@ -1578,7 +1697,7 @@ typedef VMXMSRS *PVMXMSRS;
  */
 #define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
 #define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
-#define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
+#define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> 8) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
 #define VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(a)           (((a) >> 11) & 1)
 #define VMX_IDT_VECTORING_INFO_VALID(a)                         ((a) & RT_BIT(31))
@@ -1598,34 +1717,6 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMCS field encoding: 32-bit guest-state fields.
- * @{
- */
-#define VMX_VMCS32_GUEST_ES_LIMIT                               0x4800
-#define VMX_VMCS32_GUEST_CS_LIMIT                               0x4802
-#define VMX_VMCS32_GUEST_SS_LIMIT                               0x4804
-#define VMX_VMCS32_GUEST_DS_LIMIT                               0x4806
-#define VMX_VMCS32_GUEST_FS_LIMIT                               0x4808
-#define VMX_VMCS32_GUEST_GS_LIMIT                               0x480a
-#define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480c
-#define VMX_VMCS32_GUEST_TR_LIMIT                               0x480e
-#define VMX_VMCS32_GUEST_GDTR_LIMIT                             0x4810
-#define VMX_VMCS32_GUEST_IDTR_LIMIT                             0x4812
-#define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS                       0x4814
-#define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS                       0x4816
-#define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS                       0x4818
-#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481a
-#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481c
-#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481e
-#define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                     0x4820
-#define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                       0x4822
-#define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE                 0x4824
-#define VMX_VMCS32_GUEST_ACTIVITY_STATE                         0x4826
-#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482a  /**< MSR IA32_SYSENTER_CS */
-#define VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE                    0x482e
-/** @} */
-
-
 /** @name VMX_VMCS_GUEST_ACTIVITY_STATE
  * @{
  */
@@ -1640,46 +1731,13 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE
+/** @name VMX_VMCS32_GUEST_INT_STATE
  * @{
  */
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI         RT_BIT(0)
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS       RT_BIT(1)
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI         RT_BIT(2)
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI         RT_BIT(3)
-/** @} */
-
-
-/** @name VMCS field encoding: 32-bit host-state fields.
- * @{
- */
-#define VMX_VMCS32_HOST_SYSENTER_CS                             0x4C00
-/** @} */
-
-
-/** @name Natural width control fields
- * @{
- */
-#define VMX_VMCS_CTRL_CR0_MASK                                  0x6000
-#define VMX_VMCS_CTRL_CR4_MASK                                  0x6002
-#define VMX_VMCS_CTRL_CR0_READ_SHADOW                           0x6004
-#define VMX_VMCS_CTRL_CR4_READ_SHADOW                           0x6006
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL0                           0x6008
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL1                           0x600a
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600c
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600e
-/** @} */
-
-
-/** @name Natural width read-only data fields
- * @{
- */
-#define VMX_VMCS_RO_EXIT_QUALIFICATION                          0x6400
-#define VMX_VMCS_RO_IO_RCX                                      0x6402
-#define VMX_VMCS_RO_IO_RSX                                      0x6404
-#define VMX_VMCS_RO_IO_RDI                                      0x6406
-#define VMX_VMCS_RO_IO_RIP                                      0x6408
-#define VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR                      0x640a
+#define VMX_VMCS_GUEST_INT_STATE_BLOCK_STI                      RT_BIT(0)
+#define VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS                    RT_BIT(1)
+#define VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI                      RT_BIT(2)
+#define VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI                      RT_BIT(3)
 /** @} */
 
 
@@ -1703,8 +1761,8 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_EXIT_QUAL_DRX_DIRECTION values
  * @{
  */
-#define VMX_EXIT_QUAL_DRX_DIRECTION_WRITE              0
-#define VMX_EXIT_QUAL_DRX_DIRECTION_READ               1
+#define VMX_EXIT_QUAL_DRX_DIRECTION_WRITE                       0
+#define VMX_EXIT_QUAL_DRX_DIRECTION_READ                        1
 /** @} */
 
 
@@ -1712,19 +1770,19 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
-#define VMX_EXIT_QUAL_CRX_REGISTER(a)                  ((a) & 0xf)
+#define VMX_EXIT_QUAL_CRX_REGISTER(a)                           ((a) & 0xf)
 /** 4-5:   Access type. */
-#define VMX_EXIT_QUAL_CRX_ACCESS(a)                    (((a) >> 4) & 3)
+#define VMX_EXIT_QUAL_CRX_ACCESS(a)                             (((a) >> 4) & 3)
 /** 6:     LMSW operand type */
-#define VMX_EXIT_QUAL_CRX_LMSW_OP(a)                   (((a) >> 6) & 1)
+#define VMX_EXIT_QUAL_CRX_LMSW_OP(a)                            (((a) >> 6) & 1)
 /** 7:     Reserved; cleared to 0. */
-#define VMX_EXIT_QUAL_CRX_RES1(a)                      (((a) >> 7) & 1)
+#define VMX_EXIT_QUAL_CRX_RES1(a)                               (((a) >> 7) & 1)
 /** 8-11:  General purpose register number (0 for CLTS & LMSW). */
-#define VMX_EXIT_QUAL_CRX_GENREG(a)                    (((a) >> 8) & 0xf)
+#define VMX_EXIT_QUAL_CRX_GENREG(a)                             (((a) >> 8) & 0xf)
 /** 12-15: Reserved; cleared to 0. */
-#define VMX_EXIT_QUAL_CRX_RES2(a)                      (((a) >> 12) & 0xf)
+#define VMX_EXIT_QUAL_CRX_RES2(a)                               (((a) >> 12) & 0xf)
 /** 16-31: LMSW source data (else 0). */
-#define VMX_EXIT_QUAL_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xffff)
+#define VMX_EXIT_QUAL_CRX_LMSW_DATA(a)                          (((a) >> 16) & 0xffff)
 /* Rest: reserved. */
 /** @} */
 
@@ -1732,26 +1790,26 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_EXIT_QUAL_CRX_ACCESS
  * @{
  */
-#define VMX_EXIT_QUAL_CRX_ACCESS_WRITE                 0
-#define VMX_EXIT_QUAL_CRX_ACCESS_READ                  1
-#define VMX_EXIT_QUAL_CRX_ACCESS_CLTS                  2
-#define VMX_EXIT_QUAL_CRX_ACCESS_LMSW                  3
+#define VMX_EXIT_QUAL_CRX_ACCESS_WRITE                          0
+#define VMX_EXIT_QUAL_CRX_ACCESS_READ                           1
+#define VMX_EXIT_QUAL_CRX_ACCESS_CLTS                           2
+#define VMX_EXIT_QUAL_CRX_ACCESS_LMSW                           3
 /** @} */
 
 
 /** @name VMX_EXIT_QUAL_TASK_SWITCH
  * @{
  */
-#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)          ((a) & 0xffff)
-#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE(a)              (((a) >> 30) & 0x3)
+#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)                   ((a) & 0xffff)
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE(a)                       (((a) >> 30) & 0x3)
 /** Task switch caused by a call instruction. */
-#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_CALL            0
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_CALL                     0
 /** Task switch caused by an iret instruction. */
-#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IRET            1
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IRET                     1
 /** Task switch caused by a jmp instruction. */
-#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_JMP             2
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_JMP                      2
 /** Task switch caused by an interrupt gate. */
-#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IDT             3
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IDT                      3
 /** @} */
 
 
@@ -1759,24 +1817,24 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** Set if the violation was caused by a data read. */
-#define VMX_EXIT_QUAL_EPT_DATA_READ                    RT_BIT(0)
+#define VMX_EXIT_QUAL_EPT_DATA_READ                             RT_BIT(0)
 /** Set if the violation was caused by a data write. */
-#define VMX_EXIT_QUAL_EPT_DATA_WRITE                   RT_BIT(1)
+#define VMX_EXIT_QUAL_EPT_DATA_WRITE                            RT_BIT(1)
 /** Set if the violation was caused by an instruction fetch. */
-#define VMX_EXIT_QUAL_EPT_INSTR_FETCH                  RT_BIT(2)
+#define VMX_EXIT_QUAL_EPT_INSTR_FETCH                           RT_BIT(2)
 /** AND of the present bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_PRESENT                RT_BIT(3)
+#define VMX_EXIT_QUAL_EPT_ENTRY_PRESENT                         RT_BIT(3)
 /** AND of the write bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                  RT_BIT(4)
+#define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                           RT_BIT(4)
 /** AND of the execute bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE                RT_BIT(5)
+#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE                         RT_BIT(5)
 /** Set if the guest linear address field contains the faulting address. */
-#define VMX_EXIT_QUAL_EPT_GUEST_ADDR_VALID             RT_BIT(7)
+#define VMX_EXIT_QUAL_EPT_GUEST_ADDR_VALID                      RT_BIT(7)
 /** If bit 7 is one: (reserved otherwise)
  *  1 - violation due to physical address access.
  *  0 - violation caused by page walk or access/dirty bit updates
  */
-#define VMX_EXIT_QUAL_EPT_TRANSLATED_ACCESS            RT_BIT(8)
+#define VMX_EXIT_QUAL_EPT_TRANSLATED_ACCESS                     RT_BIT(8)
 /** @} */
 
 
@@ -1784,17 +1842,17 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** 0-2:   IO operation width. */
-#define VMX_EXIT_QUAL_IO_WIDTH(a)                      ((a) & 7)
+#define VMX_EXIT_QUAL_IO_WIDTH(a)                               ((a) & 7)
 /** 3:     IO operation direction. */
-#define VMX_EXIT_QUAL_IO_DIRECTION(a)                  (((a) >> 3) & 1)
+#define VMX_EXIT_QUAL_IO_DIRECTION(a)                           (((a) >> 3) & 1)
 /** 4:     String IO operation (INS / OUTS). */
-#define VMX_EXIT_QUAL_IO_IS_STRING(a)                  RT_BOOL((a) & RT_BIT_64(4))
+#define VMX_EXIT_QUAL_IO_IS_STRING(a)                           (((a) >> 4) & 1)
 /** 5:     Repeated IO operation. */
-#define VMX_EXIT_QUAL_IO_IS_REP(a)                     RT_BOOL((a) & RT_BIT_64(5))
+#define VMX_EXIT_QUAL_IO_IS_REP(a)                              (((a) >> 5) & 1)
 /** 6:     Operand encoding. */
-#define VMX_EXIT_QUAL_IO_ENCODING(a)                   (((a) >> 6) & 1)
+#define VMX_EXIT_QUAL_IO_ENCODING(a)                            (((a) >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
-#define VMX_EXIT_QUAL_IO_PORT(a)                       (((a) >> 16) & 0xffff)
+#define VMX_EXIT_QUAL_IO_PORT(a)                                (((a) >> 16) & 0xffff)
 /* Rest reserved. */
 /** @} */
 
@@ -1802,16 +1860,16 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_EXIT_QUAL_IO_DIRECTION
  * @{
  */
-#define VMX_EXIT_QUAL_IO_DIRECTION_OUT                 0
-#define VMX_EXIT_QUAL_IO_DIRECTION_IN                  1
+#define VMX_EXIT_QUAL_IO_DIRECTION_OUT                          0
+#define VMX_EXIT_QUAL_IO_DIRECTION_IN                           1
 /** @} */
 
 
 /** @name VMX_EXIT_QUAL_IO_ENCODING
  * @{
  */
-#define VMX_EXIT_QUAL_IO_ENCODING_DX                   0
-#define VMX_EXIT_QUAL_IO_ENCODING_IMM                  1
+#define VMX_EXIT_QUAL_IO_ENCODING_DX                            0
+#define VMX_EXIT_QUAL_IO_ENCODING_IMM                           1
 /** @} */
 
 
@@ -1820,9 +1878,9 @@ typedef VMXMSRS *PVMXMSRS;
  */
 /** 0-11: If the APIC-access VM-exit is due to a linear access, the offset of
  *  access within the APIC page. */
-#define VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(a)            ((a) & 0xfff)
+#define VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(a)                     ((a) & 0xfff)
 /** 12-15: Access type. */
-#define VMX_EXIT_QUAL_APIC_ACCESS_TYPE(a)              (((a) & 0xf000) >> 12)
+#define VMX_EXIT_QUAL_APIC_ACCESS_TYPE(a)                       (((a) & 0xf000) >> 12)
 /* Rest reserved. */
 /** @} */
 
@@ -1955,32 +2013,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: Natural width guest-state fields.
- * @{
- */
-#define VMX_VMCS_GUEST_CR0                                      0x6800
-#define VMX_VMCS_GUEST_CR3                                      0x6802
-#define VMX_VMCS_GUEST_CR4                                      0x6804
-#define VMX_VMCS_GUEST_ES_BASE                                  0x6806
-#define VMX_VMCS_GUEST_CS_BASE                                  0x6808
-#define VMX_VMCS_GUEST_SS_BASE                                  0x680a
-#define VMX_VMCS_GUEST_DS_BASE                                  0x680c
-#define VMX_VMCS_GUEST_FS_BASE                                  0x680e
-#define VMX_VMCS_GUEST_GS_BASE                                  0x6810
-#define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
-#define VMX_VMCS_GUEST_TR_BASE                                  0x6814
-#define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
-#define VMX_VMCS_GUEST_IDTR_BASE                                0x6818
-#define VMX_VMCS_GUEST_DR7                                      0x681a
-#define VMX_VMCS_GUEST_RSP                                      0x681c
-#define VMX_VMCS_GUEST_RIP                                      0x681e
-#define VMX_VMCS_GUEST_RFLAGS                                   0x6820
-#define VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS                 0x6822
-#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
-#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
-/** @} */
-
-
 /** @name VMX_VMCS_GUEST_DEBUG_EXCEPTIONS
  * Bits 4-11, 13 and 15-63 are reserved.
  * @{
@@ -1997,24 +2029,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BREAKPOINT_ENABLED      RT_BIT(12)
 /** A debug exception would have been triggered by single-step execution mode. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      RT_BIT(14)
-/** @} */
-
-
-/** @name VMCS field encoding: Natural width host-state fields.
- * @{
- */
-#define VMX_VMCS_HOST_CR0                                       0x6c00
-#define VMX_VMCS_HOST_CR3                                       0x6c02
-#define VMX_VMCS_HOST_CR4                                       0x6c04
-#define VMX_VMCS_HOST_FS_BASE                                   0x6c06
-#define VMX_VMCS_HOST_GS_BASE                                   0x6c08
-#define VMX_VMCS_HOST_TR_BASE                                   0x6c0a
-#define VMX_VMCS_HOST_GDTR_BASE                                 0x6c0c
-#define VMX_VMCS_HOST_IDTR_BASE                                 0x6c0e
-#define VMX_VMCS_HOST_SYSENTER_ESP                              0x6c10
-#define VMX_VMCS_HOST_SYSENTER_EIP                              0x6c12
-#define VMX_VMCS_HOST_RSP                                       0x6c14
-#define VMX_VMCS_HOST_RIP                                       0x6c16
 /** @} */
 
 
