@@ -597,6 +597,8 @@
 #define VERR_PGM_PHYS_MMIO_EX_IPE               (-1685)
 /** Mode table internal error. */
 #define VERR_PGM_MODE_IPE                       (-1686)
+/** Shadow mode 'none' internal error. */
+#define VERR_PGM_SHW_NONE_IPE                   (-1687)
 /** @} */
 
 

@@ -213,8 +213,8 @@
 #define PGM_TYPE_NESTED_PAE             7
 #define PGM_TYPE_NESTED_AMD64           8
 #define PGM_TYPE_EPT                    9
-#define PGM_TYPE_MAX                    PGM_TYPE_EPT
-#define PGM_TYPE_END                    (PGM_TYPE_EPT + 1)
+#define PGM_TYPE_NONE                   10 /**< Dummy shadow paging mode for NEM. */
+#define PGM_TYPE_END                    (PGM_TYPE_NONE + 1)
 #define PGM_TYPE_FIRST_SHADOW           PGM_TYPE_32BIT /**< The first type used by shadow paging. */
 /** @} */
 
@@ -3022,6 +3022,9 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_SHW_NAME_EPT(name)                          PGM_CTX(pgm,ShwEPT##name)
 #define PGM_SHW_NAME_RC_EPT_STR(name)                   "pgmRCShwEPT" #name
 #define PGM_SHW_NAME_R0_EPT_STR(name)                   "pgmR0ShwEPT" #name
+#define PGM_SHW_NAME_NONE(name)                         PGM_CTX(pgm,ShwNone##name)
+#define PGM_SHW_NAME_RC_NONE_STR(name)                  "pgmRCShwNone" #name
+#define PGM_SHW_NAME_R0_NONE_STR(name)                  "pgmR0ShwNone" #name
 #define PGM_SHW_DECL(type, name)                        PGM_CTX_DECL(type) PGM_SHW_NAME(name)
 
 /*                   Shw_Gst */
@@ -3054,6 +3057,11 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_EPT_32BIT(name)                    PGM_CTX(pgm,BthEPT32Bit##name)
 #define PGM_BTH_NAME_EPT_PAE(name)                      PGM_CTX(pgm,BthEPTPAE##name)
 #define PGM_BTH_NAME_EPT_AMD64(name)                    PGM_CTX(pgm,BthEPTAMD64##name)
+#define PGM_BTH_NAME_NONE_REAL(name)                    PGM_CTX(pgm,BthNoneReal##name)
+#define PGM_BTH_NAME_NONE_PROT(name)                    PGM_CTX(pgm,BthNoneProt##name)
+#define PGM_BTH_NAME_NONE_32BIT(name)                   PGM_CTX(pgm,BthNone32Bit##name)
+#define PGM_BTH_NAME_NONE_PAE(name)                     PGM_CTX(pgm,BthNonePAE##name)
+#define PGM_BTH_NAME_NONE_AMD64(name)                   PGM_CTX(pgm,BthNoneAMD64##name)
 
 #define PGM_BTH_NAME_RC_32BIT_REAL_STR(name)            "pgmRCBth32BitReal" #name
 #define PGM_BTH_NAME_RC_32BIT_PROT_STR(name)            "pgmRCBth32BitProt" #name

@@ -1010,7 +1010,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
  */
 static RTRCPTR vmmR3SwitcherGetHyperGDT(PVM pVM)
 {
-    if (HMIsRawModeCtxNeeded(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM) || HMIsRawModeCtxNeeded(pVM))
         return SELMGetHyperGDT(pVM);
 # if HC_ARCH_BITS != 32
     AssertFailed(); /* This path is only applicable to some 32-bit hosts. */

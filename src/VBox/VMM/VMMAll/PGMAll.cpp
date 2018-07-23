@@ -518,6 +518,69 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
 # undef PGM_SHW_TYPE
 # undef PGM_SHW_NAME
 
+
+/*
+ * Shadow - NEM / None.
+ */
+# define PGM_SHW_TYPE               PGM_TYPE_NONE
+# define PGM_SHW_NAME(name)         PGM_SHW_NAME_NONE(name)
+# include "PGMAllShw.h"
+
+/* Guest - real mode */
+# define PGM_GST_TYPE               PGM_TYPE_REAL
+# define PGM_GST_NAME(name)         PGM_GST_NAME_REAL(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NONE_REAL(name)
+# include "PGMGstDefs.h"
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+
+/* Guest - protected mode */
+# define PGM_GST_TYPE               PGM_TYPE_PROT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NONE_PROT(name)
+# include "PGMGstDefs.h"
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+
+/* Guest - 32-bit mode */
+# define PGM_GST_TYPE               PGM_TYPE_32BIT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_32BIT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NONE_32BIT(name)
+# include "PGMGstDefs.h"
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+
+/* Guest - PAE mode */
+# define PGM_GST_TYPE               PGM_TYPE_PAE
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PAE(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NONE_PAE(name)
+# include "PGMGstDefs.h"
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+
+# ifdef VBOX_WITH_64_BITS_GUESTS
+/* Guest - AMD64 mode */
+#  define PGM_GST_TYPE              PGM_TYPE_AMD64
+#  define PGM_GST_NAME(name)        PGM_GST_NAME_AMD64(name)
+#  define PGM_BTH_NAME(name)        PGM_BTH_NAME_NONE_AMD64(name)
+#  include "PGMGstDefs.h"
+#  include "PGMAllBth.h"
+#  undef PGM_BTH_NAME
+#  undef PGM_GST_TYPE
+#  undef PGM_GST_NAME
+# endif /* VBOX_WITH_64_BITS_GUESTS */
+
+# undef PGM_SHW_TYPE
+# undef PGM_SHW_NAME
+
 #endif /* !IN_RC */
 
 
@@ -666,6 +729,16 @@ PGMMODEDATASHW const g_aPgmShadowModeData[PGM_SHADOW_MODE_DATA_ARRAY_SIZE] =
         PGM_SHW_NAME_EPT(Relocate),
 # endif
     },
+    {
+        PGM_TYPE_NONE,
+        PGM_SHW_NAME_NONE(GetPage),
+        PGM_SHW_NAME_NONE(ModifyPage),
+        PGM_SHW_NAME_NONE(Enter),
+        PGM_SHW_NAME_NONE(Exit),
+# ifdef IN_RING3
+        PGM_SHW_NAME_NONE(Relocate),
+# endif
+    },
 #endif /* IN_RC */
 };
 
@@ -710,6 +783,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_32BIT, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_32BIT, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_32BIT, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_32BIT, PGM_TYPE_NONE         - illegal */
 
     /* PAE shadow paging mode: */
     PGMMODEDATABTH_NULL_ENTRY(), /* 0 */
@@ -722,6 +796,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_PAE, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_PAE, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_PAE, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_PAE, PGM_TYPE_NONE         - illegal */
 
 #ifndef IN_RC
     /* AMD64 shadow paging mode: */
@@ -739,6 +814,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_AMD64, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_AMD64, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_AMD64, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_AMD64, PGM_TYPE_NONE         - illegal */
 
     /* 32-bit nested paging mode: */
     PGMMODEDATABTH_NULL_ENTRY(), /* 0 */
@@ -755,6 +831,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_32BIT, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_32BIT, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_32BIT, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_32BIT, PGM_TYPE_NONE         - illegal */
 
     /* PAE nested paging mode: */
     PGMMODEDATABTH_NULL_ENTRY(), /* 0 */
@@ -771,6 +848,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_PAE, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_PAE, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_PAE, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_PAE, PGM_TYPE_NONE         - illegal */
 
     /* AMD64 nested paging mode: */
     PGMMODEDATABTH_NULL_ENTRY(), /* 0 */
@@ -787,6 +865,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_AMD64, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_AMD64, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_AMD64, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NESTED_AMD64, PGM_TYPE_NONE         - illegal */
 
     /* EPT nested paging mode: */
     PGMMODEDATABTH_NULL_ENTRY(), /* 0 */
@@ -803,6 +882,24 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_EPT, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_EPT, PGM_TYPE_NESTED_AMD64 - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_EPT, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_EPT, PGM_TYPE_NONE         - illegal */
+
+    /* NONE / NEM: */
+    PGMMODEDATABTH_NULL_ENTRY(), /* 0 */
+    PGMMODEDATABTH_ENTRY(PGM_TYPE_NONE, PGM_TYPE_REAL,  PGM_BTH_NAME_EPT_REAL),
+    PGMMODEDATABTH_ENTRY(PGM_TYPE_NONE, PGM_TYPE_PROT,  PGM_BTH_NAME_EPT_PROT),
+    PGMMODEDATABTH_ENTRY(PGM_TYPE_NONE, PGM_TYPE_32BIT, PGM_BTH_NAME_EPT_32BIT),
+    PGMMODEDATABTH_ENTRY(PGM_TYPE_NONE, PGM_TYPE_PAE,   PGM_BTH_NAME_EPT_PAE),
+# ifdef VBOX_WITH_64_BITS_GUESTS
+    PGMMODEDATABTH_ENTRY(PGM_TYPE_NONE, PGM_TYPE_AMD64, PGM_BTH_NAME_EPT_AMD64),
+# else
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_AMD64        - illegal */
+# endif
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_32BIT - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_PAE   - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_AMD64 - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_EPT          - illegal */
+    PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NONE         - illegal */
 
 #endif /* IN_RC */
 
@@ -2920,6 +3017,7 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
         case PGMMODE_NESTED_PAE:    return PGM_TYPE_NESTED_PAE;
         case PGMMODE_NESTED_AMD64:  return PGM_TYPE_NESTED_AMD64;
         case PGMMODE_EPT:           return PGM_TYPE_EPT;
+        case PGMMODE_NONE:          return PGM_TYPE_NONE;
         default:
             AssertFatalMsgFailed(("pgmMode=%d\n", pgmMode));
     }
@@ -3093,7 +3191,7 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
     if (VM_IS_NEM_ENABLED(pVM))
     {
         pVM->pgm.s.fNestedPaging = true;
-        enmShadowMode = PGMMODE_EPT; /* whatever harmless... */
+        enmShadowMode = PGMMODE_NONE;
     }
     else
     {
@@ -3439,6 +3537,7 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
         case PGMMODE_NESTED_PAE:    return "Nested-PAE";
         case PGMMODE_NESTED_AMD64:  return "Nested-AMD64";
         case PGMMODE_EPT:           return "EPT";
+        case PGMMODE_NONE:          return "None";
         default:                    return "unknown mode value";
     }
 }

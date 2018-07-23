@@ -358,6 +358,8 @@ typedef enum PGMMODE
     PGMMODE_NESTED_AMD64,
     /** Extended paging (Intel) mode. */
     PGMMODE_EPT,
+    /** Special mode used by NEM to indicate no shadow paging necessary. */
+    PGMMODE_NONE,
     /** The max number of modes */
     PGMMODE_MAX,
     /** 32bit hackishness. */
