@@ -603,6 +603,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
+    refreshApplianceSettingsWidget();
 }
 
 void UIWizardExportAppPageExpert::sltHandleMACAddressPolicyComboChange()

@@ -188,7 +188,19 @@ public:
 
     void setVirtualSystemBaseFolder(const QString& path);
 
+    /** Defines the list of VSD @a hints. */
+    void setVsdHints(const QList<AbstractVSDParameter> &hints);
+    /** Returns a name hint for certain VSD @a enmType. */
+    QString nameHint(KVirtualSystemDescriptionType enmType) const;
+    /** Returns a kind hint for certain VSD @a enmType. */
+    AbstractVSDParameterKind kindHint(KVirtualSystemDescriptionType enmType) const;
+    /** Returns a value hint for certain VSD @a enmType. */
+    QVariant getHint(KVirtualSystemDescriptionType enmType) const;
+
 private:
+
+    /** Holds the list of VSD hints. */
+    QList<AbstractVSDParameter> m_listVsdHints;
 
     /** Holds the root item reference. */
     UIApplianceModelItem *m_pRootItem;
@@ -273,6 +285,9 @@ public:
     /** Constructs the Appliance Editor widget passing @a pParent to the base-class. */
     UIApplianceEditorWidget(QWidget *pParent = 0);
 
+    /** Defines the list of VSD @a hints. */
+    void setVsdHints(const QList<AbstractVSDParameter> &hints);
+
     /** Returns whether the Appliance Editor has valid state. */
     bool isValid() const { return m_pAppliance != 0; }
     /** Returns the currently set appliance reference. */
@@ -298,6 +313,9 @@ protected:
     virtual void retranslateUi() /* override */;
 
     void setVirtualSystemBaseFolder(const QString& path);
+
+    /** Holds the list of VSD hints. */
+    QList<AbstractVSDParameter> m_listVsdHints;
 
     /** Holds the currently set appliance reference. */
     CAppliance         *m_pAppliance;

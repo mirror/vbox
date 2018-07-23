@@ -363,7 +363,8 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
             m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
             m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
             m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
-            m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter)
+            m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP)
             enmFlags |= Qt::ItemIsUserCheckable;
         /* Some items are editable */
         if ((m_enmVSDType == KVirtualSystemDescriptionType_Name ||
@@ -383,7 +384,12 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
              m_enmVSDType == KVirtualSystemDescriptionType_HardDiskImage ||
              m_enmVSDType == KVirtualSystemDescriptionType_SettingsFile ||
              m_enmVSDType == KVirtualSystemDescriptionType_BaseFolder ||
-             m_enmVSDType == KVirtualSystemDescriptionType_PrimaryGroup) &&
+             m_enmVSDType == KVirtualSystemDescriptionType_PrimaryGroup ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIInstanceShape ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIDomain ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIBootDiskSize ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIBucket ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIVCN) &&
             m_checkState == Qt::Checked) /* Item has to be enabled */
             enmFlags |= Qt::ItemIsEditable;
     }
@@ -402,7 +408,8 @@ bool UIVirtualHardwareItem::setData(int iColumn, const QVariant &value, int iRol
                  m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
                  m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
                  m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter))
+                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP))
             {
                 m_checkState = static_cast<Qt::CheckState>(value.toInt());
                 fDone = true;
@@ -465,6 +472,12 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_SettingsFile:           value = UIApplianceEditorWidget::tr("Settings File"); break;
                     case KVirtualSystemDescriptionType_BaseFolder:             value = UIApplianceEditorWidget::tr("Base Folder"); break;
                     case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIApplianceEditorWidget::tr("Primary Group"); break;
+                    case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+                    case KVirtualSystemDescriptionType_CloudOCIDomain:
+                    case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+                    case KVirtualSystemDescriptionType_CloudOCIBucket:
+                    case KVirtualSystemDescriptionType_CloudOCIVCN:
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:       value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
                     default:                                                   value = UIApplianceEditorWidget::tr("Unknown Hardware Item"); break;
                 }
             }
@@ -532,6 +545,12 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIIconPool::iconSet(":/sound_16px.png"); break;
                     case KVirtualSystemDescriptionType_BaseFolder:             value = vboxGlobal().icon(QFileIconProvider::Folder); break;
                     case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
+                    case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+                    case KVirtualSystemDescriptionType_CloudOCIDomain:
+                    case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+                    case KVirtualSystemDescriptionType_CloudOCIBucket:
+                    case KVirtualSystemDescriptionType_CloudOCIVCN:
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:       value = UIIconPool::iconSet(":/session_info_16px.png"); break;
                     default: break;
                 }
             }
@@ -569,7 +588,8 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                  m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
                  m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
                  m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter))
+                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP))
                 value = m_checkState;
             break;
         }
@@ -715,6 +735,43 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
                 pEditor = pComboBox;
                 break;
             }
+            case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+            case KVirtualSystemDescriptionType_CloudOCIDomain:
+            case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+            case KVirtualSystemDescriptionType_CloudOCIBucket:
+            case KVirtualSystemDescriptionType_CloudOCIVCN:
+            {
+                const QVariant get = m_pParent->getHint(m_enmVSDType);
+                switch (m_pParent->kindHint(m_enmVSDType))
+                {
+                    case ParameterKind_Double:
+                    {
+                        AbstractVSDParameterDouble value = get.value<AbstractVSDParameterDouble>();
+                        QSpinBox *pSpinBox = new QSpinBox(pParent);
+                        pSpinBox->setRange(value.minimum, value.maximum);
+                        pSpinBox->setSuffix(QString(" %1").arg(VBoxGlobal::tr(value.unit.toUtf8().constData())));
+                        pEditor = pSpinBox;
+                        break;
+                    }
+                    case ParameterKind_String:
+                    {
+                        QLineEdit *pLineEdit = new QLineEdit(pParent);
+                        pEditor = pLineEdit;
+                        break;
+                    }
+                    case ParameterKind_Array:
+                    {
+                        AbstractVSDParameterArray value = get.value<AbstractVSDParameterArray>();
+                        QComboBox *pComboBox = new QComboBox(pParent);
+                        pComboBox->addItems(value.values);
+                        pEditor = pComboBox;
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                break;
+            }
             default: break;
         }
     }
@@ -809,6 +866,46 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
             {
                 pGroupCombo->setCurrentText(m_strConfigValue);
                 fDone = true;
+            }
+            break;
+        }
+        case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+        case KVirtualSystemDescriptionType_CloudOCIDomain:
+        case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+        case KVirtualSystemDescriptionType_CloudOCIBucket:
+        case KVirtualSystemDescriptionType_CloudOCIVCN:
+        {
+            switch (m_pParent->kindHint(m_enmVSDType))
+            {
+                case ParameterKind_Double:
+                {
+                    if (QSpinBox *pSpinBox = qobject_cast<QSpinBox*>(pEditor))
+                    {
+                        pSpinBox->setValue(m_strConfigValue.toInt());
+                        fDone = true;
+                    }
+                    break;
+                }
+                case ParameterKind_String:
+                {
+                    if (QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(pEditor))
+                    {
+                        pLineEdit->setText(m_strConfigValue);
+                        fDone = true;
+                    }
+                    break;
+                }
+                case ParameterKind_Array:
+                {
+                    if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
+                    {
+                        pComboBox->setCurrentText(m_strConfigValue);
+                        fDone = true;
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
             break;
         }
@@ -948,6 +1045,45 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
                 fDone = true;
             }
             break;
+        }
+        case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+        case KVirtualSystemDescriptionType_CloudOCIDomain:
+        case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+        case KVirtualSystemDescriptionType_CloudOCIBucket:
+        case KVirtualSystemDescriptionType_CloudOCIVCN:
+        {
+            switch (m_pParent->kindHint(m_enmVSDType))
+            {
+                case ParameterKind_Double:
+                {
+                    if (QSpinBox *pSpinBox = qobject_cast<QSpinBox*>(pEditor))
+                    {
+                        m_strConfigValue = QString::number(pSpinBox->value());
+                        fDone = true;
+                    }
+                    break;
+                }
+                case ParameterKind_String:
+                {
+                    if (QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(pEditor))
+                    {
+                        m_strConfigValue = pLineEdit->text();
+                        fDone = true;
+                    }
+                    break;
+                }
+                case ParameterKind_Array:
+                {
+                    if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
+                    {
+                        m_strConfigValue = pComboBox->currentText();
+                        fDone = true;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
         }
         default: break;
     }
@@ -1200,6 +1336,35 @@ void UIApplianceModel::setVirtualSystemBaseFolder(const QString& path)
             emit dataChanged(index, index);
         }
     }
+}
+
+void UIApplianceModel::setVsdHints(const QList<AbstractVSDParameter> &hints)
+{
+    m_listVsdHints = hints;
+}
+
+QString UIApplianceModel::nameHint(KVirtualSystemDescriptionType enmType) const
+{
+    foreach (const AbstractVSDParameter &parameter, m_listVsdHints)
+        if (parameter.type == enmType)
+            return parameter.name;
+    return QString();
+}
+
+AbstractVSDParameterKind UIApplianceModel::kindHint(KVirtualSystemDescriptionType enmType) const
+{
+    foreach (const AbstractVSDParameter &parameter, m_listVsdHints)
+        if (parameter.type == enmType)
+            return parameter.kind;
+    return ParameterKind_Invalid;
+}
+
+QVariant UIApplianceModel::getHint(KVirtualSystemDescriptionType enmType) const
+{
+    foreach (const AbstractVSDParameter &parameter, m_listVsdHints)
+        if (parameter.type == enmType)
+            return parameter.get;
+    return QVariant();
 }
 
 
@@ -1485,6 +1650,16 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
 
     /* Translate finally: */
     retranslateUi();
+}
+
+void UIApplianceEditorWidget::setVsdHints(const QList<AbstractVSDParameter> &hints)
+{
+    /* Save here as well: */
+    m_listVsdHints = hints;
+
+    /* Make sure model exists, it's being created in sub-classes: */
+    if (m_pModel)
+        m_pModel->setVsdHints(m_listVsdHints);
 }
 
 void UIApplianceEditorWidget::restoreDefaults()

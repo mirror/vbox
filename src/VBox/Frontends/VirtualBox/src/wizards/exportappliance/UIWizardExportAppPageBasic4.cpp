@@ -241,13 +241,46 @@ void UIWizardExportAppPage4::refreshApplianceSettingsWidget()
                 CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
                 if (comMachine.isOk() && comVsd.isNotNull())
                 {
-                    /* Now add some new fields the user may change: */
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
+                    if (fieldImp("format").toString() == "csp-1.0")
+                    {
+                        /* Populate Cloud Client parameters: */
+                        populateCloudClientParameters();
+                        /* Pass them as a list of hints to help editor with names/values: */
+                        m_pApplianceWidget->setVsdHints(m_listCloudClientParameters);
+                        /* Add corresponding Cloud Client fields with default values: */
+                        foreach (const AbstractVSDParameter &parameter, m_listCloudClientParameters)
+                        {
+                            QString strValue;
+                            switch (parameter.kind)
+                            {
+                                case ParameterKind_Bool:
+                                    strValue = QString();
+                                    break;
+                                case ParameterKind_Double:
+                                    strValue = QString::number(parameter.get.value<AbstractVSDParameterDouble>().minimum);
+                                    break;
+                                case ParameterKind_String:
+                                    strValue = parameter.get.value<AbstractVSDParameterString>().value;
+                                    break;
+                                case ParameterKind_Array:
+                                    strValue = parameter.get.value<AbstractVSDParameterArray>().values.value(0);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            comVsd.AddDescription(parameter.type, strValue, "");
+                        }
+                    }
+                    else
+                    {
+                        /* Add some additional fields the user may change: */
+                        comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
+                        comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
+                        comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
+                        comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
+                        comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
+                        comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
+                    }
                 }
                 else
                     return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath(), thisImp());
