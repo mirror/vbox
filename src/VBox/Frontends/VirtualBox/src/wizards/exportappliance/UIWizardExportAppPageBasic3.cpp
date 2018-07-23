@@ -40,9 +40,6 @@
 # include "UIWizardExportAppDefs.h"
 # include "UIWizardExportAppPageBasic3.h"
 
-/* COM includes: */
-# include "CCloudUserProfileList.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
