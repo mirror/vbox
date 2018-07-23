@@ -39,6 +39,91 @@ class QTextEdit;
 class QITreeView;
 class QVBoxLayout;
 
+
+/** Cloud Client Parameter internal kinds. */
+enum CloudClientParameterKind
+{
+    ParameterKind_Invalid,
+    ParameterKind_Bool,
+    ParameterKind_Double,
+    ParameterKind_String,
+    ParameterKind_Array
+};
+
+/** CloudClient parameter of Bool type, internal level. */
+struct CloudClientParameterBool
+{
+    /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterBool()
+        : value(false) {}
+    /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterBool(const CloudClientParameterBool &other)
+        : value(other.value) {}
+    /** Holds the value. */
+    bool value;
+};
+Q_DECLARE_METATYPE(CloudClientParameterBool);
+
+/** CloudClient parameter of Double type, internal level. */
+struct CloudClientParameterDouble
+{
+    /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterDouble()
+        : minimum(0), maximum(0), unit(QString()) {}
+    /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterDouble(const CloudClientParameterDouble &other)
+        : minimum(other.minimum), maximum(other.maximum), unit(other.unit) {}
+    /** Holds the minimum/base value. */
+    double   minimum;
+    /** Holds the maximum value. */
+    double   maximum;
+    /** Holds the unit. */
+    QString  unit;
+};
+Q_DECLARE_METATYPE(CloudClientParameterDouble);
+
+/** CloudClient parameter of String type, internal level. */
+struct CloudClientParameterString
+{
+    /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterString()
+        : value(QString()) {}
+    /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterString(const CloudClientParameterString &other)
+        : value(other.value) {}
+    /** Holds the value. */
+    QString value;
+};
+Q_DECLARE_METATYPE(CloudClientParameterString);
+
+/** CloudClient parameter of Array type, internal level. */
+struct CloudClientParameterArray
+{
+    /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterArray()
+        : values(QStringList()) {}
+    /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
+    CloudClientParameterArray(const CloudClientParameterArray &other)
+        : values(other.values) {}
+    /** Holds the values array. */
+    QStringList values;
+};
+Q_DECLARE_METATYPE(CloudClientParameterArray);
+
+/** CloudClient parameter interface, facade level. */
+struct CloudClientParameter
+{
+    /** Holds the parameter name. */
+    QString                        name;
+    /** Holds the parameter type. */
+    KVirtualSystemDescriptionType  type;
+    /** Holds the parameter kind. */
+    CloudClientParameterKind       kind;
+    /** Holds the parameter abstract getter. */
+    QVariant                       get;
+};
+
+
 /** Appliance tree-view section types. */
 enum ApplianceViewSection
 {
