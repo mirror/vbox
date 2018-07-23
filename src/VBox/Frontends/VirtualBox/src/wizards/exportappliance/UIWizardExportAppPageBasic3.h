@@ -26,6 +26,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudUserProfileList.h"
 #include "CCloudUserProfileManager.h"
 
 /* Forward declarations: */
@@ -129,9 +130,13 @@ protected:
     KCloudProviderId provider() const;
     /** Returns profile. */
     QString profile() const;
+    /** Returns Cloud User-profile object. */
+    CCloudUserProfileList profiles() const;
 
     /** Holds the Cloud User-profile Manager reference. */
     CCloudUserProfileManager  m_comCloudUserProfileManager;
+    /** Holds the Cloud User-profile object reference. */
+    CCloudUserProfileList     m_comCloudUserProfiles;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -191,6 +196,8 @@ class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
+    Q_PROPERTY(CCloudUserProfileList profiles READ profiles);
+    Q_PROPERTY(QString profile READ profile);
 
 public:
 

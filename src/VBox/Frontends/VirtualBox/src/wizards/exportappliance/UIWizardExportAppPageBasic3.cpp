@@ -147,9 +147,9 @@ void UIWizardExportAppPage3::populateAccounts()
 void UIWizardExportAppPage3::populateAccountProperties()
 {
     /* Acquire Cloud User-profile List: */
-    CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
+    m_comCloudUserProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(provider());
     /* Return if we have nothing to populate (file missing?): */
-    if (comProfiles.isNull())
+    if (m_comCloudUserProfiles.isNull())
         return;
 
     /* Clear table initially: */
@@ -158,7 +158,7 @@ void UIWizardExportAppPage3::populateAccountProperties()
     /* Acquire properties: */
     QVector<QString> keys;
     QVector<QString> values;
-    values = comProfiles.GetProfileProperties(profile(), keys);
+    values = m_comCloudUserProfiles.GetProfileProperties(profile(), keys);
 
     /* Configure table: */
     m_pAccountPropertyTable->setRowCount(keys.size());
@@ -176,7 +176,7 @@ void UIWizardExportAppPage3::populateAccountProperties()
             pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
 
             /* Use non-translated description as tool-tip: */
-            const QString strToolTip = comProfiles.GetPropertyDescription(keys.at(i));
+            const QString strToolTip = m_comCloudUserProfiles.GetPropertyDescription(keys.at(i));
             pItemK->setData(Qt::UserRole, strToolTip);
 
             /* Insert into table: */
@@ -431,6 +431,11 @@ QString UIWizardExportAppPage3::profile() const
 {
     const int iIndex = m_pAccountComboBox->currentIndex();
     return m_pAccountComboBox->itemData(iIndex, ProfileName).toString();
+}
+
+CCloudUserProfileList UIWizardExportAppPage3::profiles() const
+{
+    return m_comCloudUserProfiles;
 }
 
 
@@ -688,6 +693,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
+    registerField("profiles", this, "profiles");
+    registerField("profile", this, "profile");
 }
 
 bool UIWizardExportAppPageBasic3::event(QEvent *pEvent)
