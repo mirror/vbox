@@ -58,86 +58,90 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &select
 
 bool UIWizardExportApp::exportAppliance()
 {
-    /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
-     * For that we iterating over all virtual systems & fetch all descriptions of the type HardDiskImage. Also add the
-     * manifest file to the check. In the .ova case only the target file itself get checked. */
-
     /* Get export appliance widget & fetch all settings from the appliance editor: */
     UIApplianceExportEditorWidget *pExportApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
     AssertPtrReturn(pExportApplianceWidget, false);
     pExportApplianceWidget->prepareExport();
 
-    /* Get the appliance: */
+    /* Acquire the appliance: */
     CAppliance *pComAppliance = pExportApplianceWidget->appliance();
     AssertPtrReturn(pComAppliance, false);
 
-    /* Compose a list of all required files: */
-    QFileInfo fi(field("path").toString());
-    QVector<QString> files;
-
-    /* Add arhive itself: */
-    files << fi.fileName();
-
-    /* If archive is of .ovf type: */
-    if (fi.suffix().toLower() == "ovf")
+    /* For Filesystem formats only: */
+    if (field("format").toString() != "csp-1.0")
     {
-        /* Add manifest file if requested: */
-        if (field("manifestSelected").toBool())
-            files << fi.baseName() + ".mf";
+        /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
+         * For that we iterating over all virtual systems & fetch all descriptions of the type HardDiskImage. Also add the
+         * manifest file to the check. In the .ova case only the target file itself get checked. */
 
-        /* Add all hard disk images: */
-        CVirtualSystemDescriptionVector vsds = pComAppliance->GetVirtualSystemDescriptions();
-        for (int i = 0; i < vsds.size(); ++i)
+        /* Compose a list of all required files: */
+        QFileInfo fi(field("path").toString());
+        QVector<QString> files;
+
+        /* Add arhive itself: */
+        files << fi.fileName();
+
+        /* If archive is of .ovf type: */
+        if (fi.suffix().toLower() == "ovf")
         {
-            QVector<KVirtualSystemDescriptionType> types;
-            QVector<QString> refs, origValues, configValues, extraConfigValues;
-            vsds[i].GetDescriptionByType(KVirtualSystemDescriptionType_HardDiskImage, types,
-                                         refs, origValues, configValues, extraConfigValues);
-            foreach (const QString &strValue, origValues)
-                files << QString("%2").arg(strValue);
+            /* Add manifest file if requested: */
+            if (field("manifestSelected").toBool())
+                files << fi.baseName() + ".mf";
+
+            /* Add all hard disk images: */
+            CVirtualSystemDescriptionVector vsds = pComAppliance->GetVirtualSystemDescriptions();
+            for (int i = 0; i < vsds.size(); ++i)
+            {
+                QVector<KVirtualSystemDescriptionType> types;
+                QVector<QString> refs, origValues, configValues, extraConfigValues;
+                vsds[i].GetDescriptionByType(KVirtualSystemDescriptionType_HardDiskImage, types,
+                                             refs, origValues, configValues, extraConfigValues);
+                foreach (const QString &strValue, origValues)
+                    files << QString("%2").arg(strValue);
+            }
         }
-    }
 
-    /* Initialize VFS explorer: */
-    CVFSExplorer comExplorer = pComAppliance->CreateVFSExplorer(uri(false /* fWithFile */));
-    if (comExplorer.isNotNull())
-    {
-        CProgress comProgress = comExplorer.Update();
-        if (comExplorer.isOk() && comProgress.isNotNull())
+        /* Initialize VFS explorer: */
+        CVFSExplorer comExplorer = pComAppliance->CreateVFSExplorer(uri(false /* fWithFile */));
+        if (comExplorer.isNotNull())
         {
-            msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Checking files ..."),
-                                                ":/progress_refresh_90px.png", this);
-            if (comProgress.GetCanceled())
-                return false;
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                return msgCenter().cannotCheckFiles(comProgress, this);
-        }
-        else
-            return msgCenter().cannotCheckFiles(comExplorer, this);
-    }
-    else
-        return msgCenter().cannotCheckFiles(*pComAppliance, this);
-
-    /* Confirm overwriting for existing files: */
-    QVector<QString> exists = comExplorer.Exists(files);
-    if (!msgCenter().confirmOverridingFiles(exists, this))
-        return false;
-
-    /* DELETE all the files which exists after everything is confirmed: */
-    if (!exists.isEmpty())
-    {
-        CProgress comProgress = comExplorer.Remove(exists);
-        if (comExplorer.isOk() && comProgress.isNotNull())
-        {
-            msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Removing files ..."),
-                                                ":/progress_delete_90px.png", this);
-            if (comProgress.GetCanceled())
-                return false;
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                return msgCenter().cannotRemoveFiles(comProgress, this);
+            CProgress comProgress = comExplorer.Update();
+            if (comExplorer.isOk() && comProgress.isNotNull())
+            {
+                msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Checking files ..."),
+                                                    ":/progress_refresh_90px.png", this);
+                if (comProgress.GetCanceled())
+                    return false;
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    return msgCenter().cannotCheckFiles(comProgress, this);
+            }
+            else
+                return msgCenter().cannotCheckFiles(comExplorer, this);
         }
         else
-            return msgCenter().cannotCheckFiles(comExplorer, this);
+            return msgCenter().cannotCheckFiles(*pComAppliance, this);
+
+        /* Confirm overwriting for existing files: */
+        QVector<QString> exists = comExplorer.Exists(files);
+        if (!msgCenter().confirmOverridingFiles(exists, this))
+            return false;
+
+        /* DELETE all the files which exists after everything is confirmed: */
+        if (!exists.isEmpty())
+        {
+            CProgress comProgress = comExplorer.Remove(exists);
+            if (comExplorer.isOk() && comProgress.isNotNull())
+            {
+                msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Removing files ..."),
+                                                    ":/progress_delete_90px.png", this);
+                if (comProgress.GetCanceled())
+                    return false;
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    return msgCenter().cannotRemoveFiles(comProgress, this);
+            }
+            else
+                return msgCenter().cannotCheckFiles(comExplorer, this);
+        }
     }
 
     /* Export the VMs, on success we are finished: */
@@ -146,32 +150,23 @@ bool UIWizardExportApp::exportAppliance()
 
 QString UIWizardExportApp::uri(bool fWithFile) const
 {
-    /* Prepare storage path: */
-    QString strPath = field("path").toString();
-    /* Append file name if requested: */
-    if (!fWithFile)
+    /* For Cloud Service Providers: */
+    if (field("format").toString() == "csp-1.0")
+        return QString("OCI://%1").arg(field("profile").toString());
+    else
     {
-        QFileInfo fi(strPath);
-        strPath = fi.path();
-    }
-
-    /* For known storage types: */
-    StorageType enmType = field("storageType").value<StorageType>();
-    switch (enmType)
-    {
-        case LocalFilesystem:
+        /* Prepare storage path: */
+        QString strPath = field("path").toString();
+        /* Append file name if requested: */
+        if (!fWithFile)
         {
-            return strPath;
+            QFileInfo fi(strPath);
+            strPath = fi.path();
         }
-        case CloudProvider:
-        {
-            const QString strUri("OCI://");
-            return QString("%1%2").arg(strUri).arg(strPath);
-        }
-    }
 
-    /* Nothing by default: */
-    return QString();
+        /* Just path by default: */
+        return strPath;
+    }
 }
 
 void UIWizardExportApp::sltCurrentIdChanged(int iId)
