@@ -848,8 +848,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
 
     /* Control registers. */
     bool fMaybeChangedMode = false;
-    bool fFlushTlb         = false;
-    bool fFlushGlobalTlb   = false;
+    bool fUpdateCr3        = false;
     if (fWhat & CPUMCTX_EXTRN_CR_MASK)
     {
         if (fWhat & CPUMCTX_EXTRN_CR0)
@@ -859,7 +858,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
             {
                 CPUMSetGuestCR0(pVCpu, aValues[iReg].Reg64);
                 fMaybeChangedMode = true;
-                fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
             }
             iReg++;
         }
@@ -870,7 +868,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
             if (pVCpu->cpum.GstCtx.cr3 != aValues[iReg].Reg64)
             {
                 CPUMSetGuestCR3(pVCpu, aValues[iReg].Reg64);
-                fFlushTlb = true;
+                fUpdateCr3 = true;
             }
             iReg++;
         }
@@ -880,7 +878,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
             {
                 CPUMSetGuestCR4(pVCpu, aValues[iReg].Reg64);
                 fMaybeChangedMode = true;
-                fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
             }
             iReg++;
         }
@@ -1098,7 +1095,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
         pVCpu->cpum.GstCtx.fExtrn = 0;
 
     /* Typical. */
-    if (!fMaybeChangedMode && !fFlushTlb)
+    if (!fMaybeChangedMode && !fUpdateCr3)
         return VINF_SUCCESS;
 
     /*
@@ -1107,13 +1104,13 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
     if (fMaybeChangedMode)
     {
         int rc = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
-        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
+        AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_1);
     }
 
-    if (fFlushTlb)
+    if (fUpdateCr3)
     {
-        int rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, fFlushGlobalTlb);
-        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
+        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3);
+        AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
     }
 
     return VINF_SUCCESS;
@@ -1143,7 +1140,7 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
     ASMCompilerBarrier();
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
 
-    return nemR0WinImportState(pGVM, &pGVM->aCpus[idCpu], &pVCpu->cpum.GstCtx, fWhat);
+    return nemR0WinImportState(pGVM, &pGVM->aCpus[idCpu], &pVCpu->cpum.GstCtx, fWhat, true /*fCanUpdateCr3*/);
 # else
     RT_NOREF(pVCpu, fWhat);
     return VERR_NOT_IMPLEMENTED;
@@ -1848,7 +1845,7 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
  */
 DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PVMCPU pVCpu, uint64_t fWhat, const char *pszCaller)
 {
-    int rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat);
+    int rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat, true /*fCanUpdateCr3*/);
     if (RT_SUCCESS(rc))
     {
         Assert(rc == VINF_SUCCESS);
@@ -4362,7 +4359,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         if (pVCpu->cpum.GstCtx.fExtrn & fImport)
         {
 # ifdef IN_RING0
-            int rc2 = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+            int rc2 = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT,
+                                          true /*fCanUpdateCr3*/);
             if (RT_SUCCESS(rc2))
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
             else if (rc2 == VERR_NEM_FLUSH_TLB)

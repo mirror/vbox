@@ -84,7 +84,7 @@ NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPH
 NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 NEM_TMPL_STATIC int  nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx);
-NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat);
+NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat, bool fCanUpdateCr3);
 NEM_TMPL_STATIC int  nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pcTicks, uint32_t *pcAux);
 NEM_TMPL_STATIC int  nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64_t uPausedTscValue);
 #endif
@@ -1315,12 +1315,13 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * Intention is to use it internally later.
  *
  * @returns VBox status code.
- * @param   pGVM        The ring-0 VM handle.
- * @param   pGVCpu      The ring-0 VCPU handle.
- * @param   pCtx        The CPU context structure to import into.
- * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
+ * @param   pGVM            The ring-0 VM handle.
+ * @param   pGVCpu          The ring-0 VCPU handle.
+ * @param   pCtx            The CPU context structure to import into.
+ * @param   fWhat           What to import, CPUMCTX_EXTRN_XXX.
+ * @param   fCanUpdateCr3   Whether it's safe to update CR3 or not.
  */
-NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat)
+NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat, bool fCanUpdateCr3)
 {
     HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
@@ -1718,8 +1719,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     /* Control registers. */
     bool fMaybeChangedMode = false;
-    bool fFlushTlb         = false;
-    bool fFlushGlobalTlb   = false;
+    bool fUpdateCr3        = false;
     if (fWhat & CPUMCTX_EXTRN_CR_MASK)
     {
         if (fWhat & CPUMCTX_EXTRN_CR0)
@@ -1729,7 +1729,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             {
                 CPUMSetGuestCR0(pVCpu, paValues[iReg].Reg64);
                 fMaybeChangedMode = true;
-                fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
             }
             iReg++;
         }
@@ -1745,7 +1744,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             if (pCtx->cr3 != paValues[iReg].Reg64)
             {
                 CPUMSetGuestCR3(pVCpu, paValues[iReg].Reg64);
-                fFlushTlb = true;
+                fUpdateCr3 = true;
             }
             iReg++;
         }
@@ -1756,7 +1755,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             {
                 CPUMSetGuestCR4(pVCpu, paValues[iReg].Reg64);
                 fMaybeChangedMode = true;
-                fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
             }
             iReg++;
         }
@@ -2160,7 +2158,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtx->fExtrn = 0;
 
     /* Typical. */
-    if (!fMaybeChangedMode && !fFlushTlb)
+    if (!fMaybeChangedMode && !fUpdateCr3)
         return VINF_SUCCESS;
 
     /*
@@ -2170,14 +2168,22 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     if (fMaybeChangedMode)
     {
         rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+        AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_1);
     }
 
-    if (fFlushTlb)
+    if (fUpdateCr3)
     {
-        LogFlow(("nemR0WinImportState: -> VERR_NEM_FLUSH_TLB!\n"));
-        /** @todo eliminate the VERR_NEM_FLUSH_TLB/VINF_NEM_FLUSH_TLB complication */
-        rc = VERR_NEM_FLUSH_TLB; /* Calling PGMFlushTLB w/o long jump setup doesn't work, ring-3 does it. */
+        if (fCanUpdateCr3)
+        {
+            LogFlow(("nemR0WinImportState: -> PGMUpdateCR3!\n"));
+            rc = PGMUpdateCR3(pVCpu, pCtx->cr3);
+            AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
+        }
+        else
+        {
+            LogFlow(("nemR0WinImportState: -> VERR_NEM_FLUSH_TLB!\n"));
+            rc = VERR_NEM_FLUSH_TLB; /* Calling PGMFlushTLB w/o long jump setup doesn't work, ring-3 does it. */
+        }
     }
 
     return rc;
@@ -2212,7 +2218,7 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
         /*
          * Call worker.
          */
-        rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat);
+        rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat, false /*fCanUpdateCr3*/);
     }
     return rc;
 #else

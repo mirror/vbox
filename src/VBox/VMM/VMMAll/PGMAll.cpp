@@ -1441,7 +1441,9 @@ VMMDECL(int) PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFla
  */
 VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
 {
-    return pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)0, fOpFlags);
+    if (pVCpu->pgm.s.enmShadowMode != PGMMODE_NONE) /* avoid assertions */
+        return pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)0, fOpFlags);
+    return VINF_SUCCESS;
 }
 
 
