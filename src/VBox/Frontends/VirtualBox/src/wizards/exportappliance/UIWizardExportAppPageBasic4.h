@@ -45,7 +45,7 @@ protected:
     void populateCloudClientParameters();
 
     /** Parses JSON @a document. */
-    static QList<CloudClientParameter> parseJsonDocument(const QJsonDocument &document);
+    static QList<AbstractVSDParameter> parseJsonDocument(const QJsonDocument &document);
     /** Parses JSON bool @a field. */
     static bool parseJsonFieldBool(const QString &strFieldName, const QJsonValue &field);
     /** Parses JSON double @a field. */
@@ -62,7 +62,7 @@ protected:
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
     /** Holds the cloud client parameters. */
-    QList<CloudClientParameter> m_listCloudClientParameters;
+    QList<AbstractVSDParameter> m_listCloudClientParameters;
 
     /** Holds the appliance widget reference. */
     UIApplianceExportEditorWidget *m_pApplianceWidget;

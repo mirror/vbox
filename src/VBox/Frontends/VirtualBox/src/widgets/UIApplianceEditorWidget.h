@@ -40,8 +40,8 @@ class QITreeView;
 class QVBoxLayout;
 
 
-/** Cloud Client Parameter internal kinds. */
-enum CloudClientParameterKind
+/** Abstract VSD parameter kinds. */
+enum AbstractVSDParameterKind
 {
     ParameterKind_Invalid,
     ParameterKind_Bool,
@@ -50,28 +50,28 @@ enum CloudClientParameterKind
     ParameterKind_Array
 };
 
-/** CloudClient parameter of Bool type, internal level. */
-struct CloudClientParameterBool
+/** Abstract VSD parameter of Bool type, internal level. */
+struct AbstractVSDParameterBool
 {
     /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterBool()
+    AbstractVSDParameterBool()
         : value(false) {}
     /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterBool(const CloudClientParameterBool &other)
+    AbstractVSDParameterBool(const AbstractVSDParameterBool &other)
         : value(other.value) {}
     /** Holds the value. */
     bool value;
 };
-Q_DECLARE_METATYPE(CloudClientParameterBool);
+Q_DECLARE_METATYPE(AbstractVSDParameterBool);
 
-/** CloudClient parameter of Double type, internal level. */
-struct CloudClientParameterDouble
+/** Abstract VSD parameter of Double type, internal level. */
+struct AbstractVSDParameterDouble
 {
     /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterDouble()
+    AbstractVSDParameterDouble()
         : minimum(0), maximum(0), unit(QString()) {}
     /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterDouble(const CloudClientParameterDouble &other)
+    AbstractVSDParameterDouble(const AbstractVSDParameterDouble &other)
         : minimum(other.minimum), maximum(other.maximum), unit(other.unit) {}
     /** Holds the minimum/base value. */
     double   minimum;
@@ -80,45 +80,45 @@ struct CloudClientParameterDouble
     /** Holds the unit. */
     QString  unit;
 };
-Q_DECLARE_METATYPE(CloudClientParameterDouble);
+Q_DECLARE_METATYPE(AbstractVSDParameterDouble);
 
-/** CloudClient parameter of String type, internal level. */
-struct CloudClientParameterString
+/** Abstract VSD parameter of String type, internal level. */
+struct AbstractVSDParameterString
 {
     /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterString()
+    AbstractVSDParameterString()
         : value(QString()) {}
     /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterString(const CloudClientParameterString &other)
+    AbstractVSDParameterString(const AbstractVSDParameterString &other)
         : value(other.value) {}
     /** Holds the value. */
     QString value;
 };
-Q_DECLARE_METATYPE(CloudClientParameterString);
+Q_DECLARE_METATYPE(AbstractVSDParameterString);
 
-/** CloudClient parameter of Array type, internal level. */
-struct CloudClientParameterArray
+/** Abstract VSD parameter of Array type, internal level. */
+struct AbstractVSDParameterArray
 {
     /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterArray()
+    AbstractVSDParameterArray()
         : values(QStringList()) {}
     /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
-    CloudClientParameterArray(const CloudClientParameterArray &other)
+    AbstractVSDParameterArray(const AbstractVSDParameterArray &other)
         : values(other.values) {}
     /** Holds the values array. */
     QStringList values;
 };
-Q_DECLARE_METATYPE(CloudClientParameterArray);
+Q_DECLARE_METATYPE(AbstractVSDParameterArray);
 
-/** CloudClient parameter interface, facade level. */
-struct CloudClientParameter
+/** Abstract VSD parameter interface, facade level. */
+struct AbstractVSDParameter
 {
     /** Holds the parameter name. */
     QString                        name;
     /** Holds the parameter type. */
     KVirtualSystemDescriptionType  type;
     /** Holds the parameter kind. */
-    CloudClientParameterKind       kind;
+    AbstractVSDParameterKind       kind;
     /** Holds the parameter abstract getter. */
     QVariant                       get;
 };
