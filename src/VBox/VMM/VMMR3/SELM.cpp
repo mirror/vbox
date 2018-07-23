@@ -147,7 +147,7 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
     pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]        = (SELM_GDT_ELEMENTS - 0x4) << 3;
     pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = (SELM_GDT_ELEMENTS - 0x5) << 3;
 
-    if (HMIsRawModeCtxNeeded(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM) || HMIsRawModeCtxNeeded(pVM))
     {
         /*
          * Allocate GDT table.
@@ -309,7 +309,7 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
     /*
      * Register info handlers.
      */
-    if (HMIsRawModeCtxNeeded(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM) || HMIsRawModeCtxNeeded(pVM))
     {
         DBGFR3InfoRegisterInternal(pVM, "gdt",      "Displays the shadow GDT. No arguments.",   &selmR3InfoGdt);
         DBGFR3InfoRegisterInternal(pVM, "ldt",      "Displays the shadow LDT. No arguments.",   &selmR3InfoLdt);
@@ -348,7 +348,7 @@ VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
     int rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "DoubleFault", &f, false);
 # endif
     AssertLogRelRCReturn(rc, rc);
-    if (f && HMIsRawModeCtxNeeded(pVM))
+    if (f && (VM_IS_RAW_MODE_ENABLED(pVM) || HMIsRawModeCtxNeeded(pVM)))
     {
         PX86DESC paGdt = pVM->selm.s.paGdtR3;
         rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3]), sizeof(paGdt[0]),
@@ -482,7 +482,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     PX86DESC paGdt = pVM->selm.s.paGdtR3;
     LogFlow(("SELMR3Relocate\n"));
 
-    if (HMIsRawModeCtxNeeded(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM) || HMIsRawModeCtxNeeded(pVM))
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {

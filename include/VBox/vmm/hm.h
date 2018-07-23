@@ -59,19 +59,18 @@ RT_C_DECLS_BEGIN
 #endif
 
 /**
- * Checks whether raw-mode context is required for any purpose.
+ * Checks whether raw-mode context is required for HM purposes
  *
- * @retval  true if required either by raw-mode itself or by HM for doing
- *          switching the cpu to 64-bit mode.
- * @retval  false if not required.
+ * @retval  true if required by HM for doing switching the cpu to 64-bit mode.
+ * @retval  false if not required by HM.
  *
  * @param   a_pVM       The cross context VM structure.
  * @internal
  */
 #if HC_ARCH_BITS == 64
-# define HMIsRawModeCtxNeeded(a_pVM)        (!HMIsEnabled(a_pVM))
+# define HMIsRawModeCtxNeeded(a_pVM)        (false)
 #else
-# define HMIsRawModeCtxNeeded(a_pVM)        (!HMIsEnabled(a_pVM) || (a_pVM)->fHMNeedRawModeCtx)
+# define HMIsRawModeCtxNeeded(a_pVM)        ((a_pVM)->fHMNeedRawModeCtx)
 #endif
 
 /**
