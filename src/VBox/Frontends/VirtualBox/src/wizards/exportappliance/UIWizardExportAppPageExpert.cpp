@@ -386,6 +386,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
+    registerField("profiles", this, "profiles");
+    registerField("profile", this, "profile");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
