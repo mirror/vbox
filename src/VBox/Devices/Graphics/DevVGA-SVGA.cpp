@@ -3795,12 +3795,14 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                  * Important are pbHstBuf and cbHstBuf. offHst and cbHstPitch are verified by vmsvgaGMRTransfer.
                  */
                 uint8_t * const pbHstBuf = (uint8_t *)pThis->CTX_SUFF(vram_ptr) + pThis->svga.uScreenOffset;
-                uint32_t cbHstBuf = pThis->svga.cbScanline * pThis->svga.uHeight;
+                uint32_t const cbScanline = pThis->svga.cbScanline ? pThis->svga.cbScanline :
+                                                                     width * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+                uint32_t cbHstBuf = cbScanline * pThis->svga.uHeight;
                 if (cbHstBuf > pThis->vram_size - pThis->svga.uScreenOffset)
                    cbHstBuf = pThis->vram_size - pThis->svga.uScreenOffset; /* Paranoia. */
                 uint32_t const offHst =   (clipRect.left * RT_ALIGN(pThis->svga.uBpp, 8)) / 8
-                                        + pThis->svga.cbScanline * clipRect.top;
-                int32_t const cbHstPitch = pThis->svga.cbScanline;
+                                        + cbScanline * clipRect.top;
+                int32_t const cbHstPitch = cbScanline;
 
                 /* Source: GMRFB. vmsvgaGMRTransfer ensures that no memory outside the GMR is read. */
                 SVGAGuestPtr const gstPtr = pSVGAState->GMRFB.ptr;
@@ -3861,12 +3863,14 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                  * Important are pbHstBuf and cbHstBuf. offHst and cbHstPitch are verified by vmsvgaGMRTransfer.
                  */
                 uint8_t * const pbHstBuf = (uint8_t *)pThis->CTX_SUFF(vram_ptr) + pThis->svga.uScreenOffset;
-                uint32_t cbHstBuf = pThis->svga.cbScanline * pThis->svga.uHeight;
+                uint32_t const cbScanline = pThis->svga.cbScanline ? pThis->svga.cbScanline :
+                                                                     width * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+                uint32_t cbHstBuf = cbScanline * pThis->svga.uHeight;
                 if (cbHstBuf > pThis->vram_size - pThis->svga.uScreenOffset)
                    cbHstBuf = pThis->vram_size - pThis->svga.uScreenOffset; /* Paranoia. */
                 uint32_t const offHst =   (clipRect.left * RT_ALIGN(pThis->svga.uBpp, 8)) / 8
-                                        + pThis->svga.cbScanline * clipRect.top;
-                int32_t const cbHstPitch = pThis->svga.cbScanline;
+                                        + cbScanline * clipRect.top;
+                int32_t const cbHstPitch = cbScanline;
 
                 /* Destination: GMRFB. vmsvgaGMRTransfer ensures that no memory outside the GMR is read. */
                 SVGAGuestPtr const gstPtr = pSVGAState->GMRFB.ptr;
