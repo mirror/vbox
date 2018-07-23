@@ -25044,12 +25044,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
-  // ICloudUserProfileList
+  // ICloudUserProfiles
   //////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-    name="ICloudUserProfileList" extends="$unknown"
+    name="ICloudUserProfiles" extends="$unknown"
     uuid="cfadfecb-ef89-41a9-abbd-9772d41baddb"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
@@ -25180,21 +25180,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getAllProfiles" const="yes">
       <desc>
-        Returns the list of the ICloudUserProfileList in one call.
+        Returns the list of the ICloudUserProfiles in one call.
       </desc>
-      <param name="profileList" type="ICloudUserProfileList" safearray="yes" dir="return">
-        <desc>Returns the list of ICloudUserProfileList.</desc>
+      <param name="profileList" type="ICloudUserProfiles" safearray="yes" dir="return">
+        <desc>Returns the list of ICloudUserProfiles.</desc>
       </param>
     </method>
 
     <method name="getProfilesByProvider" const="yes">
       <desc>
-        Returns the ICloudUserProfileList for the particular provider.
+        Returns the ICloudUserProfiles for the particular provider.
       </desc>
       <param name="providerId" type="CloudProviderId" dir="in">
       </param>
-      <param name="profile" type="ICloudUserProfileList" dir="return">
-        <desc>Returns the ICloudUserProfileList.</desc>
+      <param name="profile" type="ICloudUserProfiles" dir="return">
+        <desc>Returns the ICloudUserProfiles.</desc>
       </param>
     </method>
 

@@ -40,6 +40,9 @@
 # include "UIWizardExportAppDefs.h"
 # include "UIWizardExportAppPageBasic3.h"
 
+/* COM includes: */
+# include "CCloudUserProfiles.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -122,7 +125,7 @@ void UIWizardExportAppPage3::populateAccounts()
     foreach (KCloudProviderId enmType, providerIds)
     {
         /* Acquire Cloud User-profile List: */
-        CCloudUserProfileList comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(enmType);
+        CCloudUserProfiles comProfiles = m_comCloudUserProfileManager.GetProfilesByProvider(enmType);
         /* Skip if we have nothing to populate (file missing?): */
         if (comProfiles.isNull())
             continue;
@@ -430,7 +433,7 @@ QString UIWizardExportAppPage3::profile() const
     return m_pAccountComboBox->itemData(iIndex, ProfileName).toString();
 }
 
-CCloudUserProfileList UIWizardExportAppPage3::profiles() const
+CCloudUserProfiles UIWizardExportAppPage3::profiles() const
 {
     return m_comCloudUserProfiles;
 }

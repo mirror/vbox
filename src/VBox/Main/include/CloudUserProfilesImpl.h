@@ -16,25 +16,25 @@
  */
 
 
-#ifndef ____H_CLOUDUSERPROFILELISTIMPL
-#define ____H_CLOUDUSERPROFILELISTIMPL
+#ifndef ____H_CLOUDUSERPROFILESIMPL
+#define ____H_CLOUDUSERPROFILESIMPL
 
 //#include <map>
 #include <vector>
 
 /* VBox includes */
 #include "CloudClientImpl.h"
-#include "CloudUserProfileListWrap.h"
+#include "CloudUserProfilesWrap.h"
 #include "UnattendedScript.h"
 
 /* VBox forward declarations */
 class SimpleConfigFile;
 
-class CloudUserProfileList : public CloudUserProfileListWrap
+class CloudUserProfiles : public CloudUserProfilesWrap
 {
 public:
-    CloudUserProfileList();
-    virtual ~CloudUserProfileList();
+    CloudUserProfiles();
+    virtual ~CloudUserProfiles();
     HRESULT FinalConstruct();
     void FinalRelease();
     HRESULT init(VirtualBox *aVirtualBox);
@@ -66,12 +66,12 @@ public:
 };
 
 
-class OCIUserProfileList :
-    public CloudUserProfileList
+class OCIUserProfiles :
+    public CloudUserProfiles
 {
 public:
-    OCIUserProfileList();
-    ~OCIUserProfileList();
+    OCIUserProfiles();
+    ~OCIUserProfiles();
 
     HRESULT getProvider(CloudProviderId_T *aProvider)
     {
@@ -135,6 +135,6 @@ public:
                            const std::map <Utf8Str, Utf8Str> &newSection);
     //////////////////New functions//////////////////////////////
 };
-#endif // !____H_CLOUDUSERPROFILELISTIMPL
+#endif // !____H_CLOUDUSERPROFILESIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
 

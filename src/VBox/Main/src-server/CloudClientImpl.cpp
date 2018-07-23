@@ -23,7 +23,7 @@
 
 #include "CloudClientImpl.h"
 #include "CloudUserProfileManagerImpl.h"
-#include "CloudUserProfileListImpl.h"
+#include "CloudUserProfilesImpl.h"
 #include "VirtualBoxImpl.h"
 #include "Global.h"
 #include "ProgressImpl.h"
@@ -96,7 +96,7 @@ HRESULT CloudClient::init(VirtualBox *aParent)
     return S_OK;
 }
 
-HRESULT CloudClient::initCloudClient(CloudUserProfileList *aProfiles,
+HRESULT CloudClient::initCloudClient(CloudUserProfiles *aProfiles,
                                      VirtualBox *aParent,
                                      CloudProviderId_T aCloudProvider,
                                      const com::Utf8Str &aProfileName)
@@ -116,7 +116,7 @@ HRESULT CloudClient::initCloudClient(CloudUserProfileList *aProfiles,
     {
         mCloudProvider = aCloudProvider;
         LogRel(("CloudProvider = %d\n", mCloudProvider));
-        CloudUserProfileList *lProfiles = aProfiles;
+        CloudUserProfiles*lProfiles = aProfiles;
         std::vector<com::Utf8Str> lNames;
         std::vector<com::Utf8Str> lValues;
         hrc = lProfiles->getProfileProperties(aProfileName, lNames, lValues);
@@ -251,7 +251,7 @@ CloudClientOCI::~CloudClientOCI()
     LogRel(("CloudClientOCI::~CloudClientOCI()\n"));
 }
 
-HRESULT CloudClientOCI::initCloudClient(CloudUserProfileList *aProfiles,
+HRESULT CloudClientOCI::initCloudClient(CloudUserProfiles *aProfiles,
                                      VirtualBox *aParent,
                                      CloudProviderId_T aCloudProvider,
                                      const com::Utf8Str &aProfileName)
@@ -271,7 +271,7 @@ HRESULT CloudClientOCI::initCloudClient(CloudUserProfileList *aProfiles,
     {
         mCloudProvider = aCloudProvider;
         LogRel(("CloudClientOCI = %d\n", mCloudProvider));
-        CloudUserProfileList *lProfiles = aProfiles;
+        CloudUserProfiles *lProfiles = aProfiles;
         std::vector<com::Utf8Str> lNames;
         std::vector<com::Utf8Str> lValues;
         hrc = lProfiles->getProfileProperties(aProfileName, lNames, lValues);
@@ -385,7 +385,7 @@ static Utf8Str strExportParametersToOCI = "{\n"
 "\t""\"Disk size\": {\n"
 "\t""\t""\"type\": 29,\n"
 "\t""\t""\"min\": 10,\n"
-"\t""\t""\"max\": 50,\n"
+"\t""\t""\"max\": 300,\n"
 "\t""\t""\"unit\": \"GB\"\n"
 "\t""},\n"
 "\t""\"Bucket\": {\n"

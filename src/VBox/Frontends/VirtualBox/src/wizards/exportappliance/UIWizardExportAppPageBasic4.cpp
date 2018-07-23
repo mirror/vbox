@@ -37,7 +37,7 @@
 /* COM includes: */
 # include "CAppliance.h"
 # include "CCloudClient.h"
-# include "CCloudUserProfileList.h"
+# include "CCloudUserProfiles.h"
 # include "CMachine.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -57,7 +57,7 @@ void UIWizardExportAppPage4::populateCloudClientParameters()
     m_listCloudClientParameters.clear();
 
     /* Acquire Cloud User-profiles: */
-    CCloudUserProfileList comCloudUserProfiles = fieldImp("profiles").value<CCloudUserProfileList>();
+    CCloudUserProfiles comCloudUserProfiles = fieldImp("profiles").value<CCloudUserProfiles>();
     AssertMsgReturnVoid(comCloudUserProfiles.isNotNull(),
                         ("Cloud User-profiles object is undefined!"));
 

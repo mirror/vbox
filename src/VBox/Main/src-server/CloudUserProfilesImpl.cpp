@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * ICloudUserProfileList COM class implementations.
+ * ICloudUserProfiles COM class implementations.
  */
 
 /*
@@ -20,7 +20,7 @@
 #include <iprt/cpp/utils.h>
 #include <VBox/com/array.h>
 
-#include "CloudUserProfileListImpl.h"
+#include "CloudUserProfilesImpl.h"
 #include "VirtualBoxImpl.h"
 #include "Global.h"
 #include "ProgressImpl.h"
@@ -209,33 +209,33 @@ bool SimpleConfigFile::isSectionExist(const Utf8Str &strSectionName) const
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// ICloudUserProfileList implementation
+// ICloudUserProfiles implementation
 //
 ////////////////////////////////////////////////////////////////////////////////
-CloudUserProfileList::CloudUserProfileList()
+CloudUserProfiles::CloudUserProfiles()
     : mParent(NULL)
 {
 }
 
-CloudUserProfileList::~CloudUserProfileList()
+CloudUserProfiles::~CloudUserProfiles()
 {
-    LogRel(("CloudUserProfileListImpl::~CloudUserProfileListImpl()\n"));
+    LogRel(("CloudUserProfilesImpl::~CloudUserProfilesImpl()\n"));
     unconst(mParent) = NULL;
 }
 
-HRESULT CloudUserProfileList::FinalConstruct()
+HRESULT CloudUserProfiles::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void CloudUserProfileList::FinalRelease()
+void CloudUserProfiles::FinalRelease()
 {
     uninit();
 
     BaseFinalRelease();
 }
 
-void CloudUserProfileList::uninit()
+void CloudUserProfiles::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -245,7 +245,7 @@ void CloudUserProfileList::uninit()
     unconst(mParent) = NULL;
 }
 
-HRESULT CloudUserProfileList::init(VirtualBox *aParent)
+HRESULT CloudUserProfiles::init(VirtualBox *aParent)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -258,71 +258,71 @@ HRESULT CloudUserProfileList::init(VirtualBox *aParent)
 }
 
 
-HRESULT CloudUserProfileList::getSupportedPropertiesNames(std::vector<com::Utf8Str> &aPropertiesNames)
+HRESULT CloudUserProfiles::getSupportedPropertiesNames(std::vector<com::Utf8Str> &aPropertiesNames)
 {
-    LogRel(("CloudUserProfileList::getSupportedPropertiesNames:\n"));
+    LogRel(("CloudUserProfiles::getSupportedPropertiesNames:\n"));
     aPropertiesNames.clear();
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::readProfiles(const Utf8Str &strConfigPath)
+HRESULT CloudUserProfiles::readProfiles(const Utf8Str &strConfigPath)
 {
-    LogRel(("CloudUserProfileList::readProfiles: %s\n", strConfigPath.c_str()));
+    LogRel(("CloudUserProfiles::readProfiles: %s\n", strConfigPath.c_str()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::getProvider(CloudProviderId_T *aProvider)
+HRESULT CloudUserProfiles::getProvider(CloudProviderId_T *aProvider)
 {
     *aProvider = CloudProviderId_Unknown;
-    LogRel(("CloudUserProfileList::getProvider: %d\n", *aProvider));
+    LogRel(("CloudUserProfiles::getProvider: %d\n", *aProvider));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::createProfile(const com::Utf8Str &aProfileName,
+HRESULT CloudUserProfiles::createProfile(const com::Utf8Str &aProfileName,
                                             const std::vector<com::Utf8Str> &aNames,
                                             const std::vector<com::Utf8Str> &aValues)
 {
-    LogRel(("CloudUserProfileList::createProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
+    LogRel(("CloudUserProfiles::createProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
+HRESULT CloudUserProfiles::updateProfile(const com::Utf8Str &aProfileName,
                                             const std::vector<com::Utf8Str> &aNames,
                                             const std::vector<com::Utf8Str> &aValues)
 {
-    LogRel(("CloudUserProfileList::updateProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
+    LogRel(("CloudUserProfiles::updateProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
+HRESULT CloudUserProfiles::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
 {
 
-    LogRel(("CloudUserProfileList::getStoredProfilesNames:\n"));
+    LogRel(("CloudUserProfiles::getStoredProfilesNames:\n"));
     aProfilesNames.clear();
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::getProfileProperties(const com::Utf8Str &aProfileName,
+HRESULT CloudUserProfiles::getProfileProperties(const com::Utf8Str &aProfileName,
                                               std::vector<com::Utf8Str> &aReturnNames,
                                               std::vector<com::Utf8Str> &aReturnValues)
 {
-    LogRel(("CloudUserProfileList::getProfileProperties: %s\n", aProfileName.c_str()));
+    LogRel(("CloudUserProfiles::getProfileProperties: %s\n", aProfileName.c_str()));
     aReturnNames.clear();
     aReturnValues.clear();
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::getPropertyDescription(const com::Utf8Str &aName,
+HRESULT CloudUserProfiles::getPropertyDescription(const com::Utf8Str &aName,
                                                      com::Utf8Str &aDescription)
 {
-    LogRel(("CloudUserProfileList::getPropertyDescription: %s, %s\n", aName.c_str(), aDescription.c_str()));
+    LogRel(("CloudUserProfiles::getPropertyDescription: %s, %s\n", aName.c_str(), aDescription.c_str()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
+HRESULT CloudUserProfiles::createCloudClient(const com::Utf8Str &aProfileName,
                                                 ComPtr<ICloudClient> &aCloudClient)
 {
-    LogRel(("CloudUserProfileList::createCloudClient: %s\n", aProfileName.c_str()));
+    LogRel(("CloudUserProfiles::createCloudClient: %s\n", aProfileName.c_str()));
 
     if (aCloudClient.isNull())
     {
@@ -354,21 +354,21 @@ static struct
 };
 
 
-OCIUserProfileList::OCIUserProfileList()
+OCIUserProfiles::OCIUserProfiles()
 {
-    LogRel(("OCIUserProfileList::OCIUserProfileList()\n"));
+    LogRel(("OCIUserProfiles::OCIUserProfiles()\n"));
     mpProfiles = new SimpleConfigFile(mParent);
     LogRel(("Succeeded create SimpleConfigFile\n"));
 }
 
-OCIUserProfileList::~OCIUserProfileList()
+OCIUserProfiles::~OCIUserProfiles()
 {
-    LogRel(("OCIUserProfileList::~OCIUserProfileList()\n"));
+    LogRel(("OCIUserProfiles::~OCIUserProfiles()\n"));
     if (mpProfiles)
         delete mpProfiles;
 }
 
-HRESULT OCIUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::createCloudClient(const com::Utf8Str &aProfileName,
                                               ComPtr<ICloudClient> &aCloudClient)
 {
     HRESULT hrc = S_OK;
@@ -393,7 +393,7 @@ HRESULT OCIUserProfileList::createCloudClient(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::readProfiles(const Utf8Str &strConfigPath)
+HRESULT OCIUserProfiles::readProfiles(const Utf8Str &strConfigPath)
 {
     LogRel(("Reading profiles from %s\n", strConfigPath.c_str()));
     HRESULT hrc = S_OK;
@@ -421,7 +421,7 @@ HRESULT OCIUserProfileList::readProfiles(const Utf8Str &strConfigPath)
     return hrc;
 }
 
-HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::createProfile(const com::Utf8Str &aProfileName,
                                           const std::vector<com::Utf8Str> &aNames,
                                           const std::vector<com::Utf8Str> &aValues)
 {
@@ -445,7 +445,7 @@ HRESULT OCIUserProfileList::createProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::updateProfile(const com::Utf8Str &aProfileName,
                                           const std::vector<com::Utf8Str> &aNames,
                                           const std::vector<com::Utf8Str> &aValues)
 {
@@ -468,7 +468,7 @@ HRESULT OCIUserProfileList::updateProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
+HRESULT OCIUserProfiles::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
 {
     HRESULT hrc = S_OK;
     aProfilesNames = mpProfiles->getSectionsNames();
@@ -478,7 +478,7 @@ HRESULT OCIUserProfileList::getStoredProfilesNames(std::vector<com::Utf8Str> &aP
     return hrc;
 }
 
-HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::getProfileProperties(const com::Utf8Str &aProfileName,
                                                  std::vector<com::Utf8Str> &aReturnNames,
                                                  std::vector<com::Utf8Str> &aReturnValues)
 {
@@ -507,7 +507,7 @@ HRESULT OCIUserProfileList::getProfileProperties(const com::Utf8Str &aProfileNam
     return hrc;
 }
 
-HRESULT OCIUserProfileList::getSupportedPropertiesNames(std::vector<com::Utf8Str> &aPropertiesNames)
+HRESULT OCIUserProfiles::getSupportedPropertiesNames(std::vector<com::Utf8Str> &aPropertiesNames)
 {
     HRESULT hrc = S_OK;
     for (size_t i = 0; i < RT_ELEMENTS(g_aOCIConfigEntryToDescription); ++i)
@@ -515,7 +515,7 @@ HRESULT OCIUserProfileList::getSupportedPropertiesNames(std::vector<com::Utf8Str
     return hrc;
 }
 
-HRESULT OCIUserProfileList::getPropertyDescription(const com::Utf8Str &aName, com::Utf8Str &aDescription)
+HRESULT OCIUserProfiles::getPropertyDescription(const com::Utf8Str &aName, com::Utf8Str &aDescription)
 {
     HRESULT hrc = S_OK;
     for (size_t i = 0; i < RT_ELEMENTS(g_aOCIConfigEntryToDescription); ++i)
@@ -527,7 +527,7 @@ HRESULT OCIUserProfileList::getPropertyDescription(const com::Utf8Str &aName, co
 }
 
 
-HRESULT OCIUserProfileList::i_createProfile(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::i_createProfile(const com::Utf8Str &aProfileName,
                                            const std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;
@@ -537,7 +537,7 @@ HRESULT OCIUserProfileList::i_createProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::i_updateProfile(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::i_updateProfile(const com::Utf8Str &aProfileName,
                                            const std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;
@@ -550,7 +550,7 @@ HRESULT OCIUserProfileList::i_updateProfile(const com::Utf8Str &aProfileName,
     return hrc;
 }
 
-HRESULT OCIUserProfileList::i_getProfileProperties(const com::Utf8Str &aProfileName,
+HRESULT OCIUserProfiles::i_getProfileProperties(const com::Utf8Str &aProfileName,
                                                   std::map <Utf8Str, Utf8Str> &aProfile)
 {
     HRESULT hrc = S_OK;

@@ -21,7 +21,7 @@
 
 /* VBox includes */
 #include "CloudUserProfileManagerWrap.h"
-#include "CloudUserProfileListImpl.h"
+#include "CloudUserProfilesImpl.h"
 
 /* VBox forward declarations */
 
@@ -43,8 +43,8 @@ private:
     std::vector<CloudProviderId_T> mSupportedProviders;
 
     HRESULT getSupportedProviders(std::vector<CloudProviderId_T> &aProviderTypes);
-    HRESULT getAllProfiles(std::vector< ComPtr<ICloudUserProfileList> > &aProfilesList);
-    HRESULT getProfilesByProvider(CloudProviderId_T aProviderType, ComPtr<ICloudUserProfileList> &aProfiles);
+    HRESULT getAllProfiles(std::vector< ComPtr<ICloudUserProfiles> > &aProfilesList);
+    HRESULT getProfilesByProvider(CloudProviderId_T aProviderType, ComPtr<ICloudUserProfiles> &aProfiles);
 };
 
 #endif // !____H_CLOUDUSERPROFILEMANAGERIMPL
