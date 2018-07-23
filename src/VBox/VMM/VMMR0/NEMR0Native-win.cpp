@@ -1418,8 +1418,15 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterCr8;
 
     /* Debug registers. */
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+        pInput->Names[iReg++] = HvX64RegisterDr7;
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
     {
+        if (!(fWhat & CPUMCTX_EXTRN_DR7) && (pCtx->fExtrn & CPUMCTX_EXTRN_DR7))
+        {
+            fWhat |= CPUMCTX_EXTRN_DR7;
+            pInput->Names[iReg++] = HvX64RegisterDr7;
+        }
         pInput->Names[iReg++] = HvX64RegisterDr0;
         pInput->Names[iReg++] = HvX64RegisterDr1;
         pInput->Names[iReg++] = HvX64RegisterDr2;
@@ -1427,8 +1434,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
     if (fWhat & CPUMCTX_EXTRN_DR6)
         pInput->Names[iReg++] = HvX64RegisterDr6;
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-        pInput->Names[iReg++] = HvX64RegisterDr7;
 
     /* Floating point state. */
     if (fWhat & CPUMCTX_EXTRN_X87)
@@ -1764,9 +1769,14 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
     /* Debug registers. */
-/** @todo fixme */
-/** @todo There are recalc issues here. Recalc will get register content and
- * that may assert since we doesn't clear CPUMCTX_EXTRN_ until the end. */
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+    {
+        Assert(pInput->Names[iReg] == HvX64RegisterDr7);
+        if (pCtx->dr[7] != paValues[iReg].Reg64)
+            CPUMSetGuestDR7(pVCpu, paValues[iReg].Reg64);
+        pCtx->fExtrn &= ~CPUMCTX_EXTRN_DR7; /* Hack alert! Avoids asserting when processing CPUMCTX_EXTRN_DR0_DR3. */
+        iReg++;
+    }
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterDr0);
@@ -1789,13 +1799,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(pInput->Names[iReg] == HvX64RegisterDr6);
         if (pCtx->dr[6] != paValues[iReg].Reg64)
             CPUMSetGuestDR6(pVCpu, paValues[iReg].Reg64);
-        iReg++;
-    }
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-    {
-        Assert(pInput->Names[iReg] == HvX64RegisterDr7);
-        if (pCtx->dr[7] != paValues[iReg].Reg64)
-            CPUMSetGuestDR7(pVCpu, paValues[iReg].Reg64);
         iReg++;
     }
 

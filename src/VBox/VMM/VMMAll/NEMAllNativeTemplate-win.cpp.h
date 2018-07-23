@@ -590,8 +590,15 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
         aenmNames[iReg++] = WHvX64RegisterCr8;
 
     /* Debug registers. */
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+        aenmNames[iReg++] = WHvX64RegisterDr7;
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
     {
+        if (!(fWhat & CPUMCTX_EXTRN_DR7) && (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_DR7))
+        {
+            fWhat |= CPUMCTX_EXTRN_DR7;
+            aenmNames[iReg++] = WHvX64RegisterDr7;
+        }
         aenmNames[iReg++] = WHvX64RegisterDr0;
         aenmNames[iReg++] = WHvX64RegisterDr1;
         aenmNames[iReg++] = WHvX64RegisterDr2;
@@ -599,8 +606,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
     }
     if (fWhat & CPUMCTX_EXTRN_DR6)
         aenmNames[iReg++] = WHvX64RegisterDr6;
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-        aenmNames[iReg++] = WHvX64RegisterDr7;
 
     /* Floating point state. */
     if (fWhat & CPUMCTX_EXTRN_X87)
@@ -888,7 +893,14 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
     }
 
     /* Debug registers. */
-    /** @todo fixme */
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterDr7);
+        if (pVCpu->cpum.GstCtx.dr[7] != aValues[iReg].Reg64)
+            CPUMSetGuestDR7(pVCpu, aValues[iReg].Reg64);
+        pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_DR7; /* Hack alert! Avoids asserting when processing CPUMCTX_EXTRN_DR0_DR3. */
+        iReg++;
+    }
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
     {
         Assert(aenmNames[iReg] == WHvX64RegisterDr0);
@@ -911,13 +923,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
         Assert(aenmNames[iReg] == WHvX64RegisterDr6);
         if (pVCpu->cpum.GstCtx.dr[6] != aValues[iReg].Reg64)
             CPUMSetGuestDR6(pVCpu, aValues[iReg].Reg64);
-        iReg++;
-    }
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-    {
-        Assert(aenmNames[iReg] == WHvX64RegisterDr7);
-        if (pVCpu->cpum.GstCtx.dr[7] != aValues[iReg].Reg64)
-            CPUMSetGuestDR7(pVCpu, aValues[iReg].Reg64);
         iReg++;
     }
 
