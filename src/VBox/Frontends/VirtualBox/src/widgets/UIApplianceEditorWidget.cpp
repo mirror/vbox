@@ -157,12 +157,14 @@ class UIVirtualHardwareItem : public UIApplianceModelItem
 public:
 
     /** Constructs item passing @a iNumber and @a pParentItem to the base-class.
+      * @param  pParent              Brings the parent reference.
       * @param  enmVSDType           Brings the Virtual System Description type.
       * @param  strRef               Brings something totally useless.
       * @param  strOrigValue         Brings the original value.
       * @param  strConfigValue       Brings the configuration value.
       * @param  strExtraConfigValue  Brings the extra configuration value. */
-    UIVirtualHardwareItem(int iNumber,
+    UIVirtualHardwareItem(UIApplianceModel *pParent,
+                          int iNumber,
                           KVirtualSystemDescriptionType enmVSDType,
                           const QString &strRef,
                           const QString &strOrigValue,
@@ -197,6 +199,9 @@ public:
     KVirtualSystemDescriptionType  systemDescriptionType() const;
 
 private:
+
+    /** Holds the parent reference. */
+    UIApplianceModel *m_pParent;
 
     /** Holds the Virtual System Description type. */
     KVirtualSystemDescriptionType  m_enmVSDType;
@@ -327,17 +332,19 @@ void UIVirtualSystemItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &
 *   Class UIVirtualHardwareItem implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIVirtualHardwareItem::UIVirtualHardwareItem(int iNumber,
+UIVirtualHardwareItem::UIVirtualHardwareItem(UIApplianceModel *pParent,
+                                             int iNumber,
                                              KVirtualSystemDescriptionType enmVSDType,
                                              const QString &strRef,
-                                             const QString &aOrigValue,
+                                             const QString &strOrigValue,
                                              const QString &strConfigValue,
                                              const QString &strExtraConfigValue,
                                              UIApplianceModelItem *pParentItem)
     : UIApplianceModelItem(iNumber, ApplianceModelItemType_VirtualHardware, pParentItem)
+    , m_pParent(pParent)
     , m_enmVSDType(enmVSDType)
     , m_strRef(strRef)
-    , m_strOrigValue(aOrigValue)
+    , m_strOrigValue(strOrigValue)
     , m_strConfigValue(strConfigValue)
     , m_strConfigDefaultValue(strConfigValue)
     , m_strExtraConfigValue(strExtraConfigValue)
@@ -1006,7 +1013,7 @@ UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QI
                 hdIndexes << i;
             else
             {
-                UIVirtualHardwareItem *pHardwareItem = new UIVirtualHardwareItem(i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pVirtualSystemItem);
+                UIVirtualHardwareItem *pHardwareItem = new UIVirtualHardwareItem(this, i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pVirtualSystemItem);
                 pVirtualSystemItem->appendChild(pHardwareItem);
                 /* Save the hard disk controller types in an extra map */
                 if (types[i] == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
@@ -1029,7 +1036,7 @@ UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QI
                 if (pControllerItem)
                 {
                     /* New hardware item as child of the controller */
-                    UIVirtualHardwareItem *pStorageItem = new UIVirtualHardwareItem(i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pControllerItem);
+                    UIVirtualHardwareItem *pStorageItem = new UIVirtualHardwareItem(this, i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pControllerItem);
                     pControllerItem->appendChild(pStorageItem);
                 }
             }
