@@ -2711,7 +2711,7 @@ else # !darwin
  	$(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
 endif # !darwin
 VBOX_JAVA_FIGURE_VERSION = $(shell $(1) -version 2>&1 > /dev/null \
-	| $(SED_EXT) -n -e 's|^[^ ]* *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
+	| $(SED_EXT) -n -e 's|^[^ ]* *\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
 # Test C and C++ files.
 $(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp:
