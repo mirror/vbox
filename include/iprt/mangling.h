@@ -1085,6 +1085,7 @@
 # define RTHeapSimpleRelocate                           RT_MANGLER(RTHeapSimpleRelocate)
 # define RTHeapSimpleSize                               RT_MANGLER(RTHeapSimpleSize)
 # define RTHttpGetFile                                  RT_MANGLER(RTHttpGetFile)
+# define RTHttpSetFollowRedirects                       RT_MANGLER(RTHttpSetFollowRedirects)
 # define RTHttpUseSystemProxySettings                   RT_MANGLER(RTHttpUseSystemProxySettings)
 # define RTIniFileCreateFromVfsFile                     RT_MANGLER(RTIniFileCreateFromVfsFile)
 # define RTIniFileRetain                                RT_MANGLER(RTIniFileRetain)

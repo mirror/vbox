@@ -221,6 +221,18 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pszProxyUrl, uint32_t uPo
                              const char *pszProxyUser, const char *pszProxyPwd);
 
 /**
+ * Set follow redirects (3xx)
+ *
+ * @returns iprt status code.
+ *
+ * @param   hHttp           The HTTP client instance.
+ * @param   cMaxRedirects   Max number of redirects to follow.  Zero if no
+ *                          redirects should be followed but instead returned
+ *                          to caller.
+ */
+RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects);
+
+/**
  * Set custom headers.
  *
  * @returns iprt status code.

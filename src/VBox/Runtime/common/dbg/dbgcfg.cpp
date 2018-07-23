@@ -807,6 +807,7 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
         if (RT_SUCCESS(rc))
         {
             RTHttpUseSystemProxySettings(hHttp);
+            RTHttpSetFollowRedirects(hHttp, 8);
 
             static const char * const s_apszHeaders[] =
             {

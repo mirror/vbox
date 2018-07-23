@@ -55,6 +55,9 @@ int main(int argc, char **argv)
     rc = RTHttpCreate(&hHttp);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTHttpCreate failed: %Rrc", rc);
+    rc = RTHttpSetFollowRedirects(hHttp, 8);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTHttpSetFollowRedirects(,8) failed: %Rrc", rc);
 
     /*
      * Parse arguments.
