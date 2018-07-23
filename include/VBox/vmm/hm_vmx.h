@@ -1037,7 +1037,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VM Instruction Errors
+/** @name VM Instruction Errors.
  * @{
  */
 /** VMCALL executed in VMX root operation. */
@@ -1094,7 +1094,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX MSRs - Basic VMX information.
+/** @name VMX MSR - Basic VMX information.
  * @{
  */
 /** VMCS revision identifier used by the processor. */
@@ -1128,7 +1128,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX MSRs - Misc VMX info.
+/** @name VMX MSR - Misc VMX info.
  * @{
  */
 /** Relationship between the preemption timer and tsc; count down every time bit
@@ -1153,7 +1153,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX MSRs - VMCS enumeration field info
+/** @name VMX MSR - VMCS enumeration field info
  * @{
  */
 /** Highest field index. */
@@ -1161,7 +1161,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name MSR_IA32_VMX_EPT_VPID_CAPS; EPT capabilities MSR
+/** @name VMX MSR - EPT/VPID capabilities.
  * @{
  */
 #define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                    RT_BIT_64(0)
@@ -1180,6 +1180,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS          RT_BIT_64(42)
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS  RT_BIT_64(43)
 /** @} */
+
 
 /** @name Extended Page Table Pointer (EPTP)
  * @{
@@ -1473,7 +1474,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_PIN_EXEC
+/** @name Pin-based VM-execution controls.
  * @{
  */
 /** External interrupts cause VM-exits if set; otherwise dispatched through the
@@ -1492,7 +1493,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_PROC_EXEC
+/** @name Processor-based VM-execution controls.
  * @{
  */
 /** VM-exit as soon as RFLAGS.IF=1 and no blocking is active. */
@@ -1542,7 +1543,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_PROC_EXEC2
+/** @name Secondary Processor-based VM-execution controls.
  * @{
  */
 /** Virtualize APIC access. */
@@ -1592,7 +1593,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_ENTRY
+/** @name VM-entry controls.
  * @{
  */
 /** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the
@@ -1613,7 +1614,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_EXIT
+/** @name VM-exit controls.
  * @{
  */
 /** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the
@@ -1638,7 +1639,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_VMFUNC
+/** @name VM function controls.
  * @{
  */
 /** EPTP-switching function changes the value of the EPTP to one chosen from the EPTP list. */
@@ -1646,14 +1647,14 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS32_RO_EXIT_REASON
+/** @name VM-exit reason.
  * @{
  */
 #define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
 /** @} */
 
 
-/** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
+/** @name VM-entry interruption information.
  * @{
  */
 #define VMX_ENTRY_INT_INFO_IS_VALID(a)                          (((a) >> 31) & 1)
@@ -1662,7 +1663,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
+/** @name VM-exit interruption information.
  * @{
  */
 #define VMX_EXIT_INT_INFO_VECTOR(a)                             ((a) & 0xff)
@@ -1680,7 +1681,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
+/** @name VM-exit interruption information types.
  * @{
  */
 #define VMX_EXIT_INT_INFO_TYPE_EXT_INT                          0
@@ -1692,7 +1693,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
+/** @name IDT-vectoring information.
  * @{
  */
 #define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
@@ -1705,7 +1706,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE
+/** @name IDT-vectoring information vector types.
  * @{
  */
 #define VMX_IDT_VECTORING_INFO_TYPE_EXT_INT                     0
@@ -1717,7 +1718,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_GUEST_ACTIVITY_STATE
+/** @name Guest-activity states.
  * @{
  */
 /** The logical processor is active. */
@@ -1731,7 +1732,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS32_GUEST_INT_STATE
+/** @name Guest-interruptibility states.
  * @{
  */
 #define VMX_VMCS_GUEST_INT_STATE_BLOCK_STI                      RT_BIT(0)
@@ -1741,7 +1742,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_VMCS_RO_EXIT_QUALIFICATION
+/** @name Exit qualification for Mov DRx.
  * @{
  */
 /** 0-2:  Debug register number */
@@ -1758,7 +1759,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_QUAL_DRX_DIRECTION values
+/** @name Exit qualification for debug exceptions types.
  * @{
  */
 #define VMX_EXIT_QUAL_DRX_DIRECTION_WRITE                       0
@@ -1766,7 +1767,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name CRx accesses
+/** @name Exit qualification for control-register accesses.
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
@@ -1787,7 +1788,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_QUAL_CRX_ACCESS
+/** @name Exit qualification for control-register access types.
  * @{
  */
 #define VMX_EXIT_QUAL_CRX_ACCESS_WRITE                          0
@@ -1797,7 +1798,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_QUAL_TASK_SWITCH
+/** @name Exit qualification for task switch.
  * @{
  */
 #define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)                   ((a) & 0xffff)
@@ -1813,7 +1814,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_EPT_VIOLATION
+/** @name Exit qualification for EPT violations.
  * @{
  */
 /** Set if the violation was caused by a data read. */
@@ -1838,7 +1839,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_PORT_IO
+/** @name Exit qualification for I/O instructions.
  * @{
  */
 /** 0-2:   IO operation width. */
@@ -1857,7 +1858,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_QUAL_IO_DIRECTION
+/** @name Exit qualification for I/O instruction types.
  * @{
  */
 #define VMX_EXIT_QUAL_IO_DIRECTION_OUT                          0
@@ -1865,7 +1866,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_QUAL_IO_ENCODING
+/** @name Exit qualification for I/O instruction encoding.
  * @{
  */
 #define VMX_EXIT_QUAL_IO_ENCODING_DX                            0
@@ -1873,7 +1874,8 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_APIC_ACCESS
+/** @name Exit qualification for APIC-access VM-exits from linear and
+ *        guest-physical accesses.
  * @{
  */
 /** 0-11: If the APIC-access VM-exit is due to a linear access, the offset of
@@ -1885,7 +1887,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @} */
 
 
-/** @name VMX_EXIT_QUAL_APIC_ACCESS_TYPE return values
+/** @name Exit qualification for linear address APIC-access types.
  * @{
  */
 /** Linear read access. */
@@ -2013,22 +2015,24 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @name VMX_VMCS_GUEST_DEBUG_EXCEPTIONS
- * Bits 4-11, 13 and 15-63 are reserved.
+/** @name Format of Pending-Debug-Exceptions.
+ * Bits 4-11, 13, 15 and 17-63 are reserved.
  * @{
  */
 /** Hardware breakpoint 0 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B0                      RT_BIT(0)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0                   RT_BIT(0)
 /** Hardware breakpoint 1 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B1                      RT_BIT(1)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1                   RT_BIT(1)
 /** Hardware breakpoint 2 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B2                      RT_BIT(2)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2                   RT_BIT(2)
 /** Hardware breakpoint 3 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B3                      RT_BIT(3)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3                   RT_BIT(3)
 /** At least one data or IO breakpoint was hit. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BREAKPOINT_ENABLED      RT_BIT(12)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP                 RT_BIT(12)
 /** A debug exception would have been triggered by single-step execution mode. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      RT_BIT(14)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS                    RT_BIT(14)
+/** A debug exception occurred inside an RTM region.   */
+#define VMX_VMCS_GUEST_PENDING_DEBUG_RTM                        RT_BIT(16)
 /** @} */
 
 
