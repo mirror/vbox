@@ -393,7 +393,7 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                 if (pThis->cbAvailWr)
                 {
                     /* Stuff as much data into the TX buffer as we can. */
-                    size_t cbToFetch = RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed;
+                    size_t cbToFetch = RT_MIN(RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed, pThis->cbAvailWr);
                     size_t cbFetched = 0;
                     rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &pThis->abTxBuf[pThis->cbTxUsed], cbToFetch,
                                                           &cbFetched);
@@ -402,7 +402,7 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                     if (cbFetched > 0)
                     {
                         ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
-                        pThis->cbTxUsed += cbFetched;
+                        pThis->cbTxUsed  += cbFetched;
                     }
                     else
                     {

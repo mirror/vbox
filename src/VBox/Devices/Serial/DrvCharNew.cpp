@@ -113,6 +113,7 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const ch
  */
 static DECLCALLBACK(int) drvCharDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface, size_t cbAvail)
 {
+    LogFlowFunc(("pInterface=%#p cbAvail=%zu\n", pInterface, cbAvail));
     PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
 
     int rc = VINF_SUCCESS;
@@ -129,18 +130,22 @@ static DECLCALLBACK(int) drvCharDataAvailWrNotify(PPDMISERIALCONNECTOR pInterfac
  */
 static DECLCALLBACK(int) drvCharReadRdr(PPDMISERIALCONNECTOR pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
+    LogFlowFunc(("pInterface=%#p pvBuf=%#p cbRead=%zu pcbRead=%#p\n", pInterface, pvBuf, cbRead, pcbRead));
     PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
     int rc = VINF_SUCCESS;
 
     AssertReturn(pThis->cbRemaining, VERR_INVALID_STATE);
     size_t cbToRead = RT_MIN(cbRead, pThis->cbRemaining);
     memcpy(pvBuf, pThis->pbBuf, cbToRead);
+
+    pThis->pbBuf += cbToRead;
     *pcbRead = cbToRead;
     size_t cbOld = ASMAtomicSubZ(&pThis->cbRemaining, cbToRead);
     if (!(cbOld - cbToRead)) /* Kick the I/O thread to fetch new data. */
         rc = pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
     STAM_COUNTER_ADD(&pThis->StatBytesRead, cbToRead);
 
+    LogFlowFunc(("-> %Rrc\n", rc));
     return rc;
 }
 
@@ -229,7 +234,7 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                 if (pThis->cbAvailWr)
                 {
                     /* Stuff as much data into the TX buffer as we can. */
-                    size_t cbToFetch = RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed;
+                    size_t cbToFetch = RT_MIN(RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed, pThis->cbAvailWr);
                     size_t cbFetched = 0;
                     rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &pThis->abTxBuf[pThis->cbTxUsed], cbToFetch,
                                                           &cbFetched);
@@ -238,7 +243,7 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                     if (cbFetched > 0)
                     {
                         ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
-                        pThis->cbTxUsed += cbFetched;
+                        pThis->cbTxUsed  += cbFetched;
                     }
                     else
                     {
@@ -280,10 +285,14 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                     LogFlow(("Read failed with %Rrc\n", rc));
                     break;
                 }
-                pThis->pbBuf = &pThis->abBuffer[0];
-                ASMAtomicWriteZ(&pThis->cbRemaining, cbRead);
-                /* Notify the upper device/driver. */
-                rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
+
+                if (cbRead)
+                {
+                    pThis->pbBuf = &pThis->abBuffer[0];
+                    ASMAtomicWriteZ(&pThis->cbRemaining, cbRead);
+                    /* Notify the upper device/driver. */
+                    rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
+                }
             }
         }
         else if (rc != VERR_INTERRUPTED)

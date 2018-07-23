@@ -613,7 +613,13 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
 
     while (cbFilled < cbFill)
     {
-        size_t cbThisRead = RT_MIN(cbFill - cbFilled, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
+        size_t cbThisRead = cbFill - cbFilled;
+
+        if (pFifo->offRead <= pFifo->offWrite)
+            cbThisRead = RT_MIN(cbThisRead, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
+        else
+            cbThisRead = RT_MIN(cbThisRead, (uint8_t)(pFifo->offRead - pFifo->offWrite));
+
         size_t cbRead = 0;
         int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
         AssertRC(rc); Assert(cbRead <= UINT8_MAX); RT_NOREF(rc);
@@ -669,6 +675,42 @@ static void uartR3DataFetch(PUARTCORE pThis)
         uartR3RecvFifoFill(pThis);
     else
         uartR3ByteFetch(pThis);
+}
+
+
+/**
+ * Reset the transmit/receive related bits to the standard values
+ * (after a detach/attach/reset event).
+ *
+ * @returns nothing.
+ * @param   pThis               The serial port instance.
+ */
+static void uartR3XferReset(PUARTCORE pThis)
+{
+    pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
+
+    uartFifoClear(&pThis->FifoXmit);
+    uartFifoClear(&pThis->FifoRecv);
+    uartR3ParamsUpdate(pThis);
+    uartIrqUpdate(pThis);
+
+    if (pThis->pDrvSerial)
+    {
+        /* Set the modem lines to reflect the current state. */
+        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
+        if (RT_FAILURE(rc))
+            LogRel(("Serial#%d: Failed to set modem lines with %Rrc during reset\n",
+                    pThis->pDevInsR3->iInstance, rc));
+
+        uint32_t fStsLines = 0;
+        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
+        if (RT_SUCCESS(rc))
+            uartR3StsLinesUpdate(pThis, fStsLines);
+        else
+            LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
+                    pThis->pDevInsR3->iInstance, rc));
+    }
+
 }
 #endif
 
@@ -1599,29 +1641,9 @@ DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis)
     /* Standard FIFO size for 15550A. */
     pThis->FifoXmit.cbMax = 16;
     pThis->FifoRecv.cbMax = 16;
-    uartFifoClear(&pThis->FifoXmit);
-    uartFifoClear(&pThis->FifoRecv);
     pThis->FifoRecv.cbItl = 1;
 
-    uartR3ParamsUpdate(pThis);
-    uartIrqUpdate(pThis);
-
-    if (pThis->pDrvSerial)
-    {
-        /* Set the modem lines to reflect the current state. */
-        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
-        if (RT_FAILURE(rc))
-            LogRel(("Serial#%d: Failed to set modem lines with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
-
-        uint32_t fStsLines = 0;
-        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
-        if (RT_SUCCESS(rc))
-            uartR3StsLinesUpdate(pThis, fStsLines);
-        else
-            LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
-    }
+    uartR3XferReset(pThis);
 }
 
 
@@ -1636,12 +1658,14 @@ DECLHIDDEN(int) uartR3Attach(PUARTCORE pThis, unsigned iLUN)
             AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pThis->pDevInsR3->iInstance));
             return VERR_PDM_MISSING_INTERFACE;
         }
+        uartR3XferReset(pThis);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         pThis->pDrvBase = NULL;
         pThis->pDrvSerial = NULL;
         rc = VINF_SUCCESS;
+        uartR3XferReset(pThis);
         LogRel(("Serial#%d: no unit\n", pThis->pDevInsR3->iInstance));
     }
     else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
@@ -1656,6 +1680,7 @@ DECLHIDDEN(void) uartR3Detach(PUARTCORE pThis)
     /* Zero out important members. */
     pThis->pDrvBase   = NULL;
     pThis->pDrvSerial = NULL;
+    uartR3XferReset(pThis);
 }
 
 
