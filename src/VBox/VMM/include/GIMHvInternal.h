@@ -418,6 +418,15 @@
 #define MSR_GIM_HV_RANGE12_END                    MSR_GIM_HV_CRASH_CTL
 /** @} */
 
+/**
+ *
+ * @todo r=bird: Incorrect use of the term 'END' here.
+ *               The correct term is 'LAST' as it's inclusive.
+ *               'END' is the term for exclusive range terminators.
+ *
+ *               See Coding guidelines.
+ *
+ */
 AssertCompile(MSR_GIM_HV_RANGE0_START  <= MSR_GIM_HV_RANGE0_END);
 AssertCompile(MSR_GIM_HV_RANGE1_START  <= MSR_GIM_HV_RANGE1_END);
 AssertCompile(MSR_GIM_HV_RANGE2_START  <= MSR_GIM_HV_RANGE2_END);
