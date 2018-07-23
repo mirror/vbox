@@ -1016,6 +1016,11 @@ typedef struct VMSVGA3DSTATE
         PFNGLENDQUERYPROC                               glEndQuery;
         PFNGLGETQUERYOBJECTUIVPROC                      glGetQueryObjectuiv;
         PFNGLTEXIMAGE3DPROC                             glTexImage3D;
+        PFNGLVERTEXATTRIBDIVISORPROC                    glVertexAttribDivisor;
+        PFNGLDRAWARRAYSINSTANCEDPROC                    glDrawArraysInstanced;
+        PFNGLDRAWELEMENTSINSTANCEDPROC                  glDrawElementsInstanced;
+        PFNGLCOMPRESSEDTEXIMAGE2DPROC                   glCompressedTexImage2D;
+        PFNGLCOMPRESSEDTEXIMAGE3DPROC                   glCompressedTexImage3D;
     } ext;
 
     struct

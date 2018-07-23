@@ -64,8 +64,15 @@
 #endif
 
 #ifdef RT_OS_WINDOWS
-# define OGLGETPROCADDRESS      wglGetProcAddress
-
+# define OGLGETPROCADDRESS      MyWinGetProcAddress
+DECLINLINE(PROC) MyWinGetProcAddress(const char *pszSymbol)
+{
+    /* Khronos: [on failure] "some implementations will return other values. 1, 2, and 3 are used, as well as -1". */
+    PROC p = wglGetProcAddress(pszSymbol);
+    if (RT_VALID_PTR(p))
+        return p;
+    return 0;
+}
 #elif defined(RT_OS_DARWIN)
 # include <dlfcn.h>
 # define OGLGETPROCADDRESS      MyNSGLGetProcAddress
@@ -511,6 +518,15 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
     return VINF_SUCCESS;
 }
 
+/** Check whether this is an Intel GL driver.
+ *
+ * @returns true if this seems to be some Intel graphics.
+ */
+static bool vmsvga3dIsVendorIntel(void)
+{
+    return RTStrNICmp((char *)glGetString(GL_VENDOR), "Intel", 5) == 0;
+}
+
 /**
  * @interface_method_impl{VBOXVMSVGASHADERIF,pfnSwitchInitProfile}
  */
@@ -784,22 +800,43 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_stencil_two_side ");
 #endif
 
-#define GLGETPROC(ProcType, ProcName) do { \
-    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName); \
-    AssertMsgReturn(pState->ext.ProcName, (#ProcName " missing"), VERR_NOT_IMPLEMENTED); \
+#define GLGETPROC(ProcType, ProcName, NameSuffix) do { \
+    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName NameSuffix); \
+    AssertLogRelMsgReturn(pState->ext.ProcName, (#ProcName NameSuffix " missing"), VERR_NOT_IMPLEMENTED); \
 } while(0)
-#define GLGETPROCOPT(ProcType, ProcName) do { \
-    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName); \
-    AssertMsg(pState->ext.ProcName, (#ProcName " missing (optional)")); \
+#define GLGETPROCOPT(ProcType, ProcName, NameSuffix) do { \
+    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName NameSuffix); \
+    AssertMsg(pState->ext.ProcName, (#ProcName NameSuffix " missing (optional)")); \
 } while(0)
 
-        GLGETPROCOPT(PFNGLGENQUERIESPROC                       , glGenQueries);
-        GLGETPROCOPT(PFNGLDELETEQUERIESPROC                    , glDeleteQueries);
-        GLGETPROCOPT(PFNGLBEGINQUERYPROC                       , glBeginQuery);
-        GLGETPROCOPT(PFNGLENDQUERYPROC                         , glEndQuery);
-        GLGETPROCOPT(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv);
-        GLGETPROC   (PFNGLTEXIMAGE3DPROC                       , glTexImage3D);
+    /* OpenGL 2.0 core */
+    GLGETPROCOPT(PFNGLGENQUERIESPROC                       , glGenQueries, "");
+    GLGETPROCOPT(PFNGLDELETEQUERIESPROC                    , glDeleteQueries, "");
+    GLGETPROCOPT(PFNGLBEGINQUERYPROC                       , glBeginQuery, "");
+    GLGETPROCOPT(PFNGLENDQUERYPROC                         , glEndQuery, "");
+    GLGETPROCOPT(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv, "");
+    GLGETPROC   (PFNGLTEXIMAGE3DPROC                       , glTexImage3D, "");
+    GLGETPROC   (PFNGLCOMPRESSEDTEXIMAGE2DPROC             , glCompressedTexImage2D, "");
+    GLGETPROC   (PFNGLCOMPRESSEDTEXIMAGE3DPROC             , glCompressedTexImage3D, "");
 
+    /** @todo A structured approach for loading OpenGL functions. */
+    /* OpenGL 3.3 core, GL_ARB_instanced_arrays. Required. */
+    if (pState->rsGLVersion >= 3.3f)
+        GLGETPROC(PFNGLVERTEXATTRIBDIVISORPROC          , glVertexAttribDivisor,   "");
+    else if (vmsvga3dCheckGLExtension(pState, 3.3f, " GL_ARB_instanced_arrays "))
+        GLGETPROC(PFNGLVERTEXATTRIBDIVISORPROC          , glVertexAttribDivisor,   "ARB");
+
+    /* OpenGL 3.1 core, GL_ARB_draw_instanced. Required. */
+    if (pState->rsGLVersion >= 3.1f)
+    {
+        GLGETPROC(PFNGLDRAWARRAYSINSTANCEDPROC          , glDrawArraysInstanced,   "");
+        GLGETPROC(PFNGLDRAWELEMENTSINSTANCEDPROC        , glDrawElementsInstanced, "");
+    }
+    else if (vmsvga3dCheckGLExtension(pState, 3.1f, " GL_ARB_draw_instanced "))
+    {
+        GLGETPROC(PFNGLDRAWARRAYSINSTANCEDPROC          , glDrawArraysInstanced,   "ARB");
+        GLGETPROC(PFNGLDRAWELEMENTSINSTANCEDPROC        , glDrawElementsInstanced, "ARB");
+    }
 #undef GLGETPROCOPT
 #undef GLGETPROC
     /*
@@ -848,11 +885,12 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
                                    pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
                                                                  &pState->caps.maxVertexShaderTemps));
-#ifdef DEBUG_sunlover
-        /// @todo Fix properly!!! Some Windows host drivers return 31 for the compatible OGL context (wglCreateContext).
-        if (pState->caps.maxVertexShaderTemps < 32)
+
+        /* Intel Windows drivers return 31, while the guest expects 32 at least. */
+        if (   pState->caps.maxVertexShaderTemps < 32
+            && vmsvga3dIsVendorIntel())
             pState->caps.maxVertexShaderTemps = 32;
-#endif
+
         VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
                                    pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
                                                                  &pState->caps.maxVertexShaderInstructions));
@@ -1637,14 +1675,8 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 
     case SVGA3D_DXT1:                   /* D3DFMT_DXT1 - WINED3DFMT_DXT1 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-#if 0
-        pSurface->formatGL = GL_RGBA_S3TC;          /* ??? */
-        pSurface->typeGL = GL_UNSIGNED_INT;         /* ??? */
-#else   /* wine suggests: */
-        pSurface->formatGL = GL_RGBA;
-        pSurface->typeGL = GL_UNSIGNED_BYTE;
-        AssertMsgFailed(("Test me - SVGA3D_DXT1\n"));
-#endif
+        pSurface->formatGL = GL_RGBA;        /* not used */
+        pSurface->typeGL = GL_UNSIGNED_BYTE; /* not used */
         break;
 
     case SVGA3D_DXT2:                   /* D3DFMT_DXT2 */
@@ -1653,14 +1685,8 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 
     case SVGA3D_DXT3:                   /* D3DFMT_DXT3 - WINED3DFMT_DXT3 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-#if 0 /** @todo this needs testing... */
-        pSurface->formatGL = GL_RGBA_S3TC;          /* ??? */
-        pSurface->typeGL = GL_UNSIGNED_INT;         /* ??? */
-#else   /* wine suggests: */
-        pSurface->formatGL = GL_RGBA;
-        pSurface->typeGL = GL_UNSIGNED_BYTE;
-        AssertMsgFailed(("Test me - SVGA3D_DXT3\n"));
-#endif
+        pSurface->formatGL = GL_RGBA;        /* not used */
+        pSurface->typeGL = GL_UNSIGNED_BYTE; /* not used */
         break;
 
     case SVGA3D_DXT4:                   /* D3DFMT_DXT4 */
@@ -1669,14 +1695,8 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 
     case SVGA3D_DXT5:                   /* D3DFMT_DXT5 - WINED3DFMT_DXT5 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-#if 0 /** @todo this needs testing... */
-        pSurface->formatGL = GL_RGBA_S3TC;
-        pSurface->typeGL = GL_UNSIGNED_INT;
-#else   /* wine suggests: */
-        pSurface->formatGL = GL_RGBA;
-        pSurface->typeGL = GL_UNSIGNED_BYTE;
-        AssertMsgFailed(("Test me - SVGA3D_DXT5\n"));
-#endif
+        pSurface->formatGL = GL_RGBA;        /* not used */
+        pSurface->typeGL = GL_UNSIGNED_BYTE; /* not used */
         break;
 
     case SVGA3D_LUMINANCE8:             /* D3DFMT_? - ? */
@@ -2169,19 +2189,36 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
              */
             PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
 
-            if (pMipLevel->fDirty)
-                LogFunc(("sync dirty texture mipmap level %d (pitch %x)\n", i, pMipLevel->cbSurfacePitch));
+            LogFunc(("sync dirty 3D texture mipmap level %d (pitch %x) (dirty %d)\n",
+                     i, pMipLevel->cbSurfacePitch, pMipLevel->fDirty));
 
-            pState->ext.glTexImage3D(GL_TEXTURE_3D,
-                                     i,
-                                     pSurface->internalFormatGL,
-                                     pMipLevel->mipmapSize.width,
-                                     pMipLevel->mipmapSize.height,
-                                     pMipLevel->mipmapSize.depth,
-                                     0, /* border */
-                                     pSurface->formatGL,
-                                     pSurface->typeGL,
-                                     pMipLevel->pSurfaceData);
+            if (   pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+            {
+                pState->ext.glCompressedTexImage3D(GL_TEXTURE_3D,
+                                                   i,
+                                                   pSurface->internalFormatGL,
+                                                   pMipLevel->mipmapSize.width,
+                                                   pMipLevel->mipmapSize.height,
+                                                   pMipLevel->mipmapSize.depth,
+                                                   0,
+                                                   pMipLevel->cbSurface,
+                                                   pMipLevel->pSurfaceData);
+            }
+            else
+            {
+                pState->ext.glTexImage3D(GL_TEXTURE_3D,
+                                         i,
+                                         pSurface->internalFormatGL,
+                                         pMipLevel->mipmapSize.width,
+                                         pMipLevel->mipmapSize.height,
+                                         pMipLevel->mipmapSize.depth,
+                                         0, /* border */
+                                         pSurface->formatGL,
+                                         pSurface->typeGL,
+                                         pMipLevel->pSurfaceData);
+            }
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
             pMipLevel->fDirty = false;
@@ -2199,18 +2236,34 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                 Assert(pMipLevel->mipmapSize.width == pMipLevel->mipmapSize.height);
                 Assert(pMipLevel->mipmapSize.depth == 1);
 
-                LogFunc(("sync texture face %d mipmap level %d (dirty %d)\n",
+                LogFunc(("sync cube texture face %d mipmap level %d (dirty %d)\n",
                           iFace, i, pMipLevel->fDirty));
 
-                glTexImage2D(Face,
-                             i,
-                             pSurface->internalFormatGL,
-                             pMipLevel->mipmapSize.width,
-                             pMipLevel->mipmapSize.height,
-                             0,
-                             pSurface->formatGL,
-                             pSurface->typeGL,
-                             pMipLevel->pSurfaceData);
+                if (   pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                    || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                    || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+                {
+                    pState->ext.glCompressedTexImage2D(Face,
+                                                       i,
+                                                       pSurface->internalFormatGL,
+                                                       pMipLevel->mipmapSize.width,
+                                                       pMipLevel->mipmapSize.height,
+                                                       0,
+                                                       pMipLevel->cbSurface,
+                                                       pMipLevel->pSurfaceData);
+                }
+                else
+                {
+                    glTexImage2D(Face,
+                                 i,
+                                 pSurface->internalFormatGL,
+                                 pMipLevel->mipmapSize.width,
+                                 pMipLevel->mipmapSize.height,
+                                 0,
+                                 pSurface->formatGL,
+                                 pSurface->typeGL,
+                                 pMipLevel->pSurfaceData);
+                }
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
                 pMipLevel->fDirty = false;
@@ -2228,18 +2281,34 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
             PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
             Assert(pMipLevel->mipmapSize.depth == 1);
 
-            if (pMipLevel->fDirty)
-                LogFunc(("sync dirty texture mipmap level %d (pitch %x)\n", i, pMipLevel->cbSurfacePitch));
+            LogFunc(("sync dirty texture mipmap level %d (pitch %x) (dirty %d)\n",
+                     i, pMipLevel->cbSurfacePitch, pMipLevel->fDirty));
 
-            glTexImage2D(GL_TEXTURE_2D,
-                         i,
-                         pSurface->internalFormatGL,
-                         pMipLevel->mipmapSize.width,
-                         pMipLevel->mipmapSize.height,
-                         0,
-                         pSurface->formatGL,
-                         pSurface->typeGL,
-                         pMipLevel->pSurfaceData);
+            if (   pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+            {
+                pState->ext.glCompressedTexImage2D(GL_TEXTURE_2D,
+                                                   i,
+                                                   pSurface->internalFormatGL,
+                                                   pMipLevel->mipmapSize.width,
+                                                   pMipLevel->mipmapSize.height,
+                                                   0,
+                                                   pMipLevel->cbSurface,
+                                                   pMipLevel->pSurfaceData);
+            }
+            else
+            {
+                glTexImage2D(GL_TEXTURE_2D,
+                             i,
+                             pSurface->internalFormatGL,
+                             pMipLevel->mipmapSize.width,
+                             pMipLevel->mipmapSize.height,
+                             0,
+                             pSurface->formatGL,
+                             pSurface->typeGL,
+                             pMipLevel->pSurfaceData);
+            }
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
             pMipLevel->fDirty = false;
@@ -3908,7 +3977,8 @@ static GLenum vmsvga3dBlendEquation2GL(uint32_t blendEq)
     case SVGA3D_BLENDEQ_MAXIMUM:
         return GL_MAX;
     default:
-        AssertMsgFailed(("blendEq=%d (%#x)\n", blendEq, blendEq));
+        /* SVGA3D_BLENDEQ_INVALID means that the render state has not been set, therefore use default. */
+        AssertMsg(blendEq == SVGA3D_BLENDEQ_INVALID, ("blendEq=%d (%#x)\n", blendEq, blendEq));
         return GL_FUNC_ADD;
     }
 }
@@ -4253,7 +4323,9 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
 
         case SVGA3D_RS_SEPARATEALPHABLENDENABLE: /* SVGA3dBool */
         {
-            /* Refresh the blending state based on the new enable setting. */
+            /* Refresh the blending state based on the new enable setting.
+             * This will take existing states and set them using either glBlend* or glBlend*Separate.
+             */
             SVGA3dRenderState renderstate[2];
 
             renderstate[0].state     = SVGA3D_RS_SRCBLEND;
@@ -6060,7 +6132,9 @@ int vmsvga3dResetTransformMatrices(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
     return rc;
 }
 
-int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t iVertexDeclBase, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl)
+int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext,
+                                             uint32_t iVertexDeclBase, uint32_t numVertexDecls,
+                                             SVGA3dVertexDecl *pVertexDecl, SVGA3dVertexDivisor const *paVertexDivisors)
 {
     PVMSVGA3DSTATE      pState = pThis->svga.p3dState;
     unsigned            sidVertex = pVertexDecl[0].array.surfaceId;
@@ -6128,6 +6202,12 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
             pState->ext.glVertexAttribPointer(index, size, type, normalized, pVertexDecl[iVertex].array.stride,
                                               (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+            if (pState->ext.glVertexAttribDivisor)
+            {
+                GLuint const divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
+                pState->ext.glVertexAttribDivisor(index, divisor);
+                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+            }
             /** @todo case SVGA3D_DECLUSAGE_COLOR: color component order not identical!! test GL_BGRA!!  */
         }
         else
@@ -6312,8 +6392,8 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     AssertReturn(numRanges && numRanges <= SVGA3D_MAX_DRAW_PRIMITIVE_RANGES, VERR_INVALID_PARAMETER);
     AssertReturn(!cVertexDivisor || cVertexDivisor == numVertexDecls, VERR_INVALID_PARAMETER);
 
-    /** @todo Non-zero cVertexDivisor */
-    Assert(!cVertexDivisor);
+    if (!cVertexDivisor)
+        pVertexDivisor = NULL; /* Be sure. */
 
     if (    cid >= pState->cContexts
         ||  pState->papContexts[cid]->id != cid)
@@ -6338,6 +6418,25 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                                              pVertexDecl[iVertex].identity.usage == SVGA3D_DECLUSAGE_POSITIONT);
                 break;
             default:  /* Shut up MSC. */ break;
+        }
+    }
+
+    /* Try to figure out if instancing is used.
+     * Support simple instancing case with one set of indexed data and one set per-instance data.
+     */
+    uint32_t cInstances = 0;
+    for (uint32_t iVertexDivisor = 0; iVertexDivisor < cVertexDivisor; ++iVertexDivisor)
+    {
+        if (pVertexDivisor[iVertexDivisor].s.indexedData)
+        {
+            if (cInstances == 0)
+                cInstances = pVertexDivisor[iVertexDivisor].s.count;
+            else
+                Assert(cInstances == pVertexDivisor[iVertexDivisor].s.count);
+        }
+        else if (pVertexDivisor[iVertexDivisor].s.instanceData)
+        {
+            Assert(pVertexDivisor[iVertexDivisor].s.count == 1);
         }
     }
 
@@ -6371,7 +6470,8 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             sidVertex = pVertexDecl[iVertex].array.surfaceId;
         }
 
-        rc = vmsvga3dDrawPrimitivesProcessVertexDecls(pThis, pContext, iCurrentVertex, iVertex - iCurrentVertex, &pVertexDecl[iCurrentVertex]);
+        rc = vmsvga3dDrawPrimitivesProcessVertexDecls(pThis, pContext, iCurrentVertex, iVertex - iCurrentVertex,
+                                                      &pVertexDecl[iCurrentVertex], pVertexDivisor);
         AssertRCReturn(rc, rc);
 
         iCurrentVertex = iVertex;
@@ -6448,7 +6548,15 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         {
             /* Render without an index buffer */
             Log(("DrawPrimitive %x cPrimitives=%d cVertices=%d index index bias=%d\n", modeDraw, pRange[iPrimitive].primitiveCount, cVertices, pRange[iPrimitive].indexBias));
-            glDrawArrays(modeDraw, pRange[iPrimitive].indexBias, cVertices);
+            if (cInstances == 0)
+            {
+                glDrawArrays(modeDraw, pRange[iPrimitive].indexBias, cVertices);
+            }
+            else
+            {
+                pState->ext.glDrawArraysInstanced(modeDraw, pRange[iPrimitive].indexBias, cVertices, cInstances);
+            }
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         }
         else
         {
@@ -6472,25 +6580,45 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                 indexType = GL_UNSIGNED_INT;
             }
 
-            /* Render with an index buffer */
             Log(("DrawIndexedPrimitive %x cPrimitives=%d cVertices=%d hint.first=%d hint.last=%d index offset=%d primitivecount=%d index width=%d index bias=%d\n", modeDraw, pRange[iPrimitive].primitiveCount, cVertices, pVertexDecl[0].rangeHint.first,  pVertexDecl[0].rangeHint.last,  pRange[iPrimitive].indexArray.offset, pRange[iPrimitive].primitiveCount,  pRange[iPrimitive].indexWidth, pRange[iPrimitive].indexBias));
-            if (pRange[iPrimitive].indexBias == 0)
-                glDrawElements(modeDraw,
-                               cVertices,
-                               indexType,
-                               (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset);   /* byte offset in indices buffer */
+            if (cInstances == 0)
+            {
+                /* Render with an index buffer */
+                if (pRange[iPrimitive].indexBias == 0)
+                    glDrawElements(modeDraw,
+                                   cVertices,
+                                   indexType,
+                                   (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset);   /* byte offset in indices buffer */
+                else
+                    pState->ext.glDrawElementsBaseVertex(modeDraw,
+                                                         cVertices,
+                                                         indexType,
+                                                         (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset, /* byte offset in indices buffer */
+                                                         pRange[iPrimitive].indexBias);  /* basevertex */
+            }
             else
-                pState->ext.glDrawElementsBaseVertex(modeDraw,
-                                                     cVertices,
-                                                     indexType,
-                                                     (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset, /* byte offset in indices buffer */
-                                                     pRange[iPrimitive].indexBias);  /* basevertex */
+            {
+                /* Render with an index buffer */
+                if (pRange[iPrimitive].indexBias == 0)
+                    pState->ext.glDrawElementsInstanced(modeDraw,
+                                                        cVertices,
+                                                        indexType,
+                                                        (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset, /* byte offset in indices buffer */
+                                                        cInstances);
+                else
+                    pState->ext.glDrawElementsInstancedBaseVertex(modeDraw,
+                                                                  cVertices,
+                                                                  indexType,
+                                                                  (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset, /* byte offset in indices buffer */
+                                                                  cInstances,
+                                                                  pRange[iPrimitive].indexBias);  /* basevertex */
+            }
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
             /* Unbind the index buffer after usage. */
             pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         }
-        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
     }
 
 internal_error:
