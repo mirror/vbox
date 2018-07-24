@@ -59,17 +59,17 @@ apt-get update
 # by splitting them into several apt commands.  Some will fail on some
 # distributions, but at the end everything needed should be there.
 apt-get install -y chrpath g++ make iasl libidl-dev libsdl1.2-dev \
-    libsdl-ttf2.0-dev libpam0g-dev libssl-dev libpulse-dev libasound2-dev \
-    xsltproc libxml2-dev libxml2-utils unzip libxrandr-dev libxinerama-dev \
-    libcap-dev python-dev libxmu-dev libxcursor-dev libdevmapper-dev \
+    libsdl-ttf2.0-dev libpam0g-dev libssl-dev libpulse-dev \
+    libasound2-dev xsltproc libxml2-dev libxml2-utils unzip \
+    libxrandr-dev libxinerama-dev libcap-dev python-dev \
+    libxmu-dev libxcursor-dev libcurl4-openssl-dev libdevmapper-dev \
     libvpx-dev g++-multilib libopus-dev || true
 # Only install Qt5 on recent distributions
 case "${DEBVER}" in
 7*|8*|jessie*|stretch*) ;;
-    apt-get install -y libcurl3-openssl-dev || true
 *)
     apt-get install -y qttools5-dev-tools libqt5opengl5-dev \
-        libqt5x11extras5-dev libcurl4-openssl-dev || true ;;
+        libqt5x11extras5-dev || true ;;
 esac
 test -n "${WITHDOCS}" &&
     apt-get install -y doxygen texlive texlive-latex-extra texlive-fonts-extra
