@@ -223,7 +223,7 @@
  * @{
  */
 /** Start of range 0. */
-#define MSR_GIM_HV_RANGE0_START                   UINT32_C(0x40000000)
+#define MSR_GIM_HV_RANGE0_FIRST                   UINT32_C(0x40000000)
 /** Guest OS identification (R/W) */
 #define MSR_GIM_HV_GUEST_OS_ID                    UINT32_C(0x40000000)
 /** Enable hypercall interface (R/W) */
@@ -233,17 +233,17 @@
 /** Reset operation (R/W) */
 #define MSR_GIM_HV_RESET                          UINT32_C(0x40000003)
 /** End of range 0. */
-#define MSR_GIM_HV_RANGE0_END                     MSR_GIM_HV_RESET
+#define MSR_GIM_HV_RANGE0_LAST                    MSR_GIM_HV_RESET
 
 /** Start of range 1. */
-#define MSR_GIM_HV_RANGE1_START                   UINT32_C(0x40000010)
+#define MSR_GIM_HV_RANGE1_FIRST                   UINT32_C(0x40000010)
 /** Virtual processor's (VCPU) runtime (R) */
 #define MSR_GIM_HV_VP_RUNTIME                     UINT32_C(0x40000010)
 /** End of range 1. */
-#define MSR_GIM_HV_RANGE1_END                     MSR_GIM_HV_VP_RUNTIME
+#define MSR_GIM_HV_RANGE1_LAST                    MSR_GIM_HV_VP_RUNTIME
 
 /** Start of range 2. */
-#define MSR_GIM_HV_RANGE2_START                   UINT32_C(0x40000020)
+#define MSR_GIM_HV_RANGE2_FIRST                   UINT32_C(0x40000020)
 /** Per-VM reference counter (R) */
 #define MSR_GIM_HV_TIME_REF_COUNT                 UINT32_C(0x40000020)
 /** Per-VM TSC page (R/W) */
@@ -253,10 +253,10 @@
 /** Frequency of LAPIC in Hz as reported by the hypervisor (R) */
 #define MSR_GIM_HV_APIC_FREQ                      UINT32_C(0x40000023)
 /** End of range 2. */
-#define MSR_GIM_HV_RANGE2_END                     MSR_GIM_HV_APIC_FREQ
+#define MSR_GIM_HV_RANGE2_LAST                    MSR_GIM_HV_APIC_FREQ
 
 /** Start of range 3. */
-#define MSR_GIM_HV_RANGE3_START                   UINT32_C(0x40000070)
+#define MSR_GIM_HV_RANGE3_FIRST                   UINT32_C(0x40000070)
 /** Access to APIC EOI (End-Of-Interrupt) register (W) */
 #define MSR_GIM_HV_EOI                            UINT32_C(0x40000070)
 /** Access to APIC ICR (Interrupt Command) register (R/W) */
@@ -266,10 +266,10 @@
 /** Enables lazy EOI processing (R/W) */
 #define MSR_GIM_HV_APIC_ASSIST_PAGE               UINT32_C(0x40000073)
 /** End of range 3. */
-#define MSR_GIM_HV_RANGE3_END                     MSR_GIM_HV_APIC_ASSIST_PAGE
+#define MSR_GIM_HV_RANGE3_LAST                    MSR_GIM_HV_APIC_ASSIST_PAGE
 
 /** Start of range 4. */
-#define MSR_GIM_HV_RANGE4_START                   UINT32_C(0x40000080)
+#define MSR_GIM_HV_RANGE4_FIRST                   UINT32_C(0x40000080)
 /** Control behaviour of synthetic interrupt controller (R/W) */
 #define MSR_GIM_HV_SCONTROL                       UINT32_C(0x40000080)
 /** Synthetic interrupt controller version (R) */
@@ -281,10 +281,10 @@
 /** End-Of-Message in synthetic interrupt parameter page (W) */
 #define MSR_GIM_HV_EOM                            UINT32_C(0x40000084)
 /** End of range 4. */
-#define MSR_GIM_HV_RANGE4_END                     MSR_GIM_HV_EOM
+#define MSR_GIM_HV_RANGE4_LAST                    MSR_GIM_HV_EOM
 
 /** Start of range 5. */
-#define MSR_GIM_HV_RANGE5_START                   UINT32_C(0x40000090)
+#define MSR_GIM_HV_RANGE5_FIRST                   UINT32_C(0x40000090)
 /** Configures synthetic interrupt source 0 (R/W) */
 #define MSR_GIM_HV_SINT0                          UINT32_C(0x40000090)
 /** Configures synthetic interrupt source 1 (R/W) */
@@ -318,10 +318,10 @@
 /** Configures synthetic interrupt source 15 (R/W) */
 #define MSR_GIM_HV_SINT15                         UINT32_C(0x4000009F)
 /** End of range 5. */
-#define MSR_GIM_HV_RANGE5_END                     MSR_GIM_HV_SINT15
+#define MSR_GIM_HV_RANGE5_LAST                    MSR_GIM_HV_SINT15
 
 /** Start of range 6. */
-#define MSR_GIM_HV_RANGE6_START                   UINT32_C(0x400000B0)
+#define MSR_GIM_HV_RANGE6_FIRST                   UINT32_C(0x400000B0)
 /** Configures register for synthetic timer 0 (R/W) */
 #define MSR_GIM_HV_STIMER0_CONFIG                 UINT32_C(0x400000B0)
 /** Expiration time or period for synthetic timer 0 (R/W) */
@@ -339,10 +339,10 @@
 /** Expiration time or period for synthetic timer 3 (R/W) */
 #define MSR_GIM_HV_STIMER3_COUNT                  UINT32_C(0x400000B7)
 /** End of range 6. */
-#define MSR_GIM_HV_RANGE6_END                     MSR_GIM_HV_STIMER3_COUNT
+#define MSR_GIM_HV_RANGE6_LAST                    MSR_GIM_HV_STIMER3_COUNT
 
 /** Start of range 7. */
-#define MSR_GIM_HV_RANGE7_START                   UINT32_C(0x400000C1)
+#define MSR_GIM_HV_RANGE7_FIRST                   UINT32_C(0x400000C1)
 /** Trigger to transition to power state C1 (R) */
 #define MSR_GIM_HV_POWER_STATE_TRIGGER_C1         UINT32_C(0x400000C1)
 /** Trigger to transition to power state C2 (R) */
@@ -350,10 +350,10 @@
 /** Trigger to transition to power state C3 (R) */
 #define MSR_GIM_HV_POWER_STATE_TRIGGER_C3         UINT32_C(0x400000C3)
 /** End of range 7. */
-#define MSR_GIM_HV_RANGE7_END                     MSR_GIM_HV_POWER_STATE_TRIGGER_C3
+#define MSR_GIM_HV_RANGE7_LAST                    MSR_GIM_HV_POWER_STATE_TRIGGER_C3
 
 /** Start of range 8. */
-#define MSR_GIM_HV_RANGE8_START                   UINT32_C(0x400000D1)
+#define MSR_GIM_HV_RANGE8_FIRST                   UINT32_C(0x400000D1)
 /** Configure the recipe for power state transitions to C1 (R/W) */
 #define MSR_GIM_HV_POWER_STATE_CONFIG_C1          UINT32_C(0x400000D1)
 /** Configure the recipe for power state transitions to C2 (R/W) */
@@ -361,10 +361,10 @@
 /** Configure the recipe for power state transitions to C3 (R/W) */
 #define MSR_GIM_HV_POWER_STATE_CONFIG_C3          UINT32_C(0x400000D3)
 /** End of range 8. */
-#define MSR_GIM_HV_RANGE8_END                     MSR_GIM_HV_POWER_STATE_CONFIG_C3
+#define MSR_GIM_HV_RANGE8_LAST                    MSR_GIM_HV_POWER_STATE_CONFIG_C3
 
 /** Start of range 9. */
-#define MSR_GIM_HV_RANGE9_START                   UINT32_C(0x400000E0)
+#define MSR_GIM_HV_RANGE9_FIRST                   UINT32_C(0x400000E0)
 /** Map the guest's retail partition stats page (R/W) */
 #define MSR_GIM_HV_STATS_PART_RETAIL_PAGE         UINT32_C(0x400000E0)
 /** Map the guest's internal partition stats page (R/W) */
@@ -374,10 +374,10 @@
 /** Map the guest's internal VP stats page (R/W) */
 #define MSR_GIM_HV_STATS_VP_INTERNAL_PAGE         UINT32_C(0x400000E3)
 /** End of range 9. */
-#define MSR_GIM_HV_RANGE9_END                     MSR_GIM_HV_STATS_VP_INTERNAL_PAGE
+#define MSR_GIM_HV_RANGE9_LAST                    MSR_GIM_HV_STATS_VP_INTERNAL_PAGE
 
 /** Start of range 10. */
-#define MSR_GIM_HV_RANGE10_START                  UINT32_C(0x400000F0)
+#define MSR_GIM_HV_RANGE10_FIRST                  UINT32_C(0x400000F0)
 /** Trigger the guest's transition to idle power state (R) */
 #define MSR_GIM_HV_GUEST_IDLE                     UINT32_C(0x400000F0)
 /** Synthetic debug control. */
@@ -391,17 +391,17 @@
 /** Synthetic debug pending buffer. */
 #define MSR_GIM_HV_SYNTH_DEBUG_PENDING_BUFFER     UINT32_C(0x400000F5)
 /** End of range 10. */
-#define MSR_GIM_HV_RANGE10_END                    MSR_GIM_HV_SYNTH_DEBUG_PENDING_BUFFER
+#define MSR_GIM_HV_RANGE10_LAST                   MSR_GIM_HV_SYNTH_DEBUG_PENDING_BUFFER
 
 /** Start of range 11. */
-#define MSR_GIM_HV_RANGE11_START                  UINT32_C(0x400000FF)
+#define MSR_GIM_HV_RANGE11_FIRST                  UINT32_C(0x400000FF)
 /** Undocumented debug options MSR. */
 #define MSR_GIM_HV_DEBUG_OPTIONS_MSR              UINT32_C(0x400000FF)
 /** End of range 11. */
-#define MSR_GIM_HV_RANGE11_END                    MSR_GIM_HV_DEBUG_OPTIONS_MSR
+#define MSR_GIM_HV_RANGE11_LAST                   MSR_GIM_HV_DEBUG_OPTIONS_MSR
 
 /** Start of range 12. */
-#define MSR_GIM_HV_RANGE12_START                  UINT32_C(0x40000100)
+#define MSR_GIM_HV_RANGE12_FIRST                  UINT32_C(0x40000100)
 /** Guest crash MSR 0. */
 #define MSR_GIM_HV_CRASH_P0                       UINT32_C(0x40000100)
 /** Guest crash MSR 1. */
@@ -415,30 +415,21 @@
 /** Guest crash control. */
 #define MSR_GIM_HV_CRASH_CTL                      UINT32_C(0x40000105)
 /** End of range 12. */
-#define MSR_GIM_HV_RANGE12_END                    MSR_GIM_HV_CRASH_CTL
+#define MSR_GIM_HV_RANGE12_LAST                   MSR_GIM_HV_CRASH_CTL
 /** @} */
 
-/**
- *
- * @todo r=bird: Incorrect use of the term 'END' here.
- *               The correct term is 'LAST' as it's inclusive.
- *               'END' is the term for exclusive range terminators.
- *
- *               See Coding guidelines.
- *
- */
-AssertCompile(MSR_GIM_HV_RANGE0_START  <= MSR_GIM_HV_RANGE0_END);
-AssertCompile(MSR_GIM_HV_RANGE1_START  <= MSR_GIM_HV_RANGE1_END);
-AssertCompile(MSR_GIM_HV_RANGE2_START  <= MSR_GIM_HV_RANGE2_END);
-AssertCompile(MSR_GIM_HV_RANGE3_START  <= MSR_GIM_HV_RANGE3_END);
-AssertCompile(MSR_GIM_HV_RANGE4_START  <= MSR_GIM_HV_RANGE4_END);
-AssertCompile(MSR_GIM_HV_RANGE5_START  <= MSR_GIM_HV_RANGE5_END);
-AssertCompile(MSR_GIM_HV_RANGE6_START  <= MSR_GIM_HV_RANGE6_END);
-AssertCompile(MSR_GIM_HV_RANGE7_START  <= MSR_GIM_HV_RANGE7_END);
-AssertCompile(MSR_GIM_HV_RANGE8_START  <= MSR_GIM_HV_RANGE8_END);
-AssertCompile(MSR_GIM_HV_RANGE9_START  <= MSR_GIM_HV_RANGE9_END);
-AssertCompile(MSR_GIM_HV_RANGE10_START <= MSR_GIM_HV_RANGE10_END);
-AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
+AssertCompile(MSR_GIM_HV_RANGE0_FIRST  <= MSR_GIM_HV_RANGE0_LAST);
+AssertCompile(MSR_GIM_HV_RANGE1_FIRST  <= MSR_GIM_HV_RANGE1_LAST);
+AssertCompile(MSR_GIM_HV_RANGE2_FIRST  <= MSR_GIM_HV_RANGE2_LAST);
+AssertCompile(MSR_GIM_HV_RANGE3_FIRST  <= MSR_GIM_HV_RANGE3_LAST);
+AssertCompile(MSR_GIM_HV_RANGE4_FIRST  <= MSR_GIM_HV_RANGE4_LAST);
+AssertCompile(MSR_GIM_HV_RANGE5_FIRST  <= MSR_GIM_HV_RANGE5_LAST);
+AssertCompile(MSR_GIM_HV_RANGE6_FIRST  <= MSR_GIM_HV_RANGE6_LAST);
+AssertCompile(MSR_GIM_HV_RANGE7_FIRST  <= MSR_GIM_HV_RANGE7_LAST);
+AssertCompile(MSR_GIM_HV_RANGE8_FIRST  <= MSR_GIM_HV_RANGE8_LAST);
+AssertCompile(MSR_GIM_HV_RANGE9_FIRST  <= MSR_GIM_HV_RANGE9_LAST);
+AssertCompile(MSR_GIM_HV_RANGE10_FIRST <= MSR_GIM_HV_RANGE10_LAST);
+AssertCompile(MSR_GIM_HV_RANGE11_FIRST <= MSR_GIM_HV_RANGE11_LAST);
 
 /** @name Hyper-V MSR - Reset (MSR_GIM_HV_RESET).
  * @{
