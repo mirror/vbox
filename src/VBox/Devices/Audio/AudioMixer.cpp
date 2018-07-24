@@ -652,6 +652,12 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
 
     if (RT_SUCCESS(rc))
     {
+        rc = RTCircBufCreate(&pMixStream->pCircBuf, DrvAudioHlpMsToBytes(&pSink->PCMProps, 100 /* ms */)); /** @todo Make this configurable. */
+        AssertRC(rc);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
         pMixStream->fFlags = fFlags;
         pMixStream->pConn  = pConn;
 
@@ -1681,39 +1687,78 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 
     Log3Func(("[%s] enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
 
-    uint32_t cbWritten = UINT32_MAX;
-
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        uint32_t cbProcessed = 0;
-        int rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvBuf, cbBuf, &cbProcessed);
-        if (RT_FAILURE(rc2))
-            LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
+        PRTCIRCBUF pCircBuf = pMixStream->pCircBuf;
+        void *pvChunk;
+        size_t cbChunk;
 
-        Log3Func(("[%s] Written %RU32 to '%s'\n", pSink->pszName, cbProcessed, pMixStream->pszName));
+        uint32_t cbWritten = 0;
+        uint32_t cbToWrite = RT_MIN(cbBuf, (uint32_t)RTCircBufFree(pCircBuf));
+        while (cbToWrite)
+        {
+            RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvChunk, &cbChunk);
 
-        if (cbProcessed)
+            if (cbChunk)
+                memcpy(pvChunk, (uint8_t *)pvBuf + cbWritten, cbChunk);
+
+            RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
+
+            cbWritten += (uint32_t)cbChunk;
+
+            Assert(cbToWrite >= cbChunk);
+            cbToWrite -= (uint32_t)cbChunk;
+        }
+
+        if (cbWritten < cbBuf)
+            LogFunc(("[%s] Warning: Only written %RU32/%RU32 bytes for stream '%s'\n",
+                     pSink->pszName, cbWritten, cbBuf, pMixStream->pszName));
+
+        if (!pMixStream->tsLastReadWrittenMs)
+            pMixStream->tsLastReadWrittenMs = RTTimeMilliTS();
+
+        pMixStream->tsLastReadWrittenMs = RTTimeMilliTS();
+
+        const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
+        cbToWrite = RT_MIN(cbWritableStream, (uint32_t)RTCircBufUsed(pCircBuf));
+
+        int rc2 = VINF_SUCCESS;
+
+        while (cbToWrite)
+        {
+            RTCircBufAcquireReadBlock(pCircBuf, cbToWrite, &pvChunk, &cbChunk);
+
+            if (cbChunk)
+            {
+                rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvChunk, (uint32_t)cbChunk,
+                                                        &cbWritten);
+                if (RT_FAILURE(rc2))
+                    LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
+            }
+
+            RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
+
+            if (   !cbWritten
+                || cbWritten < cbChunk)
+                break;
+
+            if (RT_FAILURE(rc2))
+                break;
+
+            Assert(cbToWrite >= cbChunk);
+            cbToWrite -= (uint32_t)cbChunk;
+        }
+
+        if (RTCircBufUsed(pCircBuf))
         {
             /* Set dirty bit. */
             pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
-
-            /*
-             * Return the minimum bytes processed by all connected streams.
-             * The host sets the pace, so all backends have to behave accordingly.
-             */
-            if (cbWritten > cbProcessed)
-                cbWritten = cbProcessed;
         }
     }
 
-    if (cbWritten == UINT32_MAX)
-        cbWritten = 0;
-
-    Log3Func(("[%s] cbWritten=%RU32\n", pSink->pszName, cbWritten));
-
     if (pcbWritten)
-        *pcbWritten = cbWritten;
+        *pcbWritten = cbBuf; /* Always report everything written, as the backends need to keep up themselves. */
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1802,6 +1847,12 @@ static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pMixStream)
     {
         RTStrFree(pMixStream->pszName);
         pMixStream->pszName = NULL;
+    }
+
+    if (pMixStream->pCircBuf)
+    {
+        RTCircBufDestroy(pMixStream->pCircBuf);
+        pMixStream->pCircBuf = NULL;
     }
 
     int rc2 = RTCritSectDelete(&pMixStream->CritSect);
