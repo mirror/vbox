@@ -1003,7 +1003,8 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
         RTINTPTR    off;
         DBGFADDRESS Addr;
         int rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, pBp->u.GCPtr),
-                                      RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &off, &Sym, NULL);
+                                      RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                      &off, &Sym, NULL);
         if (RT_SUCCESS(rc))
         {
             if (!off)
@@ -1187,9 +1188,13 @@ static void dbgcCmdUnassambleHelpListNear(PUVM pUVM, PDBGCCMDHLP pCmdHlp, RTDBGA
 {
     RTDBGSYMBOL Symbol;
     RTGCINTPTR  offDispSym;
-    int rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offDispSym, &Symbol, NULL);
+    int rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress,
+                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                  &offDispSym, &Symbol, NULL);
     if (RT_FAILURE(rc) || offDispSym > _1G)
-        rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL, &offDispSym, &Symbol, NULL);
+        rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress,
+                                  RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                  &offDispSym, &Symbol, NULL);
     if (RT_SUCCESS(rc) && offDispSym < _1G)
     {
         if (!offDispSym)
@@ -3496,7 +3501,8 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                     {
                         RTINTPTR    offDisp;
                         RTDBGSYMBOL Symbol;
-                        rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+                        rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, &Addr,
+                                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
                                                   &offDisp, &Symbol, NULL);
                         if (RT_SUCCESS(rc))
                         {
@@ -5901,9 +5907,10 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
         RTINTPTR    offDisp;
         DBGFADDRESS Addr;
         rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, AddrVar.u.GCFlat),
-                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offDisp, &Symbol, NULL);
+                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                  &offDisp, &Symbol, NULL);
         if (RT_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3ASymbolByAddr(,,%RGv,,)\n", AddrVar.u.GCFlat);
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3AsSymbolByAddr(,,%RGv,,)\n", AddrVar.u.GCFlat);
 
         if (!offDisp)
             rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s", &AddrVar, Symbol.szName);

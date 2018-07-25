@@ -197,7 +197,7 @@ void patmR3DbgAddPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 
             int rc = DBGFR3AsSymbolByAddr(pVM->pUVM, DBGF_AS_GLOBAL,
                                           DBGFR3AddrFromFlat(pVM->pUVM, &Addr, pPatchRec->patch.pPrivInstrGC),
-                                          RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+                                          RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
                                           &offDisp, &Symbol, NULL /*phMod*/);
             if (RT_SUCCESS(rc))
             {

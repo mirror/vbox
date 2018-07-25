@@ -86,7 +86,8 @@ static const char *dbgfR3FormatSymbol(PUVM pUVM, char *pszSymbol, size_t cchSymb
     DBGFADDRESS  Addr;
     RTGCINTPTR   offDisp = 0;
     PRTDBGSYMBOL pSym = DBGFR3AsSymbolByAddrA(pUVM, DBGF_AS_GLOBAL, DBGFR3AddrFromFlat(pUVM, &Addr, uFlatAddr),
-                                              0 /*fFlags*/, &offDisp, NULL /*phMod*/);
+                                              RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                              &offDisp, NULL /*phMod*/);
     if (pSym)
     {
         if (!offDisp)

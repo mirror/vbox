@@ -376,7 +376,8 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pDis, uint32_t u32Se
     {
         RTDBGSYMBOL     Sym;
         RTGCINTPTR      off;
-        rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hDbgAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+        rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hDbgAs, &Addr,
+                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
                                   &off, &Sym, NULL /*phMod*/);
         if (RT_SUCCESS(rc))
         {

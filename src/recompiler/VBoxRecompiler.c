@@ -4227,7 +4227,8 @@ const char *lookup_symbol(target_ulong orig_addr)
     DBGFADDRESS Addr;
 
     int rc = DBGFR3AsSymbolByAddr(pVM->pUVM, DBGF_AS_GLOBAL, DBGFR3AddrFromFlat(pVM->pUVM, &Addr, orig_addr),
-                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &off, &Sym, NULL /*phMod*/);
+                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                  &off, &Sym, NULL /*phMod*/);
     if (RT_SUCCESS(rc))
     {
         static char szSym[sizeof(Sym.szName) + 48];
