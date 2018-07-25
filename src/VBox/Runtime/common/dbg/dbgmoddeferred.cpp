@@ -235,6 +235,10 @@ static int rtDbgModDeferredDbgSymInfo_Last(PRTDBGMODDEFERRED pThis, PRTDBGSYMBOL
 static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
                                                           PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
+    if (   (fFlags & RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED)
+        && iSeg == RTDBGSEGIDX_ABS)
+        return VERR_SYMBOL_NOT_FOUND;
+
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnSymbolByAddr(pMod, iSeg, off, fFlags, poffDisp, pSymInfo);

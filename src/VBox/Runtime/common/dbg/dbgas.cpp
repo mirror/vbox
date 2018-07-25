@@ -1371,6 +1371,9 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, uint32_t fFlags,
         /*
          * Check for absolute symbols.  Requires iterating all modules.
          */
+        if (fFlags & RTDBGSYMADDR_FLAGS_SKIP_ABS)
+            return VERR_NOT_FOUND;
+
         uint32_t cModules;
         PRTDBGMOD pahModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
         if (!pahModules)

@@ -67,11 +67,15 @@ typedef RTDBGSEGIDX const  *PCRTDBGSEGIDX;
  * Flags used when looking up a symbol by address.
  * @{ */
 /** Less or equal address. (default) */
-#define RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL    UINT32_C(0)
+#define RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL        UINT32_C(0)
 /** Greater or equal address.  */
-#define RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL UINT32_C(1)
+#define RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL     UINT32_C(1)
+/** Don't consider absolute symbols in deferred modules. */
+#define RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED UINT32_C(2)
+/** Don't search for absolute symbols if it's expensive. */
+#define RTDBGSYMADDR_FLAGS_SKIP_ABS             UINT32_C(4)
 /** Mask of valid flags. */
-#define RTDBGSYMADDR_FLAGS_VALID_MASK       UINT32_C(1)
+#define RTDBGSYMADDR_FLAGS_VALID_MASK           UINT32_C(7)
 /** @} */
 
 

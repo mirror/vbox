@@ -1857,6 +1857,43 @@ RTDECL(int) RTDbgModSymbolByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBG
 RT_EXPORT_SYMBOL(RTDbgModSymbolByOrdinalA);
 
 
+/**
+ * Return a segment number/name as symbol if we couldn't find any
+ * valid symbols within the segment.
+ *
+ * @returns
+ * @param   pDbgMod             .
+ * @param   iSeg                .
+ * @param   off                 .
+ * @param   poffDisp            .
+ * @param   pSymInfo            .
+ */
+DECL_NO_INLINE(static, int)
+rtDbgModSymbolByAddrTrySegments(PRTDBGMODINT pDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
+                                PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
+{
+    Assert(iSeg <= RTDBGSEGIDX_LAST);
+    RTDBGSEGMENT SegInfo;
+    int rc = pDbgMod->pDbgVt->pfnSegmentByIndex(pDbgMod, iSeg, &SegInfo);
+    if (RT_SUCCESS(rc))
+    {
+        pSymInfo->Value  = 0;
+        pSymInfo->cb     = SegInfo.cb;
+        pSymInfo->offSeg = 0;
+        pSymInfo->iSeg   = iSeg;
+        pSymInfo->fFlags = 0;
+        if (SegInfo.szName[0])
+            RTStrPrintf(pSymInfo->szName, sizeof(pSymInfo->szName), "start_seg%u_%s", SegInfo.iSeg, SegInfo.szName);
+        else
+            RTStrPrintf(pSymInfo->szName, sizeof(pSymInfo->szName), "start_seg%u", SegInfo.iSeg);
+        if (poffDisp)
+            *poffDisp = off;
+        return VINF_SUCCESS;
+    }
+    return VERR_SYMBOL_NOT_FOUND;
+}
+
+
 RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
                                  PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
@@ -1888,6 +1925,12 @@ RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR o
      * Get down to business.
      */
     int rc = pDbgMod->pDbgVt->pfnSymbolByAddr(pDbgMod, iSeg, off, fFlags, poffDisp, pSymInfo);
+
+    /* If we failed to locate a symbol, try use the specified segment as a reference. */
+    if (   rc == VERR_SYMBOL_NOT_FOUND
+        && iSeg <= RTDBGSEGIDX_LAST
+        && !(fFlags & RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL))
+        rc = rtDbgModSymbolByAddrTrySegments(pDbgMod, iSeg, off, poffDisp, pSymInfo);
 
     RTDBGMOD_UNLOCK(pDbgMod);
     return rc;
