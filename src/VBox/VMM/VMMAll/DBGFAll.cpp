@@ -26,6 +26,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/stdarg.h>
 
 
 /*
@@ -312,24 +313,30 @@ DECLINLINE(bool) dbgfEventIsGenericWithArgEnabled(PVM pVM, DBGFEVENTTYPE enmEven
  * @returns Strict VBox status code.
  * @retval  VINF_EM_DBG_EVENT if the event was raised and the caller should
  *          return ASAP to the debugger (via EM).  We set VMCPU_FF_DBGF so, it
- *          is okay not to pass this along in some situations  .
+ *          is okay not to pass this along in some situations.
  * @retval  VINF_SUCCESS if the event was disabled or ignored.
  *
  * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   enmEvent            The generic event being raised.
- * @param   uEventArg           The argument of that event.
  * @param   enmCtx              The context in which this event is being raised.
+ * @param   cArgs               Number of arguments (0 - 6).
+ * @param   uEventArg           The argument of that event.
  *
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg,
-                                                   DBGFEVENTCTX enmCtx)
+VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, DBGFEVENTCTX enmCtx,
+                                                    unsigned cArgs, ...)
 {
+    Assert(cArgs < RT_ELEMENTS(pVCpu->dbgf.s.aEvents[0].Event.u.Generic.auArgs));
+
     /*
      * Is it enabled.
      */
-    if (dbgfEventIsGenericWithArgEnabled(pVM, enmEvent, uEventArg))
+    va_list va;
+    va_start(va, cArgs);
+    uint64_t uEventArg0 = cArgs ? va_arg(va, uint64_t) : 0;
+    if (dbgfEventIsGenericWithArgEnabled(pVM, enmEvent, uEventArg0))
     {
         /*
          * Any events on the stack. Should the incoming event be ignored?
@@ -345,6 +352,7 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEV
                     && pVCpu->dbgf.s.aEvents[i].rip             == rip)
                 {
                     pVCpu->dbgf.s.aEvents[i].enmState = DBGFEVENTSTATE_RESTORABLE;
+                    va_end(va);
                     return VINF_SUCCESS;
                 }
                 Assert(pVCpu->dbgf.s.aEvents[i].enmState != DBGFEVENTSTATE_CURRENT);
@@ -380,13 +388,23 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEV
         pVCpu->dbgf.s.aEvents[i].rip                    = rip;
         pVCpu->dbgf.s.aEvents[i].Event.enmType          = enmEvent;
         pVCpu->dbgf.s.aEvents[i].Event.enmCtx           = enmCtx;
-        pVCpu->dbgf.s.aEvents[i].Event.u.Generic.uArg   = uEventArg;
+        pVCpu->dbgf.s.aEvents[i].Event.u.Generic.cArgs  = cArgs;
+        pVCpu->dbgf.s.aEvents[i].Event.u.Generic.auArgs[0] = uEventArg0;
+        if (cArgs > 1)
+        {
+            AssertStmt(cArgs < RT_ELEMENTS(pVCpu->dbgf.s.aEvents[i].Event.u.Generic.auArgs),
+                       cArgs = RT_ELEMENTS(pVCpu->dbgf.s.aEvents[i].Event.u.Generic.auArgs));
+            for (unsigned iArg = 1; iArg < cArgs; iArg++)
+                pVCpu->dbgf.s.aEvents[i].Event.u.Generic.auArgs[iArg] = va_arg(va, uint64_t);
+        }
         pVCpu->dbgf.s.cEvents = i + 1;
 
         VMCPU_FF_SET(pVCpu, VMCPU_FF_DBGF);
+        va_end(va);
         return VINF_EM_DBG_EVENT;
     }
 
+    va_end(va);
     return VINF_SUCCESS;
 }
 

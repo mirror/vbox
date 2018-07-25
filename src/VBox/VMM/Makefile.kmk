@@ -92,6 +92,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/DBGFAddr.cpp \
 	VMMR3/DBGFAddrSpace.cpp \
 	VMMR3/DBGFBp.cpp \
+	VMMR3/DBGFR3BugCheck.cpp \
 	VMMR3/DBGFCoreWrite.cpp \
 	VMMR3/DBGFCpu.cpp \
 	VMMR3/DBGFDisas.cpp \

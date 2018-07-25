@@ -544,6 +544,13 @@ VMMR3DECL(int) DBGFR3FlowBranchTblItReset(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
     return VERR_INTERNAL_ERROR;
 }
 
+VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetails,
+                                    uint64_t uP0, uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4)
+{
+    pszDetails[0] = '\0';
+    return VERR_INTERNAL_ERROR;
+}
+
 #include <VBox/vmm/cfgm.h>
 VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
                                     const char *pszValidValues, const char *pszValidNodes,

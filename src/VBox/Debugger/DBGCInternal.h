@@ -423,6 +423,8 @@ typedef DBGCSXEVT const *PCDBGCSXEVT;
 /** @name DBGCSXEVT_F_XXX
  * @{ */
 #define DBGCSXEVT_F_TAKE_ARG        RT_BIT_32(0)
+/** Windows bugcheck, should take 5 arguments. */
+#define DBGCSXEVT_F_BUGCHECK        RT_BIT_32(1)
 /** @} */
 
 

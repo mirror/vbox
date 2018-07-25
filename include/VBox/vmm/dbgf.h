@@ -499,12 +499,16 @@ typedef struct DBGFEVENT
         /** Generic debug event. */
         struct DBGFEVENTGENERIC
         {
-            /** Argument. */
-            uint64_t                uArg;
+            /** Number of arguments. */
+            uint8_t                 cArgs;
+            /** Alignmnet padding. */
+            uint8_t                 uPadding[7];
+            /** Arguments. */
+            uint64_t                auArgs[6];
         } Generic;
 
         /** Padding for ensuring that the structure is 8 byte aligned. */
-        uint64_t        au64Padding[4];
+        uint64_t        au64Padding[7];
     } u;
 } DBGFEVENT;
 AssertCompileSizeAlignment(DBGFEVENT, 8);
@@ -531,6 +535,7 @@ VMMR3_INT_DECL(int)     DBGFR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     DBGFR3Term(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3PowerOff(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+
 VMMR3_INT_DECL(int)     DBGFR3VMMForcedAction(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(VBOXSTRICTRC)    DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
@@ -540,6 +545,7 @@ VMMR3DECL(int)          DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const c
                                         const char *pszFunction, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(6, 0);
 VMMR3_INT_DECL(int)     DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2);
 VMMR3_INT_DECL(int)     DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent);
+
 VMMR3_INT_DECL(int)     DBGFR3PrgStep(PVMCPU pVCpu);
 
 VMMR3DECL(int)          DBGFR3Attach(PUVM pUVM);
@@ -884,8 +890,8 @@ VMM_INT_DECL(bool)          DBGFBpIsHwIoArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsInt3Armed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
-VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg,
-                                                    DBGFEVENTCTX enmCtx);
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, DBGFEVENTCTX enmCtx,
+                                                     unsigned cArgs, ...);
 
 
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */
@@ -2706,6 +2712,12 @@ VMMR3DECL(int)               DBGFR3FlowBranchTblItReset(DBGFFLOWBRANCHTBLIT hFlo
 
 /** @} */
 
+
+/** @defgroup grp_dbgf_misc  Misc DBGF interfaces.
+ * @{ */
+VMMR3DECL(int)               DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetails,
+                                                  uint64_t uP0, uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4);
+/** @} */
 #endif /* IN_RING3 */
 
 /** @} */
