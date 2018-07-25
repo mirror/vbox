@@ -69,7 +69,7 @@ typedef struct AUDMIXSTREAM
     PPDMAUDIOSTREAM         pStream;
     /** Last read (recording) / written (playback) timestamp (in ms). */
     uint64_t                tsLastReadWrittenMs;
-    /** The stream's circular buffer for temporarily 
+    /** The stream's circular buffer for temporarily
      *  holding (raw) device audio data. */
     PRTCIRCBUF              pCircBuf;
 } AUDMIXSTREAM, *PAUDMIXSTREAM;
