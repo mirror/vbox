@@ -321,7 +321,7 @@ DECLINLINE(bool) dbgfEventIsGenericWithArgEnabled(PVM pVM, DBGFEVENTTYPE enmEven
  * @param   enmEvent            The generic event being raised.
  * @param   enmCtx              The context in which this event is being raised.
  * @param   cArgs               Number of arguments (0 - 6).
- * @param   uEventArg           The argument of that event.
+ * @param   ...                 Event arguments.
  *
  * @thread  EMT(pVCpu)
  */
