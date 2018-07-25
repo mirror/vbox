@@ -36,8 +36,7 @@ public:
     {
         Page1,
         Page2,
-        Page3,
-        Page4
+        Page3
     };
 
     /** Expert page IDs. */

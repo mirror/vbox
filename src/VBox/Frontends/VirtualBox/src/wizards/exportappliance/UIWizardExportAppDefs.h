@@ -26,10 +26,6 @@
 /* GUI includes: */
 #include "UIApplianceExportEditorWidget.h"
 
-/** Storage types. */
-enum StorageType { LocalFilesystem, CloudProvider };
-Q_DECLARE_METATYPE(StorageType);
-
 /* Typedefs: */
 typedef QPointer<UIApplianceExportEditorWidget> ExportAppliancePointer;
 Q_DECLARE_METATYPE(ExportAppliancePointer);

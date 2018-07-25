@@ -31,7 +31,6 @@
 # include "UIWizardExportAppPageBasic1.h"
 # include "UIWizardExportAppPageBasic2.h"
 # include "UIWizardExportAppPageBasic3.h"
-# include "UIWizardExportAppPageBasic4.h"
 # include "UIWizardExportAppPageExpert.h"
 
 /* COM includes: */
@@ -174,8 +173,8 @@ void UIWizardExportApp::sltCurrentIdChanged(int iId)
     /* Call to base-class: */
     UIWizard::sltCurrentIdChanged(iId);
 
-    /* Enable 2nd button (Reset to Defaults) for 4th and Expert pages only! */
-    setOption(QWizard::HaveCustomButton2,    (mode() == WizardMode_Basic && iId == Page4)
+    /* Enable 2nd button (Reset to Defaults) for 3rd and Expert pages only! */
+    setOption(QWizard::HaveCustomButton2,    (mode() == WizardMode_Basic && iId == Page3)
                                           || (mode() == WizardMode_Expert && iId == PageExpert));
 }
 
@@ -216,7 +215,6 @@ void UIWizardExportApp::prepare()
             setPage(Page1, new UIWizardExportAppPageBasic1(m_selectedVMNames));
             setPage(Page2, new UIWizardExportAppPageBasic2);
             setPage(Page3, new UIWizardExportAppPageBasic3);
-            setPage(Page4, new UIWizardExportAppPageBasic4);
             break;
         }
         case WizardMode_Expert:

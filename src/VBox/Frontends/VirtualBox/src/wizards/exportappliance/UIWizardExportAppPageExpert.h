@@ -22,24 +22,19 @@
 #include "UIWizardExportAppPageBasic1.h"
 #include "UIWizardExportAppPageBasic2.h"
 #include "UIWizardExportAppPageBasic3.h"
-#include "UIWizardExportAppPageBasic4.h"
 
 /* Forward declarations: */
 class QGroupBox;
 
-/** UIWizardPage extension for 4th page of the Export Appliance wizard,
-  * extends UIWizardExportAppPage1, UIWizardExportAppPage2,
-  *         UIWizardExportAppPage3, UIWizardExportAppPage4 as well. */
+/** UIWizardPage extension for UIWizardExportAppPage1, UIWizardExportAppPage2 and UIWizardExportAppPage3. */
 class UIWizardExportAppPageExpert : public UIWizardPage,
                                     public UIWizardExportAppPage1,
                                     public UIWizardExportAppPage2,
-                                    public UIWizardExportAppPage3,
-                                    public UIWizardExportAppPage4
+                                    public UIWizardExportAppPage3
 {
     Q_OBJECT;
     Q_PROPERTY(QStringList machineNames READ machineNames);
     Q_PROPERTY(QStringList machineIDs READ machineIDs);
-    Q_PROPERTY(StorageType storageType READ storageType WRITE setStorageType);
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
@@ -84,9 +79,6 @@ private slots:
     /** Handles VM selector index change. */
     void sltVMSelectionChangeHandler();
 
-    /** Handles storage type change. */
-    void sltStorageTypeChangeHandler();
-
     /** Handles format combo change. */
     void sltHandleFormatComboChange();
 
@@ -102,8 +94,6 @@ private:
     QGroupBox *m_pSelectorCnt;
     /** Holds the appliance widget container reference. */
     QGroupBox *m_pApplianceCnt;
-    /** Holds the storage type container instance. */
-    QGroupBox *m_pTypeCnt;
     /** Holds the settings widget container reference. */
     QGroupBox *m_pSettingsCnt;
 };

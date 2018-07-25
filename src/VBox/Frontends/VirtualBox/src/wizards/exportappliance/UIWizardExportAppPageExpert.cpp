@@ -51,7 +51,6 @@
 UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &selectedVMNames)
     : m_pSelectorCnt(0)
     , m_pApplianceCnt(0)
-    , m_pTypeCnt(0)
     , m_pSettingsCnt(0)
 {
     /* Create widgets: */
@@ -106,37 +105,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
 
             /* Add into layout: */
             pMainLayout->addWidget(m_pApplianceCnt, 0, 1);
-        }
-
-        /* Create storage type container: */
-        m_pTypeCnt = new QGroupBox;
-        if (m_pTypeCnt)
-        {
-            /* Hide it for now: */
-            m_pTypeCnt->hide();
-
-            /* Create storage type container layout: */
-            QVBoxLayout *pTypeCntLayout = new QVBoxLayout(m_pTypeCnt);
-            if (pTypeCntLayout)
-            {
-                /* Create Local LocalFilesystem radio-button: */
-                m_pTypeLocalFilesystem = new QRadioButton;
-                if (m_pTypeLocalFilesystem)
-                {
-                    /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeLocalFilesystem);
-                }
-                /* Create CloudProvider radio-button: */
-                m_pTypeCloudServiceProvider = new QRadioButton;
-                if (m_pTypeCloudServiceProvider)
-                {
-                    /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeCloudServiceProvider);
-                }
-            }
-
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pTypeCnt, 1, 0, 1, 2);
         }
 
         /* Create settings widget container: */
@@ -344,14 +312,12 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pSettingsCnt, 2, 0, 1, 2);
+            pMainLayout->addWidget(m_pSettingsCnt, 1, 0, 1, 2);
         }
     }
 
     /* Populate VM selector items: */
     populateVMSelectorItems(selectedVMNames);
-    /* Choose default storage type: */
-    chooseDefaultStorageType();
     /* Populate formats: */
     populateFormats();
     /* Populate MAC address policies: */
@@ -363,8 +329,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
-    connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,         this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
-    connect(m_pTypeCloudServiceProvider, &QRadioButton::clicked,    this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
@@ -374,13 +338,11 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleAccountComboChange);
 
     /* Register classes: */
-    qRegisterMetaType<StorageType>();
     qRegisterMetaType<ExportAppliancePointer>();
 
     /* Register fields: */
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
-    registerField("storageType", this, "storageType");
     registerField("format", this, "format");
     registerField("path", this, "path");
     registerField("macAddressPolicy", this, "macAddressPolicy");
@@ -419,16 +381,11 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Translate group-boxes: */
     m_pSelectorCnt->setTitle(UIWizardExportApp::tr("Virtual &machines to export"));
     m_pApplianceCnt->setTitle(UIWizardExportApp::tr("Virtual &system settings"));
-    m_pTypeCnt->setTitle(UIWizardExportApp::tr("&Destination"));
     m_pSettingsCnt->setTitle(UIWizardExportApp::tr("&Appliance settings"));
-
-    /* Translate radio-buttons: */
-    m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&Local Filesystem"));
-    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud Service Provider"));
 
     /* Translate File selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
-    m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
+    m_pFileSelector->setChooseButtonToolTip(UIWizardExportApp::tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
 
     /* Translate Format combo-box: */
@@ -579,15 +536,6 @@ void UIWizardExportAppPageExpert::sltVMSelectionChangeHandler()
     /* Refresh required settings: */
     refreshFileSelectorName();
     refreshApplianceSettingsWidget();
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
-
-void UIWizardExportAppPageExpert::sltStorageTypeChangeHandler()
-{
-    /* Update page appearance: */
-    updatePageAppearance();
 
     /* Broadcast complete-change: */
     emit completeChanged();
