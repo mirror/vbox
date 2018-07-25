@@ -840,7 +840,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                     else
                         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s!", pEvtDesc->pszName);
                     if (pEvent->u.Generic.cArgs <= 1)
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%u%#llx\n", pEvent->u.Generic.auArgs[0]);
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%#llx\n", pEvent->u.Generic.auArgs[0]);
                     else
                     {
                         for (uint32_t i = 0; i < pEvent->u.Generic.cArgs; i++)
