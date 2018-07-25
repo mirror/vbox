@@ -80,7 +80,7 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
                         RTTHREADTYPE_DEFAULT,
                         RTTHREADFLAGS_WAITABLE,
                         "CLWatcher");
-	Assert(RT_SUCCESS(rc));
+    Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
     {
         ASMAtomicWritePtr((void* volatile*)&CClientListWatcher::s_WatcherThread, watcherThread);
@@ -137,8 +137,8 @@ void CClientListWatcher::NotifySDSAllClientsFinished()
 
 /**
  * Deregister all staled VBoxSVC through VBoxSDS and forcebly close VBoxSVC process
- * @param	ThreadSelf	current thread id
- * @param	pvUser		pointer to CClientListWatcher that created this thread. 
+ * @param   ThreadSelf  current thread id
+ * @param   pvUser      pointer to CClientListWatcher that created this thread. 
  */
 DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
@@ -257,7 +257,7 @@ void VirtualBoxClientList::FinalRelease()
 /**
  * Deregister API client to add it to API client list
  * API client process calls this function at start to include this process to client list
- * @param	aPid	process ID of registering client process
+ * @param   aPid    process ID of registering client process
  */
 HRESULT VirtualBoxClientList::registerClient(LONG aPid)
 {
