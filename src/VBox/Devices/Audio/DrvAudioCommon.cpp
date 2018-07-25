@@ -1114,7 +1114,7 @@ uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFram
     if (!cFrames)
         return 0;
 
-    return cFrames * ((pProps->cBits / 2) * pProps->cChannels);
+    return cFrames * ((pProps->cBits / 8) * pProps->cChannels);
 }
 
 /**
