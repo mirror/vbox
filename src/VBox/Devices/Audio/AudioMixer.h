@@ -1,8 +1,9 @@
 /* $Id$ */
 /** @file
- * VBox audio: Mixing routines, mainly used by the various audio device
- *             emulations to achieve proper multiplexing from/to attached
- *             devices LUNs.
+ * VBox audio - Mixing routines.
+ *
+ * The mixing routines are mainly used by the various audio device emulations
+ * to achieve proper multiplexing from/to attached devices LUNs.
  */
 
 /*
