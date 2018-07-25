@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DBGF - Debugger Facility, Misc.
+ * DBGF - Debugger Facility, NT Bug Checks.
  */
 
 /*
