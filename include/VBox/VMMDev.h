@@ -186,6 +186,7 @@ typedef enum VMMDevRequestType
     VMMDevReq_WriteCoreDump              = 218,
     VMMDevReq_GuestHeartbeat             = 219,
     VMMDevReq_HeartbeatConfigure         = 220,
+    VMMDevReq_NtBugCheck                 = 221,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1515,8 +1516,11 @@ typedef struct
 } VMMDevReqWriteCoreDump;
 AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
 
-/** Heart beat check state structure.
- *  Used by VMMDevReq_HeartbeatConfigure. */
+
+/**
+ * Heart beat check state structure.
+ * Used by VMMDevReq_HeartbeatConfigure.
+ */
 typedef struct
 {
     /** Header. */
@@ -1527,6 +1531,23 @@ typedef struct
     bool                        fEnabled;
 } VMMDevReqHeartbeat;
 AssertCompileSize(VMMDevReqHeartbeat, 24+12);
+
+
+/**
+ * NT bug check report.
+ * Used by VMMDevReq_NtBugCheck.
+ * @remarks  Can be issued with just the header if no more data is available.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader         header;
+    /** The bug check number (P0). */
+    uint64_t                    uBugCheck;
+    /** The four bug check parameters. */
+    uint64_t                    auParameters[4];
+} VMMDevReqNtBugCheck;
+AssertCompileSize(VMMDevReqNtBugCheck, 24+40);
 
 
 

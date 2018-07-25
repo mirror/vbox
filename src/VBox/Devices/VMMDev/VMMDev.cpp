@@ -84,6 +84,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <VBox/AssertGuest.h>
 #include <VBox/VMMDev.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
@@ -546,6 +547,34 @@ static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeade
     }
 
     return rc;
+}
+
+
+/**
+ * Handles VMMDevReq_NtBugCheck.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis     The VMMDev instance data.
+ * @param   pReqHdr   The header of the request to handle.
+ */
+static int vmmDevReqHandler_NtBugCheck(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
+{
+    if (pReqHdr->size == sizeof(VMMDevReqNtBugCheck))
+    {
+        VMMDevReqNtBugCheck const *pReq = (VMMDevReqNtBugCheck const *)pReqHdr;
+        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pThis->pDevIns), PDMDevHlpGetVMCPU(pThis->pDevIns), DBGFEVENT_BSOD_VMMDEV,
+                             pReq->uBugCheck, pReq->auParameters[0], pReq->auParameters[1],
+                             pReq->auParameters[2], pReq->auParameters[3]);
+    }
+    else if (pReqHdr->size == sizeof(VMMDevRequestHeader))
+    {
+        LogRel(("VMMDev: NT BugCheck w/o data.\n"));
+        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pThis->pDevIns), PDMDevHlpGetVMCPU(pThis->pDevIns), DBGFEVENT_BSOD_VMMDEV,
+                             0, 0, 0, 0, 0);
+    }
+    else
+        return VERR_INVALID_PARAMETER;
+    return VINF_SUCCESS;
 }
 
 
@@ -2768,6 +2797,10 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 
         case VMMDevReq_HeartbeatConfigure:
             pReqHdr->rc = vmmDevReqHandler_HeartbeatConfigure(pThis, pReqHdr);
+            break;
+
+        case VMMDevReq_NtBugCheck:
+            pReqHdr->rc = vmmDevReqHandler_NtBugCheck(pThis, pReqHdr);
             break;
 
         default:

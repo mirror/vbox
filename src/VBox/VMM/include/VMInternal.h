@@ -165,6 +165,12 @@ typedef struct VMINT
     bool                            fTeleportedAndNotFullyResumedYet;
     /** The VM should power off instead of reset. */
     bool                            fPowerOffInsteadOfReset;
+    /** Reset counter (soft + hard). */
+    uint32_t                        cResets;
+    /** Hard reset counter. */
+    uint32_t                        cHardResets;
+    /** Soft reset counter. */
+    uint32_t                        cSoftResets;
 } VMINT;
 /** Pointer to the VM Internal Data (part of the VM structure). */
 typedef VMINT *PVMINT;

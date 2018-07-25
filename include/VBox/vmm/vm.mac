@@ -163,7 +163,7 @@ struc VM
     .em                     resb 256
     .nem                    resb 128
     .tm                     resb 2496
-    .dbgf                   resb 2368
+    .dbgf                   resb 2432
     .ssm                    resb 128
     .ftm                    resb 512
 %ifdef VBOX_WITH_RAW_MODE
@@ -175,7 +175,7 @@ struc VM
 %endif
     .gim                    resb 448
     .apic                   resb 128
-    .vm                     resb 24
+    .vm                     resb 32
     .cfgm                   resb 8
     alignb 4096
     .aCpus                  resb VMCPU_size

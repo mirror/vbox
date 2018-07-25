@@ -185,7 +185,12 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                             rc = dbgfR3PlugInInit(pUVM);
                             if (RT_SUCCESS(rc))
                             {
-                                return VINF_SUCCESS;
+                                rc = dbgfR3BugCheckInit(pVM);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    return VINF_SUCCESS;
+                                }
+                                dbgfR3PlugInTerm(pUVM);
                             }
                             dbgfR3OSTerm(pUVM);
                         }

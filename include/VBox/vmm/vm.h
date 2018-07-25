@@ -1334,7 +1334,7 @@ typedef struct VM
             uint8_t                     abPadding[1]; /**< Unused padding space up for grabs. */
         } const     ro;
 #endif
-        uint8_t     padding[2368];      /* multiple of 64 */
+        uint8_t     padding[2432];      /* multiple of 64 */
     } dbgf;
 
     /** SSM part. */
@@ -1410,7 +1410,7 @@ typedef struct VM
 #ifdef ___VMInternal_h
         struct VMINT s;
 #endif
-        uint8_t     padding[24];        /* multiple of 8 */
+        uint8_t     padding[32];        /* multiple of 8 */
     } vm;
 
     /** CFGM part. */
@@ -1424,13 +1424,13 @@ typedef struct VM
 
     /** Padding for aligning the cpu array on a page boundary. */
 #if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3742];
+    uint8_t         abAlignment2[3670];
 #elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[1502];
+    uint8_t         abAlignment2[1430];
 #elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3998];
+    uint8_t         abAlignment2[3926];
 #else
-    uint8_t         abAlignment2[1758];
+    uint8_t         abAlignment2[1686];
 #endif
 
     /* ---- end small stuff ---- */

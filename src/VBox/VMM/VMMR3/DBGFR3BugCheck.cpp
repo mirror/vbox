@@ -22,12 +22,39 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/tm.h>
 #include "DBGFInternal.h"
+#include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static FNDBGFHANDLERINT dbgfR3BugCheckInfo;
+
+
+/**
+ * Initializes the bug check state and registers the info callback.
+ *
+ * No termination function needed.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ */
+int dbgfR3BugCheckInit(PVM pVM)
+{
+    pVM->dbgf.s.BugCheck.idCpu    = NIL_VMCPUID;
+    pVM->dbgf.s.BugCheck.enmEvent = DBGFEVENT_END;
+
+    return DBGFR3InfoRegisterInternal(pVM, "bugcheck",
+                                      "Show bugcheck info.  Can specify bug check code and parameters to lookup info.",
+                                      dbgfR3BugCheckInfo);
+}
 
 
 /**
@@ -50,6 +77,7 @@ static const char *dbgfR3GetNtStatusName(uint32_t uNtStatus)
     }
 }
 
+
 /**
  * Formats a symbol for DBGFR3FormatBugCheck.
  */
@@ -64,9 +92,9 @@ static const char *dbgfR3FormatSymbol(PUVM pUVM, char *pszSymbol, size_t cchSymb
         if (!offDisp)
             RTStrPrintf(pszSymbol, cchSymbol, "%s%s", pszPrefix, pSym->szName);
         else if (offDisp > 0)
-            RTStrPrintf(pszSymbol, cchSymbol, "%s%s + %RGv", pszPrefix, pSym->szName, offDisp);
+            RTStrPrintf(pszSymbol, cchSymbol, "%s%s + %#RX64", pszPrefix, pSym->szName, (uint64_t)offDisp);
         else
-            RTStrPrintf(pszSymbol, cchSymbol, "%s%s - %RGv", pszPrefix, pSym->szName, -offDisp);
+            RTStrPrintf(pszSymbol, cchSymbol, "%s%s - %#RX64", pszPrefix, pSym->szName, (uint64_t)-offDisp);
         RTDbgSymbolFree(pSym);
     }
     else
@@ -84,20 +112,20 @@ static const char *dbgfR3FormatSymbol(PUVM pUVM, char *pszSymbol, size_t cchSymb
  * @param   pUVM                The usermode VM handle.
  * @param   pszDetails          The output buffer.
  * @param   cbDetails           The size of the output buffer.
- * @param   uP0                 The bugheck code.
+ * @param   uBugCheck           The bugheck code.
  * @param   uP1                 Bug check parameter 1.
  * @param   uP2                 Bug check parameter 2.
  * @param   uP3                 Bug check parameter 3.
  * @param   uP4                 Bug check parameter 4.
  */
 VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetails,
-                                    uint64_t uP0, uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4)
+                                    uint64_t uBugCheck, uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4)
 {
     /*
      * Start with bug check line typically seen in windbg.
      */
     size_t cchUsed = RTStrPrintf(pszDetails, cbDetails,
-                                 "BugCheck %RX64 {%RX64, %RX64, %RX64, %RX64}\n", uP0, uP1, uP2, uP3, uP4);
+                                 "BugCheck %RX64 {%RX64, %RX64, %RX64, %RX64}\n", uBugCheck, uP1, uP2, uP3, uP4);
     if (cchUsed >= cbDetails)
         return VINF_BUFFER_OVERFLOW;
     pszDetails += cchUsed;
@@ -107,7 +135,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
      * Try name the bugcheck and format parameters if we can/care.
      */
     char szSym[512];
-    switch (uP0)
+    switch (uBugCheck)
     {
         case 0x00000001: cchUsed = RTStrPrintf(pszDetails, cbDetails, "APC_INDEX_MISMATCH\n"); break;
         case 0x00000002: cchUsed = RTStrPrintf(pszDetails, cbDetails, "DEVICE_QUEUE_NOT_BUSY\n"); break;
@@ -219,7 +247,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                                   "P2: %016RX64 - IRQL\n"
                                   "P3: %016RX64 - %s\n"
                                   "P4: %016RX64 - reserved\n",
-                                  uP0 & 0x10000000 ? "_M" : "", uP1, uP2, uP3, uP3 & RT_BIT_64(0) ? "write" : "read", uP4);
+                                  uBugCheck & 0x10000000 ? "_M" : "", uP1, uP2, uP3, uP3 & RT_BIT_64(0) ? "write" : "read", uP4);
             break;
         case 0x00000051: cchUsed = RTStrPrintf(pszDetails, cbDetails, "REGISTRY_ERROR\n"); break;
         case 0x00000052: cchUsed = RTStrPrintf(pszDetails, cbDetails, "MAILSLOT_FILE_SYSTEM\n"); break;
@@ -273,7 +301,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                                   "P2: %016RX64 - EIP/RIP%s\n"
                                   "P3: %016RX64 - Xcpt address\n"
                                   "P4: %016RX64 - Context address\n",
-                                  uP0 & 0x10000000 ? "_M" : "", uP1, dbgfR3GetNtStatusName((uint32_t)uP1),
+                                  uBugCheck & 0x10000000 ? "_M" : "", uP1, dbgfR3GetNtStatusName((uint32_t)uP1),
                                   uP2, dbgfR3FormatSymbol(pUVM, szSym, sizeof(szSym), ": ", uP2),
                                   uP3, uP4);
             break;
@@ -285,7 +313,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                                   "P2: %016RX64 - reserved/errorcode?\n"
                                   "P3: %016RX64 - reserved\n"
                                   "P4: %016RX64 - reserved\n",
-                                  uP0 & 0x10000000 ? "_M" : "", uP1, uP2, uP3, uP4);
+                                  uBugCheck & 0x10000000 ? "_M" : "", uP1, uP2, uP3, uP4);
             break;
         case 0x00000080: cchUsed = RTStrPrintf(pszDetails, cbDetails, "NMI_HARDWARE_FAILURE\n"); break;
         case 0x00000081: cchUsed = RTStrPrintf(pszDetails, cbDetails, "SPIN_LOCK_INIT_FAILURE\n"); break;
@@ -303,7 +331,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                                   "P2: %016RX64 - EIP/RIP%s\n"
                                   "P3: %016RX64 - Trap frame address\n"
                                   "P4: %016RX64 - reserved\n",
-                                  uP0 & 0x10000000 ? "_M" : "", uP1, dbgfR3GetNtStatusName((uint32_t)uP1),
+                                  uBugCheck & 0x10000000 ? "_M" : "", uP1, dbgfR3GetNtStatusName((uint32_t)uP1),
                                   uP2, dbgfR3FormatSymbol(pUVM, szSym, sizeof(szSym), ": ", uP2),
                                   uP3, uP4);
             break;
@@ -757,5 +785,133 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
     if (cchUsed < cbDetails)
         return VINF_SUCCESS;
     return VINF_BUFFER_OVERFLOW;
+}
+
+
+/**
+ * Report a bug check.
+ *
+ * @returns
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context per virtual CPU structure.
+ * @param   enmEvent        The kind of BSOD event this is.
+ * @param   uBugCheck       The bug check number.
+ * @param   uP1             The bug check parameter \#1.
+ * @param   uP2             The bug check parameter \#2.
+ * @param   uP3             The bug check parameter \#3.
+ * @param   uP4             The bug check parameter \#4.
+ */
+VMMR3DECL(VBOXSTRICTRC) DBGFR3ReportBugCheck(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uBugCheck,
+                                             uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4)
+{
+    /*
+     * Be careful.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_INVALID_VMCPU_HANDLE);
+    const char *pszSource;
+    switch (enmEvent)
+    {
+        case DBGFEVENT_BSOD_MSR:        pszSource = "GIMHv"; break;
+        case DBGFEVENT_BSOD_EFI:        pszSource = "EFI"; break;
+        case DBGFEVENT_BSOD_VMMDEV:     pszSource = "VMMDev"; break;
+        default:
+            AssertMsgFailedReturn(("enmEvent=%d\n", enmEvent), VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Note it down.
+     */
+    pVM->dbgf.s.BugCheck.enmEvent        = enmEvent;
+    pVM->dbgf.s.BugCheck.uBugCheck       = uBugCheck;
+    pVM->dbgf.s.BugCheck.auParameters[0] = uP1;
+    pVM->dbgf.s.BugCheck.auParameters[1] = uP2;
+    pVM->dbgf.s.BugCheck.auParameters[2] = uP3;
+    pVM->dbgf.s.BugCheck.auParameters[3] = uP4;
+    pVM->dbgf.s.BugCheck.idCpu           = pVCpu->idCpu;
+    pVM->dbgf.s.BugCheck.uTimestamp      = TMVirtualGet(pVM);
+    pVM->dbgf.s.BugCheck.uResetNo        = VMGetResetCount(pVM);
+
+    /*
+     * Log the details.
+     */
+    char szDetails[2048];
+    DBGFR3FormatBugCheck(pVM->pUVM, szDetails, sizeof(szDetails), uBugCheck, uP1, uP2, uP3, uP4);
+    LogRel(("%s: %s", pszSource, szDetails));
+
+    /*
+     * Raise debugger event.
+     */
+    VBOXSTRICTRC rc = VINF_SUCCESS;
+    if (DBGF_IS_EVENT_ENABLED(pVM, enmEvent))
+        rc = DBGFEventGenericWithArgs(pVM, pVCpu, enmEvent, DBGFEVENTCTX_OTHER, 5 /*cArgs*/, uBugCheck, uP1, uP2, uP3, uP4);
+
+    /*
+     * Take actions.
+     */
+    /** @todo Take actions on BSOD, like notifying main or stopping the VM...
+     * For testing it makes little sense to continue after a BSOD. */
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERINT, bugcheck}
+ */
+static DECLCALLBACK(void) dbgfR3BugCheckInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    char szDetails[2048];
+
+    /*
+     * Any arguments for bug check formatting?
+     */
+    if (pszArgs && *pszArgs)
+        pszArgs = RTStrStripL(pszArgs);
+    if (pszArgs && *pszArgs)
+    {
+        uint64_t auData[5] = { 0, 0, 0, 0, 0 };
+        unsigned iData = 0;
+        do
+        {
+            /* Find the next hex digit  */
+            char ch;
+            while ((ch = *pszArgs) != '\0' && !RT_C_IS_XDIGIT(ch))
+                pszArgs++;
+            if (ch == '\0')
+                break;
+
+            /* Extract the number. */
+            char *pszNext = (char *)pszArgs + 1;
+            RTStrToUInt64Ex(pszArgs, &pszNext, 16, &auData[iData]);
+
+            /* Advance. */
+            pszArgs = pszNext;
+            iData++;
+        } while (iData < RT_ELEMENTS(auData) && *pszArgs);
+
+        /* Format it. */
+        DBGFR3FormatBugCheck(pVM->pUVM, szDetails, sizeof(szDetails), auData[0], auData[1], auData[2], auData[3], auData[4]);
+        pHlp->pfnPrintf(pHlp, "%s", szDetails);
+    }
+    /*
+     * Format what's been reported (if any).
+     */
+    else if (pVM->dbgf.s.BugCheck.enmEvent != DBGFEVENT_END)
+    {
+        DBGFR3FormatBugCheck(pVM->pUVM, szDetails, sizeof(szDetails), pVM->dbgf.s.BugCheck.uBugCheck,
+                             pVM->dbgf.s.BugCheck.auParameters[0], pVM->dbgf.s.BugCheck.auParameters[1],
+                             pVM->dbgf.s.BugCheck.auParameters[2], pVM->dbgf.s.BugCheck.auParameters[3]);
+        const char *pszSource  = pVM->dbgf.s.BugCheck.enmEvent == DBGFEVENT_BSOD_MSR    ? "GIMHv"
+                               : pVM->dbgf.s.BugCheck.enmEvent == DBGFEVENT_BSOD_EFI    ? "EFI"
+                               : pVM->dbgf.s.BugCheck.enmEvent == DBGFEVENT_BSOD_VMMDEV ? "VMMDev" : "<unknown>";
+        uint32_t const uFreq   = TMVirtualGetFreq(pVM);
+        uint64_t const cSecs   = pVM->dbgf.s.BugCheck.uTimestamp / uFreq;
+        uint32_t const cMillis = (pVM->dbgf.s.BugCheck.uTimestamp - cSecs * uFreq) * 1000 / uFreq;
+        pHlp->pfnPrintf(pHlp, "BugCheck on CPU #%u after %RU64.%03u s VM uptime, %u resets ago (src: %s)\n%s",
+                        pVM->dbgf.s.BugCheck.idCpu, cSecs, cMillis,  VMGetResetCount(pVM) - pVM->dbgf.s.BugCheck.uResetNo,
+                        pszSource, szDetails);
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "No bug check reported.\n");
 }
 

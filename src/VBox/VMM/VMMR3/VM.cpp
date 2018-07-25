@@ -2753,6 +2753,8 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3SoftReset(PVM pVM, PVMCPU pVCpu, void *pvU
                                  VMSTATE_SOFT_RESETTING_LS,  VMSTATE_RUNNING_LS);
         if (RT_FAILURE(rc))
             return rc;
+        pVM->vm.s.cResets++;
+        pVM->vm.s.cSoftResets++;
     }
 
     /*
@@ -2843,6 +2845,8 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3HardReset(PVM pVM, PVMCPU pVCpu, void *pvU
                                  VMSTATE_RESETTING_LS,  VMSTATE_RUNNING_LS);
         if (RT_FAILURE(rc))
             return rc;
+        pVM->vm.s.cResets++;
+        pVM->vm.s.cHardResets++;
     }
 
     /*

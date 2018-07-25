@@ -418,6 +418,8 @@ typedef enum DBGFEVENTTYPE
     DBGFEVENT_BSOD_MSR,
     /** Windows guest reported BSOD via EFI variables. */
     DBGFEVENT_BSOD_EFI,
+    /** Windows guest reported BSOD via VMMDev. */
+    DBGFEVENT_BSOD_VMMDEV,
 
     /** End of valid event values. */
     DBGFEVENT_END,
@@ -2715,6 +2717,8 @@ VMMR3DECL(int)               DBGFR3FlowBranchTblItReset(DBGFFLOWBRANCHTBLIT hFlo
 
 /** @defgroup grp_dbgf_misc  Misc DBGF interfaces.
  * @{ */
+VMMR3DECL(VBOXSTRICTRC)      DBGFR3ReportBugCheck(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uBugCheck,
+                                                  uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4);
 VMMR3DECL(int)               DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetails,
                                                   uint64_t uP0, uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4);
 /** @} */

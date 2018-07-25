@@ -299,6 +299,30 @@ typedef struct DBGF
     DBGFBPSEARCHOPT             PortIo;
     /** INT3 breakpoint search optimizations. */
     DBGFBPSEARCHOPT             Int3;
+
+    /**
+     * Bug check data.
+     * @note This will not be reset on reset.
+     */
+    struct
+    {
+        /** The ID of the CPU reporting it. */
+        VMCPUID                 idCpu;
+        /** The event associated with the bug check (gives source).
+         * This is set to DBGFEVENT_END if no BSOD data here. */
+        DBGFEVENTTYPE           enmEvent;
+        /** The total reset count at the time (VMGetResetCount). */
+        uint32_t                uResetNo;
+        /** Explicit padding. */
+        uint32_t                uPadding;
+        /** When it was reported (TMVirtualGet). */
+        uint64_t                uTimestamp;
+        /** The bug check number.
+         * @note This is really just 32-bit wide, see KeBugCheckEx.  */
+        uint64_t                uBugCheck;
+        /** The bug check parameters. */
+        uint64_t                auParameters[4];
+    } BugCheck;
 } DBGF;
 AssertCompileMemberAlignment(DBGF, DbgEvent, 8);
 AssertCompileMemberAlignment(DBGF, aHwBreakpoints, 8);
@@ -489,6 +513,7 @@ DECLHIDDEN(int)  dbgfR3TypeInit(PUVM pUVM);
 DECLHIDDEN(void) dbgfR3TypeTerm(PUVM pUVM);
 int  dbgfR3PlugInInit(PUVM pUVM);
 void dbgfR3PlugInTerm(PUVM pUVM);
+int  dbgfR3BugCheckInit(PVM pVM);
 
 
 

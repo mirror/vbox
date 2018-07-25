@@ -209,7 +209,11 @@ typedef DECLCALLBACK(void) FNVMATSTATE(PUVM pUVM, VMSTATE enmState, VMSTATE enmO
 /** Pointer to a VM state callback. */
 typedef FNVMATSTATE *PFNVMATSTATE;
 
-VMMDECL(const char *) VMGetStateName(VMSTATE enmState);
+VMMDECL(const char *)   VMGetStateName(VMSTATE enmState);
+
+VMMDECL(uint32_t)       VMGetResetCount(PVM pVM);
+VMMDECL(uint32_t)       VMGetSoftResetCount(PVM pVM);
+VMMDECL(uint32_t)       VMGetHardResetCount(PVM pVM);
 
 
 /**

@@ -390,3 +390,42 @@ VMMDECL(const char *) VMGetStateName(VMSTATE enmState)
     }
 }
 
+
+/**
+ * Gets the total reset count.
+ *
+ * @returns Reset count. UINT32_MAX if @a pVM is invalid.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(uint32_t) VMGetResetCount(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+    return pVM->vm.s.cResets;
+}
+
+
+/**
+ * Gets the soft reset count.
+ *
+ * @returns Soft reset count. UINT32_MAX if @a pVM is invalid.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(uint32_t) VMGetSoftResetCount(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+    return pVM->vm.s.cSoftResets;
+}
+
+
+/**
+ * Gets the hard reset count.
+ *
+ * @returns Hard reset count. UINT32_MAX if @a pVM is invalid.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(uint32_t) VMGetHardResetCount(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+    return pVM->vm.s.cHardResets;
+}
+
