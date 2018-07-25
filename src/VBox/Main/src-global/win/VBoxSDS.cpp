@@ -142,12 +142,6 @@ public:
         s_pInstance = NULL;
     }
 
-    /** @todo Nobody calls this method and it doesn't do anythin...   */
-    virtual HRESULT InitializeSecurity() throw()
-    {
-        return S_OK;
-    }
-
     HRESULT startService(int /*nShowCmd*/) throw()
     {
         SERVICE_TABLE_ENTRY aServiceTable[] =

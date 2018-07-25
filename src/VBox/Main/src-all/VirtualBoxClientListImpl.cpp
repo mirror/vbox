@@ -44,22 +44,22 @@ public:
 protected:
     static DECLCALLBACK(int) WatcherWorker(RTTHREAD ThreadSelf, void *pvUser);
     void NotifySDSAllClientsFinished();
-    // m_WatcherThread is static to check that single watcher thread used only
-    static volatile RTTHREAD    m_WatcherThread;
+    // s_WatcherThread is static to check that single watcher thread used only
+    static volatile RTTHREAD    s_WatcherThread;
     volatile bool               m_fWatcherRunning;
     TClientSet&                 m_clientList;
     RTCRITSECTRW&               m_clientListCritSect;
     RTSEMEVENT                  m_wakeUpWatcherEvent;
 };
 
-volatile RTTHREAD CClientListWatcher::m_WatcherThread = NULL; /** @todo r=bird: Wrong prefix for a static variable (s_)*/
+volatile RTTHREAD CClientListWatcher::s_WatcherThread = NULL;
 
 CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientListCritSect)
     : m_clientList(list), m_clientListCritSect(clientListCritSect)
 {
-    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread) == NULL);
+    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::s_WatcherThread) == NULL);
 
-    if (ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread) != NULL)
+    if (ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::s_WatcherThread) != NULL)
     {
         LogRelFunc(("Error: Watcher thread already created!\n"));
         return;
@@ -80,9 +80,10 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
                         RTTHREADTYPE_DEFAULT,
                         RTTHREADFLAGS_WAITABLE,
                         "CLWatcher");
+	Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
     {
-        ASMAtomicWritePtr((void* volatile*)&CClientListWatcher::m_WatcherThread, watcherThread);
+        ASMAtomicWritePtr((void* volatile*)&CClientListWatcher::s_WatcherThread, watcherThread);
         LogRelFunc(("Created client list watcher thread.\n"));
     }
     else
@@ -92,12 +93,6 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
 
 CClientListWatcher::~CClientListWatcher()
 {
-    /** @todo r=bird: This assertion is patently wrong in the unlikely
-     *        case that RTThreadCreate fails...  This is why we either let
-     *        constructor throw stuff or we have separate init() methods
-     *        for doing things that may fail */
-    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread));
-
     // mark watcher thread to finish
     ASMAtomicWriteBool(&m_fWatcherRunning, false);
 
@@ -105,28 +100,25 @@ CClientListWatcher::~CClientListWatcher()
     int rc = RTSemEventSignal(m_wakeUpWatcherEvent);
     Assert(RT_SUCCESS(rc));
 
-    rc = RTThreadWait(CClientListWatcher::m_WatcherThread, RT_INDEFINITE_WAIT, NULL);
+    rc = RTThreadWait(CClientListWatcher::s_WatcherThread, RT_INDEFINITE_WAIT, NULL);
     if (RT_FAILURE(rc))
         LogRelFunc(("Error: watcher thread didn't finished. Possible thread leak. %Rrs\n", rc));
     else
         LogRelFunc(("Watcher thread finished.\n"));
 
-    ASMAtomicWriteNullPtr((void* volatile*)&CClientListWatcher::m_WatcherThread);
+    ASMAtomicWriteNullPtr((void* volatile*)&CClientListWatcher::s_WatcherThread);
 
     RTSemEventDestroy(m_wakeUpWatcherEvent);
 }
 
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
 
-/*
-* Notifies the VBoxSDS that API client list is empty.
-* Initiates the chain of closing VBoxSDS/VBoxSVC.
-* VBoxSDS, in it's turn notifies VBoxSvc that relates on it,
-* VBoxSvc instances releases itself and releases their references to VBoxSDS.
-* in result VBoxSDS and VBoxSvc finishes itself after delay
-*/
+/**
+ * Notifies the VBoxSDS that API client list is empty.
+ * Initiates the chain of closing VBoxSDS/VBoxSVC.
+ * VBoxSDS, in it's turn notifies VBoxSvc that relates on it,
+ * VBoxSvc instances releases itself and releases their references to VBoxSDS.
+ * in result VBoxSDS and VBoxSvc finishes itself after delay
+ */
 void CClientListWatcher::NotifySDSAllClientsFinished()
 {
     ComPtr<IVirtualBoxSDS> ptrVirtualBoxSDS;
@@ -143,14 +135,11 @@ void CClientListWatcher::NotifySDSAllClientsFinished()
 }
 
 
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/*
-* Deregister all staled VBoxSVC through VBoxSDS and forcebly close VBoxSVC process
-* Parameters:
-*   ThreadSelf - current thread id
-*   pvUser - pointer to CClientListWatcher that created this thread. */
+/**
+ * Deregister all staled VBoxSVC through VBoxSDS and forcebly close VBoxSVC process
+ * @param	ThreadSelf	current thread id
+ * @param	pvUser		pointer to CClientListWatcher that created this thread. 
+ */
 DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     NOREF(ThreadSelf);
@@ -158,7 +147,7 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
      *        for sure how the scheduling is going to be.  So, RTThreadCreate
      *        may return and set g_hWatcherThread after the thread started
      *        executing and got here! */
-    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread));
+    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::s_WatcherThread));
     LogRelFunc(("Enter watcher thread\n"));
 
     CClientListWatcher *pThis = (CClientListWatcher *)pvUser;
@@ -264,14 +253,12 @@ void VirtualBoxClientList::FinalRelease()
     LogRelFunc(("VirtualBoxClientList released.\n"));
 }
 
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
-/*
-* Deregister API client to add it to API client list
-* API client process calls this function at start to include this process to client list
-*
-*/
+
+/**
+ * Deregister API client to add it to API client list
+ * API client process calls this function at start to include this process to client list
+ * @param	aPid	process ID of registering client process
+ */
 HRESULT VirtualBoxClientList::registerClient(LONG aPid)
 {
     int rc = RTCritSectRwEnterExcl(&m_MapCritSect);
@@ -299,30 +286,27 @@ HRESULT VirtualBoxClientList::registerClient(LONG aPid)
  * Returns PIDs of the API client processes.
  *
  * @returns COM status code.
- * @param   aEnvironment    Reference to vector that is to receive the PID list.
- *
- * @todo r=bird: There is no obvious reason why this is called 'aEnvironment', a
- *               more natural name would be 'aPids'.
+ * @param   aPids    Reference to vector that is to receive the PID list.
  */
-HRESULT VirtualBoxClientList::getClients(std::vector<LONG> &aEnvironment)
+HRESULT VirtualBoxClientList::getClients(std::vector<LONG> &aPids)
 {
     int rc = RTCritSectRwEnterShared(&m_MapCritSect);
     AssertLogRelRCReturn(rc, E_FAIL);
     if (!m_ClientSet.empty())
     {
-        Assert(aEnvironment.empty());
+        Assert(aPids.empty());
         size_t const cClients = m_ClientSet.size();
         try
         {
-            aEnvironment.reserve(cClients);
-            aEnvironment.assign(m_ClientSet.begin(), m_ClientSet.end());
+            aPids.reserve(cClients);
+            aPids.assign(m_ClientSet.begin(), m_ClientSet.end());
         }
         catch (std::bad_alloc)
         {
             RTCritSectRwLeaveShared(&m_MapCritSect);
             AssertLogRelMsgFailedReturn(("cClients=%zu\n", cClients), E_OUTOFMEMORY);
         }
-        Assert(aEnvironment.size() == cClients);
+        Assert(aPids.size() == cClients);
     }
     else
     {
