@@ -587,27 +587,29 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
             const char *pszCheck;
             switch (uP1)
             {
-                case 0x00:  pszCheck = "Stack buffer overrun"; break;
+                case 0x00:  pszCheck = "Stack buffer overrun (/GS)"; break;
                 case 0x01:  pszCheck = "Illegal virtual function table use (VTGuard)"; break;
                 case 0x02:  pszCheck = "Stack buffer overrun (via cookie)"; break;
                 case 0x03:  pszCheck = "Correupt LIST_ENTRY"; break;
                 case 0x04:  pszCheck = "Out of bounds stack pointer"; break;
-                case 0x05:  pszCheck = "Invalid parameter"; break;
-                case 0x06:  pszCheck = "Uninitialized stack cookie (by loader)"; break;
+                case 0x05:  pszCheck = "Invalid parameter (fatal)"; break;
+                case 0x06:  pszCheck = "Uninitialized stack cookie (by loader prior to Win8)"; break;
                 case 0x07:  pszCheck = "Fatal program exit request"; break;
                 case 0x08:  pszCheck = "Compiler bounds check violation"; break;
                 case 0x09:  pszCheck = "Direct RtlQueryRegistryValues w/o typechecking on untrusted hive"; break;
+                /* https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-check---bug-check-0x139-kernel-security-check-failure
+                   and !analyze -show differs on the following: */
                 case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e:
-                case 0x0f:  pszCheck = "Memory safety violation"; break;
-                case 0x10:  pszCheck = "Invalid indirect call (indirect call guard)"; break;
-                case 0x11:  pszCheck = "Invalid memory write (write guard)"; break;
-                case 0x12:  pszCheck = "Invalid target context for fiber switch"; break;
+                case 0x0f:  pszCheck = "Memory safety violation [?]"; break;
+                case 0x10:  pszCheck = "Invalid indirect call (indirect call guard) [?]"; break;
+                case 0x11:  pszCheck = "Invalid memory write (write guard) [?]"; break;
+                case 0x12:  pszCheck = "Invalid target context for fiber switch [?]"; break;
                 /** @todo there are lots more... */
-                default:    pszCheck = "Unknown"; break;
+                default:    pszCheck = "Todo/Unknown"; break;
             }
             cchUsed = RTStrPrintf(pszDetails, cbDetails,
                                   "KERNEL_SECURITY_CHECK_FAILURE\n"
-                                  "P1: %016RX64 - %s!\n",
+                                  "P1: %016RX64 - %s!\n"
                                   "P2: %016RX64 - Trap frame address\n"
                                   "P3: %016RX64 - Exception record\n"
                                   "P4: %016RX64 - reserved\n", uP1, pszCheck, uP2, uP3, uP4);
