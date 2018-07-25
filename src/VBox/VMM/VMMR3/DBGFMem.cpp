@@ -544,13 +544,15 @@ static uint32_t dbgfR3PagingDumpModeToFlags(PGMMODE enmMode)
         case PGMMODE_AMD64_NX:
             return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NXE;
         case PGMMODE_NESTED_32BIT:
-            return DBGFPGDMP_FLAGS_NP; /** @todo fix nested paging dumping*/
+            return DBGFPGDMP_FLAGS_NP | DBGFPGDMP_FLAGS_PSE;
         case PGMMODE_NESTED_PAE:
-            return DBGFPGDMP_FLAGS_NP; /** @todo fix nested paging dumping*/
+            return DBGFPGDMP_FLAGS_NP | DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_NXE;
         case PGMMODE_NESTED_AMD64:
-            return DBGFPGDMP_FLAGS_NP; /** @todo fix nested paging dumping*/
+            return DBGFPGDMP_FLAGS_NP | DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NXE;
         case PGMMODE_EPT:
             return DBGFPGDMP_FLAGS_EPT;
+        case PGMMODE_NONE:
+            return 0;
         default:
             AssertFailedReturn(UINT32_MAX);
     }
@@ -599,18 +601,16 @@ static DECLCALLBACK(int) dbgfR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t f
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         if (fFlags & DBGFPGDMP_FLAGS_SHADOW)
         {
+            if (PGMGetShadowMode(pVCpu) == PGMMODE_NONE)
+            {
+                pHlp->pfnPrintf(pHlp, "Shadow paging mode is 'none' (NEM)\n");
+                return VINF_SUCCESS;
+            }
+
             if (fFlags & DBGFPGDMP_FLAGS_CURRENT_CR3)
                 cr3 = PGMGetHyperCR3(pVCpu);
             if (fFlags & DBGFPGDMP_FLAGS_CURRENT_MODE)
-            {
                 fFlags |= dbgfR3PagingDumpModeToFlags(PGMGetShadowMode(pVCpu));
-                if (fFlags & DBGFPGDMP_FLAGS_NP)
-                {
-                    fFlags |= dbgfR3PagingDumpModeToFlags(PGMGetHostMode(pVM));
-                    if (HC_ARCH_BITS == 32 && CPUMIsGuestInLongMode(pVCpu))
-                        fFlags |= DBGFPGDMP_FLAGS_LME;
-                }
-            }
         }
         else
         {
