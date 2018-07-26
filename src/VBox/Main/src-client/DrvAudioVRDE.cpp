@@ -73,10 +73,6 @@ typedef struct VRDESTREAM
             /** Circular buffer for holding the recorded audio frames from the host. */
             PRTCIRCBUF  pCircBuf;
         } In;
-        struct
-        {
-            uint32_t last;
-        } Out;
     };
 } VRDESTREAM, *PVRDESTREAM;
 
@@ -295,18 +291,9 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
                                                  pProps->cBits,
                                                  pProps->fSigned);
 
-    const uint64_t ticksNow     = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-    const uint64_t ticksElapsed = ticksNow  - pStreamVRDE->Out.last;
-    const uint64_t ticksPerSec  = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
-
-    /* Remember when frames were consumed. */
-    pStreamVRDE->Out.last = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-
-    Log3Func(("FOOO -- %d\n", (int)((2 * ticksElapsed * pProps->uHz + ticksPerSec) / ticksPerSec / 2)));
-
     /* Use the internal counter to track if we (still) can write to the VRDP server
      * or if we need to wait another round (time slot). */
-    uint32_t cfToWrite = cfLive; //pStreamVRDE->Out.cfToWrite;
+    uint32_t cfToWrite = cfLive;
 
     Log3Func(("cfLive=%RU32, cfToWrite=%RU32\n", cfLive, cfToWrite));
 
