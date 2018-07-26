@@ -730,13 +730,13 @@ static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
     }
     else if (vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_draw_instanced "))
     {
-        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDARBPROC              , glDrawArraysInstanced,   "ARB");
-        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDARBPROC            , glDrawElementsInstanced, "ARB");
+        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDPROC                 , glDrawArraysInstanced,   "ARB");
+        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDPROC               , glDrawElementsInstanced, "ARB");
     }
     else if (vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_draw_instanced "))
     {
-        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDEXTPROC              , glDrawArraysInstanced,   "EXT");
-        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDEXTPROC            , glDrawElementsInstanced, "EXT");
+        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDPROC                 , glDrawArraysInstanced,   "EXT");
+        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDPROC               , glDrawElementsInstanced, "EXT");
     }
 
     /* OpenGL 3.2 core, GL_ARB_draw_elements_base_vertex. Same functions names in the ARB and core specs. */
