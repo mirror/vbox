@@ -638,6 +638,143 @@ int vmsvga3dInit(PVGASTATE pThis)
 #endif
 }
 
+static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
+{
+    /* A strict approach to get a proc address as recommended by Khronos:
+     * - "If the function is a core OpenGL function, then we need to check the OpenGL version".
+     * - "If the function is an extension, we need to check to see if the extension is supported."
+     */
+
+/* Get a function address, return VERR_NOT_IMPLEMENTED on failure. */
+#define GLGETPROC_(ProcType, ProcName, NameSuffix) do { \
+    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName NameSuffix); \
+    AssertLogRelMsgReturn(pState->ext.ProcName, (#ProcName NameSuffix " missing"), VERR_NOT_IMPLEMENTED); \
+} while(0)
+
+/* Get an optional function address. LogRel on failure. */
+#define GLGETPROCOPT_(ProcType, ProcName, NameSuffix) do { \
+    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName NameSuffix); \
+    if (!pState->ext.ProcName) \
+    { \
+        LogRel(("VMSVGA3d: missing optional %s\n", #ProcName NameSuffix)); \
+        AssertFailed(); \
+    } \
+} while(0)
+
+    /* OpenGL 2.0 or earlier core. Do not bother with extensions. */
+    GLGETPROC_(PFNGLGENQUERIESPROC                       , glGenQueries, "");
+    GLGETPROC_(PFNGLDELETEQUERIESPROC                    , glDeleteQueries, "");
+    GLGETPROC_(PFNGLBEGINQUERYPROC                       , glBeginQuery, "");
+    GLGETPROC_(PFNGLENDQUERYPROC                         , glEndQuery, "");
+    GLGETPROC_(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv, "");
+    GLGETPROC_(PFNGLTEXIMAGE3DPROC                       , glTexImage3D, "");
+    GLGETPROC_(PFNGLCOMPRESSEDTEXIMAGE2DPROC             , glCompressedTexImage2D, "");
+    GLGETPROC_(PFNGLCOMPRESSEDTEXIMAGE3DPROC             , glCompressedTexImage3D, "");
+    GLGETPROC_(PFNGLPOINTPARAMETERFPROC                  , glPointParameterf, "");
+    GLGETPROC_(PFNGLBLENDEQUATIONSEPARATEPROC            , glBlendEquationSeparate, "");
+    GLGETPROC_(PFNGLBLENDFUNCSEPARATEPROC                , glBlendFuncSeparate, "");
+    GLGETPROC_(PFNGLSTENCILOPSEPARATEPROC                , glStencilOpSeparate, "");
+    GLGETPROC_(PFNGLSTENCILFUNCSEPARATEPROC              , glStencilFuncSeparate, "");
+    GLGETPROC_(PFNGLBINDBUFFERPROC                       , glBindBuffer, "");
+    GLGETPROC_(PFNGLDELETEBUFFERSPROC                    , glDeleteBuffers, "");
+    GLGETPROC_(PFNGLGENBUFFERSPROC                       , glGenBuffers, "");
+    GLGETPROC_(PFNGLBUFFERDATAPROC                       , glBufferData, "");
+    GLGETPROC_(PFNGLMAPBUFFERPROC                        , glMapBuffer, "");
+    GLGETPROC_(PFNGLUNMAPBUFFERPROC                      , glUnmapBuffer, "");
+    GLGETPROC_(PFNGLENABLEVERTEXATTRIBARRAYPROC          , glEnableVertexAttribArray, "");
+    GLGETPROC_(PFNGLDISABLEVERTEXATTRIBARRAYPROC         , glDisableVertexAttribArray, "");
+    GLGETPROC_(PFNGLVERTEXATTRIBPOINTERPROC              , glVertexAttribPointer, "");
+    GLGETPROC_(PFNGLACTIVETEXTUREPROC                    , glActiveTexture, "");
+    /** @todo Why ARB? Seems to be RT_OS_DARWIN related, see DevVGA-SVGA3d-internal.h */
+    GLGETPROC_(PFNGLGETPROGRAMIVARBPROC                  , glGetProgramivARB, "");
+    GLGETPROC_(PFNGLFOGCOORDPOINTERPROC                  , glFogCoordPointer, "");
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x102
+    GLGETPROC_(PFNGLBLENDCOLORPROC                       , glBlendColor, "");
+    GLGETPROC_(PFNGLBLENDEQUATIONPROC                    , glBlendEquation, "");
+#endif
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x103
+    GLGETPROC_(PFNGLCLIENTACTIVETEXTUREPROC              , glClientActiveTexture, "");
+#endif
+
+    /* OpenGL 3.0 core, GL_ARB_instanced_arrays. Same functions names in the ARB and core specs. */
+    if (   pState->rsGLVersion >= 3.0f
+        || vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_framebuffer_object "))
+    {
+        GLGETPROC_(PFNGLISRENDERBUFFERPROC                      , glIsRenderbuffer, "");
+        GLGETPROC_(PFNGLBINDRENDERBUFFERPROC                    , glBindRenderbuffer, "");
+        GLGETPROC_(PFNGLDELETERENDERBUFFERSPROC                 , glDeleteRenderbuffers, "");
+        GLGETPROC_(PFNGLGENRENDERBUFFERSPROC                    , glGenRenderbuffers, "");
+        GLGETPROC_(PFNGLRENDERBUFFERSTORAGEPROC                 , glRenderbufferStorage, "");
+        GLGETPROC_(PFNGLGETRENDERBUFFERPARAMETERIVPROC          , glGetRenderbufferParameteriv, "");
+        GLGETPROC_(PFNGLISFRAMEBUFFERPROC                       , glIsFramebuffer, "");
+        GLGETPROC_(PFNGLBINDFRAMEBUFFERPROC                     , glBindFramebuffer, "");
+        GLGETPROC_(PFNGLDELETEFRAMEBUFFERSPROC                  , glDeleteFramebuffers, "");
+        GLGETPROC_(PFNGLGENFRAMEBUFFERSPROC                     , glGenFramebuffers, "");
+        GLGETPROC_(PFNGLCHECKFRAMEBUFFERSTATUSPROC              , glCheckFramebufferStatus, "");
+        GLGETPROC_(PFNGLFRAMEBUFFERTEXTURE1DPROC                , glFramebufferTexture1D, "");
+        GLGETPROC_(PFNGLFRAMEBUFFERTEXTURE2DPROC                , glFramebufferTexture2D, "");
+        GLGETPROC_(PFNGLFRAMEBUFFERTEXTURE3DPROC                , glFramebufferTexture3D, "");
+        GLGETPROC_(PFNGLFRAMEBUFFERRENDERBUFFERPROC             , glFramebufferRenderbuffer, "");
+        GLGETPROC_(PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC , glGetFramebufferAttachmentParameteriv, "");
+        GLGETPROC_(PFNGLGENERATEMIPMAPPROC                      , glGenerateMipmap, "");
+        GLGETPROC_(PFNGLBLITFRAMEBUFFERPROC                     , glBlitFramebuffer, "");
+        GLGETPROC_(PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC      , glRenderbufferStorageMultisample, "");
+        GLGETPROC_(PFNGLFRAMEBUFFERTEXTURELAYERPROC             , glFramebufferTextureLayer, "");
+    }
+
+    /* OpenGL 3.1 core, GL_ARB_draw_instanced, GL_EXT_draw_instanced. */
+    if (pState->rsGLVersion >= 3.1f)
+    {
+        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDPROC                 , glDrawArraysInstanced,   "");
+        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDPROC               , glDrawElementsInstanced, "");
+    }
+    else if (vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_draw_instanced "))
+    {
+        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDARBPROC              , glDrawArraysInstanced,   "ARB");
+        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDARBPROC            , glDrawElementsInstanced, "ARB");
+    }
+    else if (vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_draw_instanced "))
+    {
+        GLGETPROC_(PFNGLDRAWARRAYSINSTANCEDEXTPROC              , glDrawArraysInstanced,   "EXT");
+        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDEXTPROC            , glDrawElementsInstanced, "EXT");
+    }
+
+    /* OpenGL 3.2 core, GL_ARB_draw_elements_base_vertex. Same functions names in the ARB and core specs. */
+    if (   pState->rsGLVersion >= 3.2f
+        || vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_draw_elements_base_vertex "))
+    {
+        GLGETPROC_(PFNGLDRAWELEMENTSBASEVERTEXPROC              , glDrawElementsBaseVertex, "");
+        GLGETPROC_(PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC     , glDrawElementsInstancedBaseVertex, "");
+    }
+
+    /* Optional. OpenGL 3.2 core, GL_ARB_provoking_vertex. Same functions names in the ARB and core specs. */
+    if (   pState->rsGLVersion >= 3.2f
+        || vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_provoking_vertex "))
+    {
+        GLGETPROCOPT_(PFNGLPROVOKINGVERTEXPROC                  , glProvokingVertex, "");
+    }
+
+    /* OpenGL 3.3 core, GL_ARB_instanced_arrays. */
+    if (pState->rsGLVersion >= 3.3f)
+    {
+        GLGETPROC_(PFNGLVERTEXATTRIBDIVISORPROC                 , glVertexAttribDivisor,   "");
+    }
+    else if (vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_instanced_arrays "))
+    {
+        GLGETPROC_(PFNGLVERTEXATTRIBDIVISORARBPROC              , glVertexAttribDivisor,   "ARB");
+    }
+
+    /* Extension support */
+    /** @todo See SVGA3D_RS_STENCILENABLE2SIDED. */
+    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_stencil_two_side ");
+
+#undef GLGETPROCOPT_
+#undef GLGETPROC_
+
+    return VINF_SUCCESS;
+}
+
+
 /* We must delay window creation until the PowerOn phase. Init is too early and will cause failures. */
 int vmsvga3dPowerOn(PVGASTATE pThis)
 {
@@ -706,139 +843,16 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->rsOtherGLVersion = pState->rsGLVersion;
 #endif
 
-
-    if (vmsvga3dCheckGLExtension(pState, 3.0f, " GL_ARB_framebuffer_object "))
+    /*
+     * Resolve GL function pointers and store them in pState->ext.
+     */
+    rc = vmsvga3dLoadGLFunctions(pState);
+    if (RT_FAILURE(rc))
     {
-        pState->ext.glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)OGLGETPROCADDRESS("glIsRenderbuffer");
-        pState->ext.glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)OGLGETPROCADDRESS("glBindRenderbuffer");
-        pState->ext.glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)OGLGETPROCADDRESS("glDeleteRenderbuffers");
-        pState->ext.glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)OGLGETPROCADDRESS("glGenRenderbuffers");
-        pState->ext.glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)OGLGETPROCADDRESS("glRenderbufferStorage");
-        pState->ext.glGetRenderbufferParameteriv = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)OGLGETPROCADDRESS("glGetRenderbufferParameteriv");
-        pState->ext.glIsFramebuffer = (PFNGLISFRAMEBUFFERPROC)OGLGETPROCADDRESS("glIsFramebuffer");
-        pState->ext.glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)OGLGETPROCADDRESS("glBindFramebuffer");
-        pState->ext.glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)OGLGETPROCADDRESS("glDeleteFramebuffers");
-        pState->ext.glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)OGLGETPROCADDRESS("glGenFramebuffers");
-        pState->ext.glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)OGLGETPROCADDRESS("glCheckFramebufferStatus");
-        pState->ext.glFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)OGLGETPROCADDRESS("glFramebufferTexture1D");
-        pState->ext.glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)OGLGETPROCADDRESS("glFramebufferTexture2D");
-        pState->ext.glFramebufferTexture3D = (PFNGLFRAMEBUFFERTEXTURE3DPROC)OGLGETPROCADDRESS("glFramebufferTexture3D");
-        pState->ext.glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)OGLGETPROCADDRESS("glFramebufferRenderbuffer");
-        pState->ext.glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)OGLGETPROCADDRESS("glGetFramebufferAttachmentParameteriv");
-        pState->ext.glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)OGLGETPROCADDRESS("glGenerateMipmap");
-        pState->ext.glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)OGLGETPROCADDRESS("glBlitFramebuffer");
-        pState->ext.glRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)OGLGETPROCADDRESS("glRenderbufferStorageMultisample");
-        pState->ext.glFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)OGLGETPROCADDRESS("glFramebufferTextureLayer");
+        LogRel(("VMSVGA3d: missing required OpenGL function or extension; aborting\n"));
+        return rc;
     }
-    pState->ext.glPointParameterf           = (PFNGLPOINTPARAMETERFPROC)OGLGETPROCADDRESS("glPointParameterf");
-    AssertMsgReturn(pState->ext.glPointParameterf, ("glPointParameterf missing"), VERR_NOT_IMPLEMENTED);
-#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x102
-    pState->ext.glBlendColor                = (PFNGLBLENDCOLORPROC)OGLGETPROCADDRESS("glBlendColor");
-    AssertMsgReturn(pState->ext.glBlendColor, ("glBlendColor missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glBlendEquation             = (PFNGLBLENDEQUATIONPROC)OGLGETPROCADDRESS("glBlendEquation");
-    AssertMsgReturn(pState->ext.glBlendEquation, ("glBlendEquation missing"), VERR_NOT_IMPLEMENTED);
-#endif
-    pState->ext.glBlendEquationSeparate     = (PFNGLBLENDEQUATIONSEPARATEPROC)OGLGETPROCADDRESS("glBlendEquationSeparate");
-    AssertMsgReturn(pState->ext.glBlendEquationSeparate, ("glBlendEquationSeparate missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glBlendFuncSeparate         = (PFNGLBLENDFUNCSEPARATEPROC)OGLGETPROCADDRESS("glBlendFuncSeparate");
-    AssertMsgReturn(pState->ext.glBlendFuncSeparate, ("glBlendFuncSeparate missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glStencilOpSeparate         = (PFNGLSTENCILOPSEPARATEPROC)OGLGETPROCADDRESS("glStencilOpSeparate");
-    AssertMsgReturn(pState->ext.glStencilOpSeparate, ("glStencilOpSeparate missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glStencilFuncSeparate       = (PFNGLSTENCILFUNCSEPARATEPROC)OGLGETPROCADDRESS("glStencilFuncSeparate");
-    AssertMsgReturn(pState->ext.glStencilFuncSeparate, ("glStencilFuncSeparate missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glBindBuffer                = (PFNGLBINDBUFFERPROC)OGLGETPROCADDRESS("glBindBuffer");
-    AssertMsgReturn(pState->ext.glBindBuffer, ("glBindBuffer missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glDeleteBuffers             = (PFNGLDELETEBUFFERSPROC)OGLGETPROCADDRESS("glDeleteBuffers");
-    AssertMsgReturn(pState->ext.glDeleteBuffers, ("glDeleteBuffers missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glGenBuffers                = (PFNGLGENBUFFERSPROC)OGLGETPROCADDRESS("glGenBuffers");
-    AssertMsgReturn(pState->ext.glGenBuffers, ("glGenBuffers missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glBufferData                = (PFNGLBUFFERDATAPROC)OGLGETPROCADDRESS("glBufferData");
-    AssertMsgReturn(pState->ext.glBufferData, ("glBufferData missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glMapBuffer                 = (PFNGLMAPBUFFERPROC)OGLGETPROCADDRESS("glMapBuffer");
-    AssertMsgReturn(pState->ext.glMapBuffer, ("glMapBuffer missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glUnmapBuffer               = (PFNGLUNMAPBUFFERPROC)OGLGETPROCADDRESS("glUnmapBuffer");
-    AssertMsgReturn(pState->ext.glUnmapBuffer, ("glUnmapBuffer missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glEnableVertexAttribArray   = (PFNGLENABLEVERTEXATTRIBARRAYPROC)OGLGETPROCADDRESS("glEnableVertexAttribArray");
-    AssertMsgReturn(pState->ext.glEnableVertexAttribArray, ("glEnableVertexAttribArray missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glDisableVertexAttribArray  = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)OGLGETPROCADDRESS("glDisableVertexAttribArray");
-    AssertMsgReturn(pState->ext.glDisableVertexAttribArray, ("glDisableVertexAttribArray missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glVertexAttribPointer       = (PFNGLVERTEXATTRIBPOINTERPROC)OGLGETPROCADDRESS("glVertexAttribPointer");
-    AssertMsgReturn(pState->ext.glVertexAttribPointer, ("glVertexAttribPointer missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glFogCoordPointer           = (PFNGLFOGCOORDPOINTERPROC)OGLGETPROCADDRESS("glFogCoordPointer");
-    AssertMsgReturn(pState->ext.glFogCoordPointer, ("glFogCoordPointer missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glActiveTexture             = (PFNGLACTIVETEXTUREPROC)OGLGETPROCADDRESS("glActiveTexture");
-    AssertMsgReturn(pState->ext.glActiveTexture, ("glActiveTexture missing"), VERR_NOT_IMPLEMENTED);
-#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x103
-    pState->ext.glClientActiveTexture       = (PFNGLCLIENTACTIVETEXTUREPROC)OGLGETPROCADDRESS("glClientActiveTexture");
-    AssertMsgReturn(pState->ext.glClientActiveTexture, ("glClientActiveTexture missing"), VERR_NOT_IMPLEMENTED);
-#endif
-    pState->ext.glGetProgramivARB           = (PFNGLGETPROGRAMIVARBPROC)OGLGETPROCADDRESS("glGetProgramivARB");
-    AssertMsgReturn(pState->ext.glGetProgramivARB, ("glGetProgramivARB missing"), VERR_NOT_IMPLEMENTED);
 
-    /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension(pState, 3.2f, " GL_ARB_draw_elements_base_vertex "))
-    {
-        pState->ext.glDrawElementsBaseVertex          = (PFNGLDRAWELEMENTSBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsBaseVertex");
-        pState->ext.glDrawElementsInstancedBaseVertex = (PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsInstancedBaseVertex");
-    }
-    else
-        LogRel(("VMSVGA3d: missing extension GL_ARB_draw_elements_base_vertex\n"));
-
-    /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension(pState, 3.2f, " GL_ARB_provoking_vertex "))
-    {
-        pState->ext.glProvokingVertex                 = (PFNGLPROVOKINGVERTEXPROC)OGLGETPROCADDRESS("glProvokingVertex");
-    }
-    else
-        LogRel(("VMSVGA3d: missing extension GL_ARB_provoking_vertex\n"));
-
-    /* Extension support */
-#if defined(RT_OS_DARWIN)
-    /** @todo OpenGL version history suggest this, verify...  */
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 2.0f, " GL_EXT_stencil_two_side ");
-#else
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_stencil_two_side ");
-#endif
-
-#define GLGETPROC(ProcType, ProcName, NameSuffix) do { \
-    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName NameSuffix); \
-    AssertLogRelMsgReturn(pState->ext.ProcName, (#ProcName NameSuffix " missing"), VERR_NOT_IMPLEMENTED); \
-} while(0)
-#define GLGETPROCOPT(ProcType, ProcName, NameSuffix) do { \
-    pState->ext.ProcName = (ProcType)OGLGETPROCADDRESS(#ProcName NameSuffix); \
-    AssertMsg(pState->ext.ProcName, (#ProcName NameSuffix " missing (optional)")); \
-} while(0)
-
-    /* OpenGL 2.0 core */
-    GLGETPROCOPT(PFNGLGENQUERIESPROC                       , glGenQueries, "");
-    GLGETPROCOPT(PFNGLDELETEQUERIESPROC                    , glDeleteQueries, "");
-    GLGETPROCOPT(PFNGLBEGINQUERYPROC                       , glBeginQuery, "");
-    GLGETPROCOPT(PFNGLENDQUERYPROC                         , glEndQuery, "");
-    GLGETPROCOPT(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv, "");
-    GLGETPROC   (PFNGLTEXIMAGE3DPROC                       , glTexImage3D, "");
-    GLGETPROC   (PFNGLCOMPRESSEDTEXIMAGE2DPROC             , glCompressedTexImage2D, "");
-    GLGETPROC   (PFNGLCOMPRESSEDTEXIMAGE3DPROC             , glCompressedTexImage3D, "");
-
-    /** @todo A structured approach for loading OpenGL functions. */
-    /* OpenGL 3.3 core, GL_ARB_instanced_arrays. Required. */
-    if (pState->rsGLVersion >= 3.3f)
-        GLGETPROC(PFNGLVERTEXATTRIBDIVISORPROC          , glVertexAttribDivisor,   "");
-    else if (vmsvga3dCheckGLExtension(pState, 3.3f, " GL_ARB_instanced_arrays "))
-        GLGETPROC(PFNGLVERTEXATTRIBDIVISORPROC          , glVertexAttribDivisor,   "ARB");
-
-    /* OpenGL 3.1 core, GL_ARB_draw_instanced. Required. */
-    if (pState->rsGLVersion >= 3.1f)
-    {
-        GLGETPROC(PFNGLDRAWARRAYSINSTANCEDPROC          , glDrawArraysInstanced,   "");
-        GLGETPROC(PFNGLDRAWELEMENTSINSTANCEDPROC        , glDrawElementsInstanced, "");
-    }
-    else if (vmsvga3dCheckGLExtension(pState, 3.1f, " GL_ARB_draw_instanced "))
-    {
-        GLGETPROC(PFNGLDRAWARRAYSINSTANCEDPROC          , glDrawArraysInstanced,   "ARB");
-        GLGETPROC(PFNGLDRAWELEMENTSINSTANCEDPROC        , glDrawElementsInstanced, "ARB");
-    }
-#undef GLGETPROCOPT
-#undef GLGETPROC
     /*
      * Initialize the capabilities with sensible defaults.
      */
@@ -874,27 +888,19 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &pState->caps.maxTextureAnisotropy));
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize));
 
-    if (pState->ext.glGetProgramivARB)
-    {
-        VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
-                                   pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
-                                                                 &pState->caps.maxFragmentShaderTemps));
-        VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
-                                   pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
-                                                                 &pState->caps.maxFragmentShaderInstructions));
-        VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
-                                   pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
-                                                                 &pState->caps.maxVertexShaderTemps));
+    VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
+                               pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
+                                                             &pState->caps.maxFragmentShaderTemps));
+    VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
+                               pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
+                                                             &pState->caps.maxFragmentShaderInstructions));
+    VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
+                               pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
+                                                             &pState->caps.maxVertexShaderTemps));
+    VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
+                               pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
+                                                             &pState->caps.maxVertexShaderInstructions));
 
-        /* Intel Windows drivers return 31, while the guest expects 32 at least. */
-        if (   pState->caps.maxVertexShaderTemps < 32
-            && vmsvga3dIsVendorIntel())
-            pState->caps.maxVertexShaderTemps = 32;
-
-        VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
-                                   pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
-                                                                 &pState->caps.maxVertexShaderInstructions));
-    }
     pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_texture_compression_s3tc ");
 
     /* http://http://www.opengl.org/wiki/Detecting_the_Shader_Model
@@ -951,11 +957,21 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_11;
     }
 
-    if (!vmsvga3dCheckGLExtension(pState, 3.2f, " GL_ARB_vertex_array_bgra "))
+    if (   !vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_vertex_array_bgra ")
+        && !vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_vertex_array_bgra "))
     {
-        /** @todo Intel drivers don't support this extension! */
+        /** @todo Intel drivers don't support this extension! (TEST IT, may be it was about GL_ARB only?) */
         LogRel(("VMSVGA3D: WARNING: Missing required extension GL_ARB_vertex_array_bgra (d3dcolor)!!!\n"));
     }
+
+    /*
+     * Tweak capabilities.
+     */
+    /* Intel Windows drivers return 31, while the guest expects 32 at least. */
+    if (   pState->caps.maxVertexShaderTemps < 32
+        && vmsvga3dIsVendorIntel())
+        pState->caps.maxVertexShaderTemps = 32;
+
 #if 0
    SVGA3D_DEVCAP_MAX_FIXED_VERTEXBLEND             = 11,
    SVGA3D_DEVCAP_QUERY_TYPES                       = 15,
@@ -1057,30 +1073,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         && pState->rsOtherGLVersion < 3.0 /* darwin: legacy profile hack */)
     {
         LogRel(("VMSVGA3d: unsupported OpenGL version; minimum is 3.0\n"));
-        return VERR_NOT_IMPLEMENTED;
-    }
-    if (    !pState->ext.glIsRenderbuffer
-        ||  !pState->ext.glBindRenderbuffer
-        ||  !pState->ext.glDeleteRenderbuffers
-        ||  !pState->ext.glGenRenderbuffers
-        ||  !pState->ext.glRenderbufferStorage
-        ||  !pState->ext.glGetRenderbufferParameteriv
-        ||  !pState->ext.glIsFramebuffer
-        ||  !pState->ext.glBindFramebuffer
-        ||  !pState->ext.glDeleteFramebuffers
-        ||  !pState->ext.glGenFramebuffers
-        ||  !pState->ext.glCheckFramebufferStatus
-        ||  !pState->ext.glFramebufferTexture1D
-        ||  !pState->ext.glFramebufferTexture2D
-        ||  !pState->ext.glFramebufferTexture3D
-        ||  !pState->ext.glFramebufferRenderbuffer
-        ||  !pState->ext.glGetFramebufferAttachmentParameteriv
-        ||  !pState->ext.glGenerateMipmap
-        ||  !pState->ext.glBlitFramebuffer
-        ||  !pState->ext.glRenderbufferStorageMultisample
-        ||  !pState->ext.glFramebufferTextureLayer)
-    {
-        LogRel(("VMSVGA3d: missing required OpenGL extension; aborting\n"));
         return VERR_NOT_IMPLEMENTED;
     }
 
@@ -4566,6 +4558,15 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
         }
 
         case SVGA3D_RS_STENCILENABLE2SIDED:    /* SVGA3dBool */
+            /** @todo This should be implemented similar to SVGA3D_RS_SEPARATEALPHABLENDENABLE,
+             * i.e. use OpenGL 2.0 glStencil[Func|Op]Separate when SVGA3D_RS_STENCILENABLE2SIDED
+             * is enabled.
+             * It looks like VMSVGA (D3D) does not support separate masks, i.e. does not need
+             * glStencilMaskSeparate.
+             *
+             * GL_EXT_stencil_two_side is an NVidia extension which implements similar functionality
+             * as glStencil[*]Separate functions, but it not needed with OpenGL 2.0.
+             */
             /* @note GL_EXT_stencil_two_side required! */
             if (pState->ext.fEXT_stencil_two_side)
             {
@@ -6202,12 +6203,11 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
             pState->ext.glVertexAttribPointer(index, size, type, normalized, pVertexDecl[iVertex].array.stride,
                                               (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            if (pState->ext.glVertexAttribDivisor)
-            {
-                GLuint const divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
-                pState->ext.glVertexAttribDivisor(index, divisor);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            }
+
+            GLuint const divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
+            pState->ext.glVertexAttribDivisor(index, divisor);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
             /** @todo case SVGA3D_DECLUSAGE_COLOR: color component order not identical!! test GL_BGRA!!  */
         }
         else
