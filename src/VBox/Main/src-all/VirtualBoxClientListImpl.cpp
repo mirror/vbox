@@ -138,7 +138,7 @@ void CClientListWatcher::NotifySDSAllClientsFinished()
 /**
  * Deregister all staled VBoxSVC through VBoxSDS and forcebly close VBoxSVC process
  * @param   ThreadSelf  current thread id
- * @param   pvUser      pointer to CClientListWatcher that created this thread. 
+ * @param   pvUser      pointer to CClientListWatcher that created this thread.
  */
 DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
