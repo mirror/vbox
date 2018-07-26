@@ -46,14 +46,15 @@ ifndef VBOX_OSE
  # use docbook from our tools directory
  VBOX_PATH_DOCBOOK        ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
  VBOX_PATH_DOCBOOK_DTD    ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.5
- VBOX_XML_CATALOG         ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
- VBOX_XML_CATALOG_DOCBOOK ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
- VBOX_XML_CATALOG_MANUAL  ?= $(VBOX_PATH_MANUAL_OUTBASE)/manual
- VBOX_XML_ENTITIES        ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
 else
  # use docbook of the build host
- VBOX_PATH_DOCBOOK        ?= http://docbook.sourceforge.net/release/xsl/current/
+ VBOX_PATH_DOCBOOK        ?= /usr/share/xml/docbook/stylesheet/docbook-xsl
+ VBOX_PATH_DOCBOOK_DTD    ?= /usr/share/xml/docbook/schema/dtd/4.5
 endif
+VBOX_XML_CATALOG          ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
+VBOX_XML_CATALOG_DOCBOOK  ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
+VBOX_XML_CATALOG_MANUAL   ?= $(VBOX_PATH_MANUAL_OUTBASE)/manual
+VBOX_XML_ENTITIES         ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
 
 # xsltproc with the catalog trick if applicable.
 ifdef VBOX_XML_CATALOG
@@ -147,13 +148,13 @@ ifdef VBOX_XML_CATALOG
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		'  <delegatePublic publicIdStartString="-//OASIS/ENTITIES DocBook XML"      catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
-		'  <delegatePublic publicIdStartString="-//OASIS/DTD DocBook XML"           catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
-		'  <delegateSystem systemIdStartString="http://www.oasis-open.org/docbook/" catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
-		'  <delegateURI uriStartString="http://www.oasis-open.org/docbook/"         catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
-		'  <delegateSystem systemIdStartString="$(VBOX_PATH_MANUAL_SRC)"            catalog="file:///$(VBOX_XML_CATALOG_MANUAL)"/>' \
-		'  <delegateURI uriStartString="$(VBOX_PATH_MANUAL_SRC)"                    catalog="file:///$(VBOX_XML_CATALOG_MANUAL)"/>' \
-		'  <delegateURI uriStartString="$(VBOX_PATH_MANUAL_OUTBASE)"                catalog="file:///$(VBOX_XML_CATALOG_MANUAL)"/>' \
+		'  <delegatePublic publicIdStartString="-//OASIS/ENTITIES DocBook XML"      catalog="file://$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
+		'  <delegatePublic publicIdStartString="-//OASIS/DTD DocBook XML"           catalog="file://$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
+		'  <delegateSystem systemIdStartString="http://www.oasis-open.org/docbook/" catalog="file://$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
+		'  <delegateURI uriStartString="http://www.oasis-open.org/docbook/"         catalog="file://$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
+		'  <delegateSystem systemIdStartString="$(VBOX_PATH_MANUAL_SRC)"            catalog="file://$(VBOX_XML_CATALOG_MANUAL)"/>' \
+		'  <delegateURI uriStartString="$(VBOX_PATH_MANUAL_SRC)"                    catalog="file://$(VBOX_XML_CATALOG_MANUAL)"/>' \
+		'  <delegateURI uriStartString="$(VBOX_PATH_MANUAL_OUTBASE)"                catalog="file://$(VBOX_XML_CATALOG_MANUAL)"/>' \
 		'</catalog>'
 
  # Create a docbook catalog file for xsltproc that points to the local docbook files.
@@ -163,35 +164,35 @@ ifdef VBOX_XML_CATALOG
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		'  <public publicId="-//OASIS//ELEMENTS DocBook XML Information Pool V4.5//EN"          uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbpoolx.mod"/>' \
-		'  <public publicId="-//OASIS//DTD DocBook XML V4.5//EN"                                uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd"/>' \
-		'  <public publicId="-//OASIS//ENTITIES DocBook XML Character Entities V4.5//EN"        uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbcentx.mod"/>' \
-		'  <public publicId="-//OASIS//ENTITIES DocBook XML Notations V4.5//EN"                 uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbnotnx.mod"/>' \
-		'  <public publicId="-//OASIS//ENTITIES DocBook XML Additional General Entities V4.5//EN" uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbgenent.mod"/>' \
-		'  <public publicId="-//OASIS//ELEMENTS DocBook XML Document Hierarchy V4.5//EN"        uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbhierx.mod"/>' \
-		'  <public publicId="-//OASIS//DTD XML Exchange Table Model 19990315//EN"               uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/soextblx.dtd"/>' \
-		'  <public publicId="-//OASIS//DTD DocBook XML CALS Table Model V4.5//EN"               uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/calstblx.dtd"/>' \
-		'  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.5" rewritePrefix="file:///$(VBOX_PATH_DOCBOOK_DTD)"/>' \
-		'  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.5" rewritePrefix="file:///$(VBOX_PATH_DOCBOOK_DTD)"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Arrow Relations//EN"   uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsa.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Binary Operators//EN"  uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsb.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Delimiters//EN"        uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsc.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Negated Relations//EN" uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsn.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Ordinary//EN"          uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amso.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Relations//EN"         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsr.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Box and Line Drawing//EN"                  uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-box.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Russian Cyrillic//EN"                      uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-cyr1.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Non-Russian Cyrillic//EN"                  uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-cyr2.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Diacritical Marks//EN"                     uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-dia.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Greek Letters//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk1.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Monotoniko Greek//EN"                      uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk2.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Greek Symbols//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk3.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Alternative Greek Symbols//EN"             uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk4.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Latin 1//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-lat1.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Added Latin 2//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-lat2.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN"           uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-num.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES Publishing//EN"                            uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-pub.ent"/>' \
-		'  <public publicId="ISO 8879:1986//ENTITIES General Technical//EN"                     uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-tech.ent"/>' \
+		'  <public publicId="-//OASIS//ELEMENTS DocBook XML Information Pool V4.5//EN"          uri="file://$(VBOX_PATH_DOCBOOK_DTD)/dbpoolx.mod"/>' \
+		'  <public publicId="-//OASIS//DTD DocBook XML V4.5//EN"                                uri="file://$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd"/>' \
+		'  <public publicId="-//OASIS//ENTITIES DocBook XML Character Entities V4.5//EN"        uri="file://$(VBOX_PATH_DOCBOOK_DTD)/dbcentx.mod"/>' \
+		'  <public publicId="-//OASIS//ENTITIES DocBook XML Notations V4.5//EN"                 uri="file://$(VBOX_PATH_DOCBOOK_DTD)/dbnotnx.mod"/>' \
+		'  <public publicId="-//OASIS//ENTITIES DocBook XML Additional General Entities V4.5//EN" uri="file://$(VBOX_PATH_DOCBOOK_DTD)/dbgenent.mod"/>' \
+		'  <public publicId="-//OASIS//ELEMENTS DocBook XML Document Hierarchy V4.5//EN"        uri="file://$(VBOX_PATH_DOCBOOK_DTD)/dbhierx.mod"/>' \
+		'  <public publicId="-//OASIS//DTD XML Exchange Table Model 19990315//EN"               uri="file://$(VBOX_PATH_DOCBOOK_DTD)/soextblx.dtd"/>' \
+		'  <public publicId="-//OASIS//DTD DocBook XML CALS Table Model V4.5//EN"               uri="file://$(VBOX_PATH_DOCBOOK_DTD)/calstblx.dtd"/>' \
+		'  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.5" rewritePrefix="file://$(VBOX_PATH_DOCBOOK_DTD)"/>' \
+		'  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.5" rewritePrefix="file://$(VBOX_PATH_DOCBOOK_DTD)"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Arrow Relations//EN"   uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsa.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Binary Operators//EN"  uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsb.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Delimiters//EN"        uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsc.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Negated Relations//EN" uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsn.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Ordinary//EN"          uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amso.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Relations//EN"         uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsr.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Box and Line Drawing//EN"                  uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-box.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Russian Cyrillic//EN"                      uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-cyr1.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Non-Russian Cyrillic//EN"                  uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-cyr2.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Diacritical Marks//EN"                     uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-dia.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Greek Letters//EN"                         uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk1.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Monotoniko Greek//EN"                      uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk2.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Greek Symbols//EN"                         uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk3.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Alternative Greek Symbols//EN"             uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk4.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Latin 1//EN"                         uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-lat1.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Added Latin 2//EN"                         uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-lat2.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN"           uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-num.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES Publishing//EN"                            uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-pub.ent"/>' \
+		'  <public publicId="ISO 8879:1986//ENTITIES General Technical//EN"                     uri="file://$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-tech.ent"/>' \
 		'</catalog>'
 
  # Create a docbook catalog file for xsltproc that points to the local manual files in non-default locations
@@ -201,19 +202,19 @@ ifdef VBOX_XML_CATALOG
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_ChangeLogImpl.xml"                  uri="file:///$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_VBoxManage_CommandsOverview.xml"    uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xsl"                        uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-mediumio.xml"        uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-mediumio.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-debugvm.xml"         uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-debugvm.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-extpack.xml"         uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-extpack.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-unattended.xml"      uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-unattended.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_isomakercmd-man.xml"                uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef_apiref.xml"                       uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/all-entities.ent"                        uri="file:///$(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/docbook.xsl"                              uri="file:///$(VBOX_PATH_DOCBOOK)/html/docbook.xsl"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/chunk.xsl"                                uri="file:///$(VBOX_PATH_DOCBOOK)/html/chunk.xsl"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/htmlhelp/htmlhelp.xsl"                         uri="file:///$(VBOX_PATH_DOCBOOK)/htmlhelp/htmlhelp.xsl"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_ChangeLogImpl.xml"                  uri="file://$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_VBoxManage_CommandsOverview.xml"    uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xsl"                        uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-mediumio.xml"        uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-mediumio.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-debugvm.xml"         uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-debugvm.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-extpack.xml"         uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-extpack.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-unattended.xml"      uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-unattended.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_isomakercmd-man.xml"                uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef_apiref.xml"                       uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/all-entities.ent"                        uri="file://$(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/docbook.xsl"                              uri="file://$(VBOX_PATH_DOCBOOK)/html/docbook.xsl"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/chunk.xsl"                                uri="file://$(VBOX_PATH_DOCBOOK)/html/chunk.xsl"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/htmlhelp/htmlhelp.xsl"                         uri="file://$(VBOX_PATH_DOCBOOK)/htmlhelp/htmlhelp.xsl"/>' \
 		'</catalog>'
 
 endif # VBOX_XML_CATALOG
