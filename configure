@@ -99,6 +99,7 @@ WITH_VNC=0
 WITH_EXTPACK=1
 WITH_DOCS=1
 WITH_LIBVPX=1
+WITH_LIBOPUS=1
 BUILD_LIBXML2=
 BUILD_LIBCURL=
 BUILD_LIBSSL=
@@ -2324,6 +2325,7 @@ EOF
 [ $OSE          -eq 0 ] && echo "  --disable-extpack        don't build the extpack"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ $WITH_LIBVPX  -eq 1 ] && echo "  --disable-libvpx         don't use libvpx for video capturing"
+[ $WITH_LIBOPUS -eq 1 ] && echo "  --disable-libopus        don't use libopus for audio capturing"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
   --disable-udptunnel      disable UDP tunnel networking
@@ -2395,6 +2397,7 @@ if [ "$OS" = "darwin" ]; then
   BUILD_LIBVPX=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
+  [ $OSE -eq 1 ] && WITH_LIBOPUS=0
   WITH_XCODE_DIR=""
 elif [ "$OS" = "haiku" ]; then
   #WITH_SDL=0
@@ -2409,6 +2412,7 @@ elif [ "$OS" = "haiku" ]; then
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
   WITH_LIBVPX=0
+  WITH_LIBOPUS=0
   # it is part of libroot, which is linked by default,
   # but the script wants something
   LIBPTHREAD="-lroot"
@@ -2416,6 +2420,7 @@ elif [ "$OS" = "haiku" ]; then
   [ $OSE -eq 1 ] || BUILD_LIBSSL=1
 elif [ "$OS" = "solaris" ]; then
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
+  [ $OSE -eq 1 ] && WITH_LIBOPUS=0
 fi
 
 # scan command line options
@@ -2557,6 +2562,9 @@ for option in "$@"; do
       ;;
     --disable-libvpx)
       WITH_LIBVPX=0
+      ;;
+    --disable-libopus)
+      WITH_LIBOPUS=0
       ;;
     --disable-sdl)
       WITH_SDL=0
@@ -2747,6 +2755,10 @@ if [ $WITH_LIBVPX -eq 0 ]; then
   cnf_append "VBOX_WITH_LIBVPX" ""
   cnf_append "VBOX_WITH_VIDEOREC" ""
 fi
+if [ $WITH_LIBOPUS -eq 0 ]; then
+  cnf_append "VBOX_WITH_LIBOPUS" ""
+  cnf_append "VBOX_WITH_AUDIO_VIDEOREC" ""
+fi
 
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
@@ -2770,8 +2782,8 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_ssl
   check_curl
   [ $WITH_LIBVPX -eq 1 ] && check_vpx
-  check_libopus
- [ "$OS" != "darwin"  ] && check_z
+  [ $WITH_LIBOPUS -eq 1 ] && check_libopus
+  [ "$OS" != "darwin"  ] && check_z
   [ "$OS" != "darwin"  ] && check_png
   [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
   if [ $WITH_SDL -eq 1 ]; then
