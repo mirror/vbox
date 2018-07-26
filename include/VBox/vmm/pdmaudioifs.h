@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -81,6 +81,46 @@
  *
  * A PDMAUDIOFRAME is the internal representation of a single audio frame, which consists of a single left
  * and right audio sample in time. Only mono (1) and stereo (2) channel(s) currently are supported.
+ *
+ *
+ * == Timing
+ *
+ * Handling audio data in a virtual environment is hard, as the human perception is very sensitive
+ * to the slightest cracks and stutters in the audible data. This can happen if the VM's timing is
+ * lagging behind or not within the expected time frame.
+ *
+ * The two main components which unfortunately contradict each other is a) the audio device emulation
+ * and b) the audio backend(s) on the host. Those need to be served in a timely manner to function correctly.
+ * To make e.g. the device emulation rely on the pace the host backend(s) set - or vice versa - will not work,
+ * as the guest's audio system / drivers then will not be able to compensate this accordingly.
+ *
+ * So each component, the device emulation, the audio connector(s) and the backend(s) must do its thing
+ * *when* it needs to do it, independently of the others. For that we use various (small) ring buffers to
+ * (hopefully) serve all components with the amount of data *when* they need it.
+ *
+ * Additionally, the device emulation can run with a different audio frame size, while the backends(s) may
+ * require a different frame size (16 bit stereo -> 8 bit mono, for example).
+ *
+ * The device emulation can give the audio connector(s) a scheduling hint (optional), e.g. in which interval
+ * it expects any data processing.
+ *
+ * A data transfer for playing audio data from the guest on the host looks like this:
+ * (RB = Ring Buffer, MB = Mixing Buffer)
+ *
+ * (A) Device DMA -> (B) Device RB -> (C) Audio Connector Guest MB -> (D) Audio Connector Host MB -> \
+ * (E) Backend RB (optional, up to the backend) > (F) Backend audio framework
+ *
+ * For capturing audio data the above chain is similar, just in a different direction, of course.
+ *
+ * The audio connector hereby plays a key role when it comes to (pre-) buffering data to minimize any audio stutters
+ * and/or cracks. The following values, which also can be tweaked via CFGM / extra-data are available:
+ *
+ * - The pre-buffering time (in ms): Audio data which needs to be buffered before any playback (or capturing) can happen.
+ * - The actual buffer size (in ms): How big the mixing buffer (for C and D) will be.
+ * - The period size (in ms): How big a chunk of audio (often called period or fragment) for F must be to get handled correctly.
+ *
+ * The above values can be set on a per-driver level, whereas input and output streams for a driver also can be handled
+ * set independently. The verbose audio (release) log will tell about the (final) state of each audio stream.
  *
  *
  * == Diagram
@@ -534,17 +574,17 @@ typedef struct PDMAUDIOSTREAMCFG
      *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
      *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done. */
     PDMAUDIOSTREAMLAYOUT     enmLayout;
-    /** Hint about the optimal frame buffer size (in audio frames).
-     *  0 if no hint is given. */
-    uint32_t                 cFrameBufferHint;
+    /** Device emulation-specific data needed for the audio connector. */
     struct
     {
-        /** Scheduling hint given from the device emulation about when this stream is being served on average.
+        /** Scheduling hint set by the device emulation about when this stream is being served on average (in ms).
          *  Can be 0 if not hint given or some other mechanism (e.g. callbacks) is being used. */
         uint32_t             uSchedulingHintMs;
     } Device;
     /**
      * Backend-specific data for the stream.
+     * On input (requested configuration) those values are set by the audio connector to let the backend know what we expect.
+     * On output (acquired configuration) those values reflect the values set and used by the backend.
      * Set by the backend on return. Not all backends support all values / features.
      */
     struct
@@ -998,7 +1038,17 @@ typedef struct PDMAUDIOSTREAM
     /** Context of this stream. */
     PDMAUDIOSTREAMCTX      enmCtx;
     /** Timestamp (in ms) since last iteration. */
-    uint64_t               tsLastIterateMS;
+    uint64_t               tsLastIteratedMs;
+    /** Timestamp (in ms) since last playback / capture. */
+    uint64_t               tsLastPlayedCapturedMs;
+    /** Timestamp (in ms) since last read (input streams) or
+     *  write (output streams). */
+    uint64_t               tsLastReadWrittenMs;
+    /** For output streams this indicates whether the stream has reached
+     *  its playback threshold, e.g. is playing audio.
+     *  For input streams this  indicates whether the stream has enough input
+     *  data to actually start reading audio. */
+    bool                   fThresholdReached;
     /** Union for input/output specifics. */
     union
     {

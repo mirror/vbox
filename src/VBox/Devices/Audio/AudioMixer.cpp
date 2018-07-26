@@ -852,26 +852,15 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
 
     uint32_t cbReadable = 0;
 
+    if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+    {
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
-    /* The hosts sets the pace --
-     * so we try to find the maximum of readable data of all connected streams to this sink. */
-    PAUDMIXSTREAM pMixStream;
-    RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
-    {
-        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
-        {
-            Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
-            continue;
-        }
-
-        cbReadable = RT_MAX(cbReadable,
-                            pMixStream->pConn->pfnStreamGetReadable(pMixStream->pConn, pMixStream->pStream));
-
-        break; /** @todo For now we only support recording by the first stream added. */
-    }
+        /* Return how much data we can deliver since the last read. */
+        cbReadable = DrvAudioHlpMsToBytes(&pSink->PCMProps, RTTimeMilliTS() - pSink->tsLastReadWrittenMs);
 #endif
+    }
 
     Log3Func(("[%s] cbReadable=%RU32\n", pSink->pszName, cbReadable));
 
@@ -898,7 +887,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc))
         return 0;
 
-    uint32_t cbWritable = UINT32_MAX;
+    uint32_t cbWritable = 0;
 
     if (    (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
         && !(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
@@ -906,23 +895,10 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
-        /* The hosts sets the pace --
-         * so we try to find the minimum of writable data to all connected streams to this sink. */
-        PAUDMIXSTREAM pMixStream;
-        RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
-        {
-            const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
-
-            Log3Func(("[%s] Stream '%s' cbWritableStream=%RU32\n", pSink->pszName, pMixStream->pszName, cbWritableStream));
-
-            if (cbWritableStream < cbWritable)
-                cbWritable = cbWritableStream;
-        }
+        /* Return how much data we expect since the last write. */
+        cbWritable = DrvAudioHlpMsToBytes(&pSink->PCMProps, RTTimeMilliTS() - pSink->tsLastReadWrittenMs);
 #endif
     }
-
-    if (cbWritable == UINT32_MAX)
-        cbWritable = 0;
 
     Log3Func(("[%s] cbWritable=%RU32\n", pSink->pszName, cbWritable));
 
@@ -1166,6 +1142,9 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
         if (fClean)
             pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
 
+        /* Update our last read time stamp. */
+        pSink->tsLastReadWrittenMs = RTTimeMilliTS();
+
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
@@ -1303,7 +1282,7 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink)
     }
 
     /* Update last updated timestamp. */
-    pSink->tsLastUpdatedMS = RTTimeMilliTS();
+    pSink->tsLastUpdatedMs = RTTimeMilliTS();
 
     /* Reset status. */
     pSink->fStatus = AUDMIXSINK_STS_NONE;
@@ -1580,7 +1559,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
               pSink->pszName, RT_BOOL(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE), cStreamsDisabled, pSink->cStreams));
 
     /* Update last updated timestamp. */
-    pSink->tsLastUpdatedMS = RTTimeMilliTS();
+    pSink->tsLastUpdatedMs = RTTimeMilliTS();
 
     /* All streams disabled and the sink is in pending disable mode? */
     if (   cStreamsDisabled == pSink->cStreams
@@ -1756,6 +1735,9 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
             pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
         }
     }
+
+    /* Update our last written time stamp. */
+    pSink->tsLastReadWrittenMs = RTTimeMilliTS();
 
     if (pcbWritten)
         *pcbWritten = cbBuf; /* Always report everything written, as the backends need to keep up themselves. */

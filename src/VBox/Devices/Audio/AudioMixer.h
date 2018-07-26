@@ -195,8 +195,10 @@ typedef struct AUDMIXSINK
     PDMAUDIOVOLUME          Volume;
     /** The volume of this sink, combined with the last set  master volume. */
     PDMAUDIOVOLUME          VolumeCombined;
-    /** Timestamp (in ms) since last update. */
-    uint64_t                tsLastUpdatedMS;
+    /** Timestamp since last update (in ms). */
+    uint64_t                tsLastUpdatedMs;
+    /** Last read (recording) / written (playback) timestamp (in ms). */
+    uint64_t                tsLastReadWrittenMs;
 #ifdef VBOX_AUDIO_MIXER_DEBUG
     struct
     {

@@ -173,10 +173,7 @@ static DECLCALLBACK(int) drvHostNullAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
 static int nullCreateStreamIn(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pStreamNull, pCfgReq);
-
-    if (pCfgAcq)
-        pCfgAcq->cFrameBufferHint = _1K;
+    RT_NOREF(pStreamNull, pCfgReq, pCfgAcq);
 
     return VINF_SUCCESS;
 }
@@ -184,10 +181,7 @@ static int nullCreateStreamIn(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG p
 
 static int nullCreateStreamOut(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pStreamNull, pCfgReq);
-
-    if (pCfgAcq)
-        pCfgAcq->cFrameBufferHint = _1K; /** @todo Make this configurable. */
+    RT_NOREF(pStreamNull, pCfgReq, pCfgAcq);
 
     return VINF_SUCCESS;
 }

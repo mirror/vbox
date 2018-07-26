@@ -119,7 +119,10 @@ static int debugCreateStreamIn(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStrea
     RT_NOREF(pDrv, pStreamDbg, pCfgReq);
 
     if (pCfgAcq)
-        pCfgAcq->cFrameBufferHint = _1K;
+    {
+        pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMsToFrames(&pCfgReq->Props, 1000 /* ms */);
+        pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering". */
+    }
 
     return VINF_SUCCESS;
 }
@@ -158,7 +161,10 @@ static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStre
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cFrameBufferHint = _1K;
+        {
+            pCfgAcq->Backend.cfPeriod     = DrvAudioHlpBytesToFrames(&pCfgReq->Props, 50 /* ms */);
+            pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering". */
+        }
     }
 
     return rc;

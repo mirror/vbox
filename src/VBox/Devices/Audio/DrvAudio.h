@@ -78,16 +78,18 @@ typedef struct DRVAUDIOSTATS
  */
 typedef struct DRVAUDIOCFG
 {
-    /** Configures the period size (in audio frames).
-     *  This value reflects the number of audio frames in between each hardware interrupt on the
+    /** Configures the period size (in ms).
+     *  This value reflects the time in between each hardware interrupt on the
      *  backend (host) side. */
-    uint32_t             cfPeriod;
-    /** Configures the (ring) buffer size (in audio frames). Often is a multiple of cfPeriod. */
-    uint32_t             cfBufferSize;
-    /** Configures the pre-buffering size (in audio frames).
-     *  Frames needed in buffer before the stream becomes active (pre buffering).
-     *  The bigger this value is, the more latency for the stream will occur. */
-    uint32_t             cfPreBuf;
+    uint32_t             uPeriodMs;
+    /** Configures the (ring) buffer size (in ms). Often is a multiple of uPeriodMs. */
+    uint32_t             uBufferSizeMs;
+    /** Configures the pre-buffering size (in ms).
+     *  Time needed in buffer before the stream becomes active (pre buffering).
+     *  The bigger this value is, the more latency for the stream will occur.
+     *  Set to 0 to disable pre-buffering completely.
+     *  By default set to UINT32_MAX if not set to a custom value. */
+    uint32_t             uPreBufMs;
     /** The driver's debugging configuration. */
     struct
     {

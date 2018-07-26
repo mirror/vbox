@@ -385,8 +385,7 @@ static int ossControlStreamOut(PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD
         }
 
         default:
-            AssertMsgFailed(("Invalid command %ld\n", enmStreamCmd));
-            rc = VERR_INVALID_PARAMETER;
+            rc = VERR_NOT_SUPPORTED;
             break;
     }
 
@@ -649,13 +648,9 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
                         ossAcq.cFragments * ossAcq.cbFragmentSize, pStreamOSS->uAlign + 1));
             }
 
-            uint32_t cSamples = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, ossAcq.cFragments * ossAcq.cbFragmentSize);
-            if (!cSamples)
-                rc = VERR_INVALID_PARAMETER;
-
             if (RT_SUCCESS(rc))
             {
-                size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, cSamples);
+                size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, ossAcq.cFragments * ossAcq.cbFragmentSize);
                 void  *pvBuf = RTMemAlloc(cbBuf);
                 if (!pvBuf)
                 {
@@ -667,7 +662,9 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
                 pStreamOSS->pvBuf = pvBuf;
                 pStreamOSS->cbBuf = cbBuf;
 
-                pCfgAcq->cFrameBufferHint = cSamples;
+                pCfgAcq->Backend.cfPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, ossAcq.cbFragmentSize);
+                pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering". */
+                /** @todo Pre-buffering required? */
             }
         }
 
@@ -688,8 +685,6 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
 
     do
     {
-        uint32_t cSamples;
-
         OSSAUDIOSTREAMCFG reqStream, obtStream;
 
         memcpy(&reqStream.Props, &pCfgReq->Props, sizeof(PDMAUDIOPCMPROPS));
@@ -702,8 +697,6 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
         {
             memcpy(&pCfgAcq->Props, &obtStream.Props, sizeof(PDMAUDIOPCMPROPS));
 
-            cSamples = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cFragments * obtStream.cbFragmentSize);
-
             if (obtStream.cFragments * obtStream.cbFragmentSize & pStreamOSS->uAlign)
             {
                 LogRel(("OSS: Warning: Misaligned playback buffer: Size = %zu, Alignment = %u\n",
@@ -715,7 +708,7 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
         {
             pStreamOSS->Out.fMMIO = false;
 
-            size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, cSamples);
+            size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, obtStream.cFragments * obtStream.cbFragmentSize);
             Assert(cbBuf);
 
 #ifndef RT_OS_L4
@@ -772,7 +765,7 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
                 void *pvBuf = RTMemAlloc(cbBuf);
                 if (!pvBuf)
                 {
-                    LogRel(("OSS: Failed allocating playback buffer with %RU32 samples (%zu bytes)\n", cSamples, cbBuf));
+                    LogRel(("OSS: Failed allocating playback buffer with %zu bytes\n", cbBuf));
                     rc = VERR_NO_MEMORY;
                     break;
                 }
@@ -783,7 +776,8 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
 #ifndef RT_OS_L4
             }
 #endif
-            pCfgAcq->cFrameBufferHint = cSamples;
+            pCfgAcq->Backend.cfPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cbFragmentSize);
+            pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering" */
         }
 
     } while (0);

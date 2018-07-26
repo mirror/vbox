@@ -131,7 +131,7 @@ static int debugCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStrea
     RT_NOREF(pDrv, pStreamDbg, pCfgReq);
 
     if (pCfgAcq)
-        pCfgAcq->cFrameBufferHint = _1K;
+        pCfgAcq->cfPeriod = _1K;
 
     return VINF_SUCCESS;
 }
@@ -193,7 +193,7 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cFrameBufferHint = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDbg->Out.cbPlayBuffer);
+            pCfgAcq->cfPeriod = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDbg->Out.cbPlayBuffer);
     }
 
     return rc;

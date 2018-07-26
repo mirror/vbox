@@ -497,9 +497,6 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
     {
         AssertFailed();
 
-        if (pCfgAcq)
-            pCfgAcq->cFrameBufferHint = 0;
-
         LogRel2(("VideoRec: Support for surround audio not implemented yet\n"));
         return VERR_NOT_SUPPORTED;
     }
@@ -524,7 +521,9 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
              * a specific sampling rate Opus is optimized for. */
             pCfgAcq->Props.uHz         = pSink->Codec.Parms.uHz;
             pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
-            pCfgAcq->cFrameBufferHint = _4K; /** @todo Make this configurable. */
+
+            /* Every Opus frame marks a period for now. Optimize this later. */
+            pCfgAcq->Backend.cfPeriod  = DrvAudioHlpMsToFrames(&pCfgAcq->Props, pSink->Codec.Opus.msFrame); /** @todo Make this configurable. */
         }
     }
 #else

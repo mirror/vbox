@@ -932,19 +932,25 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClientLogon(void *pvCallback, u
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientConnect(void *pvCallback, uint32_t u32ClientId)
 {
-    ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
+    ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvCallback);
 
-    server->mConsole->i_VRDPClientConnect(u32ClientId);
+    pServer->mConsole->i_VRDPClientConnect(u32ClientId);
 
     /* Should the server report usage of an interface for each client?
      * Similar to Intercept.
      */
-    int c = ASMAtomicIncS32(&server->mcClients);
+    int c = ASMAtomicIncS32(&pServer->mcClients);
     if (c == 1)
     {
         /* Features which should be enabled only if there is a client. */
-        server->remote3DRedirect(true);
+        pServer->remote3DRedirect(true);
     }
+
+#ifdef VBOX_WITH_AUDIO_VRDE
+    AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
+    if (pVRDE)
+        pVRDE->onVRDEClientConnect(u32ClientId);
+#endif
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallback, uint32_t u32ClientId,
@@ -963,7 +969,10 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
 #ifdef VBOX_WITH_AUDIO_VRDE
         AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
         if (pVRDE)
+        {
             pVRDE->onVRDEInputIntercept(false /* fIntercept */);
+            pVRDE->onVRDEClientDisconnect(u32ClientId);
+        }
 #endif
     }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,11 +39,6 @@
 #include <AudioToolbox/AudioToolbox.h>
 
 
-/* Audio Queue buffer configuration. */
-#define AQ_BUF_COUNT    32      /* Number of buffers. */
-#define AQ_BUF_SIZE     512     /* Size of each buffer in bytes. */
-#define AQ_BUF_TOTAL    (AQ_BUF_COUNT * AQ_BUF_SIZE)
-#define AQ_BUF_SAMPLES  (AQ_BUF_TOTAL / 4)  /* Hardcoded 4 bytes per sample! */
 
 /* Enables utilizing the Core Audio converter unit for converting
  * input / output from/to our requested formats. That might be more
@@ -378,7 +373,7 @@ typedef struct COREAUDIOSTREAM
     /** The actual audio queue being used. */
     AudioQueueRef               audioQueue;
     /** The audio buffers which are used with the above audio queue. */
-    AudioQueueBufferRef         audioBuffer[AQ_BUF_COUNT];
+    AudioQueueBufferRef         audioBuffer[2];
     /** The acquired (final) audio format for this stream. */
     AudioStreamBasicDescription asbdStream;
     /** The audio unit for this stream. */
@@ -1302,7 +1297,7 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
     if (err != noErr)
         return VERR_GENERAL_FAILURE; /** @todo Fudge! */
 
-    const size_t cbBufSize = AQ_BUF_SIZE; /** @todo Make this configurable! */
+    const size_t cbBufSize = DrvAudioHlpFramesToBytes(&pCAStream->pCfg->Props, pCAStream->pCfg->Backend.cfPeriod);
 
     /*
      * Allocate audio buffers.
@@ -2325,10 +2320,6 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
             ASMAtomicXchgU32(&pCAStream->enmStatus, COREAUDIOSTATUS_IN_INIT);
 
             rc = coreAudioStreamInitQueue(pCAStream, pCfgReq, pCfgAcq);
-            if (RT_SUCCESS(rc))
-            {
-                pCfgAcq->cFrameBufferHint = AQ_BUF_SAMPLES; /** @todo Make this configurable. */
-            }
             if (RT_SUCCESS(rc))
             {
                 ASMAtomicXchgU32(&pCAStream->enmStatus, COREAUDIOSTATUS_INIT);
