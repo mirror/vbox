@@ -1860,13 +1860,6 @@ RT_EXPORT_SYMBOL(RTDbgModSymbolByOrdinalA);
 /**
  * Return a segment number/name as symbol if we couldn't find any
  * valid symbols within the segment.
- *
- * @returns
- * @param   pDbgMod             .
- * @param   iSeg                .
- * @param   off                 .
- * @param   poffDisp            .
- * @param   pSymInfo            .
  */
 DECL_NO_INLINE(static, int)
 rtDbgModSymbolByAddrTrySegments(PRTDBGMODINT pDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
