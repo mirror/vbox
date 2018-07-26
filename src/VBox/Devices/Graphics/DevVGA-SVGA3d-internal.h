@@ -1009,7 +1009,6 @@ typedef struct VMSVGA3DSTATE
 #endif
         PFNGLGETPROGRAMIVARBPROC                        glGetProgramivARB;
         PFNGLPROVOKINGVERTEXPROC                        glProvokingVertex;
-        bool                                            fEXT_stencil_two_side;
         PFNGLGENQUERIESPROC                             glGenQueries;
         PFNGLDELETEQUERIESPROC                          glDeleteQueries;
         PFNGLBEGINQUERYPROC                             glBeginQuery;

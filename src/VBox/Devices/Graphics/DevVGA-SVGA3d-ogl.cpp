@@ -767,10 +767,6 @@ static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
         GLGETPROC_(PFNGLVERTEXATTRIBDIVISORARBPROC              , glVertexAttribDivisor,   "ARB");
     }
 
-    /* Extension support */
-    /** @todo See SVGA3D_RS_STENCILENABLE2SIDED. */
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_stencil_two_side ");
-
 #undef GLGETPROCOPT_
 #undef GLGETPROC_
 
@@ -963,7 +959,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     if (   !vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_vertex_array_bgra ")
         && !vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_vertex_array_bgra "))
     {
-        /** @todo Intel drivers don't support this extension! (TEST IT, may be it was about GL_ARB only?) */
         LogRel(("VMSVGA3D: WARNING: Missing required extension GL_ARB_vertex_array_bgra (d3dcolor)!!!\n"));
     }
 
@@ -3999,7 +3994,7 @@ static GLenum vmsvgaCmpFunc2GL(uint32_t cmpFunc)
     case SVGA3D_CMP_ALWAYS:
         return GL_ALWAYS;
     default:
-        AssertFailed();
+        Assert(cmpFunc == SVGA3D_CMP_INVALID);
         return GL_LESS;
     }
 }
@@ -4025,7 +4020,7 @@ static GLenum vmsvgaStencipOp2GL(uint32_t stencilOp)
     case SVGA3D_STENCILOP_DECR:
         return GL_DECR;
     default:
-        AssertFailed();
+        Assert(stencilOp == SVGA3D_STENCILOP_INVALID);
         return GL_KEEP;
     }
 }
@@ -4321,18 +4316,24 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
             /* Refresh the blending state based on the new enable setting.
              * This will take existing states and set them using either glBlend* or glBlend*Separate.
              */
-            SVGA3dRenderState renderstate[2];
-
-            renderstate[0].state     = SVGA3D_RS_SRCBLEND;
-            renderstate[0].uintValue = pContext->state.aRenderState[SVGA3D_RS_SRCBLEND].uintValue;
-            renderstate[1].state     = SVGA3D_RS_BLENDEQUATION;
-            renderstate[1].uintValue = pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATION].uintValue;
+            static SVGA3dRenderStateName const saRefreshState[] =
+            {
+                SVGA3D_RS_SRCBLEND,
+                SVGA3D_RS_BLENDEQUATION
+            };
+            SVGA3dRenderState renderstate[RT_ELEMENTS(saRefreshState)];
+            for (uint32_t j = 0; j < RT_ELEMENTS(saRefreshState); ++j)
+            {
+                renderstate[j].state     = saRefreshState[j];
+                renderstate[j].uintValue = pContext->state.aRenderState[saRefreshState[j]].uintValue;
+            }
 
             int rc = vmsvga3dSetRenderState(pThis, cid, 2, renderstate);
             AssertRCReturn(rc, rc);
 
             if (pContext->state.aRenderState[SVGA3D_RS_BLENDENABLE].uintValue != 0)
-                continue;   /* ignore if blend is already enabled */
+                continue;   /* Ignore if blend is enabled */
+            /* Apply SVGA3D_RS_SEPARATEALPHABLENDENABLE as SVGA3D_RS_BLENDENABLE */
         }  RT_FALL_THRU();
 
         case SVGA3D_RS_BLENDENABLE:            /* SVGA3dBool */
@@ -4388,8 +4389,11 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
         case SVGA3D_RS_BLENDEQUATIONALPHA:     /* SVGA3dBlendEquation */
         case SVGA3D_RS_BLENDEQUATION:          /* SVGA3dBlendEquation */
             if (pContext->state.aRenderState[SVGA3D_RS_SEPARATEALPHABLENDENABLE].uintValue != 0)
-                pState->ext.glBlendEquationSeparate(vmsvga3dBlendEquation2GL(pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATION].uintValue),
-                                                    vmsvga3dBlendEquation2GL(pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATIONALPHA].uintValue));
+            {
+                GLenum const modeRGB = vmsvga3dBlendEquation2GL(pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATION].uintValue);
+                GLenum const modeAlpha = vmsvga3dBlendEquation2GL(pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATIONALPHA].uintValue);
+                pState->ext.glBlendEquationSeparate(modeRGB, modeAlpha);
+            }
             else
             {
 #if VBOX_VMSVGA3D_GL_HACK_LEVEL >= 0x102
@@ -4476,6 +4480,33 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
             break;
         }
 
+        case SVGA3D_RS_STENCILENABLE2SIDED:    /* SVGA3dBool */
+        {
+            /* Refresh the stencil state based on the new enable setting.
+             * This will take existing states and set them using either glStencil or glStencil*Separate.
+             */
+            static SVGA3dRenderStateName const saRefreshState[] =
+            {
+                SVGA3D_RS_STENCILFUNC,
+                SVGA3D_RS_STENCILFAIL,
+                SVGA3D_RS_CCWSTENCILFUNC,
+                SVGA3D_RS_CCWSTENCILFAIL
+            };
+            SVGA3dRenderState renderstate[RT_ELEMENTS(saRefreshState)];
+            for (uint32_t j = 0; j < RT_ELEMENTS(saRefreshState); ++j)
+            {
+                renderstate[j].state     = saRefreshState[j];
+                renderstate[j].uintValue = pContext->state.aRenderState[saRefreshState[j]].uintValue;
+            }
+
+            int rc = vmsvga3dSetRenderState(pThis, cid, RT_ELEMENTS(renderstate), renderstate);
+            AssertRCReturn(rc, rc);
+
+            if (pContext->state.aRenderState[SVGA3D_RS_STENCILENABLE].uintValue != 0)
+                continue;   /* Ignore if stencil is enabled */
+            /* Apply SVGA3D_RS_STENCILENABLE2SIDED as SVGA3D_RS_STENCILENABLE. */
+        }  RT_FALL_THRU();
+
         case SVGA3D_RS_STENCILENABLE:          /* SVGA3dBool */
             enableCap = GL_STENCIL_TEST;
             val = pRenderState[i].uintValue;
@@ -4488,13 +4519,15 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
             GLint func, ref;
             GLuint mask;
 
-            glGetIntegerv(GL_STENCIL_FUNC, &func);
+            /* Query current values to have all parameters for glStencilFunc[Separate]. */
+            glGetIntegerv(GL_STENCIL_FUNC,       &func);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             glGetIntegerv(GL_STENCIL_VALUE_MASK, (GLint *)&mask);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            glGetIntegerv(GL_STENCIL_REF, &ref);
+            glGetIntegerv(GL_STENCIL_REF,        &ref);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
+            /* Update the changed value. */
             switch (pRenderState[i].state)
             {
             case SVGA3D_RS_STENCILFUNC:            /* SVGA3dCmpFunc */
@@ -4515,7 +4548,14 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
                 break;
             }
 
-            glStencilFunc(func, ref, mask);
+            if (pContext->state.aRenderState[SVGA3D_RS_STENCILENABLE2SIDED].uintValue != 0)
+            {
+                pState->ext.glStencilFuncSeparate(GL_FRONT, func, ref, mask);
+            }
+            else
+            {
+                glStencilFunc(func, ref, mask);
+            }
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
         }
@@ -4530,9 +4570,9 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
         case SVGA3D_RS_STENCILPASS:            /* SVGA3dStencilOp */
         {
             GLint sfail, dpfail, dppass;
-            GLenum stencilop = vmsvgaStencipOp2GL(pRenderState[i].uintValue);
+            GLenum const stencilop = vmsvgaStencipOp2GL(pRenderState[i].uintValue);
 
-            glGetIntegerv(GL_STENCIL_FAIL, &sfail);
+            glGetIntegerv(GL_STENCIL_FAIL,            &sfail);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             glGetIntegerv(GL_STENCIL_PASS_DEPTH_FAIL, &dpfail);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -4555,45 +4595,31 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
                 AssertFailed();
                 break;
             }
-            glStencilOp(sfail, dpfail, dppass);
+            if (pContext->state.aRenderState[SVGA3D_RS_STENCILENABLE2SIDED].uintValue != 0)
+            {
+                pState->ext.glStencilOpSeparate(GL_FRONT, sfail, dpfail, dppass);
+            }
+            else
+            {
+                glStencilOp(sfail, dpfail, dppass);
+            }
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
         }
 
-        case SVGA3D_RS_STENCILENABLE2SIDED:    /* SVGA3dBool */
-            /** @todo This should be implemented similar to SVGA3D_RS_SEPARATEALPHABLENDENABLE,
-             * i.e. use OpenGL 2.0 glStencil[Func|Op]Separate when SVGA3D_RS_STENCILENABLE2SIDED
-             * is enabled.
-             * It looks like VMSVGA (D3D) does not support separate masks, i.e. does not need
-             * glStencilMaskSeparate.
-             *
-             * GL_EXT_stencil_two_side is an NVidia extension which implements similar functionality
-             * as glStencil[*]Separate functions, but it not needed with OpenGL 2.0.
-             */
-            /* @note GL_EXT_stencil_two_side required! */
-            if (pState->ext.fEXT_stencil_two_side)
-            {
-                enableCap = GL_STENCIL_TEST_TWO_SIDE_EXT;
-                val = pRenderState[i].uintValue;
-            }
-            else
-                Log(("vmsvga3dSetRenderState: WARNING unsupported SVGA3D_RS_STENCILENABLE2SIDED\n"));
-            break;
-
         case SVGA3D_RS_CCWSTENCILFUNC:         /* SVGA3dCmpFunc */
         {
-            /** @todo SVGA3D_RS_STENCILFAIL/ZFAIL/PASS for front & back faces
-             *        SVGA3D_RS_CCWSTENCILFAIL/ZFAIL/PASS for back faces ??
-             */
             GLint ref;
             GLuint mask;
+            GLint const func = vmsvgaCmpFunc2GL(pRenderState[i].uintValue);
 
-            glGetIntegerv(GL_STENCIL_BACK_VALUE_MASK, (GLint *)&mask);
+            /* GL_STENCIL_VALUE_MASK and GL_STENCIL_REF are the same for both GL_FRONT and GL_BACK. */
+            glGetIntegerv(GL_STENCIL_VALUE_MASK, (GLint *)&mask);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            glGetIntegerv(GL_STENCIL_BACK_REF, &ref);
+            glGetIntegerv(GL_STENCIL_REF,        &ref);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-            pState->ext.glStencilFuncSeparate(GL_BACK, vmsvgaCmpFunc2GL(pRenderState[i].uintValue), ref, mask);
+            pState->ext.glStencilFuncSeparate(GL_BACK, func, ref, mask);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
         }
@@ -4602,13 +4628,10 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
         case SVGA3D_RS_CCWSTENCILZFAIL:        /* SVGA3dStencilOp */
         case SVGA3D_RS_CCWSTENCILPASS:         /* SVGA3dStencilOp */
         {
-            /** @todo SVGA3D_RS_STENCILFAIL/ZFAIL/PASS for front & back faces
-             *        SVGA3D_RS_CCWSTENCILFAIL/ZFAIL/PASS for back faces ??
-             */
             GLint sfail, dpfail, dppass;
-            GLenum stencilop = vmsvgaStencipOp2GL(pRenderState[i].uintValue);
+            GLenum const stencilop = vmsvgaStencipOp2GL(pRenderState[i].uintValue);
 
-            glGetIntegerv(GL_STENCIL_BACK_FAIL, &sfail);
+            glGetIntegerv(GL_STENCIL_BACK_FAIL,            &sfail);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             glGetIntegerv(GL_STENCIL_BACK_PASS_DEPTH_FAIL, &dpfail);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
