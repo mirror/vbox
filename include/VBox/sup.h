@@ -813,7 +813,7 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 #define SUP_VMMR0_DO_NEM_RUN    3
 /** @} */
 
-/** SUPR3QueryVTCaps capability flags
+/** SUPR3QueryVTCaps capability flags.
  * @{
  */
 /** AMD-V support. */
