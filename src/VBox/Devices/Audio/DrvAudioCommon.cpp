@@ -119,31 +119,33 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
 }
 
 /**
- * Clears a sample buffer by the given amount of audio samples.
+ * Clears a sample buffer by the given amount of audio frames with silence (according to the format
+ * given by the PCM properties).
  *
- * @return  IPRT status code.
  * @param   pPCMProps               PCM properties to use for the buffer to clear.
  * @param   pvBuf                   Buffer to clear.
  * @param   cbBuf                   Size (in bytes) of the buffer.
- * @param   cSamples                Number of audio samples to clear in the buffer.
+ * @param   cFrames                 Number of audio frames to clear in the buffer.
  */
-void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
+void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
 {
     AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pvBuf);
 
-    if (!cbBuf || !cSamples)
+    if (!cbBuf || !cFrames)
         return;
 
     Assert(pPCMProps->cBits);
-    size_t cbToClear = cSamples * (pPCMProps->cBits / 8 /* Bytes */);
+    size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
     Assert(cbBuf >= cbToClear);
 
     if (cbBuf < cbToClear)
         cbToClear = cbBuf;
 
-    Log2Func(("pPCMProps=%p, pvBuf=%p, cSamples=%RU32, fSigned=%RTbool, cBits=%RU8\n",
-              pPCMProps, pvBuf, cSamples, pPCMProps->fSigned, pPCMProps->cBits));
+    Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBits=%RU8\n",
+              pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cBits));
+
+    Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
 
     if (pPCMProps->fSigned)
     {
@@ -162,26 +164,22 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
             case 16:
             {
                 uint16_t *p = (uint16_t *)pvBuf;
-                int16_t   s = INT16_MAX;
+                uint16_t  s = 0x8000;
 
-                if (pPCMProps->fSwapEndian)
-                    s = RT_BSWAP_U16(s);
-
-                for (uint32_t i = 0; i < cSamples; i++)
+                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames(pPCMProps, (uint32_t)cbToClear); i++)
                     p[i] = s;
 
                 break;
             }
 
+            /** @todo Add 24 bit? */
+
             case 32:
             {
                 uint32_t *p = (uint32_t *)pvBuf;
-                int32_t   s = INT32_MAX;
+                uint32_t  s = 0x80000000;
 
-                if (pPCMProps->fSwapEndian)
-                    s = RT_BSWAP_U32(s);
-
-                for (uint32_t i = 0; i < cSamples; i++)
+                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames(pPCMProps, (uint32_t)cbToClear); i++)
                     p[i] = s;
 
                 break;
