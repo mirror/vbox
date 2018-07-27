@@ -33,6 +33,7 @@
 #include <iprt/alloca.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/formats/pecoff.h>
 
 
 /*********************************************************************************************************************************
@@ -58,6 +59,11 @@ typedef struct DBGFUNWINDCTX
     RTUINTPTR   m_cbCachedMapping;
     uint8_t    *m_pbCachedInfo;
     size_t      m_cbCachedInfo;
+
+    /** Function table for PE/AMD64 (entire m_pbCachedInfo) . */
+    PCIMAGE_RUNTIME_FUNCTION_ENTRY  m_paFunctions;
+    /** Number functions in m_paFunctions. */
+    size_t                          m_cFunctions;
 
     DBGFUNWINDCTX(PUVM pUVM, VMCPUID idCpu, PCCPUMCTX pInitialCtx, RTDBGAS hAs)
     {
@@ -95,6 +101,8 @@ typedef struct DBGFUNWINDCTX
         m_cbCachedMapping = 0;
         m_pbCachedInfo    = NULL;
         m_cbCachedInfo    = 0;
+        m_paFunctions     = NULL;
+        m_cFunctions      = 0;
     }
 
     ~DBGFUNWINDCTX();
@@ -117,6 +125,8 @@ static void dbgfR3UnwindCtxFlushCache(PDBGFUNWINDCTX pUnwindCtx)
         pUnwindCtx->m_pbCachedInfo = NULL;
     }
     pUnwindCtx->m_cbCachedInfo = 0;
+    pUnwindCtx->m_paFunctions  = NULL;
+    pUnwindCtx->m_cFunctions   = 0;
 }
 
 
@@ -134,13 +144,214 @@ static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS p
 }
 
 
-static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pAddrFrame)
+/**
+ * Try read a 64-bit value off the stack.
+ *
+ * @param   pUnwindCtx      The unwind context.
+ * @param   uSrcAddr        The stack address.
+ * @param   puDst           The read destination.
+ */
+static void dbgfR3UnwindCtxLoadU64(PDBGFUNWINDCTX pUnwindCtx, uint64_t uSrcAddr, uint64_t *puDst)
 {
-    if (!pUnwindCtx->m_cbCachedInfo)
-        return false;
+    DBGFADDRESS SrcAddr;
+    DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu,
+                  DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSrcAddr),
+                  puDst, sizeof(*puDst));
+}
 
-    //PCIMAGE_RUNTIME_FUNCTION_ENTRY;
-    //UNWIND_HISTORY_TABLE
+
+/**
+ * Binary searches the lookup table.
+ *
+ * @returns RVA of unwind info on success, UINT32_MAX on failure.
+ * @param   paFunctions     The table to lookup @a offFunctionRva in.
+ * @param   iEnd            Size of the table.
+ * @param   uRva            The RVA of the function we want.
+ */
+DECLINLINE(PCIMAGE_RUNTIME_FUNCTION_ENTRY)
+dbgfR3UnwindCtxLookupUnwindInfoRva(PCIMAGE_RUNTIME_FUNCTION_ENTRY paFunctions, size_t iEnd, uint32_t uRva)
+{
+    size_t iBegin = 0;
+    while (iBegin < iEnd)
+    {
+        size_t const i = iBegin  + (iEnd - iBegin) / 2;
+        PCIMAGE_RUNTIME_FUNCTION_ENTRY pEntry = &paFunctions[i];
+        if (uRva < pEntry->BeginAddress)
+            iEnd = i;
+        else if (uRva > pEntry->EndAddress)
+            iBegin = i + 1;
+        else
+            return pEntry;
+    }
+    return NULL;
+}
+
+
+static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t uRvaRip, PDBGFADDRESS pAddrFrame)
+{
+    /*
+     * Lookup the unwind info RVA and try read it.
+     */
+    PCIMAGE_RUNTIME_FUNCTION_ENTRY pEntry = dbgfR3UnwindCtxLookupUnwindInfoRva(pUnwindCtx->m_paFunctions,
+                                                                               pUnwindCtx->m_cFunctions, uRvaRip);
+    if (pEntry)
+    {
+        unsigned iFrameReg   = ~0U;
+        unsigned offFrameReg = 0;
+
+        for (;;)
+        {
+            /*
+             * Get the info.
+             */
+            union
+            {
+                uint32_t uRva;
+                uint8_t  ab[  RT_OFFSETOF(IMAGE_UNWIND_INFO, aOpcodes)
+                            + sizeof(IMAGE_UNWIND_CODE) * 256
+                            + sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY)];
+            } uBuf;
+
+            uBuf.uRva = pEntry->UnwindInfoAddress;
+            size_t cbBuf = sizeof(uBuf);
+            int rc = RTDbgModImageQueryProp(pUnwindCtx->m_hCached, RTLDRPROP_UNWIND_INFO, &uBuf, cbBuf, &cbBuf);
+            if (RT_FAILURE(rc))
+                return false;
+
+            /*
+             * Check the info.
+             */
+            ASMCompilerBarrier(); /* we're aliasing */
+            PCIMAGE_UNWIND_INFO pInfo = (PCIMAGE_UNWIND_INFO)&uBuf;
+
+            if (pInfo->Version != 1)
+                return false;
+
+            /*
+             * Execute the opcodes.
+             */
+            unsigned const cOpcodes = pInfo->CountOfCodes;
+            unsigned       iOpcode  = 0;
+
+            /* First, skip opcodes that doesn't apply to us if we're the prolog. */
+            uint32_t offPc = uRvaRip - pEntry->BeginAddress;
+            if (offPc < pInfo->SizeOfProlog)
+                while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.CodeOffset > offPc)
+                    iOpcode++;
+
+            /* Execute. */
+            if (pInfo->FrameRegister != 0)
+            {
+                iFrameReg   = pInfo->FrameRegister;
+                offFrameReg = pInfo->FrameOffset * 16;
+            }
+            while (iOpcode < cOpcodes)
+            {
+                Assert(pInfo->aOpcodes[iOpcode].u.CodeOffset <= offPc);
+                switch (pInfo->aOpcodes[iOpcode].u.UnwindOp)
+                {
+                    case IMAGE_AMD64_UWOP_PUSH_NONVOL:
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8;
+                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP],
+                                               &pUnwindCtx->m_aGprs[pInfo->aOpcodes[iOpcode].u.OpInfo]);
+                        iOpcode++;
+                        break;
+
+                    case IMAGE_AMD64_UWOP_ALLOC_LARGE:
+                        iOpcode += 3;
+                        AssertBreak(iOpcode <= cOpcodes);
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= *(uint32_t const *)&pInfo->aOpcodes[iOpcode - 2];
+                        break;
+
+                    case IMAGE_AMD64_UWOP_ALLOC_SMALL:
+                        AssertBreak(iOpcode <= cOpcodes);
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= pInfo->aOpcodes[iOpcode].u.OpInfo * 8 + 8;
+                        iOpcode++;
+                        break;
+
+                    case IMAGE_AMD64_UWOP_SET_FPREG:
+                        iFrameReg = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                        offFrameReg = pInfo->FrameOffset * 16;
+                        break;
+
+                    case IMAGE_AMD64_UWOP_SAVE_NONVOL:
+                    case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
+                    {
+                        bool const     fFar  = pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR;
+                        unsigned const iGreg = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                        uint32_t       off   = 0;
+                        iOpcode++;
+                        if (iOpcode < cOpcodes)
+                        {
+                            off = pInfo->aOpcodes[iOpcode].FrameOffset;
+                            iOpcode++;
+                            if (fFar && iOpcode < cOpcodes)
+                            {
+                                off |= (uint32_t)pInfo->aOpcodes[iOpcode].FrameOffset << 16;
+                                iOpcode++;
+                            }
+                        }
+                        off *= 8;
+                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP] + off, &pUnwindCtx->m_aGprs[iGreg]);
+                        break;
+                    }
+
+                    case IMAGE_AMD64_UWOP_SAVE_XMM128:
+                        iOpcode += 2;
+                        break;
+
+                    case IMAGE_AMD64_UWOP_SAVE_XMM128_FAR:
+                        iOpcode += 3;
+                        break;
+
+                    case IMAGE_AMD64_UWOP_PUSH_MACHFRAME:
+                    {
+                        Assert(pInfo->aOpcodes[iOpcode].u.OpInfo <= 1);
+                        if (pInfo->aOpcodes[iOpcode].u.OpInfo)
+                            pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* error code */
+
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* RIP */
+                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uPc);
+
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* CS */
+                        //dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uCs);
+
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* EFLAGS */
+                        //dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uRFlags);
+
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* RSP */
+                        uint64_t uNewRsp = (pUnwindCtx->m_aGprs[X86_GREG_xSP] - 8) & ~(uint64_t)15;
+                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &uNewRsp);
+
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* SS */
+                        //dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uSs);
+
+                        pUnwindCtx->m_aGprs[X86_GREG_xSP] = uNewRsp;
+                        return true;
+                    }
+
+                    case IMAGE_AMD64_UWOP_RESERVED_6:
+                        AssertFailedReturn(false);
+
+                    case IMAGE_AMD64_UWOP_RESERVED_7:
+                        AssertFailedReturn(false);
+
+                    default:
+                        AssertMsgFailedReturn(("%u\n", pInfo->aOpcodes[iOpcode].u.UnwindOp), false);
+                }
+            }
+
+            /*
+             * Chained stuff?
+             */
+            if (!(pInfo->Flags & IMAGE_UNW_FLAGS_CHAININFO))
+                break;
+            /** @todo impl chains.   */
+            break;
+        }
+
+        /** @todo do post processing. */
+    }
 
     RT_NOREF_PV(pAddrFrame);
     return false;
@@ -154,7 +365,7 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
      */
     RTUINTPTR offCache = pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping;
     if (offCache < pUnwindCtx->m_cbCachedMapping)
-        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pAddrFrame);
+        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, offCache, pAddrFrame);
 
     /*
      * Try locate the module.
@@ -173,27 +384,31 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
 
         /* Play simple for now. */
         if (   idxSeg == NIL_RTDBGSEGIDX
-            && RTDbgModImageGetFormat(hDbgMod) == RTLDRFMT_PE
+            && RTDbgModImageGetFormat(hDbgMod) == RTLDRFMT_32BIT_HACK /// @todo RTLDRFMT_PE (disabled code)
             && RTDbgModImageGetArch(hDbgMod)   == RTLDRARCH_AMD64)
         {
             /*
              * Try query the unwind data.
              */
             size_t cbNeeded = 0;
-            rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_INFO, NULL, 0, &cbNeeded);
+            rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, NULL, 0, &cbNeeded);
             if (   rc == VERR_BUFFER_OVERFLOW
-                && cbNeeded > 12
+                && cbNeeded >= sizeof(*pUnwindCtx->m_paFunctions)
                 && cbNeeded < _64M)
             {
                 void *pvBuf = RTMemAllocZ(cbNeeded + 32);
                 if (pvBuf)
                 {
-                    rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_INFO, pUnwindCtx->m_pbCachedInfo, cbNeeded, &cbNeeded);
+                    rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, pUnwindCtx->m_pbCachedInfo, cbNeeded, &cbNeeded);
                     if (RT_SUCCESS(rc))
                     {
                         pUnwindCtx->m_pbCachedInfo = (uint8_t *)pvBuf;
                         pUnwindCtx->m_cbCachedInfo = cbNeeded;
-                        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pAddrFrame);
+                        pUnwindCtx->m_paFunctions  = (PCIMAGE_RUNTIME_FUNCTION_ENTRY)pvBuf;
+                        pUnwindCtx->m_cFunctions   = cbNeeded / sizeof(*pUnwindCtx->m_paFunctions);
+
+                        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping,
+                                                               pAddrFrame);
                     }
                     RTMemFree(pvBuf);
                 }
@@ -202,7 +417,6 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
     }
     return false;
 }
-
 
 
 /**
