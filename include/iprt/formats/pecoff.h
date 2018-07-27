@@ -658,6 +658,22 @@ typedef IMAGE_RESOURCE_DATA_ENTRY const *PCIMAGE_RESOURCE_DATA_ENTRY;
 
 /** @} */
 
+/** @name Image exception information
+ * @{ */
+
+/** This structure is used by AMD64 and "Itanic".
+ * MIPS uses a different one.  ARM, SH3, SH4 and PPC on WinCE also uses a different one.  */
+typedef struct _IMAGE_RUNTIME_FUNCTION_ENTRY
+{
+    uint32_t    BeginAddress;
+    uint32_t    EndAddress;
+    uint32_t    UnwindInfoAddress;
+} IMAGE_RUNTIME_FUNCTION_ENTRY;
+typedef IMAGE_RUNTIME_FUNCTION_ENTRY *PIMAGE_RUNTIME_FUNCTION_ENTRY;
+typedef IMAGE_RUNTIME_FUNCTION_ENTRY const *PCIMAGE_RUNTIME_FUNCTION_ENTRY;
+
+/** @} */
+
 
 
 /** @name Image load config directories
