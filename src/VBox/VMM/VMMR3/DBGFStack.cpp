@@ -30,15 +30,185 @@
 #include <VBox/log.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
 #include <iprt/alloca.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Unwind context.
+ *
+ * @note Using a constructor and destructor here for simple+safe cleanup.
+ *
+ * @todo Generalize and move to IPRT or some such place.
+ */
+typedef struct DBGFUNWINDCTX
+{
+    PUVM        m_pUVM;
+    VMCPUID     m_idCpu;
+    RTDBGAS     m_hAs;
+    uint64_t    m_uPc;
+    uint64_t    m_aGprs[16];
+
+    RTDBGMOD    m_hCached;
+    RTUINTPTR   m_uCachedMapping;
+    RTUINTPTR   m_cbCachedMapping;
+    uint8_t    *m_pbCachedInfo;
+    size_t      m_cbCachedInfo;
+
+    DBGFUNWINDCTX(PUVM pUVM, VMCPUID idCpu, PCCPUMCTX pInitialCtx, RTDBGAS hAs)
+    {
+        if (pInitialCtx)
+        {
+            m_aGprs[X86_GREG_xAX] = pInitialCtx->rax;
+            m_aGprs[X86_GREG_xCX] = pInitialCtx->rcx;
+            m_aGprs[X86_GREG_xDX] = pInitialCtx->rdx;
+            m_aGprs[X86_GREG_xBX] = pInitialCtx->rbx;
+            m_aGprs[X86_GREG_xSP] = pInitialCtx->rsp;
+            m_aGprs[X86_GREG_xBP] = pInitialCtx->rbp;
+            m_aGprs[X86_GREG_xSI] = pInitialCtx->rsi;
+            m_aGprs[X86_GREG_xDI] = pInitialCtx->rdi;
+            m_aGprs[X86_GREG_x8 ] = pInitialCtx->r8;
+            m_aGprs[X86_GREG_x9 ] = pInitialCtx->r9;
+            m_aGprs[X86_GREG_x10] = pInitialCtx->r10;
+            m_aGprs[X86_GREG_x11] = pInitialCtx->r11;
+            m_aGprs[X86_GREG_x12] = pInitialCtx->r12;
+            m_aGprs[X86_GREG_x13] = pInitialCtx->r13;
+            m_aGprs[X86_GREG_x14] = pInitialCtx->r14;
+            m_aGprs[X86_GREG_x15] = pInitialCtx->r15;
+            m_uPc                 = pInitialCtx->rip;
+        }
+        else
+        {
+            RT_BZERO(m_aGprs, sizeof(m_aGprs));
+            m_uPc = 0;
+        }
+        m_pUVM            = pUVM;
+        m_idCpu           = idCpu;
+        m_hAs             = hAs;
+
+        m_hCached         = NIL_RTDBGMOD;
+        m_uCachedMapping  = 0;
+        m_cbCachedMapping = 0;
+        m_pbCachedInfo    = NULL;
+        m_cbCachedInfo    = 0;
+    }
+
+    ~DBGFUNWINDCTX();
+
+} DBGFUNWINDCTX;
+/** Pointer to unwind context. */
+typedef DBGFUNWINDCTX *PDBGFUNWINDCTX;
+
+
+static void dbgfR3UnwindCtxFlushCache(PDBGFUNWINDCTX pUnwindCtx)
+{
+    if (pUnwindCtx->m_hCached != NIL_RTDBGMOD)
+    {
+        RTDbgModRelease(pUnwindCtx->m_hCached);
+        pUnwindCtx->m_hCached = NIL_RTDBGMOD;
+    }
+    if (pUnwindCtx->m_pbCachedInfo)
+    {
+        RTMemFree(pUnwindCtx->m_pbCachedInfo);
+        pUnwindCtx->m_pbCachedInfo = NULL;
+    }
+    pUnwindCtx->m_cbCachedInfo = 0;
+}
+
+
+DBGFUNWINDCTX::~DBGFUNWINDCTX()
+{
+    dbgfR3UnwindCtxFlushCache(this);
+}
+
+
+static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS pAddrPC, PCDBGFADDRESS pAddrStack)
+{
+    pUnwindCtx->m_uPc                 = pAddrPC->FlatPtr;
+    pUnwindCtx->m_aGprs[X86_GREG_xSP] = pAddrStack->FlatPtr;
+    return true;
+}
+
+
+static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pAddrFrame)
+{
+    if (!pUnwindCtx->m_cbCachedInfo)
+        return false;
+
+    //PCIMAGE_RUNTIME_FUNCTION_ENTRY;
+    //UNWIND_HISTORY_TABLE
+
+    RT_NOREF_PV(pAddrFrame);
+    return false;
+}
+
+
+static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pAddrFrame)
+{
+    /*
+     * Hope for the same module as last time around.
+     */
+    RTUINTPTR offCache = pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping;
+    if (offCache < pUnwindCtx->m_cbCachedMapping)
+        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pAddrFrame);
+
+    /*
+     * Try locate the module.
+     */
+    RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
+    RTUINTPTR       uBase   = 0;
+    RTDBGSEGIDX     idxSeg  = NIL_RTDBGSEGIDX;
+    int rc = RTDbgAsModuleByAddr(pUnwindCtx->m_hAs, pUnwindCtx->m_uPc, &hDbgMod, &uBase, &idxSeg);
+    if (RT_SUCCESS(rc))
+    {
+        /* We cache the module regardless of unwind info. */
+        dbgfR3UnwindCtxFlushCache(pUnwindCtx);
+        pUnwindCtx->m_hCached         = hDbgMod;
+        pUnwindCtx->m_uCachedMapping  = uBase;
+        pUnwindCtx->m_cbCachedMapping = RTDbgModSegmentSize(hDbgMod, idxSeg);
+
+        /* Play simple for now. */
+        if (   idxSeg == NIL_RTDBGSEGIDX
+            && RTDbgModImageGetFormat(hDbgMod) == RTLDRFMT_PE
+            && RTDbgModImageGetArch(hDbgMod)   == RTLDRARCH_AMD64)
+        {
+            /*
+             * Try query the unwind data.
+             */
+            size_t cbNeeded = 0;
+            rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_INFO, NULL, 0, &cbNeeded);
+            if (   rc == VERR_BUFFER_OVERFLOW
+                && cbNeeded > 12
+                && cbNeeded < _64M)
+            {
+                void *pvBuf = RTMemAllocZ(cbNeeded + 32);
+                if (pvBuf)
+                {
+                    rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_INFO, pUnwindCtx->m_pbCachedInfo, cbNeeded, &cbNeeded);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pUnwindCtx->m_pbCachedInfo = (uint8_t *)pvBuf;
+                        pUnwindCtx->m_cbCachedInfo = cbNeeded;
+                        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pAddrFrame);
+                    }
+                    RTMemFree(pvBuf);
+                }
+            }
+        }
+    }
+    return false;
+}
 
 
 
 /**
- * Read stack memory.
+ * Read stack memory, will init entire buffer.
  */
-DECLINLINE(int) dbgfR3Read(PUVM pUVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS pSrcAddr, size_t cb, size_t *pcbRead)
+DECLINLINE(int) dbgfR3StackRead(PUVM pUVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS pSrcAddr, size_t cb, size_t *pcbRead)
 {
     int rc = DBGFR3MemRead(pUVM, idCpu, pSrcAddr, pvBuf, cb);
     if (RT_FAILURE(rc))
@@ -77,7 +247,7 @@ DECLINLINE(int) dbgfR3Read(PUVM pUVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS 
  * @todo Add AMD64 support (needs teaming up with the module management for
  *       unwind tables).
  */
-static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME pFrame)
+DECL_NO_INLINE(static, int) dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME pFrame)
 {
     /*
      * Stop if we got a read error in the previous run.
@@ -137,11 +307,11 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
     uArgs.pb = u.pb + cbStackItem + cbRetAddr;
 
     Assert(DBGFADDRESS_IS_VALID(&pFrame->AddrFrame));
-    int rc = dbgfR3Read(pUVM, idCpu, u.pv,
-                        pFrame->fFlags & DBGFSTACKFRAME_FLAGS_ALL_VALID
-                        ? &pFrame->AddrReturnFrame
-                        : &pFrame->AddrFrame,
-                        cbRead, &cbRead);
+    int rc = dbgfR3StackRead(pUVM, idCpu, u.pv,
+                             pFrame->fFlags & DBGFSTACKFRAME_FLAGS_ALL_VALID
+                             ? &pFrame->AddrReturnFrame
+                             : &pFrame->AddrFrame,
+                             cbRead, &cbRead);
     if (    RT_FAILURE(rc)
         ||  cbRead < cbRetAddr + cbStackItem)
         pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_LAST;
@@ -320,7 +490,7 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
 /**
  * Walks the entire stack allocating memory as we walk.
  */
-static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore, RTDBGAS hAs,
+static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUMCTX pCtx, RTDBGAS hAs,
                                                 DBGFCODETYPE enmCodeType,
                                                 PCDBGFADDRESS pAddrFrame,
                                                 PCDBGFADDRESS pAddrStack,
@@ -328,6 +498,8 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
                                                 DBGFRETURNTYPE enmReturnType,
                                                 PCDBGFSTACKFRAME *ppFirstFrame)
 {
+    DBGFUNWINDCTX UnwindCtx(pUVM, idCpu, pCtx, hAs);
+
     /* alloc first frame. */
     PDBGFSTACKFRAME pCur = (PDBGFSTACKFRAME)MMR3HeapAllocZU(pUVM, MM_TAG_DBGF_STACK, sizeof(*pCur));
     if (!pCur)
@@ -343,25 +515,11 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
     if (pAddrPC)
         pCur->AddrPC = *pAddrPC;
     else if (enmCodeType != DBGFCODETYPE_GUEST)
-        DBGFR3AddrFromFlat(pUVM, &pCur->AddrPC, pCtxCore->rip);
+        DBGFR3AddrFromFlat(pUVM, &pCur->AddrPC, pCtx->rip);
     else
-        rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrPC, pCtxCore->cs.Sel, pCtxCore->rip);
+        rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrPC, pCtx->cs.Sel, pCtx->rip);
     if (RT_SUCCESS(rc))
     {
-        if (enmReturnType == DBGFRETURNTYPE_INVALID)
-            switch (pCur->AddrPC.fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
-            {
-                case DBGFADDRESS_FLAGS_FAR16: pCur->enmReturnType = DBGFRETURNTYPE_NEAR16; break;
-                case DBGFADDRESS_FLAGS_FAR32: pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break;
-                case DBGFADDRESS_FLAGS_FAR64: pCur->enmReturnType = DBGFRETURNTYPE_NEAR64; break;
-                case DBGFADDRESS_FLAGS_RING0:
-                    pCur->enmReturnType = HC_ARCH_BITS == 64 ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32;
-                    break;
-                default:
-                    pCur->enmReturnType = DBGFRETURNTYPE_NEAR32;
-                    break; /// @todo 64-bit guests
-            }
-
         uint64_t fAddrMask;
         if (enmCodeType == DBGFCODETYPE_RING0)
             fAddrMask = HC_ARCH_BITS == 64 ? UINT64_MAX : UINT32_MAX;
@@ -376,29 +534,63 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
         else
         {
             PVMCPU pVCpu = VMMGetCpuById(pUVM->pVM, idCpu);
-            CPUMMODE CpuMode = CPUMGetGuestMode(pVCpu);
-            if (CpuMode == CPUMMODE_REAL)
+            CPUMMODE enmCpuMode = CPUMGetGuestMode(pVCpu);
+            if (enmCpuMode == CPUMMODE_REAL)
+            {
                 fAddrMask = UINT16_MAX;
-            else if (   CpuMode == CPUMMODE_PROTECTED
+                if (enmReturnType == DBGFRETURNTYPE_INVALID)
+                    pCur->enmReturnType = DBGFRETURNTYPE_NEAR16;
+            }
+            else if (   enmCpuMode == CPUMMODE_PROTECTED
                      || !CPUMIsGuestIn64BitCode(pVCpu))
+            {
                 fAddrMask = UINT32_MAX;
+                if (enmReturnType == DBGFRETURNTYPE_INVALID)
+                    pCur->enmReturnType = DBGFRETURNTYPE_NEAR32;
+            }
             else
+            {
                 fAddrMask = UINT64_MAX;
+                if (enmReturnType == DBGFRETURNTYPE_INVALID)
+                    pCur->enmReturnType = DBGFRETURNTYPE_NEAR64;
+            }
         }
+
+        if (enmReturnType == DBGFRETURNTYPE_INVALID)
+            switch (pCur->AddrPC.fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
+            {
+                case DBGFADDRESS_FLAGS_FAR16: pCur->enmReturnType = DBGFRETURNTYPE_NEAR16; break;
+                case DBGFADDRESS_FLAGS_FAR32: pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break;
+                case DBGFADDRESS_FLAGS_FAR64: pCur->enmReturnType = DBGFRETURNTYPE_NEAR64; break;
+                case DBGFADDRESS_FLAGS_RING0:
+                    pCur->enmReturnType = HC_ARCH_BITS == 64 ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32;
+                    break;
+                default:
+                    pCur->enmReturnType = DBGFRETURNTYPE_NEAR32;
+                    break;
+            }
+
 
         if (pAddrStack)
             pCur->AddrStack = *pAddrStack;
         else if (enmCodeType != DBGFCODETYPE_GUEST)
-            DBGFR3AddrFromFlat(pUVM, &pCur->AddrStack, pCtxCore->rsp & fAddrMask);
+            DBGFR3AddrFromFlat(pUVM, &pCur->AddrStack, pCtx->rsp & fAddrMask);
         else
-            rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrStack, pCtxCore->ss.Sel, pCtxCore->rsp & fAddrMask);
+            rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrStack, pCtx->ss.Sel, pCtx->rsp & fAddrMask);
 
         if (pAddrFrame)
             pCur->AddrFrame = *pAddrFrame;
-        else if (enmCodeType != DBGFCODETYPE_GUEST)
-            DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtxCore->rbp & fAddrMask);
-        else if (RT_SUCCESS(rc))
-            rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtxCore->ss.Sel, pCtxCore->rbp & fAddrMask);
+        else
+        {
+            if (   RT_SUCCESS(rc)
+                && dbgfR3UnwindCtxSetPcAndSp(&UnwindCtx, &pCur->AddrPC, &pCur->AddrStack)
+                && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx, &pCur->AddrFrame))
+            { }
+            else if (enmCodeType != DBGFCODETYPE_GUEST)
+                DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtx->rbp & fAddrMask);
+            else if (RT_SUCCESS(rc))
+                rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtx->ss.Sel, pCtx->rbp & fAddrMask);
+        }
     }
     else
         pCur->enmReturnType = enmReturnType;
@@ -489,27 +681,27 @@ static int dbgfR3StackWalkBeginCommon(PUVM pUVM,
     /*
      * Get the CPUM context pointer and pass it on the specified EMT.
      */
-    RTDBGAS         hAs;
-    PCCPUMCTXCORE   pCtxCore;
+    RTDBGAS     hAs;
+    PCCPUMCTX   pCtx;
     switch (enmCodeType)
     {
         case DBGFCODETYPE_GUEST:
-            pCtxCore = CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu));
-            hAs = DBGF_AS_GLOBAL;
+            pCtx = CPUMQueryGuestCtxPtr(VMMGetCpuById(pVM, idCpu));
+            hAs  = DBGF_AS_GLOBAL;
             break;
         case DBGFCODETYPE_HYPER:
-            pCtxCore = CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
-            hAs = DBGF_AS_RC_AND_GC_GLOBAL;
+            pCtx = CPUMQueryGuestCtxPtr(VMMGetCpuById(pVM, idCpu));
+            hAs  = DBGF_AS_RC_AND_GC_GLOBAL;
             break;
         case DBGFCODETYPE_RING0:
-            pCtxCore = NULL;    /* No valid context present. */
-            hAs = DBGF_AS_R0;
+            pCtx = NULL;    /* No valid context present. */
+            hAs  = DBGF_AS_R0;
             break;
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
     return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10,
-                                    pUVM, idCpu, pCtxCore, hAs, enmCodeType,
+                                    pUVM, idCpu, pCtx, hAs, enmCodeType,
                                     pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
 }
 
