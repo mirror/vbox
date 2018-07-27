@@ -162,7 +162,7 @@ static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStre
     {
         if (pCfgAcq)
         {
-            pCfgAcq->Backend.cfPeriod     = DrvAudioHlpBytesToFrames(50 /* ms */, &pCfgReq->Props);
+            pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMsToFrames(50 /* ms */, &pCfgReq->Props);
             pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering". */
         }
     }
