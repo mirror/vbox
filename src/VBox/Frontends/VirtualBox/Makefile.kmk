@@ -786,6 +786,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIPopupCenter.h \
 	src/globals/UIShortcutPool.h \
 	src/globals/UIThreadPool.h \
+	src/globals/UIVirtualBoxEventHandler.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
 	src/logviewer/UIVMLogPage.h \
@@ -844,7 +845,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/seamless/UIMachineLogicSeamless.h \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
-	src/selector/UIVirtualBoxEventHandler.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
@@ -1059,6 +1059,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIPopupCenter.h \
 	src/globals/UIShortcutPool.h \
 	src/globals/UIThreadPool.h \
+	src/globals/UIVirtualBoxEventHandler.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
 	src/logviewer/UIVMLogPage.h \
@@ -1073,7 +1074,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumSelector.h \
-	src/selector/UIVirtualBoxEventHandler.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
@@ -1181,6 +1181,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
@@ -1194,7 +1195,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/guestctrl/UIGuestControlWidget.cpp \
 	src/runtime/guestctrl/UIGuestFileTable.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
-	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
@@ -1262,12 +1262,12 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumSelector.cpp \
-	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
@@ -1463,6 +1463,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/VBoxGlobal.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
@@ -1524,7 +1525,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/seamless/UIMachineLogicSeamless.cpp \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
-	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/settings/UISettingsDialog.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
@@ -1794,6 +1794,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/VBoxGlobal.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
@@ -1811,7 +1812,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSelector.cpp \
 	src/objects/UIRichTextString.cpp \
-	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/settings/UISettingsDialog.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
