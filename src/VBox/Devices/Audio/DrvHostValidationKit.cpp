@@ -163,7 +163,7 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
         {
             char szFile[RTPATH_MAX + 1];
 
-            rc = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), szTemp, "VaKit",
+            rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), szTemp, "VaKit",
                                         0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
             if (RT_SUCCESS(rc))
             {

@@ -1214,7 +1214,7 @@ uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
  * @param   pszPath             Path to sanitize.
  * @param   cbPath              Size (in bytes) of path to sanitize.
  */
-int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath)
+int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
 {
     RT_NOREF(cbPath);
     int rc = VINF_SUCCESS;
@@ -1255,7 +1255,7 @@ int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath)
  * @param   enmType             Audio file type to construct file name for.
  * @param   fFlags              File naming flags.
  */
-int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
+int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
                            uint32_t uInstance, PDMAUDIOFILETYPE enmType, PDMAUDIOFILENAMEFLAGS fFlags)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
@@ -1291,7 +1291,7 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
                 break;
             }
 
-            rc = DrvAudioHlpSanitizeFileName(szFileName, sizeof(szFileName));
+            rc = DrvAudioHlpFileNameSanitize(szFileName, sizeof(szFileName));
             if (RT_FAILURE(rc))
                 break;
 

@@ -215,8 +215,8 @@ const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd);
 
 /** @name Audio file (name) helper methods.
  * @{ */
-int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath);
-int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName, uint32_t uInstance, PDMAUDIOFILETYPE enmType, PDMAUDIOFILENAMEFLAGS fFlags);
+int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath);
+int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName, uint32_t uInstance, PDMAUDIOFILETYPE enmType, PDMAUDIOFILENAMEFLAGS fFlags);
 /** @}  */
 
 /** @name Audio device methods.
