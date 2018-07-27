@@ -4767,6 +4767,7 @@ VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPh
     if (RT_SUCCESS(rc))
     {
         /* Try make it writable if requested. */
+        pInfo->u2OldNemState = PGM_PAGE_GET_NEM_STATE(pPage);
         if (fMakeWritable)
             switch (PGM_PAGE_GET_STATE(pPage))
             {

@@ -1778,7 +1778,14 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
         case NEM_WIN_PAGE_STATE_WRITABLE:
             if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
             {
-                Log4(("nemHCWinHandleMemoryAccessPageCheckerCallback: %RGp - #3\n", GCPhys));
+                if (pInfo->u2OldNemState == NEM_WIN_PAGE_STATE_WRITABLE)
+                    Log4(("nemHCWinHandleMemoryAccessPageCheckerCallback: %RGp - #3a\n", GCPhys));
+                else
+                {
+                    pState->fCanResume = true;
+                    Log4(("nemHCWinHandleMemoryAccessPageCheckerCallback: %RGp - #3b (%s -> %s)\n",
+                          GCPhys, g_apszPageStates[pInfo->u2OldNemState], g_apszPageStates[u2State]));
+                }
                 return VINF_SUCCESS;
             }
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES

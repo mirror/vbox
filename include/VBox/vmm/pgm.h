@@ -687,6 +687,8 @@ typedef struct PGMPHYSNEMPAGEINFO
     uint32_t            fNemProt : 8;
     /** The NEM state associated with the PAGE. */
     uint32_t            u2NemState : 2;
+    /** The NEM state associated with the PAGE before pgmPhysPageMakeWritable was called. */
+    uint32_t            u2OldNemState : 2;
     /** Set if the page has handler. */
     uint32_t            fHasHandlers : 1;
     /** Set if is the zero page backing it. */
