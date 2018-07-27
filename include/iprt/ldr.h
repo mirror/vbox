@@ -1093,9 +1093,14 @@ typedef enum RTLDRPROP
      * name table entry for LX.
      * Returns zero terminated string. */
     RTLDRPROP_INTERNAL_NAME,
-    /** The raw unwind info if available.
-     * For PE this means IMAGE_DIRECTORY_ENTRY_EXCEPTION.  Not implemented any
-     * others yet.  */
+    /** The raw unwind table if available.
+     * For PE this means IMAGE_DIRECTORY_ENTRY_EXCEPTION content, for AMD64 this
+     * is the lookup table (IMAGE_RUNTIME_FUNCTION_ENTRY).
+     * Not implemented any others yet.  */
+    RTLDRPROP_UNWIND_TABLE,
+    /** Read unwind info at given RVA and up to buffer size.  The RVA is stored
+     * as uint32_t in the buffer when making the call.
+     * This is only implemented for PE.  */
     RTLDRPROP_UNWIND_INFO,
 
     /** End of valid properties.  */

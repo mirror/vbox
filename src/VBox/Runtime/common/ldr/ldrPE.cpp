@@ -473,6 +473,33 @@ static void rtldrPEFreePart(PRTLDRMODPE pThis, const void *pvBits, void const *p
 }
 
 
+/**
+ * Reads a section of a PE image given by RVA + size.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Pointer to the PE loader module structure.
+ * @param   pvBits              Read only bits if available. NULL if not.
+ * @param   uRva                The RVA to read at.
+ * @param   cbMem               The number of bytes to read.
+ * @param   pvDst               The destination buffer.
+ */
+static int rtldrPEReadPartByRvaInfoBuf(PRTLDRMODPE pThis, const void *pvBits, uint32_t uRva, uint32_t cbMem, void *pvDst)
+{
+    /** @todo consider optimizing this.   */
+    const void *pvSrc = NULL;
+    int rc = rtldrPEReadPartByRva(pThis, pvBits, uRva, cbMem, &pvSrc);
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(pvDst, pvSrc, cbMem);
+        rtldrPEFreePart(pThis, NULL, pvSrc);
+    }
+    return rc;
+}
+
+
+
+
+
 /** @interface_method_impl{RTLDROPS,pfnGetImageSize} */
 static DECLCALLBACK(size_t) rtldrPEGetImageSize(PRTLDRMODINTERNAL pMod)
 {
@@ -1961,7 +1988,7 @@ static int rtLdrPE_QueryInternalName(PRTLDRMODPE pThis, void const *pvBits, void
  * @param   pcbRet          Where to return the number of bytes we've returned
  *                          (or in case of VERR_BUFFER_OVERFLOW would have).
  */
-static int rtLdrPE_QueryUnwindInfo(PRTLDRMODPE pThis, void const *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+static int rtLdrPE_QueryUnwindTable(PRTLDRMODPE pThis, void const *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     int rc;
     uint32_t const cbSrc = pThis->ExceptionDir.Size;
@@ -1970,15 +1997,7 @@ static int rtLdrPE_QueryUnwindInfo(PRTLDRMODPE pThis, void const *pvBits, void *
     {
         *pcbRet = cbSrc;
         if (cbBuf >= cbSrc)
-        {
-            void const *pvSrc = NULL;
-            rc = rtldrPEReadPartByRva(pThis, pvBits, pThis->ExceptionDir.VirtualAddress, cbSrc, &pvSrc);
-            if (RT_SUCCESS(rc))
-            {
-                memcpy(pvBuf, pvSrc, cbSrc);
-                rtldrPEFreePart(pThis, pvBits, pvSrc);
-            }
-        }
+            rc = rtldrPEReadPartByRvaInfoBuf(pThis, pvBits, pThis->ExceptionDir.VirtualAddress, cbSrc, pvBuf);
         else
             rc = VERR_BUFFER_OVERFLOW;
     }
@@ -2061,8 +2080,22 @@ static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enm
         case RTLDRPROP_INTERNAL_NAME:
             return rtLdrPE_QueryInternalName(pModPe, pvBits, pvBuf, cbBuf, pcbRet);
 
+        case RTLDRPROP_UNWIND_TABLE:
+            return rtLdrPE_QueryUnwindTable(pModPe, pvBits, pvBuf, cbBuf, pcbRet);
+
         case RTLDRPROP_UNWIND_INFO:
-            return rtLdrPE_QueryUnwindInfo(pModPe, pvBits, pvBuf, cbBuf, pcbRet);
+        {
+            uint32_t uRva = *(uint32_t const *)pvBuf;
+            if (uRva < pModPe->cbImage)
+            {
+                uint32_t cbLeft   = pModPe->cbImage - uRva;
+                uint32_t cbToRead = (uint32_t)RT_MIN(cbLeft, cbBuf);
+                *pcbRet = cbToRead;
+                return rtldrPEReadPartByRvaInfoBuf(pModPe, pvBits, uRva, cbToRead, pvBuf);
+            }
+            *pcbRet = 0;
+            return VINF_SUCCESS;
+        }
 
         default:
             return VERR_NOT_FOUND;
