@@ -523,7 +523,7 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
             pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
 
             /* Every Opus frame marks a period for now. Optimize this later. */
-            pCfgAcq->Backend.cfPeriod  = DrvAudioHlpMsToFrames(&pCfgAcq->Props, pSink->Codec.Opus.msFrame); /** @todo Make this configurable. */
+            pCfgAcq->Backend.cfPeriod  = DrvAudioHlpMsToFrames(pSink->Codec.Opus.msFrame, &pCfgAcq->Props); /** @todo Make this configurable. */
         }
     }
 #else

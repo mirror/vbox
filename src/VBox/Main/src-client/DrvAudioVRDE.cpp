@@ -90,9 +90,9 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
     pCfgAcq->Props.fSigned   = true;
 
     /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-    const uint32_t cfVRDPServer = DrvAudioHlpMsToFrames(&pCfgAcq->Props, 200  /* ms */);
+    const uint32_t cfVRDPServer = DrvAudioHlpMsToFrames(200  /* ms */, &pCfgAcq->Props);
 
-    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, DrvAudioHlpFramesToBytes(&pCfgAcq->Props, cfVRDPServer));
+    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, DrvAudioHlpFramesToBytes(cfVRDPServer, &pCfgAcq->Props));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -135,8 +135,8 @@ static int vrdeCreateStreamOut(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgR
         pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
 
         /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-        pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMsToFrames(&pCfgAcq->Props, 10  /* ms */);
-        pCfgAcq->Backend.cfBufferSize = DrvAudioHlpMsToFrames(&pCfgAcq->Props, 200  /* ms */);
+        pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMsToFrames(10  /* ms */, &pCfgAcq->Props);
+        pCfgAcq->Backend.cfBufferSize = DrvAudioHlpMsToFrames(200  /* ms */, &pCfgAcq->Props);
         pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfBufferSize;
     }
 
@@ -169,7 +169,7 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
             rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE,
-                                                               DrvAudioHlpMsToFrames(&pStreamVRDE->pCfg->Props, 200 /* ms */),
+                                                               DrvAudioHlpMsToFrames(200 /* ms */, &pStreamVRDE->pCfg->Props),
                                                                pStreamVRDE->pCfg->Props.uHz, pStreamVRDE->pCfg->Props.cChannels,
                                                                pStreamVRDE->pCfg->Props.cBits);
             if (rc == VERR_NOT_SUPPORTED)

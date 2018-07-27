@@ -206,7 +206,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     }
 
     /* By default we allocate an internal buffer of 100ms. */
-    rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMsToBytes(&pCfg->Props, 100 /* ms */)); /** @todo Make this configurable. */
+    rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMsToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
     AssertRCReturn(rc, rc);
 
     /* Set the stream's direction. */

@@ -136,7 +136,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
         return;
 
     Assert(pPCMProps->cBits);
-    size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
+    size_t cbToClear = DrvAudioHlpFramesToBytes(cFrames, pPCMProps);
     Assert(cbBuf >= cbToClear);
 
     if (cbBuf < cbToClear)
@@ -166,7 +166,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
                 uint16_t *p = (uint16_t *)pvBuf;
                 uint16_t  s = 0x8000;
 
-                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames(pPCMProps, (uint32_t)cbToClear); i++)
+                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames((uint32_t)cbToClear, pPCMProps); i++)
                     p[i] = s;
 
                 break;
@@ -179,7 +179,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
                 uint32_t *p = (uint32_t *)pvBuf;
                 uint32_t  s = 0x80000000;
 
-                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames(pPCMProps, (uint32_t)cbToClear); i++)
+                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames((uint32_t)cbToClear, pPCMProps); i++)
                     p[i] = s;
 
                 break;
@@ -1102,10 +1102,10 @@ bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
  * Returns the number of audio frames for a given amount of bytes.
  *
  * @return Calculated audio frames for given bytes.
- * @param  pProps               PCM properties to calulate frames for.
  * @param  cbBytes              Bytes to convert to audio frames.
+ * @param  pProps               PCM properties to calulate frames for.
  */
-uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes)
+uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1116,10 +1116,10 @@ uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbByt
  * Returns the time (in ms) for given byte amount and PCM properties.
  *
  * @return  uint64_t            Calculated time (in ms).
- * @param   pProps              PCM properties to calculate amount of bytes for.
  * @param   cbBytes             Amount of bytes to calculate time for.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes)
+uint64_t DrvAudioHlpBytesToMs(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1138,10 +1138,10 @@ uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes)
  * Returns the bytes for a given audio frames amount and PCM properties.
  *
  * @return Calculated bytes for given audio frames.
- * @param  pProps               PCM properties to calculate bytes for.
  * @param  cFrames              Amount of audio frames to calculate bytes for.
+ * @param  pProps               PCM properties to calculate bytes for.
  */
-uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1155,10 +1155,10 @@ uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFram
  * Returns the time (in ms) for given audio frames amount and PCM properties.
  *
  * @return  uint64_t            Calculated time (in ms).
- * @param   pProps              PCM properties to calculate time (in ms) for.
  * @param   cFrames             Amount of audio frames to calculate time for.
+ * @param   pProps              PCM properties to calculate time (in ms) for.
  */
-uint64_t DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+uint64_t DrvAudioHlpFramesToMs(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1175,10 +1175,10 @@ uint64_t DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
  * Returns the amount of bytes for a given time (in ms) and PCM properties.
  *
  * @return  uint32_t            Calculated amount of bytes.
- * @param   pProps              PCM properties to calculate amount of bytes for.
  * @param   uMs                 Time (in ms) to calculate amount of bytes for.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpMsToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs)
+uint32_t DrvAudioHlpMsToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1192,10 +1192,10 @@ uint32_t DrvAudioHlpMsToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs)
  * Returns the amount of audio for a given time (in ms) and PCM properties.
  *
  * @return  uint32_t            Calculated amount of audio frames.
- * @param   pProps              PCM properties to calculate amount of bytes for.
  * @param   uMs                 Time (in ms) to calculate amount of bytes for.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpMsToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs)
+uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1203,7 +1203,7 @@ uint32_t DrvAudioHlpMsToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs)
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
-    return DrvAudioHlpMsToBytes(pProps, uMs) / cbFrame;
+    return DrvAudioHlpMsToBytes(uMs, pProps) / cbFrame;
 }
 
 /**

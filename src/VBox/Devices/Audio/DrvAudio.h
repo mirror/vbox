@@ -185,12 +185,12 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps);
 uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps);
 bool     DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes);
-uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes);
-uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint64_t DrvAudioHlpFramesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint32_t DrvAudioHlpMsToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs);
-uint32_t DrvAudioHlpMsToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs);
+uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps);
+uint64_t DrvAudioHlpBytesToMs(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
+uint64_t DrvAudioHlpFramesToMs(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpMsToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
 /** @name Audio PCM properties helper methods.
