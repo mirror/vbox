@@ -776,6 +776,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
+	src/globals/UIActionPoolRuntime.h \
+	src/globals/UIActionPoolSelector.h \
 	src/globals/UIAnimationFramework.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
@@ -798,7 +800,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumSelector.h \
-	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -843,7 +844,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/seamless/UIMachineLogicSeamless.h \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
-	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
@@ -1049,6 +1049,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
+	src/globals/UIActionPoolRuntime.h \
+	src/globals/UIActionPoolSelector.h \
 	src/globals/UIAnimationFramework.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
@@ -1071,8 +1073,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumSelector.h \
-	src/runtime/UIActionPoolRuntime.h \
-	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
@@ -1177,6 +1177,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolRuntime.cpp \
+	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
@@ -1184,7 +1186,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumSelector.cpp \
-	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1193,7 +1194,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/guestctrl/UIGuestControlWidget.cpp \
 	src/runtime/guestctrl/UIGuestFileTable.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
-	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
@@ -1258,6 +1258,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolRuntime.cpp \
+	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
@@ -1265,8 +1267,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumSelector.cpp \
-	src/runtime/UIActionPoolRuntime.cpp \
-	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
@@ -1449,6 +1449,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/converter/UIConverterBackendGlobal.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolRuntime.cpp \
+	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIAnimationFramework.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
@@ -1478,7 +1480,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSelector.cpp \
 	src/objects/UIRichTextString.cpp \
-	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1523,7 +1524,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/seamless/UIMachineLogicSeamless.cpp \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
-	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/settings/UISettingsDialog.cpp \
@@ -1780,6 +1780,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/converter/UIConverterBackendGlobal.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolRuntime.cpp \
+	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIAnimationFramework.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
@@ -1809,8 +1811,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSelector.cpp \
 	src/objects/UIRichTextString.cpp \
-	src/runtime/UIActionPoolRuntime.cpp \
-	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/settings/UISettingsDialog.cpp \
