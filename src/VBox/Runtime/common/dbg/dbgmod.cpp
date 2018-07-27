@@ -745,7 +745,7 @@ static int rtDbgModOpenDebugInfoExternalToImage2(PRTDBGMODINT pDbgMod, RTDBGCFG 
         {
             RTUUID  Uuid;
             PRTUUID pUuid = &Uuid;
-            rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, RTLDRPROP_UUID, &Uuid, sizeof(Uuid));
+            rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, RTLDRPROP_UUID, &Uuid, sizeof(Uuid), NULL);
             if (RT_FAILURE(rc))
                 pUuid = NULL;
 
@@ -1268,7 +1268,7 @@ rtDbgModFromMachOImageOpenDsymMachOCallback(RTDBGCFG hDbgCfg, const char *pszFil
             if (pArgs->pUuid)
             {
                 RTUUID UuidOpened;
-                rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, RTLDRPROP_UUID, &UuidOpened, sizeof(UuidOpened));
+                rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, RTLDRPROP_UUID, &UuidOpened, sizeof(UuidOpened), NULL);
                 if (RT_SUCCESS(rc))
                 {
                     if (RTUuidCompare(&UuidOpened, pArgs->pUuid) != 0)
@@ -1647,20 +1647,6 @@ RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUIN
 RT_EXPORT_SYMBOL(RTDbgModRvaToSegOff);
 
 
-RTDECL(RTUINTPTR) RTDbgModImageSize(RTDBGMOD hDbgMod)
-{
-    PRTDBGMODINT pDbgMod = hDbgMod;
-    RTDBGMOD_VALID_RETURN_RC(pDbgMod, RTUINTPTR_MAX);
-    RTDBGMOD_LOCK(pDbgMod);
-
-    RTUINTPTR cbImage = pDbgMod->pDbgVt->pfnImageSize(pDbgMod);
-
-    RTDBGMOD_UNLOCK(pDbgMod);
-    return cbImage;
-}
-RT_EXPORT_SYMBOL(RTDbgModImageSize);
-
-
 RTDECL(uint64_t) RTDbgModGetTag(RTDBGMOD hDbgMod)
 {
     PRTDBGMODINT pDbgMod = hDbgMod;
@@ -1682,6 +1668,78 @@ RTDECL(int) RTDbgModSetTag(RTDBGMOD hDbgMod, uint64_t uTag)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTDbgModSetTag);
+
+
+RTDECL(RTUINTPTR) RTDbgModImageSize(RTDBGMOD hDbgMod)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, RTUINTPTR_MAX);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    RTUINTPTR cbImage = pDbgMod->pDbgVt->pfnImageSize(pDbgMod);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return cbImage;
+}
+RT_EXPORT_SYMBOL(RTDbgModImageSize);
+
+
+RTDECL(RTLDRFMT) RTDbgModImageGetFormat(RTDBGMOD hDbgMod)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, RTLDRFMT_INVALID);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    RTLDRFMT enmFmt;
+    if (   pDbgMod->pImgVt
+        && pDbgMod->pImgVt->pfnGetFormat)
+        enmFmt = pDbgMod->pImgVt->pfnGetFormat(pDbgMod);
+    else
+        enmFmt = RTLDRFMT_INVALID;
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return enmFmt;
+}
+RT_EXPORT_SYMBOL(RTDbgModImageGetFormat);
+
+
+RTDECL(RTLDRARCH) RTDbgModImageGetArch(RTDBGMOD hDbgMod)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, RTLDRARCH_INVALID);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    RTLDRARCH enmArch;
+    if (   pDbgMod->pImgVt
+        && pDbgMod->pImgVt->pfnGetArch)
+        enmArch = pDbgMod->pImgVt->pfnGetArch(pDbgMod);
+    else
+        enmArch = RTLDRARCH_WHATEVER;
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return enmArch;
+}
+RT_EXPORT_SYMBOL(RTDbgModImageGetArch);
+
+
+RTDECL(int) RTDbgModImageQueryProp(RTDBGMOD hDbgMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(pcbRet, VERR_INVALID_POINTER);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    int rc;
+    if (   pDbgMod->pImgVt
+        && pDbgMod->pImgVt->pfnQueryProp)
+        rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, enmProp, pvBuf, cbBuf, pcbRet);
+    else
+        rc = VERR_NOT_FOUND;
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTDbgModImageQueryProp);
 
 
 RTDECL(int) RTDbgModSegmentAdd(RTDBGMOD hDbgMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName,

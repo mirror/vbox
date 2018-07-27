@@ -1093,6 +1093,10 @@ typedef enum RTLDRPROP
      * name table entry for LX.
      * Returns zero terminated string. */
     RTLDRPROP_INTERNAL_NAME,
+    /** The raw unwind info if available.
+     * For PE this means IMAGE_DIRECTORY_ENTRY_EXCEPTION.  Not implemented any
+     * others yet.  */
+    RTLDRPROP_UNWIND_INFO,
 
     /** End of valid properties.  */
     RTLDRPROP_END,

@@ -121,6 +121,8 @@ typedef struct RTLDRMODPE
     IMAGE_DATA_DIRECTORY    DebugDir;
     /** The security directory entry. */
     IMAGE_DATA_DIRECTORY    SecurityDir;
+    /** The exception data directory entry. */
+    IMAGE_DATA_DIRECTORY    ExceptionDir;
 
     /** Offset of the first PKCS \#7 SignedData signature if present. */
     uint32_t                offPkcs7SignedData;
@@ -1916,7 +1918,7 @@ static int rtLdrPE_QueryImportModule(PRTLDRMODPE pThis, void const *pvBits, uint
 
 
 /**
- * Worker for rtLdrPE_QueryProp that retrievs the internal module name.
+ * Worker for rtLdrPE_QueryProp that retrieves the internal module name.
  *
  * @returns IPRT status code. If VERR_BUFFER_OVERFLOW, pcbBuf is required size.
  * @param   pThis           The PE module instance.
@@ -1943,6 +1945,48 @@ static int rtLdrPE_QueryInternalName(PRTLDRMODPE pThis, void const *pvBits, void
         rtldrPEFreePart(pThis, pvBits, pExpDir);
     }
 
+    return rc;
+}
+
+
+/**
+ * Worker for rtLdrPE_QueryProp that retrieves unwind information.
+ *
+ * @returns IPRT status code. If VERR_BUFFER_OVERFLOW, pcbBuf is required size.
+ * @param   pThis           The PE module instance.
+ * @param   pvBits          Image bits if the caller had them available, NULL if
+ *                          not. Saves a couple of file accesses.
+ * @param   pvBuf           The output buffer.
+ * @param   cbBuf           The buffer size.
+ * @param   pcbRet          Where to return the number of bytes we've returned
+ *                          (or in case of VERR_BUFFER_OVERFLOW would have).
+ */
+static int rtLdrPE_QueryUnwindInfo(PRTLDRMODPE pThis, void const *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    int rc;
+    uint32_t const cbSrc = pThis->ExceptionDir.Size;
+    if (   cbSrc > 0
+        && pThis->ExceptionDir.VirtualAddress > 0)
+    {
+        *pcbRet = cbSrc;
+        if (cbBuf >= cbSrc)
+        {
+            void const *pvSrc = NULL;
+            rc = rtldrPEReadPartByRva(pThis, pvBits, pThis->ExceptionDir.VirtualAddress, cbSrc, &pvSrc);
+            if (RT_SUCCESS(rc))
+            {
+                memcpy(pvBuf, pvSrc, cbSrc);
+                rtldrPEFreePart(pThis, pvBits, pvSrc);
+            }
+        }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    else
+    {
+        *pcbRet = 0;
+        rc = VERR_NOT_FOUND;
+    }
     return rc;
 }
 
@@ -2016,6 +2060,9 @@ static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enm
 
         case RTLDRPROP_INTERNAL_NAME:
             return rtLdrPE_QueryInternalName(pModPe, pvBits, pvBuf, cbBuf, pcbRet);
+
+        case RTLDRPROP_UNWIND_INFO:
+            return rtLdrPE_QueryUnwindInfo(pModPe, pvBits, pvBuf, cbBuf, pcbRet);
 
         default:
             return VERR_NOT_FOUND;
@@ -4032,6 +4079,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                 pModPe->ExportDir     = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
                 pModPe->DebugDir      = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
                 pModPe->SecurityDir   = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY];
+                pModPe->ExceptionDir  = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION];
                 pModPe->fDllCharacteristics = OptHdr.DllCharacteristics;
 
                 /*

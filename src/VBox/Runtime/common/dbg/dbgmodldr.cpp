@@ -61,10 +61,10 @@ typedef RTDBGMODLDR *PRTDBGMODLDR;
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnQueryProp} */
-static DECLCALLBACK(int) rtDbgModLdr_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
+static DECLCALLBACK(int) rtDbgModLdr_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
-    return RTLdrQueryProp(pThis->hLdrMod, enmProp, pvBuf, cbBuf);
+    return RTLdrQueryPropEx(pThis->hLdrMod, enmProp, NULL /*pvBits*/, pvBuf, cbBuf, pcbRet);
 }
 
 

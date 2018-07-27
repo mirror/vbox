@@ -235,9 +235,12 @@ typedef struct RTDBGMODVTIMG
      * @param   enmProp         The property to query.
      * @param   pvBuf           Pointer to the return buffer.
      * @param   cbBuf           The size of the return buffer.
-     * @sa      RTLdrQueryProp
+     * @param   pcbRet          How many bytes was actually returned.  In the
+     *                          case of VERR_BUFFER_OVERFLOW this will contain
+     *                          the required buffer size.  Optional.
+     * @sa      RTLdrQueryPropEx
      */
-    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf);
+    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet);
 
     /** For catching initialization errors (RTDBGMODVTIMG_MAGIC). */
     uint32_t    u32EndMagic;

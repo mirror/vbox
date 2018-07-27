@@ -634,6 +634,7 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, 
             AssertReturn(cbBuf == sizeof(uint32_t) || cbBuf == sizeof(uint64_t), VERR_INVALID_PARAMETER);
             break;
         case RTLDRPROP_INTERNAL_NAME:
+        case RTLDRPROP_UNWIND_INFO:
             *pcbRet = 0;
             break;
 

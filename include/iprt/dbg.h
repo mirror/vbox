@@ -1088,19 +1088,6 @@ RTDECL(bool)        RTDbgModIsExports(RTDBGMOD hDbgMod);
 RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUINTPTR poffSeg);
 
 /**
- * Image size when mapped if segments are mapped adjacently.
- *
- * For ELF, PE, and Mach-O images this is (usually) a natural query, for LX and
- * NE and such it's a bit odder and the answer may not make much sense for them.
- *
- * @returns Image mapped size.
- *          RTUINTPTR_MAX is returned if the handle is invalid.
- *
- * @param   hDbgMod         The module handle.
- */
-RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod);
-
-/**
  * Gets the module tag value if any.
  *
  * @returns The tag. 0 if hDbgMod is invalid.
@@ -1123,6 +1110,68 @@ RTDECL(uint64_t)    RTDbgModGetTag(RTDBGMOD hDbgMod);
  *                          collisions with other users
  */
 RTDECL(int)         RTDbgModSetTag(RTDBGMOD hDbgMod, uint64_t uTag);
+
+
+/**
+ * Image size when mapped if segments are mapped adjacently.
+ *
+ * For ELF, PE, and Mach-O images this is (usually) a natural query, for LX and
+ * NE and such it's a bit odder and the answer may not make much sense for them.
+ *
+ * @returns Image mapped size.
+ *          RTUINTPTR_MAX is returned if the handle is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ */
+RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod);
+
+/**
+ * Gets the image format.
+ *
+ * @returns Image format.
+ * @retval  RTLDRFMT_INVALID if the handle is invalid or if the format isn't known.
+ * @param   hDbgMod         The debug module handle.
+ * @sa      RTLdrGetFormat
+ */
+RTDECL(RTLDRFMT)    RTDbgModImageGetFormat(RTDBGMOD hDbgMod);
+
+/**
+ * Gets the image architecture.
+ *
+ * @returns Image architecture.
+ * @retval  RTLDRARCH_INVALID if the handle is invalid.
+ * @retval  RTLDRARCH_WHATEVER if unknown.
+ * @param   hDbgMod         The debug module handle.
+ * @sa      RTLdrGetArch
+ */
+RTDECL(RTLDRARCH)   RTDbgModImageGetArch(RTDBGMOD hDbgMod);
+
+/**
+ * Generic method for querying image properties.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the property query isn't supported (either all
+ *          or that specific property).  The caller must handle this result.
+ * @retval  VERR_NOT_FOUND the property was not found in the module.  The caller
+ *          must also normally deal with this.
+ * @retval  VERR_INVALID_FUNCTION if the function value is wrong.
+ * @retval  VERR_INVALID_PARAMETER if the fixed buffer size is wrong. Correct
+ *          size in @a *pcbRet.
+ * @retval  VERR_BUFFER_OVERFLOW if the function doesn't have a fixed size
+ *          buffer and the buffer isn't big enough. Correct size in @a *pcbRet.
+ * @retval  VERR_INVALID_HANDLE if the handle is invalid.
+ *
+ * @param   hDbgMod         The debug module handle.
+ * @param   enmProp         The property to query.
+ * @param   pvBuf           Pointer to the input / output buffer.  In most cases
+ *                          it's only used for returning data.
+ * @param   cbBuf           The size of the buffer.
+ * @param   pcbRet          Where to return the amount of data returned.  On
+ *                          buffer size errors, this is set to the correct size.
+ *                          Optional.
+ * @sa      RTLdrQueryPropEx
+ */
+RTDECL(int)         RTDbgModImageQueryProp(RTDBGMOD hDbgMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet);
 
 
 /**
