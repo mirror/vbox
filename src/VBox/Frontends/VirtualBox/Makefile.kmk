@@ -361,6 +361,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/settings \
 	./src/settings/global \
 	./src/settings/machine \
+	./src/snapshots \
 	./src/widgets \
 	./src/widgets/graphics \
 	./src/wizards \
@@ -673,8 +674,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIDesktopPane.h \
 	src/selector/UIVMItem.h \
 	src/selector/UISelectorWindow.h \
-	src/selector/UISnapshotDetailsWidget.h \
-	src/selector/UISnapshotPane.h \
 	src/selector/UIToolsPaneGlobal.h \
 	src/selector/UIToolsPaneMachine.h \
 	src/selector/UIToolsToolbar.h \
@@ -695,6 +694,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/graphics/details/UIGDetailsElement.h \
 	src/selector/graphics/details/UIGDetailsElements.h \
 	src/selector/graphics/details/UIGMachinePreview.h \
+	src/snapshots/UISnapshotDetailsWidget.h \
+	src/snapshots/UISnapshotPane.h \
 	src/widgets/UIApplianceEditorWidget.h \
 	src/widgets/UIApplianceExportEditorWidget.h \
 	src/widgets/UIApplianceImportEditorWidget.h \
@@ -1163,8 +1164,8 @@ endif
 #
 VirtualBox_QT_MOCSRCS = \
 	src/selector/UIDesktopPane.cpp \
-	src/selector/UISnapshotDetailsWidget.cpp \
-	src/selector/UISnapshotPane.cpp \
+	src/snapshots/UISnapshotDetailsWidget.cpp \
+	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
@@ -1317,8 +1318,6 @@ VirtualBox_SOURCES = \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVMItem.cpp \
 	src/selector/UISelectorWindow.cpp \
-	src/selector/UISnapshotDetailsWidget.cpp \
-	src/selector/UISnapshotPane.cpp \
 	src/selector/UIToolsPaneGlobal.cpp \
 	src/selector/UIToolsPaneMachine.cpp \
 	src/selector/UIToolsToolbar.cpp \
@@ -1339,6 +1338,8 @@ VirtualBox_SOURCES = \
 	src/selector/graphics/details/UIGDetailsElement.cpp \
 	src/selector/graphics/details/UIGDetailsElements.cpp \
 	src/selector/graphics/details/UIGMachinePreview.cpp \
+	src/snapshots/UISnapshotDetailsWidget.cpp \
+	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIApplianceExportEditorWidget.cpp \
 	src/widgets/UIApplianceImportEditorWidget.cpp \
