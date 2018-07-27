@@ -1063,6 +1063,42 @@ uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
+ * Aligns the given byte amount to the given PCM properties and returns the aligned
+ * size.
+ *
+ * @return  Aligned size (in bytes).
+ * @param   cbSize              Size (in bytes) to align.
+ * @param   pProps              PCM properties to align size to.
+ */
+uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!cbSize)
+        return 0;
+
+    const uint32_t cbFrameSize = DrvAudioHlpPCMPropsBytesPerFrame(pProps);
+    return (cbSize / cbFrameSize) * cbFrameSize;
+}
+
+/**
+ * Returns if the the given size is properly aligned to the given PCM properties.
+ *
+ * @return  @c true if properly aligned, @c false if not.
+ * @param   cbSize              Size (in bytes) to check alignment for.
+ * @param   pProps              PCM properties to use for checking the alignment.
+ */
+bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!cbSize)
+        return true;
+
+    return (cbSize % DrvAudioHlpPCMPropsBytesPerFrame(pProps) == 0);
+}
+
+/**
  * Returns the number of audio frames for a given amount of bytes.
  *
  * @return Calculated audio frames for given bytes.

@@ -183,6 +183,8 @@ uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
 void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cFrames);
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps);
+bool     DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps);
 uint32_t DrvAudioHlpBytesToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes);
 uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, uint32_t cbBytes);
 uint32_t DrvAudioHlpFramesToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
