@@ -1401,9 +1401,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_PINBASED_CTLS          0x481
 /** Allowed settings for proc-based VM execution controls. */
 #define MSR_IA32_VMX_PROCBASED_CTLS         0x482
-/** Allowed settings for the VMX exit controls. */
+/** Allowed settings for the VM-exit controls. */
 #define MSR_IA32_VMX_EXIT_CTLS              0x483
-/** Allowed settings for the VMX entry controls. */
+/** Allowed settings for the VM-entry controls. */
 #define MSR_IA32_VMX_ENTRY_CTLS             0x484
 /** Misc VMX info. */
 #define MSR_IA32_VMX_MISC                   0x485

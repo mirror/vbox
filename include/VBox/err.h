@@ -656,6 +656,8 @@
 #define VINF_CPUM_HOST_CR0_MODIFIED             (1766)
 /** Invalid/unsupported nested hardware virtualization configuration. */
 #define VERR_CPUM_INVALID_HWVIRT_CONFIG         (-1767)
+/** Invalid nested hardware virtualization feature combination. */
+#define VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO     (-1768)
 /** @} */
 
 
@@ -2049,12 +2051,10 @@
 #define VERR_VMX_UNABLE_TO_START_VM                 (-4005)
 /** Unable to switch due to invalid host state. */
 #define VERR_VMX_INVALID_HOST_STATE                 (-4006)
-/** IA32_FEATURE_CONTROL MSR not setup correcty (turn on VMX in the host system BIOS) */
-#define VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR        (-4007)
-/** Invalid CPU mode for VMX execution. */
-#define VERR_VMX_UNSUPPORTED_MODE                   (-4008)
-/** VMX CPU extension not available */
+/** VMX CPU extension not available in hardware. */
 #define VERR_VMX_NO_VMX                             (-4009)
+/** VMX CPU extension not supported as something went wrong during init. */
+#define VERR_VMX_NOT_SUPPORTED                      (-4010)
 /** CPU was incorrectly left in VMX root mode; incompatible with VirtualBox */
 #define VERR_VMX_IN_VMX_ROOT_MODE                   (-4011)
 /** Somebody cleared X86_CR4_VMXE in the CR4 register. */

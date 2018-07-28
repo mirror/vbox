@@ -121,7 +121,7 @@ static struct
         /** Host SMM monitor control (used for logging/diagnostics) */
         uint64_t                    u64HostSmmMonitorCtl;
 
-        /** VMX MSR values */
+        /** VMX MSR values. */
         VMXMSRS                     Msrs;
 
         /** Last instruction error. */
@@ -297,7 +297,6 @@ static DECLCALLBACK(int) hmR0DummyExportHostState(PVMCPU pVCpu)
  *      - AAM126 - C0, C1, D0.
  *      - AAN92  - B1.
  *      - AAJ124 - C0, D0.
- *
  *      - AAP86  - B1.
  *
  * Steppings: B1, C0, C1, C2, D0, K0.
@@ -386,7 +385,7 @@ static int hmR0InitIntel(uint32_t uFeatEcx, uint32_t uFeatEdx)
             /* KVM workaround: Intel SDM section 34.15.5 describes that MSR_IA32_SMM_MONITOR_CTL
              * depends on bit 49 of MSR_IA32_VMX_BASIC while table 35-2 says that this MSR is
              * available if either VMX or SMX is supported. */
-            if (MSR_IA32_VMX_BASIC_DUAL_MON(g_HmR0.vmx.Msrs.u64Basic))
+            if (RT_BF_GET(g_HmR0.vmx.Msrs.u64Basic, VMX_BF_BASIC_DUAL_MON))
                 g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
             g_HmR0.vmx.Msrs.PinCtls.u       = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
             g_HmR0.vmx.Msrs.ProcCtls.u      = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
@@ -398,7 +397,7 @@ static int hmR0InitIntel(uint32_t uFeatEcx, uint32_t uFeatEdx)
             g_HmR0.vmx.Msrs.u64Cr4Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
             g_HmR0.vmx.Msrs.u64Cr4Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
             g_HmR0.vmx.Msrs.u64VmcsEnum     = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
-            if (MSR_IA32_VMX_BASIC_TRUE_CONTROLS(g_HmR0.vmx.Msrs.u64Basic))
+            if (RT_BF_GET(g_HmR0.vmx.Msrs.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
             {
                 g_HmR0.vmx.Msrs.TruePinCtls.u   = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
                 g_HmR0.vmx.Msrs.TrueProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
@@ -409,14 +408,14 @@ static int hmR0InitIntel(uint32_t uFeatEcx, uint32_t uFeatEdx)
             /* VPID 16 bits ASID. */
             g_HmR0.uMaxAsid = 0x10000; /* exclusive */
 
-            if (g_HmR0.vmx.Msrs.ProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+            if (g_HmR0.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
             {
                 g_HmR0.vmx.Msrs.ProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                if (g_HmR0.vmx.Msrs.ProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
+                if (g_HmR0.vmx.Msrs.ProcCtls2.n.allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
                     g_HmR0.vmx.Msrs.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
 
-                if (g_HmR0.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
-                    g_HmR0.vmx.Msrs.u64Vmfunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
+                if (g_HmR0.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMFUNC)
+                    g_HmR0.vmx.Msrs.u64VmFunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
             }
 
             if (!g_HmR0.vmx.fUsingSUPR0EnableVTx)
@@ -437,7 +436,7 @@ static int hmR0InitIntel(uint32_t uFeatEcx, uint32_t uFeatEdx)
                 ASMMemZeroPage(pvScatchPage);
 
                 /* Set revision dword at the beginning of the structure. */
-                *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_VMCS_ID(g_HmR0.vmx.Msrs.u64Basic);
+                *(uint32_t *)pvScatchPage = RT_BF_GET(g_HmR0.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID);
 
                 /* Make sure we don't get rescheduled to another cpu during this probe. */
                 RTCCUINTREG const fEFlags = ASMIntDisableFlags();
@@ -514,10 +513,10 @@ static int hmR0InitIntel(uint32_t uFeatEcx, uint32_t uFeatEdx)
                  * Check for the VMX-Preemption Timer and adjust for the "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" erratum.
                  */
-                if (g_HmR0.vmx.Msrs.PinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
+                if (g_HmR0.vmx.Msrs.PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER)
                 {
                     g_HmR0.vmx.fUsePreemptTimer   = true;
-                    g_HmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HmR0.vmx.Msrs.u64Misc);
+                    g_HmR0.vmx.cPreemptTimerShift = RT_BF_GET(g_HmR0.vmx.Msrs.u64Misc, VMX_BF_MISC_PREEMPT_TIMER_TSC);
                     if (hmR0InitIntelIsSubjectToVmxPreemptionTimerErratum())
                         g_HmR0.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
                 }

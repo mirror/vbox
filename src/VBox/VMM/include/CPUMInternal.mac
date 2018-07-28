@@ -96,8 +96,8 @@ struc CPUM
     .fXStateHostMask            resq    1
 
     alignb 64
-    .HostFeatures               resb    32
-    .GuestFeatures              resb    32
+    .HostFeatures               resb    40
+    .GuestFeatures              resb    40
     .GuestInfo                  resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*12
 
     ; Patch manager saved state compatability CPUID leaf arrays

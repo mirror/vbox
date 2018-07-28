@@ -30,6 +30,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/hm_svm.h>
+#include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/trpm.h>
 #include <iprt/mp.h>
 
@@ -132,7 +133,12 @@ VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family,
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
+VMM_INT_DECL(bool)              HMIsVmxSupported(PVM pVM);
 VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
+VMM_INT_DECL(int)               HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs);
+#if 0
+VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue);
+#endif
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -154,10 +160,10 @@ VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMFlushTLBOnAllVCpus(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
 VMM_INT_DECL(int)               HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
-VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
 VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM);
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
-VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
+VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
+VMM_INT_DECL(bool)              HMIsMsrBitmapActive(PVM pVM);
 VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
 VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -165,14 +171,16 @@ VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX p
 # endif
 #else /* Nops in RC: */
 # define HMFlushTLB(pVCpu)                              do { } while (0)
-# define HMIsNestedPagingActive(pVM)                    false
+# define HMFlushTLBOnAllVCpus(pVM)                      do { } while (0)
+# define HMInvalidatePageOnAllVCpus(pVM, GCVirt)        do { } while (0)
+# define HMInvalidatePhysPage(pVM,  GCVirt)             do { } while (0)
 # define HMAreNestedPagingAndFullGuestExecEnabled(pVM)  false
 # define HMIsLongModeAllowed(pVM)                       false
-# define HMAreMsrBitmapsAvailable(pVM)                  false
-# define HMFlushTLBOnAllVCpus(pVM)                      do { } while (0)
-# define HMSvmNstGstVmExitNotify(pVCpu, pCtx)           do { } while (0)
+# define HMIsNestedPagingActive(pVM)                    false
+# define HMIsMsrBitmapsActive(pVM)                      false
 # define HMSvmIsVGifActive(pVM)                         false
 # define HMSvmNstGstApplyTscOffset(pVCpu, uTicks)       (uTicks)
+# define HMSvmNstGstVmExitNotify(pVCpu, pCtx)           do { } while (0)
 #endif
 
 #ifdef IN_RING0
@@ -242,7 +250,6 @@ VMMR3_INT_DECL(bool)            HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
 VMMR3DECL(const char *)         HMR3GetVmxExitName(uint32_t uExit);
 VMMR3DECL(const char *)         HMR3GetSvmExitName(uint32_t uExit);
-
 /** @} */
 #endif /* IN_RING3 */
 

@@ -830,6 +830,21 @@ typedef VMXAUTOMSR *PVMXAUTOMSR;
 typedef const VMXAUTOMSR *PCVMXAUTOMSR;
 
 /**
+ * VMX tagged-TLB flush types.
+ */
+typedef enum
+{
+    VMXTLBFLUSHTYPE_EPT,
+    VMXTLBFLUSHTYPE_VPID,
+    VMXTLBFLUSHTYPE_EPT_VPID,
+    VMXTLBFLUSHTYPE_NONE
+} VMXTLBFLUSHTYPE;
+/** Pointer to a VMXTLBFLUSHTYPE enum. */
+typedef VMXTLBFLUSHTYPE *PVMXTLBFLUSHTYPE;
+/** Pointer to a const VMXTLBFLUSHTYPE enum. */
+typedef const VMXTLBFLUSHTYPE *PCVMXTLBFLUSHTYPE;
+
+/**
  * VMX controls MSR.
  */
 typedef union
@@ -851,22 +866,9 @@ typedef VMXCTLSMSR *PVMXCTLSMSR;
 typedef const VMXCTLSMSR *PCVMXCTLSMSR;
 
 /**
- * VMX tagged-TLB flush types.
- */
-typedef enum
-{
-    VMXTLBFLUSHTYPE_EPT,
-    VMXTLBFLUSHTYPE_VPID,
-    VMXTLBFLUSHTYPE_EPT_VPID,
-    VMXTLBFLUSHTYPE_NONE
-} VMXTLBFLUSHTYPE;
-/** Pointer to a VMXTLBFLUSHTYPE enum. */
-typedef VMXTLBFLUSHTYPE *PVMXTLBFLUSHTYPE;
-/** Pointer to a const VMXTLBFLUSHTYPE enum. */
-typedef const VMXTLBFLUSHTYPE *PCVMXTLBFLUSHTYPE;
-
-/**
  * VMX MSRs.
+ * @remarks Although treated as a plain-old data (POD) in several places, please
+ *          update HMVmxGetHostMsr() if new MSRs are added here.
  */
 typedef struct VMXMSRS
 {
@@ -887,12 +889,17 @@ typedef struct VMXMSRS
     uint64_t        u64Cr4Fixed0;
     uint64_t        u64Cr4Fixed1;
     uint64_t        u64VmcsEnum;
-    uint64_t        u64Vmfunc;
+    uint64_t        u64VmFunc;
     uint64_t        u64EptVpidCaps;
+    uint64_t        a_u64Reserved[2];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
+AssertCompileSize(VMXMSRS, 168);
 /** Pointer to a VMXMSRS struct. */
 typedef VMXMSRS *PVMXMSRS;
+/** Pointer to a const VMXMSRS struct. */
+typedef const VMXMSRS *PCVMXMSRS;
+
 
 /** @name VMX Basic Exit Reasons.
  * @{
@@ -1097,67 +1104,141 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX MSR - Basic VMX information.
  * @{
  */
+/** VMCS (and related regions) memory type - Uncacheable. */
+#define VMX_BASIC_MEM_TYPE_UC                                    0
+/** VMCS (and related regions) memory type - Write back. */
+#define VMX_BASIC_MEM_TYPE_WB                                    6
+/** Bit fields for MSR_IA32_VMX_BASIC.  */
 /** VMCS revision identifier used by the processor. */
-#define MSR_IA32_VMX_BASIC_VMCS_ID(a)                           ((a) & 0x7fffffff)
-/** Shift to get the VMCS size. */
-#define MSR_IA32_VMX_BASIC_VMCS_SIZE_SHIFT                      32
+#define VMX_BF_BASIC_VMCS_ID_SHIFT                              0
+#define VMX_BF_BASIC_VMCS_ID_MASK                               UINT64_C(0x000000007fffffff)
+/** Bit 32 is reserved as RAZ. */
+#define VMX_BF_BASIC_RSVD_32_SHIFT                              31
+#define VMX_BF_BASIC_RSVD_32_MASK                               UINT64_C(0x0000000080000000)
 /** VMCS size in bytes. */
-#define MSR_IA32_VMX_BASIC_VMCS_SIZE(a)                         (((a) >> 32) & 0x1fff)
-/** Shift to get the width of physical addresses and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT                48
-/** Width of physical addresses used for the VMCS and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH(a)                   (((a) >> 48) & 1)
-/** Shift to get the dual-monitor treatment of SMI and SMM. */
-#define MSR_IA32_VMX_BASIC_DUAL_MON_SHIFT                       49
+#define VMX_BF_BASIC_VMCS_SIZE_SHIFT                            32
+#define VMX_BF_BASIC_VMCS_SIZE_MASK                             UINT64_C(0x00001fff00000000)
+/** Bits 45:47 are reserved. */
+#define VMX_BF_BASIC_RSVD_45_47_SHIFT                           45
+#define VMX_BF_BASIC_RSVD_45_47_MASK                            UINT64_C(0x0000e00000000000)
+/** Width of physical addresses used for the VMCS and associated memory regions
+ *  (always 0 on CPUs that support Intel 64 architecture). */
+#define VMX_BF_BASIC_PHYSADDR_WIDTH_SHIFT                       48
+#define VMX_BF_BASIC_PHYSADDR_WIDTH_MASK                        UINT64_C(0x0001000000000000)
 /** Dual-monitor treatment of SMI and SMM supported. */
-#define MSR_IA32_VMX_BASIC_DUAL_MON(a)                          (((a) >> 49) & 1)
-/** Shift to get the memory type that must be used for the VMCS and associated
- *  memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT                  50
+#define VMX_BF_BASIC_DUAL_MON_SHIFT                             49
+#define VMX_BF_BASIC_DUAL_MON_MASK                              UINT64_C(0x0002000000000000)
 /** Memory type that must be used for the VMCS and associated memory regions. */
-#define MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE(a)                     (((a) >> 50) & 0xf)
-/** Shift to get the additional VM-exit information for INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT                  54
-/** Additional VM-exit information for INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_VMCS_INS_OUTS(a)                     (((a) >> 54) & 1)
-/** Shift to get the VMCS true controls. */
-#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS_SHIFT                  55
-/** Whether default 1 bits in control MSRs (pin/proc/exit/entry) may be
- *  cleared to 0 and that 'true' control MSRs are supported. */
-#define MSR_IA32_VMX_BASIC_TRUE_CONTROLS(a)                     (((a) >> 55) & 1)
+#define VMX_BF_BASIC_VMCS_MEM_TYPE_SHIFT                        50
+#define VMX_BF_BASIC_VMCS_MEM_TYPE_MASK                         UINT64_C(0x003c000000000000)
+/** VM-exit instruction information for INS/OUTS. */
+#define VMX_BF_BASIC_VMCS_INS_OUTS_SHIFT                        54
+#define VMX_BF_BASIC_VMCS_INS_OUTS_MASK                         UINT64_C(0x0040000000000000)
+/** Whether 'true' VMX controls MSRs are supported for handling of default1 class
+ *  bits in VMX control MSRs. */
+#define VMX_BF_BASIC_TRUE_CTLS_SHIFT                            55
+#define VMX_BF_BASIC_TRUE_CTLS_MASK                             UINT64_C(0x0080000000000000)
+/** Bits 56:63 are reserved and RAZ. */
+#define VMX_BF_BASIC_RSVD_56_63_SHIFT                           56
+#define VMX_BF_BASIC_RSVD_56_63_MASK                            UINT64_C(0xff00000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
+                            (VMCS_ID, RSVD_32, VMCS_SIZE, RSVD_45_47, PHYSADDR_WIDTH, DUAL_MON, VMCS_MEM_TYPE,
+                             VMCS_INS_OUTS, TRUE_CTLS, RSVD_56_63));
 /** @} */
 
 
-/** @name VMX MSR - Misc VMX info.
+/** @name VMX MSR - Miscellaneous data.
+ * Bit fields for MSR_IA32_VMX_MISC.
  * @{
  */
-/** Relationship between the preemption timer and tsc; count down every time bit
- *  x of the tsc changes. */
-#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1f)
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
-#define MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(a)               (((a) >> 5) & 1)
+#define VMX_MISC_EXIT_STORE_EFER_LMA                            RT_BIT(5)
+/** Whether VMWRITE to any valid VMCS field incl. read-only fields, otherwise
+ * VMWRITE cannot modify read-only VM-exit information fields. */
+#define VMX_MISC_VMWRITE_ALL                                    RT_BIT(29)
+/** Whether VM-entry can inject software interrupts, INT1 (ICEBP) with 0-length
+ *  instructions. */
+#define VMX_MISC_ENTRY_INJECT_SOFT_INT                          RT_BIT(30)
+/** Maximum number of MSRs in the VMCS, (n+1)*512. */
+#define VMX_MISC_MAX_MSRS(a_MiscMsr)                            (512 * (RT_BF_GET((a_MiscMsr), VMX_BF_MISC_MAX_MSRS) + 1))
+/** Relationship between the preemption timer and tsc. */
+#define VMX_BF_MISC_PREEMPT_TIMER_TSC_SHIFT                     0
+#define VMX_BF_MISC_PREEMPT_TIMER_TSC_MASK                      UINT64_C(0x000000000000001f)
+/** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
+#define VMX_BF_MISC_EXIT_STORE_EFER_LMA_SHIFT                   5
+#define VMX_BF_MISC_EXIT_STORE_EFER_LMA_MASK                    UINT64_C(0x0000000000000020)
 /** Activity states supported by the implementation. */
-#define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    (((a) >> 6) & 0x7)
+#define VMX_BF_MISC_ACTIVITY_STATES_SHIFT                       6
+#define VMX_BF_MISC_ACTIVITY_STATES_MASK                        UINT64_C(0x00000000000001c0)
+/** Bits 9:13 is reserved, RAZ. */
+#define VMX_BF_MISC_RSVD_9_13_SHIFT                             9
+#define VMX_BF_MISC_RSVD_9_13_MASK                              UINT64_C(0x0000000000003e00)
+/** Whether Intel PT (Processor Trace) can be used in VMX operation.  */
+#define VMX_BF_MISC_PT_SHIFT                                    14
+#define VMX_BF_MISC_PT_MASK                                     UINT64_C(0x0000000000004000)
+/** Whether RDMSR can be used to read IA32_SMBASE MSR in SMM. */
+#define VMX_BF_MISC_SMM_READ_SMBASE_MSR_SHIFT                   15
+#define VMX_BF_MISC_SMM_READ_SMBASE_MSR_MASK                    UINT64_C(0x0000000000008000)
 /** Number of CR3 target values supported by the processor. (0-256) */
-#define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         (((a) >> 16) & 0x1ff)
-/** Maximum number of MSRs in the VMCS. (N+1)*512. */
-#define MSR_IA32_VMX_MISC_MAX_MSR(a)                            (((((a) >> 25) & 0x7) + 1) * 512)
-/** Whether RDMSR can be used to read IA32_SMBASE_MSR in SMM. */
-#define MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(a)               (((a) >> 15) & 1)
-/** Whether bit 2 of IA32_SMM_MONITOR_CTL can be set to 1. */
-#define MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(a)                 (((a) >> 28) & 1)
-/** Whether VMWRITE can be used to write VM-exit information fields. */
-#define MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(a)                (((a) >> 29) & 1)
-/** MSEG revision identifier used by the processor. */
-#define MSR_IA32_VMX_MISC_MSEG_ID(a)                            ((a) >> 32)
+#define VMX_BF_MISC_CR3_TARGET_SHIFT                            16
+#define VMX_BF_MISC_CR3_TARGET_MASK                             UINT64_C(0x0000000001ff0000)
+/** Maximum number of MSRs in the VMCS. */
+#define VMX_BF_MISC_MAX_MSRS_SHIFT                              25
+#define VMX_BF_MISC_MAX_MSRS_MASK                               UINT64_C(0x000000000e000000)
+/** Whether IA32_SMM_MONITOR_CTL MSR can be modified to allow VMXOFF to block
+ *  SMIs. */
+#define VMX_BF_MISC_VMXOFF_BLOCK_SMI_SHIFT                      28
+#define VMX_BF_MISC_VMXOFF_BLOCK_SMI_MASK                       UINT64_C(0x0000000010000000)
+/** Whether VMWRITE to any valid VMCS field incl. read-only fields, otherwise
+ * VMWRITE cannot modify read-only VM-exit information fields. */
+#define VMX_BF_MISC_VMWRITE_ALL_SHIFT                           29
+#define VMX_BF_MISC_VMWRITE_ALL_MASK                            UINT64_C(0x0000000020000000)
+/** Whether VM-entry can inject software interrupts, INT1 (ICEBP) with 0-length
+ *  instructions. */
+#define VMX_BF_MISC_ENTRY_INJECT_SOFT_INT_SHIFT                 30
+#define VMX_BF_MISC_ENTRY_INJECT_SOFT_INT_MASK                  UINT64_C(0x0000000040000000)
+/** Bit 31 is reserved, RAZ. */
+#define VMX_BF_MISC_RSVD_31_SHIFT                               31
+#define VMX_BF_MISC_RSVD_31_MASK                                UINT64_C(0x0000000080000000)
+/** 32-bit MSEG revision ID used by the processor. */
+#define VMX_BF_MISC_MSEG_ID_SHIFT                               32
+#define VMX_BF_MISC_MSEG_ID_MASK                                UINT64_C(0xffffffff00000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_MISC_, UINT64_C(0), UINT64_MAX,
+                            (PREEMPT_TIMER_TSC, EXIT_STORE_EFER_LMA, ACTIVITY_STATES, RSVD_9_13, PT, SMM_READ_SMBASE_MSR,
+                             CR3_TARGET, MAX_MSRS, VMXOFF_BLOCK_SMI, VMWRITE_ALL, ENTRY_INJECT_SOFT_INT, RSVD_31, MSEG_ID));
 /** @} */
 
 
-/** @name VMX MSR - VMCS enumeration field info
+/** @name VMX MSR - VMCS enumeration.
+ * Bit fields for MSR_IA32_VMX_VMCS_ENUM.
  * @{
  */
-/** Highest field index. */
-#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 (((a) >> 1) & 0x1ff)
+/** Bit 0 is reserved, RAZ.  */
+#define VMX_BF_VMCS_ENUM_RSVD_0_SHIFT                           0
+#define VMX_BF_VMCS_ENUM_RSVD_0_MASK                            UINT64_C(0x0000000000000001)
+/** Highest index value used in VMCS field encoding. */
+#define VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT                      1
+#define VMX_BF_VMCS_ENUM_HIGHEST_IDX_MASK                       UINT64_C(0x00000000000003fe)
+/** Bit 10:63 is reserved, RAZ.  */
+#define VMX_BF_VMCS_ENUM_RSVD_10_63_SHIFT                       10
+#define VMX_BF_VMCS_ENUM_RSVD_10_63_MASK                        UINT64_C(0xfffffffffffffc00)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENUM_, UINT64_C(0), UINT64_MAX,
+                            (RSVD_0, HIGHEST_IDX, RSVD_10_63));
+/** @} */
+
+
+/** @name VMX MSR - VM Functions.
+ * Bit fields for MSR_IA32_VMX_VMFUNC.
+ * @{
+ */
+/** EPTP-switching function changes the value of the EPTP to one chosen from the EPTP list. */
+#define VMX_BF_VMFUNC_EPTP_SWITCHING_SHIFT                      0
+#define VMX_BF_VMFUNC_EPTP_SWITCHING_MASK                       UINT64_C(0x0000000000000001)
+/** Bits 1:63 are reserved, RAZ. */
+#define VMX_BF_VMFUNC_RSVD_1_63_SHIFT                           1
+#define VMX_BF_VMFUNC_RSVD_1_63_MASK                            UINT64_C(0xfffffffffffffffe)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
+                            (EPTP_SWITCHING, RSVD_1_63));
 /** @} */
 
 
@@ -1202,32 +1283,32 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMCS field encoding: 16-bit guest fields.
  * @{
  */
-#define VMX_VMCS16_VPID                                         0x000
-#define VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR                     0x002
-#define VMX_VMCS16_EPTP_INDEX                                   0x004
-#define VMX_VMCS16_GUEST_ES_SEL                                 0x800
-#define VMX_VMCS16_GUEST_CS_SEL                                 0x802
-#define VMX_VMCS16_GUEST_SS_SEL                                 0x804
-#define VMX_VMCS16_GUEST_DS_SEL                                 0x806
-#define VMX_VMCS16_GUEST_FS_SEL                                 0x808
-#define VMX_VMCS16_GUEST_GS_SEL                                 0x80a
-#define VMX_VMCS16_GUEST_LDTR_SEL                               0x80c
-#define VMX_VMCS16_GUEST_TR_SEL                                 0x80e
-#define VMX_VMCS16_GUEST_INTR_STATUS                            0x810
-#define VMX_VMCS16_GUEST_PML_INDEX                              0x812
+#define VMX_VMCS16_VPID                                         0x0000
+#define VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR                     0x0002
+#define VMX_VMCS16_EPTP_INDEX                                   0x0004
+#define VMX_VMCS16_GUEST_ES_SEL                                 0x0800
+#define VMX_VMCS16_GUEST_CS_SEL                                 0x0802
+#define VMX_VMCS16_GUEST_SS_SEL                                 0x0804
+#define VMX_VMCS16_GUEST_DS_SEL                                 0x0806
+#define VMX_VMCS16_GUEST_FS_SEL                                 0x0808
+#define VMX_VMCS16_GUEST_GS_SEL                                 0x080a
+#define VMX_VMCS16_GUEST_LDTR_SEL                               0x080c
+#define VMX_VMCS16_GUEST_TR_SEL                                 0x080e
+#define VMX_VMCS16_GUEST_INTR_STATUS                            0x0810
+#define VMX_VMCS16_GUEST_PML_INDEX                              0x0812
 /** @} */
 
 
 /** @name VMCS field encoding: 16-bits host fields.
  * @{
  */
-#define VMX_VMCS16_HOST_ES_SEL                                  0xc00
-#define VMX_VMCS16_HOST_CS_SEL                                  0xc02
-#define VMX_VMCS16_HOST_SS_SEL                                  0xc04
-#define VMX_VMCS16_HOST_DS_SEL                                  0xc06
-#define VMX_VMCS16_HOST_FS_SEL                                  0xc08
-#define VMX_VMCS16_HOST_GS_SEL                                  0xc0a
-#define VMX_VMCS16_HOST_TR_SEL                                  0xc0c
+#define VMX_VMCS16_HOST_ES_SEL                                  0x0c00
+#define VMX_VMCS16_HOST_CS_SEL                                  0x0c02
+#define VMX_VMCS16_HOST_SS_SEL                                  0x0c04
+#define VMX_VMCS16_HOST_DS_SEL                                  0x0c06
+#define VMX_VMCS16_HOST_FS_SEL                                  0x0c08
+#define VMX_VMCS16_HOST_GS_SEL                                  0x0c0a
+#define VMX_VMCS16_HOST_TR_SEL                                  0x0c0c
 /** @} */
 
 
@@ -1250,8 +1331,8 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                      0x200d
 #define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                         0x2010
 #define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                         0x2011
-#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                     0x2012
-#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_HIGH                     0x2013
+#define VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL                 0x2012
+#define VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_HIGH                 0x2013
 #define VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL                    0x2014
 #define VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH                    0x2015
 #define VMX_VMCS64_CTRL_POSTED_INTR_DESC_FULL                   0x2016
@@ -1298,14 +1379,14 @@ typedef VMXMSRS *PVMXMSRS;
  */
 #define VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL                     0x2800
 #define VMX_VMCS64_GUEST_VMCS_LINK_PTR_HIGH                     0x2801
-#define VMX_VMCS64_GUEST_DEBUGCTL_FULL                          0x2802      /**< MSR IA32_DEBUGCTL */
-#define VMX_VMCS64_GUEST_DEBUGCTL_HIGH                          0x2803      /**< MSR IA32_DEBUGCTL */
+#define VMX_VMCS64_GUEST_DEBUGCTL_FULL                          0x2802
+#define VMX_VMCS64_GUEST_DEBUGCTL_HIGH                          0x2803
 #define VMX_VMCS64_GUEST_PAT_FULL                               0x2804
 #define VMX_VMCS64_GUEST_PAT_HIGH                               0x2805
 #define VMX_VMCS64_GUEST_EFER_FULL                              0x2806
 #define VMX_VMCS64_GUEST_EFER_HIGH                              0x2807
-#define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL                  0x2808      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH                  0x2809      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL                  0x2808
+#define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH                  0x2809
 #define VMX_VMCS64_GUEST_PDPTE0_FULL                            0x280a
 #define VMX_VMCS64_GUEST_PDPTE0_HIGH                            0x280b
 #define VMX_VMCS64_GUEST_PDPTE1_FULL                            0x280c
@@ -1326,8 +1407,8 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS64_HOST_PAT_HIGH                                0x2c01
 #define VMX_VMCS64_HOST_EFER_FULL                               0x2c02
 #define VMX_VMCS64_HOST_EFER_HIGH                               0x2c03
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2c04      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2c05      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2c04
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2c05
 /** @} */
 
 
@@ -1393,7 +1474,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS32_GUEST_INT_STATE                              0x4824
 #define VMX_VMCS32_GUEST_ACTIVITY_STATE                         0x4826
 #define VMX_VMCS32_GUEST_SMBASE                                 0x4828
-#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482a  /**< MSR IA32_SYSENTER_CS */
+#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482a
 #define VMX_VMCS32_PREEMPT_TIMER_VALUE                          0x482e
 /** @} */
 
@@ -1417,6 +1498,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600c
 #define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600e
 /** @} */
+
 
 /** @name Natural width read-only data fields.
  * @{
@@ -1451,8 +1533,8 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_GUEST_RIP                                      0x681e
 #define VMX_VMCS_GUEST_RFLAGS                                   0x6820
 #define VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS                      0x6822
-#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
-#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
+#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824
+#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826
 /** @} */
 
 
@@ -1479,17 +1561,38 @@ typedef VMXMSRS *PVMXMSRS;
  */
 /** External interrupts cause VM-exits if set; otherwise dispatched through the
  *  guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT                     RT_BIT(0)
+#define VMX_PIN_CTLS_EXT_INT_EXIT                               RT_BIT(0)
 /** Non-maskable interrupts cause VM-exits if set; otherwise dispatched through
  *  the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT                         RT_BIT(3)
+#define VMX_PIN_CTLS_NMI_EXIT                                   RT_BIT(3)
 /** Virtual NMIs. */
-#define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI                      RT_BIT(5)
+#define VMX_PIN_CTLS_VIRT_NMI                                   RT_BIT(5)
 /** Activate VMX preemption timer. */
-#define VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER                    RT_BIT(6)
+#define VMX_PIN_CTLS_PREEMPT_TIMER                              RT_BIT(6)
 /** Process interrupts with the posted-interrupt notification vector. */
-#define VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR                      RT_BIT(7)
-/* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
+#define VMX_PIN_CTLS_POSTED_INT                                 RT_BIT(7)
+/** Default1 class when true capability MSRs are not supported. */
+#define VMX_PIN_CTLS_DEFAULT1                                   UINT32_C(0x00000016)
+/** Bit fields for MSR_IA32_VMX_PINBASED_CTLS and Pin-based VM-execution
+ *  controls field in the VMCS. */
+#define VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT                      0
+#define VMX_BF_PIN_CTLS_EXT_INT_EXIT_MASK                       UINT32_C(0x00000001)
+#define VMX_BF_PIN_CTLS_UNDEF_1_2_SHIFT                         1
+#define VMX_BF_PIN_CTLS_UNDEF_1_2_MASK                          UINT32_C(0x00000006)
+#define VMX_BF_PIN_CTLS_NMI_EXIT_SHIFT                          3
+#define VMX_BF_PIN_CTLS_NMI_EXIT_MASK                           UINT32_C(0x00000008)
+#define VMX_BF_PIN_CTLS_UNDEF_4_SHIFT                           4
+#define VMX_BF_PIN_CTLS_UNDEF_4_MASK                            UINT32_C(0x00000010)
+#define VMX_BF_PIN_CTLS_VIRT_NMI_SHIFT                          5
+#define VMX_BF_PIN_CTLS_VIRT_NMI_MASK                           UINT32_C(0x00000020)
+#define VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT                     6
+#define VMX_BF_PIN_CTLS_PREEMPT_TIMER_MASK                      UINT32_C(0x00000040)
+#define VMX_BF_PIN_CTLS_POSTED_INT_SHIFT                        7
+#define VMX_BF_PIN_CTLS_POSTED_INT_MASK                         UINT32_C(0x00000080)
+#define VMX_BF_PIN_CTLS_UNDEF_8_31_SHIFT                        8
+#define VMX_BF_PIN_CTLS_UNDEF_8_31_MASK                         UINT32_C(0xffffff00)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
+                            (EXT_INT_EXIT, UNDEF_1_2, NMI_EXIT, UNDEF_4, VIRT_NMI, PREEMPT_TIMER, POSTED_INT, UNDEF_8_31));
 /** @} */
 
 
@@ -1497,49 +1600,113 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** VM-exit as soon as RFLAGS.IF=1 and no blocking is active. */
-#define VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT                 RT_BIT(2)
+#define VMX_PROC_CTLS_INT_WINDOW_EXIT                           RT_BIT(2)
 /** Use timestamp counter offset. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING              RT_BIT(3)
+#define VMX_PROC_CTLS_USE_TSC_OFFSETTING                        RT_BIT(3)
 /** VM-exit when executing the HLT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT                        RT_BIT(7)
+#define VMX_PROC_CTLS_HLT_EXIT                                  RT_BIT(7)
 /** VM-exit when executing the INVLPG instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT                     RT_BIT(9)
+#define VMX_PROC_CTLS_INVLPG_EXIT                               RT_BIT(9)
 /** VM-exit when executing the MWAIT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT                      RT_BIT(10)
+#define VMX_PROC_CTLS_MWAIT_EXIT                                RT_BIT(10)
 /** VM-exit when executing the RDPMC instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT                      RT_BIT(11)
+#define VMX_PROC_CTLS_RDPMC_EXIT                                RT_BIT(11)
 /** VM-exit when executing the RDTSC/RDTSCP instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT                      RT_BIT(12)
+#define VMX_PROC_CTLS_RDTSC_EXIT                                RT_BIT(12)
 /** VM-exit when executing the MOV to CR3 instruction. (forced to 1 on the
  *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT                   RT_BIT(15)
+#define VMX_PROC_CTLS_CR3_LOAD_EXIT                             RT_BIT(15)
 /** VM-exit when executing the MOV from CR3 instruction. (forced to 1 on the
  *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT                  RT_BIT(16)
+#define VMX_PROC_CTLS_CR3_STORE_EXIT                            RT_BIT(16)
 /** VM-exit on CR8 loads. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT                   RT_BIT(19)
+#define VMX_PROC_CTLS_CR8_LOAD_EXIT                             RT_BIT(19)
 /** VM-exit on CR8 stores. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT                  RT_BIT(20)
+#define VMX_PROC_CTLS_CR8_STORE_EXIT                            RT_BIT(20)
 /** Use TPR shadow. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW                  RT_BIT(21)
+#define VMX_PROC_CTLS_USE_TPR_SHADOW                            RT_BIT(21)
 /** VM-exit when virtual NMI blocking is disabled. */
-#define VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT                 RT_BIT(22)
+#define VMX_PROC_CTLS_NMI_WINDOW_EXIT                           RT_BIT(22)
 /** VM-exit when executing a MOV DRx instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT                     RT_BIT(23)
+#define VMX_PROC_CTLS_MOV_DR_EXIT                               RT_BIT(23)
 /** VM-exit when executing IO instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT                  RT_BIT(24)
+#define VMX_PROC_CTLS_UNCOND_IO_EXIT                            RT_BIT(24)
 /** Use IO bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_IO_BITMAPS                  RT_BIT(25)
+#define VMX_PROC_CTLS_USE_IO_BITMAPS                            RT_BIT(25)
 /** Monitor trap flag. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG               RT_BIT(27)
+#define VMX_PROC_CTLS_MONITOR_TRAP_FLAG                         RT_BIT(27)
 /** Use MSR bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS                 RT_BIT(28)
+#define VMX_PROC_CTLS_USE_MSR_BITMAPS                           RT_BIT(28)
 /** VM-exit when executing the MONITOR instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT                    RT_BIT(29)
+#define VMX_PROC_CTLS_MONITOR_EXIT                              RT_BIT(29)
 /** VM-exit when executing the PAUSE instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT                      RT_BIT(30)
+#define VMX_PROC_CTLS_PAUSE_EXIT                                RT_BIT(30)
 /** Whether the secondary processor based VM-execution controls are used. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
+#define VMX_PROC_CTLS_USE_SECONDARY_CTLS                        RT_BIT(31)
+/** Default1 class when true-capability MSRs are not supported. */
+#define VMX_PROC_CTLS_DEFAULT1                                  UINT32_C(0x0401e172)
+/** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS and Processor-based VM-execution
+ *  controls field in the VMCS. */
+#define VMX_BF_PROC_CTLS_UNDEF_0_1_SHIFT                        0
+#define VMX_BF_PROC_CTLS_UNDEF_0_1_MASK                         UINT32_C(0x00000003)
+#define VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_SHIFT                  2
+#define VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_MASK                   UINT32_C(0x00000004)
+#define VMX_BF_PROC_CTLS_USE_TSC_OFFSETTING_SHIFT               3
+#define VMX_BF_PROC_CTLS_USE_TSC_OFFSETTING_MASK                UINT32_C(0x00000008)
+#define VMX_BF_PROC_CTLS_UNDEF_4_6_SHIFT                        4
+#define VMX_BF_PROC_CTLS_UNDEF_4_6_MASK                         UINT32_C(0x00000070)
+#define VMX_BF_PROC_CTLS_HLT_EXIT_SHIFT                         7
+#define VMX_BF_PROC_CTLS_HLT_EXIT_MASK                          UINT32_C(0x00000080)
+#define VMX_BF_PROC_CTLS_UNDEF_8_SHIFT                          8
+#define VMX_BF_PROC_CTLS_UNDEF_8_MASK                           UINT32_C(0x00000100)
+#define VMX_BF_PROC_CTLS_INVLPG_EXIT_SHIFT                      9
+#define VMX_BF_PROC_CTLS_INVLPG_EXIT_MASK                       UINT32_C(0x00000200)
+#define VMX_BF_PROC_CTLS_MWAIT_EXIT_SHIFT                       10
+#define VMX_BF_PROC_CTLS_MWAIT_EXIT_MASK                        UINT32_C(0x00000400)
+#define VMX_BF_PROC_CTLS_RDPMC_EXIT_SHIFT                       11
+#define VMX_BF_PROC_CTLS_RDPMC_EXIT_MASK                        UINT32_C(0x00000800)
+#define VMX_BF_PROC_CTLS_RDTSC_EXIT_SHIFT                       12
+#define VMX_BF_PROC_CTLS_RDTSC_EXIT_MASK                        UINT32_C(0x00001000)
+#define VMX_BF_PROC_CTLS_UNDEF_13_14_SHIFT                      13
+#define VMX_BF_PROC_CTLS_UNDEF_13_14_MASK                       UINT32_C(0x00006000)
+#define VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_SHIFT                    15
+#define VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_MASK                     UINT32_C(0x00008000)
+#define VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT                   16
+#define VMX_BF_PROC_CTLS_CR3_STORE_EXIT_MASK                    UINT32_C(0x00010000)
+#define VMX_BF_PROC_CTLS_UNDEF_17_18_SHIFT                      17
+#define VMX_BF_PROC_CTLS_UNDEF_17_18_MASK                       UINT32_C(0x00060000)
+#define VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT                    19
+#define VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_MASK                     UINT32_C(0x00080000)
+#define VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT                   20
+#define VMX_BF_PROC_CTLS_CR8_STORE_EXIT_MASK                    UINT32_C(0x00100000)
+#define VMX_BF_PROC_CTLS_USE_TPR_SHADOW_SHIFT                   21
+#define VMX_BF_PROC_CTLS_USE_TPR_SHADOW_MASK                    UINT32_C(0x00200000)
+#define VMX_BF_PROC_CTLS_NMI_WINDOW_EXIT_SHIFT                  22
+#define VMX_BF_PROC_CTLS_NMI_WINDOW_EXIT_MASK                   UINT32_C(0x00400000)
+#define VMX_BF_PROC_CTLS_MOV_DR_EXIT_SHIFT                      23
+#define VMX_BF_PROC_CTLS_MOV_DR_EXIT_MASK                       UINT32_C(0x00800000)
+#define VMX_BF_PROC_CTLS_UNCOND_IO_EXIT_SHIFT                   24
+#define VMX_BF_PROC_CTLS_UNCOND_IO_EXIT_MASK                    UINT32_C(0x01000000)
+#define VMX_BF_PROC_CTLS_USE_IO_BITMAPS_SHIFT                   25
+#define VMX_BF_PROC_CTLS_USE_IO_BITMAPS_MASK                    UINT32_C(0x02000000)
+#define VMX_BF_PROC_CTLS_UNDEF_26_SHIFT                         26
+#define VMX_BF_PROC_CTLS_UNDEF_26_MASK                          UINT32_C(0x4000000)
+#define VMX_BF_PROC_CTLS_MONITOR_TRAP_FLAG_SHIFT                27
+#define VMX_BF_PROC_CTLS_MONITOR_TRAP_FLAG_MASK                 UINT32_C(0x08000000)
+#define VMX_BF_PROC_CTLS_USE_MSR_BITMAPS_SHIFT                  28
+#define VMX_BF_PROC_CTLS_USE_MSR_BITMAPS_MASK                   UINT32_C(0x10000000)
+#define VMX_BF_PROC_CTLS_MONITOR_EXIT_SHIFT                     29
+#define VMX_BF_PROC_CTLS_MONITOR_EXIT_MASK                      UINT32_C(0x20000000)
+#define VMX_BF_PROC_CTLS_PAUSE_EXIT_SHIFT                       30
+#define VMX_BF_PROC_CTLS_PAUSE_EXIT_MASK                        UINT32_C(0x40000000)
+#define VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_SHIFT               31
+#define VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_MASK                UINT32_C(0x80000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
+                            (UNDEF_0_1, INT_WINDOW_EXIT, USE_TSC_OFFSETTING, UNDEF_4_6, HLT_EXIT, UNDEF_8, INVLPG_EXIT,
+                             MWAIT_EXIT, RDPMC_EXIT, RDTSC_EXIT, UNDEF_13_14, CR3_LOAD_EXIT, CR3_STORE_EXIT, UNDEF_17_18,
+                             CR8_LOAD_EXIT, CR8_STORE_EXIT, USE_TPR_SHADOW, NMI_WINDOW_EXIT, MOV_DR_EXIT, UNCOND_IO_EXIT,
+                             USE_IO_BITMAPS, UNDEF_26, MONITOR_TRAP_FLAG, USE_MSR_BITMAPS, MONITOR_EXIT, PAUSE_EXIT,
+                             USE_SECONDARY_CTLS));
 /** @} */
 
 
@@ -1547,49 +1714,104 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** Virtualize APIC access. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC                      RT_BIT(0)
+#define VMX_PROC_CTLS2_VIRT_APIC_ACCESS                         RT_BIT(0)
 /** EPT supported/enabled. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_EPT                            RT_BIT(1)
+#define VMX_PROC_CTLS2_EPT                                      RT_BIT(1)
 /** Descriptor table instructions cause VM-exits. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT          RT_BIT(2)
+#define VMX_PROC_CTLS2_DESC_TABLE_EXIT                          RT_BIT(2)
 /** RDTSCP supported/enabled. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP                         RT_BIT(3)
+#define VMX_PROC_CTLS2_RDTSCP                                   RT_BIT(3)
 /** Virtualize x2APIC mode. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC                    RT_BIT(4)
+#define VMX_PROC_CTLS2_VIRT_X2APIC_ACCESS                       RT_BIT(4)
 /** VPID supported/enabled. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VPID                           RT_BIT(5)
+#define VMX_PROC_CTLS2_VPID                                     RT_BIT(5)
 /** VM-exit when executing the WBINVD instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT                    RT_BIT(6)
+#define VMX_PROC_CTLS2_WBINVD_EXIT                              RT_BIT(6)
 /** Unrestricted guest execution. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST             RT_BIT(7)
+#define VMX_PROC_CTLS2_UNRESTRICTED_GUEST                       RT_BIT(7)
 /** APIC register virtualization. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT                  RT_BIT(8)
+#define VMX_PROC_CTLS2_APIC_REG_VIRT                            RT_BIT(8)
 /** Virtual-interrupt delivery. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY             RT_BIT(9)
+#define VMX_PROC_CTLS2_VIRT_INT_DELIVERY                        RT_BIT(9)
 /** A specified number of pause loops cause a VM-exit. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT                RT_BIT(10)
+#define VMX_PROC_CTLS2_PAUSE_LOOP_EXIT                          RT_BIT(10)
 /** VM-exit when executing RDRAND instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT                    RT_BIT(11)
+#define VMX_PROC_CTLS2_RDRAND_EXIT                              RT_BIT(11)
 /** Enables INVPCID instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_INVPCID                        RT_BIT(12)
+#define VMX_PROC_CTLS2_INVPCID                                  RT_BIT(12)
 /** Enables VMFUNC instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC                         RT_BIT(13)
+#define VMX_PROC_CTLS2_VMFUNC                                   RT_BIT(13)
 /** Enables VMCS shadowing. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VMCS_SHADOWING                 RT_BIT(14)
+#define VMX_PROC_CTLS2_VMCS_SHADOWING                           RT_BIT(14)
 /** Enables ENCLS VM-exits. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_ENCLS_EXIT                     RT_BIT(15)
+#define VMX_PROC_CTLS2_ENCLS_EXIT                               RT_BIT(15)
 /** VM-exit when executing RDSEED. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT                    RT_BIT(16)
+#define VMX_PROC_CTLS2_RDSEED_EXIT                              RT_BIT(16)
 /** Enables page-modification logging. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_PML                            RT_BIT(17)
+#define VMX_PROC_CTLS2_PML                                      RT_BIT(17)
 /** Controls whether EPT-violations may cause \#VE instead of exits. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE                         RT_BIT(18)
+#define VMX_PROC_CTLS2_EPT_VE                                   RT_BIT(18)
 /** Conceal VMX non-root operation from Intel processor trace (PT). */
-#define VMX_VMCS_CTRL_PROC_EXEC2_CONCEAL_FROM_PT                RT_BIT(19)
+#define VMX_PROC_CTLS2_CONCEAL_FROM_PT                          RT_BIT(19)
 /** Enables XSAVES/XRSTORS instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_XSAVES_XRSTORS                 RT_BIT(20)
+#define VMX_PROC_CTLS2_XSAVES_XRSTORS                           RT_BIT(20)
 /** Use TSC scaling. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_TSC_SCALING                    RT_BIT(25)
+#define VMX_PROC_CTLS2_TSC_SCALING                              RT_BIT(25)
+/** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS2 and Secondary processor-based
+ *  VM-execution controls field in the VMCS. */
+#define VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT                0
+#define VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_MASK                 UINT32_C(0x00000001)
+#define VMX_BF_PROC_CTLS2_EPT_SHIFT                             1
+#define VMX_BF_PROC_CTLS2_EPT_MASK                              UINT32_C(0x00000002)
+#define VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_SHIFT                 2
+#define VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_MASK                  UINT32_C(0x00000004)
+#define VMX_BF_PROC_CTLS2_RDTSCP_SHIFT                          3
+#define VMX_BF_PROC_CTLS2_RDTSCP_MASK                           UINT32_C(0x00000008)
+#define VMX_BF_PROC_CTLS2_VIRT_X2APIC_ACCESS_SHIFT              4
+#define VMX_BF_PROC_CTLS2_VIRT_X2APIC_ACCESS_MASK               UINT32_C(0x00000010)
+#define VMX_BF_PROC_CTLS2_VPID_SHIFT                            5
+#define VMX_BF_PROC_CTLS2_VPID_MASK                             UINT32_C(0x00000020)
+#define VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT                     6
+#define VMX_BF_PROC_CTLS2_WBINVD_EXIT_MASK                      UINT32_C(0x00000040)
+#define VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_SHIFT              7
+#define VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_MASK               UINT32_C(0x00000080)
+#define VMX_BF_PROC_CTLS2_APIC_REG_VIRT_SHIFT                   8
+#define VMX_BF_PROC_CTLS2_APIC_REG_VIRT_MASK                    UINT32_C(0x00000100)
+#define VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_SHIFT               9
+#define VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_MASK                UINT32_C(0x00000200)
+#define VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT                 10
+#define VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_MASK                  UINT32_C(0x00000400)
+#define VMX_BF_PROC_CTLS2_RDRAND_EXIT_SHIFT                     11
+#define VMX_BF_PROC_CTLS2_RDRAND_EXIT_MASK                      UINT32_C(0x00000800)
+#define VMX_BF_PROC_CTLS2_INVPCID_SHIFT                         12
+#define VMX_BF_PROC_CTLS2_INVPCID_MASK                          UINT32_C(0x00001000)
+#define VMX_BF_PROC_CTLS2_VMFUNC_SHIFT                          13
+#define VMX_BF_PROC_CTLS2_VMFUNC_MASK                           UINT32_C(0x00002000)
+#define VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT                  14
+#define VMX_BF_PROC_CTLS2_VMCS_SHADOWING_MASK                   UINT32_C(0x00004000)
+#define VMX_BF_PROC_CTLS2_ENCLS_EXIT_SHIFT                      15
+#define VMX_BF_PROC_CTLS2_ENCLS_EXIT_MASK                       UINT32_C(0x00008000)
+#define VMX_BF_PROC_CTLS2_RDSEED_EXIT_SHIFT                     16
+#define VMX_BF_PROC_CTLS2_RDSEED_EXIT_MASK                      UINT32_C(0x00010000)
+#define VMX_BF_PROC_CTLS2_PML_SHIFT                             17
+#define VMX_BF_PROC_CTLS2_PML_MASK                              UINT32_C(0x00020000)
+#define VMX_BF_PROC_CTLS2_EPT_VE_SHIFT                          18
+#define VMX_BF_PROC_CTLS2_EPT_VE_MASK                           UINT32_C(0x00040000)
+#define VMX_BF_PROC_CTLS2_CONCEAL_FROM_PT_SHIFT                 19
+#define VMX_BF_PROC_CTLS2_CONCEAL_FROM_PT_MASK                  UINT32_C(0x00080000)
+#define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT                  20
+#define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_MASK                   UINT32_C(0x00100000)
+#define VMX_BF_PROC_CTLS2_UNDEF_21_24_SHIFT                     21
+#define VMX_BF_PROC_CTLS2_UNDEF_21_24_MASK                      UINT32_C(0x01e00000)
+#define VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT                     25
+#define VMX_BF_PROC_CTLS2_TSC_SCALING_MASK                      UINT32_C(0x02000000)
+#define VMX_BF_PROC_CTLS2_UNDEF_26_31_SHIFT                     26
+#define VMX_BF_PROC_CTLS2_UNDEF_26_31_MASK                      UINT32_C(0xfc000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
+                            (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_ACCESS, VPID, WBINVD_EXIT,
+                             UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
+                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_FROM_PT, XSAVES_XRSTORS, UNDEF_21_24,
+                             TSC_SCALING, UNDEF_26_31));
 /** @} */
 
 
@@ -1598,19 +1820,48 @@ typedef VMXMSRS *PVMXMSRS;
  */
 /** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the
  *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG                          RT_BIT(2)
-/** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
-#define VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST                    RT_BIT(9)
+#define VMX_ENTRY_CTLS_LOAD_DEBUG                               RT_BIT(2)
+/** 64-bit guest mode. Must be 0 for CPUs that don't support AMD64. */
+#define VMX_ENTRY_CTLS_IA32E_MODE_GUEST                         RT_BIT(9)
 /** In SMM mode after VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_ENTRY_SMM                           RT_BIT(10)
+#define VMX_ENTRY_CTLS_ENTRY_TO_SMM                             RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
-#define VMX_VMCS_CTRL_ENTRY_DEACTIVATE_DUALMON                  RT_BIT(11)
+#define VMX_ENTRY_CTLS_DEACTIVATE_DUAL_MON                      RT_BIT(11)
 /** Whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR                 RT_BIT(13)
+#define VMX_ENTRY_CTLS_LOAD_PERF_MSR                            RT_BIT(13)
 /** Whether the guest IA32_PAT MSR is loaded on VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR                  RT_BIT(14)
+#define VMX_ENTRY_CTLS_LOAD_PAT_MSR                             RT_BIT(14)
 /** Whether the guest IA32_EFER MSR is loaded on VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR                 RT_BIT(15)
+#define VMX_ENTRY_CTLS_LOAD_EFER_MSR                            RT_BIT(15)
+/** Default1 class when true-capability MSRs are not supported. */
+#define VMX_ENTRY_CTLS_DEFAULT1                                 UINT32_C(0x000011ff)
+/** Bit fields for MSR_IA32_VMX_ENTRY_CTLS and VM-entry controls field in the
+ *  VMCS. */
+#define VMX_BF_ENTRY_CTLS_UNDEF_0_1_SHIFT                       0
+#define VMX_BF_ENTRY_CTLS_UNDEF_0_1_MASK                        UINT32_C(0x00000003)
+#define VMX_BF_ENTRY_CTLS_LOAD_DEBUG_SHIFT                      2
+#define VMX_BF_ENTRY_CTLS_LOAD_DEBUG_MASK                       UINT32_C(0x00000004)
+#define VMX_BF_ENTRY_CTLS_UNDEF_3_8_SHIFT                       3
+#define VMX_BF_ENTRY_CTLS_UNDEF_3_8_MASK                        UINT32_C(0x000001f8)
+#define VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_SHIFT                9
+#define VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_MASK                 UINT32_C(0x00000200)
+#define VMX_BF_ENTRY_CTLS_ENTRY_SMM_SHIFT                       10
+#define VMX_BF_ENTRY_CTLS_ENTRY_SMM_MASK                        UINT32_C(0x00000400)
+#define VMX_BF_ENTRY_CTLS_DEACTIVATE_DUAL_MON_SHIFT             11
+#define VMX_BF_ENTRY_CTLS_DEACTIVATE_DUAL_MON_MASK              UINT32_C(0x00000800)
+#define VMX_BF_ENTRY_CTLS_UNDEF_12_SHIFT                        12
+#define VMX_BF_ENTRY_CTLS_UNDEF_12_MASK                         UINT32_C(0x00001000)
+#define VMX_BF_ENTRY_CTLS_LOAD_PERF_MSR_SHIFT                   13
+#define VMX_BF_ENTRY_CTLS_LOAD_PERF_MSR_MASK                    UINT32_C(0x00002000)
+#define VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_SHIFT                    14
+#define VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_MASK                     UINT32_C(0x00004000)
+#define VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT                   15
+#define VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_MASK                    UINT32_C(0x00008000)
+#define VMX_BF_ENTRY_CTLS_UNDEF_16_31_SHIFT                     16
+#define VMX_BF_ENTRY_CTLS_UNDEF_16_31_MASK                      UINT32_C(0xffff0000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
+                            (UNDEF_0_1, LOAD_DEBUG, UNDEF_3_8, IA32E_MODE_GUEST, ENTRY_SMM, DEACTIVATE_DUAL_MON, UNDEF_12,
+                             LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, UNDEF_16_31));
 /** @} */
 
 
@@ -1619,31 +1870,61 @@ typedef VMXMSRS *PVMXMSRS;
  */
 /** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the
  *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_EXIT_SAVE_DEBUG                           RT_BIT(2)
+#define VMX_EXIT_CTLS_SAVE_DEBUG                                RT_BIT(2)
 /** Return to long mode after a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE                 RT_BIT(9)
-/** Whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR                        RT_BIT(12)
+#define VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE                      RT_BIT(9)
+/** Whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-exit. */
+#define VMX_EXIT_CTLS_LOAD_PERF_MSR                             RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_ACK_EXT_INT                          RT_BIT(15)
+#define VMX_EXIT_CTLS_ACK_EXT_INT                               RT_BIT(15)
 /** Whether the guest IA32_PAT MSR is saved on VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR                   RT_BIT(18)
+#define VMX_EXIT_CTLS_SAVE_PAT_MSR                              RT_BIT(18)
 /** Whether the host IA32_PAT MSR is loaded on VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR                    RT_BIT(19)
+#define VMX_EXIT_CTLS_LOAD_PAT_MSR                              RT_BIT(19)
 /** Whether the guest IA32_EFER MSR is saved on VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR                  RT_BIT(20)
+#define VMX_EXIT_CTLS_SAVE_EFER_MSR                             RT_BIT(20)
 /** Whether the host IA32_EFER MSR is loaded on VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR                   RT_BIT(21)
+#define VMX_EXIT_CTLS_LOAD_EFER_MSR                             RT_BIT(21)
 /** Whether the value of the VMX preemption timer is saved on every VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER               RT_BIT(22)
-/** @} */
-
-
-/** @name VM function controls.
- * @{
- */
-/** EPTP-switching function changes the value of the EPTP to one chosen from the EPTP list. */
-#define VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING                     RT_BIT_64(0)
+#define VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER                    RT_BIT(22)
+/** Default1 class when true-capability MSRs are not supported.  */
+#define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
+/** Bit fields for MSR_IA32_VMX_EXIT_CTLS and VM-exit controls field in the
+ *  VMCS. */
+#define VMX_BF_EXIT_CTLS_UNDEF_0_1_SHIFT                        0
+#define VMX_BF_EXIT_CTLS_UNDEF_0_1_MASK                         UINT32_C(0x00000003)
+#define VMX_BF_EXIT_CTLS_SAVE_DEBUG_SHIFT                       2
+#define VMX_BF_EXIT_CTLS_SAVE_DEBUG_MASK                        UINT32_C(0x00000004)
+#define VMX_BF_EXIT_CTLS_UNDEF_3_8_SHIFT                        3
+#define VMX_BF_EXIT_CTLS_UNDEF_3_8_MASK                         UINT32_C(0x000001f8)
+#define VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_SHIFT             9
+#define VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_MASK              UINT32_C(0x00000200)
+#define VMX_BF_EXIT_CTLS_UNDEF_10_11_SHIFT                      10
+#define VMX_BF_EXIT_CTLS_UNDEF_10_11_MASK                       UINT32_C(0x00000c00)
+#define VMX_BF_EXIT_CTLS_LOAD_PERF_MSR_SHIFT                    12
+#define VMX_BF_EXIT_CTLS_LOAD_PERF_MSR_MASK                     UINT32_C(0x00001000)
+#define VMX_BF_EXIT_CTLS_UNDEF_13_14_SHIFT                      13
+#define VMX_BF_EXIT_CTLS_UNDEF_13_14_MASK                       UINT32_C(0x00006000)
+#define VMX_BF_EXIT_CTLS_ACK_EXT_INT_SHIFT                      15
+#define VMX_BF_EXIT_CTLS_ACK_EXT_INT_MASK                       UINT32_C(0x00008000)
+#define VMX_BF_EXIT_CTLS_UNDEF_16_17_SHIFT                      16
+#define VMX_BF_EXIT_CTLS_UNDEF_16_17_MASK                       UINT32_C(0x00030000)
+#define VMX_BF_EXIT_CTLS_SAVE_PAT_MSR_SHIFT                     18
+#define VMX_BF_EXIT_CTLS_SAVE_PAT_MSR_MASK                      UINT32_C(0x00040000)
+#define VMX_BF_EXIT_CTLS_LOAD_PAT_MSR_SHIFT                     19
+#define VMX_BF_EXIT_CTLS_LOAD_PAT_MSR_MASK                      UINT32_C(0x00080000)
+#define VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT                    20
+#define VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_MASK                     UINT32_C(0x00100000)
+#define VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT                    21
+#define VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_MASK                     UINT32_C(0x00200000)
+#define VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT               22
+#define VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_MASK                UINT32_C(0x00400000)
+#define VMX_BF_EXIT_CTLS_UNDEF_23_31_SHIFT                      23
+#define VMX_BF_EXIT_CTLS_UNDEF_23_31_MASK                       UINT32_C(0xff800000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
+                            (UNDEF_0_1, SAVE_DEBUG, UNDEF_3_8, HOST_ADDR_SPACE_SIZE, UNDEF_10_11, LOAD_PERF_MSR, UNDEF_13_14,
+                             ACK_EXT_INT, UNDEF_16_17, SAVE_PAT_MSR, LOAD_PAT_MSR, SAVE_EFER_MSR, LOAD_EFER_MSR,
+                             SAVE_PREEMPT_TIMER, UNDEF_23_31));
 /** @} */
 
 
@@ -2036,15 +2317,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
+/** @defgroup grp_hm_vmx_emu    VMX emulation.
+ * @{
+ */
+/** @todo declare these with a prefix that immediately identifies that they are
+ *        emulated by VirtualBox and not defined by Intel, see @bugref{9180#c6}.
+ */
 /** VMCS revision identifier used for emulating VMX (bit 31 MBZ). Bump this
  *  arbitarily chosen identifier if incompatible changes to the layout of our VMCS
  *  structure is done. */
 #define VMX_VMCS_REVISION_ID                                    UINT32_C(0x1d000001)
 AssertCompile(!(VMX_VMCS_REVISION_ID & RT_BIT(31)));
-/** VMCS (and related regions) memory type - Uncacheable. */
-#define VMX_VMCS_MEM_TYPE_UC                                    0
-/** VMCS (and related regions) memory type - Write back. */
-#define VMX_VMCS_MEM_TYPE_WB                                    6
+
+/** @} */
 
 
 /** @defgroup grp_hm_vmx_asm    VMX Assembly Helpers

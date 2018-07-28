@@ -725,16 +725,16 @@ typedef struct HMCPU
 #if HC_ARCH_BITS == 32
         uint32_t                    u32Alignment0;
 #endif
-        /** Current VMX_VMCS32_CTRL_PIN_EXEC. */
+        /** Current pin-based VM-execution controls. */
         uint32_t                    u32PinCtls;
-        /** Current VMX_VMCS32_CTRL_PROC_EXEC. */
+        /** Current processor-based VM-execution controls. */
         uint32_t                    u32ProcCtls;
-        /** Current VMX_VMCS32_CTRL_PROC_EXEC2. */
+        /** Current secondary processor-based VM-execution controls. */
         uint32_t                    u32ProcCtls2;
-        /** Current VMX_VMCS32_CTRL_EXIT. */
-        uint32_t                    u32ExitCtls;
-        /** Current VMX_VMCS32_CTRL_ENTRY. */
+        /** Current VM-entry controls. */
         uint32_t                    u32EntryCtls;
+        /** Current VM-exit controls. */
+        uint32_t                    u32ExitCtls;
 
         /** Current CR0 mask. */
         uint32_t                    u32Cr0Mask;
@@ -822,7 +822,7 @@ typedef struct HMCPU
             X86DESCATTR             AttrGS;
             X86DESCATTR             AttrSS;
             X86EFLAGS               Eflags;
-            uint32_t                fRealOnV86Active;
+            bool                    fRealOnV86Active;
         } RealMode;
 
         /** VT-x error-reporting (mainly for ring-3 propagation). */

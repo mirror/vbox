@@ -348,13 +348,13 @@ VMM_INT_DECL(bool) HMIsLongModeAllowed(PVM pVM)
 
 
 /**
- * Checks if MSR bitmaps are available. It is assumed that when it's available
+ * Checks if MSR bitmaps are active. It is assumed that when it's available
  * it will be used as well.
  *
  * @returns true if MSR bitmaps are available, false otherwise.
  * @param   pVM         The cross context VM structure.
  */
-VMM_INT_DECL(bool) HMAreMsrBitmapsAvailable(PVM pVM)
+VMM_INT_DECL(bool) HMIsMsrBitmapActive(PVM pVM)
 {
     if (HMIsEnabled(pVM))
     {
@@ -362,10 +362,8 @@ VMM_INT_DECL(bool) HMAreMsrBitmapsAvailable(PVM pVM)
             return true;
 
         if (   pVM->hm.s.vmx.fSupported
-            && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
-        {
+            && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS))
             return true;
-        }
     }
     return false;
 }
@@ -388,14 +386,28 @@ VMM_INT_DECL(bool) HMIsSvmActive(PVM pVM)
 /**
  * Checks if VT-x is active.
  *
- * @returns true if AMD-V is active.
+ * @returns true if VT-x is active.
  * @param   pVM         The cross context VM structure.
  *
  * @remarks Works before hmR3InitFinalizeR0.
  */
 VMM_INT_DECL(bool) HMIsVmxActive(PVM pVM)
 {
-    return pVM->hm.s.vmx.fSupported && HMIsEnabled(pVM);
+    return HMIsVmxSupported(pVM) && HMIsEnabled(pVM);
+}
+
+
+/**
+ * Checks if VT-x is supported by the host CPU.
+ *
+ * @returns true if VT-x is supported, false otherwise.
+ * @param   pVM         The cross context VM structure.
+ *
+ * @remarks Works before hmR3InitFinalizeR0.
+ */
+VMM_INT_DECL(bool) HMIsVmxSupported(PVM pVM)
+{
+    return pVM->hm.s.vmx.fSupported;
 }
 
 #endif /* !IN_RC */
@@ -541,6 +553,86 @@ VMM_INT_DECL(void) HMNstGstVmxVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason)
 {
     RT_NOREF2(pVCpu, uBasicExitReason);
 }
+
+
+/**
+ * Gets a copy of the VMX host MSRs that were read by HM during ring-0
+ * initialization.
+ *
+ * @return VBox status code.
+ * @param   pVM        The cross context VM structure.
+ * @param   pVmxMsrs   Where to store the VMXMSRS struct (only valid when
+ *                     VINF_SUCCESS is returned).
+ *
+ * @remarks Caller needs to take care not to call this function too early. Call
+ *          after HM initialization is fully complete.
+ */
+VMM_INT_DECL(int) HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs)
+{
+    AssertPtrReturn(pVM,      VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pVmxMsrs, VERR_INVALID_PARAMETER);
+    if (pVM->hm.s.vmx.fSupported)
+    {
+        *pVmxMsrs = pVM->hm.s.vmx.Msrs;
+        return VINF_SUCCESS;
+    }
+    return VERR_VMX_NOT_SUPPORTED;
+}
+
+
+#if 0 /** @todo Update comment hm_vmx.h VMXMSRS struct if this is removed. */
+/**
+ * Gets the specified VMX host MSR that was read by HM during ring-0
+ * initialization.
+ *
+ * @return VBox status code.
+ * @param   pVM        The cross context VM structure.
+ * @param   idMsr      The MSR.
+ * @param   puValue    Where to store the MSR value (only updated when VINF_SUCCESS
+ *                     is returned).
+ *
+ * @remarks Caller needs to take care not to call this function too early. Call
+ *          after HM initialization is fully complete.
+ */
+VMM_INT_DECL(int) HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue)
+{
+    AssertPtrReturn(pVM,     VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puValue, VERR_INVALID_PARAMETER);
+
+    if (!pVM->hm.s.vmx.fSupported)
+        return VERR_VMX_NOT_SUPPORTED;
+
+    PCVMXMSRS pVmxMsrs = &pVM->hm.s.vmx.Msrs;
+    switch (idMsr)
+    {
+        case MSR_IA32_FEATURE_CONTROL:         *puValue =  pVmxMsrs->u64FeatCtrl;      break;
+        case MSR_IA32_VMX_BASIC:               *puValue =  pVmxMsrs->u64Basic;         break;
+        case MSR_IA32_VMX_PINBASED_CTLS:       *puValue =  pVmxMsrs->PinCtls.u;        break;
+        case MSR_IA32_VMX_PROCBASED_CTLS:      *puValue =  pVmxMsrs->ProcCtls.u;       break;
+        case MSR_IA32_VMX_PROCBASED_CTLS2:     *puValue =  pVmxMsrs->ProcCtls2.u;      break;
+        case MSR_IA32_VMX_EXIT_CTLS:           *puValue =  pVmxMsrs->ExitCtls.u;       break;
+        case MSR_IA32_VMX_ENTRY_CTLS:          *puValue =  pVmxMsrs->EntryCtls.u;      break;
+        case MSR_IA32_VMX_TRUE_PINBASED_CTLS:  *puValue =  pVmxMsrs->TruePinCtls.u;    break;
+        case MSR_IA32_VMX_TRUE_PROCBASED_CTLS: *puValue =  pVmxMsrs->TrueProcCtls.u;   break;
+        case MSR_IA32_VMX_TRUE_ENTRY_CTLS:     *puValue =  pVmxMsrs->TrueEntryCtls.u;  break;
+        case MSR_IA32_VMX_TRUE_EXIT_CTLS:      *puValue =  pVmxMsrs->TrueExitCtls.u;   break;
+        case MSR_IA32_VMX_MISC:                *puValue =  pVmxMsrs->u64Misc;          break;
+        case MSR_IA32_VMX_CR0_FIXED0:          *puValue =  pVmxMsrs->u64Cr0Fixed0;     break;
+        case MSR_IA32_VMX_CR0_FIXED1:          *puValue =  pVmxMsrs->u64Cr0Fixed1;     break;
+        case MSR_IA32_VMX_CR4_FIXED0:          *puValue =  pVmxMsrs->u64Cr4Fixed0;     break;
+        case MSR_IA32_VMX_CR4_FIXED1:          *puValue =  pVmxMsrs->u64Cr4Fixed1;     break;
+        case MSR_IA32_VMX_VMCS_ENUM:           *puValue =  pVmxMsrs->u64VmcsEnum;      break;
+        case MSR_IA32_VMX_VMFUNC:              *puValue =  pVmxMsrs->u64VmFunc;        break;
+        case MSR_IA32_VMX_EPT_VPID_CAP:        *puValue =  pVmxMsrs->u64EptVpidCaps;   break;
+        default:
+        {
+            AssertMsgFailed(("Invalid MSR %#x\n", idMsr));
+            return VERR_NOT_FOUND;
+        }
+    }
+    return VINF_SUCCESS;
+}
+#endif
 
 
 #ifndef IN_RC

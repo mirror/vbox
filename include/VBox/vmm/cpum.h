@@ -1116,13 +1116,138 @@ typedef struct CPUMFEATURES
     /** SVM: Maximum supported ASID. */
     uint32_t        uSvmMaxAsid;
 
-    /** @todo VMX features. */
-    /** VMX: INS/OUTS VM-exit instruction info. */
+    /** @name VMX basic controls.
+     * @{ */
+    /** VMX: Supports INS/OUTS VM-exit instruction info. */
     uint32_t        fVmxInsOutInfo : 1;
-    uint32_t        fVmxPadding0 : 31;
+    /** @} */
+
+    /** @name VMX Pin-based controls.
+     * @{ */
+    /** VMX: Supports external interrupt VM-exit. */
+    uint32_t        fVmxExtIntExit : 1;
+    /** VMX: Supports NMI VM-exit. */
+    uint32_t        fVmxNmiExit : 1;
+    /** VMX: Supports Virtual NMIs. */
+    uint32_t        fVmxVirtNmi : 1;
+    /** VMX: Supports preemption timer. */
+    uint32_t        fVmxPreemptTimer : 1;
+    /** @} */
+
+    /** @name VMX Processor-based controls.
+     * @{ */
+    /** VMX: Supports Interrupt-window exiting. */
+    uint32_t        fVmxIntWindowExit : 1;
+    /** VMX: Supports TSC offsetting. */
+    uint32_t        fVmxTscOffsetting : 1;
+    /** VMX: Supports HLT exiting. */
+    uint32_t        fVmxHltExit : 1;
+    /** VMX: Supports INVLPG exiting. */
+    uint32_t        fVmxInvlpgExit : 1;
+    /** VMX: Supports MWAIT exiting. */
+    uint32_t        fVmxMwaitExit : 1;
+    /** VMX: Supports RDPMC exiting. */
+    uint32_t        fVmxRdpmcExit : 1;
+    /** VMX: Supports RDTSC exiting. */
+    uint32_t        fVmxRdtscExit : 1;
+    /** VMX: Supports CR3-load exiting. */
+    uint32_t        fVmxCr3LoadExit : 1;
+    /** VMX: Supports CR3-store exiting. */
+    uint32_t        fVmxCr3StoreExit : 1;
+    /** VMX: Supports CR8-load exiting. */
+    uint32_t        fVmxCr8LoadExit : 1;
+    /** VMX: Supports CR8-store exiting. */
+    uint32_t        fVmxCr8StoreExit : 1;
+    /** VMX: Supports TPR shadow. */
+    uint32_t        fVmxTprShadow : 1;
+    /** VMX: Supports NMI-window exiting. */
+    uint32_t        fVmxNmiWindowExit : 1;
+    /** VMX: Supports Mov-DRx exiting. */
+    uint32_t        fVmxMovDRxExit : 1;
+    /** VMX: Supports Unconditional I/O exiting. */
+    uint32_t        fVmxUncondIoExit : 1;
+    /** VMX: Supportgs I/O bitmaps. */
+    uint32_t        fVmxUseIoBitmaps : 1;
+    /** VMX: Supports Monitor Trap Flag. */
+    uint32_t        fVmxMonitorTrapFlag : 1;
+    /** VMX: Supports MSR bitmap. */
+    uint32_t        fVmxUseMsrBitmaps : 1;
+    /** VMX: Supports MONITOR exiting. */
+    uint32_t        fVmxMonitorExit : 1;
+    /** VMX: Supports PAUSE exiting. */
+    uint32_t        fVmxPauseExit : 1;
+    /** VMX: Supports secondary processor-based VM-execution controls. */
+    uint32_t        fVmxSecondaryExecCtls : 1;
+    /** @} */
+
+    /** @name VMX Secondary processor-based controls.
+     * @{ */
+    /** VMX: Supports virtualize-APIC access. */
+    uint32_t        fVmxVirtApicAccess : 1;
+    /** VMX: Supports EPT (Extended Page Tables). */
+    uint32_t        fVmxEpt : 1;
+    /** VMX: Supports descriptor-table exiting. */
+    uint32_t        fVmxDescTableExit : 1;
+    /** VMX: Supports RDTSCP. */
+    uint32_t        fVmxRdtscp : 1;
+    /** VMX: Supports virtualize-x2APIC access. */
+    uint32_t        fVmxVirtX2ApicAccess : 1;
+    /** VMX: Supports VPID. */
+    uint32_t        fVmxVpid : 1;
+    /** VMX: Supports WBIND exiting. */
+    uint32_t        fVmxWbinvdExit : 1;
+    /** VMX: Supports Unrestricted guest. */
+    uint32_t        fVmxUnrestrictedGuest : 1;
+    /** VMX: Supports Pause-loop exiting. */
+    uint32_t        fVmxPauseLoopExit : 1;
+    /** VMX: Supports INVPCID. */
+    uint32_t        fVmxInvpcid : 1;
+    /** @} */
+
+    /** @name VMX VM-entry controls.
+     * @{ */
+    /** VMX: Supports load-debug controls on VM-entry. */
+    uint32_t        fVmxEntryLoadDebugCtls : 1;
+    /** VMX: Supports IA32e mode guest. */
+    uint32_t        fVmxIa32eModeGuest : 1;
+    /** VMX: Supports load guest EFER MSR on VM-entry. */
+    uint32_t        fVmxEntryLoadEferMsr : 1;
+    /** @} */
+
+    /** @name VMX VM-exit controls.
+     * @{ */
+    /** VMX: Supports save debug controls on VM-exit. */
+    uint32_t        fVmxExitSaveDebugCtls : 1;
+    /** VMX: Supports host-address space size. */
+    uint32_t        fVmxHostAddrSpaceSize : 1;
+    /** VMX: Supports acknowledge external interrupt on VM-exit. */
+    uint32_t        fVmxExitAckExtInt : 1;
+    /** VMX: Supports save guest EFER MSR on VM-exit. */
+    uint32_t        fVmxExitSaveEferMsr : 1;
+    /** VMX: Supports load host EFER MSR on VM-exit. */
+    uint32_t        fVmxExitLoadEferMsr : 1;
+    /** VMX: Supports save VMX preemption timer on VM-exit. */
+    uint32_t        fVmxSavePreemptTimer : 1;
+    /** @} */
+
+    /** @name VMX Miscellaneous data.
+     * @{ */
+    /** VMX: Supports storing EFER.LMA on VM-exits into IA32e-mode guest field. */
+    uint32_t        fVmxExitStoreEferLma : 1;
+    /** VMX: Supports VMWRITE to any valid VMCS field incl. read-only fields, otherwise
+     *  VMWRITE cannot modify read-only VM-exit information fields. */
+    uint32_t        fVmxVmwriteAll : 1;
+    /** VMX: Supports injection of software interrupts, ICEBP on VM-entry for zero
+     *  length instructions. */
+    uint32_t        fVmxEntryInjectSoftInt : 1;
+    /** @} */
+
+    /** VMX: Padding / reserved for future features. */
+    uint32_t        fVmxPadding0 : 16;
+    uint32_t        fVmxPadding1;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(CPUMFEATURES, 32);
+AssertCompileSize(CPUMFEATURES, 40);
 #endif
 /** Pointer to a CPU feature structure. */
 typedef CPUMFEATURES *PCPUMFEATURES;

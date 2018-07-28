@@ -1291,20 +1291,14 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uin
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
     {
-        uint64_t const fVmcsRevisionId  = VMX_VMCS_REVISION_ID;
-        uint64_t const f32BitAddrLimit  = 0;
-        uint64_t const fDualMonSmiSmm   = 0;
-        uint64_t const fVmcsMemType     = VMX_VMCS_MEM_TYPE_WB;
-        uint64_t const fVmcsInsOutsInfo = pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmxInsOutInfo;
-        uint64_t const fTrueCapMsrs     = 0;
-        *puValue = fVmcsRevisionId
-                 | (f32BitAddrLimit  << MSR_IA32_VMX_BASIC_VMCS_PHYS_WIDTH_SHIFT)
-                 | (fDualMonSmiSmm   << MSR_IA32_VMX_BASIC_DUAL_MON_SHIFT)
-                 | (fVmcsMemType     << MSR_IA32_VMX_BASIC_VMCS_MEM_TYPE_SHIFT)
-                 | (fVmcsInsOutsInfo << MSR_IA32_VMX_BASIC_VMCS_INS_OUTS_SHIFT)
-                 | (fTrueCapMsrs     << MSR_IA32_VMX_BASIC_TRUE_CONTROLS_SHIFT);
+        *puValue = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,       VMX_VMCS_REVISION_ID          )
+                 | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,      0                             )
+                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE, VMX_BASIC_MEM_TYPE_WB         )
+                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS, pGuestFeatures->fVmxInsOutInfo)
+                 | RT_BF_MAKE(VMX_BF_BASIC_TRUE_CTLS,     0                             );
     }
     else
         *puValue = 0;
@@ -1315,8 +1309,22 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+    {
+        uint32_t const fFeatures = (pGuestFeatures->fVmxExtIntExit   << VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT )
+                                 | (pGuestFeatures->fVmxNmiExit      << VMX_BF_PIN_CTLS_NMI_EXIT_SHIFT     )
+                                 | (pGuestFeatures->fVmxVirtNmi      << VMX_BF_PIN_CTLS_VIRT_NMI_SHIFT     )
+                                 | (pGuestFeatures->fVmxPreemptTimer << VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT);
+        uint32_t const fVal      = VMX_PIN_CTLS_DEFAULT1;
+        uint32_t const fZap      = fFeatures | VMX_PIN_CTLS_DEFAULT1;
+        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
+                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
+        *puValue = RT_MAKE_U64(fVal, fZap);
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1324,8 +1332,39 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+    {
+        uint32_t const fFeatures = (pGuestFeatures->fVmxIntWindowExit     << VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_SHIFT   )
+                                 | (pGuestFeatures->fVmxTscOffsetting     << VMX_BF_PROC_CTLS_USE_TSC_OFFSETTING_SHIFT)
+                                 | (pGuestFeatures->fVmxHltExit           << VMX_BF_PROC_CTLS_HLT_EXIT_SHIFT          )
+                                 | (pGuestFeatures->fVmxInvlpgExit        << VMX_BF_PROC_CTLS_INVLPG_EXIT_SHIFT       )
+                                 | (pGuestFeatures->fVmxMwaitExit         << VMX_BF_PROC_CTLS_MWAIT_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxRdpmcExit         << VMX_BF_PROC_CTLS_RDPMC_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxRdtscExit         << VMX_BF_PROC_CTLS_RDTSC_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxCr3LoadExit       << VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_SHIFT     )
+                                 | (pGuestFeatures->fVmxCr3StoreExit      << VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT    )
+                                 | (pGuestFeatures->fVmxCr8LoadExit       << VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT     )
+                                 | (pGuestFeatures->fVmxCr8StoreExit      << VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT    )
+                                 | (pGuestFeatures->fVmxTprShadow         << VMX_BF_PROC_CTLS_USE_TPR_SHADOW_SHIFT    )
+                                 | (pGuestFeatures->fVmxNmiWindowExit     << VMX_BF_PROC_CTLS_NMI_WINDOW_EXIT_SHIFT   )
+                                 | (pGuestFeatures->fVmxMovDRxExit        << VMX_BF_PROC_CTLS_MOV_DR_EXIT_SHIFT       )
+                                 | (pGuestFeatures->fVmxUncondIoExit      << VMX_BF_PROC_CTLS_UNCOND_IO_EXIT_SHIFT    )
+                                 | (pGuestFeatures->fVmxUseIoBitmaps      << VMX_BF_PROC_CTLS_USE_IO_BITMAPS_SHIFT    )
+                                 | (pGuestFeatures->fVmxMonitorTrapFlag   << VMX_BF_PROC_CTLS_MONITOR_TRAP_FLAG_SHIFT )
+                                 | (pGuestFeatures->fVmxUseMsrBitmaps     << VMX_BF_PROC_CTLS_USE_MSR_BITMAPS_SHIFT   )
+                                 | (pGuestFeatures->fVmxMonitorExit       << VMX_BF_PROC_CTLS_MONITOR_EXIT_SHIFT      )
+                                 | (pGuestFeatures->fVmxPauseExit         << VMX_BF_PROC_CTLS_PAUSE_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxSecondaryExecCtls << VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_SHIFT);
+        uint32_t const fVal      = VMX_PROC_CTLS_DEFAULT1;
+        uint32_t const fZap      = fFeatures | VMX_PROC_CTLS_DEFAULT1;
+        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
+                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
+        *puValue = RT_MAKE_U64(fVal, fZap);
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1333,8 +1372,24 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+    {
+        uint32_t const fFeatures = (pGuestFeatures->fVmxExitSaveDebugCtls << VMX_BF_EXIT_CTLS_SAVE_DEBUG_SHIFT          )
+                                 | (pGuestFeatures->fVmxHostAddrSpaceSize << VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_SHIFT)
+                                 | (pGuestFeatures->fVmxExitAckExtInt     << VMX_BF_EXIT_CTLS_ACK_EXT_INT_SHIFT         )
+                                 | (pGuestFeatures->fVmxExitSaveEferMsr   << VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT       )
+                                 | (pGuestFeatures->fVmxExitLoadEferMsr   << VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT       )
+                                 | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  );
+        uint32_t const fVal      = VMX_EXIT_CTLS_DEFAULT1;
+        uint32_t const fZap      = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
+        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
+                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
+        *puValue = RT_MAKE_U64(fVal, fZap);
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1342,8 +1397,22 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+    {
+        uint32_t const fFeatures = (pGuestFeatures->fVmxEntryLoadDebugCtls << VMX_BF_ENTRY_CTLS_LOAD_DEBUG_SHIFT      )
+                                 | (pGuestFeatures->fVmxIa32eModeGuest     << VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_SHIFT)
+                                 | (pGuestFeatures->fVmxEntryLoadEferMsr   << VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT   );
+        uint32_t const fDefault1 = VMX_ENTRY_CTLS_DEFAULT1;
+        uint32_t const fVal      = fDefault1;
+        uint32_t const fZap      = fFeatures | fDefault1;
+        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
+                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
+        *puValue = RT_MAKE_U64(fVal, fZap);
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1351,8 +1420,15 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+    {
+        /** @todo Think about this especially preemption timer TSC shifts.  */
+        *puValue = 0;
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1405,8 +1481,26 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+    {
+        uint32_t const fFeatures = (pGuestFeatures->fVmxVirtApicAccess    << VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT  )
+                                 | (pGuestFeatures->fVmxEpt               << VMX_BF_PROC_CTLS2_EPT_SHIFT               )
+                                 | (pGuestFeatures->fVmxDescTableExit     << VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_SHIFT   )
+                                 | (pGuestFeatures->fVmxRdtscp            << VMX_BF_PROC_CTLS2_RDTSCP_SHIFT            )
+                                 | (pGuestFeatures->fVmxVirtX2ApicAccess  << VMX_BF_PROC_CTLS2_VIRT_X2APIC_ACCESS_SHIFT)
+                                 | (pGuestFeatures->fVmxVpid              << VMX_BF_PROC_CTLS2_VPID_SHIFT              )
+                                 | (pGuestFeatures->fVmxWbinvdExit        << VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT       )
+                                 | (pGuestFeatures->fVmxUnrestrictedGuest << VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_SHIFT)
+                                 | (pGuestFeatures->fVmxPauseLoopExit     << VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT   )
+                                 | (pGuestFeatures->fVmxInvpcid           << VMX_BF_PROC_CTLS2_INVPCID_SHIFT           );
+        uint32_t const fVal      = 0;
+        uint32_t const fZap      = fFeatures;
+        *puValue = RT_MAKE_U64(fVal, fZap);
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 

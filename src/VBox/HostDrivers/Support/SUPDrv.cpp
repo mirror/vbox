@@ -4330,12 +4330,12 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
                     *pfCaps |= SUPVTCAPS_VT_X;
 
                     vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                    if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                    if (vtCaps.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
                     {
                         vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                        if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
+                        if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_EPT)
                             *pfCaps |= SUPVTCAPS_NESTED_PAGING;
-                        if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
+                        if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
                             *pfCaps |= SUPVTCAPS_VTX_UNRESTRICTED_GUEST;
                     }
                 }
