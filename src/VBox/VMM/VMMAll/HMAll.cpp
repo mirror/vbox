@@ -580,7 +580,6 @@ VMM_INT_DECL(int) HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs)
 }
 
 
-#if 0 /** @todo Update comment hm_vmx.h VMXMSRS struct if this is removed. */
 /**
  * Gets the specified VMX host MSR that was read by HM during ring-0
  * initialization.
@@ -632,7 +631,6 @@ VMM_INT_DECL(int) HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue)
     }
     return VINF_SUCCESS;
 }
-#endif
 
 
 #ifndef IN_RC

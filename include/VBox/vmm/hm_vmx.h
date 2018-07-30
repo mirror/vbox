@@ -2320,14 +2320,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @defgroup grp_hm_vmx_emu    VMX emulation.
  * @{
  */
-/** @todo declare these with a prefix that immediately identifies that they are
- *        emulated by VirtualBox and not defined by Intel, see @bugref{9180#c6}.
- */
 /** VMCS revision identifier used for emulating VMX (bit 31 MBZ). Bump this
  *  arbitarily chosen identifier if incompatible changes to the layout of our VMCS
  *  structure is done. */
-#define VMX_VMCS_REVISION_ID                                    UINT32_C(0x1d000001)
-AssertCompile(!(VMX_VMCS_REVISION_ID & RT_BIT(31)));
+#define VMX_E_VMCS_REVISION_ID                                  UINT32_C(0x1d000001)
+AssertCompile(!(VMX_E_VMCS_REVISION_ID & RT_BIT(31)));
+
+/** CR0 bits set here must always be set when in VMX operation. */
+#define VMX_E_CR0_FIXED0                                        (X86_CR0_PE | X86_CR0_NE | X86_CR0_PG)
+/** CR4 bits set here must always be set when in VMX operation. */
+#define VMX_E_CR4_FIXED0                                        (X86_CR4_VMXE)
+
 
 /** @} */
 
