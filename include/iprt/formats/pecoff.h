@@ -704,7 +704,7 @@ AssertCompileSize(IMAGE_UNWIND_CODE, 2);
  */
 typedef struct IMAGE_UNWIND_INFO
 {
-    /** Version, currently 1.   */
+    /** Version, currently 1 or 2.  The latter if IMAGE_AMD64_UWOP_EPILOG is used. */
     uint8_t             Version : 3;
     /** IMAGE_UNW_FLAG_XXX */
     uint8_t             Flags : 5;
@@ -749,7 +749,8 @@ typedef enum IMAGE_AMD64_UNWIND_OP_CODES
      * YASM: [pushreg reg]
      * MASM: .PUSHREG reg */
     IMAGE_AMD64_UWOP_PUSH_NONVOL = 0,
-    /** Stack allocation: Size stored in the next two slots (dword).
+    /** Stack allocation: Size stored in scaled in the next slot if OpInfo == 0,
+     * otherwise stored unscaled in the next two slots.
      * YASM: [allocstack size]
      * MASM: .ALLOCSTACK size */
     IMAGE_AMD64_UWOP_ALLOC_LARGE,
@@ -773,7 +774,20 @@ typedef enum IMAGE_AMD64_UNWIND_OP_CODES
      * YASM: [savereg reg, offset]
      * MASM: .SAVEREG reg, offset  */
     IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR,
-    IMAGE_AMD64_UWOP_RESERVED_6,
+    /** Epilog info, version 2+.
+     *
+     * The first time this opcode is used, the CodeOffset gives the size of the
+     * epilog and bit 0 of the OpInfo field indicates that there is only one
+     * epilog at the very end of the function.
+     *
+     * Subsequent uses of this opcode specifies epilog start offsets relative to
+     * the end of the function, using CodeOffset for the 8 lower bits and OpInfo
+     * for bits 8 thru 11.
+     *
+     * The compiler seems to stack allocations and register saving opcodes and
+     * indicates the location mirroring the first IMAGE_AMD64_UWOP_PUSH_NONVOL. */
+    IMAGE_AMD64_UWOP_EPILOG,
+    /** Undefined. */
     IMAGE_AMD64_UWOP_RESERVED_7,
     /** Save 128-bit XMM register (OpInfo) on stack (RSP/FP + next slot).
      * YASM: [savexmm128 reg, offset]
