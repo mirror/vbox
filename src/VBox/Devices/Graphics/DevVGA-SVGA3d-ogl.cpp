@@ -1519,11 +1519,8 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         break;
 
     case SVGA3D_DEVCAP_SURFACEFMT_DXT2:
-    case SVGA3D_DEVCAP_SURFACEFMT_DXT4:
-        *pu32Val = 0;   /* apparently not supported in OpenGL */
-        break;
-
     case SVGA3D_DEVCAP_SURFACEFMT_DXT3:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT4:
     case SVGA3D_DEVCAP_SURFACEFMT_DXT5:
     case SVGA3D_DEVCAP_SURFACEFMT_BUMPX8L8V8U8:
     case SVGA3D_DEVCAP_SURFACEFMT_A2W10V10U10:
@@ -1670,9 +1667,8 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         break;
 
     case SVGA3D_DXT2:                   /* D3DFMT_DXT2 */
-        AssertMsgFailed(("Test me - SVGA3D_DXT2\n"));
-        break;
-
+        /* "DXT2 and DXT3 are the same from an API perspective." */
+        RT_FALL_THRU();
     case SVGA3D_DXT3:                   /* D3DFMT_DXT3 - WINED3DFMT_DXT3 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
         pSurface->formatGL = GL_RGBA;        /* not used */
@@ -1680,9 +1676,8 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         break;
 
     case SVGA3D_DXT4:                   /* D3DFMT_DXT4 */
-        AssertMsgFailed(("Test me - SVGA3D_DXT4\n"));
-        break;
-
+        /* "DXT4 and DXT5 are the same from an API perspective." */
+        RT_FALL_THRU();
     case SVGA3D_DXT5:                   /* D3DFMT_DXT5 - WINED3DFMT_DXT5 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         pSurface->formatGL = GL_RGBA;        /* not used */
