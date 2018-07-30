@@ -43,6 +43,9 @@ typedef struct AUDIOMIXER
     uint8_t                 cSinks;
 } AUDIOMIXER, *PAUDIOMIXER;
 
+/** Defines an audio mixer stream's flags. */
+#define AUDMIXSTREAMFLAGS uint32_t
+
 /** No flags specified. */
 #define AUDMIXSTREAM_FLAG_NONE                  0
 
@@ -234,7 +237,7 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
-int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream);
+int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg, AUDMIXSTREAMFLAGS fFlags, PAUDMIXSTREAM *ppStream);
 int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmCmd);
 void AudioMixerSinkDestroy(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
