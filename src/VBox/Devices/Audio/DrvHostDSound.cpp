@@ -1150,6 +1150,93 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
 }
 
 /**
+ * Transfers audio data from the DirectSound capture instance to the internal buffer.
+ * Due to internal accounting and querying DirectSound, this function knows how much it can transfer at once.
+ *
+ * @return  IPRT status code.
+ * @param   pThis               Host audio driver instance.
+ */
+static int dsoundCaptureTransfer(PDRVHOSTDSOUND pThis)
+{
+    PDSOUNDSTREAM pStreamDS = pThis->pDSStrmIn;
+    AssertPtr(pStreamDS);
+
+    LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB = pStreamDS->In.pDSCB;
+    AssertPtr(pDSCB);
+
+    DWORD offCaptureCursor;
+    HRESULT hr = IDirectSoundCaptureBuffer_GetCurrentPosition(pDSCB, NULL, &offCaptureCursor);
+    if (FAILED(hr))
+        return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+
+    DWORD cbUsed = dsoundRingDistance(offCaptureCursor, pStreamDS->In.offReadPos, pStreamDS->cbBufSize);
+
+    PRTCIRCBUF pCircBuf = pStreamDS->pCircBuf;
+    AssertPtr(pCircBuf);
+
+    uint32_t cbFree = (uint32_t)RTCircBufFree(pCircBuf);
+    if (   !cbFree
+        || pStreamDS->In.cOverruns < 32) /** @todo Make this configurable. */
+    {
+        DSLOG(("DSound: Warning: Capture buffer full, skipping to record data (%RU32 bytes)\n", cbUsed));
+        pStreamDS->In.cOverruns++;
+    }
+
+    DWORD cbToCapture = RT_MIN(cbUsed, cbFree);
+
+    Log3Func(("cbUsed=%ld, cbToCapture=%ld\n", cbUsed, cbToCapture));
+
+    while (cbToCapture)
+    {
+        void  *pvBuf;
+        size_t cbBuf;
+        RTCircBufAcquireWriteBlock(pCircBuf, cbToCapture, &pvBuf, &cbBuf);
+
+        if (cbBuf)
+        {
+            PVOID pv1, pv2;
+            DWORD cb1, cb2;
+            hr = directSoundCaptureLock(pStreamDS, pStreamDS->In.offReadPos, (DWORD)cbBuf,
+                                        &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
+            if (FAILED(hr))
+                break;
+
+            AssertPtr(pv1);
+            Assert(cb1);
+
+            memcpy(pvBuf, pv1, cb1);
+
+            if (pv2 && cb2) /* Buffer wrap-around? Write second part. */
+                memcpy((uint8_t *)pvBuf + cb1, pv2, cb2);
+
+            directSoundCaptureUnlock(pDSCB, pv1, pv2, cb1, cb2);
+
+            pStreamDS->In.offReadPos = (pStreamDS->In.offReadPos + cb1 + cb2) % pStreamDS->cbBufSize;
+
+            Assert(cbToCapture >= cbBuf);
+            cbToCapture -= (uint32_t)cbBuf;
+        }
+
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+        if (cbBuf)
+        {
+            RTFILE fh;
+            int rc2 = RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "dsoundCapture.pcm",
+                                 RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+            if (RT_SUCCESS(rc2))
+            {
+                RTFileWrite(fh, pvBuf, cbBuf, NULL);
+                RTFileClose(fh);
+            }
+        }
+#endif
+        RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Destroys the DirectSound capturing interface.
  *
  * @return  IPRT status code.
@@ -2260,7 +2347,12 @@ static DECLCALLBACK(int) drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, P
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    /* Nothing to do here for DSound. */
+    PDRVHOSTDSOUND pThis    = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
+
+    if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
+        return dsoundCaptureTransfer(pThis);
+
     return VINF_SUCCESS;
 }
 
