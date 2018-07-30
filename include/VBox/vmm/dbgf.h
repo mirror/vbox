@@ -108,6 +108,8 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_IS_FAR32(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FAR32 )
 /** Checks if the mixed address is far 16:64 or not. */
 #define DBGFADDRESS_IS_FAR64(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FAR64 )
+/** Checks if the mixed address is any kind of far address. */
+#define DBGFADDRESS_IS_FAR(pAddress)     ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) <= DBGFADDRESS_FLAGS_FAR64 )
 /** Checks if the mixed address host context ring-0 (special). */
 #define DBGFADDRESS_IS_R0_HC(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_RING0 )
 /** Checks if the mixed address a virtual guest context address (incl HMA). */
@@ -1267,6 +1269,19 @@ DECLINLINE(unsigned) DBGFReturnTypeSize(DBGFRETURNTYPE enmRetType)
     }
 }
 
+/**
+ * Check if near return.
+ *
+ * @returns true if near, false if far or iret.
+ * @param   enmRetType  The type of return.
+ */
+DECLINLINE(bool) DBGFReturnTypeIsNear(DBGFRETURNTYPE enmRetType)
+{
+    return enmRetType == DBGFRETURNTYPE_NEAR32
+        || enmRetType == DBGFRETURNTYPE_NEAR64
+        || enmRetType == DBGFRETURNTYPE_NEAR16;
+}
+
 
 /** Pointer to stack frame info. */
 typedef struct DBGFSTACKFRAME *PDBGFSTACKFRAME;
@@ -1281,9 +1296,6 @@ typedef struct DBGFSTACKFRAME
     uint32_t        iFrame;
     /** Frame flags. */
     uint32_t        fFlags;
-    /** The frame address.
-     * The off member is [e|r]bp and the Sel member is ss. */
-    DBGFADDRESS     AddrFrame;
     /** The stack address of the frame.
      * The off member is [e|r]sp and the Sel member is ss. */
     DBGFADDRESS     AddrStack;
@@ -1292,24 +1304,30 @@ typedef struct DBGFSTACKFRAME
     DBGFADDRESS     AddrPC;
     /** Pointer to the symbol nearest the program counter (PC). NULL if not found. */
     PRTDBGSYMBOL    pSymPC;
-    /** Pointer to the linnumber nearest the program counter (PC). NULL if not found. */
+    /** Pointer to the linenumber nearest the program counter (PC). NULL if not found. */
     PRTDBGLINE      pLinePC;
+    /** The frame address.
+     * The off member is [e|r]bp and the Sel member is ss. */
+    DBGFADDRESS     AddrFrame;
+    /** The way this frame returns to the next one. */
+    DBGFRETURNTYPE  enmReturnType;
 
+    /** The way the next frame returns.
+     * Only valid when DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET is set. */
+    DBGFRETURNTYPE  enmReturnFrameReturnType;
     /** The return frame address.
      * The off member is [e|r]bp and the Sel member is ss. */
     DBGFADDRESS     AddrReturnFrame;
     /** The return stack address.
      * The off member is [e|r]sp and the Sel member is ss. */
     DBGFADDRESS     AddrReturnStack;
-    /** The way this frame returns to the next one. */
-    DBGFRETURNTYPE  enmReturnType;
 
     /** The program counter (PC) address which the frame returns to.
      * The off member is [e|r]ip and the Sel member is cs. */
     DBGFADDRESS     AddrReturnPC;
     /** Pointer to the symbol nearest the return PC. NULL if not found. */
     PRTDBGSYMBOL    pSymReturnPC;
-    /** Pointer to the linnumber nearest the return PC. NULL if not found. */
+    /** Pointer to the linenumber nearest the return PC. NULL if not found. */
     PRTDBGLINE      pLineReturnPC;
 
     /** 32-bytes of stack arguments. */
@@ -1335,24 +1353,27 @@ typedef struct DBGFSTACKFRAME
 
 /** @name DBGFSTACKFRAME Flags.
  * @{ */
-/** Set if the content of the frame is filled in by DBGFR3StackWalk() and can be used
- * to construct the next frame. */
-# define DBGFSTACKFRAME_FLAGS_ALL_VALID     RT_BIT(0)
 /** This is the last stack frame we can read.
  * This flag is not set if the walk stop because of max dept or recursion. */
-# define DBGFSTACKFRAME_FLAGS_LAST          RT_BIT(1)
+# define DBGFSTACKFRAME_FLAGS_LAST              RT_BIT(1)
 /** This is the last record because we detected a loop. */
-# define DBGFSTACKFRAME_FLAGS_LOOP          RT_BIT(2)
+# define DBGFSTACKFRAME_FLAGS_LOOP              RT_BIT(2)
 /** This is the last record because we reached the maximum depth. */
-# define DBGFSTACKFRAME_FLAGS_MAX_DEPTH     RT_BIT(3)
+# define DBGFSTACKFRAME_FLAGS_MAX_DEPTH         RT_BIT(3)
 /** 16-bit frame. */
-# define DBGFSTACKFRAME_FLAGS_16BIT         RT_BIT(4)
+# define DBGFSTACKFRAME_FLAGS_16BIT             RT_BIT(4)
 /** 32-bit frame. */
-# define DBGFSTACKFRAME_FLAGS_32BIT         RT_BIT(5)
+# define DBGFSTACKFRAME_FLAGS_32BIT             RT_BIT(5)
 /** 64-bit frame. */
-# define DBGFSTACKFRAME_FLAGS_64BIT         RT_BIT(6)
+# define DBGFSTACKFRAME_FLAGS_64BIT             RT_BIT(6)
+/** Real mode or V86 frame. */
+# define DBGFSTACKFRAME_FLAGS_REAL_V86          RT_BIT(7)
 /** Used Odd/even heuristics for far/near return. */
-# define DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN RT_BIT(7)
+# define DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN     RT_BIT(8)
+/** Set if we used unwind info to construct the frame. (Kind of internal.) */
+# define DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO  RT_BIT(30)
+/** Internal: Unwind info used for the return frame.  */
+# define DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET   RT_BIT(31)
 /** @} */
 
 /** @name DBGFCODETYPE

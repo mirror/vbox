@@ -51,8 +51,12 @@ typedef struct DBGFUNWINDCTX
     PUVM        m_pUVM;
     VMCPUID     m_idCpu;
     RTDBGAS     m_hAs;
+
+    uint64_t    m_auRegs[16];
     uint64_t    m_uPc;
-    uint64_t    m_aGprs[16];
+    uint64_t    m_uRFlags;
+    uint16_t    m_uCs;
+    uint16_t    m_uSs;
 
     RTDBGMOD    m_hCached;
     RTUINTPTR   m_uCachedMapping;
@@ -69,32 +73,39 @@ typedef struct DBGFUNWINDCTX
     {
         if (pInitialCtx)
         {
-            m_aGprs[X86_GREG_xAX] = pInitialCtx->rax;
-            m_aGprs[X86_GREG_xCX] = pInitialCtx->rcx;
-            m_aGprs[X86_GREG_xDX] = pInitialCtx->rdx;
-            m_aGprs[X86_GREG_xBX] = pInitialCtx->rbx;
-            m_aGprs[X86_GREG_xSP] = pInitialCtx->rsp;
-            m_aGprs[X86_GREG_xBP] = pInitialCtx->rbp;
-            m_aGprs[X86_GREG_xSI] = pInitialCtx->rsi;
-            m_aGprs[X86_GREG_xDI] = pInitialCtx->rdi;
-            m_aGprs[X86_GREG_x8 ] = pInitialCtx->r8;
-            m_aGprs[X86_GREG_x9 ] = pInitialCtx->r9;
-            m_aGprs[X86_GREG_x10] = pInitialCtx->r10;
-            m_aGprs[X86_GREG_x11] = pInitialCtx->r11;
-            m_aGprs[X86_GREG_x12] = pInitialCtx->r12;
-            m_aGprs[X86_GREG_x13] = pInitialCtx->r13;
-            m_aGprs[X86_GREG_x14] = pInitialCtx->r14;
-            m_aGprs[X86_GREG_x15] = pInitialCtx->r15;
-            m_uPc                 = pInitialCtx->rip;
+            m_auRegs[X86_GREG_xAX] = pInitialCtx->rax;
+            m_auRegs[X86_GREG_xCX] = pInitialCtx->rcx;
+            m_auRegs[X86_GREG_xDX] = pInitialCtx->rdx;
+            m_auRegs[X86_GREG_xBX] = pInitialCtx->rbx;
+            m_auRegs[X86_GREG_xSP] = pInitialCtx->rsp;
+            m_auRegs[X86_GREG_xBP] = pInitialCtx->rbp;
+            m_auRegs[X86_GREG_xSI] = pInitialCtx->rsi;
+            m_auRegs[X86_GREG_xDI] = pInitialCtx->rdi;
+            m_auRegs[X86_GREG_x8 ] = pInitialCtx->r8;
+            m_auRegs[X86_GREG_x9 ] = pInitialCtx->r9;
+            m_auRegs[X86_GREG_x10] = pInitialCtx->r10;
+            m_auRegs[X86_GREG_x11] = pInitialCtx->r11;
+            m_auRegs[X86_GREG_x12] = pInitialCtx->r12;
+            m_auRegs[X86_GREG_x13] = pInitialCtx->r13;
+            m_auRegs[X86_GREG_x14] = pInitialCtx->r14;
+            m_auRegs[X86_GREG_x15] = pInitialCtx->r15;
+            m_uPc                  = pInitialCtx->rip;
+            m_uCs                  = pInitialCtx->cs.Sel;
+            m_uSs                  = pInitialCtx->ss.Sel;
+            m_uRFlags              = pInitialCtx->rflags.u;
         }
         else
         {
-            RT_BZERO(m_aGprs, sizeof(m_aGprs));
-            m_uPc = 0;
+            RT_BZERO(m_auRegs, sizeof(m_auRegs));
+            m_uPc                  = 0;
+            m_uCs                  = 0;
+            m_uSs                  = 0;
+            m_uRFlags              = 0;
         }
+
         m_pUVM            = pUVM;
         m_idCpu           = idCpu;
-        m_hAs             = hAs;
+        m_hAs             = DBGFR3AsResolveAndRetain(pUVM, hAs);
 
         m_hCached         = NIL_RTDBGMOD;
         m_uCachedMapping  = 0;
@@ -133,14 +144,55 @@ static void dbgfR3UnwindCtxFlushCache(PDBGFUNWINDCTX pUnwindCtx)
 DBGFUNWINDCTX::~DBGFUNWINDCTX()
 {
     dbgfR3UnwindCtxFlushCache(this);
+    if (m_hAs != NIL_RTDBGAS)
+    {
+        RTDbgAsRelease(m_hAs);
+        m_hAs = NIL_RTDBGAS;
+    }
 }
 
 
+/**
+ * Sets PC and SP.
+ *
+ * @returns true.
+ * @param   pUnwindCtx          The unwind context.
+ * @param   pAddrPC             The program counter (PC) value to set.
+ * @param   pAddrStack          The stack pointer (SP) value to set.
+ */
 static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS pAddrPC, PCDBGFADDRESS pAddrStack)
 {
-    pUnwindCtx->m_uPc                 = pAddrPC->FlatPtr;
-    pUnwindCtx->m_aGprs[X86_GREG_xSP] = pAddrStack->FlatPtr;
+    if (!DBGFADDRESS_IS_FAR(pAddrPC))
+        pUnwindCtx->m_uPc = pAddrPC->FlatPtr;
+    else
+    {
+        pUnwindCtx->m_uPc = pAddrPC->off;
+        pUnwindCtx->m_uCs = pAddrPC->Sel;
+    }
+    if (!DBGFADDRESS_IS_FAR(pAddrStack))
+        pUnwindCtx->m_auRegs[X86_GREG_xSP] = pAddrStack->FlatPtr;
+    else
+    {
+        pUnwindCtx->m_auRegs[X86_GREG_xSP] = pAddrStack->off;
+        pUnwindCtx->m_uSs                  = pAddrStack->Sel;
+    }
     return true;
+}
+
+
+/**
+ * Try read a 16-bit value off the stack.
+ *
+ * @param   pUnwindCtx      The unwind context.
+ * @param   uSrcAddr        The stack address.
+ * @param   puDst           The read destination.
+ */
+static void dbgfR3UnwindCtxLoadU16(PDBGFUNWINDCTX pUnwindCtx, uint64_t uSrcAddr, uint16_t *puDst)
+{
+    DBGFADDRESS SrcAddr;
+    DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu,
+                  DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSrcAddr),
+                  puDst, sizeof(*puDst));
 }
 
 
@@ -187,7 +239,58 @@ dbgfR3UnwindCtxLookupUnwindInfoRva(PCIMAGE_RUNTIME_FUNCTION_ENTRY paFunctions, s
 }
 
 
-static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t uRvaRip, PDBGFADDRESS pAddrFrame)
+/**
+ * Processes an IRET frame.
+ *
+ * @returns true.
+ * @param   pUnwindCtx      The unwind context.
+ * @param   fErrCd          Non-zero if there is an error code on the stack.
+ * @param   pAddrFrame      Where to return the frame pointer.
+ * @param   penmRetType     Where to return the return type.
+ */
+static bool dbgfR3UnwindCtxDoOneIRet(PDBGFUNWINDCTX pUnwindCtx, uint8_t fErrCd,
+                                     PDBGFADDRESS pAddrFrame, DBGFRETURNTYPE *penmRetType)
+{
+    Assert(fErrCd <= 1);
+    if (fErrCd)
+        pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* error code */
+
+    *penmRetType = DBGFRETURNTYPE_IRET64;
+    DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, pAddrFrame,
+                       pUnwindCtx->m_auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8);
+
+    dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uPc);
+    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* RIP */
+
+    dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uCs);
+    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* CS */
+
+    dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uRFlags);
+    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* EFLAGS */
+
+    uint64_t uNewRsp = (pUnwindCtx->m_auRegs[X86_GREG_xSP] - 8) & ~(uint64_t)15;
+    dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &uNewRsp);
+    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* RSP */
+
+    dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uSs);
+    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* SS */
+
+    pUnwindCtx->m_auRegs[X86_GREG_xSP] = uNewRsp;
+    return true;
+}
+
+
+/**
+ * Unwinds one frame using cached module info.
+ *
+ * @returns true on success, false on failure.
+ * @param   pUnwindCtx      The unwind context.
+ * @param   uRvaRip         The RVA of the RIP.
+ * @param   pAddrFrame      Where to return the frame pointer.
+ * @param   penmRetType     Where to return the return type.
+ */
+static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t uRvaRip,
+                                            PDBGFADDRESS pAddrFrame, DBGFRETURNTYPE *penmRetType)
 {
     /*
      * Lookup the unwind info RVA and try read it.
@@ -196,10 +299,14 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                                                                                pUnwindCtx->m_cFunctions, uRvaRip);
     if (pEntry)
     {
+        IMAGE_RUNTIME_FUNCTION_ENTRY ChainedEntry;
         unsigned iFrameReg   = ~0U;
         unsigned offFrameReg = 0;
 
-        for (;;)
+        int      fInEpilog = -1; /* -1: not-determined-assume-false;  0: false;  1: true. */
+        uint8_t  cbEpilog  = 0;
+        uint8_t  offEpilog = UINT8_MAX;
+        for (unsigned cChainLoops = 0; ; cChainLoops++)
         {
             /*
              * Get the info.
@@ -224,7 +331,7 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
             ASMCompilerBarrier(); /* we're aliasing */
             PCIMAGE_UNWIND_INFO pInfo = (PCIMAGE_UNWIND_INFO)&uBuf;
 
-            if (pInfo->Version != 1)
+            if (pInfo->Version != 1 && pInfo->Version != 2)
                 return false;
 
             /*
@@ -233,111 +340,198 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
             unsigned const cOpcodes = pInfo->CountOfCodes;
             unsigned       iOpcode  = 0;
 
-            /* First, skip opcodes that doesn't apply to us if we're the prolog. */
-            uint32_t offPc = uRvaRip - pEntry->BeginAddress;
-            if (offPc < pInfo->SizeOfProlog)
-                while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.CodeOffset > offPc)
-                    iOpcode++;
-
-            /* Execute. */
-            if (pInfo->FrameRegister != 0)
+            /*
+             * Check for epilog opcodes at the start and see if we're in an epilog.
+             */
+            if (   pInfo->Version >= 2
+                && iOpcode < cOpcodes
+                && pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_EPILOG)
             {
-                iFrameReg   = pInfo->FrameRegister;
-                offFrameReg = pInfo->FrameOffset * 16;
-            }
-            while (iOpcode < cOpcodes)
-            {
-                Assert(pInfo->aOpcodes[iOpcode].u.CodeOffset <= offPc);
-                switch (pInfo->aOpcodes[iOpcode].u.UnwindOp)
+                if (fInEpilog == -1)
                 {
-                    case IMAGE_AMD64_UWOP_PUSH_NONVOL:
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8;
-                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP],
-                                               &pUnwindCtx->m_aGprs[pInfo->aOpcodes[iOpcode].u.OpInfo]);
-                        iOpcode++;
-                        break;
+                    cbEpilog = pInfo->aOpcodes[iOpcode].u.CodeOffset;
+                    Assert(cbEpilog > 0);
 
-                    case IMAGE_AMD64_UWOP_ALLOC_LARGE:
-                        iOpcode += 3;
-                        AssertBreak(iOpcode <= cOpcodes);
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= *(uint32_t const *)&pInfo->aOpcodes[iOpcode - 2];
-                        break;
-
-                    case IMAGE_AMD64_UWOP_ALLOC_SMALL:
-                        AssertBreak(iOpcode <= cOpcodes);
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= pInfo->aOpcodes[iOpcode].u.OpInfo * 8 + 8;
-                        iOpcode++;
-                        break;
-
-                    case IMAGE_AMD64_UWOP_SET_FPREG:
-                        iFrameReg = pInfo->aOpcodes[iOpcode].u.OpInfo;
-                        offFrameReg = pInfo->FrameOffset * 16;
-                        break;
-
-                    case IMAGE_AMD64_UWOP_SAVE_NONVOL:
-                    case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
+                    uint32_t uRvaEpilog = pEntry->EndAddress - cbEpilog;
+                    iOpcode++;
+                    if (   (pInfo->aOpcodes[iOpcode - 1].u.OpInfo & 1)
+                        && uRvaRip >= uRvaEpilog)
                     {
-                        bool const     fFar  = pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR;
-                        unsigned const iGreg = pInfo->aOpcodes[iOpcode].u.OpInfo;
-                        uint32_t       off   = 0;
-                        iOpcode++;
-                        if (iOpcode < cOpcodes)
+                        offEpilog = uRvaRip - uRvaEpilog;
+                        fInEpilog = 1;
+                    }
+                    else
+                    {
+                        fInEpilog = 0;
+                        while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_EPILOG)
                         {
-                            off = pInfo->aOpcodes[iOpcode].FrameOffset;
+                            uRvaEpilog = pEntry->EndAddress
+                                       - (pInfo->aOpcodes[iOpcode].u.CodeOffset + (pInfo->aOpcodes[iOpcode].u.OpInfo << 8));
                             iOpcode++;
-                            if (fFar && iOpcode < cOpcodes)
+                            if (uRvaRip - uRvaEpilog < cbEpilog)
                             {
-                                off |= (uint32_t)pInfo->aOpcodes[iOpcode].FrameOffset << 16;
-                                iOpcode++;
+                                offEpilog = uRvaRip - uRvaEpilog;
+                                fInEpilog = 1;
+                                break;
                             }
                         }
-                        off *= 8;
-                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP] + off, &pUnwindCtx->m_aGprs[iGreg]);
-                        break;
                     }
+                }
+                while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_EPILOG)
+                    iOpcode++;
+            }
+            if (fInEpilog != 1)
+            {
+                /*
+                 * Skip opcodes that doesn't apply to us if we're in the prolog.
+                 */
+                uint32_t offPc = uRvaRip - pEntry->BeginAddress;
+                if (offPc < pInfo->SizeOfProlog)
+                    while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.CodeOffset > offPc)
+                        iOpcode++;
 
-                    case IMAGE_AMD64_UWOP_SAVE_XMM128:
-                        iOpcode += 2;
-                        break;
-
-                    case IMAGE_AMD64_UWOP_SAVE_XMM128_FAR:
-                        iOpcode += 3;
-                        break;
-
-                    case IMAGE_AMD64_UWOP_PUSH_MACHFRAME:
+                /*
+                 * Execute the opcodes.
+                 */
+                if (pInfo->FrameRegister != 0)
+                {
+                    iFrameReg   = pInfo->FrameRegister;
+                    offFrameReg = pInfo->FrameOffset * 16;
+                }
+                while (iOpcode < cOpcodes)
+                {
+                    Assert(pInfo->aOpcodes[iOpcode].u.CodeOffset <= offPc);
+                    switch (pInfo->aOpcodes[iOpcode].u.UnwindOp)
                     {
-                        Assert(pInfo->aOpcodes[iOpcode].u.OpInfo <= 1);
-                        if (pInfo->aOpcodes[iOpcode].u.OpInfo)
-                            pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* error code */
+                        case IMAGE_AMD64_UWOP_PUSH_NONVOL:
+                            pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8;
+                            dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP],
+                                                   &pUnwindCtx->m_auRegs[pInfo->aOpcodes[iOpcode].u.OpInfo]);
+                            iOpcode++;
+                            break;
 
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* RIP */
-                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uPc);
+                        case IMAGE_AMD64_UWOP_ALLOC_LARGE:
+                            if (pInfo->aOpcodes[iOpcode].u.OpInfo == 0)
+                            {
+                                iOpcode += 2;
+                                AssertBreak(iOpcode <= cOpcodes);
+                                pUnwindCtx->m_auRegs[X86_GREG_xSP] += pInfo->aOpcodes[iOpcode - 1].FrameOffset * 8;
+                            }
+                            else
+                            {
+                                iOpcode += 3;
+                                AssertBreak(iOpcode <= cOpcodes);
+                                pUnwindCtx->m_auRegs[X86_GREG_xSP] += RT_MAKE_U32(pInfo->aOpcodes[iOpcode - 2].FrameOffset,
+                                                                                  pInfo->aOpcodes[iOpcode - 1].FrameOffset);
+                            }
+                            break;
 
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* CS */
-                        //dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uCs);
+                        case IMAGE_AMD64_UWOP_ALLOC_SMALL:
+                            AssertBreak(iOpcode <= cOpcodes);
+                            pUnwindCtx->m_auRegs[X86_GREG_xSP] += pInfo->aOpcodes[iOpcode].u.OpInfo * 8 + 8;
+                            iOpcode++;
+                            break;
 
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* EFLAGS */
-                        //dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uRFlags);
+                        case IMAGE_AMD64_UWOP_SET_FPREG:
+                            iFrameReg = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                            offFrameReg = pInfo->FrameOffset * 16;
+                            iOpcode++;
+                            break;
 
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* RSP */
-                        uint64_t uNewRsp = (pUnwindCtx->m_aGprs[X86_GREG_xSP] - 8) & ~(uint64_t)15;
-                        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &uNewRsp);
+                        case IMAGE_AMD64_UWOP_SAVE_NONVOL:
+                        case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
+                        {
+                            bool const     fFar  = pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR;
+                            unsigned const iGreg = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                            uint32_t       off   = 0;
+                            iOpcode++;
+                            if (iOpcode < cOpcodes)
+                            {
+                                off = pInfo->aOpcodes[iOpcode].FrameOffset;
+                                iOpcode++;
+                                if (fFar && iOpcode < cOpcodes)
+                                {
+                                    off |= (uint32_t)pInfo->aOpcodes[iOpcode].FrameOffset << 16;
+                                    iOpcode++;
+                                }
+                            }
+                            off *= 8;
+                            dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP] + off, &pUnwindCtx->m_auRegs[iGreg]);
+                            break;
+                        }
 
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] -= 8; /* SS */
-                        //dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_aGprs[X86_GREG_xSP], &pUnwindCtx->m_uSs);
+                        case IMAGE_AMD64_UWOP_SAVE_XMM128:
+                            iOpcode += 2;
+                            break;
 
-                        pUnwindCtx->m_aGprs[X86_GREG_xSP] = uNewRsp;
-                        return true;
+                        case IMAGE_AMD64_UWOP_SAVE_XMM128_FAR:
+                            iOpcode += 3;
+                            break;
+
+                        case IMAGE_AMD64_UWOP_PUSH_MACHFRAME:
+                            return dbgfR3UnwindCtxDoOneIRet(pUnwindCtx, pInfo->aOpcodes[iOpcode].u.OpInfo, pAddrFrame, penmRetType);
+
+                        case IMAGE_AMD64_UWOP_EPILOG:
+                            iOpcode += 1;
+                            break;
+
+                        case IMAGE_AMD64_UWOP_RESERVED_7:
+                            AssertFailedReturn(false);
+
+                        default:
+                            AssertMsgFailedReturn(("%u\n", pInfo->aOpcodes[iOpcode].u.UnwindOp), false);
                     }
+                }
+            }
+            else
+            {
+                /*
+                 * We're in the POP sequence of an epilog.  The POP sequence should
+                 * mirror the PUSH sequence exactly.
+                 *
+                 * Note! We should only end up here for the initial frame (just consider
+                 *       RSP, stack allocations, non-volatile register restores, ++).
+                 */
+                while (iOpcode < cOpcodes)
+                {
+                    switch (pInfo->aOpcodes[iOpcode].u.UnwindOp)
+                    {
+                        case IMAGE_AMD64_UWOP_PUSH_NONVOL:
+                            pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8;
+                            if (offEpilog == 0)
+                                dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP],
+                                                       &pUnwindCtx->m_auRegs[pInfo->aOpcodes[iOpcode].u.OpInfo]);
+                            else
+                            {
+                                /* Decrement offEpilog by estimated POP instruction length. */
+                                offEpilog -= 1;
+                                if (offEpilog > 0 && pInfo->aOpcodes[iOpcode].u.OpInfo >= 8)
+                                    offEpilog -= 1;
+                            }
+                            iOpcode++;
+                            break;
 
-                    case IMAGE_AMD64_UWOP_RESERVED_6:
-                        AssertFailedReturn(false);
+                        case IMAGE_AMD64_UWOP_PUSH_MACHFRAME: /* Must terminate an epilog, so always execute this. */
+                            return dbgfR3UnwindCtxDoOneIRet(pUnwindCtx, pInfo->aOpcodes[iOpcode].u.OpInfo, pAddrFrame, penmRetType);
 
-                    case IMAGE_AMD64_UWOP_RESERVED_7:
-                        AssertFailedReturn(false);
+                        case IMAGE_AMD64_UWOP_ALLOC_SMALL:
+                        case IMAGE_AMD64_UWOP_SET_FPREG:
+                        case IMAGE_AMD64_UWOP_EPILOG:
+                            iOpcode++;
+                            break;
+                        case IMAGE_AMD64_UWOP_SAVE_NONVOL:
+                        case IMAGE_AMD64_UWOP_SAVE_XMM128:
+                            iOpcode += 2;
+                            break;
+                        case IMAGE_AMD64_UWOP_ALLOC_LARGE:
+                        case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
+                        case IMAGE_AMD64_UWOP_SAVE_XMM128_FAR:
+                            iOpcode += 3;
+                            break;
 
-                    default:
-                        AssertMsgFailedReturn(("%u\n", pInfo->aOpcodes[iOpcode].u.UnwindOp), false);
+                        default:
+                            AssertMsgFailedReturn(("%u\n", pInfo->aOpcodes[iOpcode].u.UnwindOp), false);
+                    }
                 }
             }
 
@@ -346,11 +540,21 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
              */
             if (!(pInfo->Flags & IMAGE_UNW_FLAGS_CHAININFO))
                 break;
-            /** @todo impl chains.   */
-            break;
+            ChainedEntry = *(PCIMAGE_RUNTIME_FUNCTION_ENTRY)&pInfo->aOpcodes[(cOpcodes + 1) & ~1];
+            pEntry = &ChainedEntry;
+            AssertReturn(cChainLoops < 32, false);
         }
 
-        /** @todo do post processing. */
+        /*
+         * RSP should now give us the return address, so perform a RET.
+         */
+        *penmRetType = DBGFRETURNTYPE_NEAR64;
+        DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, pAddrFrame,
+                           pUnwindCtx->m_auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8);
+
+        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uPc);
+        pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8;
+        return true;
     }
 
     RT_NOREF_PV(pAddrFrame);
@@ -358,14 +562,22 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
 }
 
 
-static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pAddrFrame)
+/**
+ * Tries to unwind one frame using unwind info.
+ *
+ * @returns true on success, false on failure.
+ * @param   pUnwindCtx      The unwind context.
+ * @param   pAddrFrame      Where to return the frame pointer.
+ * @param   penmRetType     Where to return the return type.
+ */
+static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pAddrFrame, DBGFRETURNTYPE *penmRetType)
 {
     /*
      * Hope for the same module as last time around.
      */
     RTUINTPTR offCache = pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping;
     if (offCache < pUnwindCtx->m_cbCachedMapping)
-        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, offCache, pAddrFrame);
+        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, offCache, pAddrFrame, penmRetType);
 
     /*
      * Try locate the module.
@@ -380,18 +592,20 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
         dbgfR3UnwindCtxFlushCache(pUnwindCtx);
         pUnwindCtx->m_hCached         = hDbgMod;
         pUnwindCtx->m_uCachedMapping  = uBase;
-        pUnwindCtx->m_cbCachedMapping = RTDbgModSegmentSize(hDbgMod, idxSeg);
+        pUnwindCtx->m_cbCachedMapping = idxSeg == NIL_RTDBGSEGIDX ? RTDbgModImageSize(hDbgMod)
+                                      : RTDbgModSegmentSize(hDbgMod, idxSeg);
 
         /* Play simple for now. */
         if (   idxSeg == NIL_RTDBGSEGIDX
-            && RTDbgModImageGetFormat(hDbgMod) == RTLDRFMT_32BIT_HACK /// @todo RTLDRFMT_PE (disabled code)
+            && RTDbgModImageGetFormat(hDbgMod) == RTLDRFMT_PE
             && RTDbgModImageGetArch(hDbgMod)   == RTLDRARCH_AMD64)
         {
             /*
              * Try query the unwind data.
              */
+            uint32_t uDummy;
             size_t cbNeeded = 0;
-            rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, NULL, 0, &cbNeeded);
+            rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, &uDummy, 0, &cbNeeded);
             if (   rc == VERR_BUFFER_OVERFLOW
                 && cbNeeded >= sizeof(*pUnwindCtx->m_paFunctions)
                 && cbNeeded < _64M)
@@ -399,7 +613,7 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
                 void *pvBuf = RTMemAllocZ(cbNeeded + 32);
                 if (pvBuf)
                 {
-                    rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, pUnwindCtx->m_pbCachedInfo, cbNeeded, &cbNeeded);
+                    rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, pvBuf, cbNeeded + 32, &cbNeeded);
                     if (RT_SUCCESS(rc))
                     {
                         pUnwindCtx->m_pbCachedInfo = (uint8_t *)pvBuf;
@@ -408,7 +622,7 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
                         pUnwindCtx->m_cFunctions   = cbNeeded / sizeof(*pUnwindCtx->m_paFunctions);
 
                         return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping,
-                                                               pAddrFrame);
+                                                               pAddrFrame, penmRetType);
                     }
                     RTMemFree(pvBuf);
                 }
@@ -457,11 +671,8 @@ DECLINLINE(int) dbgfR3StackRead(PUVM pUVM, VMCPUID idCpu, void *pvBuf, PCDBGFADD
  *      8  parameter 0
  *      4  return address
  *      0  old ebp; current ebp points here
- *
- * @todo Add AMD64 support (needs teaming up with the module management for
- *       unwind tables).
  */
-DECL_NO_INLINE(static, int) dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME pFrame)
+DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTACKFRAME pFrame, bool fFirst)
 {
     /*
      * Stop if we got a read error in the previous run.
@@ -470,13 +681,41 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hA
         return VERR_NO_MORE_FILES;
 
     /*
-     * Read the raw frame data.
-     * We double cbRetAddr in case we find we have a far return.
+     * Advance the frame (except for the first).
      */
-    const DBGFADDRESS   AddrOldPC = pFrame->AddrPC;
-    unsigned            cbRetAddr = DBGFReturnTypeSize(pFrame->enmReturnType);
-    unsigned            cbStackItem;
-    switch (AddrOldPC.fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
+    if (!fFirst) /** @todo we can probably eliminate this fFirst business... */
+    {
+        /* frame, pc and stack is taken from the existing frames return members. */
+        pFrame->AddrFrame = pFrame->AddrReturnFrame;
+        pFrame->AddrPC    = pFrame->AddrReturnPC;
+        pFrame->pSymPC    = pFrame->pSymReturnPC;
+        pFrame->pLinePC   = pFrame->pLineReturnPC;
+
+        /* increment the frame number. */
+        pFrame->iFrame++;
+
+        /* UNWIND_INFO_RET -> USED_UNWIND; return type */
+        if (!(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET))
+            pFrame->fFlags &= ~DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO;
+        else
+        {
+            pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO;
+            pFrame->fFlags &= ~DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET;
+            if (pFrame->enmReturnFrameReturnType != DBGFRETURNTYPE_INVALID)
+            {
+                pFrame->enmReturnType = pFrame->enmReturnFrameReturnType;
+                pFrame->enmReturnFrameReturnType = DBGFRETURNTYPE_INVALID;
+            }
+        }
+    }
+
+    /*
+     * Figure the return address size and use the old PC to guess stack item size.
+     */
+    /** @todo this is bogus... */
+    unsigned cbRetAddr = DBGFReturnTypeSize(pFrame->enmReturnType);
+    unsigned cbStackItem;
+    switch (pFrame->AddrPC.fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
     {
         case DBGFADDRESS_FLAGS_FAR16: cbStackItem = 2; break;
         case DBGFADDRESS_FLAGS_FAR32: cbStackItem = 4; break;
@@ -506,6 +745,10 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hA
             }
     }
 
+    /*
+     * Read the raw frame data.
+     * We double cbRetAddr in case we have a far return.
+     */
     union
     {
         uint64_t *pu64;
@@ -521,169 +764,196 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hA
     uArgs.pb = u.pb + cbStackItem + cbRetAddr;
 
     Assert(DBGFADDRESS_IS_VALID(&pFrame->AddrFrame));
-    int rc = dbgfR3StackRead(pUVM, idCpu, u.pv,
-                             pFrame->fFlags & DBGFSTACKFRAME_FLAGS_ALL_VALID
-                             ? &pFrame->AddrReturnFrame
-                             : &pFrame->AddrFrame,
-                             cbRead, &cbRead);
-    if (    RT_FAILURE(rc)
-        ||  cbRead < cbRetAddr + cbStackItem)
+    int rc = dbgfR3StackRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, u.pv, &pFrame->AddrFrame, cbRead, &cbRead);
+    if (   RT_FAILURE(rc)
+        || cbRead < cbRetAddr + cbStackItem)
         pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_LAST;
 
     /*
-     * The first step is taken in a different way than the others.
-     */
-    if (!(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_ALL_VALID))
-    {
-        pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_ALL_VALID;
-        pFrame->iFrame = 0;
-
-        /* Current PC - set by caller, just find symbol & line. */
-        if (DBGFADDRESS_IS_VALID(&pFrame->AddrPC))
-        {
-            pFrame->pSymPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrPC,
-                                                    RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
-                                                    NULL /*poffDisp*/, NULL /*phMod*/);
-            pFrame->pLinePC = DBGFR3AsLineByAddrA(pUVM, hAs, &pFrame->AddrPC, NULL /*poffDisp*/, NULL /*phMod*/);
-        }
-    }
-    else /* 2nd and subsequent steps */
-    {
-        /* frame, pc and stack is taken from the existing frames return members. */
-        pFrame->AddrFrame = pFrame->AddrReturnFrame;
-        pFrame->AddrPC    = pFrame->AddrReturnPC;
-        pFrame->pSymPC    = pFrame->pSymReturnPC;
-        pFrame->pLinePC   = pFrame->pLineReturnPC;
-
-        /* increment the frame number. */
-        pFrame->iFrame++;
-    }
-
-    /*
      * Return Frame address.
+     *
+     * If we used unwind info to get here, the unwind register context will be
+     * positioned after the return instruction has been executed.  We start by
+     * picking up the rBP register here for return frame and will try improve
+     * on it further down by using unwind info.
      */
     pFrame->AddrReturnFrame = pFrame->AddrFrame;
-    switch (cbStackItem)
+    if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
     {
-        case 2:    pFrame->AddrReturnFrame.off = *uBp.pu16; break;
-        case 4:    pFrame->AddrReturnFrame.off = *uBp.pu32; break;
-        case 8:    pFrame->AddrReturnFrame.off = *uBp.pu64; break;
-        default:    AssertMsgFailedReturn(("cbStackItem=%d\n", cbStackItem), VERR_DBGF_STACK_IPE_1);
+        if (   pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_PRIV
+            && pFrame->enmReturnType == DBGFRETURNTYPE_IRET64)
+            DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnFrame,
+                                 pUnwindCtx->m_uSs, pUnwindCtx->m_auRegs[X86_GREG_xBP]);
+        else if (pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_V86)
+            DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnFrame,
+                               ((uint32_t)pUnwindCtx->m_uSs << 4) + pUnwindCtx->m_auRegs[X86_GREG_xBP]);
+        else
+        {
+            pFrame->AddrReturnFrame.off      = pUnwindCtx->m_auRegs[X86_GREG_xBP];
+            pFrame->AddrReturnFrame.FlatPtr += pFrame->AddrReturnFrame.off - pFrame->AddrFrame.off;
+        }
     }
-
-    /* Watcom tries to keep the frame pointer odd for far returns. */
-    if (cbStackItem <= 4)
+    else
     {
-        if (pFrame->AddrReturnFrame.off & 1)
+        switch (cbStackItem)
         {
-            pFrame->AddrReturnFrame.off &= ~(RTGCUINTPTR)1;
-            if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR16)
-            {
-                pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
-                pFrame->enmReturnType = DBGFRETURNTYPE_FAR16;
-                cbRetAddr = 4;
-            }
-            else if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR32)
-            {
-                pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
-                pFrame->enmReturnType = DBGFRETURNTYPE_FAR32;
-                cbRetAddr = 8;
-            }
+            case 2:     pFrame->AddrReturnFrame.off = *uBp.pu16; break;
+            case 4:     pFrame->AddrReturnFrame.off = *uBp.pu32; break;
+            case 8:     pFrame->AddrReturnFrame.off = *uBp.pu64; break;
+            default:    AssertMsgFailedReturn(("cbStackItem=%d\n", cbStackItem), VERR_DBGF_STACK_IPE_1);
         }
-        else if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN)
-        {
-            if (pFrame->enmReturnType == DBGFRETURNTYPE_FAR16)
-            {
-                pFrame->enmReturnType = DBGFRETURNTYPE_NEAR16;
-                cbRetAddr = 2;
-            }
-            else if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR32)
-            {
-                pFrame->enmReturnType = DBGFRETURNTYPE_FAR32;
-                cbRetAddr = 4;
-            }
-            pFrame->fFlags &= ~DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
-        }
-        uArgs.pb = u.pb + cbStackItem + cbRetAddr;
-    }
 
-    pFrame->AddrReturnFrame.FlatPtr += pFrame->AddrReturnFrame.off - pFrame->AddrFrame.off;
+        /* Watcom tries to keep the frame pointer odd for far returns. */
+        if (   cbStackItem <= 4
+            && !(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO))
+        {
+            if (pFrame->AddrReturnFrame.off & 1)
+            {
+                pFrame->AddrReturnFrame.off &= ~(RTGCUINTPTR)1;
+                if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR16)
+                {
+                    pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+                    pFrame->enmReturnType = DBGFRETURNTYPE_FAR16;
+                    cbRetAddr = 4;
+                }
+                else if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR32)
+                {
+                    pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+                    pFrame->enmReturnType = DBGFRETURNTYPE_FAR32;
+                    cbRetAddr = 8;
+                }
+            }
+            else if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN)
+            {
+                if (pFrame->enmReturnType == DBGFRETURNTYPE_FAR16)
+                {
+                    pFrame->enmReturnType = DBGFRETURNTYPE_NEAR16;
+                    cbRetAddr = 2;
+                }
+                else if (pFrame->enmReturnType == DBGFRETURNTYPE_NEAR32)
+                {
+                    pFrame->enmReturnType = DBGFRETURNTYPE_FAR32;
+                    cbRetAddr = 4;
+                }
+                pFrame->fFlags &= ~DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+            }
+            uArgs.pb = u.pb + cbStackItem + cbRetAddr;
+        }
+
+        pFrame->AddrReturnFrame.FlatPtr += pFrame->AddrReturnFrame.off - pFrame->AddrFrame.off;
+    }
 
     /*
-     * Return PC and Stack Addresses.
+     * Return Stack Address.
      */
-    /** @todo AddrReturnStack is not correct for stdcall and pascal. (requires scope info) */
-    pFrame->AddrReturnStack          = pFrame->AddrFrame;
-    pFrame->AddrReturnStack.off     += cbStackItem + cbRetAddr;
-    pFrame->AddrReturnStack.FlatPtr += cbStackItem + cbRetAddr;
-
-    pFrame->AddrReturnPC             = pFrame->AddrPC;
-    switch (pFrame->enmReturnType)
+    pFrame->AddrReturnStack = pFrame->AddrReturnFrame;
+    if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
     {
-        case DBGFRETURNTYPE_NEAR16:
-            if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
-            {
-                pFrame->AddrReturnPC.FlatPtr += *uRet.pu16 - pFrame->AddrReturnPC.off;
-                pFrame->AddrReturnPC.off      = *uRet.pu16;
-            }
-            else
-                DBGFR3AddrFromFlat(pUVM, &pFrame->AddrReturnPC, *uRet.pu16);
-            break;
-        case DBGFRETURNTYPE_NEAR32:
-            if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
-            {
-                pFrame->AddrReturnPC.FlatPtr += *uRet.pu32 - pFrame->AddrReturnPC.off;
-                pFrame->AddrReturnPC.off      = *uRet.pu32;
-            }
-            else
-                DBGFR3AddrFromFlat(pUVM, &pFrame->AddrReturnPC, *uRet.pu32);
-            break;
-        case DBGFRETURNTYPE_NEAR64:
-            if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
-            {
-                pFrame->AddrReturnPC.FlatPtr += *uRet.pu64 - pFrame->AddrReturnPC.off;
-                pFrame->AddrReturnPC.off      = *uRet.pu64;
-            }
-            else
-                DBGFR3AddrFromFlat(pUVM, &pFrame->AddrReturnPC, *uRet.pu64);
-            break;
-        case DBGFRETURNTYPE_FAR16:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
-            break;
-        case DBGFRETURNTYPE_FAR32:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
-            break;
-        case DBGFRETURNTYPE_FAR64:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
-            break;
-        case DBGFRETURNTYPE_IRET16:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
-            break;
-        case DBGFRETURNTYPE_IRET32:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
-            break;
-        case DBGFRETURNTYPE_IRET32_PRIV:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
-            break;
-        case DBGFRETURNTYPE_IRET32_V86:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
-            break;
-        case DBGFRETURNTYPE_IRET64:
-            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
-            break;
-        default:
-            AssertMsgFailed(("enmReturnType=%d\n", pFrame->enmReturnType));
-            return VERR_INVALID_PARAMETER;
+        if (   pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_PRIV
+            && pFrame->enmReturnType == DBGFRETURNTYPE_IRET64)
+            DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnStack,
+                                 pUnwindCtx->m_uSs, pUnwindCtx->m_auRegs[X86_GREG_xSP]);
+        else if (pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_V86)
+            DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnStack,
+                               ((uint32_t)pUnwindCtx->m_uSs << 4) + pUnwindCtx->m_auRegs[X86_GREG_xSP]);
+        else
+        {
+            pFrame->AddrReturnStack.off      = pUnwindCtx->m_auRegs[X86_GREG_xSP];
+            pFrame->AddrReturnStack.FlatPtr += pFrame->AddrReturnStack.off - pFrame->AddrStack.off;
+        }
+    }
+    else
+    {
+        pFrame->AddrReturnStack.off     += cbStackItem + cbRetAddr;
+        pFrame->AddrReturnStack.FlatPtr += cbStackItem + cbRetAddr;
     }
 
-    pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrReturnPC,
+    /*
+     * Return PC.
+     */
+    pFrame->AddrReturnPC = pFrame->AddrPC;
+    if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
+    {
+        if (DBGFReturnTypeIsNear(pFrame->enmReturnType))
+        {
+            pFrame->AddrReturnPC.off      = pUnwindCtx->m_uPc;
+            pFrame->AddrReturnPC.FlatPtr += pFrame->AddrReturnPC.off - pFrame->AddrPC.off;
+        }
+        else
+            DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC,
+                                 pUnwindCtx->m_uCs, pUnwindCtx->m_uPc);
+    }
+    else
+        switch (pFrame->enmReturnType)
+        {
+            case DBGFRETURNTYPE_NEAR16:
+                if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
+                {
+                    pFrame->AddrReturnPC.FlatPtr += *uRet.pu16 - pFrame->AddrReturnPC.off;
+                    pFrame->AddrReturnPC.off      = *uRet.pu16;
+                }
+                else
+                    DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnPC, *uRet.pu16);
+                break;
+            case DBGFRETURNTYPE_NEAR32:
+                if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
+                {
+                    pFrame->AddrReturnPC.FlatPtr += *uRet.pu32 - pFrame->AddrReturnPC.off;
+                    pFrame->AddrReturnPC.off      = *uRet.pu32;
+                }
+                else
+                    DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnPC, *uRet.pu32);
+                break;
+            case DBGFRETURNTYPE_NEAR64:
+                if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
+                {
+                    pFrame->AddrReturnPC.FlatPtr += *uRet.pu64 - pFrame->AddrReturnPC.off;
+                    pFrame->AddrReturnPC.off      = *uRet.pu64;
+                }
+                else
+                    DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnPC, *uRet.pu64);
+                break;
+            case DBGFRETURNTYPE_FAR16:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+                break;
+            case DBGFRETURNTYPE_FAR32:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+                break;
+            case DBGFRETURNTYPE_FAR64:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
+                break;
+            case DBGFRETURNTYPE_IRET16:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+                break;
+            case DBGFRETURNTYPE_IRET32:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+                break;
+            case DBGFRETURNTYPE_IRET32_PRIV:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+                break;
+            case DBGFRETURNTYPE_IRET32_V86:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+                break;
+            case DBGFRETURNTYPE_IRET64:
+                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
+                break;
+            default:
+                AssertMsgFailed(("enmReturnType=%d\n", pFrame->enmReturnType));
+                return VERR_INVALID_PARAMETER;
+        }
+
+
+    pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pUnwindCtx->m_pUVM, pUnwindCtx->m_hAs, &pFrame->AddrReturnPC,
                                                   RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
                                                   NULL /*poffDisp*/, NULL /*phMod*/);
-    pFrame->pLineReturnPC = DBGFR3AsLineByAddrA(pUVM, hAs, &pFrame->AddrReturnPC, NULL /*poffDisp*/, NULL /*phMod*/);
+    pFrame->pLineReturnPC = DBGFR3AsLineByAddrA(pUnwindCtx->m_pUVM, pUnwindCtx->m_hAs, &pFrame->AddrReturnPC,
+                                                NULL /*poffDisp*/, NULL /*phMod*/);
 
     /*
      * Frame bitness flag.
      */
+    /** @todo use previous return type for this? */
+    pFrame->fFlags &= ~(DBGFSTACKFRAME_FLAGS_16BIT | DBGFSTACKFRAME_FLAGS_32BIT | DBGFSTACKFRAME_FLAGS_64BIT);
     switch (cbStackItem)
     {
         case 2: pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_16BIT; break;
@@ -696,6 +966,32 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hA
      * The arguments.
      */
     memcpy(&pFrame->Args, uArgs.pv, sizeof(pFrame->Args));
+
+    /*
+     * Try use unwind information to locate the return frame pointer (for the
+     * next loop iteration).
+     */
+    Assert(!(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET));
+    pFrame->enmReturnFrameReturnType = DBGFRETURNTYPE_INVALID;
+    if (!(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_LAST))
+    {
+        /* Set PC and SP if we didn't unwind our way here (context will then point
+           and the return PC and SP already). */
+        if (!(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO))
+        {
+            dbgfR3UnwindCtxSetPcAndSp(pUnwindCtx, &pFrame->AddrReturnPC, &pFrame->AddrReturnStack);
+        }
+        /** @todo Reevaluate CS if the previous frame return type isn't near. */
+
+        DBGFADDRESS    AddrReturnFrame = pFrame->AddrReturnFrame;
+        DBGFRETURNTYPE enmReturnType   = pFrame->enmReturnType;
+        if (dbgfR3UnwindCtxDoOneFrame(pUnwindCtx, &AddrReturnFrame, &enmReturnType))
+        {
+            pFrame->fFlags                  |= DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET;
+            pFrame->AddrReturnFrame          = AddrReturnFrame;
+            pFrame->enmReturnFrameReturnType = enmReturnType;
+        }
+    }
 
     return VINF_SUCCESS;
 }
@@ -792,28 +1088,38 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
         else
             rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrStack, pCtx->ss.Sel, pCtx->rsp & fAddrMask);
 
+        Assert(!(pCur->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO));
         if (pAddrFrame)
             pCur->AddrFrame = *pAddrFrame;
-        else
+        else if (   RT_SUCCESS(rc)
+                 && dbgfR3UnwindCtxSetPcAndSp(&UnwindCtx, &pCur->AddrPC, &pCur->AddrStack)
+                 && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx, &pCur->AddrFrame, &pCur->enmReturnType))
         {
-            if (   RT_SUCCESS(rc)
-                && dbgfR3UnwindCtxSetPcAndSp(&UnwindCtx, &pCur->AddrPC, &pCur->AddrStack)
-                && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx, &pCur->AddrFrame))
-            { }
-            else if (enmCodeType != DBGFCODETYPE_GUEST)
-                DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtx->rbp & fAddrMask);
-            else if (RT_SUCCESS(rc))
-                rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtx->ss.Sel, pCtx->rbp & fAddrMask);
+            pCur->fFlags |= DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO;
+        }
+        else if (enmCodeType != DBGFCODETYPE_GUEST)
+            DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtx->rbp & fAddrMask);
+        else if (RT_SUCCESS(rc))
+            rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtx->ss.Sel, pCtx->rbp & fAddrMask);
+
+        /*
+         * The first frame.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            if (DBGFADDRESS_IS_VALID(&pCur->AddrPC))
+            {
+                pCur->pSymPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pCur->AddrPC,
+                                                      RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                                      NULL /*poffDisp*/, NULL /*phMod*/);
+                pCur->pLinePC = DBGFR3AsLineByAddrA(pUVM, hAs, &pCur->AddrPC, NULL /*poffDisp*/, NULL /*phMod*/);
+            }
+
+            rc = dbgfR3StackWalk(&UnwindCtx, pCur, true /*fFirst*/);
         }
     }
     else
         pCur->enmReturnType = enmReturnType;
-
-    /*
-     * The first frame.
-     */
-    if (RT_SUCCESS(rc))
-        rc = dbgfR3StackWalk(pUVM, idCpu, hAs, pCur);
     if (RT_FAILURE(rc))
     {
         DBGFR3StackWalkEnd(pCur);
@@ -827,7 +1133,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
     while (!(pCur->fFlags & (DBGFSTACKFRAME_FLAGS_LAST | DBGFSTACKFRAME_FLAGS_MAX_DEPTH | DBGFSTACKFRAME_FLAGS_LOOP)))
     {
         /* try walk. */
-        rc = dbgfR3StackWalk(pUVM, idCpu, hAs, &Next);
+        rc = dbgfR3StackWalk(&UnwindCtx, &Next, false /*fFirst*/);
         if (RT_FAILURE(rc))
             break;
 
