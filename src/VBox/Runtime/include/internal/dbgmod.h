@@ -546,6 +546,8 @@ typedef struct RTDBGMODDEFERRED
     RTUINTPTR           cbImage;
     /** Reference counter. */
     uint32_t volatile   cRefs;
+    /** Magic value for debug purposes. */
+    uint32_t            uMagic;
     /** The configuration instance (referenced), can be NIL. */
     RTDBGCFG            hDbgCfg;
     /** Performs deferred loading of the module. */
