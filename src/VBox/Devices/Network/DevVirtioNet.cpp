@@ -1421,7 +1421,9 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
 static DECLCALLBACK(void) vnetNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
     PVNETSTATE pThis = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
+#if defined(VBOX_WITH_STATISTICS)
     STAM_REL_COUNTER_INC(&pThis->StatTransmitByNetwork);
+#endif /* VBOX_WITH_STATISTICS */
     vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/);
 }
 
@@ -1513,7 +1515,9 @@ static DECLCALLBACK(int) vnetTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hTxEvent, RT_INDEFINITE_WAIT);
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
+#if defined(VBOX_WITH_STATISTICS)
         STAM_REL_COUNTER_INC(&pThis->StatTransmitByThread);
+#endif /* VBOX_WITH_STATISTICS */
         while (true)
         {
             vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/); /// @todo shouldn't it be true instead?
