@@ -972,12 +972,13 @@ typedef enum PDMAUDIOSTREAMCTX
  */
 typedef struct PDMAUDIOSTREAMIN
 {
-    /** Timestamp (in ms) since last read. */
-    uint64_t tsLastReadMS;
 #ifdef VBOX_WITH_STATISTICS
-    STAMCOUNTER StatBytesElapsed;
-    STAMCOUNTER StatBytesTotalRead;
-    STAMCOUNTER StatFramesCaptured;
+    struct
+    {
+        STAMCOUNTER BytesElapsed;
+        STAMCOUNTER BytesTotalRead;
+        STAMCOUNTER FramesCaptured;
+    } Stats;
 #endif
     struct
     {
@@ -994,12 +995,13 @@ typedef struct PDMAUDIOSTREAMIN
  */
 typedef struct PDMAUDIOSTREAMOUT
 {
-    /** Timestamp (in ms) since last write. */
-    uint64_t    tsLastWriteMS;
 #ifdef VBOX_WITH_STATISTICS
-    STAMCOUNTER StatBytesElapsed;
-    STAMCOUNTER StatBytesTotalWritten;
-    STAMCOUNTER StatFramesPlayed;
+    struct
+    {
+        STAMCOUNTER BytesElapsed;
+        STAMCOUNTER BytesTotalWritten;
+        STAMCOUNTER FramesPlayed;
+    } Stats;
 #endif
     struct
     {
