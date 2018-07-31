@@ -1595,15 +1595,6 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                 continue;
             }
 
-            rc2 = pConn->pfnStreamIterate(pConn, pStream);
-            if (RT_FAILURE(rc2))
-            {
-                LogFunc(("%s: Failed re-iterating stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-                continue;
-            }
-
             PDMAUDIOSTREAMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
 
             /* Is the stream not enabled and also is not in a pending disable state anymore? */
