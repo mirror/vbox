@@ -656,7 +656,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTCircBufCreate(&pMixStream->pCircBuf, DrvAudioHlpMsToBytes(100 /* ms */, &pSink->PCMProps)); /** @todo Make this configurable. */
+        rc = RTCircBufCreate(&pMixStream->pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &pSink->PCMProps)); /** @todo Make this configurable. */
         AssertRC(rc);
     }
 
@@ -930,7 +930,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
 # error "Implement me!"
 #else
         /* Return how much data we expect since the last write. */
-        cbWritable = DrvAudioHlpMsToBytes(RTTimeMilliTS() - pSink->tsLastReadWrittenMs, &pSink->PCMProps);
+        cbWritable = DrvAudioHlpMilliToBytes(RTTimeMilliTS() - pSink->tsLastReadWrittenMs, &pSink->PCMProps);
 #endif
     }
 

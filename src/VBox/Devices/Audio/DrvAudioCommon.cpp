@@ -1119,7 +1119,7 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pPro
  * @param   cbBytes             Amount of bytes to calculate time for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint64_t DrvAudioHlpBytesToMs(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1180,7 +1180,7 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
  * @param   cFrames             Amount of audio frames to calculate time for.
  * @param   pProps              PCM properties to calculate time (in ms) for.
  */
-uint64_t DrvAudioHlpFramesToMs(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1220,7 +1220,7 @@ uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProp
  * @param   uMs                 Time (in ms) to calculate amount of bytes for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpMsToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpMilliToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1254,7 +1254,7 @@ uint32_t DrvAudioHlpNanoToBytes(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uMs                 Time (in ms) to calculate amount of frames for.
  * @param   pProps              PCM properties to calculate amount of frames for.
  */
-uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpMilliToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1262,7 +1262,7 @@ uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
-    return DrvAudioHlpMsToBytes(uMs, pProps) / cbFrame;
+    return DrvAudioHlpMilliToBytes(uMs, pProps) / cbFrame;
 }
 
 /**
