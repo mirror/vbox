@@ -218,6 +218,8 @@ typedef struct VNetState_st
     STAMPROFILE             StatTransmitSend;
     STAMPROFILE             StatRxOverflow;
     STAMCOUNTER             StatRxOverflowWakeup;
+    STAMCOUNTER             StatTransmitByNetwork;
+    STAMCOUNTER             StatTransmitByThread;
 #endif /* VBOX_WITH_STATISTICS */
     /** @}  */
 } VNETSTATE;
@@ -1419,6 +1421,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
 static DECLCALLBACK(void) vnetNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
     PVNETSTATE pThis = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
+    STAM_REL_COUNTER_INC(&pThis->StatTransmitByNetwork);
     vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/);
 }
 
@@ -1510,9 +1513,16 @@ static DECLCALLBACK(int) vnetTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hTxEvent, RT_INDEFINITE_WAIT);
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
-        vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/); /// @todo shouldn't it be true instead?
-        Log(("vnetTxThread: enable kicking and get to sleep\n"));
-        vringSetNotification(&pThis->VPCI, &pThis->pTxQueue->VRing, true);
+        STAM_REL_COUNTER_INC(&pThis->StatTransmitByThread);
+        while (true)
+        {
+            vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/); /// @todo shouldn't it be true instead?
+            Log(("vnetTxThread: enable kicking and get to sleep\n"));
+            vringSetNotification(&pThis->VPCI, &pThis->pTxQueue->VRing, true);
+            if (vqueueIsEmpty(&pThis->VPCI, pThis->pTxQueue))
+                break;
+            vringSetNotification(&pThis->VPCI, &pThis->pTxQueue->VRing, false);
+        }
     }
 
     return rc;
@@ -2320,6 +2330,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeup,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups",          "/Devices/VNet%d/RxOverflowWakeup", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in HC",          "/Devices/VNet%d/Transmit/Total", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSend,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in HC",      "/Devices/VNet%d/Transmit/Send", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitByNetwork,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Network-initiated transmissions",    "/Devices/VNet%d/Transmit/ByNetwork", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitByThread,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Thread-initiated transmissions",     "/Devices/VNet%d/Transmit/ByThread", iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return VINF_SUCCESS;

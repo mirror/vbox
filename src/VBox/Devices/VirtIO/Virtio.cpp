@@ -384,7 +384,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
 {
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
-    STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIORead), a);
+    STAM_PROFILE_ADV_START(&pState->CTX_SUFF(StatIORead), a);
     RT_NOREF_PV(pvUser);
 
     /*
@@ -399,7 +399,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
     rc = vpciCsEnter(pState, VINF_IOM_R3_IOPORT_READ);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
+        STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF(StatIORead), a);
         return rc;
         }*/
 
@@ -454,7 +454,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
             break;
     }
     Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n", INSTANCE(pState), Port, cb*2, *pu32));
-    STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
+    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF(StatIORead), a);
     //vpciCsLeave(pState);
     return rc;
 }
@@ -483,7 +483,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
     bool        fHasBecomeReady;
-    STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
+    STAM_PROFILE_ADV_START(&pState->CTX_SUFF(StatIOWrite), a);
     RT_NOREF_PV(pvUser);
 
     Port -= pState->IOPortBase;
@@ -603,7 +603,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             break;
     }
 
-    STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIOWrite), a);
+    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF(StatIOWrite), a);
     return rc;
 }
 
@@ -931,14 +931,17 @@ int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     pState->nQueues = nQueues;
 
 #if defined(VBOX_WITH_STATISTICS)
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadGC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in GC",      vpciCounter(pcszNameFmt, "IO/ReadGC"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadHC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in HC",      vpciCounter(pcszNameFmt, "IO/ReadHC"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteGC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in GC",     vpciCounter(pcszNameFmt, "IO/WriteGC"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in HC",     vpciCounter(pcszNameFmt, "IO/WriteHC"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadR3,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3",      vpciCounter(pcszNameFmt, "IO/ReadR3"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadR0,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R0",      vpciCounter(pcszNameFmt, "IO/ReadR0"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadRC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RC",      vpciCounter(pcszNameFmt, "IO/ReadRC"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteR3,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3",     vpciCounter(pcszNameFmt, "IO/WriteR3"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteR0,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R0",     vpciCounter(pcszNameFmt, "IO/WriteR0"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteRC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RC",     vpciCounter(pcszNameFmt, "IO/WriteRC"), iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",   vpciCounter(pcszNameFmt, "Interrupts/Raised"), iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsSkipped,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of skipped interrupts",   vpciCounter(pcszNameFmt, "Interrupts/Skipped"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsGC,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in GC",      vpciCounter(pcszNameFmt, "Cs/CsGC"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsHC,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in HC",      vpciCounter(pcszNameFmt, "Cs/CsHC"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsR3,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R3",      vpciCounter(pcszNameFmt, "Cs/CsR3"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsR0,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R0",      vpciCounter(pcszNameFmt, "Cs/CsR0"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsRC,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in RC",      vpciCounter(pcszNameFmt, "Cs/CsRC"), iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;
