@@ -1135,6 +1135,28 @@ uint64_t DrvAudioHlpBytesToMs(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
+ * Returns the time (in ns) for given byte amount and PCM properties.
+ *
+ * @return  uint64_t            Calculated time (in ns).
+ * @param   cbBytes             Amount of bytes to calculate time for.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
+ */
+uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!cbBytes)
+        return 0;
+
+    const float dbBytesPerMs = ((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_NS_1SEC;
+    Assert(dbBytesPerMs >= 0.0f);
+    if (!dbBytesPerMs) /* Prevent division by zero. */
+        return 0;
+
+    return cbBytes / dbBytesPerMs;
+}
+
+/**
  * Returns the bytes for a given audio frames amount and PCM properties.
  *
  * @return Calculated bytes for given audio frames.
@@ -1172,6 +1194,26 @@ uint64_t DrvAudioHlpFramesToMs(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
+ * Returns the time (in ns) for given audio frames amount and PCM properties.
+ *
+ * @return  uint64_t            Calculated time (in ns).
+ * @param   cFrames             Amount of audio frames to calculate time for.
+ * @param   pProps              PCM properties to calculate time (in ns) for.
+ */
+uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!cFrames)
+        return 0;
+
+    if (!pProps->uHz) /* Prevent division by zero. */
+        return 0;
+
+    return cFrames / float(pProps->uHz / RT_NS_1SEC);
+}
+
+/**
  * Returns the amount of bytes for a given time (in ms) and PCM properties.
  *
  * @return  uint32_t            Calculated amount of bytes.
@@ -1189,11 +1231,28 @@ uint32_t DrvAudioHlpMsToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
- * Returns the amount of audio for a given time (in ms) and PCM properties.
+ * Returns the amount of bytes for a given time (in ns) and PCM properties.
+ *
+ * @return  uint32_t            Calculated amount of bytes.
+ * @param   uNs                 Time (in ns) to calculate amount of bytes for.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
+ */
+uint32_t DrvAudioHlpNanoToBytes(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!uNs)
+        return 0;
+
+    return float(((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_NS_1SEC) * uNs;
+}
+
+/**
+ * Returns the amount of audio frames for a given time (in ms) and PCM properties.
  *
  * @return  uint32_t            Calculated amount of audio frames.
- * @param   uMs                 Time (in ms) to calculate amount of bytes for.
- * @param   pProps              PCM properties to calculate amount of bytes for.
+ * @param   uMs                 Time (in ms) to calculate amount of frames for.
+ * @param   pProps              PCM properties to calculate amount of frames for.
  */
 uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
@@ -1204,6 +1263,24 @@ uint32_t DrvAudioHlpMsToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
         return 0;
 
     return DrvAudioHlpMsToBytes(uMs, pProps) / cbFrame;
+}
+
+/**
+ * Returns the amount of audio frames for a given time (in ns) and PCM properties.
+ *
+ * @return  uint32_t            Calculated amount of audio frames.
+ * @param   uNs                 Time (in ns) to calculate amount of frames for.
+ * @param   pProps              PCM properties to calculate amount of frames for.
+ */
+uint32_t DrvAudioHlpNanoToFrames(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    const uint32_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
+    if (!cbFrame) /* Prevent division by zero. */
+        return 0;
+
+    return DrvAudioHlpNanoToBytes(uNs, pProps) / cbFrame;
 }
 
 /**
