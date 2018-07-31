@@ -52,6 +52,8 @@
  */
 typedef struct RTDBGMODLDR
 {
+    /** Magic value (RTDBGMODLDR_MAGIC). */
+    uint32_t        u32Magic;
     /** The loader handle. */
     RTLDRMOD        hLdrMod;
 } RTDBGMODLDR;
@@ -64,6 +66,7 @@ typedef RTDBGMODLDR *PRTDBGMODLDR;
 static DECLCALLBACK(int) rtDbgModLdr_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrQueryPropEx(pThis->hLdrMod, enmProp, NULL /*pvBits*/, pvBuf, cbBuf, pcbRet);
 }
 
@@ -72,6 +75,7 @@ static DECLCALLBACK(int) rtDbgModLdr_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmP
 static DECLCALLBACK(RTLDRARCH) rtDbgModLdr_GetArch(PRTDBGMODINT pMod)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrGetArch(pThis->hLdrMod);
 }
 
@@ -80,6 +84,7 @@ static DECLCALLBACK(RTLDRARCH) rtDbgModLdr_GetArch(PRTDBGMODINT pMod)
 static DECLCALLBACK(RTLDRFMT) rtDbgModLdr_GetFormat(PRTDBGMODINT pMod)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrGetFormat(pThis->hLdrMod);
 }
 
@@ -88,6 +93,7 @@ static DECLCALLBACK(RTLDRFMT) rtDbgModLdr_GetFormat(PRTDBGMODINT pMod)
 static DECLCALLBACK(int) rtDbgModLdr_ReadAt(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     RT_NOREF_PV(iDbgInfoHint);
     return rtLdrReadAt(pThis->hLdrMod, pvBuf, UINT32_MAX /** @todo iDbgInfo*/, off, cb);
 }
@@ -96,6 +102,7 @@ static DECLCALLBACK(int) rtDbgModLdr_ReadAt(PRTDBGMODINT pMod, uint32_t iDbgInfo
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
+    Assert(((PRTDBGMODLDR)pMod->pvImgPriv)->u32Magic == RTDBGMODLDR_MAGIC);
     NOREF(pMod); NOREF(cb);
     RTMemFree((void *)*ppvMap);
     *ppvMap = NULL;
@@ -107,6 +114,7 @@ static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, voi
 static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
 
     void *pvMap = RTMemAlloc(cb);
     if (!pvMap)
@@ -128,6 +136,7 @@ static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, uint32_t iDbgInf
 static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrSize(pThis->hLdrMod);
 }
 
@@ -136,6 +145,7 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_ImageSize(PRTDBGMODINT pMod)
 static DECLCALLBACK(int) rtDbgModLdr_RvaToSegOffset(PRTDBGMODINT pMod, RTLDRADDR Rva, PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrRvaToSegOffset(pThis->hLdrMod, Rva, piSeg, poffSeg);
 }
 
@@ -145,6 +155,7 @@ static DECLCALLBACK(int) rtDbgModLdr_LinkAddressToSegOffset(PRTDBGMODINT pMod, R
                                                             PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrLinkAddressToSegOffset(pThis->hLdrMod, LinkAddress, piSeg, poffSeg);
 }
 
@@ -154,6 +165,7 @@ static DECLCALLBACK(int) rtDbgModLdr_EnumSymbols(PRTDBGMODINT pMod, uint32_t fFl
                                                  PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrEnumSymbols(pThis->hLdrMod, fFlags, NULL /*pvBits*/, BaseAddress, pfnCallback, pvUser);
 }
 
@@ -162,6 +174,7 @@ static DECLCALLBACK(int) rtDbgModLdr_EnumSymbols(PRTDBGMODINT pMod, uint32_t fFl
 static DECLCALLBACK(int) rtDbgModLdr_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrEnumSegments(pThis->hLdrMod, pfnCallback, pvUser);
 }
 
@@ -170,6 +183,7 @@ static DECLCALLBACK(int) rtDbgModLdr_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENU
 static DECLCALLBACK(int) rtDbgModLdr_EnumDbgInfo(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
     return RTLdrEnumDbgInfo(pThis->hLdrMod, NULL, pfnCallback, pvUser);
 }
 
@@ -179,9 +193,11 @@ static DECLCALLBACK(int) rtDbgModLdr_Close(PRTDBGMODINT pMod)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
     AssertPtr(pThis);
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
 
     int rc = RTLdrClose(pThis->hLdrMod); AssertRC(rc);
-    pThis->hLdrMod = NIL_RTLDRMOD;
+    pThis->hLdrMod  = NIL_RTLDRMOD;
+    pThis->u32Magic = RTDBGMODLDR_MAGIC_DEAD;
 
     RTMemFree(pThis);
 
@@ -242,6 +258,7 @@ DECLHIDDEN(int) rtDbgModLdrOpenFromHandle(PRTDBGMODINT pDbgMod, RTLDRMOD hLdrMod
     if (!pThis)
         return VERR_NO_MEMORY;
 
+    pThis->u32Magic    = RTDBGMODLDR_MAGIC;
     pThis->hLdrMod     = hLdrMod;
     pDbgMod->pvImgPriv = pThis;
     return VINF_SUCCESS;

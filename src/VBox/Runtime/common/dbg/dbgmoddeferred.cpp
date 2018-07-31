@@ -51,12 +51,13 @@
 static void rtDbgModDeferredReleaseInstanceData(PRTDBGMODDEFERRED pThis)
 {
     AssertPtr(pThis);
+    Assert(pThis->u32Magic == RTDBGMODDEFERRED_MAGIC);
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs); Assert(cRefs < 8);
     if (!cRefs)
     {
         RTDbgCfgRelease(pThis->hDbgCfg);
         pThis->hDbgCfg = NIL_RTDBGCFG;
-        pThis->uMagic = UINT32_C(0xdeadf00d);
+        pThis->u32Magic = RTDBGMODDEFERRED_MAGIC_DEAD;
         RTMemFree(pThis);
     }
 }
@@ -154,6 +155,7 @@ static int rtDbgModDeferredDoIt(PRTDBGMODINT pMod, bool fForcedRetry)
 static DECLCALLBACK(int) rtDbgModDeferredDbg_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
                                                         PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnLineByAddr(pMod, iSeg, off, poffDisp, pLineInfo);
@@ -164,6 +166,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_LineByAddr(PRTDBGMODINT pMod, RTDBG
 /** @interface_method_impl{RTDBGMODVTDBG,pfnLineByOrdinal} */
 static DECLCALLBACK(int) rtDbgModDeferredDbg_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnLineByOrdinal(pMod, iOrdinal, pLineInfo);
@@ -174,6 +177,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_LineByOrdinal(PRTDBGMODINT pMod, ui
 /** @interface_method_impl{RTDBGMODVTDBG,pfnLineCount} */
 static DECLCALLBACK(uint32_t) rtDbgModDeferredDbg_LineCount(PRTDBGMODINT pMod)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         return pMod->pDbgVt->pfnLineCount(pMod);
@@ -185,6 +189,7 @@ static DECLCALLBACK(uint32_t) rtDbgModDeferredDbg_LineCount(PRTDBGMODINT pMod)
 static DECLCALLBACK(int) rtDbgModDeferredDbg_LineAdd(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo,
                                                      uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnLineAdd(pMod, pszFile, cchFile, uLineNo, iSeg, off, piOrdinal);
@@ -236,6 +241,7 @@ static int rtDbgModDeferredDbgSymInfo_Last(PRTDBGMODDEFERRED pThis, PRTDBGSYMBOL
 static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
                                                           PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     if (   (fFlags & RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED)
         && iSeg == RTDBGSEGIDX_ABS)
         return VERR_SYMBOL_NOT_FOUND;
@@ -263,6 +269,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByAddr(PRTDBGMODINT pMod, RTD
 static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
                                                           PRTDBGSYMBOL pSymInfo)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnSymbolByName(pMod, pszSymbol, cchSymbol, pSymInfo);
@@ -285,6 +292,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByName(PRTDBGMODINT pMod, con
 /** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByOrdinal} */
 static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnSymbolByOrdinal(pMod, iOrdinal, pSymInfo);
@@ -305,6 +313,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolByOrdinal(PRTDBGMODINT pMod, 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolCount} */
 static DECLCALLBACK(uint32_t) rtDbgModDeferredDbg_SymbolCount(PRTDBGMODINT pMod)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         return pMod->pDbgVt->pfnSymbolCount(pMod);
@@ -317,6 +326,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolAdd(PRTDBGMODINT pMod, const 
                                                        RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags,
                                                        uint32_t *piOrdinal)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnSymbolAdd(pMod, pszSymbol, cchSymbol, iSeg, off, cb, fFlags, piOrdinal);
@@ -327,6 +337,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SymbolAdd(PRTDBGMODINT pMod, const 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentByIndex} */
 static DECLCALLBACK(int) rtDbgModDeferredDbg_SegmentByIndex(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnSegmentByIndex(pMod, iSeg, pSegInfo);
@@ -350,6 +361,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SegmentByIndex(PRTDBGMODINT pMod, R
 /** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentCount} */
 static DECLCALLBACK(RTDBGSEGIDX) rtDbgModDeferredDbg_SegmentCount(PRTDBGMODINT pMod)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         return pMod->pDbgVt->pfnSegmentCount(pMod);
@@ -361,6 +373,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModDeferredDbg_SegmentCount(PRTDBGMODINT p
 static DECLCALLBACK(int) rtDbgModDeferredDbg_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName,
                                                         size_t cchName, uint32_t fFlags, PRTDBGSEGIDX piSeg)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pDbgVt->pfnSegmentAdd(pMod, uRva, cb, pszName, cchName, fFlags, piSeg);
@@ -372,6 +385,7 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_SegmentAdd(PRTDBGMODINT pMod, RTUIN
 static DECLCALLBACK(RTUINTPTR) rtDbgModDeferredDbg_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODDEFERRED pThis = (PRTDBGMODDEFERRED)pMod->pvDbgPriv;
+    Assert(pThis->u32Magic == RTDBGMODDEFERRED_MAGIC);
     return pThis->cbImage;
 }
 
@@ -379,6 +393,7 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModDeferredDbg_ImageSize(PRTDBGMODINT pMod)
 /** @interface_method_impl{RTDBGMODVTDBG,pfnRvaToSegOff} */
 static DECLCALLBACK(RTDBGSEGIDX) rtDbgModDeferredDbg_RvaToSegOff(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvDbgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         return pMod->pDbgVt->pfnRvaToSegOff(pMod, uRva, poffSeg);
@@ -389,7 +404,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModDeferredDbg_RvaToSegOff(PRTDBGMODINT pM
 /** @interface_method_impl{RTDBGMODVTDBG,pfnClose} */
 static DECLCALLBACK(int) rtDbgModDeferredDbg_Close(PRTDBGMODINT pMod)
 {
-    rtDbgModDeferredReleaseInstanceData((PRTDBGMODDEFERRED)pMod->pvImgPriv);
+    rtDbgModDeferredReleaseInstanceData((PRTDBGMODDEFERRED)pMod->pvDbgPriv);
     return VINF_SUCCESS;
 }
 
@@ -448,6 +463,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgDeferred =
 static DECLCALLBACK(int)
 rtDbgModDeferredImg_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnQueryProp(pMod, enmProp, pvBuf, cbBuf, pcbRet);
@@ -458,6 +474,8 @@ rtDbgModDeferredImg_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf,
 /** @interface_method_impl{RTDBGMODVTIMG,pfnGetArch} */
 static DECLCALLBACK(RTLDRARCH) rtDbgModDeferredImg_GetArch(PRTDBGMODINT pMod)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
+
     RTLDRARCH enmArch;
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
@@ -471,6 +489,8 @@ static DECLCALLBACK(RTLDRARCH) rtDbgModDeferredImg_GetArch(PRTDBGMODINT pMod)
 /** @interface_method_impl{RTDBGMODVTIMG,pfnGetFormat} */
 static DECLCALLBACK(RTLDRFMT) rtDbgModDeferredImg_GetFormat(PRTDBGMODINT pMod)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
+
     RTLDRFMT enmFmt;
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
@@ -484,6 +504,7 @@ static DECLCALLBACK(RTLDRFMT) rtDbgModDeferredImg_GetFormat(PRTDBGMODINT pMod)
 /** @interface_method_impl{RTDBGMODVTIMG,pfnReadAt} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_ReadAt(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnReadAt(pMod, iDbgInfoHint, off, pvBuf, cb);
@@ -494,6 +515,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_ReadAt(PRTDBGMODINT pMod, uint32_t 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnUnmapPart(pMod, cb, ppvMap);
@@ -504,6 +526,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_UnmapPart(PRTDBGMODINT pMod, size_t
 /** @interface_method_impl{RTDBGMODVTIMG,pfnMapPart} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_MapPart(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnMapPart(pMod, iDbgInfo, off, cb, ppvMap);
@@ -515,6 +538,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_MapPart(PRTDBGMODINT pMod, uint32_t
 static DECLCALLBACK(RTUINTPTR) rtDbgModDeferredImg_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODDEFERRED pThis = (PRTDBGMODDEFERRED)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODDEFERRED_MAGIC);
     return pThis->cbImage;
 }
 
@@ -523,6 +547,7 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModDeferredImg_ImageSize(PRTDBGMODINT pMod)
 static DECLCALLBACK(int) rtDbgModDeferredImg_RvaToSegOffset(PRTDBGMODINT pMod, RTLDRADDR Rva,
                                                             PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnRvaToSegOffset(pMod, Rva, piSeg, poffSeg);
@@ -534,6 +559,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_RvaToSegOffset(PRTDBGMODINT pMod, R
 static DECLCALLBACK(int) rtDbgModDeferredImg_LinkAddressToSegOffset(PRTDBGMODINT pMod, RTLDRADDR LinkAddress,
                                                                     PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnLinkAddressToSegOffset(pMod, LinkAddress, piSeg, poffSeg);
@@ -545,6 +571,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_LinkAddressToSegOffset(PRTDBGMODINT
 static DECLCALLBACK(int) rtDbgModDeferredImg_EnumSymbols(PRTDBGMODINT pMod, uint32_t fFlags, RTLDRADDR BaseAddress,
                                                          PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnEnumSymbols(pMod, fFlags, BaseAddress, pfnCallback, pvUser);
@@ -555,6 +582,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_EnumSymbols(PRTDBGMODINT pMod, uint
 /** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSegments} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnEnumSegments(pMod, pfnCallback, pvUser);
@@ -565,6 +593,7 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_EnumSegments(PRTDBGMODINT pMod, PFN
 /** @interface_method_impl{RTDBGMODVTIMG,pfnEnumDbgInfo} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_EnumDbgInfo(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
+    Assert(((PRTDBGMODDEFERRED)pMod->pvImgPriv)->u32Magic == RTDBGMODDEFERRED_MAGIC);
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
         rc = pMod->pImgVt->pfnEnumDbgInfo(pMod, pfnCallback, pvUser);
@@ -638,9 +667,9 @@ DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED
     if (!pDeferred)
         return VERR_NO_MEMORY;
 
-    pDeferred->cbImage     = cbImage;
+    pDeferred->u32Magic    = RTDBGMODDEFERRED_MAGIC;
     pDeferred->cRefs       = 1 + (pDbgMod->pImgVt == NULL);
-    pDeferred->uMagic      = UINT32_C(0xbeef0001);
+    pDeferred->cbImage     = cbImage;
     if (hDbgCfg != NIL_RTDBGCFG)
         RTDbgCfgRetain(hDbgCfg);
     pDeferred->hDbgCfg     = hDbgCfg;

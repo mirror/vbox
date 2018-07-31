@@ -40,6 +40,14 @@
 #define RTDBGCFG_MAGIC                  UINT32_C(0x19381211)
 /** Magic number for RTDBGMODINT::u32Magic. (Keith Jarrett) */
 #define RTDBGMOD_MAGIC                  UINT32_C(0x19450508)
+/** Magic number for RTDBGMODDEFERRED::u32Magic. (Chet Baker) */
+#define RTDBGMODDEFERRED_MAGIC          UINT32_C(0x19291223)
+/** Magic number for RTDBGMODDEFERRED::u32Magic after release. */
+#define RTDBGMODDEFERRED_MAGIC_DEAD     UINT32_C(0x19880513)
+/** Magic number for RTDBGMODLDR::u32Magic. (Gerry Mulligan) */
+#define RTDBGMODLDR_MAGIC               UINT32_C(0x19270406)
+/** Magic number for RTDBGMODLDR::u32Magic after close. */
+#define RTDBGMODLDR_MAGIC_DEAD          UINT32_C(0x19960120)
 /** Magic number for RTDBGMODVTIMG::u32Magic. (Jack DeJohnette) */
 #define RTDBGMODVTDBG_MAGIC             UINT32_C(0x19420809)
 /** Magic number for RTDBGMODVTIMG::u32Magic. (Cecil McBee) */
