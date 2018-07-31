@@ -2991,16 +2991,16 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
         return 0;
     }
 
-    uint32_t cReadable = 0;
+    uint32_t cfReadable = 0;
 
     PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
     if (pGstStream)
-        cReadable = AudioMixBufLive(&pGstStream->MixBuf);
+        cfReadable = AudioMixBufLive(&pGstStream->MixBuf);
 
-    Log3Func(("[%s] cbReadable=%RU32 (%zu bytes)\n", pHstStream->szName, cReadable,
-              AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadable)));
+    Log3Func(("[%s] cfReadable=%RU32 (%zu bytes)\n", pHstStream->szName, cfReadable,
+              AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfReadable)));
 
-    uint32_t cbReadable = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadable);
+    uint32_t cbReadable = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfReadable);
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
