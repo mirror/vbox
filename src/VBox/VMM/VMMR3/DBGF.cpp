@@ -192,7 +192,8 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                                 }
                                 dbgfR3PlugInTerm(pUVM);
                             }
-                            dbgfR3OSTerm(pUVM);
+                            dbgfR3OSTermPart1(pUVM);
+                            dbgfR3OSTermPart2(pUVM);
                         }
                     }
                     dbgfR3AsTerm(pUVM);
@@ -217,8 +218,9 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
 
+    dbgfR3OSTermPart1(pUVM);
     dbgfR3PlugInTerm(pUVM);
-    dbgfR3OSTerm(pUVM);
+    dbgfR3OSTermPart2(pUVM);
     dbgfR3AsTerm(pUVM);
     dbgfR3RegTerm(pUVM);
     dbgfR3TraceTerm(pVM);
