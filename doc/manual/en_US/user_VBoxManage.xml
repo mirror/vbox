@@ -5532,7 +5532,7 @@ Virtual system 0:
           Use <computeroutput>--cipher &lt;cipher&gt;</computeroutput>
           to specify the cipher to use for encryption; this can be
           either <computeroutput>AES-XTS128-PLAIN64</computeroutput> or
-          <computeroutput>AES-AXTS256-PLAIN64</computeroutput>.
+          <computeroutput>AES-XTS256-PLAIN64</computeroutput>.
         </para>
 
         <para>
