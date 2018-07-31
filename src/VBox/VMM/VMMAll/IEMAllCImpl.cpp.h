@@ -6788,7 +6788,7 @@ IEM_CIMPL_DEF_0(iemCImpl_swapgs)
     /*
      * Do the job.
      */
-    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_OTHER_MSRS);
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_GS);
     uint64_t uOtherGsBase = pVCpu->cpum.GstCtx.msrKERNELGSBASE;
     pVCpu->cpum.GstCtx.msrKERNELGSBASE = pVCpu->cpum.GstCtx.gs.u64Base;
     pVCpu->cpum.GstCtx.gs.u64Base = uOtherGsBase;
