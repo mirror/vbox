@@ -2186,7 +2186,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @name VMX_XDTR_INSINFO_XXX - VMX_EXIT_XDTR_ACCESS instruction information
+/** @name VMX_XDTR_INSINFO_XXX - VMX_EXIT_XDTR_ACCESS instruction information.
  * Found in VMX_VMCS32_RO_EXIT_INSTR_INFO.
  * @{
  */
@@ -2241,7 +2241,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_XDTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @name VMX_YYTR_INSINFO_XXX - VMX_EXIT_TR_ACCESS instruction information
+/** @name VMX_YYTR_INSINFO_XXX - VMX_EXIT_TR_ACCESS instruction information.
  * Found in VMX_VMCS32_RO_EXIT_INSTR_INFO.
  * This is similar to VMX_XDTR_INSINFO_XXX.
  * @{
@@ -2317,20 +2317,71 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @defgroup grp_hm_vmx_emu    VMX emulation.
+/** @name VMCS field encoding.
+ * @{ */
+#define VMX_VMCS_ENC_GET_INDEX(a)
+
+#define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0
+#define VMX_BF_VMCS_ENC_ACCESS_TYPE_MASK                        UINT32_C(0x00000001)
+#define VMX_BF_VMCS_ENC_INDEX_SHIFT                             1
+#define VMX_BF_VMCS_ENC_INDEX_MASK                              UINT32_C(0x000003fe)
+#define VMX_BF_VMCS_ENC_TYPE_SHIFT                              10
+#define VMX_BF_VMCS_ENC_TYPE_MASK                               UINT32_C(0x00000c00)
+#define VMX_BF_VMCS_ENC_RSVD_12_SHIFT                           12
+#define VMX_BF_VMCS_ENC_RSVD_12_MASK                            UINT32_C(0x00001000)
+#define VMX_BF_VMCS_ENC_WIDTH_SHIFT                             13
+#define VMX_BF_VMCS_ENC_WIDTH_MASK                              UINT32_C(0x00006000)
+#define VMX_BF_VMCS_ENC_RSVD_15_31_SHIFT                        15
+#define VMX_BF_VMCS_ENC_RSVD_15_31_MASK                         UINT32_C(0xffff8000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
+                            (ACCESS_TYPE, INDEX, TYPE, RSVD_12, WIDTH, RSVD_15_31));
+/** @} */
+
+
+/** @defgroup grp_hm_vmx_virt    VMX virtualization.
  * @{
  */
-/** VMCS revision identifier used for emulating VMX (bit 31 MBZ). Bump this
- *  arbitarily chosen identifier if incompatible changes to the layout of our VMCS
- *  structure is done. */
-#define VMX_E_VMCS_REVISION_ID                                  UINT32_C(0x1d000001)
-AssertCompile(!(VMX_E_VMCS_REVISION_ID & RT_BIT(31)));
 
 /** CR0 bits set here must always be set when in VMX operation. */
-#define VMX_E_CR0_FIXED0                                        (X86_CR0_PE | X86_CR0_NE | X86_CR0_PG)
+#define VMX_V_CR0_FIXED0                                        (X86_CR0_PE | X86_CR0_NE | X86_CR0_PG)
 /** CR4 bits set here must always be set when in VMX operation. */
-#define VMX_E_CR4_FIXED0                                        (X86_CR4_VMXE)
+#define VMX_V_CR4_FIXED0                                        (X86_CR4_VMXE)
 
+/** Virtual VMCS revision ID. Bump this arbitarily chosen identifier if incompatible
+ *  changes to the layout of VMXVVMCS is done.  Bit 31 MBZ.  */
+#define VMX_V_VMCS_REVISION_ID                                  UINT32_C(0x1d000001)
+AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
+
+/** The highest index value used for VMCS field encoding. */
+#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS32_PREEMPT_TIMER_VALUE, VMX_BF_VMCS_ENC_INDEX)
+
+/**
+ * Virtual VMCS.
+ * This is our custom format and merged into the actual VMCS (/shadow) when we
+ * execute nested-guest code using hardware-assisted VMX.
+ *
+ * The first 8 bytes are as per Intel spec. 24.2 "Format of the VMCS Region".
+ */
+#pragma pack(1)
+typedef struct
+{
+    /** Revision identifier. */
+    uint32_t            u31RevisionId : 31;
+    /** Whether this is a shadow VMCS. */
+    uint32_t            fIsShadowVmcs : 1;
+
+    /** VMX-abort indicator. */
+    uint32_t            u32VmxAbortId;
+    /** @todo VMCS data. We can use RTUINT64U for the full/high 64-bit VMCS fields. */
+    uint8_t             abPadding0[X86_PAGE_4K_SIZE - 8];
+} VMXVVMCS;
+#pragma pack()
+AssertCompileSize(VMXVVMCS, X86_PAGE_4K_SIZE);
+AssertCompileMemberOffset(VMXVVMCS, u32VmxAbortId, 4);
+/** Pointer to the VMXVVMCS struct. */
+typedef VMXVVMCS *PVMXVVMCS;
+/** Pointer to a const VMXVVMCS struct. */
+typedef const VMXVVMCS *PCVMXVVMCS;
 
 /** @} */
 

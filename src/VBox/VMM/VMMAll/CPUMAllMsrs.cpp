@@ -1294,7 +1294,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t 
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
     if (pGuestFeatures->fVmx)
     {
-        *puValue = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,       VMX_E_VMCS_REVISION_ID        )
+        *puValue = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,       VMX_V_VMCS_REVISION_ID        )
                  | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,      0                             )
                  | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE, VMX_BASIC_MEM_TYPE_WB         )
                  | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS, pGuestFeatures->fVmxInsOutInfo)
@@ -1439,7 +1439,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed0(PVMCPU pVCpu, uint3
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
     if (pGuestFeatures->fVmx)
-        *puValue = VMX_E_CR0_FIXED0;
+        *puValue = VMX_V_CR0_FIXED0;
     else
         *puValue = 0;
     return VINF_SUCCESS;
@@ -1455,7 +1455,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPU pVCpu, uint3
     {
         int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), idMsr, puValue);
         AssertRCReturn(rc, rc);
-        *puValue |= VMX_E_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
+        *puValue |= VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
     }
     else
         *puValue = 0;
@@ -1469,7 +1469,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPU pVCpu, uint3
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
     if (pGuestFeatures->fVmx)
-        *puValue = VMX_E_CR4_FIXED0;
+        *puValue = VMX_V_CR4_FIXED0;
     else
         *puValue = 0;
     return VINF_SUCCESS;
@@ -1485,7 +1485,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint3
     {
         int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), idMsr, puValue);
         AssertRCReturn(rc, rc);
-        *puValue |= VMX_E_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
+        *puValue |= VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
     }
     else
         *puValue = 0;
@@ -1496,8 +1496,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    if (pGuestFeatures->fVmx)
+        *puValue = VMX_V_VMCS_MAX_INDEX << VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
