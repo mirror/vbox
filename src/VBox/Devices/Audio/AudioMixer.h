@@ -143,6 +143,8 @@ typedef struct AUDMIXSINKIN
     /** Number of bytes available to read from the sink. */
     uint32_t       cbReadable;
 #endif
+    /** The current recording source. Can be NULL if not set. */
+    PAUDMIXSTREAM  pStreamRecSource;
 } AUDMIXSINKIN;
 
 /**
@@ -243,6 +245,7 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink);
 uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink);
 AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink);
+PAUDMIXSTREAM AudioMixerSinkGetRecordingSource(PAUDMIXSINK pSink);
 PAUDMIXSTREAM AudioMixerSinkGetStream(PAUDMIXSINK pSink, uint8_t uIndex);
 AUDMIXSINKSTS AudioMixerSinkGetStatus(PAUDMIXSINK pSink);
 uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink);
@@ -253,6 +256,7 @@ void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
 void AudioMixerSinkReset(PAUDMIXSINK pSink);
 void AudioMixerSinkGetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps);
 int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps);
+int AudioMixerSinkSetRecordingSource(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
