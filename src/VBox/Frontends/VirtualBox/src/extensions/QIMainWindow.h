@@ -20,9 +20,13 @@
 
 /* Qt includes: */
 #include <QMainWindow>
+#include <QRect>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
+
+/* Forward declarations: */
+class QWidget;
 
 /** QMainWindow extension providing GUI
   * with the extended geometry management support. */
@@ -48,4 +52,3 @@ protected:
 };
 
 #endif /* !___QIMainWindow_h___ */
-
