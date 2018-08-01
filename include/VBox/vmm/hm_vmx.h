@@ -2186,111 +2186,111 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @name VMX_XDTR_INSINFO_XXX - VMX_EXIT_XDTR_ACCESS instruction information.
+/** @name VMX_BF_XXTR_INSINFO_XXX - VMX_EXIT_XDTR_ACCESS instruction information.
  * Found in VMX_VMCS32_RO_EXIT_INSTR_INFO.
  * @{
  */
 /** Address calculation scaling field (powers of two). */
-#define VMX_XDTR_INSINFO_SCALE_SHIFT                            0
-#define VMX_XDTR_INSINFO_SCALE_MASK                             UINT32_C(0x00000003)
+#define VMX_BF_XDTR_INSINFO_SCALE_SHIFT                         0
+#define VMX_BF_XDTR_INSINFO_SCALE_MASK                          UINT32_C(0x00000003)
 /** Bits 2 thru 6 are undefined. */
-#define VMX_XDTR_INSINFO_UNDEF_2_6_SHIFT                        2
-#define VMX_XDTR_INSINFO_UNDEF_2_6_MASK                         UINT32_C(0x0000007c)
+#define VMX_BF_XDTR_INSINFO_UNDEF_2_6_SHIFT                     2
+#define VMX_BF_XDTR_INSINFO_UNDEF_2_6_MASK                      UINT32_C(0x0000007c)
 /** Address size, only 0(=16), 1(=32) and 2(=64) are defined.
  * @remarks anyone's guess why this is a 3 bit field...  */
-#define VMX_XDTR_INSINFO_ADDR_SIZE_SHIFT                        7
-#define VMX_XDTR_INSINFO_ADDR_SIZE_MASK                         UINT32_C(0x00000380)
+#define VMX_BF_XDTR_INSINFO_ADDR_SIZE_SHIFT                     7
+#define VMX_BF_XDTR_INSINFO_ADDR_SIZE_MASK                      UINT32_C(0x00000380)
 /** Bit 10 is defined as zero. */
-#define VMX_XDTR_INSINFO_ZERO_10_SHIFT                          10
-#define VMX_XDTR_INSINFO_ZERO_10_MASK                           UINT32_C(0x00000400)
+#define VMX_BF_XDTR_INSINFO_ZERO_10_SHIFT                       10
+#define VMX_BF_XDTR_INSINFO_ZERO_10_MASK                        UINT32_C(0x00000400)
 /** Operand size, either (1=)32-bit or (0=)16-bit, but get this, it's undefined
  * for exits from 64-bit code as the operand size there is fixed. */
-#define VMX_XDTR_INSINFO_OP_SIZE_SHIFT                          11
-#define VMX_XDTR_INSINFO_OP_SIZE_MASK                           UINT32_C(0x00000800)
+#define VMX_BF_XDTR_INSINFO_OP_SIZE_SHIFT                       11
+#define VMX_BF_XDTR_INSINFO_OP_SIZE_MASK                        UINT32_C(0x00000800)
 /** Bits 12 thru 14 are undefined. */
-#define VMX_XDTR_INSINFO_UNDEF_12_14_SHIFT                      12
-#define VMX_XDTR_INSINFO_UNDEF_12_14_MASK                       UINT32_C(0x00007000)
+#define VMX_BF_XDTR_INSINFO_UNDEF_12_14_SHIFT                   12
+#define VMX_BF_XDTR_INSINFO_UNDEF_12_14_MASK                    UINT32_C(0x00007000)
 /** Applicable segment register (X86_SREG_XXX values). */
-#define VMX_XDTR_INSINFO_SREG_SHIFT                             15
-#define VMX_XDTR_INSINFO_SREG_MASK                              UINT32_C(0x00038000)
+#define VMX_BF_XDTR_INSINFO_SREG_SHIFT                          15
+#define VMX_BF_XDTR_INSINFO_SREG_MASK                           UINT32_C(0x00038000)
 /** Index register (X86_GREG_XXX values). Undefined if HAS_INDEX_REG is clear. */
-#define VMX_XDTR_INSINFO_INDEX_REG_SHIFT                        18
-#define VMX_XDTR_INSINFO_INDEX_REG_MASK                         UINT32_C(0x003c0000)
-/** Is VMX_XDTR_INSINFO_INDEX_REG_XXX valid (=1) or not (=0). */
-#define VMX_XDTR_INSINFO_HAS_INDEX_REG_SHIFT                    22
-#define VMX_XDTR_INSINFO_HAS_INDEX_REG_MASK                     UINT32_C(0x00400000)
+#define VMX_BF_XDTR_INSINFO_INDEX_REG_SHIFT                     18
+#define VMX_BF_XDTR_INSINFO_INDEX_REG_MASK                      UINT32_C(0x003c0000)
+/** Is VMX_BF_XDTR_INSINFO_INDEX_REG_XXX valid (=1) or not (=0). */
+#define VMX_BF_XDTR_INSINFO_HAS_INDEX_REG_SHIFT                 22
+#define VMX_BF_XDTR_INSINFO_HAS_INDEX_REG_MASK                  UINT32_C(0x00400000)
 /** Base register (X86_GREG_XXX values). Undefined if HAS_BASE_REG is clear. */
-#define VMX_XDTR_INSINFO_BASE_REG_SHIFT                         23
-#define VMX_XDTR_INSINFO_BASE_REG_MASK                          UINT32_C(0x07800000)
+#define VMX_BF_XDTR_INSINFO_BASE_REG_SHIFT                      23
+#define VMX_BF_XDTR_INSINFO_BASE_REG_MASK                       UINT32_C(0x07800000)
 /** Is VMX_XDTR_INSINFO_BASE_REG_XXX valid (=1) or not (=0). */
-#define VMX_XDTR_INSINFO_HAS_BASE_REG_SHIFT                     27
-#define VMX_XDTR_INSINFO_HAS_BASE_REG_MASK                      UINT32_C(0x08000000)
-/** The instruction identity (VMX_XDTR_INSINFO_II_XXX values) */
-#define VMX_XDTR_INSINFO_INSTR_ID_SHIFT                         28
-#define VMX_XDTR_INSINFO_INSTR_ID_MASK                          UINT32_C(0x30000000)
+#define VMX_BF_XDTR_INSINFO_HAS_BASE_REG_SHIFT                  27
+#define VMX_BF_XDTR_INSINFO_HAS_BASE_REG_MASK                   UINT32_C(0x08000000)
+/** The instruction identity (VMX_XDTR_INSINFO_II_XXX values). */
+#define VMX_BF_XDTR_INSINFO_INSTR_ID_SHIFT                      28
+#define VMX_BF_XDTR_INSINFO_INSTR_ID_MASK                       UINT32_C(0x30000000)
 #define VMX_XDTR_INSINFO_II_SGDT                                0 /**< Instruction ID: SGDT */
 #define VMX_XDTR_INSINFO_II_SIDT                                1 /**< Instruction ID: SIDT */
 #define VMX_XDTR_INSINFO_II_LGDT                                2 /**< Instruction ID: LGDT */
 #define VMX_XDTR_INSINFO_II_LIDT                                3 /**< Instruction ID: LIDT */
 /** Bits 30 & 31 are undefined. */
-#define VMX_XDTR_INSINFO_UNDEF_30_31_SHIFT                      30
-#define VMX_XDTR_INSINFO_UNDEF_30_31_MASK                       UINT32_C(0xc0000000)
-RT_BF_ASSERT_COMPILE_CHECKS(VMX_XDTR_INSINFO_, UINT32_C(0), UINT32_MAX,
+#define VMX_BF_XDTR_INSINFO_UNDEF_30_31_SHIFT                   30
+#define VMX_BF_XDTR_INSINFO_UNDEF_30_31_MASK                    UINT32_C(0xc0000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_XDTR_INSINFO_, UINT32_C(0), UINT32_MAX,
                             (SCALE, UNDEF_2_6, ADDR_SIZE, ZERO_10, OP_SIZE, UNDEF_12_14, SREG, INDEX_REG, HAS_INDEX_REG,
                              BASE_REG, HAS_BASE_REG, INSTR_ID, UNDEF_30_31));
 /** @} */
 
 
-/** @name VMX_YYTR_INSINFO_XXX - VMX_EXIT_TR_ACCESS instruction information.
+/** @name VMX_BF_YYTR_INSINFO_XXX - VMX_EXIT_TR_ACCESS instruction information.
  * Found in VMX_VMCS32_RO_EXIT_INSTR_INFO.
- * This is similar to VMX_XDTR_INSINFO_XXX.
+ * This is similar to VMX_BF_XDTR_INSINFO_XXX.
  * @{
  */
 /** Address calculation scaling field (powers of two). */
-#define VMX_YYTR_INSINFO_SCALE_SHIFT                            0
-#define VMX_YYTR_INSINFO_SCALE_MASK                             UINT32_C(0x00000003)
+#define VMX_BF_YYTR_INSINFO_SCALE_SHIFT                         0
+#define VMX_BF_YYTR_INSINFO_SCALE_MASK                          UINT32_C(0x00000003)
 /** Bit 2 is undefined. */
-#define VMX_YYTR_INSINFO_UNDEF_2_SHIFT                          2
-#define VMX_YYTR_INSINFO_UNDEF_2_MASK                           UINT32_C(0x00000004)
+#define VMX_BF_YYTR_INSINFO_UNDEF_2_SHIFT                       2
+#define VMX_BF_YYTR_INSINFO_UNDEF_2_MASK                        UINT32_C(0x00000004)
 /** Register operand 1. Undefined if VMX_YYTR_INSINFO_HAS_REG1 is clear. */
-#define VMX_YYTR_INSINFO_REG1_SHIFT                             3
-#define VMX_YYTR_INSINFO_REG1_MASK                              UINT32_C(0x00000078)
+#define VMX_BF_YYTR_INSINFO_REG1_SHIFT                          3
+#define VMX_BF_YYTR_INSINFO_REG1_MASK                           UINT32_C(0x00000078)
 /** Address size, only 0(=16), 1(=32) and 2(=64) are defined.
  * @remarks anyone's guess why this is a 3 bit field...  */
-#define VMX_YYTR_INSINFO_ADDR_SIZE_SHIFT                        7
-#define VMX_YYTR_INSINFO_ADDR_SIZE_MASK                         UINT32_C(0x00000380)
+#define VMX_BF_YYTR_INSINFO_ADDR_SIZE_SHIFT                     7
+#define VMX_BF_YYTR_INSINFO_ADDR_SIZE_MASK                      UINT32_C(0x00000380)
 /** Is VMX_YYTR_INSINFO_REG1_XXX valid (=1) or not (=0). */
-#define VMX_YYTR_INSINFO_HAS_REG1_SHIFT                         10
-#define VMX_YYTR_INSINFO_HAS_REG1_MASK                          UINT32_C(0x00000400)
+#define VMX_BF_YYTR_INSINFO_HAS_REG1_SHIFT                      10
+#define VMX_BF_YYTR_INSINFO_HAS_REG1_MASK                       UINT32_C(0x00000400)
 /** Bits 11 thru 14 are undefined. */
-#define VMX_YYTR_INSINFO_UNDEF_11_14_SHIFT                      11
-#define VMX_YYTR_INSINFO_UNDEF_11_14_MASK                       UINT32_C(0x00007800)
+#define VMX_BF_YYTR_INSINFO_UNDEF_11_14_SHIFT                   11
+#define VMX_BF_YYTR_INSINFO_UNDEF_11_14_MASK                    UINT32_C(0x00007800)
 /** Applicable segment register (X86_SREG_XXX values). */
-#define VMX_YYTR_INSINFO_SREG_SHIFT                             15
-#define VMX_YYTR_INSINFO_SREG_MASK                              UINT32_C(0x00038000)
+#define VMX_BF_YYTR_INSINFO_SREG_SHIFT                          15
+#define VMX_BF_YYTR_INSINFO_SREG_MASK                           UINT32_C(0x00038000)
 /** Index register (X86_GREG_XXX values). Undefined if HAS_INDEX_REG is clear. */
-#define VMX_YYTR_INSINFO_INDEX_REG_SHIFT                        18
-#define VMX_YYTR_INSINFO_INDEX_REG_MASK                         UINT32_C(0x003c0000)
+#define VMX_BF_YYTR_INSINFO_INDEX_REG_SHIFT                     18
+#define VMX_BF_YYTR_INSINFO_INDEX_REG_MASK                      UINT32_C(0x003c0000)
 /** Is VMX_YYTR_INSINFO_INDEX_REG_XXX valid (=1) or not (=0). */
-#define VMX_YYTR_INSINFO_HAS_INDEX_REG_SHIFT                    22
-#define VMX_YYTR_INSINFO_HAS_INDEX_REG_MASK                     UINT32_C(0x00400000)
+#define VMX_BF_YYTR_INSINFO_HAS_INDEX_REG_SHIFT                 22
+#define VMX_BF_YYTR_INSINFO_HAS_INDEX_REG_MASK                  UINT32_C(0x00400000)
 /** Base register (X86_GREG_XXX values). Undefined if HAS_BASE_REG is clear. */
-#define VMX_YYTR_INSINFO_BASE_REG_SHIFT                         23
-#define VMX_YYTR_INSINFO_BASE_REG_MASK                          UINT32_C(0x07800000)
+#define VMX_BF_YYTR_INSINFO_BASE_REG_SHIFT                      23
+#define VMX_BF_YYTR_INSINFO_BASE_REG_MASK                       UINT32_C(0x07800000)
 /** Is VMX_YYTR_INSINFO_BASE_REG_XXX valid (=1) or not (=0). */
-#define VMX_YYTR_INSINFO_HAS_BASE_REG_SHIFT                     27
-#define VMX_YYTR_INSINFO_HAS_BASE_REG_MASK                      UINT32_C(0x08000000)
+#define VMX_BF_YYTR_INSINFO_HAS_BASE_REG_SHIFT                  27
+#define VMX_BF_YYTR_INSINFO_HAS_BASE_REG_MASK                   UINT32_C(0x08000000)
 /** The instruction identity (VMX_YYTR_INSINFO_II_XXX values) */
-#define VMX_YYTR_INSINFO_INSTR_ID_SHIFT                         28
-#define VMX_YYTR_INSINFO_INSTR_ID_MASK                          UINT32_C(0x30000000)
+#define VMX_BF_YYTR_INSINFO_INSTR_ID_SHIFT                      28
+#define VMX_BF_YYTR_INSINFO_INSTR_ID_MASK                       UINT32_C(0x30000000)
 #define VMX_YYTR_INSINFO_II_SLDT                                0 /**< Instruction ID: SLDT */
 #define VMX_YYTR_INSINFO_II_STR                                 1 /**< Instruction ID: STR */
 #define VMX_YYTR_INSINFO_II_LLDT                                2 /**< Instruction ID: LLDT */
 #define VMX_YYTR_INSINFO_II_LTR                                 3 /**< Instruction ID: LTR */
 /** Bits 30 & 31 are undefined. */
-#define VMX_YYTR_INSINFO_UNDEF_30_31_SHIFT                      30
-#define VMX_YYTR_INSINFO_UNDEF_30_31_MASK                       UINT32_C(0xc0000000)
-RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
+#define VMX_BF_YYTR_INSINFO_UNDEF_30_31_SHIFT                   30
+#define VMX_BF_YYTR_INSINFO_UNDEF_30_31_MASK                    UINT32_C(0xc0000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
                             (SCALE, UNDEF_2, REG1, ADDR_SIZE, HAS_REG1, UNDEF_11_14, SREG, INDEX_REG, HAS_INDEX_REG,
                              BASE_REG, HAS_BASE_REG, INSTR_ID, UNDEF_30_31));
 /** @} */

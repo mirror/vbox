@@ -9343,7 +9343,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
         case VMX_EXIT_PAUSE:            SET_BOTH(PAUSE); break;
         case VMX_EXIT_XDTR_ACCESS:
             hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-            switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_XDTR_INSINFO_INSTR_ID))
+            switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_BF_XDTR_INSINFO_INSTR_ID))
             {
                 case VMX_XDTR_INSINFO_II_SGDT: SET_BOTH(SGDT); break;
                 case VMX_XDTR_INSINFO_II_SIDT: SET_BOTH(SIDT); break;
@@ -9354,7 +9354,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
 
         case VMX_EXIT_TR_ACCESS:
             hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-            switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_YYTR_INSINFO_INSTR_ID))
+            switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_BF_YYTR_INSINFO_INSTR_ID))
             {
                 case VMX_YYTR_INSINFO_II_SLDT: SET_BOTH(SLDT); break;
                 case VMX_YYTR_INSINFO_II_STR:  SET_BOTH(STR); break;
