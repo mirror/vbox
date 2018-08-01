@@ -1554,20 +1554,16 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos, uint32_
             if (!pDrv->Out.pStream)
                 continue;
 
+            if (!DrvAudioHlpStreamStatusCanWrite(pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector,  pDrv->Out.pStream)))
+                continue;
+
             uint32_t cbWrittenToStream = 0;
             rc2 = pDrv->pConnector->pfnStreamWrite(pDrv->pConnector, pDrv->Out.pStream, tmpbuf, cbRead, &cbWrittenToStream);
 
             LogFlowFunc(("\tLUN#%RU8: rc=%Rrc, cbWrittenToStream=%RU32\n", pDrv->uLUN, rc2, cbWrittenToStream));
-
-            /* The primary driver sets the overall pace. */
-            if (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)
-            {
-                cbWritten = cbWrittenToStream;
-
-                if (RT_FAILURE(rc2))
-                    break;
-            }
         }
+
+        cbWritten = cbRead; /* Always report everything written, as the backends need to keep up themselves. */
 
         LogFlowFunc(("\tcbToRead=%RU32, cbToWrite=%RU32, cbWritten=%RU32, cbLeft=%RU32\n",
                      cbToRead, cbToWrite, cbWritten, cbToWrite - cbWrittenTotal));

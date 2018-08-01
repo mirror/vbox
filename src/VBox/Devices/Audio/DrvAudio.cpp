@@ -3013,16 +3013,18 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
         return 0;
     }
 
-    uint32_t cfReadable = 0;
+    uint32_t cbReadable = 0;
 
     PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
     if (pGstStream)
-        cfReadable = AudioMixBufLive(&pGstStream->MixBuf);
+    {
+        uint32_t cfReadable = AudioMixBufLive(&pGstStream->MixBuf);
 
-    Log3Func(("[%s] cfReadable=%RU32 (%zu bytes)\n", pHstStream->szName, cfReadable,
-              AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfReadable)));
+        Log3Func(("[%s] cfReadable=%RU32 (%zu bytes)\n", pHstStream->szName, cfReadable,
+                  AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfReadable)));
 
-    uint32_t cbReadable = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfReadable);
+        cbReadable = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfReadable);
+    }
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
@@ -3059,10 +3061,17 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     /* As the host side sets the overall pace, return the writable bytes from that side. */
     const uint64_t deltaLastReadWriteNs = RTTimeNanoTS() - pHstStream->tsLastReadWrittenNs;
 
-    uint32_t cbWritable = DrvAudioHlpNanoToBytes(deltaLastReadWriteNs, &pHstStream->Cfg.Props);
-    cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pHstStream->Cfg.Props);
+    uint32_t cbWritable = 0;
 
-    Log3Func(("Audio: [%s] cbWritable=%RU32 (%RU64ms)\n", pHstStream->szName, cbWritable, deltaLastReadWriteNs / RT_NS_1MS_64));
+    if (DrvAudioHlpStreamStatusCanWrite(pHstStream->fStatus))
+    {
+        cbWritable = DrvAudioHlpNanoToBytes(deltaLastReadWriteNs, &pHstStream->Cfg.Props);
+
+        /* Make sure to align the writable size to the stream's frame size. */
+        cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pHstStream->Cfg.Props);
+    }
+
+    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n", pHstStream->szName, cbWritable, deltaLastReadWriteNs / RT_NS_1MS_64));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
@@ -3085,23 +3094,27 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
     int rc2 = RTCritSectEnter(&pThis->CritSect);
     AssertRC(rc2);
 
-    PDMAUDIOSTREAMSTS strmSts = PDMAUDIOSTREAMSTS_FLAG_NONE;
+    PDMAUDIOSTREAMSTS stsStream = PDMAUDIOSTREAMSTS_FLAG_NONE;
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
     if (pHstStream)
     {
-        strmSts = pHstStream->fStatus;
+        /* If the connector is ready to operate, also make sure to ask the backend. */
+        stsStream = pHstStream->fStatus;
+        if (DrvAudioHlpStreamStatusIsReady(stsStream))
+            stsStream = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pHstStream->pvBackend);
+
 #ifdef LOG_ENABLED
-        char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-        Log3Func(("[%s] %s\n", pHstStream->szName, pszHstSts));
-        RTStrFree(pszHstSts);
+        char *pszStreamSts = dbgAudioStreamStatusToStr(stsStream);
+        Log3Func(("[%s] %s\n", pHstStream->szName, pszStreamSts));
+        RTStrFree(pszStreamSts);
 #endif
     }
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
-    return strmSts;
+    return stsStream;
 }
 
 /**

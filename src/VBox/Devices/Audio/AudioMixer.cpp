@@ -933,6 +933,8 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
 #else
         /* Return how much data we expect since the last write. */
         cbWritable = DrvAudioHlpNanoToBytes(deltaLastReadWriteNs, &pSink->PCMProps);
+
+        /* Make sure to align the writable size to the stream's frame size. */
         cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pSink->PCMProps);
 #endif
     }
@@ -1114,7 +1116,8 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     {
         Log3Func(("[%s] No recording source specified, skipping ...\n", pSink->pszName));
     }
-    else if (!(pStreamRecSource->pConn->pfnStreamGetStatus(pStreamRecSource->pConn, pStreamRecSource->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
+    else if (!DrvAudioHlpStreamStatusCanRead(
+       pStreamRecSource->pConn->pfnStreamGetStatus(pStreamRecSource->pConn, pStreamRecSource->pStream)))
     {
         Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pStreamRecSource->pszName));
     }
@@ -1564,6 +1567,9 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
         uint32_t cfProc = 0;
 
+        if (!DrvAudioHlpStreamStatusIsReady(pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
+            continue;
+
         int rc2 = pConn->pfnStreamIterate(pConn, pStream);
         if (RT_SUCCESS(rc2))
         {
@@ -1720,11 +1726,12 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
               ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName));
 
-    Log3Func(("[%s] enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
-
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
+        if (!DrvAudioHlpStreamStatusCanWrite(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
+            continue;
+
         PRTCIRCBUF pCircBuf = pMixStream->pCircBuf;
         void *pvChunk;
         size_t cbChunk;
