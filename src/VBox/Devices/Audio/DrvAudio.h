@@ -217,6 +217,11 @@ void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
 const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd);
 /** @}  */
 
+/** @name Audio stream helper methods.
+ * @{ */
+bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS enmStatus);
+/** @}  */
+
 /** @name Audio file (name) helper methods.
  * @{ */
 int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath);

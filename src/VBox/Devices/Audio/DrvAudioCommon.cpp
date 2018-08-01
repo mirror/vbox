@@ -1032,6 +1032,24 @@ const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd)
 }
 
 /**
+ * Returns @c true if the given stream status indicates a ready-to-operate stream,
+ * @c false if not.
+ *
+ * @returns @c true if ready to operate, @c if not.
+ * @param   enmStatus           Stream status to evaluate.
+ */
+bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS enmStatus)
+{
+    AssertReturn(enmStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
+
+    return      enmStatus & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED
+           &&   enmStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED
+           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PAUSED)
+           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
+           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_REINIT);
+}
+
+/**
  * Calculates the audio bit rate of the given bits per sample, the Hz and the number
  * of audio channels.
  *
