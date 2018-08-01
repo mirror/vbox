@@ -535,11 +535,17 @@ typedef struct CPUMCTX
                 /** 0x3e8 - Host physical address of the nested-guest VMCB.  */
                 RTHCPHYS            HCPhysVmcb;
             } svm;
-#if 0
+
             struct
             {
+                /** 0x2e0 - Whether the guest is in VMX root mode. */
+                uint32_t            fInVmxRootMode : 1;
+                uint32_t            afPadding  : 31;
+                /** 0x2e4 - Guest physical address of the VMXON region. */
+                RTGCPHYS            GCPhysVmxon;
+                /** 0x2ec - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x2ec];
             } vmx;
-#endif
         } CPUM_UNION_NM(s);
 
         /** 0x3f0 - A subset of force flags that are preserved while running the nested-guest. */

@@ -1551,7 +1551,7 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCCPUMCTX pCtx)
 }
 
 /**
- * Tests is if the guest has AMD SVM enabled or not.
+ * Tests if the guest has AMD SVM enabled or not.
  *
  * @returns true if SMV is enabled, otherwise false.
  * @param   pCtx    Current CPU context.
@@ -1561,6 +1561,16 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
     return RT_BOOL(pCtx->msrEFER & MSR_K6_EFER_SVME);
 }
 
+/**
+ * Tests if the guest has Intel VT-x enabled or not.
+ *
+ * @returns true if VMX is enabled, otherwise false.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxEnabled(PCCPUMCTX pCtx)
+{
+    return RT_BOOL(pCtx->cr4 & X86_CR4_VMXE);
+}
 #ifndef IN_RC
 
 /**
