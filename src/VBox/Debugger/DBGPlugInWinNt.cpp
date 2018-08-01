@@ -291,318 +291,6 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
 
 
 
-/** @callback_method_impl{PFNRTLDRRDRMEMREAD} */
-static DECLCALLBACK(int) dbgDiggerWinNtRdr_Read(void *pvBuf, size_t cb, size_t off, void *pvUser)
-{
-    PDBGDIGGERWINNTRDR pThis = (PDBGDIGGERWINNTRDR)pvUser;
-    uint32_t           offFile = (uint32_t)off;
-    AssertReturn(offFile == off, VERR_INVALID_PARAMETER);
-
-    uint32_t i = pThis->iHint;
-    if (pThis->aMappings[i].offFile > offFile)
-    {
-        i = pThis->cMappings;
-        while (i-- > 0)
-            if (offFile >= pThis->aMappings[i].offFile)
-                break;
-        pThis->iHint = i;
-    }
-
-    while (cb > 0)
-    {
-        uint32_t offNextMap =  i + 1 < pThis->cMappings ? pThis->aMappings[i + 1].offFile : pThis->cbImage;
-        uint32_t offMap     = offFile - pThis->aMappings[i].offFile;
-
-        /* Read file bits backed by memory. */
-        if (offMap < pThis->aMappings[i].cbMem)
-        {
-            uint32_t cbToRead = pThis->aMappings[i].cbMem - offMap;
-            if (cbToRead > cb)
-                cbToRead = (uint32_t)cb;
-
-            DBGFADDRESS Addr = pThis->ImageAddr;
-            DBGFR3AddrAdd(&Addr, pThis->aMappings[i].offMem + offMap);
-
-            int rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, &Addr, pvBuf, cbToRead);
-            if (RT_FAILURE(rc))
-                return rc;
-
-            /* Apply SizeOfImage patch? */
-            if (   pThis->offSizeOfImage != UINT32_MAX
-                && offFile            < pThis->offSizeOfImage + 4
-                && offFile + cbToRead > pThis->offSizeOfImage)
-            {
-                uint32_t SizeOfImage = pThis->cbCorrectImageSize;
-                uint32_t cbPatch     = sizeof(SizeOfImage);
-                int32_t  offPatch    = pThis->offSizeOfImage - offFile;
-                uint8_t *pbPatch     = (uint8_t *)pvBuf + offPatch;
-                if (offFile + cbToRead < pThis->offSizeOfImage + cbPatch)
-                    cbPatch = offFile + cbToRead - pThis->offSizeOfImage;
-                while (cbPatch-- > 0)
-                {
-                    if (offPatch >= 0)
-                        *pbPatch = (uint8_t)SizeOfImage;
-                    offPatch++;
-                    pbPatch++;
-                    SizeOfImage >>= 8;
-                }
-            }
-
-            /* Done? */
-            if (cbToRead == cb)
-                break;
-
-            offFile += cbToRead;
-            cb      -= cbToRead;
-            pvBuf    = (char *)pvBuf + cbToRead;
-        }
-
-        /* Mind the gap. */
-        if (offNextMap > offFile)
-        {
-            uint32_t cbZero = offNextMap - offFile;
-            if (cbZero > cb)
-            {
-                RT_BZERO(pvBuf, cb);
-                break;
-            }
-
-            RT_BZERO(pvBuf, cbZero);
-            offFile += cbZero;
-            cb      -= cbZero;
-            pvBuf   = (char *)pvBuf + cbZero;
-        }
-
-        pThis->iHint = ++i;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/** @callback_method_impl{PFNRTLDRRDRMEMDTOR} */
-static DECLCALLBACK(void) dbgDiggerWinNtRdr_Dtor(void *pvUser)
-{
-    PDBGDIGGERWINNTRDR pThis = (PDBGDIGGERWINNTRDR)pvUser;
-
-    VMR3ReleaseUVM(pThis->pUVM);
-    pThis->pUVM = NULL;
-    RTMemFree(pvUser);
-}
-
-
-/**
- * Checks if the section headers look okay.
- *
- * @returns true / false.
- * @param   paShs               Pointer to the section headers.
- * @param   cShs                Number of headers.
- * @param   cbImage             The image size reported by NT.
- * @param   cbImageFromHdr      The image size by the linker in the header.
- * @param   uRvaRsrc            The RVA of the resource directory. UINT32_MAX if
- *                              no resource directory.
- * @param   cbSectAlign         The section alignment specified in the header.
- * @param   fNt31               Set if NT 3.1.  Needed for chopped off HAL.
- * @param   pcbImageCorrect     The corrected image size.  This is derived from
- *                              cbImage and virtual range of the section tables.
- *
- *                              The problem is that NT may choose to drop the
- *                              last pages in images it loads early, starting at
- *                              the resource directory.  These images will have
- *                              a page aligned cbImage.
- */
-static bool dbgDiggerWinNtCheckSectHdrsAndImgSize(PCIMAGE_SECTION_HEADER paShs, uint32_t cShs, uint32_t cbImage,
-                                                  uint32_t cbImageFromHdr, uint32_t uRvaRsrc, uint32_t cbSectAlign,
-                                                  bool fNt31, uint32_t *pcbImageCorrect)
-{
-    *pcbImageCorrect = cbImage;
-
-    for (uint32_t i = 0; i < cShs; i++)
-    {
-        if (!paShs[i].Name[0])
-        {
-            Log(("DigWinNt: Section header #%u has no name\n", i));
-            return false;
-        }
-
-        if (paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
-            continue;
-
-        /* Tweak to determine the virtual size if the linker didn't set it (NT 3.1). */
-        /** @todo this isn't really perfect. cbImage is kind of wrong...   */
-        uint32_t cbVirtual = paShs[i].Misc.VirtualSize;
-        if (cbVirtual == 0)
-        {
-            for (uint32_t j = i + 1; j < cShs; j++)
-                if (!(paShs[j].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
-                    && paShs[j].VirtualAddress > paShs[i].VirtualAddress)
-                {
-                    cbVirtual = paShs[j].VirtualAddress - paShs[i].VirtualAddress;
-                    break;
-                }
-            if (!cbVirtual)
-            {
-                if (paShs[i].VirtualAddress < cbImageFromHdr)
-                    cbVirtual = cbImageFromHdr - paShs[i].VirtualAddress;
-                else if (paShs[i].SizeOfRawData > 0)
-                    cbVirtual = RT_ALIGN(paShs[i].SizeOfRawData, _4K);
-            }
-        }
-
-        /* Check that sizes are within the same range and that both sizes and
-           addresses are within reasonable limits. */
-        if (   RT_ALIGN(cbVirtual, _64K) < RT_ALIGN(paShs[i].SizeOfRawData, _64K)
-            || cbVirtual                >= _1G
-            || paShs[i].SizeOfRawData   >= _1G)
-        {
-            Log(("DigWinNt: Section header #%u (%.8s) has a VirtualSize=%#x (%#x) and SizeOfRawData=%#x, that's too much data!\n",
-                 i, paShs[i].Name, cbVirtual, paShs[i].Misc.VirtualSize, paShs[i].SizeOfRawData));
-            return false;
-        }
-        uint32_t uRvaEnd = paShs[i].VirtualAddress + cbVirtual;
-        if (uRvaEnd >= _1G || uRvaEnd < paShs[i].VirtualAddress)
-        {
-            Log(("DigWinNt: Section header #%u (%.8s) has a VirtualSize=%#x (%#x) and VirtualAddr=%#x, %#x in total, that's too much!\n",
-                 i, paShs[i].Name, cbVirtual, paShs[i].Misc.VirtualSize, paShs[i].VirtualAddress, uRvaEnd));
-            return false;
-        }
-
-        /* Check for images chopped off around '.rsrc'. */
-        if (    cbImage < uRvaEnd
-            &&  uRvaEnd >= uRvaRsrc)
-            cbImage = RT_ALIGN(uRvaEnd, cbSectAlign);
-
-        /* Check that the section is within the image. */
-        if (uRvaEnd > cbImage && fNt31)
-        {
-            Log(("DigWinNt: Section header #%u has a virtual address range beyond the image: %#x TO %#x cbImage=%#x\n",
-                 i, paShs[i].VirtualAddress, uRvaEnd, cbImage));
-            return false;
-        }
-    }
-
-    Assert(*pcbImageCorrect == cbImage || !(*pcbImageCorrect & 0xfff));
-    *pcbImageCorrect = cbImage;
-    return true;
-}
-
-
-/**
- * Create a loader module for the in-guest-memory PE module.
- */
-static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const char *pszName, PCDBGFADDRESS pImageAddr,
-                                      uint32_t cbImage, uint8_t *pbBuf, size_t cbBuf,
-                                      uint32_t offHdrs, PCNTHDRS pHdrs, PRTLDRMOD phLdrMod)
-{
-    /*
-     * Allocate and create a reader instance.
-     */
-    uint32_t const      cShs = WINNT_UNION(pThis, pHdrs, FileHeader.NumberOfSections);
-    PDBGDIGGERWINNTRDR  pRdr = (PDBGDIGGERWINNTRDR)RTMemAlloc(RT_UOFFSETOF_DYN(DBGDIGGERWINNTRDR, aMappings[cShs + 2]));
-    if (!pRdr)
-        return VERR_NO_MEMORY;
-
-    VMR3RetainUVM(pUVM);
-    pRdr->pUVM               = pUVM;
-    pRdr->ImageAddr          = *pImageAddr;
-    pRdr->cbImage            = cbImage;
-    pRdr->cbCorrectImageSize = cbImage;
-    pRdr->offSizeOfImage     = UINT32_MAX;
-    pRdr->iHint              = 0;
-
-    /*
-     * Use the section table to construct a more accurate view of the file/
-     * image if it's in the buffer (it should be).
-     */
-    uint32_t uRvaRsrc = UINT32_MAX;
-    if (WINNT_UNION(pThis, pHdrs, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE]).Size > 0)
-        uRvaRsrc = WINNT_UNION(pThis, pHdrs, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE]).VirtualAddress;
-    uint32_t offShs = offHdrs
-                    + (  pThis->f32Bit
-                       ? pHdrs->vX_32.FileHeader.SizeOfOptionalHeader + RT_OFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader)
-                       : pHdrs->vX_64.FileHeader.SizeOfOptionalHeader + RT_OFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader));
-    uint32_t cbShs  = cShs * sizeof(IMAGE_SECTION_HEADER);
-    PCIMAGE_SECTION_HEADER paShs = (PCIMAGE_SECTION_HEADER)(pbBuf + offShs);
-    if (   offShs + cbShs <= RT_MIN(cbImage, cbBuf)
-        && dbgDiggerWinNtCheckSectHdrsAndImgSize(paShs, cShs, cbImage, WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage),
-                                                 uRvaRsrc, WINNT_UNION(pThis, pHdrs, OptionalHeader.SectionAlignment),
-                                                 pThis->fNt31, &pRdr->cbCorrectImageSize))
-    {
-        pRdr->cMappings = 0;
-
-        for (uint32_t i = 0; i < cShs; i++)
-            if (   paShs[i].SizeOfRawData    > 0
-                && paShs[i].PointerToRawData > 0)
-            {
-                uint32_t j = 1;
-                if (!pRdr->cMappings)
-                    pRdr->cMappings++;
-                else
-                {
-                    while (j < pRdr->cMappings && pRdr->aMappings[j].offFile < paShs[i].PointerToRawData)
-                        j++;
-                    if (j < pRdr->cMappings)
-                        memmove(&pRdr->aMappings[j + 1], &pRdr->aMappings[j], (pRdr->cMappings - j) * sizeof(pRdr->aMappings));
-                }
-                pRdr->aMappings[j].offFile = paShs[i].PointerToRawData;
-                pRdr->aMappings[j].offMem  = paShs[i].VirtualAddress;
-                pRdr->aMappings[j].cbMem   = i + 1 < cShs
-                                           ? paShs[i + 1].VirtualAddress - paShs[i].VirtualAddress
-                                           : paShs[i].Misc.VirtualSize;
-                if (j == pRdr->cMappings)
-                    pRdr->cbImage = paShs[i].PointerToRawData + paShs[i].SizeOfRawData;
-                pRdr->cMappings++;
-            }
-
-        /* Insert the mapping of the headers that isn't covered by the section table. */
-        pRdr->aMappings[0].offFile = 0;
-        pRdr->aMappings[0].offMem  = 0;
-        pRdr->aMappings[0].cbMem   = pRdr->cMappings ? pRdr->aMappings[1].offFile : pRdr->cbImage;
-
-        int j = pRdr->cMappings - 1;
-        while (j-- > 0)
-        {
-            uint32_t cbFile = pRdr->aMappings[j + 1].offFile - pRdr->aMappings[j].offFile;
-            if (pRdr->aMappings[j].cbMem > cbFile)
-                pRdr->aMappings[j].cbMem = cbFile;
-        }
-    }
-    else
-    {
-        /*
-         * Fallback, fake identity mapped file data.
-         */
-        pRdr->cMappings = 1;
-        pRdr->aMappings[0].offFile = 0;
-        pRdr->aMappings[0].offMem  = 0;
-        pRdr->aMappings[0].cbMem   = pRdr->cbImage;
-    }
-
-    /* Enable the SizeOfImage patching if necessary. */
-    if (pRdr->cbCorrectImageSize != cbImage)
-    {
-        Log(("DigWinNT: The image is really %#x bytes long, not %#x as mapped by NT!\n", pRdr->cbCorrectImageSize, cbImage));
-        pRdr->offSizeOfImage = pThis->f32Bit
-                             ? offHdrs + RT_OFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.SizeOfImage)
-                             : offHdrs + RT_OFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader.SizeOfImage);
-    }
-
-    /*
-     * Call the loader to open the PE image for debugging.
-     * Note! It always calls pfnDtor.
-     */
-    RTLDRMOD hLdrMod;
-    int rc = RTLdrOpenInMemory(pszName, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER, pRdr->cbImage,
-                               dbgDiggerWinNtRdr_Read, dbgDiggerWinNtRdr_Dtor, pRdr,
-                               &hLdrMod, NULL);
-    if (RT_SUCCESS(rc))
-        *phLdrMod = hLdrMod;
-    else
-        *phLdrMod = NIL_RTLDRMOD;
-    return rc;
-}
-
-
 /**
  * Process a PE image found in guest memory.
  *
@@ -616,22 +304,13 @@ static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const ch
  * @param   cbBuf           The scratch buffer size.
  */
 static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const char *pszName,
-                                       PCDBGFADDRESS pImageAddr, uint32_t cbImage,
-                                       uint8_t *pbBuf, size_t cbBuf)
+                                       PCDBGFADDRESS pImageAddr, uint32_t cbImage)
 {
     LogFlow(("DigWinNt: %RGp %#x %s\n", pImageAddr->FlatPtr, cbImage, pszName));
 
     /*
-     * NT 3.1 doesn't set the image size in the MTEs, so a little
-     * bit of tweaking is necessary here.
-     */
-    uint32_t const cbImageValidate = !pThis->fNt31 ? cbImage : _64M;
-
-    /*
      * Do some basic validation first.
-     * This is the usual exteremely verbose and messy code...
      */
-    Assert(cbBuf >= sizeof(IMAGE_NT_HEADERS64));
     if (   (cbImage < sizeof(IMAGE_NT_HEADERS64) && !pThis->fNt31)
         || cbImage >= _1M * 256)
     {
@@ -639,120 +318,37 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         return;
     }
 
-    /* Dig out the NT/PE headers. */
-    IMAGE_DOS_HEADER const *pMzHdr = (IMAGE_DOS_HEADER const *)pbBuf;
-    PCNTHDRS        pHdrs;
-    uint32_t        offHdrs;
-    if (pMzHdr->e_magic != IMAGE_DOS_SIGNATURE)
-    {
-        offHdrs = 0;
-        pHdrs   = (PCNTHDRS)pbBuf;
-    }
-    else if (   pMzHdr->e_lfanew >= cbImageValidate
-             || pMzHdr->e_lfanew < sizeof(*pMzHdr)
-             || pMzHdr->e_lfanew + sizeof(IMAGE_NT_HEADERS64) > cbImageValidate)
-    {
-        Log(("DigWinNt: %s: PE header to far into image: %#x  cbImage=%#x\n", pszName, pMzHdr->e_lfanew, cbImage));
-        return;
-    }
-    else if (   pMzHdr->e_lfanew < cbBuf
-             && pMzHdr->e_lfanew + sizeof(IMAGE_NT_HEADERS64) <= cbBuf)
-    {
-        offHdrs = pMzHdr->e_lfanew;
-        pHdrs = (NTHDRS const *)(pbBuf + offHdrs);
-    }
-    else
-    {
-        Log(("DigWinNt: %s: PE header to far into image (lazy bird): %#x\n", pszName, pMzHdr->e_lfanew));
-        return;
-    }
-    if (pHdrs->vX_32.Signature != IMAGE_NT_SIGNATURE)
-    {
-        Log(("DigWinNt: %s: Bad PE signature: %#x\n", pszName, pHdrs->vX_32.Signature));
-        return;
-    }
-
-    /* The file header is the same on both archs */
-    if (pHdrs->vX_32.FileHeader.Machine != (pThis->f32Bit ? IMAGE_FILE_MACHINE_I386 : IMAGE_FILE_MACHINE_AMD64))
-    {
-        Log(("DigWinNt: %s: Invalid FH.Machine: %#x\n", pszName, pHdrs->vX_32.FileHeader.Machine));
-        return;
-    }
-    if (pHdrs->vX_32.FileHeader.SizeOfOptionalHeader != (pThis->f32Bit ? sizeof(IMAGE_OPTIONAL_HEADER32) : sizeof(IMAGE_OPTIONAL_HEADER64)))
-    {
-        Log(("DigWinNt: %s: Invalid FH.SizeOfOptionalHeader: %#x\n", pszName, pHdrs->vX_32.FileHeader.SizeOfOptionalHeader));
-        return;
-    }
-    if (WINNT_UNION(pThis, pHdrs, FileHeader.NumberOfSections) > 64)
-    {
-        Log(("DigWinNt: %s: Too many sections: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, FileHeader.NumberOfSections)));
-        return;
-    }
-
-    const uint32_t TimeDateStamp = pHdrs->vX_32.FileHeader.TimeDateStamp;
-
-    /* The optional header is not... */
-    if (WINNT_UNION(pThis, pHdrs, OptionalHeader.Magic) != (pThis->f32Bit ? IMAGE_NT_OPTIONAL_HDR32_MAGIC : IMAGE_NT_OPTIONAL_HDR64_MAGIC))
-    {
-        Log(("DigWinNt: %s: Invalid OH.Magic: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.Magic)));
-        return;
-    }
-    uint32_t cbImageFromHdr = WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage);
-    if (pThis->fNt31)
-        cbImage = RT_ALIGN(cbImageFromHdr, _4K);
-    else if (RT_ALIGN(cbImageFromHdr, _4K) != RT_ALIGN(cbImage, _4K))
-    {
-        Log(("DigWinNt: %s: Invalid OH.SizeOfImage: %#x, expected %#x\n", pszName, cbImageFromHdr, cbImage));
-        return;
-    }
-    if (WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes) != IMAGE_NUMBEROF_DIRECTORY_ENTRIES)
-    {
-        Log(("DigWinNt: %s: Invalid OH.NumberOfRvaAndSizes: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes)));
-        return;
-    }
-
     /*
-     * Create the module using the in memory image first, falling back
-     * on cached image.
+     * Use the common in-memory module reader to create a debug module.
      */
-    RTLDRMOD hLdrMod;
-    int rc = dbgDiggerWinNtCreateLdrMod(pThis, pUVM, pszName, pImageAddr, cbImage, pbBuf, cbBuf, offHdrs, pHdrs,
-                                        &hLdrMod);
-    if (RT_FAILURE(rc))
-        hLdrMod = NIL_RTLDRMOD;
-
-    RTDBGMOD hMod;
-    rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, &hLdrMod,
-                                   cbImageFromHdr, TimeDateStamp, DBGFR3AsGetConfig(pUVM));
-    if (RT_FAILURE(rc))
+    RTERRINFOSTATIC ErrInfo;
+    RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
+    int rc = DBGFR3ModInMem(pUVM, pImageAddr, pThis->fNt31 ? DBGFMODINMEM_F_PE_NT31 : 0, pszName,
+                            pThis->f32Bit ? RTLDRARCH_X86_32 : RTLDRARCH_AMD64, cbImage,
+                            &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
     {
         /*
-         * Final fallback is a container module.
+         * Tag the module.
          */
-        rc = RTDbgModCreate(&hMod, pszName, cbImage, 0);
-        if (RT_FAILURE(rc))
-            return;
-
-        rc = RTDbgModSymbolAdd(hMod, "Headers", 0 /*iSeg*/, 0, cbImage, 0 /*fFlags*/, NULL);
+        rc = RTDbgModSetTag(hDbgMod, DIG_WINNT_MOD_TAG);
         AssertRC(rc);
+
+        /*
+         * Link the module.
+         */
+        RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+        if (hAs != NIL_RTDBGAS)
+            rc = RTDbgAsModuleLink(hAs, hDbgMod, pImageAddr->FlatPtr, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
+        else
+            rc = VERR_INTERNAL_ERROR;
+        RTDbgModRelease(hDbgMod);
+        RTDbgAsRelease(hAs);
     }
-
-    /* Tag the module. */
-    rc = RTDbgModSetTag(hMod, DIG_WINNT_MOD_TAG);
-    AssertRC(rc);
-
-    /*
-     * Link the module.
-     */
-    RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
-    if (hAs != NIL_RTDBGAS)
-        rc = RTDbgAsModuleLink(hAs, hMod, pImageAddr->FlatPtr, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
+    else if (RTErrInfoIsSet(&ErrInfo.Core))
+        Log(("DigWinNt: %s: DBGFR3ModInMem failed: %Rrc - %s\n", pszName, rc, ErrInfo.Core.pszMsg));
     else
-        rc = VERR_INTERNAL_ERROR;
-    RTDbgModRelease(hMod);
-    RTDbgAsRelease(hAs);
-    if (hLdrMod != NIL_RTLDRMOD)
-        RTLdrClose(hLdrMod);
+        Log(("DigWinNt: %s: DBGFR3ModInMem failed: %Rrc\n", pszName, rc));
 }
 
 
@@ -952,7 +548,8 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
         }
         if (RT_SUCCESS(rc))
         {
-            u.wsz[cbName/2] = '\0';
+            u.wsz[cbName / 2] = '\0';
+
             char *pszName;
             rc = RTUtf16ToUtf8(u.wsz, &pszName);
             if (RT_SUCCESS(rc))
@@ -960,16 +557,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
                 /* Read the start of the PE image and pass it along to a worker. */
                 DBGFADDRESS ImageAddr;
                 DBGFR3AddrFromFlat(pUVM, &ImageAddr, WINNT_UNION(pThis, &Mte, DllBase));
-                uint32_t    cbImageBuf = RT_MIN(sizeof(u), RT_MAX(cbImageMte, _4K));
-                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &ImageAddr, &u, cbImageBuf);
-                if (RT_SUCCESS(rc))
-                    dbgDiggerWinNtProcessImage(pThis,
-                                               pUVM,
-                                               pszName,
-                                               &ImageAddr,
-                                               cbImageMte,
-                                               &u.au8[0],
-                                               sizeof(u));
+                dbgDiggerWinNtProcessImage(pThis, pUVM, pszName, &ImageAddr, cbImageMte);
                 RTStrFree(pszName);
             }
         }
