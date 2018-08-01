@@ -403,7 +403,10 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVRDEGetStatus(PPDMIHOSTAUDIO pIn
 
     RT_NOREF(enmDir);
 
-    return PDMAUDIOBACKENDSTS_RUNNING;
+    if (pDrv->cClients) /* If any clients are connected via VRDE, return the backend as being operational. */
+        return PDMAUDIOBACKENDSTS_RUNNING;
+
+    return PDMAUDIOBACKENDSTS_STOPPED;
 }
 
 
@@ -528,7 +531,10 @@ static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetWritable(PPDMIHOSTAUDIO pInte
 
     /* Return frames instead of bytes here
      * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-    return _16K; // pStreamVRDE->Out.cfToWrite;
+    if (pDrv->cClients)
+        return _16K; /** @todo Find some sane value here. We probably need a VRDE API VRDE to specify this. */
+
+    return 0;
 }
 
 
@@ -543,7 +549,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioVRDEStreamGetStatus(PPDMIHOSTAUDI
     PDMAUDIOSTREAMSTS streamSts = PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
 
     if (pDrv->cClients) /* If any clients are connected, flag the stream as enabled. */
-      streamSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
+       streamSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
 
     return streamSts;
 }
