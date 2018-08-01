@@ -1112,7 +1112,7 @@ typedef const VMXMSRS *PCVMXMSRS;
 /** VMCS revision identifier used by the processor. */
 #define VMX_BF_BASIC_VMCS_ID_SHIFT                              0
 #define VMX_BF_BASIC_VMCS_ID_MASK                               UINT64_C(0x000000007fffffff)
-/** Bit 32 is reserved as RAZ. */
+/** Bit 31 is reserved and RAZ. */
 #define VMX_BF_BASIC_RSVD_32_SHIFT                              31
 #define VMX_BF_BASIC_RSVD_32_MASK                               UINT64_C(0x0000000080000000)
 /** VMCS size in bytes. */
@@ -1170,7 +1170,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 /** Activity states supported by the implementation. */
 #define VMX_BF_MISC_ACTIVITY_STATES_SHIFT                       6
 #define VMX_BF_MISC_ACTIVITY_STATES_MASK                        UINT64_C(0x00000000000001c0)
-/** Bits 9:13 is reserved, RAZ. */
+/** Bits 9:13 is reserved and RAZ. */
 #define VMX_BF_MISC_RSVD_9_13_SHIFT                             9
 #define VMX_BF_MISC_RSVD_9_13_MASK                              UINT64_C(0x0000000000003e00)
 /** Whether Intel PT (Processor Trace) can be used in VMX operation.  */
@@ -1197,7 +1197,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
  *  instructions. */
 #define VMX_BF_MISC_ENTRY_INJECT_SOFT_INT_SHIFT                 30
 #define VMX_BF_MISC_ENTRY_INJECT_SOFT_INT_MASK                  UINT64_C(0x0000000040000000)
-/** Bit 31 is reserved, RAZ. */
+/** Bit 31 is reserved and RAZ. */
 #define VMX_BF_MISC_RSVD_31_SHIFT                               31
 #define VMX_BF_MISC_RSVD_31_MASK                                UINT64_C(0x0000000080000000)
 /** 32-bit MSEG revision ID used by the processor. */
@@ -1213,13 +1213,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_MISC_, UINT64_C(0), UINT64_MAX,
  * Bit fields for MSR_IA32_VMX_VMCS_ENUM.
  * @{
  */
-/** Bit 0 is reserved, RAZ.  */
+/** Bit 0 is reserved and RAZ.  */
 #define VMX_BF_VMCS_ENUM_RSVD_0_SHIFT                           0
 #define VMX_BF_VMCS_ENUM_RSVD_0_MASK                            UINT64_C(0x0000000000000001)
 /** Highest index value used in VMCS field encoding. */
 #define VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT                      1
 #define VMX_BF_VMCS_ENUM_HIGHEST_IDX_MASK                       UINT64_C(0x00000000000003fe)
-/** Bit 10:63 is reserved, RAZ.  */
+/** Bit 10:63 is reserved and RAZ.  */
 #define VMX_BF_VMCS_ENUM_RSVD_10_63_SHIFT                       10
 #define VMX_BF_VMCS_ENUM_RSVD_10_63_MASK                        UINT64_C(0xfffffffffffffc00)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENUM_, UINT64_C(0), UINT64_MAX,
@@ -1234,7 +1234,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENUM_, UINT64_C(0), UINT64_MAX,
 /** EPTP-switching function changes the value of the EPTP to one chosen from the EPTP list. */
 #define VMX_BF_VMFUNC_EPTP_SWITCHING_SHIFT                      0
 #define VMX_BF_VMFUNC_EPTP_SWITCHING_MASK                       UINT64_C(0x0000000000000001)
-/** Bits 1:63 are reserved, RAZ. */
+/** Bits 1:63 are reserved and RAZ. */
 #define VMX_BF_VMFUNC_RSVD_1_63_SHIFT                           1
 #define VMX_BF_VMFUNC_RSVD_1_63_MASK                            UINT64_C(0xfffffffffffffffe)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
@@ -2352,8 +2352,16 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 #define VMX_V_VMCS_REVISION_ID                                  UINT32_C(0x1d000001)
 AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 
+/** The size of the virtual VMCS region (we use the maximum allowed size to avoid
+ *  complications when teleporation may be implemented). */
+#define VMX_V_VMCS_SIZE                                         X86_PAGE_4K_SIZE
+
 /** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS32_PREEMPT_TIMER_VALUE, VMX_BF_VMCS_ENC_INDEX)
+
+/** Whether physical addresses of VMXON and VMCS related structures (I/O bitmap
+ *  etc.) are limited to 32-bits (4G). Always 0 on 64-bit CPUs. */
+#define VMX_V_VMCS_PHYSADDR_4G_LIMIT                            0
 
 /**
  * Virtual VMCS.
