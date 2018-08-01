@@ -921,6 +921,8 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc))
         return 0;
 
+    const uint64_t deltaLastReadWriteNs = RTTimeNanoTS() - pSink->tsLastReadWrittenNs;
+
     uint32_t cbWritable = 0;
 
     if (    (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
@@ -930,11 +932,12 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
 # error "Implement me!"
 #else
         /* Return how much data we expect since the last write. */
-        cbWritable = DrvAudioHlpMilliToBytes(RTTimeMilliTS() - pSink->tsLastReadWrittenMs, &pSink->PCMProps);
+        cbWritable = DrvAudioHlpNanoToBytes(deltaLastReadWriteNs, &pSink->PCMProps);
+        cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pSink->PCMProps);
 #endif
     }
 
-    Log3Func(("[%s] cbWritable=%RU32\n", pSink->pszName, cbWritable));
+    Log3Func(("Mixer: [%s] cbWritable=%RU32 (%RU64ms)\n", pSink->pszName, cbWritable, deltaLastReadWriteNs / RT_NS_1MS_64));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1157,7 +1160,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
                 pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
 
             /* Update our last read time stamp. */
-            pSink->tsLastReadWrittenMs = RTTimeMilliTS();
+            pSink->tsLastReadWrittenNs = RTTimeNanoTS();
 
 #ifdef VBOX_AUDIO_MIXER_DEBUG
             int rc2 = DrvAudioHlpFileWrite(pSink->Dbg.pFile, pvBuf, cbRead, 0 /* fFlags */);
@@ -1738,22 +1741,28 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
             RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
 
             cbWritten += (uint32_t)cbChunk;
+            Assert(cbWritten <= cbBuf);
 
             Assert(cbToWrite >= cbChunk);
             cbToWrite -= (uint32_t)cbChunk;
         }
 
         if (cbWritten < cbBuf)
+        {
             LogFunc(("[%s] Warning: Only written %RU32/%RU32 bytes for stream '%s'\n",
                      pSink->pszName, cbWritten, cbBuf, pMixStream->pszName));
+            LogRel2(("Audio: Buffer overrun for mixer sink '%s', stream '%s'\n", pSink->pszName, pMixStream->pszName));
+#ifdef DEBUG_andy
+            AssertFailed();
+#endif
+        }
 
-        if (!pMixStream->tsLastReadWrittenMs)
-            pMixStream->tsLastReadWrittenMs = RTTimeMilliTS();
+        if (cbWritten) /* Update the mixer stream's last written time stamp. */
+            pMixStream->tsLastReadWrittenNs = RTTimeNanoTS();
 
-        pMixStream->tsLastReadWrittenMs = RTTimeMilliTS();
-
-        const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
-        cbToWrite = RT_MIN(cbWritableStream, (uint32_t)RTCircBufUsed(pCircBuf));
+        cbToWrite = RT_MIN(pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream),
+                           (uint32_t)RTCircBufUsed(pCircBuf));
+        cbToWrite = DrvAudioHlpBytesAlign(cbToWrite, &pSink->PCMProps);
 
         int rc2 = VINF_SUCCESS;
 
@@ -1773,7 +1782,12 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 
             if (   !cbWritten
                 || cbWritten < cbChunk)
+            {
+#ifdef DEBUG_andy
+                AssertFailed();
+#endif
                 break;
+            }
 
             if (RT_FAILURE(rc2))
                 break;
@@ -1789,8 +1803,8 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         }
     }
 
-    /* Update our last written time stamp. */
-    pSink->tsLastReadWrittenMs = RTTimeMilliTS();
+    /* Update the sink's last written time stamp. */
+    pSink->tsLastReadWrittenNs = RTTimeNanoTS();
 
     if (pcbWritten)
         *pcbWritten = cbBuf; /* Always report everything written, as the backends need to keep up themselves. */

@@ -1005,6 +1005,8 @@ typedef struct PDMAUDIOSTREAMOUT
 #endif
     struct
     {
+    	/** "Jitter value" between written and played back bytes. */
+        int64_t                 cbJitterWrittenPlayed;
         /** File for writing stream writes. */
         PPDMAUDIOFILE           pFileStreamWrite;
         /** File for writing stream playback. */
@@ -1039,13 +1041,13 @@ typedef struct PDMAUDIOSTREAM
     PDMAUDIODIR            enmDir;
     /** Context of this stream. */
     PDMAUDIOSTREAMCTX      enmCtx;
-    /** Timestamp (in ms) since last iteration. */
-    uint64_t               tsLastIteratedMs;
-    /** Timestamp (in ms) since last playback / capture. */
-    uint64_t               tsLastPlayedCapturedMs;
-    /** Timestamp (in ms) since last read (input streams) or
+    /** Timestamp (in ns) since last iteration. */
+    uint64_t               tsLastIteratedNs;
+    /** Timestamp (in ns) since last playback / capture. */
+    uint64_t               tsLastPlayedCapturedNs;
+    /** Timestamp (in ns) since last read (input streams) or
      *  write (output streams). */
-    uint64_t               tsLastReadWrittenMs;
+    uint64_t               tsLastReadWrittenNs;
     /** For output streams this indicates whether the stream has reached
      *  its playback threshold, e.g. is playing audio.
      *  For input streams this  indicates whether the stream has enough input

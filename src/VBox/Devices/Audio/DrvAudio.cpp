@@ -665,6 +665,28 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
      * Configure host buffers.
      */
 
+    /* Check if the backend did return sane values and correct if necessary.
+     * Should never happen with our own backends, but you never know ... */
+    if (CfgHostAcq.Backend.cfBufferSize < CfgHostAcq.Backend.cfPreBuf)
+    {
+        LogRel2(("Audio: Warning: Pre-buffering size (%RU32 frames) of stream '%s' does not match buffer size (%RU32 frames), "
+                 "setting pre-buffering size to %RU32 frames\n",
+                 CfgHostAcq.Backend.cfPreBuf, pHstStream->szName, CfgHostAcq.Backend.cfBufferSize, CfgHostAcq.Backend.cfBufferSize));
+        CfgHostAcq.Backend.cfPreBuf = CfgHostAcq.Backend.cfBufferSize;
+    }
+
+    if (CfgHostAcq.Backend.cfPeriod > CfgHostAcq.Backend.cfBufferSize)
+    {
+        LogRel2(("Audio: Warning: Period size (%RU32 frames) of stream '%s' does not match buffer size (%RU32 frames), setting to %RU32 frames\n",
+                 CfgHostAcq.Backend.cfPeriod, pHstStream->szName, CfgHostAcq.Backend.cfBufferSize, CfgHostAcq.Backend.cfBufferSize));
+        CfgHostAcq.Backend.cfPeriod = CfgHostAcq.Backend.cfBufferSize;
+    }
+
+    uint32_t msBufferSize = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfBufferSize, &pCfgHost->Props);
+
+    LogRel2(("Audio: Buffer size of stream '%s' is %RU32ms (%RU32 frames)\n",
+             pHstStream->szName, msBufferSize, CfgHostAcq.Backend.cfBufferSize));
+
     /* If no own pre-buffer is set, let the backend choose. */
     uint32_t msPreBuf = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPreBuf, &pCfgHost->Props);
     LogRel2(("Audio: Pre-buffering size of stream '%s' is %RU32ms (%RU32 frames)\n",
@@ -675,19 +697,6 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
     LogRel2(("Audio: Period size of stream '%s' is %RU32ms (%RU32 frames)\n",
              pHstStream->szName, msPeriod, CfgHostAcq.Backend.cfPeriod));
-
-    /* Check if the backend did return sane values and correct if necessary. */
-    if (CfgHostAcq.Backend.cfBufferSize < CfgHostAcq.Backend.cfPeriod)
-    {
-        LogRel2(("Audio: Warning: Backend of stream '%s' did not set a valid buffer size (%RU32 frames), setting to %RU32 frames",
-                 pHstStream->szName, CfgHostAcq.Backend.cfBufferSize, CfgHostAcq.Backend.cfPeriod));
-        AssertFailed(); /* Should never happen. */
-    }
-
-    uint32_t msBufferSize = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfBufferSize, &pCfgHost->Props);
-
-    LogRel2(("Audio: Buffer size of stream '%s' is %RU32ms (%RU32 frames)\n",
-             pHstStream->szName, msBufferSize, CfgHostAcq.Backend.cfBufferSize));
 
     /* Set set host buffer size multiplicator. */
     const unsigned cHstBufferFactor = 2; /** @todo Make this configurable. */
@@ -973,6 +982,9 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
         AssertPtr(pGstStream);
 
+        AssertMsg(DrvAudioHlpBytesIsAligned(cbBuf, &pGstStream->Cfg.Props),
+                  ("Writing audio data (%RU32 bytes) to stream '%s' is not properly aligned\n", cbBuf, pGstStream->szName));
+
 #ifdef LOG_ENABLED
         pszGstSts = dbgAudioStreamStatusToStr(pGstStream->fStatus);
         AssertPtr(pszGstSts);
@@ -990,9 +1002,9 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         }
 
         const uint32_t cbFree = AudioMixBufFreeBytes(&pHstStream->MixBuf);
-        if (cbFree < cbBuf) /* No space left on host side? Bail out. */
-            LogRel2(("Audio: Lost audio frames (%RU32) due to full host stream '%s', expect stuttering audio output\n",
-                     DrvAudioHlpBytesToFrames(cbBuf - cbFree, &pHstStream->Cfg.Props), pHstStream->szName));
+        if (cbFree < cbBuf)
+            LogRel2(("Audio: Lost audio output (%RU64ms, %RU32 free but needs %RU32) due to full host stream buffer '%s'\n",
+                     DrvAudioHlpBytesToMilli(cbBuf - cbFree, &pHstStream->Cfg.Props), cbFree, cbBuf, pHstStream->szName));
 
         uint32_t cbToWrite = RT_MIN(cbBuf, cbFree);
         if (cbToWrite > cbBuf) /* Paranoia. */
@@ -1000,17 +1012,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
         if (!cbToWrite)
             break;
-
-        uint64_t tsDeltaWrittenMs = RTTimeMilliTS() - pHstStream->tsLastReadWrittenMs;
-
-        Log3Func(("[%s] fThresholdReached=%RTbool, tsDeltaWrittenMs=%RU64\n",
-                  pHstStream->szName, pHstStream->fThresholdReached, tsDeltaWrittenMs));
-
-        if (   pHstStream->fThresholdReached
-            && tsDeltaWrittenMs < pGstStream->Cfg.Device.uSchedulingHintMs)
-        {
-            break;
-        }
 
         /* We use the guest side mixing buffer as an intermediate buffer to do some
          * (first) processing (if needed), so always write the incoming data at offset 0. */
@@ -1042,12 +1043,12 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             }
             else
             {
-                Log3Func(("[%s] Buffer: Last written %RU64ms, writing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%%\n",
-                          pHstStream->szName, tsDeltaWrittenMs, cfGstWritten, DrvAudioHlpFramesToMilli(cfGstWritten, &pHstStream->Cfg.Props),
+                Log3Func(("[%s] Buffer: Writing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%%\n",
+                          pHstStream->szName, cfGstWritten, DrvAudioHlpFramesToMilli(cfGstWritten, &pHstStream->Cfg.Props),
                           DrvAudioHlpFramesToMilli(AudioMixBufUsed(&pHstStream->MixBuf), &pHstStream->Cfg.Props),
                           AudioMixBufUsed(&pHstStream->MixBuf) * 100 / AudioMixBufSize(&pHstStream->MixBuf)));
 
-                pHstStream->tsLastReadWrittenMs = RTTimeMilliTS();
+                pHstStream->tsLastReadWrittenNs = RTTimeNanoTS();
 
                 /* Keep going. */
             }
@@ -1056,6 +1057,10 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
                 rc = rc2;
 
             cbWrittenTotal = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cfGstWritten);
+#ifdef DEBUG
+            if (pHstStream->fThresholdReached)
+                pHstStream->Out.Dbg.cbJitterWrittenPlayed += cbWrittenTotal;
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
             STAM_COUNTER_ADD(&pThis->Stats.TotalFramesMixedOut,      cfGstMixed);
@@ -1299,7 +1304,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     } while (0);
 
     /* Update timestamps. */
-    pGstStream->tsLastIteratedMs = RTTimeMilliTS();
+    pGstStream->tsLastIteratedNs = RTTimeNanoTS();
 
     if (RT_FAILURE(rc))
         LogFunc(("[%s] Failed with %Rrc\n",  pHstStream->szName, rc));
@@ -1374,23 +1379,29 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
     uint32_t cfPlayedTotal = 0;
 
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetWritable);
-    uint32_t cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pHstStream->pvBackend);
-    if (cbWritable)
+    uint32_t cfWritable = AUDIOMIXBUF_B2F(&pHstStream->MixBuf,
+                                          pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pHstStream->pvBackend));
+
+    Log3Func(("[%s] cfToPlay=%RU32 (%RU64ms), cfWritable=%RU32 (%RU64ms)\n", pHstStream->szName,
+              cfToPlay, DrvAudioHlpFramesToMilli(cfToPlay, &pHstStream->Cfg.Props),
+              cfWritable, DrvAudioHlpFramesToMilli(cfWritable, &pHstStream->Cfg.Props)));
+
+    if (cfWritable)
     {
-        if (cfToPlay > AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbWritable)) /* More frames available than we can write? Limit. */
-            cfToPlay = AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbWritable);
+        if (cfToPlay > cfWritable) /* More frames available than we can write? Limit. */
+            cfToPlay = cfWritable;
 
         if (cfToPlay)
         {
             uint8_t auBuf[256]; /** @todo Get rid of this here. */
 
-            uint32_t cbLeft  = AUDIOMIXBUF_F2B(&pHstStream->MixBuf, cfToPlay);
+            uint32_t cfLeft  = cfToPlay;
             uint32_t cbChunk = sizeof(auBuf);
 
-            while (cbLeft)
+            while (cfLeft)
             {
                 uint32_t cfRead = 0;
-                rc = AudioMixBufAcquireReadBlock(&pHstStream->MixBuf, auBuf, RT_MIN(cbChunk, cbLeft), &cfRead);
+                rc = AudioMixBufAcquireReadBlock(&pHstStream->MixBuf, auBuf, RT_MIN(cbChunk, AUDIOMIXBUF_F2B(&pHstStream->MixBuf, cfLeft)), &cfRead);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -1408,14 +1419,14 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                         DrvAudioHlpFileWrite(pHstStream->Out.Dbg.pFilePlayNonInterleaved, auBuf, cbPlayed, 0 /* fFlags */);
 
                     if (cbRead != cbPlayed)
-                        LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32 (%RI32), writable was %RU32)\n",
-                                 pHstStream->szName, cbRead, cbPlayed, cbRead - cbPlayed, cbWritable));
+                        LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
+                                 pHstStream->szName, cbRead, cbPlayed));
 
                     cfPlayed       = AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbPlayed);
                     cfPlayedTotal += cfPlayed;
 
-                    Assert(cbLeft >= cbPlayed);
-                    cbLeft        -= cbPlayed;
+                    Assert(cfLeft >= cfPlayed);
+                    cfLeft        -= cfPlayed;
                 }
 
                 AudioMixBufReleaseReadBlock(&pHstStream->MixBuf, cfPlayed);
@@ -1575,7 +1586,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     PDMAUDIOSTREAMSTS stsHstStream = pHstStream->fStatus;
 #ifdef LOG_ENABLED
     char *pszStreamSts = dbgAudioStreamStatusToStr(stsHstStream);
-    Log3Func(("[%s] Start: stsHstStream=%s\n", pHstStream->szName, pszStreamSts));
+    Log3Func(("[%s] Buffer: Start stsHstStream=%s\n", pHstStream->szName, pszStreamSts));
     RTStrFree(pszStreamSts);
 #endif /* LOG_ENABLED */
 
@@ -1590,17 +1601,16 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
               uint32_t cfLive       = AudioMixBufLive(&pHstStream->MixBuf);
         const uint8_t  uLivePercent = (100 * cfLive) / AudioMixBufSize(&pHstStream->MixBuf);
 
-        if (!pHstStream->tsLastPlayedCapturedMs)
-            pHstStream->tsLastPlayedCapturedMs = RTTimeMilliTS();
-        uint64_t tsDeltaPlayedCapturedMs = RTTimeMilliTS() - pHstStream->tsLastPlayedCapturedMs;
-        pHstStream->tsLastPlayedCapturedMs = RTTimeMilliTS();
+        const uint64_t tsDeltaPlayedCapturedNs = RTTimeNanoTS() - pHstStream->tsLastPlayedCapturedNs;
 
-#ifdef LOG_ENABLED
-        Log3Func(("[%s] Buffer: Last played %RU64ms, filled with %RU64ms (%RU8%%) total, "
+        pHstStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
+
+        Log3Func(("[%s] Buffer: Last played %RU64ns (%RU64ms), filled with %RU64ms (%RU8%%) total, "
                   "(cfLive=%RU32, fThresholdReached=%RTbool)\n",
-                  pHstStream->szName, tsDeltaPlayedCapturedMs, DrvAudioHlpFramesToMilli(cfLive, &pHstStream->Cfg.Props),
+                  pHstStream->szName, tsDeltaPlayedCapturedNs, tsDeltaPlayedCapturedNs / RT_NS_1MS_64,
+                  DrvAudioHlpFramesToMilli(cfLive, &pHstStream->Cfg.Props),
                   uLivePercent, cfLive, pHstStream->fThresholdReached));
-#endif
+
         bool fDoPlay      = pHstStream->fThresholdReached;
         bool fJustStarted = false;
         if (!fDoPlay)
@@ -1611,14 +1621,13 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                 LogRel2(("Audio: Stream '%s' buffering complete\n", pHstStream->szName));
                 fDoPlay = true;
             }
-
             /* Some audio files are shorter than the pre-buffering level (e.g. the "click" Explorer sounds on some Windows guests),
              * so make sure that we also play those by checking if the stream already is pending disable mode, even if we didn't
              * hit the pre-buffering watermark yet.
              *
              * To reproduce, use "Windows Navigation Start.wav" on Windows 7 (2824 samples). */
-            if (   cfLive
-                && pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
+            else if (   cfLive
+                     && pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
             {
                 LogRel2(("Audio: Stream '%s' buffering complete (short sound)\n", pHstStream->szName));
                 fDoPlay = true;
@@ -1637,36 +1646,49 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
         if (fDoPlay)
         {
-            if (pHstStream->tsLastPlayedCapturedMs < 2)
-                break;
-
-            uint32_t cfToPlay;
+            uint32_t cfToPlay = 0;
             if (fJustStarted)
-                cfToPlay = pHstStream->Cfg.Backend.cfPeriod;
-            else
-                cfToPlay = DrvAudioHlpMilliToFrames(tsDeltaPlayedCapturedMs, &pHstStream->Cfg.Props);
+                cfToPlay = pHstStream->Cfg.Backend.cfPeriod; /* cfPeriod can be 0. */
 
-            Log3Func(("[%s] Buffer: fJustStarted=%RTbool, cfLive=%RU32, cfToPlay=%RU32\n",
+            if (!cfToPlay)
+            {
+                cfToPlay = DrvAudioHlpNanoToFrames(tsDeltaPlayedCapturedNs, &pHstStream->Cfg.Props);
+                if (pHstStream->Cfg.Device.uSchedulingHintMs)
+                    cfToPlay = RT_MIN(cfToPlay, DrvAudioHlpMilliToFrames(pHstStream->Cfg.Device.uSchedulingHintMs, &pHstStream->Cfg.Props));
+            }
+
+            LogRelFunc(("[%s] Buffer: fJustStarted=%RTbool, cfLive=%RU32, cfToPlay=%RU32\n",
                       pHstStream->szName, fJustStarted, cfLive, cfToPlay));
 
             /* Did we reach a buffer underrun? Do pre-buffering again.
              * If we're in pending disabled mode, try to play (drain) the remaining audio data. */
             if (   !(pHstStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
-                && !fJustStarted
-                && cfLive < cfToPlay)
+                && !fJustStarted)
             {
-                pHstStream->fThresholdReached = false;
-                LogRel2(("Audio: Stream '%s' buffer underrun (total %RU8%%, which is %RU8%% of a period), buffering ...\n",
-                         pHstStream->szName, uLivePercent, (100 * cfLive) / pHstStream->Cfg.Backend.cfPeriod));
-                break;
+                if (cfLive < cfToPlay)
+                {
+                    pHstStream->fThresholdReached = false;
+                    Log3Func(("[%s] Buffer: Underrun (cfLive=%RU32, cfToPlay=%RU32)\n", pHstStream->szName, cfLive, cfToPlay));
+                    LogRel2(("Audio: Stream '%s' buffer underrun (total %RU8%%, which is %RU8%% of a period), buffering ...\n",
+                             pHstStream->szName, uLivePercent, (100 * cfLive) / pHstStream->Cfg.Backend.cfPeriod));
+                    break;
+                }
             }
 
             if (cfToPlay > cfLive) /* Don't try to play more than available. */
                 cfToPlay = cfLive;
 
-            Log3Func(("[%s] Buffer: Playing %RU32 frames (%RU64ms since last playback)\n",
-                      pHstStream->szName, cfToPlay, tsDeltaPlayedCapturedMs));
-
+            if (!cfToPlay)
+                break;
+#ifdef DEBUG
+            if (!fJustStarted)
+                pHstStream->Out.Dbg.cbJitterWrittenPlayed -= AUDIOMIXBUF_F2B(&pHstStream->MixBuf, cfToPlay);
+            Log3Func(("[%s] Buffer: Playing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%% (cbJitterWrittenPlayed=%RI64)\n",
+                      pHstStream->szName, cfToPlay, DrvAudioHlpFramesToMilli(cfToPlay, &pHstStream->Cfg.Props),
+                      DrvAudioHlpFramesToMilli(AudioMixBufUsed(&pHstStream->MixBuf), &pHstStream->Cfg.Props),
+                      AudioMixBufUsed(&pHstStream->MixBuf) * 100 / AudioMixBufSize(&pHstStream->MixBuf),
+                      pHstStream->Out.Dbg.cbJitterWrittenPlayed));
+#endif
             if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
                 pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pHstStream->pvBackend);
 
@@ -1701,7 +1723,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 #ifdef LOG_ENABLED
     uint32_t cfLive = AudioMixBufLive(&pHstStream->MixBuf);
     pszStreamSts  = dbgAudioStreamStatusToStr(stsHstStream);
-    Log3Func(("[%s] End: stsHstStream=%s, cfLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n",
+    Log3Func(("[%s] Buffer: End stsHstStream=%s, cfLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n",
               pHstStream->szName, pszStreamSts, cfLive, cfPlayedTotal, rc));
     RTStrFree(pszStreamSts);
 #endif /* LOG_ENABLED */
@@ -3035,9 +3057,12 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     }
 
     /* As the host side sets the overall pace, return the writable bytes from that side. */
-    uint32_t cbWritable = AudioMixBufFreeBytes(&pHstStream->MixBuf);
+    const uint64_t deltaLastReadWriteNs = RTTimeNanoTS() - pHstStream->tsLastReadWrittenNs;
 
-    Log3Func(("[%s] cbWritable=%RU32\n", pHstStream->szName, cbWritable));
+    uint32_t cbWritable = DrvAudioHlpNanoToBytes(deltaLastReadWriteNs, &pHstStream->Cfg.Props);
+    cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pHstStream->Cfg.Props);
+
+    Log3Func(("Audio: [%s] cbWritable=%RU32 (%RU64ms)\n", pHstStream->szName, cbWritable, deltaLastReadWriteNs / RT_NS_1MS_64));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
