@@ -24,7 +24,11 @@
 #include "UIMessageCenter.h"
 #include "UIStarter.h"
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
-# include "UISelectorWindow.h"
+# ifdef VBOX_GUI_WITH_NEW_MANAGER
+#  include "UIVirtualBoxManager.h"
+# else
+#  include "UISelectorWindow.h"
+# endif
 #endif
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
 # include "UIMachine.h"
@@ -121,8 +125,13 @@ void UIStarter::sltStartUI()
             return QApplication::quit();
         }
 
+# ifdef VBOX_GUI_WITH_NEW_MANAGER
+        /* Create/show manager-window: */
+        UIVirtualBoxManager::create();
+# else
         /* Create/show selector-window: */
         UISelectorWindow::create();
+# endif
 
 # ifdef VBOX_BLEEDING_EDGE
         /* Show EXPERIMENTAL BUILD warning: */
@@ -161,18 +170,30 @@ void UIStarter::sltStartUI()
 void UIStarter::sltRestartUI()
 {
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
+# ifdef VBOX_GUI_WITH_NEW_MANAGER
+    /* Recreate/show manager-window: */
+    UIVirtualBoxManager::destroy();
+    UIVirtualBoxManager::create();
+# else
     /* Recreate/show selector-window: */
     UISelectorWindow::destroy();
     UISelectorWindow::create();
+# endif
 #endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
 }
 
 void UIStarter::cleanup()
 {
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
+# ifdef VBOX_GUI_WITH_NEW_MANAGER
+    /* Destroy Manager UI: */
+    if (gpManager)
+        UIVirtualBoxManager::destroy();
+# else
     /* Destroy Selector UI: */
     if (gpSelectorWindow)
         UISelectorWindow::destroy();
+# endif
 #endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
 
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
@@ -185,11 +206,19 @@ void UIStarter::cleanup()
 void UIStarter::sltOpenURLs()
 {
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
+# ifdef VBOX_GUI_WITH_NEW_MANAGER
+    /* Create/show manager-window: */
+    UIVirtualBoxManager::create();
+
+    /* Ask the Manager UI to open URLs asynchronously: */
+    QMetaObject::invokeMethod(gpManager, "sltOpenUrls", Qt::QueuedConnection);
+# else
     /* Create/show selector-window: */
     UISelectorWindow::create();
 
     /* Ask the Selector UI to open URLs asynchronously: */
     QMetaObject::invokeMethod(gpSelectorWindow, "sltOpenUrls", Qt::QueuedConnection);
+# endif
 #endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
 }
 

@@ -177,6 +177,7 @@ VirtualBox_DEFS           += \
 	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
 	$(if $(VBOX_GUI_WITH_KEYS_RESET_HANDLER),VBOX_GUI_WITH_KEYS_RESET_HANDLER) \
 	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
+	$(if $(VBOX_GUI_WITH_NEW_MANAGER),VBOX_GUI_WITH_NEW_MANAGER) \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
 	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_DEBUGGER_GUI
@@ -372,6 +373,13 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
 	./src/wizards/firstrun
+
+ifdef VBOX_GUI_WITH_NEW_MANAGER
+VBOX_GUI_INC_DIRS += \
+	./src/manager \
+	./src/manager/chooser \
+	./src/manager/details
+endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VBOX_GUI_INC_DIRS += \
@@ -735,6 +743,33 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h
+
+ifdef VBOX_GUI_WITH_NEW_MANAGER
+ VirtualBox_QT_MOCHDRS += \
+	src/manager/UIToolbarTools.h \
+	src/manager/UIToolPaneGlobal.h \
+	src/manager/UIToolPaneMachine.h \
+	src/manager/UIVirtualBoxManager.h \
+	src/manager/UIVirtualMachineItem.h \
+	src/manager/UIWelcomePane.h \
+	src/manager/chooser/UIChooser.h \
+	src/manager/chooser/UIChooserModel.h \
+	src/manager/chooser/UIChooserView.h \
+	src/manager/chooser/UIChooserHandlerMouse.h \
+	src/manager/chooser/UIChooserHandlerKeyboard.h \
+	src/manager/chooser/UIChooserItem.h \
+	src/manager/chooser/UIChooserItemGroup.h \
+	src/manager/chooser/UIChooserItemMachine.h \
+	src/manager/details/UIDetails.h \
+	src/manager/details/UIDetailsModel.h \
+	src/manager/details/UIDetailsView.h \
+	src/manager/details/UIDetailsItem.h \
+	src/manager/details/UIDetailsGroup.h \
+	src/manager/details/UIDetailsSet.h \
+	src/manager/details/UIDetailsElement.h \
+	src/manager/details/UIDetailsElements.h \
+	src/manager/details/UIMachinePreview.h
+endif
 
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS += \
@@ -1170,6 +1205,11 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
+ifdef VBOX_GUI_WITH_NEW_MANAGER
+ VirtualBox_QT_MOCSRCS = \
+	src/manager/UIWelcomePane.cpp
+endif
+
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCSRCS += \
 	src/extensions/QIAdvancedSlider.cpp \
@@ -1379,6 +1419,33 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp
+
+ifdef VBOX_GUI_WITH_NEW_MANAGER
+ VirtualBox_SOURCES += \
+	src/manager/UIToolbarTools.cpp \
+	src/manager/UIToolPaneGlobal.cpp \
+	src/manager/UIToolPaneMachine.cpp \
+	src/manager/UIVirtualBoxManager.cpp \
+	src/manager/UIVirtualMachineItem.cpp \
+	src/manager/UIWelcomePane.cpp \
+	src/manager/chooser/UIChooser.cpp \
+	src/manager/chooser/UIChooserModel.cpp \
+	src/manager/chooser/UIChooserView.cpp \
+	src/manager/chooser/UIChooserHandlerMouse.cpp \
+	src/manager/chooser/UIChooserHandlerKeyboard.cpp \
+	src/manager/chooser/UIChooserItem.cpp \
+	src/manager/chooser/UIChooserItemGroup.cpp \
+	src/manager/chooser/UIChooserItemMachine.cpp \
+	src/manager/details/UIDetails.cpp \
+	src/manager/details/UIDetailsModel.cpp \
+	src/manager/details/UIDetailsView.cpp \
+	src/manager/details/UIDetailsItem.cpp \
+	src/manager/details/UIDetailsGroup.cpp \
+	src/manager/details/UIDetailsSet.cpp \
+	src/manager/details/UIDetailsElement.cpp \
+	src/manager/details/UIDetailsElements.cpp \
+	src/manager/details/UIMachinePreview.cpp
+endif
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
