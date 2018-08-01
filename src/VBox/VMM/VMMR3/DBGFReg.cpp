@@ -1050,6 +1050,43 @@ VMMR3DECL(int) DBGFR3RegCpuQueryU64(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, ui
     return rc;
 }
 
+
+/**
+ * Queries a descriptor table register value.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_VM_HANDLE
+ * @retval  VERR_INVALID_CPU_ID
+ * @retval  VERR_DBGF_REGISTER_NOT_FOUND
+ * @retval  VERR_DBGF_UNSUPPORTED_CAST
+ * @retval  VINF_DBGF_TRUNCATED_REGISTER
+ * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
+ *
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               The target CPU ID.  Can be OR'ed with
+ *                              DBGFREG_HYPER_VMCPUID.
+ * @param   enmReg              The register that's being queried.
+ * @param   pu64Base            Where to store the register base value.
+ * @param   pu16Limit           Where to store the register limit value.
+ */
+VMMR3DECL(int) DBGFR3RegCpuQueryXdtr(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64Base, uint16_t *pu16Limit)
+{
+    DBGFREGVAL Value;
+    int rc = dbgfR3RegCpuQueryWorker(pUVM, idCpu, enmReg, DBGFREGVALTYPE_DTR, &Value);
+    if (RT_SUCCESS(rc))
+    {
+        *pu64Base  = Value.dtr.u64Base;
+        *pu16Limit = Value.dtr.u32Limit;
+    }
+    else
+    {
+        *pu64Base  = 0;
+        *pu16Limit = 0;
+    }
+    return rc;
+}
+
+
 #if 0 /* rewrite / remove */
 
 /**
@@ -1769,21 +1806,21 @@ VMMR3DECL(int) DBGFR3RegNmQueryLrd(PUVM pUVM, VMCPUID idDefCpu, const char *pszR
  *                              CPU registers, this must be on the form
  *                              "set.reg[.sub]".
  * @param   pu64Base            Where to store the register base value.
- * @param   pu32Limit           Where to store the register limit value.
+ * @param   pu16Limit           Where to store the register limit value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint32_t *pu32Limit)
+VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint16_t *pu16Limit)
 {
     DBGFREGVAL Value;
     int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_DTR, &Value, NULL);
     if (RT_SUCCESS(rc))
     {
         *pu64Base  = Value.dtr.u64Base;
-        *pu32Limit = Value.dtr.u32Limit;
+        *pu16Limit = Value.dtr.u32Limit;
     }
     else
     {
         *pu64Base  = 0;
-        *pu32Limit = 0;
+        *pu16Limit = 0;
     }
     return rc;
 }

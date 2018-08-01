@@ -1865,7 +1865,7 @@ typedef union DBGFREGVAL
         /** The table address. */
         uint64_t u64Base;
         /** The table limit (length minus 1). */
-        uint32_t u32Limit;
+        uint32_t u32Limit; /**< @todo Limit should be uint16_t */
     }           dtr;
 } DBGFREGVAL;
 /** Pointer to a generic register value type. */

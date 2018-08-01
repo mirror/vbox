@@ -109,7 +109,12 @@ EXPORTS
     DBGFR3LogModifyGroups
     DBGFR3OSDetect
     DBGFR3OSQueryNameAndVersion
+    DBGFR3RegCpuQueryU8
+    DBGFR3RegCpuQueryU16
     DBGFR3RegCpuQueryU32
+    DBGFR3RegCpuQueryU64
+    DBGFR3RegCpuQueryXdtr
+    DBGFR3RegCpuQueryLrd
     DBGFR3RegFormatValue
     DBGFR3RegNmQuery
     DBGFR3RegNmQueryAll
@@ -120,6 +125,7 @@ EXPORTS
     DBGFR3MemReadString
     DBGFR3MemRead
     DBGFR3MemScan
+    DBGFR3ModInMem
     DBGFR3AddrFromFlat
     DBGFR3AsSymbolByName
     DBGFR3AsResolveAndRetain
