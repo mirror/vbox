@@ -1126,12 +1126,13 @@ uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProp
     if (!cbBytes)
         return 0;
 
-    const float dbBytesPerMs = ((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_MS_1SEC;
+    const uint64_t cbBytesPerSec = (pProps->cBits / 8) * pProps->cChannels * pProps->uHz;
+    const double dbBytesPerMs = (double)cbBytesPerSec / (double)RT_MS_1SEC;
     Assert(dbBytesPerMs >= 0.0f);
     if (!dbBytesPerMs) /* Prevent division by zero. */
         return 0;
 
-    return cbBytes / dbBytesPerMs;
+    return (double)cbBytes / (double)dbBytesPerMs;
 }
 
 /**
@@ -1148,7 +1149,7 @@ uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps
     if (!cbBytes)
         return 0;
 
-    const float dbBytesPerMs = ((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_NS_1SEC;
+    const double dbBytesPerMs = ((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_NS_1SEC;
     Assert(dbBytesPerMs >= 0.0f);
     if (!dbBytesPerMs) /* Prevent division by zero. */
         return 0;
@@ -1170,7 +1171,8 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
     if (!cFrames)
         return 0;
 
-    return cFrames * ((pProps->cBits / 8) * pProps->cChannels);
+    const uint32_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
+    return cFrames * cbFrame;
 }
 
 /**
@@ -1190,7 +1192,7 @@ uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
     if (!pProps->uHz) /* Prevent division by zero. */
         return 0;
 
-    return cFrames / (pProps->uHz / RT_MS_1SEC);
+    return cFrames / ((double)pProps->uHz / (double)RT_MS_1SEC);
 }
 
 /**
@@ -1210,7 +1212,7 @@ uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProp
     if (!pProps->uHz) /* Prevent division by zero. */
         return 0;
 
-    return cFrames / float(pProps->uHz / RT_NS_1SEC);
+    return cFrames / ((double)pProps->uHz / (double)RT_NS_1SEC);
 }
 
 /**
@@ -1220,14 +1222,15 @@ uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProp
  * @param   uMs                 Time (in ms) to calculate amount of bytes for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpMilliToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
     if (!uMs)
         return 0;
 
-    return float(((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_MS_1SEC) * uMs;
+    const uint64_t cbBytesPerSec = (pProps->cBits / 8) * pProps->cChannels * pProps->uHz;
+    return ((double)cbBytesPerSec / (double)RT_MS_1SEC) * uMs;
 }
 
 /**
@@ -1237,14 +1240,15 @@ uint32_t DrvAudioHlpMilliToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uNs                 Time (in ns) to calculate amount of bytes for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpNanoToBytes(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
     if (!uNs)
         return 0;
 
-    return float(((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_NS_1SEC) * uNs;
+    const uint64_t cbBytesPerSec = (pProps->cBits / 8) * pProps->cChannels * pProps->uHz;
+    return ((double)cbBytesPerSec / (double)RT_NS_1SEC) * uNs;
 }
 
 /**
@@ -1254,7 +1258,7 @@ uint32_t DrvAudioHlpNanoToBytes(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uMs                 Time (in ms) to calculate amount of frames for.
  * @param   pProps              PCM properties to calculate amount of frames for.
  */
-uint32_t DrvAudioHlpMilliToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1272,7 +1276,7 @@ uint32_t DrvAudioHlpMilliToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uNs                 Time (in ns) to calculate amount of frames for.
  * @param   pProps              PCM properties to calculate amount of frames for.
  */
-uint32_t DrvAudioHlpNanoToFrames(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 

@@ -191,10 +191,10 @@ uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps
 uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
 uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
 uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpMilliToBytes(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpNanoToBytes(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpMilliToFrames(uint32_t uMs, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpNanoToFrames(uint32_t uNs, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
 /** @name Audio PCM properties helper methods.
