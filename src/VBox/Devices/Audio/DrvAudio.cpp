@@ -1657,7 +1657,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                     cfToPlay = RT_MIN(cfToPlay, DrvAudioHlpMilliToFrames(pHstStream->Cfg.Device.uSchedulingHintMs, &pHstStream->Cfg.Props));
             }
 
-            LogRelFunc(("[%s] Buffer: fJustStarted=%RTbool, cfLive=%RU32, cfToPlay=%RU32\n",
+            Log3Func(("[%s] Buffer: fJustStarted=%RTbool, cfLive=%RU32, cfToPlay=%RU32\n",
                       pHstStream->szName, fJustStarted, cfLive, cfToPlay));
 
             /* Did we reach a buffer underrun? Do pre-buffering again.
