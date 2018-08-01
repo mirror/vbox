@@ -5507,8 +5507,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                             | X86_CR4_MCE | X86_CR4_PGE
                             | X86_CR4_PCE | X86_CR4_OSFXSR
                             | X86_CR4_OSXMMEEXCPT;
-            //if (xxx)
-            //    fValid |= X86_CR4_VMXE;
+            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmx)
+                fValid |= X86_CR4_VMXE;
             if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
                 fValid |= X86_CR4_OSXSAVE;
             if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fPcid)
