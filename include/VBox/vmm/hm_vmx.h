@@ -2352,7 +2352,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 #define VMX_V_VMCS_REVISION_ID                                  UINT32_C(0x1d000001)
 AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 
-/** The highest index value used for VMCS field encoding. */
+/** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS32_PREEMPT_TIMER_VALUE, VMX_BF_VMCS_ENC_INDEX)
 
 /**
