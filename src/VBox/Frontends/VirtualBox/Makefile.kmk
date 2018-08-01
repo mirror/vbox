@@ -1206,7 +1206,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 ifdef VBOX_GUI_WITH_NEW_MANAGER
- VirtualBox_QT_MOCSRCS = \
+ VirtualBox_QT_MOCSRCS += \
 	src/manager/UIWelcomePane.cpp
 endif
 
