@@ -587,6 +587,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
         uint32_t            au32[8192/4];
         IMAGE_DOS_HEADER    MzHdr;
         RTUTF16             wsz[8192/2];
+        X86DESC64GATE       a32Gates[X86_XCPT_PF + 1];
+        X86DESC64GATE       a64Gates[X86_XCPT_PF + 1];
     } u;
 
     union
@@ -596,6 +598,57 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
     } uMte, uMte2, uMte3;
 
     /*
+     * NT only runs in protected or long mode.
+     */
+    CPUMMODE const enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
+    if (enmMode != CPUMMODE_PROTECTED && enmMode != CPUMMODE_LONG)
+        return false;
+    bool const      f64Bit = enmMode == CPUMMODE_LONG;
+    uint64_t const  uStart = f64Bit ? UINT64_C(0xffff080000000000) : UINT32_C(0x80001000);
+    uint64_t const  uEnd   = f64Bit ? UINT64_C(0xffffffffffff0000) : UINT32_C(0xffff0000);
+
+    /*
+     * To approximately locate the kernel we examine the IDTR handlers.
+     *
+     * The exception/trap/fault handlers are all in NT kernel image, we pick
+     * KiPageFault here.
+     */
+    uint64_t uIdtrBase = 0;
+    uint16_t uIdtrLimit = 0;
+    int rc = DBGFR3RegCpuQueryXdtr(pUVM, 0, DBGFREG_IDTR, &uIdtrBase, &uIdtrLimit);
+    AssertRCReturn(rc, false);
+
+    const uint16_t cbMinIdtr = (X86_XCPT_PF + 1) * (f64Bit ? sizeof(X86DESC64GATE) : sizeof(X86DESCGATE));
+    if (uIdtrLimit < cbMinIdtr)
+        return false;
+
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uIdtrBase), &u, cbMinIdtr);
+    if (RT_FAILURE(rc))
+        return false;
+
+    uint64_t uKrnlStart  = uStart;
+    uint64_t uKrnlEnd    = uEnd;
+    if (f64Bit)
+    {
+        uint64_t uHandler = u.a64Gates[X86_XCPT_PF].u16OffsetLow
+                          | ((uint32_t)u.a64Gates[X86_XCPT_PF].u16OffsetHigh << 16)
+                          | ((uint64_t)u.a64Gates[X86_XCPT_PF].u32OffsetTop  << 32);
+        if (uHandler < uStart || uHandler > uEnd)
+            return false;
+        uKrnlStart = (uHandler & ~(uint64_t)_4M) - _512M;
+        uKrnlEnd   = (uHandler + (uint64_t)_4M) & ~(uint64_t)_4M;
+    }
+    else
+    {
+        uint32_t uHandler = u.a32Gates[X86_XCPT_PF].u16OffsetLow
+                          | ((uint32_t)u.a64Gates[X86_XCPT_PF].u16OffsetHigh << 16);
+        if (uHandler < uStart || uHandler > uEnd)
+            return false;
+        uKrnlStart = (uHandler & ~(uint64_t)_4M) - _64M;
+        uKrnlEnd   = (uHandler + (uint64_t)_4M) & ~(uint64_t)_4M;
+    }
+
+    /*
      * Look for the PAGELK section name that seems to be a part of all kernels.
      * Then try find the module table entry for it.  Since it's the first entry
      * in the PsLoadedModuleList we can easily validate the list head and report
@@ -603,18 +656,15 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
      *
      * Note! We ASSUME the section name is 8 byte aligned.
      */
-    CPUMMODE        enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
-    uint64_t const  uStart  = enmMode == CPUMMODE_LONG ? UINT64_C(0xffff080000000000) : UINT32_C(0x80001000);
-    uint64_t const  uEnd    = enmMode == CPUMMODE_LONG ? UINT64_C(0xffffffffffff0000) : UINT32_C(0xffff0000);
-    DBGFADDRESS     KernelAddr;
-    for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, uStart);
-         KernelAddr.FlatPtr < uEnd;
+    DBGFADDRESS KernelAddr;
+    for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, uKrnlStart);
+         KernelAddr.FlatPtr < uKrnlEnd;
          KernelAddr.FlatPtr += PAGE_SIZE)
     {
         bool fNt31 = false;
         DBGFADDRESS const RetryAddress = KernelAddr;
-        int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
-                               8, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
+        rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
+                           8, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
         if (   rc == VERR_DBGF_MEM_NOT_FOUND
             && enmMode != CPUMMODE_LONG)
         {
