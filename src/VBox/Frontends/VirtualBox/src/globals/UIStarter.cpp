@@ -211,7 +211,7 @@ void UIStarter::sltOpenURLs()
     UIVirtualBoxManager::create();
 
     /* Ask the Manager UI to open URLs asynchronously: */
-    QMetaObject::invokeMethod(gpManager, "sltOpenUrls", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(gpManager, "sltHandleOpenUrlCall", Qt::QueuedConnection);
 # else
     /* Create/show selector-window: */
     UISelectorWindow::create();

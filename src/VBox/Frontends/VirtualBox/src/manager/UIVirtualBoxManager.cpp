@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,42 +86,41 @@
 
 
 /* static */
-UIVirtualBoxManager* UIVirtualBoxManager::m_spInstance = 0;
+UIVirtualBoxManager *UIVirtualBoxManager::s_pInstance = 0;
 
 /* static */
 void UIVirtualBoxManager::create()
 {
-    /* Return if selector-window is already created: */
-    if (m_spInstance)
-        return;
+    /* Make sure VirtualBox Manager isn't created: */
+    AssertReturnVoid(s_pInstance == 0);
 
-    /* Create selector-window: */
+    /* Create VirtualBox Manager: */
     new UIVirtualBoxManager;
-    /* Prepare selector-window: */
-    m_spInstance->prepare();
-    /* Show selector-window: */
-    m_spInstance->show();
+    /* Prepare VirtualBox Manager: */
+    s_pInstance->prepare();
+    /* Show VirtualBox Manager: */
+    s_pInstance->show();
     /* Register in the modal window manager: */
-    windowManager().setMainWindowShown(m_spInstance);
+    windowManager().setMainWindowShown(s_pInstance);
 }
 
 /* static */
 void UIVirtualBoxManager::destroy()
 {
-    /* Make sure selector-window is created: */
-    AssertPtrReturnVoid(m_spInstance);
+    /* Make sure VirtualBox Manager is created: */
+    AssertPtrReturnVoid(s_pInstance);
 
     /* Unregister in the modal window manager: */
     windowManager().setMainWindowShown(0);
-    /* Cleanup selector-window: */
-    m_spInstance->cleanup();
+    /* Cleanup VirtualBox Manager: */
+    s_pInstance->cleanup();
     /* Destroy machine UI: */
-    delete m_spInstance;
+    delete s_pInstance;
 }
 
 UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
-    , m_fWarningAboutInaccessibleMediaShown(false)
+    , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
     , m_pSlidingWidget(0)
     , m_pSplitter(0)
@@ -139,12 +138,12 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
 {
-    m_spInstance = this;
+    s_pInstance = this;
 }
 
 UIVirtualBoxManager::~UIVirtualBoxManager()
 {
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 bool UIVirtualBoxManager::shouldBeMaximized() const
@@ -189,7 +188,7 @@ void UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange()
 }
 #endif /* VBOX_WS_X11 */
 
-void UIVirtualBoxManager::sltShowSelectorWindowContextMenu(const QPoint &position)
+void UIVirtualBoxManager::sltHandleContextMenuRequest(const QPoint &position)
 {
     /* Populate toolbar/statusbar acctions: */
     QList<QAction*> actions;
@@ -325,14 +324,14 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange(bool fUpdateDetails /*
 
 void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 {
-    /* We try to warn about inaccessible mediums only once
-     * (after media emumeration started from main() at startup),
-     * to avoid annoying the user: */
-    if (m_fWarningAboutInaccessibleMediaShown)
+    /* To avoid annoying the user, we check for inaccessible mediums just once, after
+     * the first media emumeration [started from main() at startup] is complete. */
+    if (m_fFirstMediumEnumerationHandled)
         return;
-    m_fWarningAboutInaccessibleMediaShown = true;
+    m_fFirstMediumEnumerationHandled = true;
 
-    /* Make sure MM window is not opened: */
+    /* Make sure MM window/tool is not opened,
+     * otherwise user sees everything himself: */
     if (   m_pManagerVirtualMedia
         || m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
         return;
@@ -348,7 +347,7 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
         }
     }
 
-    /* Warn the user about inaccessible medium: */
+    /* Warn the user about inaccessible medium, propose to open MM window/tool: */
     if (fIsThereAnyInaccessibleMedium && !msgCenter().warnAboutInaccessibleMedia())
     {
         /* Open the MM window: */
@@ -356,48 +355,47 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
     }
 }
 
-void UIVirtualBoxManager::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
+void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>() */)
 {
-    /* Make sure any pending D&D events are consumed. */
-    /// @todo What? So dangerous method for so cheap purpose?
-    qApp->processEvents();
-
+    /* If passed list is empty: */
     if (list.isEmpty())
     {
+        /* We take the one which stored in VBoxGlobal: */
         list = vboxGlobal().argUrlList();
         vboxGlobal().argUrlList().clear();
+        /// @todo: Rework this getter to do .clear() as well.
     }
-    /* Check if we are can handle the dropped urls. */
+
+    /* Check if we are can handle the dropped urls: */
     for (int i = 0; i < list.size(); ++i)
     {
 #ifdef VBOX_WS_MAC
-        QString strFile = ::darwinResolveAlias(list.at(i).toLocalFile());
-#else /* VBOX_WS_MAC */
-        QString strFile = list.at(i).toLocalFile();
-#endif /* !VBOX_WS_MAC */
+        const QString strFile = ::darwinResolveAlias(list.at(i).toLocalFile());
+#else
+        const QString strFile = list.at(i).toLocalFile();
+#endif
+        /* If there is such file exists: */
         if (!strFile.isEmpty() && QFile::exists(strFile))
         {
+            /* And has allowed VBox config file extension: */
             if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
             {
-                /* VBox config files. */
-                CVirtualBox vbox = vboxGlobal().virtualBox();
-                CMachine machine = vbox.FindMachine(strFile);
-                if (!machine.isNull())
-                {
-                    CVirtualBox vbox = vboxGlobal().virtualBox();
-                    CMachine machine = vbox.FindMachine(strFile);
-                    if (!machine.isNull())
-                        vboxGlobal().launchMachine(machine);
-                }
+                /* Handle VBox config file: */
+                CVirtualBox comVBox = vboxGlobal().virtualBox();
+                CMachine comMachine = comVBox.FindMachine(strFile);
+                if (comVBox.isOk() && comMachine.isNotNull())
+                    vboxGlobal().launchMachine(comMachine);
                 else
                     sltOpenAddMachineDialog(strFile);
             }
+            /* And has allowed VBox OVF file extension: */
             else if (VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
             {
-                /* OVF/OVA. Only one file at the time. */
+                /* Allow only one file at the time: */
                 sltOpenImportApplianceWizard(strFile);
                 break;
             }
+            /* And has allowed VBox extension pack file extension: */
             else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
             {
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -428,7 +426,7 @@ void UIVirtualBoxManager::sltActionHovered(UIAction *pAction)
 }
 #endif /* VBOX_WS_MAC */
 
-void UIVirtualBoxManager::sltHandleStateChange(QString)
+void UIVirtualBoxManager::sltHandleStateChange(const QString &)
 {
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -443,7 +441,7 @@ void UIVirtualBoxManager::sltHandleStateChange(QString)
 
 void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
 {
-    /* First check if instance of widget opened embedded: */
+    /* First check if instance of widget opened the embedded way: */
     if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
     {
         sltHandleToolOpenedGlobal(ToolTypeGlobal_VirtualMedia);
@@ -473,7 +471,7 @@ void UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow()
 
 void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
 {
-    /* First check if instance of widget opened embedded: */
+    /* First check if instance of widget opened the embedded way: */
     if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_HostNetwork))
     {
         sltHandleToolOpenedGlobal(ToolTypeGlobal_HostNetwork);
@@ -505,10 +503,10 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 {
     /* Show Import Appliance wizard: */
 #ifdef VBOX_WS_MAC
-    QString strTmpFile = ::darwinResolveAlias(strFileName);
-#else /* VBOX_WS_MAC */
-    QString strTmpFile = strFileName;
-#endif /* !VBOX_WS_MAC */
+    const QString strTmpFile = ::darwinResolveAlias(strFileName);
+#else
+    const QString strTmpFile = strFileName;
+#endif
 
     /* Lock the action preventing cascade calls: */
     actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setEnabled(false);
@@ -520,9 +518,9 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
     pWizard->prepare();
     if (strFileName.isEmpty() || pWizard->isValid())
         pWizard->exec();
-    if (pWizard)
-        delete pWizard;
+    delete pWizard;
 
+    /// @todo Is it possible at all if event-loop unwind?
     /* Unlock the action allowing further calls: */
     actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setEnabled(true);
 }
@@ -536,7 +534,7 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     /* Populate the list of VM names: */
     QStringList names;
     for (int i = 0; i < items.size(); ++i)
-        names << items[i]->name();
+        names << items.at(i)->name();
 
     /* Lock the action preventing cascade calls: */
     actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setEnabled(false);
@@ -547,9 +545,9 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
     pWizard->exec();
-    if (pWizard)
-        delete pWizard;
+    delete pWizard;
 
+    /// @todo Is it possible at all if event-loop unwind?
     /* Unlock the action allowing further calls: */
     actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setEnabled(true);
 }
@@ -571,12 +569,14 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
 
     /* Don't show the inaccessible warning
      * if the user tries to open global settings: */
-    m_fWarningAboutInaccessibleMediaShown = true;
+    m_fFirstMediumEnumerationHandled = true;
 
     /* Create and execute global settings window: */
-    UISettingsDialogGlobal dialog(this);
-    dialog.execute();
+    QPointer<UISettingsDialogGlobal> pDlg = new UISettingsDialogGlobal(this);
+    pDlg->execute();
+    delete pDlg;
 
+    /// @todo Is it possible at all if event-loop unwind?
     /* Remember that we do NOT handling that already: */
     actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
 }
@@ -668,14 +668,16 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(const QString &strCategor
 
     /* Don't show the inaccessible warning
      * if the user tries to open VM settings: */
-    m_fWarningAboutInaccessibleMediaShown = true;
+    m_fFirstMediumEnumerationHandled = true;
 
     /* Create and execute corresponding VM settings window: */
-    UISettingsDialogMachine dialog(this,
-                                   QUuid(strID).isNull() ? currentItem()->id() : strID,
-                                   strCategory, strControl);
-    dialog.execute();
+    QPointer<UISettingsDialogMachine> pDlg = new UISettingsDialogMachine(this,
+                                                                         QUuid(strID).isNull() ? currentItem()->id() : strID,
+                                                                         strCategory, strControl);
+    pDlg->execute();
+    delete pDlg;
 
+    /// @todo Is it possible at all if event-loop unwind?
     /* Remember that we do NOT handling that already: */
     actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setData(false);
 }
@@ -698,9 +700,9 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
     pWizard->exec();
-    if (pWizard)
-        delete pWizard;
+    delete pWizard;
 
+    /// @todo Is it possible at all if event-loop unwind?
     /* Unlock the action allowing further calls: */
     actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(true);
 }
@@ -711,36 +713,34 @@ void UIVirtualBoxManager::sltPerformMoveMachine()
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Open a session thru which we will modify the machine: */
-    CSession session = vboxGlobal().openSession(pItem->id(), KLockType_Write);
-    if (session.isNull())
+    CSession comSession = vboxGlobal().openSession(pItem->id(), KLockType_Write);
+    if (comSession.isNull())
         return;
 
     /* Get session machine: */
-    CMachine machine = session.GetMachine();
-    AssertMsgReturnVoid(!machine.isNull(), ("Invalid Machine!\n"));
+    CMachine comMachine = comSession.GetMachine();
+    AssertMsgReturnVoid(comSession.isOk() && comMachine.isNotNull(), ("Unable to acquire machine!\n"));
 
     /* Open a file dialog for the user to select a destination folder. Start with the default machine folder: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    QString strBaseFolder = comVBox.GetSystemProperties().GetDefaultMachineFolder();
     QString strTitle = tr("Select a destination folder to move the selected virtual machine");
     QString strDestinationFolder = QIFileDialog::getExistingDirectory(strBaseFolder, this, strTitle);
-    if (strDestinationFolder.isEmpty())
+    if (!strDestinationFolder.isEmpty())
     {
-        session.UnlockMachine();
-        return;
+        /* Prepare machine move progress: */
+        CProgress comProgress = comMachine.MoveTo(strDestinationFolder, "basic");
+        if (comMachine.isOk() && comProgress.isNotNull())
+        {
+            /* Show machine move progress: */
+            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_clone_90px.png");
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                msgCenter().cannotMoveMachine(comProgress, comMachine.GetName());
+        }
+        else
+            msgCenter().cannotMoveMachine(comMachine);
     }
-    CProgress progress = machine.MoveTo(strDestinationFolder, "basic");
-
-    if (machine.isOk())
-    {
-        /* Show machine move progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_clone_90px.png");
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-            msgCenter().cannotMoveMachine(progress, machine.GetName());
-    }
-    else
-        msgCenter().cannotMoveMachine(machine);
-    session.UnlockMachine();
+    comSession.UnlockMachine();
 }
 
 void UIVirtualBoxManager::sltPerformStartOrShowMachine()
@@ -954,7 +954,7 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
             console.Pause();
         if (console.isOk())
         {
-            /* Prepare machine state saving: */
+            /* Prepare machine state saving progress: */
             CProgress progress = machine.SaveState();
             if (machine.isOk())
             {
@@ -1265,7 +1265,7 @@ void UIVirtualBoxManager::sltHandleToolClosedGlobal(ToolTypeGlobal enmType)
     m_pPaneToolsGlobal->closeTool(enmType);
 }
 
-UIVirtualMachineItem* UIVirtualBoxManager::currentItem() const
+UIVirtualMachineItem *UIVirtualBoxManager::currentItem() const
 {
     return m_pPaneChooser->currentItem();
 }
@@ -1359,7 +1359,7 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
         {
             /* This is the unified context menu event. Lets show the context menu. */
             QContextMenuEvent *pContextMenuEvent = static_cast<QContextMenuEvent*>(pEvent);
-            sltShowSelectorWindowContextMenu(pContextMenuEvent->globalPos());
+            sltHandleContextMenuRequest(pContextMenuEvent->globalPos());
             /* Accept it to interrupt the chain. */
             pContextMenuEvent->accept();
             return false;
@@ -1415,7 +1415,7 @@ bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
     {
         case QEvent::FileOpen:
         {
-            sltOpenUrls(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->url());
+            sltHandleOpenUrlCall(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->url());
             pEvent->accept();
             return true;
             break;
@@ -2110,7 +2110,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltHandleMediumEnumerationFinish()));
 
     /* Menu-bar connections: */
-    connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
+    connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
 
     /* 'File' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenVirtualMediumManagerWindow()));
@@ -2178,7 +2178,7 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* Status-bar connections: */
     connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
-            this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
+            this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
 
     /* Graphics VM chooser connections: */
     connect(m_pPaneChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltHandleChooserPaneIndexChange()));
@@ -2189,7 +2189,7 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* Tool-bar connections: */
 #ifndef VBOX_WS_MAC
-    connect(m_pToolBar, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
+    connect(m_pToolBar, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
 #else /* VBOX_WS_MAC */
     /* We want to receive right click notifications on the title bar, so register our own handler: */
     ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
