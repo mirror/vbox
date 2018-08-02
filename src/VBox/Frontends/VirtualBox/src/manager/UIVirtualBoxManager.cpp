@@ -147,6 +147,162 @@ bool UIVirtualBoxManager::shouldBeMaximized() const
     return gEDataManager->selectorWindowShouldBeMaximized();
 }
 
+#ifdef VBOX_WS_MAC
+bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Ignore for non-active window except for FileOpen event which should be always processed: */
+    if (!isActiveWindow() && pEvent->type() != QEvent::FileOpen)
+        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
+
+    /* Ignore for other objects: */
+    if (qobject_cast<QWidget*>(pObject) &&
+        qobject_cast<QWidget*>(pObject)->window() != this)
+        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
+
+    /* Which event do we have? */
+    switch (pEvent->type())
+    {
+        case QEvent::FileOpen:
+        {
+            sltHandleOpenUrlCall(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->url());
+            pEvent->accept();
+            return true;
+            break;
+        }
+        default:
+            break;
+    }
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
+}
+#endif /* VBOX_WS_MAC */
+
+void UIVirtualBoxManager::retranslateUi()
+{
+    /* Set window title: */
+    QString strTitle(VBOX_PRODUCT);
+    strTitle += " " + tr("Manager", "Note: main window title which is prepended by the product name.");
+#ifdef VBOX_BLEEDING_EDGE
+    strTitle += QString(" EXPERIMENTAL build ")
+             +  QString(RTBldCfgVersion())
+             +  QString(" r")
+             +  QString(RTBldCfgRevisionStr())
+             +  QString(" - " VBOX_BLEEDING_EDGE);
+#endif /* VBOX_BLEEDING_EDGE */
+    setWindowTitle(strTitle);
+
+    /* Make sure chosen item fetched: */
+    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
+
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text.
+    m_pToolBar->updateLayout();
+#endif
+}
+
+bool UIVirtualBoxManager::event(QEvent *pEvent)
+{
+    /* Which event do we have? */
+    switch (pEvent->type())
+    {
+        /* Handle every ScreenChangeInternal event to notify listeners: */
+        case QEvent::ScreenChangeInternal:
+        {
+            emit sigWindowRemapped();
+            break;
+        }
+        /* Handle every Resize and Move we keep track of the geometry. */
+        case QEvent::Resize:
+        {
+#ifdef VBOX_WS_X11
+            /* Prevent handling if fake screen detected: */
+            if (gpDesktop->isFakeScreenDetected())
+                break;
+#endif /* VBOX_WS_X11 */
+
+            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+                m_geometry.setSize(pResizeEvent->size());
+            }
+            break;
+        }
+        case QEvent::Move:
+        {
+#ifdef VBOX_WS_X11
+            /* Prevent handling if fake screen detected: */
+            if (gpDesktop->isFakeScreenDetected())
+                break;
+#endif /* VBOX_WS_X11 */
+
+            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
+                m_geometry.moveTo(pMoveEvent->pos());
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+                m_geometry.moveTo(geometry().x(), geometry().y());
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+            }
+            break;
+        }
+#ifdef VBOX_WS_MAC
+        case QEvent::ContextMenu:
+        {
+            /* This is the unified context menu event. Lets show the context menu. */
+            QContextMenuEvent *pContextMenuEvent = static_cast<QContextMenuEvent*>(pEvent);
+            sltHandleContextMenuRequest(pContextMenuEvent->globalPos());
+            /* Accept it to interrupt the chain. */
+            pContextMenuEvent->accept();
+            return false;
+            break;
+        }
+#endif /* VBOX_WS_MAC */
+        default:
+            break;
+    }
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QIMainWindow>::event(pEvent);
+}
+
+void UIVirtualBoxManager::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIMainWindow>::showEvent(pEvent);
+
+    /* Is polishing required? */
+    if (!m_fPolished)
+    {
+        /* Pass the show-event to polish-event: */
+        polishEvent(pEvent);
+        /* Mark as polished: */
+        m_fPolished = true;
+    }
+}
+
+void UIVirtualBoxManager::polishEvent(QShowEvent *)
+{
+    /* Make sure user warned about inaccessible medium(s)
+     * even if enumeration had finished before selector window shown: */
+    QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
+
+    /* Call for async polishing: */
+    QMetaObject::invokeMethod(this, "sltHandlePolishEvent", Qt::QueuedConnection);
+}
+
+void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIMainWindow>::closeEvent(pEvent);
+
+    /* Quit application: */
+    QApplication::quit();
+}
+
 void UIVirtualBoxManager::sltHandlePolishEvent()
 {
     /* Get current item: */
@@ -604,8 +760,8 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
 }
 
 void UIVirtualBoxManager::sltOpenMachineSettingsDialog(const QString &strCategoryRef /* = QString() */,
-                                                    const QString &strControlRef /* = QString() */,
-                                                    const QString &strID /* = QString() */)
+                                                       const QString &strControlRef /* = QString() */,
+                                                       const QString &strID /* = QString() */)
 {
     /* This slot should not be called when there is not selection: */
     AssertMsgReturnVoid(currentItem(), ("Current item should be selected!\n"));
@@ -1244,162 +1400,6 @@ UIVirtualMachineItem *UIVirtualBoxManager::currentItem() const
 QList<UIVirtualMachineItem*> UIVirtualBoxManager::currentItems() const
 {
     return m_pPaneChooser->currentItems();
-}
-
-void UIVirtualBoxManager::retranslateUi()
-{
-    /* Set window title: */
-    QString strTitle(VBOX_PRODUCT);
-    strTitle += " " + tr("Manager", "Note: main window title which is pretended by the product name.");
-#ifdef VBOX_BLEEDING_EDGE
-    strTitle += QString(" EXPERIMENTAL build ")
-             +  QString(RTBldCfgVersion())
-             +  QString(" r")
-             +  QString(RTBldCfgRevisionStr())
-             +  QString(" - " VBOX_BLEEDING_EDGE);
-#endif /* VBOX_BLEEDING_EDGE */
-    setWindowTitle(strTitle);
-
-    /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
-
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
-    // the with doesn't match if the text increase. So manually adjust the size
-    // after changing the text.
-    m_pToolBar->updateLayout();
-#endif
-}
-
-bool UIVirtualBoxManager::event(QEvent *pEvent)
-{
-    /* Which event do we have? */
-    switch (pEvent->type())
-    {
-        /* Handle every ScreenChangeInternal event to notify listeners: */
-        case QEvent::ScreenChangeInternal:
-        {
-            emit sigWindowRemapped();
-            break;
-        }
-        /* Handle every Resize and Move we keep track of the geometry. */
-        case QEvent::Resize:
-        {
-#ifdef VBOX_WS_X11
-            /* Prevent handling if fake screen detected: */
-            if (gpDesktop->isFakeScreenDetected())
-                break;
-#endif /* VBOX_WS_X11 */
-
-            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
-            {
-                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                m_geometry.setSize(pResizeEvent->size());
-            }
-            break;
-        }
-        case QEvent::Move:
-        {
-#ifdef VBOX_WS_X11
-            /* Prevent handling if fake screen detected: */
-            if (gpDesktop->isFakeScreenDetected())
-                break;
-#endif /* VBOX_WS_X11 */
-
-            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
-            {
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
-                m_geometry.moveTo(pMoveEvent->pos());
-#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
-                m_geometry.moveTo(geometry().x(), geometry().y());
-#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
-            }
-            break;
-        }
-#ifdef VBOX_WS_MAC
-        case QEvent::ContextMenu:
-        {
-            /* This is the unified context menu event. Lets show the context menu. */
-            QContextMenuEvent *pContextMenuEvent = static_cast<QContextMenuEvent*>(pEvent);
-            sltHandleContextMenuRequest(pContextMenuEvent->globalPos());
-            /* Accept it to interrupt the chain. */
-            pContextMenuEvent->accept();
-            return false;
-            break;
-        }
-#endif /* VBOX_WS_MAC */
-        default:
-            break;
-    }
-    /* Call to base-class: */
-    return QIMainWindow::event(pEvent);
-}
-
-void UIVirtualBoxManager::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIMainWindow::showEvent(pEvent);
-
-    /* Is polishing required? */
-    if (!m_fPolished)
-    {
-        /* Pass the show-event to polish-event: */
-        polishEvent(pEvent);
-        /* Mark as polished: */
-        m_fPolished = true;
-    }
-}
-
-void UIVirtualBoxManager::polishEvent(QShowEvent*)
-{
-    /* Make sure user warned about inaccessible medium(s)
-     * even if enumeration had finished before selector window shown: */
-    QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
-
-    /* Call for async polishing: */
-    QMetaObject::invokeMethod(this, "sltHandlePolishEvent", Qt::QueuedConnection);
-}
-
-#ifdef VBOX_WS_MAC
-bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Ignore for non-active window except for FileOpen event which should be always processed: */
-    if (!isActiveWindow() && pEvent->type() != QEvent::FileOpen)
-        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
-
-    /* Ignore for other objects: */
-    if (qobject_cast<QWidget*>(pObject) &&
-        qobject_cast<QWidget*>(pObject)->window() != this)
-        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
-
-    /* Which event do we have? */
-    switch (pEvent->type())
-    {
-        case QEvent::FileOpen:
-        {
-            sltHandleOpenUrlCall(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->url());
-            pEvent->accept();
-            return true;
-            break;
-        }
-        default:
-            break;
-    }
-    /* Call to base-class: */
-    return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
-}
-#endif /* VBOX_WS_MAC */
-
-void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QIMainWindow>::closeEvent(pEvent);
-
-    /* Quit application: */
-    QApplication::quit();
 }
 
 void UIVirtualBoxManager::prepare()
