@@ -969,7 +969,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR7_G3                          RT_BIT_32(7)
 /** Bit 8 - LE - Local breakpoint exact. (Not supported (read ignored) by P6 and later.) */
 #define X86_DR7_LE                          RT_BIT_32(8)
-/** Bit 9 - GE - Local breakpoint exact. (Not supported (read ignored) by P6 and later.) */
+/** Bit 9 - GE - Global breakpoint exact. (Not supported (read ignored) by P6 and later.) */
 #define X86_DR7_GE                          RT_BIT_32(9)
 
 /** L0, L1, L2, and L3.  */
