@@ -152,6 +152,7 @@ typedef struct DBGFINFO
 #endif /* IN_RING3 */
 
 
+#ifdef IN_RING3
 /**
  * Guest OS digger instance.
  */
@@ -166,10 +167,11 @@ typedef struct DBGFOS
     /** The instance data (variable size). */
     uint8_t                     abData[16];
 } DBGFOS;
+#endif
 /** Pointer to guest OS digger instance. */
-typedef DBGFOS *PDBGFOS;
+typedef struct DBGFOS *PDBGFOS;
 /** Pointer to const guest OS digger instance. */
-typedef DBGFOS const *PCDBGFOS;
+typedef struct DBGFOS const *PCDBGFOS;
 
 
 /**
@@ -496,6 +498,7 @@ typedef struct DBGFUSERPERVMCPU
 } DBGFUSERPERVMCPU;
 
 
+#ifdef IN_RING3
 int  dbgfR3AsInit(PUVM pUVM);
 void dbgfR3AsTerm(PUVM pUVM);
 void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta);
@@ -505,6 +508,8 @@ int  dbgfR3InfoTerm(PUVM pUVM);
 int  dbgfR3OSInit(PUVM pUVM);
 void dbgfR3OSTermPart1(PUVM pUVM);
 void dbgfR3OSTermPart2(PUVM pUVM);
+int  dbgfR3OSStackUnwindAssist(PUVM pUVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame, PRTDBGUNWINDSTATE pState,
+                               PCCPUMCTX pInitialCtx, RTDBGAS hAs, uint64_t *puScratch);
 int  dbgfR3RegInit(PUVM pUVM);
 void dbgfR3RegTerm(PUVM pUVM);
 int  dbgfR3TraceInit(PVM pVM);
@@ -516,9 +521,6 @@ int  dbgfR3PlugInInit(PUVM pUVM);
 void dbgfR3PlugInTerm(PUVM pUVM);
 int  dbgfR3BugCheckInit(PVM pVM);
 
-
-
-#ifdef IN_RING3
 /**
  * DBGF disassembler state (substate of DISSTATE).
  */
@@ -540,7 +542,7 @@ typedef DBGFDISSTATE *PDBGFDISSTATE;
 DECLHIDDEN(int) dbgfR3DisasInstrStateEx(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddr, uint32_t fFlags,
                                         char *pszOutput, uint32_t cbOutput, PDBGFDISSTATE pDisState);
 
-#endif
+#endif /* IN_RING3 */
 
 /** @} */
 

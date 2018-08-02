@@ -637,3 +637,25 @@ VMMR3DECL(void *) DBGFR3OSQueryInterface(PUVM pUVM, DBGFOSINTERFACE enmIf)
     return pvIf;
 }
 
+
+
+/**
+ * Internal wrapper for calling DBGFOSREG::pfnStackUnwindAssist.
+ */
+int dbgfR3OSStackUnwindAssist(PUVM pUVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame, PRTDBGUNWINDSTATE pState,
+                              PCCPUMCTX pInitialCtx, RTDBGAS hAs, uint64_t *puScratch)
+{
+    int rc = VINF_SUCCESS;
+    if (pUVM->dbgf.s.pCurOS)
+    {
+        ASMCompilerBarrier();
+        DBGF_OS_READ_LOCK(pUVM);
+        PDBGFOS pOS = pUVM->dbgf.s.pCurOS;
+        if (pOS)
+            rc = pOS->pReg->pfnStackUnwindAssist(pUVM, pUVM->dbgf.s.pCurOS->abData, idCpu, pFrame,
+                                                 pState, pInitialCtx, hAs, puScratch);
+        DBGF_OS_READ_UNLOCK(pUVM);
+    }
+    return rc;
+}
+

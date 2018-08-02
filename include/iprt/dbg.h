@@ -108,6 +108,177 @@ typedef RTDBGSEGMENT *PRTDBGSEGMENT;
 typedef RTDBGSEGMENT const *PCRTDBGSEGMENT;
 
 
+/**
+ * Return type.
+ */
+typedef enum RTDBGRETURNTYPE
+{
+    /** The usual invalid 0 value. */
+    RTDBGRETURNTYPE_INVALID = 0,
+    /** Near 16-bit return. */
+    RTDBGRETURNTYPE_NEAR16,
+    /** Near 32-bit return. */
+    RTDBGRETURNTYPE_NEAR32,
+    /** Near 64-bit return. */
+    RTDBGRETURNTYPE_NEAR64,
+    /** Far 16:16 return. */
+    RTDBGRETURNTYPE_FAR16,
+    /** Far 16:32 return. */
+    RTDBGRETURNTYPE_FAR32,
+    /** Far 16:64 return. */
+    RTDBGRETURNTYPE_FAR64,
+    /** 16-bit iret return (e.g. real or 286 protect mode). */
+    RTDBGRETURNTYPE_IRET16,
+    /** 32-bit iret return. */
+    RTDBGRETURNTYPE_IRET32,
+    /** 32-bit iret return. */
+    RTDBGRETURNTYPE_IRET32_PRIV,
+    /** 32-bit iret return to V86 mode. */
+    RTDBGRETURNTYPE_IRET32_V86,
+    /** @todo 64-bit iret return. */
+    RTDBGRETURNTYPE_IRET64,
+    /** The end of the valid return types. */
+    RTDBGRETURNTYPE_END,
+    /** The usual 32-bit blowup. */
+    RTDBGRETURNTYPE_32BIT_HACK = 0x7fffffff
+} RTDBGRETURNTYPE;
+
+/**
+ * Figures the size of the return state on the stack.
+ *
+ * @returns number of bytes. 0 if invalid parameter.
+ * @param   enmRetType  The type of return.
+ */
+DECLINLINE(unsigned) RTDbgReturnTypeSize(RTDBGRETURNTYPE enmRetType)
+{
+    switch (enmRetType)
+    {
+        case RTDBGRETURNTYPE_NEAR16:         return 2;
+        case RTDBGRETURNTYPE_NEAR32:         return 4;
+        case RTDBGRETURNTYPE_NEAR64:         return 8;
+        case RTDBGRETURNTYPE_FAR16:          return 4;
+        case RTDBGRETURNTYPE_FAR32:          return 4;
+        case RTDBGRETURNTYPE_FAR64:          return 8;
+        case RTDBGRETURNTYPE_IRET16:         return 6;
+        case RTDBGRETURNTYPE_IRET32:         return 4*3;
+        case RTDBGRETURNTYPE_IRET32_PRIV:    return 4*5;
+        case RTDBGRETURNTYPE_IRET32_V86:     return 4*9;
+        case RTDBGRETURNTYPE_IRET64:         return 5*8;
+
+        case RTDBGRETURNTYPE_INVALID:
+        case RTDBGRETURNTYPE_END:
+        case RTDBGRETURNTYPE_32BIT_HACK:
+            break;
+    }
+    return 0;
+}
+
+/**
+ * Check if near return.
+ *
+ * @returns true if near, false if far or iret.
+ * @param   enmRetType  The type of return.
+ */
+DECLINLINE(bool) RTDbgReturnTypeIsNear(RTDBGRETURNTYPE enmRetType)
+{
+    return enmRetType == RTDBGRETURNTYPE_NEAR32
+        || enmRetType == RTDBGRETURNTYPE_NEAR64
+        || enmRetType == RTDBGRETURNTYPE_NEAR16;
+}
+
+
+
+/** Magic value for RTDBGUNWINDSTATE::u32Magic (James Moody). */
+#define RTDBGUNWINDSTATE_MAGIC          UINT32_C(0x19250326)
+/** Magic value for RTDBGUNWINDSTATE::u32Magic after use. */
+#define RTDBGUNWINDSTATE_MAGIC_DEAD     UINT32_C(0x20101209)
+
+/**
+ * Unwind machine state.
+ */
+typedef struct RTDBGUNWINDSTATE
+{
+    /** Structure magic (RTDBGUNWINDSTATE_MAGIC) */
+    uint32_t            u32Magic;
+    /** The state architecture. */
+    RTLDRARCH           enmArch;
+
+    /** The program counter register.
+     * amd64/x86: RIP/EIP/IP
+     * sparc: PC
+     * arm32: PC / R15
+     */
+    uint64_t            uPc;
+
+    /** Return type. */
+    RTDBGRETURNTYPE     enmRetType;
+
+    /** Register state (see enmArch). */
+    union
+    {
+        /** RTLDRARCH_AMD64, RTLDRARCH_X86_32 and RTLDRARCH_X86_16. */
+        struct
+        {
+            /** General purpose registers indexed by X86_GREG_XXX. */
+            uint64_t    auRegs[16];
+            /** The frame address. */
+            RTFAR64     FrameAddr;
+            /** Set if we're in real or virtual 8086 mode. */
+            bool        fRealOrV86;
+            /** The flags register. */
+            uint64_t    uRFlags;
+            /** Trap error code. */
+            uint64_t    uErrCd;
+            /** Segment registers (indexed by X86_SREG_XXX). */
+            uint16_t    auSegs[6];
+
+            /** Bitmap tracking register we've loaded and which content can possibly be trusted. */
+            union
+            {
+                /** For effective clearing of the bits. */
+                uint32_t    fAll;
+                /** Detailed view. */
+                struct
+                {
+                    /** Bitmap indicating whether a GPR was loaded (parallel to auRegs). */
+                    uint16_t    fRegs;
+                    /** Bitmap indicating whether a segment register was loaded (parallel to auSegs). */
+                    uint8_t     fSegs;
+                    /** Set if uPc was loaded. */
+                    uint8_t     fPc : 1;
+                    /** Set if FrameAddr was loaded. */
+                    uint8_t     fFrameAddr : 1;
+                    /** Set if uRFlags was loaded. */
+                    uint8_t     fRFlags : 1;
+                    /** Set if uErrCd was loaded. */
+                    uint8_t     fErrCd : 1;
+                } s;
+            } Loaded;
+        } x86;
+
+        /** @todo add ARM and others as needed. */
+    } u;
+
+    /**
+     * Stack read callback.
+     *
+     * @returns IPRT status code.
+     * @param   pThis       Pointer to this structure.
+     * @param   uSp         The stack pointer address.
+     * @param   cbToRead    The number of bytes to read.
+     * @param   pvDst       Where to put the bytes we read.
+     */
+    DECLCALLBACKMEMBER(int, pfnReadStack)(struct RTDBGUNWINDSTATE *pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst);
+    /** User argument (usefule for pfnReadStack). */
+    void               *pvUser;
+
+} RTDBGUNWINDSTATE;
+/** Pointer to an unwind machine state. */
+typedef struct RTDBGUNWINDSTATE *PRTDBGUNWINDSTATE;
+/** Pointer to a const unwind machine state. */
+typedef struct RTDBGUNWINDSTATE const *PCRTDBGUNWINDSTATE;
+
+
 
 /** Max length (including '\\0') of a symbol name. */
 #define RTDBG_SYMBOL_NAME_LENGTH    (512 - 8 - 8 - 8 - 4 - 4 - 8)

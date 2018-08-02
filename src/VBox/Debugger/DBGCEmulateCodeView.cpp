@@ -2852,21 +2852,25 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
             /*
              * Display verbose frame info.
              */
-            const char *pszRetType;
+            const char *pszRetType = "invalid";
             switch (pFrame->enmReturnType)
             {
-                case DBGFRETURNTYPE_NEAR16:         pszRetType = "retn/16"; break;
-                case DBGFRETURNTYPE_NEAR32:         pszRetType = "retn/32"; break;
-                case DBGFRETURNTYPE_NEAR64:         pszRetType = "retn/64"; break;
-                case DBGFRETURNTYPE_FAR16:          pszRetType = "retf/16"; break;
-                case DBGFRETURNTYPE_FAR32:          pszRetType = "retf/32"; break;
-                case DBGFRETURNTYPE_FAR64:          pszRetType = "retf/64"; break;
-                case DBGFRETURNTYPE_IRET16:         pszRetType = "iret-16"; break;
-                case DBGFRETURNTYPE_IRET32:         pszRetType = "iret/32s"; break;
-                case DBGFRETURNTYPE_IRET32_PRIV:    pszRetType = "iret/32p"; break;
-                case DBGFRETURNTYPE_IRET32_V86:     pszRetType = "iret/v86"; break;
-                case DBGFRETURNTYPE_IRET64:         pszRetType = "iret/64"; break;
-                default:                            pszRetType = "invalid"; break;
+                case RTDBGRETURNTYPE_NEAR16:        pszRetType = "retn/16"; break;
+                case RTDBGRETURNTYPE_NEAR32:        pszRetType = "retn/32"; break;
+                case RTDBGRETURNTYPE_NEAR64:        pszRetType = "retn/64"; break;
+                case RTDBGRETURNTYPE_FAR16:         pszRetType = "retf/16"; break;
+                case RTDBGRETURNTYPE_FAR32:         pszRetType = "retf/32"; break;
+                case RTDBGRETURNTYPE_FAR64:         pszRetType = "retf/64"; break;
+                case RTDBGRETURNTYPE_IRET16:        pszRetType = "iret-16"; break;
+                case RTDBGRETURNTYPE_IRET32:        pszRetType = "iret/32s"; break;
+                case RTDBGRETURNTYPE_IRET32_PRIV:   pszRetType = "iret/32p"; break;
+                case RTDBGRETURNTYPE_IRET32_V86:    pszRetType = "iret/v86"; break;
+                case RTDBGRETURNTYPE_IRET64:        pszRetType = "iret/64"; break;
+
+                case RTDBGRETURNTYPE_END:
+                case RTDBGRETURNTYPE_INVALID:
+                case RTDBGRETURNTYPE_32BIT_HACK:
+                    break;
             }
             size_t cchLine = DBGCCmdHlpPrintfLen(pCmdHlp, "   %s", pszRetType);
             if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
@@ -2877,6 +2881,8 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
                 cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " real-v86");
             if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_MAX_DEPTH)
                 cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " max-depth");
+            if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_TRAP_FRAME)
+                cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " trap-frame");
 
             if (pFrame->cSureRegs > 0)
             {

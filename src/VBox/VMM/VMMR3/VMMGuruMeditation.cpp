@@ -472,7 +472,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 
                     PCDBGFSTACKFRAME pFirstFrame;
                     rc2 = DBGFR3StackWalkBeginEx(pVM->pUVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &pc,
-                                                 DBGFRETURNTYPE_INVALID, &pFirstFrame);
+                                                 RTDBGRETURNTYPE_INVALID, &pFirstFrame);
                     if (RT_SUCCESS(rc2))
                     {
                         pHlp->pfnPrintf(pHlp,

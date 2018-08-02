@@ -206,6 +206,7 @@ EXPORTS
 
     MMR3HeapFree
     MMR3HeapRealloc
+    MMR3HeapAllocU
 
     MMR3HyperAllocOnceNoRel
 

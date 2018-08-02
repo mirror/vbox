@@ -22,6 +22,8 @@
 #define LOG_GROUP LOG_GROUP_DBGF /// @todo add new log group.
 #include "DBGPlugIns.h"
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/cpumctx.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <iprt/ldr.h>
@@ -30,6 +32,7 @@
 #include <iprt/string.h>
 #include <iprt/formats/pecoff.h>
 #include <iprt/formats/mz.h>
+#include <iprt/nt/nt-structures.h>
 
 
 /*********************************************************************************************************************************
@@ -261,7 +264,7 @@ typedef DBGDIGGERWINNTRDR *PDBGDIGGERWINNTRDR;
 /** Validates a 32-bit Windows NT kernel address */
 #define WINNT32_VALID_ADDRESS(Addr)         ((Addr) >         UINT32_C(0x80000000) && (Addr) <         UINT32_C(0xfffff000))
 /** Validates a 64-bit Windows NT kernel address */
- #define WINNT64_VALID_ADDRESS(Addr)         ((Addr) > UINT64_C(0xffff800000000000) && (Addr) < UINT64_C(0xfffffffffffff000))
+#define WINNT64_VALID_ADDRESS(Addr)         ((Addr) > UINT64_C(0xffff800000000000) && (Addr) < UINT64_C(0xfffffffffffff000))
 /** Validates a kernel address. */
 #define WINNT_VALID_ADDRESS(pThis, Addr)    ((pThis)->f32Bit ? WINNT32_VALID_ADDRESS(Addr) : WINNT64_VALID_ADDRESS(Addr))
 /** Versioned and bitness wrapper. */
@@ -346,6 +349,145 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         Log(("DigWinNt: %s: DBGFR3ModInMem failed: %Rrc - %s\n", pszName, rc, ErrInfo.Core.pszMsg));
     else
         Log(("DigWinNt: %s: DBGFR3ModInMem failed: %Rrc\n", pszName, rc));
+}
+
+
+/**
+ * @copydoc DBGFOSREG::pfnStackUnwindAssist
+ */
+static DECLCALLBACK(int) dbgDiggerWinNtStackUnwindAssist(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
+                                                         PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
+                                                         uint64_t *puScratch)
+{
+    Assert(pInitialCtx);
+
+    /*
+     * We want to locate trap frames here.  The trap frame structure contains
+     * the 64-bit IRET frame, so given unwind information it's easy to identify
+     * using the return type and frame address.
+     */
+    if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_64BIT)
+    {
+        /*
+         * Is this a trap frame?  If so, try read the trap frame.
+         */
+        if (   pFrame->enmReturnType == RTDBGRETURNTYPE_IRET64
+            && !(pFrame->AddrFrame.FlatPtr & 0x7)
+            && WINNT64_VALID_ADDRESS(pFrame->AddrFrame.FlatPtr) )
+        {
+            KTRAP_FRAME_AMD64 TrapFrame;
+            RT_ZERO(TrapFrame);
+            uint64_t const uTrapFrameAddr = pFrame->AddrFrame.FlatPtr
+                                          - RT_UOFFSETOF(KTRAP_FRAME_AMD64, ErrCdOrXcptFrameOrS);
+            int rc = pState->pfnReadStack(pState, uTrapFrameAddr, sizeof(TrapFrame), &TrapFrame);
+            if (RT_SUCCESS(rc))
+            {
+                /* Valid?  Not too much else we can check here (EFlags isn't
+                   reliable in manually construct frames). */
+                if (TrapFrame.ExceptionActive <= 2)
+                {
+                    pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_TRAP_FRAME;
+
+                    /*
+                     * Add sure 'register' information from the frame to the frame.
+                     *
+                     * To avoid code duplication, we do this in two steps in a loop.
+                     * The first iteration only figures out how many registers we're
+                     * going to save and allocates room for them.  The second iteration
+                     * does the actual adding.
+                     */
+                    uint32_t      cRegs      = pFrame->cSureRegs;
+                    PDBGFREGVALEX paSureRegs = NULL;
+#define ADD_REG_NAMED(a_Type, a_ValMemb, a_Value, a_pszName) do { \
+                            if (paSureRegs) \
+                            { \
+                                paSureRegs[iReg].pszName         = a_pszName;\
+                                paSureRegs[iReg].enmReg          = DBGFREG_END; \
+                                paSureRegs[iReg].enmType         = a_Type; \
+                                paSureRegs[iReg].Value.a_ValMemb = (a_Value); \
+                            } \
+                            iReg++; \
+                        } while (0)
+#define MAYBE_ADD_GREG(a_Value, a_enmReg, a_idxReg) do { \
+                            if (!(pState->u.x86.Loaded.s.fRegs & RT_BIT(a_idxReg))) \
+                            { \
+                                if (paSureRegs) \
+                                { \
+                                    pState->u.x86.Loaded.s.fRegs    |= RT_BIT(a_idxReg); \
+                                    pState->u.x86.auRegs[a_idxReg]   = (a_Value); \
+                                    paSureRegs[iReg].Value.u64       = (a_Value); \
+                                    paSureRegs[iReg].enmReg          = a_enmReg; \
+                                    paSureRegs[iReg].enmType         = DBGFREGVALTYPE_U64; \
+                                    paSureRegs[iReg].pszName         = NULL; \
+                                } \
+                                iReg++; \
+                            } \
+                        } while (0)
+                    for (unsigned iLoop = 0; iLoop < 2; iLoop++)
+                    {
+                        uint32_t iReg = pFrame->cSureRegs;
+                        ADD_REG_NAMED(DBGFREGVALTYPE_U64, u64, uTrapFrameAddr, "TrapFrame");
+                        ADD_REG_NAMED(DBGFREGVALTYPE_U8,   u8, TrapFrame.ExceptionActive, "ExceptionActive");
+                        if (TrapFrame.ExceptionActive == 0)
+                        {
+                            ADD_REG_NAMED(DBGFREGVALTYPE_U8,   u8, TrapFrame.PreviousIrql, "PrevIrql");
+                            ADD_REG_NAMED(DBGFREGVALTYPE_U8,   u8, (uint8_t)TrapFrame.ErrCdOrXcptFrameOrS, "IntNo");
+                        }
+                        else if (   TrapFrame.ExceptionActive == 1
+                                 && TrapFrame.FaultIndicator == ((TrapFrame.ErrCdOrXcptFrameOrS >> 1) & 0x9))
+                            ADD_REG_NAMED(DBGFREGVALTYPE_U64, u64, TrapFrame.FaultAddrOrCtxRecOrTS, "cr2-probably");
+                        if (TrapFrame.SegCs & X86_SEL_RPL)
+                            ADD_REG_NAMED(DBGFREGVALTYPE_U8,   u8, 1, "UserMode");
+                        else
+                            ADD_REG_NAMED(DBGFREGVALTYPE_U8,   u8, 1, "KernelMode");
+                        if (TrapFrame.ExceptionActive <= 1)
+                        {
+                            MAYBE_ADD_GREG(TrapFrame.Rax, DBGFREG_RAX, X86_GREG_xAX);
+                            MAYBE_ADD_GREG(TrapFrame.Rcx, DBGFREG_RCX, X86_GREG_xCX);
+                            MAYBE_ADD_GREG(TrapFrame.Rdx, DBGFREG_RDX, X86_GREG_xDX);
+                            MAYBE_ADD_GREG(TrapFrame.R8,  DBGFREG_R8,  X86_GREG_x8);
+                            MAYBE_ADD_GREG(TrapFrame.R9,  DBGFREG_R9,  X86_GREG_x9);
+                            MAYBE_ADD_GREG(TrapFrame.R10, DBGFREG_R10, X86_GREG_x10);
+                            MAYBE_ADD_GREG(TrapFrame.R11, DBGFREG_R11, X86_GREG_x11);
+                        }
+                        else if (TrapFrame.ExceptionActive == 2)
+                        {
+                            MAYBE_ADD_GREG(TrapFrame.Rbx, DBGFREG_RBX, X86_GREG_xBX);
+                            MAYBE_ADD_GREG(TrapFrame.Rsi, DBGFREG_RSI, X86_GREG_xSI);
+                            MAYBE_ADD_GREG(TrapFrame.Rdi, DBGFREG_RDI, X86_GREG_xDI);
+                        }
+                        MAYBE_ADD_GREG(TrapFrame.Rbp, DBGFREG_RBP, X86_GREG_xBP);
+
+                        /* Done? */
+                        if (iLoop > 0)
+                        {
+                            Assert(cRegs == iReg);
+                            break;
+                        }
+
+                        /* Resize the array, zeroing the extension. */
+                        if (pFrame->cSureRegs)
+                            paSureRegs = (PDBGFREGVALEX)MMR3HeapRealloc(pFrame->paSureRegs, iReg * sizeof(paSureRegs[0]));
+                        else
+                            paSureRegs = (PDBGFREGVALEX)MMR3HeapAllocU(pUVM, MM_TAG_DBGF_STACK, iReg * sizeof(paSureRegs[0]));
+                        AssertReturn(paSureRegs, VERR_NO_MEMORY);
+
+                        pFrame->paSureRegs = paSureRegs;
+                        RT_BZERO(&paSureRegs[pFrame->cSureRegs], (iReg - pFrame->cSureRegs) * sizeof(paSureRegs[0]));
+                        cRegs = iReg;
+                    }
+#undef ADD_REG_NAMED
+#undef MAYBE_ADD_GREG
+
+                    /* Commit the register update. */
+                    pFrame->cSureRegs = cRegs;
+                }
+            }
+        }
+    }
+
+    RT_NOREF(pUVM, pvData, idCpu, hAs, puScratch);
+    return VINF_SUCCESS;
 }
 
 
@@ -881,18 +1023,19 @@ static DECLCALLBACK(int)  dbgDiggerWinNtConstruct(PUVM pUVM, void *pvData)
 
 const DBGFOSREG g_DBGDiggerWinNt =
 {
-    /* .u32Magic = */           DBGFOSREG_MAGIC,
-    /* .fFlags = */             0,
-    /* .cbData = */             sizeof(DBGDIGGERWINNT),
-    /* .szName = */             "WinNT",
-    /* .pfnConstruct = */       dbgDiggerWinNtConstruct,
-    /* .pfnDestruct = */        dbgDiggerWinNtDestruct,
-    /* .pfnProbe = */           dbgDiggerWinNtProbe,
-    /* .pfnInit = */            dbgDiggerWinNtInit,
-    /* .pfnRefresh = */         dbgDiggerWinNtRefresh,
-    /* .pfnTerm = */            dbgDiggerWinNtTerm,
-    /* .pfnQueryVersion = */    dbgDiggerWinNtQueryVersion,
-    /* .pfnQueryInterface = */  dbgDiggerWinNtQueryInterface,
-    /* .u32EndMagic = */        DBGFOSREG_MAGIC
+    /* .u32Magic = */               DBGFOSREG_MAGIC,
+    /* .fFlags = */                 0,
+    /* .cbData = */                 sizeof(DBGDIGGERWINNT),
+    /* .szName = */                 "WinNT",
+    /* .pfnConstruct = */           dbgDiggerWinNtConstruct,
+    /* .pfnDestruct = */            dbgDiggerWinNtDestruct,
+    /* .pfnProbe = */               dbgDiggerWinNtProbe,
+    /* .pfnInit = */                dbgDiggerWinNtInit,
+    /* .pfnRefresh = */             dbgDiggerWinNtRefresh,
+    /* .pfnTerm = */                dbgDiggerWinNtTerm,
+    /* .pfnQueryVersion = */        dbgDiggerWinNtQueryVersion,
+    /* .pfnQueryInterface = */      dbgDiggerWinNtQueryInterface,
+    /* .pfnStackUnwindAssist = */   dbgDiggerWinNtStackUnwindAssist,
+    /* .u32EndMagic = */            DBGFOSREG_MAGIC
 };
 

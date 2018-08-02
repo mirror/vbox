@@ -354,6 +354,18 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PUVM pUVM, void *pvData);
 
 
 /**
+ * @copydoc DBGFOSREG::pfnStackUnwindAssist
+ */
+static DECLCALLBACK(int) dbgDiggerSolarisStackUnwindAssist(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
+                                                           PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
+                                                           uint64_t *puScratch)
+{
+    RT_NOREF(pUVM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
 static DECLCALLBACK(void *) dbgDiggerSolarisQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
@@ -1110,18 +1122,19 @@ static DECLCALLBACK(int)  dbgDiggerSolarisConstruct(PUVM pUVM, void *pvData)
 
 const DBGFOSREG g_DBGDiggerSolaris =
 {
-    /* .u32Magic = */           DBGFOSREG_MAGIC,
-    /* .fFlags = */             0,
-    /* .cbData = */             sizeof(DBGDIGGERSOLARIS),
-    /* .szName = */             "Solaris",
-    /* .pfnConstruct = */       dbgDiggerSolarisConstruct,
-    /* .pfnDestruct = */        dbgDiggerSolarisDestruct,
-    /* .pfnProbe = */           dbgDiggerSolarisProbe,
-    /* .pfnInit = */            dbgDiggerSolarisInit,
-    /* .pfnRefresh = */         dbgDiggerSolarisRefresh,
-    /* .pfnTerm = */            dbgDiggerSolarisTerm,
-    /* .pfnQueryVersion = */    dbgDiggerSolarisQueryVersion,
-    /* .pfnQueryInterface = */  dbgDiggerSolarisQueryInterface,
-    /* .u32EndMagic = */        DBGFOSREG_MAGIC
+    /* .u32Magic = */               DBGFOSREG_MAGIC,
+    /* .fFlags = */                 0,
+    /* .cbData = */                 sizeof(DBGDIGGERSOLARIS),
+    /* .szName = */                 "Solaris",
+    /* .pfnConstruct = */           dbgDiggerSolarisConstruct,
+    /* .pfnDestruct = */            dbgDiggerSolarisDestruct,
+    /* .pfnProbe = */               dbgDiggerSolarisProbe,
+    /* .pfnInit = */                dbgDiggerSolarisInit,
+    /* .pfnRefresh = */             dbgDiggerSolarisRefresh,
+    /* .pfnTerm = */                dbgDiggerSolarisTerm,
+    /* .pfnQueryVersion = */        dbgDiggerSolarisQueryVersion,
+    /* .pfnQueryInterface = */      dbgDiggerSolarisQueryInterface,
+    /* .pfnStackUnwindAssist = */   dbgDiggerSolarisStackUnwindAssist,
+    /* .u32EndMagic = */            DBGFOSREG_MAGIC
 };
 

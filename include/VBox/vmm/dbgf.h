@@ -1208,81 +1208,6 @@ VMMR3DECL(int)          DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint
 
 #ifdef IN_RING3 /* The stack API only works in ring-3. */
 
-/**
- * Return type.
- */
-typedef enum DBGFRETRUNTYPE
-{
-    /** The usual invalid 0 value. */
-    DBGFRETURNTYPE_INVALID = 0,
-    /** Near 16-bit return. */
-    DBGFRETURNTYPE_NEAR16,
-    /** Near 32-bit return. */
-    DBGFRETURNTYPE_NEAR32,
-    /** Near 64-bit return. */
-    DBGFRETURNTYPE_NEAR64,
-    /** Far 16:16 return. */
-    DBGFRETURNTYPE_FAR16,
-    /** Far 16:32 return. */
-    DBGFRETURNTYPE_FAR32,
-    /** Far 16:64 return. */
-    DBGFRETURNTYPE_FAR64,
-    /** 16-bit iret return (e.g. real or 286 protect mode). */
-    DBGFRETURNTYPE_IRET16,
-    /** 32-bit iret return. */
-    DBGFRETURNTYPE_IRET32,
-    /** 32-bit iret return. */
-    DBGFRETURNTYPE_IRET32_PRIV,
-    /** 32-bit iret return to V86 mode. */
-    DBGFRETURNTYPE_IRET32_V86,
-    /** @todo 64-bit iret return. */
-    DBGFRETURNTYPE_IRET64,
-    /** The end of the valid return types. */
-    DBGFRETURNTYPE_END,
-    /** The usual 32-bit blowup. */
-    DBGFRETURNTYPE_32BIT_HACK = 0x7fffffff
-} DBGFRETURNTYPE;
-
-/**
- * Figures the size of the return state on the stack.
- *
- * @returns number of bytes. 0 if invalid parameter.
- * @param   enmRetType  The type of return.
- */
-DECLINLINE(unsigned) DBGFReturnTypeSize(DBGFRETURNTYPE enmRetType)
-{
-    switch (enmRetType)
-    {
-        case DBGFRETURNTYPE_NEAR16:         return 2;
-        case DBGFRETURNTYPE_NEAR32:         return 4;
-        case DBGFRETURNTYPE_NEAR64:         return 8;
-        case DBGFRETURNTYPE_FAR16:          return 4;
-        case DBGFRETURNTYPE_FAR32:          return 4;
-        case DBGFRETURNTYPE_FAR64:          return 8;
-        case DBGFRETURNTYPE_IRET16:         return 6;
-        case DBGFRETURNTYPE_IRET32:         return 4*3;
-        case DBGFRETURNTYPE_IRET32_PRIV:    return 4*5;
-        case DBGFRETURNTYPE_IRET32_V86:     return 4*9;
-        case DBGFRETURNTYPE_IRET64:
-        default:
-            return 0;
-    }
-}
-
-/**
- * Check if near return.
- *
- * @returns true if near, false if far or iret.
- * @param   enmRetType  The type of return.
- */
-DECLINLINE(bool) DBGFReturnTypeIsNear(DBGFRETURNTYPE enmRetType)
-{
-    return enmRetType == DBGFRETURNTYPE_NEAR32
-        || enmRetType == DBGFRETURNTYPE_NEAR64
-        || enmRetType == DBGFRETURNTYPE_NEAR16;
-}
-
-
 /** Pointer to stack frame info. */
 typedef struct DBGFSTACKFRAME *PDBGFSTACKFRAME;
 /** Pointer to const stack frame info. */
@@ -1294,7 +1219,7 @@ typedef struct DBGFSTACKFRAME
 {
     /** Frame number. */
     uint32_t        iFrame;
-    /** Frame flags. */
+    /** Frame flags (DBGFSTACKFRAME_FLAGS_XXX). */
     uint32_t        fFlags;
     /** The stack address of the frame.
      * The off member is [e|r]sp and the Sel member is ss. */
@@ -1310,11 +1235,11 @@ typedef struct DBGFSTACKFRAME
      * The off member is [e|r]bp and the Sel member is ss. */
     DBGFADDRESS     AddrFrame;
     /** The way this frame returns to the next one. */
-    DBGFRETURNTYPE  enmReturnType;
+    RTDBGRETURNTYPE enmReturnType;
 
     /** The way the next frame returns.
      * Only valid when DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET is set. */
-    DBGFRETURNTYPE  enmReturnFrameReturnType;
+    RTDBGRETURNTYPE enmReturnFrameReturnType;
     /** The return frame address.
      * The off member is [e|r]bp and the Sel member is ss. */
     DBGFADDRESS     AddrReturnFrame;
@@ -1357,7 +1282,7 @@ typedef struct DBGFSTACKFRAME
     PCDBGFSTACKFRAME pFirstInternal;
 } DBGFSTACKFRAME;
 
-/** @name DBGFSTACKFRAME Flags.
+/** @name DBGFSTACKFRAME_FLAGS_XXX - DBGFSTACKFRAME Flags.
  * @{ */
 /** This is the last stack frame we can read.
  * This flag is not set if the walk stop because of max dept or recursion. */
@@ -1374,8 +1299,11 @@ typedef struct DBGFSTACKFRAME
 # define DBGFSTACKFRAME_FLAGS_64BIT             RT_BIT(6)
 /** Real mode or V86 frame. */
 # define DBGFSTACKFRAME_FLAGS_REAL_V86          RT_BIT(7)
+/** Is a trap frame (NT term). */
+# define DBGFSTACKFRAME_FLAGS_TRAP_FRAME        RT_BIT(8)
+
 /** Used Odd/even heuristics for far/near return. */
-# define DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN     RT_BIT(8)
+# define DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN     RT_BIT(29)
 /** Set if we used unwind info to construct the frame. (Kind of internal.) */
 # define DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO  RT_BIT(30)
 /** Internal: Unwind info used for the return frame.  */
@@ -1403,7 +1331,7 @@ VMMR3DECL(int)              DBGFR3StackWalkBegin(PUVM pUVM, VMCPUID idCpu, DBGFC
                                                  PCDBGFSTACKFRAME *ppFirstFrame);
 VMMR3DECL(int)              DBGFR3StackWalkBeginEx(PUVM pUVM, VMCPUID idCpu, DBGFCODETYPE enmCodeType, PCDBGFADDRESS pAddrFrame,
                                                    PCDBGFADDRESS pAddrStack,PCDBGFADDRESS pAddrPC,
-                                                   DBGFRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
+                                                   RTDBGRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
 VMMR3DECL(PCDBGFSTACKFRAME) DBGFR3StackWalkNext(PCDBGFSTACKFRAME pCurrent);
 VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 
@@ -2123,6 +2051,8 @@ VMMR3DECL(int) DBGFR3RegPrintf( PUVM pUVM, VMCPUID idDefCpu, char *pszBuf, size_
 VMMR3DECL(int) DBGFR3RegPrintfV(PUVM pUVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va);
 
 
+#ifdef IN_RING3
+
 /**
  * Guest OS digger interface identifier.
  *
@@ -2256,6 +2186,25 @@ typedef struct DBGFOSREG
      */
     DECLCALLBACKMEMBER(void *, pfnQueryInterface)(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf);
 
+    /**
+     * Stack unwind assist callback.
+     *
+     * This is only called after pfnInit().
+     *
+     * @returns VBox status code (allocation error or something of  similar fatality).
+     * @param   pUVM            The user mode VM handle.
+     * @param   pvData          Pointer to the instance data.
+     * @param   idCpu           The CPU that's unwinding it's stack.
+     * @param   pFrame          The current frame. Okay to modify it a little.
+     * @param   pState          The unwind state.  Okay to modify it.
+     * @param   pInitialCtx     The initial register context.
+     * @param   hAs             The address space being used for the unwind.
+     * @param   puScratch       Scratch area (initialized to zero, no dtor).
+     */
+    DECLCALLBACKMEMBER(int, pfnStackUnwindAssist)(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
+                                                  PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
+                                                  uint64_t *puScratch);
+
     /** Trailing magic (DBGFOSREG_MAGIC). */
     uint32_t u32EndMagic;
 } DBGFOSREG;
@@ -2320,7 +2269,6 @@ VMMR3DECL(void *)   DBGFR3OSQueryInterface(PUVM pUVM, DBGFOSINTERFACE enmIf);
 VMMR3DECL(int)      DBGFR3CoreWrite(PUVM pUVM, const char *pszFilename, bool fReplaceFile);
 
 
-#ifdef IN_RING3
 
 /** @defgroup grp_dbgf_plug_in      The DBGF Plug-in Interface
  * @{
