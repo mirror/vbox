@@ -227,7 +227,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIScrollAreaTools implementation.                                                                                       *
+*   Class UIScrollAreaTools implementation.                                                                                      *
 *********************************************************************************************************************************/
 
 UIScrollAreaTools::UIScrollAreaTools(QWidget *pParent /* = 0 */)
@@ -249,7 +249,7 @@ QSize UIScrollAreaTools::minimumSizeHint() const
 
 
 /*********************************************************************************************************************************
-*   Class UIWrappableLabel implementation.                                                                                                *
+*   Class UIWrappableLabel implementation.                                                                                       *
 *********************************************************************************************************************************/
 
 UIWrappableLabel::UIWrappableLabel(QWidget *pParent /* = 0 */)
