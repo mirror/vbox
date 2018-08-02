@@ -5787,10 +5787,51 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint3
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu)
 {
-    uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INT_INFO_VALID;
-    u32IntInfo          |= (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    u32IntInfo          |= VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
+    uint32_t const u32IntInfo = X86_XCPT_DF | VMX_EXIT_INT_INFO_VALID
+                              | (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT)
+                              | VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu)
+{
+    uint32_t const u32IntInfo  = X86_XCPT_UD | VMX_EXIT_INT_INFO_VALID
+                               | (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets a debug (\#DB) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu)
+{
+    uint32_t const u32IntInfo = X86_XCPT_DB | VMX_EXIT_INT_INFO_VALID
+                              | (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets an overflow (\#OF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The value of RIP that is to be pushed on the guest
+ *                          stack.
+ */
+DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, uint32_t cbInstr)
+{
+    uint32_t const u32IntInfo  = X86_XCPT_OF | VMX_EXIT_INT_INFO_VALID
+                               | (VMX_EXIT_INT_INFO_TYPE_SW_INT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -7389,18 +7430,6 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, uint32_t fIntrState,
 
 
 /**
- * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu)
-{
-    uint32_t u32IntInfo = X86_XCPT_UD | VMX_EXIT_INT_INFO_VALID;
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
  * Injects a double-fault (\#DF) exception into the VM.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
@@ -7415,39 +7444,11 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu)
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptDF(PVMCPU pVCpu, bool fStepping, uint32_t *pfIntrState)
 {
-    uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INT_INFO_VALID;
-    u32IntInfo          |= (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    u32IntInfo          |= VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
+    uint32_t const u32IntInfo = X86_XCPT_DF | VMX_EXIT_INT_INFO_VALID
+                              | (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT)
+                              | VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
     return hmR0VmxInjectEventVmcs(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */, fStepping,
                                   pfIntrState);
-}
-
-
-/**
- * Sets a debug (\#DB) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu)
-{
-    uint32_t u32IntInfo  = X86_XCPT_DB | VMX_EXIT_INT_INFO_VALID;
-    u32IntInfo          |= (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
- * Sets an overflow (\#OF) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The value of RIP that is to be pushed on the guest
- *                          stack.
- */
-DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, uint32_t cbInstr)
-{
-    uint32_t u32IntInfo  = X86_XCPT_OF | VMX_EXIT_INT_INFO_VALID;
-    u32IntInfo          |= (VMX_EXIT_INT_INFO_TYPE_SW_INT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -7471,10 +7472,9 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, uint32_t cbInstr)
 DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptGP(PVMCPU pVCpu, bool fErrorCodeValid, uint32_t u32ErrorCode, bool fStepping,
                                              uint32_t *pfIntrState)
 {
-    uint32_t u32IntInfo  = X86_XCPT_GP | VMX_EXIT_INT_INFO_VALID;
-    u32IntInfo          |= (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    if (fErrorCodeValid)
-        u32IntInfo |= VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
+    uint32_t const u32IntInfo = X86_XCPT_GP | VMX_EXIT_INT_INFO_VALID
+                              | (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT)
+                              | (fErrorCodeValid ? VMX_EXIT_INT_INFO_ERROR_CODE_VALID : 0);
     return hmR0VmxInjectEventVmcs(pVCpu, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */, fStepping,
                                   pfIntrState);
 }
@@ -7490,12 +7490,10 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptGP(PVMCPU pVCpu, bool fErrorCodeValid,
  */
 DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, uint16_t uVector, uint32_t cbInstr)
 {
-    uint32_t u32IntInfo = uVector | VMX_EXIT_INT_INFO_VALID;
-    if (   uVector == X86_XCPT_BP
-        || uVector == X86_XCPT_OF)
-        u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_SW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    else
-        u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_SW_INT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
+    bool const     fIsSwXcpt  = RT_BOOL(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
+    uint32_t const u32IntType = fIsSwXcpt ? VMX_EXIT_INT_INFO_TYPE_SW_XCPT : VMX_EXIT_INT_INFO_TYPE_SW_INT;
+    uint32_t const u32IntInfo = uVector | VMX_EXIT_INT_INFO_VALID
+                              | (u32IntType << VMX_EXIT_INT_INFO_TYPE_SHIFT);
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
