@@ -109,11 +109,6 @@ private slots:
 
         /** Handles signal about group saving progress change. */
         void sltHandleGroupSavingProgressChange();
-
-#ifdef VBOX_WS_MAC
-        /** Handles signal about some @a pAction hovered. */
-        void sltActionHovered(UIAction *pAction);
-#endif
     /** @} */
 
     /** @name CVirtualBox event handling stuff.

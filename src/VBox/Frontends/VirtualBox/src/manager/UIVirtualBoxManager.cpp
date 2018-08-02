@@ -56,10 +56,6 @@
 # include "UIWizardCloneVM.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardImportApp.h"
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include "UINetworkManager.h"
-#  include "UINetworkManagerIndicator.h"
-# endif
 # ifdef VBOX_WS_MAC
 #  include "UIImageTools.h"
 #  include "UIWindowMenuManager.h"
@@ -217,18 +213,6 @@ void UIVirtualBoxManager::sltHandleContextMenuRequest(const QPoint &position)
         actions << pShowToolBarText;
     }
 
-    /* Create 'Show Statusbar' action: */
-    QAction *pShowStatusBar = new QAction(tr("Show Statusbar"), 0);
-    AssertPtrReturnVoid(pShowStatusBar);
-    {
-        /* Configure action: */
-        pShowStatusBar->setCheckable(true);
-        pShowStatusBar->setChecked(statusBar()->isVisible());
-
-        /* Add into action list: */
-        actions << pShowStatusBar;
-    }
-
     /* Prepare the menu position: */
     QPoint globalPosition = position;
     QWidget *pSender = static_cast<QWidget*>(sender());
@@ -244,17 +228,12 @@ void UIVirtualBoxManager::sltHandleContextMenuRequest(const QPoint &position)
     }
     else if (pResult == pShowToolBarText)
     {
-        m_pToolBar->setToolButtonStyle(pResult->isChecked()
-                                       ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
-        m_pToolbarTools->setToolButtonStyle(pResult->isChecked()
-                                            ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
-    }
-    else if (pResult == pShowStatusBar)
-    {
-        if (pResult->isChecked())
-            statusBar()->show();
-        else
-            statusBar()->hide();
+        m_pToolBar->setToolButtonStyle(  pResult->isChecked()
+                                       ? Qt::ToolButtonTextUnderIcon
+                                       : Qt::ToolButtonIconOnly);
+        m_pToolbarTools->setToolButtonStyle(  pResult->isChecked()
+                                            ? Qt::ToolButtonTextUnderIcon
+                                            : Qt::ToolButtonIconOnly);
     }
 }
 
@@ -417,14 +396,6 @@ void UIVirtualBoxManager::sltHandleGroupSavingProgressChange()
 {
     updateActionsAppearance();
 }
-
-#ifdef VBOX_WS_MAC
-void UIVirtualBoxManager::sltActionHovered(UIAction *pAction)
-{
-    /* Show the action message for a ten seconds: */
-    statusBar()->showMessage(pAction->statusTip(), 10000);
-}
-#endif /* VBOX_WS_MAC */
 
 void UIVirtualBoxManager::sltHandleStateChange(const QString &)
 {
@@ -1348,12 +1319,6 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
             }
             break;
         }
-        case QEvent::WindowDeactivate:
-        {
-            /* Make sure every status bar hint is cleared when the window lost focus. */
-            statusBar()->clearMessage();
-            break;
-        }
 #ifdef VBOX_WS_MAC
         case QEvent::ContextMenu:
         {
@@ -1906,21 +1871,8 @@ void UIVirtualBoxManager::prepareMenuMachineClose(QMenu *pMenu)
 
 void UIVirtualBoxManager::prepareStatusBar()
 {
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* Setup statusbar policy: */
-    statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    /* Add network-manager indicator: */
-    UINetworkManagerIndicator *pIndicator = gNetworkManager->createIndicator();
-    statusBar()->addPermanentWidget(pIndicator);
-    pIndicator->updateAppearance();
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
-#ifdef VBOX_WS_MAC
-    /* Make sure the status-bar is aware of action hovering: */
-    connect(actionPool(), SIGNAL(sigActionHovered(UIAction *)),
-            this, SLOT(sltActionHovered(UIAction *)));
-#endif /* VBOX_WS_MAC */
+    /* We are not using status-bar anymore: */
+    statusBar()->setHidden(true);
 }
 
 void UIVirtualBoxManager::prepareToolbar()
@@ -2176,10 +2128,6 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Tools_T_Global), &UIAction::toggled,
             this, &UIVirtualBoxManager::sltHandleToolsTypeSwitch);
 
-    /* Status-bar connections: */
-    connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
-            this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
-
     /* Graphics VM chooser connections: */
     connect(m_pPaneChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltHandleChooserPaneIndexChange()));
     connect(m_pPaneChooser, SIGNAL(sigSlidingStarted()), m_pPaneToolsMachine, SIGNAL(sigSlidingStarted()));
@@ -2253,7 +2201,6 @@ void UIVirtualBoxManager::loadSettings()
                                        ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
         m_pToolbarTools->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
                                             ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
-        statusBar()->setHidden(!gEDataManager->selectorWindowStatusBarVisible());
     }
 
     /* Restore toolbar Machine/Global tools orders:  */
@@ -2288,7 +2235,6 @@ void UIVirtualBoxManager::saveSettings()
     {
         gEDataManager->setSelectorWindowToolBarVisible(!m_pToolBar->isHidden());
         gEDataManager->setSelectorWindowToolBarTextVisible(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
-        gEDataManager->setSelectorWindowStatusBarVisible(!statusBar()->isHidden());
     }
 
     /* Save splitter handle position: */
