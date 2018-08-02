@@ -1571,6 +1571,7 @@ DECLINLINE(bool) CPUMIsGuestVmxEnabled(PCCPUMCTX pCtx)
 {
     return RT_BOOL(pCtx->cr4 & X86_CR4_VMXE);
 }
+
 #ifndef IN_RC
 
 /**
