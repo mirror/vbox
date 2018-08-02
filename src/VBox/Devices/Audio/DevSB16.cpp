@@ -1739,25 +1739,15 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         int rc2 = pConn->pfnStreamIterate(pConn, pStream);
         if (RT_SUCCESS(rc2))
         {
-            if (pStream->enmDir == PDMAUDIODIR_IN)
+            rc2 = pConn->pfnStreamPlay(pConn, pStream, NULL /* cPlayed */);
+            if (RT_FAILURE(rc2))
             {
-                /** @todo Implement recording! */
-            }
-            else
-            {
-                rc2 = pConn->pfnStreamPlay(pConn, pStream, NULL /* cPlayed */);
-                if (RT_FAILURE(rc2))
-                {
-                    LogFlowFunc(("%s: Failed playing stream, rc=%Rrc\n", pStream->szName, rc2));
-                    continue;
-                }
+                LogFlowFunc(("%s: Failed playing stream, rc=%Rrc\n", pStream->szName, rc2));
+                continue;
             }
 
-            if (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)
-            {
-                /* Only do the next DMA transfer if we're able to write the remaining data block. */
-                fDoTransfer = pConn->pfnStreamGetWritable(pConn, pStream) > (unsigned)pThis->left_till_irq;
-            }
+            /* Only do the next DMA transfer if we're able to write the remaining data block. */
+            fDoTransfer = pConn->pfnStreamGetWritable(pConn, pStream) > (unsigned)pThis->left_till_irq;
         }
 
         PDMAUDIOSTREAMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
