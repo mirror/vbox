@@ -1468,7 +1468,7 @@ DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCCPUMCTX pCtx)
  * @returns @c true if it is, @c false if not.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCCPUMCTX pCtx)
 {
     return !(pCtx->cr0 & X86_CR0_PE)
         || pCtx->eflags.Bits.u1VM;  /* Cannot be set in long mode. Intel spec 2.3.1 "System Flags and Fields in IA-32e Mode". */
