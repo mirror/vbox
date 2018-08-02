@@ -303,7 +303,7 @@ static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS p
  * Try read a 16-bit value off the stack.
  *
  * @returns pfnReadStack result.
- * @param   pUnwindCtx      The unwind context.
+ * @param   pThis           The unwind state.
  * @param   uSrcAddr        The stack address.
  * @param   puDst           The read destination.
  */
@@ -317,7 +317,7 @@ DECLINLINE(int) dbgUnwindLoadStackU16(PDBGFUNWINDSTATE pThis, uint64_t uSrcAddr,
  * Try read a 64-bit value off the stack.
  *
  * @returns pfnReadStack result.
- * @param   pUnwindCtx      The unwind context.
+ * @param   pThis           The unwind state.
  * @param   uSrcAddr        The stack address.
  * @param   puDst           The read destination.
  */
@@ -412,6 +412,7 @@ static bool dbgUnwindPeAmd64DoOneIRet(PDBGFUNWINDSTATE pThis, uint8_t fErrCd)
  * @param   hMod            The debug module to retrieve unwind info from.
  * @param   paFunctions     The table to lookup @a uRvaRip in.
  * @param   cFunctions      Size of the lookup table.
+ * @param   pThis           The unwind state.
  * @param   uRvaRip         The RVA of the RIP.
  *
  * @todo Move this down to IPRT in the ldrPE.cpp / dbgmodcodeview.cpp area.
