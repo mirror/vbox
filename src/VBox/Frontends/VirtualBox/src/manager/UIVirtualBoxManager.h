@@ -180,15 +180,15 @@ private slots:
           * @param strCategory can bring the settings category to start from.
           * @param strControl  can bring the widget of the page to focus.
           * @param strID       can bring the ID of machine to manage. */
-        void sltOpenMachineSettingsDialog(const QString &strCategory = QString(),
-                                          const QString &strControl = QString(),
+        void sltOpenMachineSettingsDialog(QString strCategory = QString(),
+                                          QString strControl = QString(),
                                           const QString &strID = QString());
 
         /** Handles call to open Clone Machine wizard. */
         void sltOpenCloneMachineWizard();
 
         /** Handles the Move Machine action. */
-        void sltPerformMoveMachine();
+        void sltPerformMachineMove();
 
         /** Handles call to start or show machine. */
         void sltPerformStartOrShowMachine();

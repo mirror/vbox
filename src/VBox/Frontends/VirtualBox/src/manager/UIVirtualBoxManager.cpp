@@ -628,7 +628,7 @@ void UIVirtualBoxManager::sltCloseHostNetworkManagerWindow()
 
 void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
 {
-    /* Show Import Appliance wizard: */
+    /* Initialize variables: */
 #ifdef VBOX_WS_MAC
     const QString strTmpFile = ::darwinResolveAlias(strFileName);
 #else
@@ -688,11 +688,8 @@ void UIVirtualBoxManager::sltOpenExtraDataManagerWindow()
 
 void UIVirtualBoxManager::sltOpenPreferencesDialog()
 {
-    /* Check that we do NOT handling that already: */
-    if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
-        return;
     /* Remember that we handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setEnabled(false);
 
     /* Don't show the inaccessible warning
      * if the user tries to open global settings: */
@@ -705,7 +702,7 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
 
     /// @todo Is it possible at all if event-loop unwind?
     /* Remember that we do NOT handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setEnabled(true);
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -718,13 +715,15 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
     /* Initialize variables: */
 #ifdef VBOX_WS_MAC
     QString strTmpFile = ::darwinResolveAlias(strFileName);
-#else /* VBOX_WS_MAC */
+#else
     QString strTmpFile = strFileName;
-#endif /* !VBOX_WS_MAC */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+#endif
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* No file specified: */
     if (strTmpFile.isEmpty())
     {
-        QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+        QString strBaseFolder = comVBox.GetSystemProperties().GetDefaultMachineFolder();
         QString strTitle = tr("Select a virtual machine file");
         QStringList extensions;
         for (int i = 0; i < VBoxFileExts.size(); ++i)
@@ -740,73 +739,69 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
         return;
 
     /* Make sure this machine can be opened: */
-    CMachine newMachine = vbox.OpenMachine(strTmpFile);
-    if (!vbox.isOk())
+    CMachine comMachineNew = comVBox.OpenMachine(strTmpFile);
+    if (!comVBox.isOk())
     {
-        msgCenter().cannotOpenMachine(vbox, strTmpFile);
+        msgCenter().cannotOpenMachine(comVBox, strTmpFile);
         return;
     }
 
     /* Make sure this machine was NOT registered already: */
-    CMachine oldMachine = vbox.FindMachine(newMachine.GetId());
-    if (!oldMachine.isNull())
+    CMachine comMachineOld = comVBox.FindMachine(comMachineNew.GetId());
+    if (!comMachineOld.isNull())
     {
-        msgCenter().cannotReregisterExistingMachine(strTmpFile, oldMachine.GetName());
+        msgCenter().cannotReregisterExistingMachine(strTmpFile, comMachineOld.GetName());
         return;
     }
 
     /* Register that machine: */
-    vbox.RegisterMachine(newMachine);
+    comVBox.RegisterMachine(comMachineNew);
 }
 
-void UIVirtualBoxManager::sltOpenMachineSettingsDialog(const QString &strCategoryRef /* = QString() */,
-                                                       const QString &strControlRef /* = QString() */,
+void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
+                                                       QString strControl /* = QString() */,
                                                        const QString &strID /* = QString() */)
 {
-    /* This slot should not be called when there is not selection: */
-    AssertMsgReturnVoid(currentItem(), ("Current item should be selected!\n"));
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
-    /* Check that we do NOT handling that already: */
-    if (actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->data().toBool())
-        return;
-    /* Remember that we handling that already: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setData(true);
+    /* Lock the action preventing cascade calls: */
+    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(false);
 
     /* Process href from VM details / description: */
-    if (!strCategoryRef.isEmpty() && strCategoryRef[0] != '#')
+    if (!strCategory.isEmpty() && strCategory[0] != '#')
     {
-        vboxGlobal().openURL(strCategoryRef);
-        return;
+        vboxGlobal().openURL(strCategory);
     }
-
-    /* Get category and control: */
-    QString strCategory = strCategoryRef;
-    QString strControl = strControlRef;
-    /* Check if control is coded into the URL by %%: */
-    if (strControl.isEmpty())
+    else
     {
-        QStringList parts = strCategory.split("%%");
-        if (parts.size() == 2)
+        /* Check if control is coded into the URL by %%: */
+        if (strControl.isEmpty())
         {
-            strCategory = parts.at(0);
-            strControl = parts.at(1);
+            QStringList parts = strCategory.split("%%");
+            if (parts.size() == 2)
+            {
+                strCategory = parts.at(0);
+                strControl = parts.at(1);
+            }
         }
+
+        /* Don't show the inaccessible warning
+         * if the user tries to open VM settings: */
+        m_fFirstMediumEnumerationHandled = true;
+
+        /* Create and execute corresponding VM settings window: */
+        QPointer<UISettingsDialogMachine> pDlg = new UISettingsDialogMachine(this,
+                                                                             QUuid(strID).isNull() ? pItem->id() : strID,
+                                                                             strCategory, strControl);
+        pDlg->execute();
+        delete pDlg;
     }
-
-    /* Don't show the inaccessible warning
-     * if the user tries to open VM settings: */
-    m_fFirstMediumEnumerationHandled = true;
-
-    /* Create and execute corresponding VM settings window: */
-    QPointer<UISettingsDialogMachine> pDlg = new UISettingsDialogMachine(this,
-                                                                         QUuid(strID).isNull() ? currentItem()->id() : strID,
-                                                                         strCategory, strControl);
-    pDlg->execute();
-    delete pDlg;
 
     /// @todo Is it possible at all if event-loop unwind?
-    /* Remember that we do NOT handling that already: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setData(false);
+    /* Unlock the action allowing further calls: */
+    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(true);
 }
 
 void UIVirtualBoxManager::sltOpenCloneMachineWizard()
@@ -820,9 +815,8 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
-
     const QStringList &machineGroupNames = pItem->groups();
-    QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
+    const QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
     UISafePointerWizard pWizard = new UIWizardCloneVM(pWizardParent, pItem->machine(), strGroup);
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
@@ -834,8 +828,9 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(true);
 }
 
-void UIVirtualBoxManager::sltPerformMoveMachine()
+void UIVirtualBoxManager::sltPerformMachineMove()
 {
+    /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
@@ -912,11 +907,13 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
     QStringList machineNames;
     QList<UIVirtualMachineItem*> itemsToDiscard;
     foreach (UIVirtualMachineItem *pItem, items)
+    {
         if (isActionEnabled(UIActionIndexST_M_Group_S_Discard, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToDiscard << pItem;
         }
+    }
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm discarding saved VM state: */
@@ -927,18 +924,18 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
     foreach (UIVirtualMachineItem *pItem, itemsToDiscard)
     {
         /* Open a session to modify VM: */
-        CSession session = vboxGlobal().openSession(pItem->id());
-        if (session.isNull())
+        CSession comSession = vboxGlobal().openSession(pItem->id());
+        if (comSession.isNull())
             return;
 
         /* Get session machine: */
-        CMachine machine = session.GetMachine();
-        machine.DiscardSavedState(true);
-        if (!machine.isOk())
-            msgCenter().cannotDiscardSavedState(machine);
+        CMachine comMachine = comSession.GetMachine();
+        comMachine.DiscardSavedState(true);
+        if (!comMachine.isOk())
+            msgCenter().cannotDiscardSavedState(comMachine);
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
     }
 }
 
@@ -952,7 +949,7 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
     foreach (UIVirtualMachineItem *pItem, items)
     {
         /* Get item state: */
-        KMachineState state = pItem->machineState();
+        const KMachineState enmState = pItem->machineState();
 
         /* Check if current item could be paused/resumed: */
         if (!isActionEnabled(UIActionIndexST_M_Group_T_Pause, QList<UIVirtualMachineItem*>() << pItem))
@@ -960,40 +957,39 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
 
         /* Check if current item already paused: */
         if (fPause &&
-            (state == KMachineState_Paused ||
-             state == KMachineState_TeleportingPausedVM))
+            (enmState == KMachineState_Paused ||
+             enmState == KMachineState_TeleportingPausedVM))
             continue;
 
         /* Check if current item already resumed: */
         if (!fPause &&
-            (state == KMachineState_Running ||
-             state == KMachineState_Teleporting ||
-             state == KMachineState_LiveSnapshotting))
+            (enmState == KMachineState_Running ||
+             enmState == KMachineState_Teleporting ||
+             enmState == KMachineState_LiveSnapshotting))
             continue;
 
         /* Open a session to modify VM state: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
-        if (session.isNull())
+        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        if (comSession.isNull())
             return;
 
         /* Get session console: */
-        CConsole console = session.GetConsole();
+        CConsole comConsole = comSession.GetConsole();
         /* Pause/resume VM: */
         if (fPause)
-            console.Pause();
+            comConsole.Pause();
         else
-            console.Resume();
-        bool ok = console.isOk();
-        if (!ok)
+            comConsole.Resume();
+        if (!comConsole.isOk())
         {
             if (fPause)
-                msgCenter().cannotPauseMachine(console);
+                msgCenter().cannotPauseMachine(comConsole);
             else
-                msgCenter().cannotResumeMachine(console);
+                msgCenter().cannotResumeMachine(comConsole);
         }
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
     }
 }
 
@@ -1007,11 +1003,13 @@ void UIVirtualBoxManager::sltPerformResetMachine()
     QStringList machineNames;
     QList<UIVirtualMachineItem*> itemsToReset;
     foreach (UIVirtualMachineItem *pItem, items)
+    {
         if (isActionEnabled(UIActionIndexST_M_Group_S_Reset, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToReset << pItem;
         }
+    }
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm reseting VM: */
@@ -1022,17 +1020,17 @@ void UIVirtualBoxManager::sltPerformResetMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToReset)
     {
         /* Open a session to modify VM state: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
-        if (session.isNull())
+        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        if (comSession.isNull())
             return;
 
         /* Get session console: */
-        CConsole console = session.GetConsole();
+        CConsole comConsole = comSession.GetConsole();
         /* Reset VM: */
-        console.Reset();
+        comConsole.Reset();
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
     }
 }
 
@@ -1068,36 +1066,36 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
             continue;
 
         /* Open a session to modify VM state: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
-        if (session.isNull())
+        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        if (comSession.isNull())
             return;
 
         /* Get session console: */
-        CConsole console = session.GetConsole();
+        CConsole comConsole = comSession.GetConsole();
         /* Get session machine: */
-        CMachine machine = session.GetMachine();
+        CMachine comMachine = comSession.GetMachine();
         /* Pause VM first if necessary: */
         if (pItem->machineState() != KMachineState_Paused)
-            console.Pause();
-        if (console.isOk())
+            comConsole.Pause();
+        if (comConsole.isOk())
         {
             /* Prepare machine state saving progress: */
-            CProgress progress = machine.SaveState();
-            if (machine.isOk())
+            CProgress comProgress = comMachine.SaveState();
+            if (comMachine.isOk())
             {
                 /* Show machine state saving progress: */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png");
-                if (!progress.isOk() || progress.GetResultCode() != 0)
-                    msgCenter().cannotSaveMachineState(progress, machine.GetName());
+                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_state_save_90px.png");
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotSaveMachineState(comProgress, comMachine.GetName());
             }
             else
-                msgCenter().cannotSaveMachineState(machine);
+                msgCenter().cannotSaveMachineState(comMachine);
         }
         else
-            msgCenter().cannotPauseMachine(console);
+            msgCenter().cannotPauseMachine(comConsole);
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
     }
 }
 
@@ -1111,11 +1109,13 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     QStringList machineNames;
     QList<UIVirtualMachineItem*> itemsToShutdown;
     foreach (UIVirtualMachineItem *pItem, items)
+    {
         if (isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToShutdown << pItem;
         }
+    }
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm ACPI shutdown current VM: */
@@ -1126,19 +1126,19 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToShutdown)
     {
         /* Open a session to modify VM state: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
-        if (session.isNull())
+        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        if (comSession.isNull())
             return;
 
         /* Get session console: */
-        CConsole console = session.GetConsole();
+        CConsole comConsole = comSession.GetConsole();
         /* ACPI Shutdown: */
-        console.PowerButton();
-        if (!console.isOk())
-            msgCenter().cannotACPIShutdownMachine(console);
+        comConsole.PowerButton();
+        if (!comConsole.isOk())
+            msgCenter().cannotACPIShutdownMachine(comConsole);
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
     }
 }
 
@@ -1152,11 +1152,13 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     QStringList machineNames;
     QList<UIVirtualMachineItem*> itemsToPowerOff;
     foreach (UIVirtualMachineItem *pItem, items)
+    {
         if (isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_PowerOff, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToPowerOff << pItem;
         }
+    }
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm Power Off current VM: */
@@ -1167,27 +1169,27 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToPowerOff)
     {
         /* Open a session to modify VM state: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
-        if (session.isNull())
+        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        if (comSession.isNull())
             return;
 
         /* Get session console: */
-        CConsole console = session.GetConsole();
+        CConsole comConsole = comSession.GetConsole();
         /* Prepare machine power down: */
-        CProgress progress = console.PowerDown();
-        if (console.isOk())
+        CProgress comProgress = comConsole.PowerDown();
+        if (comConsole.isOk())
         {
             /* Show machine power down progress: */
-            CMachine machine = session.GetMachine();
-            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png");
-            if (!progress.isOk() || progress.GetResultCode() != 0)
-                msgCenter().cannotPowerDownMachine(progress, machine.GetName());
+            CMachine machine = comSession.GetMachine();
+            msgCenter().showModalProgressDialog(comProgress, machine.GetName(), ":/progress_poweroff_90px.png");
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                msgCenter().cannotPowerDownMachine(comProgress, machine.GetName());
         }
         else
-            msgCenter().cannotPowerDownMachine(console);
+            msgCenter().cannotPowerDownMachine(comConsole);
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
     }
 }
 
@@ -1240,22 +1242,22 @@ void UIVirtualBoxManager::sltOpenMachineLogDialog()
 
 void UIVirtualBoxManager::sltCloseLogViewerWindow()
 {
-    QMap<QString, QIManagerDialog*>::iterator sendersIterator = m_logViewers.begin();
-
     /* Search for the sender of the signal within the m_logViewers map: */
+    QMap<QString, QIManagerDialog*>::iterator sendersIterator = m_logViewers.begin();
     while (sendersIterator != m_logViewers.end() && sendersIterator.value() != sender())
         ++sendersIterator;
     /* Do nothing if we cannot find it with the map: */
     if (sendersIterator == m_logViewers.end())
         return;
 
-    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
+    /* Check whether we have found the proper dialog: */
+    QIManagerDialog *pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
     if (!pDialog)
         return;
 
-    /* First remove this log viewer dialog from the map. This should be
-       done before closing the dialog which will incur a second call to
-       this function and result in double delete!!!: */
+    /* First remove this log-viewer dialog from the map.
+     * This should be done before closing the dialog which will incur
+     * a second call to this function and result in double delete!!!: */
     m_logViewers.erase(sendersIterator);
     UIVMLogViewerDialogFactory(CMachine()).cleanup(pDialog);
 }
@@ -1292,10 +1294,10 @@ void UIVirtualBoxManager::sltPerformCreateMachineShortcut()
             continue;
 
         /* Create shortcut for this VM: */
-        const CMachine &machine = pItem->machine();
-        UIDesktopServices::createMachineShortcut(machine.GetSettingsFilePath(),
+        const CMachine &comMachine = pItem->machine();
+        UIDesktopServices::createMachineShortcut(comMachine.GetSettingsFilePath(),
                                                  QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
-                                                 machine.GetName(), machine.GetId());
+                                                 comMachine.GetName(), comMachine.GetId());
     }
 }
 
@@ -1412,7 +1414,7 @@ void UIVirtualBoxManager::prepare()
 #ifdef VBOX_WS_MAC
     /* We have to make sure that we are getting the front most process: */
     ::darwinSetFrontMostProcess();
-#endif /* VBOX_WS_MAC */
+#endif
 
     /* Cache medium data early if necessary: */
     if (vboxGlobal().agressiveCaching())
@@ -1457,7 +1459,7 @@ void UIVirtualBoxManager::prepareIcon()
      * On Win host it's built-in to the executable.
      * On Mac OS X the icon referenced in info.plist is used.
      * On X11 we will provide as much icons as we can. */
-#if !(defined (VBOX_WS_WIN) || defined (VBOX_WS_MAC))
+#if !defined(VBOX_WS_WIN) && !defined(VBOX_WS_MAC)
     QIcon icon(":/VirtualBox.svg");
     icon.addFile(":/VirtualBox_48px.png");
     icon.addFile(":/VirtualBox_64px.png");
@@ -1504,7 +1506,7 @@ void UIVirtualBoxManager::prepareMenuBar()
     UIWindowMenuManager::create();
     menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
     gpWindowMenuManager->addWindow(this);
-#endif /* VBOX_WS_MAC */
+#endif
 
     /* Prepare Help-menu: */
     menuBar()->addMenu(actionPool()->action(UIActionIndex_Menu_Help)->menu());
@@ -1522,6 +1524,7 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     /* The Application / 'File' menu contents is very different depending on host type. */
 
 #ifdef VBOX_WS_MAC
+
     /* 'About' action goes to Application menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1606,6 +1609,7 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     pMenu->addSeparator();
     /* 'Close' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
+
 #endif /* !VBOX_WS_MAC */
 }
 
@@ -2089,7 +2093,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), SIGNAL(triggered()), this, SLOT(sltOpenAddMachineDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), SIGNAL(triggered()), this, SLOT(sltOpenMachineSettingsDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), SIGNAL(triggered()), this, SLOT(sltOpenCloneMachineWizard()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), SIGNAL(triggered()), this, SLOT(sltPerformMoveMachine()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), SIGNAL(triggered()), this, SLOT(sltPerformMachineMove()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseOrResumeMachine(bool)));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Reset), SIGNAL(triggered()), this, SLOT(sltPerformResetMachine()));
@@ -2267,7 +2271,7 @@ void UIVirtualBoxManager::cleanupMenuBar()
 #ifdef VBOX_WS_MAC
     /* Cleanup 'Window' menu: */
     UIWindowMenuManager::destroy();
-#endif /* VBOX_WS_MAC */
+#endif
 
     /* Destroy action-pool: */
     UIActionPool::destroy(m_pActionPool);
@@ -2297,11 +2301,13 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
     QStringList startableMachineNames;
     QList<UIVirtualMachineItem*> startableItems;
     foreach (UIVirtualMachineItem *pItem, items)
+    {
         if (isAtLeastOneItemCanBeStarted(QList<UIVirtualMachineItem*>() << pItem))
         {
             startableItems << pItem;
             startableMachineNames << pItem->name();
         }
+    }
 
     /* Initially we have start auto-confirmed: */
     bool fStartConfirmed = true;
@@ -2312,6 +2318,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
 
     /* For every item => check if it could be launched: */
     foreach (UIVirtualMachineItem *pItem, items)
+    {
         if (   isAtLeastOneItemCanBeShown(QList<UIVirtualMachineItem*>() << pItem)
             || (   isAtLeastOneItemCanBeStarted(QList<UIVirtualMachineItem*>() << pItem)
                 && fStartConfirmed))
@@ -2327,6 +2334,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             CMachine machine = pItem->machine();
             vboxGlobal().launchMachine(machine, enmItemLaunchMode);
         }
+    }
 }
 
 void UIVirtualBoxManager::updateActionsVisibility()
@@ -2440,11 +2448,13 @@ void UIVirtualBoxManager::updateActionsAppearance()
     /* Pause/Resume action is deremined by 1st started item: */
     UIVirtualMachineItem *pFirstStartedAction = 0;
     foreach (UIVirtualMachineItem *pSelectedItem, items)
+    {
         if (UIVirtualMachineItem::isItemStarted(pSelectedItem))
         {
             pFirstStartedAction = pSelectedItem;
             break;
         }
+    }
     /* Update the group Pause/Resume action appearance: */
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(true);
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setChecked(pFirstStartedAction && UIVirtualMachineItem::isItemPaused(pFirstStartedAction));
@@ -2649,13 +2659,15 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
 bool UIVirtualBoxManager::isAtLeastOneItemSupportsShortcuts(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (pItem->accessible()
+    {
+        if (   pItem->accessible()
 #ifdef VBOX_WS_MAC
             /* On Mac OS X this are real alias files, which don't work with the old legacy xml files. */
             && pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
-#endif /* VBOX_WS_MAC */
+#endif
             )
             return true;
+    }
     return false;
 }
 
