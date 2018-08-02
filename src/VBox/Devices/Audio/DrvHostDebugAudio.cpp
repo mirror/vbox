@@ -73,8 +73,8 @@ static DECLCALLBACK(int) drvHostDebugAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
     pBackendCfg->cbStreamOut    = sizeof(DEBUGAUDIOSTREAM);
     pBackendCfg->cbStreamIn     = sizeof(DEBUGAUDIOSTREAM);
 
-    pBackendCfg->cMaxStreamsOut = 1; /* Output */
-    pBackendCfg->cMaxStreamsIn  = 2; /* Line input + microphone input. */
+    pBackendCfg->cMaxStreamsOut = 1; /* Output; writing to a file. */
+    pBackendCfg->cMaxStreamsIn  = 0; /** @todo Right now we don't support any input (capturing, injecting from a file). */
 
     return VINF_SUCCESS;
 }
