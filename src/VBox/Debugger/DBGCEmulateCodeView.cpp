@@ -419,7 +419,9 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "g",          0,        0,        NULL,               0,                              0,       dbgcCmdGo,          "",                     "Continue execution." },
     { "gu",         0,        0,        NULL,               0,                              0,       dbgcCmdGoUp,        "",                     "Go up - continue execution till after return." },
     { "k",          0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack." },
+    { "kv",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Verbose callstack." },
     { "kg",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - guest." },
+    { "kgv",        0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Verbose callstack - guest." },
     { "kh",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - hypervisor." },
     { "lm",         0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules." },
     { "lmv",        0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules, verbose." },
@@ -2704,6 +2706,50 @@ static DECLCALLBACK(int) dbgcCmdStepTraceTo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
 /**
+ * Helper that tries to resolve a far address to a symbol and formats it.
+ *
+ * @returns Pointer to symbol string on success, NULL if not resolved.
+ *          Free using RTStrFree.
+ * @param   pCmdHlp             The command helper structure.
+ * @param   hAs                 The address space to use.  NIL_RTDBGAS means no symbol resolving.
+ * @param   sel                 The selector part of the address.
+ * @param   off                 The offset part of the address.
+ * @param   pszPrefix           How to prefix the symbol string.
+ * @param   pszSuffix           How to suffix the symbol string.
+ */
+static char *dbgcCmdHlpFarAddrToSymbol(PDBGCCMDHLP pCmdHlp, RTDBGAS hAs, RTSEL sel, uint64_t off,
+                                       const char *pszPrefix, const char *pszSuffix)
+{
+    char *pszRet = NULL;
+    if (hAs != NIL_RTDBGAS)
+    {
+        PDBGC        pDbgc      = DBGC_CMDHLP2DBGC(pCmdHlp);
+        DBGFADDRESS  Addr;
+        int rc = DBGFR3AddrFromSelOff(pDbgc->pUVM, pDbgc->idCpu, &Addr, sel, off);
+        if (RT_SUCCESS(rc))
+        {
+            RTGCINTPTR   offDispSym = 0;
+            PRTDBGSYMBOL pSymbol = DBGFR3AsSymbolByAddrA(pDbgc->pUVM, hAs, &Addr,
+                                                           RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL
+                                                         | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                                         &offDispSym, NULL);
+            if (pSymbol)
+            {
+                if (offDispSym == 0)
+                    pszRet = RTStrAPrintf2("%s%s%s", pszPrefix, pSymbol->szName, pszSuffix);
+                else if (offDispSym > 0)
+                    pszRet = RTStrAPrintf2("%s%s+%llx%s", pszPrefix, pSymbol->szName, (int64_t)offDispSym, pszSuffix);
+                else
+                    pszRet = RTStrAPrintf2("%s%s-%llx%s", pszPrefix, pSymbol->szName, -(int64_t)offDispSym, pszSuffix);
+                RTDbgSymbolFree(pSymbol);
+            }
+        }
+    }
+    return pszRet;
+}
+
+
+/**
  * @callback_method_impl{FNDBGCCMD, The 'k'\, 'kg' and 'kh' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
@@ -2716,15 +2762,17 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
     int                 rc;
     PCDBGFSTACKFRAME    pFirstFrame;
     bool const          fGuest = pCmd->pszCmd[1] == 'g'
-                              || (!pCmd->pszCmd[1] && pDbgc->fRegCtxGuest);
+                              || (pCmd->pszCmd[1] != 'h' && pDbgc->fRegCtxGuest);
+    bool const          fVerbose = pCmd->pszCmd[1] == 'v'
+                                || (pCmd->pszCmd[1] != '\0' && pCmd->pszCmd[2] == 'v');
     rc = DBGFR3StackWalkBegin(pUVM, pDbgc->idCpu, fGuest ? DBGFCODETYPE_GUEST : DBGFCODETYPE_HYPER, &pFirstFrame);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpPrintf(pCmdHlp, "Failed to begin stack walk, rc=%Rrc\n", rc);
 
     /*
-     * Print header.
-     *                                      12345678 12345678 0023:87654321 12345678 87654321 12345678 87654321 symbol
+     * Print the frames.
      */
+    char     szTmp[1024];
     uint32_t fBitFlags = 0;
     for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
          pFrame;
@@ -2734,42 +2782,45 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
         if (fCurBitFlags & DBGFSTACKFRAME_FLAGS_16BIT)
         {
             if (fCurBitFlags != fBitFlags)
-                pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "SS:BP     Ret SS:BP Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "%04RX16:%04RX16 %04RX16:%04RX16 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
-                                    pFrame->AddrFrame.Sel,
-                                    (uint16_t)pFrame->AddrFrame.off,
-                                    pFrame->AddrReturnFrame.Sel,
-                                    (uint16_t)pFrame->AddrReturnFrame.off,
-                                    (uint32_t)pFrame->AddrReturnPC.Sel,
-                                    (uint32_t)pFrame->AddrReturnPC.off,
-                                    pFrame->Args.au32[0],
-                                    pFrame->Args.au32[1],
-                                    pFrame->Args.au32[2],
-                                    pFrame->Args.au32[3]);
+                pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "#  SS:BP     Ret SS:BP Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%02x %04RX16:%04RX16 %04RX16:%04RX16 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                  pFrame->iFrame,
+                                  pFrame->AddrFrame.Sel,
+                                  (uint16_t)pFrame->AddrFrame.off,
+                                  pFrame->AddrReturnFrame.Sel,
+                                  (uint16_t)pFrame->AddrReturnFrame.off,
+                                  (uint32_t)pFrame->AddrReturnPC.Sel,
+                                  (uint32_t)pFrame->AddrReturnPC.off,
+                                  pFrame->Args.au32[0],
+                                  pFrame->Args.au32[1],
+                                  pFrame->Args.au32[2],
+                                  pFrame->Args.au32[3]);
         }
         else if (fCurBitFlags & DBGFSTACKFRAME_FLAGS_32BIT)
         {
             if (fCurBitFlags != fBitFlags)
-                pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
-                                    (uint32_t)pFrame->AddrFrame.off,
-                                    (uint32_t)pFrame->AddrReturnFrame.off,
-                                    (uint32_t)pFrame->AddrReturnPC.Sel,
-                                    (uint32_t)pFrame->AddrReturnPC.off,
-                                    pFrame->Args.au32[0],
-                                    pFrame->Args.au32[1],
-                                    pFrame->Args.au32[2],
-                                    pFrame->Args.au32[3]);
+                pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "#  EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%02x %08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                  pFrame->iFrame,
+                                  (uint32_t)pFrame->AddrFrame.off,
+                                  (uint32_t)pFrame->AddrReturnFrame.off,
+                                  (uint32_t)pFrame->AddrReturnPC.Sel,
+                                  (uint32_t)pFrame->AddrReturnPC.off,
+                                  pFrame->Args.au32[0],
+                                  pFrame->Args.au32[1],
+                                  pFrame->Args.au32[2],
+                                  pFrame->Args.au32[3]);
         }
         else if (fCurBitFlags & DBGFSTACKFRAME_FLAGS_64BIT)
         {
             if (fCurBitFlags != fBitFlags)
-                pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "RBP              Ret SS:RBP            Ret RIP          CS:RIP / Symbol [line]\n");
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "%016RX64 %04RX16:%016RX64 %016RX64",
-                                    (uint64_t)pFrame->AddrFrame.off,
-                                    pFrame->AddrReturnFrame.Sel,
-                                    (uint64_t)pFrame->AddrReturnFrame.off,
-                                    (uint64_t)pFrame->AddrReturnPC.off);
+                pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "#  RBP              Ret SS:RBP            Ret RIP          CS:RIP / Symbol [line]\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%02x %016RX64 %04RX16:%016RX64 %016RX64",
+                                  pFrame->iFrame,
+                                  (uint64_t)pFrame->AddrFrame.off,
+                                  pFrame->AddrReturnFrame.Sel,
+                                  (uint64_t)pFrame->AddrReturnFrame.off,
+                                  (uint64_t)pFrame->AddrReturnPC.off);
         }
         if (RT_FAILURE(rc))
             break;
@@ -2795,6 +2846,63 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
             rc = DBGCCmdHlpPrintf(pCmdHlp, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
         if (RT_SUCCESS(rc))
             rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+
+        if (fVerbose && RT_SUCCESS(rc))
+        {
+            /*
+             * Display verbose frame info.
+             */
+            const char *pszRetType;
+            switch (pFrame->enmReturnType)
+            {
+                case DBGFRETURNTYPE_NEAR16:         pszRetType = "retn/16"; break;
+                case DBGFRETURNTYPE_NEAR32:         pszRetType = "retn/32"; break;
+                case DBGFRETURNTYPE_NEAR64:         pszRetType = "retn/64"; break;
+                case DBGFRETURNTYPE_FAR16:          pszRetType = "retf/16"; break;
+                case DBGFRETURNTYPE_FAR32:          pszRetType = "retf/32"; break;
+                case DBGFRETURNTYPE_FAR64:          pszRetType = "retf/64"; break;
+                case DBGFRETURNTYPE_IRET16:         pszRetType = "iret-16"; break;
+                case DBGFRETURNTYPE_IRET32:         pszRetType = "iret/32s"; break;
+                case DBGFRETURNTYPE_IRET32_PRIV:    pszRetType = "iret/32p"; break;
+                case DBGFRETURNTYPE_IRET32_V86:     pszRetType = "iret/v86"; break;
+                case DBGFRETURNTYPE_IRET64:         pszRetType = "iret/64"; break;
+                default:                            pszRetType = "invalid"; break;
+            }
+            size_t cchLine = DBGCCmdHlpPrintfLen(pCmdHlp, "   %s", pszRetType);
+            if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
+                cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " used-unwind-info", pszRetType);
+            if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN)
+                cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " used-odd-even", pszRetType);
+            if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_REAL_V86)
+                cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " real-v86", pszRetType);
+            if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_MAX_DEPTH)
+                cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " max-depth", pszRetType);
+
+            if (pFrame->cSureRegs > 0)
+            {
+                cchLine = 1024; /* force new line */
+                for (uint32_t i = 0; i < pFrame->cSureRegs; i++)
+                {
+                    if (cchLine > 80)
+                    {
+                        DBGCCmdHlpPrintf(pCmdHlp, "\n  ");
+                        cchLine = 2;
+                    }
+
+                    szTmp[0] = '\0';
+                    DBGFR3RegFormatValue(szTmp, sizeof(szTmp), &pFrame->paSureRegs[i].Value,
+                                         pFrame->paSureRegs[i].enmType, false);
+                    const char *pszName = pFrame->paSureRegs[i].enmReg != DBGFREG_END
+                                        ? DBGFR3RegCpuName(pUVM, pFrame->paSureRegs[i].enmReg, pFrame->paSureRegs[i].enmType)
+                                        : pFrame->paSureRegs[i].pszName;
+                    cchLine += DBGCCmdHlpPrintfLen(pCmdHlp, " %s=%s", pszName, szTmp);
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+        }
+
         if (RT_FAILURE(rc))
             break;
 
@@ -2808,7 +2916,8 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
 }
 
 
-static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigned iEntry, bool fHyper, bool *pfDblEntry)
+static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigned iEntry, bool fHyper, RTDBGAS hAs,
+                                 bool *pfDblEntry)
 {
     /* GUEST64 */
     int rc;
@@ -2915,9 +3024,11 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 uint64_t off =    pDesc->au16[0]
                                 | ((uint64_t)pDesc->au16[3] << 16)
                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
-                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
-                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
-                                        pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
+                char *pszSymbol = dbgcCmdHlpFarAddrToSymbol(pCmdHlp, hAs, sel, off, " (", ")");
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s%s\n",
+                                      iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
+                                      pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper, pszSymbol ? pszSymbol : "");
+                RTStrFree(pszSymbol);
                 if (pfDblEntry)
                     *pfDblEntry = true;
                 break;
@@ -2930,9 +3041,11 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 uint64_t off =            pDesc->Gate.u16OffsetLow
                              | ((uint64_t)pDesc->Gate.u16OffsetHigh << 16)
                              | ((uint64_t)pDesc->Gate.u32OffsetTop  << 32);
-                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%u %s IST=%u%s\n",
+                char *pszSymbol = dbgcCmdHlpFarAddrToSymbol(pCmdHlp, hAs, sel, off, " (", ")");
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%u %s IST=%u%s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gate.u4Type], sel, off,
-                                        pDesc->Gate.u2Dpl, pszPresent, pDesc->Gate.u3IST, pszHyper);
+                                        pDesc->Gate.u2Dpl, pszPresent, pDesc->Gate.u3IST, pszHyper, pszSymbol ? pszSymbol : "");
+                RTStrFree(pszSymbol);
                 if (pfDblEntry)
                     *pfDblEntry = true;
                 break;
@@ -2956,7 +3069,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
  * @param   iEntry      The descriptor entry number.
  * @param   fHyper      Whether the selector belongs to the hypervisor or not.
  */
-static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned iEntry, bool fHyper)
+static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned iEntry, bool fHyper, RTDBGAS hAs)
 {
     int rc;
 
@@ -3070,9 +3183,11 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
                 const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
                 RTSEL sel = pDesc->au16[1];
                 uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
-                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s %s=%d%s\n",
-                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
-                                        pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
+                char *pszSymbol = dbgcCmdHlpFarAddrToSymbol(pCmdHlp, hAs, sel, off, " (", ")");
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s %s=%d%s%s\n",
+                                      iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
+                                      pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper, pszSymbol ? pszSymbol : "");
+                RTStrFree(pszSymbol);
                 break;
             }
 
@@ -3083,9 +3198,11 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             {
                 RTSEL sel = pDesc->au16[1];
                 uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
-                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s%s\n",
+                char *pszSymbol = dbgcCmdHlpFarAddrToSymbol(pCmdHlp, hAs, sel, off, " (", ")");
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s%s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
-                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper, pszSymbol ? pszSymbol : "");
+                RTStrFree(pszSymbol);
                 break;
             }
 
@@ -3180,11 +3297,13 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
                              || SelInfo.u.Raw.Gen.u1Present)
                     {
                         if (enmMode == CPUMMODE_PROTECTED)
-                            rc = dbgcCmdDumpDTWorker32(pCmdHlp, &SelInfo.u.Raw, Sel, !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_HYPER));
+                            rc = dbgcCmdDumpDTWorker32(pCmdHlp, &SelInfo.u.Raw, Sel,
+                                                       !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_HYPER), DBGF_AS_GLOBAL);
                         else
                         {
                             bool fDblSkip = false;
-                            rc = dbgcCmdDumpDTWorker64(pCmdHlp, &SelInfo.u.Raw64, Sel, !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_HYPER), &fDblSkip);
+                            rc = dbgcCmdDumpDTWorker64(pCmdHlp, &SelInfo.u.Raw64, Sel,
+                                                       !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_HYPER), DBGF_AS_GLOBAL, &fDblSkip);
                             if (fDblSkip)
                                 Sel += 4;
                         }
@@ -3225,11 +3344,13 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
      * Establish some stuff like the current IDTR and CPU mode,
      * and fix a default parameter.
      */
-    PDBGC       pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    PVMCPU      pVCpu     = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
-    uint16_t    cbLimit;
-    RTGCUINTPTR GCPtrBase = CPUMGetGuestIDTR(pVCpu, &cbLimit);
-    CPUMMODE    enmMode   = CPUMGetGuestMode(pVCpu);
+    PDBGC       pDbgc     = DBGC_CMDHLP2DBGC(pCmdHlp);
+    CPUMMODE    enmMode   = DBGCCmdHlpGetCpuMode(pCmdHlp);
+    uint16_t    cbLimit   = 0;
+    uint64_t    GCFlat    = 0;
+    int rc = DBGFR3RegCpuQueryXdtr(pDbgc->pUVM, pDbgc->idCpu, DBGFREG_IDTR, &GCFlat, &cbLimit);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3RegCpuQueryXdtr/DBGFREG_IDTR");
     unsigned    cbEntry;
     switch (enmMode)
     {
@@ -3285,7 +3406,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                 }
                 DBGCVAR AddrVar;
                 AddrVar.enmType = DBGCVAR_TYPE_GC_FLAT;
-                AddrVar.u.GCFlat = GCPtrBase + iInt * cbEntry;
+                AddrVar.u.GCFlat = GCFlat + iInt * cbEntry;
                 AddrVar.enmRangeType = DBGCVAR_RANGE_NONE;
                 int rc = pCmdHlp->pfnMemRead(pCmdHlp, &u, cbEntry, &AddrVar, NULL);
                 if (RT_FAILURE(rc))
@@ -3297,16 +3418,19 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                 switch (enmMode)
                 {
                     case CPUMMODE_REAL:
-                        rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %RTfp16\n", (unsigned)iInt, u.Real);
-                        /** @todo resolve 16:16 IDTE to a symbol */
+                    {
+                        char *pszSymbol = dbgcCmdHlpFarAddrToSymbol(pCmdHlp, DBGF_AS_GLOBAL, u.Real.sel, u.Real.off, " (", ")");
+                        rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %RTfp16%s\n", (unsigned)iInt, u.Real, pszSymbol ? pszSymbol : "");
+                        RTStrFree(pszSymbol);
                         break;
+                    }
                     case CPUMMODE_PROTECTED:
                         if (fAll || fSingle || u.Prot.Gen.u1Present)
-                            rc = dbgcCmdDumpDTWorker32(pCmdHlp, &u.Prot, iInt, false);
+                            rc = dbgcCmdDumpDTWorker32(pCmdHlp, &u.Prot, iInt, false, DBGF_AS_GLOBAL);
                         break;
                     case CPUMMODE_LONG:
                         if (fAll || fSingle || u.Long.Gen.u1Present)
-                            rc = dbgcCmdDumpDTWorker64(pCmdHlp, &u.Long, iInt, false, NULL);
+                            rc = dbgcCmdDumpDTWorker64(pCmdHlp, &u.Long, iInt, false, DBGF_AS_GLOBAL, NULL);
                         break;
                     default: break; /* to shut up gcc */
                 }
