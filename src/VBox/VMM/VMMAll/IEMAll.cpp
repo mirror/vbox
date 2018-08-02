@@ -323,6 +323,14 @@ typedef enum IEMXCPTCLASS
 #define IEM_IS_LONG_MODE(a_pVCpu)           (CPUMIsGuestInLongModeEx(IEM_GET_CTX(a_pVCpu)))
 
 /**
+ * Check if we're currently executing in a 64-bit code segment.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
+ */
+#define IEM_IS_64BIT_CODE(a_pVCpu)          (CPUMIsGuestIn64BitCodeEx(IEM_GET_CTX(a_pVCpu)))
+
+/**
  * Check if we're currently executing in real mode.
  *
  * @returns @c true if it is, @c false if not.
@@ -375,6 +383,41 @@ typedef enum IEMXCPTCLASS
 # define IEM_USE_UNALIGNED_DATA_ACCESS
 #endif
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Check the common VMX instruction preconditions.
+ */
+#define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
+    do { \
+    { \
+        if (!IEM_IS_VMX_ENABLED(a_pVCpu)) \
+        { \
+            Log((RT_STR(a_Instr) ": CR4.VMXE not enabled -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+        if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
+        { \
+            Log((RT_STR(a_Instr) ": Real or v8086 mode -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+        if (IEM_IS_LONG_MODE(a_pVCpu) && !IEM_IS_64BIT_CODE(a_pVCpu)) \
+        { \
+            Log((RT_STR(a_Instr) ": Long mode without 64-bit code segment -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+} while (0)
+
+/**
+ * Check if VMX is enabled.
+ */
+# define IEM_IS_VMX_ENABLED(a_pVCpu)                         (CPUMIsGuestVmxEnabled(IEM_GET_CTX(a_pVCpu)))
+
+#else
+# define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr)       do { } while (0)
+# define IEM_IS_VMX_ENABLED(a_pVCpu)                         (false)
+
+#endif
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Check the common SVM instruction preconditions.
@@ -408,7 +451,7 @@ typedef enum IEMXCPTCLASS
     } while (0)
 
 /**
- * Check if an SVM is enabled.
+ * Check if SVM is enabled.
  */
 # define IEM_IS_SVM_ENABLED(a_pVCpu)                         (CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu)))
 
@@ -483,7 +526,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)          do { return VERR_SVM_IPE_1; } while (0)
 # define IEM_RETURN_SVM_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)         do { return VERR_SVM_IPE_1; } while (0)
 
-#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
+#endif
 
 
 /*********************************************************************************************************************************
