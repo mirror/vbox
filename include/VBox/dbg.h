@@ -719,7 +719,7 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, 
  *                      well as the debugger ones.
  * @param   ...         Arguments specified in the format string.
  */
-DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) DBGCCmdHlpPrintfEx(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(3, 4) DBGCCmdHlpPrintfEx(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
                                                              const char *pszFormat, ...)
 {
     va_list va;
