@@ -930,11 +930,20 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
         case RTLDRARCH_WHATEVER:
             enmCpuArch = KCPUARCH_UNKNOWN;
             break;
+        case RTLDRARCH_X86_16:
+            enmCpuArch = KCPUARCH_X86_16;
+            break;
         case RTLDRARCH_X86_32:
             enmCpuArch = KCPUARCH_X86_32;
             break;
         case RTLDRARCH_AMD64:
             enmCpuArch = KCPUARCH_AMD64;
+            break;
+        case RTLDRARCH_ARM32:
+            enmCpuArch = KCPUARCH_ARM_32;
+            break;
+        case RTLDRARCH_ARM64:
+            enmCpuArch = KCPUARCH_ARM_64;
             break;
         default:
             return VERR_INVALID_PARAMETER;

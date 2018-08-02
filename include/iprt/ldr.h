@@ -347,6 +347,8 @@ typedef enum RTLDRARCH
     RTLDRARCH_WHATEVER,
     /** The host architecture. */
     RTLDRARCH_HOST,
+    /** 16-bit x86. */
+    RTLDRARCH_X86_16,
     /** 32-bit x86. */
     RTLDRARCH_X86_32,
     /** AMD64 (64-bit x86 if you like). */
