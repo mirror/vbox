@@ -486,7 +486,7 @@ static DECLCALLBACK(int) dbgDiggerWinNtStackUnwindAssist(PUVM pUVM, void *pvData
         }
     }
 
-    RT_NOREF(pUVM, pvData, idCpu, hAs, puScratch);
+    RT_NOREF(pUVM, pvData, idCpu, hAs, pInitialCtx, puScratch);
     return VINF_SUCCESS;
 }
 
