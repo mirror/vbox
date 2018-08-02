@@ -2432,9 +2432,18 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
                  * @todo Make the recording source dynamic (CFGM?). */
                 if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
                 {
-                    rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
-                    LogFlowFunc(("LUN#%RU8: Recording source is now \"%s\", rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
-                    LogRel2(("HDA: Set recording source to '%s'\n", pStreamCfg->szName));
+                    PDMAUDIOBACKENDCFG Cfg;
+                    rc = pDrv->pConnector->pfnGetConfig(pDrv->pConnector, &Cfg);
+                    if (   RT_SUCCESS(rc)
+                        && Cfg.cMaxStreamsIn) /* At least one input source available? */
+                    {
+                        rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
+                        LogFlowFunc(("LUN#%RU8: Recording source is now '%s', rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
+                        LogRel2(("HDA: Set recording source to '%s'\n", pStreamCfg->szName));
+                    }
+                    else if (RT_FAILURE(rc))
+                        LogFunc(("LUN#%RU8: Unable to retrieve backend configuratio for '%s', rc=%Rrc\n",
+                                 pDrv->uLUN, pStreamCfg->szName, rc));
                 }
             }
         }
