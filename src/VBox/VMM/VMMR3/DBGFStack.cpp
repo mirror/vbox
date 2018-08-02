@@ -39,6 +39,97 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Magic value for DBGFUNWINDSTATE::u32Magic (James Moody). */
+#define DBGFUNWINDSTATE_MAGIC           UINT32_C(0x19250326)
+/** Magic value for DBGFUNWINDSTATE::u32Magic after use. */
+#define DBGFUNWINDSTATE_MAGIC_DEAD      UINT32_C(0x20101209)
+
+/**
+ * Register state.
+ */
+typedef struct DBGFUNWINDSTATE
+{
+    /** Structure magic (DBGFUNWINDSTATE_MAGIC) */
+    uint32_t            u32Magic;
+    /** The state architecture. */
+    RTLDRARCH           enmArch;
+
+    /** The program counter register.
+     * amd64/x86: RIP/EIP/IP
+     * sparc: PC
+     * arm32: PC / R15
+     */
+    uint64_t            uPc;
+
+    /** Return type. */
+    DBGFRETRUNTYPE      enmRetType;
+
+    /** Register state (see enmArch). */
+    union
+    {
+        /** RTLDRARCH_AMD64, RTLDRARCH_X86_32 and RTLDRARCH_X86_16. */
+        struct
+        {
+            /** General purpose registers indexed by X86_GREG_XXX. */
+            uint64_t    auRegs[16];
+            /** The frame address. */
+            RTFAR64     FrameAddr;
+            /** Set if we're in real or virtual 8086 mode. */
+            bool        fRealOrV86;
+            /** The flags register. */
+            uint64_t    uRFlags;
+            /** Trap error code. */
+            uint64_t    uErrCd;
+            /** Segment registers (indexed by X86_SREG_XXX). */
+            uint16_t    auSegs[6];
+
+            /** Bitmap tracking register we've loaded and which content can possibly be trusted. */
+            union
+            {
+                /** For effective clearing of the bits. */
+                uint32_t    fAll;
+                /** Detailed view. */
+                struct
+                {
+                    /** Bitmap indicating whether a GPR was loaded (parallel to auRegs). */
+                    uint16_t    fRegs;
+                    /** Bitmap indicating whether a segment register was loaded (parallel to auSegs). */
+                    uint8_t     fSegs;
+                    /** Set if uPc was loaded. */
+                    uint8_t     fPc : 1;
+                    /** Set if FrameAddr was loaded. */
+                    uint8_t     fFrameAddr : 1;
+                    /** Set if uRFlags was loaded. */
+                    uint8_t     fRFlags : 1;
+                    /** Set if uErrCd was loaded. */
+                    uint8_t     fErrCd : 1;
+                } s;
+            } Loaded;
+        } x86;
+
+        /** @todo add ARM and others as needed. */
+    } u;
+
+    /**
+     * Stack read callback.
+     *
+     * @returns IPRT status code.
+     * @param   pThis       Pointer to this structure.
+     * @param   uSp         The stack pointer address.
+     * @param   cbToRead    The number of bytes to read.
+     * @param   pvDst       Where to put the bytes we read.
+     */
+    DECLCALLBACKMEMBER(int, pfnReadStack)(struct DBGFUNWINDSTATE *pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst);
+    /** User argument (usefule for pfnReadStack). */
+    void               *pvUser;
+
+} DBGFUNWINDSTATE;
+typedef struct DBGFUNWINDSTATE *PDBGFUNWINDSTATE;
+typedef struct DBGFUNWINDSTATE const *PCDBGFUNWINDSTATE;
+
+static DECLCALLBACK(int) dbgfR3StackReadCallback(PDBGFUNWINDSTATE pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst);
+
+
 /**
  * Unwind context.
  *
@@ -52,11 +143,7 @@ typedef struct DBGFUNWINDCTX
     VMCPUID     m_idCpu;
     RTDBGAS     m_hAs;
 
-    uint64_t    m_auRegs[16];
-    uint64_t    m_uPc;
-    uint64_t    m_uRFlags;
-    uint16_t    m_uCs;
-    uint16_t    m_uSs;
+    DBGFUNWINDSTATE m_State;
 
     RTDBGMOD    m_hCached;
     RTUINTPTR   m_uCachedMapping;
@@ -71,36 +158,38 @@ typedef struct DBGFUNWINDCTX
 
     DBGFUNWINDCTX(PUVM pUVM, VMCPUID idCpu, PCCPUMCTX pInitialCtx, RTDBGAS hAs)
     {
+        m_State.u32Magic     = DBGFUNWINDSTATE_MAGIC;
+        m_State.enmArch      = RTLDRARCH_AMD64;
+        m_State.pfnReadStack = dbgfR3StackReadCallback;
+        m_State.pvUser       = this;
+        RT_ZERO(m_State.u);
         if (pInitialCtx)
         {
-            m_auRegs[X86_GREG_xAX] = pInitialCtx->rax;
-            m_auRegs[X86_GREG_xCX] = pInitialCtx->rcx;
-            m_auRegs[X86_GREG_xDX] = pInitialCtx->rdx;
-            m_auRegs[X86_GREG_xBX] = pInitialCtx->rbx;
-            m_auRegs[X86_GREG_xSP] = pInitialCtx->rsp;
-            m_auRegs[X86_GREG_xBP] = pInitialCtx->rbp;
-            m_auRegs[X86_GREG_xSI] = pInitialCtx->rsi;
-            m_auRegs[X86_GREG_xDI] = pInitialCtx->rdi;
-            m_auRegs[X86_GREG_x8 ] = pInitialCtx->r8;
-            m_auRegs[X86_GREG_x9 ] = pInitialCtx->r9;
-            m_auRegs[X86_GREG_x10] = pInitialCtx->r10;
-            m_auRegs[X86_GREG_x11] = pInitialCtx->r11;
-            m_auRegs[X86_GREG_x12] = pInitialCtx->r12;
-            m_auRegs[X86_GREG_x13] = pInitialCtx->r13;
-            m_auRegs[X86_GREG_x14] = pInitialCtx->r14;
-            m_auRegs[X86_GREG_x15] = pInitialCtx->r15;
-            m_uPc                  = pInitialCtx->rip;
-            m_uCs                  = pInitialCtx->cs.Sel;
-            m_uSs                  = pInitialCtx->ss.Sel;
-            m_uRFlags              = pInitialCtx->rflags.u;
-        }
-        else
-        {
-            RT_BZERO(m_auRegs, sizeof(m_auRegs));
-            m_uPc                  = 0;
-            m_uCs                  = 0;
-            m_uSs                  = 0;
-            m_uRFlags              = 0;
+            m_State.u.x86.auRegs[X86_GREG_xAX] = pInitialCtx->rax;
+            m_State.u.x86.auRegs[X86_GREG_xCX] = pInitialCtx->rcx;
+            m_State.u.x86.auRegs[X86_GREG_xDX] = pInitialCtx->rdx;
+            m_State.u.x86.auRegs[X86_GREG_xBX] = pInitialCtx->rbx;
+            m_State.u.x86.auRegs[X86_GREG_xSP] = pInitialCtx->rsp;
+            m_State.u.x86.auRegs[X86_GREG_xBP] = pInitialCtx->rbp;
+            m_State.u.x86.auRegs[X86_GREG_xSI] = pInitialCtx->rsi;
+            m_State.u.x86.auRegs[X86_GREG_xDI] = pInitialCtx->rdi;
+            m_State.u.x86.auRegs[X86_GREG_x8 ] = pInitialCtx->r8;
+            m_State.u.x86.auRegs[X86_GREG_x9 ] = pInitialCtx->r9;
+            m_State.u.x86.auRegs[X86_GREG_x10] = pInitialCtx->r10;
+            m_State.u.x86.auRegs[X86_GREG_x11] = pInitialCtx->r11;
+            m_State.u.x86.auRegs[X86_GREG_x12] = pInitialCtx->r12;
+            m_State.u.x86.auRegs[X86_GREG_x13] = pInitialCtx->r13;
+            m_State.u.x86.auRegs[X86_GREG_x14] = pInitialCtx->r14;
+            m_State.u.x86.auRegs[X86_GREG_x15] = pInitialCtx->r15;
+            m_State.uPc                        = pInitialCtx->rip;
+            m_State.u.x86.uRFlags              = pInitialCtx->rflags.u;
+            m_State.u.x86.auSegs[X86_SREG_ES]  = pInitialCtx->es.Sel;
+            m_State.u.x86.auSegs[X86_SREG_CS]  = pInitialCtx->cs.Sel;
+            m_State.u.x86.auSegs[X86_SREG_SS]  = pInitialCtx->ss.Sel;
+            m_State.u.x86.auSegs[X86_SREG_DS]  = pInitialCtx->ds.Sel;
+            m_State.u.x86.auSegs[X86_SREG_GS]  = pInitialCtx->gs.Sel;
+            m_State.u.x86.auSegs[X86_SREG_FS]  = pInitialCtx->fs.Sel;
+            m_State.u.x86.fRealOrV86           = CPUMIsGuestInRealOrV86ModeEx(pInitialCtx);
         }
 
         m_pUVM            = pUVM;
@@ -153,6 +242,33 @@ DBGFUNWINDCTX::~DBGFUNWINDCTX()
 
 
 /**
+ * @interface_method_impl{DBGFUNWINDSTATE,pfnReadStack}
+ */
+static DECLCALLBACK(int) dbgfR3StackReadCallback(PDBGFUNWINDSTATE pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst)
+{
+    Assert(   pThis->enmArch == RTLDRARCH_AMD64
+           || pThis->enmArch == RTLDRARCH_X86_32);
+
+    PDBGFUNWINDCTX pUnwindCtx = (PDBGFUNWINDCTX)pThis->pvUser;
+    DBGFADDRESS SrcAddr;
+    int rc = VINF_SUCCESS;
+    if (   pThis->enmArch == RTLDRARCH_X86_32
+        || pThis->enmArch == RTLDRARCH_X86_16)
+    {
+        if (!pThis->u.x86.fRealOrV86)
+            rc = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &SrcAddr, pThis->u.x86.auSegs[X86_SREG_SS], uSp);
+        else
+            DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSp + ((uint32_t)pThis->u.x86.auSegs[X86_SREG_SS] << 4));
+    }
+    else
+        DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSp);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &SrcAddr, pvDst, cbToRead);
+    return rc;
+}
+
+
+/**
  * Sets PC and SP.
  *
  * @returns true.
@@ -162,19 +278,22 @@ DBGFUNWINDCTX::~DBGFUNWINDCTX()
  */
 static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS pAddrPC, PCDBGFADDRESS pAddrStack)
 {
+    Assert(   pUnwindCtx->m_State.enmArch == RTLDRARCH_AMD64
+           || pUnwindCtx->m_State.enmArch == RTLDRARCH_X86_32);
+
     if (!DBGFADDRESS_IS_FAR(pAddrPC))
-        pUnwindCtx->m_uPc = pAddrPC->FlatPtr;
+        pUnwindCtx->m_State.uPc = pAddrPC->FlatPtr;
     else
     {
-        pUnwindCtx->m_uPc = pAddrPC->off;
-        pUnwindCtx->m_uCs = pAddrPC->Sel;
+        pUnwindCtx->m_State.uPc                       = pAddrPC->off;
+        pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_CS] = pAddrPC->Sel;
     }
     if (!DBGFADDRESS_IS_FAR(pAddrStack))
-        pUnwindCtx->m_auRegs[X86_GREG_xSP] = pAddrStack->FlatPtr;
+        pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xSP] = pAddrStack->FlatPtr;
     else
     {
-        pUnwindCtx->m_auRegs[X86_GREG_xSP] = pAddrStack->off;
-        pUnwindCtx->m_uSs                  = pAddrStack->Sel;
+        pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xSP] = pAddrStack->off;
+        pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_SS]  = pAddrStack->Sel;
     }
     return true;
 }
@@ -183,32 +302,28 @@ static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS p
 /**
  * Try read a 16-bit value off the stack.
  *
+ * @returns pfnReadStack result.
  * @param   pUnwindCtx      The unwind context.
  * @param   uSrcAddr        The stack address.
  * @param   puDst           The read destination.
  */
-static void dbgfR3UnwindCtxLoadU16(PDBGFUNWINDCTX pUnwindCtx, uint64_t uSrcAddr, uint16_t *puDst)
+DECLINLINE(int) dbgUnwindLoadStackU16(PDBGFUNWINDSTATE pThis, uint64_t uSrcAddr, uint16_t *puDst)
 {
-    DBGFADDRESS SrcAddr;
-    DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu,
-                  DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSrcAddr),
-                  puDst, sizeof(*puDst));
+    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
 }
 
 
 /**
  * Try read a 64-bit value off the stack.
  *
+ * @returns pfnReadStack result.
  * @param   pUnwindCtx      The unwind context.
  * @param   uSrcAddr        The stack address.
  * @param   puDst           The read destination.
  */
-static void dbgfR3UnwindCtxLoadU64(PDBGFUNWINDCTX pUnwindCtx, uint64_t uSrcAddr, uint64_t *puDst)
+DECLINLINE(int) dbgUnwindLoadStackU64(PDBGFUNWINDSTATE pThis, uint64_t uSrcAddr, uint64_t *puDst)
 {
-    DBGFADDRESS SrcAddr;
-    DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu,
-                  DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSrcAddr),
-                  puDst, sizeof(*puDst));
+    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
 }
 
 
@@ -216,7 +331,7 @@ static void dbgfR3UnwindCtxLoadU64(PDBGFUNWINDCTX pUnwindCtx, uint64_t uSrcAddr,
  * Binary searches the lookup table.
  *
  * @returns RVA of unwind info on success, UINT32_MAX on failure.
- * @param   paFunctions     The table to lookup @a offFunctionRva in.
+ * @param   paFunctions     The table to lookup @a uRva in.
  * @param   iEnd            Size of the table.
  * @param   uRva            The RVA of the function we want.
  */
@@ -243,39 +358,49 @@ dbgfR3UnwindCtxLookupUnwindInfoRva(PCIMAGE_RUNTIME_FUNCTION_ENTRY paFunctions, s
  * Processes an IRET frame.
  *
  * @returns true.
- * @param   pUnwindCtx      The unwind context.
+ * @param   pThis           The unwind state being worked.
  * @param   fErrCd          Non-zero if there is an error code on the stack.
- * @param   pAddrFrame      Where to return the frame pointer.
- * @param   penmRetType     Where to return the return type.
  */
-static bool dbgfR3UnwindCtxDoOneIRet(PDBGFUNWINDCTX pUnwindCtx, uint8_t fErrCd,
-                                     PDBGFADDRESS pAddrFrame, DBGFRETURNTYPE *penmRetType)
+static bool dbgUnwindPeAmd64DoOneIRet(PDBGFUNWINDSTATE pThis, uint8_t fErrCd)
 {
     Assert(fErrCd <= 1);
-    if (fErrCd)
-        pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* error code */
+    if (!fErrCd)
+        pThis->u.x86.Loaded.s.fErrCd = 0;
+    else
+    {
+        pThis->u.x86.uErrCd = 0;
+        pThis->u.x86.Loaded.s.fErrCd = 1;
+        dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.uErrCd);
+        pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
+    }
 
-    *penmRetType = DBGFRETURNTYPE_IRET64;
-    DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, pAddrFrame,
-                       pUnwindCtx->m_auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8);
+    pThis->enmRetType = DBGFRETURNTYPE_IRET64;
+    pThis->u.x86.FrameAddr.off = pThis->u.x86.auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8;
+    pThis->u.x86.FrameAddr.sel = pThis->u.x86.auSegs[X86_SREG_SS];
 
-    dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uPc);
-    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* RIP */
+    dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->uPc);
+    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* RIP */
 
-    dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uCs);
-    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* CS */
+    dbgUnwindLoadStackU16(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auSegs[X86_SREG_CS]);
+    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* CS */
 
-    dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uRFlags);
-    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* EFLAGS */
+    dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.uRFlags);
+    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* EFLAGS */
 
-    uint64_t uNewRsp = (pUnwindCtx->m_auRegs[X86_GREG_xSP] - 8) & ~(uint64_t)15;
-    dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &uNewRsp);
-    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* RSP */
+    uint64_t uNewRsp = (pThis->u.x86.auRegs[X86_GREG_xSP] - 8) & ~(uint64_t)15;
+    dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &uNewRsp);
+    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* RSP */
 
-    dbgfR3UnwindCtxLoadU16(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uSs);
-    pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8; /* SS */
+    dbgUnwindLoadStackU16(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auSegs[X86_SREG_SS]);
+    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* SS */
 
-    pUnwindCtx->m_auRegs[X86_GREG_xSP] = uNewRsp;
+    pThis->u.x86.auRegs[X86_GREG_xSP] = uNewRsp;
+
+    pThis->u.x86.Loaded.s.fRegs        |= RT_BIT(X86_GREG_xSP);
+    pThis->u.x86.Loaded.s.fSegs        |= RT_BIT(X86_SREG_CS) | RT_BIT(X86_SREG_SS);
+    pThis->u.x86.Loaded.s.fPc           = 1;
+    pThis->u.x86.Loaded.s.fFrameAddr    = 1;
+    pThis->u.x86.Loaded.s.fRFlags       = 1;
     return true;
 }
 
@@ -284,19 +409,20 @@ static bool dbgfR3UnwindCtxDoOneIRet(PDBGFUNWINDCTX pUnwindCtx, uint8_t fErrCd,
  * Unwinds one frame using cached module info.
  *
  * @returns true on success, false on failure.
- * @param   pUnwindCtx      The unwind context.
+ * @param   hMod            The debug module to retrieve unwind info from.
+ * @param   paFunctions     The table to lookup @a uRvaRip in.
+ * @param   cFunctions      Size of the lookup table.
  * @param   uRvaRip         The RVA of the RIP.
- * @param   pAddrFrame      Where to return the frame pointer.
- * @param   penmRetType     Where to return the return type.
+ *
+ * @todo Move this down to IPRT in the ldrPE.cpp / dbgmodcodeview.cpp area.
  */
-static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t uRvaRip,
-                                            PDBGFADDRESS pAddrFrame, DBGFRETURNTYPE *penmRetType)
+static bool dbgUnwindPeAmd64DoOne(RTDBGMOD hMod, PCIMAGE_RUNTIME_FUNCTION_ENTRY paFunctions, size_t cFunctions,
+                                  PDBGFUNWINDSTATE pThis, uint32_t uRvaRip)
 {
     /*
      * Lookup the unwind info RVA and try read it.
      */
-    PCIMAGE_RUNTIME_FUNCTION_ENTRY pEntry = dbgfR3UnwindCtxLookupUnwindInfoRva(pUnwindCtx->m_paFunctions,
-                                                                               pUnwindCtx->m_cFunctions, uRvaRip);
+    PCIMAGE_RUNTIME_FUNCTION_ENTRY pEntry = dbgfR3UnwindCtxLookupUnwindInfoRva(paFunctions, cFunctions, uRvaRip);
     if (pEntry)
     {
         IMAGE_RUNTIME_FUNCTION_ENTRY ChainedEntry;
@@ -321,7 +447,7 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
 
             uBuf.uRva = pEntry->UnwindInfoAddress;
             size_t cbBuf = sizeof(uBuf);
-            int rc = RTDbgModImageQueryProp(pUnwindCtx->m_hCached, RTLDRPROP_UNWIND_INFO, &uBuf, cbBuf, &cbBuf);
+            int rc = RTDbgModImageQueryProp(hMod, RTLDRPROP_UNWIND_INFO, &uBuf, cbBuf, &cbBuf);
             if (RT_FAILURE(rc))
                 return false;
 
@@ -401,39 +527,41 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                 while (iOpcode < cOpcodes)
                 {
                     Assert(pInfo->aOpcodes[iOpcode].u.CodeOffset <= offPc);
-                    switch (pInfo->aOpcodes[iOpcode].u.UnwindOp)
+                    uint8_t const uOpInfo   = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                    uint8_t const uUnwindOp = pInfo->aOpcodes[iOpcode].u.UnwindOp;
+                    switch (uUnwindOp)
                     {
                         case IMAGE_AMD64_UWOP_PUSH_NONVOL:
-                            pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8;
-                            dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP],
-                                                   &pUnwindCtx->m_auRegs[pInfo->aOpcodes[iOpcode].u.OpInfo]);
+                            pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
+                            dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auRegs[uOpInfo]);
+                            pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
                             iOpcode++;
                             break;
 
                         case IMAGE_AMD64_UWOP_ALLOC_LARGE:
-                            if (pInfo->aOpcodes[iOpcode].u.OpInfo == 0)
+                            if (uOpInfo == 0)
                             {
                                 iOpcode += 2;
                                 AssertBreak(iOpcode <= cOpcodes);
-                                pUnwindCtx->m_auRegs[X86_GREG_xSP] += pInfo->aOpcodes[iOpcode - 1].FrameOffset * 8;
+                                pThis->u.x86.auRegs[X86_GREG_xSP] += pInfo->aOpcodes[iOpcode - 1].FrameOffset * 8;
                             }
                             else
                             {
                                 iOpcode += 3;
                                 AssertBreak(iOpcode <= cOpcodes);
-                                pUnwindCtx->m_auRegs[X86_GREG_xSP] += RT_MAKE_U32(pInfo->aOpcodes[iOpcode - 2].FrameOffset,
+                                pThis->u.x86.auRegs[X86_GREG_xSP] += RT_MAKE_U32(pInfo->aOpcodes[iOpcode - 2].FrameOffset,
                                                                                   pInfo->aOpcodes[iOpcode - 1].FrameOffset);
                             }
                             break;
 
                         case IMAGE_AMD64_UWOP_ALLOC_SMALL:
                             AssertBreak(iOpcode <= cOpcodes);
-                            pUnwindCtx->m_auRegs[X86_GREG_xSP] += pInfo->aOpcodes[iOpcode].u.OpInfo * 8 + 8;
+                            pThis->u.x86.auRegs[X86_GREG_xSP] += uOpInfo * 8 + 8;
                             iOpcode++;
                             break;
 
                         case IMAGE_AMD64_UWOP_SET_FPREG:
-                            iFrameReg = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                            iFrameReg = uOpInfo;
                             offFrameReg = pInfo->FrameOffset * 16;
                             iOpcode++;
                             break;
@@ -441,22 +569,21 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                         case IMAGE_AMD64_UWOP_SAVE_NONVOL:
                         case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
                         {
-                            bool const     fFar  = pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR;
-                            unsigned const iGreg = pInfo->aOpcodes[iOpcode].u.OpInfo;
-                            uint32_t       off   = 0;
+                            uint32_t off = 0;
                             iOpcode++;
                             if (iOpcode < cOpcodes)
                             {
                                 off = pInfo->aOpcodes[iOpcode].FrameOffset;
                                 iOpcode++;
-                                if (fFar && iOpcode < cOpcodes)
+                                if (uUnwindOp == IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR && iOpcode < cOpcodes)
                                 {
                                     off |= (uint32_t)pInfo->aOpcodes[iOpcode].FrameOffset << 16;
                                     iOpcode++;
                                 }
                             }
                             off *= 8;
-                            dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP] + off, &pUnwindCtx->m_auRegs[iGreg]);
+                            dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP] + off, &pThis->u.x86.auRegs[uOpInfo]);
+                            pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
                             break;
                         }
 
@@ -469,7 +596,7 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                             break;
 
                         case IMAGE_AMD64_UWOP_PUSH_MACHFRAME:
-                            return dbgfR3UnwindCtxDoOneIRet(pUnwindCtx, pInfo->aOpcodes[iOpcode].u.OpInfo, pAddrFrame, penmRetType);
+                            return dbgUnwindPeAmd64DoOneIRet(pThis, uOpInfo);
 
                         case IMAGE_AMD64_UWOP_EPILOG:
                             iOpcode += 1;
@@ -479,7 +606,7 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                             AssertFailedReturn(false);
 
                         default:
-                            AssertMsgFailedReturn(("%u\n", pInfo->aOpcodes[iOpcode].u.UnwindOp), false);
+                            AssertMsgFailedReturn(("%u\n", uUnwindOp), false);
                     }
                 }
             }
@@ -494,25 +621,29 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                  */
                 while (iOpcode < cOpcodes)
                 {
-                    switch (pInfo->aOpcodes[iOpcode].u.UnwindOp)
+                    uint8_t const uOpInfo   = pInfo->aOpcodes[iOpcode].u.OpInfo;
+                    uint8_t const uUnwindOp = pInfo->aOpcodes[iOpcode].u.UnwindOp;
+                    switch (uUnwindOp)
                     {
                         case IMAGE_AMD64_UWOP_PUSH_NONVOL:
-                            pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8;
+                            pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
                             if (offEpilog == 0)
-                                dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP],
-                                                       &pUnwindCtx->m_auRegs[pInfo->aOpcodes[iOpcode].u.OpInfo]);
+                            {
+                                dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auRegs[uOpInfo]);
+                                pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
+                            }
                             else
                             {
                                 /* Decrement offEpilog by estimated POP instruction length. */
                                 offEpilog -= 1;
-                                if (offEpilog > 0 && pInfo->aOpcodes[iOpcode].u.OpInfo >= 8)
+                                if (offEpilog > 0 && uOpInfo >= 8)
                                     offEpilog -= 1;
                             }
                             iOpcode++;
                             break;
 
                         case IMAGE_AMD64_UWOP_PUSH_MACHFRAME: /* Must terminate an epilog, so always execute this. */
-                            return dbgfR3UnwindCtxDoOneIRet(pUnwindCtx, pInfo->aOpcodes[iOpcode].u.OpInfo, pAddrFrame, penmRetType);
+                            return dbgUnwindPeAmd64DoOneIRet(pThis, uOpInfo);
 
                         case IMAGE_AMD64_UWOP_ALLOC_SMALL:
                         case IMAGE_AMD64_UWOP_SET_FPREG:
@@ -530,7 +661,7 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
                             break;
 
                         default:
-                            AssertMsgFailedReturn(("%u\n", pInfo->aOpcodes[iOpcode].u.UnwindOp), false);
+                            AssertMsgFailedReturn(("%u\n", uUnwindOp), false);
                     }
                 }
             }
@@ -548,16 +679,18 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
         /*
          * RSP should now give us the return address, so perform a RET.
          */
-        *penmRetType = DBGFRETURNTYPE_NEAR64;
-        DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, pAddrFrame,
-                           pUnwindCtx->m_auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8);
+        pThis->enmRetType = DBGFRETURNTYPE_NEAR64;
 
-        dbgfR3UnwindCtxLoadU64(pUnwindCtx, pUnwindCtx->m_auRegs[X86_GREG_xSP], &pUnwindCtx->m_uPc);
-        pUnwindCtx->m_auRegs[X86_GREG_xSP] += 8;
+        pThis->u.x86.FrameAddr.off = pThis->u.x86.auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8;
+        pThis->u.x86.FrameAddr.sel = pThis->u.x86.auSegs[X86_SREG_SS];
+        pThis->u.x86.Loaded.s.fFrameAddr = 1;
+
+        dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->uPc);
+        pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
+        pThis->u.x86.Loaded.s.fPc = 1;
         return true;
     }
 
-    RT_NOREF_PV(pAddrFrame);
     return false;
 }
 
@@ -567,17 +700,16 @@ static bool dbgfR3UnwindCtxDoOneFrameCached(PDBGFUNWINDCTX pUnwindCtx, uint32_t 
  *
  * @returns true on success, false on failure.
  * @param   pUnwindCtx      The unwind context.
- * @param   pAddrFrame      Where to return the frame pointer.
- * @param   penmRetType     Where to return the return type.
  */
-static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pAddrFrame, DBGFRETURNTYPE *penmRetType)
+static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx)
 {
     /*
      * Hope for the same module as last time around.
      */
-    RTUINTPTR offCache = pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping;
+    RTUINTPTR offCache = pUnwindCtx->m_State.uPc - pUnwindCtx->m_uCachedMapping;
     if (offCache < pUnwindCtx->m_cbCachedMapping)
-        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, offCache, pAddrFrame, penmRetType);
+        return dbgUnwindPeAmd64DoOne(pUnwindCtx->m_hCached, pUnwindCtx->m_paFunctions, pUnwindCtx->m_cFunctions,
+                                     &pUnwindCtx->m_State, offCache);
 
     /*
      * Try locate the module.
@@ -585,7 +717,7 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
     RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
     RTUINTPTR       uBase   = 0;
     RTDBGSEGIDX     idxSeg  = NIL_RTDBGSEGIDX;
-    int rc = RTDbgAsModuleByAddr(pUnwindCtx->m_hAs, pUnwindCtx->m_uPc, &hDbgMod, &uBase, &idxSeg);
+    int rc = RTDbgAsModuleByAddr(pUnwindCtx->m_hAs, pUnwindCtx->m_State.uPc, &hDbgMod, &uBase, &idxSeg);
     if (RT_SUCCESS(rc))
     {
         /* We cache the module regardless of unwind info. */
@@ -621,8 +753,8 @@ static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx, PDBGFADDRESS pA
                         pUnwindCtx->m_paFunctions  = (PCIMAGE_RUNTIME_FUNCTION_ENTRY)pvBuf;
                         pUnwindCtx->m_cFunctions   = cbNeeded / sizeof(*pUnwindCtx->m_paFunctions);
 
-                        return dbgfR3UnwindCtxDoOneFrameCached(pUnwindCtx, pUnwindCtx->m_uPc - pUnwindCtx->m_uCachedMapping,
-                                                               pAddrFrame, penmRetType);
+                        return dbgUnwindPeAmd64DoOne(pUnwindCtx->m_hCached, pUnwindCtx->m_paFunctions, pUnwindCtx->m_cFunctions,
+                                                     &pUnwindCtx->m_State, pUnwindCtx->m_State.uPc - pUnwindCtx->m_uCachedMapping);
                     }
                     RTMemFree(pvBuf);
                 }
@@ -658,6 +790,102 @@ DECLINLINE(int) dbgfR3StackRead(PUVM pUVM, VMCPUID idCpu, void *pvBuf, PCDBGFADD
     else
         *pcbRead = cb;
     return rc;
+}
+
+static int dbgfR3StackWalkCollectRegisterChanges(PUVM pUVM, PDBGFSTACKFRAME pFrame, PDBGFUNWINDSTATE pState)
+{
+    pFrame->cSureRegs  = 0;
+    pFrame->paSureRegs = NULL;
+
+    if (   pState->enmArch == RTLDRARCH_AMD64
+        || pState->enmArch == RTLDRARCH_X86_32
+        || pState->enmArch == RTLDRARCH_X86_16)
+    {
+        if (pState->u.x86.Loaded.fAll)
+        {
+            /*
+             * Count relevant registers.
+             */
+            uint32_t cRegs = 0;
+            if (pState->u.x86.Loaded.s.fRegs)
+                for (uint32_t f = 1; f < RT_BIT_32(RT_ELEMENTS(pState->u.x86.auRegs)); f <<= 1)
+                    if (pState->u.x86.Loaded.s.fRegs & f)
+                        cRegs++;
+            if (pState->u.x86.Loaded.s.fSegs)
+                for (uint32_t f = 1; f < RT_BIT_32(RT_ELEMENTS(pState->u.x86.auSegs)); f <<= 1)
+                    if (pState->u.x86.Loaded.s.fSegs & f)
+                        cRegs++;
+            if (pState->u.x86.Loaded.s.fRFlags)
+                cRegs++;
+            if (pState->u.x86.Loaded.s.fErrCd)
+                cRegs++;
+            if (cRegs > 0)
+            {
+                /*
+                 * Allocate the arrays.
+                 */
+                PDBGFREGVALEX paSureRegs = (PDBGFREGVALEX)MMR3HeapAllocZU(pUVM, MM_TAG_DBGF_STACK, sizeof(DBGFREGVALEX) * cRegs);
+                AssertReturn(paSureRegs, VERR_NO_MEMORY);
+                pFrame->paSureRegs = paSureRegs;
+                pFrame->cSureRegs  = cRegs;
+
+                /*
+                 * Popuplate the arrays.
+                 */
+                uint32_t iReg = 0;
+                if (pState->u.x86.Loaded.s.fRegs)
+                    for (uint32_t i = 1; i < RT_ELEMENTS(pState->u.x86.auRegs); i++)
+                        if (pState->u.x86.Loaded.s.fRegs & RT_BIT(i))
+                        {
+                            paSureRegs[iReg].Value.u64 = pState->u.x86.auRegs[i];
+                            paSureRegs[iReg].enmType   = DBGFREGVALTYPE_U64;
+                            paSureRegs[iReg].enmReg    = (DBGFREG)(DBGFREG_RAX + i);
+                            iReg++;
+                        }
+
+                if (pState->u.x86.Loaded.s.fSegs)
+                    for (uint32_t i = 1; i < RT_ELEMENTS(pState->u.x86.auSegs); i++)
+                        if (pState->u.x86.Loaded.s.fSegs & RT_BIT(i))
+                        {
+                            paSureRegs[iReg].Value.u16 = pState->u.x86.auSegs[i];
+                            paSureRegs[iReg].enmType   = DBGFREGVALTYPE_U16;
+                            switch (i)
+                            {
+                                case X86_SREG_ES: paSureRegs[iReg].enmReg = DBGFREG_ES; break;
+                                case X86_SREG_CS: paSureRegs[iReg].enmReg = DBGFREG_CS; break;
+                                case X86_SREG_SS: paSureRegs[iReg].enmReg = DBGFREG_SS; break;
+                                case X86_SREG_DS: paSureRegs[iReg].enmReg = DBGFREG_DS; break;
+                                case X86_SREG_FS: paSureRegs[iReg].enmReg = DBGFREG_FS; break;
+                                case X86_SREG_GS: paSureRegs[iReg].enmReg = DBGFREG_GS; break;
+                                default:          AssertFailedBreak();
+                            }
+                            iReg++;
+                        }
+
+                if (iReg < cRegs)
+                {
+                    if (pState->u.x86.Loaded.s.fRFlags)
+                    {
+                        paSureRegs[iReg].Value.u64 = pState->u.x86.uRFlags;
+                        paSureRegs[iReg].enmType   = DBGFREGVALTYPE_U64;
+                        paSureRegs[iReg].enmReg    = DBGFREG_RFLAGS;
+                        iReg++;
+                    }
+                    if (pState->u.x86.Loaded.s.fErrCd)
+                    {
+                        paSureRegs[iReg].Value.u64 = pState->u.x86.uErrCd;
+                        paSureRegs[iReg].enmType   = DBGFREGVALTYPE_U64;
+                        paSureRegs[iReg].enmReg    = DBGFREG_END;
+                        paSureRegs[iReg].pszName   = "trap-errcd";
+                        iReg++;
+                    }
+                }
+                Assert(iReg == cRegs);
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -706,6 +934,20 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
                 pFrame->enmReturnType = pFrame->enmReturnFrameReturnType;
                 pFrame->enmReturnFrameReturnType = DBGFRETURNTYPE_INVALID;
             }
+        }
+    }
+
+    /*
+     * Enagage the OS layer and collect register changes.
+     */
+    if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
+    {
+        /** @todo engage the OS buggers to identify trap frames and update unwindctx accordingly. */
+        if (!fFirst)
+        {
+            int rc = dbgfR3StackWalkCollectRegisterChanges(pUnwindCtx->m_pUVM, pFrame, &pUnwindCtx->m_State);
+            if (RT_FAILURE(rc))
+                return rc;
         }
     }
 
@@ -783,13 +1025,14 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
         if (   pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_PRIV
             || pFrame->enmReturnType == DBGFRETURNTYPE_IRET64)
             DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnFrame,
-                                 pUnwindCtx->m_uSs, pUnwindCtx->m_auRegs[X86_GREG_xBP]);
+                                 pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_SS], pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xBP]);
         else if (pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_V86)
             DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnFrame,
-                               ((uint32_t)pUnwindCtx->m_uSs << 4) + pUnwindCtx->m_auRegs[X86_GREG_xBP]);
+                                 ((uint32_t)pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_SS] << 4)
+                               + pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xBP]);
         else
         {
-            pFrame->AddrReturnFrame.off      = pUnwindCtx->m_auRegs[X86_GREG_xBP];
+            pFrame->AddrReturnFrame.off      = pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xBP];
             pFrame->AddrReturnFrame.FlatPtr += pFrame->AddrReturnFrame.off - pFrame->AddrFrame.off;
         }
     }
@@ -852,13 +1095,14 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
         if (   pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_PRIV
             || pFrame->enmReturnType == DBGFRETURNTYPE_IRET64)
             DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnStack,
-                                 pUnwindCtx->m_uSs, pUnwindCtx->m_auRegs[X86_GREG_xSP]);
+                                 pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_SS], pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xSP]);
         else if (pFrame->enmReturnType == DBGFRETURNTYPE_IRET32_V86)
             DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnStack,
-                               ((uint32_t)pUnwindCtx->m_uSs << 4) + pUnwindCtx->m_auRegs[X86_GREG_xSP]);
+                                 ((uint32_t)pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_SS] << 4)
+                               + pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xSP]);
         else
         {
-            pFrame->AddrReturnStack.off      = pUnwindCtx->m_auRegs[X86_GREG_xSP];
+            pFrame->AddrReturnStack.off      = pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xSP];
             pFrame->AddrReturnStack.FlatPtr += pFrame->AddrReturnStack.off - pFrame->AddrStack.off;
         }
     }
@@ -876,12 +1120,12 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
     {
         if (DBGFReturnTypeIsNear(pFrame->enmReturnType))
         {
-            pFrame->AddrReturnPC.off      = pUnwindCtx->m_uPc;
+            pFrame->AddrReturnPC.off      = pUnwindCtx->m_State.uPc;
             pFrame->AddrReturnPC.FlatPtr += pFrame->AddrReturnPC.off - pFrame->AddrPC.off;
         }
         else
             DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC,
-                                 pUnwindCtx->m_uCs, pUnwindCtx->m_uPc);
+                                 pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_CS], pUnwindCtx->m_State.uPc);
     }
     else
         switch (pFrame->enmReturnType)
@@ -982,14 +1226,21 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
             dbgfR3UnwindCtxSetPcAndSp(pUnwindCtx, &pFrame->AddrReturnPC, &pFrame->AddrReturnStack);
         }
         /** @todo Reevaluate CS if the previous frame return type isn't near. */
-
-        DBGFADDRESS    AddrReturnFrame = pFrame->AddrReturnFrame;
-        DBGFRETURNTYPE enmReturnType   = pFrame->enmReturnType;
-        if (dbgfR3UnwindCtxDoOneFrame(pUnwindCtx, &AddrReturnFrame, &enmReturnType))
+        if (   pUnwindCtx->m_State.enmArch == RTLDRARCH_AMD64
+            || pUnwindCtx->m_State.enmArch == RTLDRARCH_X86_32
+            || pUnwindCtx->m_State.enmArch == RTLDRARCH_X86_16)
+            pUnwindCtx->m_State.u.x86.Loaded.fAll = 0;
+        else
+            AssertFailed();
+        if (dbgfR3UnwindCtxDoOneFrame(pUnwindCtx))
         {
+            DBGFADDRESS AddrReturnFrame = pFrame->AddrReturnFrame;
+            int rc = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &AddrReturnFrame,
+                                          pUnwindCtx->m_State.u.x86.FrameAddr.sel, pUnwindCtx->m_State.u.x86.FrameAddr.off);
+            if (RT_SUCCESS(rc))
+                pFrame->AddrReturnFrame      = AddrReturnFrame;
+            pFrame->enmReturnFrameReturnType = pUnwindCtx->m_State.enmRetType;
             pFrame->fFlags                  |= DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET;
-            pFrame->AddrReturnFrame          = AddrReturnFrame;
-            pFrame->enmReturnFrameReturnType = enmReturnType;
         }
     }
 
@@ -1093,9 +1344,12 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
             pCur->AddrFrame = *pAddrFrame;
         else if (   RT_SUCCESS(rc)
                  && dbgfR3UnwindCtxSetPcAndSp(&UnwindCtx, &pCur->AddrPC, &pCur->AddrStack)
-                 && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx, &pCur->AddrFrame, &pCur->enmReturnType))
+                 && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx))
         {
+            pCur->enmReturnType = UnwindCtx.m_State.enmRetType;
             pCur->fFlags |= DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO;
+            rc = DBGFR3AddrFromSelOff(UnwindCtx.m_pUVM, UnwindCtx.m_idCpu, &pCur->AddrFrame,
+                                      UnwindCtx.m_State.u.x86.FrameAddr.sel, UnwindCtx.m_State.u.x86.FrameAddr.off);
         }
         else if (enmCodeType != DBGFCODETYPE_GUEST)
             DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtx->rbp & fAddrMask);
@@ -1132,6 +1386,9 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
     DBGFSTACKFRAME Next = *pCur;
     while (!(pCur->fFlags & (DBGFSTACKFRAME_FLAGS_LAST | DBGFSTACKFRAME_FLAGS_MAX_DEPTH | DBGFSTACKFRAME_FLAGS_LOOP)))
     {
+        Next.cSureRegs  = 0;
+        Next.paSureRegs = NULL;
+
         /* try walk. */
         rc = dbgfR3StackWalk(&UnwindCtx, &Next, false /*fFirst*/);
         if (RT_FAILURE(rc))
@@ -1341,6 +1598,13 @@ VMMR3DECL(void) DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame)
         RTDbgSymbolFree(pCur->pSymReturnPC);
         RTDbgLineFree(pCur->pLinePC);
         RTDbgLineFree(pCur->pLineReturnPC);
+
+        if (pCur->paSureRegs)
+        {
+            MMR3HeapFree(pCur->paSureRegs);
+            pCur->paSureRegs = NULL;
+            pCur->cSureRegs = 0;
+        }
 
         pCur->pNextInternal = NULL;
         pCur->pFirstInternal = NULL;

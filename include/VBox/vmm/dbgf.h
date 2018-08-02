@@ -1343,6 +1343,12 @@ typedef struct DBGFSTACKFRAME
         uint8_t     au8[32];
     } Args;
 
+    /** Number of registers values we can be sure about.
+     * @note This is generally zero in the first frame.  */
+    uint32_t                cSureRegs;
+    /** Registers we can be sure about (length given by cSureRegs). */
+    struct DBGFREGVALEX    *paSureRegs;
+
     /** Pointer to the next frame.
      * Might not be used in some cases, so consider it internal. */
     PCDBGFSTACKFRAME pNextInternal;
@@ -1877,6 +1883,27 @@ typedef DBGFREGVAL const *PCDBGFREGVAL;
 #define DBGFREGVAL_INITIALIZE_ZERO { { 0, 0, 0, 0, 0, 0, 0, 0 } }
 /** Initialize a DBGFREGVAL variable to all bits set .  */
 #define DBGFREGVAL_INITIALIZE_FFFF { { UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX } }
+
+/**
+ * Extended register value, including register ID and type.
+ *
+ * This is currently only used by the stack walker.
+ */
+typedef struct DBGFREGVALEX
+{
+    /** The register value. */
+    DBGFREGVAL          Value;
+    /** The register value type. */
+    DBGFREGVALTYPE      enmType;
+    /** The register ID, DBGFREG_END if not applicable. */
+    DBGFREG             enmReg;
+    /** Pointer to read-only register name string if no register ID could be found. */
+    const char         *pszName;
+} DBGFREGVALEX;
+/** Pointer to an extended register value struct. */
+typedef DBGFREGVALEX *PDBGFREGVALEX;
+/** Pointer to a const extended register value struct. */
+typedef DBGFREGVALEX const *PCDBGFREGVALEX;
 
 
 VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial);
