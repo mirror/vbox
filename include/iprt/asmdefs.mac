@@ -125,6 +125,15 @@
 %endmacro
 
 ;;
+; Records a general register push.
+; @param 1 Register name.
+%macro SEH64_PUSH_GREG 1
+ %ifdef RT_ASM_WITH_SEH64
+  [pushreg %1]
+ %endif
+%endmacro
+
+;;
 ; Sets xBP as frame pointer that's pointing to a stack position %1 relative to xBP.
 %macro SEH64_SET_FRAME_xBP 1
  %ifdef RT_ASM_WITH_SEH64
