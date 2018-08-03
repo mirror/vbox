@@ -361,6 +361,7 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 #ifdef IN_RING3
 static int                        hdaR3AddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg);
 static int                        hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg);
+static int                        hdaR3UpdateStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 static DECLCALLBACK(VBOXSTRICTRC) hdaR3DMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys,
                                                         void *pvBuf, size_t cbBuf,
@@ -2023,6 +2024,21 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     return rc;
 }
 
+/**
+ * Updates an audio device stream with the given configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   pCfg                Stream configuration to apply.
+ */
+static int hdaR3UpdateStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
+{
+    /* Remove the old stream from the device setup. */
+    hdaR3RemoveStream(pThis, pCfg);
+
+    /* Add the stream to the device setup. */
+    return hdaR3AddStream(pThis, pCfg);
+}
 #endif /* IN_RING3 */
 
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -4528,25 +4544,39 @@ static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
     {
         PHDASTREAM pStream = hdaR3GetStreamFromSink(pThis, &pThis->SinkFront);
         if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
-            hdaR3MixerAddDrvStream(pThis, pThis->SinkFront.pMixSink,     &pStream->State.Cfg, pDrv);
-
+        {
+            rc2 = hdaR3UpdateStream(pThis, &pStream->State.Cfg);
+            AssertRC(rc2);
+        }
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         pStream = hdaR3GetStreamFromSink(pThis, &pThis->SinkCenterLFE);
         if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
-            hdaR3MixerAddDrvStream(pThis, pThis->SinkCenterLFE.pMixSink, &pStream->State.Cfg, pDrv);
+        {
+            rc2 = hdaR3UpdateStream(pThis, &pStream->State.Cfg);
+            AssertRC(rc2);
+        }
 
         pStream = hdaR3GetStreamFromSink(pThis, &pThis->SinkRear);
         if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
-            hdaR3MixerAddDrvStream(pThis, pThis->SinkRear.pMixSink,      &pStream->State.Cfg, pDrv);
+        {
+            rc2 = hdaR3UpdateStream(pThis, &pStream->State.Cfg);
+            AssertRC(rc2);
+        }
 #endif
         pStream = hdaR3GetStreamFromSink(pThis, &pThis->SinkLineIn);
         if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
-            hdaR3MixerAddDrvStream(pThis, pThis->SinkLineIn.pMixSink,    &pStream->State.Cfg, pDrv);
+        {
+            rc2 = hdaR3UpdateStream(pThis, &pStream->State.Cfg);
+            AssertRC(rc2);
+        }
 
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         pStream = hdaR3GetStreamFromSink(pThis, &pThis->SinkMicIn);
         if (DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
-            hdaR3MixerAddDrvStream(pThis, pThis->SinkMicIn.pMixSink,     &pStream->State.Cfg, pDrv);
+        {
+            rc2 = hdaR3UpdateStream(pThis, &pStream->State.Cfg);
+            AssertRC(rc2);
+        }
 #endif
     }
 
