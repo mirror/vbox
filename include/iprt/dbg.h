@@ -273,10 +273,6 @@ typedef struct RTDBGUNWINDSTATE
     void               *pvUser;
 
 } RTDBGUNWINDSTATE;
-/** Pointer to an unwind machine state. */
-typedef struct RTDBGUNWINDSTATE *PRTDBGUNWINDSTATE;
-/** Pointer to a const unwind machine state. */
-typedef struct RTDBGUNWINDSTATE const *PCRTDBGUNWINDSTATE;
 
 
 

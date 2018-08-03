@@ -2419,6 +2419,11 @@ typedef RTDBGMOD                            RT_FAR *PRTDBGMOD;
 /** NIL debug module handle. */
 #define NIL_RTDBGMOD                                ((RTDBGMOD)0)
 
+/** Pointer to an unwind machine state. */
+typedef struct RTDBGUNWINDSTATE RT_FAR              *PRTDBGUNWINDSTATE;
+/** Pointer to a const unwind machine state. */
+typedef struct RTDBGUNWINDSTATE const RT_FAR        *PCRTDBGUNWINDSTATE;
+
 /** Manifest handle. */
 typedef struct RTMANIFESTINT                RT_FAR *RTMANIFEST;
 /** Pointer to a manifest handle. */
