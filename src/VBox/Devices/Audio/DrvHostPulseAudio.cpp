@@ -644,6 +644,8 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         return rc;
     }
 
+    LogRel(("PulseAudio: Using v%s\n", pa_get_library_version()));
+
     pThis->fAbortLoop = false;
     pThis->pMainLoop = NULL;
 
