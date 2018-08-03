@@ -2931,7 +2931,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
  * @param   iEntry      The descriptor entry number.
  * @param   fHyper      Whether the selector belongs to the hypervisor or not.
  * @param   hAs         Address space to use when resolving symbols.
- * @param   pfDbgEntry  Where to indicate whether the entry is two entries wide.
+ * @param   pfDblEntry  Where to indicate whether the entry is two entries wide.
  *                      Optional.
  */
 static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigned iEntry, bool fHyper, RTDBGAS hAs,
