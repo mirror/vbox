@@ -1410,6 +1410,8 @@ static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterf
     AssertPtr(pStreamALSA->pCfg);
     if (pStreamALSA->pCfg->enmDir == PDMAUDIODIR_OUT)
     {
+        /* Getting the delay (in audio frames) reports the time it will take
+         * to hear a new sample after all queued samples have been played out. */
         int rc2 = snd_pcm_delay(pStreamALSA->phPCM, &cfDelay);
         if (RT_SUCCESS(rc))
             rc = rc2;
