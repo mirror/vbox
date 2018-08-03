@@ -95,6 +95,7 @@ struc VMMR0JMPBUF
 %endif
 
     ; Statistics
+    alignb 8
     .cbUsedMax      resd 1
     .cbUsedAvg      resd 1
     .cbUsedTotal    resq 1
