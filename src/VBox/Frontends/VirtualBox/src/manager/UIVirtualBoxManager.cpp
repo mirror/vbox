@@ -20,35 +20,26 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QMenuBar>
 # include <QResizeEvent>
 # include <QStandardPaths>
 # include <QStatusBar>
-# include <QToolButton>
-# include <QTimer>
+//# include <QToolButton>
 
 /* GUI includes: */
 # include "QIFileDialog.h"
-# include "QISplitter.h"
 # include "UIActionPoolSelector.h"
 # include "UIDesktopServices.h"
-# include "UIErrorString.h"
 # include "UIExtraDataManager.h"
-# include "UIChooser.h"
 # include "UIHostNetworkManager.h"
 # include "UIMedium.h"
 # include "UIMediumManager.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
 # include "UIVirtualBoxManager.h"
+# include "UIVirtualBoxManagerWidget.h"
 # include "UISettingsDialogSpecific.h"
-# include "UISlidingWidget.h"
-# include "UITabBar.h"
-# include "UIToolBar.h"
 # include "UIVMLogViewerDialog.h"
 # include "UIVirtualMachineItem.h"
-# include "UIToolPaneMachine.h"
-# include "UIToolbarTools.h"
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 #  include "UIUpdateManager.h"
 # endif
@@ -118,17 +109,6 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
-    , m_pSlidingWidget(0)
-    , m_pSplitter(0)
-    , m_pToolBar(0)
-    , m_pTabBarMachine(0)
-    , m_pTabBarGlobal(0)
-    , m_pActionTabBarMachine(0)
-    , m_pActionTabBarGlobal(0)
-    , m_pToolbarTools(0)
-    , m_pPaneChooser(0)
-    , m_pPaneToolsMachine(0)
-    , m_pPaneToolsGlobal(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
     , m_pManagerVirtualMedia(0)
@@ -172,6 +152,7 @@ bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
         default:
             break;
     }
+
     /* Call to base-class: */
     return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
 }
@@ -190,18 +171,6 @@ void UIVirtualBoxManager::retranslateUi()
              +  QString(" - " VBOX_BLEEDING_EDGE);
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
-
-    /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
-
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
-    // the with doesn't match if the text increase. So manually adjust the size
-    // after changing the text.
-    m_pToolBar->updateLayout();
-#endif
 }
 
 bool UIVirtualBoxManager::event(QEvent *pEvent)
@@ -250,18 +219,6 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
             }
             break;
         }
-#ifdef VBOX_WS_MAC
-        case QEvent::ContextMenu:
-        {
-            /* This is the unified context menu event. Lets show the context menu. */
-            QContextMenuEvent *pContextMenuEvent = static_cast<QContextMenuEvent*>(pEvent);
-            sltHandleContextMenuRequest(pContextMenuEvent->globalPos());
-            /* Accept it to interrupt the chain. */
-            pContextMenuEvent->accept();
-            return false;
-            break;
-        }
-#endif /* VBOX_WS_MAC */
         default:
             break;
     }
@@ -286,12 +243,8 @@ void UIVirtualBoxManager::showEvent(QShowEvent *pEvent)
 
 void UIVirtualBoxManager::polishEvent(QShowEvent *)
 {
-    /* Make sure user warned about inaccessible medium(s)
-     * even if enumeration had finished before selector window shown: */
-    QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
-
-    /* Call for async polishing: */
-    QMetaObject::invokeMethod(this, "sltHandlePolishEvent", Qt::QueuedConnection);
+    /* Make sure user warned about inaccessible media: */
+    QMetaObject::invokeMethod(this, "sltHandleMediumEnumerationFinish", Qt::QueuedConnection);
 }
 
 void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
@@ -301,30 +254,6 @@ void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
 
     /* Quit application: */
     QApplication::quit();
-}
-
-void UIVirtualBoxManager::sltHandlePolishEvent()
-{
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-
-    /* Make sure there is accessible VM item chosen: */
-    if (pItem && pItem->accessible())
-    {
-        // WORKAROUND:
-        // By some reason some of X11 DEs unable to update() tab-bars on startup.
-        // Let's just _create_ them later, asynchronously after the showEvent().
-        /* Restore previously opened Machine tools at startup: */
-        QMap<ToolTypeMachine, QAction*> mapActionsMachine;
-        mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details);
-        mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots);
-        mapActionsMachine[ToolTypeMachine_LogViewer] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer);
-        for (int i = m_orderMachine.size() - 1; i >= 0; --i)
-            if (m_orderMachine.at(i) != ToolTypeMachine_Invalid)
-                mapActionsMachine.value(m_orderMachine.at(i))->trigger();
-        /* Make sure further action triggering cause tool type switch as well: */
-        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setProperty("watch_child_activation", true);
-    }
 }
 
 #ifdef VBOX_WS_X11
@@ -340,123 +269,6 @@ void UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange()
 }
 #endif /* VBOX_WS_X11 */
 
-void UIVirtualBoxManager::sltHandleContextMenuRequest(const QPoint &position)
-{
-    /* Populate toolbar/statusbar acctions: */
-    QList<QAction*> actions;
-
-    /* Create 'Show Toolbar' action: */
-    QAction *pShowToolBar = new QAction(tr("Show Toolbar"), 0);
-    AssertPtrReturnVoid(pShowToolBar);
-    {
-        /* Configure action: */
-        pShowToolBar->setCheckable(true);
-        pShowToolBar->setChecked(m_pToolBar->isVisible());
-
-        /* Add into action list: */
-        actions << pShowToolBar;
-    }
-
-    /* Create 'Show Toolbar Text' action: */
-    QAction *pShowToolBarText = new QAction(tr("Show Toolbar Text"), 0);
-    AssertPtrReturnVoid(pShowToolBarText);
-    {
-        /* Configure action: */
-        pShowToolBarText->setCheckable(true);
-        pShowToolBarText->setChecked(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
-
-        /* Add into action list: */
-        actions << pShowToolBarText;
-    }
-
-    /* Prepare the menu position: */
-    QPoint globalPosition = position;
-    QWidget *pSender = static_cast<QWidget*>(sender());
-    if (pSender)
-        globalPosition = pSender->mapToGlobal(position);
-    QAction *pResult = QMenu::exec(actions, globalPosition);
-    if (pResult == pShowToolBar)
-    {
-        if (pResult->isChecked())
-            m_pToolBar->show();
-        else
-            m_pToolBar->hide();
-    }
-    else if (pResult == pShowToolBarText)
-    {
-        m_pToolBar->setToolButtonStyle(  pResult->isChecked()
-                                       ? Qt::ToolButtonTextUnderIcon
-                                       : Qt::ToolButtonIconOnly);
-        m_pToolbarTools->setToolButtonStyle(  pResult->isChecked()
-                                            ? Qt::ToolButtonTextUnderIcon
-                                            : Qt::ToolButtonIconOnly);
-    }
-}
-
-void UIVirtualBoxManager::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
-                                                          bool fUpdateSnapshots /* = true */,
-                                                          bool fUpdateLogViewer /* = true */)
-{
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-
-    /* Update action visibility: */
-    updateActionsVisibility();
-    /* Update action appearance: */
-    updateActionsAppearance();
-
-    /* Update Tools-pane: */
-    m_pPaneToolsMachine->setCurrentItem(pItem);
-
-    /* Update Machine tab-bar visibility */
-    m_pTabBarMachine->setEnabled(pItem && pItem->accessible());
-
-    /* If current item exists & accessible: */
-    if (pItem && pItem->accessible())
-    {
-        /* If Desktop pane is chosen currently: */
-        if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Desktop)
-        {
-            /* Make sure Details or Snapshot pane is chosen if opened: */
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->trigger();
-            else
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->trigger();
-            else
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_LogViewer))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->trigger();
-        }
-
-        /* Update Details-pane (if requested): */
-        if (   fUpdateDetails
-            && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-            m_pPaneToolsMachine->setItems(currentItems());
-        /* Update the Snapshots-pane or/and Logviewer-pane (if requested): */
-        if (fUpdateSnapshots || fUpdateLogViewer)
-            m_pPaneToolsMachine->setMachine(pItem->machine());
-    }
-    else
-    {
-        /* Make sure Desktop-pane raised: */
-        m_pPaneToolsMachine->openTool(ToolTypeMachine_Desktop);
-
-        /* Note that the machine becomes inaccessible (or if the last VM gets
-         * deleted), we have to update all fields, ignoring input arguments. */
-        if (pItem)
-        {
-            /* The VM is inaccessible: */
-            m_pPaneToolsMachine->setDetailsError(UIErrorString::formatErrorInfo(pItem->accessError()));
-        }
-
-        /* Update Details-pane (in any case): */
-        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-            m_pPaneToolsMachine->setItems(currentItems());
-        /* Update Snapshots-pane and Logviewer-pane (in any case): */
-        m_pPaneToolsMachine->setMachine(CMachine());
-    }
-}
-
 void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 {
     /* To avoid annoying the user, we check for inaccessible mediums just once, after
@@ -468,7 +280,7 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
     /* Make sure MM window/tool is not opened,
      * otherwise user sees everything himself: */
     if (   m_pManagerVirtualMedia
-        || m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
+        || m_pWidget->isToolOpened(ToolTypeGlobal_VirtualMedia))
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -548,6 +360,12 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
     }
 }
 
+void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
+{
+    updateActionsVisibility();
+    updateActionsAppearance();
+}
+
 void UIVirtualBoxManager::sltHandleGroupSavingProgressChange()
 {
     updateActionsAppearance();
@@ -555,23 +373,15 @@ void UIVirtualBoxManager::sltHandleGroupSavingProgressChange()
 
 void UIVirtualBoxManager::sltHandleStateChange(const QString &)
 {
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-
-    /* Make sure current item present: */
-    if (!pItem)
-        return;
-
-    /* Update actions: */
     updateActionsAppearance();
 }
 
 void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
+    if (m_pWidget->isToolOpened(ToolTypeGlobal_VirtualMedia))
     {
-        sltHandleToolOpenedGlobal(ToolTypeGlobal_VirtualMedia);
+        m_pWidget->switchToTool(ToolTypeGlobal_VirtualMedia);
         return;
     }
 
@@ -599,9 +409,9 @@ void UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow()
 void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_HostNetwork))
+    if (m_pWidget->isToolOpened(ToolTypeGlobal_HostNetwork))
     {
-        sltHandleToolOpenedGlobal(ToolTypeGlobal_HostNetwork);
+        m_pWidget->switchToTool(ToolTypeGlobal_HostNetwork);
         return;
     }
 
@@ -1200,9 +1010,9 @@ void UIVirtualBoxManager::sltOpenMachineLogDialog()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* First check if a logviewer is already opened in embedded mode: */
-    if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_LogViewer))
+    if (m_pWidget->isToolOpened(ToolTypeMachine_LogViewer))
     {
-        sltHandleToolOpenedMachine(ToolTypeMachine_LogViewer);
+        m_pWidget->switchToTool(ToolTypeMachine_LogViewer);
         return;
     }
 
@@ -1319,91 +1129,6 @@ void UIVirtualBoxManager::sltMachineCloseMenuAboutToShow()
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
 }
 
-void UIVirtualBoxManager::sltHandleToolsTypeSwitch()
-{
-    /* If Machine tool button is checked => go backward: */
-    if (actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
-        m_pSlidingWidget->moveBackward();
-
-    else
-
-    /* If Global tool button is checked => go forward: */
-    if (actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
-        m_pSlidingWidget->moveForward();
-
-    /* Update action visibility: */
-    updateActionsVisibility();
-
-    /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
-}
-
-void UIVirtualBoxManager::sltHandleShowTabBarMachine()
-{
-    m_pActionTabBarGlobal->setVisible(false);
-    m_pActionTabBarMachine->setVisible(true);
-}
-
-void UIVirtualBoxManager::sltHandleShowTabBarGlobal()
-{
-    m_pActionTabBarMachine->setVisible(false);
-    m_pActionTabBarGlobal->setVisible(true);
-}
-
-void UIVirtualBoxManager::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
-{
-    /* First, make sure corresponding tool set opened: */
-    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked()
-        && actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->property("watch_child_activation").toBool())
-        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
-
-    /* Open corresponding tool: */
-    m_pPaneToolsMachine->openTool(enmType);
-    /* If that was 'Details' => pass there current items: */
-    if (   enmType == ToolTypeMachine_Details
-        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-        m_pPaneToolsMachine->setItems(currentItems());
-    /* If that was 'Snapshot' or 'LogViewer' => pass there current or null machine: */
-    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_LogViewer)
-    {
-        UIVirtualMachineItem *pItem = currentItem();
-        m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
-    }
-}
-
-void UIVirtualBoxManager::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
-{
-    /* First, make sure corresponding tool set opened: */
-    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked()
-        && actionPool()->action(UIActionIndexST_M_Tools_T_Global)->property("watch_child_activation").toBool())
-        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setChecked(true);
-
-    /* Open corresponding tool: */
-    m_pPaneToolsGlobal->openTool(enmType);
-}
-
-void UIVirtualBoxManager::sltHandleToolClosedMachine(ToolTypeMachine enmType)
-{
-    /* Close corresponding tool: */
-    m_pPaneToolsMachine->closeTool(enmType);
-}
-
-void UIVirtualBoxManager::sltHandleToolClosedGlobal(ToolTypeGlobal enmType)
-{
-    /* Close corresponding tool: */
-    m_pPaneToolsGlobal->closeTool(enmType);
-}
-
-UIVirtualMachineItem *UIVirtualBoxManager::currentItem() const
-{
-    return m_pPaneChooser->currentItem();
-}
-
-QList<UIVirtualMachineItem*> UIVirtualBoxManager::currentItems() const
-{
-    return m_pPaneChooser->currentItems();
-}
-
 void UIVirtualBoxManager::prepare()
 {
 #ifdef VBOX_WS_X11
@@ -1424,7 +1149,6 @@ void UIVirtualBoxManager::prepare()
     prepareIcon();
     prepareMenuBar();
     prepareStatusBar();
-    prepareToolbar();
     prepareWidgets();
     prepareConnections();
 
@@ -1435,22 +1159,13 @@ void UIVirtualBoxManager::prepare()
     retranslateUi();
 
 #ifdef VBOX_WS_MAC
-    /* Enable unified toolbar: */
-    m_pToolBar->enableMacToolbar();
-
     /* Beta label? */
     if (vboxGlobal().isBeta())
     {
         QPixmap betaLabel = ::betaLabel(QSize(100, 16));
         ::darwinLabelWindow(this, &betaLabel, true);
     }
-
-    /* General event filter: */
-    qApp->installEventFilter(this);
 #endif /* VBOX_WS_MAC */
-
-    /* Make sure current Chooser-pane index fetched: */
-    sltHandleChooserPaneIndexChange();
 }
 
 void UIVirtualBoxManager::prepareIcon()
@@ -1879,285 +1594,144 @@ void UIVirtualBoxManager::prepareStatusBar()
     statusBar()->setHidden(true);
 }
 
-void UIVirtualBoxManager::prepareToolbar()
-{
-    /* Create Main toolbar: */
-    m_pToolBar = new UIToolBar(this);
-    AssertPtrReturnVoid(m_pToolBar);
-    {
-        /* Configure toolbar: */
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
-        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-        /* Add main actions block: */
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-#ifdef VBOX_WS_MAC
-        // WORKAROUND:
-        // Actually Qt should do that itself but by some unknown reason it sometimes
-        // forget to update toolbar after changing its actions on cocoa platform.
-        connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-        connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-        connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-        connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-#endif /* VBOX_WS_MAC */
-
-        /* Create Machine tab-bar: */
-        m_pTabBarMachine = new UITabBar;
-        AssertPtrReturnVoid(m_pTabBarMachine);
-        {
-            /* Configure tab-bar: */
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
-            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-            m_pTabBarMachine->setContentsMargins(iL, 0, iR, 0);
-
-            /* Add into toolbar: */
-            m_pActionTabBarMachine = m_pToolBar->addWidget(m_pTabBarMachine);
-        }
-
-        /* Create Global tab-bar: */
-        m_pTabBarGlobal = new UITabBar;
-        AssertPtrReturnVoid(m_pTabBarGlobal);
-        {
-            /* Configure tab-bar: */
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
-            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-            m_pTabBarGlobal->setContentsMargins(iL, 0, iR, 0);
-
-            /* Add into toolbar: */
-            m_pActionTabBarGlobal = m_pToolBar->addWidget(m_pTabBarGlobal);
-        }
-
-        /* Create Tools toolbar: */
-        m_pToolbarTools = new UIToolbarTools(actionPool());
-        if (m_pToolbarTools)
-        {
-            /* Configure toolbar: */
-            m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-            connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarMachine,
-                    this, &UIVirtualBoxManager::sltHandleShowTabBarMachine);
-            connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarGlobal,
-                    this, &UIVirtualBoxManager::sltHandleShowTabBarGlobal);
-            m_pToolbarTools->setTabBars(m_pTabBarMachine, m_pTabBarGlobal);
-
-            /* Create exclusive action-group: */
-            QActionGroup *pActionGroupTools = new QActionGroup(m_pToolbarTools);
-            AssertPtrReturnVoid(pActionGroupTools);
-            {
-                /* Configure action-group: */
-                pActionGroupTools->setExclusive(true);
-
-                /* Add 'Tools' actions into action-group: */
-                pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Machine));
-                pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Global));
-            }
-
-            /* Add into toolbar: */
-            m_pToolBar->addWidget(m_pToolbarTools);
-        }
-
-#ifdef VBOX_WS_MAC
-        // WORKAROUND:
-        // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-        // the necessary size of the toolbar is increased. Also for some languages
-        // the with doesn't match if the text increase. So manually adjust the size
-        // after changing the text.
-        m_pToolBar->updateLayout();
-#endif
-    }
-}
-
 void UIVirtualBoxManager::prepareWidgets()
 {
     /* Create central-widget: */
-    QWidget *pWidget = new QWidget;
-    AssertPtrReturnVoid(pWidget);
+    m_pWidget = new UIVirtualBoxManagerWidget(this);
+    if (m_pWidget)
     {
         /* Configure central-widget: */
-        setCentralWidget(pWidget);
-
-        /* Create central-layout: */
-        QVBoxLayout *pLayout = new QVBoxLayout(pWidget);
-        AssertPtrReturnVoid(pLayout);
-        {
-            /* Configure layout: */
-            pLayout->setSpacing(0);
-            pLayout->setContentsMargins(0, 0, 0, 0);
-
-#ifdef VBOX_WS_MAC
-            /* Native toolbar on MAC: */
-            addToolBar(m_pToolBar);
-#else
-            /* Add into layout: */
-            pLayout->addWidget(m_pToolBar);
-#endif
-
-            /* Create sliding-widget: */
-            m_pSlidingWidget = new UISlidingWidget;
-            AssertPtrReturnVoid(m_pSlidingWidget);
-            {
-                /* Create splitter: */
-                m_pSplitter = new QISplitter;
-                AssertPtrReturnVoid(m_pSplitter);
-                {
-                    /* Configure splitter: */
-#ifdef VBOX_WS_X11
-                    m_pSplitter->setHandleType(QISplitter::Native);
-#endif
-
-                    /* Create Chooser-pane: */
-                    m_pPaneChooser = new UIChooser(this);
-                    AssertPtrReturnVoid(m_pPaneChooser);
-                    {
-                        /* Add into splitter: */
-                        m_pSplitter->addWidget(m_pPaneChooser);
-                    }
-
-                    /* Create Machine Tools-pane: */
-                    m_pPaneToolsMachine = new UIToolPaneMachine(actionPool());
-                    AssertPtrReturnVoid(m_pPaneToolsMachine);
-                    {
-                        /* Add into splitter: */
-                        m_pSplitter->addWidget(m_pPaneToolsMachine);
-                    }
-
-                    /* Adjust splitter colors according to main widgets it splits: */
-                    m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
-                                                 m_pPaneToolsMachine->palette().color(QPalette::Active, QPalette::Window));
-                    /* Set the initial distribution. The right site is bigger. */
-                    m_pSplitter->setStretchFactor(0, 2);
-                    m_pSplitter->setStretchFactor(1, 3);
-                }
-
-                /* Create Global Tools-pane: */
-                m_pPaneToolsGlobal = new UIToolPaneGlobal(actionPool());
-                AssertPtrReturnVoid(m_pPaneToolsGlobal);
-
-                /* Add left/right widgets into sliding widget: */
-                m_pSlidingWidget->setWidgets(m_pSplitter, m_pPaneToolsGlobal);
-
-                /* Add into layout: */
-                pLayout->addWidget(m_pSlidingWidget);
-            }
-        }
+        setCentralWidget(m_pWidget);
     }
-
-    /* Bring the VM list to the focus: */
-    m_pPaneChooser->setFocus();
 }
 
 void UIVirtualBoxManager::prepareConnections()
 {
 #ifdef VBOX_WS_X11
     /* Desktop event handlers: */
-    connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaResized(int)), this, SLOT(sltHandleHostScreenAvailableAreaChange()));
-#endif /* VBOX_WS_X11 */
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaResized,
+            this, &UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange);
+#endif
 
     /* Medium enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltHandleMediumEnumerationFinish()));
+    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
+            this, &UIVirtualBoxManager::sltHandleMediumEnumerationFinish);
 
-    /* Menu-bar connections: */
-    connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
+    /* Widget connections: */
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigChooserPaneIndexChange,
+            this, &UIVirtualBoxManager::sltHandleChooserPaneIndexChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged,
+            this, &UIVirtualBoxManager::sltHandleGroupSavingProgressChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
+            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
+    connect(menuBar(), &QMenuBar::customContextMenuRequested,
+            m_pWidget, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
+
+    /* Global VBox event handlers: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIVirtualBoxManager::sltHandleStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
+            this, &UIVirtualBoxManager::sltHandleStateChange);
 
     /* 'File' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenVirtualMediumManagerWindow()));
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager), SIGNAL(triggered()), this, SLOT(sltOpenHostNetworkManagerWindow()));
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenImportApplianceWizard()));
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenExportApplianceWizard()));
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow);
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenHostNetworkManagerWindow);
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenImportApplianceWizardDefault);
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager), SIGNAL(triggered()), this, SLOT(sltOpenExtraDataManagerWindow()));
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenExtraDataManagerWindow);
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()), this, SLOT(sltOpenPreferencesDialog()));
-    connect(actionPool()->action(UIActionIndexST_M_File_S_Close), SIGNAL(triggered()), this, SLOT(sltPerformExit()));
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenPreferencesDialog);
+    connect(actionPool()->action(UIActionIndexST_M_File_S_Close), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformExit);
 
     /* 'Group' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Add), SIGNAL(triggered()), this, SLOT(sltOpenAddMachineDialog()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow), SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_T_Pause), SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseOrResumeMachine(bool)));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Reset), SIGNAL(triggered()), this, SLOT(sltPerformResetMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Discard), SIGNAL(triggered()), this, SLOT(sltPerformDiscardMachineState()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog), SIGNAL(triggered()), this, SLOT(sltOpenMachineLogDialog()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager), SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut), SIGNAL(triggered()), this, SLOT(sltPerformCreateMachineShortcut()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Add), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Group_T_Pause), &UIAction::toggled,
+            this, &UIVirtualBoxManager::sltPerformPauseOrResumeMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Reset), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformResetMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Discard), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenMachineLogDialog);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltShowMachineInFileManager);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
 
     /* 'Machine' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), SIGNAL(triggered()), this, SLOT(sltOpenAddMachineDialog()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), SIGNAL(triggered()), this, SLOT(sltOpenMachineSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), SIGNAL(triggered()), this, SLOT(sltOpenCloneMachineWizard()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), SIGNAL(triggered()), this, SLOT(sltPerformMachineMove()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseOrResumeMachine(bool)));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Reset), SIGNAL(triggered()), this, SLOT(sltPerformResetMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), SIGNAL(triggered()), this, SLOT(sltPerformDiscardMachineState()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog), SIGNAL(triggered()), this, SLOT(sltOpenMachineLogDialog()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager), SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), SIGNAL(triggered()), this, SLOT(sltPerformCreateMachineShortcut()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenCloneMachineWizard);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformMachineMove);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), &UIAction::toggled,
+            this, &UIVirtualBoxManager::sltPerformPauseOrResumeMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Reset), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformResetMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenMachineLogDialog);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltShowMachineInFileManager);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
 
     /* 'Group/Start or Show' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal), SIGNAL(triggered()), this, SLOT(sltPerformStartMachineNormal()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless), SIGNAL(triggered()), this, SLOT(sltPerformStartMachineHeadless()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable), SIGNAL(triggered()), this, SLOT(sltPerformStartMachineDetachable()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartMachineNormal);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartMachineHeadless);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartMachineDetachable);
 
     /* 'Machine/Start or Show' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal), SIGNAL(triggered()), this, SLOT(sltPerformStartMachineNormal()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless), SIGNAL(triggered()), this, SLOT(sltPerformStartMachineHeadless()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable), SIGNAL(triggered()), this, SLOT(sltPerformStartMachineDetachable()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartMachineNormal);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartMachineHeadless);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformStartMachineDetachable);
 
     /* 'Group/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu(), SIGNAL(aboutToShow()), this, SLOT(sltGroupCloseMenuAboutToShow()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), SIGNAL(triggered()), this, SLOT(sltPerformDetachMachineUI()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState), SIGNAL(triggered()), this, SLOT(sltPerformSaveMachineState()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown), SIGNAL(triggered()), this, SLOT(sltPerformShutdownMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff), SIGNAL(triggered()), this, SLOT(sltPerformPowerOffMachine()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu(), &UIMenu::aboutToShow,
+            this, &UIVirtualBoxManager::sltGroupCloseMenuAboutToShow);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformSaveMachineState);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformShutdownMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Machine/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu(), SIGNAL(aboutToShow()), this, SLOT(sltMachineCloseMenuAboutToShow()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach), SIGNAL(triggered()), this, SLOT(sltPerformDetachMachineUI()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState), SIGNAL(triggered()), this, SLOT(sltPerformSaveMachineState()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown), SIGNAL(triggered()), this, SLOT(sltPerformShutdownMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff), SIGNAL(triggered()), this, SLOT(sltPerformPowerOffMachine()));
-
-    /* 'Tools' actions connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Tools_T_Machine), &UIAction::toggled,
-            this, &UIVirtualBoxManager::sltHandleToolsTypeSwitch);
-    connect(actionPool()->action(UIActionIndexST_M_Tools_T_Global), &UIAction::toggled,
-            this, &UIVirtualBoxManager::sltHandleToolsTypeSwitch);
-
-    /* Graphics VM chooser connections: */
-    connect(m_pPaneChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltHandleChooserPaneIndexChange()));
-    connect(m_pPaneChooser, SIGNAL(sigSlidingStarted()), m_pPaneToolsMachine, SIGNAL(sigSlidingStarted()));
-    connect(m_pPaneChooser, SIGNAL(sigToggleStarted()), m_pPaneToolsMachine, SIGNAL(sigToggleStarted()));
-    connect(m_pPaneChooser, SIGNAL(sigToggleFinished()), m_pPaneToolsMachine, SIGNAL(sigToggleFinished()));
-    connect(m_pPaneChooser, SIGNAL(sigGroupSavingStateChanged()), this, SLOT(sltHandleGroupSavingProgressChange()));
-
-    /* Tool-bar connections: */
-#ifndef VBOX_WS_MAC
-    connect(m_pToolBar, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
-#else /* VBOX_WS_MAC */
-    /* We want to receive right click notifications on the title bar, so register our own handler: */
-    ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
-#endif /* VBOX_WS_MAC */
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolOpenedMachine, this, &UIVirtualBoxManager::sltHandleToolOpenedMachine);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolOpenedGlobal,  this, &UIVirtualBoxManager::sltHandleToolOpenedGlobal);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolClosedMachine, this, &UIVirtualBoxManager::sltHandleToolClosedMachine);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolClosedGlobal,  this, &UIVirtualBoxManager::sltHandleToolClosedGlobal);
-
-    /* VM desktop connections: */
-    connect(m_pPaneToolsMachine, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
-            this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QString&)));
-
-    /* Global event handlers: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltHandleStateChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltHandleStateChange(QString)));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu(), &UIMenu::aboutToShow,
+            this, &UIVirtualBoxManager::sltMachineCloseMenuAboutToShow);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformSaveMachineState);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformShutdownMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 }
 
 void UIVirtualBoxManager::loadSettings()
@@ -2172,80 +1746,10 @@ void UIVirtualBoxManager::loadSettings()
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
         restoreGeometry();
     }
-
-    /* Restore splitter handle position: */
-    {
-        /* Read splitter hints: */
-        QList<int> sizes = gEDataManager->selectorWindowSplitterHints();
-        /* If both hints are zero, we have the 'default' case: */
-        if (sizes[0] == 0 && sizes[1] == 0)
-        {
-            /* Propose some 'default' based on current dialog width: */
-            sizes[0] = (int)(width() * .9 * (1.0 / 3));
-            sizes[1] = (int)(width() * .9 * (2.0 / 3));
-        }
-        /* Pass hints to the splitter: */
-        m_pSplitter->setSizes(sizes);
-    }
-
-    /* Restore toolbar and statusbar functionality: */
-    {
-#ifdef VBOX_WS_MAC
-        // WORKAROUND:
-        // There is an issue in Qt5 main-window toolbar implementation:
-        // if you are hiding it before it's shown for the first time,
-        // there is an ugly empty container appears instead, so we
-        // have to hide toolbar asynchronously to avoid that.
-        if (!gEDataManager->selectorWindowToolBarVisible())
-            QMetaObject::invokeMethod(m_pToolBar, "hide", Qt::QueuedConnection);
-#else
-        m_pToolBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
-#endif
-        m_pToolBar->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
-                                       ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
-        m_pToolbarTools->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
-                                            ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
-    }
-
-    /* Restore toolbar Machine/Global tools orders:  */
-    {
-        m_orderMachine = gEDataManager->selectorWindowToolsOrderMachine();
-        m_orderGlobal = gEDataManager->selectorWindowToolsOrderGlobal();
-
-        /* We can restore previously opened Global tools right here: */
-        QMap<ToolTypeGlobal, QAction*> mapActionsGlobal;
-        mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
-        mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
-        for (int i = m_orderGlobal.size() - 1; i >= 0; --i)
-            if (m_orderGlobal.at(i) != ToolTypeGlobal_Invalid)
-                mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
-        /* Make sure further action triggering cause tool type switch as well: */
-        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setProperty("watch_child_activation", true);
-
-        /* But we can't restore previously opened Machine tools here,
-         * see the reason in corresponding async sltHandlePolishEvent slot. */
-    }
 }
 
 void UIVirtualBoxManager::saveSettings()
 {
-    /* Save toolbar Machine/Global tools orders: */
-    {
-        gEDataManager->setSelectorWindowToolsOrderMachine(m_pToolbarTools->tabOrderMachine());
-        gEDataManager->setSelectorWindowToolsOrderGlobal(m_pToolbarTools->tabOrderGlobal());
-    }
-
-    /* Save toolbar and statusbar visibility: */
-    {
-        gEDataManager->setSelectorWindowToolBarVisible(!m_pToolBar->isHidden());
-        gEDataManager->setSelectorWindowToolBarTextVisible(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
-    }
-
-    /* Save splitter handle position: */
-    {
-        gEDataManager->setSelectorWindowSplitterHints(m_pSplitter->sizes());
-    }
-
     /* Save window geometry: */
     {
 #ifdef VBOX_WS_MAC
@@ -2258,12 +1762,13 @@ void UIVirtualBoxManager::saveSettings()
     }
 }
 
-void UIVirtualBoxManager::cleanupConnections()
+void UIVirtualBoxManager::cleanupWidgets()
 {
-#ifdef VBOX_WS_MAC
-    /* Tool-bar connections: */
-    ::darwinUnregisterForUnifiedToolbarContextMenuEvents(this);
-#endif /* VBOX_WS_MAC */
+    /* Deconfigure central-widget: */
+    setCentralWidget(0);
+    /* Destroy central-widget: */
+    delete m_pWidget;
+    m_pWidget = 0;
 }
 
 void UIVirtualBoxManager::cleanupMenuBar()
@@ -2287,14 +1792,39 @@ void UIVirtualBoxManager::cleanup()
     saveSettings();
 
     /* Cleanup: */
-    cleanupConnections();
+    cleanupWidgets();
     cleanupMenuBar();
+}
+
+UIVirtualMachineItem *UIVirtualBoxManager::currentItem() const
+{
+    return m_pWidget->currentItem();
+}
+
+QList<UIVirtualMachineItem*> UIVirtualBoxManager::currentItems() const
+{
+    return m_pWidget->currentItems();
+}
+
+bool UIVirtualBoxManager::isGroupSavingInProgress() const
+{
+    return m_pWidget->isGroupSavingInProgress();
+}
+
+bool UIVirtualBoxManager::isAllItemsOfOneGroupSelected() const
+{
+    return m_pWidget->isAllItemsOfOneGroupSelected();
+}
+
+bool UIVirtualBoxManager::isSingleGroupSelected() const
+{
+    return m_pWidget->isSingleGroupSelected();
 }
 
 void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, VBoxGlobal::LaunchMode enmLaunchMode)
 {
     /* Do nothing while group saving is in progress: */
-    if (m_pPaneChooser->isGroupSavingInProgress())
+    if (isGroupSavingInProgress())
         return;
 
     /* Compose the list of startable items: */
@@ -2341,7 +1871,7 @@ void UIVirtualBoxManager::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
     const bool fMachineOrGroupMenuShown = actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked();
-    const bool fMachineMenuShown = !m_pPaneChooser->isSingleGroupSelected();
+    const bool fMachineMenuShown = !isSingleGroupSelected();
     m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
     m_pGroupMenuAction->setVisible(fMachineOrGroupMenuShown && !fMachineMenuShown);
 
@@ -2432,17 +1962,19 @@ void UIVirtualBoxManager::updateActionsAppearance()
     {
         actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(UIVirtualMachineItem::isItemPoweredOff(pItem) ? 0 : 1);
         actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(UIVirtualMachineItem::isItemPoweredOff(pItem) ? 0 : 1);
-        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
-        if (pButton)
-            pButton->setPopupMode(UIVirtualMachineItem::isItemPoweredOff(pItem) ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+        /// todo Hmm, fix it?
+//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
+//        if (pButton)
+//            pButton->setPopupMode(UIVirtualMachineItem::isItemPoweredOff(pItem) ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
     }
     else
     {
         actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
         actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
-        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
-        if (pButton)
-            pButton->setPopupMode(UIVirtualMachineItem::isItemPoweredOff(pItem) ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+        /// todo Hmm, fix it?
+//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
+//        if (pButton)
+//            pButton->setPopupMode(UIVirtualMachineItem::isItemPoweredOff(pItem) ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
     }
 
     /* Pause/Resume action is deremined by 1st started item: */
@@ -2488,36 +2020,36 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_S_Rename:
         case UIActionIndexST_M_Group_S_Remove:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    isItemsPoweredOff(items);
         }
         case UIActionIndexST_M_Group_S_Sort:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
-                   m_pPaneChooser->isSingleGroupSelected();
+            return !isGroupSavingInProgress() &&
+                   isSingleGroupSelected();
         }
         case UIActionIndexST_M_Machine_S_Settings:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
                    pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null;
         }
         case UIActionIndexST_M_Machine_S_Clone:
         case UIActionIndexST_M_Machine_S_Move:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
                    UIVirtualMachineItem::isItemEditable(pItem);
         }
         case UIActionIndexST_M_Machine_S_Remove:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    isAtLeastOneItemRemovable(items);
         }
         case UIActionIndexST_M_Machine_S_AddGroup:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
-                   !m_pPaneChooser->isAllItemsOfOneGroupSelected() &&
+            return !isGroupSavingInProgress() &&
+                   !isAllItemsOfOneGroupSelected() &&
                    isItemsPoweredOff(items);
         }
         case UIActionIndexST_M_Group_M_StartOrShow:
@@ -2529,13 +2061,13 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless:
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    isAtLeastOneItemCanBeStartedOrShown(items);
         }
         case UIActionIndexST_M_Group_S_Discard:
         case UIActionIndexST_M_Machine_S_Discard:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    isAtLeastOneItemDiscardable(items);
         }
         case UIActionIndexST_M_Group_S_ShowLogDialog:
@@ -2565,7 +2097,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         }
         case UIActionIndexST_M_Machine_S_SortParent:
         {
-            return !m_pPaneChooser->isGroupSavingInProgress();
+            return !isGroupSavingInProgress();
         }
         case UIActionIndexST_M_Group_S_CreateShortcut:
         case UIActionIndexST_M_Machine_S_CreateShortcut:

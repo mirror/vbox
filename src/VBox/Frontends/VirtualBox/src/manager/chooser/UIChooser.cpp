@@ -28,15 +28,15 @@
 # include "UIChooser.h"
 # include "UIChooserModel.h"
 # include "UIChooserView.h"
-# include "UIVirtualBoxManager.h"
+# include "UIVirtualBoxManagerWidget.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIChooser::UIChooser(UIVirtualBoxManager *pParent)
+UIChooser::UIChooser(UIVirtualBoxManagerWidget *pParent)
     : QWidget(pParent)
-    , m_pSelectorWindow(pParent)
+    , m_pManagerWidget(pParent)
     , m_pMainLayout(0)
     , m_pChooserModel(0)
     , m_pChooserView(0)
@@ -68,7 +68,7 @@ UIChooser::~UIChooser()
 
 UIActionPool* UIChooser::actionPool() const
 {
-    return selector()->actionPool();
+    return managerWidget()->actionPool();
 }
 
 UIVirtualMachineItem* UIChooser::currentItem() const

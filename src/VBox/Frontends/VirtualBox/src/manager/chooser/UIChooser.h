@@ -27,7 +27,7 @@
 /* Forward declartions: */
 class UIVirtualMachineItem;
 class QVBoxLayout;
-class UIVirtualBoxManager;
+class UIVirtualBoxManagerWidget;
 class UIActionPool;
 class UIChooserModel;
 class UIChooserView;
@@ -56,11 +56,11 @@ signals:
 public:
 
     /* Constructor/destructor: */
-    UIChooser(UIVirtualBoxManager *pParent);
+    UIChooser(UIVirtualBoxManagerWidget *pParent);
     ~UIChooser();
 
-    /** Returns the selector-window reference. */
-    UIVirtualBoxManager* selector() const { return m_pSelectorWindow; }
+    /** Returns the manager-widget reference. */
+    UIVirtualBoxManagerWidget *managerWidget() const { return m_pManagerWidget; }
     /** Returns the action-pool reference. */
     UIActionPool* actionPool() const;
 
@@ -91,8 +91,8 @@ private:
     /* Helper: Cleanup stuff: */
     void save();
 
-    /** Holds the selector-window reference. */
-    UIVirtualBoxManager* m_pSelectorWindow;
+    /** Holds the manager-widget reference. */
+    UIVirtualBoxManagerWidget *m_pManagerWidget;
 
     /* Variables: */
     QVBoxLayout *m_pMainLayout;

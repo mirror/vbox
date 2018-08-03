@@ -24,21 +24,14 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
-#include "UIToolPaneGlobal.h"
-#include "UIToolPaneMachine.h"
 #include "VBoxGlobal.h"
 
 /* Forward declarations: */
 class QMenu;
 class QIManagerDialog;
-class QISplitter;
 class UIAction;
 class UIActionPool;
-class UIChooser;
-class UISlidingWidget;
-class UITabBar;
-class UIToolBar;
-class UIToolbarTools;
+class UIVirtualBoxManagerWidget;
 class UIVirtualMachineItem;
 
 /* Type definitions: */
@@ -100,9 +93,6 @@ private slots:
 
     /** @name Common stuff.
       * @{ */
-        /** Handles polishing in the async way. */
-        void sltHandlePolishEvent();
-
 #if QT_VERSION == 0
         /** Stupid moc does not warn if it cannot find headers! */
         void QT_VERSION_NOT_DEFINED
@@ -111,22 +101,14 @@ private slots:
         void sltHandleHostScreenAvailableAreaChange();
 #endif /* VBOX_WS_X11 */
 
-        /** Handles context-menu request for passed @a position. */
-        void sltHandleContextMenuRequest(const QPoint &position);
-
-        /** Handles signal about Chooser-pane index change.
-          * @param  fUpdateDetails    Brings whether details should be updated.
-          * @param  fUpdateSnapshots  Brings whether tools should be updated. */
-        void sltHandleChooserPaneIndexChange(bool fUpdateDetails = true,
-                                             bool fUpdateSnapshots = true,
-                                             bool fUpdateLogViewer = true);
-
         /** Handles signal about medium-enumeration finished. */
         void sltHandleMediumEnumerationFinish();
 
         /** Handles call to open a @a list of URLs. */
         void sltHandleOpenUrlCall(QList<QUrl> list = QList<QUrl>());
 
+        /** Hnadles singal about Chooser-pane index change.  */
+        void sltHandleChooserPaneIndexChange();
         /** Handles signal about group saving progress change. */
         void sltHandleGroupSavingProgressChange();
     /** @} */
@@ -155,6 +137,8 @@ private slots:
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
         void sltOpenImportApplianceWizard(const QString &strFileName = QString());
+        /** Handles call to open Import Appliance wizard the default way. */
+        void sltOpenImportApplianceWizardDefault() { sltOpenImportApplianceWizard(); }
         /** Handles call to open Export Appliance wizard. */
         void sltOpenExportApplianceWizard();
 
@@ -175,6 +159,8 @@ private slots:
         /** Handles call to open Add Machine dialog.
           * @param strFileName can bring the name of file to add machine from. */
         void sltOpenAddMachineDialog(const QString &strFileName = QString());
+        /** Handles call to open Add Machine dialog the default way. */
+        void sltOpenAddMachineDialogDefault() { sltOpenAddMachineDialog(); }
 
         /** Handles call to open Machine Settings dialog.
           * @param strCategory can bring the settings category to start from.
@@ -183,6 +169,8 @@ private slots:
         void sltOpenMachineSettingsDialog(QString strCategory = QString(),
                                           QString strControl = QString(),
                                           const QString &strID = QString());
+        /** Handles call to open Machine Settings dialog the default way. */
+        void sltOpenMachineSettingsDialogDefault() { sltOpenMachineSettingsDialog(); }
 
         /** Handles call to open Clone Machine wizard. */
         void sltOpenCloneMachineWizard();
@@ -232,33 +220,7 @@ private slots:
         void sltMachineCloseMenuAboutToShow();
     /** @} */
 
-    /** @name Tools stuff.
-      * @{ */
-        /** Handles tools type switch. */
-        void sltHandleToolsTypeSwitch();
-
-        /** Handles request to show Machine tab-bar. */
-        void sltHandleShowTabBarMachine();
-        /** Handles request to show Global tab-bar. */
-        void sltHandleShowTabBarGlobal();
-
-        /** Handles rquest to open Machine tool of passed @a enmType. */
-        void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
-        /** Handles rquest to open Global tool of passed @a enmType. */
-        void sltHandleToolOpenedGlobal(ToolTypeGlobal enmType);
-
-        /** Handles rquest to close Machine tool of passed @a enmType. */
-        void sltHandleToolClosedMachine(ToolTypeMachine enmType);
-        /** Handles rquest to close Global tool of passed @a enmType. */
-        void sltHandleToolClosedGlobal(ToolTypeGlobal enmType);
-    /** @} */
-
 private:
-
-    /** Returns current-item. */
-    UIVirtualMachineItem *currentItem() const;
-    /** Returns a list of current-items. */
-    QList<UIVirtualMachineItem*> currentItems() const;
 
     /** @name Prepare/Cleanup cascade.
       * @{ */
@@ -295,12 +257,27 @@ private:
 
         /** Saves settings. */
         void saveSettings();
-        /** Cleanups connections. */
-        void cleanupConnections();
+        /** Cleanups widgets. */
+        void cleanupWidgets();
         /** Cleanups menu-bar. */
         void cleanupMenuBar();
         /** Cleanups window. */
         void cleanup();
+    /** @} */
+
+    /** @name Common stuff.
+      * @{ */
+        /** Returns current-item. */
+        UIVirtualMachineItem *currentItem() const;
+        /** Returns a list of current-items. */
+        QList<UIVirtualMachineItem*> currentItems() const;
+
+        /** Returns whether group saving is in progress. */
+        bool isGroupSavingInProgress() const;
+        /** Returns whether all items of one group is selected. */
+        bool isAllItemsOfOneGroupSelected() const;
+        /** Returns whether single group is selected. */
+        bool isSingleGroupSelected() const;
     /** @} */
 
     /** @name VM launching stuff.
@@ -357,39 +334,6 @@ private:
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
 
-    /** Holds the sliding-widget isntance. */
-    UISlidingWidget *m_pSlidingWidget;
-
-    /** Holds the central splitter instance. */
-    QISplitter *m_pSplitter;
-
-    /** Holds the main toolbar instance. */
-    UIToolBar *m_pToolBar;
-
-    /** Holds the Machine tab-bar instance. */
-    UITabBar *m_pTabBarMachine;
-    /** Holds the Global tab-bar instance. */
-    UITabBar *m_pTabBarGlobal;
-    /** Holds the Machine tab-bar action reference. */
-    QAction *m_pActionTabBarMachine;
-    /** Holds the Global tab-bar action reference. */
-    QAction *m_pActionTabBarGlobal;
-
-    /** Holds the Tools-toolbar instance. */
-    UIToolbarTools *m_pToolbarTools;
-
-    /** Holds the Machine Tools order. */
-    QList<ToolTypeMachine>  m_orderMachine;
-    /** Holds the Global Tools order. */
-    QList<ToolTypeGlobal>   m_orderGlobal;
-
-    /** Holds the Chooser-pane instance. */
-    UIChooser         *m_pPaneChooser;
-    /** Holds the Machine Tools-pane instance. */
-    UIToolPaneMachine *m_pPaneToolsMachine;
-    /** Holds the Global Tools-pane instance. */
-    UIToolPaneGlobal  *m_pPaneToolsGlobal;
-
     /** Holds the list of Group menu actions. */
     QList<UIAction*>  m_groupActions;
     /** Holds the Group menu parent action. */
@@ -406,6 +350,9 @@ private:
     QIManagerDialog *m_pManagerHostNetwork;
     /** Holds a map of (machineUUID, UIVMLogViewerDialog). */
     VMLogViewerMap   m_logViewers;
+
+    /** Holds the central-widget instance. */
+    UIVirtualBoxManagerWidget *m_pWidget;
 };
 
 #define gpManager UIVirtualBoxManager::instance()

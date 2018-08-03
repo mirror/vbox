@@ -750,6 +750,7 @@ ifdef VBOX_GUI_WITH_NEW_MANAGER
 	src/manager/UIToolPaneGlobal.h \
 	src/manager/UIToolPaneMachine.h \
 	src/manager/UIVirtualBoxManager.h \
+	src/manager/UIVirtualBoxManagerWidget.h \
 	src/manager/UIVirtualMachineItem.h \
 	src/manager/UIWelcomePane.h \
 	src/manager/chooser/UIChooser.h \
@@ -1426,6 +1427,7 @@ ifdef VBOX_GUI_WITH_NEW_MANAGER
 	src/manager/UIToolPaneGlobal.cpp \
 	src/manager/UIToolPaneMachine.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
+	src/manager/UIVirtualBoxManagerWidget.cpp \
 	src/manager/UIVirtualMachineItem.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooser.cpp \
