@@ -2532,7 +2532,7 @@ VMMR3_INT_DECL(void) VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, struc
      * Locate the resume point on the stack.
      */
 #ifdef VMM_R0_SWITCH_STACK
-    uintptr_t off = VMMR0JMPBUF.SpResume - MMHyperCCToR0(pVCpu->pVMR3, pVCpu->vmm.s.pbEMTStackR3);
+    uintptr_t off = pVCpu->vmm.s.CallRing3JmpBufR0.SpResume - MMHyperCCToR0(pVCpu->pVMR3, pVCpu->vmm.s.pbEMTStackR3);
     AssertReturnVoid(off < VMM_STACK_SIZE);
 #else
     uintptr_t off = 0;
