@@ -26,8 +26,10 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+#include <iprt/ctype.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/formats/pecoff.h>
@@ -299,11 +301,12 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
  *
  * @param   pThis           The instance data.
  * @param   pUVM            The user mode VM handle.
- * @param   pszName         The image name.
+ * @param   pszName         The module name.
+ * @param   pszFilename     The image filename.
  * @param   pImageAddr      The image address.
  * @param   cbImage         The size of the image.
  */
-static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const char *pszName,
+static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const char *pszName, const char *pszFilename,
                                        PCDBGFADDRESS pImageAddr, uint32_t cbImage)
 {
     LogFlow(("DigWinNt: %RGp %#x %s\n", pImageAddr->FlatPtr, cbImage, pszName));
@@ -323,7 +326,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
      */
     RTERRINFOSTATIC ErrInfo;
     RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
-    int rc = DBGFR3ModInMem(pUVM, pImageAddr, pThis->fNt31 ? DBGFMODINMEM_F_PE_NT31 : 0, pszName,
+    int rc = DBGFR3ModInMem(pUVM, pImageAddr, pThis->fNt31 ? DBGFMODINMEM_F_PE_NT31 : 0, pszName, pszFilename,
                             pThis->f32Bit ? RTLDRARCH_X86_32 : RTLDRARCH_AMD64, cbImage,
                             &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
@@ -349,6 +352,50 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         Log(("DigWinNt: %s: DBGFR3ModInMem failed: %Rrc - %s\n", pszName, rc, ErrInfo.Core.pszMsg));
     else
         Log(("DigWinNt: %s: DBGFR3ModInMem failed: %Rrc\n", pszName, rc));
+}
+
+
+/**
+ * Adjust the module name into something that's compatible with the debugger.
+ *
+ * @param   pUVM                The user mode VM handle.
+ * @param   ppszName            Pointer to the image name pointer.
+ * @param   pImageAddr          The image load address.
+ */
+static const char *dbgDiggerWintNtFilenameToModuleName(const char *pszFilename, char *pszName, size_t cbName)
+{
+    /* Skip to the filename part of the filename. :-) */
+    pszFilename = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
+
+    /* We try use 'nt' for the kernel. */
+    if (   RTStrICmpAscii(pszFilename, "ntoskrnl.exe") == 0
+        || RTStrICmpAscii(pszFilename, "ntkrnlmp.exe") == 0)
+        return "nt";
+
+
+    /* Drop the extension if .dll or .sys. */
+    size_t cchFilename = strlen(pszFilename);
+    if (   cchFilename > 4
+        && pszFilename[cchFilename - 4] == '.')
+    {
+        if (   RTStrICmpAscii(&pszFilename[cchFilename - 4], ".sys") == 0
+            || RTStrICmpAscii(&pszFilename[cchFilename - 4], ".dll") == 0)
+            cchFilename -= 4;
+    }
+
+    /* Copy and do replacements. */
+    if (cchFilename >= cbName)
+        cchFilename = cbName - 1;
+    size_t off;
+    for (off = 0; off < cchFilename; off++)
+    {
+        char ch = pszFilename[off];
+        if (!RT_C_IS_ALNUM(ch))
+            ch = '_';
+        pszName[off] = ch;
+    }
+    pszName[off] = '\0';
+    return pszName;
 }
 
 
@@ -689,15 +736,18 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
         {
             u.wsz[cbName / 2] = '\0';
 
-            char *pszName;
-            rc = RTUtf16ToUtf8(u.wsz, &pszName);
+            char *pszFilename;
+            rc = RTUtf16ToUtf8(u.wsz, &pszFilename);
             if (RT_SUCCESS(rc))
             {
+                char        szModName[128];
+                const char *pszModName = dbgDiggerWintNtFilenameToModuleName(pszFilename, szModName, sizeof(szModName));
+
                 /* Read the start of the PE image and pass it along to a worker. */
                 DBGFADDRESS ImageAddr;
                 DBGFR3AddrFromFlat(pUVM, &ImageAddr, WINNT_UNION(pThis, &Mte, DllBase));
-                dbgDiggerWinNtProcessImage(pThis, pUVM, pszName, &ImageAddr, cbImageMte);
-                RTStrFree(pszName);
+                dbgDiggerWinNtProcessImage(pThis, pUVM, pszModName, pszFilename, &ImageAddr, cbImageMte);
+                RTStrFree(pszFilename);
             }
         }
 

@@ -23,8 +23,10 @@
 #include <VBox/vmm/dbgf.h>
 
 #include <VBox/err.h>
+#include <iprt/ctype.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/formats/pecoff.h>
 #include <iprt/formats/mz.h>
@@ -84,13 +86,61 @@ typedef DBGFMODINMEMBUF *PDBGFMODINMEMBUF;
 
 
 /**
+ * Normalizes a debug module name.
+ *
+ * @returns Normalized debug module name.
+ * @param   pszName         The name.
+ * @param   pszBuf          Buffer to use if work is needed.
+ * @param   cbBuf           Size of buffer.
+ */
+const char *dbgfR3ModNormalizeName(const char *pszName, char *pszBuf, size_t cbBuf)
+{
+    /*
+     * Skip to the filename in case someone gave us a full filename path.
+     */
+    pszName = RTPathFilenameEx(pszName, RTPATH_STR_F_STYLE_DOS);
+
+    /*
+     * Is it okay?
+     */
+    size_t cchName = strlen(pszName);
+    size_t off = 0;
+    for (;; off++)
+    {
+        char ch = pszName[off];
+        if (ch == '\0')
+            return pszName;
+        if (!RT_C_IS_ALNUM(ch) && ch != '_')
+            break;
+    }
+
+    /*
+     * It's no okay, so morph it.
+     */
+    if (cchName >= cbBuf)
+        cchName = cbBuf - 1;
+    for (off = 0; off < cchName; off++)
+    {
+        char ch = pszName[off];
+        if (!RT_C_IS_ALNUM(ch))
+            ch = '_';
+        pszBuf[off] = ch;
+    }
+    pszBuf[off] = '\0';
+
+    return pszBuf;
+}
+
+
+/**
  * Handles in-memory ELF images.
  *
  * @returns VBox status code.
  * @param   pUVM            The user mode VM handle.
  * @param   pImageAddr      The image address.
  * @param   fFlags          Flags, DBGFMODINMEM_F_XXX.
- * @param   pszName         The image name, optional.
+ * @param   pszName         The module name, optional.
+ * @param   pszFilename     The image filename, optional.
  * @param   enmArch         The image arch if we force it, pass
  *                          RTLDRARCH_WHATEVER if you don't care.
  * @param   cbImage         Image size.  Pass 0 if not known.
@@ -98,11 +148,11 @@ typedef DBGFMODINMEMBUF *PDBGFMODINMEMBUF;
  * @param   phDbgMod        Where to return the resulting debug module on success.
  * @param   pErrInfo        Where to return extended error info on failure.
  */
-static int dbgfR3ModInMemElf(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName,
+static int dbgfR3ModInMemElf(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName, const char *pszFilename,
                              RTLDRARCH enmArch, uint32_t cbImage, PDBGFMODINMEMBUF puBuf,
                              PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pUVM, fFlags, pszName, enmArch, cbImage, puBuf, phDbgMod);
+    RT_NOREF(pUVM, fFlags, pszName, pszFilename, enmArch, cbImage, puBuf, phDbgMod);
     return RTERRINFO_LOG_SET_F(pErrInfo, VERR_INVALID_EXE_SIGNATURE, "Found ELF magic at %RGv", pImageAddr->FlatPtr);
 }
 
@@ -421,7 +471,8 @@ static int dbgfR3ModInMemPeCreateLdrMod(PUVM pUVM, uint32_t fFlags, const char *
  * @param   pUVM            The user mode VM handle.
  * @param   pImageAddr      The image address.
  * @param   fFlags          Flags, DBGFMODINMEM_F_XXX.
- * @param   pszName         The image name, optional.
+ * @param   pszName         The module name, optional.
+ * @param   pszFilename     The image filename, optional.
  * @param   enmArch         The image arch if we force it, pass
  *                          RTLDRARCH_WHATEVER if you don't care.
  * @param   cbImage         Image size.  Pass 0 if not known.
@@ -431,9 +482,9 @@ static int dbgfR3ModInMemPeCreateLdrMod(PUVM pUVM, uint32_t fFlags, const char *
  * @param   phDbgMod        Where to return the resulting debug module on success.
  * @param   pErrInfo        Where to return extended error info on failure.
  */
-static int dbgfR3ModInMemPe(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName, RTLDRARCH enmArch,
-                            uint32_t cbImage, uint32_t offPeHdrs, uint32_t cbPeHdrsPart1, PDBGFMODINMEMBUF puBuf,
-                            PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo)
+static int dbgfR3ModInMemPe(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName, const char *pszFilename,
+                            RTLDRARCH enmArch, uint32_t cbImage, uint32_t offPeHdrs, uint32_t cbPeHdrsPart1,
+                            PDBGFMODINMEMBUF puBuf, PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo)
 {
     /*
      * Read the optional header and the section table after validating the
@@ -532,13 +583,17 @@ static int dbgfR3ModInMemPe(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_MISMATCH, "Image size mismatch: input=%#x header=%#x", cbImage, cbImageFromHdr);
 
     /*
-     * Guess the image name if not specified.
+     * Guess the module name if not specified and make sure it conforms to DBGC expectations.
      */
-    //char szImageName[64];
     if (!pszName)
     {
+        if (pszFilename)
+            pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
         /** @todo */
     }
+
+    char szNormalized[128];
+    pszName = dbgfR3ModNormalizeName(pszName, szNormalized, sizeof(szNormalized));
 
     /*
      * Create the module using the in memory image first, falling back on cached image.
@@ -551,7 +606,7 @@ static int dbgfR3ModInMemPe(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags
         hLdrMod = NIL_RTLDRMOD;
 
     RTDBGMOD hMod;
-    rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, &hLdrMod, cbImageFromHdr,
+    rc = RTDbgModCreateFromPeImage(&hMod, pszFilename, pszName, &hLdrMod, cbImageFromHdr,
                                    puBuf->Nt32.FileHeader.TimeDateStamp, DBGFR3AsGetConfig(pUVM));
     if (RT_SUCCESS(rc))
         *phDbgMod = hMod;
@@ -578,14 +633,15 @@ static int dbgfR3ModInMemPe(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags
  * @param   pUVM            The user mode VM handle.
  * @param   pImageAddr      The image address.
  * @param   fFlags          Flags, DBGFMODINMEM_F_XXX.
- * @param   pszName         The image name, optional.
+ * @param   pszName         The module name, optional.
+ * @param   pszFilename     The image filename, optional.
  * @param   enmArch         The image arch if we force it, pass
  *                          RTLDRARCH_WHATEVER if you don't care.
  * @param   cbImage         Image size.  Pass 0 if not known.
  * @param   phDbgMod        Where to return the resulting debug module on success.
  * @param   pErrInfo        Where to return extended error info on failure.
  */
-VMMR3DECL(int) DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName,
+VMMR3DECL(int) DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName, const char *pszFilename,
                               RTLDRARCH enmArch, uint32_t cbImage, PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo)
 {
     /*
@@ -611,7 +667,7 @@ VMMR3DECL(int) DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFla
         return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Failed to read DOS header at %RGv: %Rrc", pImageAddr->FlatPtr, rc);
 
     if (uBuf.ab[0] == ELFMAG0 && uBuf.ab[1] == ELFMAG1 && uBuf.ab[2] == ELFMAG2 && uBuf.ab[3] == ELFMAG3)
-        return dbgfR3ModInMemElf(pUVM, pImageAddr, fFlags, pszName, enmArch, cbImage, &uBuf, phDbgMod, pErrInfo);
+        return dbgfR3ModInMemElf(pUVM, pImageAddr, fFlags, pszName, pszFilename, enmArch, cbImage, &uBuf, phDbgMod, pErrInfo);
 
     uint32_t offNewHdrs;
     if (uBuf.DosHdr.e_magic == IMAGE_DOS_SIGNATURE)
@@ -641,8 +697,8 @@ VMMR3DECL(int) DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFla
                                    PeHdrAddr.FlatPtr, offNewHdrs, rc);
 
     if (uBuf.Nt32.Signature == IMAGE_NT_SIGNATURE)
-        return dbgfR3ModInMemPe(pUVM, pImageAddr, fFlags, pszName, enmArch, cbImage, offNewHdrs, cbPeHdrsPart1, &uBuf,
-                                phDbgMod, pErrInfo);
+        return dbgfR3ModInMemPe(pUVM, pImageAddr, fFlags, pszName, pszFilename, enmArch, cbImage, offNewHdrs, cbPeHdrsPart1,
+                                &uBuf, phDbgMod, pErrInfo);
 
     return RTERRINFO_LOG_SET_F(pErrInfo, VERR_INVALID_EXE_SIGNATURE, "No PE/LX/NE header at %RGv (off=%#RX32): %.8Rhxs",
                                PeHdrAddr.FlatPtr, offNewHdrs, uBuf.ab);

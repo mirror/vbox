@@ -1396,7 +1396,8 @@ static DECLCALLBACK(int) dbgcCmdLoadInMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     uint32_t fFlags = DBGFMODINMEM_F_NO_CONTAINER_FALLBACK | DBGFMODINMEM_F_NO_READER_FALLBACK;
     RTDBGMOD hDbgMod;
     RTERRINFOSTATIC ErrInfo;
-    rc = DBGFR3ModInMem(pUVM, &ModAddress, fFlags, pszModName, enmArch, 0 /*cbImage*/, &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
+    rc = DBGFR3ModInMem(pUVM, &ModAddress, fFlags, pszModName, pszModName, enmArch, 0 /*cbImage*/,
+                        &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
         if (RTErrInfoIsSet(&ErrInfo.Core))

@@ -1203,7 +1203,8 @@ VMMR3DECL(PRTDBGLINE)   DBGFR3AsLineByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADD
 #define DBGFMODINMEM_F_VALID_MASK               UINT32_C(0x00000007)
 /** @} */
 VMMR3DECL(int)          DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName,
-                                       RTLDRARCH enmArch, uint32_t cbImage, PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo);
+                                       const char *pszFilename, RTLDRARCH enmArch, uint32_t cbImage,
+                                       PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo);
 
 #endif /* IN_RING3 */
 
