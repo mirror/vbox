@@ -347,10 +347,10 @@ typedef struct PDMAUDIOBACKENDCFG
     size_t   cbStreamOut;
     /** Size (in bytes) of the host backend's audio input stream structure. */
     size_t   cbStreamIn;
-    /** Number of concurrent output streams supported on the host.
+    /** Number of concurrent output (playback) streams supported on the host.
      *  UINT32_MAX for unlimited concurrent streams, 0 if no concurrent input streams are supported. */
     uint32_t cMaxStreamsOut;
-    /** Number of concurrent input streams supported on the host.
+    /** Number of concurrent input (recording) streams supported on the host.
      *  UINT32_MAX for unlimited concurrent streams, 0 if no concurrent input streams are supported. */
     uint32_t cMaxStreamsIn;
 } PDMAUDIOBACKENDCFG, *PPDMAUDIOBACKENDCFG;
@@ -952,21 +952,6 @@ typedef enum PDMAUDIOBACKENDSTS
 } PDMAUDIOBACKENDSTS;
 
 /**
- * Audio stream context.
- */
-typedef enum PDMAUDIOSTREAMCTX
-{
-    /** No context set / invalid. */
-    PDMAUDIOSTREAMCTX_UNKNOWN = 0,
-    /** Host stream, connected to a backend. */
-    PDMAUDIOSTREAMCTX_HOST,
-    /** Guest stream, connected to the device emulation. */
-    PDMAUDIOSTREAMCTX_GUEST,
-    /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOSTREAMCTX_32BIT_HACK = 0x7fffffff
-} PDMAUDIOSTREAMCTX;
-
-/**
  * Structure for keeping audio input stream specifics.
  * Do not use directly. Instead, use PDMAUDIOSTREAM.
  */
@@ -1014,33 +999,50 @@ typedef struct PDMAUDIOSTREAMOUT
     } Dbg;
 } PDMAUDIOSTREAMOUT, *PPDMAUDIOSTREAMOUT;
 
+/** Pointer to an audio stream. */
 typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
 
 /**
- * Structure for maintaining an nput/output audio stream.
+ * Audio stream context.
+ * Needed for separating data from the guest and host side (per stream).
+ */
+typedef struct PDMAUDIOSTREAMCTX
+{
+    /** The stream's audio configuration. */
+    PDMAUDIOSTREAMCFG      Cfg;
+    /** This stream's mixing buffer. */
+    PDMAUDIOMIXBUF         MixBuf;
+} PDMAUDIOSTREAMCTX;
+
+/** Pointer to an audio stream context. */
+typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAMCTX;
+
+/**
+ * Structure for maintaining an input/output audio stream.
  */
 typedef struct PDMAUDIOSTREAM
 {
     /** List node. */
     RTLISTNODE             Node;
-    /** Pointer to the other pair of this stream.
-     *  This might be the host or guest side. */
-    PPDMAUDIOSTREAM        pPair;
     /** Name of this stream. */
     char                   szName[64];
     /** Number of references to this stream. Only can be
      *  destroyed if the reference count is reaching 0. */
     uint32_t               cRefs;
-    /** The stream's audio configuration. */
-    PDMAUDIOSTREAMCFG      Cfg;
     /** Stream status flag. */
     PDMAUDIOSTREAMSTS      fStatus;
-    /** This stream's mixing buffer. */
-    PDMAUDIOMIXBUF         MixBuf;
     /** Audio direction of this stream. */
     PDMAUDIODIR            enmDir;
-    /** Context of this stream. */
-    PDMAUDIOSTREAMCTX      enmCtx;
+    /** The guest side of the stream. */
+    PDMAUDIOSTREAMCTX      Guest;
+    /** The host side of the stream. */
+    PDMAUDIOSTREAMCTX      Host;
+    /** Union for input/output specifics (based on enmDir). */
+    union
+    {
+        PDMAUDIOSTREAMIN   In;
+        PDMAUDIOSTREAMOUT  Out;
+    } RT_UNION_NM(u);
     /** Timestamp (in ns) since last iteration. */
     uint64_t               tsLastIteratedNs;
     /** Timestamp (in ns) since last playback / capture. */
@@ -1053,12 +1055,6 @@ typedef struct PDMAUDIOSTREAM
      *  For input streams this  indicates whether the stream has enough input
      *  data to actually start reading audio. */
     bool                   fThresholdReached;
-    /** Union for input/output specifics. */
-    union
-    {
-        PDMAUDIOSTREAMIN   In;
-        PDMAUDIOSTREAMOUT  Out;
-    } RT_UNION_NM(u);
     /** Data to backend-specific stream data.
      *  This data block will be casted by the backend to access its backend-dependent data.
      *

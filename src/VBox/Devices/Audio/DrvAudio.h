@@ -122,10 +122,8 @@ typedef struct DRVAUDIO
     PPDMIHOSTAUDIO          pHostDrvAudio;
     /** Pointer to CFGM configuration node of this driver. */
     PCFGMNODE               pCFGMNode;
-    /** List of host input/output audio streams. */
-    RTLISTANCHOR            lstHstStreams;
-    /** List of guest input/output audio streams. */
-    RTLISTANCHOR            lstGstStreams;
+    /** List of audio streams. */
+    RTLISTANCHOR            lstStreams;
 #ifdef VBOX_WITH_AUDIO_ENUM
     /** Flag indicating to perform an (re-)enumeration of the host audio devices. */
     bool                    fEnumerateDevices;
