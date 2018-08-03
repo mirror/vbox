@@ -1139,7 +1139,7 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
     {
         if (!fFirst)
         {
-            int rc = dbgfR3StackWalkCollectRegisterChanges(pUnwindCtx->m_pUVM, pFrame, &pUnwindCtx->m_State);
+            rc = dbgfR3StackWalkCollectRegisterChanges(pUnwindCtx->m_pUVM, pFrame, &pUnwindCtx->m_State);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -1147,8 +1147,8 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
         if (   pUnwindCtx->m_pInitialCtx
             && pUnwindCtx->m_hAs != NIL_RTDBGAS)
         {
-            int rc = dbgfR3OSStackUnwindAssist(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, pFrame, &pUnwindCtx->m_State,
-                                               pUnwindCtx->m_pInitialCtx, pUnwindCtx->m_hAs, &pUnwindCtx->m_uOsScratch);
+            rc = dbgfR3OSStackUnwindAssist(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, pFrame, &pUnwindCtx->m_State,
+                                           pUnwindCtx->m_pInitialCtx, pUnwindCtx->m_hAs, &pUnwindCtx->m_uOsScratch);
             if (RT_FAILURE(rc))
                 return rc;
         }
