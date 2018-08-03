@@ -488,6 +488,7 @@ static bool dbgUnwindPeAmd64DoOne(RTDBGMOD hMod, PCIMAGE_RUNTIME_FUNCTION_ENTRY 
                         case IMAGE_AMD64_UWOP_SET_FPREG:
                             iFrameReg = uOpInfo;
                             offFrameReg = pInfo->FrameOffset * 16;
+                            pThis->u.x86.auRegs[X86_GREG_xSP] = pThis->u.x86.auRegs[iFrameReg] - offFrameReg;
                             iOpcode++;
                             break;
 

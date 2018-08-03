@@ -456,7 +456,7 @@ static DECLCALLBACK(int) dbgDiggerWinNtStackUnwindAssist(PUVM pUVM, void *pvData
                             MAYBE_ADD_GREG(TrapFrame.Rsi, DBGFREG_RSI, X86_GREG_xSI);
                             MAYBE_ADD_GREG(TrapFrame.Rdi, DBGFREG_RDI, X86_GREG_xDI);
                         }
-                        MAYBE_ADD_GREG(TrapFrame.Rbp, DBGFREG_RBP, X86_GREG_xBP);
+                        // MAYBE_ADD_GREG(TrapFrame.Rbp, DBGFREG_RBP, X86_GREG_xBP); - KiInterrupt[Sub]Dispatch* may leave this invalid.
 
                         /* Done? */
                         if (iLoop > 0)
