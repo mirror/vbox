@@ -977,6 +977,14 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, NULL);
 
+#ifdef VBOX_STRICT
+    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+    {
+        AssertMsgFailed(("Stream config '%s' (%p) is invalid\n", pCfg->szName, pCfg));
+        return NULL;
+    }
+#endif
+
     PPDMAUDIOSTREAMCFG pDst = (PPDMAUDIOSTREAMCFG)RTMemAllocZ(sizeof(PDMAUDIOSTREAMCFG));
     if (!pDst)
         return NULL;
