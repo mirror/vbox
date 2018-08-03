@@ -2951,7 +2951,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (pDrvCfg->uPeriodMs)
         pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(pDrvCfg->uPeriodMs, &pCfgReq->Props);
     else /* Set default period size. */
-        pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(50 /* ms */, &pCfgReq->Props);
+        pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(200 /* ms */, &pCfgReq->Props);
 
     LogRel2(("Audio: Using %s period size (%RU64ms, %RU32 frames) for stream '%s'\n",
              pDrvCfg->uPeriodMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPeriod, &pCfgReq->Props),
