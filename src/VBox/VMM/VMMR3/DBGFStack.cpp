@@ -1137,12 +1137,9 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
      */
     if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO)
     {
-        if (!fFirst)
-        {
-            rc = dbgfR3StackWalkCollectRegisterChanges(pUnwindCtx->m_pUVM, pFrame, &pUnwindCtx->m_State);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
+        rc = dbgfR3StackWalkCollectRegisterChanges(pUnwindCtx->m_pUVM, pFrame, &pUnwindCtx->m_State);
+        if (RT_FAILURE(rc))
+            return rc;
 
         if (   pUnwindCtx->m_pInitialCtx
             && pUnwindCtx->m_hAs != NIL_RTDBGAS)
