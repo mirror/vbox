@@ -115,6 +115,7 @@ UIMainEventListeningThread::UIMainEventListeningThread(const CEventSource &comSo
     , m_comListener(comListener)
     , m_fShutdown(false)
 {
+    setObjectName("UIMainEventListeningThread");
 }
 
 UIMainEventListeningThread::~UIMainEventListeningThread()
@@ -122,8 +123,12 @@ UIMainEventListeningThread::~UIMainEventListeningThread()
     /* Make a request to shutdown: */
     setShutdown(true);
 
-    /* And wait 30 seconds for run() to finish: */
-    wait(30000);
+    /* And wait 30 seconds for run() to finish (1 sec increments to help with
+       delays incurred debugging and prevent suicidal use-after-free behaviour): */
+    uint32_t i = 30000;
+    do
+        wait(1000);
+    while (i-- > 0 && !isFinished());
 }
 
 void UIMainEventListeningThread::run()
@@ -203,6 +208,14 @@ void UIMainEventListener::registerSource(const CEventSource &comSource, const CE
 void UIMainEventListener::unregisterSources()
 {
     /* Wipe out the threads: */
+    /** @todo r=bird: The use of qDeleteAll here is unsafe because it won't take
+     * QThread::wait() timeouts into account, and may delete the QThread object
+     * while the thread is still running, causing heap corruption/crashes once
+     * the thread awakens and gets on with its termination.
+     * Observed with debugger + paged heap.
+     *
+     * Should use specialized thread list which only deletes the threads after
+     * isFinished() returns true, leaving them alone on timeout failures. */
     qDeleteAll(m_threads);
 }
 
