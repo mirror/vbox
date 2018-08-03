@@ -98,46 +98,7 @@ typedef struct ALSAAUDIOSTREAM
 
 /* latency = period_size * periods / (rate * bytes_per_frame) */
 
-typedef struct ALSAAUDIOCFG
-{
-    int size_in_usec_in;
-    int size_in_usec_out;
-    const char *pcm_name_in;
-    const char *pcm_name_out;
-    unsigned int buffer_size_in;
-    unsigned int period_size_in;
-    unsigned int buffer_size_out;
-    unsigned int period_size_out;
-    unsigned int threshold;
-
-    int buffer_size_in_overriden;
-    int period_size_in_overriden;
-
-    int buffer_size_out_overriden;
-    int period_size_out_overriden;
-
-} ALSAAUDIOCFG, *PALSAAUDIOCFG;
-
 static int alsaStreamRecover(snd_pcm_t *phPCM);
-
-static ALSAAUDIOCFG s_ALSAConf =
-{
-    0,
-    0,
-    "default",
-    "default",
-# define DEFAULT_PERIOD_FRAMES 4410                      /* 100ms for 44,1 kHz. */
-# define DEFAULT_BUFFER_FRAMES DEFAULT_PERIOD_FRAMES * 2 /* Double (buffering) the period size. */
-    DEFAULT_BUFFER_FRAMES,
-    DEFAULT_PERIOD_FRAMES,
-    DEFAULT_BUFFER_FRAMES,
-    DEFAULT_PERIOD_FRAMES,
-    DEFAULT_PERIOD_FRAMES * 2,                           /* Threshold, using double the period size to avoid stutters. */
-    0,
-    0,
-    0,
-    0
-};
 
 /**
  * Host Alsa audio driver instance data.
@@ -562,7 +523,7 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
 
     do
     {
-        const char *pszDev = fIn ? s_ALSAConf.pcm_name_in : s_ALSAConf.pcm_name_out;
+        const char *pszDev = "default"; /** @todo Make this configurable through PALSAAUDIOSTREAMCFG. */
         if (!pszDev)
         {
             LogRel(("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"));
@@ -600,8 +561,7 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
             break;
         }
 
-        err = snd_pcm_hw_params_set_access(phPCM, pHWParms,
-                                           SND_PCM_ACCESS_RW_INTERLEAVED);
+        err = snd_pcm_hw_params_set_access(phPCM, pHWParms, SND_PCM_ACCESS_RW_INTERLEAVED);
         if (err < 0)
         {
             LogRel(("ALSA: Failed to set access type: %s\n", snd_strerror(err)));
@@ -641,133 +601,54 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
             break;
         }
 
-        unsigned int period_size = pCfgReq->period_size;
-        unsigned int buffer_size = pCfgReq->buffer_size;
+        snd_pcm_uframes_t period_size_f = pCfgReq->period_size;
+        snd_pcm_uframes_t buffer_size_f = pCfgReq->buffer_size;
 
-        if (   !((fIn && s_ALSAConf.size_in_usec_in)
-            ||  (!fIn && s_ALSAConf.size_in_usec_out)))
+        snd_pcm_uframes_t minval = period_size_f;
+
+        int dir = 0;
+        err = snd_pcm_hw_params_get_period_size_min(pHWParms, &minval, &dir);
+        if (err < 0)
         {
-            if (!buffer_size)
-            {
-                buffer_size = DEFAULT_BUFFER_FRAMES;
-                period_size = DEFAULT_PERIOD_FRAMES;
-            }
-        }
-
-        if (buffer_size)
-        {
-            if (   ( fIn && s_ALSAConf.size_in_usec_in)
-                || (!fIn && s_ALSAConf.size_in_usec_out))
-            {
-                if (period_size)
-                {
-                    err = snd_pcm_hw_params_set_period_time_near(phPCM, pHWParms,
-                                                                 &period_size, 0);
-                    if (err < 0)
-                    {
-                        LogRel(("ALSA: Failed to set period time %d\n", pCfgReq->period_size));
-                        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                        break;
-                    }
-                }
-
-                err = snd_pcm_hw_params_set_buffer_time_near(phPCM, pHWParms,
-                                                             &buffer_size, 0);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Failed to set buffer time %d\n", pCfgReq->buffer_size));
-                    rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                    break;
-                }
-            }
-            else
-            {
-                snd_pcm_uframes_t period_size_f = (snd_pcm_uframes_t)period_size;
-                snd_pcm_uframes_t buffer_size_f = (snd_pcm_uframes_t)buffer_size;
-
-                snd_pcm_uframes_t minval;
-
-                if (period_size_f)
-                {
-                    minval = period_size_f;
-
-                    int dir = 0;
-                    err = snd_pcm_hw_params_get_period_size_min(pHWParms,
-                                                                &minval, &dir);
-                    if (err < 0)
-                    {
-                        LogRel(("ALSA: Could not determine minimal period size\n"));
-                        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                        break;
-                    }
-                    else
-                    {
-                        LogFunc(("Minimal period size is: %ld\n", minval));
-                        if (period_size_f < minval)
-                        {
-                            if (   ( fIn && s_ALSAConf.period_size_in_overriden)
-                                || (!fIn && s_ALSAConf.period_size_out_overriden))
-                            {
-                                LogFunc(("Period size %RU32 is less than minimal period size %RU32\n",
-                                         period_size_f, minval));
-                            }
-
-                            period_size_f = minval;
-                        }
-                    }
-
-                    err = snd_pcm_hw_params_set_period_size_near(phPCM, pHWParms,
-                                                                 &period_size_f, 0);
-                    LogFunc(("Period size is: %RU32\n", period_size_f));
-                    if (err < 0)
-                    {
-                        LogRel(("ALSA: Failed to set period size %d (%s)\n",
-                                period_size_f, snd_strerror(err)));
-                        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                        break;
-                    }
-                }
-
-                /* Calculate default buffer size here since it might have been changed
-                 * in the _near functions */
-                buffer_size_f = 4 * period_size_f;
-
-                minval = buffer_size_f;
-                err = snd_pcm_hw_params_get_buffer_size_min(pHWParms, &minval);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Could not retrieve minimal buffer size\n"));
-                    rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                    break;
-                }
-                else
-                {
-                    LogFunc(("Minimal buffer size is: %RU32\n", minval));
-                    if (buffer_size_f < minval)
-                    {
-                        if (   ( fIn && s_ALSAConf.buffer_size_in_overriden)
-                            || (!fIn && s_ALSAConf.buffer_size_out_overriden))
-                        {
-                            LogFunc(("Buffer size %RU32 is less than minimal buffer size %RU32\n",
-                                     buffer_size_f, minval));
-                        }
-
-                        buffer_size_f = minval;
-                    }
-                }
-
-                err = snd_pcm_hw_params_set_buffer_size_near(phPCM,
-                                                             pHWParms, &buffer_size_f);
-                if (err < 0)
-                {
-                    LogRel(("ALSA: Failed to set near buffer size %RU32: %s\n", buffer_size_f, snd_strerror(err)));
-                    rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-                    break;
-                }
-            }
+            LogRel(("ALSA: Could not determine minimal period size\n"));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
         }
         else
-            LogFunc(("Warning: Buffer size is not set\n"));
+        {
+            LogFunc(("Minimal period size is: %ld\n", minval));
+            if (period_size_f < minval)
+                period_size_f = minval;
+        }
+
+        err = snd_pcm_hw_params_set_period_size_near(phPCM, pHWParms, &period_size_f, 0);
+        LogFunc(("Period size is: %RU32\n", period_size_f));
+        if (err < 0)
+        {
+            LogRel(("ALSA: Failed to set period size %d (%s)\n",
+                    period_size_f, snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+
+        minval = buffer_size_f;
+        err = snd_pcm_hw_params_get_buffer_size_min(pHWParms, &minval);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Could not retrieve minimal buffer size\n"));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        else
+            LogFunc(("Minimal buffer size is: %RU32\n", minval));
+
+        err = snd_pcm_hw_params_set_buffer_size_near(phPCM, pHWParms, &buffer_size_f);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Failed to set near buffer size %RU32: %s\n", buffer_size_f, snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
 
         err = snd_pcm_hw_params(phPCM, pHWParms);
         if (err < 0)
@@ -786,7 +667,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         }
 
         snd_pcm_uframes_t obt_period_size;
-        int dir = 0;
         err = snd_pcm_hw_params_get_period_size(pHWParms, &obt_period_size, &dir);
         if (err < 0)
         {
