@@ -3131,7 +3131,7 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
         /* Reset status. */
         pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
 
-#ifdef VBOX_STRICT
+#ifdef LOG_ENABLED
         if (pStream->fStatus != PDMAUDIOSTREAMSTS_FLAG_NONE)
         {
             char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
