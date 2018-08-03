@@ -65,7 +65,7 @@ struc VMCPU
     .nem                    resb 512
     .trpm                   resb 128
     .tm                     resb 384
-    .vmm                    resb 704
+    .vmm                    resb 768
     .pdm                    resb 256
     .iom                    resb 512
     .dbgf                   resb 256

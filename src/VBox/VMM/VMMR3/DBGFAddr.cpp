@@ -209,6 +209,23 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromPhys(PUVM pUVM, PDBGFADDRESS pAddress, RTG
 
 
 /**
+ * Creates a mixed address from a flat host ring-0 address.
+ *
+ * @returns pAddress
+ * @param   pAddress        Where to store the mixed address.
+ * @param   R0Ptr           The host ring-0 address.
+ */
+VMMR3_INT_DECL(PDBGFADDRESS) DBGFR3AddrFromHostR0(PDBGFADDRESS pAddress, RTR0UINTPTR R0Ptr)
+{
+    pAddress->FlatPtr = R0Ptr;
+    pAddress->off     = R0Ptr;
+    pAddress->fFlags  = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
+    pAddress->Sel     = DBGF_SEL_FLAT;
+    return pAddress;
+}
+
+
+/**
  * Checks if the specified address is valid (checks the structure pointer too).
  *
  * @returns true if valid.

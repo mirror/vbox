@@ -451,27 +451,12 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 #endif
 
                     /* Callstack. */
-                    DBGFADDRESS pc;
-                    pc.fFlags    = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-#if HC_ARCH_BITS == 64
-                    pc.FlatPtr   = pc.off = pVCpu->vmm.s.CallRing3JmpBufR0.rip;
-#else
-                    pc.FlatPtr   = pc.off = pVCpu->vmm.s.CallRing3JmpBufR0.eip;
-#endif
-                    pc.Sel       = DBGF_SEL_FLAT;
-
-                    DBGFADDRESS ebp;
-                    ebp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-                    ebp.FlatPtr  = ebp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp;
-                    ebp.Sel      = DBGF_SEL_FLAT;
-
-                    DBGFADDRESS esp;
-                    esp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-                    esp.Sel      = DBGF_SEL_FLAT;
-                    esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp;
-
+                    DBGFADDRESS AddrPc, AddrBp, AddrSp;
                     PCDBGFSTACKFRAME pFirstFrame;
-                    rc2 = DBGFR3StackWalkBeginEx(pVM->pUVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &pc,
+                    rc2 = DBGFR3StackWalkBeginEx(pVM->pUVM, pVCpu->idCpu, DBGFCODETYPE_RING0,
+                                                 DBGFR3AddrFromHostR0(&AddrBp, pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp),
+                                                 DBGFR3AddrFromHostR0(&AddrSp, pVCpu->vmm.s.CallRing3JmpBufR0.SpResume),
+                                                 DBGFR3AddrFromHostR0(&AddrPc, pVCpu->vmm.s.CallRing3JmpBufR0.SavedEipForUnwind),
                                                  RTDBGRETURNTYPE_INVALID, &pFirstFrame);
                     if (RT_SUCCESS(rc2))
                     {

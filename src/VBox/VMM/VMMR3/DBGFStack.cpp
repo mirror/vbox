@@ -54,6 +54,7 @@ typedef struct DBGFUNWINDCTX
     VMCPUID     m_idCpu;
     RTDBGAS     m_hAs;
     PCCPUMCTX   m_pInitialCtx;
+    bool        m_fIsHostRing0;
     uint64_t    m_uOsScratch; /**< For passing to DBGFOSREG::pfnStackUnwindAssist. */
 
     RTDBGUNWINDSTATE m_State;
@@ -104,11 +105,14 @@ typedef struct DBGFUNWINDCTX
             m_State.u.x86.auSegs[X86_SREG_FS]  = pInitialCtx->fs.Sel;
             m_State.u.x86.fRealOrV86           = CPUMIsGuestInRealOrV86ModeEx(pInitialCtx);
         }
+        else if (hAs == DBGF_AS_R0)
+            VMMR3InitR0StackUnwindState(pUVM, idCpu, &m_State);
 
         m_pUVM            = pUVM;
         m_idCpu           = idCpu;
         m_hAs             = DBGFR3AsResolveAndRetain(pUVM, hAs);
         m_pInitialCtx     = pInitialCtx;
+        m_fIsHostRing0    = hAs == DBGF_AS_R0;
         m_uOsScratch      = 0;
 
         m_hCached         = NIL_RTDBGMOD;
@@ -167,16 +171,21 @@ static DECLCALLBACK(int) dbgfR3StackReadCallback(PRTDBGUNWINDSTATE pThis, RTUINT
     PDBGFUNWINDCTX pUnwindCtx = (PDBGFUNWINDCTX)pThis->pvUser;
     DBGFADDRESS SrcAddr;
     int rc = VINF_SUCCESS;
-    if (   pThis->enmArch == RTLDRARCH_X86_32
-        || pThis->enmArch == RTLDRARCH_X86_16)
-    {
-        if (!pThis->u.x86.fRealOrV86)
-            rc = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &SrcAddr, pThis->u.x86.auSegs[X86_SREG_SS], uSp);
-        else
-            DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSp + ((uint32_t)pThis->u.x86.auSegs[X86_SREG_SS] << 4));
-    }
+    if (pUnwindCtx->m_fIsHostRing0)
+        DBGFR3AddrFromHostR0(&SrcAddr, uSp);
     else
-        DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSp);
+    {
+        if (   pThis->enmArch == RTLDRARCH_X86_32
+            || pThis->enmArch == RTLDRARCH_X86_16)
+        {
+            if (!pThis->u.x86.fRealOrV86)
+                rc = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &SrcAddr, pThis->u.x86.auSegs[X86_SREG_SS], uSp);
+            else
+                DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSp + ((uint32_t)pThis->u.x86.auSegs[X86_SREG_SS] << 4));
+        }
+        else
+            DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &SrcAddr, uSp);
+    }
     if (RT_SUCCESS(rc))
         rc = DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &SrcAddr, pvDst, cbToRead);
     return rc;
@@ -448,9 +457,9 @@ static bool dbgUnwindPeAmd64DoOne(RTDBGMOD hMod, PCIMAGE_RUNTIME_FUNCTION_ENTRY 
                     switch (uUnwindOp)
                     {
                         case IMAGE_AMD64_UWOP_PUSH_NONVOL:
-                            pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
                             dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auRegs[uOpInfo]);
                             pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
+                            pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
                             iOpcode++;
                             break;
 
@@ -1168,11 +1177,16 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
             AssertFailed();
         if (dbgfR3UnwindCtxDoOneFrame(pUnwindCtx))
         {
-            DBGFADDRESS AddrReturnFrame = pFrame->AddrReturnFrame;
-            rc = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &AddrReturnFrame,
-                                      pUnwindCtx->m_State.u.x86.FrameAddr.sel, pUnwindCtx->m_State.u.x86.FrameAddr.off);
-            if (RT_SUCCESS(rc))
-                pFrame->AddrReturnFrame      = AddrReturnFrame;
+            if (pUnwindCtx->m_fIsHostRing0)
+                DBGFR3AddrFromHostR0(&pFrame->AddrReturnFrame, pUnwindCtx->m_State.u.x86.FrameAddr.off);
+            else
+            {
+                DBGFADDRESS AddrReturnFrame = pFrame->AddrReturnFrame;
+                rc = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &AddrReturnFrame,
+                                          pUnwindCtx->m_State.u.x86.FrameAddr.sel, pUnwindCtx->m_State.u.x86.FrameAddr.off);
+                if (RT_SUCCESS(rc))
+                    pFrame->AddrReturnFrame = AddrReturnFrame;
+            }
             pFrame->enmReturnFrameReturnType = pUnwindCtx->m_State.enmRetType;
             pFrame->fFlags                  |= DBGFSTACKFRAME_FLAGS_UNWIND_INFO_RET;
         }
@@ -1276,20 +1290,26 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
         Assert(!(pCur->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO));
         if (pAddrFrame)
             pCur->AddrFrame = *pAddrFrame;
-        else if (   RT_SUCCESS(rc)
-                 && dbgfR3UnwindCtxSetPcAndSp(&UnwindCtx, &pCur->AddrPC, &pCur->AddrStack)
-                 && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx))
-        {
-            pCur->enmReturnType = UnwindCtx.m_State.enmRetType;
-            pCur->fFlags |= DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO;
-            rc = DBGFR3AddrFromSelOff(UnwindCtx.m_pUVM, UnwindCtx.m_idCpu, &pCur->AddrFrame,
-                                      UnwindCtx.m_State.u.x86.FrameAddr.sel, UnwindCtx.m_State.u.x86.FrameAddr.off);
-        }
         else if (enmCodeType != DBGFCODETYPE_GUEST)
             DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtx->rbp & fAddrMask);
         else if (RT_SUCCESS(rc))
             rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtx->ss.Sel, pCtx->rbp & fAddrMask);
 
+        /*
+         * Try unwind and get a better frame pointer and state.
+         */
+        if (   RT_SUCCESS(rc)
+            && dbgfR3UnwindCtxSetPcAndSp(&UnwindCtx, &pCur->AddrPC, &pCur->AddrStack)
+            && dbgfR3UnwindCtxDoOneFrame(&UnwindCtx))
+        {
+            pCur->enmReturnType = UnwindCtx.m_State.enmRetType;
+            pCur->fFlags |= DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO;
+            if (!UnwindCtx.m_fIsHostRing0)
+                rc = DBGFR3AddrFromSelOff(UnwindCtx.m_pUVM, UnwindCtx.m_idCpu, &pCur->AddrFrame,
+                                          UnwindCtx.m_State.u.x86.FrameAddr.sel, UnwindCtx.m_State.u.x86.FrameAddr.off);
+            else
+                DBGFR3AddrFromHostR0(&pCur->AddrFrame, UnwindCtx.m_State.u.x86.FrameAddr.off);
+        }
         /*
          * The first frame.
          */

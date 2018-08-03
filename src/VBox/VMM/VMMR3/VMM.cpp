@@ -2471,18 +2471,137 @@ VMMR3_INT_DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr,
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     AssertReturn(pVCpu, VERR_INVALID_PARAMETER);
+    AssertReturn(cbRead < ~(size_t)0 / 2, VERR_INVALID_PARAMETER);
 
+    int rc;
 #ifdef VMM_R0_SWITCH_STACK
     RTHCUINTPTR off = R0Addr - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
 #else
     RTHCUINTPTR off = pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack - (pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck - R0Addr);
 #endif
-    if (   off          >  VMM_STACK_SIZE
-        || off + cbRead >= VMM_STACK_SIZE)
-        return VERR_INVALID_POINTER;
+    if (   off < VMM_STACK_SIZE
+        && off + cbRead <= VMM_STACK_SIZE)
+    {
+        memcpy(pvBuf, &pVCpu->vmm.s.pbEMTStackR3[off], cbRead);
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_INVALID_POINTER;
 
-    memcpy(pvBuf, &pVCpu->vmm.s.pbEMTStackR3[off], cbRead);
-    return VINF_SUCCESS;
+    /* Supply the setjmp return RIP/EIP.  */
+    if (   pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation + sizeof(RTR0UINTPTR) > R0Addr
+        && pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation < R0Addr + cbRead)
+    {
+        uint8_t const  *pbSrc  = (uint8_t const *)&pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcValue;
+        size_t          cbSrc  = sizeof(pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcValue);
+        size_t          offDst = 0;
+        if (R0Addr < pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation)
+            offDst = pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation - R0Addr;
+        else if (R0Addr > pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation)
+        {
+            size_t offSrc = R0Addr - pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation;
+            Assert(offSrc < cbSrc);
+            pbSrc -= offSrc;
+            cbSrc -= offSrc;
+        }
+        if (cbSrc > cbRead - offDst)
+            cbSrc = cbRead - offDst;
+        memcpy((uint8_t *)pvBuf + offDst, pbSrc, cbSrc);
+
+        if (cbSrc == cbRead)
+            rc = VINF_SUCCESS;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Used by the DBGF stack unwinder to initialize the register state.
+ *
+ * @param   pUVM            The user mode VM handle.
+ * @param   idCpu           The ID of the CPU being unwound.
+ * @param   pState          The unwind state to initialize.
+ */
+VMMR3_INT_DECL(void) VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, struct RTDBGUNWINDSTATE *pState)
+{
+    PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, idCpu);
+    AssertReturnVoid(pVCpu);
+
+    /*
+     * Locate the resume point on the stack.
+     */
+#ifdef VMM_R0_SWITCH_STACK
+    uint32_t off = VMMR0JMPBUF.SpResume - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
+    AssertReturnVoid(off < VMM_STACK_SIZE);
+#else
+    uint32_t off = 0;
+#endif
+
+#ifdef RT_ARCH_AMD64
+    /*
+     * This code must match the .resume stuff in VMMR0JmpA-amd64.asm exactly.
+     */
+# ifdef VBOX_STRICT
+    Assert(*(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off] == UINT32_C(0x7eadf00d));
+    off += 8; /* RESUME_MAGIC */
+# endif
+# ifdef RT_OS_WINDOWS
+    off += 0xa0; /* XMM6 thru XMM15 */
+# endif
+    pState->u.x86.uRFlags              = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->u.x86.auRegs[X86_GREG_xBX] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+# ifdef RT_OS_WINDOWS
+    pState->u.x86.auRegs[X86_GREG_xSI] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->u.x86.auRegs[X86_GREG_xDI] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+# endif
+    pState->u.x86.auRegs[X86_GREG_x12] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->u.x86.auRegs[X86_GREG_x13] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->u.x86.auRegs[X86_GREG_x14] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->u.x86.auRegs[X86_GREG_x15] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->u.x86.auRegs[X86_GREG_xBP] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+    pState->uPc                        = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 8;
+
+#elif defined(RT_ARCH_X86)
+    /*
+     * This code must match the .resume stuff in VMMR0JmpA-x86.asm exactly.
+     */
+# ifdef VBOX_STRICT
+    Assert(*(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off] == UINT32_C(0x7eadf00d));
+    off += 4; /* RESUME_MAGIC */
+# endif
+    pState->u.x86.uRFlags              = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 4;
+    pState->u.x86.auRegs[X86_GREG_xBX] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 4;
+    pState->u.x86.auRegs[X86_GREG_xSI] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 4;
+    pState->u.x86.auRegs[X86_GREG_xDI] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 4;
+    pState->u.x86.auRegs[X86_GREG_xBP] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 4;
+    pState->uPc                        = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    off += 4;
+#else
+# error "Port me"
+#endif
+
+    /*
+     * This is all we really need here, though the above helps if the assembly
+     * doesn't contain unwind info (currently only on win/64, so that is useful).
+     */
+    pState->u.x86.auRegs[X86_GREG_xBP] = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp;
+    pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.CallRing3JmpBufR0.SpResume;
 }
 
 #ifdef VBOX_WITH_RAW_MODE

@@ -182,6 +182,12 @@ typedef struct VMMR0JMPBUF
     RTHCUINTREG                 SavedEsp;
     /** EBP/RBP at the time of the jump to ring 3. */
     RTHCUINTREG                 SavedEbp;
+    /** EIP/RIP within vmmR0CallRing3LongJmp for assisting unwinding. */
+    RTHCUINTREG                 SavedEipForUnwind;
+    /** Unwind: The vmmR0CallRing3SetJmp return address value. */
+    RTHCUINTREG                 UnwindRetPcValue;
+    /** Unwind: The vmmR0CallRing3SetJmp return address stack location. */
+    RTHCUINTREG                 UnwindRetPcLocation;
 
     /** Stats: Max amount of stack used. */
     uint32_t                    cbUsedMax;
