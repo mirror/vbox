@@ -356,11 +356,12 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
 
 
 /**
- * Adjust the module name into something that's compatible with the debugger.
+ * Generate a debugger compatible module name from a filename.
  *
- * @param   pUVM                The user mode VM handle.
- * @param   ppszName            Pointer to the image name pointer.
- * @param   pImageAddr          The image load address.
+ * @returns Pointer to module name (doesn't need to be pszName).
+ * @param   pszFilename         The source filename.
+ * @param   pszName             Buffer to put the module name in.
+ * @param   cbName              Buffer size.
  */
 static const char *dbgDiggerWintNtFilenameToModuleName(const char *pszFilename, char *pszName, size_t cbName)
 {
