@@ -1430,6 +1430,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     NULL /*pfnQueryProp*/,
     NULL /*pfnVerifySignature*/,
     NULL /*pfnHashImage*/,
+    NULL /*pfnUnwindFrame*/,
     42
 };
 

@@ -85,6 +85,7 @@ static const RTLDROPS g_rtldrNativeOps =
     NULL,
     NULL,
     NULL,
+    NULL /*pfnUnwindFrame*/,
     42
 };
 

@@ -62,6 +62,15 @@ typedef RTDBGMODLDR *PRTDBGMODLDR;
 
 
 
+/** @interface_method_impl{RTDBGMODVTDBG,pfnUnwindFrame} */
+static DECLCALLBACK(int) rtDbgModLdr_UnwindFrame(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    Assert(pThis->u32Magic == RTDBGMODLDR_MAGIC);
+    return RTLdrUnwindFrame(pThis->hLdrMod, NULL, iSeg, off, pState);
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnQueryProp} */
 static DECLCALLBACK(int) rtDbgModLdr_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
@@ -240,6 +249,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnGetFormat = */                rtDbgModLdr_GetFormat,
     /*.pfnGetArch = */                  rtDbgModLdr_GetArch,
     /*.pfnQueryProp = */                rtDbgModLdr_QueryProp,
+    /*.pfnUnwindFrame = */              rtDbgModLdr_UnwindFrame,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };

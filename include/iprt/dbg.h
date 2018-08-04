@@ -33,7 +33,6 @@
 
 RT_C_DECLS_BEGIN
 
-# ifdef IN_RING3
 
 /** @defgroup grp_rt_dbg    RTDbg - Debugging Routines
  * @ingroup grp_rt
@@ -274,6 +273,45 @@ typedef struct RTDBGUNWINDSTATE
 
 } RTDBGUNWINDSTATE;
 
+/**
+ * Try read a 16-bit value off the stack.
+ *
+ * @returns pfnReadStack result.
+ * @param   pThis           The unwind state.
+ * @param   uSrcAddr        The stack address.
+ * @param   puDst           The read destination.
+ */
+DECLINLINE(int) RTDbgUnwindLoadStackU16(PRTDBGUNWINDSTATE pThis, RTUINTPTR uSrcAddr, uint16_t *puDst)
+{
+    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
+}
+
+/**
+ * Try read a 32-bit value off the stack.
+ *
+ * @returns pfnReadStack result.
+ * @param   pThis           The unwind state.
+ * @param   uSrcAddr        The stack address.
+ * @param   puDst           The read destination.
+ */
+DECLINLINE(int) RTDbgUnwindLoadStackU32(PRTDBGUNWINDSTATE pThis, RTUINTPTR uSrcAddr, uint32_t *puDst)
+{
+    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
+}
+
+/**
+ * Try read a 64-bit value off the stack.
+ *
+ * @returns pfnReadStack result.
+ * @param   pThis           The unwind state.
+ * @param   uSrcAddr        The stack address.
+ * @param   puDst           The read destination.
+ */
+DECLINLINE(int) RTDbgUnwindLoadStackU64(PRTDBGUNWINDSTATE pThis, RTUINTPTR uSrcAddr, uint64_t *puDst)
+{
+    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
+}
+
 
 
 /** Max length (including '\\0') of a symbol name. */
@@ -306,6 +344,7 @@ typedef struct RTDBGSYMBOL
 typedef RTDBGSYMBOL *PRTDBGSYMBOL;
 /** Pointer to const debug symbol. */
 typedef const RTDBGSYMBOL *PCRTDBGSYMBOL;
+
 
 /**
  * Allocate a new symbol structure.
@@ -384,6 +423,8 @@ RTDECL(PRTDBGLINE)      RTDbgLineDup(PCRTDBGLINE pLine);
  */
 RTDECL(void)            RTDbgLineFree(PRTDBGLINE pLine);
 
+
+# ifdef IN_RING3
 
 /** @defgroup grp_rt_dbgcfg     RTDbgCfg - Debugging Configuration
  *
@@ -658,6 +699,7 @@ RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszFilename, PC
 #define RTDBG_CACHE_DSYM_FILE_SUFFIX     ".dwarf"
 /** @} */
 
+# endif /* IN_RING3 */
 
 /** @} */
 
@@ -1104,6 +1146,7 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
 /** @} */
 
 
+# ifdef IN_RING3
 /** @defgroup grp_rt_dbgmod     RTDbgMod - Debug Module Interpreter
  * @{
  */
@@ -1749,9 +1792,29 @@ RTDECL(int)         RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUIN
  *                              RTDbgLineFree.
  */
 RTDECL(int)         RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE *ppLineInfo);
-/** @} */
 
+/**
+ * Try use unwind information to unwind one frame.
+ *
+ * @returns IPRT status code.  Last informational status from stack reader callback.
+ * @retval  VERR_DBG_NO_UNWIND_INFO if the module contains no unwind information.
+ * @retval  VERR_DBG_UNWIND_INFO_NOT_FOUND if no unwind information was found
+ *          for the location given by iSeg:off.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iSeg                The segment number of the program counter.
+ * @param   off                 The offset into @a iSeg.  Together with @a iSeg
+ *                              this corresponds to the RTDBGUNWINDSTATE::uPc
+ *                              value pointed to by @a pState.
+ * @param   pState              The unwind state to work.
+ *
+ * @sa      RTLdrUnwindFrame
+ */
+RTDECL(int)         RTDbgModUnwindFrame(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState);
+
+/** @} */
 # endif /* IN_RING3 */
+
 
 
 /** @name Kernel Debug Info API

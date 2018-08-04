@@ -905,6 +905,7 @@ static const RTLDROPS g_rtkldrOps =
     rtkldr_QueryProp,
     NULL,
     NULL,
+    NULL /*pfnUnwindFrame*/,
     42
 };
 

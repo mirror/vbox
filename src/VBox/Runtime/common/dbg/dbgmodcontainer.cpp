@@ -149,6 +149,16 @@ typedef struct RTDBGMODCTN
 typedef RTDBGMODCTN *PRTDBGMODCTN;
 
 
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnUnwindFrame} */
+static DECLCALLBACK(int)
+rtDbgModContainer_UnwindFrame(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
+{
+    RT_NOREF(pMod, iSeg, off, pState);
+    return VERR_DBG_NO_UNWIND_INFO;
+}
+
+
 /**
  * Fills in a RTDBGSYMBOL structure.
  *
@@ -740,6 +750,8 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgContainer =
     /*.pfnLineCount = */        rtDbgModContainer_LineCount,
     /*.pfnLineByOrdinal = */    rtDbgModContainer_LineByOrdinal,
     /*.pfnLineByAddr = */       rtDbgModContainer_LineByAddr,
+
+    /*.pfnUnwindFrame = */      rtDbgModContainer_UnwindFrame,
 
     /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
 };

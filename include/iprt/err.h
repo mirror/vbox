@@ -1728,6 +1728,12 @@ RT_C_DECLS_END
 #define VERR_CV_TODO                            (-692)
 /** Internal processing error the CodeView debug information reader. */
 #define VERR_CV_IPE                             (-693)
+/** No unwind information was found. */
+#define VERR_DBG_NO_UNWIND_INFO                 (-694)
+/** No unwind information for the specified location. */
+#define VERR_DBG_UNWIND_INFO_NOT_FOUND          (-695)
+/** Malformed unwind information. */
+#define VERR_DBG_MALFORMED_UNWIND_INFO          (-696)
 /** @} */
 
 /** @name Request Packet Status Codes.

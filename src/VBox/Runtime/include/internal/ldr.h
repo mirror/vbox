@@ -401,6 +401,28 @@ typedef struct RTLDROPS
      */
     DECLCALLBACKMEMBER(int, pfnHashImage)(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest);
 
+        /**
+     * Try use unwind information to unwind one frame.
+     *
+     * @returns IPRT status code.  Last informational status from stack reader callback.
+     * @retval  VERR_DBG_NO_UNWIND_INFO if the module contains no unwind information.
+     * @retval  VERR_DBG_UNWIND_INFO_NOT_FOUND if no unwind information was found
+     *          for the location given by iSeg:off.
+     *
+     * @param   pMod        Pointer to the module structure.
+     * @param   pvBits      Pointer to the bits returned by
+     *                      RTLDROPS::pfnGetBits(), optional.
+     * @param   iSeg        The segment number of the program counter.  UINT32_MAX for RVA.
+     * @param   off         The offset into @a iSeg.  Together with @a iSeg
+     *                      this corresponds to the RTDBGUNWINDSTATE::uPc
+     *                      value pointed to by @a pState.
+     * @param   pState      The unwind state to work.
+     *
+     * @sa      RTLdrUnwindFrame, RTDbgModUnwindFrame
+     */
+    DECLCALLBACKMEMBER(int, pfnUnwindFrame)(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t iSeg, RTUINTPTR off,
+                                            PRTDBGUNWINDSTATE pState);
+
     /** Dummy entry to make sure we've initialized it all. */
     RTUINT uDummy;
 } RTLDROPS;

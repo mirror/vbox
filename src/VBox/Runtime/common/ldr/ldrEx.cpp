@@ -33,6 +33,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
+#include <iprt/dbg.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/md5.h>
@@ -705,6 +706,26 @@ RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDi
     return pMod->pOps->pfnHashImage(pMod, enmDigest, pszDigest, cbDigest);
 }
 RT_EXPORT_SYMBOL(RTLdrHashImage);
+
+
+RTDECL(int) RTLdrUnwindFrame(RTLDRMOD hLdrMod, void const *pvBits, uint32_t iSeg, RTLDRADDR off, PRTDBGUNWINDSTATE pState)
+{
+    /*
+     * Validate.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    AssertPtr(pState);
+    AssertReturn(pState->u32Magic == RTDBGUNWINDSTATE_MAGIC, VERR_INVALID_MAGIC);
+
+    /*
+     * Pass on the work.
+     */
+    if (pMod->pOps->pfnUnwindFrame)
+        return pMod->pOps->pfnUnwindFrame(pMod, pvBits, iSeg, off, pState);
+    return VERR_DBG_NO_UNWIND_INFO;
+}
+RT_EXPORT_SYMBOL(RTLdrUnwindFrame);
 
 
 /**

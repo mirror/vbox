@@ -2406,6 +2406,14 @@ static int rtDbgModCvLoadCoffInfo(PRTDBGMODCV pThis)
  */
 
 
+/** @interface_method_impl{RTDBGMODVTDBG,pfnUnwindFrame} */
+static DECLCALLBACK(int) rtDbgModCv_UnwindFrame(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
+{
+    RT_NOREF(pMod, iSeg, off, pState);
+    return VERR_DBG_NO_UNWIND_INFO;
+}
+
+
 /** @interface_method_impl{RTDBGMODVTDBG,pfnLineByAddr} */
 static DECLCALLBACK(int) rtDbgModCv_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
                                                   PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
@@ -3163,6 +3171,8 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgCodeView =
     /*.pfnLineCount = */        rtDbgModCv_LineCount,
     /*.pfnLineByOrdinal = */    rtDbgModCv_LineByOrdinal,
     /*.pfnLineByAddr = */       rtDbgModCv_LineByAddr,
+
+    /*.pfnUnwindFrame = */      rtDbgModCv_UnwindFrame,
 
     /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
 };

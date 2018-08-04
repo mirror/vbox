@@ -2199,3 +2199,48 @@ RTDECL(int) RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR of
 }
 RT_EXPORT_SYMBOL(RTDbgModLineByAddrA);
 
+
+RTDECL(int) RTDbgModUnwindFrame(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
+{
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    AssertPtr(pState);
+    AssertReturn(pState->u32Magic == RTDBGUNWINDSTATE_MAGIC, VERR_INVALID_MAGIC);
+
+    RTDBGMOD_LOCK(pDbgMod);
+
+    /*
+     * Convert RVAs.
+     */
+    if (iSeg == RTDBGSEGIDX_RVA)
+    {
+        iSeg = pDbgMod->pDbgVt->pfnRvaToSegOff(pDbgMod, off, &off);
+        if (iSeg == NIL_RTDBGSEGIDX)
+        {
+            RTDBGMOD_UNLOCK(pDbgMod);
+            return VERR_DBG_INVALID_RVA;
+        }
+    }
+
+    /*
+     * Try the debug module first, then the image.
+     */
+    int rc = pDbgMod->pDbgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
+    if (rc == VERR_DBG_NO_UNWIND_INFO)
+        rc = pDbgMod->pImgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
+    else if (rc == VERR_DBG_UNWIND_INFO_NOT_FOUND)
+    {
+        rc = pDbgMod->pImgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
+        if (rc == VERR_DBG_NO_UNWIND_INFO)
+            rc = VERR_DBG_UNWIND_INFO_NOT_FOUND;
+    }
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
+
+}
+RT_EXPORT_SYMBOL(RTDbgModUnwindFrame);
+

@@ -1227,6 +1227,29 @@ RTDECL(int) RTLdrVerifySignature(RTLDRMOD hLdrMod, PFNRTLDRVALIDATESIGNEDDATA pf
  */
 RTDECL(int) RTLdrHashImage(RTLDRMOD hLdrMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest);
 
+/**
+ * Try use unwind information to unwind one frame.
+ *
+ * @returns IPRT status code.  Last informational status from stack reader callback.
+ * @retval  VERR_DBG_NO_UNWIND_INFO if the module contains no unwind information.
+ * @retval  VERR_DBG_UNWIND_INFO_NOT_FOUND if no unwind information was found
+ *          for the location given by iSeg:off.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   pvBits              Optional pointer to bits returned by
+ *                              RTLdrGetBits().  This can be utilized by some module
+ *                              interpreters to reduce memory consumption and file
+ *                              access.
+ * @param   iSeg                The segment number of the program counter.  UINT32_MAX if RVA.
+ * @param   off                 The offset into @a iSeg.  Together with @a iSeg
+ *                              this corresponds to the RTDBGUNWINDSTATE::uPc
+ *                              value pointed to by @a pState.
+ * @param   pState              The unwind state to work.
+ *
+ * @sa      RTDbgModUnwindFrame
+ */
+RTDECL(int) RTLdrUnwindFrame(RTLDRMOD hLdrMod, void const *pvBits, uint32_t iSeg, RTLDRADDR off, PRTDBGUNWINDSTATE pState);
+
 RT_C_DECLS_END
 
 /** @} */
