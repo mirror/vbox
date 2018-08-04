@@ -2925,6 +2925,11 @@ endif
 VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 
+# Avoid freaking out in the additions build when using flexible arrays in C++ code (ldrPE.cpp, ++).
+if $(VBOX_GCC_VERSION_CXX) < 60100 && defined(VBOX_GCC_Wno-array_bounds)
+ VBOX_GCC_PEDANTIC_CXX += $(VBOX_GCC_Wno-array_bounds)
+endif
+
 VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
 VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
 
