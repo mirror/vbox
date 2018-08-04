@@ -45,8 +45,6 @@ static DECLCALLBACK(int) dbgfR3StackReadCallback(PRTDBGUNWINDSTATE pThis, RTUINT
  * Unwind context.
  *
  * @note Using a constructor and destructor here for simple+safe cleanup.
- *
- * @todo Generalize and move to IPRT or some such place.
  */
 typedef struct DBGFUNWINDCTX
 {
@@ -57,18 +55,12 @@ typedef struct DBGFUNWINDCTX
     bool        m_fIsHostRing0;
     uint64_t    m_uOsScratch; /**< For passing to DBGFOSREG::pfnStackUnwindAssist. */
 
-    RTDBGUNWINDSTATE m_State;
-
     RTDBGMOD    m_hCached;
     RTUINTPTR   m_uCachedMapping;
     RTUINTPTR   m_cbCachedMapping;
-    uint8_t    *m_pbCachedInfo;
-    size_t      m_cbCachedInfo;
+    RTDBGSEGIDX m_idxCachedSegMapping;
 
-    /** Function table for PE/AMD64 (entire m_pbCachedInfo) . */
-    PCIMAGE_RUNTIME_FUNCTION_ENTRY  m_paFunctions;
-    /** Number functions in m_paFunctions. */
-    size_t                          m_cFunctions;
+    RTDBGUNWINDSTATE m_State;
 
     DBGFUNWINDCTX(PUVM pUVM, VMCPUID idCpu, PCCPUMCTX pInitialCtx, RTDBGAS hAs)
     {
@@ -118,10 +110,7 @@ typedef struct DBGFUNWINDCTX
         m_hCached         = NIL_RTDBGMOD;
         m_uCachedMapping  = 0;
         m_cbCachedMapping = 0;
-        m_pbCachedInfo    = NULL;
-        m_cbCachedInfo    = 0;
-        m_paFunctions     = NULL;
-        m_cFunctions      = 0;
+        m_idxCachedSegMapping = NIL_RTDBGSEGIDX;
     }
 
     ~DBGFUNWINDCTX();
@@ -138,14 +127,8 @@ static void dbgfR3UnwindCtxFlushCache(PDBGFUNWINDCTX pUnwindCtx)
         RTDbgModRelease(pUnwindCtx->m_hCached);
         pUnwindCtx->m_hCached = NIL_RTDBGMOD;
     }
-    if (pUnwindCtx->m_pbCachedInfo)
-    {
-        RTMemFree(pUnwindCtx->m_pbCachedInfo);
-        pUnwindCtx->m_pbCachedInfo = NULL;
-    }
-    pUnwindCtx->m_cbCachedInfo = 0;
-    pUnwindCtx->m_paFunctions  = NULL;
-    pUnwindCtx->m_cFunctions   = 0;
+    pUnwindCtx->m_cbCachedMapping     = 0;
+    pUnwindCtx->m_idxCachedSegMapping = NIL_RTDBGSEGIDX;
 }
 
 
@@ -188,7 +171,9 @@ static DECLCALLBACK(int) dbgfR3StackReadCallback(PRTDBGUNWINDSTATE pThis, RTUINT
     }
     if (RT_SUCCESS(rc))
         rc = DBGFR3MemRead(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &SrcAddr, pvDst, cbToRead);
-    return rc;
+    if (RT_SUCCESS(rc))
+        return rc;
+    return -rc; /* Ignore read errors. */
 }
 
 
@@ -224,404 +209,6 @@ static bool dbgfR3UnwindCtxSetPcAndSp(PDBGFUNWINDCTX pUnwindCtx, PCDBGFADDRESS p
 
 
 /**
- * Try read a 16-bit value off the stack.
- *
- * @returns pfnReadStack result.
- * @param   pThis           The unwind state.
- * @param   uSrcAddr        The stack address.
- * @param   puDst           The read destination.
- */
-DECLINLINE(int) dbgUnwindLoadStackU16(PRTDBGUNWINDSTATE pThis, uint64_t uSrcAddr, uint16_t *puDst)
-{
-    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
-}
-
-
-/**
- * Try read a 64-bit value off the stack.
- *
- * @returns pfnReadStack result.
- * @param   pThis           The unwind state.
- * @param   uSrcAddr        The stack address.
- * @param   puDst           The read destination.
- */
-DECLINLINE(int) dbgUnwindLoadStackU64(PRTDBGUNWINDSTATE pThis, uint64_t uSrcAddr, uint64_t *puDst)
-{
-    return pThis->pfnReadStack(pThis, uSrcAddr, sizeof(*puDst), puDst);
-}
-
-
-/**
- * Binary searches the lookup table.
- *
- * @returns RVA of unwind info on success, UINT32_MAX on failure.
- * @param   paFunctions     The table to lookup @a uRva in.
- * @param   iEnd            Size of the table.
- * @param   uRva            The RVA of the function we want.
- */
-DECLINLINE(PCIMAGE_RUNTIME_FUNCTION_ENTRY)
-dbgfR3UnwindCtxLookupUnwindInfoRva(PCIMAGE_RUNTIME_FUNCTION_ENTRY paFunctions, size_t iEnd, uint32_t uRva)
-{
-    size_t iBegin = 0;
-    while (iBegin < iEnd)
-    {
-        size_t const i = iBegin  + (iEnd - iBegin) / 2;
-        PCIMAGE_RUNTIME_FUNCTION_ENTRY pEntry = &paFunctions[i];
-        if (uRva < pEntry->BeginAddress)
-            iEnd = i;
-        else if (uRva > pEntry->EndAddress)
-            iBegin = i + 1;
-        else
-            return pEntry;
-    }
-    return NULL;
-}
-
-
-/**
- * Processes an IRET frame.
- *
- * @returns true.
- * @param   pThis           The unwind state being worked.
- * @param   fErrCd          Non-zero if there is an error code on the stack.
- */
-static bool dbgUnwindPeAmd64DoOneIRet(PRTDBGUNWINDSTATE pThis, uint8_t fErrCd)
-{
-    Assert(fErrCd <= 1);
-    if (!fErrCd)
-        pThis->u.x86.Loaded.s.fErrCd = 0;
-    else
-    {
-        pThis->u.x86.uErrCd = 0;
-        pThis->u.x86.Loaded.s.fErrCd = 1;
-        dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.uErrCd);
-        pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
-    }
-
-    pThis->enmRetType = RTDBGRETURNTYPE_IRET64;
-    pThis->u.x86.FrameAddr.off = pThis->u.x86.auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8;
-    pThis->u.x86.FrameAddr.sel = pThis->u.x86.auSegs[X86_SREG_SS];
-
-    dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->uPc);
-    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* RIP */
-
-    dbgUnwindLoadStackU16(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auSegs[X86_SREG_CS]);
-    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* CS */
-
-    dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.uRFlags);
-    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* EFLAGS */
-
-    uint64_t uNewRsp = (pThis->u.x86.auRegs[X86_GREG_xSP] - 8) & ~(uint64_t)15;
-    dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &uNewRsp);
-    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* RSP */
-
-    dbgUnwindLoadStackU16(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auSegs[X86_SREG_SS]);
-    pThis->u.x86.auRegs[X86_GREG_xSP] += 8; /* SS */
-
-    pThis->u.x86.auRegs[X86_GREG_xSP] = uNewRsp;
-
-    pThis->u.x86.Loaded.s.fRegs        |= RT_BIT(X86_GREG_xSP);
-    pThis->u.x86.Loaded.s.fSegs        |= RT_BIT(X86_SREG_CS) | RT_BIT(X86_SREG_SS);
-    pThis->u.x86.Loaded.s.fPc           = 1;
-    pThis->u.x86.Loaded.s.fFrameAddr    = 1;
-    pThis->u.x86.Loaded.s.fRFlags       = 1;
-    return true;
-}
-
-
-/**
- * Unwinds one frame using cached module info.
- *
- * @returns true on success, false on failure.
- * @param   hMod            The debug module to retrieve unwind info from.
- * @param   paFunctions     The table to lookup @a uRvaRip in.
- * @param   cFunctions      Size of the lookup table.
- * @param   pThis           The unwind state.
- * @param   uRvaRip         The RVA of the RIP.
- *
- * @todo Move this down to IPRT in the ldrPE.cpp / dbgmodcodeview.cpp area.
- */
-static bool dbgUnwindPeAmd64DoOne(RTDBGMOD hMod, PCIMAGE_RUNTIME_FUNCTION_ENTRY paFunctions, size_t cFunctions,
-                                  PRTDBGUNWINDSTATE pThis, uint32_t uRvaRip)
-{
-    /*
-     * Lookup the unwind info RVA and try read it.
-     */
-    PCIMAGE_RUNTIME_FUNCTION_ENTRY pEntry = dbgfR3UnwindCtxLookupUnwindInfoRva(paFunctions, cFunctions, uRvaRip);
-    if (pEntry)
-    {
-        IMAGE_RUNTIME_FUNCTION_ENTRY ChainedEntry;
-        unsigned iFrameReg   = ~0U;
-        unsigned offFrameReg = 0;
-
-        int      fInEpilog = -1; /* -1: not-determined-assume-false;  0: false;  1: true. */
-        uint8_t  cbEpilog  = 0;
-        uint8_t  offEpilog = UINT8_MAX;
-        for (unsigned cChainLoops = 0; ; cChainLoops++)
-        {
-            /*
-             * Get the info.
-             */
-            union
-            {
-                uint32_t uRva;
-                uint8_t  ab[  RT_OFFSETOF(IMAGE_UNWIND_INFO, aOpcodes)
-                            + sizeof(IMAGE_UNWIND_CODE) * 256
-                            + sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY)];
-            } uBuf;
-
-            uBuf.uRva = pEntry->UnwindInfoAddress;
-            size_t cbBuf = sizeof(uBuf);
-            int rc = RTDbgModImageQueryProp(hMod, RTLDRPROP_UNWIND_INFO, &uBuf, cbBuf, &cbBuf);
-            if (RT_FAILURE(rc))
-                return false;
-
-            /*
-             * Check the info.
-             */
-            ASMCompilerBarrier(); /* we're aliasing */
-            PCIMAGE_UNWIND_INFO pInfo = (PCIMAGE_UNWIND_INFO)&uBuf;
-
-            if (pInfo->Version != 1 && pInfo->Version != 2)
-                return false;
-
-            /*
-             * Execute the opcodes.
-             */
-            unsigned const cOpcodes = pInfo->CountOfCodes;
-            unsigned       iOpcode  = 0;
-
-            /*
-             * Check for epilog opcodes at the start and see if we're in an epilog.
-             */
-            if (   pInfo->Version >= 2
-                && iOpcode < cOpcodes
-                && pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_EPILOG)
-            {
-                if (fInEpilog == -1)
-                {
-                    cbEpilog = pInfo->aOpcodes[iOpcode].u.CodeOffset;
-                    Assert(cbEpilog > 0);
-
-                    uint32_t uRvaEpilog = pEntry->EndAddress - cbEpilog;
-                    iOpcode++;
-                    if (   (pInfo->aOpcodes[iOpcode - 1].u.OpInfo & 1)
-                        && uRvaRip >= uRvaEpilog)
-                    {
-                        offEpilog = uRvaRip - uRvaEpilog;
-                        fInEpilog = 1;
-                    }
-                    else
-                    {
-                        fInEpilog = 0;
-                        while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_EPILOG)
-                        {
-                            uRvaEpilog = pEntry->EndAddress
-                                       - (pInfo->aOpcodes[iOpcode].u.CodeOffset + (pInfo->aOpcodes[iOpcode].u.OpInfo << 8));
-                            iOpcode++;
-                            if (uRvaRip - uRvaEpilog < cbEpilog)
-                            {
-                                offEpilog = uRvaRip - uRvaEpilog;
-                                fInEpilog = 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-                while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.UnwindOp == IMAGE_AMD64_UWOP_EPILOG)
-                    iOpcode++;
-            }
-            if (fInEpilog != 1)
-            {
-                /*
-                 * Skip opcodes that doesn't apply to us if we're in the prolog.
-                 */
-                uint32_t offPc = uRvaRip - pEntry->BeginAddress;
-                if (offPc < pInfo->SizeOfProlog)
-                    while (iOpcode < cOpcodes && pInfo->aOpcodes[iOpcode].u.CodeOffset > offPc)
-                        iOpcode++;
-
-                /*
-                 * Execute the opcodes.
-                 */
-                if (pInfo->FrameRegister != 0)
-                {
-                    iFrameReg   = pInfo->FrameRegister;
-                    offFrameReg = pInfo->FrameOffset * 16;
-                }
-                while (iOpcode < cOpcodes)
-                {
-                    Assert(pInfo->aOpcodes[iOpcode].u.CodeOffset <= offPc);
-                    uint8_t const uOpInfo   = pInfo->aOpcodes[iOpcode].u.OpInfo;
-                    uint8_t const uUnwindOp = pInfo->aOpcodes[iOpcode].u.UnwindOp;
-                    switch (uUnwindOp)
-                    {
-                        case IMAGE_AMD64_UWOP_PUSH_NONVOL:
-                            dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auRegs[uOpInfo]);
-                            pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
-                            pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
-                            iOpcode++;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_ALLOC_LARGE:
-                            if (uOpInfo == 0)
-                            {
-                                iOpcode += 2;
-                                AssertBreak(iOpcode <= cOpcodes);
-                                pThis->u.x86.auRegs[X86_GREG_xSP] += pInfo->aOpcodes[iOpcode - 1].FrameOffset * 8;
-                            }
-                            else
-                            {
-                                iOpcode += 3;
-                                AssertBreak(iOpcode <= cOpcodes);
-                                pThis->u.x86.auRegs[X86_GREG_xSP] += RT_MAKE_U32(pInfo->aOpcodes[iOpcode - 2].FrameOffset,
-                                                                                  pInfo->aOpcodes[iOpcode - 1].FrameOffset);
-                            }
-                            break;
-
-                        case IMAGE_AMD64_UWOP_ALLOC_SMALL:
-                            AssertBreak(iOpcode <= cOpcodes);
-                            pThis->u.x86.auRegs[X86_GREG_xSP] += uOpInfo * 8 + 8;
-                            iOpcode++;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_SET_FPREG:
-                            iFrameReg = uOpInfo;
-                            offFrameReg = pInfo->FrameOffset * 16;
-                            pThis->u.x86.auRegs[X86_GREG_xSP] = pThis->u.x86.auRegs[iFrameReg] - offFrameReg;
-                            iOpcode++;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_SAVE_NONVOL:
-                        case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
-                        {
-                            uint32_t off = 0;
-                            iOpcode++;
-                            if (iOpcode < cOpcodes)
-                            {
-                                off = pInfo->aOpcodes[iOpcode].FrameOffset;
-                                iOpcode++;
-                                if (uUnwindOp == IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR && iOpcode < cOpcodes)
-                                {
-                                    off |= (uint32_t)pInfo->aOpcodes[iOpcode].FrameOffset << 16;
-                                    iOpcode++;
-                                }
-                            }
-                            off *= 8;
-                            dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP] + off, &pThis->u.x86.auRegs[uOpInfo]);
-                            pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
-                            break;
-                        }
-
-                        case IMAGE_AMD64_UWOP_SAVE_XMM128:
-                            iOpcode += 2;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_SAVE_XMM128_FAR:
-                            iOpcode += 3;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_PUSH_MACHFRAME:
-                            return dbgUnwindPeAmd64DoOneIRet(pThis, uOpInfo);
-
-                        case IMAGE_AMD64_UWOP_EPILOG:
-                            iOpcode += 1;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_RESERVED_7:
-                            AssertFailedReturn(false);
-
-                        default:
-                            AssertMsgFailedReturn(("%u\n", uUnwindOp), false);
-                    }
-                }
-            }
-            else
-            {
-                /*
-                 * We're in the POP sequence of an epilog.  The POP sequence should
-                 * mirror the PUSH sequence exactly.
-                 *
-                 * Note! We should only end up here for the initial frame (just consider
-                 *       RSP, stack allocations, non-volatile register restores, ++).
-                 */
-                while (iOpcode < cOpcodes)
-                {
-                    uint8_t const uOpInfo   = pInfo->aOpcodes[iOpcode].u.OpInfo;
-                    uint8_t const uUnwindOp = pInfo->aOpcodes[iOpcode].u.UnwindOp;
-                    switch (uUnwindOp)
-                    {
-                        case IMAGE_AMD64_UWOP_PUSH_NONVOL:
-                            pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
-                            if (offEpilog == 0)
-                            {
-                                dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->u.x86.auRegs[uOpInfo]);
-                                pThis->u.x86.Loaded.s.fRegs |= RT_BIT(uOpInfo);
-                            }
-                            else
-                            {
-                                /* Decrement offEpilog by estimated POP instruction length. */
-                                offEpilog -= 1;
-                                if (offEpilog > 0 && uOpInfo >= 8)
-                                    offEpilog -= 1;
-                            }
-                            iOpcode++;
-                            break;
-
-                        case IMAGE_AMD64_UWOP_PUSH_MACHFRAME: /* Must terminate an epilog, so always execute this. */
-                            return dbgUnwindPeAmd64DoOneIRet(pThis, uOpInfo);
-
-                        case IMAGE_AMD64_UWOP_ALLOC_SMALL:
-                        case IMAGE_AMD64_UWOP_SET_FPREG:
-                        case IMAGE_AMD64_UWOP_EPILOG:
-                            iOpcode++;
-                            break;
-                        case IMAGE_AMD64_UWOP_SAVE_NONVOL:
-                        case IMAGE_AMD64_UWOP_SAVE_XMM128:
-                            iOpcode += 2;
-                            break;
-                        case IMAGE_AMD64_UWOP_ALLOC_LARGE:
-                        case IMAGE_AMD64_UWOP_SAVE_NONVOL_FAR:
-                        case IMAGE_AMD64_UWOP_SAVE_XMM128_FAR:
-                            iOpcode += 3;
-                            break;
-
-                        default:
-                            AssertMsgFailedReturn(("%u\n", uUnwindOp), false);
-                    }
-                }
-            }
-
-            /*
-             * Chained stuff?
-             */
-            if (!(pInfo->Flags & IMAGE_UNW_FLAGS_CHAININFO))
-                break;
-            ChainedEntry = *(PCIMAGE_RUNTIME_FUNCTION_ENTRY)&pInfo->aOpcodes[(cOpcodes + 1) & ~1];
-            pEntry = &ChainedEntry;
-            AssertReturn(cChainLoops < 32, false);
-        }
-
-        /*
-         * RSP should now give us the return address, so perform a RET.
-         */
-        pThis->enmRetType = RTDBGRETURNTYPE_NEAR64;
-
-        pThis->u.x86.FrameAddr.off = pThis->u.x86.auRegs[X86_GREG_xSP] - /* pretend rbp is pushed on the stack */ 8;
-        pThis->u.x86.FrameAddr.sel = pThis->u.x86.auSegs[X86_SREG_SS];
-        pThis->u.x86.Loaded.s.fFrameAddr = 1;
-
-        dbgUnwindLoadStackU64(pThis, pThis->u.x86.auRegs[X86_GREG_xSP], &pThis->uPc);
-        pThis->u.x86.auRegs[X86_GREG_xSP] += 8;
-        pThis->u.x86.Loaded.s.fPc = 1;
-        return true;
-    }
-
-    return false;
-}
-
-
-/**
  * Tries to unwind one frame using unwind info.
  *
  * @returns true on success, false on failure.
@@ -630,63 +217,36 @@ static bool dbgUnwindPeAmd64DoOne(RTDBGMOD hMod, PCIMAGE_RUNTIME_FUNCTION_ENTRY 
 static bool dbgfR3UnwindCtxDoOneFrame(PDBGFUNWINDCTX pUnwindCtx)
 {
     /*
-     * Hope for the same module as last time around.
+     * Need to load it into the cache?
      */
     RTUINTPTR offCache = pUnwindCtx->m_State.uPc - pUnwindCtx->m_uCachedMapping;
-    if (offCache < pUnwindCtx->m_cbCachedMapping)
-        return dbgUnwindPeAmd64DoOne(pUnwindCtx->m_hCached, pUnwindCtx->m_paFunctions, pUnwindCtx->m_cFunctions,
-                                     &pUnwindCtx->m_State, offCache);
+    if (offCache >= pUnwindCtx->m_cbCachedMapping)
+    {
+        RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
+        RTUINTPTR       uBase   = 0;
+        RTDBGSEGIDX     idxSeg  = NIL_RTDBGSEGIDX;
+        int rc = RTDbgAsModuleByAddr(pUnwindCtx->m_hAs, pUnwindCtx->m_State.uPc, &hDbgMod, &uBase, &idxSeg);
+        if (RT_SUCCESS(rc))
+        {
+            dbgfR3UnwindCtxFlushCache(pUnwindCtx);
+            pUnwindCtx->m_hCached             = hDbgMod;
+            pUnwindCtx->m_uCachedMapping      = uBase;
+            pUnwindCtx->m_idxCachedSegMapping = idxSeg;
+            pUnwindCtx->m_cbCachedMapping     = idxSeg == NIL_RTDBGSEGIDX ? RTDbgModImageSize(hDbgMod)
+                                              : RTDbgModSegmentSize(hDbgMod, idxSeg);
+            offCache = pUnwindCtx->m_State.uPc - uBase;
+        }
+        else
+            return false;
+    }
 
     /*
-     * Try locate the module.
+     * Do the lookup.
      */
-    RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
-    RTUINTPTR       uBase   = 0;
-    RTDBGSEGIDX     idxSeg  = NIL_RTDBGSEGIDX;
-    int rc = RTDbgAsModuleByAddr(pUnwindCtx->m_hAs, pUnwindCtx->m_State.uPc, &hDbgMod, &uBase, &idxSeg);
+    AssertCompile(UINT32_MAX == NIL_RTDBGSEGIDX);
+    int rc = RTDbgModUnwindFrame(pUnwindCtx->m_hCached, pUnwindCtx->m_idxCachedSegMapping, offCache, &pUnwindCtx->m_State);
     if (RT_SUCCESS(rc))
-    {
-        /* We cache the module regardless of unwind info. */
-        dbgfR3UnwindCtxFlushCache(pUnwindCtx);
-        pUnwindCtx->m_hCached         = hDbgMod;
-        pUnwindCtx->m_uCachedMapping  = uBase;
-        pUnwindCtx->m_cbCachedMapping = idxSeg == NIL_RTDBGSEGIDX ? RTDbgModImageSize(hDbgMod)
-                                      : RTDbgModSegmentSize(hDbgMod, idxSeg);
-
-        /* Play simple for now. */
-        if (   idxSeg == NIL_RTDBGSEGIDX
-            && RTDbgModImageGetFormat(hDbgMod) == RTLDRFMT_PE
-            && RTDbgModImageGetArch(hDbgMod)   == RTLDRARCH_AMD64)
-        {
-            /*
-             * Try query the unwind data.
-             */
-            uint32_t uDummy;
-            size_t cbNeeded = 0;
-            rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, &uDummy, 0, &cbNeeded);
-            if (   rc == VERR_BUFFER_OVERFLOW
-                && cbNeeded >= sizeof(*pUnwindCtx->m_paFunctions)
-                && cbNeeded < _64M)
-            {
-                void *pvBuf = RTMemAllocZ(cbNeeded + 32);
-                if (pvBuf)
-                {
-                    rc = RTDbgModImageQueryProp(hDbgMod, RTLDRPROP_UNWIND_TABLE, pvBuf, cbNeeded + 32, &cbNeeded);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pUnwindCtx->m_pbCachedInfo = (uint8_t *)pvBuf;
-                        pUnwindCtx->m_cbCachedInfo = cbNeeded;
-                        pUnwindCtx->m_paFunctions  = (PCIMAGE_RUNTIME_FUNCTION_ENTRY)pvBuf;
-                        pUnwindCtx->m_cFunctions   = cbNeeded / sizeof(*pUnwindCtx->m_paFunctions);
-
-                        return dbgUnwindPeAmd64DoOne(pUnwindCtx->m_hCached, pUnwindCtx->m_paFunctions, pUnwindCtx->m_cFunctions,
-                                                     &pUnwindCtx->m_State, pUnwindCtx->m_State.uPc - pUnwindCtx->m_uCachedMapping);
-                    }
-                    RTMemFree(pvBuf);
-                }
-            }
-        }
-    }
+        return true;
     return false;
 }
 
