@@ -514,6 +514,7 @@ static int dbgcInputRead(PDBGC pDbgc)
                         case '\t': ch = ' '; break;
                         case '\n': pDbgc->cInputLines++; break;
                     }
+                    RT_FALL_THRU();
                 default:
                     Log2(("DBGC: ch=%02x\n", (unsigned char)ch));
                     pDbgc->achInput[pDbgc->iWrite] = ch;
