@@ -339,7 +339,7 @@ DISDECL(uint8_t) DISQuerySegPrefixByte(PCDISSTATE pDis)
  */
 DISDECL(int) DISFetchReg8(PCCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal)
 {
-    AssertReturnStmt(reg8 < RT_ELEMENTS(g_aReg8Index), *pVal, VERR_INVALID_PARAMETER);
+    AssertReturnStmt(reg8 < RT_ELEMENTS(g_aReg8Index), *pVal = 0, VERR_INVALID_PARAMETER);
 
     *pVal = DIS_READ_REG8(pCtx, reg8);
     return VINF_SUCCESS;
