@@ -771,6 +771,7 @@ static int rtZipTarReaderGetFsObjInfo(PRTZIPTARREADER pThis, PRTFSOBJINFO pObjIn
                 case 0:
                     return VERR_TAR_UNKNOWN_TYPE_FLAG; /** @todo new status code */
             }
+            break;
 
         default:
             return VERR_TAR_UNKNOWN_TYPE_FLAG; /* Should've been caught in validate. */
