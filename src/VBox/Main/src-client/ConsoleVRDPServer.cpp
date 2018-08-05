@@ -3193,7 +3193,7 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
         if (SUCCEEDED(hr) && authResult == "granted")
             result = AuthResultAccessGranted;
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
     }
 #else
@@ -3264,7 +3264,7 @@ void ConsoleVRDPServer::AuthDisconnect(const Guid &uuid, uint32_t u32ClientId)
                                                               authResult.asOutParam());
         LogFlowFunc(("%Rhrc [%ls]\n", hr, authResult.raw())); NOREF(hr);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
     }
 #else

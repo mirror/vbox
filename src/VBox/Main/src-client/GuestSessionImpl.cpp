@@ -699,7 +699,7 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
 
         vrc = registerWaitEventEx(mData.mSession.mID, mData.mObjectID, eventTypes, &pEvent);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
     }
@@ -960,7 +960,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
         procInfo.mArguments.push_back("--");    /* '--version' is a valid directory name. */
         procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
     }
@@ -1112,7 +1112,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         procInfo.mArguments.push_back("--"); /* strTemplate could be '--help'. */
         procInfo.mArguments.push_back(strTemplate);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         Log(("Out of memory!\n"));
         return VERR_NO_MEMORY;
@@ -1465,7 +1465,7 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
         procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
         procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
     }
@@ -1628,7 +1628,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
         procInfo.mArguments.push_back(strPath);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         Log(("Out of memory!\n"));
         return VERR_NO_MEMORY;
@@ -1922,7 +1922,7 @@ int GuestSession::i_startSession(int *prcGuest)
 
         vrc = registerWaitEventEx(mData.mSession.mID, mData.mObjectID, eventTypes, &pEvent);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
     }
@@ -2697,7 +2697,7 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
 
         vrc = registerWaitEventEx(mData.mSession.mID, mData.mObjectID, eventTypes, &pEvent);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
     }

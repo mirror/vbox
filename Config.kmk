@@ -2758,11 +2758,15 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-misleading-indentation     ?= $(call VBOX_GCC_CHECK_CC,-Wno-misleading-indentation,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-missing-field-initializers ?= $(call VBOX_GCC_CHECK_CC,-Wno-missing-field-initializers,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-to-int-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-to-int-cast,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-variadic-macros   ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-vla               ?= $(call VBOX_GCC_CHECK_CXX,-Wno-vla,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-overlength-strings?= $(call VBOX_GCC_CHECK_CC,-Wno-overlength-strings,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-overloaded-virtual?= $(call VBOX_GCC_CHECK_CXX,-Wno-overloaded-virtual,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-ignored-qualifiers?= $(call VBOX_GCC_CHECK_CXX,-Wno-ignored-qualifiers,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-variadic-macros            ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-vla                        ?= $(call VBOX_GCC_CHECK_CXX,-Wno-vla,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-overlength-strings         ?= $(call VBOX_GCC_CHECK_CC,-Wno-overlength-strings,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-overloaded-virtual         ?= $(call VBOX_GCC_CHECK_CXX,-Wno-overloaded-virtual,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-ignored-qualifiers         ?= $(call VBOX_GCC_CHECK_CXX,-Wno-ignored-qualifiers,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-multistatement-macros      ?= $(call VBOX_GCC_CHECK_CXX,-Wno-multistatement-macros,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-class-memaccess            ?= $(call VBOX_GCC_CHECK_CXX,-Wno-class-memaccess,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-stringop-overflow          ?= $(call VBOX_GCC_CHECK_CXX,-Wno-stringop-overflow,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-stringop-truncation        ?= $(call VBOX_GCC_CHECK_CXX,-Wno-stringop-truncation,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_m64                   ?= $(call VBOX_GCC_CHECK_CC,-m64,)'
@@ -5698,7 +5702,7 @@ else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
-	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) -Wshadow \
+	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_Wno-class-memaccess) -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY

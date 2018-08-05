@@ -244,7 +244,7 @@ HRESULT MediumIO::read(LONG64 a_off, ULONG a_cbRead, std::vector<BYTE> &a_rData)
     {
         a_rData.resize(a_cbRead);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }

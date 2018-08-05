@@ -147,7 +147,7 @@ HRESULT CloudClient::initCloudClient(CloudUserProfiles *aProfiles,
         hrc = arc;
         LogRel(("Get cought an exception %d\n", hrc));
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }
@@ -302,7 +302,7 @@ HRESULT CloudClientOCI::initCloudClient(CloudUserProfiles *aProfiles,
         hrc = arc;
         LogRel(("Get cought an exception %d\n", hrc));
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }

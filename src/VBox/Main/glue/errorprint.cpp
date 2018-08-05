@@ -80,7 +80,7 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
         RTMsgError("%s", str.c_str());
         Log(("ERROR: %s", str.c_str()));
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         RTMsgError("std::bad_alloc in GluePrintErrorInfo!");
         Log(("ERROR: std::bad_alloc in GluePrintErrorInfo!\n"));

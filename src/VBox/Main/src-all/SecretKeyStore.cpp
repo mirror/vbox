@@ -146,7 +146,7 @@ int SecretKeyStore::addSecretKey(const com::Utf8Str &strKeyId, const uint8_t *pb
     {
         return rc;
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         if (pKey)
             delete pKey;

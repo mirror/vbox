@@ -709,7 +709,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORE
 
             pStream->File.pWEBM = new WebMWriter();
         }
-        catch (std::bad_alloc)
+        catch (std::bad_alloc &)
         {
             rc = VERR_NO_MEMORY;
             break;
@@ -894,7 +894,7 @@ DECLINLINE(PVIDEORECSTREAM) videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uS
     {
         pStream = pCtx->vecStreams.at(uScreen);
     }
-    catch (std::out_of_range)
+    catch (std::out_of_range &)
     {
         pStream = NULL;
     }
