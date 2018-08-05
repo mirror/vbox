@@ -3614,7 +3614,7 @@ static void lsilogicR3InitializeConfigurationPages(PLSILOGICSCSI pThis)
     strncpy((char *)pPages->ManufacturingPage0.u.fields.abChipRevision,      "1.0", 8);
     strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardName,         "VBox MPT Fusion", 16);
     strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardAssembly,     "SUN", 8);
-    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardTracerNumber, "CAFECAFECAFECAFE", 16);
+    memcpy(pPages->ManufacturingPage0.u.fields.abBoardTracerNumber, "CAFECAFECAFECAFE", 16);
 
     /* Manufacturing Page 1 - I don't know what this contains so we leave it 0 for now. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage1,

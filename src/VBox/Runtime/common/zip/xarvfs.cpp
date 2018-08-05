@@ -1940,7 +1940,7 @@ static int rtZipXarReadAndValidateToc(RTVFSIOSTREAM hVfsIosIn, PCXARHEADER pXarH
                 {
                     Parser.read(pszOutput, cchToc, RTCString("xar-toc.xml"), *pDoc);
                 }
-                catch (xml::XmlError Err)
+                catch (xml::XmlError &Err)
                 {
                     rc = VERR_XAR_TOC_XML_PARSE_ERROR;
                 }

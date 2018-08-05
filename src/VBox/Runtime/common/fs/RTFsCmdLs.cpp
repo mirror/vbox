@@ -491,6 +491,7 @@ static void rtCmdLsSortCollections(PRTCMDLSOPTS pOpts)
                 case RTCMDLSTIME_CTIME: pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstCTime : rtCmdLsEntryCmpCTime; break;
                 case RTCMDLSTIME_ATIME: pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstATime : rtCmdLsEntryCmpATime; break;
             }
+            break;
         case RTCMDLSSORT_VERSION:
             pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstVersion       : rtCmdLsEntryCmpVersion;
             break;

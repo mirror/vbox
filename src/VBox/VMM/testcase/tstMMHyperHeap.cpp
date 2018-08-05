@@ -65,7 +65,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);
         return RTEXITCODE_FAILURE;
     }
-    memset(pVM, 0, sizeof(*pVM)); /* wtf? */
     pVM->paVMPagesR3 = aPages;
     pVM->pVMR0 = pvR0;
 
