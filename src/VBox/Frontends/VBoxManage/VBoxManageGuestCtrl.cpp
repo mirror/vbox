@@ -1676,7 +1676,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
 
         } while (0);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = E_OUTOFMEMORY;
     }
@@ -2253,7 +2253,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
             }
         }
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         vrc = VERR_NO_MEMORY;
     }
