@@ -543,7 +543,7 @@ typedef struct ClientState
             mHostCmdList.push_back(pHostCmd);
             pHostCmd->AddRef();
         }
-        catch (std::bad_alloc)
+        catch (std::bad_alloc &)
         {
             rc = VERR_NO_MEMORY;
         }
@@ -1365,7 +1365,7 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
         if (RT_SUCCESS(rc))
             /* rc = */ RTListAppend(&mHostCmdList, &pHostCmd->Node);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -1513,7 +1513,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             }
         }
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -1557,7 +1557,7 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
                 break;
         }
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }

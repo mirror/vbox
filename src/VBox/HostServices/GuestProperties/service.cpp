@@ -780,7 +780,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
                     rc = VERR_ALREADY_EXISTS;
                 }
             }
-            catch (std::bad_alloc)
+            catch (std::bad_alloc &)
             {
                 rc = VERR_NO_MEMORY;
             }
@@ -1234,7 +1234,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         if (mGuestNotifications.size() > GUEST_PROP_MAX_GUEST_NOTIFICATIONS)
             mGuestNotifications.pop_front();
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -1417,7 +1417,7 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 rc = VERR_NOT_IMPLEMENTED;
         }
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -1553,7 +1553,7 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                 break;
         }
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
