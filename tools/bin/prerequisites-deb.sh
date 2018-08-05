@@ -64,6 +64,12 @@ apt-get install -y chrpath g++ make iasl libidl-dev libsdl1.2-dev \
     libxrandr-dev libxinerama-dev libcap-dev python-dev \
     libxmu-dev libxcursor-dev libcurl4-openssl-dev libdevmapper-dev \
     libvpx-dev g++-multilib libopus-dev || true
+# 32-bits libs for 64-bit installs.
+case `uname -m` in
+   x86_64|amd64|AMD64)
+       apt-get install -y libc6-dev-i386 lib32gcc1 lib32stdc++6 lib32z1-dev || true
+       ;;
+esac
 # Only install Qt5 on recent distributions
 case "${DEBVER}" in
 7*|8*|jessie*|stretch*) ;;
