@@ -921,25 +921,27 @@ static void doQueuesLoop()
         while (g_fKeepRunning)
         {
             struct timeval timeout;
-            fd_set fds;
+            fd_set ReadFds, WriteFds, XcptFds;
             int rv;
             for (;;)
             {
                 timeout.tv_sec = 60;
                 timeout.tv_usec = 0;
-                FD_ZERO(&fds);
-                FD_SET(soap.master, &fds);
-                rv = select((int)soap.master + 1, &fds, &fds, &fds, &timeout);
+                FD_ZERO(&ReadFds);
+                FD_SET(soap.master, &ReadFds);
+                FD_ZERO(&WriteFds);
+                FD_SET(soap.master, &WriteFds);
+                FD_ZERO(&XcptFds);
+                FD_SET(soap.master, &XcptFds);
+                rv = select((int)soap.master + 1, &ReadFds, &WriteFds, &XcptFds, &timeout);
                 if (rv > 0)
                     break; // work is waiting
-                else if (rv == 0)
+                if (rv == 0)
                     continue; // timeout, not necessary to bother gsoap
-                else // r < 0, errno
-                {
-                    if (soap_socket_errno(soap.master) == SOAP_EINTR)
-                        rv = 0; // re-check if we should terminate
-                    break;
-                }
+                // r < 0, errno
+                if (soap_socket_errno(soap.master) == SOAP_EINTR)
+                    rv = 0; // re-check if we should terminate
+                break;
             }
             if (rv == 0)
                 continue;
