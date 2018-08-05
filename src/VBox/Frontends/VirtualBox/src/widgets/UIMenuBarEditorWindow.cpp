@@ -411,7 +411,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuBar(UIExtraDataMetaDefs::MenuTy
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::MenuType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::MenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip MenuType_Invalid & MenuType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::MenuType_Invalid ||
             enumValue == UIExtraDataMetaDefs::MenuType_All)
@@ -440,7 +440,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuApplication(UIExtraDataMetaDefs
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::MenuApplicationActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip MenuApplicationActionType_Invalid & MenuApplicationActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
@@ -469,7 +469,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuMachine(UIExtraDataMetaDefs::Ru
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::RuntimeMenuMachineActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip RuntimeMenuMachineActionType_Invalid & RuntimeMenuMachineActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
@@ -498,7 +498,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuView(UIExtraDataMetaDefs::Runti
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::RuntimeMenuViewActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuViewActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip RuntimeMenuViewActionType_Invalid & RuntimeMenuViewActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
@@ -527,7 +527,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuInput(UIExtraDataMetaDefs::Runt
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::RuntimeMenuInputActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuInputActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip RuntimeMenuInputActionType_Invalid & RuntimeMenuInputActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_All)
@@ -556,7 +556,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuDevices(UIExtraDataMetaDefs::Ru
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip RuntimeMenuDevicesActionType_Invalid & RuntimeMenuDevicesActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
@@ -586,7 +586,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuDebug(UIExtraDataMetaDefs::Runt
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip RuntimeMenuDebuggerActionType_Invalid & RuntimeMenuDebuggerActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
@@ -647,7 +647,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuH
     {
         /* Get iterated enum-value: */
         const UIExtraDataMetaDefs::MenuHelpActionType enumValue =
-            static_cast<const UIExtraDataMetaDefs::MenuHelpActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            static_cast<UIExtraDataMetaDefs::MenuHelpActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
         /* Skip MenuHelpActionType_Invalid & MenuHelpActionType_All enum-value: */
         if (enumValue == UIExtraDataMetaDefs::MenuHelpActionType_Invalid ||
             enumValue == UIExtraDataMetaDefs::MenuHelpActionType_All)
