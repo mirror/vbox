@@ -269,7 +269,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORAN
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_IOM);
                 if (rc == VINF_SUCCESS)
                     rc = VINF_IOM_R3_MMIO_COMMIT_WRITE;
-                return rc2;
+                return rc;
 #endif
             default:
                 if (RT_FAILURE(rc2))
