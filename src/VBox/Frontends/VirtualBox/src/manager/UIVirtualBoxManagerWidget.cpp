@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QHBoxLayout>
 # include <QStyle>
 # include <QVBoxLayout>
 
@@ -461,63 +462,75 @@ void UIVirtualBoxManagerWidget::prepareToolbar()
 
 void UIVirtualBoxManagerWidget::prepareWidgets()
 {
-    /* Create central-layout: */
-    QVBoxLayout *pLayout = new QVBoxLayout(this);
-    if (pLayout)
+    /* Create main-layout: */
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    if (pLayoutMain)
     {
         /* Configure layout: */
-        pLayout->setSpacing(0);
-        pLayout->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setSpacing(0);
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
-        /* Add into layout: */
-        pLayout->addWidget(m_pToolBar);
-
-        /* Create sliding-widget: */
-        m_pSlidingWidget = new UISlidingWidget;
-        if (m_pSlidingWidget)
+        /* Create splitter: */
+        m_pSplitter = new QISplitter;
+        if (m_pSplitter)
         {
-            /* Create splitter: */
-            m_pSplitter = new QISplitter;
-            if (m_pSplitter)
-            {
-                /* Configure splitter: */
+            /* Configure splitter: */
 #ifdef VBOX_WS_X11
-                m_pSplitter->setHandleType(QISplitter::Native);
+            m_pSplitter->setHandleType(QISplitter::Native);
 #endif
 
-                /* Create Chooser-pane: */
-                m_pPaneChooser = new UIChooser(this);
-                if (m_pPaneChooser)
-                {
-                    /* Add into splitter: */
-                    m_pSplitter->addWidget(m_pPaneChooser);
-                }
-
-                /* Create Machine Tools-pane: */
-                m_pPaneToolsMachine = new UIToolPaneMachine(actionPool());
-                if (m_pPaneToolsMachine)
-                {
-                    /* Add into splitter: */
-                    m_pSplitter->addWidget(m_pPaneToolsMachine);
-                }
-
-                /* Adjust splitter colors according to main widgets it splits: */
-                m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
-                                             m_pPaneToolsMachine->palette().color(QPalette::Active, QPalette::Window));
-                /* Set the initial distribution. The right site is bigger. */
-                m_pSplitter->setStretchFactor(0, 2);
-                m_pSplitter->setStretchFactor(1, 3);
+            /* Create Chooser-pane: */
+            m_pPaneChooser = new UIChooser(this);
+            if (m_pPaneChooser)
+            {
+                /* Add into splitter: */
+                m_pSplitter->addWidget(m_pPaneChooser);
             }
 
-            /* Create Global Tools-pane: */
-            m_pPaneToolsGlobal = new UIToolPaneGlobal(actionPool());
-            if (m_pPaneToolsGlobal)
+            /* Create right widget: */
+            QWidget *pWidgetRight = new QWidget;
+            if (pWidgetRight)
+            {
+                /* Create right-layout: */
+                QVBoxLayout *pLayoutRight = new QVBoxLayout(pWidgetRight);
+                if(pLayoutRight)
+                {
+                    /* Configure layout: */
+                    pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
-            /* Add left/right widgets into sliding widget: */
-            m_pSlidingWidget->setWidgets(m_pSplitter, m_pPaneToolsGlobal);
+                    /* Add tool-bar into layout: */
+                    pLayoutRight->addWidget(m_pToolBar);
+
+                    /* Create sliding-widget: */
+                    m_pSlidingWidget = new UISlidingWidget;
+                    if (m_pSlidingWidget)
+                    {
+                        /* Create Machine Tools-pane: */
+                        m_pPaneToolsMachine = new UIToolPaneMachine(actionPool());
+                        /* Create Global Tools-pane: */
+                        m_pPaneToolsGlobal = new UIToolPaneGlobal(actionPool());
+
+                        /* Add left/right widgets into sliding widget: */
+                        m_pSlidingWidget->setWidgets(m_pPaneToolsMachine, m_pPaneToolsGlobal);
+
+                        /* Add into layout: */
+                        pLayoutRight->addWidget(m_pSlidingWidget);
+                    }
+                }
+
+                /* Add into splitter: */
+                m_pSplitter->addWidget(pWidgetRight);
+            }
+
+            /* Adjust splitter colors according to main widgets it splits: */
+            m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
+                                         m_pPaneToolsMachine->palette().color(QPalette::Active, QPalette::Window));
+            /* Set the initial distribution. The right site is bigger. */
+            m_pSplitter->setStretchFactor(0, 2);
+            m_pSplitter->setStretchFactor(1, 3);
 
             /* Add into layout: */
-            pLayout->addWidget(m_pSlidingWidget);
+            pLayoutMain->addWidget(m_pSplitter);
         }
     }
 
