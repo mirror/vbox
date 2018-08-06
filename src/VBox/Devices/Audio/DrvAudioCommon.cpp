@@ -135,15 +135,15 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
     if (!cbBuf || !cFrames)
         return;
 
-    Assert(pPCMProps->cBits);
+    Assert(pPCMProps->cBytes);
     size_t cbToClear = DrvAudioHlpFramesToBytes(cFrames, pPCMProps);
     Assert(cbBuf >= cbToClear);
 
     if (cbBuf < cbToClear)
         cbToClear = cbBuf;
 
-    Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBits=%RU8\n",
-              pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cBits));
+    Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
+              pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cBytes));
 
     Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
 
@@ -153,15 +153,15 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
     }
     else
     {
-        switch (pPCMProps->cBits)
+        switch (pPCMProps->cBytes)
         {
-            case 8:
+            case 1: /* 8 bit */
             {
                 memset(pvBuf, 0x80, cbToClear);
                 break;
             }
 
-            case 16:
+            case 2: /* 16 bit */
             {
                 uint16_t *p = (uint16_t *)pvBuf;
                 uint16_t  s = 0x8000;
@@ -174,7 +174,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
 
             /** @todo Add 24 bit? */
 
-            case 32:
+            case 4: /* 32 bit */
             {
                 uint32_t *p = (uint32_t *)pvBuf;
                 uint32_t  s = 0x80000000;
@@ -187,7 +187,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
 
             default:
             {
-                AssertMsgFailed(("Invalid bits: %RU8\n", pPCMProps->cBits));
+                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pPCMProps->cBytes));
                 break;
             }
         }
@@ -805,7 +805,7 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps1, const PPDMAUDI
 
     return    pProps1->uHz         == pProps2->uHz
            && pProps1->cChannels   == pProps2->cChannels
-           && pProps1->cBits       == pProps2->cBits
+           && pProps1->cBytes      == pProps2->cBytes
            && pProps1->fSigned     == pProps2->fSigned
            && pProps1->fSwapEndian == pProps2->fSwapEndian;
 }
@@ -826,12 +826,12 @@ bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
 
     if (fValid)
     {
-        switch (pProps->cBits)
+        switch (pProps->cBytes)
         {
-            case 8:
-            case 16:
+            case 1:
+            case 2:
             /** @todo Do we need support for 24-bit samples? */
-            case 32:
+            case 4:
                 break;
             default:
                 fValid = false;
@@ -843,7 +843,7 @@ bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
         return false;
 
     fValid &= pProps->uHz > 0;
-    fValid &= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
+    fValid &= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBytes, pProps->cChannels);
     fValid &= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
 
     return fValid;
@@ -873,7 +873,7 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIO
  */
 uint32_t DrvAudioHlpPCMPropsBytesPerFrame(const PPDMAUDIOPCMPROPS pProps)
 {
-    return (pProps->cBits / 8) * pProps->cChannels;
+    return pProps->cBytes * pProps->cChannels;
 }
 
 /**
@@ -886,7 +886,7 @@ void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps)
     AssertPtrReturnVoid(pProps);
 
     Log(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
-         pProps->uHz, pProps->cChannels, pProps->cBits, pProps->fSigned ? "S" : "U"));
+         pProps->uHz, pProps->cChannels, pProps->cBytes * 8, pProps->fSigned ? "S" : "U"));
 }
 
 /**
@@ -1012,7 +1012,7 @@ void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg)
 
     LogFunc(("szName=%s, enmDir=%RU32 (uHz=%RU32, cBits=%RU8%s, cChannels=%RU8)\n",
              pCfg->szName, pCfg->enmDir,
-             pCfg->Props.uHz, pCfg->Props.cBits, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannels));
+             pCfg->Props.uHz, pCfg->Props.cBytes * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannels));
 }
 
 /**
@@ -1118,7 +1118,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  */
 uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
 {
-    return DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels);
+    return DrvAudioHlpCalcBitrate(pProps->cBytes * 8, pProps->uHz, pProps->cChannels);
 }
 
 /**
@@ -1168,7 +1168,7 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pPro
 {
     AssertPtrReturn(pProps, 0);
 
-    return cbBytes / ((pProps->cBits / 8) * pProps->cChannels);
+    return cbBytes / (pProps->cBytes * pProps->cChannels);
 }
 
 /**
@@ -1185,7 +1185,7 @@ uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProp
     if (!cbBytes)
         return 0;
 
-    const uint64_t cbBytesPerSec = (pProps->cBits / 8) * pProps->cChannels * pProps->uHz;
+    const uint64_t cbBytesPerSec = pProps->cBytes * pProps->cChannels * pProps->uHz;
     const double dbBytesPerMs = (double)cbBytesPerSec / (double)RT_MS_1SEC;
     Assert(dbBytesPerMs >= 0.0f);
     if (!dbBytesPerMs) /* Prevent division by zero. */
@@ -1208,7 +1208,7 @@ uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps
     if (!cbBytes)
         return 0;
 
-    const double dbBytesPerMs = ((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / RT_NS_1SEC;
+    const double dbBytesPerMs = (pProps->cBytes * pProps->cChannels * pProps->uHz) / RT_NS_1SEC;
     Assert(dbBytesPerMs >= 0.0f);
     if (!dbBytesPerMs) /* Prevent division by zero. */
         return 0;
@@ -1230,8 +1230,7 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
     if (!cFrames)
         return 0;
 
-    const uint32_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
-    return cFrames * cbFrame;
+    return cFrames * pProps->cBytes * pProps->cChannels;
 }
 
 /**
@@ -1288,7 +1287,7 @@ uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
     if (!uMs)
         return 0;
 
-    const uint64_t cbBytesPerSec = (pProps->cBits / 8) * pProps->cChannels * pProps->uHz;
+    const uint64_t cbBytesPerSec = pProps->cBytes * pProps->cChannels * pProps->uHz;
     return ((double)cbBytesPerSec / (double)RT_MS_1SEC) * uMs;
 }
 
@@ -1306,7 +1305,7 @@ uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
     if (!uNs)
         return 0;
 
-    const uint64_t cbBytesPerSec = (pProps->cBits / 8) * pProps->cChannels * pProps->uHz;
+    const uint64_t cbBytesPerSec = pProps->cBytes * pProps->cChannels * pProps->uHz;
     return ((double)cbBytesPerSec / (double)RT_NS_1SEC) * uNs;
 }
 
@@ -1321,7 +1320,7 @@ uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    const uint32_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
+    const uint32_t cbFrame = pProps->cBytes * pProps->cChannels;
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
@@ -1339,7 +1338,7 @@ uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    const uint32_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
+    const uint32_t cbFrame = pProps->cBytes * pProps->cChannels;
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
@@ -1578,7 +1577,7 @@ int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, const PPDMAUDIOPCMP
     {
         Assert(pProps->cChannels);
         Assert(pProps->uHz);
-        Assert(pProps->cBits);
+        Assert(pProps->cBytes);
 
         pFile->pvData = (PAUDIOWAVFILEDATA)RTMemAllocZ(sizeof(AUDIOWAVFILEDATA));
         if (pFile->pvData)
@@ -1598,9 +1597,9 @@ int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, const PPDMAUDIOPCMP
             pData->Hdr.u16AudioFormat   = 1;  /* PCM, linear quantization. */
             pData->Hdr.u16NumChannels   = pProps->cChannels;
             pData->Hdr.u32SampleRate    = pProps->uHz;
-            pData->Hdr.u32ByteRate      = DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels) / 8;
-            pData->Hdr.u16BlockAlign    = pProps->cChannels * pProps->cBits / 8;
-            pData->Hdr.u16BitsPerSample = pProps->cBits;
+            pData->Hdr.u32ByteRate      = DrvAudioHlpCalcBitrate(pProps) / 8;
+            pData->Hdr.u16BlockAlign    = pProps->cChannels * pProps->cBytes;
+            pData->Hdr.u16BitsPerSample = pProps->cBytes * 8;
 
             /* Data chunk. */
             pData->Hdr.u32ID2           = AUDIO_MAKE_FOURCC('d','a','t','a');

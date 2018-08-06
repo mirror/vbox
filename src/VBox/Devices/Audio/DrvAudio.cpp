@@ -542,11 +542,11 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     LogRel2(("Audio: Creating stream '%s'\n", pStream->szName));
     LogRel2(("Audio: Guest %s format for '%s': %RU32Hz, %RU8%s, %RU8 %s\n",
              pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback", pStream->szName,
-             pCfgGuest->Props.uHz, pCfgGuest->Props.cBits, pCfgGuest->Props.fSigned ? "S" : "U",
+             pCfgGuest->Props.uHz, pCfgGuest->Props.cBytes * 8, pCfgGuest->Props.fSigned ? "S" : "U",
              pCfgGuest->Props.cChannels, pCfgGuest->Props.cChannels == 1 ? "Channel" : "Channels"));
     LogRel2(("Audio: Requested host %s format for '%s': %RU32Hz, %RU8%s, %RU8 %s\n",
              pCfgHost->enmDir == PDMAUDIODIR_IN ? "recording" : "playback", pStream->szName,
-             pCfgHost->Props.uHz, pCfgHost->Props.cBits, pCfgHost->Props.fSigned ? "S" : "U",
+             pCfgHost->Props.uHz, pCfgHost->Props.cBytes * 8, pCfgHost->Props.fSigned ? "S" : "U",
              pCfgHost->Props.cChannels, pCfgHost->Props.cChannels == 1 ? "Channel" : "Channels"));
 
     PDMAUDIOSTREAMCFG CfgHostAcq;
@@ -561,7 +561,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
     LogRel2(("Audio: Acquired host %s format for '%s': %RU32Hz, %RU8%s, %RU8 %s\n",
              CfgHostAcq.enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
-             CfgHostAcq.Props.uHz, CfgHostAcq.Props.cBits, CfgHostAcq.Props.fSigned ? "S" : "U",
+             CfgHostAcq.Props.uHz, CfgHostAcq.Props.cBytes * 8, CfgHostAcq.Props.fSigned ? "S" : "U",
              CfgHostAcq.Props.cChannels, CfgHostAcq.Props.cChannels == 1 ? "Channel" : "Channels"));
 
     /* Let the user know if the backend changed some of the tweakable values. */
@@ -623,7 +623,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     AudioMixBufDestroy(&pStream->Host.MixBuf);
 
     /* Make sure to (re-)set the host buffer's shift size. */
-    CfgHostAcq.Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(CfgHostAcq.Props.cBits, CfgHostAcq.Props.cChannels);
+    CfgHostAcq.Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(CfgHostAcq.Props.cBytes, CfgHostAcq.Props.cChannels);
 
     rc = AudioMixBufInit(&pStream->Host.MixBuf, pStream->szName, &CfgHostAcq.Props,
                         CfgHostAcq.Backend.cfBufferSize * cHstBufferFactor);
@@ -647,7 +647,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     pCfgGuest->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
     /* Make sure to (re-)set the guest buffer's shift size. */
-    pCfgGuest->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgGuest->Props.cBits, pCfgGuest->Props.cChannels);
+    pCfgGuest->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgGuest->Props.cBytes, pCfgGuest->Props.cChannels);
 
     /* Set set guest buffer size multiplicator. */
     const unsigned cGstBufferFactor = 4; /** @todo Make this configurable. */

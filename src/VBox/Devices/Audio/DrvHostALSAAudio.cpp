@@ -141,22 +141,22 @@ typedef struct ALSAAUDIOSTREAMCFG
 
 static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 {
-    switch (pProps->cBits)
+    switch (pProps->cBytes)
     {
-        case 8:
+        case 1:
             return pProps->fSigned ? SND_PCM_FORMAT_S8 : SND_PCM_FORMAT_U8;
 
-        case 16:
+        case 2:
             return pProps->fSigned ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_U16_LE;
 
-        case 32:
+        case 4:
             return pProps->fSigned ? SND_PCM_FORMAT_S32_LE : SND_PCM_FORMAT_U32_LE;
 
         default:
             break;
     }
 
-    AssertMsgFailed(("%RU8 bits not supported\n", pProps->cBits));
+    AssertMsgFailed(("%RU8 bytes not supported\n", pProps->cBytes));
     return SND_PCM_FORMAT_U8;
 }
 
@@ -166,62 +166,62 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
     switch (fmt)
     {
         case SND_PCM_FORMAT_S8:
-            pProps->cBits   = 8;
+            pProps->cBytes  = 1;
             pProps->fSigned = true;
             break;
 
         case SND_PCM_FORMAT_U8:
-            pProps->cBits   = 8;
+            pProps->cBytes  = 1;
             pProps->fSigned = false;
             break;
 
         case SND_PCM_FORMAT_S16_LE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = true;
             break;
 
         case SND_PCM_FORMAT_U16_LE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = false;
             break;
 
         case SND_PCM_FORMAT_S16_BE:
-            pProps->cBits       = 16;
-            pProps->fSigned     = true;
+            pProps->cBytes  = 2;
+            pProps->fSigned = true;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case SND_PCM_FORMAT_U16_BE:
-            pProps->cBits       = 16;
-            pProps->fSigned     = false;
+            pProps->cBytes  = 2;
+            pProps->fSigned = false;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case SND_PCM_FORMAT_S32_LE:
-            pProps->cBits   = 32;
+            pProps->cBytes  = 4;
             pProps->fSigned = true;
             break;
 
         case SND_PCM_FORMAT_U32_LE:
-            pProps->cBits   = 32;
+            pProps->cBytes  = 4;
             pProps->fSigned = false;
             break;
 
         case SND_PCM_FORMAT_S32_BE:
-            pProps->cBits       = 32;
-            pProps->fSigned     = true;
+            pProps->cBytes  = 4;
+            pProps->fSigned = true;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case SND_PCM_FORMAT_U32_BE:
-            pProps->cBits       = 32;
-            pProps->fSigned     = false;
+            pProps->cBytes  = 4;
+            pProps->fSigned = false;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
@@ -232,9 +232,9 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
             return VERR_NOT_SUPPORTED;
     }
 
-    Assert(pProps->cBits);
+    Assert(pProps->cBytes);
     Assert(pProps->cChannels);
-    pProps->cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
+    pProps->cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBytes, pProps->cChannels);
 
     return VINF_SUCCESS;
 }

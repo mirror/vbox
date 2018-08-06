@@ -1035,9 +1035,9 @@ static void sb16CmdResetLegacy(PSB16STATE pThis)
 
     pCfg->Props.uHz       = pThis->freq;
     pCfg->Props.cChannels = 1; /* Mono */
-    pCfg->Props.cBits     = 8;
+    pCfg->Props.cBytes    = 1 /* 8-bit */;
     pCfg->Props.fSigned   = false;
-    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
+    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
     AssertCompile(sizeof(pCfg->szName) > sizeof("Output"));
     strcpy(pCfg->szName, "Output");
@@ -2041,9 +2041,9 @@ static int sb16CheckAndReOpenOut(PSB16STATE pThis)
 
         Cfg.Props.uHz       = pThis->freq;
         Cfg.Props.cChannels = 1 << pThis->fmt_stereo;
-        Cfg.Props.cBits     = pThis->fmt_bits;
+        Cfg.Props.cBytes    = pThis->fmt_bits / 8;
         Cfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
-        Cfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Cfg.Props.cBits, Cfg.Props.cChannels);
+        Cfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Cfg.Props.cBytes, Cfg.Props.cChannels);
 
         if (!DrvAudioHlpPCMPropsAreEqual(&Cfg.Props, &pThis->Out.Cfg.Props))
         {

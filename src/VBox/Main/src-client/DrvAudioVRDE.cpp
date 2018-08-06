@@ -86,10 +86,10 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
 
     pCfgAcq->Props.uHz         = 22050; /* The VRDP server's internal frequency. */
     pCfgAcq->Props.cChannels   = 2;
-    pCfgAcq->Props.cBits       = 16;
+    pCfgAcq->Props.cBytes      = 2; /* 16 bit. */
     pCfgAcq->Props.fSigned     = true;
     pCfgAcq->Props.fSwapEndian = false;
-    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
+    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
 
     /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
     const uint32_t cfVRDPServer = DrvAudioHlpMilliToFrames(200  /* ms */, &pCfgAcq->Props);
@@ -132,9 +132,9 @@ static int vrdeCreateStreamOut(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgR
 
         pCfgAcq->Props.uHz       = 22050; /* The VRDP server's internal frequency. */
         pCfgAcq->Props.cChannels = 2;
-        pCfgAcq->Props.cBits     = 16;
+        pCfgAcq->Props.cBytes    = 2; /* 16 bit. */
         pCfgAcq->Props.fSigned   = true;
-        pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
+        pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
 
         /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
         pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMilliToFrames(10  /* ms */, &pCfgAcq->Props);
@@ -173,7 +173,7 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
             rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE,
                                                                DrvAudioHlpMilliToFrames(200 /* ms */, &pStreamVRDE->pCfg->Props),
                                                                pStreamVRDE->pCfg->Props.uHz, pStreamVRDE->pCfg->Props.cChannels,
-                                                               pStreamVRDE->pCfg->Props.cBits);
+                                                               pStreamVRDE->pCfg->Props.cBytes * 8 /* Bit */);
             if (rc == VERR_NOT_SUPPORTED)
             {
                 LogFunc(("No RDP client connected, so no input recording supported\n"));
@@ -290,7 +290,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
     VRDEAUDIOFORMAT format = VRDE_AUDIO_FMT_MAKE(pProps->uHz,
                                                  pProps->cChannels,
-                                                 pProps->cBits,
+                                                 pProps->cBytes * 8 /* Bit */,
                                                  pProps->fSigned);
 
     /* Use the internal counter to track if we (still) can write to the VRDP server

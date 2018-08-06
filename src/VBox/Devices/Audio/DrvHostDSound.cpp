@@ -265,7 +265,7 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 
     pFmt->wFormatTag      = WAVE_FORMAT_PCM;
     pFmt->nChannels       = pCfg->Props.cChannels;
-    pFmt->wBitsPerSample  = pCfg->Props.cBits;
+    pFmt->wBitsPerSample  = pCfg->Props.cBytes * 8;
     pFmt->nSamplesPerSec  = pCfg->Props.uHz;
     pFmt->nBlockAlign     = pFmt->nChannels * pFmt->wBitsPerSample / 8;
     pFmt->nAvgBytesPerSec = pFmt->nSamplesPerSec * pFmt->nBlockAlign;
@@ -620,7 +620,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     DSLOG(("DSound: Opening playback stream (uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool)\n",
            pCfgReq->Props.uHz,
            pCfgReq->Props.cChannels,
-           pCfgReq->Props.cBits,
+           pCfgReq->Props.cBytes * 8,
            pCfgReq->Props.fSigned));
 
     WAVEFORMATEX wfx;
@@ -1336,7 +1336,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
     DSLOG(("DSound: Opening capturing stream (uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool)\n",
            pCfgReq->Props.uHz,
            pCfgReq->Props.cChannels,
-           pCfgReq->Props.cBits,
+           pCfgReq->Props.cBytes * 8,
            pCfgReq->Props.fSigned));
 
     WAVEFORMATEX wfx;

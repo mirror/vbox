@@ -244,9 +244,9 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     }
 
     /* Set the stream's frame size. */
-    pStream->State.cbFrameSize = pCfg->Props.cChannels * (pCfg->Props.cBits / 8 /* To bytes */);
-    LogFunc(("[SD%RU8] cChannels=%RU8, cBits=%RU8 -> cbFrameSize=%RU32\n",
-             pStream->u8SD, pCfg->Props.cChannels, pCfg->Props.cBits, pStream->State.cbFrameSize));
+    pStream->State.cbFrameSize = pCfg->Props.cChannels * pCfg->Props.cBytes;
+    LogFunc(("[SD%RU8] cChannels=%RU8, cBytes=%RU8 -> cbFrameSize=%RU32\n",
+             pStream->u8SD, pCfg->Props.cChannels, pCfg->Props.cBytes, pStream->State.cbFrameSize));
     Assert(pStream->State.cbFrameSize); /* Frame size must not be 0. */
 
     /*

@@ -552,7 +552,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
         return rc;
 
     LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %RU8 bits, %RU8 channels, %RU32Hz)\n",
-                 pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cBits, pCfg->Props.cChannels, pCfg->Props.uHz));
+                 pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cBytes * 8, pCfg->Props.cChannels, pCfg->Props.uHz));
 
     /*
      * Initialize the host-side configuration for the stream to be created.
@@ -1321,12 +1321,12 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
 
     if (pSink->PCMProps.uHz)
         LogFlowFunc(("[%s] Old format: %RU8 bit, %RU8 channels, %RU32Hz\n",
-                     pSink->pszName, pSink->PCMProps.cBits, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
+                     pSink->pszName, pSink->PCMProps.cBytes * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
     memcpy(&pSink->PCMProps, pPCMProps, sizeof(PDMAUDIOPCMPROPS));
 
     LogFlowFunc(("[%s] New format %RU8 bit, %RU8 channels, %RU32Hz\n",
-                 pSink->pszName, pSink->PCMProps.cBits, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
+                 pSink->pszName, pSink->PCMProps.cBytes * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
     /* Also update the sink's mixing buffer format. */

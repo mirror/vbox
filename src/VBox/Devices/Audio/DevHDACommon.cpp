@@ -527,17 +527,17 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
             break;
     }
 
-    uint8_t cBits = 0;
+    uint8_t cBytes = 0;
     switch (EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
     {
         case 0:
-            cBits = 8;
+            cBytes = 1;
             break;
         case 1:
-            cBits = 16;
+            cBytes = 2;
             break;
         case 4:
-            cBits = 32;
+            cBytes = 4;
             break;
         default:
             AssertMsgFailed(("Unsupported bits per sample %x\n",
@@ -550,11 +550,11 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
     {
         RT_BZERO(pProps, sizeof(PDMAUDIOPCMPROPS));
 
-        pProps->cBits     = cBits;
+        pProps->cBytes    = cBytes;
         pProps->fSigned   = true;
         pProps->cChannels = (u32SDFMT & 0xf) + 1;
         pProps->uHz       = u32Hz * u32HzMult / u32HzDiv;
-        pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
+        pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBytes, pProps->cChannels);
     }
 
 # undef EXTRACT_VALUE

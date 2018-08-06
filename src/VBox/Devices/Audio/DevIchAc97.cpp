@@ -1765,9 +1765,9 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             Assert(pCfg->enmDir != PDMAUDIODIR_UNKNOWN);
 
             pCfg->Props.cChannels = 2;
-            pCfg->Props.cBits     = 16;
+            pCfg->Props.cBytes    = 2 /* 16-bit */;
             pCfg->Props.fSigned   = true;
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
             rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, pCfg);
         }

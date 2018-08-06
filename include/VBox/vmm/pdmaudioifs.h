@@ -510,8 +510,8 @@ typedef union PDMAUDIODESTSOURCE
  */
 typedef struct PDMAUDIOPCMPROPS
 {
-    /** Sample width. Bits per sample. */
-    uint8_t     cBits;
+    /** Sample width (in bytes). */
+    uint8_t     cBytes;
     /** Number of audio channels. */
     uint8_t     cChannels;
     /** Shift count used for faster calculation of various
@@ -534,13 +534,13 @@ AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
 typedef PDMAUDIOPCMPROPS *PPDMAUDIOPCMPROPS;
 
 /** Initializor for PDMAUDIOPCMPROPS. */
-#define PDMAUDIOPCMPROPS_INITIALIZOR(a_cBits, a_fSigned, a_cCannels, a_uHz, a_cShift, a_fSwapEndian) \
-    { a_cBits, a_cCannels, a_cShift, a_fSigned, a_fSwapEndian, a_uHz }
+#define PDMAUDIOPCMPROPS_INITIALIZOR(a_cBytes, a_fSigned, a_cCannels, a_uHz, a_cShift, a_fSwapEndian) \
+    { a_cBytes, a_cCannels, a_cShift, a_fSigned, a_fSwapEndian, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
  *  Note: Does only support mono/stereo channels for now. */
-#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + (cBits / 16))
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBytes, cChannels)    ((cChannels == 2) + (cBytes / 2))
 /** Calculates the cShift value of a PDMAUDIOPCMPROPS structure. */
-#define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps)                     PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cBits, (pProps)->cChannels)
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps)                     PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cBytes, (pProps)->cChannels)
 /** Converts (audio) frames to bytes.
  *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
 #define PDMAUDIOPCMPROPS_F2B(pProps, frames)                    ((frames) << (pProps)->cShift)

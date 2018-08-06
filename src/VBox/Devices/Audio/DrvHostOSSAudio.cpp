@@ -157,27 +157,27 @@ static int ossOSSToAudioProps(int fmt, PPDMAUDIOPCMPROPS pProps)
     switch (fmt)
     {
         case AFMT_S8:
-            pProps->cBits   = 8;
+            pProps->cBytes  = 1;
             pProps->fSigned = true;
             break;
 
         case AFMT_U8:
-            pProps->cBits   = 8;
+            pProps->cBytes  = 1;
             pProps->fSigned = false;
             break;
 
         case AFMT_S16_LE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = true;
             break;
 
         case AFMT_U16_LE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = false;
             break;
 
        case AFMT_S16_BE:
-            pProps->cBits   = 16;
+           pProps->cBytes  = 2;
             pProps->fSigned = true;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
@@ -185,7 +185,7 @@ static int ossOSSToAudioProps(int fmt, PPDMAUDIOPCMPROPS pProps)
             break;
 
         case AFMT_U16_BE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = false;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
@@ -238,13 +238,13 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         }
 
         int iFormat;
-        switch (pOSSReq->Props.cBits)
+        switch (pOSSReq->Props.cBytes)
         {
-            case 8:
+            case 1:
                 iFormat = pOSSReq->Props.fSigned ? AFMT_S8 : AFMT_U8;
                 break;
 
-            case 16:
+            case 2:
                 iFormat = pOSSReq->Props.fSigned ? AFMT_S16_LE : AFMT_U16_LE;
                 break;
 
@@ -318,7 +318,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         {
             pOSSAcq->Props.cChannels = cChannels;
             pOSSAcq->Props.uHz       = freq;
-            pOSSAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pOSSAcq->Props.cBits, pOSSAcq->Props.cChannels);
+            pOSSAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pOSSAcq->Props.cBytes, pOSSAcq->Props.cChannels);
 
             pOSSAcq->cFragments      = abinfo.fragstotal;
             pOSSAcq->cbFragmentSize  = abinfo.fragsize;

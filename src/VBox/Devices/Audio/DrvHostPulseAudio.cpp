@@ -199,20 +199,20 @@ static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 
 static pa_sample_format_t paAudioPropsToPulse(PPDMAUDIOPCMPROPS pProps)
 {
-    switch (pProps->cBits)
+    switch (pProps->cBytes)
     {
-        case 8:
+        case 1:
             if (!pProps->fSigned)
                 return PA_SAMPLE_U8;
             break;
 
-        case 16:
+        case 2:
             if (pProps->fSigned)
                 return PA_SAMPLE_S16LE;
             break;
 
 #ifdef PA_SAMPLE_S32LE
-        case 32:
+        case 4:
             if (pProps->fSigned)
                 return PA_SAMPLE_S32LE;
             break;
@@ -222,7 +222,7 @@ static pa_sample_format_t paAudioPropsToPulse(PPDMAUDIOPCMPROPS pProps)
             break;
     }
 
-    AssertMsgFailed(("%RU8%s not supported\n", pProps->cBits, pProps->fSigned ? "S" : "U"));
+    AssertMsgFailed(("%RU8%s not supported\n", pProps->cBytes, pProps->fSigned ? "S" : "U"));
     return PA_SAMPLE_INVALID;
 }
 
@@ -232,31 +232,31 @@ static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pP
     switch (pulsefmt)
     {
         case PA_SAMPLE_U8:
-            pProps->cBits   = 8;
+            pProps->cBytes  = 1;
             pProps->fSigned = false;
             break;
 
         case PA_SAMPLE_S16LE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = true;
             break;
 
         case PA_SAMPLE_S16BE:
-            pProps->cBits   = 16;
+            pProps->cBytes  = 2;
             pProps->fSigned = true;
             /** @todo Handle Endianess. */
             break;
 
 #ifdef PA_SAMPLE_S32LE
         case PA_SAMPLE_S32LE:
-            pProps->cBits   = 32;
+            pProps->cBytes  = 4;
             pProps->fSigned = true;
             break;
 #endif
 
 #ifdef PA_SAMPLE_S32BE
         case PA_SAMPLE_S32BE:
-            pProps->cBits   = 32;
+            pProps->cBytes  = 4;
             pProps->fSigned = true;
             /** @todo Handle Endianess. */
             break;
@@ -768,7 +768,7 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
 
     pCfgAcq->Props.uHz       = pStreamPA->SampleSpec.rate;
     pCfgAcq->Props.cChannels = pStreamPA->SampleSpec.channels;
-    pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
+    pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
 
     uint32_t cbBuf = RT_MIN(pStreamPA->BufAttr.tlength * 2,
                             pStreamPA->BufAttr.maxlength); /** @todo Make this configurable! */

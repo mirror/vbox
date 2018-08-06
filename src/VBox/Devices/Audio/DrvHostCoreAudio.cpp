@@ -182,7 +182,7 @@ static void coreAudioPCMPropsToASBD(PDMAUDIOPCMPROPS *pPCMProps, AudioStreamBasi
     pASBD->mFramesPerPacket  = 1; /* For uncompressed audio, set this to 1. */
     pASBD->mSampleRate       = (Float64)pPCMProps->uHz;
     pASBD->mChannelsPerFrame = pPCMProps->cChannels;
-    pASBD->mBitsPerChannel   = pPCMProps->cBits;
+    pASBD->mBitsPerChannel   = pPCMProps->cBytes * 8;
     if (pPCMProps->fSigned)
         pASBD->mFormatFlags |= kAudioFormatFlagIsSignedInteger;
     pASBD->mBytesPerFrame    = pASBD->mChannelsPerFrame * (pASBD->mBitsPerChannel / 8);
@@ -197,9 +197,9 @@ static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDI
 
     pCfg->Props.cChannels = pASBD->mChannelsPerFrame;
     pCfg->Props.uHz       = (uint32_t)pASBD->mSampleRate;
-    pCfg->Props.cBits     = pASBD->mBitsPerChannel;
+    pCfg->Props.cBytes    = pASBD->mBitsPerChannel / 8;
     pCfg->Props.fSigned   = RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger);
-    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
+    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
     return VINF_SUCCESS;
 }
