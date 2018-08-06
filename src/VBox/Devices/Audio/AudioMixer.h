@@ -26,6 +26,9 @@
 
 #include <VBox/vmm/pdmaudioifs.h>
 
+/* Use a mixer sink's mixing buffer for multiplexing. */
+#define VBOX_AUDIO_MIXER_WITH_MIXBUF
+
 /**
  * Structure for maintaining an audio mixer instance.
  */
@@ -135,14 +138,6 @@ typedef enum AUDMIXSINKCMD
  */
 typedef struct AUDMIXSINKIN
 {
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
-    /** This sink's mixing buffer, acting as
-     * a parent buffer for all streams this sink owns. */
-    PDMAUDIOMIXBUF MixBuf;
-#else
-    /** Number of bytes available to read from the sink. */
-    uint32_t       cbReadable;
-#endif
     /** The current recording source. Can be NULL if not set. */
     PAUDMIXSTREAM  pStreamRecSource;
 } AUDMIXSINKIN;
@@ -153,14 +148,6 @@ typedef struct AUDMIXSINKIN
  */
 typedef struct AUDMIXSINKOUT
 {
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
-    /** This sink's mixing buffer, acting as
-     * a parent buffer for all streams this sink owns. */
-    PDMAUDIOMIXBUF MixBuf;
-#else
-    /** Number of bytes available to write to the sink. */
-    uint32_t       cbWritable;
-#endif
 } AUDMIXSINKOUT;
 
 /**
@@ -178,6 +165,11 @@ typedef struct AUDMIXSINK
     AUDMIXSINKDIR           enmDir;
     /** The sink's critical section. */
     RTCRITSECT              CritSect;
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+    /** This sink's mixing buffer, acting as
+     * a parent buffer for all streams this sink owns. */
+    PDMAUDIOMIXBUF          MixBuf;
+#endif
     /** Union for input/output specifics. */
     union
     {
