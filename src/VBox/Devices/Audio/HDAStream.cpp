@@ -1325,6 +1325,8 @@ void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
 #endif
             const uint32_t cbSinkWritable = AudioMixerSinkGetWritable(pSink);
 
+            Log3Func(("[SD%RU8] cbWritable=%RU32, cbUsed=%RU32\n", pStream->u8SD, cbSinkWritable, cbUsed));
+
             /* Do not write more than the sink can hold at the moment.
              * The host sets the overall pace. */
             if (cbUsed > cbSinkWritable)
