@@ -719,8 +719,9 @@ void UITabBarItem::updatePixmap()
 *   Class UITabBar implementation.                                                                                               *
 *********************************************************************************************************************************/
 
-UITabBar::UITabBar(QWidget *pParent /* = 0 */)
+UITabBar::UITabBar(Alignment enmAlignment, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
+    , m_enmAlignment(enmAlignment)
     , m_pLayoutMain(0)
     , m_pLayoutTab(0)
     , m_pCurrentItem(0)
@@ -744,8 +745,17 @@ QUuid UITabBar::addTab(const QAction *pAction)
         connect(pItem, &UITabBarItem::sigCloseClicked,      this, &UITabBar::sltHandleChildClose);
         connect(pItem, &UITabBarItem::sigDragObjectDestroy, this, &UITabBar::sltHandleDragObjectDestroy);
         /* Add item into layout and list: */
-        m_pLayoutTab->insertWidget(0, pItem);
-        m_aItems.prepend(pItem);
+        switch (m_enmAlignment)
+        {
+            case Align_Left:
+                m_pLayoutTab->addWidget(pItem);
+                m_aItems.append(pItem);
+                break;
+            case Align_Right:
+                m_pLayoutTab->insertWidget(0, pItem);
+                m_aItems.prepend(pItem);
+                break;
+        }
         /* Update children styles: */
         updateChildrenStyles();
         /* Return unique ID: */
@@ -1020,10 +1030,9 @@ void UITabBar::prepare()
         m_pLayoutMain->setSpacing(0);
         m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
-        /// @todo Workout stretch at the and as well,
-        //       depending on which alignment is set.
-        /* Add strech into beginning: */
-        m_pLayoutMain->addStretch();
+        /* Add strech to beginning: */
+        if (m_enmAlignment == Align_Right)
+            m_pLayoutMain->addStretch();
 
         /* Create tab layout: */
         m_pLayoutTab = new QHBoxLayout;
@@ -1032,6 +1041,10 @@ void UITabBar::prepare()
             /* Add into layout: */
             m_pLayoutMain->addLayout(m_pLayoutTab);
         }
+
+        /* Add strech to end: */
+        if (m_enmAlignment == Align_Left)
+            m_pLayoutMain->addStretch();
     }
 }
 

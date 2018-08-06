@@ -55,8 +55,11 @@ signals:
 
 public:
 
+    /** Alignment types. */
+    enum Alignment { Align_Left, Align_Right };
+
     /** Constructs tab-bar passing @a pParent to the base-class. */
-    UITabBar(QWidget *pParent = 0);
+    UITabBar(Alignment enmAlignment, QWidget *pParent = 0);
 
     /** Adds new tab for passed @a pAction. @returns unique tab ID. */
     QUuid addTab(const QAction *pAction);
@@ -102,6 +105,12 @@ private:
 
     /** Updates children styles. */
     void updateChildrenStyles();
+
+    /** @name Contents: Common
+      * @{ */
+        /** Holds the alignment. */
+        Alignment m_enmAlignment;
+    /** @} */
 
     /** @name Contents: Widgets
       * @{ */
