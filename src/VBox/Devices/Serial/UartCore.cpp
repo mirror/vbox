@@ -850,7 +850,7 @@ DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
              * byte in the RBR register which will be lost so we have to adjust the available bytes.
              */
             if (   ASMAtomicReadU32(&pThis->cbAvailRdr) > 0
-                && (pThis->uRegFcr & UART_REG_FCR_FIFO_EN))
+                && (uVal & UART_REG_FCR_FIFO_EN))
                 ASMAtomicDecU32(&pThis->cbAvailRdr);
 
             /* Clear the DR bit too. */
@@ -1355,7 +1355,7 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
     AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
 
     uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
-    LogFlow(("    cbAvailRdr=%zu -> cbAvailRdr=%zu\n", cbAvailOld, cbAvail + cbAvailOld));
+    LogFlow(("    cbAvailRdr=%u -> cbAvailRdr=%u\n", cbAvailOld, cbAvail + cbAvailOld));
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         uartR3RecvFifoFill(pThis);
