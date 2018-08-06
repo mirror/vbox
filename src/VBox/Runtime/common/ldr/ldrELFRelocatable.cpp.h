@@ -129,6 +129,11 @@ typedef struct RTLDRMODELF
     unsigned                cbShStr;
     /** Pointer to section header string table within RTLDRMODELF::pvBits. */
     const char             *pShStr;
+
+    /** The '.eh_frame' section index.  Zero if not searched for, ~0U if not found. */
+    unsigned                iShEhFrame;
+    /** The '.eh_frame_hdr' section index.  Zero if not searched for, ~0U if not found. */
+    unsigned                iShEhFrameHdr;
 } RTLDRMODELF, *PRTLDRMODELF;
 
 
@@ -1298,7 +1303,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetImportStubCallback)(RTLDRMOD hLdrMod, 
 }
 
 
-/** @copydoc RTLDROPS::pfnRvaToSegOffset. */
+/** @copydoc RTLDROPS::pfnReadDbgInfo. */
 static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off,
                                                     size_t cb, void *pvBuf)
 {
@@ -1399,6 +1404,87 @@ static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint
 }
 
 
+/**
+ * @interface_method_impl{RTLDROPS,pfnUnwindFrame}
+ */
+static DECLCALLBACK(int)
+RTLDRELF_NAME(UnwindFrame)(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
+{
+    PRTLDRMODELF pThis = (PRTLDRMODELF)pMod;
+    LogFlow(("%s: iSeg=%#x off=%RTptr\n", __FUNCTION__, iSeg, off));
+
+    /*
+     * Process the input address, making us both RVA and proper seg:offset out of it.
+     */
+    int rc;
+    RTLDRADDR uRva = off;
+    if (iSeg == RTDBGSEGIDX_RVA)
+        rc = RTLDRELF_NAME(RvaToSegOffset)(pMod, uRva, &iSeg, &off);
+    else
+        rc = RTLDRELF_NAME(SegOffsetToRva)(pMod, iSeg, off, &uRva);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Map the image bits if not already done and setup pointer into it.
+     */
+    RT_NOREF(pvBits); /** @todo Try use passed in pvBits? */
+    rc = RTLDRELF_NAME(MapBits)(pThis, true);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Do we need to search for .eh_frame and .eh_frame_hdr?
+     */
+    if (pThis->iShEhFrame == 0)
+    {
+        pThis->iShEhFrame = ~0U;
+        pThis->iShEhFrameHdr = ~0U;
+        unsigned cLeft = 2;
+        for (unsigned iShdr = 1; iShdr < pThis->Ehdr.e_shnum; iShdr++)
+        {
+            const char *pszName = ELF_SH_STR(pThis, pThis->paShdrs[iShdr].sh_name);
+            if (   pszName[0] == '.'
+                && pszName[1] == 'e'
+                && pszName[2] == 'h'
+                && pszName[3] == '_'
+                && pszName[4] == 'f'
+                && pszName[5] == 'r'
+                && pszName[6] == 'a'
+                && pszName[7] == 'm'
+                && pszName[8] == 'e')
+            {
+                if (pszName[8] == '\0')
+                    pThis->iShEhFrame = iShdr;
+                else if (   pszName[8] == '_'
+                         && pszName[9] == 'h'
+                         && pszName[10] == 'd'
+                         && pszName[11] == 'r'
+                         && pszName[12] == '\0')
+                    pThis->iShEhFrameHdr = iShdr;
+                else
+                    continue;
+                if (--cLeft == 0)
+                    break;
+            }
+        }
+    }
+
+    /*
+     * Any info present?
+     */
+    unsigned iShdr = pThis->iShEhFrame;
+    if (   iShdr != ~0U
+        && pThis->paShdrs[iShdr].sh_size > 0)
+    {
+        if (pThis->paShdrs[iShdr].sh_flags & SHF_ALLOC)
+            return rtDwarfUnwind_EhData((uint8_t const *)pThis->pvBits + pThis->paShdrs[iShdr].sh_addr,
+                                        pThis->paShdrs[iShdr].sh_size, iSeg, off, uRva, pState, pThis->Core.enmArch);
+    }
+    return VERR_DBG_NO_UNWIND_INFO;
+}
+
+
+
 
 /**
  * The ELF module operations.
@@ -1430,7 +1516,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     NULL /*pfnQueryProp*/,
     NULL /*pfnVerifySignature*/,
     NULL /*pfnHashImage*/,
-    NULL /*pfnUnwindFrame*/,
+    RTLDRELF_NAME(UnwindFrame),
     42
 };
 
@@ -1782,6 +1868,8 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     //pModElf->pStr           = NULL;
     //pModElf->cbShStr        = 0;
     //pModElf->pShStr         = NULL;
+    //pModElf->iShEhFrame      = 0;
+    //pModElf->iShEhFrameHdr   = 0;
 
     /*
      * Read and validate the ELF header and match up the CPU architecture.

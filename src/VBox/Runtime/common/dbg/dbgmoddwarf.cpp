@@ -349,6 +349,29 @@
 #define DW_OP_hi_user           UINT8_C(0xff) /**< Last user opcode. */
 /** @} */
 
+/** @name Exception Handler Pointer Encodings (GCC/LSB).
+ * @{ */
+#define DW_EH_PE_FORMAT_MASK    UINT8_C(0x0f) /**< Format mask. */
+#define DW_EH_PE_APPL_MASK      UINT8_C(0x70) /**< Application mask. */
+#define DW_EH_PE_indirect       UINT8_C(0x80) /**< Flag: Indirect pointer. */
+#define DW_EH_PE_omit           UINT8_C(0xff) /**< Special value: Omitted. */
+#define DW_EH_PE_ptr            UINT8_C(0x00) /**< Format: pointer sized, unsigned. */
+#define DW_EH_PE_uleb128        UINT8_C(0x01) /**< Format: unsigned LEB128. */
+#define DW_EH_PE_udata2         UINT8_C(0x02) /**< Format: unsigned 16-bit. */
+#define DW_EH_PE_udata4         UINT8_C(0x03) /**< Format: unsigned 32-bit. */
+#define DW_EH_PE_udata8         UINT8_C(0x04) /**< Format: unsigned 64-bit. */
+#define DW_EH_PE_sleb128        UINT8_C(0x09) /**< Format: signed LEB128. */
+#define DW_EH_PE_sdata2         UINT8_C(0x0a) /**< Format: signed 16-bit. */
+#define DW_EH_PE_sdata4         UINT8_C(0x0b) /**< Format: signed 32-bit. */
+#define DW_EH_PE_sdata8         UINT8_C(0x0c) /**< Format: signed 64-bit. */
+#define DW_EH_PE_absptr         UINT8_C(0x00) /**< Application: Absolute */
+#define DW_EH_PE_pcrel          UINT8_C(0x10) /**< Application: PC relative, i.e. relative pointer address. */
+#define DW_EH_PE_textrel        UINT8_C(0x20) /**< Application: text section relative. */
+#define DW_EH_PE_datarel        UINT8_C(0x30) /**< Application: data section relative. */
+#define DW_EH_PE_funcrel        UINT8_C(0x40) /**< Application: relative to start of function. */
+#define DW_EH_PE_aligned        UINT8_C(0x50) /**< Application: aligned pointer. */
+/** @} */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -505,7 +528,7 @@ typedef struct RTDWARFCURSOR
     size_t                  cbLeft;
     /** The number of bytes left to read in the current unit. */
     size_t                  cbUnitLeft;
-    /** The DWARF debug info reader instance. */
+    /** The DWARF debug info reader instance.  (Can be NULL for eh_frame.) */
     PRTDBGMODDWARF          pDwarfMod;
     /** Set if this is 64-bit DWARF, clear if 32-bit. */
     bool                    f64bitDwarf;
@@ -1514,6 +1537,60 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
 }
 
 
+/**
+ * Converts a segment+offset address into an RVA.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The DWARF instance.
+ * @param   idxSegment      The segment index.
+ * @param   offSegment      The segment offset.
+ * @param   puRva           Where to return the calculated RVA.
+ */
+static int rtDbgModDwarfSegOffsetToRva(PRTDBGMODDWARF pThis, RTDBGSEGIDX idxSegment, uint64_t offSegment, PRTUINTPTR puRva)
+{
+    if (pThis->paSegs)
+    {
+        PRTDBGDWARFSEG pSeg = rtDbgModDwarfFindSegment(pThis, idxSegment);
+        if (pSeg)
+        {
+            *puRva = pSeg->uBaseAddr + offSegment;
+            return VINF_SUCCESS;
+        }
+    }
+
+    RTUINTPTR uRva = RTDbgModSegmentRva(pThis->pImgMod, idxSegment);
+    if (uRva != RTUINTPTR_MAX)
+    {
+        *puRva = uRva + offSegment;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_POINTER;
+}
+
+/**
+ * Converts a segment+offset address into an RVA.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The DWARF instance.
+ * @param   uRva            The RVA to convert.
+ * @param   pidxSegment     Where to return the segment index.
+ * @param   poffSegment     Where to return the segment offset.
+ */
+static int rtDbgModDwarfRvaToSegOffset(PRTDBGMODDWARF pThis, RTUINTPTR uRva, RTDBGSEGIDX *pidxSegment, uint64_t *poffSegment)
+{
+    RTUINTPTR   offSeg = 0;
+    RTDBGSEGIDX idxSeg = RTDbgModRvaToSegOff(pThis->pImgMod, uRva, &offSeg);
+    if (idxSeg != NIL_RTDBGSEGIDX)
+    {
+        *pidxSegment = idxSeg;
+        *poffSegment = offSeg;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_POINTER;
+}
+
+
+
 /*
  *
  * DWARF Cursor.
@@ -1891,7 +1968,7 @@ static const char *rtDwarfCursor_GetSZ(PRTDWARFCURSOR pCursor, const char *pszEr
 
 
 /**
- * Reads a 1, 2, 4 or 8 byte unsgined value.
+ * Reads a 1, 2, 4 or 8 byte unsigned value.
  *
  * @returns 64-bit unsigned value.
  * @param   pCursor             The cursor.
@@ -2025,6 +2102,56 @@ static uint64_t rtDwarfCursor_GetNativeUOff(PRTDWARFCURSOR pCursor, uint64_t uEr
 
 
 /**
+ * Reads a 1, 2, 4 or 8 byte unsigned value.
+ *
+ * @returns 64-bit unsigned value.
+ * @param   pCursor             The cursor.
+ * @param   bPtrEnc             The pointer encoding.
+ * @param   uErrValue           The error value.
+ */
+static uint64_t rtDwarfCursor_GetPtrEnc(PRTDWARFCURSOR pCursor, uint8_t bPtrEnc, uint64_t uErrValue)
+{
+    uint64_t u64Ret;
+    switch (bPtrEnc & DW_EH_PE_FORMAT_MASK)
+    {
+        case DW_EH_PE_ptr:
+            u64Ret = rtDwarfCursor_GetNativeUOff(pCursor, uErrValue);
+            break;
+        case DW_EH_PE_uleb128:
+            u64Ret = rtDwarfCursor_GetULeb128(pCursor, uErrValue);
+            break;
+        case DW_EH_PE_udata2:
+            u64Ret = rtDwarfCursor_GetU16(pCursor, UINT16_MAX);
+            break;
+        case DW_EH_PE_udata4:
+            u64Ret = rtDwarfCursor_GetU32(pCursor, UINT32_MAX);
+            break;
+        case DW_EH_PE_udata8:
+            u64Ret = rtDwarfCursor_GetU64(pCursor, UINT64_MAX);
+            break;
+        case DW_EH_PE_sleb128:
+            u64Ret = rtDwarfCursor_GetSLeb128(pCursor, uErrValue);
+            break;
+        case DW_EH_PE_sdata2:
+            u64Ret = (int64_t)(int16_t)rtDwarfCursor_GetU16(pCursor, UINT16_MAX);
+            break;
+        case DW_EH_PE_sdata4:
+            u64Ret = (int64_t)(int32_t)rtDwarfCursor_GetU32(pCursor, UINT32_MAX);
+            break;
+        case DW_EH_PE_sdata8:
+            u64Ret = rtDwarfCursor_GetU64(pCursor, UINT64_MAX);
+            break;
+        default:
+            pCursor->rc = VERR_DWARF_BAD_INFO;
+            return uErrValue;
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return uErrValue;
+    return u64Ret;
+}
+
+
+/**
  * Gets the unit length, updating the unit length member and DWARF bitness
  * members of the cursor.
  *
@@ -2068,7 +2195,7 @@ static uint64_t rtDwarfCursor_GetInitalLength(PRTDWARFCURSOR pCursor)
  */
 static uint32_t rtDwarfCursor_CalcSectOffsetU32(PRTDWARFCURSOR pCursor)
 {
-    size_t off = pCursor->pb - (uint8_t const *)pCursor->pDwarfMod->aSections[pCursor->enmSect].pv;
+    size_t off = pCursor->pb - pCursor->pbStart;
     uint32_t offRet = (uint32_t)off;
     if (offRet != off)
     {
@@ -2273,6 +2400,33 @@ static int rtDwarfCursor_InitForBlock(PRTDWARFCURSOR pCursor, PRTDWARFCURSOR pPa
 
 
 /**
+ * Initialize a reader cursor for a memory block (eh_frame).
+ *
+ * @returns IPRT status code.
+ * @param   pCursor             The cursor.
+ * @param   pvMem               The memory block.
+ * @param   cbMem               The size of the memory block.
+ */
+static int rtDwarfCursor_InitForMem(PRTDWARFCURSOR pCursor, void const *pvMem, size_t cbMem)
+{
+    pCursor->enmSect          = krtDbgModDwarfSect_End;
+    pCursor->pbStart          = (uint8_t const *)pvMem;
+    pCursor->pb               = (uint8_t const *)pvMem;
+    pCursor->cbLeft           = cbMem;
+    pCursor->cbUnitLeft       = cbMem;
+    pCursor->pDwarfMod        = NULL;
+    pCursor->f64bitDwarf      = false;
+    /** @todo ask the image about the endian used as well as the address
+     *        width. */
+    pCursor->fNativEndian     = true;
+    pCursor->cbNativeAddr     = 4;
+    pCursor->rc               = VINF_SUCCESS;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Deletes a section reader initialized by rtDwarfCursor_Init.
  *
  * @returns @a rcOther or RTDWARCURSOR::rc.
@@ -2291,6 +2445,436 @@ static int rtDwarfCursor_Delete(PRTDWARFCURSOR pCursor, int rcOther)
         rcOther = pCursor->rc;
     pCursor->rc         = VERR_INTERNAL_ERROR_4;
     return rcOther;
+}
+
+
+/*
+ *
+ * DWARF Frame Unwind Information.
+ * DWARF Frame Unwind Information.
+ * DWARF Frame Unwind Information.
+ *
+ */
+
+/**
+ * Common information entry (CIE) information.
+ */
+typedef struct RTDWARFCIEINFO
+{
+    /** The segment location of the CIE. */
+    uint64_t        offCie;
+    /** The DWARF version. */
+    uint8_t         uDwarfVer;
+    /** The address pointer encoding. */
+    uint8_t         bAddressPtrEnc;
+    /** The segment size (v4). */
+    uint8_t         cbSegment;
+    /** The LSDA pointer encoding. */
+    uint8_t         bLsdaPtrEnc;
+
+    /** Set if the EH data field is present ('eh'). */
+    bool            fHasEhData : 1;
+    /** Set if there is an augmentation data size ('z'). */
+    bool            fHasAugmentationSize : 1;
+    /** Set if the augmentation data contains a LSDA (pointer size byte in CIE,
+     * pointer in FDA) ('L'). */
+    bool            fHasLanguageSpecificDataArea : 1;
+    /** Set if the augmentation data contains a personality routine
+     * (pointer size + pointer) ('P'). */
+    bool            fHasPersonalityRoutine : 1;
+    /** Set if the augmentation data contains the address encoding . */
+    bool            fHasAddressEnc : 1;
+    /** Set if signal frame. */
+    bool            fIsSignalFrame : 1;
+    /** Set if we've encountered unknown augmentation data.  This
+     * means the CIE is incomplete and cannot be used. */
+    bool            fHasUnknowAugmentation : 1;
+
+    /** Copy of the augmentation string. */
+    const char     *pszAugmentation;
+
+    /** Code alignment factor for the instruction. */
+    uint64_t        uCodeAlignFactor;
+    /** Data alignment factor for the instructions. */
+    int64_t         iDataAlignFactor;
+
+    /** Pointer to the instruction sequence. */
+    uint8_t const  *pbInstructions;
+    /** The length of the instruction sequence. */
+    size_t          cbInstructions;
+} RTDWARFCIEINFO;
+/** Pointer to CIE info. */
+typedef RTDWARFCIEINFO *PRTDWARFCIEINFO;
+/** Pointer to const CIE info. */
+typedef RTDWARFCIEINFO const *PCRTDWARFCIEINFO;
+
+
+/**
+ * Processes a FDE, taking over after the PC range field.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor         The cursor.
+ * @param   pCie            Information about the corresponding CIE.
+ * @param   uPcBegin        The PC begin field value (sans segment).
+ * @param   cbPcRange       The PC range from @a uPcBegin.
+ * @param   offInRange      The offset into the range corresponding to
+ *                          pState->uPc.
+ * @param   pState          The unwind state to work.
+ */
+static int rtDwarfUnwind_ProcessFde(PRTDWARFCURSOR pCursor, PCRTDWARFCIEINFO pCie, uint64_t uPcBegin,
+                                    uint64_t cbPcRange, uint64_t offInRange, PRTDBGUNWINDSTATE pState)
+{
+    /*
+     * Deal with augmented data fields.
+     */
+    /* The size. */
+    size_t cbInstr = ~(size_t)0;
+    if (pCie->fHasAugmentationSize)
+    {
+        uint64_t cbAugData = rtDwarfCursor_GetULeb128(pCursor, UINT64_MAX);
+        if (RT_FAILURE(pCursor->rc))
+            return pCursor->rc;
+        if (cbAugData > pCursor->cbUnitLeft)
+            return VERR_DBG_MALFORMED_UNWIND_INFO;
+        cbInstr = pCursor->cbUnitLeft - cbAugData;
+    }
+    else if (pCie->fHasUnknowAugmentation)
+        return VERR_DBG_MALFORMED_UNWIND_INFO;
+
+    /* Parse the string and fetch FDE fields. */
+    if (!pCie->fHasEhData)
+        for (const char *pszAug = pCie->pszAugmentation; *pszAug != '\0'; pszAug++)
+            switch (*pszAug)
+            {
+                case 'L':
+                    if (pCie->bLsdaPtrEnc != DW_EH_PE_omit)
+                        rtDwarfCursor_GetPtrEnc(pCursor, pCie->bLsdaPtrEnc, 0);
+                    break;
+            }
+
+    /* Skip unconsumed bytes. */
+    if (   cbInstr != ~(size_t)0
+        && pCursor->cbUnitLeft > cbInstr)
+        rtDwarfCursor_SkipBytes(pCursor, pCursor->cbUnitLeft - cbInstr);
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    /*
+     * The crazy part.  Table program execution.
+     */
+    if (pCie->cbInstructions > 0)
+    {
+        /** @todo continue here later.   */
+    }
+
+    RT_NOREF(pState, uPcBegin, cbPcRange, offInRange);
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Load the information we need from a CIE.
+ *
+ * This starts after the initial length and CIE_pointer fields has
+ * been processed.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor         The cursor.
+ * @param   pNewCie         The structure to populate with parsed CIE info.
+ * @param   offUnit         The unit offset.
+ * @param   bDefaultPtrEnc  The default pointer encoding.
+ */
+static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie, uint64_t offUnit, uint8_t bDefaultPtrEnc)
+{
+    /*
+     * Initialize the CIE record and get the version.
+     */
+    RT_ZERO(*pNewCie);
+    pNewCie->offCie         = offUnit;
+    pNewCie->bLsdaPtrEnc    = DW_EH_PE_omit;
+    pNewCie->bAddressPtrEnc = DW_EH_PE_omit; /* set later */
+    pNewCie->uDwarfVer      = rtDwarfCursor_GetUByte(pCursor, 0);
+    if (   pNewCie->uDwarfVer >= 1 /* Note! Some GCC versions may emit v1 here. */
+        && pNewCie->uDwarfVer <= 5)
+        return VERR_VERSION_MISMATCH;
+
+    /*
+     * The augmentation string.
+     *
+     * First deal with special "eh" string from oldish GCC (dwarf2out.c about 1997), specified in LSB:
+     *     https://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-PDA/LSB-PDA/ehframechpt.html
+     */
+    pNewCie->pszAugmentation = rtDwarfCursor_GetSZ(pCursor, "");
+    if (   pNewCie->pszAugmentation[0] == 'e'
+        && pNewCie->pszAugmentation[1] == 'h'
+        && pNewCie->pszAugmentation[2] == '\0')
+    {
+        pNewCie->fHasEhData = true;
+        rtDwarfCursor_GetPtrEnc(pCursor, bDefaultPtrEnc, 0);
+    }
+    else
+    {
+        /* Regular augmentation string. */
+        for (const char *pszAug = pNewCie->pszAugmentation; *pszAug != '\0'; pszAug++)
+            switch (*pszAug)
+            {
+                case 'z':
+                    pNewCie->fHasAugmentationSize = true;
+                    break;
+                case 'L':
+                    pNewCie->fHasLanguageSpecificDataArea = true;
+                    break;
+                case 'P':
+                    pNewCie->fHasPersonalityRoutine = true;
+                    break;
+                case 'R':
+                    pNewCie->fHasAddressEnc = true;
+                    break;
+                case 'S':
+                    pNewCie->fIsSignalFrame = true;
+                    break;
+                default:
+                    pNewCie->fHasUnknowAugmentation = true;
+                    break;
+            }
+    }
+
+    /*
+     * More standard fields
+     */
+    uint8_t cbAddress = 0;
+    if (pNewCie->uDwarfVer >= 4)
+    {
+        cbAddress = rtDwarfCursor_GetU8(pCursor, bDefaultPtrEnc == DW_EH_PE_udata8 ? 8 : 4);
+        pNewCie->cbSegment = rtDwarfCursor_GetU8(pCursor, 0);
+    }
+    pNewCie->uCodeAlignFactor = rtDwarfCursor_GetULeb128(pCursor, 1);
+    pNewCie->iDataAlignFactor = rtDwarfCursor_GetSLeb128(pCursor, 1);
+
+    /*
+     * Augmentation data.
+     */
+    if (!pNewCie->fHasEhData)
+    {
+        /* The size. */
+        size_t cbInstr = ~(size_t)0;
+        if (pNewCie->fHasAugmentationSize)
+        {
+            uint64_t cbAugData = rtDwarfCursor_GetULeb128(pCursor, UINT64_MAX);
+            if (RT_FAILURE(pCursor->rc))
+                return pCursor->rc;
+            if (cbAugData > pCursor->cbUnitLeft)
+                return VERR_DBG_MALFORMED_UNWIND_INFO;
+            cbInstr = pCursor->cbUnitLeft - cbAugData;
+        }
+        else if (pNewCie->fHasUnknowAugmentation)
+            return VERR_DBG_MALFORMED_UNWIND_INFO;
+
+        /* Parse the string. */
+        for (const char *pszAug = pNewCie->pszAugmentation; *pszAug != '\0'; pszAug++)
+            switch (*pszAug)
+            {
+                case 'L':
+                    pNewCie->bLsdaPtrEnc = rtDwarfCursor_GetU8(pCursor, DW_EH_PE_omit);
+                    break;
+                case 'P':
+                    rtDwarfCursor_GetPtrEnc(pCursor, rtDwarfCursor_GetU8(pCursor, DW_EH_PE_omit), 0);
+                    break;
+                case 'R':
+                    pNewCie->bAddressPtrEnc = rtDwarfCursor_GetU8(pCursor, DW_EH_PE_omit);
+                    break;
+            }
+
+        /* Skip unconsumed bytes. */
+        if (   cbInstr != ~(size_t)0
+            && pCursor->cbUnitLeft > cbInstr)
+            rtDwarfCursor_SkipBytes(pCursor, pCursor->cbUnitLeft - cbInstr);
+    }
+
+    /*
+     * Note down where the instructions are.
+     */
+    pNewCie->pbInstructions = pCursor->pb;
+    pNewCie->cbInstructions = pCursor->cbUnitLeft;
+
+    /*
+     * Determine the target address encoding.
+     */
+    if (pNewCie->bAddressPtrEnc == DW_EH_PE_omit)
+        switch (cbAddress)
+        {
+            case 2:     pNewCie->bAddressPtrEnc = DW_EH_PE_udata2; break;
+            case 4:     pNewCie->bAddressPtrEnc = DW_EH_PE_udata4; break;
+            case 8:     pNewCie->bAddressPtrEnc = DW_EH_PE_udata8; break;
+            default:    pNewCie->bAddressPtrEnc = bDefaultPtrEnc;  break;
+        }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Does a slow unwind of a '.debug_frame' or '.eh_frame' section.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor         The cursor.
+ * @param   idxSeg          The segment of the PC location.
+ * @param   offSeg          The segment offset of the PC location.
+ * @param   uRva            The RVA of the PC location.
+ * @param   pState          The unwind state to work.
+ * @param   bDefaultPtrEnc  The default pointer encoding.
+ * @param   fIsEhFrame      Set if this is a '.eh_frame'.  GCC generate these
+ *                          with different CIE_pointer values.
+ */
+DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
+                                   PRTDBGUNWINDSTATE pState, uint8_t bDefaultPtrEnc, bool fIsEhFrame)
+{
+    /*
+     * CIE info we collect.
+     */
+    PRTDWARFCIEINFO paCies   = NULL;
+    uint32_t        cCies    = 0;
+    PRTDWARFCIEINFO pCieHint = NULL;
+
+    /*
+     * Do the scanning.
+     */
+    int rc = VERR_DBG_UNWIND_INFO_NOT_FOUND;
+    while (   !rtDwarfCursor_IsAtEnd(pCursor)
+           && RT_SUCCESS(rc))
+    {
+        uint64_t const offUnit = rtDwarfCursor_CalcSectOffsetU32(pCursor);
+        if (rtDwarfCursor_GetInitalLength(pCursor) == 0)
+            break;
+
+        uint64_t const offRelCie = rtDwarfCursor_GetUOff(pCursor, 0);
+        if (   offRelCie != 0
+            && offRelCie != (pCursor->f64bitDwarf ? UINT64_MAX : UINT32_MAX))
+        {
+            /*
+             * Frame descriptor entry (FDE).
+             */
+            /* Locate the corresponding CIE.  The CIE pointer is self relative
+               in .eh_frame and section relative in .debug_frame. */
+            PRTDWARFCIEINFO pCieForFde;
+            uint64_t offCie = fIsEhFrame ? offUnit - offRelCie : offRelCie;
+            if (pCieHint && pCieHint->offCie == offCie)
+                pCieForFde = pCieHint;
+            else
+            {
+                pCieForFde = NULL;
+                uint32_t i = cCies;
+                while (i-- > 0)
+                    if (paCies[i].offCie == offCie)
+                    {
+                        pCieHint = pCieForFde = &paCies[i];
+                        break;
+                    }
+            }
+            if (pCieForFde)
+            {
+                /* Read the PC range covered by this FDE (the fields are also
+                   known as initial_location & instructions). */
+                RTDBGSEGIDX idxFdeSeg = RTDBGSEGIDX_RVA;
+                if (pCieForFde->cbSegment)
+                    idxFdeSeg = rtDwarfCursor_GetVarSizedU(pCursor, pCieForFde->cbSegment, RTDBGSEGIDX_RVA);
+                uint64_t uPcBegin  = rtDwarfCursor_GetPtrEnc(pCursor, pCieForFde->bAddressPtrEnc, 0);
+                uint64_t cbPcRange = rtDwarfCursor_GetPtrEnc(pCursor, pCieForFde->bAddressPtrEnc, 0);
+
+                /* Match it with what we're looking for. */
+                bool fMatch = idxFdeSeg == RTDBGSEGIDX_RVA
+                            ? uRva - uPcBegin < cbPcRange
+                            : idxSeg == idxFdeSeg && offSeg - uPcBegin < cbPcRange;
+                if (fMatch)
+                {
+                    rc = rtDwarfUnwind_ProcessFde(pCursor, pCieForFde, uPcBegin, cbPcRange,
+                                                  idxFdeSeg == RTDBGSEGIDX_RVA ? uRva - uPcBegin : offSeg - uPcBegin,
+                                                  pState);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            /*
+             * Common information entry (CIE).  Record the info we need about it.
+             */
+            if ((cCies & 8) == 0)
+            {
+                void *pvNew = RTMemRealloc(paCies, sizeof(paCies[0]) * (cCies + 8));
+                if (pvNew)
+                    paCies = (PRTDWARFCIEINFO)pvNew;
+                else
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+            }
+            int rc2 = rtDwarfUnwind_LoadCie(pCursor, &paCies[cCies], offUnit, bDefaultPtrEnc);
+            if (RT_SUCCESS(rc2))
+                cCies++;
+        }
+        rtDwarfCursor_SkipUnit(pCursor);
+    }
+
+    /*
+     * Cleanup.
+     */
+    if (paCies)
+        RTMemFree(paCies);
+    return rc;
+}
+
+
+/**
+ * Helper for translating a loader architecture value to a pointe encoding.
+ *
+ * @returns Pointer encoding.
+ * @param   enmLdrArch          The loader architecture value to convert.
+ */
+static uint8_t rtDwarfUnwind_ArchToPtrEnc(RTLDRARCH enmLdrArch)
+{
+    switch (enmLdrArch)
+    {
+        case RTLDRARCH_AMD64:
+        case RTLDRARCH_ARM64:
+            return DW_EH_PE_udata8;
+        case RTLDRARCH_X86_16:
+        case RTLDRARCH_X86_32:
+        case RTLDRARCH_ARM32:
+            return DW_EH_PE_udata4;
+        case RTLDRARCH_HOST:
+        case RTLDRARCH_WHATEVER:
+        case RTLDRARCH_INVALID:
+        case RTLDRARCH_END:
+        case RTLDRARCH_32BIT_HACK:
+            break;
+    }
+    AssertFailed();
+    return DW_EH_PE_udata4;
+}
+
+
+/**
+ * Interface for the loader code.
+ *
+ * @returns IPRT status.
+ * @param   pvSection       The '.eh_frame' section data.
+ * @param   cbSection       The size of the '.eh_frame' section data.
+ * @param   idxSeg          The segment of the PC location.
+ * @param   offSeg          The segment offset of the PC location.
+ * @param   uRva            The RVA of the PC location.
+ * @param   pState          The unwind state to work.
+ * @param   enmArch         The image architecture.
+ */
+DECLHIDDEN(int) rtDwarfUnwind_EhData(void const *pvSection, size_t cbSection, RTDBGSEGIDX idxSeg, RTUINTPTR offSeg,
+                                     RTUINTPTR uRva, PRTDBGUNWINDSTATE pState, RTLDRARCH enmArch)
+{
+    RTDWARFCURSOR Cursor;
+    rtDwarfCursor_InitForMem(&Cursor, pvSection, cbSection);
+    int rc = rtDwarfUnwind_Slow(&Cursor, idxSeg, offSeg, uRva, pState, rtDwarfUnwind_ArchToPtrEnc(enmArch), true /*fIsEhFrame*/);
+    return rtDwarfCursor_Delete(&Cursor, rc);
 }
 
 
@@ -4527,7 +5111,37 @@ static int rtDwarfSyms_LoadAll(PRTDBGMODDWARF pThis)
 /** @interface_method_impl{RTDBGMODVTDBG,pfnUnwindFrame} */
 static DECLCALLBACK(int) rtDbgModDwarf_UnwindFrame(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
 {
-    RT_NOREF(pMod, iSeg, off, pState);
+    PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
+
+    /*
+     * Unwinding info is stored in the '.debug_frame' section, or altertively
+     * in the '.eh_frame' one in the image.  In the latter case the dbgmodldr.cpp
+     * part of the operation will take care of it.  Since the sections contain the
+     * same data, we just create a cursor and call a common function to do the job.
+     */
+    if (pThis->aSections[krtDbgModDwarfSect_frame].fPresent)
+    {
+        RTDWARFCURSOR Cursor;
+        int rc = rtDwarfCursor_Init(&Cursor, pThis, krtDbgModDwarfSect_frame);
+        if (RT_SUCCESS(rc))
+        {
+            /* Figure default pointer encoding from image arch. */
+            uint8_t bPtrEnc = rtDwarfUnwind_ArchToPtrEnc(pMod->pImgVt->pfnGetArch(pMod));
+
+            /* Make sure we've got both seg:off and rva for the input address. */
+            RTUINTPTR uRva = off;
+            if (iSeg == RTDBGSEGIDX_RVA)
+                rtDbgModDwarfRvaToSegOffset(pThis, uRva, &iSeg, &off);
+            else
+                rtDbgModDwarfSegOffsetToRva(pThis, iSeg, off, &uRva);
+
+            /* Do the work */
+            rc = rtDwarfUnwind_Slow(&Cursor, iSeg, off, uRva, pState, bPtrEnc, false /*fIsEhFrame*/);
+
+            rc = rtDwarfCursor_Delete(&Cursor, rc);
+        }
+        return rc;
+    }
     return VERR_DBG_NO_UNWIND_INFO;
 }
 
