@@ -873,7 +873,7 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIO
  */
 uint32_t DrvAudioHlpPCMPropsBytesPerFrame(const PPDMAUDIOPCMPROPS pProps)
 {
-    return pProps->cBytes * pProps->cChannels;
+    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
 }
 
 /**
@@ -1136,8 +1136,7 @@ uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
     if (!cbSize)
         return 0;
 
-    const uint32_t cbFrameSize = DrvAudioHlpPCMPropsBytesPerFrame(pProps);
-    return (cbSize / cbFrameSize) * cbFrameSize;
+    return PDMAUDIOPCMPROPS_B2F(pProps, cbSize) * PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
 }
 
 /**
@@ -1154,7 +1153,18 @@ bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
     if (!cbSize)
         return true;
 
-    return (cbSize % DrvAudioHlpPCMPropsBytesPerFrame(pProps) == 0);
+    return (cbSize % PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) == 0);
+}
+
+/**
+ * Returns the bytes per second for given PCM properties.
+ *
+ * @returns Bytes per second.
+ * @param   pProps              PCM properties to retrieve size for.
+ */
+DECLINLINE(uint64_t) drvAudioHlpBytesPerSec(const PPDMAUDIOPCMPROPS pProps)
+{
+    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) * pProps->uHz;
 }
 
 /**
@@ -1168,7 +1178,7 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pPro
 {
     AssertPtrReturn(pProps, 0);
 
-    return cbBytes / (pProps->cBytes * pProps->cChannels);
+    return PDMAUDIOPCMPROPS_B2F(pProps, cbBytes);
 }
 
 /**
@@ -1185,8 +1195,7 @@ uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProp
     if (!cbBytes)
         return 0;
 
-    const uint64_t cbBytesPerSec = pProps->cBytes * pProps->cChannels * pProps->uHz;
-    const double dbBytesPerMs = (double)cbBytesPerSec / (double)RT_MS_1SEC;
+    const double dbBytesPerMs = (double)drvAudioHlpBytesPerSec(pProps) / (double)RT_MS_1SEC;
     Assert(dbBytesPerMs >= 0.0f);
     if (!dbBytesPerMs) /* Prevent division by zero. */
         return 0;
@@ -1208,7 +1217,7 @@ uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps
     if (!cbBytes)
         return 0;
 
-    const double dbBytesPerMs = (pProps->cBytes * pProps->cChannels * pProps->uHz) / RT_NS_1SEC;
+    const double dbBytesPerMs = (PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) * pProps->uHz) / RT_NS_1SEC;
     Assert(dbBytesPerMs >= 0.0f);
     if (!dbBytesPerMs) /* Prevent division by zero. */
         return 0;
@@ -1230,7 +1239,7 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
     if (!cFrames)
         return 0;
 
-    return cFrames * pProps->cBytes * pProps->cChannels;
+    return cFrames * PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
 }
 
 /**
@@ -1287,8 +1296,7 @@ uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
     if (!uMs)
         return 0;
 
-    const uint64_t cbBytesPerSec = pProps->cBytes * pProps->cChannels * pProps->uHz;
-    return ((double)cbBytesPerSec / (double)RT_MS_1SEC) * uMs;
+    return ((double)drvAudioHlpBytesPerSec(pProps) / (double)RT_MS_1SEC) * uMs;
 }
 
 /**
@@ -1305,8 +1313,7 @@ uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
     if (!uNs)
         return 0;
 
-    const uint64_t cbBytesPerSec = pProps->cBytes * pProps->cChannels * pProps->uHz;
-    return ((double)cbBytesPerSec / (double)RT_NS_1SEC) * uNs;
+    return ((double)drvAudioHlpBytesPerSec(pProps) / (double)RT_NS_1SEC) * uNs;
 }
 
 /**
@@ -1320,7 +1327,7 @@ uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    const uint32_t cbFrame = pProps->cBytes * pProps->cChannels;
+    const uint32_t cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
@@ -1338,7 +1345,7 @@ uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    const uint32_t cbFrame = pProps->cBytes * pProps->cChannels;
+    const uint32_t cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
