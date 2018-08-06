@@ -332,6 +332,14 @@ SHADERDECL(int) ShaderCreateVertexShader(void *pShaderContext, const uint32_t *p
         return VERR_INTERNAL_ERROR;
     }
 
+    /* Tweak the float constants limit to use a greater number of constants.
+     * Keep some space for the internal usage.
+     * The shader creation code artificially sets the limit according to D3D shader version.
+     * But the guest may use more constants and we are not required to strictly follow D3D specs.
+     */
+    object->baseShader.limits.constant_float = RT_MAX(g_adapter.gl_info.limits.glsl_vs_float_constants / 2,
+                                                      object->baseShader.limits.constant_float);
+
 #ifdef VBOX_WINE_WITH_SHADER_CACHE
     object = vertexshader_check_cached(This, object);
 #endif
@@ -365,6 +373,14 @@ SHADERDECL(int) ShaderCreatePixelShader(void *pShaderContext, const uint32_t *pS
         HeapFree(GetProcessHeap(), 0, object);
         return VERR_INTERNAL_ERROR;
     }
+
+    /* Tweak the float constants limit to use a greater number of constants.
+     * Keep some space for the internal usage.
+     * The shader creation code artificially sets the limit according to D3D shader version.
+     * But the guest may use more constants and we are not required to strictly follow D3D specs.
+     */
+    object->baseShader.limits.constant_float = RT_MAX(g_adapter.gl_info.limits.glsl_ps_float_constants / 2,
+                                                      object->baseShader.limits.constant_float);
 
 #ifdef VBOX_WINE_WITH_SHADER_CACHE
     object = pixelshader_check_cached(This, object);
