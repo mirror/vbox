@@ -52,8 +52,6 @@ UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParen
     , m_pToolBar(0)
     , m_pTabBarMachine(0)
     , m_pTabBarGlobal(0)
-    , m_pActionTabBarMachine(0)
-    , m_pActionTabBarGlobal(0)
     , m_pToolbarTools(0)
     , m_pPaneChooser(0)
     , m_pPaneToolsMachine(0)
@@ -292,14 +290,14 @@ void UIVirtualBoxManagerWidget::sltHandleToolsTypeSwitch()
 
 void UIVirtualBoxManagerWidget::sltHandleShowTabBarMachine()
 {
-    m_pActionTabBarGlobal->setVisible(false);
-    m_pActionTabBarMachine->setVisible(true);
+    m_pTabBarGlobal->setVisible(false);
+    m_pTabBarMachine->setVisible(true);
 }
 
 void UIVirtualBoxManagerWidget::sltHandleShowTabBarGlobal()
 {
-    m_pActionTabBarMachine->setVisible(false);
-    m_pActionTabBarGlobal->setVisible(true);
+    m_pTabBarMachine->setVisible(false);
+    m_pTabBarGlobal->setVisible(true);
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
@@ -395,60 +393,6 @@ void UIVirtualBoxManagerWidget::prepareToolbar()
                 m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
 #endif /* VBOX_WS_MAC */
 
-        /* Create Machine tab-bar: */
-        m_pTabBarMachine = new UITabBar;
-        if (m_pTabBarMachine)
-        {
-            /* Configure tab-bar: */
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
-            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-            m_pTabBarMachine->setContentsMargins(iL, 0, iR, 0);
-
-            /* Add into toolbar: */
-            m_pActionTabBarMachine = m_pToolBar->addWidget(m_pTabBarMachine);
-        }
-
-        /* Create Global tab-bar: */
-        m_pTabBarGlobal = new UITabBar;
-        if (m_pTabBarGlobal)
-        {
-            /* Configure tab-bar: */
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
-            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-            m_pTabBarGlobal->setContentsMargins(iL, 0, iR, 0);
-
-            /* Add into toolbar: */
-            m_pActionTabBarGlobal = m_pToolBar->addWidget(m_pTabBarGlobal);
-        }
-
-        /* Create Tools toolbar: */
-        m_pToolbarTools = new UIToolbarTools(actionPool());
-        if (m_pToolbarTools)
-        {
-            /* Configure toolbar: */
-            m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-            connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarMachine,
-                    this, &UIVirtualBoxManagerWidget::sltHandleShowTabBarMachine);
-            connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarGlobal,
-                    this, &UIVirtualBoxManagerWidget::sltHandleShowTabBarGlobal);
-            m_pToolbarTools->setTabBars(m_pTabBarMachine, m_pTabBarGlobal);
-
-            /* Create exclusive action-group: */
-            QActionGroup *pActionGroupTools = new QActionGroup(m_pToolbarTools);
-            if (pActionGroupTools)
-            {
-                /* Configure action-group: */
-                pActionGroupTools->setExclusive(true);
-
-                /* Add 'Tools' actions into action-group: */
-                pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Machine));
-                pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Global));
-            }
-
-            /* Add into toolbar: */
-            m_pToolBar->addWidget(m_pToolbarTools);
-        }
-
 #ifdef VBOX_WS_MAC
         // WORKAROUND:
         // There is a bug in Qt Cocoa which result in showing a "more arrow" when
@@ -501,6 +445,50 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                     /* Add tool-bar into layout: */
                     pLayoutRight->addWidget(m_pToolBar);
 
+                    /* Create Machine tab-bar: */
+                    m_pTabBarMachine = new UITabBar(UITabBar::Align_Left);
+                    if (m_pTabBarMachine)
+                    {
+                        /* Add into toolbar: */
+                        pLayoutRight->addWidget(m_pTabBarMachine);
+                    }
+
+                    /* Create Global tab-bar: */
+                    m_pTabBarGlobal = new UITabBar(UITabBar::Align_Left);
+                    if (m_pTabBarGlobal)
+                    {
+                        /* Add into toolbar: */
+                        pLayoutRight->addWidget(m_pTabBarGlobal);
+                    }
+
+                    /* Create Tools toolbar: */
+                    m_pToolbarTools = new UIToolbarTools(actionPool());
+                    if (m_pToolbarTools)
+                    {
+                        /* Configure toolbar: */
+                        m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+                        connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarMachine,
+                                this, &UIVirtualBoxManagerWidget::sltHandleShowTabBarMachine);
+                        connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarGlobal,
+                                this, &UIVirtualBoxManagerWidget::sltHandleShowTabBarGlobal);
+                        m_pToolbarTools->setTabBars(m_pTabBarMachine, m_pTabBarGlobal);
+
+                        /* Create exclusive action-group: */
+                        QActionGroup *pActionGroupTools = new QActionGroup(m_pToolbarTools);
+                        if (pActionGroupTools)
+                        {
+                            /* Configure action-group: */
+                            pActionGroupTools->setExclusive(true);
+
+                            /* Add 'Tools' actions into action-group: */
+                            pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Machine));
+                            pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Global));
+                        }
+
+                        /* Add into toolbar: */
+                        m_pToolBar->addWidget(m_pToolbarTools);
+                    }
+
                     /* Create sliding-widget: */
                     m_pSlidingWidget = new UISlidingWidget;
                     if (m_pSlidingWidget)
@@ -514,7 +502,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pSlidingWidget->setWidgets(m_pPaneToolsMachine, m_pPaneToolsGlobal);
 
                         /* Add into layout: */
-                        pLayoutRight->addWidget(m_pSlidingWidget);
+                        pLayoutRight->addWidget(m_pSlidingWidget, 1);
                     }
                 }
 

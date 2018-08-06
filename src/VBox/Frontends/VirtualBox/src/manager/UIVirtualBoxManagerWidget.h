@@ -189,10 +189,6 @@ private:
     UITabBar *m_pTabBarMachine;
     /** Holds the Global tab-bar instance. */
     UITabBar *m_pTabBarGlobal;
-    /** Holds the Machine tab-bar action reference. */
-    QAction *m_pActionTabBarMachine;
-    /** Holds the Global tab-bar action reference. */
-    QAction *m_pActionTabBarGlobal;
 
     /** Holds the Tools-toolbar instance. */
     UIToolbarTools *m_pToolbarTools;
