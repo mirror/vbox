@@ -2798,20 +2798,18 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
 
     AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT, ("Can't write to a non-output stream\n"));
 
-    /* As the host side sets the overall pace, return the writable bytes from that side. */
-    const uint64_t deltaLastReadWriteNs = RTTimeNanoTS() - pStream->tsLastReadWrittenNs;
-
     uint32_t cbWritable = 0;
 
     if (DrvAudioHlpStreamStatusCanWrite(pStream->fStatus))
     {
-        cbWritable = DrvAudioHlpNanoToBytes(deltaLastReadWriteNs, &pStream->Host.Cfg.Props);
+        cbWritable = AudioMixBufFreeBytes(&pStream->Host.MixBuf);
 
         /* Make sure to align the writable size to the guest's frame size. */
         cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pStream->Guest.Cfg.Props);
     }
 
-    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n", pStream->szName, cbWritable, deltaLastReadWriteNs / RT_NS_1MS_64));
+    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms2)\n",
+              pStream->szName, cbWritable, DrvAudioHlpBytesToMilli(cbWritable, &pStream->Host.Cfg.Props)));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
