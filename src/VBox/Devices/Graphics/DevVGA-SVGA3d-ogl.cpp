@@ -1243,7 +1243,9 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(uint32_t idx3dCaps)
         break;
 
     case SVGA3D_DEVCAP_SURFACEFMT_DXT1:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT2:
     case SVGA3D_DEVCAP_SURFACEFMT_DXT3:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT4:
     case SVGA3D_DEVCAP_SURFACEFMT_DXT5:
         result |= SVGA3DFORMAT_OP_TEXTURE
                |  SVGA3DFORMAT_OP_VOLUMETEXTURE
@@ -1264,6 +1266,10 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(uint32_t idx3dCaps)
     case SVGA3D_DEVCAP_SURFACEFMT_RG_S23E8:
     case SVGA3D_DEVCAP_SURFACEFMT_ARGB_S10E5:
     case SVGA3D_DEVCAP_SURFACEFMT_ARGB_S23E8:
+        result |= SVGA3DFORMAT_OP_TEXTURE
+               |  SVGA3DFORMAT_OP_VOLUMETEXTURE
+               |  SVGA3DFORMAT_OP_CUBETEXTURE
+               |  SVGA3DFORMAT_OP_OFFSCREEN_RENDERTARGET;
         break;
 
     case SVGA3D_DEVCAP_SURFACEFMT_V16U16:
@@ -1782,7 +1788,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         break;
     case SVGA3D_R_S23E8:                /* D3DFMT_R32F - WINED3DFMT_R32_FLOAT */
         pSurface->internalFormatGL = GL_R32F;
-        pSurface->formatGL = GL_RG;
+        pSurface->formatGL = GL_RED;
         pSurface->typeGL = GL_FLOAT;
         break;
     case SVGA3D_RG_S10E5:               /* D3DFMT_G16R16F - WINED3DFMT_R16G16_FLOAT */
