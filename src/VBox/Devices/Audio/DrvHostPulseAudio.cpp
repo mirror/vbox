@@ -132,21 +132,6 @@ typedef struct PULSEAUDIOSTREAM
 #endif
 } PULSEAUDIOSTREAM, *PPULSEAUDIOSTREAM;
 
-/* The desired buffer length in milliseconds. Will be the target total stream
- * latency on newer version of pulse. Apparent latency can be less (or more.)
- */
-typedef struct PULSEAUDIOCFG
-{
-    RTMSINTERVAL buffer_msecs_out;
-    RTMSINTERVAL buffer_msecs_in;
-} PULSEAUDIOCFG, *PPULSEAUDIOCFG;
-
-static PULSEAUDIOCFG s_pulseCfg =
-{
-    100, /* buffer_msecs_out */
-    100  /* buffer_msecs_in */
-};
-
 /**
  * Callback context for server enumeration callbacks.
  */
@@ -749,24 +734,24 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
     pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
 
-    pStreamPA->curLatencyUs        = 100 * 1000; /** 10ms latency by default. @todo Make this configurable. */
+    pStreamPA->curLatencyUs        = DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props) * RT_US_1MS;
 
     const uint32_t cbLatency = pa_usec_to_bytes(pStreamPA->curLatencyUs, &pStreamPA->SampleSpec);
 
-    LogRel2(("PulseAudio: Initial output latency is %RU64ms (%RU32 bytes)\n", pStreamPA->curLatencyUs / 1000 /* ms */, cbLatency));
+    LogRel2(("PulseAudio: Initial output latency is %RU64ms (%RU32 bytes)\n", pStreamPA->curLatencyUs / RT_US_1MS, cbLatency));
 
     pStreamPA->BufAttr.tlength     = cbLatency;
-    pStreamPA->BufAttr.maxlength   = (pStreamPA->BufAttr.tlength * 3) / 2;
+    pStreamPA->BufAttr.maxlength   = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
     pStreamPA->BufAttr.prebuf      = cbLatency;
-    pStreamPA->BufAttr.minreq      = (uint32_t)-1;                 /* PulseAudio should set something sensible for minreq on it's own. */
+    pStreamPA->BufAttr.minreq      = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cfPeriod, &pCfgReq->Props);
 
-    LogFunc(("BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
+    LogFunc(("Requested: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
              pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
 
     Assert(pCfgReq->enmDir == PDMAUDIODIR_OUT);
 
     char szName[256];
-    RTStrPrintf2(szName, sizeof(szName),  "VirtualBox %s [%s]",
+    RTStrPrintf2(szName, sizeof(szName), "VirtualBox %s [%s]",
                  DrvAudioHlpPlaybackDstToStr(pCfgReq->DestSource.Dest), pThis->szStreamName);
 
     /* Note that the struct BufAttr is updated to the obtained values after this call! */
@@ -787,6 +772,10 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
 
     uint32_t cbBuf = RT_MIN(pStreamPA->BufAttr.tlength * 2,
                             pStreamPA->BufAttr.maxlength); /** @todo Make this configurable! */
+
+    LogFunc(("Acquired: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
+             pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
+
     if (cbBuf)
     {
         pCfgAcq->Backend.cfPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamPA->BufAttr.minreq);
@@ -809,14 +798,13 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
     pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
     pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
 
-    /** @todo Check these values! */
-    pStreamPA->BufAttr.fragsize    = (pa_bytes_per_second(&pStreamPA->SampleSpec) * s_pulseCfg.buffer_msecs_in) / 1000;
-    pStreamPA->BufAttr.maxlength   = (pStreamPA->BufAttr.fragsize * 3) / 2;
+    pStreamPA->BufAttr.fragsize    = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cfPeriod, &pCfgReq->Props);
+    pStreamPA->BufAttr.maxlength   = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
 
     Assert(pCfgReq->enmDir == PDMAUDIODIR_IN);
 
     char szName[256];
-    RTStrPrintf2(szName, sizeof(szName),  "VirtualBox %s [%s]",
+    RTStrPrintf2(szName, sizeof(szName), "VirtualBox %s [%s]",
                  DrvAudioHlpRecSrcToStr(pCfgReq->DestSource.Source), pThis->szStreamName);
 
     /* Note: Other members of BufAttr are ignored for record streams. */
