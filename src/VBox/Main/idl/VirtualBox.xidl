@@ -24874,30 +24874,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <enum
-    name="CloudOperation"
+    name="CloudCommand"
     uuid="1c5cfa19-7754-4071-bf3e-6d21ad432655"
     >
     <const name="Unknown" value="0"/>
-
     <const name="createInstance" value="0x1"/>
     <const name="launchInstance" value="0x2"/>
     <const name="pauseInstance" value="0x3"/>
     <const name="stopInstance" value="0x4"/>
     <const name="deleteInstance" value="0x5"/>
     <const name="getInstanceProperties" value="0x6"/>
-    <const name="listOfInstances" value="0x7"/>
+    <const name="listInstances" value="0x7"/>
+    <const name="importImage" value="0x8"/>
 
     <const name="uploadFile" value="0x10"/>
     <const name="downloadObject" value="0x11"/>
     <const name="deleteObject" value="0x12"/>
     <const name="getObjectProperties" value="0x13"/>
     <const name="listObjects" value="0x14"/>
-
-    <const name="exportVM" value="0xf0"/>
+    <const name="listBuckets" value="0x15"/>
+    <const name="listNetworks" value="0x16"/>
+    <const name="listShapes" value="0x17"/>
+    <const name="listRegions" value="0x18"/>
+    <const name="listAvailabilityDomains" value="0x19"/>
+    <const name="listCompartments" value="0x20"/>
+    <const name="getNamespace" value="0x21"/>
   </enum>
 
   <enum
-    name="CloudOperationResult"
+    name="CloudOperation"
+    uuid="68289604-2fec-4163-b10a-eb2da7a61306"
+    >
+    <const name="Unknown" value="0"/>
+    <const name="exportVM" value="0x1"/>
+  </enum>
+
+  <enum
+    name="CloudCommandResult"
     uuid="e33af696-255a-4f5a-8dba-d65d6ee2fe9a"
     >
     <const name="unknown" value="0"/>
@@ -24912,24 +24925,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
-    <method name="createOperation">
+    <method name="createCommand">
       <desc>
         Creates a cloud operation object for the passed profile
         if profile name is NULL or empty string creates operation for the active profile.
         if profile name is NULL or empty string and there is not the active profile
         returns "VERR_INVALID_PARAMETER"
       </desc>
-      <param name="profileName" type="wstring" dir="in">
-        <desc>
-          The profile's name
-        </desc>
-      </param>
-      <param name="cloudOperation" type="CloudOperation" dir="in">
+      <param name="cloudCommand" type="CloudCommand" dir="in">
         <desc>
           The type of the supported cloud commands.
         </desc>
       </param>
-      <param name="opId" type="uuid" mod="string" dir="return">
+      <param name="Id" type="uuid" mod="string" dir="return">
         <desc>
           UUID of the operation.
           It's used later when user chooses and runs this cloud operation
@@ -24937,11 +24945,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="runOperation">
+    <method name="runCommand">
       <desc>
         Runs a cloud operation by ID
       </desc>
-      <param name="opId" type="uuid" mod="string" dir="in">
+      <param name="Id" type="uuid" mod="string" dir="in">
         <desc>
           UUID of the operation.
         </desc>
@@ -24951,18 +24959,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Timeout in seconds.
         </desc>
       </param>
+      <param name="result" type="CloudCommandResult" dir="return">
+      </param>
     </method>
 
-    <method name="checkOperationResult"  const="yes">
+    <method name="validateCommand">
       <desc>
-        Check a cloud operation result by ID
+        Validates a cloud operation by ID
       </desc>
-      <param name="opId" type="uuid" mod="string" dir="in">
+      <param name="Id" type="uuid" mod="string" dir="in">
         <desc>
           UUID of the operation.
         </desc>
       </param>
-      <param name="startOpTime" type="long long" dir="out">
+      <param name="valid" type="boolean" dir="return">
+        <desc>
+          if the command is valid return s true else returns false.
+        </desc>
+      </param>
+    </method>
+
+    <method name="checkCommandResult"  const="yes">
+      <desc>
+        Check a cloud operation result by ID
+      </desc>
+      <param name="Id" type="uuid" mod="string" dir="in">
+        <desc>
+          UUID of the operation.
+        </desc>
+      </param>
+      <param name="startTime" type="long long" dir="out">
         <desc>
           Start time of operation.
         </desc>
@@ -24972,18 +24998,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Time of the last result.
         </desc>
       </param>
-      <param name="result" type="CloudOperationResult" dir="return">
+      <param name="result" type="CloudCommandResult" dir="return">
         <desc>
           The last result of the cloud command.
         </desc>
       </param>
     </method>
 
-    <method name="getOperationParameterNames" const="yes">
+    <method name="getCommandParameterNames" const="yes">
       <desc>
         Returns the parameters names for this operation.
       </desc>
-      <param name="cloudOperation" type="CloudOperation" dir="in">
+      <param name="cloudCommand" type="CloudCommand" dir="in">
         <desc>
           The type of the supported cloud commands.
         </desc>
@@ -24993,29 +25019,29 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getOperationParameterProperties" const="yes">
+    <method name="getCommandParameterProperties" const="yes">
       <desc>
         Returns the value/s for the passed parameter.
       </desc>
-      <param name="opParameterName" type="wstring" dir="in">
+      <param name="parameterName" type="wstring" dir="in">
         <desc>Parameter name.</desc>
       </param>
-      <param name="opParameterType" type="wstring" dir="out">
+      <param name="parameterType" type="wstring" dir="out">
         <desc>Parameter type.</desc>
       </param>
-      <param name="opParameterDesc" type="wstring" dir="out">
+      <param name="parameterDesc" type="wstring" dir="out">
         <desc>Parameter description.</desc>
       </param>
-      <param name="opParameterValues" type="wstring" safearray="yes" dir="return">
+      <param name="parameterValues" type="wstring" safearray="yes" dir="return">
         <desc>Possible values of the parameter.</desc>
       </param>
     </method>
 
-    <method name="getOperationParameters" const="yes">
+    <method name="getCommandParameters" const="yes">
       <desc>
         Returns the parameters with their values.
       </desc>
-      <param name="cloudOperation" type="CloudOperation" dir="in">
+      <param name="cloudCommand" type="CloudCommand" dir="in">
         <desc>
           The type of the supported cloud commands.
         </desc>
@@ -25025,23 +25051,59 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="setParametersForOperation">
+    <method name="setCommandParameters">
       <desc>
-        Sets the parameters values for the particular operation by ID.
+        Sets the parameters values for the particular command by ID.
       </desc>
-      <param name="opId" type="uuid" mod="string" dir="in">
+      <param name="Id" type="uuid" mod="string" dir="in">
         <desc>
           UUID of the operation.
         </desc>
+      </param>
+      <param name="names" type="wstring" safearray="yes" dir="in">
+        <desc>Names of the parameters.</desc>
       </param>
       <param name="values" type="wstring" safearray="yes" dir="in">
         <desc>Values of the parameters.</desc>
       </param>
     </method>
 
+    <method name="getCommandsForOperation" const="yes">
+      <desc>
+        Returns the list of commands for particular operation.
+      </desc>
+      <param name="cloudOperation" type="CloudOperation" dir="in">
+        <desc>
+          The type of the supported cloud operation.
+        </desc>
+      </param>
+      <param name="prep" type="boolean" dir="in">
+        <desc>
+          Which list to return: false - general commands, true - preparatory commands
+        </desc>
+      </param>
+      <param name="cloudCommands" type="CloudCommand" safearray="yes" dir="return">
+        <desc>
+          The list of cloud commands.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getOperationParameters" const="yes">
+      <desc>
+        Returns the parameters with their values.
+      </desc>
+      <param name="cloudOperation" type="CloudOperation" dir="in">
+        <desc>
+          The type of the supported cloud operation.
+        </desc>
+      </param>
+      <param name="jsonString" type="wstring" dir="return">
+        <desc>the parameters with values in json format.</desc>
+      </param>
+    </method>
+
   </interface>
-
-
 
   <!--
   // ICloudUserProfiles

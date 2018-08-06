@@ -454,6 +454,7 @@ VBoxSVC_SOURCES = \
 	src-server/BIOSSettingsImpl.cpp \
 	src-server/ClientWatcher.cpp \
 	src-server/ClientToken.cpp \
+	src-server/CloudAPI.cpp \
 	src-server/CloudClientImpl.cpp \
 	src-server/CloudUserProfilesImpl.cpp \
 	src-server/CloudUserProfileManagerImpl.cpp \
