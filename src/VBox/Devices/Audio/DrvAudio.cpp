@@ -2198,7 +2198,7 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
     {
         PPDMAUDIOSTREAM pStream;
         RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
-            drvAudioStreamControlInternalBackend(pThis, pStream, enmCmd);
+            drvAudioStreamControlInternal(pThis, pStream, enmCmd);
     }
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
