@@ -2211,7 +2211,8 @@ static DECLCALLBACK(int) drvHostDSoundStreamDestroy(PPDMIHOSTAUDIO pInterface, P
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTCritSectDelete(&pStreamDS->CritSect);
+        if (RTCritSectIsInitialized(&pStreamDS->CritSect))
+            rc = RTCritSectDelete(&pStreamDS->CritSect);
     }
 
     return rc;
