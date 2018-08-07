@@ -115,8 +115,8 @@ HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProvider
         SafeArray<CloudProviderId_T> FromCurrent;
         HRESULT hrc2 = mUserProfileManagers[i]->COMGETTER(SupportedProviders)(ComSafeArrayAsOutParam(FromCurrent));
         if (SUCCEEDED(hrc2))
-            for (size_t i = 0; i < FromCurrent.size(); i++)
-                aSupportedProviders.push_back(FromCurrent[i]);
+            for (size_t j = 0; j < FromCurrent.size(); j++)
+                aSupportedProviders.push_back(FromCurrent[j]);
         else if (SUCCEEDED(hrc))
             hrc = hrc2;
     }
@@ -141,8 +141,8 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
         SafeIfaceArray<ICloudUserProfiles> FromCurrent;
         HRESULT hrc2 = mUserProfileManagers[i]->GetAllProfiles(ComSafeArrayAsOutParam(FromCurrent));
         if (SUCCEEDED(hrc2))
-            for (size_t i = 0; i < FromCurrent.size(); i++)
-                aProfilesList.push_back(FromCurrent[i]);
+            for (size_t j = 0; j < FromCurrent.size(); j++)
+                aProfilesList.push_back(FromCurrent[j]);
         else if (SUCCEEDED(hrc))
             hrc = hrc2;
     }
