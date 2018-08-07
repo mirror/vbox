@@ -133,11 +133,6 @@ private slots:
         /** Handles tools type switch. */
         void sltHandleToolsTypeSwitch();
 
-        /** Handles request to show Machine tab-bar. */
-        void sltHandleShowTabBarMachine();
-        /** Handles request to show Global tab-bar. */
-        void sltHandleShowTabBarGlobal();
-
         /** Handles rquest to open Machine tool of passed @a enmType. */
         void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
         /** Handles rquest to open Global tool of passed @a enmType. */
@@ -184,11 +179,6 @@ private:
 
     /** Holds the main toolbar instance. */
     UIToolBar *m_pToolBar;
-
-    /** Holds the Machine tab-bar instance. */
-    UITabBar *m_pTabBarMachine;
-    /** Holds the Global tab-bar instance. */
-    UITabBar *m_pTabBarGlobal;
 
     /** Holds the Tools-toolbar instance. */
     UIToolbarTools *m_pToolbarTools;

@@ -33,9 +33,6 @@
 # include "UIToolBar.h"
 # include "UIToolbarTools.h"
 
-/* Other VBox includes: */
-# include "iprt/assert.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -45,35 +42,20 @@ UIToolbarTools::UIToolbarTools(UIActionPool *pActionPool, QWidget *pParent /* = 
     , m_pTabBarMachine(0)
     , m_pTabBarGlobal(0)
     , m_pLayoutMain(0)
-    , m_pToolBar(0)
 {
-    /* Prepare: */
     prepare();
 }
 
-void UIToolbarTools::setTabBars(UITabBar *pTabBarMachine, UITabBar *pTabBarGlobal)
+void UIToolbarTools::setTabBarEnabledMachine(bool fEnabled)
 {
-    /* Remember the new tab-bars: */
-    m_pTabBarMachine = pTabBarMachine;
-    m_pTabBarGlobal = pTabBarGlobal;
-
-    /* Configure tab-bar connections: */
-    connect(m_pTabBarMachine, &UITabBar::sigTabRequestForClosing,
-            this, &UIToolbarTools::sltHandleCloseToolMachine);
-    connect(m_pTabBarMachine, &UITabBar::sigCurrentTabChanged,
-            this, &UIToolbarTools::sltHandleToolChosenMachine);
-    connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
-            this, &UIToolbarTools::sltHandleCloseToolGlobal);
-    connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
-            this, &UIToolbarTools::sltHandleToolChosenGlobal);
-
-    /* Let the tab-bars know our opinion: */
-    sltHandleActionToggle();
+    /* Update Machine tab-bar availability: */
+    m_pTabBarMachine->setEnabled(fEnabled);
 }
 
-void UIToolbarTools::setToolButtonStyle(Qt::ToolButtonStyle enmStyle)
+void UIToolbarTools::setTabBarEnabledGlobal(bool fEnabled)
 {
-    m_pToolBar->setToolButtonStyle(enmStyle);
+    /* Update Global tab-bar availability: */
+    m_pTabBarGlobal->setEnabled(fEnabled);
 }
 
 QList<ToolTypeMachine> UIToolbarTools::tabOrderMachine() const
@@ -184,9 +166,19 @@ void UIToolbarTools::sltHandleActionToggle()
 {
     /* Handle known actions: */
     if (m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
-        emit sigShowTabBarMachine();
+    {
+        if (m_pTabBarGlobal)
+            m_pTabBarGlobal->setVisible(false);
+        if (m_pTabBarMachine)
+            m_pTabBarMachine->setVisible(true);
+    }
     else if (m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
-        emit sigShowTabBarGlobal();
+    {
+        if (m_pTabBarMachine)
+            m_pTabBarMachine->setVisible(false);
+        if (m_pTabBarGlobal)
+            m_pTabBarGlobal->setVisible(true);
+    }
 }
 
 void UIToolbarTools::prepare()
@@ -204,7 +196,7 @@ void UIToolbarTools::prepareMenu()
 {
     /* Configure 'Machine' menu: */
     UIMenu *pMenuMachine = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine)->menu();
-    AssertPtrReturnVoid(pMenuMachine);
+    if (pMenuMachine)
     {
         /* Add 'Details' action: */
         pMenuMachine->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Details));
@@ -235,7 +227,7 @@ void UIToolbarTools::prepareMenu()
 
     /* Configure 'Global' menu: */
     UIMenu *pMenuGlobal = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global)->menu();
-    AssertPtrReturnVoid(pMenuGlobal);
+    if (pMenuGlobal)
     {
         /* Add 'Virtual Media Manager' action: */
         pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager));
@@ -265,27 +257,39 @@ void UIToolbarTools::prepareWidgets()
 {
     /* Create main layout: */
     m_pLayoutMain = new QHBoxLayout(this);
-    AssertPtrReturnVoid(m_pLayoutMain);
+    if (m_pLayoutMain)
     {
         /* Configure layout: */
         m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
-        /* Create toolbar: */
-        m_pToolBar = new UIToolBar;
-        AssertPtrReturnVoid(m_pToolBar);
+        /* Create Machine tab-bar: */
+        m_pTabBarMachine = new UITabBar(UITabBar::Align_Left);
+        if (m_pTabBarMachine)
         {
-            /* Configure toolbar: */
-            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-            m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-            m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-            /* Add actions: */
-            m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine));
-            m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_T_Global));
+            connect(m_pTabBarMachine, &UITabBar::sigTabRequestForClosing,
+                    this, &UIToolbarTools::sltHandleCloseToolMachine);
+            connect(m_pTabBarMachine, &UITabBar::sigCurrentTabChanged,
+                    this, &UIToolbarTools::sltHandleToolChosenMachine);
 
             /* Add into layout: */
-            m_pLayoutMain->addWidget(m_pToolBar);
+            m_pLayoutMain->addWidget(m_pTabBarMachine);
         }
+
+        /* Create Global tab-bar: */
+        m_pTabBarGlobal = new UITabBar(UITabBar::Align_Left);
+        if (m_pTabBarGlobal)
+        {
+            /* Configure tab-bar connections: */
+            connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
+                    this, &UIToolbarTools::sltHandleCloseToolGlobal);
+            connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
+                    this, &UIToolbarTools::sltHandleToolChosenGlobal);
+
+            /* Add into layout: */
+            m_pLayoutMain->addWidget(m_pTabBarGlobal);
+        }
+
+        /* Let the tab-bars know our opinion: */
+        sltHandleActionToggle();
     }
 }
-

@@ -44,11 +44,6 @@ class UIToolbarTools : public QWidget
 
 signals:
 
-    /** Notifies listeners about Machine tab-bar should be shown. */
-    void sigShowTabBarMachine();
-    /** Notifies listeners about Global tab-bar should be shown. */
-    void sigShowTabBarGlobal();
-
     /** Notifies listeners about Machine tool of particular @a enmType opened. */
     void sigToolOpenedMachine(const ToolTypeMachine enmType);
     /** Notifies listeners about Global tool of particular @a enmType opened. */
@@ -65,11 +60,10 @@ public:
       * @param  pActionPool  Brings the action-pool to take corresponding actions from. */
     UIToolbarTools(UIActionPool *pActionPool, QWidget *pParent = 0);
 
-    /** Defines the tab-bars to control. */
-    void setTabBars(UITabBar *pTabBarMachine, UITabBar *pTabBarGlobal);
-
-    /** Defines toolbar tool button @a enmStyle. */
-    void setToolButtonStyle(Qt::ToolButtonStyle enmStyle);
+    /** Defines whether Machine tab-bar is @a fEnabled. */
+    void setTabBarEnabledMachine(bool fEnabled);
+    /** Defines whether Global tab-bar is @a fEnabled. */
+    void setTabBarEnabledGlobal(bool fEnabled);
 
     /** Returns Machine tab-bar order. */
     QList<ToolTypeMachine> tabOrderMachine() const;
@@ -108,15 +102,12 @@ private:
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 
-    /** Holds the Machine tab-bar instance. */
-    UITabBar *m_pTabBarMachine;
-    /** Holds the Global tab-bar instance. */
-    UITabBar *m_pTabBarGlobal;
-
     /** Holds the main layout instance. */
     QHBoxLayout *m_pLayoutMain;
-    /** Holds the toolbar instance. */
-    UIToolBar   *m_pToolBar;
+    /** Holds the Machine tab-bar instance. */
+    UITabBar    *m_pTabBarMachine;
+    /** Holds the Global tab-bar instance. */
+    UITabBar    *m_pTabBarGlobal;
 
     /** Holds the map of opened Machine tool IDs. */
     QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;

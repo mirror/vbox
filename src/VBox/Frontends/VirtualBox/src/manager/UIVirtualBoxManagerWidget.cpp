@@ -50,8 +50,6 @@ UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParen
     , m_pSlidingWidget(0)
     , m_pSplitter(0)
     , m_pToolBar(0)
-    , m_pTabBarMachine(0)
-    , m_pTabBarGlobal(0)
     , m_pToolbarTools(0)
     , m_pPaneChooser(0)
     , m_pPaneToolsMachine(0)
@@ -141,9 +139,6 @@ void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &positi
         m_pToolBar->setToolButtonStyle(  pResult->isChecked()
                                        ? Qt::ToolButtonTextUnderIcon
                                        : Qt::ToolButtonIconOnly);
-        m_pToolbarTools->setToolButtonStyle(  pResult->isChecked()
-                                            ? Qt::ToolButtonTextUnderIcon
-                                            : Qt::ToolButtonIconOnly);
     }
 }
 
@@ -220,8 +215,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
     /* Update Tools-pane: */
     m_pPaneToolsMachine->setCurrentItem(pItem);
 
-    /* Update Machine tab-bar visibility */
-    m_pTabBarMachine->setEnabled(pItem && pItem->accessible());
+    /* Update Machine tab-bar availability: */
+    m_pToolbarTools->setTabBarEnabledMachine(pItem && pItem->accessible());
 
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
@@ -286,18 +281,6 @@ void UIVirtualBoxManagerWidget::sltHandleToolsTypeSwitch()
 
     /* Make sure chosen item fetched: */
     sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
-}
-
-void UIVirtualBoxManagerWidget::sltHandleShowTabBarMachine()
-{
-    m_pTabBarGlobal->setVisible(false);
-    m_pTabBarMachine->setVisible(true);
-}
-
-void UIVirtualBoxManagerWidget::sltHandleShowTabBarGlobal()
-{
-    m_pTabBarMachine->setVisible(false);
-    m_pTabBarGlobal->setVisible(true);
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
@@ -445,48 +428,15 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                     /* Add tool-bar into layout: */
                     pLayoutRight->addWidget(m_pToolBar);
 
-                    /* Create Machine tab-bar: */
-                    m_pTabBarMachine = new UITabBar(UITabBar::Align_Left);
-                    if (m_pTabBarMachine)
-                    {
-                        /* Add into toolbar: */
-                        pLayoutRight->addWidget(m_pTabBarMachine);
-                    }
-
-                    /* Create Global tab-bar: */
-                    m_pTabBarGlobal = new UITabBar(UITabBar::Align_Left);
-                    if (m_pTabBarGlobal)
-                    {
-                        /* Add into toolbar: */
-                        pLayoutRight->addWidget(m_pTabBarGlobal);
-                    }
-
                     /* Create Tools toolbar: */
                     m_pToolbarTools = new UIToolbarTools(actionPool());
                     if (m_pToolbarTools)
                     {
                         /* Configure toolbar: */
                         m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-                        connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarMachine,
-                                this, &UIVirtualBoxManagerWidget::sltHandleShowTabBarMachine);
-                        connect(m_pToolbarTools, &UIToolbarTools::sigShowTabBarGlobal,
-                                this, &UIVirtualBoxManagerWidget::sltHandleShowTabBarGlobal);
-                        m_pToolbarTools->setTabBars(m_pTabBarMachine, m_pTabBarGlobal);
 
-                        /* Create exclusive action-group: */
-                        QActionGroup *pActionGroupTools = new QActionGroup(m_pToolbarTools);
-                        if (pActionGroupTools)
-                        {
-                            /* Configure action-group: */
-                            pActionGroupTools->setExclusive(true);
-
-                            /* Add 'Tools' actions into action-group: */
-                            pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Machine));
-                            pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Global));
-                        }
-
-                        /* Add into toolbar: */
-                        m_pToolBar->addWidget(m_pToolbarTools);
+                        /* Add into layout: */
+                        pLayoutRight->addWidget(m_pToolbarTools);
                     }
 
                     /* Create sliding-widget: */
@@ -582,10 +532,9 @@ void UIVirtualBoxManagerWidget::loadSettings()
 
     /* Restore toolbar settings: */
     {
-        m_pToolBar->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
-                                       ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
-        m_pToolbarTools->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
-                                            ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
+        m_pToolBar->setToolButtonStyle(  gEDataManager->selectorWindowToolBarTextVisible()
+                                       ? Qt::ToolButtonTextUnderIcon
+                                       : Qt::ToolButtonIconOnly);
     }
 
     /* Restore toolbar Machine/Global tools orders:  */
