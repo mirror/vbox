@@ -2788,22 +2788,31 @@ Virtual system 0:
     (change with "--vsys 0 --ostype &lt;type&gt;"; use "list ostypes" to list all)
  1: Suggested VM name "Windows XP Professional_1"
     (change with "--vsys 0 --vmname &lt;name&gt;")
- 3: Number of CPUs: 1
+ 2: Suggested VM group "/"
+    (change with "--vsys 0 --group &lt;group&gt;")
+ 3: Suggested VM settings file name "/home/klaus/VirtualBox VMs/dummy2 2/dummy2 2.vbox"
+    (change with "--vsys 0 --settingsfile &lt;filename&gt;")
+ 4: Suggested VM base folder "/home/klaus/VirtualBox VMs"
+    (change with "--vsys 0 --basefolder &lt;path&gt;")
+ 5: End-user license agreement
+    (display with "--vsys 0 --eula show";
+    accept with "--vsys 0 --eula accept")
+ 6: Number of CPUs: 1
     (change with "--vsys 0 --cpus &lt;n&gt;")
- 4: Guest memory: 956 MB (change with "--vsys 0 --memory &lt;MB&gt;")
- 5: Sound card (appliance expects "ensoniq1371", can change on import)
+ 7: Guest memory: 956 MB (change with "--vsys 0 --memory &lt;MB&gt;")
+ 8: Sound card (appliance expects "ensoniq1371", can change on import)
     (disable with "--vsys 0 --unit 5 --ignore")
- 6: USB controller
+ 9: USB controller
     (disable with "--vsys 0 --unit 6 --ignore")
- 7: Network adapter: orig bridged, config 2, extra type=bridged
- 8: Floppy
+10: Network adapter: orig bridged, config 2, extra type=bridged
+11: Floppy
     (disable with "--vsys 0 --unit 8 --ignore")
- 9: SCSI controller, type BusLogic
+12: SCSI controller, type BusLogic
     (change with "--vsys 0 --unit 9 --scsitype {BusLogic|LsiLogic}";
     disable with "--vsys 0 --unit 9 --ignore")
-10: IDE controller, type PIIX4
+13: IDE controller, type PIIX4
     (disable with "--vsys 0 --unit 10 --ignore")
-11: Hard disk image: source image=WindowsXp.vmdk,
+14: Hard disk image: source image=WindowsXp.vmdk,
       target path=/home/user/disks/WindowsXp.vmdk, controller=9;channel=0
     (change controller with "--vsys 0 --unit 11 --controller &lt;id&gt;";
     disable with "--vsys 0 --unit 11 --ignore")</screen>
