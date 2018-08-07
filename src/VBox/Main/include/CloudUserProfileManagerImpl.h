@@ -40,7 +40,11 @@ public:
 
 private:
     ComPtr<VirtualBox> const mParent;       /**< Strong reference to the parent object (VirtualBox/IMachine). */
+#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+    std::vector<ComPtr<ICloudUserProfileManager>> mUserProfileManagers;
+#else
     std::vector<CloudProviderId_T> mSupportedProviders;
+#endif
 
     HRESULT getSupportedProviders(std::vector<CloudProviderId_T> &aProviderTypes);
     HRESULT getAllProfiles(std::vector< ComPtr<ICloudUserProfiles> > &aProfilesList);

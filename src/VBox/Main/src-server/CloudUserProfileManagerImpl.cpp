@@ -24,6 +24,7 @@
 #include "CloudUserProfileManagerImpl.h"
 #include "CloudUserProfilesImpl.h"
 #include "VirtualBoxImpl.h"
+#include "ExtPackManagerImpl.h"
 #include "Global.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
@@ -66,8 +67,27 @@ HRESULT CloudUserProfileManager::init(VirtualBox *aParent)
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     unconst(mParent) = aParent;
+
+#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+    /*
+     * Engage the extension pack manager and get all the implementations of this class.
+     */
+    ExtPackManager *pExtPackMgr = aParent->i_getExtPackManager();
+    std::vector<ComPtr<IUnknown> > Objects;
+    com::Guid idObj(COM_IIDOF(ICloudUserProfileManager));
+    pExtPackMgr->i_queryObjects(idObj.toString(), Objects);
+    for (unsigned i = 0; i < Objects.size(); i++)
+    {
+        ComPtr<ICloudUserProfileManager> ptrTmp;
+        HRESULT hrc = Objects[i].queryInterfaceTo(ptrTmp.asOutParam());
+        if (SUCCEEDED(hrc))
+            mUserProfileManagers.push_back(ptrTmp);
+    }
+#else
+
     mSupportedProviders.clear();
     mSupportedProviders.push_back(CloudProviderId_OCI);
+#endif
 
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -85,12 +105,52 @@ void CloudUserProfileManager::uninit()
 
 HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProviderId_T> &aSupportedProviders)
 {
+#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+    /*
+     * Collect all the provider names from all the extension pack objects.
+     */
+    HRESULT hrc = S_OK;
+    for (unsigned i = 0; i < mUserProfileManagers.size(); i++)
+    {
+        SafeArray<CloudProviderId_T> FromCurrent;
+        HRESULT hrc2 = mUserProfileManagers[i]->COMGETTER(SupportedProviders)(ComSafeArrayAsOutParam(FromCurrent));
+        if (SUCCEEDED(hrc2))
+            for (size_t i = 0; i < FromCurrent.size(); i++)
+                aSupportedProviders.push_back(FromCurrent[i]);
+        else if (SUCCEEDED(hrc))
+            hrc = hrc2;
+    }
+    if (aSupportedProviders.size() > 0)
+        hrc = S_OK;
+    return hrc;
+#else
     aSupportedProviders = mSupportedProviders;
     return S_OK;
+#endif
 }
 
 HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserProfiles> > &aProfilesList)
 {
+#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+    /*
+     * Collect all the cloud providers from all the extension pack objects.
+     */
+    HRESULT hrc = S_OK;
+    for (unsigned i = 0; i < mUserProfileManagers.size(); i++)
+    {
+        SafeIfaceArray<ICloudUserProfiles> FromCurrent;
+        HRESULT hrc2 = mUserProfileManagers[i]->GetAllProfiles(ComSafeArrayAsOutParam(FromCurrent));
+        if (SUCCEEDED(hrc2))
+            for (size_t i = 0; i < FromCurrent.size(); i++)
+                aProfilesList.push_back(FromCurrent[i]);
+        else if (SUCCEEDED(hrc))
+            hrc = hrc2;
+    }
+    if (aProfilesList.size() > 0)
+        hrc = S_OK;
+    return hrc;
+
+#else
     HRESULT hrc = S_OK;
     std::vector<ComPtr<ICloudUserProfiles> > lProfilesList;
     for (size_t i=0;i<mSupportedProviders.size();++i)
@@ -107,11 +167,27 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
         aProfilesList = lProfilesList;
 
     return hrc;
+#endif
 }
 
 HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProviderType,
                                                        ComPtr<ICloudUserProfiles> &aProfiles)
 {
+#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+    /*
+     * Return the first provider we get.
+     */
+    HRESULT hrc = VBOX_E_OBJECT_NOT_FOUND;
+    for (unsigned i = 0; i < mUserProfileManagers.size(); i++)
+    {
+        hrc = mUserProfileManagers[i]->GetProfilesByProvider(aProviderType, aProfiles.asOutParam());
+        if (SUCCEEDED(hrc))
+            break;
+    }
+    return hrc;
+
+#else
+
     ComObjPtr<CloudUserProfiles> ptrCloudUserProfiles;
     HRESULT hrc = ptrCloudUserProfiles.createObject();
     switch(aProviderType)
@@ -157,5 +233,6 @@ HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProvid
     }
 
     return hrc;
+#endif
 }
 
