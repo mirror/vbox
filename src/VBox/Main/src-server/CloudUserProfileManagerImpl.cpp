@@ -68,7 +68,7 @@ HRESULT CloudUserProfileManager::init(VirtualBox *aParent)
 
     unconst(mParent) = aParent;
 
-#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
      * Engage the extension pack manager and get all the implementations of this class.
      */
@@ -105,7 +105,7 @@ void CloudUserProfileManager::uninit()
 
 HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProviderId_T> &aSupportedProviders)
 {
-#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
      * Collect all the provider names from all the extension pack objects.
      */
@@ -131,7 +131,7 @@ HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProvider
 
 HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserProfiles> > &aProfilesList)
 {
-#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
      * Collect all the cloud providers from all the extension pack objects.
      */
@@ -173,7 +173,7 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
 HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProviderType,
                                                        ComPtr<ICloudUserProfiles> &aProfiles)
 {
-#ifdef CLOUD_PROVIDERS_IN_EXTPACK
+#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
      * Return the first provider we get.
      */
