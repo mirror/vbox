@@ -144,9 +144,9 @@ static int force_async_tsc = 0;
  * Memory for the executable memory heap (in IPRT).
  */
 # ifdef DEBUG
-#  define EXEC_MEMORY_SIZE   6291456    /* 6 MB */
+#  define EXEC_MEMORY_SIZE   8388608    /* 8 MB */
 # else
-#  define EXEC_MEMORY_SIZE   1572864    /* 1.5 MB */
+#  define EXEC_MEMORY_SIZE   2097152    /* 2 MB */
 # endif
 extern uint8_t g_abExecMemory[EXEC_MEMORY_SIZE];
 # ifndef VBOX_WITH_TEXT_MODMEM_HACK
