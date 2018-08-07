@@ -153,6 +153,10 @@ typedef struct DSOUNDSTREAM
             uint64_t                    cbTransferred;
             /** Flag indicating whether playback was just (re)started. */
             bool                        fFirstTransfer;
+            /** Flag indicating whether this stream is in draining mode, e.g. no new
+             *  data is being written to it but DirectSound still needs to be able to
+             *  play its remaining (buffered) data. */
+            bool                        fDrain;
             /** How much (in bytes) the last transfer from the internal buffer
              *  to the DirectSound buffer was. */
             uint32_t                    cbLastTransferred;
@@ -850,18 +854,16 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis)
 #ifdef LOG_ENABLED
     if (!pStreamDS->Dbg.tsLastTransferredMs)
         pStreamDS->Dbg.tsLastTransferredMs = RTTimeMilliTS();
-    Log3Func(("tsLastTransferredMs=%RU64ms, cbAvail=%RU32, cbFree=%RU32 -> cbToTransfer=%RU32\n",
-              RTTimeMilliTS() - pStreamDS->Dbg.tsLastTransferredMs, cbAvail, cbFree, cbToTransfer));
+    Log3Func(("tsLastTransferredMs=%RU64ms, cbAvail=%RU32, cbFree=%RU32 -> cbToTransfer=%RU32 (fDrain=%RTbool)\n",
+              RTTimeMilliTS() - pStreamDS->Dbg.tsLastTransferredMs, cbAvail, cbFree, cbToTransfer, pStreamDS->Out.fDrain));
     pStreamDS->Dbg.tsLastTransferredMs = RTTimeMilliTS();
 #endif
 
-#if 0
-    if (cbToTransfer > cbAvail) /* Paranoia. */
-        cbToTransfer = cbAvail;
-
-    if (cbToTransfer > cbFree)
-        cbToTransfer = cbFree;
-#endif
+    /* Only transfer anything if we have enough data for a DirectSound stream's period *and* are not
+     * in draining mode (already). */
+    if (   !pStreamDS->Out.fDrain
+        && cbToTransfer < DrvAudioHlpFramesToBytes(pStreamDS->Cfg.Backend.cfPeriod, &pStreamDS->Cfg.Props))
+        return VINF_SUCCESS;
 
     while (cbToTransfer)
     {
@@ -1759,6 +1761,7 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     pStreamDS->Out.cbWritten = 0;
     pStreamDS->Out.cbTransferred = 0;
     pStreamDS->Out.fFirstTransfer = true;
+    pStreamDS->Out.fDrain = false;
     pStreamDS->Out.cbLastTransferred = 0;
     pStreamDS->Out.tsLastTransferred = 0;
 
@@ -1810,6 +1813,7 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
         case PDMAUDIOSTREAMCMD_DRAIN:
         {
             /* Make sure we transferred everything. */
+            pStreamDS->Out.fDrain = true;
             rc = dsoundPlayTransfer(pThis);
             if (   RT_SUCCESS(rc)
                 && pStreamDS->Out.fFirstTransfer)
