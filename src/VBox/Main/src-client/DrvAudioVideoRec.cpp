@@ -570,20 +570,24 @@ static int avRecControlStreamOut(PDRVAUDIOVIDEOREC pThis,
 {
     RT_NOREF(pThis, pStreamAV);
 
+    int rc;
+
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_DISABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         case PDMAUDIOSTREAMCMD_PAUSE:
+            rc = VINF_SUCCESS;
             break;
 
         default:
-            AssertMsgFailed(("Invalid command %ld\n", enmStreamCmd));
+            rc = VERR_NOT_SUPPORTED;
             break;
+        }
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
