@@ -372,6 +372,51 @@
 #define DW_EH_PE_aligned        UINT8_C(0x50) /**< Application: aligned pointer. */
 /** @} */
 
+/** @name Call frame instructions.
+ * @{  */
+/** Mask to use to identify DW_CFA_advance_loc, DW_CFA_offset and DW_CFA_restore. */
+#define DW_CFA_high_bit_mask        UINT8_C(0xc0)
+
+#define DW_CFA_nop                  UINT8_C(0x00) /**< No operands. */
+
+#define DW_CFA_advance_loc          UINT8_C(0x40) /**< low 6 bits: delta to advance. */
+#define DW_CFA_set_loc              UINT8_C(0x01) /**< op1: address. */
+#define DW_CFA_advance_loc1         UINT8_C(0x02) /**< op1: 1-byte delta. */
+#define DW_CFA_advance_loc2         UINT8_C(0x03) /**< op1: 2-byte delta. */
+#define DW_CFA_advance_loc4         UINT8_C(0x04) /**< op1: 4-byte delta. */
+
+#define DW_CFA_offset               UINT8_C(0x80) /**< low 6 bits: register; op1: ULEB128 offset. */
+#define DW_CFA_offset_extended      UINT8_C(0x05) /**< op1: ULEB128 register; op2: ULEB128 offset. */
+#define DW_CFA_offset_extended_sf   UINT8_C(0x11) /**< op1: ULEB128 register; op2: SLEB128 offset. */
+#define DW_CFA_restore              UINT8_C(0xc0) /**< low 6 bits: register. */
+#define DW_CFA_restore_extended     UINT8_C(0x06) /**< op1: ULEB128 register; op2: ULEB128 offset. */
+#define DW_CFA_undefined            UINT8_C(0x07) /**< op1: ULEB128 register. */
+#define DW_CFA_same_value           UINT8_C(0x08) /**< op1: ULEB128 register. */
+#define DW_CFA_register             UINT8_C(0x09) /**< op1: ULEB128 destination register; op2: ULEB128 source register. */
+#define DW_CFA_expression           UINT8_C(0x10) /**< op1: ULEB128 register; op2: BLOCK. */
+
+#define DW_CFA_val_offset           UINT8_C(0x14) /**< op1: ULEB128 register; op2: ULEB128. */
+#define DW_CFA_val_offset_sf        UINT8_C(0x15) /**< op1: ULEB128 register; op2: SLEB128. */
+#define DW_CFA_val_expression       UINT8_C(0x16) /**< op1: ULEB128 register; op2: BLOCK. */
+
+#define DW_CFA_remember_state       UINT8_C(0x0a) /**< No operands. */
+#define DW_CFA_restore_state        UINT8_C(0x0b) /**< No operands. */
+
+#define DW_CFA_def_cfa              UINT8_C(0x0c) /**< op1: ULEB128 register; op2: ULEB128 offset. */
+#define DW_CFA_def_cfa_register     UINT8_C(0x0d) /**< op1: ULEB128 register. */
+#define DW_CFA_def_cfa_offset       UINT8_C(0x0e) /**< op1: ULEB128 offset. */
+#define DW_CFA_def_cfa_expression   UINT8_C(0x0f) /**< op1: BLOCK. */
+#define DW_CFA_def_cfa_sf           UINT8_C(0x12) /**< op1: ULEB128 register; op2: SLEB128 offset. */
+#define DW_CFA_def_cfa_offset_sf    UINT8_C(0x13) /**< op1: SLEB128 offset. */
+
+#define DW_CFA_lo_user              UINT8_C(0x1c) /**< User defined operands. */
+#define DW_CFA_MIPS_advance_loc8    UINT8_C(0x1d) /**< op1: 8-byte delta? */
+#define DW_CFA_GNU_window_save      UINT8_C(0x2d) /**< op1: ??; op2: ?? */
+#define DW_CFA_GNU_args_size        UINT8_C(0x2e) /**< op1: ??; op2: ?? */
+#define DW_CFA_GNU_negative_offset_extended UINT8_C(0x2f) /**< op1: ??; op2: ?? */
+#define DW_CFA_hi_user              UINT8_C(0x3f) /**< User defined operands. */
+/** @} */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -2508,6 +2553,25 @@ typedef RTDWARFCIEINFO *PRTDWARFCIEINFO;
 /** Pointer to const CIE info. */
 typedef RTDWARFCIEINFO const *PCRTDWARFCIEINFO;
 
+#if 0
+
+typedef struct RTDWARFCFEXPR
+{
+
+};
+
+/**
+ * Call frame engine state.
+ */
+typedef struct RTDWARFCFSTATE
+{
+    /** Stack worked by DW_CFA_remember_state and DW_CFA_restore_state. */
+    struct RTDWARFCFSTATE      *pNextOnStack;
+
+
+
+} RTDWARFCFSTATE;
+#endif
 
 /**
  * Processes a FDE, taking over after the PC range field.
