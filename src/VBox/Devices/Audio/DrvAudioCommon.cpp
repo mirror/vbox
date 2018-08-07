@@ -828,10 +828,18 @@ bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
     {
         switch (pProps->cBytes)
         {
-            case 1:
-            case 2:
-            /** @todo Do we need support for 24-bit samples? */
-            case 4:
+            case 1: /* 8 bit */
+               if (pProps->fSigned)
+                   fValid = false;
+               break;
+           case 2: /* 16 bit */
+               if (!pProps->fSigned)
+                   fValid = false;
+               break;
+           /** @todo Do we need support for 24 bit samples? */
+           case 4: /* 32 bit */
+               if (!pProps->fSigned)
+                   fValid = false;
                 break;
             default:
                 fValid = false;
