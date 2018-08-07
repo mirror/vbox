@@ -208,6 +208,7 @@ public:
     HRESULT     i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo);
     HRESULT     i_doUninstall(const Utf8Str *a_pstrName, bool a_fForcedRemoval, const Utf8Str *a_pstrDisplayInfo);
     void        i_callAllVirtualBoxReadyHooks(void);
+    HRESULT     i_queryObjects(const com::Utf8Str &aObjUuid, std::vector<ComPtr<IUnknown> > &aObjects);
 #endif
 #ifdef VBOX_COM_INPROC
     void        i_callAllConsoleReadyHooks(IConsole *a_pConsole);

@@ -2893,6 +2893,45 @@ void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
     }
 }
 
+
+/**
+ * Queries objects of type @a aObjUuid from all the extension packs.
+ *
+ * @returns COM status code.
+ * @param   aObjUuid        The UUID of the kind of objects we're querying.
+ * @param   aObjects        Where to return the objects.
+ *
+ * @remarks The caller must not hold any locks.
+ */
+HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector<ComPtr<IUnknown> > &aObjects)
+{
+    aObjects.clear();
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+        ComPtr<ExtPackManager> ptrSelfRef = this;
+
+        for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+             it != m->llInstalledExtPacks.end();
+             /* advancing below */)
+        {
+            ComPtr<IUnknown> ptrIf;
+            HRESULT hrc2 = (*it)->queryObject(aObjUuid, ptrIf);
+            if (SUCCEEDED(hrc2))
+                aObjects.push_back(ptrIf);
+            else if (hrc2 != E_NOINTERFACE)
+                hrc = hrc2;
+        }
+
+        if (aObjects.size() > 0)
+            hrc = S_OK;
+    }
+    return hrc;
+}
+
 #endif /* !VBOX_COM_INPROC */
 
 #ifdef VBOX_COM_INPROC
