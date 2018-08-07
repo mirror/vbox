@@ -583,7 +583,6 @@ static int avRecControlStreamOut(PDRVAUDIOVIDEOREC pThis,
         default:
             rc = VERR_NOT_SUPPORTED;
             break;
-        }
     }
 
     return rc;
