@@ -176,7 +176,7 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
                                                                pStreamVRDE->pCfg->Props.cBytes * 8 /* Bit */);
             if (rc == VERR_NOT_SUPPORTED)
             {
-                LogFunc(("No RDP client connected, so no input recording supported\n"));
+                LogRel2(("Audio: No VRDE client connected, so no input recording available\n"));
                 rc = VINF_SUCCESS;
             }
 
