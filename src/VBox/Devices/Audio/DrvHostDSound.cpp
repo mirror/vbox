@@ -167,10 +167,12 @@ typedef struct DSOUNDSTREAM
             uint8_t                     cUnderruns;
         } Out;
     };
+#ifdef LOG_ENABLED
     struct
     {
         uint64_t tsLastTransferredMs;
     } Dbg;
+#endif
 } DSOUNDSTREAM, *PDSOUNDSTREAM;
 
 typedef struct DRVHOSTDSOUND
@@ -248,6 +250,8 @@ static HRESULT  directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
 static void     dsoundDeviceRemove(PDSOUNDDEV pDev);
 static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg);
 
+static int      dsoundStreamEnable(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fEnable);
+static void     dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS);
 static void     dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis);
 static void     dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum);
 
@@ -807,14 +811,13 @@ static void dsoundPlayClearBuffer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
  *
  * @return  IPRT status code.
  * @param   pThis               Host audio driver instance.
+ * @param   pStreamDS           Stream to transfer playback data for.
  */
-static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis)
+static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
-    PDSOUNDSTREAM pStreamDS = pThis->pDSStrmOut;
-
-    if (   !pStreamDS
-        || !pStreamDS->fEnabled)
+    if (!pStreamDS->fEnabled)
     {
+        Log2Func(("Stream disabled, skipping\n"));
         return VINF_SUCCESS;
     }
 
@@ -854,8 +857,10 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis)
 #ifdef LOG_ENABLED
     if (!pStreamDS->Dbg.tsLastTransferredMs)
         pStreamDS->Dbg.tsLastTransferredMs = RTTimeMilliTS();
-    Log3Func(("tsLastTransferredMs=%RU64ms, cbAvail=%RU32, cbFree=%RU32 -> cbToTransfer=%RU32 (fDrain=%RTbool)\n",
-              RTTimeMilliTS() - pStreamDS->Dbg.tsLastTransferredMs, cbAvail, cbFree, cbToTransfer, pStreamDS->Out.fDrain));
+    Log3Func(("offPlay=%RU32, offWrite=%RU32, tsLastTransferredMs=%RU64ms, cbAvail=%RU32, cbFree=%RU32 -> cbToTransfer=%RU32 "
+              "(fFirst=%RTbool, fDrain=%RTbool)\n",
+              offPlayCursor, offWriteCursor, RTTimeMilliTS() - pStreamDS->Dbg.tsLastTransferredMs, cbAvail, cbFree, cbToTransfer,
+              pStreamDS->Out.fFirstTransfer, pStreamDS->Out.fDrain));
     pStreamDS->Dbg.tsLastTransferredMs = RTTimeMilliTS();
 #endif
 
@@ -914,7 +919,6 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis)
         hr = directSoundPlayStart(pThis, pStreamDS);
         if (SUCCEEDED(hr))
         {
-            DSLOG(("DSound: Started playing output\n"));
             pStreamDS->Out.fFirstTransfer = false;
         }
         else
@@ -976,29 +980,20 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
     if (pStreamDS->Out.pDSB)
     {
-        if (pStreamDS->fEnabled)
+        DSLOG(("DSound: Stopping playback\n"));
+        hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
+        if (FAILED(hr))
         {
-            DSLOG(("DSound: %s playback\n", fFlush ? "Stopping" : "Pausing"));
-
-            hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
+            hr = directSoundPlayRestore(pThis, pStreamDS->Out.pDSB);
             if (FAILED(hr))
-            {
-                hr = directSoundPlayRestore(pThis, pStreamDS->Out.pDSB);
-                if (FAILED(hr))
-                    hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
-            }
-
-            pStreamDS->fEnabled = false;
+                hr = IDirectSoundBuffer8_Stop(pStreamDS->Out.pDSB);
         }
     }
 
     if (SUCCEEDED(hr))
     {
-        if (   fFlush
-            && pStreamDS->pCircBuf)
-        {
-            RTCircBufReset(pStreamDS->pCircBuf);
-        }
+        if (fFlush)
+            dsoundStreamReset(pThis, pStreamDS);
     }
 
     if (FAILED(hr))
@@ -1007,28 +1002,53 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     return hr;
 }
 
+/**
+ * Enables or disables a stream.
+ *
+ * @return  IPRT status code.
+ * @param   pThis               Host audio driver instance.
+ * @param   pStreamDS           Stream to enable / disable.
+ * @param   fEnable             Whether to enable or disable the stream.
+ */
+static int dsoundStreamEnable(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fEnable)
+{
+    RT_NOREF(pThis);
+
+    LogFunc(("%s %s\n",
+             fEnable ? "Enabling" : "Disabling",
+             pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN ? "capture" : "playback"));
+
+    pStreamDS->fEnabled = fEnable;
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Resets the state of a DirectSound stream.
  *
- * @return  HRESULT
  * @param   pThis               Host audio driver instance.
  * @param   pStreamDS           Stream to reset state for.
  */
-static HRESULT directSoundPlayReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
-    AssertPtrReturn(pThis,     E_POINTER);
-    AssertPtrReturn(pStreamDS, E_POINTER);
+    RT_NOREF(pThis);
 
-    Assert(pStreamDS->fEnabled == false);
+    LogFunc(("Resetting %s\n",
+             pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN ? "capture" : "playback"));
 
-    pStreamDS->fEnabled           = true;
-    /* Note: Playing back via DirectSound starts in the notification thread
-     *       once enough audio output data is available. */
+    if (pStreamDS->pCircBuf)
+        RTCircBufReset(pStreamDS->pCircBuf);
 
-    if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT)
+    if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
+    {
+        pStreamDS->In.offReadPos = 0;
+        pStreamDS->In.cOverruns  = 0;
+    }
+    else if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT)
     {
         pStreamDS->Out.fFirstTransfer = true;
+        pStreamDS->Out.fDrain         = false;
         pStreamDS->Out.cUnderruns     = 0;
 
         pStreamDS->Out.cbLastTransferred = 0;
@@ -1037,11 +1057,16 @@ static HRESULT directSoundPlayReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
         pStreamDS->Out.cbTransferred = 0;
         pStreamDS->Out.cbWritten = 0;
 
+        pStreamDS->Out.offWritePos = 0;
         pStreamDS->Out.offPlayCursorLastPending = 0;
         pStreamDS->Out.offPlayCursorLastPlayed = 0;
     }
+    else
+        AssertFailed();
 
-    return S_OK;
+#ifdef LOG_ENABLED
+    pStreamDS->Dbg.tsLastTransferredMs = 0;
+#endif
 }
 
 
@@ -1060,6 +1085,7 @@ static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
 
     for (unsigned i = 0; i < DRV_DSOUND_RESTORE_ATTEMPTS_MAX; i++)
     {
+        DSLOG(("DSound: Starting playback\n"));
         hr = IDirectSoundBuffer8_Play(pStreamDS->Out.pDSB, 0, 0, fFlags);
         if (   SUCCEEDED(hr)
             || hr != DSERR_BUFFERLOST)
@@ -1157,11 +1183,11 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
  *
  * @return  IPRT status code.
  * @param   pThis               Host audio driver instance.
+ * @param   pStreamDS           Stream to capture audio data for.
  */
-static int dsoundCaptureTransfer(PDRVHOSTDSOUND pThis)
+static int dsoundCaptureTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
-    PDSOUNDSTREAM pStreamDS = pThis->pDSStrmIn;
-    AssertPtr(pStreamDS);
+    RT_NOREF(pThis);
 
     LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB = pStreamDS->In.pDSCB;
     AssertPtr(pDSCB);
@@ -1169,7 +1195,10 @@ static int dsoundCaptureTransfer(PDRVHOSTDSOUND pThis)
     DWORD offCaptureCursor;
     HRESULT hr = IDirectSoundCaptureBuffer_GetCurrentPosition(pDSCB, NULL, &offCaptureCursor);
     if (FAILED(hr))
+    {
+        AssertFailed();
         return VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+    }
 
     DWORD cbUsed = dsoundRingDistance(offCaptureCursor, pStreamDS->In.offReadPos, pStreamDS->cbBufSize);
 
@@ -1472,23 +1501,14 @@ static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
     if (pStreamDS->In.pDSCB)
     {
-        if (pStreamDS->fEnabled)
-        {
-            DSLOG(("DSound: Stopping capture\n"));
-
-            hr = IDirectSoundCaptureBuffer_Stop(pStreamDS->In.pDSCB);
-            if (SUCCEEDED(hr))
-                pStreamDS->fEnabled = false;
-        }
+        DSLOG(("DSound: Stopping capture\n"));
+        hr = IDirectSoundCaptureBuffer_Stop(pStreamDS->In.pDSCB);
     }
 
     if (SUCCEEDED(hr))
     {
-        if (   fFlush
-            && pStreamDS->pCircBuf)
-        {
-            RTCircBufReset(pStreamDS->pCircBuf);
-        }
+        if (fFlush)
+             dsoundStreamReset(pThis, pStreamDS);
     }
 
     if (FAILED(hr))
@@ -1502,10 +1522,8 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
     AssertPtrReturn(pThis,     E_POINTER);
     AssertPtrReturn(pStreamDS, E_POINTER);
 
-    Assert(pStreamDS->fEnabled == false);
-
     HRESULT hr;
-    if (pStreamDS->In.pDSCB != NULL)
+    if (pStreamDS->In.pDSCB)
     {
         DWORD dwStatus;
         hr = IDirectSoundCaptureBuffer8_GetStatus(pStreamDS->In.pDSCB, &dwStatus);
@@ -1525,14 +1543,7 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
 
                 DSLOG(("DSound: Starting to capture\n"));
                 hr = IDirectSoundCaptureBuffer8_Start(pStreamDS->In.pDSCB, fFlags);
-                if (SUCCEEDED(hr))
-                {
-                    pStreamDS->fEnabled = true;
-
-                    pStreamDS->In.offReadPos = 0;
-                    pStreamDS->In.cOverruns  = 0;
-                }
-                else
+                if (FAILED(hr))
                     DSLOGREL(("DSound: Starting to capture failed with %Rhrc\n", hr));
             }
         }
@@ -1752,24 +1763,17 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
 {
     LogFlowFunc(("pStreamDS=%p, pCfgReq=%p\n", pStreamDS, pCfgReq));
 
-    pStreamDS->cbBufSize = 0;
-
-    pStreamDS->Out.pDSB = NULL;
-    pStreamDS->Out.offWritePos = 0;
-    pStreamDS->Out.offPlayCursorLastPlayed = 0;
-    pStreamDS->Out.offPlayCursorLastPending = 0;
-    pStreamDS->Out.cbWritten = 0;
-    pStreamDS->Out.cbTransferred = 0;
-    pStreamDS->Out.fFirstTransfer = true;
-    pStreamDS->Out.fDrain = false;
-    pStreamDS->Out.cbLastTransferred = 0;
-    pStreamDS->Out.tsLastTransferred = 0;
-
     int rc = VINF_SUCCESS;
 
     /* Try to open playback in case the device is already there. */
     HRESULT hr = directSoundPlayOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
-    if (FAILED(hr))
+    if (SUCCEEDED(hr))
+    {
+        rc = DrvAudioHlpStreamCfgCopy(&pStreamDS->Cfg, pCfgAcq);
+        if (RT_SUCCESS(rc))
+            dsoundStreamReset(pThis, pStreamDS);
+    }
+    else
         rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
 
     LogFlowFuncLeaveRC(rc);
@@ -1787,9 +1791,7 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            hr = directSoundPlayReset(pThis, pStreamDS);
-            if (FAILED(hr))
-                rc = VERR_NOT_SUPPORTED; /** @todo Fix this. */
+            dsoundStreamEnable(pThis, pStreamDS, true /* fEnable */);
             break;
         }
 
@@ -1802,9 +1804,17 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            dsoundStreamEnable(pThis, pStreamDS, false /* fEnable */);
+            hr = directSoundPlayStop(pThis, pStreamDS, true /* fFlush */);
+            if (FAILED(hr))
+                rc = VERR_NOT_SUPPORTED;
+            break;
+        }
+
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            hr = directSoundPlayStop(pThis, pStreamDS, enmStreamCmd == PDMAUDIOSTREAMCMD_DISABLE /* fFlush */);
+            hr = directSoundPlayStop(pThis, pStreamDS, false /* fFlush */);
             if (FAILED(hr))
                 rc = VERR_NOT_SUPPORTED;
             break;
@@ -1813,8 +1823,9 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
         case PDMAUDIOSTREAMCMD_DRAIN:
         {
             /* Make sure we transferred everything. */
+            pStreamDS->fEnabled = true;
             pStreamDS->Out.fDrain = true;
-            rc = dsoundPlayTransfer(pThis);
+            rc = dsoundPlayTransfer(pThis, pStreamDS);
             if (   RT_SUCCESS(rc)
                 && pStreamDS->Out.fFirstTransfer)
             {
@@ -1889,7 +1900,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     pStreamDS->Out.cbWritten += cbWrittenTotal;
 
-    rc = dsoundPlayTransfer(pThis);
+    rc = dsoundPlayTransfer(pThis, pStreamDS);
     AssertRC(rc);
 
     if (RT_SUCCESS(rc))
@@ -1926,18 +1937,17 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     LogFunc(("pStreamDS=%p, pCfgReq=%p, enmRecSource=%s\n",
              pStreamDS, pCfgReq, DrvAudioHlpRecSrcToStr(pCfgReq->DestSource.Source)));
 
-    /* Init the stream structure and save relevant information to it. */
-    pStreamDS->cbBufSize     = 0;
-
-    pStreamDS->In.pDSCB      = NULL;
-    pStreamDS->In.offReadPos = 0;
-    pStreamDS->In.cOverruns  = 0;
-
     int rc = VINF_SUCCESS;
 
     /* Try to open capture in case the device is already there. */
     HRESULT hr = directSoundCaptureOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
-    if (FAILED(hr))
+    if (SUCCEEDED(hr))
+    {
+        rc = DrvAudioHlpStreamCfgCopy(&pStreamDS->Cfg, pCfgAcq);
+        if (RT_SUCCESS(rc))
+            dsoundStreamReset(pThis, pStreamDS);
+    }
+    else
         rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
 
     return rc;
@@ -1953,6 +1963,8 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
+            dsoundStreamEnable(pThis, pStreamDS, true /* fEnable */);
+            RT_FALL_THROUGH();
         case PDMAUDIOSTREAMCMD_RESUME:
         {
             /* Try to start capture. If it fails, then reopen and try again. */
@@ -1983,10 +1995,10 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
+            dsoundStreamEnable(pThis, pStreamDS, false /* fEnable */);
+            RT_FALL_THROUGH();
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            AssertPtr(pThis->pDSC);
-
             directSoundCaptureStop(pThis, pStreamDS,
                                    enmStreamCmd == PDMAUDIOSTREAMCMD_DISABLE /* fFlush */);
 
@@ -2330,16 +2342,9 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUD
     PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
 
     PDMAUDIOSTREAMSTS strmSts = PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
-    if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
-    {
-        if (pStreamDS->fEnabled)
-            strmSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
-    }
-    else
-    {
-        if (pStreamDS->fEnabled)
-            strmSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
-    }
+
+    if (pStreamDS->fEnabled)
+        strmSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
 
     return strmSts;
 }
@@ -2356,7 +2361,7 @@ static DECLCALLBACK(int) drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, P
     PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
 
     if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
-        return dsoundCaptureTransfer(pThis);
+        return dsoundCaptureTransfer(pThis, pStreamDS);
 
     return VINF_SUCCESS;
 }
