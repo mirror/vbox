@@ -1065,9 +1065,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     }
     else
     {
-        uint32_t cbToRead    = RT_MIN(cbBuf,
-                                      pStreamRecSource->pConn->pfnStreamGetReadable(pStreamRecSource->pConn,
-                                                                                    pStreamRecSource->pStream));
+        uint32_t cbToRead = cbBuf;
         while (cbToRead)
         {
             uint32_t cbReadStrm;
