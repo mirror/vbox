@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * ICloudUserProfileManager  COM class implementations.
+ * ICloudProviderManager  COM class implementations.
  */
 
 /*
@@ -35,32 +35,32 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// CloudUserProfileManager constructor / destructor
+// CloudProviderManager constructor / destructor
 //
 // ////////////////////////////////////////////////////////////////////////////////
-CloudUserProfileManager::CloudUserProfileManager()
+CloudProviderManager::CloudProviderManager()
     : mParent(NULL)
 {
 }
 
-CloudUserProfileManager::~CloudUserProfileManager()
+CloudProviderManager::~CloudProviderManager()
 {
 }
 
 
-HRESULT CloudUserProfileManager::FinalConstruct()
+HRESULT CloudProviderManager::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void CloudUserProfileManager::FinalRelease()
+void CloudProviderManager::FinalRelease()
 {
     uninit();
 
     BaseFinalRelease();
 }
 
-HRESULT CloudUserProfileManager::init(VirtualBox *aParent)
+HRESULT CloudProviderManager::init(VirtualBox *aParent)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -74,11 +74,11 @@ HRESULT CloudUserProfileManager::init(VirtualBox *aParent)
      */
     ExtPackManager *pExtPackMgr = aParent->i_getExtPackManager();
     std::vector<ComPtr<IUnknown> > Objects;
-    com::Guid idObj(COM_IIDOF(ICloudUserProfileManager));
+    com::Guid idObj(COM_IIDOF(ICloudProviderManager));
     pExtPackMgr->i_queryObjects(idObj.toString(), Objects);
     for (unsigned i = 0; i < Objects.size(); i++)
     {
-        ComPtr<ICloudUserProfileManager> ptrTmp;
+        ComPtr<ICloudProviderManager> ptrTmp;
         HRESULT hrc = Objects[i].queryInterfaceTo(ptrTmp.asOutParam());
         if (SUCCEEDED(hrc))
             mUserProfileManagers.push_back(ptrTmp);
@@ -86,14 +86,15 @@ HRESULT CloudUserProfileManager::init(VirtualBox *aParent)
 #else
 
     mSupportedProviders.clear();
-    mSupportedProviders.push_back(CloudProviderId_OCI);
+    mSupportedProviders.push_back("OCI");
+
 #endif
 
     autoInitSpan.setSucceeded();
     return S_OK;
 }
 
-void CloudUserProfileManager::uninit()
+void CloudProviderManager::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -103,7 +104,7 @@ void CloudUserProfileManager::uninit()
     unconst(mParent) = NULL;
 }
 
-HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProviderId_T> &aSupportedProviders)
+HRESULT CloudProviderManager::getSupportedProviders(std::vector<Utf8Str> &aSupportedProviders)
 {
 #ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
@@ -112,7 +113,7 @@ HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProvider
     HRESULT hrc = S_OK;
     for (unsigned i = 0; i < mUserProfileManagers.size(); i++)
     {
-        SafeArray<CloudProviderId_T> FromCurrent;
+        SafeArray<Utf8Str> FromCurrent;
         HRESULT hrc2 = mUserProfileManagers[i]->COMGETTER(SupportedProviders)(ComSafeArrayAsOutParam(FromCurrent));
         if (SUCCEEDED(hrc2))
             for (size_t j = 0; j < FromCurrent.size(); j++)
@@ -129,7 +130,7 @@ HRESULT CloudUserProfileManager::getSupportedProviders(std::vector<CloudProvider
 #endif
 }
 
-HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserProfiles> > &aProfilesList)
+HRESULT CloudProviderManager::getAllProfiles(std::vector<ComPtr<ICloudProvider> > &aProfilesList)
 {
 #ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
@@ -138,7 +139,7 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
     HRESULT hrc = S_OK;
     for (unsigned i = 0; i < mUserProfileManagers.size(); i++)
     {
-        SafeIfaceArray<ICloudUserProfiles> FromCurrent;
+        SafeIfaceArray<ICloudProvider> FromCurrent;
         HRESULT hrc2 = mUserProfileManagers[i]->GetAllProfiles(ComSafeArrayAsOutParam(FromCurrent));
         if (SUCCEEDED(hrc2))
             for (size_t j = 0; j < FromCurrent.size(); j++)
@@ -152,10 +153,10 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
 
 #else
     HRESULT hrc = S_OK;
-    std::vector<ComPtr<ICloudUserProfiles> > lProfilesList;
+    std::vector<ComPtr<ICloudProvider> > lProfilesList;
     for (size_t i=0;i<mSupportedProviders.size();++i)
     {
-        ComPtr<ICloudUserProfiles> lProfiles;
+        ComPtr<ICloudProvider> lProfiles;
         hrc = getProfilesByProvider(mSupportedProviders.at(i), lProfiles);
         if (FAILED(hrc))
             break;
@@ -170,8 +171,8 @@ HRESULT CloudUserProfileManager::getAllProfiles(std::vector<ComPtr<ICloudUserPro
 #endif
 }
 
-HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProviderType,
-                                                       ComPtr<ICloudUserProfiles> &aProfiles)
+HRESULT CloudProviderManager::getProfilesByProvider(const com::Utf8Str &aProviderName,
+                                                    ComPtr<ICloudProvider> &aProfiles)
 {
 #ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
     /*
@@ -188,48 +189,45 @@ HRESULT CloudUserProfileManager::getProfilesByProvider(CloudProviderId_T aProvid
 
 #else
 
-    ComObjPtr<CloudUserProfiles> ptrCloudUserProfiles;
-    HRESULT hrc = ptrCloudUserProfiles.createObject();
-    switch(aProviderType)
+    ComObjPtr<CloudProvider> ptrCloudProvider;
+    HRESULT hrc = ptrCloudProvider.createObject();
+    if (aProviderName.equals("OCI"))
     {
-        case CloudProviderId_OCI:
-        default:
-            ComObjPtr<OCIUserProfiles> ptrOCIUserProfiles;
-            hrc = ptrOCIUserProfiles.createObject();
+        ComObjPtr<OCIUserProfiles> ptrOCIUserProfiles;
+        hrc = ptrOCIUserProfiles.createObject();
+        if (SUCCEEDED(hrc))
+        {
+            AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+            hrc = ptrOCIUserProfiles->init(mParent);
             if (SUCCEEDED(hrc))
             {
-                AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
-
-                hrc = ptrOCIUserProfiles->init(mParent);
-                if (SUCCEEDED(hrc))
+                char szOciConfigPath[RTPATH_MAX];
+                int vrc = RTPathUserHome(szOciConfigPath, sizeof(szOciConfigPath));
+                if (RT_SUCCESS(vrc))
+                    vrc = RTPathAppend(szOciConfigPath, sizeof(szOciConfigPath), ".oci" RTPATH_SLASH_STR "config");
+                if (RT_SUCCESS(vrc))
                 {
-                    char szOciConfigPath[RTPATH_MAX];
-                    int vrc = RTPathUserHome(szOciConfigPath, sizeof(szOciConfigPath));
-                    if (RT_SUCCESS(vrc))
-                        vrc = RTPathAppend(szOciConfigPath, sizeof(szOciConfigPath), ".oci" RTPATH_SLASH_STR "config");
-                    if (RT_SUCCESS(vrc))
+                    LogRel(("config = %s\n", szOciConfigPath));
+                    if (RTFileExists(szOciConfigPath))
                     {
-                        LogRel(("config = %s\n", szOciConfigPath));
-                        if (RTFileExists(szOciConfigPath))
-                        {
-                            hrc = ptrOCIUserProfiles->readProfiles(szOciConfigPath);
-                            if (SUCCEEDED(hrc))
-                                LogRel(("Reading profiles from %s has been done\n", szOciConfigPath));
-                            else
-                                LogRel(("Reading profiles from %s hasn't been done\n", szOciConfigPath));
-
-                            ptrCloudUserProfiles = ptrOCIUserProfiles;
-                            hrc = ptrCloudUserProfiles.queryInterfaceTo(aProfiles.asOutParam());
-                        }
+                        hrc = ptrOCIUserProfiles->readProfiles(szOciConfigPath);
+                        if (SUCCEEDED(hrc))
+                            LogRel(("Reading profiles from %s has been done\n", szOciConfigPath));
                         else
-                            hrc = setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the config file '%s'"),
-                                               szOciConfigPath);
+                            LogRel(("Reading profiles from %s hasn't been done\n", szOciConfigPath));
+
+                        ptrCloudProvider = ptrOCIUserProfiles;
+                        hrc = ptrCloudProvider.queryInterfaceTo(aProfiles.asOutParam());
                     }
                     else
-                        hrc = setErrorVrc(vrc);
+                        hrc = setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the config file '%s'"),
+                                           szOciConfigPath);
                 }
+                else
+                    hrc = setErrorVrc(vrc);
             }
-            break;
+        }
     }
 
     return hrc;

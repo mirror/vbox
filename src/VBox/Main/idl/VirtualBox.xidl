@@ -2450,11 +2450,11 @@
       </param>
     </method>
 
-    <method name="createCloudUserProfileManager">
+    <method name="createCloudProviderManager">
       <desc>
-        Creates a new cloud user profile manager object
+        Creates a new cloud provider manager object
       </desc>
-      <param name="manager" type="ICloudUserProfileManager" dir="return">
+      <param name="manager" type="ICloudProviderManager" dir="return">
         <desc>New cloud user profile manager</desc>
       </param>
     </method>
@@ -25106,19 +25106,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
-  // ICloudUserProfiles
+  // ICloudProvider
   //////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-    name="ICloudUserProfiles" extends="$unknown"
+    name="ICloudProvider" extends="$unknown"
     uuid="cfadfecb-ef89-41a9-abbd-9772d41baddb"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
-    <desc>
-        Cloud user profiles description
-    </desc>
-
     <method name="getProvider">
       <desc>
         Returns provider Id tied with these profiles
@@ -25224,39 +25220,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
-  // ICloudUserProfileManager
+  // ICloudProviderManager
   //////////////////////////////////////////////////////////////////////////
   -->
   <interface
-    name="ICloudUserProfileManager" extends="$unknown"
+    name="ICloudProviderManager" extends="$unknown"
     uuid="64e276a7-cfd1-48ed-aad3-19368197f3b2"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
-    <desc>
-        Cloud User Profile Manager description
-    </desc>
 
-    <attribute name="supportedProviders" type="CloudProviderId" readonly="yes" safearray="yes">
+    <attribute name="supportedProviders" type="wstring" readonly="yes" safearray="yes">
       <desc>Returns a predefined list of all supported cloud providers.</desc>
     </attribute>
 
     <method name="getAllProfiles" const="yes">
       <desc>
-        Returns the list of the ICloudUserProfiles in one call.
+        Returns the list of the ICloudProvider in one call.
       </desc>
-      <param name="profileList" type="ICloudUserProfiles" safearray="yes" dir="return">
-        <desc>Returns the list of ICloudUserProfiles.</desc>
+      <param name="profileList" type="ICloudProvider" safearray="yes" dir="return">
+        <desc>Returns the list of ICloudProvider.</desc>
       </param>
     </method>
 
     <method name="getProfilesByProvider" const="yes">
       <desc>
-        Returns the ICloudUserProfiles for the particular provider.
+        Returns the ICloudProvider for the particular provider.
       </desc>
-      <param name="providerId" type="CloudProviderId" dir="in">
+      <param name="providerName" type="wstring" dir="in">
       </param>
-      <param name="profile" type="ICloudUserProfiles" dir="return">
-        <desc>Returns the ICloudUserProfiles.</desc>
+      <param name="profile" type="ICloudProvider" dir="return">
+        <desc>Returns the ICloudProvider.</desc>
       </param>
     </method>
 

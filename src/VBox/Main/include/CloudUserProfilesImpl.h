@@ -24,17 +24,17 @@
 
 /* VBox includes */
 #include "CloudClientImpl.h"
-#include "CloudUserProfilesWrap.h"
+#include "CloudProviderWrap.h"
 #include "UnattendedScript.h"
 
 /* VBox forward declarations */
 class SimpleConfigFile;
 
-class CloudUserProfiles : public CloudUserProfilesWrap
+class CloudProvider : public CloudProviderWrap
 {
 public:
-    CloudUserProfiles();
-    virtual ~CloudUserProfiles();
+    CloudProvider();
+    virtual ~CloudProvider();
     HRESULT FinalConstruct();
     void FinalRelease();
     HRESULT init(VirtualBox *aVirtualBox);
@@ -67,7 +67,7 @@ public:
 
 
 class OCIUserProfiles :
-    public CloudUserProfiles
+    public CloudProvider
 {
 public:
     OCIUserProfiles();

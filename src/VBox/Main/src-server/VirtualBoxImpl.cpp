@@ -1819,16 +1819,16 @@ HRESULT VirtualBox::createUnattendedInstaller(ComPtr<IUnattended> &aUnattended)
 #endif
 }
 
-HRESULT VirtualBox::createCloudUserProfileManager(ComPtr<ICloudUserProfileManager> &aManager)
+HRESULT VirtualBox::createCloudProviderManager(ComPtr<ICloudProviderManager> &aManager)
 {
-    ComObjPtr<CloudUserProfileManager> ptrCloudUserProfileManager;
-    HRESULT hrc = ptrCloudUserProfileManager.createObject();
+    ComObjPtr<CloudProviderManager> ptrCloudProviderManager;
+    HRESULT hrc = ptrCloudProviderManager.createObject();
     if (SUCCEEDED(hrc))
     {
         AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = ptrCloudUserProfileManager->init(this);
+        hrc = ptrCloudProviderManager->init(this);
         if (SUCCEEDED(hrc))
-            hrc = ptrCloudUserProfileManager.queryInterfaceTo(aManager.asOutParam());
+            hrc = ptrCloudProviderManager.queryInterfaceTo(aManager.asOutParam());
     }
     return hrc;
 }

@@ -20,17 +20,17 @@
 #define ____H_CLOUDUSERPROFILEMANAGERIMPL
 
 /* VBox includes */
-#include "CloudUserProfileManagerWrap.h"
+#include "CloudProviderManagerWrap.h"
 #include "CloudUserProfilesImpl.h"
 
 /* VBox forward declarations */
 
-class ATL_NO_VTABLE CloudUserProfileManager
-    : public CloudUserProfileManagerWrap
+class ATL_NO_VTABLE CloudProviderManager
+    : public CloudProviderManagerWrap
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(CloudUserProfileManager)
+    DECLARE_EMPTY_CTOR_DTOR(CloudProviderManager)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -41,14 +41,14 @@ public:
 private:
     ComPtr<VirtualBox> const mParent;       /**< Strong reference to the parent object (VirtualBox/IMachine). */
 #ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
-    std::vector<ComPtr<ICloudUserProfileManager>> mUserProfileManagers;
+    std::vector<ComPtr<ICloudProviderManager>> mUserProfileManagers;
 #else
-    std::vector<CloudProviderId_T> mSupportedProviders;
+    std::vector<Utf8Str> mSupportedProviders;
 #endif
 
-    HRESULT getSupportedProviders(std::vector<CloudProviderId_T> &aProviderTypes);
-    HRESULT getAllProfiles(std::vector< ComPtr<ICloudUserProfiles> > &aProfilesList);
-    HRESULT getProfilesByProvider(CloudProviderId_T aProviderType, ComPtr<ICloudUserProfiles> &aProfiles);
+    HRESULT getSupportedProviders(std::vector<Utf8Str> &aProviderTypes);
+    HRESULT getAllProfiles(std::vector< ComPtr<ICloudProvider> > &aProfilesList);
+    HRESULT getProfilesByProvider(const com::Utf8Str &aProviderName, ComPtr<ICloudProvider> &aProfiles);
 };
 
 #endif // !____H_CLOUDUSERPROFILEMANAGERIMPL

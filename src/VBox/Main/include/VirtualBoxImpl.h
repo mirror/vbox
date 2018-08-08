@@ -312,7 +312,7 @@ private:
                              std::vector<MachineState_T> &aStates);
     HRESULT createAppliance(ComPtr<IAppliance> &aAppliance);
     HRESULT createUnattendedInstaller(ComPtr<IUnattended> &aUnattended);
-    HRESULT createCloudUserProfileManager(ComPtr<ICloudUserProfileManager> &aManager);
+    HRESULT createCloudProviderManager(ComPtr<ICloudProviderManager> &aManager);
     HRESULT createMedium(const com::Utf8Str &aFormat,
                          const com::Utf8Str &aLocation,
                          AccessMode_T aAccessMode,

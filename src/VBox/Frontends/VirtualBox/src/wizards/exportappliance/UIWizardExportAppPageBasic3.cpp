@@ -37,7 +37,7 @@
 /* COM includes: */
 # include "CAppliance.h"
 # include "CCloudClient.h"
-# include "CCloudUserProfiles.h"
+# include "CCloudProvider.h"
 # include "CMachine.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -57,13 +57,13 @@ void UIWizardExportAppPage3::populateCloudClientParameters()
     m_listCloudClientParameters.clear();
 
     /* Acquire Cloud User-profiles: */
-    CCloudUserProfiles comCloudUserProfiles = fieldImp("profiles").value<CCloudUserProfiles>();
-    AssertMsgReturnVoid(comCloudUserProfiles.isNotNull(),
-                        ("Cloud User-profiles object is undefined!"));
+    CCloudProvider comCloudProvider = fieldImp("profiles").value<CCloudProvider>();
+    AssertMsgReturnVoid(comCloudProvider.isNotNull(),
+                        ("Cloud provider object is undefined!"));
 
     /* Create Cloud Client: */
-    CCloudClient comCloudClient = comCloudUserProfiles.CreateCloudClient(fieldImp("profile").toString());
-    AssertMsgReturnVoid(comCloudUserProfiles.isOk() && comCloudClient.isNotNull(),
+    CCloudClient comCloudClient = comCloudProvider.CreateCloudClient(fieldImp("profile").toString());
+    AssertMsgReturnVoid(comCloudProvider.isOk() && comCloudClient.isNotNull(),
                         ("Can't create Cloud Client object!"));
 
     /* Read Cloud Client parameters for Export VM operation: */

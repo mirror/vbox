@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * ICloudUserProfiles COM class implementations.
+ * ICloudProvider COM class implementations.
  */
 
 /*
@@ -209,33 +209,33 @@ bool SimpleConfigFile::isSectionExist(const Utf8Str &strSectionName) const
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// ICloudUserProfiles implementation
+// ICloudProvider implementation
 //
 ////////////////////////////////////////////////////////////////////////////////
-CloudUserProfiles::CloudUserProfiles()
+CloudProvider::CloudProvider()
     : mParent(NULL)
 {
 }
 
-CloudUserProfiles::~CloudUserProfiles()
+CloudProvider::~CloudProvider()
 {
-    LogRel(("CloudUserProfilesImpl::~CloudUserProfilesImpl()\n"));
+    LogRel(("CloudProvider::~CloudProvider()\n"));
     unconst(mParent) = NULL;
 }
 
-HRESULT CloudUserProfiles::FinalConstruct()
+HRESULT CloudProvider::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void CloudUserProfiles::FinalRelease()
+void CloudProvider::FinalRelease()
 {
     uninit();
 
     BaseFinalRelease();
 }
 
-void CloudUserProfiles::uninit()
+void CloudProvider::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -245,7 +245,7 @@ void CloudUserProfiles::uninit()
     unconst(mParent) = NULL;
 }
 
-HRESULT CloudUserProfiles::init(VirtualBox *aParent)
+HRESULT CloudProvider::init(VirtualBox *aParent)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -258,71 +258,71 @@ HRESULT CloudUserProfiles::init(VirtualBox *aParent)
 }
 
 
-HRESULT CloudUserProfiles::getSupportedPropertiesNames(std::vector<com::Utf8Str> &aPropertiesNames)
+HRESULT CloudProvider::getSupportedPropertiesNames(std::vector<com::Utf8Str> &aPropertiesNames)
 {
-    LogRel(("CloudUserProfiles::getSupportedPropertiesNames:\n"));
+    LogRel(("CloudProvider::getSupportedPropertiesNames:\n"));
     aPropertiesNames.clear();
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::readProfiles(const Utf8Str &strConfigPath)
+HRESULT CloudProvider::readProfiles(const Utf8Str &strConfigPath)
 {
-    LogRel(("CloudUserProfiles::readProfiles: %s\n", strConfigPath.c_str()));
+    LogRel(("CloudProvider::readProfiles: %s\n", strConfigPath.c_str()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::getProvider(CloudProviderId_T *aProvider)
+HRESULT CloudProvider::getProvider(CloudProviderId_T *aProvider)
 {
     *aProvider = CloudProviderId_Unknown;
-    LogRel(("CloudUserProfiles::getProvider: %d\n", *aProvider));
+    LogRel(("CloudProvider::getProvider: %d\n", *aProvider));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::createProfile(const com::Utf8Str &aProfileName,
+HRESULT CloudProvider::createProfile(const com::Utf8Str &aProfileName,
                                             const std::vector<com::Utf8Str> &aNames,
                                             const std::vector<com::Utf8Str> &aValues)
 {
-    LogRel(("CloudUserProfiles::createProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
+    LogRel(("CloudProvider::createProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::updateProfile(const com::Utf8Str &aProfileName,
+HRESULT CloudProvider::updateProfile(const com::Utf8Str &aProfileName,
                                             const std::vector<com::Utf8Str> &aNames,
                                             const std::vector<com::Utf8Str> &aValues)
 {
-    LogRel(("CloudUserProfiles::updateProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
+    LogRel(("CloudProvider::updateProfile: %s, %d, %d\n", aProfileName.c_str(), aNames.size(), aValues.size()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
+HRESULT CloudProvider::getStoredProfilesNames(std::vector<com::Utf8Str> &aProfilesNames)
 {
 
-    LogRel(("CloudUserProfiles::getStoredProfilesNames:\n"));
+    LogRel(("CloudProvider::getStoredProfilesNames:\n"));
     aProfilesNames.clear();
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::getProfileProperties(const com::Utf8Str &aProfileName,
+HRESULT CloudProvider::getProfileProperties(const com::Utf8Str &aProfileName,
                                               std::vector<com::Utf8Str> &aReturnNames,
                                               std::vector<com::Utf8Str> &aReturnValues)
 {
-    LogRel(("CloudUserProfiles::getProfileProperties: %s\n", aProfileName.c_str()));
+    LogRel(("CloudProvider::getProfileProperties: %s\n", aProfileName.c_str()));
     aReturnNames.clear();
     aReturnValues.clear();
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::getPropertyDescription(const com::Utf8Str &aName,
+HRESULT CloudProvider::getPropertyDescription(const com::Utf8Str &aName,
                                                      com::Utf8Str &aDescription)
 {
-    LogRel(("CloudUserProfiles::getPropertyDescription: %s, %s\n", aName.c_str(), aDescription.c_str()));
+    LogRel(("CloudProvider::getPropertyDescription: %s, %s\n", aName.c_str(), aDescription.c_str()));
     return setErrorBoth(E_FAIL, VERR_NOT_IMPLEMENTED, tr("Not implemented"));
 }
 
-HRESULT CloudUserProfiles::createCloudClient(const com::Utf8Str &aProfileName,
+HRESULT CloudProvider::createCloudClient(const com::Utf8Str &aProfileName,
                                                 ComPtr<ICloudClient> &aCloudClient)
 {
-    LogRel(("CloudUserProfiles::createCloudClient: %s\n", aProfileName.c_str()));
+    LogRel(("CloudProvider::createCloudClient: %s\n", aProfileName.c_str()));
 
     if (aCloudClient.isNull())
     {

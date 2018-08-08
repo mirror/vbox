@@ -26,8 +26,8 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CCloudUserProfiles.h"
-#include "CCloudUserProfileManager.h"
+#include "CCloudProvider.h"
+#include "CCloudProviderManager.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -127,16 +127,17 @@ protected:
     /** Defines @a strProvider. */
     void setProvider(KCloudProviderId enmProvider);
     /** Returns provider. */
-    KCloudProviderId provider() const;
+//  KCloudProviderId provider() const;
+    QString provider() const;
     /** Returns profile. */
     QString profile() const;
     /** Returns Cloud User-profile object. */
-    CCloudUserProfiles profiles() const;
+    CCloudProvider profiles() const;
 
     /** Holds the Cloud User-profile Manager reference. */
-    CCloudUserProfileManager  m_comCloudUserProfileManager;
+    CCloudProviderManager  m_comCloudProviderManager;
     /** Holds the Cloud User-profile object reference. */
-    CCloudUserProfiles     m_comCloudUserProfiles;
+    CCloudProvider     m_comCloudProvider;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -196,7 +197,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(CCloudUserProfiles profiles READ profiles);
+    Q_PROPERTY(CCloudProvider profiles READ profiles);
     Q_PROPERTY(QString profile READ profile);
 
 public:
