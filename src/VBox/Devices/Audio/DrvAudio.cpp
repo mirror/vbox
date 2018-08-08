@@ -2336,41 +2336,41 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
          * Read from the parent buffer (that is, the guest buffer) which
          * should have the audio data in the format the guest needs.
          */
-        uint32_t cReadTotal = 0;
+        uint32_t cfReadTotal = 0;
 
         uint32_t cfToRead = RT_MIN(AUDIOMIXBUF_B2F(&pStream->Guest.MixBuf, cbBuf), AudioMixBufUsed(&pStream->Guest.MixBuf));
         while (cfToRead)
         {
-            uint32_t cRead;
+            uint32_t cfRead;
             rc = AudioMixBufAcquireReadBlock(&pStream->Guest.MixBuf,
-                                             (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cReadTotal),
-                                             AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfToRead), &cRead);
+                                             (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal),
+                                             AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfToRead), &cfRead);
             if (RT_FAILURE(rc))
                 break;
 
 #ifdef VBOX_WITH_STATISTICS
-            const uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cRead);
+            const uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfRead);
 
             STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,      cbRead);
             STAM_COUNTER_ADD(&pStream->In.Stats.BytesTotalRead, cbRead);
 #endif
-            Assert(cfToRead >= cRead);
-            cfToRead -= cRead;
+            Assert(cfToRead >= cfRead);
+            cfToRead -= cfRead;
 
-            cReadTotal += cRead;
+            cfReadTotal += cfRead;
 
-            AudioMixBufReleaseReadBlock(&pStream->Guest.MixBuf, cRead);
+            AudioMixBufReleaseReadBlock(&pStream->Guest.MixBuf, cfRead);
         }
 
-        if (cReadTotal)
+        if (cfReadTotal)
         {
             if (pThis->In.Cfg.Dbg.fEnabled)
                 DrvAudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
-                                     pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cReadTotal), 0 /* fFlags */);
+                                     pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal), 0 /* fFlags */);
 
-            AudioMixBufFinish(&pStream->Guest.MixBuf, cReadTotal);
+            AudioMixBufFinish(&pStream->Guest.MixBuf, cfReadTotal);
 
-            cbReadTotal = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cReadTotal);
+            cbReadTotal = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal);
         }
 
     } while (0);
