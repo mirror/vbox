@@ -161,8 +161,11 @@ static DECLCALLBACK(int) drvHostNullAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 {
     RT_NOREF(pInterface, pStream);
 
+    PNULLAUDIOSTREAM pStreamNull = (PNULLAUDIOSTREAM)pStream;
+
     /* Return silence. */
-    RT_BZERO(pvBuf, cxBuf);
+    Assert(pStreamNull->pCfg);
+    DrvAudioHlpClearBuf(&pStreamNull->pCfg->Props, pvBuf, cxBuf, PDMAUDIOPCMPROPS_B2F(&pStreamNull->pCfg->Props, cxBuf));
 
     if (pcxRead)
         *pcxRead = cxBuf;
