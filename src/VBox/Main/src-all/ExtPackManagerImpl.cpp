@@ -2916,7 +2916,7 @@ HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector
 
         for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
              it != m->llInstalledExtPacks.end();
-             /* advancing below */)
+             ++it)
         {
             ComPtr<IUnknown> ptrIf;
             HRESULT hrc2 = (*it)->queryObject(aObjUuid, ptrIf);
