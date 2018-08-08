@@ -1582,8 +1582,8 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
 
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
 
-    uint8_t auBuf[_1K]; /** @todo Get rid of this. */
-    size_t  cbBuf = sizeof(auBuf);
+    uint8_t  auBuf[_1K]; /** @todo Get rid of this. */
+    uint32_t cbBuf = sizeof(auBuf);
 
     uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
     if (!cbReadable)
@@ -1600,7 +1600,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     {
         uint32_t cbCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                    auBuf, RT_MIN(cbReadable, (uint32_t)cbBuf), &cbCaptured);
+                                                    auBuf, RT_MIN(cbReadable, cbBuf), &cbCaptured);
         if (RT_FAILURE(rc))
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
@@ -1611,7 +1611,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
 
         Assert(cbCaptured <= cbBuf);
         if (cbCaptured > cbBuf) /* Paranoia. */
-            cbCaptured = (uint32_t)cbBuf;
+            cbCaptured = cbBuf;
 
         /* We use the host side mixing buffer as an intermediate buffer to do some
          * (first) processing (if needed), so always write the incoming data at offset 0. */
