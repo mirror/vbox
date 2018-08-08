@@ -2455,7 +2455,7 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
                     {
                         rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
                         LogFlowFunc(("LUN#%RU8: Recording source is now '%s', rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
-                        LogRel2(("HDA: Set recording source to '%s'\n", pStreamCfg->szName));
+                        LogRel2(("HDA: Set recording source to '%s' (LUN#%RU8)\n", pStreamCfg->szName, pDrv->uLUN));
                     }
                     else if (RT_FAILURE(rc))
                         LogFunc(("LUN#%RU8: Unable to retrieve backend configuratio for '%s', rc=%Rrc\n",
