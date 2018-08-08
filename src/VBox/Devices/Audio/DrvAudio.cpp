@@ -1600,7 +1600,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     {
         uint32_t cbCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                    auBuf, RT_MIN(cbReadable, cbBuf), &cbCaptured);
+                                                    auBuf, RT_MIN(cbReadable, (uint32_t)cbBuf), &cbCaptured);
         if (RT_FAILURE(rc))
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
