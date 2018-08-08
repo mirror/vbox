@@ -1685,23 +1685,23 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
 
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
 
-    for (;;)
+    /* Note: Raw means *audio frames*, not bytes! */
+    uint32_t cfReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
+    if (!cfReadable)
+        Log2Func(("[%s] No readable data available\n", pStream->szName));
+
+    const uint32_t cfFree = AudioMixBufFree(&pStream->Guest.MixBuf); /* Parent */
+    if (!cfFree)
+        Log2Func(("[%s] Buffer full\n", pStream->szName));
+
+    if (cfReadable > cfFree) /* More data readable than we can store at the moment? Limit. */
+        cfReadable = cfFree;
+
+    while (cfReadable)
     {
-        uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
-        if (!cbReadable) /* Nothing to read on the backend side? Bail out. */
-            break;
-
-        const uint32_t cbFree = AudioMixBufFreeBytes(&pStream->Host.MixBuf);
-        if (!cbFree) /* No space left in the host stream? */
-            break;
-
-        if (cbReadable > cbFree) /* Don't capture more than the host stream currently can hold. */
-            cbReadable = cbFree;
-
         PPDMAUDIOFRAME paFrames;
         uint32_t cfWritable;
-        rc = AudioMixBufPeekMutable(&pStream->Host.MixBuf, AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbReadable),
-                                    &paFrames, &cfWritable);
+        rc = AudioMixBufPeekMutable(&pStream->Host.MixBuf, cfReadable, &paFrames, &cfWritable);
         if (   RT_FAILURE(rc)
             || !cfWritable)
         {
@@ -1715,20 +1715,17 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
             AssertRC(rc2);
-        }
-        else if (cfCaptured)
-        {
-            Assert(cfCaptured <= cfWritable);
-            if (cfCaptured > cfWritable) /* Paranoia. */
-                cfCaptured = cfWritable;
 
-            cfCapturedTotal += cfCaptured;
+            break;
         }
-        else /* Nothing captured -- bail out. */
-            break;
 
-        if (RT_FAILURE(rc))
-            break;
+        Assert(cfCaptured <= cfWritable);
+        if (cfCaptured > cfWritable) /* Paranoia. */
+            cfCaptured = cfWritable;
+
+        Assert(cfReadable >= cfCaptured);
+        cfReadable      -= cfCaptured;
+        cfCapturedTotal += cfCaptured;
     }
 
     Log2Func(("[%s] %RU32 frames captured, rc=%Rrc\n", pStream->szName, cfCapturedTotal, rc));
