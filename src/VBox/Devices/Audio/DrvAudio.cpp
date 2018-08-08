@@ -1585,76 +1585,62 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     uint8_t auBuf[_1K]; /** @todo Get rid of this. */
     size_t  cbBuf = sizeof(auBuf);
 
-    for (;;)
+    uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
+    if (!cbReadable)
+        Log2Func(("[%s] No readable data available\n", pStream->szName));
+
+    uint32_t cbFree = AudioMixBufFreeBytes(&pStream->Guest.MixBuf); /* Parent */
+    if (!cbFree)
+        Log2Func(("[%s] Buffer full\n", pStream->szName));
+
+    if (cbReadable > cbFree) /* More data readable than we can store at the moment? Limit. */
+        cbReadable = cbFree;
+
+    while (cbReadable)
     {
-        uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
-        if (!cbReadable)
-        {
-            Log2Func(("[%s] No readable data available, skipping\n", pStream->szName));
-            break;
-        }
-
-        uint32_t cbFree = AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, AudioMixBufFree(&pStream->Host.MixBuf));
-        if (!cbFree)
-        {
-            Log2Func(("[%s] Host buffer full, skipping\n", pStream->szName));
-            break;
-        }
-
-        if (cbFree < cbReadable) /* More data captured than we can read? */
-        {
-            /** @todo Warn? */
-        }
-
-        if (cbFree > cbBuf) /* Limit to buffer size. */
-            cbFree = (uint32_t)cbBuf;
-
         uint32_t cbCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                    auBuf, cbFree, &cbCaptured);
+                                                    auBuf, RT_MIN(cbReadable, cbBuf), &cbCaptured);
         if (RT_FAILURE(rc))
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
             AssertRC(rc2);
+
+            break;
         }
-        else if (cbCaptured)
+
+        Assert(cbCaptured <= cbBuf);
+        if (cbCaptured > cbBuf) /* Paranoia. */
+            cbCaptured = (uint32_t)cbBuf;
+
+        /* We use the host side mixing buffer as an intermediate buffer to do some
+         * (first) processing (if needed), so always write the incoming data at offset 0. */
+        uint32_t cfHstWritten = 0;
+        rc = AudioMixBufWriteAt(&pStream->Host.MixBuf, 0 /* offFrames */, auBuf, cbCaptured, &cfHstWritten);
+        if (   RT_FAILURE(rc)
+            || !cfHstWritten)
         {
-            Assert(cbCaptured <= cbBuf);
-            if (cbCaptured > cbBuf) /* Paranoia. */
-                cbCaptured = (uint32_t)cbBuf;
-
-            /* We use the host side mixing buffer as an intermediate buffer to do some
-             * (first) processing (if needed), so always write the incoming data at offset 0. */
-            uint32_t cfHstWritten = 0;
-            rc = AudioMixBufWriteAt(&pStream->Host.MixBuf, 0 /* offFrames */, auBuf, cbCaptured, &cfHstWritten);
-            if (   RT_FAILURE(rc)
-                || !cfHstWritten)
-            {
-                AssertMsgFailed(("[%s] Write failed: cbCaptured=%RU32, cfHstWritten=%RU32, rc=%Rrc\n",
-                                 pStream->szName, cbCaptured, cfHstWritten, rc));
-                break;
-            }
-
-            if (pThis->In.Cfg.Dbg.fEnabled)
-                DrvAudioHlpFileWrite(pStream->In.Dbg.pFileCaptureNonInterleaved, auBuf, cbCaptured, 0 /* fFlags */);
-
-            uint32_t cfHstMixed = 0;
-            if (cfHstWritten)
-            {
-                int rc2 = AudioMixBufMixToParentEx(&pStream->Host.MixBuf, 0 /* cSrcOffset */, cfHstWritten /* cSrcFrames */,
-                                                   &cfHstMixed /* pcSrcMixed */);
-                Log3Func(("[%s] cbCaptured=%RU32, cfWritten=%RU32, cfMixed=%RU32, rc=%Rrc\n",
-                          pStream->szName, cbCaptured, cfHstWritten, cfHstMixed, rc2));
-                AssertRC(rc2);
-            }
-
-            cfCapturedTotal += cfHstMixed;
+            AssertMsgFailed(("[%s] Write failed: cbCaptured=%RU32, cfHstWritten=%RU32, rc=%Rrc\n",
+                             pStream->szName, cbCaptured, cfHstWritten, rc));
+            break;
         }
-        else /* Nothing captured -- bail out. */
-            break;
 
-        if (RT_FAILURE(rc))
-            break;
+        if (pThis->In.Cfg.Dbg.fEnabled)
+            DrvAudioHlpFileWrite(pStream->In.Dbg.pFileCaptureNonInterleaved, auBuf, cbCaptured, 0 /* fFlags */);
+
+        uint32_t cfHstMixed = 0;
+        if (cfHstWritten)
+        {
+            int rc2 = AudioMixBufMixToParentEx(&pStream->Host.MixBuf, 0 /* cSrcOffset */, cfHstWritten /* cSrcFrames */,
+                                               &cfHstMixed /* pcSrcMixed */);
+            Log3Func(("[%s] cbCaptured=%RU32, cfWritten=%RU32, cfMixed=%RU32, rc=%Rrc\n",
+                      pStream->szName, cbCaptured, cfHstWritten, cfHstMixed, rc2));
+            AssertRC(rc2);
+        }
+
+        Assert(cbReadable >= cbCaptured);
+        cbReadable      -= cbCaptured;
+        cfCapturedTotal += cfHstMixed;
     }
 
     if (RT_SUCCESS(rc))
