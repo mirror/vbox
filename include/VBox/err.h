@@ -2789,6 +2789,8 @@
 /** There is more data available.
  *  This can happen due to a buffer wraparound of a buffer read/write operation. */
 #define VINF_AUDIO_MORE_DATA_AVAILABLE              (6604)
+/** Stream is not ready for requested operation.  */
+#define VERR_AUDIO_STREAM_NOT_READY                 (-6604)
 /** @} */
 
 
