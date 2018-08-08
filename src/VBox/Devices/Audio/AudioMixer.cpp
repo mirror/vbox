@@ -1525,12 +1525,10 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         {
             if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
             {
-                rc = pConn->pfnStreamCapture(pConn, pStream, &cfProc);
+                rc2 = pConn->pfnStreamCapture(pConn, pStream, &cfProc);
                 if (RT_FAILURE(rc2))
                 {
                     LogFunc(("%s: Failed capturing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
-                    if (RT_SUCCESS(rc))
-                        rc = rc2;
                     continue;
                 }
 
@@ -1543,8 +1541,6 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                 if (RT_FAILURE(rc2))
                 {
                     LogFunc(("%s: Failed playing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
-                    if (RT_SUCCESS(rc))
-                        rc = rc2;
                     continue;
                 }
             }
