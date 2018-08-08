@@ -2402,6 +2402,83 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPU pVCpu, uint64_t *pu64)
 
 
 #ifndef IEM_WITH_SETJMP
+/**
+ * Fetches the next opcode byte.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ * @param   pu8                 Where to return the opcode byte.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPU pVCpu, uint8_t *pu8)
+{
+    uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
+    pVCpu->iem.s.offModRm = offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
+    {
+        pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
+        *pu8 = pVCpu->iem.s.abOpcode[offOpcode];
+        return VINF_SUCCESS;
+    }
+    return iemOpcodeGetNextU8Slow(pVCpu, pu8);
+}
+#else  /* IEM_WITH_SETJMP */
+/**
+ * Fetches the next opcode byte, longjmp on error.
+ *
+ * @returns The opcode byte.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ */
+DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPU pVCpu)
+{
+# ifdef IEM_WITH_CODE_TLB
+    uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
+    pVCpu->iem.s.offModRm = offOpcode;
+    uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
+    if (RT_LIKELY(   pbBuf != NULL
+                  && offBuf < pVCpu->iem.s.cbInstrBuf))
+    {
+        pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 1;
+        return pbBuf[offBuf];
+    }
+# else
+    uintptr_t offOpcode = pVCpu->iem.s.offOpcode;
+    pVCpu->iem.s.offModRm = offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
+    {
+        pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
+        return pVCpu->iem.s.abOpcode[offOpcode];
+    }
+# endif
+    return iemOpcodeGetNextU8SlowJmp(pVCpu);
+}
+#endif /* IEM_WITH_SETJMP */
+
+/**
+ * Fetches the next opcode byte, which is a ModR/M byte, returns automatically
+ * on failure.
+ *
+ * Will note down the position of the ModR/M byte for VT-x exits.
+ *
+ * @param   a_pbRm              Where to return the RM opcode byte.
+ * @remark Implicitly references pVCpu.
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_OPCODE_GET_NEXT_RM(a_pbRm) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextRm(pVCpu, (a_pu8)); \
+        if (rcStrict2 == VINF_SUCCESS) \
+        { /* likely */ } \
+        else \
+            return rcStrict2; \
+    } while (0)
+#else
+# define IEM_OPCODE_GET_NEXT_RM(a_pbRm) (*(a_pbRm) = iemOpcodeGetNextRmJmp(pVCpu))
+#endif /* IEM_WITH_SETJMP */
+
+
+#ifndef IEM_WITH_SETJMP
 
 /**
  * Deals with the problematic cases that iemOpcodeGetNextU16 doesn't like.

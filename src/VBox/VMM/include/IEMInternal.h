@@ -421,61 +421,66 @@ typedef struct IEMCPU
     /** The effective segment register (X86_SREG_XXX). */
     uint8_t                 iEffSeg;                                                                        /* 0x2b */
 
+    /** The offset of the ModR/M byte relative to the start of the instruction. */
+    uint8_t                 offModRm;                                                                       /* 0x2c */
 #else
     /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
     /** The current offset into abOpcode. */
     uint8_t                 offOpcode;                                                                      /*       0x09 */
+    /** The offset of the ModR/M byte relative to the start of the instruction. */
+    uint8_t                 offModRm;                                                                       /*       0x0a */
 
     /** The effective segment register (X86_SREG_XXX). */
-    uint8_t                 iEffSeg;                                                                        /*       0x0a */
+    uint8_t                 iEffSeg;                                                                        /*       0x0b */
 
-    /** The extra REX ModR/M register field bit (REX.R << 3). */
-    uint8_t                 uRexReg;                                                                        /*       0x0b */
     /** The prefix mask (IEM_OP_PRF_XXX). */
     uint32_t                fPrefixes;                                                                      /*       0x0c */
+    /** The extra REX ModR/M register field bit (REX.R << 3). */
+    uint8_t                 uRexReg;                                                                        /*       0x10 */
     /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
      * (REX.B << 3). */
-    uint8_t                 uRexB;                                                                          /*       0x10 */
+    uint8_t                 uRexB;                                                                          /*       0x11 */
     /** The extra REX SIB index field bit (REX.X << 3). */
-    uint8_t                 uRexIndex;                                                                      /*       0x11 */
+    uint8_t                 uRexIndex;                                                                      /*       0x12 */
 
 #endif
 
     /** The effective operand mode. */
-    IEMMODE                 enmEffOpSize;                                                                   /* 0x2c, 0x12 */
+    IEMMODE                 enmEffOpSize;                                                                   /* 0x2d, 0x13 */
     /** The default addressing mode. */
-    IEMMODE                 enmDefAddrMode;                                                                 /* 0x2d, 0x13 */
+    IEMMODE                 enmDefAddrMode;                                                                 /* 0x2e, 0x14 */
     /** The effective addressing mode. */
-    IEMMODE                 enmEffAddrMode;                                                                 /* 0x2e, 0x14 */
+    IEMMODE                 enmEffAddrMode;                                                                 /* 0x2f, 0x15 */
     /** The default operand mode. */
-    IEMMODE                 enmDefOpSize;                                                                   /* 0x2f, 0x15 */
+    IEMMODE                 enmDefOpSize;                                                                   /* 0x30, 0x16 */
 
     /** Prefix index (VEX.pp) for two byte and three byte tables. */
-    uint8_t                 idxPrefix;                                                                      /* 0x30, 0x16 */
+    uint8_t                 idxPrefix;                                                                      /* 0x31, 0x17 */
     /** 3rd VEX/EVEX/XOP register.
      * Please use IEM_GET_EFFECTIVE_VVVV to access.  */
-    uint8_t                 uVex3rdReg;                                                                     /* 0x31, 0x17 */
+    uint8_t                 uVex3rdReg;                                                                     /* 0x32, 0x18 */
     /** The VEX/EVEX/XOP length field. */
-    uint8_t                 uVexLength;                                                                     /* 0x32, 0x18 */
+    uint8_t                 uVexLength;                                                                     /* 0x33, 0x19 */
     /** Additional EVEX stuff. */
-    uint8_t                 fEvexStuff;                                                                     /* 0x33, 0x19 */
-
-    /** The FPU opcode (FOP). */
-    uint16_t                uFpuOpcode;                                                                     /* 0x34, 0x1a */
+    uint8_t                 fEvexStuff;                                                                     /* 0x34, 0x1a */
 
     /** Explicit alignment padding. */
-#ifdef IEM_WITH_CODE_TLB
-    uint8_t                 abAlignment2a[2];                                                               /* 0x36       */
+    uint8_t                 abAlignment2a[1];                                                               /* 0x35, 0x1b */
+    /** The FPU opcode (FOP). */
+    uint16_t                uFpuOpcode;                                                                     /* 0x36, 0x1c */
+#ifndef IEM_WITH_CODE_TLB
+    /** Explicit alignment padding. */
+    uint8_t                 abAlignment2b[2];                                                               /*       0x1e */
 #endif
 
     /** The opcode bytes. */
-    uint8_t                 abOpcode[15];                                                                   /* 0x48, 0x1c */
+    uint8_t                 abOpcode[15];                                                                   /* 0x48, 0x20 */
     /** Explicit alignment padding. */
 #ifdef IEM_WITH_CODE_TLB
     uint8_t                 abAlignment2c[0x48 - 0x47];                                                     /* 0x37 */
 #else
-    uint8_t                 abAlignment2c[0x48 - 0x2b];                                                     /*       0x2b */
+    uint8_t                 abAlignment2c[0x48 - 0x2f];                                                     /*       0x2f */
 #endif
     /** @} */
 
