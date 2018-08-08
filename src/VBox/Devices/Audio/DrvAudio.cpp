@@ -2319,7 +2319,9 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
     {
         if (!pThis->In.fEnabled)
         {
-            RT_BZERO(pvBuf, cbBuf);
+            /* If the stream is not enabled, return silence. */
+            DrvAudioHlpClearBuf(&pStream->Guest.Cfg.Props, pvBuf, cbBuf,
+                                PDMAUDIOPCMPROPS_B2F(&pStream->Guest.Cfg.Props, cbBuf));
             cbReadTotal = cbBuf;
             break;
         }
