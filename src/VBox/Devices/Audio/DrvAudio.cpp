@@ -862,6 +862,9 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
 
+    AssertMsg(DrvAudioHlpBytesIsAligned(cbBuf, &pStream->Guest.Cfg.Props),
+              ("Writing audio data (%RU32 bytes) to stream '%s' is not properly aligned\n", cbBuf, pStream->szName));
+
     uint32_t cbWrittenTotal = 0;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -873,14 +876,16 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 #endif
 
 #ifdef LOG_ENABLED
-    char *pszStreamSts = NULL;
+    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
+    AssertPtr(pszStreamSts);
 #endif
 
     do
     {
-        if (!pThis->Out.fEnabled)
+        if (   !pThis->Out.fEnabled
+            || !DrvAudioHlpStreamStatusIsReady(pStream->fStatus))
         {
-            cbWrittenTotal = cbBuf;
+            rc = VERR_AUDIO_STREAM_NOT_READY;
             break;
         }
 
@@ -888,25 +893,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             && pThis->pHostDrvAudio->pfnGetStatus
             && pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, PDMAUDIODIR_OUT) != PDMAUDIOBACKENDSTS_RUNNING)
         {
-            rc = VERR_NOT_AVAILABLE;
-            break;
-        }
-
-        AssertMsg(DrvAudioHlpBytesIsAligned(cbBuf, &pStream->Guest.Cfg.Props),
-                  ("Writing audio data (%RU32 bytes) to stream '%s' is not properly aligned\n", cbBuf, pStream->szName));
-
-#ifdef LOG_ENABLED
-        pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-        AssertPtr(pszStreamSts);
-#endif
-        if (!(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
-        {
-            Log3Func(("[%s] Writing to disabled guest output stream not possible (status is %s)\n",
-                      pStream->szName, pszStreamSts));
-#ifdef DEBUG_andy
-            AssertFailed();
-#endif
-            rc = VERR_NOT_AVAILABLE;
+            rc = VERR_AUDIO_STREAM_NOT_READY;
             break;
         }
 
@@ -920,7 +907,10 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             cbToWrite = cbBuf;
 
         if (!cbToWrite)
+        {
+            rc = VERR_BUFFER_OVERFLOW;
             break;
+        }
 
         /* We use the guest side mixing buffer as an intermediate buffer to do some
          * (first) processing (if needed), so always write the incoming data at offset 0. */
@@ -986,8 +976,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     } while (0);
 
-    Log3Func(("[%s] fEnabled=%RTbool, cbWrittenTotal=%RU32, rc=%Rrc\n",
-              pStream->szName, pThis->Out.fEnabled, cbWrittenTotal, rc));
+    Log3Func(("[%s] cbWrittenTotal=%RU32, rc=%Rrc\n", pStream->szName, cbWrittenTotal, rc));
 
 #ifdef LOG_ENABLED
     RTStrFree(pszStreamSts);
@@ -1402,9 +1391,6 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     uint32_t cfPlayedTotal = 0;
 
-    if (!pThis->pHostDrvAudio)
-        return VINF_SUCCESS;
-
     PDMAUDIOSTREAMSTS stsStream = pStream->fStatus;
 #ifdef LOG_ENABLED
     char *pszStreamSts = dbgAudioStreamStatusToStr(stsStream);
@@ -1414,12 +1400,18 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     do
     {
-        /*
-         * Check if the backend is ready to operate.
-         */
-        if (!(stsStream & PDMAUDIOSTREAMSTS_FLAG_ENABLED)) /* Stream disabled? Bail out. */
+        if (!pThis->pHostDrvAudio)
+        {
+            rc = VERR_AUDIO_STREAM_NOT_READY;
             break;
+        }
 
+        if (   !pThis->Out.fEnabled
+            || !DrvAudioHlpStreamStatusIsReady(stsStream))
+        {
+            rc = VERR_AUDIO_STREAM_NOT_READY;
+            break;
+        }
               uint32_t cfLive       = AudioMixBufLive(&pStream->Host.MixBuf);
         const uint8_t  uLivePercent = (100 * cfLive) / AudioMixBufSize(&pStream->Host.MixBuf);
 
