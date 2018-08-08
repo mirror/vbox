@@ -1591,6 +1591,12 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
                     m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
                     fSuccess = m_machine.isOk();
                 }
+                /* Save video capture options: */
+                if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
+                {
+                    m_machine.SetVideoCaptureOptions(newDisplayData.m_strVideoCaptureOptions);
+                    fSuccess = m_machine.isOk();
+                }
                 /* Save whether video capture is enabled: */
                 if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
                 {
@@ -1678,6 +1684,8 @@ void UIMachineSettingsDisplay::enableDisableCaptureWidgets()
 
     bool fVideoCapture = enmCaptureMode == UIDataSettingsMachineDisplay::CaptureMode_VideoOnly ||
         enmCaptureMode == UIDataSettingsMachineDisplay::CaptureMode_VideoAudio;
+    bool fAudioCapture = enmCaptureMode == UIDataSettingsMachineDisplay::CaptureMode_AudioOnly ||
+        enmCaptureMode == UIDataSettingsMachineDisplay::CaptureMode_VideoAudio;
 
     m_pLabelVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
     m_pComboVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
@@ -1692,6 +1700,9 @@ void UIMachineSettingsDisplay::enableDisableCaptureWidgets()
     m_pContainerSliderVideoCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
     m_pEditorVideoCaptureBitRate->setEnabled(fIsVideoCaptureOptionsEnabled && fVideoCapture);
     m_pScrollerVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fVideoCapture);
+
+    m_pAudioCaptureQualityLabel->setEnabled(fIsVideoCaptureOptionsEnabled && fAudioCapture);
+    m_pContainerSliderAudioCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled && fAudioCapture);
 
     m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fVideoCapture);
     m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled && fVideoCapture);

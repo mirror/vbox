@@ -795,6 +795,14 @@ class UIIndicatorVideoCapture : public UISessionStateStatusBarIndicator
         UIIndicatorStateVideoCapture_Paused   = 2
     };
 
+    /** Video-capture modes. */
+    enum UIIndicatorStateVideoCaptureMode
+    {
+        UIIndicatorStateVideoCaptureMode_None   = RT_BIT(0),
+        UIIndicatorStateVideoCaptureMode_Video  = RT_BIT(1),
+        UIIndicatorStateVideoCaptureMode_Audio  = RT_BIT(2)
+    };
+
 public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
@@ -802,6 +810,7 @@ public:
         : UISessionStateStatusBarIndicator(IndicatorType_VideoCapture, pSession)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
+        , m_eCaptureMode(UIIndicatorStateVideoCaptureMode_None)
     {
         /* Assign state-icons: */
         setStateIcon(UIIndicatorStateVideoCapture_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
@@ -879,6 +888,8 @@ private:
         else
             setState(UIIndicatorStateVideoCapture_Paused);
 
+        updateCaptureMode();
+
         /* Prepare tool-tip: */
         QString strFullData;
         switch (state())
@@ -892,8 +903,17 @@ private:
             case UIIndicatorStateVideoCapture_Enabled:
             case UIIndicatorStateVideoCapture_Paused:
             {
+                QString strToolTip;
+                if ( m_eCaptureMode & UIIndicatorStateVideoCaptureMode_Audio &&
+                    m_eCaptureMode & UIIndicatorStateVideoCaptureMode_Video)
+                    strToolTip = "Video/audio capture file";
+                else if (m_eCaptureMode & UIIndicatorStateVideoCaptureMode_Audio)
+                    strToolTip = "Audio capture file";
+                else if (m_eCaptureMode & UIIndicatorStateVideoCaptureMode_Video)
+                    strToolTip = "Video capture file";
+
                 strFullData += s_strTableRow2
-                    .arg(QApplication::translate("UIIndicatorsPool", "Video capture file", "Video capture tooltip"))
+                    .arg(QApplication::translate("UIIndicatorsPool", strToolTip.toLatin1().constData(), "Video capture tooltip"))
                     .arg(machine.GetVideoCaptureFile());
                 break;
             }
@@ -914,10 +934,37 @@ private:
     /** Defines current rotation angle. */
     void setRotationAngle(double dRotationAngle) { m_dRotationAngle = dRotationAngle; update(); }
 
+    /* Parses CMachine::videoCaptureOptions and updates m_eCaptureMode accordingly. */
+    void updateCaptureMode()
+    {
+        m_eCaptureMode = UIIndicatorStateVideoCaptureMode_None;
+
+        /* Get machine: */
+        if (!m_pSession)
+            return;
+        const CMachine machine = m_pSession->machine();
+        if (machine.isNull())
+            return;
+        QStringList strOptionsPairList = machine.GetVideoCaptureOptions().split(",", QString::SkipEmptyParts);
+
+        for (int i = 0; i < strOptionsPairList.size(); ++i)
+        {
+            if (strOptionsPairList.at(i).contains("vc_enabled", Qt::CaseInsensitive) &&
+                strOptionsPairList.at(i).contains("true", Qt::CaseInsensitive))
+                m_eCaptureMode = (UIIndicatorStateVideoCaptureMode)((int)m_eCaptureMode | (int)UIIndicatorStateVideoCaptureMode_Video);
+
+            if (strOptionsPairList.at(i).contains("ac_enabled", Qt::CaseInsensitive) &&
+                strOptionsPairList.at(i).contains("true", Qt::CaseInsensitive))
+                m_eCaptureMode = (UIIndicatorStateVideoCaptureMode)((int)m_eCaptureMode | (int)UIIndicatorStateVideoCaptureMode_Audio);
+        }
+    }
+
     /** Holds the rotation animation instance. */
     UIAnimationLoop *m_pAnimation;
     /** Holds current rotation angle. */
     double m_dRotationAngle;
+
+    UIIndicatorStateVideoCaptureMode m_eCaptureMode;
 };
 
 
@@ -1503,4 +1550,3 @@ void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndi
 }
 
 #include "UIIndicatorsPool.moc"
-
