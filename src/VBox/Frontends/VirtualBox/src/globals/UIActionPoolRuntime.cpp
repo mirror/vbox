@@ -976,7 +976,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Video Capture"));
+        setName(QApplication::translate("UIActionPool", "Audio/&Video Capture"));
     }
 };
 
@@ -1065,7 +1065,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Video Capture"));
+        setName(QApplication::translate("UIActionPool", "Audio/&Video Capture"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable guest display video capture"));
     }
 };
@@ -4170,4 +4170,3 @@ QString UIActionPoolRuntime::shortcutsExtraDataID() const
 
 
 #include "UIActionPoolRuntime.moc"
-
