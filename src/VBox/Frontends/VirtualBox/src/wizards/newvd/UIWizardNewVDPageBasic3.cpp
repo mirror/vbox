@@ -47,6 +47,8 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Other VBox includes: */
+#include <iprt/path.h>
 
 UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath)
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
@@ -261,14 +263,18 @@ bool UIWizardNewVDPageBasic3::validatePage()
         msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
 
     if (fResult)
+        fResult = checkFATSizeLimitation();
+
+    if (!fResult)
+        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+    else
     {
         /* Lock finish button: */
         startProcessing();
 
         /* Try to create virtual hard drive file: */
         fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
-
-        /* Unlock finish button: */
+       /* Unlock finish button: */
         endProcessing();
     }
 
@@ -276,3 +282,20 @@ bool UIWizardNewVDPageBasic3::validatePage()
     return fResult;
 }
 
+bool UIWizardNewVDPage3::checkFATSizeLimitation()
+{
+    QString strMediumPath(mediumPath());
+    RTFSTYPE enmType;
+    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
+    if (RT_SUCCESS(rc))
+    {
+        if (enmType == RTFSTYPE_FAT)
+        {
+            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
+            qulonglong fatLimit = 4 * pow(2,30) - 128 * pow(2, 20);
+            if (mediumSize() >= fatLimit)
+                return false;
+        }
+    }
+    return true;
+}

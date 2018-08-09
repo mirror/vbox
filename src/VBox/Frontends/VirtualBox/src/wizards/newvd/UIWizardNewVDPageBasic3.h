@@ -45,6 +45,9 @@ protected:
     static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
     static QString defaultExtension(const CMediumFormat &mediumFormatRef);
 
+    /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
+    bool checkFATSizeLimitation();
+
     /* Stuff for 'mediumPath' field: */
     QString mediumPath() const;
 

@@ -150,4 +150,3 @@ void UIWizardNewVD::prepare()
     /* Call to base-class: */
     UIWizard::prepare();
 }
-

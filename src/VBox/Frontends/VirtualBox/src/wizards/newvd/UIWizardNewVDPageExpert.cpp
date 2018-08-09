@@ -268,6 +268,12 @@ bool UIWizardNewVDPageExpert::validatePage()
     if (!fResult)
         msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
 
+    if (fResult)
+        fResult = checkFATSizeLimitation();
+
+    if (!fResult)
+        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+
     /* Try to create virtual-disk: */
     if (fResult)
         fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
@@ -278,4 +284,3 @@ bool UIWizardNewVDPageExpert::validatePage()
     /* Return result: */
     return fResult;
 }
-
