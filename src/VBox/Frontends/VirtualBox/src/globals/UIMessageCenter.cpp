@@ -1690,7 +1690,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, con
 void UIMessageCenter::cannotCreateHardDiskStorageInFAT(const QString &strLocation, QWidget *pParent /* = 0 */) const
 {
     alert(pParent, MessageType_Info,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr> FAT file systems have 4GB file size limit")
+          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr> FAT file systems have 4GB file size limit.")
           .arg(strLocation));
 }
 

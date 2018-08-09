@@ -37,9 +37,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-#include <iprt/path.h>
 
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
                              const QString &strDefaultName, const QString &strDefaultPath,
@@ -114,31 +111,6 @@ bool UIWizardNewVD::createVirtualDisk()
     /* Inform VBoxGlobal about it: */
     vboxGlobal().createMedium(UIMedium(m_virtualDisk, UIMediumType_HardDisk, KMediumState_Created));
 
-    return true;
-}
-
-bool UIWizardNewVD::checkFATSizeLimitation()
-{
-    qulonglong uVariant = field("mediumVariant").toULongLong();
-    /* If the hard disk is split into 2GB parts then no need to make further checks: */
-    if (uVariant & KMediumVariant_VmdkSplit2G)
-        return true;
-
-    QString strMediumPath = field("mediumPath").toString();
-    qulonglong uSize = field("mediumSize").toULongLong();
-
-    RTFSTYPE enmType;
-    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
-    if (RT_SUCCESS(rc))
-    {
-        if (enmType == RTFSTYPE_FAT)
-        {
-            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
-            qulonglong fatLimit = _4G - _128M;
-            if (uSize >= fatLimit)
-                return false;
-        }
-    }
     return true;
 }
 

@@ -259,8 +259,8 @@ bool UIWizardNewVDPageExpert::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Make sure such virtual-disk doesn't exists: */
-    QString strMediumPath(mediumPath());
+    /* Make sure such file doesn't exist already: */
+    const QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
     {
@@ -268,7 +268,8 @@ bool UIWizardNewVDPageExpert::validatePage()
         return fResult;
     }
 
-    fResult = qobject_cast<UIWizardNewVD*>(wizard())->checkFATSizeLimitation();
+    /* Make sure we are passing FAT size limitation: */
+    fResult = checkFATSizeLimitation();
     if (!fResult)
     {
         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
@@ -277,10 +278,8 @@ bool UIWizardNewVDPageExpert::validatePage()
 
     /* Lock finish button: */
     startProcessing();
-
     /* Try to create virtual-disk: */
     fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
-
     /* Unlock finish button: */
     endProcessing();
 

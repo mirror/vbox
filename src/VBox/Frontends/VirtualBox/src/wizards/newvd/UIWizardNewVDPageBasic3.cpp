@@ -47,6 +47,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Other VBox includes: */
+#include <iprt/cdefs.h>
+#include <iprt/path.h>
+
+
 UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath)
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
@@ -157,6 +162,35 @@ QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRe
     return QString();
 }
 
+bool UIWizardNewVDPage3::checkFATSizeLimitation()
+{
+    /* Acquire medium variant: */
+    const qulonglong uVariant = fieldImp("mediumVariant").toULongLong();
+
+    /* If the hard disk is split into 2GB parts then no need to make further checks: */
+    if (uVariant & KMediumVariant_VmdkSplit2G)
+        return true;
+
+    /* Acquire medium path and size: */
+    const QString strMediumPath = fieldImp("mediumPath").toString();
+    const qulonglong uSize = fieldImp("mediumSize").toULongLong();
+
+    RTFSTYPE enmType;
+    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
+    if (RT_SUCCESS(rc))
+    {
+        if (enmType == RTFSTYPE_FAT)
+        {
+            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
+            qulonglong fatLimit = _4G - _128M;
+            if (uSize >= fatLimit)
+                return false;
+        }
+    }
+
+    return true;
+}
+
 QString UIWizardNewVDPage3::mediumPath() const
 {
     return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
@@ -253,8 +287,8 @@ bool UIWizardNewVDPageBasic3::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Make sure such file doesn't exists already: */
-    QString strMediumPath(mediumPath());
+    /* Make sure such file doesn't exist already: */
+    const QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
     {
@@ -262,7 +296,8 @@ bool UIWizardNewVDPageBasic3::validatePage()
         return fResult;
     }
 
-    fResult = qobject_cast<UIWizardNewVD*>(wizard())->checkFATSizeLimitation();
+    /* Make sure we are passing FAT size limitation: */
+    fResult = checkFATSizeLimitation();
     if (!fResult)
     {
         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
@@ -271,8 +306,7 @@ bool UIWizardNewVDPageBasic3::validatePage()
 
     /* Lock finish button: */
     startProcessing();
-
-    /* Try to create virtual hard drive file: */
+    /* Try to create virtual-disk: */
     fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
     /* Unlock finish button: */
     endProcessing();
