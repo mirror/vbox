@@ -2583,7 +2583,7 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
     if (fEnable != *pfEnabled)
     {
         LogRel(("Audio: %s %s\n",
-                fEnable ? "Enabling " : "Disabling ", enmDir == PDMAUDIODIR_IN ? "input" : "output"));
+                fEnable ? "Enabling" : "Disabling", enmDir == PDMAUDIODIR_IN ? "input" : "output"));
 
         PPDMAUDIOSTREAM pStream;
         RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
