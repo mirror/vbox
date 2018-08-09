@@ -2769,7 +2769,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
 
         Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
                   pStream->szName, cbReadable, DrvAudioHlpBytesToMilli(cbReadable, &pStream->Host.Cfg.Props)));
-    
+
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
