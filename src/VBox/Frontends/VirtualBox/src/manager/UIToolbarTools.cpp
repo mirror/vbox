@@ -46,6 +46,30 @@ UIToolbarTools::UIToolbarTools(UIActionPool *pActionPool, QWidget *pParent /* = 
     prepare();
 }
 
+void UIToolbarTools::switchToTabBar(TabBarType enmType)
+{
+    /* Handle known types: */
+    switch (enmType)
+    {
+        case TabBarType_Machine:
+        {
+            if (m_pTabBarGlobal)
+                m_pTabBarGlobal->setVisible(false);
+            if (m_pTabBarMachine)
+                m_pTabBarMachine->setVisible(true);
+            break;
+        }
+        case TabBarType_Global:
+        {
+            if (m_pTabBarMachine)
+                m_pTabBarMachine->setVisible(false);
+            if (m_pTabBarGlobal)
+                m_pTabBarGlobal->setVisible(true);
+            break;
+        }
+    }
+}
+
 void UIToolbarTools::setTabBarEnabledMachine(bool fEnabled)
 {
     /* Update Machine tab-bar availability: */
@@ -162,34 +186,12 @@ void UIToolbarTools::sltHandleToolChosenGlobal(const QUuid &uuid)
         emit sigToolOpenedGlobal(m_mapTabIdsGlobal.key(uuid));
 }
 
-void UIToolbarTools::sltHandleActionToggle()
-{
-    /* Handle known actions: */
-    if (m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
-    {
-        if (m_pTabBarGlobal)
-            m_pTabBarGlobal->setVisible(false);
-        if (m_pTabBarMachine)
-            m_pTabBarMachine->setVisible(true);
-    }
-    else if (m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
-    {
-        if (m_pTabBarMachine)
-            m_pTabBarMachine->setVisible(false);
-        if (m_pTabBarGlobal)
-            m_pTabBarGlobal->setVisible(true);
-    }
-}
-
 void UIToolbarTools::prepare()
 {
     /* Prepare menu: */
     prepareMenu();
     /* Prepare widgets: */
     prepareWidgets();
-
-    /* Make sure just one tab-bar shown initially: */
-    sltHandleActionToggle();
 }
 
 void UIToolbarTools::prepareMenu()
@@ -222,8 +224,6 @@ void UIToolbarTools::prepareMenu()
 
     /* Configure 'Machine' toggle action: */
     m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->setMenu(pMenuMachine);
-    connect(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine), &UIAction::toggled,
-            this, &UIToolbarTools::sltHandleActionToggle);
 
     /* Configure 'Global' menu: */
     UIMenu *pMenuGlobal = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global)->menu();
@@ -246,11 +246,6 @@ void UIToolbarTools::prepareMenu()
 
     /* Configure 'Global' toggle action: */
     m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->setMenu(pMenuGlobal);
-    connect(m_pActionPool->action(UIActionIndexST_M_Tools_T_Global), &UIAction::toggled,
-            this, &UIToolbarTools::sltHandleActionToggle);
-
-    /* By default 'Machine' toggle action is toggled: */
-    m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
 }
 
 void UIToolbarTools::prepareWidgets()
@@ -279,7 +274,6 @@ void UIToolbarTools::prepareWidgets()
         m_pTabBarGlobal = new UITabBar(UITabBar::Align_Left);
         if (m_pTabBarGlobal)
         {
-            /* Configure tab-bar connections: */
             connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
                     this, &UIToolbarTools::sltHandleCloseToolGlobal);
             connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
@@ -290,6 +284,6 @@ void UIToolbarTools::prepareWidgets()
         }
 
         /* Let the tab-bars know our opinion: */
-        sltHandleActionToggle();
+        switchToTabBar(TabBarType_Machine);
     }
 }

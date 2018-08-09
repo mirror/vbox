@@ -56,9 +56,15 @@ signals:
 
 public:
 
+    /** Tab-bar types. */
+    enum TabBarType { TabBarType_Machine, TabBarType_Global };
+
     /** Constructs Tools toolbar passing @a pParent to the base-class.
       * @param  pActionPool  Brings the action-pool to take corresponding actions from. */
     UIToolbarTools(UIActionPool *pActionPool, QWidget *pParent = 0);
+
+    /** Switches to tab-bar of certain @a enmType. */
+    void switchToTabBar(TabBarType enmType);
 
     /** Defines whether Machine tab-bar is @a fEnabled. */
     void setTabBarEnabledMachine(bool fEnabled);
@@ -86,9 +92,6 @@ private slots:
     void sltHandleToolChosenMachine(const QUuid &uuid);
     /** Handles request to make Global tool with passed @a uuid current one. */
     void sltHandleToolChosenGlobal(const QUuid &uuid);
-
-    /** Handles action toggle. */
-    void sltHandleActionToggle();
 
 private:
 
