@@ -63,6 +63,16 @@ UIVirtualBoxManagerWidget::~UIVirtualBoxManagerWidget()
     cleanup();
 }
 
+bool UIVirtualBoxManagerWidget::isGlobalItemSelected() const
+{
+    return m_pPaneChooser->isGlobalItemSelected();
+}
+
+bool UIVirtualBoxManagerWidget::isMachineItemSelected() const
+{
+    return m_pPaneChooser->isMachineItemSelected();
+}
+
 UIVirtualMachineItem *UIVirtualBoxManagerWidget::currentItem() const
 {
     return m_pPaneChooser->currentItem();
@@ -209,78 +219,79 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
     /* Let the parent know: */
     emit sigChooserPaneIndexChange();
 
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-
-    /* Update Tools-pane: */
-    m_pPaneToolsMachine->setCurrentItem(pItem);
-
-    /* Update Machine tab-bar availability: */
-    m_pToolbarTools->setTabBarEnabledMachine(pItem && pItem->accessible());
-
-    /* If current item exists & accessible: */
-    if (pItem && pItem->accessible())
+    /* If global item is selected and we are on machine tools pane => switch to global tools pane: */
+    if (isGlobalItemSelected() && m_pSlidingWidget->state() == UISlidingWidget::State_Start)
     {
-        /* If Desktop pane is chosen currently: */
-        if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Desktop)
-        {
-            /* Make sure Details or Snapshot pane is chosen if opened: */
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->trigger();
-            else
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->trigger();
-            else
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_LogViewer))
-                actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->trigger();
-        }
-
-        /* Update Details-pane (if requested): */
-        if (   fUpdateDetails
-            && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-            m_pPaneToolsMachine->setItems(currentItems());
-        /* Update the Snapshots-pane or/and Logviewer-pane (if requested): */
-        if (fUpdateSnapshots || fUpdateLogViewer)
-            m_pPaneToolsMachine->setMachine(pItem->machine());
-    }
-    else
-    {
-        /* Make sure Desktop-pane raised: */
-        m_pPaneToolsMachine->openTool(ToolTypeMachine_Desktop);
-
-        /* Note that the machine becomes inaccessible (or if the last VM gets
-         * deleted), we have to update all fields, ignoring input arguments. */
-        if (pItem)
-        {
-            /* The VM is inaccessible: */
-            m_pPaneToolsMachine->setDetailsError(UIErrorString::formatErrorInfo(pItem->accessError()));
-        }
-
-        /* Update Details-pane (in any case): */
-        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-            m_pPaneToolsMachine->setItems(currentItems());
-        /* Update Snapshots-pane and Logviewer-pane (in any case): */
-        m_pPaneToolsMachine->setMachine(CMachine());
-    }
-}
-
-void UIVirtualBoxManagerWidget::sltHandleToolsTypeSwitch()
-{
-    /* If Machine tool button is checked => go backward: */
-    if (actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
-        m_pSlidingWidget->moveBackward();
-
-    else
-
-    /* If Global tool button is checked => go forward: */
-    if (actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
         m_pSlidingWidget->moveForward();
+        m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Global);
+    }
 
-    /* Update action visibility: */
-    emit sigToolsTypeSwitch();
+    else
 
-    /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
+    /* If machine item is selected and we are on global tools pane => switch to machine tools pane: */
+    if (isMachineItemSelected() && m_pSlidingWidget->state() == UISlidingWidget::State_Final)
+    {
+        m_pSlidingWidget->moveBackward();
+        m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Machine);
+    }
+
+    /* If that was machine item selected: */
+    if (isMachineItemSelected())
+    {
+        /* Get current item: */
+        UIVirtualMachineItem *pItem = currentItem();
+
+        /* Update Tools-pane: */
+        m_pPaneToolsMachine->setCurrentItem(pItem);
+
+        /* Update Machine tab-bar availability: */
+        m_pToolbarTools->setTabBarEnabledMachine(pItem && pItem->accessible());
+
+        /* If current item exists & accessible: */
+        if (pItem && pItem->accessible())
+        {
+            /* If Desktop pane is chosen currently: */
+            if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Desktop)
+            {
+                /* Make sure Details or Snapshot pane is chosen if opened: */
+                if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+                    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->trigger();
+                else
+                if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+                    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->trigger();
+                else
+                if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_LogViewer))
+                    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->trigger();
+            }
+
+            /* Update Details-pane (if requested): */
+            if (   fUpdateDetails
+                && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+                m_pPaneToolsMachine->setItems(currentItems());
+            /* Update the Snapshots-pane or/and Logviewer-pane (if requested): */
+            if (fUpdateSnapshots || fUpdateLogViewer)
+                m_pPaneToolsMachine->setMachine(pItem->machine());
+        }
+        else
+        {
+            /* Make sure Desktop-pane raised: */
+            m_pPaneToolsMachine->openTool(ToolTypeMachine_Desktop);
+
+            /* Note that the machine becomes inaccessible (or if the last VM gets
+             * deleted), we have to update all fields, ignoring input arguments. */
+            if (pItem)
+            {
+                /* The VM is inaccessible: */
+                m_pPaneToolsMachine->setDetailsError(UIErrorString::formatErrorInfo(pItem->accessError()));
+            }
+
+            /* Update Details-pane (in any case): */
+            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+                m_pPaneToolsMachine->setItems(currentItems());
+            /* Update Snapshots-pane and Logviewer-pane (in any case): */
+            m_pPaneToolsMachine->setMachine(CMachine());
+        }
+    }
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
@@ -489,12 +500,6 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             this, &UIVirtualBoxManagerWidget::sltHandleToolClosedMachine);
     connect(m_pToolbarTools, &UIToolbarTools::sigToolClosedGlobal,
             this, &UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal);
-
-    /* 'Tools' actions connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Tools_T_Machine), &UIAction::toggled,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolsTypeSwitch);
-    connect(actionPool()->action(UIActionIndexST_M_Tools_T_Global), &UIAction::toggled,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolsTypeSwitch);
 
     /* Chooser-pane connections: */
     connect(m_pPaneChooser, &UIChooser::sigSelectionChanged,

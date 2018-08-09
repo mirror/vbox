@@ -67,6 +67,10 @@ public:
         /** Returns the action-pool instance. */
         UIActionPool *actionPool() const { return m_pActionPool; }
 
+        /** Returns whether global current-item is selected. */
+        bool isGlobalItemSelected() const;
+        /** Returns whether machine current-item is selected. */
+        bool isMachineItemSelected() const;
         /** Returns current-item. */
         UIVirtualMachineItem *currentItem() const;
         /** Returns a list of current-items. */
@@ -130,9 +134,6 @@ private slots:
 
     /** @name Tools stuff.
       * @{ */
-        /** Handles tools type switch. */
-        void sltHandleToolsTypeSwitch();
-
         /** Handles rquest to open Machine tool of passed @a enmType. */
         void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
         /** Handles rquest to open Global tool of passed @a enmType. */
