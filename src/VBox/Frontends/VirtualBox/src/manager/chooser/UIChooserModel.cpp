@@ -36,6 +36,7 @@
 # include "UIChooser.h"
 # include "UIChooserModel.h"
 # include "UIChooserItemGroup.h"
+# include "UIChooserItemGlobal.h"
 # include "UIChooserItemMachine.h"
 # include "UIExtraDataDefs.h"
 # include "UIMessageCenter.h"
@@ -206,10 +207,22 @@ void UIChooserModel::updateNavigation()
     m_navigationList = createNavigationList(root());
 }
 
+bool UIChooserModel::isGlobalItemSelected() const
+{
+    return currentItem() && currentItem()->type() == UIChooserItemType_Global;
+}
+
+bool UIChooserModel::isMachineItemSelected() const
+{
+    return currentItem() && currentItem()->type() == UIChooserItemType_Machine;
+}
+
 UIVirtualMachineItem* UIChooserModel::currentMachineItem() const
 {
     /* Return first machine-item of the current-item: */
-    return currentItem() ? currentItem()->firstMachineItem() : 0;
+    return   currentItem() && currentItem()->firstMachineItem()
+           ? currentItem()->firstMachineItem()->toMachineItem()
+           : 0;
 }
 
 QList<UIVirtualMachineItem*> UIChooserModel::currentMachineItems() const
@@ -217,7 +230,7 @@ QList<UIVirtualMachineItem*> UIChooserModel::currentMachineItems() const
     /* Gather list of current unique machine-items: */
     QList<UIChooserItemMachine*> currentMachineItemList;
     UIChooserItemMachine::enumerateMachineItems(currentItems(), currentMachineItemList,
-                                                 UIChooserItemMachineEnumerationFlag_Unique);
+                                                UIChooserItemMachineEnumerationFlag_Unique);
 
     /* Reintegrate machine-items into valid format: */
     QList<UIVirtualMachineItem*> currentMachineList;
@@ -981,7 +994,7 @@ void UIChooserModel::sltGroupSelectedMachines()
                     break;
                 /* Add name to busy: */
                 busyMachineNames << pItem->name();
-                /* Copy or move machine item: */
+                /* Copy or move machine-item: */
                 new UIChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
                 delete pItem;
                 break;
@@ -1450,6 +1463,9 @@ QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
         if (pGroupItem->toGroupItem()->isOpened())
             navigationItems << createNavigationList(pGroupItem);
     }
+    /* Iterate over all the global-items: */
+    foreach (UIChooserItem *pGlobalItem, pItem->items(UIChooserItemType_Global))
+        navigationItems << pGlobalItem;
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pMachineItem, pItem->items(UIChooserItemType_Machine))
         navigationItems << pMachineItem;
@@ -1749,6 +1765,9 @@ bool UIChooserModel::processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent)
 
 void UIChooserModel::loadGroupTree()
 {
+    /* Create Global item: */
+    createGlobalItem(mainRoot());
+
     /* Add all the approved machines we have into the group-tree: */
     LogRelFlow(("UIChooserModel: Loading VMs...\n"));
     foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
@@ -1959,11 +1978,14 @@ int UIChooserModel::positionFromDefinitions(UIChooserItem *pParentItem, UIChoose
 
 void UIChooserModel::createMachineItem(const CMachine &machine, UIChooserItem *pParentItem)
 {
-    /* Create corresponding item: */
-    new UIChooserItemMachine(/* Parent item and corresponding machine: */
-                              pParentItem, machine,
-                              /* Which position new group-item should be placed in? */
-                              getDesiredPosition(pParentItem, UIChooserItemType_Machine, machine.GetId()));
+    /* Create machine-item: */
+    new UIChooserItemMachine(pParentItem, machine, getDesiredPosition(pParentItem, UIChooserItemType_Machine, machine.GetId()));
+}
+
+void UIChooserModel::createGlobalItem(UIChooserItem *pParentItem)
+{
+    /* Create global-item: */
+    new UIChooserItemGlobal(pParentItem, 0);
 }
 
 void UIChooserModel::saveGroupDefinitions()

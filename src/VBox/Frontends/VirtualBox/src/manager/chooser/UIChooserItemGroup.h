@@ -144,8 +144,8 @@ private:
     void clearItems(UIChooserItemType type = UIChooserItemType_Any);
     void updateAll(const QString &strId);
     void removeAll(const QString &strId);
-    UIChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
-    UIChooserItemMachine* firstMachineItem();
+    UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags);
+    UIChooserItem *firstMachineItem();
     void sortItems();
 
     /* Helpers: Layout stuff: */
@@ -202,6 +202,7 @@ private:
     UIEditorGroupRename *m_pNameEditorWidget;
     QGraphicsProxyWidget *m_pNameEditor;
     QList<UIChooserItem*> m_groupItems;
+    QList<UIChooserItem*> m_globalItems;
     QList<UIChooserItem*> m_machineItems;
     int m_iAdditionalHeight;
     int m_iCornerRadius;

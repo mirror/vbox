@@ -30,6 +30,7 @@
 
 /* GUI includes: */
 # include "UIChooserItemGroup.h"
+# include "UIChooserItemGlobal.h"
 # include "UIChooserItemMachine.h"
 # include "UIChooserModel.h"
 # include "UIChooserView.h"
@@ -469,6 +470,9 @@ void UIChooserItemGroup::copyContent(UIChooserItemGroup *pFrom, UIChooserItemGro
     /* Copy group-items: */
     foreach (UIChooserItem *pGroupItem, pFrom->items(UIChooserItemType_Group))
         new UIChooserItemGroup(pTo, pGroupItem->toGroupItem());
+    /* Copy global-items: */
+    foreach (UIChooserItem *pGlobalItem, pFrom->items(UIChooserItemType_Global))
+        new UIChooserItemGlobal(pTo, pGlobalItem->toGlobalItem());
     /* Copy machine-items: */
     foreach (UIChooserItem *pMachineItem, pFrom->items(UIChooserItemType_Machine))
         new UIChooserItemMachine(pTo, pMachineItem->toMachineItem());
@@ -806,6 +810,16 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, int iPosition)
             scene()->addItem(pItem);
             break;
         }
+        case UIChooserItemType_Global:
+        {
+            AssertMsg(!m_globalItems.contains(pItem), ("Global-item already added!"));
+            if (iPosition < 0 || iPosition >= m_globalItems.size())
+                m_globalItems.append(pItem);
+            else
+                m_globalItems.insert(iPosition, pItem);
+            scene()->addItem(pItem);
+            break;
+        }
         case UIChooserItemType_Machine:
         {
             AssertMsg(!m_machineItems.contains(pItem), ("Machine-item already added!"));
@@ -841,6 +855,13 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
             m_groupItems.removeAt(m_groupItems.indexOf(pItem));
             break;
         }
+        case UIChooserItemType_Global:
+        {
+            AssertMsg(m_globalItems.contains(pItem), ("Global-item was not found!"));
+            scene()->removeItem(pItem);
+            m_globalItems.removeAt(m_globalItems.indexOf(pItem));
+            break;
+        }
         case UIChooserItemType_Machine:
         {
             AssertMsg(m_machineItems.contains(pItem), ("Machine-item was not found!"));
@@ -867,6 +888,7 @@ void UIChooserItemGroup::setItems(const QList<UIChooserItem*> &items, UIChooserI
     switch (type)
     {
         case UIChooserItemType_Group: m_groupItems = items; break;
+        case UIChooserItemType_Global: m_globalItems = items; break;
         case UIChooserItemType_Machine: m_machineItems = items; break;
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
@@ -881,8 +903,9 @@ QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserItemType type /* = UICh
 {
     switch (type)
     {
-        case UIChooserItemType_Any: return items(UIChooserItemType_Group) + items(UIChooserItemType_Machine);
+        case UIChooserItemType_Any: return items(UIChooserItemType_Global) + items(UIChooserItemType_Group) + items(UIChooserItemType_Machine);
         case UIChooserItemType_Group: return m_groupItems;
+        case UIChooserItemType_Global: return m_globalItems;
         case UIChooserItemType_Machine: return m_machineItems;
         default: break;
     }
@@ -894,9 +917,11 @@ bool UIChooserItemGroup::hasItems(UIChooserItemType type /* = UIChooserItemType_
     switch (type)
     {
         case UIChooserItemType_Any:
-            return hasItems(UIChooserItemType_Group) || hasItems(UIChooserItemType_Machine);
+            return hasItems(UIChooserItemType_Global) || hasItems(UIChooserItemType_Group) || hasItems(UIChooserItemType_Machine);
         case UIChooserItemType_Group:
             return !m_groupItems.isEmpty();
+        case UIChooserItemType_Global:
+            return !m_globalItems.isEmpty();
         case UIChooserItemType_Machine:
             return !m_machineItems.isEmpty();
     }
@@ -910,6 +935,7 @@ void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemTyp
         case UIChooserItemType_Any:
         {
             clearItems(UIChooserItemType_Group);
+            clearItems(UIChooserItemType_Global);
             clearItems(UIChooserItemType_Machine);
             break;
         }
@@ -917,6 +943,12 @@ void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemTyp
         {
             while (!m_groupItems.isEmpty()) { delete m_groupItems.last(); }
             AssertMsg(m_groupItems.isEmpty(), ("Group items cleanup failed!"));
+            break;
+        }
+        case UIChooserItemType_Global:
+        {
+            while (!m_globalItems.isEmpty()) { delete m_globalItems.last(); }
+            AssertMsg(m_globalItems.isEmpty(), ("Global items cleanup failed!"));
             break;
         }
         case UIChooserItemType_Machine:
@@ -972,6 +1004,9 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
     foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
         if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
             return pFoundItem;
+    foreach (UIChooserItem *pItem, items(UIChooserItemType_Global))
+        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
+            return pFoundItem;
     foreach (UIChooserItem *pItem, items(UIChooserItemType_Group))
         if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
             return pFoundItem;
@@ -980,7 +1015,7 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
     return 0;
 }
 
-UIChooserItemMachine* UIChooserItemGroup::firstMachineItem()
+UIChooserItem *UIChooserItemGroup::firstMachineItem()
 {
     /* If this group-item have at least one machine-item: */
     if (hasItems(UIChooserItemType_Machine))

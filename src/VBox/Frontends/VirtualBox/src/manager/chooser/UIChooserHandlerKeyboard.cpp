@@ -267,6 +267,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 switch (pFocusItem->type())
                 {
                     case UIChooserItemType_Group:
+                    case UIChooserItemType_Global:
                     case UIChooserItemType_Machine:
                     {
                         /* Unindent root if its NOT main: */

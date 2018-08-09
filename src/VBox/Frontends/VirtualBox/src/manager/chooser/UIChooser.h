@@ -70,7 +70,9 @@ public:
     UIChooserView *view() const { return m_pChooserView; }
 
     /* API: Current-item stuff: */
-    UIVirtualMachineItem* currentItem() const;
+    bool isGlobalItemSelected() const;
+    bool isMachineItemSelected() const;
+    UIVirtualMachineItem *currentItem() const;
     QList<UIVirtualMachineItem*> currentItems() const;
     bool isSingleGroupSelected() const;
     bool isAllItemsOfOneGroupSelected() const;

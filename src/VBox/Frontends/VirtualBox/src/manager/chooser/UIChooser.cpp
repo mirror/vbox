@@ -71,7 +71,17 @@ UIActionPool* UIChooser::actionPool() const
     return managerWidget()->actionPool();
 }
 
-UIVirtualMachineItem* UIChooser::currentItem() const
+bool UIChooser::isGlobalItemSelected() const
+{
+    return m_pChooserModel->isGlobalItemSelected();
+}
+
+bool UIChooser::isMachineItemSelected() const
+{
+    return m_pChooserModel->isMachineItemSelected();
+}
+
+UIVirtualMachineItem *UIChooser::currentItem() const
 {
     return m_pChooserModel->currentMachineItem();
 }

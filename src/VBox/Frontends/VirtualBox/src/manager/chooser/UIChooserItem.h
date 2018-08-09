@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QMimeData>
+#include <QString>
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
@@ -32,6 +33,7 @@
 class UIActionPool;
 class UIChooserModel;
 class UIChooserItemGroup;
+class UIChooserItemGlobal;
 class UIChooserItemMachine;
 class QGraphicsSceneHoverEvent;
 class QGraphicsSceneMouseEvent;
@@ -42,17 +44,19 @@ class QPropertyAnimation;
 /* UIChooserItem types: */
 enum UIChooserItemType
 {
-    UIChooserItemType_Any     = QGraphicsItem::UserType,
-    UIChooserItemType_Group   = QGraphicsItem::UserType + 1,
-    UIChooserItemType_Machine = QGraphicsItem::UserType + 2
+    UIChooserItemType_Any = QGraphicsItem::UserType,
+    UIChooserItemType_Group,
+    UIChooserItemType_Global,
+    UIChooserItemType_Machine
 };
 
 /* Item search flags: */
 enum UIChooserItemSearchFlag
 {
     UIChooserItemSearchFlag_Machine   = RT_BIT(0),
-    UIChooserItemSearchFlag_Group     = RT_BIT(1),
-    UIChooserItemSearchFlag_ExactName = RT_BIT(2)
+    UIChooserItemSearchFlag_Global    = RT_BIT(1),
+    UIChooserItemSearchFlag_Group     = RT_BIT(2),
+    UIChooserItemSearchFlag_ExactName = RT_BIT(3)
 };
 
 /* Drag token placement: */
@@ -81,8 +85,9 @@ public:
     UIChooserItem(UIChooserItem *pParent, bool fTemporary);
 
     /* API: Cast stuff: */
-    UIChooserItemGroup* toGroupItem();
-    UIChooserItemMachine* toMachineItem();
+    UIChooserItemGroup *toGroupItem();
+    UIChooserItemGlobal *toGlobalItem();
+    UIChooserItemMachine *toMachineItem();
 
     /* API: Model stuff: */
     UIChooserModel* model() const;
@@ -117,7 +122,7 @@ public:
     virtual void updateAll(const QString &strId) = 0;
     virtual void removeAll(const QString &strId) = 0;
     virtual UIChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;
-    virtual UIChooserItemMachine* firstMachineItem() = 0;
+    virtual UIChooserItem* firstMachineItem() = 0;
     virtual void sortItems() = 0;
 
     /* API: Layout stuff: */

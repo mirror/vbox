@@ -604,7 +604,7 @@ UIChooserItem* UIChooserItemMachine::searchForItem(const QString &strSearchTag, 
     return this;
 }
 
-UIChooserItemMachine* UIChooserItemMachine::firstMachineItem()
+UIChooserItem *UIChooserItemMachine::firstMachineItem()
 {
     return this;
 }
