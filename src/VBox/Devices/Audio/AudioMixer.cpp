@@ -674,13 +674,40 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     if (RT_FAILURE(rc))
         return rc;
 
-    PAUDMIXSTREAM pStream;
-    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    /* Input sink and no recording source set? Bail out early. */
+    if (   pSink->enmDir == AUDMIXSINKDIR_INPUT
+        && pSink->In.pStreamRecSource == NULL)
     {
-        int rc2 = audioMixerStreamCtlInternal(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-        /* Keep going. Flag? */
+        int rc2 = RTCritSectLeave(&pSink->CritSect);
+        AssertRC(rc2);
+
+        return rc;
+    }
+
+    PAUDMIXSTREAM pStream;
+    if (   pSink->enmDir == AUDMIXSINKDIR_INPUT
+        && pSink->In.pStreamRecSource) /* Any recording source set? */
+    {
+        RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+        {
+            if (pStream == pSink->In.pStreamRecSource)
+            {
+                int rc2 = audioMixerStreamCtlInternal(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+                /* Keep going. Flag? */
+            }
+        }
+    }
+    else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+    {
+        RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+        {
+            int rc2 = audioMixerStreamCtlInternal(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+            /* Keep going. Flag? */
+        }
     }
 
     if (enmSinkCmd == AUDMIXSINKCMD_ENABLE)
@@ -1503,12 +1530,22 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
         return rc;
 
+    /* Input sink and no recording source set? Bail out early. */
+    if (   pSink->enmDir == AUDMIXSINKDIR_INPUT
+        && pSink->In.pStreamRecSource == NULL)
+        return rc;
+
     /* Number of detected disabled streams of this sink. */
     uint8_t cStreamsDisabled = 0;
 
     PAUDMIXSTREAM pMixStream, pMixStreamNext;
     RTListForEachSafe(&pSink->lstStreams, pMixStream, pMixStreamNext, AUDMIXSTREAM, Node)
     {
+        /* Input sink and not the recording source? Skip. */
+        if (   pSink->enmDir == AUDMIXSINKDIR_INPUT
+            && pSink->In.pStreamRecSource != pMixStream)
+            continue;
+
         PPDMAUDIOSTREAM pStream   = pMixStream->pStream;
         AssertPtr(pStream);
 
