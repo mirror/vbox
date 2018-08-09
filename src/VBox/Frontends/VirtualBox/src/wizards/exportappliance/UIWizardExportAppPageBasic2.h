@@ -124,20 +124,19 @@ protected:
     /** Defines whether include ISOs @a fSelected. */
     void setIncludeISOsSelected(bool fChecked);
 
-    /** Defines @a strProvider. */
-    void setProvider(KCloudProviderId enmProvider);
-    /** Returns provider. */
-//  KCloudProviderId provider() const;
-    QString provider() const;
-    /** Returns profile. */
-    QString profile() const;
-    /** Returns Cloud User-profile object. */
-    CCloudProvider profiles() const;
+    /** Defines provider by @a strId. */
+    void setProviderById(const QString &strId);
+    /** Returns provider ID. */
+    QString providerId() const;
+    /** Returns profile name. */
+    QString profileName() const;
+    /** Returns Cloud Provider object. */
+    CCloudProvider provider() const;
 
-    /** Holds the Cloud User-profile Manager reference. */
+    /** Holds the Cloud Provider Manager reference. */
     CCloudProviderManager  m_comCloudProviderManager;
-    /** Holds the Cloud User-profile object reference. */
-    CCloudProvider     m_comCloudProvider;
+    /** Holds the Cloud Provider object reference. */
+    CCloudProvider         m_comCloudProvider;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -197,8 +196,8 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(CCloudProvider profiles READ profiles);
-    Q_PROPERTY(QString profile READ profile);
+    Q_PROPERTY(CCloudProvider provider READ provider);
+    Q_PROPERTY(QString profileName READ profileName);
 
 public:
 

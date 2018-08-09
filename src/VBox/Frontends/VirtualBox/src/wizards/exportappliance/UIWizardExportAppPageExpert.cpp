@@ -348,8 +348,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
-    registerField("profiles", this, "profiles");
-    registerField("profile", this, "profile");
+    registerField("profileName", this, "profileName");
+    registerField("provider", this, "provider");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -431,16 +431,16 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
     for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
-        if (m_pAccountComboBox->itemData(i, Qt::UserRole + 1).toInt() == KCloudProviderId_OCI)
+        if (m_pAccountComboBox->itemData(i, ProviderID).toString() == "OCI")
         {
             m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure: %1", "provider: profile")
-                .arg(m_pAccountComboBox->itemData(i, Qt::UserRole + 2).toString()));
+                .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
         }
         else
         {
             m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-                .arg(gpConverter->toInternalInteger((KCloudProviderId)m_pAccountComboBox->itemData(i, Qt::UserRole + 1).toInt()))
-                .arg(m_pAccountComboBox->itemData(i, Qt::UserRole + 2).toString()));
+                .arg(m_pAccountComboBox->itemData(i, ProviderID).toString())
+                .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
         }
     }
 
