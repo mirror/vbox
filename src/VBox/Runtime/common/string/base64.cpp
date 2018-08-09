@@ -399,16 +399,27 @@ RT_EXPORT_SYMBOL(RTBase64Decode);
 
 /**
  * Calculates the length of the Base64 encoding of a given number of bytes of
- * data.
- *
- * This will assume line breaks every 64 chars. A RTBase64EncodedLengthEx
- * function can be added if closer control over the output is found to be
- * required.
+ * data produced by RTBase64Encode().
  *
  * @returns The Base64 string length.
  * @param   cbData      The number of bytes to encode.
  */
 RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
+{
+    return RTBase64EncodedLengthEx(cbData, 0);
+}
+RT_EXPORT_SYMBOL(RTBase64EncodedLength);
+
+
+/**
+ * Calculates the length of the Base64 encoding of a given number of bytes of
+ * data produced by RTBase64EncodeEx() with the same @a fFlags.
+ *
+ * @returns The Base64 string length.
+ * @param   cbData      The number of bytes to encode.
+ * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
+ */
+RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
 {
     if (cbData * 8 / 8 != cbData)
     {
@@ -418,7 +429,8 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
             cch += 8;
         cch /= 6;
 
-        cch += ((cch - 1) / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
+        if ((fFlags & RTBASE64_FLAGS_NO_LINE_BREAKS) == 0) /* add EOLs? */
+            cch += ((cch - 1) / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
         return cch;
     }
 
@@ -427,19 +439,18 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
         cch += 8;
     cch /= 6;
 
-    cch += ((cch - 1) / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
+    if ((fFlags & RTBASE64_FLAGS_NO_LINE_BREAKS) == 0) /* add EOLs? */
+        cch += ((cch - 1) / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
     return cch;
 }
-RT_EXPORT_SYMBOL(RTBase64EncodedLength);
+RT_EXPORT_SYMBOL(RTBase64EncodedLengthEx);
 
 
 /**
  * Encodes the specifed data into a Base64 string, the caller supplies the
  * output buffer.
  *
- * This will make the same assumptions about line breaks and EOL size as
- * RTBase64EncodedLength() does. A RTBase64EncodeEx function can be added if
- * more strict control over the output formatting is found necessary.
+ * This is equivalent to calling RTBase64EncodeEx() with no flags.
  *
  * @returns IRPT status code.
  * @retval  VERR_BUFFER_OVERFLOW if the output buffer is too small. The buffer
@@ -452,6 +463,28 @@ RT_EXPORT_SYMBOL(RTBase64EncodedLength);
  * @param   pcchActual  The actual number of characters returned.
  */
 RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size_t cbBuf, size_t *pcchActual)
+{
+    return RTBase64EncodeEx(pvData, cbData, 0, pszBuf, cbBuf, pcchActual);
+}
+RT_EXPORT_SYMBOL(RTBase64Encode);
+
+
+/**
+ * Encodes the specifed data into a Base64 string, the caller supplies the
+ * output buffer.
+ *
+ * @returns IRPT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the output buffer is too small. The buffer
+ *          may contain an invalid Base64 string.
+ *
+ * @param   pvData      The data to encode.
+ * @param   cbData      The number of bytes to encode.
+ * @param   pszBuf      Where to put the Base64 string.
+ * @param   cbBuf       The size of the output buffer, including the terminator.
+ * @param   pcchActual  The actual number of characters returned.
+ */
+RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
+                             char *pszBuf, size_t cbBuf, size_t *pcchActual)
 {
     /*
      * Process whole "trios" of input data.
@@ -482,16 +515,19 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
         cbData -= 3;
         pbSrc  += 3;
 
-        /* deal out linefeeds */
-        if (cbBuf == cbLineFeed && cbData)
+        if ((fFlags & RTBASE64_FLAGS_NO_LINE_BREAKS) == 0) /* add EOLs? */
         {
-            if (cbBuf < RTBASE64_EOL_SIZE + 1)
-                return VERR_BUFFER_OVERFLOW;
-            cbBuf -= RTBASE64_EOL_SIZE;
-            if (RTBASE64_EOL_SIZE == 2)
-                *pchDst++ = '\r';
-            *pchDst++ = '\n';
-            cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
+            /* deal out end-of-line */
+            if (cbBuf == cbLineFeed && cbData)
+            {
+                if (cbBuf < RTBASE64_EOL_SIZE + 1)
+                    return VERR_BUFFER_OVERFLOW;
+                cbBuf -= RTBASE64_EOL_SIZE;
+                if (RTBASE64_EOL_SIZE == 2)
+                    *pchDst++ = '\r';
+                *pchDst++ = '\n';
+                cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
+            }
         }
     }
 
@@ -529,5 +565,4 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
         *pcchActual = pchDst - pszBuf;
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTBase64Encode);
-
+RT_EXPORT_SYMBOL(RTBase64EncodeEx);
