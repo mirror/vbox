@@ -1230,9 +1230,6 @@ static DECLCALLBACK(void) drvscsiDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 
     LogFlowFunc(("pDrvIns=%#p fFlags=%#x\n", pDrvIns, fFlags));
 
-    AssertMsgReturnVoid((fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
-                        ("SCSI: Hotplugging is not supported\n"));
-
     /*
      * Zero some important members.
      */

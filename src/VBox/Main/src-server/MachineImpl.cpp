@@ -4506,15 +4506,41 @@ HRESULT Machine::passthroughDevice(const com::Utf8Str &aName, LONG aControllerPo
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
 
-    if (Global::IsOnlineOrTransient(mData->mMachineState))
+    /* Check for an existing controller. */
+    ComObjPtr<StorageController> ctl;
+    rc = i_getStorageControllerByName(aName, ctl, true /* aSetError */);
+    if (FAILED(rc)) return rc;
+
+    StorageControllerType_T ctrlType;
+    rc = ctl->COMGETTER(ControllerType)(&ctrlType);
+    if (FAILED(rc))
+        return setError(E_FAIL,
+                        tr("Could not get type of controller '%s'"),
+                        aName.c_str());
+
+    bool fSilent = false;
+    Utf8Str strReconfig;
+
+    /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
+    strReconfig = i_getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
+    if (   mData->mMachineState == MachineState_Paused
+        && strReconfig == "1")
+        fSilent = true;
+
+    /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
+    bool fHotplug = false;
+    if (!fSilent && Global::IsOnlineOrTransient(mData->mMachineState))
+        fHotplug = true;
+
+    if (fHotplug && !i_isControllerHotplugCapable(ctrlType))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Invalid machine state: %s"),
-                        Global::stringifyMachineState(mData->mMachineState));
+                        tr("Controller '%s' does not support hotplugging which is required to change the passthrough setting while the VM is running"),
+                        aName.c_str());
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
                                                  aName,
@@ -4537,7 +4563,11 @@ HRESULT Machine::passthroughDevice(const com::Utf8Str &aName, LONG aControllerPo
                         aDevice, aControllerPort, aName.c_str());
     pAttach->i_updatePassthrough(!!aPassthrough);
 
-    return S_OK;
+    attLock.release();
+    alock.release();
+    rc = i_onStorageDeviceChange(pAttach, FALSE /* aRemove */, FALSE /* aSilent */);
+
+    return rc;
 }
 
 HRESULT Machine::temporaryEjectDevice(const com::Utf8Str &aName, LONG aControllerPort,
