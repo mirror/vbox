@@ -162,7 +162,7 @@ QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRe
     return QString();
 }
 
-bool UIWizardNewVDPage3::checkFATSizeLimitation()
+bool UIWizardNewVDPage3::checkFATSizeLimitation() const
 {
     /* Acquire medium variant: */
     const qulonglong uVariant = fieldImp("mediumVariant").toULongLong();
