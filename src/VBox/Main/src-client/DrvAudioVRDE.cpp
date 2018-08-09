@@ -405,10 +405,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVRDEGetStatus(PPDMIHOSTAUDIO pIn
 
     RT_NOREF(enmDir);
 
-    if (pDrv->cClients) /* If any clients are connected via VRDE, return the backend as being operational. */
-        return PDMAUDIOBACKENDSTS_RUNNING;
-
-    return PDMAUDIOBACKENDSTS_STOPPED;
+    return PDMAUDIOBACKENDSTS_RUNNING;
 }
 
 
