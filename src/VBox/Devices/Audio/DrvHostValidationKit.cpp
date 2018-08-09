@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -128,10 +128,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostVaKitAudioGetStatus(PPDMIHOSTAUDI
 static int debugCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pDrv, pStreamDbg, pCfgReq);
-
-    if (pCfgAcq)
-        pCfgAcq->cfPeriod = _1K;
+    RT_NOREF(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
 
     return VINF_SUCCESS;
 }
@@ -140,14 +137,14 @@ static int debugCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStrea
 static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pDrv);
+    RT_NOREF(pDrv, pCfgAcq);
 
     int rc = VINF_SUCCESS;
 
     pStreamDbg->tsStarted = 0;
     pStreamDbg->uSamplesSinceStarted = 0;
     pStreamDbg->Out.tsLastPlayed  = 0;
-    pStreamDbg->Out.cbPlayBuffer  = 16 * _1K * PDMAUDIOSTREAMCFG_F2B(pCfgReq, 1); /** @todo Make this configurable? */
+    pStreamDbg->Out.cbPlayBuffer  = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props);
     pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
     if (!pStreamDbg->Out.pu8PlayBuffer)
         rc = VERR_NO_MEMORY;
@@ -180,20 +177,14 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
             {
                 size_t cch;
                 char szTimingInfo[128];
-                cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %dHz %dch %dbps\n",
-                    pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cBits);
+                cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %dHz %dch %dbit\n",
+                                  pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cBytes * 8);
 
                 RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
             }
         }
         else
             LogRel(("VaKitAudio: Unable to retrieve temp dir: %Rrc\n", rc));
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        if (pCfgAcq)
-            pCfgAcq->cfPeriod = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDbg->Out.cbPlayBuffer);
     }
 
     return rc;
