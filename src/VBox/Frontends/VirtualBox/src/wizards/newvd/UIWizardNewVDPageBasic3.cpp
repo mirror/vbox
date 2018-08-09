@@ -50,6 +50,9 @@
 /* Other VBox includes: */
 #include <iprt/path.h>
 
+/* External includes: */
+#include <math.h>
+
 UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath)
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
