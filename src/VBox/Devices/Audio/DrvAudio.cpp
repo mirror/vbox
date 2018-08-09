@@ -2276,21 +2276,15 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             break;
         }
 
-        if (   pThis->pHostDrvAudio
-            && pThis->pHostDrvAudio->pfnGetStatus
-            && pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, PDMAUDIODIR_IN) != PDMAUDIOBACKENDSTS_RUNNING)
-        {
-            rc = VERR_AUDIO_STREAM_NOT_READY;
-            break;
-        }
-
         /*
          * Read from the parent buffer (that is, the guest buffer) which
          * should have the audio data in the format the guest needs.
          */
         uint32_t cfReadTotal = 0;
 
-        uint32_t cfToRead = RT_MIN(AUDIOMIXBUF_B2F(&pStream->Guest.MixBuf, cbBuf), AudioMixBufLive(&pStream->Guest.MixBuf));
+        const uint32_t cfBuf = AUDIOMIXBUF_B2F(&pStream->Guest.MixBuf, cbBuf);
+
+        uint32_t cfToRead = RT_MIN(cfBuf, AudioMixBufLive(&pStream->Guest.MixBuf));
         while (cfToRead)
         {
             uint32_t cfRead;
@@ -2314,6 +2308,24 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             AudioMixBufReleaseReadBlock(&pStream->Guest.MixBuf, cfRead);
         }
 
+        /* If we were not able to read as much data as requested, fill up the returned
+         * data with silence.
+         *
+         * This is needed to keep the device emulation DMA transfers up and running at a constant rate. */
+        if (cfReadTotal < cfBuf)
+        {
+            Log3Func(("[%s] Filling in silence (%RU64ms / %RU64ms)\n", pStream->szName,
+                      DrvAudioHlpFramesToMilli(cfBuf - cfReadTotal, &pStream->Guest.Cfg.Props),
+                      DrvAudioHlpFramesToMilli(cfBuf, &pStream->Guest.Cfg.Props)));
+
+            DrvAudioHlpClearBuf(&pStream->Guest.Cfg.Props,
+                                (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal),
+                                AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfBuf - cfReadTotal),
+                                cfBuf - cfReadTotal);
+
+            cfReadTotal = cfBuf;
+        }
+
         if (cfReadTotal)
         {
             if (pThis->In.Cfg.Dbg.fEnabled)
@@ -2325,9 +2337,12 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             cbReadTotal = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal);
         }
 
+        pStream->tsLastReadWrittenNs = RTTimeNanoTS();
+
+        Log3Func(("[%s] fEnabled=%RTbool, cbReadTotal=%RU32, rc=%Rrc\n", pStream->szName, pThis->In.fEnabled, cbReadTotal, rc));
+
     } while (0);
 
-    Log3Func(("[%s] fEnabled=%RTbool, cbReadTotal=%RU32, rc=%Rrc\n", pStream->szName, pThis->In.fEnabled, cbReadTotal, rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2727,12 +2742,34 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
     {
         const uint32_t cfReadable = AudioMixBufLive(&pStream->Guest.MixBuf);
 
-        Log3Func(("[%s] cfReadable=%RU32 (%zu bytes)\n", pStream->szName, cfReadable,
-                  AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadable)));
-
         cbReadable = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadable);
+
+        if (!cbReadable)
+        {
+            /*
+             * If Nothing is readable, check if the stream on the backend side is ready to be read from.
+             * If it isn't, return the number of bytes readable since the last read from this stream.
+             *
+             * This is needed for backends (e.g. VRDE) which do not provide any input data in certain
+             * situations, but the device emulation needs input data to keep the DMA transfers moving.
+             * Reading the actual data from a stream then will return silence then.
+             */
+            if (!DrvAudioHlpStreamStatusCanRead(
+                    pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)))
+            {
+                cbReadable = DrvAudioHlpNanoToBytes(RTTimeNanoTS() - pStream->tsLastReadWrittenNs,
+                                                    &pStream->Host.Cfg.Props);
+                Log3Func(("[%s] Backend stream not ready, returning silence\n", pStream->szName));
+            }
+        }
+
+        /* Make sure to align the readable size to the guest's frame size. */
+        cbReadable = DrvAudioHlpBytesAlign(cbReadable, &pStream->Guest.Cfg.Props);
     }
 
+        Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
+                  pStream->szName, cbReadable, DrvAudioHlpBytesToMilli(cbReadable, &pStream->Host.Cfg.Props)));
+    
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
@@ -2789,10 +2826,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
     int rc2 = RTCritSectEnter(&pThis->CritSect);
     AssertRC(rc2);
 
-    /* If the connector is ready to operate, also make sure to ask the backend. */
     PDMAUDIOSTREAMSTS stsStream = pStream->fStatus;
-    if (DrvAudioHlpStreamStatusIsReady(stsStream))
-        stsStream = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend);
 
 #ifdef LOG_ENABLED
     char *pszStreamSts = dbgAudioStreamStatusToStr(stsStream);
