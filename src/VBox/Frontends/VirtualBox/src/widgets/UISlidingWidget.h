@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,6 +46,15 @@ signals:
 
 public:
 
+    /** Sliding state. */
+    enum State
+    {
+        State_Start,
+        State_GoingForward,
+        State_Final,
+        State_GoingBackward
+    };
+
     /** Constructs sliding widget passing @a pParent to the base-class. */
     UISlidingWidget(QWidget *pParent = 0);
 
@@ -55,10 +64,13 @@ public:
     /** Defines @a pWidget1 and @a pWidget2. */
     void setWidgets(QWidget *pWidget1, QWidget *pWidget2);
 
+    /** Returns sliding state. */
+    State state() const { return m_enmState; }
+
     /** Moves animation forward. */
-    void moveForward() { emit sigForward(); }
+    void moveForward() { m_enmState = State_GoingForward; emit sigForward(); }
     /** Moves animation backward. */
-    void moveBackward() { emit sigBackward(); }
+    void moveBackward() { m_enmState = State_GoingBackward; emit sigBackward(); }
 
 protected:
 
@@ -71,9 +83,9 @@ protected:
 private slots:
 
     /** Marks state as start. */
-    void sltSetStateToStart() { m_fStateIsFinal = false; }
+    void sltSetStateToStart() { m_enmState = State_Start; }
     /** Marks state as final. */
-    void sltSetStateToFinal() { m_fStateIsFinal = true; }
+    void sltSetStateToFinal() { m_enmState = State_Final; }
 
 private:
 
@@ -93,7 +105,7 @@ private:
     QRect finalWidgetGeometry() const { return m_finalWidgetGeometry; }
 
     /** Holds whether we are in animation final state. */
-    bool         m_fStateIsFinal;
+    State        m_enmState;
     /** Holds the shift left/right animation instance. */
     UIAnimation *m_pAnimation;
     /** Holds sub-window start-geometry. */
