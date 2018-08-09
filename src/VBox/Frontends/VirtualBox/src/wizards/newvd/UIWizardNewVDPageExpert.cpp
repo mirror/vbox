@@ -259,24 +259,27 @@ bool UIWizardNewVDPageExpert::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
     /* Make sure such virtual-disk doesn't exists: */
     QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
+    {
         msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        return fResult;
+    }
 
-    if (fResult)
-        fResult = checkFATSizeLimitation();
-
+    fResult = qobject_cast<UIWizardNewVD*>(wizard())->checkFATSizeLimitation();
     if (!fResult)
+    {
         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+        return fResult;
+    }
+
+    /* Lock finish button: */
+    startProcessing();
 
     /* Try to create virtual-disk: */
-    if (fResult)
-        fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+    fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
 
     /* Unlock finish button: */
     endProcessing();

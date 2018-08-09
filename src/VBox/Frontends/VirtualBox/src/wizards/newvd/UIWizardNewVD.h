@@ -63,6 +63,9 @@ protected:
     /* Creates virtual-disk: */
     bool createVirtualDisk();
 
+    /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
+    bool checkFATSizeLimitation();
+
     /* Who will be able to create virtual-disk: */
     friend class UIWizardNewVDPageBasic3;
     friend class UIWizardNewVDPageExpert;

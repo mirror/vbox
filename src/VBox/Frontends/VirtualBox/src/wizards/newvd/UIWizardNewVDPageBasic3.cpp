@@ -47,10 +47,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-#include <iprt/path.h>
-
 UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath)
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
@@ -261,42 +257,26 @@ bool UIWizardNewVDPageBasic3::validatePage()
     QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
-        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-
-    if (fResult)
-        fResult = checkFATSizeLimitation();
-
-    if (!fResult)
-        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-    else
     {
-        /* Lock finish button: */
-        startProcessing();
-
-        /* Try to create virtual hard drive file: */
-        fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
-        /* Unlock finish button: */
-        endProcessing();
+        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        return fResult;
     }
+
+    fResult = qobject_cast<UIWizardNewVD*>(wizard())->checkFATSizeLimitation();
+    if (!fResult)
+    {
+        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+        return fResult;
+    }
+
+    /* Lock finish button: */
+    startProcessing();
+
+    /* Try to create virtual hard drive file: */
+    fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+    /* Unlock finish button: */
+    endProcessing();
 
     /* Return result: */
     return fResult;
-}
-
-bool UIWizardNewVDPage3::checkFATSizeLimitation()
-{
-    QString strMediumPath(mediumPath());
-    RTFSTYPE enmType;
-    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
-    if (RT_SUCCESS(rc))
-    {
-        if (enmType == RTFSTYPE_FAT)
-        {
-            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
-            qulonglong fatLimit = _4G - _128M;
-            if (mediumSize() >= fatLimit)
-                return false;
-        }
-    }
-    return true;
 }
