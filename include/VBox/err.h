@@ -2097,6 +2097,8 @@
 #define VERR_VMX_MSR_VMX_ENABLE_FAILED              (-4031)
 /** Failed to enable VMXON-in-SMX bit while enabling VT-x through the MSR. */
 #define VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED          (-4032)
+/** An operation caused a nested-guest VM-exit. */
+#define VINF_VMX_VMEXIT                             4031
 /** @} */
 
 
@@ -2186,6 +2188,8 @@
 /** The requested nested-guest VM-exit intercept is not active or not in
  *  nested-guest execution mode. */
 #define VINF_HM_INTERCEPT_NOT_ACTIVE                4118
+/** Pending exception; continue guest execution. */
+#define VINF_HM_PENDING_XCPT                        4119
 /** @} */
 
 
