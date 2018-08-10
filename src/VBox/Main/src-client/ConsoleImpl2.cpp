@@ -3429,8 +3429,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 }
 
 /**
- * Retrieves an uint32_t value from audio's extra data branch and returns a default value
- * if not found or an invalid value is found.
+ * Retrieves an uint32_t value from the audio driver's extra data branch
+ * (VBoxInternal2/Audio/<DriverName>/<Value>), or, if not found, use global branch
+ * (VBoxInternal2/Audio/<Value>).
+ *
+ * The driver branch always supersedes the global branch.
+ * If both branches are not found (empty), return the given default value.
  *
  * @return VBox status code.
  * @param  pVirtualBox          Pointer to IVirtualBox instance.
@@ -3442,12 +3446,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 uint32_t Console::i_getAudioDriverValU32(IVirtualBox *pVirtualBox, IMachine *pMachine,
                                          const char *pszDriverName, const char *pszValue, uint32_t uDefault)
 {
-    Utf8StrFmt strPath("VBoxInternal2/Audio/%s/%s", pszDriverName, pszValue);
-
     Utf8Str strTmp;
-    GetExtraDataBoth(pVirtualBox, pMachine, strPath.c_str(), &strTmp);
 
-    if (strTmp.isNotEmpty())
+    Utf8StrFmt strPathDrv("VBoxInternal2/Audio/%s/%s", pszDriverName, pszValue);
+    GetExtraDataBoth(pVirtualBox, pMachine, strPathDrv.c_str(), &strTmp);
+    if (strTmp.isEmpty())
+    {
+        Utf8StrFmt strPathGlobal("VBoxInternal2/Audio/%s", pszValue);
+        GetExtraDataBoth(pVirtualBox, pMachine, strPathGlobal.c_str(), &strTmp);
+        if (strTmp.isNotEmpty())
+            return strTmp.toUInt32();
+    }
+    else /* Return driver-specific value. */
         return strTmp.toUInt32();
 
     return uDefault;
