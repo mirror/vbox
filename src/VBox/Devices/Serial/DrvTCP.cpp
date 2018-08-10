@@ -132,22 +132,6 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
         }
         else
         {
-            /*
-             * Just return if the send buffer wasn't full till now and
-             * the caller wants to check whether writing is possible with
-             * the event set.
-             *
-             * On Windows the write event is only posted after a send operation returned
-             * WSAEWOULDBLOCK. So without this we would block in the poll call below waiting
-             * for an event which would never happen if the buffer has space left.
-             */
-            if (   (fEvts & RTPOLL_EVT_WRITE)
-                && !pThis->fXmitBufFull)
-            {
-                *pfEvts = RTPOLL_EVT_WRITE;
-                return VINF_SUCCESS;
-            }
-
             /* Always include error event. */
             fEvts |= RTPOLL_EVT_ERROR;
             rc = RTPollSetEventsChange(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET, fEvts);
@@ -161,6 +145,19 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
         {
             uint32_t fEvtsRecv = 0;
             uint32_t idHnd = 0;
+
+            /*
+             * Just check for data available to be read if the send buffer wasn't full till now and
+             * the caller wants to check whether writing is possible with the event set.
+             *
+             * On Windows the write event is only posted after a send operation returned
+             * WSAEWOULDBLOCK. So without this we would block in the poll call below waiting
+             * for an event which would never happen if the buffer has space left.
+             */
+            if (   (fEvts & RTPOLL_EVT_WRITE)
+                && !pThis->fXmitBufFull
+                && pThis->fTcpSockInPollSet)
+                cMillies = 0;
 
             rc = RTPoll(pThis->hPollSet, cMillies, &fEvtsRecv, &idHnd);
             if (RT_SUCCESS(rc))
@@ -208,10 +205,19 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
                     {
                         if (fEvtsRecv & RTPOLL_EVT_WRITE)
                             pThis->fXmitBufFull = false;
+                        else if (!pThis->fXmitBufFull)
+                            fEvtsRecv |= RTPOLL_EVT_WRITE;
                         *pfEvts = fEvtsRecv;
                         break;
                     }
                 }
+            }
+            else if (   rc == VERR_TIMEOUT
+                     && !pThis->fXmitBufFull)
+            {
+                *pfEvts = RTPOLL_EVT_WRITE;
+                rc = VINF_SUCCESS;
+                break;
             }
         }
     }
