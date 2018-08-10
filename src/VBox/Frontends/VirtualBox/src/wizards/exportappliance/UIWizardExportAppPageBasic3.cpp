@@ -176,7 +176,6 @@ bool UIWizardExportAppPage3::parseJsonFieldBool(const QString &strFieldName, con
 {
     /* Make sure field is bool: */
     AssertMsgReturn(field.isBool(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), false);
-    LogRel(("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()));
     const bool fFieldValue = field.toBool();
     //printf("  Field value: \"%s\"\n", fFieldValue ? "true" : "false");
 
@@ -188,7 +187,6 @@ double UIWizardExportAppPage3::parseJsonFieldDouble(const QString &strFieldName,
 {
     /* Make sure field is double: */
     AssertMsgReturn(field.isDouble(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), 0);
-    LogRel(("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()));
     const double dFieldValue = field.toDouble();
     //printf("  Field value: \"%f\"\n", dFieldValue);
 
@@ -200,7 +198,6 @@ QString UIWizardExportAppPage3::parseJsonFieldString(const QString &strFieldName
 {
     /* Make sure field is string: */
     AssertMsgReturn(field.isString(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QString());
-    LogRel(("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()));
     const QString strFieldValue = field.toString();
     //printf("  Field value: \"%s\"\n", strFieldValue.toUtf8().constData());
 
@@ -211,12 +208,11 @@ QString UIWizardExportAppPage3::parseJsonFieldString(const QString &strFieldName
 QStringList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field)
 {
     /* Make sure field is array: */
-    AssertMsgReturn(field.isArray(), ("Item '%s' has wrong structure!", strFieldName.toUtf8().constData()), QStringList());
-    LogRel(("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()));
+    AssertMsgReturn(field.isArray(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QStringList());
     const QJsonArray fieldValueArray = field.toArray();
     QStringList fieldValueStirngList;
     for (int i = 0; i < fieldValueArray.count(); ++i)
-        fieldValueStirngList << fieldValueArray[i].toString();
+            fieldValueStirngList << fieldValueArray[i].toString();
     //printf("  Field value: \"%s\"\n", fieldValueStirngList.join(", ").toUtf8().constData());
 
     return fieldValueStirngList;
