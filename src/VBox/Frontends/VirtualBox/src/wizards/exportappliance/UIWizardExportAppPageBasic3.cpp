@@ -210,12 +210,26 @@ QStringList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldN
     /* Make sure field is array: */
     AssertMsgReturn(field.isArray(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QStringList());
     const QJsonArray fieldValueArray = field.toArray();
-    QStringList fieldValueStirngList;
+    QStringList fieldValueStringList;
+    /* Parse array: */
     for (int i = 0; i < fieldValueArray.count(); ++i)
-            fieldValueStirngList << fieldValueArray[i].toString();
-    //printf("  Field value: \"%s\"\n", fieldValueStirngList.join(", ").toUtf8().constData());
+    {
+        /* Parse current array value: */
+        const QJsonValue value = fieldValueArray[i];
+        /* If value is of string type, we just take it: */
+        if (value.isString())
+            fieldValueStringList << fieldValueArray[i].toString();
+        /* If value is of object type, we just take object values only: */
+        else if (value.isObject())
+        {
+            const QJsonObject valueObject = value.toObject();
+            foreach (const QString &strKey, valueObject.keys())
+                fieldValueStringList << valueObject.value(strKey).toString();
+        }
+    }
+    //printf("  Field value: \"%s\"\n", fieldValueStringList.join(", ").toUtf8().constData());
 
-    return fieldValueStirngList;
+    return fieldValueStringList;
 }
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
