@@ -2182,12 +2182,12 @@ static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PDRVAUDIOCFG pCfg, PCFGMNODE 
         LogRel(("Audio: Debugging enabled (audio data written to '%s')\n", pCfg->Dbg.szPathOut));
 
     /* Buffering stuff. */
-    CFGMR3QueryU32Def(pNode, "PeriodMs",     &pCfg->uPeriodMs, 0);
-    CFGMR3QueryU32Def(pNode, "BufferSizeMs", &pCfg->uBufferSizeMs, 0);
-    CFGMR3QueryU32Def(pNode, "PreBufferMs",  &pCfg->uPreBufMs, UINT32_MAX /* No custom value set */);
+    CFGMR3QueryU32Def(pNode, "PeriodSizeMs",    &pCfg->uPeriodSizeMs, 0);
+    CFGMR3QueryU32Def(pNode, "BufferSizeMs",    &pCfg->uBufferSizeMs, 0);
+    CFGMR3QueryU32Def(pNode, "PreBufferSizeMs", &pCfg->uPreBufSizeMs, UINT32_MAX /* No custom value set */);
 
-    LogFunc(("pCfg=%p, uPeriodMs=%RU32, uBufferSizeMs=%RU32, uPreBufMs=%RU32\n",
-             pCfg, pCfg->uPeriodMs, pCfg->uBufferSizeMs, pCfg->uPreBufMs));
+    LogFunc(("pCfg=%p, uPeriodSizeMs=%RU32, uBufferSizeMs=%RU32, uPreBufSizeMs=%RU32\n",
+             pCfg, pCfg->uPeriodSizeMs, pCfg->uBufferSizeMs, pCfg->uPreBufSizeMs));
 
     return VINF_SUCCESS;
 }
@@ -2937,13 +2937,13 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Period size
      */
-    if (pDrvCfg->uPeriodMs)
-        pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(pDrvCfg->uPeriodMs, &pCfgReq->Props);
+    if (pDrvCfg->uPeriodSizeMs)
+        pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(pDrvCfg->uPeriodSizeMs, &pCfgReq->Props);
     else /* Set default period size. */
         pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(200 /* ms */, &pCfgReq->Props);
 
     LogRel2(("Audio: Using %s period size (%RU64ms, %RU32 frames) for stream '%s'\n",
-             pDrvCfg->uPeriodMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPeriod, &pCfgReq->Props),
+             pDrvCfg->uPeriodSizeMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPeriod, &pCfgReq->Props),
              pCfgReq->Backend.cfPeriod, pStream->szName));
 
     /*
@@ -2961,17 +2961,17 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Pre-buffering size
      */
-    if (pDrvCfg->uPreBufMs != UINT32_MAX)
+    if (pDrvCfg->uPreBufSizeMs != UINT32_MAX)
     {
-        if (!pDrvCfg->uPreBufMs) /* Pre-buffering is set to disabled. */
+        if (!pDrvCfg->uPreBufSizeMs) /* Pre-buffering is set to disabled. */
             LogRel2(("Audio: Using custom pre-buffering (disabled) for stream '%s'\n", pStream->szName));
-        pCfgReq->Backend.cfPreBuf = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufMs, &pCfgReq->Props);
+        pCfgReq->Backend.cfPreBuf = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufSizeMs, &pCfgReq->Props);
     }
     else /* Set default pre-buffering size. */
         pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfBufferSize;
 
     LogRel2(("Audio: Using %s pre-buffering size (%RU64ms, %RU32 frames) for stream '%s'\n",
-             pDrvCfg->uPreBufMs != UINT32_MAX ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPreBuf, &pCfgReq->Props),
+             pDrvCfg->uPreBufSizeMs != UINT32_MAX ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPreBuf, &pCfgReq->Props),
              pCfgReq->Backend.cfPreBuf, pStream->szName));
 
     /*
@@ -3033,14 +3033,14 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfBufferSize, &pCfgAcq->Props), pCfgAcq->Backend.cfBufferSize));
     }
 
-    if (   pDrvCfg->uPeriodMs
+    if (   pDrvCfg->uPeriodSizeMs
         && pCfgAcq->Backend.cfPeriod != pCfgReq->Backend.cfPeriod)
     {
         LogRel2(("Audio: Custom period size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPeriod, &pCfgAcq->Props), pCfgAcq->Backend.cfPeriod));
     }
 
-    if (   pDrvCfg->uPreBufMs != UINT32_MAX
+    if (   pDrvCfg->uPreBufSizeMs != UINT32_MAX
         && pCfgAcq->Backend.cfPreBuf != pCfgReq->Backend.cfPreBuf)
     {
         LogRel2(("Audio: Custom pre-buffering size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",

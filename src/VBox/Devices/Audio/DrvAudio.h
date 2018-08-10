@@ -81,7 +81,7 @@ typedef struct DRVAUDIOCFG
     /** Configures the period size (in ms).
      *  This value reflects the time in between each hardware interrupt on the
      *  backend (host) side. */
-    uint32_t             uPeriodMs;
+    uint32_t             uPeriodSizeMs;
     /** Configures the (ring) buffer size (in ms). Often is a multiple of uPeriodMs. */
     uint32_t             uBufferSizeMs;
     /** Configures the pre-buffering size (in ms).
@@ -89,7 +89,7 @@ typedef struct DRVAUDIOCFG
      *  The bigger this value is, the more latency for the stream will occur.
      *  Set to 0 to disable pre-buffering completely.
      *  By default set to UINT32_MAX if not set to a custom value. */
-    uint32_t             uPreBufMs;
+    uint32_t             uPreBufSizeMs;
     /** The driver's debugging configuration. */
     struct
     {

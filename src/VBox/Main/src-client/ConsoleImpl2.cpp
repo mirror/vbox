@@ -3496,12 +3496,12 @@ int Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVir
             InsertConfigString(pCfg, "DebugPathOut",  strDebugPathOut.c_str());
         }
 
-        InsertConfigInteger(pCfg, "PeriodMs",
-                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PeriodMs", 0 /* Default */));
+        InsertConfigInteger(pCfg, "PeriodSizeMs",
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PeriodSizeMs", 0 /* Default */));
         InsertConfigInteger(pCfg, "BufferSizeMs",
                             i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "BufferSizeMs", 0 /* Default */));
-        InsertConfigInteger(pCfg, "PreBufferMs",
-                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PreBufferMs", UINT32_MAX /* Default */));
+        InsertConfigInteger(pCfg, "PreBufferSizeMs",
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PreBufferSizeMs", UINT32_MAX /* Default */));
 
     PCFGMNODE pLunL1;
     InsertConfigNode(pLUN, "AttachedDriver", &pLunL1);
