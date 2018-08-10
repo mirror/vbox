@@ -178,6 +178,7 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
  *
  * @param   pvData      The data to encode.
  * @param   cbData      The number of bytes to encode.
+ * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
  * @param   pszBuf      Where to put the Base64 string.
  * @param   cbBuf       The size of the output buffer, including the terminator.
  * @param   pcchActual  The actual number of characters returned.
