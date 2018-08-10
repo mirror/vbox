@@ -175,6 +175,7 @@ QList<AbstractVSDParameter> UIWizardExportAppPage3::parseJsonDocument(const QJso
 bool UIWizardExportAppPage3::parseJsonFieldBool(const QString &strFieldName, const QJsonValue &field)
 {
     /* Make sure field is bool: */
+    Q_UNUSED(strFieldName);
     AssertMsgReturn(field.isBool(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), false);
     const bool fFieldValue = field.toBool();
     //printf("  Field value: \"%s\"\n", fFieldValue ? "true" : "false");
@@ -186,6 +187,7 @@ bool UIWizardExportAppPage3::parseJsonFieldBool(const QString &strFieldName, con
 double UIWizardExportAppPage3::parseJsonFieldDouble(const QString &strFieldName, const QJsonValue &field)
 {
     /* Make sure field is double: */
+    Q_UNUSED(strFieldName);
     AssertMsgReturn(field.isDouble(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), 0);
     const double dFieldValue = field.toDouble();
     //printf("  Field value: \"%f\"\n", dFieldValue);
@@ -197,6 +199,7 @@ double UIWizardExportAppPage3::parseJsonFieldDouble(const QString &strFieldName,
 QString UIWizardExportAppPage3::parseJsonFieldString(const QString &strFieldName, const QJsonValue &field)
 {
     /* Make sure field is string: */
+    Q_UNUSED(strFieldName);
     AssertMsgReturn(field.isString(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QString());
     const QString strFieldValue = field.toString();
     //printf("  Field value: \"%s\"\n", strFieldValue.toUtf8().constData());
@@ -208,6 +211,7 @@ QString UIWizardExportAppPage3::parseJsonFieldString(const QString &strFieldName
 QStringList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field)
 {
     /* Make sure field is array: */
+    Q_UNUSED(strFieldName);
     AssertMsgReturn(field.isArray(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QStringList());
     const QJsonArray fieldValueArray = field.toArray();
     QStringList fieldValueStringList;
