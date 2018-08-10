@@ -69,6 +69,8 @@ class tdSerial1(vbox.TestDriver):
         self.asSerialModes    = self.asSerialModesDef;
         self.asSerialTestsDef = ['Write', 'ReadWrite'];
         self.asSerialTests    = self.asSerialTestsDef;
+        self.asUartsDef       = ['16450', '16550A', '16750'];
+        self.asUarts          = self.asUartsDef;
         self.oLoopback        = None;
         self.sLocation        = None;
         self.fVerboseTest     = False;
@@ -84,6 +86,8 @@ class tdSerial1(vbox.TestDriver):
         reporter.log('      Default: %s' % (':'.join(self.asSerialModesDef)));
         reporter.log('  --serial-tests    <t1[:t2[:]]');
         reporter.log('      Default: %s' % (':'.join(self.asSerialTestsDef)));
+        reporter.log('  --uarts           <u1[:u2[:]]');
+        reporter.log('      Default: %s' % (':'.join(self.asUartsDef)));
         reporter.log('  --verbose-test');
         reporter.log('      Whether to enable verbose output when running the');
         reporter.log('      test utility inside the VM');
@@ -106,6 +110,14 @@ class tdSerial1(vbox.TestDriver):
             for s in self.asSerialTests:
                 if s not in self.asSerialTestsDef:
                     reporter.log('warning: The "--serial-tests" value "%s" is not a valid serial port test.' % (s));
+        elif asArgs[iArg] == '--aurts':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('The "--uarts" takes a colon separated list of uarts to test');
+            self.asUarts = asArgs[iArg].split(':');
+            for s in self.asUarts:
+                if s not in self.asUartsDef:
+                    reporter.log('warning: The "--uarts" value "%s" is not a valid uart.' % (s));
         elif asArgs[iArg] == '--verbose-test':
             iArg += 1;
             self.fVerboseTest = True;
@@ -201,9 +213,9 @@ class tdSerial1(vbox.TestDriver):
         _ = oSession;
 
         reporter.testStart('Write');
-        tupCmdLine = ('SerialTest', '--tests', 'write', '--txbytes', '1048576',);
+        tupCmdLine = ('SerialTest', '--tests', 'write', '--txbytes', '1048576');
         if self.fVerboseTest:
-            tupCmdLine += ('--verbose');
+            tupCmdLine += ('--verbose',);
         if oTestVm.isWindows():
             tupCmdLine += ('--device', r'\\.\COM1',);
         elif oTestVm.isLinux():
@@ -245,7 +257,7 @@ class tdSerial1(vbox.TestDriver):
         reporter.testStart('ReadWrite');
         tupCmdLine = ('SerialTest', '--tests', 'readwrite', '--txbytes', '1048576');
         if self.fVerboseTest:
-            tupCmdLine += ('--verbose');
+            tupCmdLine += ('--verbose',);
         if oTestVm.isWindows():
             tupCmdLine += ('--device', r'\\.\COM1',);
         elif oTestVm.isLinux():
@@ -276,43 +288,48 @@ class tdSerial1(vbox.TestDriver):
         Runs the specified VM thru test #1.
         """
 
-        # Reconfigure the VM
-        fRc = True;
-        oSession = self.openSession(oVM);
-        if oSession is not None:
-            fRc = oSession.enableSerialPort(0);
-
-            fRc = fRc and oSession.saveSettings();
-            fRc = oSession.close() and fRc;
-            oSession = None;
-        else:
-            fRc = False;
-
-        if fRc is True:
-            self.logVmInfo(oVM);
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);
+        for sUart in self.asUarts:
+            reporter.testStart(sUart);
+            # Reconfigure the VM
+            fRc = True;
+            oSession = self.openSession(oVM);
             if oSession is not None:
-                self.addTask(oTxsSession);
+                fRc = oSession.enableSerialPort(0);
 
-                for sMode in self.asSerialModes:
-                    reporter.testStart(sMode);
-                    fRc = self.setupSerialMode(oSession, oTestVm, sMode);
-                    if fRc:
-                        for sTest in self.asSerialTests:
-                            # Skip tests which don't work with the current mode.
-                            if self.isModeCompatibleWithTest(sMode, sTest):
-                                if sTest == 'Write':
-                                    fRc = self.testWrite(oSession, oTxsSession, oTestVm, sMode);
-                                if sTest == 'ReadWrite':
-                                    fRc = self.testReadWrite(oSession, oTxsSession, oTestVm);
-                        if self.oLoopback is not None:
-                            self.oLoopback.shutdown();
-                            self.oLoopback = None;
+                fRc = fRc and oSession.setExtraData("VBoxInternal/Devices/serial/0/Config/UartType", "string:" + sUart);
+                fRc = fRc and oSession.saveSettings();
+                fRc = oSession.close() and fRc;
+                oSession = None;
+            else:
+                fRc = False;
 
-                    reporter.testDone();
+            if fRc is True:
+                self.logVmInfo(oVM);
+                oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);
+                if oSession is not None:
+                    self.addTask(oTxsSession);
 
-                self.removeTask(oTxsSession);
-                self.terminateVmBySession(oSession);
+                    for sMode in self.asSerialModes:
+                        reporter.testStart(sMode);
+                        fRc = self.setupSerialMode(oSession, oTestVm, sMode);
+                        if fRc:
+                            for sTest in self.asSerialTests:
+                                # Skip tests which don't work with the current mode.
+                                if self.isModeCompatibleWithTest(sMode, sTest):
+                                    if sTest == 'Write':
+                                        fRc = self.testWrite(oSession, oTxsSession, oTestVm, sMode);
+                                    if sTest == 'ReadWrite':
+                                        fRc = self.testReadWrite(oSession, oTxsSession, oTestVm);
+                            if self.oLoopback is not None:
+                                self.oLoopback.shutdown();
+                                self.oLoopback = None;
+
+                        reporter.testDone();
+
+                    self.removeTask(oTxsSession);
+                    self.terminateVmBySession(oSession);
+            reporter.testDone();
+
         return fRc;
 
 if __name__ == '__main__':
