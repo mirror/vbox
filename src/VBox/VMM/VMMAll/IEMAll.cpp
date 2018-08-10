@@ -8105,7 +8105,7 @@ iemMemApplySegment(PVMCPU pVCpu, uint32_t fAccess, uint8_t iSegReg, size_t cbMem
             Assert(cbMem >= 1);
             if (RT_LIKELY(X86_IS_CANONICAL(GCPtrMem) && X86_IS_CANONICAL(GCPtrMem + cbMem - 1)))
                 return VINF_SUCCESS;
-            /** @todo We should probably raise #SS(0) here if segment is SS; see AMD spec.
+            /** @todo We should probably raise \#SS(0) here if segment is SS; see AMD spec.
              *        4.12.2 "Data Limit Checks in 64-bit Mode". */
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
