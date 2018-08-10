@@ -20,11 +20,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/vmm/em.h>
-#include <VBox/vmm/stam.h>
-#include <VBox/dis.h>
 #include <VBox/vmm/hm.h>
-#include <VBox/vmm/pgm.h>
 #include <VBox/vmm/hm_svm.h>
 
 RT_C_DECLS_BEGIN

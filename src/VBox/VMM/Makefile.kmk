@@ -174,6 +174,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/HMAll.cpp \
 	VMMAll/HMSVMAll.cpp \
+	VMMAll/HMVMXAll.cpp \
 	VMMAll/IEMAll.cpp \
 	VMMAll/IEMAllAImpl.asm \
 	VMMAll/IEMAllAImplC.cpp \
@@ -507,7 +508,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
 
  VMMRC_DEFS      = IN_VMM_RC IN_RT_RC IN_DIS DIS_CORE_ONLY VBOX_WITH_RAW_MODE VBOX_WITH_RAW_MODE_NOT_R0 IN_SUP_RC \
  	$(VMM_COMMON_DEFS)
- VMMRC_DEFS := $(filter-out VBOX_WITH_NESTED_HWVIRT_SVM,$(VMMRC_DEFS))
+ VMMRC_DEFS := $(filter-out VBOX_WITH_NESTED_HWVIRT_SVM VBOX_WITH_NESTED_HWVIRT_VMX,$(VMMRC_DEFS))
  ifdef VBOX_WITH_VMM_R0_SWITCH_STACK
   VMMRC_DEFS    += VMM_R0_SWITCH_STACK
  endif
@@ -569,8 +570,9 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/GIMAll.cpp \
  	VMMAll/GIMAllHv.cpp \
  	VMMAll/GIMAllKvm.cpp \
-	VMMAll/HMAll.cpp \
-	VMMAll/HMSVMAll.cpp \
+ 	VMMAll/HMAll.cpp \
+ 	VMMAll/HMSVMAll.cpp \
+ 	VMMAll/HMVMXAll.cpp \
  	VMMAll/MMAll.cpp \
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/PDMAll.cpp \
@@ -717,6 +719,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/GIMAllKvm.cpp \
  	VMMAll/HMAll.cpp \
  	VMMAll/HMSVMAll.cpp \
+ 	VMMAll/HMVMXAll.cpp \
  	VMMAll/IEMAll.cpp \
  	VMMAll/IEMAllAImpl.asm \
  	VMMAll/IEMAllAImplC.cpp \

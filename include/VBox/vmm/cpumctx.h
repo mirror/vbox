@@ -30,6 +30,7 @@
 # include <iprt/x86.h>
 # include <VBox/types.h>
 # include <VBox/vmm/hm_svm.h>
+# include <VBox/vmm/hm_vmx.h>
 #else
 # pragma D depends_on library x86.d
 #endif
@@ -487,64 +488,81 @@ typedef struct CPUMCTX
             struct
             {
                 /** 0x2e0 - MSR holding physical address of the Guest's Host-state. */
-                uint64_t            uMsrHSavePa;
+                uint64_t                uMsrHSavePa;
                 /** 0x2e8 - Guest physical address of the nested-guest VMCB. */
-                RTGCPHYS            GCPhysVmcb;
+                RTGCPHYS                GCPhysVmcb;
                 /** 0x2f0 - Cache of the nested-guest VMCB - R0 ptr. */
-                R0PTRTYPE(PSVMVMCB) pVmcbR0;
+                R0PTRTYPE(PSVMVMCB)     pVmcbR0;
 #if HC_ARCH_BITS == 32
-                uint32_t            uVmcbR0Padding;
+                uint32_t                uVmcbR0Padding;
 #endif
                 /** 0x2f8 - Cache of the nested-guest VMCB - R3 ptr. */
-                R3PTRTYPE(PSVMVMCB) pVmcbR3;
+                R3PTRTYPE(PSVMVMCB)     pVmcbR3;
 #if HC_ARCH_BITS == 32
-                uint32_t            uVmcbR3Padding;
+                uint32_t                uVmcbR3Padding;
 #endif
                 /** 0x300 - Guest's host-state save area. */
-                SVMHOSTSTATE        HostState;
+                SVMHOSTSTATE            HostState;
                 /** 0x3b8 - Guest TSC time-stamp of when the previous PAUSE instr. was executed. */
-                uint64_t            uPrevPauseTick;
+                uint64_t                uPrevPauseTick;
                 /** 0x3c0 - Pause filter count. */
-                uint16_t            cPauseFilter;
+                uint16_t                cPauseFilter;
                 /** 0x3c2 - Pause filter threshold. */
-                uint16_t            cPauseFilterThreshold;
+                uint16_t                cPauseFilterThreshold;
                 /** 0x3c4 - Whether the injected event is subject to event intercepts. */
-                bool                fInterceptEvents;
+                bool                    fInterceptEvents;
                 /** 0x3c5 - Padding. */
-                bool                afPadding[3];
+                bool                    afPadding[3];
                 /** 0x3c8 - MSR permission bitmap - R0 ptr. */
-                R0PTRTYPE(void *)   pvMsrBitmapR0;
+                R0PTRTYPE(void *)       pvMsrBitmapR0;
 #if HC_ARCH_BITS == 32
-                uint32_t            uvMsrBitmapR0Padding;
+                uint32_t                uvMsrBitmapR0Padding;
 #endif
                 /** 0x3d0 - MSR permission bitmap - R3 ptr. */
-                R3PTRTYPE(void *)   pvMsrBitmapR3;
+                R3PTRTYPE(void *)       pvMsrBitmapR3;
 #if HC_ARCH_BITS == 32
-                uint32_t            uvMsrBitmapR3Padding;
+                uint32_t                uvMsrBitmapR3Padding;
 #endif
                 /** 0x3d8 - IO permission bitmap - R0 ptr. */
-                R0PTRTYPE(void *)   pvIoBitmapR0;
+                R0PTRTYPE(void *)       pvIoBitmapR0;
 #if HC_ARCH_BITS == 32
-                uint32_t            uIoBitmapR0Padding;
+                uint32_t                uIoBitmapR0Padding;
 #endif
                 /** 0x3e0 - IO permission bitmap - R3 ptr. */
-                R3PTRTYPE(void *)   pvIoBitmapR3;
+                R3PTRTYPE(void *)       pvIoBitmapR3;
 #if HC_ARCH_BITS == 32
-                uint32_t            uIoBitmapR3Padding;
+                uint32_t                uIoBitmapR3Padding;
 #endif
                 /** 0x3e8 - Host physical address of the nested-guest VMCB.  */
-                RTHCPHYS            HCPhysVmcb;
+                RTHCPHYS                HCPhysVmcb;
             } svm;
 
             struct
             {
-                /** 0x2e0 - Whether the guest is in VMX root mode. */
-                uint32_t            fInVmxRootMode : 1;
-                uint32_t            afPadding  : 31;
                 /** 0x2e4 - Guest physical address of the VMXON region. */
-                RTGCPHYS            GCPhysVmxon;
-                /** 0x2ec - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x2ec];
+                RTGCPHYS                GCPhysVmxon;
+                /** 0x2e8 - Guest physical address of the current VMCS pointer. */
+                RTGCPHYS                GCPhysVmcs;
+                /** 0x2f0 - Last emulated VMX instruction diagnostic. */
+                VMXVINSTRDIAG           enmInstrDiag;
+                /** 0x2f4 - Whether the guest is in VMX root mode. */
+                bool                    fInVmxRootMode;
+                /** 0x2f5 - Whether the guest is in VMX non-root mode. */
+                bool                    fInVmxNonRootMode;
+                /** 0x2f6 - Padding.  */
+                bool                    afPadding[2];
+                /** 0x2f8 - Cache of the nested-guest current VMCS - R0 ptr. */
+                R0PTRTYPE(PVMXVVMCS)    pVmcsR0;
+#if HC_ARCH_BITS == 32
+                uint32_t                uVmcsR0Padding;
+#endif
+                /** 0x300 - Cache of the nested-guest curent VMCS - R3 ptr. */
+                R3PTRTYPE(PVMXVVMCS)    pVmcsR3;
+#if HC_ARCH_BITS == 32
+                uint32_t                uVmcsR3Padding;
+#endif
+                /** 0x308 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x308];
             } vmx;
         } CPUM_UNION_NM(s);
 

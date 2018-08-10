@@ -29,6 +29,7 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/apic.h>
 #include "HMInternal.h"
@@ -710,7 +711,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     uint32_t u32Family;
     uint32_t u32Model;
     uint32_t u32Stepping;
-    if (HMAmdIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
+    if (HMSvmIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
     {
         Log4Func(("AMD cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
         pVM->hm.s.svm.fAlwaysFlushTLB = true;

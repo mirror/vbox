@@ -1301,6 +1301,8 @@ VMMDECL(void)       CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t iSu
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32FeatureControl(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32VmxBasic(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32SmmMonitorCtl(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
@@ -1787,28 +1789,38 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
 }
 
 /**
- * Checks if we are executing inside a VMX nested hardware-virtualized guest.
+ * Checks if the guest is in VMX non-root operation.
  *
- * @returns @c true if in VMX nested-guest mode, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @returns @c true if in VMX non-root operation, @c false otherwise.
+ * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestInVmxNestedHwVirtMode(PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInVmxNonRootMode(PCCPUMCTX pCtx)
 {
-    /** @todo Intel. */
+#ifndef IN_RC
+    Assert(!pCtx->hwvirt.vmx.fInVmxNonRootMode || pCtx->hwvirt.vmx.fInVmxRootMode);
+    return pCtx->hwvirt.vmx.fInVmxNonRootMode;
+#else
     NOREF(pCtx);
     return false;
+#endif
 }
 
 /**
- * Checks if we are executing inside a nested hardware-virtualized guest.
+ * Checks if the guest is in VMX root operation.
  *
- * @returns @c true if in SVM/VMX nested-guest mode, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @returns @c true if in VMX root operation, @c false otherwise.
+ * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInVmxRootMode(PCCPUMCTX pCtx)
 {
-    return CPUMIsGuestInSvmNestedHwVirtMode(pCtx) || CPUMIsGuestInVmxNestedHwVirtMode(pCtx);
+#ifndef IN_RC
+    return pCtx->hwvirt.vmx.fInVmxRootMode;
+#else
+    NOREF(pCtx);
+    return false;
+#endif
 }
+
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
 
 /** @} */

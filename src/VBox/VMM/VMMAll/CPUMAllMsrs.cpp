@@ -299,12 +299,26 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosUpdateTrigger(PVMCPU pVCpu, 
 }
 
 
+/**
+ * Get MSR_IA32_SMM_MONITOR_CTL value for IEM and cpumMsrRd_Ia32SmmMonitorCtl.
+ *
+ * @returns The MSR_IA32_SMM_MONITOR_CTL value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32SmmMonitorCtl(PVMCPU pVCpu)
+{
+    /* We do not support dual-monitor treatment for SMI and SMM. */
+    /** @todo SMM. */
+    RT_NOREF(pVCpu);
+    return 0;
+}
+
+
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmmMonitorCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    /** @todo SMM. */
-    *puValue = 0;
+    *puValue = CPUMGetGuestIa32SmmMonitorCtl(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -1287,23 +1301,37 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uin
 }
 
 
+/**
+ * Gets IA32_VMX_BASIC for IEM and cpumMsrRd_Ia32VmxBasic.
+ *
+ * @returns IA32_VMX_BASIC value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxBasic(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
+    if (pGuestFeatures->fVmx)
+    {
+        uVmxMsr = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,         VMX_V_VMCS_REVISION_ID        )
+                | RT_BF_MAKE(VMX_BF_BASIC_VMCS_SIZE,       VMX_V_VMCS_SIZE               )
+                | RT_BF_MAKE(VMX_BF_BASIC_PHYSADDR_WIDTH,  VMX_V_VMCS_PHYSADDR_4G_LIMIT  )
+                | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,        0                             )
+                | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE,   VMX_BASIC_MEM_TYPE_WB         )
+                | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS,   pGuestFeatures->fVmxInsOutInfo)
+                | RT_BF_MAKE(VMX_BF_BASIC_TRUE_CTLS,       0                             );
+    }
+    else
+        uVmxMsr = 0;
+    return uVmxMsr;
+}
+
+
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-    {
-        *puValue = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,         VMX_V_VMCS_REVISION_ID        )
-                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_SIZE,       VMX_V_VMCS_SIZE               )
-                 | RT_BF_MAKE(VMX_BF_BASIC_PHYSADDR_WIDTH,  VMX_V_VMCS_PHYSADDR_4G_LIMIT  )
-                 | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,        0                             )
-                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE,   VMX_BASIC_MEM_TYPE_WB         )
-                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS,   pGuestFeatures->fVmxInsOutInfo)
-                 | RT_BF_MAKE(VMX_BF_BASIC_TRUE_CTLS,       0                             );
-    }
-    else
-        *puValue = 0;
+    *puValue = CPUMGetGuestIa32VmxBasic(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -5100,10 +5128,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam14hIbsBrTarget(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
     /* Raise #GP(0) like a physical CPU would since the nested-hypervisor hasn't intercept these MSRs. */
-    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+    if (   CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest)
+        || CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
         return VERR_CPUM_RAISE_GP_0;
 #endif
     return GIMReadMsr(pVCpu, idMsr, pRange, puValue);
@@ -5113,10 +5141,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
     /* Raise #GP(0) like a physical CPU would since the nested-hypervisor hasn't intercept these MSRs. */
-    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+    if (   CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest)
+        || CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
         return VERR_CPUM_RAISE_GP_0;
 #endif
     return GIMWriteMsr(pVCpu, idMsr, pRange, uValue, uRawValue);

@@ -811,6 +811,77 @@ typedef VMXPOSTEDINTRDESC *PVMXPOSTEDINTRDESC;
 typedef const VMXPOSTEDINTRDESC *PCVMXPOSTEDINTRDESC;
 
 /**
+ * VMX VMCS revision identifier.
+ */
+typedef union
+{
+    struct
+    {
+        /** Revision identifier. */
+        uint32_t    u31RevisionId : 31;
+        /** Whether this is a shadow VMCS. */
+        uint32_t    fIsShadowVmcs : 1;
+    } n;
+    /* The unsigned integer view. */
+    uint32_t        u;
+} VMXVMCSREVID;
+AssertCompileSize(VMXVMCSREVID, 4);
+/** Pointer to the VMXVMCSREVID union. */
+typedef VMXVMCSREVID *PVMXVMCSREVID;
+/** Pointer to a const VMXVVMCSREVID union. */
+typedef const VMXVMCSREVID *PCVMXVMCSREVID;
+
+/**
+ * VMX VM-exit instruction information.
+ */
+typedef union
+{
+    /** Plain unsigned int representation. */
+    uint32_t    u;
+    /** INS and OUTS information. */
+    struct
+    {
+        uint32_t    u7Reserved0 : 7;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize  : 3;
+        uint32_t    u5Reserved1 : 5;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg     : 3;
+        uint32_t    uReserved2  : 14;
+    } StrIo;
+    /** INVEPT, INVVPID, INVPCID, VMCLEAR, VMPTRLD, VMPTRST, VMXON, VMXOFF, XSAVES,
+     *  XRSTORS information. */
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Scaling       : 2;
+        uint32_t    u5Reserved0     : 5;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize      : 3;
+        /** Memory/Register - Always cleared to 0 to indicate memory operand. */
+        uint32_t    fIsRegOperand   : 1;
+        uint32_t    u4Reserved0     : 4;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg         : 3;
+        /** The index register (X86_GREG_XXX). */
+        uint32_t    iIdxReg         : 4;
+        /** Set if index register is invalid. */
+        uint32_t    fIdxRegInvalid  : 1;
+        /** The base register (X86_GREG_XXX). */
+        uint32_t    iBaseReg        : 4;
+        /** Set if base register is invalid. */
+        uint32_t    fBaseRegInvalid : 1;
+        /** Register 2 (X86_GREG_XXX). */
+        uint32_t    iReg2           : 4;
+    } InvVmxXsaves;
+} VMXEXITINSTRINFO;
+AssertCompileSize(VMXEXITINSTRINFO, 4);
+/** Pointer to a VMX VM-exit instruction info. struct. */
+typedef VMXEXITINSTRINFO *PVMXEXITINSTRINFO;
+/** Pointer to a const VMX VM-exit instruction info. struct. */
+typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
+
+/**
  * VMX MSR autoload/store element.
  * In accordance to the VT-x spec.
  */
@@ -1045,59 +1116,64 @@ typedef const VMXMSRS *PCVMXMSRS;
 
 
 /** @name VM Instruction Errors.
+ * See Intel spec. "30.4 VM Instruction Error Numbers"
  * @{
  */
-/** VMCALL executed in VMX root operation. */
-#define VMX_ERROR_VMCALL                                        1
-/** VMCLEAR with invalid physical address. */
-#define VMX_ERROR_VMCLEAR_INVALID_PHYS_ADDR                     2
-/** VMCLEAR with VMXON pointer. */
-#define VMX_ERROR_VMCLEAR_INVALID_VMXON_PTR                     3
-/** VMLAUNCH with non-clear VMCS. */
-#define VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS                        4
-/** VMRESUME with non-launched VMCS. */
-#define VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS                    5
-/** VMRESUME with a corrupted VMCS (indicates corruption of the current VMCS). */
-#define VMX_ERROR_VMRESUME_CORRUPTED_VMCS                       6
-/** VM-entry with invalid control field(s). */
-#define VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS                7
-/** VM-entry with invalid host-state field(s). */
-#define VMX_ERROR_VMENTRY_INVALID_HOST_STATE                    8
-/** VMPTRLD with invalid physical address. */
-#define VMX_ERROR_VMPTRLD_INVALID_PHYS_ADDR                     9
-/** VMPTRLD with VMXON pointer. */
-#define VMX_ERROR_VMPTRLD_VMXON_PTR                             10
-/** VMPTRLD with incorrect VMCS revision identifier. */
-#define VMX_ERROR_VMPTRLD_WRONG_VMCS_REVISION                   11
-/** VMREAD/VMWRITE from/to unsupported VMCS component. */
-#define VMX_ERROR_VMREAD_INVALID_COMPONENT                      12
-#define VMX_ERROR_VMWRITE_INVALID_COMPONENT                     VMX_ERROR_VMREAD_INVALID_COMPONENT
-/** VMWRITE to read-only VMCS component. */
-#define VMX_ERROR_VMWRITE_READONLY_COMPONENT                    13
-/** VMXON executed in VMX root operation. */
-#define VMX_ERROR_VMXON_IN_VMX_ROOT_OP                          15
-/** VM-entry with invalid executive-VMCS pointer. */
-#define VMX_ERROR_VMENTRY_INVALID_VMCS_EXEC_PTR                 16
-/** VM-entry with non-launched executive VMCS. */
-#define VMX_ERROR_VMENTRY_NON_LAUNCHED_EXEC_VMCS                17
-/** VM-entry with executive-VMCS pointer not VMXON pointer. */
-#define VMX_ERROR_VMENTRY_EXEC_VMCS_PTR                         18
-/** VMCALL with non-clear VMCS. */
-#define VMX_ERROR_VMCALL_NON_CLEAR_VMCS                         19
-/** VMCALL with invalid VM-exit control fields. */
-#define VMX_ERROR_VMCALL_INVALID_VMEXIT_FIELDS                  20
-/** VMCALL with incorrect MSEG revision identifier. */
-#define VMX_ERROR_VMCALL_INVALID_MSEG_REVISION                  22
-/** VMXOFF under dual-monitor treatment of SMIs and SMM. */
-#define VMX_ERROR_VMXOFF_DUAL_MONITOR                           23
-/** VMCALL with invalid SMM-monitor features. */
-#define VMX_ERROR_VMCALL_INVALID_SMM_MONITOR                    24
-/** VM-entry with invalid VM-execution control fields in executive VMCS. */
-#define VMX_ERROR_VMENTRY_INVALID_VM_EXEC_CTRL                  25
-/** VM-entry with events blocked by MOV SS. */
-#define VMX_ERROR_VMENTRY_MOV_SS                                26
-/** Invalid operand to INVEPT/INVVPID. */
-#define VMX_ERROR_INVEPTVPID_INVALID_OPERAND                    28
+typedef enum
+{
+    /** VMCALL executed in VMX root operation. */
+    VMXINSTRERR_VMCALL_VMXROOTMODE             = 1,
+    /** VMCLEAR with invalid physical address. */
+    VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR       = 2,
+    /** VMCLEAR with VMXON pointer. */
+    VMXINSTRERR_VMCLEAR_VMXON_PTR              = 3,
+    /** VMLAUNCH with non-clear VMCS. */
+    VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS        = 4,
+    /** VMRESUME with non-launched VMCS. */
+    VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS     = 5,
+    /** VMRESUME after VMXOFF (VMXOFF and VMXON between VMLAUNCH and VMRESUME). */
+    VMXINSTRERR_VMRESUME_AFTER_VMXOFF          = 6,
+    /** VM-entry with invalid control field(s). */
+    VMXINSTRERR_VMENTRY_INVALID_CTL            = 7,
+    /** VM-entry with invalid host-state field(s). */
+    VMXINSTRERR_VMENTRY_INVALID_HOST_STATE     = 8,
+    /** VMPTRLD with invalid physical address. */
+    VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR       = 9,
+    /** VMPTRLD with VMXON pointer. */
+    VMXINSTRERR_VMPTRLD_VMXON_PTR              = 10,
+    /** VMPTRLD with incorrect VMCS revision identifier. */
+    VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV     = 11,
+    /** VMREAD from unsupported VMCS component. */
+    VMXINSTRERR_VMREAD_INVALID_COMPONENT       = 12,
+    /** VMWRITE to unsupported VMCS component. */
+    VMXINSTRERR_VMWRITE_INVALID_COMPONENT      = 12,
+    /** VMWRITE to read-only VMCS component. */
+    VMXINSTRERR_VMWRITE_RO_COMPONENT           = 13,
+    /** VMXON executed in VMX root operation. */
+    VMXINSTRERR_VMXON_IN_VMXROOTMODE           = 15,
+    /** VM-entry with invalid executive-VMCS pointer. */
+    VMXINSTRERR_VMENTRY_INVALID_VMCS_PTR       = 16,
+    /** VM-entry with non-launched executive VMCS. */
+    VMXINSTRERR_VMENTRY_NON_LAUNCHED_VMCS      = 17,
+    /** VM-entry with executive-VMCS pointer not VMXON pointer. */
+    VMXINSTRERR_VMENTRY_VMCS_PTR               = 18,
+    /** VMCALL with non-clear VMCS. */
+    VMXINSTRERR_VMCALL_NON_CLEAR_VMCS          = 19,
+    /** VMCALL with invalid VM-exit control fields. */
+    VMXINSTRERR_VMCALL_INVALID_EXITCTLS        = 20,
+    /** VMCALL with incorrect MSEG revision identifier. */
+    VMXINSTRERR_VMCALL_INVALID_MSEG_ID         = 22,
+    /** VMXOFF under dual-monitor treatment of SMIs and SMM. */
+    VMXINSTRERR_VMXOFF_DUAL_MON                = 23,
+    /** VMCALL with invalid SMM-monitor features. */
+    VMXINSTRERR_VMCALL_INVALID_SMMCTLS         = 24,
+    /** VM-entry with invalid VM-execution control fields in executive VMCS. */
+    VMXINSTRERR_VMENTRY_INVALID_EXECTLS        = 25,
+    /** VM-entry with events blocked by MOV SS. */
+    VMXINSTRERR_VMENTRY_BLOCK_MOVSS            = 26,
+    /** Invalid operand to INVEPT/INVVPID. */
+    VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND = 28
+} VMXINSTRERR;
 /** @} */
 
 
@@ -1105,9 +1181,10 @@ typedef const VMXMSRS *PCVMXMSRS;
  * @{
  */
 /** VMCS (and related regions) memory type - Uncacheable. */
-#define VMX_BASIC_MEM_TYPE_UC                                    0
+#define VMX_BASIC_MEM_TYPE_UC                                   0
 /** VMCS (and related regions) memory type - Write back. */
-#define VMX_BASIC_MEM_TYPE_WB                                    6
+#define VMX_BASIC_MEM_TYPE_WB                                   6
+
 /** Bit fields for MSR_IA32_VMX_BASIC.  */
 /** VMCS revision identifier used by the processor. */
 #define VMX_BF_BASIC_VMCS_ID_SHIFT                              0
@@ -1573,6 +1650,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_PIN_CTLS_POSTED_INT                                 RT_BIT(7)
 /** Default1 class when true capability MSRs are not supported. */
 #define VMX_PIN_CTLS_DEFAULT1                                   UINT32_C(0x00000016)
+
 /** Bit fields for MSR_IA32_VMX_PINBASED_CTLS and Pin-based VM-execution
  *  controls field in the VMCS. */
 #define VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT                      0
@@ -1645,6 +1723,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_PROC_CTLS_USE_SECONDARY_CTLS                        RT_BIT(31)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_PROC_CTLS_DEFAULT1                                  UINT32_C(0x0401e172)
+
 /** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS and Processor-based VM-execution
  *  controls field in the VMCS. */
 #define VMX_BF_PROC_CTLS_UNDEF_0_1_SHIFT                        0
@@ -1757,6 +1836,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_PROC_CTLS2_XSAVES_XRSTORS                           RT_BIT(20)
 /** Use TSC scaling. */
 #define VMX_PROC_CTLS2_TSC_SCALING                              RT_BIT(25)
+
 /** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS2 and Secondary processor-based
  *  VM-execution controls field in the VMCS. */
 #define VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT                0
@@ -1835,6 +1915,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 #define VMX_ENTRY_CTLS_LOAD_EFER_MSR                            RT_BIT(15)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_ENTRY_CTLS_DEFAULT1                                 UINT32_C(0x000011ff)
+
 /** Bit fields for MSR_IA32_VMX_ENTRY_CTLS and VM-entry controls field in the
  *  VMCS. */
 #define VMX_BF_ENTRY_CTLS_UNDEF_0_1_SHIFT                       0
@@ -1889,6 +1970,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER                    RT_BIT(22)
 /** Default1 class when true-capability MSRs are not supported.  */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
+
 /** Bit fields for MSR_IA32_VMX_EXIT_CTLS and VM-exit controls field in the
  *  VMCS. */
 #define VMX_BF_EXIT_CTLS_UNDEF_0_1_SHIFT                        0
@@ -1944,6 +2026,53 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
+/** @name VM-entry interruption information.
+ * @{ */
+#define VMX_ENTRY_INT_INFO_VECTOR(a)                             ((a) & 0xff)
+#define VMX_ENTRY_INT_INFO_TYPE_SHIFT                            8
+#define VMX_ENTRY_INT_INFO_TYPE(a)                               (((a) >> 8) & 7)
+#define VMX_ENTRY_INT_INFO_ERROR_CODE_VALID                      RT_BIT(11)
+#define VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(a)                (((a) >> 11) & 1)
+#define VMX_ENTRY_INT_INFO_NMI_UNBLOCK_IRET                      12
+#define VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
+#define VMX_ENTRY_INT_INFO_VALID                                 RT_BIT(31)
+#define VMX_ENTRY_INT_INFO_IS_VALID(a)                           (((a) >> 31) & 1)
+/** Construct an VM-entry interruption information field from a VM-exit interruption
+ *  info value (same except that bit 12 is reserved). */
+#define VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(a)                 ((a) & ~RT_BIT(12))
+/** Construct a VM-entry interruption information field from an IDT-vectoring
+ *  information field (same except that bit 12 is reserved). */
+#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                 ((a) & ~RT_BIT(12))
+
+/** Bit fields for VM-entry interruption information. */
+#define VMX_BF_ENTRY_INT_INFO_VECTOR_SHIFT                       0
+#define VMX_BF_ENTRY_INT_INFO_VECTOR_MASK                        UINT32_C(0x000000ff)
+#define VMX_BF_ENTRY_INT_INFO_TYPE_SHIFT                         8
+#define VMX_BF_ENTRY_INT_INFO_TYPE_MASK                          UINT32_C(0x00000700)
+#define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_SHIFT               11
+#define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_MASK                UINT32_C(0x00000800)
+#define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_SHIFT                   12
+#define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_MASK                    UINT32_C(0x7ffff000)
+#define VMX_BF_ENTRY_INT_INFO_VALID_SHIFT                        31
+#define VMX_BF_ENTRY_INT_INFO_VALID_MASK                         UINT32_C(0x80000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
+                            (VECTOR, TYPE, ERR_CODE_VALID, RSVD_12_30, VALID));
+/** @} */
+
+
+/** @name VM-entry interruption information types.
+ * @{
+ */
+#define VMX_ENTRY_INT_INFO_TYPE_EXT_INT                          0
+#define VMX_ENTRY_INT_INFO_TYPE_NMI                              2
+#define VMX_ENTRY_INT_INFO_TYPE_HW_XCPT                          3
+#define VMX_ENTRY_INT_INFO_TYPE_SW_INT                           4
+#define VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT                     5
+#define VMX_ENTRY_INT_INFO_TYPE_SW_XCPT                          6
+#define VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT                      7
+/** @} */
+
+
 /** @name VM-exit interruption information.
  * @{
  */
@@ -1956,9 +2085,22 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
 #define VMX_EXIT_INT_INFO_VALID                                 RT_BIT(31)
 #define VMX_EXIT_INT_INFO_IS_VALID(a)                           (((a) >> 31) & 1)
-/** Construct an irq event injection value from the exit interruption info value
- *  (same except that bit 12 is reserved). */
-#define VMX_VMCS_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)           ((a) & ~RT_BIT(12))
+
+/** Bit fields for VM-exit interruption infomration. */
+#define VMX_BF_EXIT_INT_INFO_VECTOR_SHIFT                       0
+#define VMX_BF_EXIT_INT_INFO_VECTOR_MASK                        UINT32_C(0x000000ff)
+#define VMX_BF_EXIT_INT_INFO_TYPE_SHIFT                         8
+#define VMX_BF_EXIT_INT_INFO_TYPE_MASK                          UINT32_C(0x00000700)
+#define VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID_SHIFT               11
+#define VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID_MASK                UINT32_C(0x00000800)
+#define VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET_SHIFT             12
+#define VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET_MASK              UINT32_C(0x00001000)
+#define VMX_BF_EXIT_INT_INFO_RSVD_13_30_SHIFT                   13
+#define VMX_BF_EXIT_INT_INFO_RSVD_13_30_MASK                    UINT32_C(0x7fffe000)
+#define VMX_BF_EXIT_INT_INFO_VALID_SHIFT                        31
+#define VMX_BF_EXIT_INT_INFO_VALID_MASK                         UINT32_C(0x80000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_INT_INFO_, UINT32_C(0), UINT32_MAX,
+                            (VECTOR, TYPE, ERR_CODE_VALID, NMI_UNBLOCK_IRET, RSVD_13_30, VALID));
 /** @} */
 
 
@@ -1971,6 +2113,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_INT_INFO_TYPE_SW_INT                           4
 #define VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT                     5
 #define VMX_EXIT_INT_INFO_TYPE_SW_XCPT                          6
+#define VMX_EXIT_INT_INFO_TYPE_UNUSED                           7
 /** @} */
 
 
@@ -1978,12 +2121,25 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
  * @{
  */
 #define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
-#define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> 8) & 7)
-#define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
 #define VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(a)           (((a) >> 11) & 1)
-#define VMX_IDT_VECTORING_INFO_VALID(a)                         ((a) & RT_BIT(31))
-#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                ((a) & ~RT_BIT(12))
+#define VMX_IDT_VECTORING_INFO_IS_VALID(a)                      (((a) >> 31) & 1)
+
+/** Bit fields for IDT-vectoring information. */
+#define VMX_BF_IDT_VECTORING_INFO_VECTOR_SHIFT                  0
+#define VMX_BF_IDT_VECTORING_INFO_VECTOR_MASK                   UINT32_C(0x000000ff)
+#define VMX_BF_IDT_VECTORING_INFO_TYPE_SHIFT                    8
+#define VMX_BF_IDT_VECTORING_INFO_TYPE_MASK                     UINT32_C(0x00000700)
+#define VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID_SHIFT          11
+#define VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID_MASK           UINT32_C(0x00000800)
+#define VMX_BF_IDT_VECTORING_INFO_UNDEF_12_SHIFT                12
+#define VMX_BF_IDT_VECTORING_INFO_UNDEF_12_MASK                 UINT32_C(0x00001000)
+#define VMX_BF_IDT_VECTORING_INFO_RSVD_13_30_SHIFT              13
+#define VMX_BF_IDT_VECTORING_INFO_RSVD_13_30_MASK               UINT32_C(0x7fffe000)
+#define VMX_BF_IDT_VECTORING_INFO_VALID_SHIFT                   31
+#define VMX_BF_IDT_VECTORING_INFO_VALID_MASK                    UINT32_C(0x80000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_IDT_VECTORING_INFO_, UINT32_C(0), UINT32_MAX,
+                            (VECTOR, TYPE, ERR_CODE_VALID, UNDEF_12, RSVD_13_30, VALID));
 /** @} */
 
 
@@ -1996,6 +2152,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_IDT_VECTORING_INFO_TYPE_SW_INT                      4
 #define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT                5
 #define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT                     6
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_UNUSED                   7
 /** @} */
 
 
@@ -2344,6 +2501,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 
 /** CR0 bits set here must always be set when in VMX operation. */
 #define VMX_V_CR0_FIXED0                                        (X86_CR0_PE | X86_CR0_NE | X86_CR0_PG)
+/** VMX_V_CR0_FIXED0 when unrestricted-guest execution is supported for the guest. */
+#define VMX_V_CR0_FIXED0_UX                                     (VMX_V_CR0_FIXED0 & ~(X86_CR0_PE | X86_CR0_PG))
 /** CR4 bits set here must always be set when in VMX operation. */
 #define VMX_V_CR4_FIXED0                                        (X86_CR4_VMXE)
 
@@ -2364,6 +2523,63 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 #define VMX_V_VMCS_PHYSADDR_4G_LIMIT                            0
 
 /**
+ * Virtual VMX-instruction diagnostics.
+ *
+ * These are not the same as VM instruction errors that are enumerated in the Intel
+ * spec. These are purely internal, fine-grained definitions used for diagnostic
+ * purposes and are not reported to guest software under the VM-instruction error
+ * field in its VMCS.
+ *
+ * @note Members of this enum are used as array indices, so no gaps are allowed.
+ *       Please update g_apszVmxInstrDiagDesc when you add new fields to this
+ *       enum.
+ */
+typedef enum
+{
+    /* Internal processing errors. */
+    kVmxVInstrDiag_Ipe_1 = 0,
+    kVmxVInstrDiag_Ipe_2,
+    kVmxVInstrDiag_Ipe_3,
+    kVmxVInstrDiag_Ipe_4,
+    kVmxVInstrDiag_Ipe_5,
+    kVmxVInstrDiag_Ipe_6,
+    kVmxVInstrDiag_Ipe_7,
+    kVmxVInstrDiag_Ipe_8,
+    kVmxVInstrDiag_Ipe_9,
+    /* VMXON. */
+    kVmxVInstrDiag_Vmxon_A20M,
+    kVmxVInstrDiag_Vmxon_Cpl,
+    kVmxVInstrDiag_Vmxon_Cr0Fixed0,
+    kVmxVInstrDiag_Vmxon_Cr4Fixed0,
+    kVmxVInstrDiag_Vmxon_Intercept,
+    kVmxVInstrDiag_Vmxon_LongModeCS,
+    kVmxVInstrDiag_Vmxon_MsrFeatCtl,
+    kVmxVInstrDiag_Vmxon_PtrAlign,
+    kVmxVInstrDiag_Vmxon_PtrAbnormal,
+    kVmxVInstrDiag_Vmxon_PtrMap,
+    kVmxVInstrDiag_Vmxon_PtrReadPhys,
+    kVmxVInstrDiag_Vmxon_PtrWidth,
+    kVmxVInstrDiag_Vmxon_RealOrV86Mode,
+    kVmxVInstrDiag_Vmxon_ShadowVmcs,
+    kVmxVInstrDiag_Vmxon_Success,
+    kVmxVInstrDiag_Vmxon_Vmxe,
+    kVmxVInstrDiag_Vmxon_VmcsRevId,
+    kVmxVInstrDiag_Vmxon_VmxRoot,
+    kVmxVInstrDiag_Vmxon_VmxRootCpl,
+    /* VMXOFF. */
+    kVmxVInstrDiag_Vmxoff_Cpl,
+    kVmxVInstrDiag_Vmxoff_Intercept,
+    kVmxVInstrDiag_Vmxoff_LongModeCS,
+    kVmxVInstrDiag_Vmxoff_RealOrV86Mode,
+    kVmxVInstrDiag_Vmxoff_Success,
+    kVmxVInstrDiag_Vmxoff_Vmxe,
+    kVmxVInstrDiag_Vmxoff_VmxRoot,
+    /* Last member for determining array index limit. */
+    kVmxVInstrDiag_Last
+} VMXVINSTRDIAG;
+AssertCompileSize(VMXVINSTRDIAG, 4);
+
+/**
  * Virtual VMCS.
  * This is our custom format and merged into the actual VMCS (/shadow) when we
  * execute nested-guest code using hardware-assisted VMX.
@@ -2373,11 +2589,8 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 #pragma pack(1)
 typedef struct
 {
-    /** Revision identifier. */
-    uint32_t            u31RevisionId : 31;
-    /** Whether this is a shadow VMCS. */
-    uint32_t            fIsShadowVmcs : 1;
-
+    /** VMX VMCS revision identifier.   */
+    VMXVMCSREVID        u32VmcsRevId;
     /** VMX-abort indicator. */
     uint32_t            u32VmxAbortId;
     /** @todo VMCS data. We can use RTUINT64U for the full/high 64-bit VMCS fields. */

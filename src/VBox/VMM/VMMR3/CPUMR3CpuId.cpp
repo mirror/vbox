@@ -3936,27 +3936,36 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
-#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
-    /** @cfgm{/CPUM/NestedHWVirt, bool, false}
-     * Whether to expose the hardware virtualization (VMX/SVM) feature to the guest.
-     * The default is false, and when enabled requires nested paging and AMD-V or
-     * unrestricted guest mode.
-     */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedHWVirt", &pConfig->fNestedHWVirt, false);
-    AssertLogRelRCReturn(rc, rc);
-    if (   pConfig->fNestedHWVirt
-        && !fNestedPagingAndFullGuestExec)
-        return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
-                          "Cannot enable nested VT-x/AMD-V without nested-paging and unresricted guest execution!\n");
-
-    /** @todo Think about enabling this later with NEM/KVM. */
-    if (   pConfig->fNestedHWVirt
-        && VM_IS_NEM_ENABLED(pVM))
-    {
-        LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used!\n"));
-        pConfig->fNestedHWVirt = false;
-    }
+    bool fQueryNestedHwvirt = false;
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+    fQueryNestedHwvirt |= RT_BOOL(pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD);
 #endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    fQueryNestedHwvirt |= RT_BOOL(   pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL
+                                  || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_VIA);
+#endif
+    if (fQueryNestedHwvirt)
+    {
+        /** @cfgm{/CPUM/NestedHWVirt, bool, false}
+         * Whether to expose the hardware virtualization (VMX/SVM) feature to the guest.
+         * The default is false, and when enabled requires nested paging and AMD-V or
+         * unrestricted guest mode.
+         */
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedHWVirt", &pConfig->fNestedHWVirt, false);
+        AssertLogRelRCReturn(rc, rc);
+        if (   pConfig->fNestedHWVirt
+            && !fNestedPagingAndFullGuestExec)
+            return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
+                              "Cannot enable nested VT-x/AMD-V without nested-paging and unresricted guest execution!\n");
+
+        /** @todo Think about enabling this later with NEM/KVM. */
+        if (   pConfig->fNestedHWVirt
+            && VM_IS_NEM_ENABLED(pVM))
+        {
+            LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used!\n"));
+            pConfig->fNestedHWVirt = false;
+        }
+    }
 
     /*
      * Instruction Set Architecture (ISA) Extensions.

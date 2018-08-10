@@ -2135,7 +2135,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     pCtx = pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     Assert(pCtx);
-    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+    if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
+        || CPUMIsGuestInVmxNonRootMode(pCtx))
     {
         AssertMsgFailed(("Bad scheduling - can't exec. nested-guest in REM!\n"));
         return VERR_EM_CANNOT_EXEC_GUEST;

@@ -2774,8 +2774,9 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
 
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     static const char *const s_aHwvirtModes[] = { "No/inactive", "SVM", "VMX", "Common" };
-    uint8_t const idxHwvirtState = CPUMIsGuestInSvmNestedHwVirtMode(pCtx) ? CPUMHWVIRTDUMP_SVM
-                                 : CPUMIsGuestInVmxNestedHwVirtMode(pCtx) ? CPUMHWVIRTDUMP_VMX : CPUMHWVIRTDUMP_NONE;
+    bool const fSvm = pVM->cpum.ro.GuestFeatures.fSvm;
+    bool const fVmx = pVM->cpum.ro.GuestFeatures.fVmx;
+    uint8_t const idxHwvirtState = fSvm ? CPUMHWVIRTDUMP_SVM : (fVmx ? CPUMHWVIRTDUMP_VMX : CPUMHWVIRTDUMP_NONE);
     AssertCompile(CPUMHWVIRTDUMP_LAST <= RT_ELEMENTS(s_aHwvirtModes));
     Assert(idxHwvirtState < RT_ELEMENTS(s_aHwvirtModes));
     const char *pcszHwvirtMode   = s_aHwvirtModes[idxHwvirtState];
@@ -2787,17 +2788,16 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, "VCPU[%u] hardware virtualization state:\n", pVCpu->idCpu);
 
     if (fDumpState & CPUMHWVIRTDUMP_COMMON)
-    {
-        pHlp->pfnPrintf(pHlp, "fGif                           = %RTbool\n", pCtx->hwvirt.fGif);
-        pHlp->pfnPrintf(pHlp, "fLocalForcedActions            = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
-    }
+        pHlp->pfnPrintf(pHlp, "fLocalForcedActions          = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
+
     pHlp->pfnPrintf(pHlp, "%s hwvirt state%s\n", pcszHwvirtMode, (fDumpState & (CPUMHWVIRTDUMP_SVM | CPUMHWVIRTDUMP_VMX)) ?
                                                                  ":" : "");
     if (fDumpState & CPUMHWVIRTDUMP_SVM)
     {
+        pHlp->pfnPrintf(pHlp, "  fGif                       = %RTbool\n", pCtx->hwvirt.fGif);
+
         char szEFlags[80];
         cpumR3InfoFormatFlags(&szEFlags[0], pCtx->hwvirt.svm.HostState.rflags.u);
-
         pHlp->pfnPrintf(pHlp, "  uMsrHSavePa                = %#RX64\n",    pCtx->hwvirt.svm.uMsrHSavePa);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcb                 = %#RGp\n",     pCtx->hwvirt.svm.GCPhysVmcb);
         pHlp->pfnPrintf(pHlp, "  VmcbCtrl:\n");
@@ -2838,12 +2838,16 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  pvIoBitmapR0               = %RKv\n",      pCtx->hwvirt.svm.pvIoBitmapR0);
     }
 
-    /** @todo Intel.  */
-#if 0
     if (fDumpState & CPUMHWVIRTDUMP_VMX)
     {
+        pHlp->pfnPrintf(pHlp, "  fInVmxRootMode             = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxRootMode);
+        pHlp->pfnPrintf(pHlp, "  fInVmxNonRootMode          = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxNonRootMode);
+        pHlp->pfnPrintf(pHlp, "  GCPhysVmxon                = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmxon);
+        pHlp->pfnPrintf(pHlp, "  GCPhysVmcs                 = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmcs);
+        pHlp->pfnPrintf(pHlp, "  enmInstrDiag               = %u (%s)\n",   pCtx->hwvirt.vmx.enmInstrDiag,
+                        HMVmxGetInstrDiagDesc(pCtx->hwvirt.vmx.enmInstrDiag));
+        /** @todo NSTVMX: Dump remaining/new fields. */
     }
-#endif
 
 #undef CPUMHWVIRTDUMP_NONE
 #undef CPUMHWVIRTDUMP_COMMON

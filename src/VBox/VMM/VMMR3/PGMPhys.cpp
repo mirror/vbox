@@ -4548,6 +4548,15 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
     LogFlow(("PGMR3PhysSetA20 %d (was %d)\n", fEnable, pVCpu->pgm.s.fA20Enabled));
     if (pVCpu->pgm.s.fA20Enabled != fEnable)
     {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        if (   CPUMIsGuestInVmxRootMode(pCtx)
+            && !fEnable)
+        {
+            Log(("Cannot enter A20M mode while in VMX root mode\n"));
+            return;
+        }
+#endif
         pVCpu->pgm.s.fA20Enabled = fEnable;
         pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!fEnable << 20);
 #ifdef VBOX_WITH_REM

@@ -5334,6 +5334,18 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 
+            /* Check for bits that must remain set in VMX operation. */
+            if (IEM_IS_VMX_ROOT_MODE(pVCpu))
+            {
+                uint32_t const uCr0Fixed0 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxUnrestrictedGuest ?
+                                            VMX_V_CR0_FIXED0_UX : VMX_V_CR0_FIXED0;
+                if ((uNewCrX & uCr0Fixed0) != uCr0Fixed0)
+                {
+                    Log(("Trying to clear reserved CR0 bits in VMX operation: NewCr0=%#llx MB1=%#llx\n", uNewCrX, uCr0Fixed0));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+            }
+
             /** @todo check reserved PDPTR bits as AMD states. */
 
             /*
@@ -5547,6 +5559,17 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
                 IEM_SVM_UPDATE_NRIP(pVCpu);
                 IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR4, enmAccessCrX, iGReg);
+            }
+
+            /* Check for bits that must remain set in VMX operation. */
+            if (IEM_IS_VMX_ROOT_MODE(pVCpu))
+            {
+                uint32_t const uCr4Fixed0 = VMX_V_CR4_FIXED0;
+                if ((uNewCrX & uCr4Fixed0) != uCr4Fixed0)
+                {
+                    Log(("Trying to clear reserved CR4 bits in VMX operation: NewCr4=%#llx MB1=%#llx\n", uNewCrX, uCr4Fixed0));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
             }
 
             /*
@@ -5934,11 +5957,12 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
 /**
  * Implements INVPCID.
  *
+ * @param   iEffSeg              The segment of the invpcid descriptor.
+ * @param   GCPtrInvpcidDesc     The address of invpcid descriptor.
  * @param   uInvpcidType         The invalidation type.
- * @param   GCPtrInvpcidDesc     The effective address of invpcid descriptor.
  * @remarks Updates the RIP.
  */
-IEM_CIMPL_DEF_2(iemCImpl_invpcid, uint64_t, uInvpcidType, RTGCPTR, GCPtrInvpcidDesc)
+IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, uint8_t, uInvpcidType)
 {
     /*
      * Check preconditions.
@@ -5966,7 +5990,7 @@ IEM_CIMPL_DEF_2(iemCImpl_invpcid, uint64_t, uInvpcidType, RTGCPTR, GCPtrInvpcidD
      * Fetch the invpcid descriptor from guest memory.
      */
     RTUINT128U uDesc;
-    VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, pVCpu->iem.s.iEffSeg, GCPtrInvpcidDesc);
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, iEffSeg, GCPtrInvpcidDesc);
     if (rcStrict == VINF_SUCCESS)
     {
         /*

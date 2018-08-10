@@ -1814,7 +1814,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
         return VINF_SUCCESS;
     }
 
-    if (CPUMIsGuestInVmxNestedHwVirtMode(&pVCpu->cpum.GstCtx))
+    if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
     { /** @todo Nested VMX. */ }
 
     /* Shouldn't really get here. */
@@ -2146,7 +2146,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             {
                 Assert(!HMR3IsEventPending(pVCpu));
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-                if (CPUMIsGuestInNestedHwVirtMode(&pVCpu->cpum.GstCtx))
+                if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
                 {
                     bool fResched, fInject;
                     rc2 = emR3NstGstInjectIntr(pVCpu, &fResched, &fInject);

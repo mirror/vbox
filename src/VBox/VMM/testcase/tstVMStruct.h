@@ -145,6 +145,13 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvIoBitmapR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvIoBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HCPhysVmcb);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.GCPhysVmxon);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.GCPhysVmcs);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.enmInstrDiag);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInVmxRootMode);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInVmxNonRootMode);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pVmcsR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pVmcsR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);
     /** @todo add rest of hwvirt fields when code is more

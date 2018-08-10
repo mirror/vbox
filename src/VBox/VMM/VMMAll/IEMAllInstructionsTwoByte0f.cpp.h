@@ -263,11 +263,20 @@ FNIEMOP_DEF(iemOp_Grp7_vmresume)
 
 
 /** Opcode 0x0f 0x01 /0. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+FNIEMOP_DEF(iemOp_Grp7_vmxoff)
+{
+    IEMOP_MNEMONIC(vmxoff, "vmxoff");
+    IEMOP_HLP_DONE_DECODING();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmxoff);
+}
+#else
 FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 {
     IEMOP_BITCH_ABOUT_STUB();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
+#endif
 
 
 /** Opcode 0x0f 0x01 /1. */
@@ -8417,7 +8426,22 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmptrld_Mq, uint8_t, bRm);
 FNIEMOP_UD_STUB_1(iemOp_Grp9_vmclear_Mq, uint8_t, bRm);
 
 /** Opcode 0xf3 0x0f 0xc7 !11/6. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+FNIEMOP_DEF_1(iemOp_Grp9_vmxon_Mq, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(vmxon, "vmxon");
+    IEMOP_HLP_VMX_INSTR();
+    IEM_MC_BEGIN(1, 0);
+    IEM_MC_ARG(RTGCPTR, GCPtrEffSrc, 0);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+    IEMOP_HLP_DONE_DECODING();
+    IEM_MC_CALL_CIMPL_1(iemCImpl_vmxon, GCPtrEffSrc);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+#else
 FNIEMOP_UD_STUB_1(iemOp_Grp9_vmxon_Mq, uint8_t, bRm);
+#endif
 
 /** Opcode [0xf3] 0x0f 0xc7 !11/7. */
 FNIEMOP_UD_STUB_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm);
@@ -8463,7 +8487,7 @@ AssertCompile(RT_ELEMENTS(g_apfnGroup9MemReg) == 8*4);
 /** Opcode 0x0f 0xc7. */
 FNIEMOP_DEF(iemOp_Grp9)
 {
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_RM(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
         /* register, register */
         return FNIEMOP_CALL_1(g_apfnGroup9RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4

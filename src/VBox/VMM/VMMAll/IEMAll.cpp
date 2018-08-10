@@ -387,34 +387,48 @@ typedef enum IEMXCPTCLASS
 /**
  * Check the common VMX instruction preconditions.
  */
-#define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
+#define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
     do { \
-    { \
         if (!IEM_IS_VMX_ENABLED(a_pVCpu)) \
         { \
-            Log((RT_STR(a_Instr) ": CR4.VMXE not enabled -> #UD\n")); \
+            Log((a_szInstr ": CR4.VMXE not enabled -> #UD\n")); \
+            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_Vmxe; \
             return iemRaiseUndefinedOpcode(a_pVCpu); \
         } \
         if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
         { \
-            Log((RT_STR(a_Instr) ": Real or v8086 mode -> #UD\n")); \
+            Log((a_szInstr ": Real or v8086 mode -> #UD\n")); \
+            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_RealOrV86Mode; \
             return iemRaiseUndefinedOpcode(a_pVCpu); \
         } \
         if (IEM_IS_LONG_MODE(a_pVCpu) && !IEM_IS_64BIT_CODE(a_pVCpu)) \
         { \
-            Log((RT_STR(a_Instr) ": Long mode without 64-bit code segment -> #UD\n")); \
+            Log((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
+            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_LongModeCS; \
             return iemRaiseUndefinedOpcode(a_pVCpu); \
         } \
-} while (0)
+    } while (0)
 
 /**
  * Check if VMX is enabled.
  */
 # define IEM_IS_VMX_ENABLED(a_pVCpu)                         (CPUMIsGuestVmxEnabled(IEM_GET_CTX(a_pVCpu)))
 
+/**
+ * Check if the guest has entered VMX root operation.
+ */
+#define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                        (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(pVCpu)))
+
+/**
+ * Check if the guest has entered VMX non-root operation.
+ */
+#define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+
 #else
-# define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr)       do { } while (0)
+# define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix)  do { } while (0)
 # define IEM_IS_VMX_ENABLED(a_pVCpu)                         (false)
+# define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                       (false)
+# define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                   (false)
 
 #endif
 
@@ -937,6 +951,11 @@ IEM_STATIC VBOXSTRICTRC     iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint6
 IEM_STATIC VBOXSTRICTRC     iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2);
 #endif
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+IEM_STATIC VBOXSTRICTRC     iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmxon, PCVMXEXITINSTRINFO pExitInstrInfo,
+                                        RTGCPTR GCPtrDisp);
+#endif
+
 /**
  * Sets the pass up status.
  *
@@ -1036,6 +1055,7 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.fPrefixes          = 0xfeedbeef;
     pVCpu->iem.s.uRexReg            = 127;
     pVCpu->iem.s.uRexB              = 127;
+    pVCpu->iem.s.offModRm           = 127;
     pVCpu->iem.s.uRexIndex          = 127;
     pVCpu->iem.s.iEffSeg            = 127;
     pVCpu->iem.s.idxPrefix          = 127;
@@ -1195,6 +1215,7 @@ DECLINLINE(void) iemInitDecoder(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.offOpcode          = 0;
     pVCpu->iem.s.cbOpcode           = 0;
 #endif
+    pVCpu->iem.s.offModRm           = 0;
     pVCpu->iem.s.cActiveMappings    = 0;
     pVCpu->iem.s.iNextMapping       = 0;
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
@@ -1305,6 +1326,7 @@ DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
     pVCpu->iem.s.cbOpcode           = 0;
     pVCpu->iem.s.offOpcode          = 0;
 #endif
+    pVCpu->iem.s.offModRm           = 0;
     Assert(pVCpu->iem.s.cActiveMappings == 0);
     pVCpu->iem.s.iNextMapping       = 0;
     Assert(pVCpu->iem.s.rcPassUp   == VINF_SUCCESS);
@@ -2433,7 +2455,7 @@ DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPU pVCpu)
 {
 # ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
-    pVCpu->iem.s.offModRm = offOpcode;
+    pVCpu->iem.s.offModRm  = offBuf;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
     if (RT_LIKELY(   pbBuf != NULL
                   && offBuf < pVCpu->iem.s.cbInstrBuf))
@@ -2442,7 +2464,7 @@ DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPU pVCpu)
         return pbBuf[offBuf];
     }
 # else
-    uintptr_t offOpcode = pVCpu->iem.s.offOpcode;
+    uintptr_t offOpcode   = pVCpu->iem.s.offOpcode;
     pVCpu->iem.s.offModRm = offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
     {
@@ -2467,7 +2489,7 @@ DECLINLINE(uint8_t) iemOpcodeGetNextRmJmp(PVMCPU pVCpu)
 # define IEM_OPCODE_GET_NEXT_RM(a_pbRm) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextRm(pVCpu, (a_pu8)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextRm(pVCpu, (a_pbRm)); \
         if (rcStrict2 == VINF_SUCCESS) \
         { /* likely */ } \
         else \
@@ -5522,7 +5544,8 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
         {
             /* If a nested-guest enters an endless CPU loop condition, we'll emulate it; otherwise guru. */
             Log2(("iemRaiseXcptOrInt: CPU hang condition detected\n"));
-            if (!CPUMIsGuestInNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
+            if (   !CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu))
+                && !CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
                 return VERR_EM_GUEST_CPU_HANG;
         }
         else
@@ -8082,6 +8105,8 @@ iemMemApplySegment(PVMCPU pVCpu, uint32_t fAccess, uint8_t iSegReg, size_t cbMem
             Assert(cbMem >= 1);
             if (RT_LIKELY(X86_IS_CANONICAL(GCPtrMem) && X86_IS_CANONICAL(GCPtrMem + cbMem - 1)))
                 return VINF_SUCCESS;
+            /** @todo We should probably raise #SS(0) here if segment is SS; see AMD spec.
+             *        4.12.2 "Data Limit Checks in 64-bit Mode". */
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
@@ -12546,6 +12571,22 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         else return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** This instruction raises an \#UD in real and V8086 mode or when not using a
+ *  64-bit code segment when in long mode (applicable to all VMX instructions
+ *  except VMCALL). */
+# define IEMOP_HLP_VMX_INSTR() \
+    do \
+    { \
+        if (   !IEM_IS_REAL_OR_V86_MODE(pVCpu) \
+            && (  !IEM_IS_LONG_MODE(pVCpu) \
+                || IEM_IS_64BIT_CODE(pVCpu))) \
+        { /* likely */ } \
+        else \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
+    } while (0)
+#endif
+
 /** The instruction is not available in 64-bit mode, throw \#UD if we're in
  * 64-bit mode. */
 #define IEMOP_HLP_NO_64BIT() \
@@ -15095,28 +15136,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpg(PVMCPU pVCpu, uint8_t cbInstr, R
 
 
 /**
- * Interface for HM and EM to emulate the INVPCID instruction.
- *
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   cbInstr             The instruction length in bytes.
- * @param   uType               The invalidation type.
- * @param   GCPtrInvpcidDesc    The effective address of the INVPCID descriptor.
- *
- * @remarks In ring-0 not all of the state needs to be synced in.
- */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvpcid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t uType, RTGCPTR GCPtrInvpcidDesc)
-{
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 4);
-
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
-    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_invpcid, uType, GCPtrInvpcidDesc);
-    Assert(!pVCpu->iem.s.cActiveMappings);
-    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
-}
-
-
-
-/**
  * Interface for HM and EM to emulate the CPUID instruction.
  *
  * @returns Strict VBox status code.
@@ -15497,6 +15516,55 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
 }
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
+/**
+ * Interface for HM and EM to emulate the VMXOFF instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmxoff);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate the VMXON instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr         The instruction length in bytes.
+ * @param   GCPtrVmxon      The linear address of the VMXON pointer.
+ * @param   uExitInstrInfo  The VM-exit instruction information field.
+ * @param   GCPtrDisp       The displacement field for @a GCPtrVmxon if any.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmxon, uint32_t uExitInstrInfo,
+                                               RTGCPTR GCPtrDisp)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    PCVMXEXITINSTRINFO pExitInstrInfo = (PCVMXEXITINSTRINFO)&uExitInstrInfo;
+    VBOXSTRICTRC rcStrict = iemVmxVmxon(pVCpu, cbInstr, GCPtrVmxon, pExitInstrInfo, GCPtrDisp);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+#endif
+
 #ifdef IN_RING3
 
 /**

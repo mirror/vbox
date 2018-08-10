@@ -41,6 +41,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/ssm.h>
@@ -76,8 +77,9 @@
 *********************************************************************************************************************************/
 #define EXIT_REASON(def, val, str) #def " - " #val " - " str
 #define EXIT_REASON_NIL() NULL
-/** Exit reason descriptions for VT-x, used to describe statistics. */
-static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
+/** Exit reason descriptions for VT-x, used to describe statistics and exit
+ *  history. */
+static const char * const g_apszVmxExitReasons[MAX_EXITREASON_STAT] =
 {
     EXIT_REASON(VMX_EXIT_XCPT_OR_NMI            ,   0, "Exception or non-maskable interrupt (NMI)."),
     EXIT_REASON(VMX_EXIT_EXT_INT                ,   1, "External interrupt."),
@@ -148,13 +150,13 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
 /** Array index of the last valid VT-x exit reason. */
 #define MAX_EXITREASON_VTX                         64
 
-/** A partial list of Exit reason descriptions for AMD-V, used to describe
- *  statistics.
+/** A partial list of \#EXIT reason descriptions for AMD-V, used to describe
+ *  statistics and exit history.
  *
  *  @note AMD-V have annoyingly large gaps (e.g. \#NPF VMEXIT comes at 1024),
  *        this array doesn't contain the entire set of exit reasons, we
  *        handle them via hmSvmGetSpecialExitReasonDesc(). */
-static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
+static const char * const g_apszSvmExitReasons[MAX_EXITREASON_STAT] =
 {
     EXIT_REASON(SVM_EXIT_READ_CR0     ,    0, "Read CR0."),
     EXIT_REASON(SVM_EXIT_READ_CR1     ,    1, "Read CR1."),
@@ -309,7 +311,7 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 
 /**
  * Gets the SVM exit reason if it's one of the reasons not present in the @c
- * g_apszAmdVExitReasons array.
+ * g_apszSvmExitReasons array.
  *
  * @returns The exit reason or NULL if unknown.
  * @param   uExit       The exit.
@@ -1060,8 +1062,8 @@ static int hmR3InitCPU(PVM pVM)
 
 #undef HM_REG_COUNTER
 
-        const char *const *papszDesc = ASMIsIntelCpu() || ASMIsViaCentaurCpu() ? &g_apszVTxExitReasons[0]
-                                                                               : &g_apszAmdVExitReasons[0];
+        const char *const *papszDesc = ASMIsIntelCpu() || ASMIsViaCentaurCpu() ? &g_apszVmxExitReasons[0]
+                                                                               : &g_apszSvmExitReasons[0];
 
         /*
          * Guest Exit reason stats.
@@ -1937,7 +1939,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     uint32_t u32Family;
     uint32_t u32Model;
     uint32_t u32Stepping;
-    if (HMAmdIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
+    if (HMSvmIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
         LogRel(("HM: AMD Cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
     LogRel(("HM: AMD HWCR MSR                      = %#RX64\n", pVM->hm.s.svm.u64MsrHwcr));
@@ -2947,7 +2949,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     Assert(HMIsEnabled(pVM));
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
-    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+    if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
+        || CPUMIsGuestVmxEnabled(pCtx))
     {
         Log(("HMR3CanExecuteGuest: In nested-guest mode - returning false"));
         return false;
@@ -3150,9 +3153,7 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
         && !pVM->hm.s.vmx.fUnrestrictedGuest
         &&  CPUMIsGuestInRealModeEx(pCtx)
         && !PDMVmmDevHeapIsEnabled(pVM))
-    {
         return true;
-    }
 
     return false;
 }
@@ -3428,13 +3429,13 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("HM: CPU[%u] Instruction error    %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
                 LogRel(("HM: CPU[%u] Exit reason          %#x\n", i, pVCpu->hm.s.vmx.LastError.u32ExitReason));
 
-                if (   pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS
-                    || pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS)
+                if (   pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS
+                    || pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS)
                 {
                     LogRel(("HM: CPU[%u] Entered Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
                     LogRel(("HM: CPU[%u] Current Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 }
-                else if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
+                else if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMENTRY_INVALID_CTL)
                 {
                     LogRel(("HM: CPU[%u] PinCtls          %#RX32\n", i, pVCpu->hm.s.vmx.u32PinCtls));
                     {
@@ -3755,8 +3756,8 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
  */
 VMMR3DECL(const char *) HMR3GetVmxExitName(uint32_t uExit)
 {
-    if (uExit < RT_ELEMENTS(g_apszVTxExitReasons))
-        return g_apszVTxExitReasons[uExit];
+    if (uExit < RT_ELEMENTS(g_apszVmxExitReasons))
+        return g_apszVmxExitReasons[uExit];
     return NULL;
 }
 
@@ -3769,8 +3770,8 @@ VMMR3DECL(const char *) HMR3GetVmxExitName(uint32_t uExit)
  */
 VMMR3DECL(const char *) HMR3GetSvmExitName(uint32_t uExit)
 {
-    if (uExit < RT_ELEMENTS(g_apszAmdVExitReasons))
-        return g_apszAmdVExitReasons[uExit];
+    if (uExit < RT_ELEMENTS(g_apszSvmExitReasons))
+        return g_apszSvmExitReasons[uExit];
     return hmSvmGetSpecialExitReasonDesc(uExit);
 }
 
