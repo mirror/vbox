@@ -1157,7 +1157,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_FEATURE_CONTROL_LOCK                 RT_BIT_64(0)
 /** Feature control - Enable VMX inside SMX operation (R/WL). */
 #define MSR_IA32_FEATURE_CONTROL_SMX_VMXON            RT_BIT_64(1)
-/** Feature control - Enable VMX outside SMX operationr (R/WL). */
+/** Feature control - Enable VMX outside SMX operation (R/WL). */
 #define MSR_IA32_FEATURE_CONTROL_VMXON                RT_BIT_64(2)
 /** Feature control - SENTER local functions enable (R/WL).  */
 #define MSR_IA32_FEATURE_CONTROL_SENTER_LOCAL_FN_0    RT_BIT_64(8)
@@ -1201,6 +1201,12 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** SMM monitor control. */
 #define MSR_IA32_SMM_MONITOR_CTL            0x9B
+/** SMM control - Valid. */
+#define MSR_IA32_SMM_MONITOR_VALID                  RT_BIT_64(0)
+/** SMM control - VMXOFF unblocks SMI. */
+#define MSR_IA32_SMM_MONITOR_VMXOFF_UNBLOCK_SMI     RT_BIT_64(2)
+/** SMM control - MSEG base physical address. */
+#define MSR_IA32_SMM_MONITOR_MSGEG_PHYSADDR(a)      (((a) >> 12) & UINT64_C(0xfffff))
 
 /** General performance counter no. 0. */
 #define MSR_IA32_PMC0                       0xC1
