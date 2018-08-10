@@ -2834,6 +2834,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                             break;
                         default: AssertFailedBreak();
                     }
+                    InsertConfigInteger(pCfg, "DebugEnabled", fDebugEnabled);
+                    InsertConfigString (pCfg, "DebugPathOut", strDebugPathOut);
                     break;
                 }
                 case AudioControllerType_SB16:

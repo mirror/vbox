@@ -323,17 +323,46 @@ AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 typedef AC97STREAMSTATE *PAC97STREAMSTATE;
 
 /**
+ * Structure containing AC'97 stream debug stuff, configurable at runtime.
+ */
+typedef struct AC97STREAMDBGINFORT
+{
+    /** Whether debugging is enabled or not. */
+    bool                     fEnabled;
+    uint8_t                  Padding[7];
+    /** File for dumping stream reads / writes.
+     *  For input streams, this dumps data being written to the device FIFO,
+     *  whereas for output streams this dumps data being read from the device FIFO. */
+    R3PTRTYPE(PPDMAUDIOFILE) pFileStream;
+    /** File for dumping DMA reads / writes.
+     *  For input streams, this dumps data being written to the device DMA,
+     *  whereas for output streams this dumps data being read from the device DMA. */
+    R3PTRTYPE(PPDMAUDIOFILE) pFileDMA;
+} AC97STREAMDBGINFORT, *PAC97STREAMDBGINFORT;
+
+/**
+ * Structure containing AC'97 stream debug information.
+ */
+typedef struct AC97STREAMDBGINFO
+{
+    /** Runtime debug info. */
+    AC97STREAMDBGINFORT      Runtime;
+} AC97STREAMDBGINFO ,*PAC97STREAMDBGINFO;
+
+/**
  * Structure for an AC'97 stream.
  */
 typedef struct AC97STREAM
 {
     /** Stream number (SDn). */
-    uint8_t         u8SD;
-    uint8_t         abPadding[7];
+    uint8_t           u8SD;
+    uint8_t           abPadding[7];
     /** Bus master registers of this stream. */
-    AC97BMREGS      Regs;
+    AC97BMREGS        Regs;
     /** Internal state of this stream. */
-    AC97STREAMSTATE State;
+    AC97STREAMSTATE   State;
+    /** Debug information. */
+    AC97STREAMDBGINFO Dbg;
 } AC97STREAM, *PAC97STREAM;
 AssertCompileSizeAlignment(AC97STREAM, 8);
 /** Pointer to an AC'97 stream (registers + state). */
@@ -398,6 +427,15 @@ typedef struct AC97DRIVER
     /** Driver stream for output. */
     AC97DRIVERSTREAM                   Out;
 } AC97DRIVER, *PAC97DRIVER;
+
+typedef struct AC97STATEDBGINFO
+{
+    /** Whether debugging is enabled or not. */
+    bool                               fEnabled;
+    /** Path where to dump the debug output to.
+     *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
+    char                               szOutPath[RTPATH_MAX + 1];
+} AC97STATEDBGINFO, *PAC97STATEDBGINFO;
 
 /**
  * Structure for maintaining an AC'97 device state.
@@ -477,6 +515,7 @@ typedef struct AC97STATE
 #endif
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
+    AC97STATEDBGINFO        Dbg;
 } AC97STATE;
 AssertCompileMemberAlignment(AC97STATE, StreamLineIn, 8);
 /** Pointer to a AC'97 state. */
@@ -620,8 +659,9 @@ static void               ichac97R3StreamAsyncIOLock(PAC97STREAM pStream);
 static void               ichac97R3StreamAsyncIOUnlock(PAC97STREAM pStream);
 static void               ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable);
 # endif
-#endif /* IN_RING3 */
 
+DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
+#endif /* IN_RING3 */
 
 static void ichac97WarmReset(PAC97STATE pThis)
 {
@@ -802,6 +842,22 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEn
             RTCircBufReset(pStream->State.pCircBuf);
 
         rc = ichac97R3StreamOpen(pThis, pStream);
+        if (RT_SUCCESS(rc))
+        {
+            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileStream))
+            {
+                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStream->State.Cfg.Props);
+                AssertRC(rc2);
+            }
+
+            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileDMA))
+            {
+                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStream->State.Cfg.Props);
+                AssertRC(rc2);
+            }
+        }
     }
     else
         rc = ichac97R3StreamClose(pThis, pStream);
@@ -890,6 +946,41 @@ static int ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t 
     if (RT_SUCCESS(rc))
         rc = RTCircBufCreate(&pStream->State.pCircBuf, _4K); /** @todo Make this configurable. */
 
+    pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
+
+    if (pStream->Dbg.Runtime.fEnabled)
+    {
+        char szFile[64];
+
+        if (ichac97GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "ac97StreamWriteSD%RU8", pStream->u8SD);
+        else
+            RTStrPrintf(szFile, sizeof(szFile), "ac97StreamReadSD%RU8", pStream->u8SD);
+
+        char szPath[RTPATH_MAX + 1];
+        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+                                         0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+        AssertRC(rc2);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileStream);
+        AssertRC(rc2);
+
+        if (ichac97GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "ac97DMAWriteSD%RU8", pStream->u8SD);
+        else
+            RTStrPrintf(szFile, sizeof(szFile), "ac97DMAReadSD%RU8", pStream->u8SD);
+
+        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+        AssertRC(rc2);
+
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileDMA);
+        AssertRC(rc2);
+
+        /* Delete stale debugging files from a former run. */
+        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileStream);
+        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileDMA);
+    }
+
     return rc;
 }
 
@@ -919,6 +1010,15 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
 # else
     RT_NOREF(pThis);
 # endif
+
+    if (pStream->Dbg.Runtime.fEnabled)
+    {
+        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileStream);
+        pStream->Dbg.Runtime.pFileStream = NULL;
+
+        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileDMA);
+        pStream->Dbg.Runtime.pFileDMA = NULL;
+    }
 
     LogFlowFuncLeave();
 }
@@ -1007,13 +1107,8 @@ static int ichac97R3StreamWrite(PAC97STATE pThis, PAC97STREAM pDstStream, PAUDMI
         int rc2 = AudioMixerSinkRead(pSrcMixSink, AUDMIXOP_COPY, pvDst, (uint32_t)cbDst, &cbRead);
         AssertRC(rc2);
 
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ichac97StreamWrite.pcm",
-                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pvDst, cbRead, NULL);
-        RTFileClose(fh);
-# endif
+        if (pDstStream->Dbg.Runtime.fEnabled)
+            DrvAudioHlpFileWrite(pDstStream->Dbg.Runtime.pFileStream, pvDst, cbRead, 0 /* fFlags */);
     }
 
     RTCircBufReleaseWriteBlock(pCircBuf, cbRead);
@@ -1061,13 +1156,9 @@ static int ichac97R3StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIX
 
         if (cbSrc)
         {
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            RTFILE fh;
-            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm",
-                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-            RTFileWrite(fh, pvSrc, cbSrc, NULL);
-            RTFileClose(fh);
-# endif
+            if (pSrcStream->Dbg.Runtime.fEnabled)
+                DrvAudioHlpFileWrite(pSrcStream->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
+
             rc = AudioMixerSinkWrite(pDstMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
             if (RT_SUCCESS(rc))
             {
@@ -2021,6 +2112,23 @@ static uint8_t ichac97R3RecSourceToIdx(PDMAUDIORECSOURCE enmRecSrc)
     return AC97_REC_MIC;
 }
 
+/**
+ * Returns the audio direction of a specified stream descriptor.
+ *
+ * @return  Audio direction.
+ */
+DECLINLINE(PDMAUDIODIR) ichac97GetDirFromSD(uint8_t uSD)
+{
+    switch (uSD)
+    {
+        case AC97SOUNDSOURCE_PI_INDEX: return PDMAUDIODIR_IN;
+        case AC97SOUNDSOURCE_PO_INDEX: return PDMAUDIODIR_OUT;
+        case AC97SOUNDSOURCE_MC_INDEX: return PDMAUDIODIR_IN;
+    }
+
+    return PDMAUDIODIR_UNKNOWN;
+}
+
 #endif /* IN_RING3 */
 
 /**
@@ -2470,13 +2578,8 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
                     int rc2 = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pRegs->bd.addr, (uint8_t *)pvDst, cbDst);
                     AssertRC(rc2);
 
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-                    RTFILE fh;
-                    RTFileOpen(&fh,  VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMARead.pcm",
-                               RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-                    RTFileWrite(fh, pvDst, cbDst, NULL);
-                    RTFileClose(fh);
-# endif
+                    if (pStream->Dbg.Runtime.fEnabled)
+                        DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, pvDst, cbDst, 0 /* fFlags */);
                 }
 
                 RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
@@ -2500,13 +2603,8 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
                     int rc2 = PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pRegs->bd.addr, (uint8_t *)pvSrc, cbSrc);
                     AssertRC(rc2);
 
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-                    RTFILE fh;
-                    RTFileOpen(&fh,  VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMAWrite.pcm",
-                               RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-                    RTFileWrite(fh, pvSrc, cbSrc, NULL);
-                    RTFileClose(fh);
-# endif
+                    if (pStream->Dbg.Runtime.fEnabled)
+                        DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, pvSrc, cbSrc, 0 /* fFlags */);
                 }
 
                 RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
@@ -3812,10 +3910,11 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     /*
      * Validations.
      */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "RZEnabled\0"
-                              "Codec\0"
-                              "TimerHz\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
+                                    "Codec\0"
+                                    "TimerHz\0"
+                                    "DebugEnabled\0"
+                                    "DebugPathOut\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for the AC'97 device"));
 
@@ -3825,7 +3924,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pThis->fRZEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read RCEnabled as boolean"));
+                                N_("AC'97 configuration error: failed to read RCEnabled as boolean"));
 
     char szCodec[20];
     rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
@@ -3839,7 +3938,27 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC'97 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+
+    if (uTimerHz != AC97_TIMER_HZ)
+        LogRel(("AC97: Using custom device timer rate (%RU16Hz)\n", uTimerHz));
 # endif
+
+    rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AC97 configuration error: failed to read debugging enabled flag as boolean"));
+
+    rc = CFGMR3QueryStringDef(pCfg, "DebugPathOut", pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath),
+                              VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AC97 configuration error: failed to read debugging output path flag as string"));
+
+    if (!strlen(pThis->Dbg.szOutPath))
+        RTStrPrintf(pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+
+    if (pThis->Dbg.fEnabled)
+        LogRel2(("AC97: Debug output will be saved to '%s'\n", pThis->Dbg.szOutPath));
 
     /*
      * The AD1980 codec (with corresponding PCI subsystem vendor ID) is whitelisted
@@ -4150,13 +4269,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, "/Devices/AC97/BytesRead"   , STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, "/Devices/AC97/BytesWritten", STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
     }
-# endif
-
-# ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMARead.pcm");
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMAWrite.pcm");
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm");
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamWrite.pcm");
 # endif
 
     LogFlowFuncLeaveRC(rc);
