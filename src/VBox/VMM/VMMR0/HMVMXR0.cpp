@@ -5828,6 +5828,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, uint32_t cbInstr)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Sets a general-protection (\#GP) exception as pending-for-injection into the VM.
  *
@@ -5842,6 +5843,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptGP(PVMCPU pVCpu, uint32_t u32ErrCode)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, u32ErrCode, 0 /* GCPtrFaultAddress */);
 }
+#endif
 
 
 /**
