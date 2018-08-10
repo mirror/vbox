@@ -1860,8 +1860,8 @@ typedef struct H3DORInstance
     H3DORLOG(("H3DORGeometry: ins %p %d,%d %dx%d\n", pvInstance, x, y, w, h));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
-    Assert(p);
-    Assert(p->pThis);
+    AssertPtrReturnVoid(p);
+    AssertPtrReturnVoid(p->pThis);
 
     /** @todo find out what to do if size changes to 0x0 from non zero */
     if (w == 0 || h == 0)
@@ -1983,8 +1983,8 @@ typedef struct H3DORInstance
     H3DORLOG(("H3DORVisibleRegion: ins %p %d\n", pvInstance, cRects));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
-    Assert(p);
-    Assert(p->pThis);
+    AssertPtrReturnVoid(p);
+    AssertPtrReturnVoid(p->pThis);
 
     if (cRects == 0)
     {
@@ -2014,8 +2014,8 @@ typedef struct H3DORInstance
     H3DORLOG(("H3DORFrame: ins %p %p %d\n", pvInstance, pvData, cbData));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
-    Assert(p);
-    Assert(p->pThis);
+    AssertPtrReturnVoid(p);
+    AssertPtrReturnVoid(p->pThis);
 
     /* Currently only a topdown BGR0 bitmap format is supported. */
     VRDEIMAGEBITMAP image;
@@ -2047,11 +2047,12 @@ typedef struct H3DORInstance
     H3DORLOG(("H3DOREnd: ins %p\n", pvInstance));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
-    Assert(p);
-    Assert(p->pThis);
+    AssertPtrReturnVoid(p);
+    AssertPtrReturnVoid(p->pThis);
 
     p->pThis->m_interfaceImage.VRDEImageHandleClose(p->hImageBitmap);
 
+    RT_ZERO(*p);
     RTMemFree(p);
 
     H3DORLOG(("H3DOREnd: ins %p completed\n", pvInstance));
