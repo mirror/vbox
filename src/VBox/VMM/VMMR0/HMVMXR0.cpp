@@ -5811,23 +5811,6 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu)
 }
 
 
-/**
- * Sets an overflow (\#OF) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The value of RIP that is to be pushed on the guest
- *                          stack.
- */
-DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, uint32_t cbInstr)
-{
-    uint32_t const u32IntInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR,         X86_XCPT_OF)
-                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,           VMX_EXIT_INT_INFO_TYPE_SW_INT)
-                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
-                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
-}
-
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Sets a general-protection (\#GP) exception as pending-for-injection into the VM.
@@ -7767,24 +7750,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptGP(PVMCPU pVCpu, bool fErrorCodeValid,
                               | (fErrorCodeValid ? VMX_EXIT_INT_INFO_ERROR_CODE_VALID : 0);
     return hmR0VmxInjectEventVmcs(pVCpu, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */, fStepping,
                                   pfIntrState);
-}
-
-
-/**
- * Sets a software interrupt (INTn) as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uVector         The software interrupt vector number.
- * @param   cbInstr         The value of RIP that is to be pushed on the guest
- *                          stack.
- */
-DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, uint16_t uVector, uint32_t cbInstr)
-{
-    bool const     fIsSwXcpt  = RT_BOOL(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
-    uint32_t const u32IntType = fIsSwXcpt ? VMX_EXIT_INT_INFO_TYPE_SW_XCPT : VMX_EXIT_INT_INFO_TYPE_SW_INT;
-    uint32_t const u32IntInfo = uVector | VMX_EXIT_INT_INFO_VALID
-                              | (u32IntType << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
