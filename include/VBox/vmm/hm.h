@@ -126,6 +126,7 @@ typedef enum HM64ON32OP
 /** @name All-context HM API.
  * @{ */
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
+VMMDECL(bool)                   HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
@@ -144,6 +145,7 @@ VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGM
 VMM_INT_DECL(int)               HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs);
 VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue);
 VMM_INT_DECL(const char *)      HMVmxGetInstrDiagDesc(VMXVINSTRDIAG enmInstrDiag);
+VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -247,7 +249,6 @@ VMMR3_INT_DECL(int)             HMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3Reset(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3ResetCpu(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            HMR3CheckError(PVM pVM, int iStatusCode);
-VMMR3DECL(bool)                 HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChanged(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool)            HMR3IsActive(PVMCPU pVCpu);

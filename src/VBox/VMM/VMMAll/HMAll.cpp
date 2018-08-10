@@ -55,6 +55,41 @@ VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
 
 
 /**
+ * Checks if the guest is in a suitable state for hardware-assisted execution.
+ *
+ * @returns @c true if it is suitable, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pCtx    Pointer to the guest CPU context.
+ *
+ * @remarks @a pCtx can be a partial context created and not necessarily the same as
+ *          pVCpu->cpum.GstCtx.
+ */
+VMMDECL(bool) HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(HMIsEnabled(pVM));
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
+        || CPUMIsGuestVmxEnabled(pCtx))
+    {
+        LogFunc(("In nested-guest mode - returning false"));
+        return false;
+    }
+#endif
+
+    /* AMD-V supports real & protected mode with or without paging. */
+    if (pVM->hm.s.svm.fEnabled)
+    {
+        pVCpu->hm.s.fActive = true;
+        return true;
+    }
+
+    return HMVmxCanExecuteGuest(pVCpu, pCtx);
+}
+
+
+/**
  * Queues a guest page for invalidation.
  *
  * @returns VBox status code.

@@ -23,6 +23,7 @@
 #define VMCPU_INCL_CPUM_GST_CTX
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/pdmapi.h>
 
 
 /*********************************************************************************************************************************
@@ -163,5 +164,339 @@ VMM_INT_DECL(const char *) HMVmxGetInstrDiagDesc(VMXVINSTRDIAG enmInstrDiag)
     if (RT_LIKELY((unsigned)enmInstrDiag < RT_ELEMENTS(g_apszVmxInstrDiagDesc)))
         return g_apszVmxInstrDiagDesc[enmInstrDiag];
     return "Unknown/invalid";
+}
+
+
+/**
+ * Checks if a code selector (CS) is suitable for execution using hardware-assisted
+ * VMX when unrestricted execution isn't available.
+ *
+ * @returns true if selector is suitable for VMX, otherwise
+ *        false.
+ * @param   pSel        Pointer to the selector to check (CS).
+ * @param   uStackDpl   The CPL, aka the DPL of the stack segment.
+ */
+static bool hmVmxIsCodeSelectorOk(PCCPUMSELREG pSel, unsigned uStackDpl)
+{
+    /*
+     * Segment must be an accessed code segment, it must be present and it must
+     * be usable.
+     * Note! These are all standard requirements and if CS holds anything else
+     *       we've got buggy code somewhere!
+     */
+    AssertCompile(X86DESCATTR_TYPE == 0xf);
+    AssertMsgReturn(   (pSel->Attr.u & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_CODE | X86DESCATTR_DT | X86DESCATTR_P | X86DESCATTR_UNUSABLE))
+                    ==                 (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_CODE | X86DESCATTR_DT | X86DESCATTR_P),
+                    ("%#x\n", pSel->Attr.u),
+                    false);
+
+    /* For conforming segments, CS.DPL must be <= SS.DPL, while CS.DPL
+       must equal SS.DPL for non-confroming segments.
+       Note! This is also a hard requirement like above. */
+    AssertMsgReturn(  pSel->Attr.n.u4Type & X86_SEL_TYPE_CONF
+                    ? pSel->Attr.n.u2Dpl <= uStackDpl
+                    : pSel->Attr.n.u2Dpl == uStackDpl,
+                    ("u4Type=%#x u2Dpl=%u uStackDpl=%u\n", pSel->Attr.n.u4Type, pSel->Attr.n.u2Dpl, uStackDpl),
+                    false);
+
+    /*
+     * The following two requirements are VT-x specific:
+     *  - G bit must be set if any high limit bits are set.
+     *  - G bit must be clear if any low limit bits are clear.
+     */
+    if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
+        return true;
+    return false;
+}
+
+
+/**
+ * Checks if a data selector (DS/ES/FS/GS) is suitable for execution using
+ * hardware-assisted VMX when unrestricted execution isn't available.
+ *
+ * @returns true if selector is suitable for VMX, otherwise
+ *        false.
+ * @param   pSel        Pointer to the selector to check
+ *                      (DS/ES/FS/GS).
+ */
+static bool hmVmxIsDataSelectorOk(PCCPUMSELREG pSel)
+{
+    /*
+     * Unusable segments are OK.  These days they should be marked as such, as
+     * but as an alternative we for old saved states and AMD<->VT-x migration
+     * we also treat segments with all the attributes cleared as unusable.
+     */
+    if (pSel->Attr.n.u1Unusable || !pSel->Attr.u)
+        return true;
+
+    /** @todo tighten these checks. Will require CPUM load adjusting. */
+
+    /* Segment must be accessed. */
+    if (pSel->Attr.u & X86_SEL_TYPE_ACCESSED)
+    {
+        /* Code segments must also be readable. */
+        if (  !(pSel->Attr.u & X86_SEL_TYPE_CODE)
+            || (pSel->Attr.u & X86_SEL_TYPE_READ))
+        {
+            /* The S bit must be set. */
+            if (pSel->Attr.n.u1DescType)
+            {
+                /* Except for conforming segments, DPL >= RPL. */
+                if (   pSel->Attr.n.u2Dpl  >= (pSel->Sel & X86_SEL_RPL)
+                    || pSel->Attr.n.u4Type >= X86_SEL_TYPE_ER_ACC)
+                {
+                    /* Segment must be present. */
+                    if (pSel->Attr.n.u1Present)
+                    {
+                        /*
+                         * The following two requirements are VT-x specific:
+                         *   - G bit must be set if any high limit bits are set.
+                         *   - G bit must be clear if any low limit bits are clear.
+                         */
+                        if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+                            && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
+                            return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
+/**
+ * Checks if the stack selector (SS) is suitable for execution using
+ * hardware-assisted VMX when unrestricted execution isn't available.
+ *
+ * @returns true if selector is suitable for VMX, otherwise
+ *        false.
+ * @param   pSel        Pointer to the selector to check (SS).
+ */
+static bool hmVmxIsStackSelectorOk(PCCPUMSELREG pSel)
+{
+    /*
+     * Unusable segments are OK.  These days they should be marked as such, as
+     * but as an alternative we for old saved states and AMD<->VT-x migration
+     * we also treat segments with all the attributes cleared as unusable.
+     */
+    /** @todo r=bird: actually all zeroes isn't gonna cut it... SS.DPL == CPL. */
+    if (pSel->Attr.n.u1Unusable || !pSel->Attr.u)
+        return true;
+
+    /*
+     * Segment must be an accessed writable segment, it must be present.
+     * Note! These are all standard requirements and if SS holds anything else
+     *       we've got buggy code somewhere!
+     */
+    AssertCompile(X86DESCATTR_TYPE == 0xf);
+    AssertMsgReturn(   (pSel->Attr.u & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P | X86_SEL_TYPE_CODE))
+                    ==                 (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P),
+                    ("%#x\n", pSel->Attr.u), false);
+
+    /* DPL must equal RPL.
+       Note! This is also a hard requirement like above. */
+    AssertMsgReturn(pSel->Attr.n.u2Dpl == (pSel->Sel & X86_SEL_RPL),
+                    ("u2Dpl=%u Sel=%#x\n", pSel->Attr.n.u2Dpl, pSel->Sel), false);
+
+    /*
+     * The following two requirements are VT-x specific:
+     *   - G bit must be set if any high limit bits are set.
+     *   - G bit must be clear if any low limit bits are clear.
+     */
+    if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
+        return true;
+    return false;
+}
+
+
+/**
+ * Checks if the guest is in a suitable state for hardware-assisted VMX execution.
+ *
+ * @returns @c true if it is suitable, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pCtx    Pointer to the guest CPU context.
+ *
+ * @remarks @a pCtx can be a partial context and thus may not be necessarily the
+ *          same as pVCpu->cpum.GstCtx! Thus don't eliminate the @a pCtx parameter.
+ *          Secondly, if additional checks are added that require more of the CPU
+ *          state, make sure REM (which supplies a partial state) is updated.
+ */
+VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(HMIsEnabled(pVM));
+    Assert(!CPUMIsGuestVmxEnabled(pCtx));
+    Assert(   ( pVM->hm.s.vmx.fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)
+           || (!pVM->hm.s.vmx.fUnrestrictedGuest && pVM->hm.s.vmx.pRealModeTSS));
+
+    pVCpu->hm.s.fActive = false;
+
+    bool const fSupportsRealMode = pVM->hm.s.vmx.fUnrestrictedGuest || PDMVmmDevHeapIsEnabled(pVM);
+    if (!pVM->hm.s.vmx.fUnrestrictedGuest)
+    {
+        /*
+         * The VMM device heap is a requirement for emulating real mode or protected mode without paging with the unrestricted
+         * guest execution feature is missing (VT-x only).
+         */
+        if (fSupportsRealMode)
+        {
+            if (CPUMIsGuestInRealModeEx(pCtx))
+            {
+                /*
+                 * In V86 mode (VT-x or not), the CPU enforces real-mode compatible selector
+                 * bases and limits, i.e. limit must be 64K and base must be selector * 16.
+                 * If this is not true, we cannot execute real mode as V86 and have to fall
+                 * back to emulation.
+                 */
+                if (   pCtx->cs.Sel != (pCtx->cs.u64Base >> 4)
+                    || pCtx->ds.Sel != (pCtx->ds.u64Base >> 4)
+                    || pCtx->es.Sel != (pCtx->es.u64Base >> 4)
+                    || pCtx->ss.Sel != (pCtx->ss.u64Base >> 4)
+                    || pCtx->fs.Sel != (pCtx->fs.u64Base >> 4)
+                    || pCtx->gs.Sel != (pCtx->gs.u64Base >> 4))
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRmSelBase);
+                    return false;
+                }
+                if (   (pCtx->cs.u32Limit != 0xffff)
+                    || (pCtx->ds.u32Limit != 0xffff)
+                    || (pCtx->es.u32Limit != 0xffff)
+                    || (pCtx->ss.u32Limit != 0xffff)
+                    || (pCtx->fs.u32Limit != 0xffff)
+                    || (pCtx->gs.u32Limit != 0xffff))
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit);
+                    return false;
+                }
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckRmOk);
+            }
+            else
+            {
+                /*
+                 * Verify the requirements for executing code in protected mode. VT-x can't
+                 * handle the CPU state right after a switch from real to protected mode
+                 * (all sorts of RPL & DPL assumptions).
+                 */
+                if (pVCpu->hm.s.vmx.fWasInRealMode)
+                {
+                    /** @todo If guest is in V86 mode, these checks should be different! */
+                    if ((pCtx->cs.Sel & X86_SEL_RPL) != (pCtx->ss.Sel & X86_SEL_RPL))
+                    {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRpl);
+                        return false;
+                    }
+                    if (   !hmVmxIsCodeSelectorOk(&pCtx->cs, pCtx->ss.Attr.n.u2Dpl)
+                        || !hmVmxIsDataSelectorOk(&pCtx->ds)
+                        || !hmVmxIsDataSelectorOk(&pCtx->es)
+                        || !hmVmxIsDataSelectorOk(&pCtx->fs)
+                        || !hmVmxIsDataSelectorOk(&pCtx->gs)
+                        || !hmVmxIsStackSelectorOk(&pCtx->ss))
+                    {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadSel);
+                        return false;
+                    }
+                }
+                /* VT-x also chokes on invalid TR or LDTR selectors (minix). */
+                if (pCtx->gdtr.cbGdt)
+                {
+                    if ((pCtx->tr.Sel | X86_SEL_RPL_LDT) > pCtx->gdtr.cbGdt)
+                    {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadTr);
+                        return false;
+                    }
+                    else if ((pCtx->ldtr.Sel | X86_SEL_RPL_LDT) > pCtx->gdtr.cbGdt)
+                    {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadLdt);
+                        return false;
+                    }
+                }
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckPmOk);
+            }
+        }
+        else
+        {
+            if (   !CPUMIsGuestInLongModeEx(pCtx)
+                && !pVM->hm.s.vmx.fUnrestrictedGuest)
+            {
+                if (   !pVM->hm.s.fNestedPaging        /* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
+                    ||  CPUMIsGuestInRealModeEx(pCtx)) /* Requires a fake TSS for real mode - stored in the VMM device heap */
+                    return false;
+
+                /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
+                if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr.Sel == 0)
+                    return false;
+
+                /*
+                 * The guest is about to complete the switch to protected mode. Wait a bit longer.
+                 * Windows XP; switch to protected mode; all selectors are marked not present
+                 * in the hidden registers (possible recompiler bug; see load_seg_vm).
+                 */
+                /** @todo Is this supposed recompiler bug still relevant with IEM? */
+                if (pCtx->cs.Attr.n.u1Present == 0)
+                    return false;
+                if (pCtx->ss.Attr.n.u1Present == 0)
+                    return false;
+
+                /*
+                 * Windows XP: possible same as above, but new recompiler requires new
+                 * heuristics? VT-x doesn't seem to like something about the guest state and
+                 * this stuff avoids it.
+                 */
+                /** @todo This check is actually wrong, it doesn't take the direction of the
+                 *        stack segment into account. But, it does the job for now. */
+                if (pCtx->rsp >= pCtx->ss.u32Limit)
+                    return false;
+            }
+        }
+    }
+
+    if (pVM->hm.s.vmx.fEnabled)
+    {
+        uint32_t uCr0Mask;
+
+        /* If bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
+        uCr0Mask = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
+
+        /* We ignore the NE bit here on purpose; see HMR0.cpp for details. */
+        uCr0Mask &= ~X86_CR0_NE;
+
+        if (fSupportsRealMode)
+        {
+            /* We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
+            uCr0Mask &= ~(X86_CR0_PG|X86_CR0_PE);
+        }
+        else
+        {
+            /* We support protected mode without paging using identity mapping. */
+            uCr0Mask &= ~X86_CR0_PG;
+        }
+        if ((pCtx->cr0 & uCr0Mask) != uCr0Mask)
+            return false;
+
+        /* If bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
+        uCr0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
+        if ((pCtx->cr0 & uCr0Mask) != 0)
+            return false;
+
+        /* If bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
+        uCr0Mask  = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
+        uCr0Mask &= ~X86_CR4_VMXE;
+        if ((pCtx->cr4 & uCr0Mask) != uCr0Mask)
+            return false;
+
+        /* If bit N is cleared in cr4_fixed1, then it must be zero in the guest's cr4. */
+        uCr0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
+        if ((pCtx->cr4 & uCr0Mask) != 0)
+            return false;
+
+        pVCpu->hm.s.fActive = true;
+        return true;
+    }
+
+    return false;
 }
 

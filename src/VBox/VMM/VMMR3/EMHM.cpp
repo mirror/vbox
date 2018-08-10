@@ -85,7 +85,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint
 {
     Assert(!(fFlags & ~EM_ONE_INS_FLAGS_MASK));
 
-    if (!HMR3CanExecuteGuest(pVM, &pVCpu->cpum.GstCtx))
+    if (!HMCanExecuteGuest(pVCpu, &pVCpu->cpum.GstCtx))
         return VINF_EM_RESCHEDULE;
 
     uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip;

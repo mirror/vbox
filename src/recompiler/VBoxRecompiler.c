@@ -1437,7 +1437,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
             return false;
 
         /*
-         * Create partial context for HMR3CanExecuteGuest
+         * Create partial context for HMCanExecuteGuest.
          */
         pCtx->cr0            = env->cr[0];
         pCtx->cr3            = env->cr[3];
@@ -1512,11 +1512,12 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
 
         pCtx->msrEFER        = env->efer;
 
-        /* Hardware accelerated raw-mode:
-         *
+        /*
+         * Hardware accelerated mode:
          * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
          */
-        if (HMR3CanExecuteGuest(env->pVM, pCtx) == true)
+        PVMCPU pVCpu = &env->pVM->aCpus[0];
+        if (HMCanExecuteGuest(pVCpu, pCtx))
         {
             *piException = EXCP_EXECUTE_HM;
             return true;

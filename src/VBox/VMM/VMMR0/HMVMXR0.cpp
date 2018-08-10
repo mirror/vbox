@@ -4552,7 +4552,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu)
         else
         {
             Assert(pVM->hm.s.vmx.pRealModeTSS);
-            Assert(PDMVmmDevHeapIsEnabled(pVM));    /* Guaranteed by HMR3CanExecuteGuest() -XXX- what about inner loop changes? */
+            Assert(PDMVmmDevHeapIsEnabled(pVM));    /* Guaranteed by HMCanExecuteGuest() -XXX- what about inner loop changes? */
 
             /* We obtain it here every time as PCI regions could be reconfigured in the guest, changing the VMMDev base. */
             RTGCPHYS GCPhys;
@@ -8271,9 +8271,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPU pVCpu)
     pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = false;
     if (   !pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest
         &&  CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx))
-    {
         pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = true;
-    }
 
     /*
      * Any ordering dependency among the sub-functions below must be explicitly stated using comments.
@@ -13170,7 +13168,6 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
 
-    int rc;
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
     { /* likely */ }
@@ -13180,10 +13177,10 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         Assert(pVCpu->hm.s.fUsingDebugLoop);
 #endif
         /* If the guest is not in real-mode or we have unrestricted execution support, reflect #GP to the guest. */
-        rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
-        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
-        rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-        rc |= hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
+        int rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+        rc     |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+        rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        rc     |= hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
         AssertRCReturn(rc, rc);
         Log4Func(("Gst: CS:RIP %04x:%08RX64 ErrorCode=%#x CR0=%#RX64 CPL=%u TR=%#04x\n", pCtx->cs.Sel, pCtx->rip,
                   pVmxTransient->uExitIntErrorCode, pCtx->cr0, CPUMGetGuestCPL(pVCpu), pCtx->tr.Sel));
@@ -13195,284 +13192,39 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     Assert(CPUMIsGuestInRealModeEx(pCtx));
     Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest);
 
-    /* EMInterpretDisasCurrent() requires a lot of the state, save the entire state. */
-    rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
+    int rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
 
-    PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
-    uint32_t cbOp     = 0;
-    PVM pVM           = pVCpu->CTX_SUFF(pVM);
-    bool fDbgStepping = pVCpu->hm.s.fSingleInstruction;
-    rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
-    if (RT_SUCCESS(rc))
+    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
+    if (rcStrict == VINF_SUCCESS)
     {
-        rc = VINF_SUCCESS;
-        Assert(cbOp == pDis->cbInstr);
-        Log4Func(("Disas OpCode=%u CS:EIP %04x:%04RX64\n", pDis->pCurInstr->uOpcode, pCtx->cs.Sel, pCtx->rip));
-        switch (pDis->pCurInstr->uOpcode)
+        if (!CPUMIsGuestInRealModeEx(pCtx))
         {
-            case OP_CLI:
+            /*
+             * The guest is no longer in real-mode, check if we can continue executing the
+             * guest using hardware-assisted VMX. Otherwise, fall back to emulation.
+             */
+            if (HMVmxCanExecuteGuest(pVCpu, pCtx))
             {
-                pCtx->eflags.Bits.u1IF = 0;
-                pCtx->eflags.Bits.u1RF = 0;
-                pCtx->rip += pDis->cbInstr;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
-                if (   !fDbgStepping
-                    && pCtx->eflags.Bits.u1TF)
-                {
-                    rc = hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
-                    AssertRCReturn(rc, rc);
-                }
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCli);
-                break;
-            }
-
-            case OP_STI:
-            {
-                bool fOldIF = pCtx->eflags.Bits.u1IF;
-                pCtx->eflags.Bits.u1IF = 1;
-                pCtx->eflags.Bits.u1RF = 0;
-                pCtx->rip += pDis->cbInstr;
-                if (!fOldIF)
-                {
-                    EMSetInhibitInterruptsPC(pVCpu, pCtx->rip);
-                    Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-                }
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
-                if (   !fDbgStepping
-                    && pCtx->eflags.Bits.u1TF)
-                {
-                    rc = hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
-                    AssertRCReturn(rc, rc);
-                }
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitSti);
-                break;
-            }
-
-            case OP_HLT:
-            {
-                rc = VINF_EM_HALT;
-                pCtx->rip += pDis->cbInstr;
-                pCtx->eflags.Bits.u1RF = 0;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
-                break;
-            }
-
-            case OP_POPF:
-            {
-                Log4Func(("POPF CS:EIP %04x:%04RX64\n", pCtx->cs.Sel, pCtx->rip));
-                uint32_t cbParm;
-                uint32_t uMask;
-                bool     fGstStepping = RT_BOOL(pCtx->eflags.Bits.u1TF);
-                if (pDis->fPrefix & DISPREFIX_OPSIZE)
-                {
-                    cbParm = 4;
-                    uMask  = 0xffffffff;
-                }
-                else
-                {
-                    cbParm = 2;
-                    uMask  = 0xffff;
-                }
-
-                /* Get the stack pointer & pop the contents of the stack onto Eflags. */
-                RTGCPTR   GCPtrStack = 0;
-                X86EFLAGS Eflags;
-                Eflags.u32 = 0;
-                rc = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, SELMTOFLAT_FLAGS_CPL0,
-                                  &GCPtrStack);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(sizeof(Eflags.u32) >= cbParm);
-                    rc = VBOXSTRICTRC_TODO(PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u32, cbParm, PGMACCESSORIGIN_HM));
-                    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc)); /** @todo allow strict return codes here */
-                }
-                if (RT_FAILURE(rc))
-                {
-                    rc = VERR_EM_INTERPRETER;
-                    break;
-                }
-                Log4Func(("POPF %#x -> %#RX64 mask=%#x RIP=%#RX64\n", Eflags.u, pCtx->rsp, uMask, pCtx->rip));
-                pCtx->eflags.u32 = (pCtx->eflags.u32 & ~((X86_EFL_POPF_BITS & uMask) | X86_EFL_RF))
-                                 | (Eflags.u32 & X86_EFL_POPF_BITS & uMask);
-                pCtx->esp += cbParm;
-                pCtx->esp &= uMask;
-                pCtx->rip += pDis->cbInstr;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS);
-                /* Generate a pending-debug exception when the guest stepping over POPF regardless of how
-                   POPF restores EFLAGS.TF. */
-                if (  !fDbgStepping
-                    && fGstStepping)
-                {
-                    rc = hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
-                    AssertRCReturn(rc, rc);
-                }
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPopf);
-                break;
-            }
-
-            case OP_PUSHF:
-            {
-                uint32_t cbParm;
-                uint32_t uMask;
-                if (pDis->fPrefix & DISPREFIX_OPSIZE)
-                {
-                    cbParm = 4;
-                    uMask  = 0xffffffff;
-                }
-                else
-                {
-                    cbParm = 2;
-                    uMask  = 0xffff;
-                }
-
-                /* Get the stack pointer & push the contents of eflags onto the stack. */
-                RTGCPTR GCPtrStack = 0;
-                rc = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), (pCtx->esp - cbParm) & uMask,
-                                  SELMTOFLAT_FLAGS_CPL0, &GCPtrStack);
-                if (RT_FAILURE(rc))
-                {
-                    rc = VERR_EM_INTERPRETER;
-                    break;
-                }
-                X86EFLAGS Eflags = pCtx->eflags;
-                /* The RF & VM bits are cleared on image stored on stack; see Intel Instruction reference for PUSHF. */
-                Eflags.Bits.u1RF = 0;
-                Eflags.Bits.u1VM = 0;
-
-                rc = VBOXSTRICTRC_TODO(PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u, cbParm, PGMACCESSORIGIN_HM));
-                if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                {
-                    AssertMsgFailed(("%Rrc\n", rc)); /** @todo allow strict return codes here */
-                    rc = VERR_EM_INTERPRETER;
-                    break;
-                }
-                Log4Func(("PUSHF %#x -> %#RGv\n", Eflags.u, GCPtrStack));
-                pCtx->esp -= cbParm;
-                pCtx->esp &= uMask;
-                pCtx->rip += pDis->cbInstr;
-                pCtx->eflags.Bits.u1RF = 0;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS);
-                if (  !fDbgStepping
-                    && pCtx->eflags.Bits.u1TF)
-                {
-                    rc = hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
-                    AssertRCReturn(rc, rc);
-                }
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPushf);
-                break;
-            }
-
-            case OP_IRET:
-            {
-                /** @todo Handle 32-bit operand sizes and check stack limits. See Intel
-                 *        instruction reference. */
-                RTGCPTR  GCPtrStack    = 0;
-                uint32_t uMask         = 0xffff;
-                bool     fGstStepping  = RT_BOOL(pCtx->eflags.Bits.u1TF);
-                uint16_t aIretFrame[3];
-                if (pDis->fPrefix & (DISPREFIX_OPSIZE | DISPREFIX_ADDRSIZE))
-                {
-                    rc = VERR_EM_INTERPRETER;
-                    break;
-                }
-                rc = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->esp & uMask, SELMTOFLAT_FLAGS_CPL0,
-                                  &GCPtrStack);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = VBOXSTRICTRC_TODO(PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &aIretFrame[0], sizeof(aIretFrame),
-                                                       PGMACCESSORIGIN_HM));
-                    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc)); /** @todo allow strict return codes here */
-                }
-                if (RT_FAILURE(rc))
-                {
-                    rc = VERR_EM_INTERPRETER;
-                    break;
-                }
-                pCtx->eip                = 0;
-                pCtx->ip                 = aIretFrame[0];
-                pCtx->cs.Sel             = aIretFrame[1];
-                pCtx->cs.ValidSel        = aIretFrame[1];
-                pCtx->cs.u64Base         = (uint64_t)pCtx->cs.Sel << 4;
-                pCtx->eflags.u32         = (pCtx->eflags.u32 & ((UINT32_C(0xffff0000) | X86_EFL_1) & ~X86_EFL_RF))
-                                         | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
-                pCtx->sp                += sizeof(aIretFrame);
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
-                                                         | HM_CHANGED_GUEST_CS);
-                /* Generate a pending-debug exception when stepping over IRET regardless of how IRET modifies EFLAGS.TF. */
-                if (   !fDbgStepping
-                    && fGstStepping)
-                {
-                    rc = hmR0VmxSetPendingDebugXcptVmcs(pVCpu);
-                    AssertRCReturn(rc, rc);
-                }
-                Log4Func(("IRET %#RX32 to %04x:%04x\n", GCPtrStack, pCtx->cs.Sel, pCtx->ip));
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIret);
-                break;
-            }
-
-            case OP_INT:
-            {
-                uint16_t uVector = pDis->Param1.uValue & 0xff;
-                hmR0VmxSetPendingIntN(pVCpu, uVector, pDis->cbInstr);
-                /* INT clears EFLAGS.TF, we must not set any pending debug exceptions here. */
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
-                break;
-            }
-
-            case OP_INTO:
-            {
-                if (pCtx->eflags.Bits.u1OF)
-                {
-                    hmR0VmxSetPendingXcptOF(pVCpu, pDis->cbInstr);
-                    /* INTO clears EFLAGS.TF, we must not set any pending debug exceptions here. */
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
-                }
-                else
-                {
-                    pCtx->eflags.Bits.u1RF = 0;
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RFLAGS);
-                }
-                break;
-            }
-
-            default:
-            {
-                pCtx->eflags.Bits.u1RF = 0; /* This is correct most of the time... */
-                VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, CPUMCTX2CORE(pCtx), 0 /* pvFault */,
-                                                                    EMCODETYPE_SUPERVISOR);
-                rc = VBOXSTRICTRC_VAL(rc2);
+                Log4Func(("Mode changed but guest still suitable for executing using VT-x\n"));
+                pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = false;
                 ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
-                /** @todo We have to set pending-debug exceptions here when the guest is
-                 *        single-stepping depending on the instruction that was interpreted. */
-
-                /*
-                 * HACK ALERT! Detect mode change and go to ring-3 to properly exit this
-                 *             real mode emulation stuff.
-                 */
-                if (   rc == VINF_SUCCESS
-                    && (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE))
-                {
-                    Log4Func(("Mode changed -> VINF_EM_RESCHEDULE\n"));
-                    /** @todo Exit fRealOnV86Active here w/o dropping back to ring-3. */
-                    rc = VINF_EM_RESCHEDULE;
-                }
-
-                Log4Func(("#GP rc=%Rrc\n", rc));
-                break;
+            }
+            else
+            {
+                Log4Func(("Mode changed -> VINF_EM_RESCHEDULE\n"));
+                rcStrict = VINF_EM_RESCHEDULE;
             }
         }
+        else
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     }
-    else
-        rc = VERR_EM_INTERPRETER;
-
-    AssertMsg(   rc == VINF_SUCCESS
-              || rc == VERR_EM_INTERPRETER
-              || rc == VINF_EM_HALT
-              || rc == VINF_EM_RESCHEDULE
-              , ("#GP Unexpected rc=%Rrc\n", rc));
-    return rc;
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+    }
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
