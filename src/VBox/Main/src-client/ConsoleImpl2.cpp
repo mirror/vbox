@@ -3432,8 +3432,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
 /**
  * Retrieves an uint32_t value from the audio driver's extra data branch
- * (VBoxInternal2/Audio/<DriverName>/<Value>), or, if not found, use global branch
- * (VBoxInternal2/Audio/<Value>).
+ * (VBoxInternal2/Audio/DriverName/Value), or, if not found, use global branch
+ * (VBoxInternal2/Audio/Value).
  *
  * The driver branch always supersedes the global branch.
  * If both branches are not found (empty), return the given default value.
