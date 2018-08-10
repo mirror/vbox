@@ -1288,29 +1288,54 @@ RTDECL(uint32_t) RTJsonValueRelease(RTJSONVAL hJsonVal)
 RTDECL(RTJSONVALTYPE) RTJsonValueGetType(RTJSONVAL hJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, RTJSONVALTYPE_INVALID);
+
     if (pThis == NIL_RTJSONVAL)
         return RTJSONVALTYPE_INVALID;
-    AssertPtrReturn(pThis, RTJSONVALTYPE_INVALID);
 
     return pThis->enmType;
 }
 
+
+#define AssertJsonTypeReturn(pJson, enmExpectedType, ret) do {          \
+        AssertPtrReturn((pJson), (ret));                                \
+        AssertReturn((pJson) != NIL_RTJSONVAL, (ret));                  \
+        AssertReturn((pJson)->enmType == (enmExpectedType), (ret));     \
+    } while (0)
+
+#define RTJSON_TYPECHECK(pJson, enmExpectedType) do {   \
+        if (RT_UNLIKELY((pJson) == NIL_RTJSONVAL))      \
+            return VERR_INVALID_HANDLE;                 \
+        if ((pJson)->enmType != (enmExpectedType))      \
+            return VERR_JSON_VALUE_INVALID_TYPE;        \
+    } while (0)
+
+
+#define RTJSON_TYPECHECK_CONTAINER(pJson) do {                  \
+        if (RT_UNLIKELY((pJson) == NIL_RTJSONVAL))              \
+            return VERR_INVALID_HANDLE;                         \
+        if (   (pJson)->enmType != RTJSONVALTYPE_ARRAY          \
+            && (pJson)->enmType != RTJSONVALTYPE_OBJECT)        \
+            return VERR_JSON_VALUE_INVALID_TYPE;                \
+    } while (0)
+
+
 RTDECL(const char *) RTJsonValueGetString(RTJSONVAL hJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
-    AssertReturn(pThis != NIL_RTJSONVAL, NULL);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_STRING, NULL);
+    AssertJsonTypeReturn(pThis, RTJSONVALTYPE_STRING, NULL);
 
     return pThis->Type.String.pszStr;
 }
 
+
 RTDECL(int) RTJsonValueQueryString(RTJSONVAL hJsonVal, const char **ppszStr)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(ppszStr, VERR_INVALID_POINTER);
-    AssertReturn(pThis != NIL_RTJSONVAL, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_STRING, VERR_JSON_VALUE_INVALID_TYPE);
 
+    RTJSON_TYPECHECK(pThis, RTJSONVALTYPE_STRING);
     *ppszStr = pThis->Type.String.pszStr;
     return VINF_SUCCESS;
 }
@@ -1318,10 +1343,10 @@ RTDECL(int) RTJsonValueQueryString(RTJSONVAL hJsonVal, const char **ppszStr)
 RTDECL(int) RTJsonValueQueryInteger(RTJSONVAL hJsonVal, int64_t *pi64Num)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pi64Num, VERR_INVALID_POINTER);
-    AssertReturn(pThis != NIL_RTJSONVAL, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_NUMBER, VERR_JSON_VALUE_INVALID_TYPE);
 
+    RTJSON_TYPECHECK(pThis, RTJSONVALTYPE_NUMBER);
     *pi64Num = pThis->Type.Number.i64Num;
     return VINF_SUCCESS;
 }
@@ -1329,10 +1354,11 @@ RTDECL(int) RTJsonValueQueryInteger(RTJSONVAL hJsonVal, int64_t *pi64Num)
 RTDECL(int) RTJsonValueQueryByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSONVAL phJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
-    AssertReturn(pThis != NIL_RTJSONVAL, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_OBJECT, VERR_JSON_VALUE_INVALID_TYPE);
+
+    RTJSON_TYPECHECK(pThis, RTJSONVALTYPE_OBJECT);
 
     int rc = VERR_NOT_FOUND;
     for (unsigned i = 0; i < pThis->Type.Object.cMembers; i++)
@@ -1406,8 +1432,7 @@ RTDECL(int) RTJsonValueQueryBooleanByName(RTJSONVAL hJsonVal, const char *pszNam
 RTDECL(unsigned) RTJsonValueGetArraySize(RTJSONVAL hJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
-    AssertReturn(pThis != NIL_RTJSONVAL, 0);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_ARRAY, 0);
+    AssertJsonTypeReturn(pThis, RTJSONVALTYPE_ARRAY, 0);
 
     return pThis->Type.Array.cItems;
 }
@@ -1415,10 +1440,10 @@ RTDECL(unsigned) RTJsonValueGetArraySize(RTJSONVAL hJsonVal)
 RTDECL(int) RTJsonValueQueryArraySize(RTJSONVAL hJsonVal, unsigned *pcItems)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pcItems, VERR_INVALID_POINTER);
-    AssertReturn(pThis != NIL_RTJSONVAL, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_ARRAY, VERR_JSON_VALUE_INVALID_TYPE);
 
+    RTJSON_TYPECHECK(pThis, RTJSONVALTYPE_ARRAY);
     *pcItems = pThis->Type.Array.cItems;
     return VINF_SUCCESS;
 }
@@ -1426,10 +1451,12 @@ RTDECL(int) RTJsonValueQueryArraySize(RTJSONVAL hJsonVal, unsigned *pcItems)
 RTDECL(int) RTJsonValueQueryByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL phJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
-    AssertReturn(pThis != NIL_RTJSONVAL, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_ARRAY, VERR_JSON_VALUE_INVALID_TYPE);
-    AssertReturn(idx < pThis->Type.Array.cItems, VERR_OUT_OF_RANGE);
+
+    RTJSON_TYPECHECK(pThis, RTJSONVALTYPE_ARRAY);
+    if (RT_UNLIKELY(idx >= pThis->Type.Array.cItems))
+        return VERR_OUT_OF_RANGE;
 
     RTJsonValueRetain(pThis->Type.Array.papItems[idx]);
     *phJsonVal = pThis->Type.Array.papItems[idx];
@@ -1439,10 +1466,10 @@ RTDECL(int) RTJsonValueQueryByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL
 RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt)
 {
     PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(phJsonIt, VERR_INVALID_POINTER);
-    AssertReturn(pThis != NIL_RTJSONVAL, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->enmType == RTJSONVALTYPE_ARRAY || pThis->enmType == RTJSONVALTYPE_OBJECT,
-                 VERR_JSON_VALUE_INVALID_TYPE);
+
+    RTJSON_TYPECHECK_CONTAINER(pThis);
 
     PRTJSONITINT pIt = (PRTJSONITINT)RTMemTmpAllocZ(sizeof(RTJSONITINT));
     if (RT_UNLIKELY(!pIt))
@@ -1459,6 +1486,7 @@ RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt)
 RTDECL(int) RTJsonIteratorQueryValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, const char **ppszName)
 {
     PRTJSONITINT pIt = hJsonIt;
+    AssertPtrReturn(pIt, VERR_INVALID_HANDLE);
     AssertReturn(pIt != NIL_RTJSONIT, VERR_INVALID_HANDLE);
     AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
 
@@ -1499,6 +1527,7 @@ RTDECL(int) RTJsonIteratorQueryValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, con
 RTDECL(int) RTJsonIteratorNext(RTJSONIT hJsonIt)
 {
     PRTJSONITINT pIt = hJsonIt;
+    AssertPtrReturn(pIt, VERR_INVALID_HANDLE);
     AssertReturn(pIt != NIL_RTJSONIT, VERR_INVALID_HANDLE);
 
     int rc = VINF_SUCCESS;
@@ -1528,11 +1557,11 @@ RTDECL(int) RTJsonIteratorNext(RTJSONIT hJsonIt)
 RTDECL(void) RTJsonIteratorFree(RTJSONIT hJsonIt)
 {
     PRTJSONITINT pThis = hJsonIt;
+    AssertPtrReturnVoid(pThis);
+
     if (pThis == NIL_RTJSONIT)
         return;
-    AssertPtrReturnVoid(pThis);
 
     RTJsonValueRelease(pThis->pJsonVal);
     RTMemTmpFree(pThis);
 }
-
