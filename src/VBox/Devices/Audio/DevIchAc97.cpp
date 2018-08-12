@@ -944,8 +944,6 @@ static int ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t 
     pStream->u8SD = u8Strm;
 
     int rc = RTCritSectInit(&pStream->State.CritSect);
-    if (RT_SUCCESS(rc))
-        rc = RTCircBufCreate(&pStream->State.pCircBuf, _4K); /** @todo Make this configurable. */
 
     pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
 
@@ -996,14 +994,10 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
 
+    ichac97R3StreamClose(pThis, pStream);
+
     int rc2 = RTCritSectDelete(&pStream->State.CritSect);
     AssertRC(rc2);
-
-    if (pStream->State.pCircBuf)
-    {
-        RTCircBufDestroy(pStream->State.pCircBuf);
-        pStream->State.pCircBuf = NULL;
-    }
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     rc2 = ichac97R3StreamAsyncIODestroy(pThis, pStream);
@@ -1861,7 +1855,9 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             pCfg->Props.fSigned   = true;
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
-            rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, pCfg);
+            rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
+            if (RT_SUCCESS(rc))
+                rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, pCfg);
         }
     }
 
@@ -1879,9 +1875,14 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 static int ichac97R3StreamClose(PAC97STATE pThis, PAC97STREAM pStream)
 {
     RT_NOREF(pThis);
-    RT_NOREF(pStream);
 
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
+
+    if (pStream->State.pCircBuf)
+    {
+        RTCircBufDestroy(pStream->State.pCircBuf);
+        pStream->State.pCircBuf = NULL;
+    }
 
     return VINF_SUCCESS;
 }
