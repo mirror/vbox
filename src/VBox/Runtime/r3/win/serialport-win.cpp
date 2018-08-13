@@ -266,11 +266,18 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
                                          FILE_FLAG_OVERLAPPED, /* Overlapped I/O. */
                                          NULL);
                 if (pThis->hDev)
+                {
                     rc = rtSerialPortSetDefaultCfg(pThis);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phSerialPort = pThis;
+                        return rc;
+                    }
+                }
                 else
                     rc = RTErrConvertFromWin32(GetLastError());
 
-                CloseHandle(pThis->hEvtDev);
+                CloseHandle(pThis->hEvtIntr);
             }
             else
                 rc = RTErrConvertFromWin32(GetLastError());
