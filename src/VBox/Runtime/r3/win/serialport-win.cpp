@@ -59,10 +59,18 @@ typedef struct RTSERIALPORTINTERNAL
     uint32_t            fOpenFlags;
     /** The device handle. */
     HANDLE              hDev;
-    /** The overlapped I/O structure. */
-    OVERLAPPED          Overlapped;
-    /** The event handle to wait on for the overlapped I/O operations of the device. */
+    /** The overlapped write structure. */
+    OVERLAPPED          OverlappedWrite;
+    /** The overlapped read structure. */
+    OVERLAPPED          OverlappedRead;
+    /** The overlapped I/O structure when waiting on events. */
+    OVERLAPPED          OverlappedEvt;
+    /** The event handle to wait on for the overlapped event operations of the device. */
     HANDLE              hEvtDev;
+    /** The event handle to wait on for the overlapped write operations of the device. */
+    HANDLE              hEvtWrite;
+    /** The event handle to wait on for the overlapped read operations of the device. */
+    HANDLE              hEvtRead;
     /** The event handle to wait on for waking up waiting threads externally. */
     HANDLE              hEvtIntr;
     /** Events currently waited for. */
@@ -110,7 +118,7 @@ typedef RTSERIALPORTINTERNAL *PRTSERIALPORTINTERNAL;
  */
 static int rtSerialPortWinUpdateEvtMask(PRTSERIALPORTINTERNAL pThis, uint32_t fEvtMask)
 {
-    DWORD dwEvtMask = 0;
+    DWORD dwEvtMask = EV_ERR;
 
     if (fEvtMask & RTSERIALPORT_EVT_F_DATA_RX)
         dwEvtMask |= EV_RXCHAR;
@@ -172,11 +180,11 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
 static int rtSerialPortWriteCheckCompletion(PRTSERIALPORTINTERNAL pThis)
 {
     int rc = VINF_SUCCESS;
-    DWORD dwRc = WaitForSingleObject(pThis->Overlapped.hEvent, 0);
+    DWORD dwRc = WaitForSingleObject(pThis->OverlappedWrite.hEvent, 0);
     if (dwRc == WAIT_OBJECT_0)
     {
         DWORD cbWritten = 0;
-        if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbWritten, TRUE))
+        if (GetOverlappedResult(pThis->hDev, &pThis->OverlappedWrite, &cbWritten, TRUE))
         {
             for (;;)
             {
@@ -189,9 +197,9 @@ static int rtSerialPortWriteCheckCompletion(PRTSERIALPORTINTERNAL pThis)
 
                 /* resubmit the remainder of the buffer - can this actually happen? */
                 memmove(&pThis->pbBounceBuf[0], &pThis->pbBounceBuf[cbWritten], pThis->cbBounceBufUsed - cbWritten);
-                rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
+                rc = ResetEvent(pThis->OverlappedWrite.hEvent); Assert(rc == TRUE);
                 if (!WriteFile(pThis->hDev, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed,
-                               &cbWritten, &pThis->Overlapped))
+                               &cbWritten, &pThis->OverlappedWrite))
                 {
                     if (GetLastError() == ERROR_IO_PENDING)
                         rc = VINF_TRY_AGAIN;
@@ -244,38 +252,55 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
         pThis->pbBounceBuf      = NULL;
         pThis->cbBounceBufUsed  = 0;
         pThis->cbBounceBufAlloc = 0;
-        pThis->hEvtDev          = CreateEvent(NULL, FALSE, FALSE, NULL);
+        RT_ZERO(pThis->OverlappedEvt);
+        RT_ZERO(pThis->OverlappedWrite);
+        RT_ZERO(pThis->OverlappedRead);
+        pThis->hEvtDev          = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (pThis->hEvtDev)
         {
-            pThis->Overlapped.hEvent = pThis->hEvtDev,
+            pThis->OverlappedEvt.hEvent = pThis->hEvtDev,
             pThis->hEvtIntr = CreateEvent(NULL, FALSE, FALSE, NULL);
             if (pThis->hEvtIntr)
             {
-                DWORD fWinFlags = 0;
-
-                if (fFlags & RTSERIALPORT_OPEN_F_WRITE)
-                    fWinFlags |= GENERIC_WRITE;
-                if (fFlags & RTSERIALPORT_OPEN_F_READ)
-                    fWinFlags |= GENERIC_READ;
-
-                pThis->hDev = CreateFile(pszPortAddress,
-                                         fWinFlags,
-                                         0, /* Must be opened with exclusive access. */
-                                         NULL, /* No SECURITY_ATTRIBUTES structure. */
-                                         OPEN_EXISTING, /* Must use OPEN_EXISTING. */
-                                         FILE_FLAG_OVERLAPPED, /* Overlapped I/O. */
-                                         NULL);
-                if (pThis->hDev)
+                pThis->hEvtWrite = CreateEvent(NULL, TRUE, TRUE, NULL);
+                if (pThis->hEvtWrite)
                 {
-                    rc = rtSerialPortSetDefaultCfg(pThis);
-                    if (RT_SUCCESS(rc))
+                    pThis->OverlappedWrite.hEvent = pThis->hEvtWrite;
+                    pThis->hEvtRead = CreateEvent(NULL, TRUE, TRUE, NULL);
+                    if (pThis->hEvtRead)
                     {
-                        *phSerialPort = pThis;
-                        return rc;
+                        pThis->OverlappedRead.hEvent = pThis->hEvtRead;
+                        DWORD fWinFlags = 0;
+
+                        if (fFlags & RTSERIALPORT_OPEN_F_WRITE)
+                            fWinFlags |= GENERIC_WRITE;
+                        if (fFlags & RTSERIALPORT_OPEN_F_READ)
+                            fWinFlags |= GENERIC_READ;
+
+                        pThis->hDev = CreateFile(pszPortAddress,
+                                                 fWinFlags,
+                                                 0, /* Must be opened with exclusive access. */
+                                                 NULL, /* No SECURITY_ATTRIBUTES structure. */
+                                                 OPEN_EXISTING, /* Must use OPEN_EXISTING. */
+                                                 FILE_FLAG_OVERLAPPED, /* Overlapped I/O. */
+                                                 NULL);
+                        if (pThis->hDev)
+                        {
+                            rc = rtSerialPortSetDefaultCfg(pThis);
+                            if (RT_SUCCESS(rc))
+                            {
+                                *phSerialPort = pThis;
+                                return rc;
+                            }
+                        }
+                        else
+                            rc = RTErrConvertFromWin32(GetLastError());
+
+                        CloseHandle(pThis->hEvtRead);
                     }
+
+                    CloseHandle(pThis->hEvtWrite);
                 }
-                else
-                    rc = RTErrConvertFromWin32(GetLastError());
 
                 CloseHandle(pThis->hEvtIntr);
             }
@@ -314,10 +339,14 @@ RTDECL(int)  RTSerialPortClose(RTSERIALPORT hSerialPort)
 
     CloseHandle(pThis->hDev);
     CloseHandle(pThis->hEvtDev);
+    CloseHandle(pThis->hEvtWrite);
+    CloseHandle(pThis->hEvtRead);
     CloseHandle(pThis->hEvtIntr);
-    pThis->hDev     = NULL;
-    pThis->hEvtDev  = NULL;
-    pThis->hEvtIntr = NULL;
+    pThis->hDev      = NULL;
+    pThis->hEvtDev   = NULL;
+    pThis->hEvtWrite = NULL;
+    pThis->hEvtRead  = NULL;
+    pThis->hEvtIntr  = NULL;
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
@@ -350,11 +379,11 @@ RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToR
     while (   cbToRead > 0
            && RT_SUCCESS(rc))
     {
-        BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
+        BOOL fSucc = ResetEvent(pThis->OverlappedRead.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
         DWORD cbRead = 0;
         if (ReadFile(pThis->hDev, pbBuf,
                      cbToRead <= ~(DWORD)0 ? (DWORD)cbToRead : ~(DWORD)0,
-                     &cbRead, &pThis->Overlapped))
+                     &cbRead, &pThis->OverlappedRead))
         {
             if (pcbRead)
             {
@@ -365,10 +394,10 @@ RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToR
         }
         else if (GetLastError() == ERROR_IO_PENDING)
         {
-            DWORD dwWait = WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+            DWORD dwWait = WaitForSingleObject(pThis->OverlappedRead.hEvent, INFINITE);
             if (dwWait == WAIT_OBJECT_0)
             {
-                if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbRead, TRUE /*fWait*/))
+                if (GetOverlappedResult(pThis->hDev, &pThis->OverlappedRead, &cbRead, TRUE /*fWait*/))
                 {
                     if (pcbRead)
                     {
@@ -417,12 +446,12 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
      * what we get back.
      */
     int rc = VINF_SUCCESS;
-    BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
+    BOOL fSucc = ResetEvent(pThis->OverlappedRead.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
     DWORD cbRead = 0;
     if (   cbToRead == 0
         || ReadFile(pThis->hDev, pvBuf,
                     cbToRead <= ~(DWORD)0 ? (DWORD)cbToRead : ~(DWORD)0,
-                    &cbRead, &pThis->Overlapped))
+                    &cbRead, &pThis->OverlappedRead))
     {
         *pcbRead = cbRead;
         rc = VINF_SUCCESS;
@@ -430,8 +459,8 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
     else if (GetLastError() == ERROR_IO_PENDING)
     {
         if (!CancelIo(pThis->hDev))
-            WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
-        if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbRead, TRUE /*fWait*/))
+            WaitForSingleObject(pThis->OverlappedRead.hEvent, INFINITE);
+        if (GetOverlappedResult(pThis->hDev, &pThis->OverlappedRead, &cbRead, TRUE /*fWait*/))
         {
             *pcbRead = cbRead;
             rc = VINF_SUCCESS;
@@ -470,11 +499,11 @@ RTDECL(int) RTSerialPortWrite(RTSERIALPORT hSerialPort, const void *pvBuf, size_
         while (   cbToWrite > 0
                && RT_SUCCESS(rc))
         {
-            BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
+            BOOL fSucc = ResetEvent(pThis->OverlappedWrite.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
             DWORD cbWritten = 0;
             if (WriteFile(pThis->hDev, pbBuf,
                           cbToWrite <= ~(DWORD)0 ? (DWORD)cbToWrite : ~(DWORD)0,
-                          &cbWritten, &pThis->Overlapped))
+                          &cbWritten, &pThis->OverlappedWrite))
             {
                 if (pcbWritten)
                 {
@@ -485,10 +514,10 @@ RTDECL(int) RTSerialPortWrite(RTSERIALPORT hSerialPort, const void *pvBuf, size_
             }
             else if (GetLastError() == ERROR_IO_PENDING)
             {
-                DWORD dwWait = WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+                DWORD dwWait = WaitForSingleObject(pThis->OverlappedWrite.hEvent, INFINITE);
                 if (dwWait == WAIT_OBJECT_0)
                 {
-                    if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbWritten, TRUE /*fWait*/))
+                    if (GetOverlappedResult(pThis->hDev, &pThis->OverlappedWrite, &cbWritten, TRUE /*fWait*/))
                     {
                         if (pcbWritten)
                         {
@@ -561,10 +590,10 @@ RTDECL(int) RTSerialPortWriteNB(RTSERIALPORT hSerialPort, const void *pvBuf, siz
             pThis->cbBounceBufUsed = (uint32_t)cbToWrite;
 
             /* Submit the write. */
-            rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
+            rc = ResetEvent(pThis->OverlappedWrite.hEvent); Assert(rc == TRUE);
             DWORD cbWritten = 0;
             if (WriteFile(pThis->hDev, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed,
-                          &cbWritten, &pThis->Overlapped))
+                          &cbWritten, &pThis->OverlappedWrite))
             {
                 *pcbWritten = RT_MIN(cbWritten, cbToWrite); /* paranoia^3 */
                 rc = VINF_SUCCESS;
@@ -749,6 +778,33 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
     if (fEvtMask != pThis->fEvtMask)
         rc = rtSerialPortWinUpdateEvtMask(pThis, fEvtMask);
 
+    /*
+     * EV_RXCHAR is triggered only if a byte is received after the event mask is set,
+     * not if there is already something in the input buffer. Thatswhy we check the input
+     * buffer for any stored data and the output buffer whether it is empty and return
+     * the appropriate flags.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        COMSTAT ComStat; RT_ZERO(ComStat);
+        if (!ClearCommError(pThis->hDev, NULL, &ComStat))
+            return RTErrConvertFromWin32(GetLastError());
+
+        /* Check whether data is already waiting in the input buffer. */
+        if (   (fEvtMask & RTSERIALPORT_EVT_F_DATA_RX)
+            && ComStat.cbInQue > 0)
+            *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_RX;
+
+        /* Check whether the output buffer is empty. */
+        if (   (fEvtMask & RTSERIALPORT_EVT_F_DATA_TX)
+            && ComStat.cbOutQue == 0)
+            *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
+
+        /* Return if there is at least one event. */
+        if (*pfEvtsRecv != 0)
+            return VINF_SUCCESS;
+    }
+
     if (RT_SUCCESS(rc))
     {
         DWORD dwEventMask = 0;
@@ -756,10 +812,10 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
         ahWait[0] = pThis->hEvtDev;
         ahWait[1] = pThis->hEvtIntr;
 
-        RT_ZERO(pThis->Overlapped);
-        pThis->Overlapped.hEvent = pThis->hEvtDev;
+        RT_ZERO(pThis->OverlappedEvt);
+        pThis->OverlappedEvt.hEvent = pThis->hEvtDev;
 
-        if (!WaitCommEvent(pThis->hDev, &dwEventMask, &pThis->Overlapped))
+        if (!WaitCommEvent(pThis->hDev, &dwEventMask, &pThis->OverlappedEvt))
         {
             DWORD dwRet = GetLastError();
             if (dwRet == ERROR_IO_PENDING)
