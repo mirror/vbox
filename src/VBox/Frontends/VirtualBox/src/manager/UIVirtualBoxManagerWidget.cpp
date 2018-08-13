@@ -225,7 +225,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
     emit sigChooserPaneIndexChange();
 
     /* If global item is selected and we are on machine tools pane => switch to global tools pane: */
-    if (isGlobalItemSelected() && m_pSlidingWidget->state() == UISlidingWidget::State_Start)
+    if (   isGlobalItemSelected()
+        && m_pSlidingWidget->state() == UISlidingWidget::State_Start)
     {
         m_pSlidingWidget->moveForward();
         m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Global);
@@ -233,16 +234,16 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
 
     else
 
-    /* If machine item is selected and we are on global tools pane => switch to machine tools pane: */
-    if (isMachineItemSelected() && m_pSlidingWidget->state() == UISlidingWidget::State_Final)
+    /* If machine or group item is selected and we are on global tools pane => switch to machine tools pane: */
+    if (   (isMachineItemSelected() || isGroupItemSelected())
+        && m_pSlidingWidget->state() == UISlidingWidget::State_Final)
     {
         m_pSlidingWidget->moveBackward();
         m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Machine);
     }
 
-    /* If that was machine item selected: */
-    if (   isMachineItemSelected()
-        || isGroupItemSelected())
+    /* If that was machine or group item selected: */
+    if (isMachineItemSelected() || isGroupItemSelected())
     {
         /* Get current item: */
         UIVirtualMachineItem *pItem = currentItem();
