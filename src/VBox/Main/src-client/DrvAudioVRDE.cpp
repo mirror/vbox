@@ -615,7 +615,8 @@ void AudioVRDE::onVRDEClientConnect(uint32_t uClientID)
     RT_NOREF(uClientID);
 
     LogRel2(("Audio: VRDE client connected\n"));
-    mpDrv->cClients++;
+    if (mpDrv)
+        mpDrv->cClients++;
 }
 
 
@@ -625,7 +626,8 @@ void AudioVRDE::onVRDEClientDisconnect(uint32_t uClientID)
 
     LogRel2(("Audio: VRDE client disconnected\n"));
     Assert(mpDrv->cClients);
-    mpDrv->cClients--;
+    if (mpDrv)
+        mpDrv->cClients--;
 }
 
 
