@@ -180,8 +180,12 @@ typedef struct UARTCORE
      * during an 4 times the character transmit/receive period and the FIFO
      * is not empty). */
     bool                            fIrqCtiPending;
+    /** Flag whether the transmitter holding register went empty since last time the
+     * IIR register was read. This gets reset when IIR is read so the guest will get this
+     * interrupt ID only once. */
+    bool                            fThreEmptyPending;
     /** Alignment. */
-    bool                            afAlignment[3];
+    bool                            afAlignment[2];
         /** The transmit FIFO. */
     UARTFIFO                        FifoXmit;
     /** The receive FIFO. */

@@ -1349,6 +1349,7 @@ int main()
     GEN_CHECK_OFF(UARTCORE, uRegMsr);
     GEN_CHECK_OFF(UARTCORE, uRegScr);
     GEN_CHECK_OFF(UARTCORE, fIrqCtiPending);
+    GEN_CHECK_OFF(UARTCORE, fThreEmptyPending);
     GEN_CHECK_OFF(UARTCORE, FifoXmit);
     GEN_CHECK_OFF(UARTCORE, FifoRecv);
     GEN_CHECK_OFF(UARTCORE, cSymbolXferTicks);

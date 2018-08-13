@@ -68,6 +68,8 @@
 # define UART_REG_IIR_ID_MASK                0x0e
 /** Sets the interrupt identification to the given value. */
 # define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) << 1) & UART_REG_IIR_ID_MASK)
+/** Gets the interrupt identification from the given IIR register value. */
+# define UART_REG_IIR_ID_GET(a_Val)          (((a_Val) >> 1) & UART_REG_IIR_ID_MASK)
 /** Receiver Line Status interrupt. */
 #  define UART_REG_IIR_ID_RCL                0x3
 /** Received Data Available interrupt. */
@@ -302,7 +304,7 @@ static void uartIrqUpdate(PUARTCORE pThis)
                  || pThis->FifoRecv.cbUsed >= pThis->FifoRecv.cbItl))
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RDA);
     else if (   (pThis->uRegLsr & UART_REG_LSR_THRE)
-             && (pThis->uRegIer & UART_REG_IER_ETBEI))
+             && pThis->fThreEmptyPending)
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_THRE);
     else if (   (pThis->uRegMsr & UART_REG_MSR_BITS_IIR_MS)
              && (pThis->uRegIer & UART_REG_IER_EDSSI))
@@ -688,6 +690,7 @@ static void uartR3DataFetch(PUARTCORE pThis)
 static void uartR3XferReset(PUARTCORE pThis)
 {
     pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
+    pThis->fThreEmptyPending = false;
 
     uartFifoClear(&pThis->FifoXmit);
     uartFifoClear(&pThis->FifoRecv);
@@ -748,6 +751,7 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
 #else
             uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, uVal);
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+            pThis->fThreEmptyPending = false;
             uartIrqUpdate(pThis);
             if (pThis->pDrvSerial)
             {
@@ -767,6 +771,7 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
 #else
                 pThis->uRegThr = uVal;
                 UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+                pThis->fThreEmptyPending = false;
                 uartIrqUpdate(pThis);
                 if (pThis->pDrvSerial)
                 {
@@ -1115,6 +1120,12 @@ DECLINLINE(int) uartRegIerDlmRead(PUARTCORE pThis, uint32_t *puVal)
 DECLINLINE(int) uartRegIirRead(PUARTCORE pThis, uint32_t *puVal)
 {
     *puVal = pThis->uRegIir;
+    /* Reset the THRE empty interrupt id when this gets returned to the guest (see table 3 UART Reset configuration). */
+    if (UART_REG_IIR_ID_GET(pThis->uRegIir) == UART_REG_IIR_ID_THRE)
+    {
+        pThis->fThreEmptyPending = false;
+        uartIrqUpdate(pThis);
+    }
     return VINF_SUCCESS;
 }
 
@@ -1405,7 +1416,10 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
     {
         *pcbRead = uartFifoCopyTo(&pThis->FifoXmit, pvBuf, cbRead);
         if (!pThis->FifoXmit.cbUsed)
+        {
             UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
+            pThis->fThreEmptyPending = true;
+        }
         if (*pcbRead)
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
         uartIrqUpdate(pThis);
@@ -1416,6 +1430,7 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
         *pcbRead = 1;
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
         UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
+        pThis->fThreEmptyPending = true;
         uartIrqUpdate(pThis);
     }
     else
@@ -1492,6 +1507,7 @@ DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
     SSMR3PutU8(pSSM,   pThis->uRegMsr);
     SSMR3PutU8(pSSM,   pThis->uRegScr);
     SSMR3PutBool(pSSM, pThis->fIrqCtiPending);
+    SSMR3PutBool(pSSM, pThis->fThreEmptyPending);
     SSMR3PutU8(pSSM,   pThis->FifoXmit.cbMax);
     SSMR3PutU8(pSSM,   pThis->FifoXmit.cbItl);
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbMax);
@@ -1521,6 +1537,7 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM,   &pThis->uRegMsr);
         SSMR3GetU8(pSSM,   &pThis->uRegScr);
         SSMR3GetBool(pSSM, &pThis->fIrqCtiPending);
+        SSMR3GetBool(pSSM, &pThis->fThreEmptyPending);
         SSMR3GetU8(pSSM,   &pThis->FifoXmit.cbMax);
         SSMR3GetU8(pSSM,   &pThis->FifoXmit.cbItl);
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbMax);
@@ -1537,6 +1554,7 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         }
 
         int      uIrq;
+        int32_t  iTmp;
         uint32_t PortBase;
 
         SSMR3GetU16(pSSM, &pThis->uRegDivisor);
@@ -1549,7 +1567,8 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM, &pThis->uRegScr);
         if (uVersion > UART_SAVED_STATE_VERSION_16450)
             SSMR3GetU8(pSSM, &pThis->uRegFcr);
-        SSMR3Skip(pSSM, sizeof(int32_t));
+        SSMR3GetS32(pSSM, &iTmp);
+        pThis->fThreEmptyPending = RT_BOOL(iTmp);
         SSMR3GetS32(pSSM, &uIrq);
         SSMR3Skip(pSSM, sizeof(int32_t));
         SSMR3GetU32(pSSM, &PortBase);
@@ -1637,6 +1656,7 @@ DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis)
     pThis->uRegMsr        = 0; /* Updated below. */
     pThis->uRegScr        = 0;
     pThis->fIrqCtiPending = false;
+    pThis->fThreEmptyPending = false;
 
     /* Standard FIFO size for 15550A. */
     pThis->FifoXmit.cbMax = 16;
