@@ -255,7 +255,10 @@ void UIToolbarTools::prepareWidgets()
     if (m_pLayoutMain)
     {
         /* Configure layout: */
-        m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
+#ifndef VBOX_WS_MAC
+        const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 9;
+        m_pLayoutMain->setContentsMargins(iL, 0, 0, 0);
+#endif
 
         /* Create Machine tab-bar: */
         m_pTabBarMachine = new UITabBar(UITabBar::Align_Left);

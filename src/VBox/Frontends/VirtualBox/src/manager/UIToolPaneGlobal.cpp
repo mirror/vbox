@@ -21,6 +21,9 @@
 
 /* Qt includes: */
 # include <QStackedLayout>
+# ifndef VBOX_WS_MAC
+#  include <QStyle>
+# endif
 # include <QUuid>
 
 /* GUI includes */
@@ -110,6 +113,11 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 m_pPaneMedia = new UIMediumManagerWidget(EmbedTo_Stack);
                 AssertPtrReturnVoid(m_pPaneMedia);
                 {
+#ifndef VBOX_WS_MAC
+                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                    m_pPaneMedia->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
                     /* Configure pane: */
                     m_pPaneMedia->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_VirtualMedia));
 
@@ -125,6 +133,11 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack);
                 AssertPtrReturnVoid(m_pPaneNetwork);
                 {
+#ifndef VBOX_WS_MAC
+                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                    m_pPaneNetwork->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
                     /* Configure pane: */
                     m_pPaneNetwork->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_HostNetwork));
 
