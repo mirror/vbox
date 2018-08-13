@@ -380,7 +380,7 @@ DECLINLINE(bool) serialTestRndTrue(void)
  */
 static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest)
 {
-    uint64_t tsStart = RTTimeMilliTS();
+    uint64_t tsStart = RTTimeNanoTS();
     bool fFailed = false;
     SERIALTESTTXRXBUFCNT SerBufTx;
     SERIALTESTTXRXBUFCNT SerBufRx;
@@ -422,9 +422,10 @@ static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest)
             rc = serialTestTxBufSend(pSerialTest->hSerialPort, &SerBufTx);
     }
 
-    uint64_t tsRuntime = RTTimeMilliTS() - tsStart;
-    tsRuntime /= 1000; /* Seconds */
-    RTTestValue(pSerialTest->hTest, "Throughput", g_cbTx / tsRuntime, RTTESTUNIT_BYTES_PER_SEC);
+    uint64_t tsRuntime = RTTimeNanoTS() - tsStart;
+    size_t cNsPerByte = tsRuntime / g_cbTx;
+    uint64_t cbBytesPerSec = RT_NS_1SEC / cNsPerByte;
+    RTTestValue(pSerialTest->hTest, "Throughput", cbBytesPerSec, RTTESTUNIT_BYTES_PER_SEC);
 
     return rc;
 }
@@ -438,7 +439,7 @@ static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest)
  */
 static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest)
 {
-    uint64_t tsStart = RTTimeMilliTS();
+    uint64_t tsStart = RTTimeNanoTS();
     SERIALTESTTXRXBUFCNT SerBufTx;
 
     serialTestTxBufInit(&SerBufTx, g_cbTx);
@@ -457,9 +458,10 @@ static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest)
             rc = serialTestTxBufSend(pSerialTest->hSerialPort, &SerBufTx);
     }
 
-    uint64_t tsRuntime = RTTimeMilliTS() - tsStart;
-    tsRuntime /= 1000; /* Seconds */
-    RTTestValue(pSerialTest->hTest, "Throughput", g_cbTx / tsRuntime, RTTESTUNIT_BYTES_PER_SEC);
+    uint64_t tsRuntime = RTTimeNanoTS() - tsStart;
+    size_t cNsPerByte = tsRuntime / g_cbTx;
+    uint64_t cbBytesPerSec = RT_NS_1SEC / cNsPerByte;
+    RTTestValue(pSerialTest->hTest, "Throughput", cbBytesPerSec, RTTESTUNIT_BYTES_PER_SEC);
 
     return rc;
 }
