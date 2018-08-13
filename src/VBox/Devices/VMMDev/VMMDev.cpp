@@ -1562,6 +1562,8 @@ static int vmmdevReqHandler_GetDisplayChangeRequestMulti(PVMMDEV pThis, VMMDevRe
             pDCR->lastReadDisplayChangeRequest = pDCR->displayChangeRequest;
             pDCR->fPending = false;
         }
+
+        pThis->displayChangeData.fGuestSentChangeEventAck = true;
     }
 
     /* Fill the guest request with monitor layout data. */
