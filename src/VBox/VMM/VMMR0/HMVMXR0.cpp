@@ -5926,6 +5926,8 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
             return VINF_SUCCESS;
         }
 
+        /** @todo r=ramshankar: We should probably raise \#SS or \#GP. See AMD spec. 4.12.2
+         *        "Data Limit Checks in 64-bit Mode". */
         Log4Func(("Long mode effective address is not canonical GCPtrMem=%#RX64\n", GCPtrMem));
         hmR0VmxSetPendingXcptGP(pVCpu, 0);
         return VINF_HM_PENDING_XCPT;
