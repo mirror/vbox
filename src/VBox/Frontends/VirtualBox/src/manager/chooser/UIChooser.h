@@ -70,6 +70,7 @@ public:
     UIChooserView *view() const { return m_pChooserView; }
 
     /* API: Current-item stuff: */
+    bool isGroupItemSelected() const;
     bool isGlobalItemSelected() const;
     bool isMachineItemSelected() const;
     UIVirtualMachineItem *currentItem() const;

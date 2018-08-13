@@ -67,6 +67,8 @@ public:
         /** Returns the action-pool instance. */
         UIActionPool *actionPool() const { return m_pActionPool; }
 
+        /** Returns whether group current-item is selected. */
+        bool isGroupItemSelected() const;
         /** Returns whether global current-item is selected. */
         bool isGlobalItemSelected() const;
         /** Returns whether machine current-item is selected. */

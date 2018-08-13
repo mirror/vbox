@@ -71,6 +71,11 @@ UIActionPool* UIChooser::actionPool() const
     return managerWidget()->actionPool();
 }
 
+bool UIChooser::isGroupItemSelected() const
+{
+    return m_pChooserModel->isGroupItemSelected();
+}
+
 bool UIChooser::isGlobalItemSelected() const
 {
     return m_pChooserModel->isGlobalItemSelected();

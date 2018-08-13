@@ -207,6 +207,11 @@ void UIChooserModel::updateNavigation()
     m_navigationList = createNavigationList(root());
 }
 
+bool UIChooserModel::isGroupItemSelected() const
+{
+    return currentItem() && currentItem()->type() == UIChooserItemType_Group;
+}
+
 bool UIChooserModel::isGlobalItemSelected() const
 {
     return currentItem() && currentItem()->type() == UIChooserItemType_Global;

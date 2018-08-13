@@ -109,6 +109,7 @@ public:
     void updateNavigation();
 
     /* API: Current-item stuff: */
+    bool isGroupItemSelected() const;
     bool isGlobalItemSelected() const;
     bool isMachineItemSelected() const;
     UIVirtualMachineItem *currentMachineItem() const;

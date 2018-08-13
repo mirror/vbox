@@ -63,6 +63,11 @@ UIVirtualBoxManagerWidget::~UIVirtualBoxManagerWidget()
     cleanup();
 }
 
+bool UIVirtualBoxManagerWidget::isGroupItemSelected() const
+{
+    return m_pPaneChooser->isGroupItemSelected();
+}
+
 bool UIVirtualBoxManagerWidget::isGlobalItemSelected() const
 {
     return m_pPaneChooser->isGlobalItemSelected();
@@ -236,7 +241,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
     }
 
     /* If that was machine item selected: */
-    if (isMachineItemSelected())
+    if (   isMachineItemSelected()
+        || isGroupItemSelected())
     {
         /* Get current item: */
         UIVirtualMachineItem *pItem = currentItem();
