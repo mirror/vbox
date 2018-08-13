@@ -336,7 +336,6 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = false;
     Assert(!pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode);
 
-    /** @todo NSTVMX: Unblock INIT. */
     if (fSmmMonitorCtl & MSR_IA32_SMM_MONITOR_VMXOFF_UNBLOCK_SMI)
     { /** @todo NSTVMX: Unblock SMI. */ }
     /** @todo NSTVMX: Unblock and enable A20M. */

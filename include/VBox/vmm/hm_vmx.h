@@ -1236,8 +1236,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 /** Whether VM-entry can inject software interrupts, INT1 (ICEBP) with 0-length
  *  instructions. */
 #define VMX_MISC_ENTRY_INJECT_SOFT_INT                          RT_BIT(30)
-/** Maximum number of MSRs in the VMCS, (n+1)*512. */
+/** Maximum number of MSRs in the auto-load/store MSR areas, (n+1) * 512. */
 #define VMX_MISC_MAX_MSRS(a_MiscMsr)                            (512 * (RT_BF_GET((a_MiscMsr), VMX_BF_MISC_MAX_MSRS) + 1))
+/** Maximum CR3-target count supported by the CPU. */
+#define VMX_MISC_CR3_TARGET_COUNT(a_MiscMsr)                    (((a) >> 16) & 0xff)
 /** Relationship between the preemption timer and tsc. */
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_SHIFT                     0
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_MASK                      UINT64_C(0x000000000000001f)
@@ -1285,6 +1287,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_MISC_, UINT64_C(0), UINT64_MAX,
                              CR3_TARGET, MAX_MSRS, VMXOFF_BLOCK_SMI, VMWRITE_ALL, ENTRY_INJECT_SOFT_INT, RSVD_31, MSEG_ID));
 /** @} */
 
+/** Maximum number of CR3 target supported by VT-x */
+#define VMX_VMCS_CTRL_CR3_TARGET_COUNT_MAX                      4
 
 /** @name VMX MSR - VMCS enumeration.
  * Bit fields for MSR_IA32_VMX_VMCS_ENUM.
@@ -1573,7 +1577,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_CTRL_CR3_TARGET_VAL0                           0x6008
 #define VMX_VMCS_CTRL_CR3_TARGET_VAL1                           0x600a
 #define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600c
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600e
+#define VMX_VMCS_CTRL_CR3_TARGET_VAL3                           0x600e
 /** @} */
 
 
@@ -2521,6 +2525,20 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** Whether physical addresses of VMXON and VMCS related structures (I/O bitmap
  *  etc.) are limited to 32-bits (4G). Always 0 on 64-bit CPUs. */
 #define VMX_V_VMCS_PHYSADDR_4G_LIMIT                            0
+
+/** @name Virtual VMX MSR - Miscellaneous data.
+ * @{ */
+/** Number of CR3-target values supported. */
+#define VMX_V_CR3_TARGET_COUNT                                  4
+/** Activity states supported. */
+#define VMX_V_GUEST_ACTIVITY_STATE_MASK                         (VMX_VMCS_GUEST_ACTIVITY_HLT)
+/** VMX preemption-timer shift (Core i7-2600 taken as reference). */
+#define VMX_V_PREEMPT_TIMER_SHIFT                               5
+/** Maximum number of MSRs in the auto-load/store MSR areas, (n+1) * 512. */
+#define VMX_V_MAX_MSRS                                          0
+/** SMM MSEG revision ID. */
+#define VMX_V_MSEG_REV_ID                                       0
+/** @} */
 
 /**
  * Virtual VMX-instruction diagnostics.

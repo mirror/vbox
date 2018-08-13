@@ -1454,8 +1454,21 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t i
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
     if (pGuestFeatures->fVmx)
     {
-        /** @todo Think about this especially preemption timer TSC shifts.  */
-        *puValue = 0;
+        uint64_t uHostMsr;
+        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), idMsr, &uHostMsr);
+        AssertRCReturn(rc, rc);
+        uint8_t const cMaxMsrs = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_MAX_MSRS);
+        *puValue = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,      VMX_V_PREEMPT_TIMER_SHIFT             )
+                 | RT_BF_MAKE(VMX_BF_MISC_EXIT_STORE_EFER_LMA,    pGuestFeatures->fVmxExitStoreEferLma  )
+                 | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        VMX_V_GUEST_ACTIVITY_STATE_MASK       )
+                 | RT_BF_MAKE(VMX_BF_MISC_PT,                     0                                     )
+                 | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                     )
+                 | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT                )
+                 | RT_BF_MAKE(VMX_BF_MISC_MAX_MSRS,               cMaxMsrs                              )
+                 | RT_BF_MAKE(VMX_BF_MISC_VMXOFF_BLOCK_SMI,       0                                     )
+                 | RT_BF_MAKE(VMX_BF_MISC_VMWRITE_ALL,            pGuestFeatures->fVmxVmwriteAll        )
+                 | RT_BF_MAKE(VMX_BF_MISC_ENTRY_INJECT_SOFT_INT,  pGuestFeatures->fVmxEntryInjectSoftInt)
+                 | RT_BF_MAKE(VMX_BF_MISC_MSEG_ID,                VMX_V_MSEG_REV_ID                     );
     }
     else
         *puValue = 0;
