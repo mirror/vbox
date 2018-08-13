@@ -566,17 +566,17 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
     /* Let the user know if the backend changed some of the tweakable values. */
     if (CfgHostAcq.Backend.cfBufferSize != pCfgHost->Backend.cfBufferSize)
-        LogRel2(("Audio: Backend changed buffer size from (%RU64ms, %RU32 frames) to (%RU64ms, %RU32 frames) frames\n",
+        LogRel2(("Audio: Backend changed buffer size from %RU64ms (%RU32 frames) to %RU64ms (%RU32 frames)\n",
                  DrvAudioHlpFramesToMilli(pCfgHost->Backend.cfBufferSize, &pCfgHost->Props), pCfgHost->Backend.cfBufferSize,
                  DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfBufferSize, &CfgHostAcq.Props), CfgHostAcq.Backend.cfBufferSize));
 
     if (CfgHostAcq.Backend.cfPeriod != pCfgHost->Backend.cfPeriod)
-        LogRel2(("Audio: Backend changed period size from (%RU64ms, %RU32 frames) to (%RU64ms, %RU32 frames) frames\n",
+        LogRel2(("Audio: Backend changed period size from %RU64ms (%RU32 frames) to %RU64ms (%RU32 frames)\n",
                  DrvAudioHlpFramesToMilli(pCfgHost->Backend.cfPeriod, &pCfgHost->Props), pCfgHost->Backend.cfPeriod,
                  DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPeriod, &CfgHostAcq.Props), CfgHostAcq.Backend.cfPeriod));
 
     if (CfgHostAcq.Backend.cfPreBuf != pCfgHost->Backend.cfPreBuf)
-        LogRel2(("Audio: Backend changed pre-buffering size from (%RU64ms, %RU32 frames) to (%RU64ms, %RU32 frames) frames\n",
+        LogRel2(("Audio: Backend changed pre-buffering size from %RU64ms (%RU32 frames) to %RU64ms (%RU32 frames)\n",
                  DrvAudioHlpFramesToMilli(pCfgHost->Backend.cfPreBuf, &pCfgHost->Props), pCfgHost->Backend.cfPreBuf,
                  DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPreBuf, &CfgHostAcq.Props), CfgHostAcq.Backend.cfPreBuf));
     /*
@@ -638,7 +638,9 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
      */
 
     if (pCfgGuest->Device.uSchedulingHintMs)
-        LogRel2(("Audio: Stream '%s' got a scheduling hint of %RU32ms\n", pStream->szName, pCfgGuest->Device.uSchedulingHintMs));
+        LogRel2(("Audio: Stream '%s' got a scheduling hint of %RU32ms (%RU32 bytes)\n",
+                 pStream->szName, pCfgGuest->Device.uSchedulingHintMs,
+                 DrvAudioHlpMilliToBytes(pCfgGuest->Device.uSchedulingHintMs, &pCfgGuest->Props)));
 
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pStream->Guest.MixBuf);
@@ -1394,7 +1396,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     PDMAUDIOSTREAMSTS stsStream = pStream->fStatus;
 #ifdef LOG_ENABLED
     char *pszStreamSts = dbgAudioStreamStatusToStr(stsStream);
-    Log3Func(("[%s] Buffer: Start fStatus=%s\n", pStream->szName, pszStreamSts));
+    Log3Func(("[%s] Start fStatus=%s\n", pStream->szName, pszStreamSts));
     RTStrFree(pszStreamSts);
 #endif /* LOG_ENABLED */
 
@@ -1419,7 +1421,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
         pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
 
-        Log3Func(("[%s] Buffer: Last played %RU64ns (%RU64ms), filled with %RU64ms (%RU8%%) total, "
+        Log3Func(("[%s] Last played %RU64ns (%RU64ms), filled with %RU64ms (%RU8%%) total, "
                   "(cfLive=%RU32, fThresholdReached=%RTbool)\n",
                   pStream->szName, tsDeltaPlayedCapturedNs, tsDeltaPlayedCapturedNs / RT_NS_1MS_64,
                   DrvAudioHlpFramesToMilli(cfLive, &pStream->Host.Cfg.Props),
@@ -1471,7 +1473,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                     cfToPlay = RT_MIN(cfToPlay, DrvAudioHlpMilliToFrames(pStream->Host.Cfg.Device.uSchedulingHintMs, &pStream->Host.Cfg.Props));
             }
 
-            Log3Func(("[%s] Buffer: fJustStarted=%RTbool, cfLive=%RU32, cfToPlay=%RU32\n",
+            Log3Func(("[%s] fJustStarted=%RTbool, cfLive=%RU32, cfToPlay=%RU32\n",
                       pStream->szName, fJustStarted, cfLive, cfToPlay));
 
             /* Did we reach a buffer underrun? Do pre-buffering again.
@@ -1482,7 +1484,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                 if (cfLive < cfToPlay)
                 {
                     pStream->fThresholdReached = false;
-                    Log3Func(("[%s] Buffer: Underrun (cfLive=%RU32, cfToPlay=%RU32)\n", pStream->szName, cfLive, cfToPlay));
+                    Log3Func(("[%s] Warning: Buffer underrun (cfLive=%RU32, cfToPlay=%RU32)\n", pStream->szName, cfLive, cfToPlay));
                     LogRel2(("Audio: Stream '%s' buffer underrun (total %RU8%%, which is %RU8%% of a period), buffering ...\n",
                              pStream->szName, uLivePercent, (100 * cfLive) / pStream->Host.Cfg.Backend.cfPeriod));
                     break;
@@ -1497,7 +1499,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 #ifdef DEBUG
             if (!fJustStarted)
                 pStream->Out.Dbg.cbJitterWrittenPlayed -= AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfToPlay);
-            Log3Func(("[%s] Buffer: Playing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%% (cbJitterWrittenPlayed=%RI64)\n",
+            Log3Func(("[%s] Playing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%% (cbJitterWrittenPlayed=%RI64)\n",
                       pStream->szName, cfToPlay, DrvAudioHlpFramesToMilli(cfToPlay, &pStream->Host.Cfg.Props),
                       DrvAudioHlpFramesToMilli(AudioMixBufUsed(&pStream->Host.MixBuf), &pStream->Host.Cfg.Props),
                       AudioMixBufUsed(&pStream->Host.MixBuf) * 100 / AudioMixBufSize(&pStream->Host.MixBuf),
@@ -1537,7 +1539,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 #ifdef LOG_ENABLED
     uint32_t cfLive = AudioMixBufLive(&pStream->Host.MixBuf);
     pszStreamSts  = dbgAudioStreamStatusToStr(stsStream);
-    Log3Func(("[%s] Buffer: End fStatus=%s, cfLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n",
+    Log3Func(("[%s] End fStatus=%s, cfLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n",
               pStream->szName, pszStreamSts, cfLive, cfPlayedTotal, rc));
     RTStrFree(pszStreamSts);
 #endif /* LOG_ENABLED */
