@@ -451,9 +451,10 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
 *   Class UISnapshotPane implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UISnapshotPane::UISnapshotPane(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
+UISnapshotPane::UISnapshotPane(UIActionPool *pActionPool, bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionPool(pActionPool)
+    , m_fShowToolbar(fShowToolbar)
     , m_enmSessionState(KSessionState_Null)
     , m_fShapshotOperationsAllowed(false)
     , m_pLockReadWrite(0)
@@ -1219,8 +1220,9 @@ void UISnapshotPane::prepareWidgets()
         layout()->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
 #endif
 
-        /* Prepare toolbar: */
-        prepareToolbar();
+        /* Prepare toolbar, if requested: */
+        if (m_fShowToolbar)
+            prepareToolbar();
         /* Prepare snapshot tree: */
         prepareTreeWidget();
         /* Prepare details-widget: */
@@ -1232,7 +1234,7 @@ void UISnapshotPane::prepareToolbar()
 {
     /* Create snapshot toolbar: */
     m_pToolBar = new UIToolBar(this);
-    AssertPtrReturnVoid(m_pToolBar);
+    if (m_pToolBar)
     {
         /* Configure toolbar: */
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);

@@ -111,6 +111,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pActionPool(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
+    , m_pSnapshotMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
 {
@@ -1226,6 +1227,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     prepareMenuMachine(actionPool()->action(UIActionIndexST_M_Machine)->menu());
     m_pMachineMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Machine)->menu());
 
+    /* Prepare Snapshot-menu: */
+    prepareMenuSnapshot(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
+    m_pSnapshotMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
+
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
     UIWindowMenuManager::create();
@@ -1598,6 +1603,41 @@ void UIVirtualBoxManager::prepareMenuMachineClose(QMenu *pMenu)
                      << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff);
 }
 
+void UIVirtualBoxManager::prepareMenuSnapshot(QMenu *pMenu)
+{
+    /* Do not touch if filled already: */
+    if (!pMenu->isEmpty())
+        return;
+
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
+    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
+    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
+    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
+    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
+#endif /* VBOX_WS_X11 */
+
+    /* Populate Snapshot-menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
+
+    /* Remember action list: */
+    m_snapshotActions << actionPool()->action(UIActionIndexST_M_Snapshot_S_Take)
+                      << actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete)
+                      << actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore)
+                      << actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties)
+                      << actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone);
+}
+
 void UIVirtualBoxManager::prepareStatusBar()
 {
     /* We are not using status-bar anymore: */
@@ -1886,6 +1926,15 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fMachineMenuShown = !isSingleGroupSelected();
     m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
     m_pGroupMenuAction->setVisible(fMachineOrGroupMenuShown && !fMachineMenuShown);
+
+    /* Determine whether Snapshot actions should be visible: */
+    const bool fSnapshotMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
+    m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
+    actionPool()->action(UIActionIndexST_M_Snapshot_S_Take)->setVisible(fSnapshotMenuShown);
+    actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete)->setVisible(fSnapshotMenuShown);
+    actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore)->setVisible(fSnapshotMenuShown);
+    actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties)->setVisible(fSnapshotMenuShown);
+    actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone)->setVisible(fSnapshotMenuShown);
 
     /* Hide action shortcuts: */
     if (!fMachineMenuShown)

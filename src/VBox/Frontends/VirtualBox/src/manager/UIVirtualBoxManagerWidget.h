@@ -85,6 +85,10 @@ public:
         /** Returns whether single group is selected. */
         bool isSingleGroupSelected() const;
 
+        /** Returns a type of curent Machine tool. */
+        ToolTypeMachine currentMachineTool() const;
+        /** Returns a type of curent Global tool. */
+        ToolTypeGlobal currentGlobalTool() const;
         /** Returns whether Machine tool of passed @a enmType is opened. */
         bool isToolOpened(ToolTypeMachine enmType) const;
         /** Returns whether Global tool of passed @a enmType is opened. */
