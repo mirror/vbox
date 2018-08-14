@@ -166,6 +166,7 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             existingShortcut.setDescription(pAction->name());
             /* Copy the sequence from the shortcut to the action: */
             pAction->setShortcut(existingShortcut.sequence());
+            pAction->retranslateUi();
             /* Copy the default sequence from the action to the shortcut: */
             existingShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
         }
@@ -178,6 +179,7 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
             newShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
             pAction->setShortcut(newShortcut.sequence());
+            pAction->retranslateUi();
             /* Copy the description from the action to the shortcut: */
             newShortcut.setDescription(pAction->name());
         }
