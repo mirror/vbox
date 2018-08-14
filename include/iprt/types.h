@@ -2086,6 +2086,13 @@ typedef RTCRDIGEST                          RT_FAR *PRTCRDIGEST;
 /** NIL cryptographic message digest handle. */
 #define NIL_RTCRDIGEST                              (0)
 
+/** Cryptographic key handle. */
+typedef R3R0PTRTYPE(struct RTCRKEYINT RT_FAR *)     RTCRKEY;
+/** Pointer to a cryptographic key handle. */
+typedef RTCRKEY                             RT_FAR *PRTCRKEY;
+/** Cryptographic key handle nil value. */
+#define NIL_RTCRKEY                                 (0)
+
 /** Public key encryption schema handle. */
 typedef R3R0PTRTYPE(struct RTCRPKIXENCRYPTIONINT RT_FAR *) RTCRPKIXENCRYPTION;
 /** Pointer to a public key encryption schema handle. */

@@ -2728,12 +2728,34 @@ RT_C_DECLS_END
 #define VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED     (-23516)
 /** The EVP_PKEY_type API in OpenSSL failed.  */
 #define VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR       (-23517)
+/** OpenSSL failed to decode the public key. */
+#define VERR_CR_PKIX_OSSL_D2I_PRIVATE_KEY_FAILED    (-23518)
+/** The EVP_PKEY_CTX_set_rsa_padding API in OpenSSL failed.  */
+#define VERR_CR_PKIX_OSSL_EVP_PKEY_RSA_PAD_ERROR    (-23519)
+/** Final OpenSSL PKIX signing failed. */
+#define VERR_CR_PKIX_OSSL_SIGN_FINAL_FAILED         (-23520)
+/** OpenSSL and IPRT disagree on the signature size. */
+#define VERR_CR_PKIX_OSSL_VS_IPRT_SIGNATURE_SIZE    (-23521)
+/** OpenSSL and IPRT disagree on the signature. */
+#define VERR_CR_PKIX_OSSL_VS_IPRT_SIGNATURE         (-23522)
+/** Expected RSA private key. */
+#define VERR_CR_PKIX_NOT_RSA_PRIVATE_KEY            (-23523)
+/** Expected RSA public key. */
+#define VERR_CR_PKIX_NOT_RSA_PUBLIC_KEY             (-23524)
 /** @} */
 
 /** @name RTCrStore status codes.
  * @{ */
 /** Generic store error. */
 #define VERR_CR_STORE_GENERIC_ERROR                 (-23700)
+/** @} */
+
+/** @name RTCrKey status codes.
+ * @{ */
+/** Could not recognize the key type. */
+#define VERR_CR_KEY_UNKNOWN_TYPE                    (-23800)
+/** Unsupported key format. */
+#define VERR_CR_KEY_FORMAT_NOT_SUPPORTED            (-23801)
 /** @} */
 
 /** @name RTCrRsa status codes.

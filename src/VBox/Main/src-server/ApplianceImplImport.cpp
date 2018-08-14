@@ -1728,11 +1728,9 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                 /* Compare the signed digest with the one we just calculated.  (This
                    API will do the verification twice, once using IPRT's own crypto
                    and once using OpenSSL.  Both must OK it for success.) */
-                vrc = RTCrPkixPubKeyVerifySignedDigest(&m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm,
-                                                       &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.Algorithm.Parameters,
-                                                       &m->SignerCert.TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey,
-                                                       m->pbSignedDigest, m->cbSignedDigest, hDigest,
-                                                       RTErrInfoInitStatic(&StaticErrInfo));
+                vrc = RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(&m->SignerCert.TbsCertificate.SubjectPublicKeyInfo,
+                                                                       m->pbSignedDigest, m->cbSignedDigest, hDigest,
+                                                                       RTErrInfoInitStatic(&StaticErrInfo));
                 if (RT_SUCCESS(vrc))
                 {
                     m->fSignatureValid = true;

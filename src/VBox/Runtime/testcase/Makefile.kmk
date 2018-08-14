@@ -52,6 +52,7 @@ PROGRAMS += \
 	tstRTCidr \
 	tstRTCritSect \
 	tstRTCritSectRw \
+	tstRTCrPkix-1 \
 	tstRTCrX509-1 \
 	tstRTCType \
 	tstRTDigest \
@@ -263,6 +264,9 @@ tstRTCritSectRw_SOURCES = tstRTCritSectRw.cpp
 tstRTCritSectW32_TEMPLATE = VBOXR3TSTEXE
 tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
 tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
+
+tstRTCrPkix-1_TEMPLATE      = VBOXR3TSTEXE
+tstRTCrPkix-1_SOURCES       = tstRTCrPkix-1.cpp
 
 tstRTCrX509-1_TEMPLATE      = VBOXR3TSTEXE
 tstRTCrX509-1_SOURCES       = tstRTCrX509-1.cpp

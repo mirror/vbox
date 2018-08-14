@@ -313,6 +313,7 @@ RuntimeR3_SOURCES       = \
 	common/asn1/asn1-cursor.cpp \
 	common/asn1/asn1-default-allocator.cpp \
 	common/asn1/asn1-efence-allocator.cpp \
+	common/asn1/asn1-safer-allocator.cpp \
 	common/asn1/asn1-dump.cpp \
 	common/asn1/asn1-encode.cpp \
 	common/asn1/asn1-ut-bitstring.cpp \
@@ -366,6 +367,9 @@ RuntimeR3_SOURCES       = \
 	common/crypto/digest-builtin.cpp \
 	common/crypto/digest-vfs.cpp \
 	common/crypto/iprt-openssl.cpp \
+	common/crypto/key.cpp \
+	common/crypto/key-file.cpp \
+	common/crypto/key-openssl.cpp \
 	common/crypto/rsa-asn1-decoder.cpp \
 	common/crypto/rsa-core.cpp \
 	common/crypto/rsa-init.cpp \
@@ -376,6 +380,7 @@ RuntimeR3_SOURCES       = \
 	common/crypto/pkcs7-init.cpp \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkix-sign.cpp \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
 	common/crypto/pkix-signature-rsa.cpp \
@@ -2303,6 +2308,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/asn1/asn1-dump.cpp \
 	common/asn1/asn1-cursor.cpp \
 	common/asn1/asn1-default-allocator.cpp \
+	common/asn1/asn1-safer-allocator.cpp \
 	common/asn1/asn1-encode.cpp \
 	common/asn1/asn1-ut-bitstring.cpp \
 	common/asn1/asn1-ut-bitstring-decode.cpp \
@@ -2326,6 +2332,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/asn1/asn1-ut-time-decode.cpp \
 	common/crypto/digest-core.cpp \
 	common/crypto/digest-builtin.cpp \
+	common/crypto/key.cpp \
 	common/crypto/rsa-asn1-decoder.cpp \
 	common/crypto/rsa-core.cpp \
 	common/crypto/rsa-init.cpp \

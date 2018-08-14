@@ -31,10 +31,15 @@
 #include <iprt/crypto/x509.h>
 
 RT_C_DECLS_BEGIN
+struct evp_md_st;
+struct evp_pkey_st;
 
 DECLHIDDEN(void) rtCrOpenSslInit(void);
 DECLHIDDEN(int)  rtCrOpenSslErrInfoCallback(const char *pach, size_t cch, void *pvUser);
 DECLHIDDEN(int)  rtCrOpenSslAddX509CertToStack(void *pvOsslStack, PCRTCRX509CERTIFICATE pCert);
+
+DECLHIDDEN(int)  rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, const char *pszAlgoObjId,
+                                     struct evp_pkey_st **ppEvpKey, const struct evp_md_st **ppEvpMdType, PRTERRINFO pErrInfo);
 
 RT_C_DECLS_END
 

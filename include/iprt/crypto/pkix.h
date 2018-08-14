@@ -31,6 +31,8 @@
 
 RT_C_DECLS_BEGIN
 
+struct RTCRX509SUBJECTPUBLICKEYINFO;
+
 /** @defgroup grp_rt_crpkix RTCrPkix - Public Key Infrastructure APIs
  * @ingroup grp_rt_crypto
  * @{
@@ -42,8 +44,8 @@ RT_C_DECLS_BEGIN
  *
  * @returns IPRT status code.
  * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
+ * @param   hPublicKey      The public key.
  * @param   pParameters     Parameter to the public key algorithm. Optional.
- * @param   pPublicKey      The public key.
  * @param   pSignatureValue The signature value.
  * @param   pvData          The signed data.
  * @param   cbData          The amount of signed data.
@@ -52,7 +54,7 @@ RT_C_DECLS_BEGIN
  * @remarks Depending on the IPRT build configuration, the verficiation may be
  *          performed more than once using all available crypto implementations.
  */
-RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNTYPE pParameters, PCRTASN1BITSTRING pPublicKey,
+RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, RTCRKEY hPublicKey, PCRTASN1DYNTYPE pParameters,
                                           PCRTASN1BITSTRING pSignatureValue, const void *pvData, size_t cbData,
                                           PRTERRINFO pErrInfo);
 
@@ -63,8 +65,8 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
  *
  * @returns IPRT status code.
  * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
+ * @param   hPublicKey      The public key.
  * @param   pParameters     Parameter to the public key algorithm. Optional.
- * @param   pPublicKey      The public key.
  * @param   pvSignedDigest  The signed digest.
  * @param   cbSignedDigest  The signed digest size.
  * @param   hDigest         The digest of the data to compare @a pvSignedDigest
@@ -74,10 +76,45 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
  * @remarks Depending on the IPRT build configuration, the verficiation may be
  *          performed more than once using all available crypto implementations.
  */
-RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNTYPE pParameters,
-                                             PCRTASN1BITSTRING pPublicKey, void const *pvSignedDigest, size_t cbSignedDigest,
+RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY hPublicKey, PCRTASN1DYNTYPE pParameters,
+                                             void const *pvSignedDigest, size_t cbSignedDigest,
                                              RTCRDIGEST hDigest, PRTERRINFO pErrInfo);
 
+/**
+ * Wrapper around RTCrPkixPubKeyVerifySignedDigest & RTCrKeyCreateFromAlgorithmAndBits.
+ *
+ * @note The public key info must include digest type for this to work.
+ */
+RTDECL(int) RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(struct RTCRX509SUBJECTPUBLICKEYINFO const *pCertPubKeyInfo,
+                                                             void const *pvSignedDigest, size_t cbSignedDigest,
+                                                             RTCRDIGEST hDigest, PRTERRINFO pErrInfo);
+
+
+/**
+ * Signs a digest (@a hDigest) using the specified private key (@a pPrivateKey) and algorithm.
+ *
+ * @returns IPRT status code.
+ * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
+ * @param   hPrivateKey     Handle to the private key to use.
+ * @param   pParameters     Parameter to the public key algorithm. Optional.
+ * @param   hDigest         The digest of the data being signed.
+ * @param   fFlags          Flags for future extensions, MBZ.
+ * @param   pvSignature     The output signature buffer.  Pass NULL to query
+ *                          the signature size.
+ * @param   pcbSignature    On input the variable pointed to holds the size of
+ *                          the buffer @a pvSignature points to.
+ *                          On return the variable pointed to is set to the size
+ *                          of the returned signature, or the required size in
+ *                          case of VERR_BUFFER_OVERFLOW.
+ * @param   pErrInfo        Where to return extended error info. Optional.
+ *
+ * @remarks Depending on the IPRT build configuration and the algorithm used, the
+ *          signing may be performed more than once using all available crypto
+ *          implementations.
+ */
+RTDECL(int) RTCrPkixPubKeySignDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY hPrivateKey, PCRTASN1DYNTYPE pParameters,
+                                     RTCRDIGEST hDigest, uint32_t fFlags,
+                                     void *pvSignature, size_t *pcbSignature, PRTERRINFO pErrInfo);
 
 /**
  * Gets the cipher OID matching the given signature algorithm.
@@ -140,13 +177,13 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *                          clear if it is a verification.  This is a fixed
      *                          setting for the lifetime of the instance due to the
      *                          algorithm requiring different keys.
-     * @param   pKey            The key to use (whether private or public depends on
-     *                          the operation).
+     * @param   hKey            The key handle.  Caller has retained it for the
+     *                          lifetime of the state being initialize.
      * @param   pParams         Algorithm/key parameters, optional.  Will be NULL if
      *                          none.
      */
     DECLCALLBACKMEMBER(int, pfnInit)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, void *pvOpaque, bool fSigning,
-                                     PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+                                     RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
 
     /**
      * Resets the state before performing another signing or verification.
@@ -182,12 +219,13 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *
      * @param   pDesc           Pointer to this structure (for uProviderSpecific).
      * @param   pvState         The opaque provider state.
+     * @param   hKey            The key handle associated with the state at init.
      * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
      *                          complete and retreive the final hash value.
      * @param   pvSignature     The signature to validate.
      * @param   cbSignature     The size of the signature (in bytes).
      */
-    DECLCALLBACKMEMBER(int, pfnVerify)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState,
+    DECLCALLBACKMEMBER(int, pfnVerify)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, RTCRKEY hKey,
                                        RTCRDIGEST hDigest, void const *pvSignature, size_t cbSignature);
 
     /**
@@ -201,6 +239,7 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *
      * @param   pDesc           Pointer to this structure (for uProviderSpecific).
      * @param   pvState         The opaque provider state.
+     * @param   hKey            The key handle associated with the state at init.
      * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
      *                          complete and retreive the final hash value.
      * @param   pvSignature     The output signature buffer.
@@ -210,7 +249,7 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *                          of the returned signature, or the required size in
      *                          case of VERR_BUFFER_OVERFLOW.
      */
-    DECLCALLBACKMEMBER(int, pfnSign)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState,
+    DECLCALLBACKMEMBER(int, pfnSign)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, RTCRKEY hKey,
                                      RTCRDIGEST hDigest, void *pvSignature, size_t *pcbSignature);
 
 } RTCRPKIXSIGNATUREDESC;
@@ -219,15 +258,15 @@ typedef RTCRPKIXSIGNATUREDESC const *PCRTCRPKIXSIGNATUREDESC;
 
 
 PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjIdString(const char *pszObjId, void *ppvOpaque);
-PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjId(PCRTASN1OBJID pObjId, void *ppvOpaque);
+PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjId(PCRTASN1OBJID pObjId, void **ppvOpaque);
 RTDECL(int) RTCrPkixSignatureCreateByObjIdString(PRTCRPKIXSIGNATURE phSignature, const char *pszObjId, bool fSigning,
-                                                 PCRTASN1BITSTRING pKey,PCRTASN1DYNTYPE pParams);
-RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTASN1OBJID pObjId, bool fSigning,
-                                           PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+                                                 RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
+RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTASN1OBJID pObjId, RTCRKEY hKey,
+                                           PCRTASN1DYNTYPE pParams, bool fSigning);
 
 
 RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSIGNATUREDESC pDesc, void *pvOpaque,
-                                    bool fSigning, PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+                                    bool fSigning, RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
 RTDECL(uint32_t) RTCrPkixSignatureRetain(RTCRPKIXSIGNATURE hSignature);
 RTDECL(uint32_t) RTCrPkixSignatureRelease(RTCRPKIXSIGNATURE hSignature);
 RTDECL(int) RTCrPkixSignatureVerify(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest,

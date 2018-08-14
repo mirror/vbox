@@ -37,6 +37,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/crypto/digest.h>
+#include <iprt/crypto/key.h>
 
 
 /*********************************************************************************************************************************
@@ -53,13 +54,12 @@ typedef struct RTCRPKIXSIGNATUREINT
     uint32_t volatile       cRefs;
     /** Pointer to the message digest descriptor. */
     PCRTCRPKIXSIGNATUREDESC pDesc;
+    /** Key being used (referrenced of course). */
+    RTCRKEY                 hKey;
     /** The operation this instance is licensed for. */
     bool                    fSigning;
     /** State. */
     uint32_t                uState;
-#if ARCH_BITS == 32
-    uint32_t                uPadding;
-#endif
 
     /** Opaque data specific to the message digest algorithm, size given by
      * RTCRPKIXSIGNATUREDESC::cbState. */
@@ -85,15 +85,13 @@ typedef RTCRPKIXSIGNATUREINT *PRTCRPKIXSIGNATUREINT;
 
 
 RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSIGNATUREDESC pDesc, void *pvOpaque,
-                                    bool fSigning, PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams)
+                                    bool fSigning, RTCRKEY hKey, PCRTASN1DYNTYPE pParams)
 {
     /*
      * Validate input.
      */
     AssertPtrReturn(phSignature, VERR_INVALID_POINTER);
     AssertPtrReturn(pDesc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pKey, VERR_INVALID_POINTER);
-    AssertReturn(RTAsn1BitString_IsPresent(pKey), VERR_INVALID_PARAMETER);
     if (pParams)
     {
         AssertPtrReturn(pParams, VERR_INVALID_POINTER);
@@ -101,6 +99,8 @@ RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSI
             || !RTASN1CORE_IS_PRESENT(&pParams->u.Core))
             pParams = NULL;
     }
+    uint32_t cKeyRefs = RTCrKeyRetain(hKey);
+    AssertReturn(cKeyRefs != UINT32_MAX, VERR_INVALID_HANDLE);
 
     /*
      * Instantiate the algorithm for the given operation.
@@ -115,8 +115,9 @@ RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSI
         pThis->pDesc        = pDesc;
         pThis->fSigning     = fSigning;
         pThis->uState       = RTCRPKIXSIGNATURE_STATE_READY;
+        pThis->hKey         = hKey;
         if (pDesc->pfnInit)
-            rc = pDesc->pfnInit(pDesc, pThis->abState, pvOpaque, fSigning, pKey, pParams);
+            rc = pDesc->pfnInit(pDesc, pThis->abState, pvOpaque, fSigning, hKey, pParams);
         if (RT_SUCCESS(rc))
         {
             *phSignature = pThis;
@@ -127,6 +128,7 @@ RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSI
     }
     else
         rc = VERR_NO_MEMORY;
+    RTCrKeyRelease(hKey);
     return rc;
 
 }
@@ -144,6 +146,26 @@ RTDECL(uint32_t) RTCrPkixSignatureRetain(RTCRPKIXSIGNATURE hSignature)
 }
 
 
+/**
+ * Destructor worker.
+ */
+static uint32_t rtCrPkixSignatureDestructor(PRTCRPKIXSIGNATUREINT pThis)
+{
+    pThis->u32Magic = ~RTCRPKIXSIGNATUREINT_MAGIC;
+    if (pThis->pDesc->pfnDelete)
+        pThis->pDesc->pfnDelete(pThis->pDesc, pThis->abState, pThis->fSigning);
+
+    RTCrKeyRelease(pThis->hKey);
+    pThis->hKey = NIL_RTCRKEY;
+
+    size_t cbToWipe = RT_UOFFSETOF_DYN(RTCRPKIXSIGNATUREINT, abState[pThis->pDesc->cbState]);
+    RTMemWipeThoroughly(pThis, cbToWipe, 6);
+
+    RTMemFree(pThis);
+    return 0;
+}
+
+
 RTDECL(uint32_t) RTCrPkixSignatureRelease(RTCRPKIXSIGNATURE hSignature)
 {
     PRTCRPKIXSIGNATUREINT pThis = hSignature;
@@ -155,16 +177,7 @@ RTDECL(uint32_t) RTCrPkixSignatureRelease(RTCRPKIXSIGNATURE hSignature)
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     Assert(cRefs < 64);
     if (!cRefs)
-    {
-        pThis->u32Magic = ~RTCRPKIXSIGNATUREINT_MAGIC;
-        if (pThis->pDesc->pfnDelete)
-            pThis->pDesc->pfnDelete(pThis->pDesc, pThis->abState, pThis->fSigning);
-
-        size_t cbToWipe = RT_UOFFSETOF_DYN(RTCRPKIXSIGNATUREINT, abState[pThis->pDesc->cbState]);
-        RTMemWipeThoroughly(pThis, cbToWipe, 6);
-
-        RTMemFree(pThis);
-    }
+        return rtCrPkixSignatureDestructor(pThis);
     return cRefs;
 }
 
@@ -210,7 +223,7 @@ RTDECL(int) RTCrPkixSignatureVerify(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDi
     int rc = rtCrPkxiSignatureReset(pThis);
     if (RT_SUCCESS(rc))
     {
-        rc = pThis->pDesc->pfnVerify(pThis->pDesc, pThis->abState, hDigest, pvSignature, cbSignature);
+        rc = pThis->pDesc->pfnVerify(pThis->pDesc, pThis->abState, pThis->hKey, hDigest, pvSignature, cbSignature);
         pThis->uState = RTCRPKIXSIGNATURE_STATE_DONE;
     }
 
@@ -264,7 +277,7 @@ RTDECL(int) RTCrPkixSignatureSign(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDige
     int rc = rtCrPkxiSignatureReset(pThis);
     if (RT_SUCCESS(rc))
     {
-        rc = pThis->pDesc->pfnSign(pThis->pDesc, pThis->abState, hDigest, pvSignature, pcbSignature);
+        rc = pThis->pDesc->pfnSign(pThis->pDesc, pThis->abState, pThis->hKey, hDigest, pvSignature, pcbSignature);
         if (rc != VERR_BUFFER_OVERFLOW)
             pThis->uState = RTCRPKIXSIGNATURE_STATE_DONE;
     }

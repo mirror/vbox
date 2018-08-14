@@ -241,6 +241,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-basics.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-cursor.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-default-allocator.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-safer-allocator.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-dump.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-encode.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-ut-bitstring.cpp \
@@ -265,6 +266,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-ut-time-decode.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/digest-core.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/digest-builtin.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/key.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/pkcs7-asn1-decoder.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/pkcs7-core.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/pkcs7-init.cpp \

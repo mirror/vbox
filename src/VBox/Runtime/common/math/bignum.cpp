@@ -839,12 +839,13 @@ RTDECL(int) RTBigNumDestroy(PRTBIGNUM pBigNum)
         if (pBigNum->pauElements)
         {
             Assert(pBigNum->cAllocated > 0);
-            if (pBigNum->fSensitive)
+            if (!pBigNum->fSensitive)
+                RTMemFree(pBigNum->pauElements);
+            else
             {
                 RTMemSaferFree(pBigNum->pauElements, pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
                 RT_ZERO(*pBigNum);
             }
-            RTMemFree(pBigNum->pauElements);
             pBigNum->pauElements = NULL;
         }
     }

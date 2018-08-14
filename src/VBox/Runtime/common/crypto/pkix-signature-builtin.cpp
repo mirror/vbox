@@ -115,24 +115,24 @@ PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjId(PCRTASN1OBJID pObjId, void 
 }
 
 
-RTDECL(int) RTCrPkixSignatureCreateByObjIdString(PRTCRPKIXSIGNATURE phSignature, const char *pszObjId, bool fSigning,
-                                                 PCRTASN1BITSTRING pKey,PCRTASN1DYNTYPE pParams)
+RTDECL(int) RTCrPkixSignatureCreateByObjIdString(PRTCRPKIXSIGNATURE phSignature, const char *pszObjId,
+                                                 RTCRKEY hKey, PCRTASN1DYNTYPE pParams, bool fSigning)
 {
     void *pvOpaque;
     PCRTCRPKIXSIGNATUREDESC pDesc = RTCrPkixSignatureFindByObjIdString(pszObjId, &pvOpaque);
     if (pDesc)
-        return RTCrPkixSignatureCreate(phSignature, pDesc, pvOpaque, fSigning, pKey, pParams);
+        return RTCrPkixSignatureCreate(phSignature, pDesc, pvOpaque, fSigning, hKey, pParams);
     return VERR_NOT_FOUND;
 }
 
 
-RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTASN1OBJID pObjId, bool fSigning,
-                                           PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams)
+RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTASN1OBJID pObjId,
+                                           RTCRKEY hKey, PCRTASN1DYNTYPE pParams, bool fSigning)
 {
     void *pvOpaque;
     PCRTCRPKIXSIGNATUREDESC pDesc = RTCrPkixSignatureFindByObjId(pObjId, &pvOpaque);
     if (pDesc)
-        return RTCrPkixSignatureCreate(phSignature, pDesc, pvOpaque, fSigning, pKey, pParams);
+        return RTCrPkixSignatureCreate(phSignature, pDesc, pvOpaque, fSigning, hKey, pParams);
     return VERR_NOT_FOUND;
 }
 
