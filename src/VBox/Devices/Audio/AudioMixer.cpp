@@ -1708,73 +1708,73 @@ int audioMixerSinkWriteToStreams(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *
         void *pvChunk;
         size_t cbChunk;
 
-        uint32_t cbWritten = 0;
-        uint32_t cbToWrite = RT_MIN(cbBuf, (uint32_t)RTCircBufFree(pCircBuf));
-        while (cbToWrite)
+        uint32_t cbWrittenBuf = 0;
+        uint32_t cbToWriteBuf = RT_MIN(cbBuf, (uint32_t)RTCircBufFree(pCircBuf));
+        while (cbToWriteBuf)
         {
-            RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvChunk, &cbChunk);
+            RTCircBufAcquireWriteBlock(pCircBuf, cbToWriteBuf, &pvChunk, &cbChunk);
 
             if (cbChunk)
-                memcpy(pvChunk, (uint8_t *)pvBuf + cbWritten, cbChunk);
+                memcpy(pvChunk, (uint8_t *)pvBuf + cbWrittenBuf, cbChunk);
 
             RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
 
-            cbWritten += (uint32_t)cbChunk;
-            Assert(cbWritten <= cbBuf);
+            cbWrittenBuf += (uint32_t)cbChunk;
+            Assert(cbWrittenBuf <= cbBuf);
 
-            Assert(cbToWrite >= cbChunk);
-            cbToWrite -= (uint32_t)cbChunk;
+            Assert(cbToWriteBuf >= cbChunk);
+            cbToWriteBuf -= (uint32_t)cbChunk;
         }
 
-        if (cbWritten < cbBuf)
-        {
-            LogFunc(("[%s] Warning: Only written %RU32/%RU32 bytes for stream '%s'\n",
-                     pSink->pszName, cbWritten, cbBuf, pMixStream->pszName));
-            LogRel2(("Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
-#ifdef DEBUG_andy
-            AssertFailed();
-#endif
-        }
+        cbWrittenMin = RT_MIN(cbWrittenMin, cbWrittenBuf);
 
-        cbWrittenMin = RT_MIN(cbWrittenMin, cbWritten);
-
-        if (cbWritten) /* Update the mixer stream's last written time stamp. */
+        if (cbWrittenBuf) /* Update the mixer stream's last written time stamp. */
             pMixStream->tsLastReadWrittenNs = RTTimeNanoTS();
 
-        cbToWrite = RT_MIN(pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream),
-                           (uint32_t)RTCircBufUsed(pCircBuf));
-        cbToWrite = DrvAudioHlpBytesAlign(cbToWrite, &pSink->PCMProps);
+        uint32_t cbToWriteStream = DrvAudioHlpBytesAlign(cbWrittenBuf, &pSink->PCMProps);
+        uint32_t cbWrittenStream = 0;
 
         int rc2 = VINF_SUCCESS;
 
-        while (cbToWrite)
+        while (cbToWriteStream)
         {
-            RTCircBufAcquireReadBlock(pCircBuf, cbToWrite, &pvChunk, &cbChunk);
+            RTCircBufAcquireReadBlock(pCircBuf, cbToWriteStream, &pvChunk, &cbChunk);
 
+            uint32_t cbChunkWritten = 0;
             if (cbChunk)
             {
                 rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvChunk, (uint32_t)cbChunk,
-                                                        &cbWritten);
+                                                        &cbChunkWritten);
                 if (RT_FAILURE(rc2))
                     LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
-            }
-
-            RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
-
-            if (   !cbWritten
-                || cbWritten < cbChunk)
-            {
 #ifdef DEBUG_andy
-                AssertFailed();
+                AssertRC(rc2);
 #endif
-                break;
             }
+
+            RTCircBufReleaseReadBlock(pCircBuf, cbChunkWritten);
 
             if (RT_FAILURE(rc2))
                 break;
 
-            Assert(cbToWrite >= cbChunk);
-            cbToWrite -= (uint32_t)cbChunk;
+            Assert(cbToWriteStream >= cbChunk);
+            cbToWriteStream -= (uint32_t)cbChunk;
+
+            cbWrittenStream += cbChunk;
+            Assert(cbWrittenStream <= cbBuf);
+        }
+
+        Log3Func(("[%s] cbBuf=%RU32, cbWrittenBuf=%RU32, cbWrittenStream=%RU32\n",
+                  pMixStream->pszName, cbBuf, cbWrittenBuf, cbWrittenStream));
+
+        if (cbWrittenBuf < cbBuf)
+        {
+            LogFunc(("[%s] Warning: Only written %RU32/%RU32 bytes for stream '%s'\n",
+                     pSink->pszName, cbWrittenBuf, cbBuf, pMixStream->pszName));
+            LogRel2(("Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
+#ifdef DEBUG_andy
+            AssertFailed();
+#endif
         }
     }
 
