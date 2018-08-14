@@ -323,6 +323,8 @@ typedef struct AC97STREAMSTATE
     uint64_t              tsLastTransferNs;
     /** Timestamp (in ns) of last DMA buffer read / write. */
     uint64_t              tsLastReadWriteNs;
+    /** Timestamp (in ns) of last stream update. */
+    uint64_t              tsLastUpdateNs;
 } AC97STREAMSTATE;
 AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 /** Pointer to internal state of an AC'97 stream. */
@@ -1437,25 +1439,41 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
 
     if (pStream->u8SD == AC97SOUNDSOURCE_PO_INDEX) /* Output (SDO). */
     {
-        /* Is the AC'97 stream ready to be written (guest output data) to? If so, by how much? */
-        const uint32_t cbFree = ichac97R3StreamGetFree(pStream);
+        const uint64_t deltaLastUpdateNs = RTTimeNanoTS() - pStream->State.tsLastUpdateNs;
+
+        pStream->State.tsLastUpdateNs = RTTimeNanoTS();
+
+        PPDMAUDIOPCMPROPS pProps = &pStream->State.Cfg.Props;
+
+        /* Make sure that we don't transfer more than we need for this slot. */
+        uint32_t cbToTransfer = DrvAudioHlpMilliToBytes(pStream->State.Cfg.Device.uSchedulingHintMs, pProps);
+
+        /* Make sure that the transfer is frame-aligned.
+         * Add one additional frame to not transfer too little because of the alignment;
+         * ichac97R3StreamTransfer() will take care of clamping to the correct value then. */
+        cbToTransfer = DrvAudioHlpBytesAlign(cbToTransfer, pProps) + PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+
+        Log3Func(("[SD%RU8] cbToTransfer=%RU32, deltaLastUpdateNs=%RU64\n", pStream->u8SD, cbToTransfer, deltaLastUpdateNs / RT_NS_1MS));
 
         if (   fInTimer
-            && cbFree)
+            && cbToTransfer)
         {
-            Log3Func(("[SD%RU8] cbFree=%RU32\n", pStream->u8SD, cbFree));
-
             /* Do the DMA transfer. */
-            rc2 = ichac97R3StreamTransfer(pThis, pStream, cbFree);
+            rc2 = ichac97R3StreamTransfer(pThis, pStream, cbToTransfer);
             AssertRC(rc2);
         }
 
-        /* How much (guest output) data is available at the moment for the AC'97 stream? */
-        uint32_t cbUsed = ichac97R3StreamGetUsed(pStream);
+        /* Make sure that we don't write more than we need for this slot. */
+        uint32_t cbToWrite = RT_MIN(cbToTransfer, ichac97R3StreamGetUsed(pStream));
+
+        /* Make sure that the write is byte-aligned. */
+        cbToWrite = DrvAudioHlpBytesAlign(cbToWrite, pProps);
+
+        Log3Func(("[SD%RU8] cbToWrite=%RU32, deltaLastUpdateNs=%RU64\n", pStream->u8SD, cbToWrite, deltaLastUpdateNs / RT_NS_1MS));
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (   fInTimer
-            && cbUsed)
+            && cbToWrite)
         {
             rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
             AssertRC(rc2);
@@ -1463,18 +1481,11 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
         else
 # endif
         {
-            const uint32_t cbSinkWritable = AudioMixerSinkGetWritable(pSink);
-
-            /* Do not write more than the sink can hold at the moment.
-             * The host sets the overall pace. */
-            if (cbUsed > cbSinkWritable)
-                cbUsed = cbSinkWritable;
-
-            if (cbUsed)
+            if (cbToWrite)
             {
                 /* Read (guest output) data and write it to the stream's sink. */
                 uint32_t cbRead;
-                rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbUsed, &cbRead);
+                rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbToWrite, &cbRead);
                 AssertRC(rc2);
             }
 
@@ -1503,19 +1514,19 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
             const uint32_t cbReadable = AudioMixerSinkGetReadable(pSink);
 
             /* How much (guest input) data is free at the moment? */
-            uint32_t cbFree = ichac97R3StreamGetFree(pStream);
+            uint32_t cbToTransfer = ichac97R3StreamGetFree(pStream);
 
-            Log3Func(("[SD%RU8] cbReadable=%RU32, cbFree=%RU32\n", pStream->u8SD, cbReadable, cbFree));
+            Log3Func(("[SD%RU8] cbReadable=%RU32, cbFree=%RU32\n", pStream->u8SD, cbReadable, cbToTransfer));
 
             /* Do not read more than the sink can provide at the moment.
              * The host sets the overall pace. */
-            if (cbFree > cbReadable)
-                cbFree = cbReadable;
+            if (cbToTransfer > cbReadable)
+                cbToTransfer = cbReadable;
 
-            if (cbFree)
+            if (cbToTransfer)
             {
                 /* Write (guest input) data to the stream which was read from stream's sink before. */
-                rc2 = ichac97R3StreamWrite(pThis, pStream, pSink, cbFree, NULL /* pcbWritten */);
+                rc2 = ichac97R3StreamWrite(pThis, pStream, pSink, cbToTransfer, NULL /* pcbWritten */);
                 AssertRC(rc2);
             }
         }
