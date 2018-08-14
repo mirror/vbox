@@ -317,6 +317,12 @@ typedef struct AC97STREAMSTATE
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO    AIO;
 #endif
+    /** Timestamp (in ns) of last DMA transfer.
+     *  For output streams this is the last DMA read,
+     *  for input streams this is the last DMA write. */
+    uint64_t              tsLastTransferNs;
+    /** Timestamp (in ns) of last DMA buffer read / write. */
+    uint64_t              tsLastReadWriteNs;
 } AC97STREAMSTATE;
 AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 /** Pointer to internal state of an AC'97 stream. */
@@ -1114,6 +1120,8 @@ static int ichac97R3StreamWrite(PAC97STATE pThis, PAC97STREAM pDstStream, PAUDMI
 
     RTCircBufReleaseWriteBlock(pCircBuf, cbRead);
 
+    pDstStream->State.tsLastReadWriteNs = RTTimeNanoTS();
+
     if (pcbWritten)
         *pcbWritten = cbRead;
 
@@ -1181,6 +1189,8 @@ static int ichac97R3StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIX
         if (RT_FAILURE(rc))
             break;
     }
+
+    pSrcStream->State.tsLastReadWriteNs = RTTimeNanoTS();
 
     if (pcbRead)
         *pcbRead = cbReadTotal;
@@ -2682,6 +2692,8 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
             break;
         }
     }
+
+    pStream->State.tsLastTransferNs = RTTimeNanoTS();
 
     ichac97R3StreamUnlock(pStream);
 
