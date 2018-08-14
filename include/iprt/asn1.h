@@ -157,6 +157,9 @@ extern RTDATADECL(RTASN1ALLOCATORVTABLE const) g_RTAsn1DefaultAllocator;
 /** The Electric Fence ASN.1 allocator. */
 extern RTDATADECL(RTASN1ALLOCATORVTABLE const) g_RTAsn1EFenceAllocator;
 
+/** The safer ASN.1 allocator for sensitive data. */
+extern RTDATADECL(RTASN1ALLOCATORVTABLE const) g_RTAsn1SaferAllocator;
+
 
 /**
  * Allocation information.
@@ -1751,6 +1754,17 @@ RTDECL(int) RTAsn1CursorSetInfo(PRTASN1CURSOR pCursor, int rc, const char *pszMs
  * @param   va                  Format arguments.
  */
 RTDECL(int) RTAsn1CursorSetInfoV(PRTASN1CURSOR pCursor, int rc, const char *pszMsg, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Checks that we've reached the end of the data for the cursor.
+ *
+ * This differs from RTAsn1CursorCheckEnd in that it does not consider the end
+ * an error and therefore leaves the error buffer alone.
+ *
+ * @returns True if end, otherwise false.
+ * @param   pCursor             The cursor we're decoding from.
+ */
+RTDECL(bool) RTAsn1CursorIsEnd(PRTASN1CURSOR pCursor);
 
 /**
  * Checks that we've reached the end of the data for the cursor.

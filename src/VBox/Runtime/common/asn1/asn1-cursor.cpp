@@ -186,6 +186,12 @@ RTDECL(int) RTAsn1CursorSetInfo(PRTASN1CURSOR pCursor, int rc, const char *pszMs
 }
 
 
+RTDECL(bool) RTAsn1CursorIsEnd(PRTASN1CURSOR pCursor)
+{
+    return pCursor->cbLeft == 0;
+}
+
+
 RTDECL(int) RTAsn1CursorCheckEnd(PRTASN1CURSOR pCursor)
 {
     if (pCursor->cbLeft == 0)
