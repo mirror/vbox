@@ -86,6 +86,20 @@ RTDECL(bool)            RTCrKeyHasPrivatePart(RTCRKEY hKey);
 RTDECL(bool)            RTCrKeyHasPublicPart(RTCRKEY hKey);
 RTDECL(uint32_t)        RTCrKeyGetBitCount(RTCRKEY hKey);
 
+
+/** Public key markers. */
+extern RT_DECL_DATA_CONST(RTCRPEMMARKER const)  g_aRTCrKeyPublicMarkers[];
+/** Number of entries in g_aRTCrKeyPublicMarkers. */
+extern RT_DECL_DATA_CONST(uint32_t const)       g_cRTCrKeyPublicMarkers;
+/** Private key markers. */
+extern RT_DECL_DATA_CONST(RTCRPEMMARKER const)  g_aRTCrKeyPrivateMarkers[];
+/** Number of entries in g_aRTCrKeyPrivateMarkers. */
+extern RT_DECL_DATA_CONST(uint32_t const)       g_cRTCrKeyPrivateMarkers;
+/** Private and public key markers. */
+extern RT_DECL_DATA_CONST(RTCRPEMMARKER const)  g_aRTCrKeyAllMarkers[];
+/** Number of entries in g_aRTCrKeyAllMarkers. */
+extern RT_DECL_DATA_CONST(uint32_t const)       g_cRTCrKeyAllMarkers;
+
 /** @} */
 
 RT_C_DECLS_END
