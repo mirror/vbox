@@ -990,8 +990,11 @@ typedef struct PDMAUDIOSTREAMOUT
 #endif
     struct
     {
-        /** "Jitter value" between written and played back bytes. */
-        int64_t                 cbJitterWrittenPlayed;
+#ifdef DEBUG
+        /** Number of audio frames written since the last playback (transfer)
+         *  to the backend. */
+        uint64_t                cfWrittenSinceLastPlay;
+#endif
         /** File for writing stream writes. */
         PPDMAUDIOFILE           pFileStreamWrite;
         /** File for writing stream playback. */
