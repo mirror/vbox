@@ -83,12 +83,9 @@ typedef struct ALSAAUDIOSTREAM
     {
         struct
         {
-
         } In;
         struct
         {
-            /** Minimum samples required for ALSA to play data. */
-            uint32_t    cSamplesMin;
         } Out;
     };
     snd_pcm_t          *phPCM;
@@ -240,8 +237,11 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
 }
 
 
-static int alsaStreamSetThreshold(snd_pcm_t *phPCM, snd_pcm_uframes_t threshold)
+static int alsaStreamSetSWParams(snd_pcm_t *phPCM, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
 {
+    if (fIn) /* For input streams there's nothing to do in here right now. */
+        return VINF_SUCCESS;
+
     snd_pcm_sw_params_t *pSWParms = NULL;
     snd_pcm_sw_params_alloca(&pSWParms);
     if (!pSWParms)
@@ -253,26 +253,23 @@ static int alsaStreamSetThreshold(snd_pcm_t *phPCM, snd_pcm_uframes_t threshold)
         int err = snd_pcm_sw_params_current(phPCM, pSWParms);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to get current software parameters for threshold: %s\n",
-                    snd_strerror(err)));
+            LogRel(("ALSA: Failed to get current software parameters: %s\n", snd_strerror(err)));
             rc = VERR_ACCESS_DENIED;
             break;
         }
 
-        err = snd_pcm_sw_params_set_start_threshold(phPCM, pSWParms, threshold);
+        err = snd_pcm_sw_params_set_start_threshold(phPCM, pSWParms, pCfgReq->threshold);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to set software threshold to %ld: %s\n",
-                    threshold, snd_strerror(err)));
+            LogRel(("ALSA: Failed to set software threshold to %ld: %s\n", pCfgReq->threshold, snd_strerror(err)));
             rc = VERR_ACCESS_DENIED;
             break;
         }
 
-        err = snd_pcm_sw_params_set_avail_min(phPCM, pSWParms, 512);
+        err = snd_pcm_sw_params_set_avail_min(phPCM, pSWParms, pCfgReq->period_size);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to set available minimum to %ld: %s\n",
-                    threshold, snd_strerror(err)));
+            LogRel(("ALSA: Failed to set available minimum to %ld: %s\n", pCfgReq->threshold, snd_strerror(err)));
             rc = VERR_ACCESS_DENIED;
             break;
         }
@@ -280,13 +277,20 @@ static int alsaStreamSetThreshold(snd_pcm_t *phPCM, snd_pcm_uframes_t threshold)
         err = snd_pcm_sw_params(phPCM, pSWParms);
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to set new software parameters for threshold: %s\n",
-                    snd_strerror(err)));
+            LogRel(("ALSA: Failed to set new software parameters: %s\n", snd_strerror(err)));
             rc = VERR_ACCESS_DENIED;
             break;
         }
 
-        LogFlowFunc(("Setting threshold to %RU32\n", threshold));
+        err = snd_pcm_sw_params_get_start_threshold(pSWParms, &pCfgObt->threshold);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Failed to get start threshold\n"));
+            rc = VERR_ACCESS_DENIED;
+            break;
+        }
+
+        LogFunc(("Setting threshold to %RU32 frames\n", pCfgObt->threshold));
         rc = VINF_SUCCESS;
     }
     while (0);
@@ -481,7 +485,7 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
             break;
         }
 
-        LogRel2(("ALSA: Frequency is %dHz, period size is %RU32 frames, buffer size is %RU32 fames\n",
+        LogRel2(("ALSA: Frequency is %dHz, period size is %RU32 frames, buffer size is %RU32 frames\n",
                  pCfgReq->freq, obt_period_size, obt_buffer_size));
 
         err = snd_pcm_prepare(phPCM);
@@ -492,24 +496,15 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
             break;
         }
 
-        if (   !fIn
-            && pCfgReq->threshold)
-        {
-            rc = alsaStreamSetThreshold(phPCM, pCfgReq->threshold);
-            if (RT_FAILURE(rc))
-                break;
-
-            LogRel2(("ALSA: Threshold for playback set to %RU32 frames\n", pCfgReq->threshold));
-        }
+        rc = alsaStreamSetSWParams(phPCM, fIn, pCfgReq, pCfgObt);
+        if (RT_FAILURE(rc))
+            break;
 
         pCfgObt->fmt         = pCfgReq->fmt;
         pCfgObt->nchannels   = cChannels;
         pCfgObt->freq        = uFreq;
         pCfgObt->period_size = obt_period_size;
         pCfgObt->buffer_size = obt_buffer_size;
-        pCfgObt->threshold   = pCfgReq->threshold;
-
-        rc = VINF_SUCCESS;
     }
     while (0);
 
@@ -1382,11 +1377,8 @@ static DECLCALLBACK(uint32_t) drvHostALSAAudioStreamGetWritable(PPDMIHOSTAUDIO p
 
     snd_pcm_sframes_t cFramesAvail;
     int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
-    if (   RT_SUCCESS(rc)
-        && (uint32_t)cFramesAvail >= pStreamALSA->Out.cSamplesMin)
-    {
+    if (RT_SUCCESS(rc))
         cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
-    }
 
     return cbAvail;
 }
