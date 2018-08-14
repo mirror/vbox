@@ -320,6 +320,9 @@ void UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine(ToolTypeMachine enmTy
         UIVirtualMachineItem *pItem = currentItem();
         m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
     }
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
@@ -331,18 +334,27 @@ void UIVirtualBoxManagerWidget::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType
 
     /* Open corresponding tool: */
     m_pPaneToolsGlobal->openTool(enmType);
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolClosedMachine(ToolTypeMachine enmType)
 {
     /* Close corresponding tool: */
     m_pPaneToolsMachine->closeTool(enmType);
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal(ToolTypeGlobal enmType)
 {
     /* Close corresponding tool: */
     m_pPaneToolsGlobal->closeTool(enmType);
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
 }
 
 void UIVirtualBoxManagerWidget::prepare()

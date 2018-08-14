@@ -52,8 +52,8 @@ signals:
     /** Notifies aboud Details-pane link clicked. */
     void sigMachineSettingsLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
 
-    /** Notifies about Tool type switch. */
-    void sigToolsTypeSwitch();
+    /** Notifies about Tool type change. */
+    void sigToolTypeChange();
 
 public:
 
