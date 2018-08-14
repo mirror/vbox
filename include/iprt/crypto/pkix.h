@@ -259,8 +259,8 @@ typedef RTCRPKIXSIGNATUREDESC const *PCRTCRPKIXSIGNATUREDESC;
 
 PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjIdString(const char *pszObjId, void *ppvOpaque);
 PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjId(PCRTASN1OBJID pObjId, void **ppvOpaque);
-RTDECL(int) RTCrPkixSignatureCreateByObjIdString(PRTCRPKIXSIGNATURE phSignature, const char *pszObjId, bool fSigning,
-                                                 RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
+RTDECL(int) RTCrPkixSignatureCreateByObjIdString(PRTCRPKIXSIGNATURE phSignature, const char *pszObjId,
+                                                 RTCRKEY hKey, PCRTASN1DYNTYPE pParams, bool fSigning);
 RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTASN1OBJID pObjId, RTCRKEY hKey,
                                            PCRTASN1DYNTYPE pParams, bool fSigning);
 
@@ -435,9 +435,9 @@ typedef RTCRPKIXENCRYPTIONDESC const *PCRTCRPKIXENCRYPTIONDESC;
 PCRTCRPKIXENCRYPTIONDESC RTCrPkixEncryptionFindByObjIdString(const char *pszObjId, void *ppvOpaque);
 PCRTCRPKIXENCRYPTIONDESC RTCrPkixEncryptionFindByObjId(PCRTASN1OBJID pObjId, void *ppvOpaque);
 RTDECL(int) RTCrPkixEncryptionCreateByObjIdString(PRTCRPKIXENCRYPTION phEncryption, const char *pszObjId,
-                                                  bool fEncrypt, PCRTASN1BITSTRING pKey,PCRTASN1DYNTYPE pParams);
+                                                  bool fEncrypt, RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
 RTDECL(int) RTCrPkixEncryptionCreateByObjId(PRTCRPKIXENCRYPTION phEncryption, PCRTASN1OBJID pObjId, bool fEncrypt,
-                                            PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+                                            RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
 
 
 RTDECL(int) RTCrPkixEncryptionCreate(PRTCRPKIXENCRYPTION phEncryption, PCRTCRPKIXENCRYPTIONDESC pDesc, void *pvOpaque,

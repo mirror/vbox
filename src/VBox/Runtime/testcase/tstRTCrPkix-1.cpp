@@ -33,6 +33,7 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/crypto/key.h>
+#include <iprt/crypto/digest.h>
 
 
 /*********************************************************************************************************************************
@@ -227,105 +228,83 @@ static void test1()
         if (hPrivateKey == NIL_RTCRKEY || hPublicKey == NIL_RTCRKEY)
             continue;
 
-#if 0
         /*
-         * Decode.
+         * Create corresponding signing and verifying decoder instances.
          */
-        /* Raw decoding of DER bytes, structure will have pointers to the raw data. */
-        RTASN1CURSORPRIMARY PrimaryCursor;
-        RTAsn1CursorInitPrimary(&PrimaryCursor, g_aFiles[i].pbDer, (uint32_t)g_aFiles[i].cbDer,
-                                NULL /*pErrInfo*/, &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, NULL /*pszErrorTag*/);
-        rc = RTCrRsaPublicKey_DecodeAsn1(&PrimaryCursor.Cursor, 0, &Cert0, "Cert0");
-        if (RT_SUCCESS(rc))
+        static struct { uint32_t cBits; const char *pszObjId; } const s_aSignatures[] =
         {
-            rc = RTCrX509Certificate_CheckSanity(&Cert0, 0, NULL /*pErrInfo*/, "Cert0");
-            if (RT_SUCCESS(rc))
+            { 128, RTCR_PKCS1_MD2_WITH_RSA_OID },
+            //{ 128, RTCR_PKCS1_MD4_WITH_RSA_OID },
+            { 128, RTCR_PKCS1_MD5_WITH_RSA_OID },
+            { 160, RTCR_PKCS1_SHA1_WITH_RSA_OID },
+            { 256, RTCR_PKCS1_SHA256_WITH_RSA_OID },
+            { 224, RTCR_PKCS1_SHA224_WITH_RSA_OID },
+            { 384, RTCR_PKCS1_SHA384_WITH_RSA_OID },
+            { 512, RTCR_PKCS1_SHA512_WITH_RSA_OID },
+        };
+        RTCRPKIXSIGNATURE hSign   = NIL_RTCRPKIXSIGNATURE;
+        RTCRPKIXSIGNATURE hVerify = NIL_RTCRPKIXSIGNATURE;
+        for (unsigned iSig = 0; iSig < RT_ELEMENTS(s_aSignatures); iSig++)
+        {
+            RTCrPkixSignatureRelease(hSign);
+            hSign = NIL_RTCRPKIXSIGNATURE;
+            RTCrPkixSignatureRelease(hVerify);
+            hVerify = NIL_RTCRPKIXSIGNATURE;
+
+            rc = RTCrPkixSignatureCreateByObjIdString(&hSign, s_aSignatures[iSig].pszObjId, hPrivateKey, NULL, true /*fSigning*/);
+            if (RT_FAILURE(rc))
+                RTTestIFailed("RTCrPkixSignatureCreateByObjIdString failed with %Rrc on %u bits private key and %u bits MD (%s)",
+                              rc, g_aKeyPairs[i].cBits, s_aSignatures[iSig].cBits, s_aSignatures[iSig].pszObjId);
+
+            rc = RTCrPkixSignatureCreateByObjIdString(&hVerify, s_aSignatures[iSig].pszObjId, hPublicKey, NULL, false /*fSigning*/);
+            if (RT_FAILURE(rc))
+                RTTestIFailed("RTCrPkixSignatureCreateByObjIdString failed with %Rrc on %u bits public key and %u bits MD (%s)",
+                              rc, g_aKeyPairs[i].cBits, s_aSignatures[iSig].cBits, s_aSignatures[iSig].pszObjId);
+
+            if (RT_FAILURE(rc) || hSign == NIL_RTCRPKIXSIGNATURE || hVerify == NIL_RTCRPKIXSIGNATURE)
+                continue;
+
+            /*
+             * Try a few different boilplate things.
+             */
+            static struct { void const *pv; size_t cb; } const s_aTexts[] =
             {
-                /* Check the API, this clones the certificate so no data pointers. */
-                RTCRX509CERTIFICATE Cert1;
-                memset(&Cert1, i, sizeof(Cert1));
-                rc = RTCrX509Certificate_ReadFromBuffer(&Cert1, g_aFiles[i].pbDer, g_aFiles[i].cbDer, 0 /*fFlags*/,
-                                                        &g_RTAsn1EFenceAllocator, NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
+                {  RT_STR_TUPLE("IPRT") },
+                {  RT_STR_TUPLE("abcdef") },
+            };
+
+            for (unsigned iText = 0; iText < RT_ELEMENTS(s_aTexts); iText++)
+            {
+                uint8_t abSignature[4096];
+                size_t  cbSignature = sizeof(abSignature);
+
+                RTCRDIGEST hDigest = NIL_RTCRDIGEST;
+                rc = RTCrDigestCreateByObjIdString(&hDigest, s_aSignatures[iSig].pszObjId);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Read the PEM variant. */
-                    RTCRX509CERTIFICATE Cert2;
-                    memset(&Cert2, ~i, sizeof(Cert2));
-                    rc = RTCrX509Certificate_ReadFromBuffer(&Cert2, g_aFiles[i].pchPem, g_aFiles[i].cbPem, 0 /*fFlags*/,
-                                                            &g_RTAsn1DefaultAllocator, NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
+                    rc = RTCrPkixSignatureSign(hSign, hDigest, abSignature, &cbSignature);
                     if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Compare them, they should be all the same.
-                         */
-                        if (RTCrX509Certificate_Compare(&Cert0, &Cert1) != 0)
-                            RTTestIFailed("Cert0 and Cert1 (DER) decoding of file %s (#%u) differs", g_aFiles[i].pszFile, i);
-                        else if (RTCrX509Certificate_Compare(&Cert0, &Cert2) != 0)
-                            RTTestIFailed("Cert0 and Cert2 (PEM) decoding of file %s (#%u) differs", g_aFiles[i].pszFile, i);
-                        else if (RTCrX509Certificate_Compare(&Cert1, &Cert2) != 0)
-                            RTTestIFailed("Cert1 (DER) and Cert2 (PEM) decoding of file %s (#%u) differs", g_aFiles[i].pszFile, i);
-                        else
-                        {
-                            /*
-                             * Encode the certificates.
-                             */
-                            unsigned j;
-                            PRTCRX509CERTIFICATE paCerts[] = { &Cert0, &Cert1, &Cert2 };
-                            for (j = 0; j < RT_ELEMENTS(paCerts); j++)
-                            {
-                                uint32_t cbEncoded = ~(j ^ i);
-                                RTTESTI_CHECK_RC(rc = RTAsn1EncodePrepare(&paCerts[j]->SeqCore.Asn1Core,
-                                                                          RTASN1ENCODE_F_DER, &cbEncoded, NULL), VINF_SUCCESS);
-                                if (RT_SUCCESS(rc) && cbEncoded != g_aFiles[i].cbDer)
-                                    RTTestIFailed("RTAsn1EncodePrepare of file %s (#%u) returned %#x bytes instead of %#x",
-                                                  g_aFiles[i].pszFile, i, cbEncoded, g_aFiles[i].cbDer);
+                        rc = RTCrPkixSignatureVerify(hVerify, hDigest, abSignature, cbSignature);
+                        if (RT_FAILURE(rc))
+                            RTTestIFailed("RTCrPkixSignatureVerify failed with %Rrc for %u bits MD with %u bits key (%s); signature length %u",
+                                                          rc, s_aSignatures[iSig].cBits, g_aKeyPairs[i].cBits, s_aSignatures[iSig].pszObjId, cbSignature);
 
-                                cbEncoded = (uint32_t)g_aFiles[i].cbDer;
-                                void *pvTmp = RTTestGuardedAllocTail(g_hTest, cbEncoded);
-                                RTTESTI_CHECK_RC(rc = RTAsn1EncodeToBuffer(&paCerts[j]->SeqCore.Asn1Core, RTASN1ENCODE_F_DER,
-                                                                           pvTmp, cbEncoded, NULL /*pErrInfo*/), VINF_SUCCESS);
-                                if (RT_SUCCESS(rc) && memcmp(pvTmp, g_aFiles[i].pbDer, cbEncoded) != 0)
-                                    RTTestIFailed("RTAsn1EncodeToBuffer produces the wrong output for file %s (#%u), variation %u",
-                                                  g_aFiles[i].pszFile, i, j);
-                                RTTestGuardedFree(g_hTest, pvTmp);
-                            }
-
-                            /*
-                             * Check that our self signed check works.
-                             */
-                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert0) == g_aFiles[i].fSelfSigned);
-                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert1) == g_aFiles[i].fSelfSigned);
-                            RTTESTI_CHECK(RTCrX509Certificate_IsSelfSigned(&Cert2) == g_aFiles[i].fSelfSigned);
-
-                            if (g_aFiles[i].fSelfSigned)
-                            {
-                                /*
-                                 * Verify the certificate signature (self signed).
-                                 */
-                                for (j = 0; j < RT_ELEMENTS(paCerts); j++)
-                                {
-                                    rc = RTCrX509Certificate_VerifySignatureSelfSigned(paCerts[j], NULL /*pErrInfo*/);
-                                    if (   RT_FAILURE(rc)
-                                        && (   rc != VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP
-                                            || !g_aFiles[i].fMaybeNotInOpenSSL) )
-                                        RTTestIFailed("RTCrX509Certificate_VerifySignatureSelfSigned failed for %s (#%u), variation %u: %Rrc",
-                                                      g_aFiles[i].pszFile, i, j, rc);
-                                }
-                            }
-                        }
-
-                        RTCrX509Certificate_Delete(&Cert2);
                     }
-                    else
-                        RTTestIFailed("Error %Rrc decoding PEM file %s (#%u)", rc, g_aFiles[i].pszFile, i);
-                    RTCrX509Certificate_Delete(&Cert1);
+                    else if (rc != VERR_CR_PKIX_HASH_TOO_LONG_FOR_KEY)
+                        RTTestIFailed("RTCrPkixSignatureSign failed with %Rrc for %u bits MD with %u bits key (%s)",
+                                      rc, s_aSignatures[iSig].cBits, g_aKeyPairs[i].cBits, s_aSignatures[iSig].pszObjId);
                 }
                 else
-                    RTTestIFailed("Error %Rrc decoding DER file %s (#%u)", rc, g_aFiles[i].pszFile, i);
+                    RTTestIFailed("RTCrDigestCreateByObjIdString failed with %Rrc for %s (%u bits)",
+                                  rc, s_aSignatures[iSig].pszObjId, s_aSignatures[iSig].cBits);
             }
-            RTCrX509Certificate_Delete(&Cert0);
         }
-#endif
+
+        RTCrPkixSignatureRelease(hSign);
+        hSign = NIL_RTCRPKIXSIGNATURE;
+        RTCrPkixSignatureRelease(hVerify);
+        hVerify = NIL_RTCRPKIXSIGNATURE;
     }
 
     RTCrKeyRelease(hPublicKey);
