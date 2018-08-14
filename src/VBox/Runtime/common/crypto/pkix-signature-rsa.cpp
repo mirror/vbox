@@ -170,6 +170,7 @@ static DECLCALLBACK(void) rtCrPkixSignatureRsa_Delete(PCRTCRPKIXSIGNATUREDESC pD
     PRTCRPKIXSIGNATURERSA pThis = (PRTCRPKIXSIGNATURERSA)pvState;
     RT_NOREF_PV(fSigning); RT_NOREF_PV(pDesc);
     Assert(pThis->fSigning == fSigning);
+    NOREF(pThis);
 }
 
 
