@@ -299,7 +299,7 @@ void UIChooserItemGlobal::updateAll(const QString &)
 
 void UIChooserItemGlobal::removeAll(const QString &)
 {
-    AssertMsgFailed(("Global graphics item do NOT support deleting!"));
+    // Just do nothing ..
 }
 
 UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iItemSearchFlags)
