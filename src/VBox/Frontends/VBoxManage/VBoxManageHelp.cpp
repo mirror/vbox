@@ -729,7 +729,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--snapshot <uuid>|<name>]\n"
                      "                            [--mode machine|machineandchildren|all]\n"
                      "                            [--options link|keepallmacs|keepnatmacs|\n"
-                     "                                       keepdisknames]\n"
+                     "                                       keepdisknames|keephwuuids]\n"
                      "                            [--name <name>]\n"
                      "                            [--groups <group>, ...]\n"
                      "                            [--basefolder <basefolder>]\n"

@@ -4833,6 +4833,9 @@
     <const name="KeepDiskNames"     value="4">
       <desc>Don't change the disk names.</desc>
     </const>
+    <const name="KeepHwUUIDs"       value="5">
+      <desc>Don't change UUID of the machine hardware.</desc>
+    </const>
 
   </enum>
 

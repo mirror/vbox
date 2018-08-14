@@ -452,6 +452,9 @@ static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *op
             else if (   !RTStrNICmp(psz, "Link", len)
                      || !RTStrNICmp(psz, "Linked", len))
                 options->push_back(CloneOptions_Link);
+            else if (   !RTStrNICmp(psz, "KeepHwUUIDs", len)
+                     || !RTStrNICmp(psz, "KeepHwUUID", len))
+                options->push_back(CloneOptions_KeepHwUUIDs);
             else
                 rc = VERR_PARSE_ERROR;
         }

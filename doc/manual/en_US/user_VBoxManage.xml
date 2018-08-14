@@ -2664,7 +2664,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
       <listitem>
         <para>
           <computeroutput>--options
-          link|keepallmacs|keepnatmacs|keepdisknames</computeroutput>:
+          link|keepallmacs|keepnatmacs|keepdisknames|keephwuuids</computeroutput>:
           Allows additional fine tuning of the clone operation. The
           first option defines that a linked clone should be created,
           which is only possible for a machine cloned from a snapshot.
@@ -2676,7 +2676,8 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
           (<computeroutput>keepnatmacs</computeroutput>). If you add
           <computeroutput>keepdisknames</computeroutput> all new disk
           images are called like the original ones, otherwise they are
-          renamed.
+          renamed. If you add <computeroutput>keephwuuids</computeroutput>
+          source hardware IDs will be preserved.
         </para>
       </listitem>
 
@@ -2760,12 +2761,10 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
     <para>
       Use of the <computeroutput>--options
-      link|keepallmacs|keepnatmacs|keepdisknames</computeroutput>:
+      keepallmacs|keepnatmacs|keepdisknames</computeroutput>:
       option enables additional fine tuning of the clone operation. The
-      first option defines that a linked clone should be created, which
-      is only possible for a machine clone from a snapshot. The next two
-      options enable specification of how the MAC addresses of every
-      virtual network card should be handled. They can either be
+      first two options enable specification of how the MAC addresses of
+      every virtual network card should be handled. They can either be
       reinitialized (the default), left unchanged
       (<computeroutput>keepallmacs</computeroutput>) or left unchanged
       when the network type is NAT

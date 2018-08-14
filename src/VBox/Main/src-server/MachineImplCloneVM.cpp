@@ -123,6 +123,7 @@ struct MachineCloneVMPrivate
                                      const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia,
                                      ComObjPtr<Medium> *ppDiff) const;
     static DECLCALLBACK(int) copyStateFileProgress(unsigned uPercentage, void *pvUser);
+    static void updateSnapshotHardwareUUIDs(settings::SnapshotsList &snapshot_list, const Guid &id);
 
     /* Private q and parent pointer */
     MachineCloneVM             *q_ptr;
@@ -764,6 +765,18 @@ DECLCALLBACK(int) MachineCloneVMPrivate::copyStateFileProgress(unsigned uPercent
     return VINF_SUCCESS;
 }
 
+void MachineCloneVMPrivate::updateSnapshotHardwareUUIDs(settings::SnapshotsList &snapshot_list, const Guid &id)
+{
+    for (settings::SnapshotsList::iterator snapshot_it = snapshot_list.begin();
+         snapshot_it != snapshot_list.end();
+         ++snapshot_it)
+    {
+        if (!snapshot_it->hardware.uuid.isValid() || snapshot_it->hardware.uuid.isZero())
+            snapshot_it->hardware.uuid = id;
+        updateSnapshotHardwareUUIDs(snapshot_it->llChildSnapshots, id);
+    }
+}
+
 // The public class
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1007,6 +1020,19 @@ HRESULT MachineCloneVM::run()
         /* Copy all the configuration from this machine to an empty
          * configuration dataset. */
         settings::MachineConfigFile trgMCF = *d->pSrcMachine->mData->pMachineConfigFile;
+
+        /* keep source machine hardware UUID if enabled*/
+        if (d->options.contains(CloneOptions_KeepHwUUIDs))
+        {
+            /* because HW UUIDs must be preserved including snapshots by the option,
+             * just fill zero UUIDs with corresponding machine UUID before any snapshot
+             * processing will take place, while all uuids are from source machine */
+            if (!trgMCF.hardwareMachine.uuid.isValid() || trgMCF.hardwareMachine.uuid.isZero())
+                trgMCF.hardwareMachine.uuid = trgMCF.uuid;
+
+            MachineCloneVMPrivate::updateSnapshotHardwareUUIDs(trgMCF.llFirstSnapshot, trgMCF.uuid);
+        }
+
 
         /* Reset media registry. */
         trgMCF.mediaRegistry.llHardDisks.clear();
