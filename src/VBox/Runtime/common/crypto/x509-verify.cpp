@@ -97,7 +97,7 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
     else
     {
         uint32_t cbEncoded;
-        int rc = RTAsn1EncodePrepare((PRTASN1CORE)&pThis->TbsCertificate.SeqCore.Asn1Core, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
+        rc = RTAsn1EncodePrepare((PRTASN1CORE)&pThis->TbsCertificate.SeqCore.Asn1Core, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
         if (RT_SUCCESS(rc))
         {
             void *pvTbsBits = RTMemTmpAlloc(cbEncoded);
