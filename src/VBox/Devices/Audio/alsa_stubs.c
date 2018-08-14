@@ -135,6 +135,9 @@ PROXY_STUB(snd_pcm_sw_params, int,
 PROXY_STUB(snd_pcm_sw_params_current, int,
            (snd_pcm_t *pcm, snd_pcm_sw_params_t *params),
            (pcm, params))
+PROXY_STUB(snd_pcm_sw_params_get_start_threshold, int,
+           (const snd_pcm_sw_params_t *params, snd_pcm_uframes_t *val),
+           (params, val))
 PROXY_STUB(snd_pcm_sw_params_set_avail_min, int,
            (snd_pcm_t *pcm, snd_pcm_sw_params_t *params, snd_pcm_uframes_t val),
            (pcm, params, val))
@@ -192,8 +195,9 @@ static SHARED_FUNC SharedFuncs[] =
 
     ELEMENT(snd_pcm_sw_params),
     ELEMENT(snd_pcm_sw_params_current),
-    ELEMENT(snd_pcm_sw_params_set_start_threshold),
+    ELEMENT(snd_pcm_sw_params_get_start_threshold),
     ELEMENT(snd_pcm_sw_params_set_avail_min),
+    ELEMENT(snd_pcm_sw_params_set_start_threshold),
     ELEMENT(snd_pcm_sw_params_sizeof),
 };
 #undef ELEMENT

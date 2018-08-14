@@ -61,8 +61,9 @@
 
 #define snd_pcm_sw_params                       ALSA_MANGLER(snd_pcm_sw_params)
 #define snd_pcm_sw_params_current               ALSA_MANGLER(snd_pcm_sw_params_current)
-#define snd_pcm_sw_params_set_start_threshold   ALSA_MANGLER(snd_pcm_sw_params_set_start_threshold)
+#define snd_pcm_sw_params_get_start_threshold   ALSA_MANGLER(snd_pcm_sw_params_get_start_threshold)
 #define snd_pcm_sw_params_set_avail_min         ALSA_MANGLER(snd_pcm_sw_params_set_avail_min)
+#define snd_pcm_sw_params_set_start_threshold   ALSA_MANGLER(snd_pcm_sw_params_set_start_threshold)
 #define snd_pcm_sw_params_sizeof                ALSA_MANGLER(snd_pcm_sw_params_sizeof)
 
 #endif /* !AUDIO_ALSA_MANGLING_H */
