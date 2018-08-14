@@ -1138,6 +1138,158 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Close' menu class. */
+class UIActionMenuSelectorClose : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorClose(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/exit_16px.png")
+    {}
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Close"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Detach' action class. */
+class UIActionSimpleSelectorPerformDetach : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorPerformDetach(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("DetachUIVM");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Detach GUI"));
+        setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Save' action class. */
+class UIActionSimpleSelectorPerformSave : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorPerformSave(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("SaveVM");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+V");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Save State"));
+        setStatusTip(QApplication::translate("UIActionPool", "Save state of selected virtual machines"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Shutdown' action class. */
+class UIActionSimpleSelectorPerformShutdown : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorPerformShutdown(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ACPIShutdownVM");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+H");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send ACPI Shutdown signal to selected virtual machines"));
+    }
+};
+
+/** Simple action extension, used as 'Perform PowerOff' action class. */
+class UIActionSimpleSelectorPerformPowerOff : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorPerformPowerOff(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("PowerOffVM");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Po&wer Off"));
+        setStatusTip(QApplication::translate("UIActionPool", "Power off selected virtual machines"));
+    }
+};
+
+
 /** Toggle action extension, used as 'Machine Tools' action class. */
 class UIActionToggleSelectorToolsMachine : public UIActionToggle
 {
@@ -1398,158 +1550,6 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Host Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the Host Network Manager"));
-    }
-};
-
-
-/** Menu action extension, used as 'Close' menu class. */
-class UIActionMenuSelectorClose : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorClose(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/exit_16px.png")
-    {}
-
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Close"));
-    }
-};
-
-/** Simple action extension, used as 'Perform Detach' action class. */
-class UIActionSimpleSelectorPerformDetach : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorPerformDetach(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("DetachUIVM");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Detach GUI"));
-        setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
-    }
-};
-
-/** Simple action extension, used as 'Perform Save' action class. */
-class UIActionSimpleSelectorPerformSave : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorPerformSave(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("SaveVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+V");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Save State"));
-        setStatusTip(QApplication::translate("UIActionPool", "Save state of selected virtual machines"));
-    }
-};
-
-/** Simple action extension, used as 'Perform Shutdown' action class. */
-class UIActionSimpleSelectorPerformShutdown : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorPerformShutdown(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ACPIShutdownVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+H");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send ACPI Shutdown signal to selected virtual machines"));
-    }
-};
-
-/** Simple action extension, used as 'Perform PowerOff' action class. */
-class UIActionSimpleSelectorPerformPowerOff : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorPerformPowerOff(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("PowerOffVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+F");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Po&wer Off"));
-        setStatusTip(QApplication::translate("UIActionPool", "Power off selected virtual machines"));
     }
 };
 
