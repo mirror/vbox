@@ -182,6 +182,7 @@ static bool rtCrPemFindMarker(uint8_t const *pbContent, size_t cbContent, size_t
                             }
                             break;
                         }
+                        pWord++;
                     } /* for each word in marker. */
                 } /* for each marker. */
             }
