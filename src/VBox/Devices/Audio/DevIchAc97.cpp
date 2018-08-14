@@ -1015,6 +1015,12 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
         pStream->Dbg.Runtime.pFileDMA = NULL;
     }
 
+    if (pStream->State.pCircBuf)
+    {
+        RTCircBufDestroy(pStream->State.pCircBuf);
+        pStream->State.pCircBuf = NULL;
+    }
+
     LogFlowFuncLeave();
 }
 
@@ -1855,7 +1861,13 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             pCfg->Props.fSigned   = true;
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
-            rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
+            if (pStream->State.pCircBuf)
+            {
+                RTCircBufDestroy(pStream->State.pCircBuf);
+                pStream->State.pCircBuf = NULL;
+            }
+
+            rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(500 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
             if (RT_SUCCESS(rc))
                 rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, pCfg);
         }
@@ -1877,12 +1889,6 @@ static int ichac97R3StreamClose(PAC97STATE pThis, PAC97STREAM pStream)
     RT_NOREF(pThis);
 
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
-
-    if (pStream->State.pCircBuf)
-    {
-        RTCircBufDestroy(pStream->State.pCircBuf);
-        pStream->State.pCircBuf = NULL;
-    }
 
     return VINF_SUCCESS;
 }
