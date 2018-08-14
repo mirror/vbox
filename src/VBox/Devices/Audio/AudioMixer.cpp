@@ -1760,7 +1760,7 @@ int audioMixerSinkWriteToStreams(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *
             Assert(cbToWriteStream >= cbChunk);
             cbToWriteStream -= (uint32_t)cbChunk;
 
-            cbWrittenStream += cbChunk;
+            cbWrittenStream += (uint32_t)cbChunk;
             Assert(cbWrittenStream <= cbBuf);
         }
 
