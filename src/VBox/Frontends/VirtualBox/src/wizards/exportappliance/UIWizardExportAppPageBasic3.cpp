@@ -223,12 +223,14 @@ QStringList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldN
         /* If value is of string type, we just take it: */
         if (value.isString())
             fieldValueStringList << fieldValueArray[i].toString();
-        /* If value is of object type, we just take object values only: */
+        /* If value is of object type, we take object "key : value" pairs: */
         else if (value.isObject())
         {
             const QJsonObject valueObject = value.toObject();
             foreach (const QString &strKey, valueObject.keys())
-                fieldValueStringList << valueObject.value(strKey).toString();
+                fieldValueStringList << QString("%1 : %2")
+                                            .arg(strKey)
+                                            .arg(valueObject.value(strKey).toString());
         }
     }
     //printf("  Field value: \"%s\"\n", fieldValueStringList.join(", ").toUtf8().constData());
