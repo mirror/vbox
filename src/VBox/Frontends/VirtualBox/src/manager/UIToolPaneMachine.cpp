@@ -133,7 +133,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
             case ToolTypeMachine_Snapshots:
             {
                 /* Create Snapshots pane: */
-                m_pPaneSnapshots = new UISnapshotPane;
+                m_pPaneSnapshots = new UISnapshotPane(m_pActionPool);
                 AssertPtrReturnVoid(m_pPaneSnapshots);
                 {
 #ifndef VBOX_WS_MAC

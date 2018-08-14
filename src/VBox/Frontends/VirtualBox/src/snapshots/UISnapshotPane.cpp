@@ -36,6 +36,7 @@
 /* GUI includes: */
 # include "QIMessageBox.h"
 # include "QITreeWidget.h"
+# include "UIActionPoolSelector.h"
 # include "UIConverter.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
@@ -450,8 +451,9 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
 *   Class UISnapshotPane implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
+UISnapshotPane::UISnapshotPane(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pActionPool(pActionPool)
     , m_enmSessionState(KSessionState_Null)
     , m_fShapshotOperationsAllowed(false)
     , m_pLockReadWrite(0)
@@ -459,11 +461,6 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     , m_pIconSnapshotOnline(0)
     , m_pTimerUpdateAge(0)
     , m_pToolBar(0)
-    , m_pActionTakeSnapshot(0)
-    , m_pActionDeleteSnapshot(0)
-    , m_pActionRestoreSnapshot(0)
-    , m_pActionShowSnapshotDetails(0)
-    , m_pActionCloneSnapshot(0)
     , m_pSnapshotTree(0)
     , m_pCurrentSnapshotItem(0)
     , m_pCurrentStateItem(0)
@@ -511,30 +508,6 @@ void UISnapshotPane::retranslateUi()
 {
     /* Translate snapshot tree: */
     m_pSnapshotTree->setWhatsThis(tr("Contains the snapshot tree of the current virtual machine"));
-
-    /* Translate actions names: */
-    m_pActionTakeSnapshot->setText(tr("&Take..."));
-    m_pActionDeleteSnapshot->setText(tr("&Delete"));
-    m_pActionRestoreSnapshot->setText(tr("&Restore"));
-    m_pActionShowSnapshotDetails->setText(tr("&Properties..."));
-    m_pActionCloneSnapshot->setText(tr("&Clone..."));
-    /* Translate actions tool-tips: */
-    m_pActionTakeSnapshot->setToolTip(tr("Take Snapshot (%1)")
-                                      .arg(m_pActionTakeSnapshot->shortcut().toString()));
-    m_pActionDeleteSnapshot->setToolTip(tr("Delete Snapshot (%1)")
-                                        .arg(m_pActionDeleteSnapshot->shortcut().toString()));
-    m_pActionRestoreSnapshot->setToolTip(tr("Restore Snapshot (%1)")
-                                         .arg(m_pActionRestoreSnapshot->shortcut().toString()));
-    m_pActionShowSnapshotDetails->setToolTip(tr("Open Snapshot Properties (%1)")
-                                             .arg(m_pActionShowSnapshotDetails->shortcut().toString()));
-    m_pActionCloneSnapshot->setToolTip(tr("Clone Virtual Machine (%1)")
-                                       .arg(m_pActionCloneSnapshot->shortcut().toString()));
-    /* Translate actions status-tips: */
-    m_pActionTakeSnapshot->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
-    m_pActionDeleteSnapshot->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
-    m_pActionRestoreSnapshot->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
-    m_pActionShowSnapshotDetails->setStatusTip(tr("Open pane with the selected snapshot properties"));
-    m_pActionCloneSnapshot->setStatusTip(tr("Clone selected virtual machine"));
 
     /* Translate toolbar: */
 #ifdef VBOX_WS_MAC
@@ -1094,19 +1067,19 @@ void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)
     /* For snapshot item: */
     if (m_pCurrentSnapshotItem && !pSnapshotItem->isCurrentStateItem())
     {
-        menu.addAction(m_pActionDeleteSnapshot);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete));
         menu.addSeparator();
-        menu.addAction(m_pActionRestoreSnapshot);
-        menu.addAction(m_pActionShowSnapshotDetails);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties));
         menu.addSeparator();
-        menu.addAction(m_pActionCloneSnapshot);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone));
     }
     /* For "current state" item: */
     else
     {
-        menu.addAction(m_pActionTakeSnapshot);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take));
         menu.addSeparator();
-        menu.addAction(m_pActionCloneSnapshot);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone));
     }
 
     /* Show menu: */
@@ -1183,7 +1156,7 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
         else
         {
             /* As show details-widget procedure: */
-            m_pActionShowSnapshotDetails->setChecked(true);
+            m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties)->setChecked(true);
         }
     }
 }
@@ -1267,61 +1240,33 @@ void UISnapshotPane::prepareToolbar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add Take Snapshot action: */
-        m_pActionTakeSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_take_22px.png",
-                                                                              ":/snapshot_take_16px.png",
-                                                                              ":/snapshot_take_disabled_22px.png",
-                                                                              ":/snapshot_take_disabled_16px.png"),
-                                                      QString(), this, &UISnapshotPane::sltTakeSnapshot);
-        {
-            m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+T"));
-        }
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take));
+        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take), &UIAction::triggered,
+                this, &UISnapshotPane::sltTakeSnapshot);
 
         /* Add Delete Snapshot action: */
-        m_pActionDeleteSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_delete_22px.png",
-                                                                                ":/snapshot_delete_16px.png",
-                                                                                ":/snapshot_delete_disabled_22px.png",
-                                                                                ":/snapshot_delete_disabled_16px.png"),
-                                                        QString(), this, &UISnapshotPane::sltDeleteSnapshot);
-        {
-            m_pActionDeleteSnapshot->setShortcut(QString("Ctrl+Shift+D"));
-        }
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete));
+        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete), &UIAction::triggered,
+                this, &UISnapshotPane::sltDeleteSnapshot);
 
         m_pToolBar->addSeparator();
 
         /* Add Restore Snapshot action: */
-        m_pActionRestoreSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_restore_22px.png",
-                                                                                 ":/snapshot_restore_16px.png",
-                                                                                 ":/snapshot_restore_disabled_22px.png",
-                                                                                 ":/snapshot_restore_disabled_16px.png"),
-                                                         QString(), this, &UISnapshotPane::sltRestoreSnapshot);
-        {
-            m_pActionRestoreSnapshot->setShortcut(QString("Ctrl+Shift+R"));
-        }
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore));
+        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore), &UIAction::triggered,
+                this, &UISnapshotPane::sltRestoreSnapshot);
 
         /* Add Show Snapshot Details action: */
-        m_pActionShowSnapshotDetails = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_show_details_22px.png",
-                                                                                     ":/snapshot_show_details_16px.png",
-                                                                                     ":/snapshot_show_details_disabled_22px.png",
-                                                                                     ":/snapshot_show_details_disabled_16px.png"),
-                                                             QString());
-        {
-            connect(m_pActionShowSnapshotDetails, &QAction::toggled,
-                    this, &UISnapshotPane::sltToggleSnapshotDetailsVisibility);
-            m_pActionShowSnapshotDetails->setCheckable(true);
-            m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
-        }
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties));
+        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties), &UIAction::toggled,
+                this, &UISnapshotPane::sltToggleSnapshotDetailsVisibility);
 
         m_pToolBar->addSeparator();
 
         /* Add Clone Snapshot action: */
-        m_pActionCloneSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/vm_clone_22px.png",
-                                                                               ":/vm_clone_16px.png",
-                                                                               ":/vm_clone_disabled_22px.png",
-                                                                               ":/vm_clone_disabled_16px.png"),
-                                                       QString(), this, &UISnapshotPane::sltCloneSnapshot);
-        {
-            m_pActionCloneSnapshot->setShortcut(QString("Ctrl+Shift+C"));
-        }
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone));
+        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone), &UIAction::triggered,
+                this, &UISnapshotPane::sltCloneSnapshot);
 
         /* Add into layout: */
         layout()->addWidget(m_pToolBar);
@@ -1368,7 +1313,8 @@ void UISnapshotPane::prepareDetailsWidget()
 void UISnapshotPane::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionShowSnapshotDetails->setChecked(gEDataManager->snapshotManagerDetailsExpanded());
+    m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties)->
+        setChecked(gEDataManager->snapshotManagerDetailsExpanded());
 }
 
 void UISnapshotPane::refreshAll()
@@ -1513,7 +1459,7 @@ void UISnapshotPane::updateActionStates()
                                         || enmState == KMachineState_Paused;
 
     /* Update 'Take' action: */
-    m_pActionTakeSnapshot->setEnabled(
+    m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take)->setEnabled(
            m_fShapshotOperationsAllowed
         && (   (   fCanTakeDeleteSnapshot
                 && m_pCurrentSnapshotItem
@@ -1524,7 +1470,7 @@ void UISnapshotPane::updateActionStates()
     );
 
     /* Update 'Delete' action: */
-    m_pActionDeleteSnapshot->setEnabled(
+    m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete)->setEnabled(
            m_fShapshotOperationsAllowed
         && fCanTakeDeleteSnapshot
         && m_pCurrentSnapshotItem
@@ -1533,7 +1479,7 @@ void UISnapshotPane::updateActionStates()
     );
 
     /* Update 'Restore' action: */
-    m_pActionRestoreSnapshot->setEnabled(
+    m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore)->setEnabled(
            !fBusy
         && m_pCurrentSnapshotItem
         && pSnapshotItem
@@ -1541,12 +1487,12 @@ void UISnapshotPane::updateActionStates()
     );
 
     /* Update 'Show Details' action: */
-    m_pActionShowSnapshotDetails->setEnabled(
+    m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties)->setEnabled(
         pSnapshotItem
     );
 
     /* Update 'Clone' action: */
-    m_pActionCloneSnapshot->setEnabled(
+    m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone)->setEnabled(
            pSnapshotItem
         && (   !pSnapshotItem->isCurrentStateItem()
             || !fBusy)

@@ -1554,6 +1554,220 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Snapshot' menu class. */
+class UIActionMenuSelectorSnapshot : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorSnapshot(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("SnapshotMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Snapshot"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the snapshot menu"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Take' action class. */
+class UIActionMenuSelectorSnapshotPerformTake : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorSnapshotPerformTake(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
+                         ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("TakeSnapshot");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+T");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Take..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Take a snapshot of the current virtual machine state"));
+        setToolTip(tr("Take Snapshot (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Delete' action class. */
+class UIActionMenuSelectorSnapshotPerformDelete : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorSnapshotPerformDelete(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/snapshot_delete_22px.png", ":/snapshot_delete_16px.png",
+                         ":/snapshot_delete_disabled_22px.png", ":/snapshot_delete_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("DeleteSnapshot");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+D");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Delete..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Delete selected snapshot of the virtual machine"));
+        setToolTip(tr("Delete Snapshot (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Restore' action class. */
+class UIActionMenuSelectorSnapshotPerformRestore : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorSnapshotPerformRestore(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/snapshot_restore_22px.png", ":/snapshot_restore_16px.png",
+                         ":/snapshot_restore_disabled_22px.png", ":/snapshot_restore_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RestoreSnapshot");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+R");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Restore..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Restore selected snapshot of the virtual machine"));
+        setToolTip(tr("Restore Snapshot (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Toggle action extension, used as 'Toggle Snapshot Properties' action class. */
+class UIActionMenuSelectorSnapshotToggleProperties : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorSnapshotToggleProperties(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/snapshot_show_details_16px.png", ":/snapshot_show_details_16px.png",
+                         ":/snapshot_show_details_disabled_16px.png", ":/snapshot_show_details_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleSnapshotProperties");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Space");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Properties"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with the selected snapshot properties"));
+        setToolTip(tr("Open Snapshot Properties (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Clone' action class. */
+class UIActionMenuSelectorSnapshotPerformClone : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorSnapshotPerformClone(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/vm_clone_22px.png", ":/vm_clone_16px.png",
+                         ":/vm_clone_disabled_22px.png", ":/vm_clone_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CloneSnapshot");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+C");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Clone..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Clone selected virtual machine"));
+        setToolTip(tr("Clone Virtual Machine (%1)").arg(shortcut().toString()));
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIActionPoolSelector implementation.                                                                                   *
 *********************************************************************************************************************************/
@@ -1639,6 +1853,14 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
     m_pool[UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(this);
     m_pool[UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(this);
+
+    /* Snapshot Pane actions: */
+    m_pool[UIActionIndexST_M_Snapshot] = new UIActionMenuSelectorSnapshot(this);
+    m_pool[UIActionIndexST_M_Snapshot_S_Take] = new UIActionMenuSelectorSnapshotPerformTake(this);
+    m_pool[UIActionIndexST_M_Snapshot_S_Delete] = new UIActionMenuSelectorSnapshotPerformDelete(this);
+    m_pool[UIActionIndexST_M_Snapshot_S_Restore] = new UIActionMenuSelectorSnapshotPerformRestore(this);
+    m_pool[UIActionIndexST_M_Snapshot_T_Properties] = new UIActionMenuSelectorSnapshotToggleProperties(this);
+    m_pool[UIActionIndexST_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
 
     /* Call to base-class: */
     UIActionPool::preparePool();
