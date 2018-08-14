@@ -270,7 +270,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                             switch (parameter.kind)
                             {
                                 case ParameterKind_Bool:
-                                    strValue = QString();
+                                    strValue = QString("true");
                                     break;
                                 case ParameterKind_Double:
                                     strValue = QString::number(parameter.get.value<AbstractVSDParameterDouble>().minimum);

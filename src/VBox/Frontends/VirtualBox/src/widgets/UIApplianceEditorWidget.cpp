@@ -403,16 +403,34 @@ bool UIVirtualHardwareItem::setData(int iColumn, const QVariant &value, int iRol
     {
         case Qt::CheckStateRole:
         {
-            if (iColumn == ApplianceViewSection_ConfigValue &&
-                (m_enmVSDType == KVirtualSystemDescriptionType_Floppy ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP))
+            if (iColumn == ApplianceViewSection_ConfigValue)
             {
-                m_checkState = static_cast<Qt::CheckState>(value.toInt());
-                fDone = true;
+                switch (m_enmVSDType)
+                {
+                    /* These hardware items can be disabled: */
+                    case KVirtualSystemDescriptionType_Floppy:
+                    case KVirtualSystemDescriptionType_CDROM:
+                    case KVirtualSystemDescriptionType_USBController:
+                    case KVirtualSystemDescriptionType_SoundCard:
+                    case KVirtualSystemDescriptionType_NetworkAdapter:
+                    {
+                        m_checkState = static_cast<Qt::CheckState>(value.toInt());
+                        fDone = true;
+                        break;
+                    }
+                    /* These option items can be enabled: */
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
+                    {
+                        if (value.toInt() == Qt::Unchecked)
+                            m_strConfigValue = "false";
+                        else if (value.toInt() == Qt::Checked)
+                            m_strConfigValue = "true";
+                        fDone = true;
+                        break;
+                    }
+                    default:
+                        break;
+                }
             }
             break;
         }
@@ -498,11 +516,12 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                             strTmp.replace(i, strTmp.length(), "...");
                         value = strTmp; break;
                     }
-                    case KVirtualSystemDescriptionType_OS:             value = vboxGlobal().vmGuestOSTypeDescription(m_strConfigValue); break;
-                    case KVirtualSystemDescriptionType_Memory:         value = m_strConfigValue + " " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"); break;
-                    case KVirtualSystemDescriptionType_SoundCard:      value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
-                    case KVirtualSystemDescriptionType_NetworkAdapter: value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
-                    default:                                           value = m_strConfigValue; break;
+                    case KVirtualSystemDescriptionType_OS:               value = vboxGlobal().vmGuestOSTypeDescription(m_strConfigValue); break;
+                    case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"); break;
+                    case KVirtualSystemDescriptionType_SoundCard:        value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
+                    case KVirtualSystemDescriptionType_NetworkAdapter:   value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP: break;
+                    default:                                             value = m_strConfigValue; break;
                 }
             }
             break;
@@ -583,14 +602,33 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
         }
         case Qt::CheckStateRole:
         {
-            if (iColumn == ApplianceViewSection_ConfigValue &&
-                (m_enmVSDType == KVirtualSystemDescriptionType_Floppy ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
-                 m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP))
-                value = m_checkState;
+            if (iColumn == ApplianceViewSection_ConfigValue)
+            {
+                switch (m_enmVSDType)
+                {
+                    /* These hardware items can be disabled: */
+                    case KVirtualSystemDescriptionType_Floppy:
+                    case KVirtualSystemDescriptionType_CDROM:
+                    case KVirtualSystemDescriptionType_USBController:
+                    case KVirtualSystemDescriptionType_SoundCard:
+                    case KVirtualSystemDescriptionType_NetworkAdapter:
+                    {
+                        value = m_checkState;
+                        break;
+                    }
+                    /* These option items can be enabled: */
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
+                    {
+                        if (m_strConfigValue == "true")
+                            value = Qt::Checked;
+                        else
+                            value = Qt::Unchecked;
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
             break;
         }
         case UIVirtualHardwareItem::TypeRole:
