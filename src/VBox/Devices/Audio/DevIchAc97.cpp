@@ -1896,7 +1896,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
  */
 static int ichac97R3StreamClose(PAC97STATE pThis, PAC97STREAM pStream)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, pStream);
 
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
 
