@@ -60,7 +60,7 @@
  * @param   pErrInfo        Where to optionally return more error details.
  */
 DECLHIDDEN(int) rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, const char *pszAlgoObjId,
-                                    EVP_PKEY **ppEvpKey, const EVP_MD **ppEvpMdType, PRTERRINFO pErrInfo)
+                                    void /*EVP_PKEY*/ **ppEvpKey, const void /*EVP_MD*/ **ppEvpMdType, PRTERRINFO pErrInfo)
 {
     *ppEvpKey = NULL;
     if (ppEvpMdType)

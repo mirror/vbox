@@ -154,7 +154,8 @@ RTDECL(int) RTCrPkixPubKeySignDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY hPrivateK
     /* Create an EVP private key. */
     EVP_PKEY     *pEvpPrivateKey = NULL;
     const EVP_MD *pEvpMdType = NULL;
-    int rcOssl = rtCrKeyToOpenSslKey(hPrivateKey, false /*fNeedPublic*/, pszAlgObjId, &pEvpPrivateKey, &pEvpMdType, pErrInfo);
+    int rcOssl = rtCrKeyToOpenSslKey(hPrivateKey, false /*fNeedPublic*/, pszAlgObjId,
+                                     (void **)&pEvpPrivateKey, (const void **)&pEvpMdType, pErrInfo);
     if (RT_SUCCESS(rcOssl))
     {
         /* Create an EVP Private key context we can use to validate the digest. */
