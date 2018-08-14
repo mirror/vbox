@@ -1882,7 +1882,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
 void UIVirtualBoxManager::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
-    const bool fMachineOrGroupMenuShown = m_pWidget->isMachineItemSelected();
+    const bool fMachineOrGroupMenuShown = m_pWidget->isMachineItemSelected() || m_pWidget->isGroupItemSelected();
     const bool fMachineMenuShown = !isSingleGroupSelected();
     m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
     m_pGroupMenuAction->setVisible(fMachineOrGroupMenuShown && !fMachineMenuShown);
@@ -1891,19 +1891,21 @@ void UIVirtualBoxManager::updateActionsVisibility()
     if (!fMachineMenuShown)
         foreach (UIAction *pAction, m_machineActions)
             pAction->hideShortcut();
-    if (fMachineMenuShown)
+    else
         foreach (UIAction *pAction, m_groupActions)
             pAction->hideShortcut();
 
     /* Update actions visibility: */
     foreach (UIAction *pAction, m_machineActions)
         pAction->setVisible(fMachineOrGroupMenuShown);
+    foreach (UIAction *pAction, m_groupActions)
+        pAction->setVisible(fMachineOrGroupMenuShown);
 
-    /* Show what should be shown: */
+    /* Show action shortcuts: */
     if (fMachineMenuShown)
         foreach (UIAction *pAction, m_machineActions)
             pAction->showShortcut();
-    if (!fMachineMenuShown)
+    else
         foreach (UIAction *pAction, m_groupActions)
             pAction->showShortcut();
 }
