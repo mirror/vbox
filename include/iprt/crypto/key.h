@@ -70,7 +70,7 @@ RTDECL(int)             RTCrKeyCreateFromBuffer(PRTCRKEY hKey, uint32_t fFlags, 
                                                 PRTERRINFO pErrInfo, const char *pszErrorTag);
 RTDECL(int)             RTCrKeyCreateFromFile(PRTCRKEY hKey, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
 /** @todo add support for decrypting private keys.  */
-/** @def RTCRKEYFROM_F_XXX
+/** @name RTCRKEYFROM_F_XXX
  * @{ */
 /** Only PEM sections, no binary fallback.
  * @sa RTCRPEMREADFILE_F_ONLY_PEM */
