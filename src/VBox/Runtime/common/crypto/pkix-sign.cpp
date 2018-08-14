@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/pkix.h>
 
+#include <iprt/alloca.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
