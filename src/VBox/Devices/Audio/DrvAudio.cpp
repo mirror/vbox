@@ -874,6 +874,9 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     AssertPtr(pszStreamSts);
 #endif
 
+    /* Whether to discard the incoming data or not. */
+    bool fToBitBucket = false;
+
     do
     {
         if (   !pThis->Out.fEnabled
@@ -883,12 +886,15 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             break;
         }
 
-        if (   pThis->pHostDrvAudio
-            && pThis->pHostDrvAudio->pfnGetStatus
-            && pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, PDMAUDIODIR_OUT) != PDMAUDIOBACKENDSTS_RUNNING)
+        if (pThis->pHostDrvAudio)
         {
-            rc = VERR_AUDIO_STREAM_NOT_READY;
-            break;
+            /* If the backend's stream is not writable, all written data goes to /dev/null. */
+            if (!DrvAudioHlpStreamStatusCanWrite(
+                pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)))
+            {
+                fToBitBucket = true;
+                break;
+            }
         }
 
         const uint32_t cbFree = AudioMixBufFreeBytes(&pStream->Host.MixBuf);
@@ -977,6 +983,12 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     if (RT_SUCCESS(rc))
     {
+        if (fToBitBucket)
+        {
+            Log3Func(("[%s] Backend stream not ready (yet), discarding written data\n", pStream->szName));
+            cbWrittenTotal = cbBuf; /* Report all data as being written to the caller. */
+        }
+
         if (pcbWritten)
             *pcbWritten = cbWrittenTotal;
     }
@@ -2739,7 +2751,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
         if (!cbReadable)
         {
             /*
-             * If Nothing is readable, check if the stream on the backend side is ready to be read from.
+             * If nothing is readable, check if the stream on the backend side is ready to be read from.
              * If it isn't, return the number of bytes readable since the last read from this stream.
              *
              * This is needed for backends (e.g. VRDE) which do not provide any input data in certain
@@ -2747,7 +2759,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
              * Reading the actual data from a stream then will return silence then.
              */
             if (!DrvAudioHlpStreamStatusCanRead(
-                    pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)))
+                pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)))
             {
                 cbReadable = DrvAudioHlpNanoToBytes(RTTimeNanoTS() - pStream->tsLastReadWrittenNs,
                                                     &pStream->Host.Cfg.Props);
@@ -2759,8 +2771,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
         cbReadable = DrvAudioHlpBytesAlign(cbReadable, &pStream->Guest.Cfg.Props);
     }
 
-        Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
-                  pStream->szName, cbReadable, DrvAudioHlpBytesToMilli(cbReadable, &pStream->Host.Cfg.Props)));
+    Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
+              pStream->szName, cbReadable, DrvAudioHlpBytesToMilli(cbReadable, &pStream->Host.Cfg.Props)));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
@@ -2786,6 +2798,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
 
     uint32_t cbWritable = 0;
 
+    /* Note: We don't propage the backend stream's status to the outside -- it's the job of this
+     *       audio connector to make sense of it. */
     if (DrvAudioHlpStreamStatusCanWrite(pStream->fStatus))
     {
         cbWritable = AudioMixBufFreeBytes(&pStream->Host.MixBuf);
@@ -2794,7 +2808,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
         cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pStream->Guest.Cfg.Props);
     }
 
-    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms2)\n",
+    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
               pStream->szName, cbWritable, DrvAudioHlpBytesToMilli(cbWritable, &pStream->Host.Cfg.Props)));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
