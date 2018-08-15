@@ -600,18 +600,18 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
         CfgHostAcq.Backend.cfPeriod = CfgHostAcq.Backend.cfBufferSize;
     }
 
-    uint64_t msBufferSize = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfBufferSize, &pCfgHost->Props);
+    uint64_t msBufferSize = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfBufferSize, &CfgHostAcq.Props);
 
     LogRel2(("Audio: Buffer size of stream '%s' is %RU64ms (%RU32 frames)\n",
              pStream->szName, msBufferSize, CfgHostAcq.Backend.cfBufferSize));
 
     /* If no own pre-buffer is set, let the backend choose. */
-    uint64_t msPreBuf = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPreBuf, &pCfgHost->Props);
+    uint64_t msPreBuf = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPreBuf, &CfgHostAcq.Props);
     LogRel2(("Audio: Pre-buffering size of stream '%s' is %RU64ms (%RU32 frames)\n",
              pStream->szName, msPreBuf, CfgHostAcq.Backend.cfPreBuf));
 
     /* Make sure the configured buffer size by the backend at least can hold the configured latency. */
-    const uint32_t msPeriod = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPeriod, &pCfgHost->Props);
+    const uint32_t msPeriod = DrvAudioHlpFramesToMilli(CfgHostAcq.Backend.cfPeriod, &CfgHostAcq.Props);
 
     LogRel2(("Audio: Period size of stream '%s' is %RU64ms (%RU32 frames)\n",
              pStream->szName, msPeriod, CfgHostAcq.Backend.cfPeriod));
