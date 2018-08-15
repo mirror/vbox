@@ -2412,7 +2412,7 @@ void UIMachineLogic::sltCloseLogViewerWindow()
     /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
     m_pLogViewerDialog = 0;
     pDialog->close();
-    UIVMLogViewerDialogFactory(CMachine()).cleanup(pDialog);
+    UIVMLogViewerDialogFactory().cleanup(pDialog);
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */

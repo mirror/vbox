@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMLogViewer class declaration.
+ * VBox Qt GUI - UIVMLogViewerWidget class declaration.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,9 +56,12 @@ signals:
     void sigSetCloseButtonShortCut(QKeySequence);
 
 public:
+
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
-      * @param  machine  Specifies the machine for which VM Log-Viewer is requested. */
-    UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0, const CMachine &machine = CMachine());
+      * @param  enmEmbedding  Brings the type of widget embedding.
+      * @param  comMachine    Brings the machine for which VM Log-Viewer is requested. */
+    UIVMLogViewerWidget(EmbedTo enmEmbedding,
+                        const CMachine &comMachine = CMachine(), QWidget *pParent = 0);
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
     /** Returns the width of the current log page. return 0 if there is no current log page: */
@@ -72,8 +75,8 @@ public:
     UIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
-    /** Sets the machine whose logs to show. */
-    void setMachine(const CMachine &machine);
+    /** Defines the @a comMachine whose logs to show. */
+    void setMachine(const CMachine &comMachine);
     QFont currentFont() const;
 
 protected:
@@ -94,13 +97,13 @@ private slots:
         void sltDeleteBookmark(int index);
         /** Receives delete all signal from the bookmark panel and notifies UIVMLogPage. */
         void sltDeleteAllBookmarks();
-        /** Manages bookmark panel update when bookmark vector is updated */
+        /** Manages bookmark panel update when bookmark vector is updated. */
         void sltUpdateBookmarkPanel();
-        /* Makes the current UIVMLogPage to goto (scroll) its bookmark with index @a index. */
+        /** Makes the current UIVMLogPage to goto (scroll) its bookmark with index @a index. */
         void gotoBookmark(int bookmarkIndex);
     /** @} */
 
-    void sltPanelActionTriggered(bool checked);
+    void sltPanelActionToggled(bool fChecked);
     /** Handles the search result highlight changes. */
     void sltSearchResultHighLigting();
     /** Handles the tab change of the logviewer. */
@@ -127,13 +130,21 @@ private:
       * @{ */
         /** Prepares VM Log-Viewer. */
         void prepare();
+        /** Prepares actions. */
+        void prepareActions();
+        /** Prepares action icons. */
+        void prepareActionIcons();
+        /** Prepares toolbar. */
+        void prepareToolBar();
+        /** Prepares menu. */
+        void prepareMenu();
         /** Prepares widgets. */
         void prepareWidgets();
-        void prepareActions();
-        void prepareActionIcons();
-        void prepareToolBar();
-        void prepareMenu();
+        /** Loads settings.  */
+        void loadSettings();
 
+        /** Saves settings.  */
+        void saveSettings();
         /** Cleanups VM Log-Viewer. */
         void cleanup();
     /** @} */
@@ -141,12 +152,12 @@ private:
     /** @name Event handling stuff.
       * @{ */
         /** Handles translation event. */
-        void retranslateUi();
+        virtual void retranslateUi() /* override */;
 
         /** Handles Qt show @a pEvent. */
-        void showEvent(QShowEvent *pEvent);
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
         /** Handles Qt key-press @a pEvent. */
-        void keyPressEvent(QKeyEvent *pEvent);
+        virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** @} */
 
 
@@ -155,9 +166,8 @@ private:
     /** Returns the newly created log-page using @a strPage filename. */
     void createLogPage(const QString &strFileName, const QString &strLogContent, bool noLogsToShow = false);
 
-
-    UIVMLogPage *currentLogPage();
     const UIVMLogPage *currentLogPage() const;
+    UIVMLogPage *currentLogPage();
 
     /** Attempts to read the logs through the API, returns true if there exists any logs, false otherwise. */
     bool createLogViewerPages();
@@ -175,17 +185,13 @@ private:
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
 
-    /** @name Load/save some settings from/to extra data
-      * @{ */
-        void loadSettings();
-        void saveSettings();
-    /** @} */
+    /** Holds the widget's embedding type. */
+    const EmbedTo m_enmEmbedding;
+    /** Holds the machine instance. */
+    CMachine      m_comMachine;
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
-
-    /** Holds the machine instance. */
-    CMachine m_comMachine;
 
     /** Holds container for log-pages. */
     QITabWidget        *m_pTabWidget;
@@ -203,9 +209,6 @@ private:
         QList<UIVMLogViewerPanel*>          m_visiblePanelsList;
     /** @} */
     QVBoxLayout         *m_pMainLayout;
-
-    /** Holds the widget's embedding type. */
-    const EmbedTo m_enmEmbedding;
 
     /** @name Toolbar and menu variables.
       * @{ */

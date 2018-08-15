@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMLogViewer class declaration.
+ * VBox Qt GUI - UIVMLogViewerDialog class declaration.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,50 +38,76 @@ class UIVMLogViewerDialog;
 class CMachine;
 
 
-/** QIManagerDialogFactory  used as a factory for Virtual Media Manager dialog. */
+/** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */
 class SHARED_LIBRARY_STUFF UIVMLogViewerDialogFactory : public QIManagerDialogFactory
 {
 public:
-    UIVMLogViewerDialogFactory(const CMachine &machine);
+
+    /** Constructs Log Viewer factory acquiring additional arguments.
+      * @param  comMachine  Brings the machine for which VM Log-Viewer is requested. */
+    UIVMLogViewerDialogFactory(const CMachine &comMachine = CMachine());
 
 protected:
+
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
-    CMachine m_comMachine;
+
+    /** Holds the machine reference. */
+    CMachine      m_comMachine;
 };
 
 
-/** A QIDialog to display machine logs. */
+/** QIManagerDialog extension providing GUI with the dialog displaying machine logs. */
 class SHARED_LIBRARY_STUFF UIVMLogViewerDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
 public:
 
-    UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine);
+    /** Constructs Log Viewer dialog.
+      * @param  pCenterWidget  Brings the widget reference to center according to.
+      * @param  comMachine     Brings the machine reference. */
+    UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &comMachine);
 
 protected:
 
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+    /** @} */
+
     /** @name Prepare/cleanup cascade.
      * @{ */
+        /** Configures all. */
         virtual void configure() /* override */;
+        /** Configures central-widget. */
         virtual void configureCentralWidget() /* override */;
+        /** Perform final preparations. */
         virtual void finalize() /* override */;
-        virtual void saveSettings() const /* override */;
+        /** Loads dialog setting such as geometry from extradata. */
         virtual void loadSettings() /* override */;
+
+        /** Saves dialog setting into extradata. */
+        virtual void saveSettings() const /* override */;
     /** @} */
-    /* Reads the related extradata to determine if the dialog should be maximized. */
-    virtual bool shouldBeMaximized() const /* override */;
+
+    /** @name Functions related to geometry restoration.
+     * @{ */
+        /** Returns whether the window should be maximized when geometry being restored. */
+        virtual bool shouldBeMaximized() const /* override */;
+    /** @} */
 
 private slots:
 
-    void sltSetCloseButtonShortCut(QKeySequence shortCut);
+    /** Must be handles soemthing related to close @a shortcut. */
+    void sltSetCloseButtonShortCut(QKeySequence shortcut);
 
 private:
 
-    void retranslateUi();
-    CMachine m_comMachine;
+    /** Holds the machine reference. */
+    CMachine  m_comMachine;
 };
 
 

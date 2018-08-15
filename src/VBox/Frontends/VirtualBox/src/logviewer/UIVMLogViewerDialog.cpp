@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMLogViewer class implementation.
+ * VBox Qt GUI - UIVMLogViewerDialog class implementation.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,9 +26,9 @@
 # include <QDialogButtonBox>
 # include <QKeyEvent>
 # include <QLabel>
-# include <QScrollBar>
 # include <QPlainTextEdit>
 # include <QPushButton>
+# include <QScrollBar>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -40,12 +40,17 @@
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(const CMachine &machine)
-    :m_comMachine(machine)
+
+/*********************************************************************************************************************************
+*   Class UIVMLogViewerDialogFactory implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(const CMachine &comMachine /* = CMachine() */)
+    : m_comMachine(comMachine)
 {
 }
 
@@ -54,39 +59,27 @@ void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
     pDialog = new UIVMLogViewerDialog(pCenterWidget, m_comMachine);
 }
 
-UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine)
+
+/*********************************************************************************************************************************
+*   Class UIVMLogViewerDialog implementation.                                                                                    *
+*********************************************************************************************************************************/
+
+UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &comMachine)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
-    , m_comMachine(machine)
+    , m_comMachine(comMachine)
 {
 }
 
 void UIVMLogViewerDialog::retranslateUi()
 {
-    button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
-    /* Setup a dialog caption: */
+    /* Translate window title: */
     if (!m_comMachine.isNull())
         setWindowTitle(tr("%1 - Log Viewer").arg(m_comMachine.GetName()));
     else
         setWindowTitle(UIVMLogViewerWidget::tr("Log Viewer"));
-}
 
-void UIVMLogViewerDialog::configureCentralWidget()
-{
-    /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, this, m_comMachine);
-    if (pWidget)
-    {
-        /* Configure widget: */
-        setWidget(pWidget);
-        setWidgetMenu(pWidget->menu());
-#ifdef VBOX_WS_MAC
-        setWidgetToolbar(pWidget->toolbar());
-#endif
-        /* Add into layout: */
-        centralWidget()->layout()->addWidget(pWidget);
-        connect(pWidget, &UIVMLogViewerWidget::sigSetCloseButtonShortCut,
-                this, &UIVMLogViewerDialog::sltSetCloseButtonShortCut);
-    }
+    /* Translate buttons: */
+    button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
 }
 
 void UIVMLogViewerDialog::configure()
@@ -95,28 +88,51 @@ void UIVMLogViewerDialog::configure()
     setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
 }
 
+void UIVMLogViewerDialog::configureCentralWidget()
+{
+    /* Create widget: */
+    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_comMachine, this);
+    if (pWidget)
+    {
+        /* Configure widget: */
+        setWidget(pWidget);
+        setWidgetMenu(pWidget->menu());
+#ifdef VBOX_WS_MAC
+        setWidgetToolbar(pWidget->toolbar());
+#endif
+        connect(pWidget, &UIVMLogViewerWidget::sigSetCloseButtonShortCut,
+                this, &UIVMLogViewerDialog::sltSetCloseButtonShortCut);
+
+        /* Add into layout: */
+        centralWidget()->layout()->addWidget(pWidget);
+    }
+}
+
 void UIVMLogViewerDialog::finalize()
 {
+    /* Apply language settings: */
     retranslateUi();
+
+    // WTF? Why here?
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
 }
 
 void UIVMLogViewerDialog::loadSettings()
 {
-    const UIVMLogViewerWidget *pWidget = qobject_cast<const UIVMLogViewerWidget *>(widget());
+    /* Acquire widget: */
+    const UIVMLogViewerWidget *pWidget = qobject_cast<const UIVMLogViewerWidget*>(widget());
 
     /* Restore window geometry: */
-    /* Getting available geometry to calculate default geometry: */
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
     int iDefaultHeight = desktopRect.height() * 3 / 4;
 
-    /* Try obtain the default width of the current logviewer */
+    /* Try obtain the default width of the current logviewer: */
     if (pWidget)
     {
-        int width =  pWidget->defaultLogPageWidth();
-        if (width != 0)
-            iDefaultWidth = width;
+        int iWidth =  pWidget->defaultLogPageWidth();
+        if (iWidth != 0)
+            iDefaultWidth = iWidth;
     }
 
     QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
@@ -152,8 +168,8 @@ bool UIVMLogViewerDialog::shouldBeMaximized() const
     return gEDataManager->logWindowShouldBeMaximized();
 }
 
-void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortCut)
+void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
     if (button(ButtonType_Close))
-        button(ButtonType_Close)->setShortcut(shortCut);
+        button(ButtonType_Close)->setShortcut(shortcut);
 }
