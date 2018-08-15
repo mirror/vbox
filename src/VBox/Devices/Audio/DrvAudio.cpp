@@ -3053,6 +3053,14 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPreBuf, &pCfgAcq->Props), pCfgAcq->Backend.cfPreBuf));
     }
 
+    /* Sanity for detecting buggy backends. */
+    AssertMsgReturn(pCfgAcq->Backend.cfPeriod < pCfgAcq->Backend.cfBufferSize,
+                    ("Acquired period size must be smaller than buffer size\n"),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pCfgAcq->Backend.cfPreBuf < pCfgAcq->Backend.cfBufferSize,
+                    ("Acquired pre-buffering size must be smaller than buffer size -- this otherwise will lead to buffer overruns\n"),
+                    VERR_INVALID_PARAMETER);
+
     pStream->fStatus |= PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
 
     return VINF_SUCCESS;
