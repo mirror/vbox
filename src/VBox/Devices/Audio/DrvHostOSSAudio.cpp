@@ -224,7 +224,7 @@ static int ossStreamClose(int *phFile)
 
 static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSReq, POSSAUDIOSTREAMCFG pOSSAcq, int *phFile)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
     int hFile = -1;
     do
@@ -233,7 +233,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         if (hFile == -1)
         {
             LogRel(("OSS: Failed to open %s: %s (%d)\n", pszDev, strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 
@@ -249,7 +248,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
                 break;
 
             default:
-                rc = VERR_NOT_SUPPORTED;
+                rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
                 break;
         }
 
@@ -259,7 +258,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         if (ioctl(hFile, SNDCTL_DSP_SAMPLESIZE, &iFormat))
         {
             LogRel(("OSS: Failed to set audio format to %ld: %s (%d)\n", iFormat, strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 
@@ -268,7 +266,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         {
             LogRel(("OSS: Failed to set number of audio channels (%RU8): %s (%d)\n",
                     pOSSReq->Props.cChannels, strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 
@@ -276,7 +273,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         if (ioctl(hFile, SNDCTL_DSP_SPEED, &freq))
         {
             LogRel(("OSS: Failed to set audio frequency (%dHZ): %s (%d)\n", pOSSReq->Props.uHz, strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 
@@ -285,7 +281,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         if (ioctl(hFile, SNDCTL_DSP_NONBLOCK))
         {
             LogRel(("OSS: Failed to set non-blocking mode: %s (%d)\n", strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 #endif
@@ -301,7 +296,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         {
             LogRel(("OSS: Failed to set %RU16 fragments to %RU32 bytes each: %s (%d)\n",
                     pOSSReq->cFragments, pOSSReq->cbFragmentSize, strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 
@@ -309,7 +303,6 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         if (ioctl(hFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo))
         {
             LogRel(("OSS: Failed to retrieve %s buffer length: %s (%d)\n", fIn ? "input" : "output", strerror(errno), errno));
-            rc = RTErrConvertFromErrno(errno);
             break;
         }
 

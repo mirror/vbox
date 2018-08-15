@@ -1774,7 +1774,7 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
             dsoundStreamReset(pThis, pStreamDS);
     }
     else
-        rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1948,7 +1948,7 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
             dsoundStreamReset(pThis, pStreamDS);
     }
     else
-        rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
     return rc;
 }

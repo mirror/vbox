@@ -2336,7 +2336,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
         }
     }
     else
-        rc = VERR_NOT_AVAILABLE;
+        rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
     LogFunc(("Returning %Rrc\n", rc));
     return rc;

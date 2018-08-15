@@ -479,7 +479,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
     AssertPtrReturn(pStreamPA, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName,   VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
+    int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
     pa_stream *pStream = NULL;
     uint32_t   flags   = PA_STREAM_NOFLAGS;
@@ -497,7 +497,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
         if (!pa_sample_spec_valid(pSampleSpec))
         {
             LogRel(("PulseAudio: Unsupported sample specification for stream '%s'\n", pszName));
-            rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -538,7 +537,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
             {
                 LogRel(("PulseAudio: Could not connect input stream '%s': %s\n",
                         pszName, pa_strerror(pa_context_errno(pThis->pContext))));
-                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }
@@ -552,7 +550,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
             {
                 LogRel(("PulseAudio: Could not connect playback stream '%s': %s\n",
                         pszName, pa_strerror(pa_context_errno(pThis->pContext))));
-                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }
@@ -571,7 +568,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
                      || streamSt == PA_STREAM_TERMINATED)
             {
                 LogRel(("PulseAudio: Failed to initialize stream '%s' (state %ld)\n", pszName, streamSt));
-                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }
@@ -591,6 +587,8 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
                  pBufAttr->tlength, pBufAttr->maxlength, pBufAttr->minreq, pBufAttr->fragsize, pBufAttr->prebuf));
 
         pStreamPA->pStream = pStream;
+
+        rc = VINF_SUCCESS;
 
     } while (0);
 
@@ -658,7 +656,6 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         {
             LogRel(("PulseAudio: Failed to start threaded mainloop: %s\n",
                      pa_strerror(pa_context_errno(pThis->pContext))));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -673,7 +670,6 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         {
             LogRel(("PulseAudio: Failed to connect to server: %s\n",
                      pa_strerror(pa_context_errno(pThis->pContext))));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -691,7 +687,6 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
                      || cstate == PA_CONTEXT_FAILED)
             {
                 LogRel(("PulseAudio: Failed to initialize context (state %d)\n", cstate));
-                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
         }

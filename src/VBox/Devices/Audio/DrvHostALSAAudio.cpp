@@ -325,7 +325,8 @@ static int alsaStreamClose(snd_pcm_t **pphPCM)
 static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt, snd_pcm_t **pphPCM)
 {
     snd_pcm_t *phPCM = NULL;
-    int rc;
+
+    int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
     unsigned int cChannels = pCfgReq->nchannels;
     unsigned int uFreq = pCfgReq->freq;
@@ -349,7 +350,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to open \"%s\" as %s device: %s\n", pszDev, fIn ? "input" : "output", snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -357,7 +357,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Error setting output non-blocking mode: %s\n", snd_strerror(err)));
-            rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
             break;
         }
 
@@ -367,7 +366,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to initialize hardware parameters: %s\n", snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -375,7 +373,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to set access type: %s\n", snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -383,7 +380,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to set audio format to %d: %s\n", pCfgReq->fmt, snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -391,7 +387,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to set frequency to %uHz: %s\n", pCfgReq->freq, snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -399,7 +394,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to set number of channels to %d\n", pCfgReq->nchannels));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -407,7 +401,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
             && cChannels != 2)
         {
             LogRel(("ALSA: Number of audio channels (%u) not supported\n", cChannels));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -421,7 +414,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Could not determine minimal period size\n"));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
         else
@@ -435,9 +427,7 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         LogFunc(("Period size is: %RU32\n", period_size_f));
         if (err < 0)
         {
-            LogRel(("ALSA: Failed to set period size %d (%s)\n",
-                    period_size_f, snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            LogRel(("ALSA: Failed to set period size %d (%s)\n", period_size_f, snd_strerror(err)));
             break;
         }
 
@@ -446,7 +436,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Could not retrieve minimal buffer size\n"));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
         else
@@ -456,7 +445,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to set near buffer size %RU32: %s\n", buffer_size_f, snd_strerror(err)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -464,7 +452,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to apply audio parameters\n"));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -472,7 +459,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to get buffer size\n"));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -481,7 +467,6 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         if (err < 0)
         {
             LogRel(("ALSA: Failed to get period size\n"));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
@@ -505,6 +490,8 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
         pCfgObt->freq        = uFreq;
         pCfgObt->period_size = obt_period_size;
         pCfgObt->buffer_size = obt_buffer_size;
+
+        rc = VINF_SUCCESS;
     }
     while (0);
 
