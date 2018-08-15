@@ -679,7 +679,11 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
 
     do
     {
-        OSSAUDIOSTREAMCFG reqStream, obtStream;
+        OSSAUDIOSTREAMCFG reqStream;
+        RT_ZERO(reqStream);
+
+        OSSAUDIOSTREAMCFG obtStream;
+        RT_ZERO(obtStream);
 
         memcpy(&reqStream.Props, &pCfgReq->Props, sizeof(PDMAUDIOPCMPROPS));
 
