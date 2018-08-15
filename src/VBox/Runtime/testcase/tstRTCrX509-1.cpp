@@ -156,7 +156,8 @@ static void test1()
                                 {
                                     rc = RTCrX509Certificate_VerifySignatureSelfSigned(paCerts[j], NULL /*pErrInfo*/);
                                     if (   RT_FAILURE(rc)
-                                        && (   rc != VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP
+                                        && (   (   rc != VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP
+                                                && rc != VERR_NOT_FOUND)
                                             || !g_aFiles[i].fMaybeNotInOpenSSL) )
                                         RTTestIFailed("RTCrX509Certificate_VerifySignatureSelfSigned failed for %s (#%u), variation %u: %Rrc",
                                                       g_aFiles[i].pszFile, i, j, rc);
