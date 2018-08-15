@@ -2362,7 +2362,6 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface
 #endif
           ))
     {
-        AssertFailed();
         return VINF_SUCCESS;
     }
 
