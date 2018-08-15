@@ -2795,6 +2795,11 @@
 #define VINF_AUDIO_MORE_DATA_AVAILABLE              (6604)
 /** Stream is not ready for requested operation.  */
 #define VERR_AUDIO_STREAM_NOT_READY                 (-6604)
+/** Stream could not be created.
+ *  This might due to missing host (backend) drivers or a host not having the
+ *  required hardware, or that the requested stream configuration
+ *  is not supported by the host backend. */
+#define VERR_AUDIO_STREAM_COULD_NOT_CREATE          (-6605)
 /** @} */
 
 
