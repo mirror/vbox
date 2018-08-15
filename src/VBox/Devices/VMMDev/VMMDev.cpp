@@ -1553,6 +1553,7 @@ static int vmmdevReqHandler_GetDisplayChangeRequestMulti(PVMMDEV pThis, VMMDevRe
 
     if (pReq->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
     {
+        uint32_t cDisplaysOut = 0;
         /* Remember which resolution the client has queried, subsequent reads
          * will return the same values. */
         for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); ++i)
@@ -1560,23 +1561,34 @@ static int vmmdevReqHandler_GetDisplayChangeRequestMulti(PVMMDEV pThis, VMMDevRe
             DISPLAYCHANGEREQUEST *pDCR = &pThis->displayChangeData.aRequests[i];
 
             pDCR->lastReadDisplayChangeRequest = pDCR->displayChangeRequest;
-            pDCR->fPending = false;
+
+            if (pDCR->fPending)
+            {
+                if (cDisplaysOut < cDisplays)
+                    pReq->aDisplays[cDisplaysOut] = pDCR->lastReadDisplayChangeRequest;
+
+                cDisplaysOut++;
+                pDCR->fPending = false;
+            }
         }
 
+        pReq->cDisplays = cDisplaysOut;
         pThis->displayChangeData.fGuestSentChangeEventAck = true;
     }
-
-    /* Fill the guest request with monitor layout data. */
-    for (i = 0; i < cDisplays; ++i)
+    else
     {
-        /* If not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
-         * read the last valid video mode hint. This happens when the guest X server
-         * determines the initial mode. */
-        DISPLAYCHANGEREQUEST const *pDCR = &pThis->displayChangeData.aRequests[i];
-        VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
-                                                  &pDCR->lastReadDisplayChangeRequest :
-                                                  &pDCR->displayChangeRequest;
-        pReq->aDisplays[i] = *pDisplayDef;
+        /* Fill the guest request with monitor layout data. */
+        for (i = 0; i < cDisplays; ++i)
+        {
+            /* If not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+             * read the last valid video mode hint. This happens when the guest X server
+             * determines the initial mode. */
+            DISPLAYCHANGEREQUEST const *pDCR = &pThis->displayChangeData.aRequests[i];
+            VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
+                &pDCR->lastReadDisplayChangeRequest :
+                &pDCR->displayChangeRequest;
+            pReq->aDisplays[i] = *pDisplayDef;
+        }
     }
 
     Log(("VMMDev: returning multimonitor display change request cDisplays %d\n", cDisplays));
