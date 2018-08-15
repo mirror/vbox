@@ -2388,7 +2388,7 @@ void UIMachineLogic::sltShowLogDialog()
         return;
 
     QIManagerDialog *pLogViewerDialog;
-    UIVMLogViewerDialogFactory dialogFactory(machine());
+    UIVMLogViewerDialogFactory dialogFactory(actionPool(), machine());
     dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
     if (pLogViewerDialog)
     {

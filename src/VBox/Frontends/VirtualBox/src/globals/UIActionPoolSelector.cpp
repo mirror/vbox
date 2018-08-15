@@ -1880,6 +1880,9 @@ void UIActionPoolSelector::updateMenus()
 {
     /* 'Help' menu: */
     updateMenuHelp();
+
+    /* 'Log Viewer' menu: */
+    updateMenuLogViewer();
 }
 
 void UIActionPoolSelector::updateShortcuts()

@@ -37,6 +37,7 @@
 /* GUI includes: */
 # include "QIFileDialog.h"
 # include "QITabWidget.h"
+# include "UIActionPool.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIMessageCenter.h"
@@ -57,10 +58,12 @@
 
 
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
+                                         UIActionPool *pActionPool,
                                          const CMachine &comMachine /* = CMachine() */,
                                          QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
+    , m_pActionPool(pActionPool)
     , m_comMachine(comMachine)
     , m_fIsPolished(false)
     , m_pTabWidget(0)
@@ -70,13 +73,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_pSettingsPanel(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
-    , m_pActionFind(0)
-    , m_pActionFilter(0)
-    , m_pActionRefresh(0)
-    , m_pActionSave(0)
-    , m_pActionBookmarks(0)
-    , m_pActionSettings(0)
-    , m_pMenu(0)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
     , m_font(QFontDatabase::systemFont(QFontDatabase::FixedFont))
@@ -109,6 +105,11 @@ int UIVMLogViewerWidget::defaultLogPageWidth() const
                         pBrowser->frameWidth() * 2;
 
     return iDefaultWidth;
+}
+
+QMenu *UIVMLogViewerWidget::menu() const
+{
+    return m_pActionPool->action(UIActionIndex_M_LogViewer)->menu();
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &comMachine)
@@ -186,16 +187,11 @@ void UIVMLogViewerWidget::sltRefresh()
     sltTabIndexChange(tabIndex);
 
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
-    if (m_pActionFind)
-        m_pActionFind->setEnabled(!noLogsToShow);
-    if (m_pActionFilter)
-        m_pActionFilter->setEnabled(!noLogsToShow);
-    if (m_pActionSave)
-        m_pActionSave->setEnabled(!noLogsToShow);
-    if (m_pActionBookmarks)
-        m_pActionBookmarks->setEnabled(!noLogsToShow);
-    if (m_pActionSettings)
-        m_pActionSettings->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings)->setEnabled(!noLogsToShow);
 
     m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
@@ -425,7 +421,6 @@ void UIVMLogViewerWidget::prepare()
     /* Prepare stuff: */
     prepareActions();
     prepareToolBar();
-    prepareMenu();
     prepareWidgets();
     /* Load settings: */
     loadSettings();
@@ -441,87 +436,29 @@ void UIVMLogViewerWidget::prepare()
 
 void UIVMLogViewerWidget::prepareActions()
 {
-    /* Create and configure 'Find' action: */
-    m_pActionFind = new QAction(this);
-    if (m_pActionFind)
-    {
-        m_pActionFind->setShortcut(QKeySequence("Ctrl+F"));
-        m_pActionFind->setCheckable(true);
-        connect(m_pActionFind, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    }
+    /* Configure 'Find' action: */
+    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find), &QAction::toggled,
+            this, &UIVMLogViewerWidget::sltPanelActionToggled);
 
-    /* Create and configure 'Filter' action: */
-    m_pActionFilter = new QAction(this);
-    if (m_pActionFilter)
-    {
-        m_pActionFilter->setShortcut(QKeySequence("Ctrl+T"));
-        m_pActionFilter->setCheckable(true);
-        connect(m_pActionFilter, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    }
-    /* Create and configure 'Bookmark' action: */
-    m_pActionBookmarks = new QAction(this);
-    if (m_pActionBookmarks)
-    {
-        /* tie Ctrl+D to save only if we show this in a dialog since Ctrl+D is
-           already assigned to another action in the selector UI: */
-        if (m_enmEmbedding == EmbedTo_Dialog)
-            m_pActionBookmarks->setShortcut(QKeySequence("Ctrl+D"));
-        m_pActionBookmarks->setCheckable(true);
-        connect(m_pActionBookmarks, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    }
+    /* Configure 'Filter' action: */
+    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter), &QAction::toggled,
+            this, &UIVMLogViewerWidget::sltPanelActionToggled);
 
-    /* Create and configure 'Settings' action: */
-    m_pActionSettings = new QAction(this);
-    if (m_pActionSettings)
-    {
-        m_pActionSettings->setShortcut(QKeySequence("Ctrl+P"));
-        m_pActionSettings->setCheckable(true);
-        connect(m_pActionSettings, &QAction::triggered, this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    }
+    /* Configure 'Bookmark' action: */
+    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark), &QAction::toggled,
+            this, &UIVMLogViewerWidget::sltPanelActionToggled);
 
-    /* Create and configure 'Refresh' action: */
-    m_pActionRefresh = new QAction(this);
-    if (m_pActionRefresh)
-    {
-        m_pActionRefresh->setShortcut(QKeySequence("F5"));
-        connect(m_pActionRefresh, &QAction::triggered, this, &UIVMLogViewerWidget::sltRefresh);
-    }
+    /* Configure 'Settings' action: */
+    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings), &QAction::toggled,
+            this, &UIVMLogViewerWidget::sltPanelActionToggled);
 
-    /* Create and configure 'Save' action: */
-    m_pActionSave = new QAction(this);
-    if (m_pActionSave)
-    {
-        /* tie Ctrl+S to save only if we show this in a dialog since Ctrl+S is
-           already assigned to another action in the selector UI: */
-        if (m_enmEmbedding == EmbedTo_Dialog)
-            m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
-        connect(m_pActionSave, &QAction::triggered, this, &UIVMLogViewerWidget::sltSave);
-     }
+    /* Configure 'Refresh' action: */
+    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Refresh), &QAction::triggered,
+            this, &UIVMLogViewerWidget::sltRefresh);
 
-    /* Update action icons: */
-    prepareActionIcons();
-}
-
-void UIVMLogViewerWidget::prepareActionIcons()
-{
-    if (m_pActionFind)
-        m_pActionFind->setIcon(UIIconPool::iconSet(QString(":/log_viewer_find_22px.png"),
-                                                   QString(":/log_viewer_find_disabled_22px.png")));
-    if (m_pActionFilter)
-        m_pActionFilter->setIcon(UIIconPool::iconSet(QString(":/log_viewer_filter_22px.png"),
-                                                     QString(":/log_viewer_filter_disabled_22px.png")));
-    if (m_pActionRefresh)
-        m_pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/log_viewer_refresh_22px.png"),
-                                                      QString(":/log_viewer_refresh_disabled_22px.png")));
-    if (m_pActionSave)
-        m_pActionSave->setIcon(UIIconPool::iconSet(QString(":/log_viewer_save_22px.png"),
-                                                   QString(":/log_viewer_save_disabled_22px.png")));
-    if (m_pActionBookmarks)
-        m_pActionBookmarks->setIcon(UIIconPool::iconSet(QString(":/log_viewer_bookmark_22px.png"),
-                                                        QString(":/log_viewer_bookmark_disabled_22px.png")));
-    if (m_pActionSettings)
-        m_pActionSettings->setIcon(UIIconPool::iconSet(QString(":/log_viewer_settings_22px.png"),
-                                                       QString(":/log_viewer_settings_disabled_22px.png")));
+    /* Configure 'Save' action: */
+    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save), &QAction::triggered,
+            this, &UIVMLogViewerWidget::sltSave);
 }
 
 void UIVMLogViewerWidget::prepareToolBar()
@@ -536,24 +473,14 @@ void UIVMLogViewerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        if (m_pActionSave)
-        {
-            m_pToolBar->addAction(m_pActionSave);
-            m_pToolBar->addSeparator();
-        }
-        if (m_pActionFind)
-            m_pToolBar->addAction(m_pActionFind);
-        if (m_pActionFilter)
-            m_pToolBar->addAction(m_pActionFilter);
-        if (m_pActionBookmarks)
-            m_pToolBar->addAction(m_pActionBookmarks);
-        if (m_pActionSettings)
-            m_pToolBar->addAction(m_pActionSettings);
-        if (m_pActionRefresh)
-        {
-            m_pToolBar->addSeparator();
-            m_pToolBar->addAction(m_pActionRefresh);
-        }
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -566,33 +493,6 @@ void UIVMLogViewerWidget::prepareToolBar()
         /* Add into layout: */
         m_pMainLayout->addWidget(m_pToolBar);
 #endif
-    }
-}
-
-void UIVMLogViewerWidget::prepareMenu()
-{
-    /* Create 'LogViewer' menu: */
-    m_pMenu = new QMenu(this);
-    if (m_pMenu)
-    {
-        if (m_pActionSave)
-        {
-            m_pMenu->addAction(m_pActionSave);
-            m_pMenu->addSeparator();
-        }
-        if (m_pActionFind)
-            m_pMenu->addAction(m_pActionFind);
-        if (m_pActionFilter)
-            m_pMenu->addAction(m_pActionFilter);
-        if (m_pActionBookmarks)
-            m_pMenu->addAction(m_pActionBookmarks);
-        if (m_pActionSettings)
-            m_pMenu->addAction(m_pActionSettings);
-        if (m_pActionRefresh)
-        {
-            m_pMenu->addSeparator();
-            m_pMenu->addAction(m_pActionRefresh);
-        }
     }
 }
 
@@ -623,7 +523,7 @@ void UIVMLogViewerWidget::prepareWidgets()
         m_pSearchPanel->hide();
         connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
                 this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
-        m_panelActionMap.insert(m_pSearchPanel, m_pActionFind);
+        m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find));
 
         /* Add into layout: */
         m_pMainLayout->addWidget(m_pSearchPanel);
@@ -638,7 +538,7 @@ void UIVMLogViewerWidget::prepareWidgets()
         m_pFilterPanel->hide();
         connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
                 this, &UIVMLogViewerWidget::sltFilterApplied);
-        m_panelActionMap.insert(m_pFilterPanel, m_pActionFilter);
+        m_panelActionMap.insert(m_pFilterPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter));
 
         /* Add into layout: */
         m_pMainLayout->addWidget(m_pFilterPanel);
@@ -655,7 +555,7 @@ void UIVMLogViewerWidget::prepareWidgets()
                 this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
         connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
                 this, &UIVMLogViewerWidget::gotoBookmark);
-        m_panelActionMap.insert(m_pBookmarksPanel, m_pActionBookmarks);
+        m_panelActionMap.insert(m_pBookmarksPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark));
 
         /* Add into layout: */
         m_pMainLayout->addWidget(m_pBookmarksPanel);
@@ -674,7 +574,7 @@ void UIVMLogViewerWidget::prepareWidgets()
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetSettingsToDefault);
-        m_panelActionMap.insert(m_pSettingsPanel, m_pActionSettings);
+        m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings));
 
         /* Add into layout: */
         m_pMainLayout->addWidget(m_pSettingsPanel);
@@ -703,69 +603,6 @@ void UIVMLogViewerWidget::cleanup()
 
 void UIVMLogViewerWidget::retranslateUi()
 {
-    if (m_pMenu)
-    {
-        m_pMenu->setTitle(tr("&Log Viewer"));
-    }
-
-    if (m_pActionFind)
-    {
-        m_pActionFind->setText(tr("&Find"));
-        m_pActionFind->setToolTip(tr("Show/Hide 'Find' Panel (Ctrl+F)"));
-        m_pActionFind->setStatusTip(tr("Show/Hide 'Find' Panel (Ctrl+F)"));
-    }
-
-    if (m_pActionFilter)
-    {
-        m_pActionFilter->setText(tr("&Filter"));
-        m_pActionFilter->setToolTip(tr("Show/Hide 'Filter' Panel (Ctrl+T)"));
-        m_pActionFilter->setStatusTip(tr("Show/Hide 'Filter' Panel (Ctrl+T)"));
-    }
-
-    if (m_pActionRefresh)
-    {
-        m_pActionRefresh->setText(tr("&Refresh"));
-        m_pActionRefresh->setToolTip(tr("Reload the log (F5)"));
-        m_pActionRefresh->setStatusTip(tr("Reload the log (F5)"));
-    }
-
-    if (m_pActionSave)
-    {
-        m_pActionSave->setText(tr("&Save..."));
-        if (m_enmEmbedding == EmbedTo_Dialog)
-        {
-            m_pActionSave->setToolTip(tr("Save the log (Ctrl+S)"));
-            m_pActionSave->setStatusTip(tr("Save the log (Ctrl+S)"));
-        }
-        else
-        {
-            m_pActionSave->setToolTip(tr("Save the log"));
-            m_pActionSave->setStatusTip(tr("Save the log"));
-        }
-    }
-
-    if (m_pActionBookmarks)
-    {
-        m_pActionBookmarks->setText(tr("&Bookmarks"));
-        if (m_enmEmbedding == EmbedTo_Dialog)
-        {
-            m_pActionBookmarks->setToolTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
-            m_pActionBookmarks->setStatusTip(tr("Show/Hide 'Bookmarks' Panel (Ctrl+D)"));
-        }
-        else
-        {
-            m_pActionBookmarks->setToolTip(tr("Show/Hide 'Bookmarks' Panel"));
-            m_pActionBookmarks->setStatusTip(tr("Show/Hide 'Bookmarks' Panel"));
-        }
-    }
-
-    if (m_pActionSettings)
-    {
-        m_pActionSettings->setText(tr("&Settings"));
-        m_pActionSettings->setToolTip(tr("Show/Hide 'Settings' Panel (Ctrl+P)"));
-        m_pActionSettings->setStatusTip(tr("Show/Hide 'Settings' Panel (Ctrl+P)"));
-    }
-
     /* Translate toolbar: */
 #ifdef VBOX_WS_MAC
     // WORKAROUND:

@@ -36,6 +36,7 @@
 class QITabWidget;
 class QPlainTextEdit;
 class QVBoxLayout;
+class UIActionPool;
 class UIToolBar;
 class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
@@ -59,8 +60,9 @@ public:
 
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
       * @param  enmEmbedding  Brings the type of widget embedding.
+      * @param  pActionPool   Brings the action-pool reference.
       * @param  comMachine    Brings the machine for which VM Log-Viewer is requested. */
-    UIVMLogViewerWidget(EmbedTo enmEmbedding,
+    UIVMLogViewerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                         const CMachine &comMachine = CMachine(), QWidget *pParent = 0);
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
@@ -68,7 +70,7 @@ public:
     int defaultLogPageWidth() const;
 
     /** Returns the menu. */
-    QMenu *menu() const { return m_pMenu; }
+    QMenu *menu() const;
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
@@ -132,12 +134,8 @@ private:
         void prepare();
         /** Prepares actions. */
         void prepareActions();
-        /** Prepares action icons. */
-        void prepareActionIcons();
         /** Prepares toolbar. */
         void prepareToolBar();
-        /** Prepares menu. */
-        void prepareMenu();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Loads settings.  */
@@ -187,6 +185,8 @@ private:
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
+    /** Hold sthe action-pool reference. */
+    UIActionPool *m_pActionPool;
     /** Holds the machine instance. */
     CMachine      m_comMachine;
 
@@ -213,13 +213,6 @@ private:
     /** @name Toolbar and menu variables.
       * @{ */
         UIToolBar *m_pToolBar;
-        QAction   *m_pActionFind;
-        QAction   *m_pActionFilter;
-        QAction   *m_pActionRefresh;
-        QAction   *m_pActionSave;
-        QAction   *m_pActionBookmarks;
-        QAction   *m_pActionSettings;
-        QMenu     *m_pMenu;
     /** @} */
 
     /** @name Toolbar and menu variables. Cache these to restore them after refresh.

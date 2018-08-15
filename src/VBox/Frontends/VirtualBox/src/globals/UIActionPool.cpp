@@ -1176,6 +1176,251 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Log' menu class. */
+class UIActionMenuSelectorLog : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLog(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("LogViewerMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Log Viewer"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the log menu"));
+    }
+};
+
+/** Simple action extension, used as 'Toggle Pane Find' action class. */
+class UIActionMenuSelectorLogTogglePaneFind : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogTogglePaneFind(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/log_viewer_find_22px.png", ":/log_viewer_find_disabled_22px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleLogFind");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Find"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with searching options"));
+        setToolTip(tr("Open Find Pane (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Toggle Pane Filter' action class. */
+class UIActionMenuSelectorLogTogglePaneFilter : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogTogglePaneFilter(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/log_viewer_filter_22px.png", ":/log_viewer_filter_disabled_22px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleLogFilter");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+T");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Filter"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with filtering options"));
+        setToolTip(tr("Open Filter Pane (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Toggle Pane Bookmark' action class. */
+class UIActionMenuSelectorLogTogglePaneBookmark : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogTogglePaneBookmark(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/log_viewer_bookmark_22px.png", ":/log_viewer_bookmark_disabled_22px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleLogBookmark");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+D");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Bookmark"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with bookmarking options"));
+        setToolTip(tr("Open Bookmark Pane (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Toggle Pane Settings' action class. */
+class UIActionMenuSelectorLogTogglePaneSettings : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogTogglePaneSettings(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/log_viewer_settings_22px.png", ":/log_viewer_settings_disabled_22px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleLogSettings");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+P");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer settings"));
+        setToolTip(tr("Open Settings Pane (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Refresh' action class. */
+class UIActionMenuSelectorLogPerformRefresh : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogPerformRefresh(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/log_viewer_refresh_22px.png", ":/log_viewer_refresh_disabled_22px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RefreshLog");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+R");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Refresh"));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh selected virtual machine log"));
+        setToolTip(tr("Refresh Virtual Machine Log (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Save' action class. */
+class UIActionMenuSelectorLogPerformSave : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorLogPerformSave(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/log_viewer_save_22px.png", ":/log_viewer_save_disabled_22px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("SaveLog");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+S");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Save..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Save selected virtual machine log"));
+        setToolTip(tr("Save Virtual Machine Log (%1)").arg(shortcut().toString()));
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIActionPool implementation.                                                                                           *
 *********************************************************************************************************************************/
@@ -1371,12 +1616,22 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
 #endif
 
+    /* Create 'Log Viewer' actions: */
+    m_pool[UIActionIndex_M_LogViewer] = new UIActionMenuSelectorLog(this);
+    m_pool[UIActionIndex_M_LogViewer_T_Find] = new UIActionMenuSelectorLogTogglePaneFind(this);
+    m_pool[UIActionIndex_M_LogViewer_T_Filter] = new UIActionMenuSelectorLogTogglePaneFilter(this);
+    m_pool[UIActionIndex_M_LogViewer_T_Bookmark] = new UIActionMenuSelectorLogTogglePaneBookmark(this);
+    m_pool[UIActionIndex_M_LogViewer_T_Settings] = new UIActionMenuSelectorLogTogglePaneSettings(this);
+    m_pool[UIActionIndex_M_LogViewer_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
+    m_pool[UIActionIndex_M_LogViewer_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
+
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC
     m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
     m_menuUpdateHandlers[UIActionIndex_M_Window].ptf = &UIActionPool::updateMenuWindow;
 #endif
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
+    m_menuUpdateHandlers[UIActionIndex_M_LogViewer].ptf = &UIActionPool::updateMenuLogViewer;
 
     /* Invalidate all known menus: */
     m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
@@ -1611,6 +1866,50 @@ void UIActionPool::updateMenuHelp()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_Menu_Help);
+}
+
+void UIActionPool::updateMenuLogViewer()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndex_M_LogViewer)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator? */
+    bool fSeparator = false;
+
+    /* 'Save' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_S_Save)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Find' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Find)) || fSeparator;
+    /* 'Filter' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Filter)) || fSeparator;
+    /* 'Bookmarks' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Bookmark)) || fSeparator;
+    /* 'Settings' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Settings)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Refresh' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_S_Refresh)) || fSeparator;;
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_LogViewer);
 }
 
 void UIActionPool::retranslateUi()

@@ -153,7 +153,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
             case ToolTypeMachine_LogViewer:
             {
                 /* Create the Logviewer pane: */
-                m_pPaneLogViewer = new UIVMLogViewerWidget(EmbedTo_Stack);
+                m_pPaneLogViewer = new UIVMLogViewerWidget(EmbedTo_Stack, m_pActionPool);
                 AssertPtrReturnVoid(m_pPaneLogViewer);
                 {
 #ifndef VBOX_WS_MAC

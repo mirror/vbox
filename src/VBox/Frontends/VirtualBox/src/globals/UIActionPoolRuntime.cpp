@@ -3424,6 +3424,9 @@ void UIActionPoolRuntime::updateMenus()
     /* 'Help' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_Menu_Help));
     updateMenuHelp();
+
+    /* 'Log Viewer' menu: */
+    updateMenuLogViewer();
 }
 
 void UIActionPoolRuntime::updateMenuMachine()

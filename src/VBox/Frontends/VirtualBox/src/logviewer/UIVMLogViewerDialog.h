@@ -34,6 +34,7 @@
 /* Forward declarations: */
 class QDialogButtonBox;
 class QVBoxLayout;
+class UIActionPool;
 class UIVMLogViewerDialog;
 class CMachine;
 
@@ -44,8 +45,9 @@ class SHARED_LIBRARY_STUFF UIVMLogViewerDialogFactory : public QIManagerDialogFa
 public:
 
     /** Constructs Log Viewer factory acquiring additional arguments.
-      * @param  comMachine  Brings the machine for which VM Log-Viewer is requested. */
-    UIVMLogViewerDialogFactory(const CMachine &comMachine = CMachine());
+      * @param  pActionPool  Brings the action-pool reference.
+      * @param  comMachine   Brings the machine for which VM Log-Viewer is requested. */
+    UIVMLogViewerDialogFactory(UIActionPool *pActionPool = 0, const CMachine &comMachine = CMachine());
 
 protected:
 
@@ -53,6 +55,8 @@ protected:
       * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
 
+    /** Holds the action-pool reference. */
+    UIActionPool *m_pActionPool;
     /** Holds the machine reference. */
     CMachine      m_comMachine;
 };
@@ -67,8 +71,9 @@ public:
 
     /** Constructs Log Viewer dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
+      * @param  pActionPool    Brings the action-pool reference.
       * @param  comMachine     Brings the machine reference. */
-    UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &comMachine);
+    UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine);
 
 protected:
 
@@ -106,8 +111,10 @@ private slots:
 
 private:
 
+    /** Holds the action-pool reference. */
+    UIActionPool *m_pActionPool;
     /** Holds the machine reference. */
-    CMachine  m_comMachine;
+    CMachine      m_comMachine;
 };
 
 

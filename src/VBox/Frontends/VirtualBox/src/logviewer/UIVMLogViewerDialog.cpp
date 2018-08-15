@@ -49,14 +49,16 @@
 *   Class UIVMLogViewerDialogFactory implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(const CMachine &comMachine /* = CMachine() */)
-    : m_comMachine(comMachine)
+UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(UIActionPool *pActionPool /* = 0 */,
+                                                       const CMachine &comMachine /* = CMachine() */)
+    : m_pActionPool(pActionPool)
+    , m_comMachine(comMachine)
 {
 }
 
 void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_comMachine);
+    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_pActionPool, m_comMachine);
 }
 
 
@@ -64,8 +66,9 @@ void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *   Class UIVMLogViewerDialog implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &comMachine)
+UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_pActionPool(pActionPool)
     , m_comMachine(comMachine)
 {
 }
@@ -91,7 +94,7 @@ void UIVMLogViewerDialog::configure()
 void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_comMachine, this);
+    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, m_comMachine, this);
     if (pWidget)
     {
         /* Configure widget: */

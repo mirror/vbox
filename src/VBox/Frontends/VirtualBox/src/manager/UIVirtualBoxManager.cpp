@@ -1034,7 +1034,7 @@ void UIVirtualBoxManager::sltOpenMachineLogDialog()
         /* Create and Show VM Log Viewer: */
         if (!m_logViewers[pItem->machine().GetHardwareUUID()])
         {
-            UIVMLogViewerDialogFactory dialogFactory(pItem->machine());
+            UIVMLogViewerDialogFactory dialogFactory(actionPool(), pItem->machine());
             dialogFactory.prepare(pLogViewerDialog, this);
             if (pLogViewerDialog)
             {
