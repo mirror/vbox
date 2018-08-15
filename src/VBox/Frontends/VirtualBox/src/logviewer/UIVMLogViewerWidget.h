@@ -61,9 +61,10 @@ public:
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
       * @param  enmEmbedding  Brings the type of widget embedding.
       * @param  pActionPool   Brings the action-pool reference.
+      * @param  fShowToolbar  Brings whether we should create/show toolbar.
       * @param  comMachine    Brings the machine for which VM Log-Viewer is requested. */
     UIVMLogViewerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                        const CMachine &comMachine = CMachine(), QWidget *pParent = 0);
+                        bool fShowToolbar = true, const CMachine &comMachine = CMachine(), QWidget *pParent = 0);
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewerWidget();
     /** Returns the width of the current log page. return 0 if there is no current log page: */
@@ -187,6 +188,8 @@ private:
     const EmbedTo m_enmEmbedding;
     /** Hold sthe action-pool reference. */
     UIActionPool *m_pActionPool;
+    /** Holds whether we should create/show toolbar. */
+    const bool    m_fShowToolbar;
     /** Holds the machine instance. */
     CMachine      m_comMachine;
 

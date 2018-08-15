@@ -112,6 +112,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
     , m_pSnapshotMenuAction(0)
+    , m_pLogViewerMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
 {
@@ -1219,17 +1220,21 @@ void UIVirtualBoxManager::prepareMenuBar()
     /* Prepare 'Machine' / 'Close' menu: */
     prepareMenuMachineClose(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
 
-    /* Prepare Group-menu: */
+    /* Prepare 'Group' menu: */
     prepareMenuGroup(actionPool()->action(UIActionIndexST_M_Group)->menu());
     m_pGroupMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Group)->menu());
 
-    /* Prepare Machine-menu: */
+    /* Prepare 'Machine' menu: */
     prepareMenuMachine(actionPool()->action(UIActionIndexST_M_Machine)->menu());
     m_pMachineMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Machine)->menu());
 
-    /* Prepare Snapshot-menu: */
+    /* Prepare 'Snapshot' menu: */
     prepareMenuSnapshot(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
     m_pSnapshotMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
+
+    /* Prepare 'Log Viewer' menu: */
+    prepareMenuLogViewer(actionPool()->action(UIActionIndex_M_LogViewer)->menu());
+    m_pLogViewerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndex_M_LogViewer)->menu());
 
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
@@ -1238,7 +1243,7 @@ void UIVirtualBoxManager::prepareMenuBar()
     gpWindowMenuManager->addWindow(this);
 #endif
 
-    /* Prepare Help-menu: */
+    /* Prepare 'Help' menu: */
     menuBar()->addMenu(actionPool()->action(UIActionIndex_Menu_Help)->menu());
 
     /* Setup menubar policy: */
@@ -1638,6 +1643,24 @@ void UIVirtualBoxManager::prepareMenuSnapshot(QMenu *pMenu)
                       << actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone);
 }
 
+void UIVirtualBoxManager::prepareMenuLogViewer(QMenu *pMenu)
+{
+    /* We are doing it inside the UIActionPool. */
+    Q_UNUSED(pMenu);
+
+    /* Do not touch if filled already: */
+    if (!m_logViewerActions.isEmpty())
+        return;
+
+    /* Remember action list: */
+    m_logViewerActions << actionPool()->action(UIActionIndex_M_LogViewer_T_Find)
+                 << actionPool()->action(UIActionIndex_M_LogViewer_T_Filter)
+                 << actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark)
+                 << actionPool()->action(UIActionIndex_M_LogViewer_T_Settings)
+                 << actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh)
+                 << actionPool()->action(UIActionIndex_M_LogViewer_S_Save);
+}
+
 void UIVirtualBoxManager::prepareStatusBar()
 {
     /* We are not using status-bar anymore: */
@@ -1931,6 +1954,10 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fSnapshotMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
     m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
 
+    /* Determine whether LogViewer actions should be visible: */
+    const bool fLogViewerMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_LogViewer;
+    m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
+
     /* Hide action shortcuts: */
     if (!fMachineMenuShown)
         foreach (UIAction *pAction, m_machineActions)
@@ -1946,6 +1973,8 @@ void UIVirtualBoxManager::updateActionsVisibility()
         pAction->setVisible(fMachineOrGroupMenuShown);
     foreach (UIAction *pAction, m_snapshotActions)
         pAction->setVisible(fSnapshotMenuShown);
+    foreach (UIAction *pAction, m_logViewerActions)
+        pAction->setVisible(fLogViewerMenuShown);
 
     /* Show action shortcuts: */
     if (fMachineMenuShown)

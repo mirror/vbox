@@ -59,11 +59,13 @@
 
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
+                                         bool fShowToolbar /* = true */,
                                          const CMachine &comMachine /* = CMachine() */,
                                          QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
+    , m_fShowToolbar(fShowToolbar)
     , m_comMachine(comMachine)
     , m_fIsPolished(false)
     , m_pTabWidget(0)
@@ -420,7 +422,8 @@ void UIVMLogViewerWidget::prepare()
 
     /* Prepare stuff: */
     prepareActions();
-    prepareToolBar();
+    if (m_fShowToolbar)
+        prepareToolBar();
     prepareWidgets();
     /* Load settings: */
     loadSettings();

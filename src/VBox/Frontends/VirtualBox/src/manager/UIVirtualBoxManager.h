@@ -249,6 +249,8 @@ private:
         void prepareMenuMachineClose(QMenu *pMenu);
         /** Prepares @a pMenu Snapshot. */
         void prepareMenuSnapshot(QMenu *pMenu);
+        /** Prepares @a pMenu Log Viewer. */
+        void prepareMenuLogViewer(QMenu *pMenu);
         /** Prepares status-bar. */
         void prepareStatusBar();
         /** Prepares toolbar. */
@@ -353,6 +355,11 @@ private:
     QList<UIAction*>  m_snapshotActions;
     /** Holds the Snapshot menu parent action. */
     QAction          *m_pSnapshotMenuAction;
+
+    /** Holds the list of Log Viewer menu actions. */
+    QList<UIAction*>  m_logViewerActions;
+    /** Holds the Log menu parent action. */
+    QAction          *m_pLogViewerMenuAction;
 
     /** Holds the Virtual Media Manager window instance. */
     QIManagerDialog *m_pManagerVirtualMedia;

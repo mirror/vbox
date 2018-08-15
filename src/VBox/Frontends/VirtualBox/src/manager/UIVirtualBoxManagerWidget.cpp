@@ -403,13 +403,23 @@ void UIVirtualBoxManagerWidget::prepareToolbar()
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
 
-        /* Add Snapshot actions block: */
+        /* Separator: */
         m_pToolBar->addSeparator();
+
+        /* Add 'Snapshot' actions block: */
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
+
+        /* Add 'Log Viewer' actions block: */
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_S_Save));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Find));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Filter));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Settings));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         // WORKAROUND:
