@@ -1407,7 +1407,7 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
 #endif /* DEBUG */
 
 /**
- * Returns the total number of frames used.
+ * Returns the total number of audio frames used.
  *
  * @return  uint32_t
  * @param   pMixBuf
@@ -1416,6 +1416,18 @@ uint32_t AudioMixBufUsed(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
     return pMixBuf->cUsed;
+}
+
+/**
+ * Returns the total number of bytes used.
+ *
+ * @return  uint32_t
+ * @param   pMixBuf
+ */
+uint32_t AudioMixBufUsedBytes(PPDMAUDIOMIXBUF pMixBuf)
+{
+    AssertPtrReturn(pMixBuf, 0);
+    return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cUsed);
 }
 
 /**
