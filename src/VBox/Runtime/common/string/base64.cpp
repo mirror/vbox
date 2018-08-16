@@ -80,8 +80,7 @@ static const uint8_t    g_au8CharToVal[256] =
 };
 
 /** Value to Base64 character. (RFC 2045) */
-static const char       g_szValToChar[64+1] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char       g_szValToChar[64+1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 
 #ifdef RT_STRICT
