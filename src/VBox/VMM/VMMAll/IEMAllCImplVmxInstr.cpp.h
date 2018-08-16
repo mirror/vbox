@@ -401,7 +401,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
         {
             Assert(VMX_INSTR_ID_IS_VALID(InstrId));
             ExitInstrInfo.LdtTr.u2InstrId = VMX_INSTR_ID_GET_ID(InstrId);
-            ExitInstrInfo.GdtIdt.u2Undef0 = 0;
+            ExitInstrInfo.LdtTr.u2Undef0 = 0;
             break;
         }
 
