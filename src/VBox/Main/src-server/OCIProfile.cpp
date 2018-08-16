@@ -196,7 +196,7 @@ HRESULT OCIProfile::getProperties(const com::Utf8Str &aNames,
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
     AutoReadLock alock(mParent COMMA_LOCKVAL_SRC_POS);
-    /// @todo: implement name filtering (everywhere... lots of similar code in many places handling properties. */
+    /// @todo implement name filtering (everywhere... lots of similar code in many places handling properties. */
     RT_NOREF(aNames);
     mParent->i_getProfile(mName, aReturnNames, aReturnValues);
     return S_OK;
