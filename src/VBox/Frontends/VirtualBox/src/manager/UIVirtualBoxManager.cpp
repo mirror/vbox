@@ -113,6 +113,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pMachineMenuAction(0)
     , m_pSnapshotMenuAction(0)
     , m_pLogViewerMenuAction(0)
+    , m_pVirtualMediaManagerMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
 {
@@ -1236,6 +1237,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     prepareMenuLogViewer(actionPool()->action(UIActionIndex_M_LogViewer)->menu());
     m_pLogViewerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndex_M_LogViewer)->menu());
 
+    /* Prepare 'Medium' menu: */
+    prepareMenuMedium(actionPool()->action(UIActionIndexST_M_Medium)->menu());
+    m_pVirtualMediaManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Medium)->menu());
+
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
     UIWindowMenuManager::create();
@@ -1654,11 +1659,30 @@ void UIVirtualBoxManager::prepareMenuLogViewer(QMenu *pMenu)
 
     /* Remember action list: */
     m_logViewerActions << actionPool()->action(UIActionIndex_M_LogViewer_T_Find)
-                 << actionPool()->action(UIActionIndex_M_LogViewer_T_Filter)
-                 << actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark)
-                 << actionPool()->action(UIActionIndex_M_LogViewer_T_Settings)
-                 << actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh)
-                 << actionPool()->action(UIActionIndex_M_LogViewer_S_Save);
+                       << actionPool()->action(UIActionIndex_M_LogViewer_T_Filter)
+                       << actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark)
+                       << actionPool()->action(UIActionIndex_M_LogViewer_T_Settings)
+                       << actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh)
+                       << actionPool()->action(UIActionIndex_M_LogViewer_S_Save);
+}
+
+void UIVirtualBoxManager::prepareMenuMedium(QMenu *pMenu)
+{
+    /* We are doing it inside the UIActionPoolSelector. */
+    Q_UNUSED(pMenu);
+
+    /* Do not touch if filled already: */
+    if (!m_virtualMediaManagerActions.isEmpty())
+        return;
+
+    /* Remember action list: */
+    m_virtualMediaManagerActions << actionPool()->action(UIActionIndexST_M_Medium_S_Add)
+                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Copy)
+                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Move)
+                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Remove)
+                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Release)
+                                 << actionPool()->action(UIActionIndexST_M_Medium_T_Details)
+                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Refresh);
 }
 
 void UIVirtualBoxManager::prepareStatusBar()
@@ -1945,6 +1969,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
 void UIVirtualBoxManager::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
+    const bool fGlobalMenuShown = m_pWidget->isGlobalItemSelected();
     const bool fMachineOrGroupMenuShown = m_pWidget->isMachineItemSelected() || m_pWidget->isGroupItemSelected();
     const bool fMachineMenuShown = !isSingleGroupSelected();
     m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
@@ -1957,6 +1982,10 @@ void UIVirtualBoxManager::updateActionsVisibility()
     /* Determine whether LogViewer actions should be visible: */
     const bool fLogViewerMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_LogViewer;
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
+
+    /* Determine whether VirtualMediaManager actions should be visible: */
+    const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_VirtualMedia;
+    m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
 
     /* Hide action shortcuts: */
     if (!fMachineMenuShown)
@@ -1975,6 +2004,8 @@ void UIVirtualBoxManager::updateActionsVisibility()
         pAction->setVisible(fSnapshotMenuShown);
     foreach (UIAction *pAction, m_logViewerActions)
         pAction->setVisible(fLogViewerMenuShown);
+    foreach (UIAction *pAction, m_virtualMediaManagerActions)
+        pAction->setVisible(fMediumMenuShown);
 
     /* Show action shortcuts: */
     if (fMachineMenuShown)

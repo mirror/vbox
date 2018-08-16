@@ -110,7 +110,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
             case ToolTypeGlobal_VirtualMedia:
             {
                 /* Create Virtual Media Manager: */
-                m_pPaneMedia = new UIMediumManagerWidget(EmbedTo_Stack, m_pActionPool);
+                m_pPaneMedia = new UIMediumManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneMedia);
                 {
 #ifndef VBOX_WS_MAC
