@@ -269,7 +269,7 @@ typedef RTCRPKIXSIGNATUREDESC const *PCRTCRPKIXSIGNATUREDESC;
 /**
  * Locates a signature schema provider descriptor by object ID string.
  * @returns Pointer to descriptor on success, NULL on if not found.
- * @param   pObjId      The ID of the signature to search for.
+ * @param   pszObjId    The ID of the signature to search for.
  * @param   ppvOpaque   Where to store an opaque schema parameter. Optional.
  */
 PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjIdString(const char *pszObjId, void *ppvOpaque);
