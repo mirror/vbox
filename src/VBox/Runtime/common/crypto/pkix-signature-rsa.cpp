@@ -192,6 +192,8 @@ static DECLCALLBACK(void) rtCrPkixSignatureRsa_Delete(PCRTCRPKIXSIGNATUREDESC pD
  *                          false, include the prefix like v2.0 (RFC-2437)
  *                          describes in step in section 9.2.1
  *                          (EMSA-PKCS1-v1_5)
+ *
+ * @remarks Must preserve informational status codes!
  */
 static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, RTCRDIGEST hDigest, size_t cbEncodedMsg,
                                                    bool fNoDigestInfo)
@@ -241,12 +243,14 @@ static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, 
     *pbDst++ = 0x00;
     memcpy(pbDst, pbDigestInfoStart, cbDigestInfoStart);
     pbDst += cbDigestInfoStart;
+    /* Note! Must preserve informational status codes from this call . */
     int rc = RTCrDigestFinal(hDigest, pbDst, cbHash);
-    if (RT_FAILURE(rc))
-        return rc;
-    pbDst += cbHash;
-    Assert((size_t)(pbDst - &pThis->Scratch.abSignature[0]) == cbEncodedMsg);
-    return VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+    {
+        pbDst += cbHash;
+        Assert((size_t)(pbDst - &pThis->Scratch.abSignature[0]) == cbEncodedMsg);
+    }
+    return rc;
 }
 
 
@@ -312,7 +316,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Verify(PCRTCRPKIXSIGNATUREDESC pDe
                                  * 8.2.2.4 - Compare the two.
                                  */
                                 if (memcmp(&pThis->Scratch.abSignature[0], pbDecrypted, cbDecrypted) == 0)
-                                    rc = VINF_SUCCESS;
+                                { /* No rc = VINF_SUCCESS here,  mustpreserve informational status codes from digest. */ }
                                 else
                                 {
                                     /*
@@ -324,7 +328,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Verify(PCRTCRPKIXSIGNATUREDESC pDe
                                     if (RT_SUCCESS(rc))
                                     {
                                         if (memcmp(&pThis->Scratch.abSignature[0], pbDecrypted, cbDecrypted) == 0)
-                                            rc = VINF_SUCCESS;
+                                        { /* No rc = VINF_SUCCESS here,  mustpreserve informational status codes from digest. */ }
                                         else
                                             rc = VERR_CR_PKIX_SIGNATURE_MISMATCH;
                                     }
@@ -377,39 +381,44 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Sign(PCRTCRPKIXSIGNATUREDESC pDesc
     /*
      * 8.1.1.1 - EMSA-PSS encoding.  (RFC-3447)
      */
-    int rc = rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(pThis, hDigest, cbEncodedMsg, false /* fNoDigestInfo */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * 8.1.1.2 - RSA signature.
-     */
-    /* a) m = OS2IP(EM) -- Convert the encoded message (EM) to integer. */
-    rc = RTBigNumInit(&pThis->TmpBigNum1, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
-                      pThis->Scratch.abSignature, cbEncodedMsg);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* b) s = RSASP1(K, m = EM) - 5.2.1.1: Range check (0 <= m < n). */
-    if (RTBigNumCompare(&pThis->TmpBigNum1, pModulus) < 0)
+    int rcRetSuccess;
+    int rc = rcRetSuccess = rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(pThis, hDigest, cbEncodedMsg, false /* fNoDigestInfo */);
+    if (RT_SUCCESS(rc))
     {
-        /* b) s = RSAVP1(K, m = EM) - 5.2.1.2.a: s = m^d mod n */
-        rc = RTBigNumInitZero(&pThis->TmpBigNum2, 0);
+        /*
+         * 8.1.1.2 - RSA signature.
+         */
+        /* a) m = OS2IP(EM) -- Convert the encoded message (EM) to integer. */
+        rc = RTBigNumInit(&pThis->TmpBigNum1, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
+                          pThis->Scratch.abSignature, cbEncodedMsg);
         if (RT_SUCCESS(rc))
         {
-            rc = RTBigNumModExp(&pThis->TmpBigNum2, &pThis->TmpBigNum1, pExponent, pModulus);
-            if (RT_SUCCESS(rc))
+            /* b) s = RSASP1(K, m = EM) - 5.2.1.1: Range check (0 <= m < n). */
+            if (RTBigNumCompare(&pThis->TmpBigNum1, pModulus) < 0)
             {
-                /* c) S = I2OSP(s, k) -- Convert the result to bytes. */
-                rc = RTBigNumToBytesBigEndian(&pThis->TmpBigNum2, pvSignature, cbEncodedMsg);
-                AssertStmt(RT_SUCCESS(rc) || rc != VERR_BUFFER_OVERFLOW, rc = VERR_CR_PKIX_INTERNAL_ERROR);
+                /* b) s = RSAVP1(K, m = EM) - 5.2.1.2.a: s = m^d mod n */
+                rc = RTBigNumInitZero(&pThis->TmpBigNum2, 0);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTBigNumModExp(&pThis->TmpBigNum2, &pThis->TmpBigNum1, pExponent, pModulus);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* c) S = I2OSP(s, k) -- Convert the result to bytes. */
+                        rc = RTBigNumToBytesBigEndian(&pThis->TmpBigNum2, pvSignature, cbEncodedMsg);
+                        AssertStmt(RT_SUCCESS(rc) || rc != VERR_BUFFER_OVERFLOW, rc = VERR_CR_PKIX_INTERNAL_ERROR);
+
+                        /* Make sure we return the informational status code from the digest on success. */
+                        if (rc == VINF_SUCCESS && rcRetSuccess != VINF_SUCCESS)
+                            rc = rcRetSuccess;
+                    }
+                    RTBigNumDestroy(&pThis->TmpBigNum2);
+                }
             }
-            RTBigNumDestroy(&pThis->TmpBigNum2);
+            else
+                rc = VERR_CR_PKIX_SIGNATURE_GE_KEY;
+            RTBigNumDestroy(&pThis->TmpBigNum1);
         }
     }
-    else
-        rc = VERR_CR_PKIX_SIGNATURE_GE_KEY;
-    RTBigNumDestroy(&pThis->TmpBigNum1);
     return rc;
 }
 

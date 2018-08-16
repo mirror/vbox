@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/crypto/digest.h>
 #include <iprt/md2.h>
+#include <iprt/md4.h>
 #include <iprt/md5.h>
 #include <iprt/sha.h>
 
@@ -77,10 +78,11 @@ typedef struct TESTRTDIGEST
  * @param   hDigest             The digest to finalize and check.
  * @param   iTest               The test number (for reporting).
  * @param   pTest               The test.
+ * @param   rcSuccessDigest The digest success informational status code.
  */
-static bool testGenericCheckResult(RTCRDIGEST hDigest, uint32_t iTest, TESTRTDIGEST const *pTest)
+static bool testGenericCheckResult(RTCRDIGEST hDigest, uint32_t iTest, TESTRTDIGEST const *pTest, int rcSuccessDigest)
 {
-    RTTESTI_CHECK_RC_RET(RTCrDigestFinal(hDigest, NULL, 0), VINF_SUCCESS, false);
+    RTTESTI_CHECK_RC_RET(RTCrDigestFinal(hDigest, NULL, 0), rcSuccessDigest, false);
 
     char szDigest[_4K * 2];
     RTTESTI_CHECK_RC_RET(RTStrPrintHexBytes(szDigest, sizeof(szDigest),
@@ -105,9 +107,10 @@ static bool testGenericCheckResult(RTCRDIGEST hDigest, uint32_t iTest, TESTRTDIG
  * @param   cTests          The number of tests in the table.
  * @param   pszDigestName   The name of the digest.
  * @param   enmDigestType   The digest enum type value.
+ * @param   rcSuccessDigest The digest success informational status code.
  */
 static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests, size_t cTests, const char *pszDigestName,
-                        RTDIGESTTYPE enmDigestType)
+                        RTDIGESTTYPE enmDigestType, int rcSuccessDigest)
 {
     /*
      * Execute the tests.
@@ -118,12 +121,12 @@ static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests,
         /*
          * The whole thing in one go.
          */
-        RTTESTI_CHECK_RC_RETV(RTCrDigestCreateByObjIdString(&hDigest, pszDigestObjId), VINF_SUCCESS);
+        RTTESTI_CHECK_RC_RETV(RTCrDigestCreateByObjIdString(&hDigest, pszDigestObjId), rcSuccessDigest);
         uint32_t const cbHash = RTCrDigestGetHashSize(hDigest);
         RTTESTI_CHECK_RETV(cbHash > 0);
         RTTESTI_CHECK_RETV(cbHash < _1K);
         RTTESTI_CHECK_RC_RETV(RTCrDigestUpdate(hDigest, paTests[iTest].pvInput, paTests[iTest].cbInput), VINF_SUCCESS);
-        if (!testGenericCheckResult(hDigest, iTest, &paTests[iTest]))
+        if (!testGenericCheckResult(hDigest, iTest, &paTests[iTest], rcSuccessDigest))
             continue; /* skip the remaining tests if this failed. */
 
         /*
@@ -146,7 +149,7 @@ static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests,
                 cbInput -= cbUpdate;
             }
 
-            if (!testGenericCheckResult(hDigest, iTest, &paTests[iTest]))
+            if (!testGenericCheckResult(hDigest, iTest, &paTests[iTest], rcSuccessDigest))
                 break; /* No need to test the other permutations if this fails. */
         }
 
@@ -156,7 +159,7 @@ static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests,
     /*
      * Do a quick benchmark.
      */
-    RTTESTI_CHECK_RC_RETV(RTCrDigestCreateByObjIdString(&hDigest, pszDigestObjId), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTCrDigestCreateByObjIdString(&hDigest, pszDigestObjId), rcSuccessDigest);
 
     /* Warmup. */
     uint32_t cChunks  = enmDigestType == RTDIGESTTYPE_MD2 ? 12 : 128;
@@ -383,7 +386,207 @@ static void testMd2(void)
         { &g_abRandom72KB[0],      73728, "2cf3570a90117130c8879cca30dafb39", "MD2 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "bbba194efa81238e5b613e20e937144e", "MD2 8393 bytes @9991" },
     };
-    testGeneric("1.2.840.113549.2.2", s_abTests, RT_ELEMENTS(s_abTests), "MD2", RTDIGESTTYPE_MD2);
+    testGeneric("1.2.840.113549.2.2", s_abTests, RT_ELEMENTS(s_abTests), "MD2", RTDIGESTTYPE_MD2, VINF_CR_DIGEST_DEPRECATED);
+}
+
+
+/**
+ * Tests MD4.
+ */
+static void testMd4(void)
+{
+    RTTestISub("MD4");
+
+    /*
+     * Some quick direct API tests.
+     */
+    uint8_t     abHash[RTMD4_HASH_SIZE];
+    char        szDigest[RTMD4_DIGEST_LEN + 1];
+    const char *pszString;
+
+    pszString = "";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "31d6cfe0d16ae931b73c59d7e0c089c0");
+
+    pszString = "The quick brown fox jumps over the lazy dog";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "1bee69a46ba811185c194762abaeae90");
+
+    pszString = "a";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "bde52cb31de33e46245e05fbdbd6fb24");
+
+    pszString = "abc";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "a448017aaf21d8525fc10ae87aa6729d");
+
+    pszString = "message digest";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "d9130a8164549fe818874806e1c7014b");
+
+    pszString = "abcdefghijklmnopqrstuvwxyz";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "d79e1c308aa5bbcdeea8ed63df412da9");
+
+    pszString = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "043f8582f241db351ce627e153e7f0e4");
+
+    pszString = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+    RTMd4(pszString, strlen(pszString), abHash);
+    RTTESTI_CHECK_RC_RETV(RTMd4ToString(abHash, szDigest, sizeof(szDigest)), VINF_SUCCESS);
+    CHECK_STRING(szDigest, "e33b4ddc9c38f2199c3e7b164fcc0536");
+
+
+    /*
+     * Generic API tests.
+     */
+    static TESTRTDIGEST const s_abTests[] =
+    {
+        { &g_abRandom72KB[0],          0, "31d6cfe0d16ae931b73c59d7e0c089c0", "MD4 0 bytes" },
+        { &g_abRandom72KB[0],          1, "0014d6b190d365d071ea01701055f180", "MD4 1 byte" },
+        { &g_abRandom72KB[0],          2, "2be9806c2efb7648dc5c3ec5a502cf10", "MD4 2 bytes" },
+        { &g_abRandom72KB[0],          3, "4d5268b74418be41d0f2ed6806048897", "MD4 3 bytes" },
+        { &g_abRandom72KB[0],          4, "62f2e58f059dea40a92eba280f3062b4", "MD4 4 bytes" },
+        { &g_abRandom72KB[0],          5, "b3f93386d95f56dd3e95b9bd03c6e944", "MD4 5 bytes" },
+        { &g_abRandom72KB[0],          6, "21faedc10d9ec3943d047518b6fd5238", "MD4 6 bytes" },
+        { &g_abRandom72KB[0],          7, "fba0c1028ffb0714cc44a9572713a900", "MD4 7 bytes" },
+        { &g_abRandom72KB[0],          8, "1ba88ad5bc00076e753213a2e5b8ae15", "MD4 8 bytes" },
+        { &g_abRandom72KB[0],          9, "e86ba9ff9cdd821dedc54fc7e752dda4", "MD4 9 bytes" },
+        { &g_abRandom72KB[0],         10, "4ca3d69542505eaebd6a55dccb1d7413", "MD4 10 bytes" },
+        { &g_abRandom72KB[0],         11, "3efc80988668aa176ec0cee9edd8122f", "MD4 11 bytes" },
+        { &g_abRandom72KB[0],         12, "084cd1ce1d35e8e1908c9700f372790a", "MD4 12 bytes" },
+        { &g_abRandom72KB[0],         13, "91114dc2de94a27707045f261ce616e0", "MD4 13 bytes" },
+        { &g_abRandom72KB[0],         14, "637000da1e66c73d400baa653470bdb1", "MD4 14 bytes" },
+        { &g_abRandom72KB[0],         15, "02af37485efd590a086dac3f30389592", "MD4 15 bytes" },
+        { &g_abRandom72KB[0],         16, "2a6f6d15a99fc5a467f60bb78733780e", "MD4 16 bytes" },
+        { &g_abRandom72KB[0],         17, "866b211da26762208316b930dacdeaaa", "MD4 17 bytes" },
+        { &g_abRandom72KB[0],         18, "15ebc4114d9e5ca0cdff23f84531a64d", "MD4 18 bytes" },
+        { &g_abRandom72KB[0],         19, "56927e67e2f6a99c8327c6ff14404d61", "MD4 19 bytes" },
+        { &g_abRandom72KB[0],         20, "70fc8943ee6233e1f7a349a6dc68d0f6", "MD4 20 bytes" },
+        { &g_abRandom72KB[0],         21, "4927cf2f4ec8ede18328abc0507cb1aa", "MD4 21 bytes" },
+        { &g_abRandom72KB[0],         22, "dccda1a1c95d36c4ab6f593c3ab81b9e", "MD4 22 bytes" },
+        { &g_abRandom72KB[0],         23, "9a45e0e9bfee3f362592ccc8aea9207c", "MD4 23 bytes" },
+        { &g_abRandom72KB[0],         24, "0f4dee14ef3ec085ee80810066095600", "MD4 24 bytes" },
+        { &g_abRandom72KB[0],         25, "986534cc3fd5c50a8be5c66b170bd67b", "MD4 25 bytes" },
+        { &g_abRandom72KB[0],         26, "fb84beb50239e80d38631571fc02bd37", "MD4 26 bytes" },
+        { &g_abRandom72KB[0],         27, "416675187789def281c48d402d3db6d8", "MD4 27 bytes" },
+        { &g_abRandom72KB[0],         28, "a7e5379e670b33f3d9e3499955561cd8", "MD4 28 bytes" },
+        { &g_abRandom72KB[0],         29, "5b3b41e2c4d91056c58280468952d755", "MD4 29 bytes" },
+        { &g_abRandom72KB[0],         30, "8f0389eb6c9a5574341ec707b7496fdb", "MD4 30 bytes" },
+        { &g_abRandom72KB[0],         31, "8fb16cc1fd5ea43d6ae52b852dbecf3f", "MD4 31 bytes" },
+        { &g_abRandom72KB[0],         32, "c5ce62339fa63c3eb8386ee024e157ec", "MD4 32 bytes" },
+        { &g_abRandom72KB[0],         33, "fc03d11586207fa12b505354f6ed8fa0", "MD4 33 bytes" },
+        { &g_abRandom72KB[0],         34, "41923f367cd620969f1ee087295d0a40", "MD4 34 bytes" },
+        { &g_abRandom72KB[0],         35, "07dbc9ad8d993e0c7a8febd2c506b87b", "MD4 35 bytes" },
+        { &g_abRandom72KB[0],         36, "19d8e4f515748b03ad6b000ccce51101", "MD4 36 bytes" },
+        { &g_abRandom72KB[0],         37, "54d2c85331ca4e7236629620268527c4", "MD4 37 bytes" },
+        { &g_abRandom72KB[0],         38, "352148c6cc975c6b67704c52be5e280a", "MD4 38 bytes" },
+        { &g_abRandom72KB[0],         39, "31c52890373437a2041a759fdd782ee2", "MD4 39 bytes" },
+        { &g_abRandom72KB[0],         40, "1aebb166f3576845dc79b442885ea46c", "MD4 40 bytes" },
+        { &g_abRandom72KB[0],         41, "0ca6c4388a7faa9304681261bc155676", "MD4 41 bytes" },
+        { &g_abRandom72KB[0],         42, "69cd5768697348aceac47c2c119efb60", "MD4 42 bytes" },
+        { &g_abRandom72KB[0],         43, "0912c29c5fd6daa187f4c22426854792", "MD4 43 bytes" },
+        { &g_abRandom72KB[0],         44, "a7db92786a2703ff4b06cd3be31dabb7", "MD4 44 bytes" },
+        { &g_abRandom72KB[0],         45, "d6584bb2131258613f779e26e72c6d72", "MD4 45 bytes" },
+        { &g_abRandom72KB[0],         46, "19c49d89942e737d592618e45c413480", "MD4 46 bytes" },
+        { &g_abRandom72KB[0],         47, "25034803d9d5b5add9969416147b9db4", "MD4 47 bytes" },
+        { &g_abRandom72KB[0],         48, "ce20d232be7507c888591db5b3803086", "MD4 48 bytes" },
+        { &g_abRandom72KB[0],         49, "fba1b3a38e353f06cac6a85d90f17733", "MD4 49 bytes" },
+        { &g_abRandom72KB[0],         50, "9b72cd65b42e377c3d3660b07474c617", "MD4 50 bytes" },
+        { &g_abRandom72KB[0],         51, "9c7177c712c4124cf1e7fe153fa2dbcb", "MD4 51 bytes" },
+        { &g_abRandom72KB[0],         52, "6f3428a83cba0c3ee050ad43441c80ac", "MD4 52 bytes" },
+        { &g_abRandom72KB[0],         53, "e4fff75da9a2797949101eeccd71cda9", "MD4 53 bytes" },
+        { &g_abRandom72KB[0],         54, "840d32fc7b779ceb6b8d1b0b2cd0c9fc", "MD4 54 bytes" },
+        { &g_abRandom72KB[0],         55, "0742c60033fe94ade3a0b1627e2daca1", "MD4 55 bytes" },
+        { &g_abRandom72KB[0],         56, "6e258014688e63ad1a20ebe81d285141", "MD4 56 bytes" },
+        { &g_abRandom72KB[0],         57, "f8c6d8879fcc3f99b10c680ca7b96566", "MD4 57 bytes" },
+        { &g_abRandom72KB[0],         58, "5b0882e886b454247403184daaa5088f", "MD4 58 bytes" },
+        { &g_abRandom72KB[0],         59, "0a2944704b29793e9b8e86950bc06eb7", "MD4 59 bytes" },
+        { &g_abRandom72KB[0],         60, "84e03ff08c2fd101b157bb6799339dd8", "MD4 60 bytes" },
+        { &g_abRandom72KB[0],         61, "66fc3200bd43dc88fbdf2ecfc86210c0", "MD4 61 bytes" },
+        { &g_abRandom72KB[0],         62, "19ea83da725826d1fa4a2816eca5363d", "MD4 62 bytes" },
+        { &g_abRandom72KB[0],         63, "a274d6f859c5e2a3aa055e2f25a5f695", "MD4 63 bytes" },
+        { &g_abRandom72KB[0],         64, "dcd51f9400a8864157ef380eebbef60d", "MD4 64 bytes" },
+        { &g_abRandom72KB[0],         65, "f8fe3a0be1c9ec0ee1a9f1a8bfe7701c", "MD4 65 bytes" },
+        { &g_abRandom72KB[0],         66, "e20f96625019092cc70d706bbd113aec", "MD4 66 bytes" },
+        { &g_abRandom72KB[0],         67, "16dd4f76d2d1845bfb9804516ce1a509", "MD4 67 bytes" },
+        { &g_abRandom72KB[0],         68, "cc30a7b83a4a54e592435e1185ea4812", "MD4 68 bytes" },
+        { &g_abRandom72KB[0],         69, "a64b84a86b0bf5b93604e2151d1dab05", "MD4 69 bytes" },
+        { &g_abRandom72KB[0],         70, "523fb6da8d86b6d21d59e79150ec9749", "MD4 70 bytes" },
+        { &g_abRandom72KB[0],         71, "ba92cad24dae5ff8b09e078c7b80df1d", "MD4 71 bytes" },
+        { &g_abRandom72KB[0],         72, "510636391607ac06f1701b6420d90bf6", "MD4 72 bytes" },
+        { &g_abRandom72KB[0],         73, "642f99a448cfebcb6502a3d51d84561e", "MD4 73 bytes" },
+        { &g_abRandom72KB[0],         74, "0594cbfff1dcd956168f9780b4bf5fd7", "MD4 74 bytes" },
+        { &g_abRandom72KB[0],         75, "bcd149fa1824199ce20723c455c6a799", "MD4 75 bytes" },
+        { &g_abRandom72KB[0],         76, "2b31bf720e1adff2f9b3229ad680eea0", "MD4 76 bytes" },
+        { &g_abRandom72KB[0],         77, "8498a6b10c06fd14f88fa4fbd957c1ec", "MD4 77 bytes" },
+        { &g_abRandom72KB[0],         78, "03366c519d243d914e13024803ac6fdb", "MD4 78 bytes" },
+        { &g_abRandom72KB[0],         79, "4795ab150f194b2e8e5c0f40f26f09eb", "MD4 79 bytes" },
+        { &g_abRandom72KB[0],         80, "ca2b9808e7083ff0be1c0b5567861123", "MD4 80 bytes" },
+        { &g_abRandom72KB[0],         81, "002a0aa238fc962ab76313413111fc34", "MD4 81 bytes" },
+        { &g_abRandom72KB[0],         82, "289fb6a311a5603fe47c65c571ee3938", "MD4 82 bytes" },
+        { &g_abRandom72KB[0],         83, "cacd59c0bc6fc31849c0f4552e3b253f", "MD4 83 bytes" },
+        { &g_abRandom72KB[0],         84, "b6ebc1eb2ed472ab95696752aafeab24", "MD4 84 bytes" },
+        { &g_abRandom72KB[0],         85, "98c289ef93f887fa9eeed86e655f5890", "MD4 85 bytes" },
+        { &g_abRandom72KB[0],         86, "22c3bf5be2798a9ec04e1c459ff65544", "MD4 86 bytes" },
+        { &g_abRandom72KB[0],         87, "43cd7e64a8d0b5a2ee4221786876bb0f", "MD4 87 bytes" },
+        { &g_abRandom72KB[0],         88, "ec95c85bb82c26e17ef7083a6732c1e5", "MD4 88 bytes" },
+        { &g_abRandom72KB[0],         89, "1b9a6299f80996cd9a01ffd4299d4b2a", "MD4 89 bytes" },
+        { &g_abRandom72KB[0],         90, "9ad1ec0845c287fa2c3400946f3b74c4", "MD4 90 bytes" },
+        { &g_abRandom72KB[0],         91, "eff2124cd403f523ddefce349d913d33", "MD4 91 bytes" },
+        { &g_abRandom72KB[0],         92, "5253b33449b543eadc7de0061c35cdf0", "MD4 92 bytes" },
+        { &g_abRandom72KB[0],         93, "170f9e4cda211d9e2c48a3636d29120e", "MD4 93 bytes" },
+        { &g_abRandom72KB[0],         94, "7c738164e285ec838c2736eb1396db34", "MD4 94 bytes" },
+        { &g_abRandom72KB[0],         95, "cfedfee3e1ac2414d9083a8ffcb1d6c6", "MD4 95 bytes" },
+        { &g_abRandom72KB[0],         96, "41ff6a9f247ba6ba7cbc16bc19101b0a", "MD4 96 bytes" },
+        { &g_abRandom72KB[0],         97, "871ba92280eb7a1d838376840bd3eedb", "MD4 97 bytes" },
+        { &g_abRandom72KB[0],         98, "1663e51bcea3a86fb19ed2753c3234ba", "MD4 98 bytes" },
+        { &g_abRandom72KB[0],         99, "70d79f6be8da0a5ac1e05f9a3f72385d", "MD4 99 bytes" },
+        { &g_abRandom72KB[0],        100, "1b2eeec426c1e5d8b2459b9308eec29e", "MD4 100 bytes" },
+        { &g_abRandom72KB[0],        101, "1d7eac9ef23954d8c2e9115ca8ae43c2", "MD4 101 bytes" },
+        { &g_abRandom72KB[0],        102, "f1dd48951a67dddecfca3572a6d1e41b", "MD4 102 bytes" },
+        { &g_abRandom72KB[0],        103, "97c4443adf9896437112a826d3041f08", "MD4 103 bytes" },
+        { &g_abRandom72KB[0],        104, "8834a131a88b9cf837389cf9cbf00a16", "MD4 104 bytes" },
+        { &g_abRandom72KB[0],        105, "54c072c5b32150a631d584212be70918", "MD4 105 bytes" },
+        { &g_abRandom72KB[0],        106, "28312975c6f5eeab493208ae2fd36401", "MD4 106 bytes" },
+        { &g_abRandom72KB[0],        107, "921f5392f4ebd739647db883067e33a9", "MD4 107 bytes" },
+        { &g_abRandom72KB[0],        108, "f60480eb631d321f8fba8d6f8b302bd7", "MD4 108 bytes" },
+        { &g_abRandom72KB[0],        109, "ba9ec7166e3b8764d7110b097b0183a8", "MD4 109 bytes" },
+        { &g_abRandom72KB[0],        110, "319757aba1d89a4a0e675ab08408956b", "MD4 110 bytes" },
+        { &g_abRandom72KB[0],        111, "9a85d1eb0fb988c0d83aad8353e7e29e", "MD4 111 bytes" },
+        { &g_abRandom72KB[0],        112, "fac16e7a4c33a301a0f626c5d291e27e", "MD4 112 bytes" },
+        { &g_abRandom72KB[0],        113, "654d8ebe888100f4c484d22b68af9185", "MD4 113 bytes" },
+        { &g_abRandom72KB[0],        114, "766df4a0681e87523146cc2c5084bc5b", "MD4 114 bytes" },
+        { &g_abRandom72KB[0],        115, "c73d46e4e0039821f29eb595e63a6445", "MD4 115 bytes" },
+        { &g_abRandom72KB[0],        116, "ed3544002078b116451827c45b8ce782", "MD4 116 bytes" },
+        { &g_abRandom72KB[0],        117, "0db043d6e4006523679ad807d1b8b25d", "MD4 117 bytes" },
+        { &g_abRandom72KB[0],        118, "59fd1acab527423854deb0b5cc8aa7fd", "MD4 118 bytes" },
+        { &g_abRandom72KB[0],        119, "ca5d2aa85a493741e4e6bce6f6d23e1d", "MD4 119 bytes" },
+        { &g_abRandom72KB[0],        120, "47f646776ef01e3c8e4e38c0beae7333", "MD4 120 bytes" },
+        { &g_abRandom72KB[0],        121, "1905c60dc8f51c3b7c326b5cad9f6fd2", "MD4 121 bytes" },
+        { &g_abRandom72KB[0],        122, "ce435994d14df744b26d5dfc80b95398", "MD4 122 bytes" },
+        { &g_abRandom72KB[0],        123, "e3c102dcf64d29f2c386413c0483c3a6", "MD4 123 bytes" },
+        { &g_abRandom72KB[0],        124, "aa7ed5d353dc66b7f23639ac5cf18636", "MD4 124 bytes" },
+        { &g_abRandom72KB[0],        125, "37f30e534f4661a989e9c9367ded7536", "MD4 125 bytes" },
+        { &g_abRandom72KB[0],        126, "da722a846bcdd3b5b8acf5100b44a9b4", "MD4 126 bytes" },
+        { &g_abRandom72KB[0],        127, "b93bc385e0c6d2b31213bbec50111359", "MD4 127 bytes" },
+        { &g_abRandom72KB[0],        128, "762bbb84570d3fb82ea0cd2b468d1ac1", "MD4 128 bytes" },
+        { &g_abRandom72KB[0],        129, "0f7b751552acc853f88684616d21a737", "MD4 129 bytes" },
+        { &g_abRandom72KB[0],       1024, "3722350e9c6c7e7ddf39f112cdd6b454", "MD4 1024 bytes" },
+        { &g_abRandom72KB[0],      73001, "ee4fec16230aff2fd3f9075d781de22d", "MD4 73001 bytes" },
+        { &g_abRandom72KB[0],      73728, "120c5ba7971af1dcc004c2a54e0afb44", "MD4 73728 bytes" },
+        { &g_abRandom72KB[0x20c9],  9991, "7d1e0e69dfec5dd0ae84aeecd53516bd", "MD4 8393 bytes @9991" },
+    };
+    testGeneric("1.2.840.113549.2.4", s_abTests, RT_ELEMENTS(s_abTests), "MD4", RTDIGESTTYPE_MD4,
+                VINF_CR_DIGEST_SEVERELY_COMPROMISED);
 }
 
 
@@ -582,7 +785,8 @@ static void testMd5(void)
         { &g_abRandom72KB[0],     73728, "aef57c3b2ec6e560b51b8094fe34def7", "MD5 73728 bytes" },
         { &g_abRandom72KB[0x20c9], 9991, "6461339c6615d23c704298a313e07cf5", "MD5 8393 bytes @9991" },
     };
-    testGeneric("1.2.840.113549.2.5", s_abTests, RT_ELEMENTS(s_abTests), "MD5", RTDIGESTTYPE_MD5);
+    testGeneric("1.2.840.113549.2.5", s_abTests, RT_ELEMENTS(s_abTests), "MD5", RTDIGESTTYPE_MD5,
+                VINF_CR_DIGEST_COMPROMISED);
 }
 
 
@@ -761,7 +965,7 @@ static void testSha1(void)
         { &g_abRandom72KB[0],     73728, "e89f36633ad2745ab2aac50ea7b2fe23e49ba69f", "SHA-1 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "62001184bacacce3774566d916055d425a85eba5", "SHA-1 8393 bytes @9991" },
     };
-    testGeneric("1.3.14.3.2.26", s_abTests, RT_ELEMENTS(s_abTests), "SHA-1", RTDIGESTTYPE_SHA1);
+    testGeneric("1.3.14.3.2.26", s_abTests, RT_ELEMENTS(s_abTests), "SHA-1", RTDIGESTTYPE_SHA1, VINF_CR_DIGEST_DEPRECATED);
 }
 
 
@@ -929,7 +1133,7 @@ static void testSha256(void)
         { &g_abRandom72KB[0],     73728, "930de9a012e41bcb650a12328a45e3b25f010c2e1b531376ffce4247b3b16faf", "SHA-256 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "8bd4c6142e36f15385769ebdeb855dcdf542f72d067315472a52ff626946310e", "SHA-256 8393 bytes @9991" },
     };
-    testGeneric("2.16.840.1.101.3.4.2.1", s_abTests, RT_ELEMENTS(s_abTests), "SHA-256", RTDIGESTTYPE_SHA256);
+    testGeneric("2.16.840.1.101.3.4.2.1", s_abTests, RT_ELEMENTS(s_abTests), "SHA-256", RTDIGESTTYPE_SHA256, VINF_SUCCESS);
 }
 
 
@@ -967,7 +1171,7 @@ static void testSha224(void)
         { RT_STR_TUPLE("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
           "75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525", "SHA-224 abcdbc..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.4", s_abTests, RT_ELEMENTS(s_abTests), "SHA-224", RTDIGESTTYPE_SHA224);
+    testGeneric("2.16.840.1.101.3.4.2.4", s_abTests, RT_ELEMENTS(s_abTests), "SHA-224", RTDIGESTTYPE_SHA224, VINF_SUCCESS);
 }
 
 
@@ -1135,7 +1339,7 @@ static void testSha512(void)
         { &g_abRandom72KB[0],     73728, "80bd83278c0a26e0f2f952b44ff31057a33e971ea4d6d2f45097e1ff289c9b3c927152ec8ef972929b9b3222abecc3ed64bebc31779c6178b60b91e00a71f542", "SHA-512 73728 bytes" },
         { &g_abRandom72KB[0x20c9],  9991, "d6ac7c68664df2e34dc6be233b33f8dad196348350b70a4c2c5a78eb54d6e297c819771313d798de7552b7a3cb85370aab25087e189f3be8560d49406ebb6280", "SHA-512 8393 bytes @9991" },
     };
-    testGeneric("2.16.840.1.101.3.4.2.3", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512", RTDIGESTTYPE_SHA512);
+    testGeneric("2.16.840.1.101.3.4.2.3", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512", RTDIGESTTYPE_SHA512, VINF_SUCCESS);
 }
 
 
@@ -1173,7 +1377,7 @@ static void testSha512t224(void)
         { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
           "23fec5bb94d60b23308192640b0c453335d664734fe40e7268674af9", "SHA-512/256 abcdef..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.5", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/224", RTDIGESTTYPE_SHA512T224);
+    testGeneric("2.16.840.1.101.3.4.2.5", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/224", RTDIGESTTYPE_SHA512T224, VINF_SUCCESS);
 }
 #endif /* IPRT_WITHOUT_SHA512T224 */
 
@@ -1211,7 +1415,7 @@ static void testSha512t256(void)
         { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
           "3928e184fb8690f840da3988121d31be65cb9d3ef83ee6146feac861e19b563a", "SHA-512/256 abcdef..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.6", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/256", RTDIGESTTYPE_SHA512T256);
+    testGeneric("2.16.840.1.101.3.4.2.6", s_abTests, RT_ELEMENTS(s_abTests), "SHA-512/256", RTDIGESTTYPE_SHA512T256, VINF_SUCCESS);
 }
 #endif /* !IPRT_WITHOUT_SHA512T256 */
 
@@ -1248,7 +1452,7 @@ static void testSha384(void)
         { RT_STR_TUPLE("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
           "09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039", "SHA-384 abcdef..." },
     };
-    testGeneric("2.16.840.1.101.3.4.2.2", s_abTests, RT_ELEMENTS(s_abTests), "SHA-384", RTDIGESTTYPE_SHA384);
+    testGeneric("2.16.840.1.101.3.4.2.2", s_abTests, RT_ELEMENTS(s_abTests), "SHA-384", RTDIGESTTYPE_SHA384, VINF_SUCCESS);
 }
 
 
@@ -1261,6 +1465,7 @@ int main()
     RTTestBanner(hTest);
 
     testMd2();
+    testMd4();
     testMd5();
     testSha1();
     testSha256();

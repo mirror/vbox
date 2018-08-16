@@ -35,6 +35,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/md2.h>
+#include <iprt/md4.h>
 #include <iprt/md5.h>
 #include <iprt/sha.h>
 #include <iprt/crypto/pkix.h>
@@ -44,9 +45,12 @@
 # include <openssl/evp.h>
 #endif
 
+
+
 /*
  * MD2
  */
+#ifndef IPRT_WITHOUT_DIGEST_MD2
 
 /** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
 static DECLCALLBACK(void) rtCrDigestMd2_Update(void *pvState, const void *pvData, size_t cbData)
@@ -86,7 +90,7 @@ static RTCRDIGESTDESC const g_rtCrDigestMd2Desc =
     RTDIGESTTYPE_MD2,
     RTMD2_HASH_SIZE,
     sizeof(RTMD2CONTEXT),
-    0,
+    RTCRDIGESTDESC_F_DEPRECATED,
     NULL,
     NULL,
     rtCrDigestMd2_Update,
@@ -97,11 +101,70 @@ static RTCRDIGESTDESC const g_rtCrDigestMd2Desc =
     NULL,
     NULL,
 };
+#endif /* !IPRT_WITHOUT_DIGEST_MD2 */
+
+
+/*
+ * MD4
+ */
+#ifndef IPRT_WITHOUT_DIGEST_MD4
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestMd4_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    RTMd4Update((PRTMD4CONTEXT)pvState, pvData, cbData);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestMd4_Final(void *pvState, uint8_t *pbHash)
+{
+    RTMd4Final((PRTMD4CONTEXT)pvState, pbHash);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestMd4_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    RT_NOREF_PV(fReInit); RT_NOREF_PV(pvOpaque);
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    RTMd4Init((PRTMD4CONTEXT)pvState);
+    return VINF_SUCCESS;
+}
+
+/** MD4 alias ODIs. */
+static const char * const g_apszMd4Aliases[] =
+{
+    RTCR_PKCS1_MD4_WITH_RSA_OID,
+    NULL
+};
+
+/** MD4 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestMd4Desc =
+{
+    "md4",
+    "1.2.840.113549.2.4",
+    g_apszMd4Aliases,
+    RTDIGESTTYPE_MD4,
+    RTMD4_HASH_SIZE,
+    sizeof(RTMD4CONTEXT),
+    RTCRDIGESTDESC_F_DEPRECATED | RTCRDIGESTDESC_F_COMPROMISED | RTCRDIGESTDESC_F_SERVERELY_COMPROMISED,
+    NULL,
+    NULL,
+    rtCrDigestMd4_Update,
+    rtCrDigestMd4_Final,
+    rtCrDigestMd4_Init,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+#endif /* !IPRT_WITHOUT_DIGEST_MD4 */
 
 
 /*
  * MD5
  */
+#ifndef IPRT_WITHOUT_DIGEST_MD5
 
 /** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
 static DECLCALLBACK(void) rtCrDigestMd5_Update(void *pvState, const void *pvData, size_t cbData)
@@ -141,7 +204,7 @@ static RTCRDIGESTDESC const g_rtCrDigestMd5Desc =
     RTDIGESTTYPE_MD5,
     RTMD5_HASH_SIZE,
     sizeof(RTMD5CONTEXT),
-    0,
+    RTCRDIGESTDESC_F_COMPROMISED,
     NULL,
     NULL,
     rtCrDigestMd5_Update,
@@ -152,6 +215,7 @@ static RTCRDIGESTDESC const g_rtCrDigestMd5Desc =
     NULL,
     NULL,
 };
+#endif /* !IPRT_WITHOUT_DIGEST_MD5 */
 
 
 /*
@@ -196,7 +260,7 @@ static RTCRDIGESTDESC const g_rtCrDigestSha1Desc =
     RTDIGESTTYPE_SHA1,
     RTSHA1_HASH_SIZE,
     sizeof(RTSHA1CONTEXT),
-    0,
+    RTCRDIGESTDESC_F_DEPRECATED,
     NULL,
     NULL,
     rtCrDigestSha1_Update,
@@ -540,8 +604,15 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512t256Desc =
  */
 static PCRTCRDIGESTDESC const g_apDigestOps[] =
 {
+#ifndef IPRT_WITHOUT_DIGEST_MD2
     &g_rtCrDigestMd2Desc,
+#endif
+#ifndef IPRT_WITHOUT_DIGEST_MD4
+    &g_rtCrDigestMd4Desc,
+#endif
+#ifndef IPRT_WITHOUT_DIGEST_MD5
     &g_rtCrDigestMd5Desc,
+#endif
     &g_rtCrDigestSha1Desc,
     &g_rtCrDigestSha256Desc,
     &g_rtCrDigestSha512Desc,

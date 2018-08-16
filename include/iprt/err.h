@@ -2781,6 +2781,18 @@ RT_C_DECLS_END
 #define VERR_CR_DIGEST_OSSL_DIGEST_INIT_ERROR       (-24200)
 /** OpenSSL failed to clone the digest algorithm context. */
 #define VERR_CR_DIGEST_OSSL_DIGEST_CTX_COPY_ERROR   (-24201)
+/** Deprecated digest. */
+#define VINF_CR_DIGEST_DEPRECATED                   (24202)
+/** Deprecated digest. */
+#define VERR_CR_DIGEST_DEPRECATED                   (-24202)
+/** Compromised digest. */
+#define VINF_CR_DIGEST_COMPROMISED                  (24203)
+/** Compromised digest. */
+#define VERR_CR_DIGEST_COMPROMISED                  (-24203)
+/** Severely compromised digest. */
+#define VINF_CR_DIGEST_SEVERELY_COMPROMISED         (24204)
+/** Severely compromised digest. */
+#define VERR_CR_DIGEST_SEVERELY_COMPROMISED         (-24204)
 /** @} */
 
 /** @name RTPath  status codes.

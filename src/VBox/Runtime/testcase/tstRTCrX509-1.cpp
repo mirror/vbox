@@ -48,6 +48,7 @@ static const struct
     const char     *pszFile;
     bool            fMaybeNotInOpenSSL;
     bool            fSelfSigned;
+    int             rcSuccessDigestQuality;
 
     char const     *pchPem;
     size_t          cbPem;
@@ -56,18 +57,18 @@ static const struct
     size_t          cbDer;
 } g_aFiles[] =
 {
-#define MY_CERT_ENTRY(a_fMaybeNotInOpenSSL, a_fSelfSigned, a_Name) \
-    { #a_Name, a_fMaybeNotInOpenSSL, a_fSelfSigned, \
+#define MY_CERT_ENTRY(a_fMaybeNotInOpenSSL, a_fSelfSigned, a_rcSuccessDigestQuality, a_Name) \
+    { #a_Name, a_fMaybeNotInOpenSSL, a_fSelfSigned, a_rcSuccessDigestQuality, \
       (const char *)RT_CONCAT(g_abPem_, a_Name), RT_CONCAT(g_cbPem_, a_Name), \
                     RT_CONCAT(g_abDer_, a_Name), RT_CONCAT(g_cbDer_, a_Name) }
-    MY_CERT_ENTRY(true,   true, md4),
-    MY_CERT_ENTRY(false,  true, md5),
-    MY_CERT_ENTRY(false,  true, sha1),
-    MY_CERT_ENTRY(false,  true, sha224),
-    MY_CERT_ENTRY(false,  true, sha256),
-    MY_CERT_ENTRY(false,  true, sha384),
-    MY_CERT_ENTRY(false,  true, sha512),
-    MY_CERT_ENTRY(false, false, cert1),
+    MY_CERT_ENTRY(true,   true, VINF_CR_DIGEST_SEVERELY_COMPROMISED,    md4),
+    MY_CERT_ENTRY(false,  true, VINF_CR_DIGEST_COMPROMISED,             md5),
+    MY_CERT_ENTRY(false,  true, VINF_CR_DIGEST_DEPRECATED,              sha1),
+    MY_CERT_ENTRY(false,  true, VINF_SUCCESS,                           sha224),
+    MY_CERT_ENTRY(false,  true, VINF_SUCCESS,                           sha256),
+    MY_CERT_ENTRY(false,  true, VINF_SUCCESS,                           sha384),
+    MY_CERT_ENTRY(false,  true, VINF_SUCCESS,                           sha512),
+    MY_CERT_ENTRY(false, false, -1,                                     cert1),
 };
 
 
@@ -155,12 +156,13 @@ static void test1()
                                 for (j = 0; j < RT_ELEMENTS(paCerts); j++)
                                 {
                                     rc = RTCrX509Certificate_VerifySignatureSelfSigned(paCerts[j], NULL /*pErrInfo*/);
-                                    if (   RT_FAILURE(rc)
-                                        && (   (   rc != VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP
-                                                && rc != VERR_NOT_FOUND)
-                                            || !g_aFiles[i].fMaybeNotInOpenSSL) )
+                                    if (RT_FAILURE(rc))
                                         RTTestIFailed("RTCrX509Certificate_VerifySignatureSelfSigned failed for %s (#%u), variation %u: %Rrc",
                                                       g_aFiles[i].pszFile, i, j, rc);
+                                    else if (   rc != g_aFiles[i].rcSuccessDigestQuality
+                                             && g_aFiles[i].rcSuccessDigestQuality != -1)
+                                        RTTestIFailed("RTCrX509Certificate_VerifySignatureSelfSigned returned %Rrc rather than %Rrc for %s (#%u), variation %u",
+                                                      rc, g_aFiles[i].rcSuccessDigestQuality, g_aFiles[i].pszFile, i, j);
                                 }
                             }
                         }

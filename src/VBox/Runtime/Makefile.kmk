@@ -342,11 +342,13 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/crc16ccitt.cpp \
 	common/checksum/alt-md2.cpp \
+	common/checksum/alt-md4.cpp \
 	common/checksum/alt-md5.cpp \
 	common/checksum/alt-sha1.cpp \
 	common/checksum/alt-sha256.cpp \
 	common/checksum/alt-sha512.cpp \
 	common/checksum/md2str.cpp \
+	common/checksum/md4str.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
@@ -2368,10 +2370,12 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/tsp-init.cpp \
 	common/crypto/tsp-sanity.cpp \
 	common/checksum/alt-md2.cpp \
+	common/checksum/alt-md4.cpp \
 	common/checksum/alt-sha1.cpp \
 	common/checksum/alt-sha256.cpp \
 	common/checksum/alt-sha512.cpp \
 	common/checksum/md2str.cpp \
+	common/checksum/md4str.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/sha1str.cpp \
 	common/checksum/sha224str.cpp \

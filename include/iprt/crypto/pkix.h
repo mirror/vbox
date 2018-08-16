@@ -215,6 +215,12 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *
      * @returns IPRT status code.
      * @retval  VINF_SUCCESS if the signature checked out correctly.
+     * @retval  VINF_CR_DIGEST_DEPRECATED if the signature checked out correctly
+     *          but the hash algorithm is deprecated.
+     * @retval  VINF_CR_DIGEST_COMPROMISED if the signature checked out correctly
+     *          but the hash algorithm is compromised.
+     * @retval  VINF_CR_DIGEST_SEVERELY_COMPROMISED if the signature checked out
+     *          correctly but the hash algorithm is severely compromised.
      * @retval  VERR_PKIX_KEY wrong key or some other key issue.
      *
      * @param   pDesc           Pointer to this structure (for uProviderSpecific).
@@ -233,6 +239,10 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *
      * @returns IPRT status code.
      * @retval  VINF_SUCCESS on success.
+     * @retval  VINF_CR_DIGEST_DEPRECATED on success but the hash algorithm is deprecated.
+     * @retval  VINF_CR_DIGEST_COMPROMISED on success but the hash algorithm is compromised.
+     * @retval  VINF_CR_DIGEST_SEVERELY_COMPROMISED on success but the hash algorithm
+     *          is severely compromised.
      * @retval  VERR_PKIX_KEY wrong key or some other key issue.
      * @retval  VERR_BUFFER_OVERFLOW if the signature buffer is too small, the
      *          require buffer size will be available in @a *pcbSignature.
@@ -256,25 +266,109 @@ typedef struct RTCRPKIXSIGNATUREDESC
 /** Pointer to a public key signature scheme provider descriptor. */
 typedef RTCRPKIXSIGNATUREDESC const *PCRTCRPKIXSIGNATUREDESC;
 
-
+/**
+ * Locates a signature schema provider descriptor by object ID string.
+ * @returns Pointer to descriptor on success, NULL on if not found.
+ * @param   pObjId      The ID of the signature to search for.
+ * @param   ppvOpaque   Where to store an opaque schema parameter. Optional.
+ */
 PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjIdString(const char *pszObjId, void *ppvOpaque);
+
+/**
+ * Locates a signature schema provider descriptor by ASN.1 object ID.
+ * @returns Pointer to descriptor on success, NULL on if not found.
+ * @param   pObjId      The ID of the signature to search for.
+ * @param   ppvOpaque   Where to store an opaque schema parameter. Optional.
+ */
 PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjId(PCRTASN1OBJID pObjId, void **ppvOpaque);
+
+/**
+ * Create a signature schema provier instance.
+ *
+ * @returns IPRT status code.
+ * @param   phSignature Where to return the handle to the created instance.
+ * @param   pDesc       The signature schema provider descriptor.  Use
+ *                      RTCrPkixSignatureFindByObjIdString() or RTCrPkixSignatureFindByObjId()
+ *                      to get this.
+ * @param   pvOpaque    The opaque schema parameter returned by the find functions.
+ * @param   fSigning    Set if the intention is to sign stuff, clear if verification only.
+ * @param   hKey        The key handle.  A referenced will be retained.
+ * @param   pParams     Algorithm/key parameters, optional.
+ */
+RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSIGNATUREDESC pDesc, void *pvOpaque,
+                                    bool fSigning, RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
+/** Convenience wrapper function for RTCrPkixSignatureCreate(). */
 RTDECL(int) RTCrPkixSignatureCreateByObjIdString(PRTCRPKIXSIGNATURE phSignature, const char *pszObjId,
                                                  RTCRKEY hKey, PCRTASN1DYNTYPE pParams, bool fSigning);
+/** Convenience wrapper function for RTCrPkixSignatureCreate(). */
 RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTASN1OBJID pObjId, RTCRKEY hKey,
                                            PCRTASN1DYNTYPE pParams, bool fSigning);
 
-
-RTDECL(int) RTCrPkixSignatureCreate(PRTCRPKIXSIGNATURE phSignature, PCRTCRPKIXSIGNATUREDESC pDesc, void *pvOpaque,
-                                    bool fSigning, RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
+/**
+ * Retains a reference to the signature schema provider instance.
+ *
+ * @returns New reference count on success, UINT32_MAX if invalid handle.
+ * @param   hSignature      The signature schema provider handle.
+ */
 RTDECL(uint32_t) RTCrPkixSignatureRetain(RTCRPKIXSIGNATURE hSignature);
+
+/**
+ * Releases a reference to the signature schema provider instance.
+ *
+ * @returns New reference count on success, UINT32_MAX if invalid handle.
+ * @param   hSignature      The signature schema provider handle.  NIL is ignored.
+ */
 RTDECL(uint32_t) RTCrPkixSignatureRelease(RTCRPKIXSIGNATURE hSignature);
-RTDECL(int) RTCrPkixSignatureVerify(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest,
-                                    void const *pvSignature, size_t cbSignature);
+
+/**
+ * Verifies a signed message digest.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if the signature checked out correctly.
+ * @retval  VINF_CR_DIGEST_DEPRECATED if the signature checked out correctly
+ *          but the hash algorithm is deprecated.
+ * @retval  VINF_CR_DIGEST_COMPROMISED if the signature checked out correctly
+ *          but the hash algorithm is compromised.
+ * @retval  VINF_CR_DIGEST_SEVERELY_COMPROMISED if the signature checked out
+ *          correctly but the hash algorithm is severely compromised.
+ * @retval  VERR_PKIX_KEY wrong key or some other key issue.
+ *
+ * @param   hSignature      The signature schema provider handle.
+ * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
+ *                          complete and retreive the final hash value.
+ * @param   pvSignature     The signature to validate.
+ * @param   cbSignature     The size of the signature (in bytes).
+ */
+RTDECL(int) RTCrPkixSignatureVerify(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest, void const *pvSignature, size_t cbSignature);
+/** Convenience wrapper function for RTCrPkixSignatureVerify(). */
 RTDECL(int) RTCrPkixSignatureVerifyBitString(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest, PCRTASN1BITSTRING pSignature);
+/** Convenience wrapper function for RTCrPkixSignatureVerify(). */
 RTDECL(int) RTCrPkixSignatureVerifyOctetString(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest, PCRTASN1OCTETSTRING pSignature);
-RTDECL(int) RTCrPkixSignatureSign(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest,
-                                  void *pvSignature, size_t *pcbSignature);
+
+/**
+ * Sign a message digest.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_CR_DIGEST_DEPRECATED on success but the hash algorithm is deprecated.
+ * @retval  VINF_CR_DIGEST_COMPROMISED on success but the hash algorithm is compromised.
+ * @retval  VINF_CR_DIGEST_SEVERELY_COMPROMISED on success but the hash algorithm
+ *          is severely compromised.
+ * @retval  VERR_PKIX_KEY wrong key or some other key issue.
+ * @retval  VERR_BUFFER_OVERFLOW if the signature buffer is too small, the
+ *          require buffer size will be available in @a *pcbSignature.
+ *
+ * @param   hSignature      The signature schema provider handle.
+ * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
+ *                          complete and retreive the final hash value.
+ * @param   pvSignature     The output signature buffer.
+ * @param   pcbSignature    On input the variable pointed to holds the size of
+ *                          the buffer @a pvSignature points to.
+ *                          On return the variable pointed to is set to the size
+ *                          of the returned signature, or the required size in
+ *                          case of VERR_BUFFER_OVERFLOW.
+ */
+RTDECL(int) RTCrPkixSignatureSign(RTCRPKIXSIGNATURE hSignature, RTCRDIGEST hDigest, void *pvSignature, size_t *pcbSignature);
 
 
 /**

@@ -87,6 +87,29 @@ typedef RTCRDIGESTINT *PRTCRDIGESTINT;
 
 
 
+/**
+ * Used for successful returns which wants to hit at digest security.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VINF_CR_DIGEST_DEPRECATED
+ * @retval  VINF_CR_DIGEST_COMPROMISED
+ * @retval  VINF_CR_DIGEST_SEVERELY_COMPROMISED
+ * @param   pDesc               The digest descriptor.
+ */
+DECLINLINE(int) rtCrDigestSuccessWithDigestWarnings(PCRTCRDIGESTDESC pDesc)
+{
+    uint32_t const fFlags = pDesc->fFlags
+                          & (RTCRDIGESTDESC_F_DEPRECATED | RTCRDIGESTDESC_F_COMPROMISED | RTCRDIGESTDESC_F_SERVERELY_COMPROMISED);
+    if (!fFlags)
+        return VINF_SUCCESS;
+    if (fFlags & RTCRDIGESTDESC_F_SERVERELY_COMPROMISED)
+        return VINF_CR_DIGEST_SEVERELY_COMPROMISED;
+    if (fFlags & RTCRDIGESTDESC_F_COMPROMISED)
+        return VINF_CR_DIGEST_COMPROMISED;
+    return VINF_CR_DIGEST_DEPRECATED;
+}
+
+
 RTDECL(int) RTCrDigestCreate(PRTCRDIGEST phDigest, PCRTCRDIGESTDESC pDesc, void *pvOpaque)
 {
     AssertPtrReturn(phDigest, VERR_INVALID_POINTER);
@@ -115,7 +138,7 @@ RTDECL(int) RTCrDigestCreate(PRTCRDIGEST phDigest, PCRTCRDIGESTDESC pDesc, void 
             if (RT_SUCCESS(rc))
             {
                 *phDigest = pThis;
-                return VINF_SUCCESS;
+                return rtCrDigestSuccessWithDigestWarnings(pDesc);
             }
             if (pDesc->pfnFree)
                 pDesc->pfnFree(pThis->pvState);
@@ -165,7 +188,7 @@ RTDECL(int) RTCrDigestClone(PRTCRDIGEST phDigest, RTCRDIGEST hSrc)
             if (RT_SUCCESS(rc))
             {
                 *phDigest = pThis;
-                return VINF_SUCCESS;
+                return rtCrDigestSuccessWithDigestWarnings(pThis->pDesc);
             }
             if (hSrc->pDesc->pfnFree)
                 hSrc->pDesc->pfnFree(pThis->pvState);
@@ -299,7 +322,7 @@ RTDECL(int) RTCrDigestFinal(RTCRDIGEST hDigest, void *pvHash, size_t cbHash)
         }
     }
 
-    return VINF_SUCCESS;
+    return rtCrDigestSuccessWithDigestWarnings(pThis->pDesc);
 }
 
 
@@ -378,6 +401,15 @@ RTDECL(RTDIGESTTYPE) RTCrDigestGetType(RTCRDIGEST hDigest)
 RTDECL(const char *) RTCrDigestGetAlgorithmOid(RTCRDIGEST hDigest)
 {
     return RTCrDigestTypeToAlgorithmOid(RTCrDigestGetType(hDigest));
+}
+
+
+RTDECL(uint32_t) RTCrDigestGetFlags(RTCRDIGEST hDigest)
+{
+    PRTCRDIGESTINT pThis = hDigest;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTCRDIGESTINT_MAGIC, UINT32_MAX);
+    return pThis->pDesc->fFlags;
 }
 
 
