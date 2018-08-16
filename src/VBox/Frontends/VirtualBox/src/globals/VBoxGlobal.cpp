@@ -4101,9 +4101,9 @@ void VBoxGlobal::prepare()
                               RTLOGFLAGS_PREFIX_TIME_PROG,
                               "all",
                               "VBOX_GUI_SELECTORWINDOW_RELEASE_LOG",
-                              RTLOGDEST_FILE,
+                              RTLOGDEST_FILE | RTLOGDEST_F_NO_DENY,
                               UINT32_MAX,
-                              1,
+                              10,
                               60 * 60,
                               _1M,
                               NULL /*pErrInfo*/);
