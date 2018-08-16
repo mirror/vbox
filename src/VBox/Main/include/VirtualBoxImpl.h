@@ -288,6 +288,7 @@ private:
     HRESULT getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionPackManager);
     HRESULT getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetworks);
     HRESULT getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGenericNetworkDrivers);
+    HRESULT getCloudProviderManager(ComPtr<ICloudProviderManager> &aCloudProviderManager);
 
    // wrapped IVirtualBox methods
     HRESULT composeMachineFilename(const com::Utf8Str &aName,
@@ -312,7 +313,6 @@ private:
                              std::vector<MachineState_T> &aStates);
     HRESULT createAppliance(ComPtr<IAppliance> &aAppliance);
     HRESULT createUnattendedInstaller(ComPtr<IUnattended> &aUnattended);
-    HRESULT createCloudProviderManager(ComPtr<ICloudProviderManager> &aManager);
     HRESULT createMedium(const com::Utf8Str &aFormat,
                          const com::Utf8Str &aLocation,
                          AccessMode_T aAccessMode,

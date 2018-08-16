@@ -40,7 +40,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(CCloudProvider provider READ provider);
+    Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(QString profileName READ profileName);
     Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
 

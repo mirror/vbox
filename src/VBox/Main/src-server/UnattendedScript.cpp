@@ -196,6 +196,8 @@ HRESULT BaseTextScript::save(const Utf8Str &rStrFilename, bool fOverwrite)
     return hrc;
 }
 
+#ifdef VBOX_WITH_UNATTENDED
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 *
@@ -634,6 +636,8 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
     return S_OK;
 #undef IS_PLACEHOLDER_MATCH
 }
+
+#endif /* VBOX_WITH_UNATTENDED */
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -455,10 +455,12 @@ VBoxSVC_SOURCES = \
 	src-server/BIOSSettingsImpl.cpp \
 	src-server/ClientWatcher.cpp \
 	src-server/ClientToken.cpp \
-	src-server/CloudAPI.cpp \
-	src-server/CloudClientImpl.cpp \
-	src-server/CloudUserProfilesImpl.cpp \
-	src-server/CloudUserProfileManagerImpl.cpp \
+	src-server/CloudProviderManagerImpl.cpp \
+	$(if $(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK),, \
+		src-server/CloudAPI.cpp \
+		src-server/CloudClientImpl.cpp \
+		src-server/OCIProvider.cpp \
+		src-server/OCIProfile.cpp) \
 	src-server/DHCPServerImpl.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \

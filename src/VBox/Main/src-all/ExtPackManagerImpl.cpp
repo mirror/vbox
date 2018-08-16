@@ -154,6 +154,10 @@ typedef std::list< ComObjPtr<ExtPack> > ExtPackList;
  */
 struct ExtPackManager::Data
 {
+    Data()
+        : cUpdate(0)
+    {}
+
     /** The directory where the extension packs are installed. */
     Utf8Str             strBaseDir;
     /** The directory where the certificates this installation recognizes are
@@ -167,6 +171,8 @@ struct ExtPackManager::Data
 #endif
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
+    /** Update counter for the installed extension packs, increased in every list update. */
+    uint64_t            cUpdate;
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
@@ -2001,7 +2007,12 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
                             hrc2 = NewExtPack->initWithDir(a_enmContext, pstrName->c_str(), szExtPackDir);
                         delete pstrName;
                         if (SUCCEEDED(hrc2))
+                        {
                             m->llInstalledExtPacks.push_back(NewExtPack);
+                            /* Paranoia, there should be no API clients before this method is finished. */
+
+                            m->cUpdate++;
+                        }
                         else if (SUCCEEDED(rc))
                             hrc = hrc2;
                     }
@@ -2466,6 +2477,7 @@ void ExtPackManager::i_removeExtPack(const char *a_pszName)
             && pExtPackData->Desc.strName.equalsIgnoreCase(a_pszName))
         {
             m->llInstalledExtPacks.erase(it);
+            m->cUpdate++;
             return;
         }
     }
@@ -2581,6 +2593,7 @@ HRESULT ExtPackManager::i_refreshExtPack(const char *a_pszName, bool a_fUnusable
             if (SUCCEEDED(hrc))
             {
                 m->llInstalledExtPacks.push_back(ptrNewExtPack);
+                m->cUpdate++;
                 if (ptrNewExtPack->m->fUsable)
                     LogRel(("ExtPackManager: Found extension pack '%s'.\n", a_pszName));
                 else
@@ -2900,12 +2913,15 @@ void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
  * @returns COM status code.
  * @param   aObjUuid        The UUID of the kind of objects we're querying.
  * @param   aObjects        Where to return the objects.
+ * @param   a_pstrExtPackNames Where to return the corresponding extpack names (may be NULL).
  *
  * @remarks The caller must not hold any locks.
  */
-HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector<ComPtr<IUnknown> > &aObjects)
+HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector<ComPtr<IUnknown> > &aObjects, std::vector<com::Utf8Str> *a_pstrExtPackNames)
 {
     aObjects.clear();
+    if (a_pstrExtPackNames)
+        a_pstrExtPackNames->clear();
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -2921,7 +2937,11 @@ HRESULT ExtPackManager::i_queryObjects(const com::Utf8Str &aObjUuid, std::vector
             ComPtr<IUnknown> ptrIf;
             HRESULT hrc2 = (*it)->queryObject(aObjUuid, ptrIf);
             if (SUCCEEDED(hrc2))
+            {
                 aObjects.push_back(ptrIf);
+                if (a_pstrExtPackNames)
+                    a_pstrExtPackNames->push_back((*it)->m->Desc.strName);
+            }
             else if (hrc2 != E_NOINTERFACE)
                 hrc = hrc2;
         }
@@ -3240,6 +3260,19 @@ void ExtPackManager::i_dumpAllToReleaseLog(void)
 
     if (!m->llInstalledExtPacks.size())
         LogRel(("  None installed!\n"));
+}
+
+/**
+ * Gets the update counter (reflecting extpack list updates).
+ */
+uint64_t ExtPackManager::i_getUpdateCounter(void)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return 0;
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+    return m->cUpdate;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

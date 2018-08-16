@@ -70,7 +70,7 @@ UIWizardExportAppPage2::UIWizardExportAppPage2()
 {
     /* Init Cloud Provider Manager: */
     CVirtualBox comVBox = vboxGlobal().virtualBox();
-    m_comCloudProviderManager = comVBox.CreateCloudProviderManager();
+    m_comCloudProviderManager = comVBox.GetCloudProviderManager();
     AssertMsg(comVBox.isOk() && m_comCloudProviderManager.isNotNull(),
               ("Unable to acquire Cloud Provider Manager"));
 }
@@ -116,41 +116,46 @@ void UIWizardExportAppPage2::populateAccounts()
     /* Make sure this combo isn't filled yet: */
     AssertReturnVoid(m_pAccountComboBox->count() == 0);
 
-    /* Acquire provider ID list: */
-    QVector<QString> providerIds = m_comCloudProviderManager.GetSupportedProviders();
+    /* Acquire provider list: */
+    QVector<CCloudProvider> comProviders = m_comCloudProviderManager.GetProviders();
     /* Make sure at least one provider is supported: */
-    AssertReturnVoid(!providerIds.isEmpty());
+    AssertReturnVoid(!comProviders.isEmpty());
 
-    /* Iterate through provider IDs: */
-    foreach (const QString &strProviderId, providerIds)
+    /* Iterate through providers: */
+    foreach (const CCloudProvider &comProvider, comProviders)
     {
-        /* Acquire Cloud Provider: */
-        const CCloudProvider comProvider = m_comCloudProviderManager.GetProfilesByProvider(strProviderId);
         /* Skip if we have nothing to populate (file missing?): */
         if (comProvider.isNull())
             continue;
+        QString strProviderId = comProvider.GetId();
+        QString strProviderShortName = comProvider.GetShortName();
 
         /* Iterate through profile names: */
-        foreach (const QString &strProfileName, comProvider.GetStoredProfilesNames())
+        foreach (const QString &strProfileName, comProvider.GetProfileNames())
         {
             m_pAccountComboBox->addItem(QString());
             m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProviderId, ProviderID);
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProviderShortName, ProviderName);
             m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, ProfileName);
         }
     }
 
     /* Set default: */
     if (m_pAccountComboBox->count() != 0)
-        setProviderById("OCI");
+        setProviderById("54e11de4-afcc-47fb-9c39-b24244cfa044");
 }
 
 void UIWizardExportAppPage2::populateAccountProperties()
 {
     /* Acquire Cloud Provider: */
-    m_comCloudProvider = m_comCloudProviderManager.GetProfilesByProvider(providerId());
-    /* Return if we have nothing to populate (file missing?): */
-    if (m_comCloudProvider.isNull())
+    CCloudProvider comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
+    /* Return if the provider has disappeared: */
+    if (comCloudProvider.isNull())
         return;
+
+    m_comCloudProfile = comCloudProvider.GetProfileByName(profileName());
+    /* Return if the profile has disappeared: */
+    if (m_comCloudProfile.isNull())
 
     /* Clear table initially: */
     m_pAccountPropertyTable->clear();
@@ -158,7 +163,7 @@ void UIWizardExportAppPage2::populateAccountProperties()
     /* Acquire properties: */
     QVector<QString> keys;
     QVector<QString> values;
-    values = m_comCloudProvider.GetProfileProperties(profileName(), keys);
+    values = m_comCloudProfile.GetProperties(QString(), keys);
 
     /* Configure table: */
     m_pAccountPropertyTable->setRowCount(keys.size());
@@ -176,7 +181,7 @@ void UIWizardExportAppPage2::populateAccountProperties()
             pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
 
             /* Use non-translated description as tool-tip: */
-            const QString strToolTip = m_comCloudProvider.GetPropertyDescription(keys.at(i));
+            const QString strToolTip = m_comCloudProfile.GetPropertyDescription(keys.at(i));
             pItemK->setData(Qt::UserRole, strToolTip);
 
             /* Insert into table: */
@@ -433,9 +438,9 @@ QString UIWizardExportAppPage2::profileName() const
     return m_pAccountComboBox->itemData(iIndex, ProfileName).toString();
 }
 
-CCloudProvider UIWizardExportAppPage2::provider() const
+CCloudProfile UIWizardExportAppPage2::profile() const
 {
-    return m_comCloudProvider;
+    return m_comCloudProfile;
 }
 
 
@@ -785,7 +790,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
     for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
-        if (m_pAccountComboBox->itemData(i, ProviderID).toString() == "OCI")
+        if (m_pAccountComboBox->itemData(i, ProviderID).toString() == "54e11de4-afcc-47fb-9c39-b24244cfa044")
         {
             m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure: %1", "provider: profile")
                 .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
@@ -793,7 +798,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
         else
         {
             m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-                .arg(m_pAccountComboBox->itemData(i, ProviderID).toString())
+                .arg(m_pAccountComboBox->itemData(i, ProviderName).toString())
                 .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
         }
     }

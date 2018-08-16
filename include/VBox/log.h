@@ -361,6 +361,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_CLIPBOARDMODECHANGEDEVENT,
     /** Main group, ICloudClient. */
     LOG_GROUP_MAIN_CLOUDCLIENT,
+    /** Main group, ICloudProfile. */
+    LOG_GROUP_MAIN_CLOUDPROFILE,
     /** Main group, ICloudProvider. */
     LOG_GROUP_MAIN_CLOUDPROVIDER,
     /** Main group, ICloudProviderManager. */
@@ -997,6 +999,7 @@ typedef enum LOGGROUP
     "MAIN_CERTIFICATE", \
     "MAIN_CLIPBOARDMODECHANGEDEVENT", \
     "MAIN_CLOUDCLIENT", \
+    "MAIN_CLOUDPROFILE", \
     "MAIN_CLOUDPROVIDER", \
     "MAIN_CLOUDPROVIDERMANAGER", \
     "MAIN_CONSOLE", \

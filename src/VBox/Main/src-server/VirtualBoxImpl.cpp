@@ -79,7 +79,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-# include "CloudUserProfileManagerImpl.h"
+# include "CloudProviderManagerImpl.h"
 
 #include <QMTranslator.h>
 
@@ -299,6 +299,9 @@ struct VirtualBox::Data
     const ComObjPtr<ExtPackManager>     ptrExtPackManager;
 #endif
 
+    /** The reference to the cloud provider manager singleton. */
+    const ComObjPtr<CloudProviderManager> pCloudProviderManager;
+
     /** The global autostart database for the user. */
     AutostartDb * const                 pAutostartDb;
 
@@ -471,8 +474,9 @@ HRESULT VirtualBox::init()
 #endif
 
         /* create the system properties object, someone may need it too */
-        unconst(m->pSystemProperties).createObject();
-        rc = m->pSystemProperties->init(this);
+        rc = unconst(m->pSystemProperties).createObject();
+        if (SUCCEEDED(rc))
+            rc = m->pSystemProperties->init(this);
         ComAssertComRCThrowRC(rc);
 
         rc = m->pSystemProperties->i_loadSettings(m->pMainConfigFile->systemProperties);
@@ -544,6 +548,13 @@ HRESULT VirtualBox::init()
         /* events */
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
             rc = m->pEventSource->init();
+        if (FAILED(rc)) throw rc;
+
+        /* cloud provider manager */
+        rc = unconst(m->pCloudProviderManager).createObject();
+        if (SUCCEEDED(rc))
+            rc = m->pCloudProviderManager->init(this);
+        ComAssertComRCThrowRC(rc);
         if (FAILED(rc)) throw rc;
     }
     catch (HRESULT err)
@@ -806,6 +817,12 @@ void VirtualBox::uninit()
      * some resources of the singletons which would prevent them from
      * uninitializing (as for example, mSystemProperties which owns
      * MediumFormat objects which Medium objects refer to) */
+    if (m->pCloudProviderManager)
+    {
+        m->pCloudProviderManager->uninit();
+        unconst(m->pCloudProviderManager).setNull();
+    }
+
     if (m->pSystemProperties)
     {
         m->pSystemProperties->uninit();
@@ -825,6 +842,14 @@ void VirtualBox::uninit()
         unconst(m->pPerformanceCollector).setNull();
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+#ifdef VBOX_WITH_EXTPACK
+    if (m->ptrExtPackManager)
+    {
+        m->ptrExtPackManager->uninit();
+        unconst(m->ptrExtPackManager).setNull();
+    }
+#endif
 
     LogFlowThisFunc(("Terminating the async event handler...\n"));
     if (m->threadAsyncEvent != NIL_RTTHREAD)
@@ -1234,6 +1259,12 @@ HRESULT VirtualBox::getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGeneric
         aGenericNetworkDrivers[i] = *it;
 
     return S_OK;
+}
+
+HRESULT VirtualBox::getCloudProviderManager(ComPtr<ICloudProviderManager> &aCloudProviderManager)
+{
+    HRESULT hrc = m->pCloudProviderManager.queryInterfaceTo(aCloudProviderManager.asOutParam());
+    return hrc;
 }
 
 HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
@@ -1817,20 +1848,6 @@ HRESULT VirtualBox::createUnattendedInstaller(ComPtr<IUnattended> &aUnattended)
     NOREF(aUnattended);
     return E_NOTIMPL;
 #endif
-}
-
-HRESULT VirtualBox::createCloudProviderManager(ComPtr<ICloudProviderManager> &aManager)
-{
-    ComObjPtr<CloudProviderManager> ptrCloudProviderManager;
-    HRESULT hrc = ptrCloudProviderManager.createObject();
-    if (SUCCEEDED(hrc))
-    {
-        AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = ptrCloudProviderManager->init(this);
-        if (SUCCEEDED(hrc))
-            hrc = ptrCloudProviderManager.queryInterfaceTo(aManager.asOutParam());
-    }
-    return hrc;
 }
 
 HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
@@ -5196,8 +5213,8 @@ HRESULT VirtualBox::createNATNetwork(const com::Utf8Str &aNetworkName,
 
     return rc;
 #else
-    NOREF(aName);
-    NOREF(aNatNetwork);
+    NOREF(aNetworkName);
+    NOREF(aNetwork);
     return E_NOTIMPL;
 #endif
 }
@@ -5232,8 +5249,8 @@ HRESULT VirtualBox::findNATNetworkByName(const com::Utf8Str &aNetworkName,
     found.queryInterfaceTo(aNetwork.asOutParam());
     return rc;
 #else
-    NOREF(aName);
     NOREF(aNetworkName);
+    NOREF(aNetwork);
     return E_NOTIMPL;
 #endif
 }

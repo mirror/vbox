@@ -26,6 +26,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
 
@@ -54,8 +55,9 @@ Q_DECLARE_METATYPE(MACAddressPolicy);
 /** Account combo data fields. */
 enum
 {
-    ProviderID  = Qt::UserRole + 1,
-    ProfileName = Qt::UserRole + 2
+    ProviderID      = Qt::UserRole + 1,
+    ProviderName    = Qt::UserRole + 2,
+    ProfileName     = Qt::UserRole + 3
 };
 
 
@@ -130,13 +132,13 @@ protected:
     QString providerId() const;
     /** Returns profile name. */
     QString profileName() const;
-    /** Returns Cloud Provider object. */
-    CCloudProvider provider() const;
+    /** Returns Cloud Profile object. */
+    CCloudProfile profile() const;
 
     /** Holds the Cloud Provider Manager reference. */
     CCloudProviderManager  m_comCloudProviderManager;
-    /** Holds the Cloud Provider object reference. */
-    CCloudProvider         m_comCloudProvider;
+    /** Holds the Cloud Profile object reference. */
+    CCloudProfile          m_comCloudProfile;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -196,7 +198,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(CCloudProvider provider READ provider);
+    Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(QString profileName READ profileName);
 
 public:

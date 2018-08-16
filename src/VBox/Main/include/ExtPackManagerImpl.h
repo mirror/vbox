@@ -208,7 +208,7 @@ public:
     HRESULT     i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo);
     HRESULT     i_doUninstall(const Utf8Str *a_pstrName, bool a_fForcedRemoval, const Utf8Str *a_pstrDisplayInfo);
     void        i_callAllVirtualBoxReadyHooks(void);
-    HRESULT     i_queryObjects(const com::Utf8Str &aObjUuid, std::vector<ComPtr<IUnknown> > &aObjects);
+    HRESULT     i_queryObjects(const com::Utf8Str &aObjUuid, std::vector<ComPtr<IUnknown> > &aObjects, std::vector<com::Utf8Str> *a_pstrExtPackNames);
 #endif
 #ifdef VBOX_COM_INPROC
     void        i_callAllConsoleReadyHooks(IConsole *a_pConsole);
@@ -227,6 +227,7 @@ public:
     HRESULT     i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack);
     bool        i_isExtPackUsable(const char *a_pszExtPack);
     void        i_dumpAllToReleaseLog(void);
+    uint64_t    i_getUpdateCounter(void);
     /** @}  */
 
 private:

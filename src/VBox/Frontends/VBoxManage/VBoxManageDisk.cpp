@@ -1379,6 +1379,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                 RTPrintf("%s%ls=%ls\n",
                          fFirst ? "Property:       " : "                ",
                          names[i], value.raw());
+                fFirst = false;
             }
         }
 

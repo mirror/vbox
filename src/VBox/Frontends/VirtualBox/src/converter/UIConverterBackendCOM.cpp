@@ -58,7 +58,6 @@ template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
-template<> bool canConvert<KCloudProviderId>() { return true; }
 
 
 /* QColor <= KMachineState: */
@@ -653,20 +652,4 @@ template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProto
     }
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strProtocol, Qt::CaseInsensitive)));
-}
-
-/* QString <= KCloudProviderId: */
-template<> QString toInternalString(const KCloudProviderId &enmProvider)
-{
-    switch (enmProvider)
-    {
-        case KCloudProviderId_OCI:            return "OCI";
-        case KCloudProviderId_GCP:            return "GCP";
-        case KCloudProviderId_AWS:            return "AWS";
-        case KCloudProviderId_MicrosoftAzure: return "Microsoft Azure";
-        case KCloudProviderId_IBMCloud:       return "IBM Cloud";
-        case KCloudProviderId_DigitalOcean:   return "Digital Ocean";
-        default: AssertMsgFailed(("No text for %d", enmProvider)); break;
-    }
-    return QString();
 }

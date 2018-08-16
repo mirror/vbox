@@ -899,6 +899,95 @@ static HRESULT listScreenShotFormats(const ComPtr<IVirtualBox> pVirtualBox)
     return rc;
 }
 
+/**
+ * List available cloud providers.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox pointer.
+ */
+static HRESULT listCloudProviders(const ComPtr<IVirtualBox> pVirtualBox)
+{
+    HRESULT rc = S_OK;
+    ComPtr<ICloudProviderManager> pCloudProviderManager;
+    CHECK_ERROR(pVirtualBox, COMGETTER(CloudProviderManager)(pCloudProviderManager.asOutParam()));
+    com::SafeIfaceArray<ICloudProvider> apCloudProviders;
+    CHECK_ERROR(pCloudProviderManager, COMGETTER(Providers)(ComSafeArrayAsOutParam(apCloudProviders)));
+
+    RTPrintf("Supported %d cloud providers:\n", apCloudProviders.size());
+    for (size_t i = 0; i < apCloudProviders.size(); ++i)
+    {
+        ComPtr<ICloudProvider> pCloudProvider = apCloudProviders[i];
+        Bstr bstrProviderName;
+        pCloudProvider->COMGETTER(Name)(bstrProviderName.asOutParam());
+        RTPrintf("Name:            %ls\n", bstrProviderName.raw());
+        pCloudProvider->COMGETTER(ShortName)(bstrProviderName.asOutParam());
+        RTPrintf("Short Name:      %ls\n", bstrProviderName.raw());
+        Bstr bstrProviderID;
+        pCloudProvider->COMGETTER(Id)(bstrProviderID.asOutParam());
+        RTPrintf("GUID:            %ls\n", bstrProviderID.raw());
+
+        RTPrintf("\n");
+    }
+    return rc;
+}
+
+
+/**
+ * List all available cloud profiles (by iterating over the cloud providers).
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox pointer.
+ * @param   fOptLong            If true, list all profile properties.
+ */
+static HRESULT listCloudProfiles(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLong)
+{
+    HRESULT rc = S_OK;
+    ComPtr<ICloudProviderManager> pCloudProviderManager;
+    CHECK_ERROR(pVirtualBox, COMGETTER(CloudProviderManager)(pCloudProviderManager.asOutParam()));
+    com::SafeIfaceArray<ICloudProvider> apCloudProviders;
+    CHECK_ERROR(pCloudProviderManager, COMGETTER(Providers)(ComSafeArrayAsOutParam(apCloudProviders)));
+
+    for (size_t i = 0; i < apCloudProviders.size(); ++i)
+    {
+        ComPtr<ICloudProvider> pCloudProvider = apCloudProviders[i];
+        com::SafeIfaceArray<ICloudProfile> apCloudProfiles;
+        CHECK_ERROR(pCloudProvider, COMGETTER(Profiles)(ComSafeArrayAsOutParam(apCloudProfiles)));
+        for (size_t j = 0; j < apCloudProfiles.size(); ++j)
+        {
+            ComPtr<ICloudProfile> pCloudProfile = apCloudProfiles[j];
+            Bstr bstrProfileName;
+            pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
+            RTPrintf("Name:          %ls\n", bstrProfileName.raw());
+            Bstr bstrProviderID;
+            pCloudProfile->COMGETTER(ProviderId)(bstrProviderID.asOutParam());
+            RTPrintf("Provider GUID: %ls\n", bstrProviderID.raw());
+
+            if (fOptLong)
+            {
+                com::SafeArray<BSTR> names;
+                com::SafeArray<BSTR> values;
+                pCloudProfile->GetProperties(Bstr().raw(), ComSafeArrayAsOutParam(names), ComSafeArrayAsOutParam(values));
+                size_t cNames = names.size();
+                size_t cValues = values.size();
+                bool fFirst = true;
+                for (size_t k = 0; k < cNames; k++)
+                {
+                    Bstr value;
+                    if (k < cValues)
+                        value = values[k];
+                    RTPrintf("%s%ls=%ls\n",
+                             fFirst ? "Property:      " : "               ",
+                             names[k], value.raw());
+                    fFirst = false;
+                }
+            }
+
+            RTPrintf("\n");
+        }
+    }
+    return rc;
+}
+
 
 /**
  * The type of lists we can produce.
@@ -930,7 +1019,9 @@ enum enmListType
     kListGroups,
     kListNatNetworks,
     kListVideoInputDevices,
-    kListScreenShotFormats
+    kListScreenShotFormats,
+    kListCloudProviders,
+    kListCloudProfiles,
 };
 
 
@@ -1296,6 +1387,14 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOpt
             rc = listScreenShotFormats(pVirtualBox);
             break;
 
+        case kListCloudProviders:
+            rc = listCloudProviders(pVirtualBox);
+            break;
+
+        case kListCloudProfiles:
+            rc = listCloudProfiles(pVirtualBox, fOptLong);
+            break;
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1348,6 +1447,8 @@ RTEXITCODE handleList(HandlerArg *a)
         { "groups",             kListGroups,             RTGETOPT_REQ_NOTHING },
         { "webcams",            kListVideoInputDevices,  RTGETOPT_REQ_NOTHING },
         { "screenshotformats",  kListScreenShotFormats,  RTGETOPT_REQ_NOTHING },
+        { "cloudproviders",     kListCloudProviders,     RTGETOPT_REQ_NOTHING },
+        { "cloudprofiles",      kListCloudProfiles,      RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1399,6 +1500,8 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListNatNetworks:
             case kListVideoInputDevices:
             case kListScreenShotFormats:
+            case kListCloudProviders:
+            case kListCloudProfiles:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {

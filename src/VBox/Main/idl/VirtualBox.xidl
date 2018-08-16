@@ -1953,7 +1953,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="9570b9d5-f1a1-448a-10c5-e12f5285adad"
+    uuid="176b85cd-4bc2-453e-9228-f408c5282267"
     wsmap="managed"
     reservedMethods="7" reservedAttributes="12"
     >
@@ -2161,6 +2161,12 @@
     <attribute name="genericNetworkDrivers" type="wstring" safearray="yes" readonly="yes">
       <desc>
         Names of all generic network drivers.
+      </desc>
+    </attribute>
+
+    <attribute name="cloudProviderManager" type="ICloudProviderManager" readonly="yes">
+      <desc>
+        The cloud provider manager (singleton).
       </desc>
     </attribute>
 
@@ -2447,15 +2453,6 @@
       </desc>
       <param name="unattended" type="IUnattended" dir="return">
         <desc>New unattended object.</desc>
-      </param>
-    </method>
-
-    <method name="createCloudProviderManager">
-      <desc>
-        Creates a new cloud provider manager object
-      </desc>
-      <param name="manager" type="ICloudProviderManager" dir="return">
-        <desc>New cloud user profile manager</desc>
       </param>
     </method>
 
@@ -24864,19 +24861,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <enum
-    name="CloudProviderId"
-    uuid="c3856743-aa5d-404d-847d-14b6cf523677"
-    >
-    <const name="Unknown" value="0"/>
-    <const name="OCI" value="1"/>
-    <const name="GCP" value="2"/>
-    <const name="AWS" value="3"/>
-    <const name="MicrosoftAzure" value="4"/>
-    <const name="IBMCloud" value="5"/>
-    <const name="DigitalOcean" value="6"/>
-  </enum>
-
-  <enum
     name="CloudCommand"
     uuid="1c5cfa19-7754-4071-bf3e-6d21ad432655"
     >
@@ -25109,85 +25093,87 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
-  // ICloudProvider
+  // ICloudProfile
   //////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-    name="ICloudProvider" extends="$unknown"
-    uuid="cfadfecb-ef89-41a9-abbd-9772d41baddb"
+    name="ICloudProfile" extends="$unknown"
+    uuid="011d1e9a-a48b-4d15-91a0-6101b087155c"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
-    <method name="getProvider">
+
+    <attribute name="name" type="wstring" readonly="yes">
       <desc>
-        Returns provider Id tied with these profiles
+        Returns the profile name.
       </desc>
-      <param name="provider" type="CloudProviderId" dir="return">
+    </attribute>
+
+    <attribute name="providerId" type="uuid" mod="string" readonly="yes">
+      <desc>
+        Returns provider identifier tied with this profile.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedPropertyNames" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        Returns the supported property names.
+      </desc>
+    </attribute>
+
+    <method name="getProperty" const="yes">
+      <desc>
+        Returns the value of the cloud profile property with the given name.
+
+        If the requested data @a name does not exist, this function will
+        succeed and return an empty string in the @a value argument.
+
+        <result name="E_INVALIDARG">@a name is @c null or empty.</result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the property to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Current property value.</desc>
       </param>
     </method>
 
-    <method name="createProfile">
+    <method name="setProperty" const="yes">
       <desc>
-        Creates an empty profile
+        Sets the value of the cloud profile property with the given name.
+
+        Setting the property value to @c null or an empty string is equivalent
+        to deleting the existing value.
+
+        <result name="E_INVALIDARG">@a name is @c null or empty.</result>
       </desc>
-      <param name="profileName" type="wstring" dir="in">
-        <desc>
-          The profile's name
-        </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the property to set.</desc>
       </param>
-      <param name="names" type="wstring" safearray="yes" dir="in">
-        <desc>Names of properties.</desc>
-      </param>
-      <param name="values" type="wstring" safearray="yes" dir="in">
-        <desc>Values of set properties.</desc>
+      <param name="value" type="wstring" dir="in">
+        <desc>Property value to set.</desc>
       </param>
     </method>
 
-    <method name="updateProfile">
+    <method name="getProperties" const="yes">
       <desc>
-        Updates active profile in memory
-      </desc>
-      <param name="profileName" type="wstring" dir="in">
-        <desc>
-          The profile's name
-        </desc>
-      </param>
-      <param name="names" type="wstring" safearray="yes" dir="in">
-        <desc>Names of properties.</desc>
-      </param>
-      <param name="values" type="wstring" safearray="yes" dir="in">
-        <desc>Values of set properties.</desc>
-      </param>
-    </method>
+        Returns values for a group of properties in one call.
 
-    <method name="getStoredProfilesNames" const="yes">
-      <desc>
-        Returns the names\IDs for the existing profiles in one call.
-      </desc>
-      <param name="profilesNames" type="wstring" safearray="yes" dir="return">
-        <desc>Names of the existing profiles.</desc>
-      </param>
-    </method>
-
-    <method name="getProfileProperties" const="yes">
-      <desc>
-        Returns values for a profile's properties in one call.
-
-        The list of all properties supported by the given profile.
+        The names of the properties to get are specified using the @a names
+        argument which is a list of comma-separated property names or
+        an empty string if all properties are to be returned.
+        <note>Currently the value of this argument is ignored and the method
+        always returns all existing properties.</note>
 
         The method returns two arrays, the array of property names corresponding
         to the @a names argument and the current values of these properties.
         Both arrays have the same number of elements with each element at the
         given index in the first array corresponds to an element at the same
         index in the second array.
-
-        For properties that do not have assigned values, an empty string is
-        returned at the appropriate index in the @a returnValues array.
-
       </desc>
-      <param name="profileName" type="wstring" dir="in">
+      <param name="names" type="wstring" dir="in">
         <desc>
-          Name of profile.
+          Names of properties to get.
         </desc>
       </param>
       <param name="returnNames" type="wstring" safearray="yes" dir="out">
@@ -25198,26 +25184,118 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="setProperties">
+      <desc>
+        Updates profile, changing/adding/removing properties.
+
+        The names of the properties to set are passed in the @a names
+        array along with the new values for them in the @a values array. Both
+        arrays have the same number of elements with each element at the given
+        index in the first array corresponding to an element at the same index
+        in the second array.
+
+        If there is at least one property name in @a names that is not valid,
+        the method will fail before changing the values of any other properties
+        from the @a names array.
+
+        Using this method over <link to="#setProperty"/> is preferred if you
+        need to set several properties at once since it is more efficient.
+
+        Setting the property value to @c null or an empty string is equivalent
+        to deleting the existing value.
+      </desc>
+      <param name="names" type="wstring" safearray="yes" dir="in">
+        <desc>Names of properties.</desc>
+      </param>
+      <param name="values" type="wstring" safearray="yes" dir="in">
+        <desc>Values of set properties.</desc>
+      </param>
+    </method>
+
+    <!--- @todo r=klaus Is this the best placement of this method? To me it's
+         not obvious that it processes the object's state at all, and could be
+         moved up to ICloudProvider unless there's any chance that the
+         description changes with the profile. -->
     <method name="getPropertyDescription" const="yes">
       <param name="name" type="wstring" dir="in">
-        <desc>Property name</desc>
+        <desc>Property name.</desc>
       </param>
       <param name="description" type="wstring" dir="return">
-        <desc>Property description</desc>
+        <desc>Property description.</desc>
       </param>
     </method>
 
     <method name="createCloudClient">
       <desc>
-        Creates a cloud client for this cloud provider
+        Creates a cloud client for this cloud profile.
       </desc>
-      <param name="profileName" type="wstring" dir="in">
-      </param>
       <param name="cloudClient" type="ICloudClient" dir="return">
         <desc>
-          returns interface to the cloud client object
+          The cloud client object reference.
         </desc>
       </param>
+    </method>
+
+  </interface>
+
+  <!--
+  // ICloudProvider
+  //////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="ICloudProvider" extends="$unknown"
+    uuid="6e500583-602c-49bc-894d-2f53b8e371e9"
+    wsmap="managed" reservedMethods="4" reservedAttributes="4"
+    >
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>Returns the long name of the provider. Includes vendor and precise
+        product name spelled out in the preferred way.</desc>
+    </attribute>
+
+    <attribute name="shortName" type="wstring" readonly="yes">
+      <desc>Returns the short name of the provider. Less than 8 ASCII chars,
+        using acronyms. No vendor name, but can contain a hint if it's a 3rd
+        party implementation for this cloud provider, to keep it unique.</desc>
+    </attribute>
+
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
+      <desc>Returns the UUID of this cloud provider.</desc>
+    </attribute>
+
+    <!-- if there are any generally useful, static pieces of information about
+         a particular cloud provider, please add them here. Maybe a description
+         of the functionality of the cloud provider implementation?-->
+
+    <attribute name="profiles" type="ICloudProfile" safearray="yes" readonly="yes">
+      <desc>Returns all profiles for this cloud provider.</desc>
+    </attribute>
+
+    <attribute name="profileNames" type="wstring" safearray="yes" readonly="yes">
+      <desc>Returns all profile names for this cloud provider.</desc>
+    </attribute>
+
+    <method name="createProfile">
+      <desc>
+        Creates a new profile.
+      </desc>
+      <param name="profileName" type="wstring" dir="in">
+        <desc>
+          The profile name. Must not exist, otherwise an error is raised.
+        </desc>
+      </param>
+      <param name="names" type="wstring" safearray="yes" dir="in">
+        <desc>Names of properties.</desc>
+      </param>
+      <param name="values" type="wstring" safearray="yes" dir="in">
+        <desc>Values of set properties.</desc>
+      </param>
+    </method>
+
+    <method name="getProfileByName">
+      <param name="profileName" type="wstring" dir="in"/>
+      <param name="profile" type="ICloudProfile" dir="return"/>
     </method>
 
   </interface>
@@ -25228,35 +25306,31 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudProviderManager" extends="$unknown"
-    uuid="64e276a7-cfd1-48ed-aad3-19368197f3b2"
+    uuid="95533d5b-20ec-4089-b461-f2794c9512df"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
-    <attribute name="supportedProviders" type="wstring" readonly="yes" safearray="yes">
-      <desc>Returns a predefined list of all supported cloud providers.</desc>
+    <attribute name="providers" type="ICloudProvider" safearray="yes" readonly="yes">
+      <desc>Returns all supported cloud providers.</desc>
     </attribute>
 
-    <method name="getAllProfiles" const="yes">
-      <desc>
-        Returns the list of the ICloudProvider in one call.
-      </desc>
-      <param name="profileList" type="ICloudProvider" safearray="yes" dir="return">
-        <desc>Returns the list of ICloudProvider.</desc>
-      </param>
+    <method name="getProviderById">
+      <param name="providerId" type="uuid" mod="string" dir="in"/>
+      <param name="provider" type="ICloudProvider" dir="return"/>
     </method>
 
-    <method name="getProfilesByProvider" const="yes">
-      <desc>
-        Returns the ICloudProvider for the particular provider.
-      </desc>
-      <param name="providerName" type="wstring" dir="in">
-      </param>
-      <param name="profile" type="ICloudProvider" dir="return">
-        <desc>Returns the ICloudProvider.</desc>
-      </param>
+    <method name="getProviderByShortName">
+      <param name="providerName" type="wstring" dir="in"/>
+      <param name="provider" type="ICloudProvider" dir="return"/>
+    </method>
+
+    <method name="getProviderByName">
+      <param name="providerName" type="wstring" dir="in"/>
+      <param name="provider" type="ICloudProvider" dir="return"/>
     </method>
 
   </interface>
+
 
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
