@@ -1704,14 +1704,14 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
     const VMMDevDisplayDef* pDispDef;
     VBOXDISPIF_OP Op;
     DWORD winEr = ERROR_SUCCESS;
-    uint32_t id;
+    uint32_t i;
     int iPath;
 
     vboxDispIfOpBegin(pIf, &Op);
 
-    for (id = 0; id < cDispDef; ++id)
+    for (i = 0; i < cDispDef; ++i)
     {
-        pDispDef = &paDispDef[id];
+        pDispDef = &paDispDef[i];
 
         if (!(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED) &&
              (pDispDef->fDisplayFlags | VMMDEV_DISPLAY_CX) ||
@@ -1722,7 +1722,7 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
             Size.cx = pDispDef->cx;
             Size.cy = pDispDef->cy;
 
-            vboxDispIfUpdateModesWDDM(&Op, id, &Size);
+            vboxDispIfUpdateModesWDDM(&Op, pDispDef->idDisplay, &Size);
         }
     }
 
@@ -1732,16 +1732,16 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
 
     vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
 
-    for (id = 0; id < cDispDef; ++id)
+    for (i = 0; i < cDispDef; ++i)
     {
         DISPLAYCONFIG_PATH_INFO *pPathInfo;
 
-        pDispDef = &paDispDef[id];
-        iPath = vboxDispIfWddmDcSearchPath(&DispCfg, id, id);
+        pDispDef = &paDispDef[i];
+        iPath = vboxDispIfWddmDcSearchPath(&DispCfg, pDispDef->idDisplay, pDispDef->idDisplay);
 
         if (iPath < 0)
         {
-            WARN(("VBoxTray:(WDDM) Unexpected iPath(%d) between src(%d) and tgt(%d)\n", iPath, id, id));
+            WARN(("VBoxTray:(WDDM) Unexpected iPath(%d) between src(%d) and tgt(%d)\n", iPath, pDispDef->idDisplay, pDispDef->idDisplay));
             continue;
         }
 
@@ -1826,12 +1826,12 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                 DispCfg.pModeInfoArray = pModeInfo;
 
                 *pPathInfo = DispCfg.pPathInfoArray[0];
-                pPathInfo->sourceInfo.id = id;
-                pPathInfo->targetInfo.id = id;
+                pPathInfo->sourceInfo.id = pDispDef->idDisplay;
+                pPathInfo->targetInfo.id = pDispDef->idDisplay;
 
                 pModeInfoNew = &pModeInfo[DispCfg.cModeInfoArray];
                 pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
-                pModeInfoNew->id = id;
+                pModeInfoNew->id = pDispDef->idDisplay;
                 pModeInfoNew->adapterId = pModeInfo[0].adapterId;
                 pSrcMode = &pModeInfoNew->sourceMode;
                 pSrcMode->width  = pDispDef->cx;
@@ -1843,7 +1843,7 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
 
                 pModeInfoNew++;
                 pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_TARGET;
-                pModeInfoNew->id = id;
+                pModeInfoNew->id = pDispDef->idDisplay;
                 pModeInfoNew->adapterId = pModeInfo[0].adapterId;
                 pModeInfoNew->targetMode = pModeInfo[0].targetMode;
                 pTgtMode = &pModeInfoNew->targetMode;

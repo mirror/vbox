@@ -818,6 +818,102 @@ static void doResize(PVBOXDISPLAYCONTEXT pCtx,
     }
 }
 
+static BOOL DisplayChangeRequestHandler(PVBOXDISPLAYCONTEXT pCtx)
+{
+    VMMDevDisplayDef aDisplays[64];
+    uint32_t cDisplays = RT_ELEMENTS(aDisplays);
+    int rc = VINF_SUCCESS;
+
+    rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true /* fAck */);
+
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t i;
+
+        LogRel(("Got multi resize request %d displays\n", cDisplays));
+
+        for (i = 0; i < cDisplays; ++i)
+        {
+            LogRel(("[%d]: %d 0x%02X %d,%d %dx%d %d\n",
+                i, aDisplays[i].idDisplay,
+                aDisplays[i].fDisplayFlags,
+                aDisplays[i].xOrigin,
+                aDisplays[i].yOrigin,
+                aDisplays[i].cx,
+                aDisplays[i].cy,
+                aDisplays[i].cBitsPerPixel));
+        }
+
+        /* Multidisplay resize is still implemented only for Win7 and newer guests.
+           Single display resize request still goes old way. */
+        if (pCtx->pEnv->dispIf.enmMode < VBOXDISPIF_MODE_WDDM_W7 || cDisplays == 1)
+        {
+            for (i = 0; i < cDisplays; ++i)
+            {
+                doResize(pCtx,
+                    aDisplays[i].idDisplay,
+                    aDisplays[i].cx,
+                    aDisplays[i].cy,
+                    aDisplays[i].cBitsPerPixel,
+                    !RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
+                    aDisplays[i].xOrigin,
+                    aDisplays[i].yOrigin,
+                    RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN));
+            }
+        }
+        else
+        {
+            rc = VBoxDispIfResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
+        }
+
+        return rc;
+    }
+
+
+    /* Fall back to the single monitor resize request. */
+
+    /*
+    * We got at least one event. (bird: What does that mean actually?  The driver wakes us up immediately upon
+    * receiving the event.  Or are we refering to mouse & display?  In the latter case it's misleading.)
+    *
+    * Read the requested resolution and try to set it until success.
+    * New events will not be seen but a new resolution will be read in
+    * this poll loop.
+    *
+    * Note! The interface we're using here was added in VBox 4.2.4.  As of 2017-08-16, this
+    *       version has been unsupported for a long time and we therefore don't bother
+    *       implementing fallbacks using VMMDevDisplayChangeRequest2 and VMMDevDisplayChangeRequest.
+    */
+    uint32_t cx = 0;
+    uint32_t cy = 0;
+    uint32_t cBits = 0;
+    uint32_t iDisplay = 0;
+    uint32_t cxOrigin = 0;
+    uint32_t cyOrigin = 0;
+    bool     fChangeOrigin = false;
+    bool     fEnabled = false;
+    rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay, &cxOrigin, &cyOrigin, &fEnabled, &fChangeOrigin,
+        true /*fAck*/);
+    if (RT_SUCCESS(rc))
+    {
+        /* Try to set the requested video mode. Repeat until it is successful or is rejected by the driver. */
+        LogFlowFunc(("DisplayChangeReqEx parameters  iDisplay=%d x cx=%d x cy=%d x cBits=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
+            iDisplay, cx, cy, cBits, fEnabled, cxOrigin, cyOrigin, fChangeOrigin));
+
+        doResize(pCtx,
+            iDisplay,
+            cx,
+            cy,
+            cBits,
+            fEnabled,
+            cxOrigin,
+            cyOrigin,
+            fChangeOrigin);
+    }
+
+    return rc;
+}
+
 /**
  * Thread function to wait for and process display change requests.
  */
@@ -868,84 +964,7 @@ static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfSh
         if (RT_SUCCESS(rc))
         {
             if (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
-            {
-                LogFlowFunc(("going to get display change information\n"));
-
-#if 0
-                /* Prototype code which processes the multimonitor resize request. */
-                VMMDevDisplayDef aDisplays[64];
-                uint32_t cDisplays = VBoxDisplayGetCount();
-                rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true /* fAck */);
-                if (RT_SUCCESS(rc))
-                {
-                    LogRel(("Got multi resize request %d displays\n", cDisplays));
-
-                    uint32_t i;
-                    for (i = 0; i < cDisplays; ++i)
-                    {
-                        LogRel(("[%d]: %d 0x%02X %d,%d %dx%d %d\n",
-                                 i, aDisplays[i].idDisplay,
-                                 aDisplays[i].fDisplayFlags,
-                                 aDisplays[i].xOrigin,
-                                 aDisplays[i].yOrigin,
-                                 aDisplays[i].cx,
-                                 aDisplays[i].cy,
-                                 aDisplays[i].cBitsPerPixel));
-                    }
-
-                    if (pCtx->pEnv->dispIf.enmMode >= VBOXDISPIF_MODE_WDDM_W7)
-                    {
-                        VBoxDispIfResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
-                    }
-                    else if (pCtx->pEnv->dispIf.enmMode == VBOXDISPIF_MODE_WDDM)
-                    {
-                        VBoxDispIfResizeDisplayVista(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
-                    }
-
-                    continue; /* Done */
-                }
-                /* Fall back to the single monitor resize request. */
-#endif
-
-                /*
-                 * We got at least one event. (bird: What does that mean actually?  The driver wakes us up immediately upon
-                 * receiving the event.  Or are we refering to mouse & display?  In the latter case it's misleading.)
-                 *
-                 * Read the requested resolution and try to set it until success.
-                 * New events will not be seen but a new resolution will be read in
-                 * this poll loop.
-                 *
-                 * Note! The interface we're using here was added in VBox 4.2.4.  As of 2017-08-16, this
-                 *       version has been unsupported for a long time and we therefore don't bother
-                 *       implementing fallbacks using VMMDevDisplayChangeRequest2 and VMMDevDisplayChangeRequest.
-                 */
-                uint32_t cx             = 0;
-                uint32_t cy             = 0;
-                uint32_t cBits          = 0;
-                uint32_t iDisplay       = 0;
-                uint32_t cxOrigin       = 0;
-                uint32_t cyOrigin       = 0;
-                bool     fChangeOrigin  = false;
-                bool     fEnabled       = false;
-                rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay, &cxOrigin, &cyOrigin, &fEnabled, &fChangeOrigin,
-                                                   true /*fAck*/);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Try to set the requested video mode. Repeat until it is successful or is rejected by the driver. */
-                    LogFlowFunc(("DisplayChangeReqEx parameters  iDisplay=%d x cx=%d x cy=%d x cBits=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
-                                 iDisplay, cx, cy, cBits, fEnabled, cxOrigin, cyOrigin, fChangeOrigin));
-
-                    doResize(pCtx,
-                             iDisplay,
-                             cx,
-                             cy,
-                             cBits,
-                             fEnabled,
-                             cxOrigin,
-                             cyOrigin,
-                             fChangeOrigin);
-                }
-            } // if (fDisplayChangeQueried)
+                DisplayChangeRequestHandler(pCtx);
 
             if (fEvents & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED)
                 hlpReloadCursor();
