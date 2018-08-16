@@ -21,6 +21,7 @@
 /* Qt includes: */
 #include <QAction>
 #include <QMenu>
+#include <QVector>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -30,7 +31,6 @@
 /* Forward declarations: */
 class QKeySequence;
 class QString;
-class UIActionPolymorphic;
 class UIActionPolymorphicMenu;
 class UIActionPool;
 class UIActionPoolRuntime;
@@ -169,10 +169,18 @@ public:
     /** Returns action-pool this action belongs to. */
     UIActionPool *actionPool() const { return m_pActionPool; }
 
-    /** Casts action to polymorphic-action. */
-    UIActionPolymorphic *toActionPolymorphic();
     /** Casts action to polymorphic-menu-action. */
     UIActionPolymorphicMenu *toActionPolymorphicMenu();
+
+    /** Returns current action state. */
+    int state() const { return m_iState; }
+    /** Defines current action @a iState. */
+    void setState(int iState) { m_iState = iState; updateIcon(); retranslateUi(); }
+
+    /** Defines @a icon for certain @a iState. */
+    void setIcon(int iState, const QIcon &icon);
+    /** Defines @a icon. */
+    void setIcon(const QIcon &icon);
 
     /** Returns current action name. */
     const QString &name() const { return m_strName; }
@@ -200,6 +208,7 @@ public:
 
     /** Retranslates action. */
     virtual void retranslateUi() = 0;
+    /** Destructs action. */
     virtual ~UIAction() /* override */ { delete menu(); }
 
 protected:
@@ -210,6 +219,9 @@ protected:
 
     /** Returns current action name in menu. */
     QString nameInMenu() const;
+
+    /** Updates action icon. */
+    virtual void updateIcon();
 
     /** Updates action text accordingly. */
     virtual void updateText();
@@ -224,12 +236,16 @@ private:
     /** Holds the type of the action-pool this action belongs to. */
     UIActionPoolType  m_enmActionPoolType;
 
+    /** Holds current action state. */
+    int             m_iState;
+    /** Holds action icons. */
+    QVector<QIcon>  m_icons;
     /** Holds the action name. */
-    QString       m_strName;
+    QString         m_strName;
     /** Holds the action shortcut. */
-    QKeySequence  m_shortcut;
+    QKeySequence    m_shortcut;
     /** Holds whether action shortcut hidden. */
-    bool          m_fShortcutHidden;
+    bool            m_fShortcutHidden;
 };
 
 
@@ -288,7 +304,7 @@ protected:
     /** Constructs simple action passing @a pParent to the base-class.
       * @param  icon  Brings the icon. */
     UIActionSimple(UIActionPool *pParent,
-                   const QIcon& icon);
+                   const QIcon &icon);
 };
 
 
@@ -321,45 +337,6 @@ private:
 
     /** Prepare routine. */
     void prepare();
-};
-
-
-/** Abstract UIAction extension for 'Polymorphic' action type. */
-class SHARED_LIBRARY_STUFF UIActionPolymorphic : public UIAction
-{
-    Q_OBJECT;
-
-public:
-
-    /** Returns current action state. */
-    int state() const { return m_iState; }
-    /** Defines current action state. */
-    void setState(int iState) { m_iState = iState; retranslateUi(); }
-
-protected:
-
-    /** Constructs polymorphic action passing @a pParent to the base-class.
-      * @param  strIcon          Brings the normal-icon name.
-      * @param  strIconDisabled  Brings the disabled-icon name. */
-    UIActionPolymorphic(UIActionPool *pParent,
-                        const QString &strIcon = QString(), const QString &strIconDisabled = QString());
-    /** Constructs polymorphic action passing @a pParent to the base-class.
-      * @param  strIconNormal          Brings the normal-icon name.
-      * @param  strIconSmall           Brings the small-icon name.
-      * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
-      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
-    UIActionPolymorphic(UIActionPool *pParent,
-                        const QString &strIconNormal, const QString &strIconSmall,
-                        const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
-    /** Constructs polymorphic action passing @a pParent to the base-class.
-      * @param  icon  Brings the icon. */
-    UIActionPolymorphic(UIActionPool *pParent,
-                        const QIcon& icon);
-
-private:
-
-    /** Holds current action state. */
-    int m_iState;
 };
 
 

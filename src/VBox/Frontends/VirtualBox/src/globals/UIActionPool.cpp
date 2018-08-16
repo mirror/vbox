@@ -110,6 +110,7 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType enmType)
     , m_enmType(enmType)
     , m_pActionPool(pParent)
     , m_enmActionPoolType(pParent->type())
+    , m_iState(0)
     , m_fShortcutHidden(false)
 {
     /* By default there is no specific menu role.
@@ -128,14 +129,21 @@ UIMenu *UIAction::menu() const
     return QAction::menu() ? qobject_cast<UIMenu*>(QAction::menu()) : 0;
 }
 
-UIActionPolymorphic *UIAction::toActionPolymorphic()
-{
-    return qobject_cast<UIActionPolymorphic*>(this);
-}
-
 UIActionPolymorphicMenu *UIAction::toActionPolymorphicMenu()
 {
     return qobject_cast<UIActionPolymorphicMenu*>(this);
+}
+
+void UIAction::setIcon(int iState, const QIcon &icon)
+{
+    m_icons.resize(iState + 1);
+    m_icons[iState] = icon;
+    updateIcon();
+}
+
+void UIAction::setIcon(const QIcon &icon)
+{
+    setIcon(0, icon);
 }
 
 void UIAction::setName(const QString &strName)
@@ -188,6 +196,11 @@ QString UIAction::nameInMenu() const
     }
     /* Nothing by default: */
     return QString();
+}
+
+void UIAction::updateIcon()
+{
+    QAction::setIcon(m_icons.value(m_iState));
 }
 
 void UIAction::updateText()
@@ -315,38 +328,6 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
 void UIActionToggle::prepare()
 {
     setCheckable(true);
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIActionPolymorphic implementation.                                                                                    *
-*********************************************************************************************************************************/
-
-UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
-                                         const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
-    : UIAction(pParent, UIActionType_Polymorphic)
-    , m_iState(0)
-{
-    if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
-}
-
-UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
-                                         const QString &strIconNormal, const QString &strIconSmall,
-                                         const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
-    : UIAction(pParent, UIActionType_Polymorphic)
-    , m_iState(0)
-{
-    setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
-}
-
-UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
-                                         const QIcon& icon)
-    : UIAction(pParent, UIActionType_Polymorphic)
-    , m_iState(0)
-{
-    if (!icon.isNull())
-        setIcon(icon);
 }
 
 
