@@ -165,6 +165,19 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
     if (!SetCommState(pThis->hDev, &pThis->PortCfg))
         rc = RTErrConvertFromWin32(GetLastError());
 
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Set timeouts for non blocking mode.
+         * See https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_commtimeouts .
+         */
+        COMMTIMEOUTS ComTimeouts;
+        RT_ZERO(ComTimeouts);
+        ComTimeouts.ReadIntervalTimeout = MAXDWORD;
+        if (!SetCommTimeouts(pThis->hDev, &ComTimeouts))
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+
     return rc;
 }
 
@@ -440,38 +453,34 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
 
     *pcbRead = 0;
 
-    /*
-     * Kick of an overlapped read.  It should return immediately if
-     * there is bytes in the buffer.  If not, we'll cancel it and see
-     * what we get back.
-     */
+    /* Check whether there is data waiting in the input queue. */
     int rc = VINF_SUCCESS;
-    BOOL fSucc = ResetEvent(pThis->OverlappedRead.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
-    DWORD cbRead = 0;
-    if (   cbToRead == 0
-        || ReadFile(pThis->hDev, pvBuf,
-                    cbToRead <= ~(DWORD)0 ? (DWORD)cbToRead : ~(DWORD)0,
-                    &cbRead, &pThis->OverlappedRead))
+    COMSTAT ComStat; RT_ZERO(ComStat);
+    if (ClearCommError(pThis->hDev, NULL, &ComStat))
     {
-        *pcbRead = cbRead;
-        rc = VINF_SUCCESS;
-    }
-    else if (GetLastError() == ERROR_IO_PENDING)
-    {
-        if (!CancelIo(pThis->hDev))
-            WaitForSingleObject(pThis->OverlappedRead.hEvent, INFINITE);
-        if (GetOverlappedResult(pThis->hDev, &pThis->OverlappedRead, &cbRead, TRUE /*fWait*/))
+        if (ComStat.cbInQue > 0)
         {
-            *pcbRead = cbRead;
-            rc = VINF_SUCCESS;
-        }
-        else if (GetLastError() == ERROR_OPERATION_ABORTED)
-        {
-            *pcbRead = 0;
-            rc = VINF_TRY_AGAIN;
+            DWORD dwToRead = RT_MIN(ComStat.cbInQue, (DWORD)cbToRead);
+            /* Kick of an overlapped read.  It should return immediately */
+            BOOL fSucc = ResetEvent(pThis->OverlappedRead.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
+            DWORD cbRead = 0;
+            if (   cbToRead == 0
+                || ReadFile(pThis->hDev, pvBuf, dwToRead,
+                            &cbRead, &pThis->OverlappedRead))
+                *pcbRead = cbRead;
+            else if (GetLastError() == ERROR_IO_PENDING)
+            {
+                /* This shouldn't actually happen, so turn this into a synchronous read. */
+                if (GetOverlappedResult(pThis->hDev, &pThis->OverlappedRead, &cbRead, TRUE /*fWait*/))
+                    *pcbRead = cbRead;
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
         }
         else
-            rc = RTErrConvertFromWin32(GetLastError());
+            rc = VINF_TRY_AGAIN;
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
