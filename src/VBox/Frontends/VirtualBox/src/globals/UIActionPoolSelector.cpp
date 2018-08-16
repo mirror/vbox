@@ -2224,7 +2224,6 @@ void UIActionPoolSelector::updateMenuMedium()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Medium)->menu();
-    AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
