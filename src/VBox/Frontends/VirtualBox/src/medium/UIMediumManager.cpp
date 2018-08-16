@@ -1603,7 +1603,7 @@ void UIMediumManager::configure()
 void UIMediumManager::configureCentralWidget()
 {
     /* Create widget: */
-    UIMediumManagerWidget *pWidget = new UIMediumManagerWidget(EmbedTo_Dialog, m_pActionPool, this);
+    UIMediumManagerWidget *pWidget = new UIMediumManagerWidget(EmbedTo_Dialog, m_pActionPool, true, this);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */
