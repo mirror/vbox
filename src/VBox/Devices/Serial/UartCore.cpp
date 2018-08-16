@@ -339,7 +339,7 @@ static void uartIrqUpdate(PUARTCORE pThis)
 /**
  * Returns the amount of bytes stored in the given FIFO.
  *
- * @retrusn Amount of bytes stored in the FIFO.
+ * @returns Amount of bytes stored in the FIFO.
  * @param   pFifo               The FIFO.
  */
 DECLINLINE(size_t) uartFifoUsedGet(PUARTFIFO pFifo)
