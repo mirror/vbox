@@ -86,6 +86,8 @@ typedef struct RTMEMSAFERNODE
     uint32_t                cPages;
     /** The allocator used for this node. */
     RTMEMSAFERALLOCATOR     enmAllocator;
+    /** XOR scrambler value for memory. */
+    uintptr_t               uScramblerXor;
 } RTMEMSAFERNODE;
 /** Pointer to an allocation tracking node. */
 typedef RTMEMSAFERNODE *PRTMEMSAFERNODE;
@@ -100,8 +102,6 @@ static RTONCE       g_MemSaferOnce = RTONCE_INITIALIZER;
 static RTCRITSECTRW g_MemSaferCritSect;
 /** Tree of allocation nodes. */
 static AVLPVTREE    g_pMemSaferTree;
-/** XOR scrambler value for memory. */
-static uintptr_t    g_uMemSaferScramblerXor;
 /** XOR scrambler value pointers. */
 static uintptr_t    g_uMemSaferPtrScramblerXor;
 /** Pointer rotate shift count.*/
@@ -115,7 +115,6 @@ static DECLCALLBACK(int32_t) rtMemSaferOnceInit(void *pvUserIgnore)
 {
     RT_NOREF_PV(pvUserIgnore);
 
-    g_uMemSaferScramblerXor = (uintptr_t)RTRandU64();
     g_uMemSaferPtrScramblerXor = (uintptr_t)RTRandU64();
     g_cMemSaferPtrScramblerRotate = RTRandU32Ex(0, ARCH_BITS - 1);
     return RTCritSectRwInit(&g_MemSaferCritSect);
@@ -202,18 +201,20 @@ static PRTMEMSAFERNODE rtMemSaferNodeRemove(void *pvUser)
 
 RTDECL(int) RTMemSaferScramble(void *pv, size_t cb)
 {
-#ifdef RT_STRICT
     PRTMEMSAFERNODE pThis = rtMemSaferNodeLookup(pv);
     AssertReturn(pThis, VERR_INVALID_POINTER);
     AssertMsgReturn(cb == pThis->cbUser, ("cb=%#zx != %#zx\n", cb, pThis->cbUser), VERR_INVALID_PARAMETER);
-#endif
+
+    /* First time we get a new xor value. */
+    if (!pThis->uScramblerXor)
+        pThis->uScramblerXor = (uintptr_t)RTRandU64();
 
     /* Note! This isn't supposed to be safe, just less obvious. */
     uintptr_t *pu = (uintptr_t *)pv;
     cb = RT_ALIGN_Z(cb, RTMEMSAFER_ALIGN);
     while (cb > 0)
     {
-        *pu ^= g_uMemSaferScramblerXor;
+        *pu ^= pThis->uScramblerXor;
         pu++;
         cb -= sizeof(*pu);
     }
@@ -225,18 +226,16 @@ RT_EXPORT_SYMBOL(RTMemSaferScramble);
 
 RTDECL(int) RTMemSaferUnscramble(void *pv, size_t cb)
 {
-#ifdef RT_STRICT
     PRTMEMSAFERNODE pThis = rtMemSaferNodeLookup(pv);
     AssertReturn(pThis, VERR_INVALID_POINTER);
     AssertMsgReturn(cb == pThis->cbUser, ("cb=%#zx != %#zx\n", cb, pThis->cbUser), VERR_INVALID_PARAMETER);
-#endif
 
     /* Note! This isn't supposed to be safe, just less obvious. */
     uintptr_t *pu = (uintptr_t *)pv;
     cb = RT_ALIGN_Z(cb, RTMEMSAFER_ALIGN);
     while (cb > 0)
     {
-        *pu ^= g_uMemSaferScramblerXor;
+        *pu ^= pThis->uScramblerXor;
         pu++;
         cb -= sizeof(*pu);
     }
