@@ -5873,14 +5873,14 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
     static uint64_t const s_auAccessSizeMasks[] = { sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t) };
     AssertCompile(RT_ELEMENTS(s_auAccessSizeMasks) == RT_ELEMENTS(s_auAddrSizeMasks));
 
-    uint8_t const   uAddrSize     =  pExitInstrInfo->InvVmxXsaves.u3AddrSize;
-    uint8_t const   iSegReg       =  pExitInstrInfo->InvVmxXsaves.iSegReg;
-    bool const      fIdxRegValid  = !pExitInstrInfo->InvVmxXsaves.fIdxRegInvalid;
-    uint8_t const   iIdxReg       =  pExitInstrInfo->InvVmxXsaves.iIdxReg;
-    uint8_t const   uScale        =  pExitInstrInfo->InvVmxXsaves.u2Scaling;
-    bool const      fBaseRegValid = !pExitInstrInfo->InvVmxXsaves.fBaseRegInvalid;
-    uint8_t const   iBaseReg      =  pExitInstrInfo->InvVmxXsaves.iBaseReg;
-    bool const      fIsMemOperand = !pExitInstrInfo->InvVmxXsaves.fIsRegOperand;
+    uint8_t const   uAddrSize     =  pExitInstrInfo->All.u3AddrSize;
+    uint8_t const   iSegReg       =  pExitInstrInfo->All.iSegReg;
+    bool const      fIdxRegValid  = !pExitInstrInfo->All.fIdxRegInvalid;
+    uint8_t const   iIdxReg       =  pExitInstrInfo->All.iIdxReg;
+    uint8_t const   uScale        =  pExitInstrInfo->All.u2Scaling;
+    bool const      fBaseRegValid = !pExitInstrInfo->All.fBaseRegInvalid;
+    uint8_t const   iBaseReg      =  pExitInstrInfo->All.iBaseReg;
+    bool const      fIsMemOperand = !pExitInstrInfo->All.fIsRegOperand;
     bool const      fIsLongMode   =  CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
 
     /*
@@ -5900,7 +5900,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
      * See AMD instruction spec. 1.4.2 "SIB Byte Format"
      * See AMD spec. 4.5.2 "Segment Registers".
      */
-    RTGCPTR GCPtrMem  = GCPtrDisp;
+    RTGCPTR GCPtrMem = GCPtrDisp;
     if (fBaseRegValid)
         GCPtrMem += pVCpu->cpum.GstCtx.aGRegs[iBaseReg].u64;
     if (fIdxRegValid)

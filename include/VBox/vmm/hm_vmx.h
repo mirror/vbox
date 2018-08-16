@@ -849,8 +849,30 @@ typedef union
         uint32_t    iSegReg     : 3;
         uint32_t    uReserved2  : 14;
     } StrIo;
-    /** INVEPT, INVVPID, INVPCID, VMCLEAR, VMPTRLD, VMPTRST, VMXON, VMXOFF, XSAVES,
-     *  XRSTORS information. */
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Scaling       : 2;
+        uint32_t    u5Undef0        : 5;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize      : 3;
+        /** Cleared to 0. */
+        uint32_t    u1Cleared0      : 1;
+        uint32_t    u4Undef0        : 4;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg         : 3;
+        /** The index register (X86_GREG_XXX). */
+        uint32_t    iIdxReg         : 4;
+        /** Set if index register is invalid. */
+        uint32_t    fIdxRegInvalid  : 1;
+        /** The base register (X86_GREG_XXX). */
+        uint32_t    iBaseReg        : 4;
+        /** Set if base register is invalid. */
+        uint32_t    fBaseRegInvalid : 1;
+        /** Register 2 (X86_GREG_XXX). */
+        uint32_t    iReg2           : 4;
+    } Inv;
+    /** VMCLEAR, VMPTRLD, VMPTRST, VMXON, XRSTORS, XSAVES information. */
     struct
     {
         /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
@@ -858,8 +880,8 @@ typedef union
         uint32_t    u5Reserved0     : 5;
         /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
         uint32_t    u3AddrSize      : 3;
-        /** Memory/Register - Always cleared to 0 to indicate memory operand. */
-        uint32_t    fIsRegOperand   : 1;
+        /** Cleared to 0. */
+        uint32_t    u1Cleared0      : 1;
         uint32_t    u4Reserved0     : 4;
         /** The segment register (X86_SREG_XXX). */
         uint32_t    iSegReg         : 3;
@@ -873,7 +895,128 @@ typedef union
         uint32_t    fBaseRegInvalid : 1;
         /** Register 2 (X86_GREG_XXX). */
         uint32_t    iReg2           : 4;
-    } InvVmxXsaves;
+    } VmxXsave;
+    /** LIDT, LGDT, SIDT, SGDT information. */
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Scaling       : 2;
+        uint32_t    u5Undef0        : 5;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize      : 3;
+        /** Always cleared to 0. */
+        uint32_t    u1Cleared0      : 1;
+        /** Operand size; 0=16-bit, 1=32-bit, undefined for 64-bit.  */
+        uint32_t    uOperandSize    : 1;
+        uint32_t    u3Undef0        : 3;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg         : 3;
+        /** The index register (X86_GREG_XXX). */
+        uint32_t    iIdxReg         : 4;
+        /** Set if index register is invalid. */
+        uint32_t    fIdxRegInvalid  : 1;
+        /** The base register (X86_GREG_XXX). */
+        uint32_t    iBaseReg        : 4;
+        /** Set if base register is invalid. */
+        uint32_t    fBaseRegInvalid : 1;
+        /** Instruction identity (VMX_INSTR_ID_XXX). */
+        uint32_t    u2InstrId       : 2;
+        uint32_t    u2Undef0        : 2;
+    } GdtIdt;
+    /** LLDT, LTR, SLDT, STR information. */
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Scaling       : 2;
+        uint32_t    u1Undef0        : 1;
+        /** Register 1 (X86_GREG_XXX). */
+        uint32_t    iReg1           : 4;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize      : 3;
+        /** Memory/Register - Always cleared to 0 to indicate memory operand. */
+        uint32_t    fIsRegOperand   : 1;
+        uint32_t    u4Undef0        : 4;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg         : 3;
+        /** The index register (X86_GREG_XXX). */
+        uint32_t    iIdxReg         : 4;
+        /** Set if index register is invalid. */
+        uint32_t    fIdxRegInvalid  : 1;
+        /** The base register (X86_GREG_XXX). */
+        uint32_t    iBaseReg        : 4;
+        /** Set if base register is invalid. */
+        uint32_t    fBaseRegInvalid : 1;
+        /** Instruction identity (VMX_INSTR_ID_XXX). */
+        uint32_t    u2InstrId       : 2;
+        uint32_t    u2Undef0        : 2;
+    } LdtTr;
+    /** RDRAND, RDSEED information. */
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Undef0        : 2;
+        /** Destination register (X86_GREG_XXX). */
+        uint32_t    iReg1           : 4;
+        uint32_t    u4Undef0        : 4;
+        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
+        uint32_t    u2OperandSize   : 2;
+        uint32_t    u19Def0         : 20;
+    } RdrandRdseed;
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Scaling       : 2;
+        uint32_t    u1Undef0        : 1;
+        /** Register 1 (X86_GREG_XXX). */
+        uint32_t    iReg1           : 4;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize      : 3;
+        /** Memory/Register - Always cleared to 0 to indicate memory operand. */
+        uint32_t    fIsRegOperand   : 1;
+        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
+        uint32_t    u4Undef0        : 4;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg         : 3;
+        /** The index register (X86_GREG_XXX). */
+        uint32_t    iIdxReg         : 4;
+        /** Set if index register is invalid. */
+        uint32_t    fIdxRegInvalid  : 1;
+        /** The base register (X86_GREG_XXX). */
+        uint32_t    iBaseReg        : 4;
+        /** Set if base register is invalid. */
+        uint32_t    fBaseRegInvalid : 1;
+        /** Register 2 (X86_GREG_XXX). */
+        uint32_t    iReg2           : 4;
+    } VmreadVmwrite;
+    /** This is a combination field of all instruction information. Note! Not all field
+     *  combinations are valid (e.g., iReg1 is undefined for memory operands). */
+    struct
+    {
+        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
+        uint32_t    u2Scaling       : 2;
+        uint32_t    u1Undef0        : 1;
+        /** Register 1 (X86_GREG_XXX). */
+        uint32_t    iReg1           : 4;
+        /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
+        uint32_t    u3AddrSize      : 3;
+        /** Memory/Register - Always cleared to 0 to indicate memory operand. */
+        uint32_t    fIsRegOperand   : 1;
+        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
+        uint32_t    uOperandSize    : 2;
+        uint32_t    u2Undef0        : 2;
+        /** The segment register (X86_SREG_XXX). */
+        uint32_t    iSegReg         : 3;
+        /** The index register (X86_GREG_XXX). */
+        uint32_t    iIdxReg         : 4;
+        /** Set if index register is invalid. */
+        uint32_t    fIdxRegInvalid  : 1;
+        /** The base register (X86_GREG_XXX). */
+        uint32_t    iBaseReg        : 4;
+        /** Set if base register is invalid. */
+        uint32_t    fBaseRegInvalid : 1;
+        /** Register 2 (X86_GREG_XXX) or instruction identity. */
+        uint32_t    iReg2           : 4;
+    } All;
 } VMXEXITINSTRINFO;
 AssertCompileSize(VMXEXITINSTRINFO, 4);
 /** Pointer to a VMX VM-exit instruction info. struct. */
@@ -2118,6 +2261,29 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_INT_INFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT                     5
 #define VMX_EXIT_INT_INFO_TYPE_SW_XCPT                          6
 #define VMX_EXIT_INT_INFO_TYPE_UNUSED                           7
+/** @} */
+
+
+/** @name VM-exit instruction identity.
+ *
+ * These are found in VM-exit instruction information fields for certain
+ * instructions.
+ * @{ */
+typedef uint8_t VMXINSTRID;
+#define VMX_INSTR_ID_VALID                                    RT_BIT(7)
+#define VMX_INSTR_ID_IS_VALID(a)                              (((a) >> 7) & 1)
+#define VMX_INSTR_ID_GET_ID(a)                                ((a) & ~VMX_INSTR_ID_VALID)
+#define VMX_INSTR_ID_NONE                                     0x7f
+/** The following values are in accordance to the VT-x spec: */
+#define VMX_INSTR_ID_SGDT                                     ((VMX_INSTR_ID_VALID) | 0)
+#define VMX_INSTR_ID_SIDT                                     ((VMX_INSTR_ID_VALID) | 1)
+#define VMX_INSTR_ID_LGDT                                     ((VMX_INSTR_ID_VALID) | 2)
+#define VMX_INSTR_ID_LIDT                                     ((VMX_INSTR_ID_VALID) | 3)
+
+#define VMX_INSTR_ID_SLDT                                     ((VMX_INSTR_ID_VALID) | 0)
+#define VMX_INSTR_ID_STR                                      ((VMX_INSTR_ID_VALID) | 1)
+#define VMX_INSTR_ID_LLDT                                     ((VMX_INSTR_ID_VALID) | 2)
+#define VMX_INSTR_ID_LTR                                      ((VMX_INSTR_ID_VALID) | 3)
 /** @} */
 
 
