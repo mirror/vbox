@@ -2602,7 +2602,7 @@ RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PRTHTTPREADCALLBACK pfnRead, v
     if (rcCurl != CURLE_OK)
         return VERR_HTTP_CURL_ERROR;
 
-    return VINF_SUCCESS;    
+    return VINF_SUCCESS;
 }
 
 
@@ -2621,7 +2621,7 @@ RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pfnWrite
     if (rcCurl != CURLE_OK)
         return VERR_HTTP_CURL_ERROR;
 
-    return VINF_SUCCESS;    
+    return VINF_SUCCESS;
 }
 
 
@@ -2640,7 +2640,7 @@ RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pf
     if (rcCurl != CURLE_OK)
         return VERR_HTTP_CURL_ERROR;
 
-    return VINF_SUCCESS;    
+    return VINF_SUCCESS;
 }
 
 
