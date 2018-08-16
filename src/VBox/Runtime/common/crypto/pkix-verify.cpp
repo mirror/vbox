@@ -151,7 +151,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, RTCRKEY hPub
     /*
      * Check the result.
      */
-    if (   RT_SUCCESS(rcIprt) && RT_SUCCESS(rcOssl)
+    if (   (RT_SUCCESS(rcIprt) && RT_SUCCESS(rcOssl))
         || (RT_FAILURE_NP(rcIprt) && RT_FAILURE_NP(rcOssl))
         || (RT_SUCCESS(rcIprt) && rcOssl == VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP) )
         return rcIprt;
@@ -273,7 +273,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY h
     /*
      * Check the result.
      */
-    if (   RT_SUCCESS(rcIprt) && RT_SUCCESS(rcOssl)
+    if (   (RT_SUCCESS(rcIprt) && RT_SUCCESS(rcOssl))
         || (RT_FAILURE_NP(rcIprt) && RT_FAILURE_NP(rcOssl))
         || (RT_SUCCESS(rcIprt) && rcOssl == VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP) )
         return rcIprt;
