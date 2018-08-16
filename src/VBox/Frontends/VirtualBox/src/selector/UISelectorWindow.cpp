@@ -453,7 +453,7 @@ void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
     /* Create instance if not yet created: */
     if (!m_pManagerVirtualMedia)
     {
-        UIMediumManagerFactory().prepare(m_pManagerVirtualMedia, this);
+        UIMediumManagerFactory(m_pActionPool).prepare(m_pManagerVirtualMedia, this);
         connect(m_pManagerVirtualMedia, &QIManagerDialog::sigClose,
                 this, &UISelectorWindow::sltCloseVirtualMediumManagerWindow);
     }

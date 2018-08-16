@@ -408,12 +408,15 @@ class SHARED_LIBRARY_STUFF UIActionPool : public QIWithRetranslateUI3<QObject>
 
     /** Pointer to menu update-handler for this class. */
     typedef void (UIActionPool::*PTFActionPool)();
+    /** Pointer to menu update-handler for Selector sub-class. */
+    typedef void (UIActionPoolSelector::*PTFActionPoolSelector)();
     /** Pointer to menu update-handler for Runtime sub-class. */
     typedef void (UIActionPoolRuntime::*PTFActionPoolRuntime)();
     /** Union for two defines above. */
     union PointerToFunction
     {
         PTFActionPool ptf;
+        PTFActionPoolSelector ptfs;
         PTFActionPoolRuntime ptfr;
     };
 

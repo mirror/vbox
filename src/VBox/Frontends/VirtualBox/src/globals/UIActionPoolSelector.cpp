@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "UIActionPoolSelector.h"
 # include "UIExtraDataDefs.h"
+# include "UIIconPool.h"
 # include "UIShortcutPool.h"
 # include "UIDefs.h"
 
@@ -1768,6 +1769,324 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Medium' menu class. */
+class UIActionMenuSelectorMedium : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMedium(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("MediumMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Medium"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the medium menu"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Add' action class. */
+class UIActionMenuSelectorMediumPerformAdd : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformAdd(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setIcon(0, UIIconPool::iconSetFull(":/hd_add_22px.png",          ":/hd_add_16px.png",
+                                           ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_add_22px.png",          ":/cd_add_16px.png",
+                                           ":/cd_add_disabled_22px.png", ":/cd_add_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_add_22px.png",          ":/fd_add_16px.png",
+                                           ":/fd_add_disabled_22px.png", ":/fd_add_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("AddMedium");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+A");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Add a Disk Image File"));
+        setToolTip(tr("Add a Disk Image File (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Copy' action class. */
+class UIActionMenuSelectorMediumPerformCopy : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformCopy(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setIcon(0, UIIconPool::iconSetFull(":/hd_copy_22px.png",          ":/hd_copy_16px.png",
+                                           ":/hd_copy_disabled_22px.png", ":/hd_copy_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_copy_22px.png",          ":/cd_copy_16px.png",
+                                           ":/cd_copy_disabled_22px.png", ":/cd_copy_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_copy_22px.png",          ":/fd_copy_16px.png",
+                                           ":/fd_copy_disabled_22px.png", ":/fd_copy_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CopyMedium");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+C");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Copy..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Copy selected disk image file"));
+        setToolTip(tr("Copy Disk Image File (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Move' action class. */
+class UIActionMenuSelectorMediumPerformMove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformMove(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setIcon(0, UIIconPool::iconSetFull(":/hd_move_22px.png",          ":/hd_move_16px.png",
+                                           ":/hd_move_disabled_22px.png", ":/hd_move_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_move_22px.png",          ":/cd_move_16px.png",
+                                           ":/cd_move_disabled_22px.png", ":/cd_move_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_move_22px.png",          ":/fd_move_16px.png",
+                                           ":/fd_move_disabled_22px.png", ":/fd_move_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("MoveMedium");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+M");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Move..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Move selected disk image file"));
+        setToolTip(tr("Move Disk Image File (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Remove' action class. */
+class UIActionMenuSelectorMediumPerformRemove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformRemove(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setIcon(0, UIIconPool::iconSetFull(":/hd_remove_22px.png",          ":/hd_remove_16px.png",
+                                           ":/hd_remove_disabled_22px.png", ":/hd_remove_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_remove_22px.png",          ":/cd_remove_16px.png",
+                                           ":/cd_remove_disabled_22px.png", ":/cd_remove_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_remove_22px.png",          ":/fd_remove_16px.png",
+                                           ":/fd_remove_disabled_22px.png", ":/fd_remove_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RemoveMedium");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+R");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Remove..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove selected disk image file"));
+        setToolTip(tr("Remove Disk Image File (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Release' action class. */
+class UIActionMenuSelectorMediumPerformRelease : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformRelease(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setIcon(0, UIIconPool::iconSetFull(":/hd_release_22px.png",          ":/hd_release_16px.png",
+                                           ":/hd_release_disabled_22px.png", ":/hd_release_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_release_22px.png",          ":/cd_release_16px.png",
+                                           ":/cd_release_disabled_22px.png", ":/cd_release_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_release_22px.png",          ":/fd_release_16px.png",
+                                           ":/fd_release_disabled_22px.png", ":/fd_release_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ReleaseMedium");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+L");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Re&lease..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Release selected disk image file"));
+        setToolTip(tr("Release Disk Image File (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Toggle action extension, used as 'Toggle Medium Properties' action class. */
+class UIActionMenuSelectorMediumToggleProperties : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumToggleProperties(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setIcon(0, UIIconPool::iconSetFull(":/hd_modify_22px.png",          ":/hd_modify_16px.png",
+                                           ":/hd_modify_disabled_22px.png", ":/hd_modify_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_modify_22px.png",          ":/cd_modify_16px.png",
+                                           ":/cd_modify_disabled_22px.png", ":/cd_modify_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_modify_22px.png",          ":/fd_modify_16px.png",
+                                           ":/fd_modify_disabled_22px.png", ":/fd_modify_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleMediumProperties");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Space");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Properties"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected disk image file properties"));
+        setToolTip(tr("Open Disk Image File Properties (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Refresh' action class. */
+class UIActionMenuSelectorMediumPerformRefresh : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformRefresh(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/refresh_22px.png",          ":/refresh_16px.png",
+                         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RefreshMediums");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Re&fresh..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of disk image files"));
+        setToolTip(tr("Refresh Disk Image Files (%1)").arg(shortcut().toString()));
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIActionPoolSelector implementation.                                                                                   *
 *********************************************************************************************************************************/
@@ -1862,6 +2181,19 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Snapshot_T_Properties] = new UIActionMenuSelectorSnapshotToggleProperties(this);
     m_pool[UIActionIndexST_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
 
+    /* Virtual Medium Manager actions: */
+    m_pool[UIActionIndexST_M_Medium] = new UIActionMenuSelectorMedium(this);
+    m_pool[UIActionIndexST_M_Medium_S_Add] = new UIActionMenuSelectorMediumPerformAdd(this);
+    m_pool[UIActionIndexST_M_Medium_S_Copy] = new UIActionMenuSelectorMediumPerformCopy(this);
+    m_pool[UIActionIndexST_M_Medium_S_Move] = new UIActionMenuSelectorMediumPerformMove(this);
+    m_pool[UIActionIndexST_M_Medium_S_Remove] = new UIActionMenuSelectorMediumPerformRemove(this);
+    m_pool[UIActionIndexST_M_Medium_S_Release] = new UIActionMenuSelectorMediumPerformRelease(this);
+    m_pool[UIActionIndexST_M_Medium_T_Details] = new UIActionMenuSelectorMediumToggleProperties(this);
+    m_pool[UIActionIndexST_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
+
+    /* Prepare update-handlers for known menus: */
+    m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfs = &UIActionPoolSelector::updateMenuMedium;
+
     /* Call to base-class: */
     UIActionPool::preparePool();
 }
@@ -1883,6 +2215,55 @@ void UIActionPoolSelector::updateMenus()
 
     /* 'Log Viewer' menu: */
     updateMenuLogViewer();
+
+    /* 'Virtual Media Manager' menu: */
+    updateMenuMedium();
+}
+
+void UIActionPoolSelector::updateMenuMedium()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexST_M_Medium)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator? */
+    bool fSeparator = false;
+
+    /* 'Add' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Add)) || fSeparator;
+    /* 'Copy' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Copy)) || fSeparator;
+    /* 'Move' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Move)) || fSeparator;
+    /* 'Remove' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Remove)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Release' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
+    /* 'Properties' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Refresh' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Refresh)) || fSeparator;;
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Medium);
 }
 
 void UIActionPoolSelector::updateShortcuts()

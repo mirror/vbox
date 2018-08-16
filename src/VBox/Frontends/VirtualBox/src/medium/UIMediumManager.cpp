@@ -35,6 +35,7 @@
 # include "QIMessageBox.h"
 # include "QITabWidget.h"
 # include "VBoxGlobal.h"
+# include "UIActionPoolSelector.h"
 # include "UIExtraDataManager.h"
 # include "UIMediumDetailsWidget.h"
 # include "UIMediumItem.h"
@@ -147,9 +148,10 @@ void UIEnumerationProgressBar::prepare()
 *   Class UIMediumManagerWidget implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
+UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
+    , m_pActionPool(pActionPool)
     , m_fPreventChangeCurrentItem(false)
     , m_pTabWidget(0)
     , m_iTabCount(3)
@@ -162,14 +164,15 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pDetailsWidget(0)
     , m_pToolBar(0)
     , m_pContextMenu(0)
-    , m_pMenu(0)
-    , m_pActionAdd(0), m_pActionCopy(0), m_pActionMove(0), m_pActionRemove(0)
-    , m_pActionRelease(0), m_pActionDetails(0)
-    , m_pActionRefresh(0)
     , m_pProgressBar(0)
 {
     /* Prepare: */
     prepare();
+}
+
+QMenu *UIMediumManagerWidget::menu() const
+{
+    return m_pActionPool->action(UIActionIndexST_M_Medium)->menu();
 }
 
 void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBar)
@@ -183,54 +186,6 @@ void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBa
 
 void UIMediumManagerWidget::retranslateUi()
 {
-    /* Translate menu: */
-    if (m_pMenu)
-        m_pMenu->setTitle(UIMediumManager::tr("&Medium"));
-
-    /* Translate actions: */
-    if (m_pActionAdd)
-    {
-        m_pActionAdd->setText(UIMediumManager::tr("&Add..."));
-        m_pActionAdd->setToolTip(UIMediumManager::tr("Add a Disk Image File"));
-        m_pActionAdd->setStatusTip(UIMediumManager::tr("Add a disk image file"));
-    }
-    if (m_pActionCopy)
-    {
-        m_pActionCopy->setText(UIMediumManager::tr("&Copy..."));
-        m_pActionCopy->setToolTip(UIMediumManager::tr("Copy Disk Image File (%1)").arg(m_pActionCopy->shortcut().toString()));
-        m_pActionCopy->setStatusTip(UIMediumManager::tr("Copy selected disk image file"));
-    }
-    if (m_pActionMove)
-    {
-        m_pActionMove->setText(UIMediumManager::tr("&Move..."));
-        m_pActionMove->setToolTip(UIMediumManager::tr("Move Disk Image File (%1)").arg(m_pActionMove->shortcut().toString()));
-        m_pActionMove->setStatusTip(UIMediumManager::tr("Move selected disk image file"));
-    }
-    if (m_pActionRemove)
-    {
-        m_pActionRemove->setText(UIMediumManager::tr("&Remove..."));
-        m_pActionRemove->setToolTip(UIMediumManager::tr("Remove Disk Image File (%1)").arg(m_pActionRemove->shortcut().toString()));
-        m_pActionRemove->setStatusTip(UIMediumManager::tr("Remove selected disk image file"));
-    }
-    if (m_pActionRelease)
-    {
-        m_pActionRelease->setText(UIMediumManager::tr("Re&lease..."));
-        m_pActionRelease->setToolTip(UIMediumManager::tr("Release Disk Image File (%1)").arg(m_pActionRelease->shortcut().toString()));
-        m_pActionRelease->setStatusTip(UIMediumManager::tr("Release selected disk image file by detaching it from machines"));
-    }
-    if (m_pActionDetails)
-    {
-        m_pActionDetails->setText(UIMediumManager::tr("&Properties..."));
-        m_pActionDetails->setToolTip(UIMediumManager::tr("Open Disk Image File Properties (%1)").arg(m_pActionDetails->shortcut().toString()));
-        m_pActionDetails->setStatusTip(UIMediumManager::tr("Open pane with selected disk image file properties"));
-    }
-    if (m_pActionRefresh)
-    {
-        m_pActionRefresh->setText(UIMediumManager::tr("Re&fresh"));
-        m_pActionRefresh->setToolTip(UIMediumManager::tr("Refresh Disk Image Files (%1)").arg(m_pActionRefresh->shortcut().toString()));
-        m_pActionRefresh->setStatusTip(UIMediumManager::tr("Refresh the list of disk image files"));
-    }
-
     /* Translate toolbar: */
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
@@ -466,8 +421,8 @@ void UIMediumManagerWidget::sltHandleMediumDeleted(const QString &strMediumID)
 void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
 {
     /* Disable 'refresh' action: */
-    if (m_pActionRefresh)
-        m_pActionRefresh->setEnabled(false);
+    if (m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh))
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh)->setEnabled(false);
 
     /* Disable details-widget: */
     if (m_pDetailsWidget)
@@ -535,8 +490,8 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
         m_pDetailsWidget->setOptionsEnabled(true);
 
     /* Enable 'refresh' action: */
-    if (m_pActionRefresh)
-        m_pActionRefresh->setEnabled(true);
+    if (m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh))
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh)->setEnabled(true);
 
     /* Re-fetch all current medium-items: */
     refetchCurrentMediumItems();
@@ -758,106 +713,27 @@ void UIMediumManagerWidget::prepareConnections()
 
 void UIMediumManagerWidget::prepareActions()
 {
-    /* Create 'Add' action: */
-    m_pActionAdd = new QAction(this);
-    AssertPtrReturnVoid(m_pActionAdd);
-    {
-        /* Configure add-action: */
-        m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
-        connect(m_pActionAdd, &QAction::triggered, this, &UIMediumManagerWidget::sltAddMedium);
-    }
-    /* Create 'Copy' action: */
-    m_pActionCopy = new QAction(this);
-    AssertPtrReturnVoid(m_pActionCopy);
-    {
-        /* Configure copy-action: */
-        m_pActionCopy->setShortcut(QKeySequence("Ctrl+C"));
-        connect(m_pActionCopy, &QAction::triggered, this, &UIMediumManagerWidget::sltCopyMedium);
-    }
-
-    /* Create 'Move' action: */
-    m_pActionMove = new QAction(this);
-    AssertPtrReturnVoid(m_pActionMove);
-    {
-        /* Configure move-action: */
-        m_pActionMove->setShortcut(QKeySequence("Ctrl+M"));
-        connect(m_pActionMove, &QAction::triggered, this, &UIMediumManagerWidget::sltMoveMedium);
-    }
-
-    /* Create 'Remove' action: */
-    m_pActionRemove  = new QAction(this);
-    AssertPtrReturnVoid(m_pActionRemove);
-    {
-        /* Configure remove-action: */
-        m_pActionRemove->setShortcut(QKeySequence("Ctrl+R"));
-        connect(m_pActionRemove, &QAction::triggered, this, &UIMediumManagerWidget::sltRemoveMedium);
-    }
-
-    /* Create 'Release' action: */
-    m_pActionRelease = new QAction(this);
-    AssertPtrReturnVoid(m_pActionRelease);
-    {
-        /* Configure release-action: */
-        m_pActionRelease->setShortcut(QKeySequence("Ctrl+L"));
-        connect(m_pActionRelease, &QAction::triggered, this, &UIMediumManagerWidget::sltReleaseMedium);
-    }
-
-    /* Create 'Details' action: */
-    m_pActionDetails = new QAction(this);
-    AssertPtrReturnVoid(m_pActionDetails);
-    {
-        /* Configure modify-action: */
-        m_pActionDetails->setCheckable(true);
-        m_pActionDetails->setShortcut(QKeySequence("Ctrl+Space"));
-        connect(m_pActionDetails, &QAction::toggled, this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
-    }
-
-    /* Create 'Refresh' action: */
-    m_pActionRefresh = new QAction(this);
-    AssertPtrReturnVoid(m_pActionRefresh);
-    {
-        /* Configure refresh-action: */
-        m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
-        connect(m_pActionRefresh, &QAction::triggered, this, &UIMediumManagerWidget::sltRefreshAll);
-    }
+    /* Connect actions: */
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltAddMedium);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltCopyMedium);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltMoveMedium);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltRemoveMedium);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltReleaseMedium);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::toggled,
+            this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltRefreshAll);
 
     /* Update action icons: */
     updateActionIcons();
 
-    /* Prepare menu: */
-    prepareMenu();
     /* Prepare context-menu: */
     prepareContextMenu();
-}
-
-void UIMediumManagerWidget::prepareMenu()
-{
-    /* Create 'Medium' menu: */
-    m_pMenu = new QMenu(this);
-    AssertPtrReturnVoid(m_pMenu);
-    {
-        /* Configure 'Medium' menu: */
-        if (m_pActionAdd)
-            m_pMenu->addAction(m_pActionAdd);
-        if (m_pActionCopy)
-            m_pMenu->addAction(m_pActionCopy);
-        if (m_pActionMove)
-            m_pMenu->addAction(m_pActionMove);
-        if (m_pActionRemove)
-            m_pMenu->addAction(m_pActionRemove);
-        if (   (m_pActionCopy || m_pActionMove || m_pActionRemove)
-            && (m_pActionRelease || m_pActionDetails))
-            m_pMenu->addSeparator();
-        if (m_pActionRelease)
-            m_pMenu->addAction(m_pActionRelease);
-        if (m_pActionDetails)
-            m_pMenu->addAction(m_pActionDetails);
-        if (   (m_pActionRelease || m_pActionDetails)
-            && (m_pActionRefresh))
-            m_pMenu->addSeparator();
-        if (m_pActionRefresh)
-            m_pMenu->addAction(m_pActionRefresh);
-    }
 }
 
 void UIMediumManagerWidget::prepareContextMenu()
@@ -867,21 +743,13 @@ void UIMediumManagerWidget::prepareContextMenu()
     AssertPtrReturnVoid(m_pContextMenu);
     {
         /* Configure contex-menu: */
-        if (m_pActionAdd)
-            m_pContextMenu->addAction(m_pActionAdd);
-        if (m_pActionCopy)
-            m_pContextMenu->addAction(m_pActionCopy);
-        if (m_pActionMove)
-            m_pContextMenu->addAction(m_pActionMove);
-        if (m_pActionRemove)
-            m_pContextMenu->addAction(m_pActionRemove);
-        if (   (m_pActionCopy || m_pActionMove || m_pActionRemove)
-            && (m_pActionRelease || m_pActionDetails))
-            m_pContextMenu->addSeparator();
-        if (m_pActionRelease)
-            m_pContextMenu->addAction(m_pActionRelease);
-        if (m_pActionDetails)
-            m_pContextMenu->addAction(m_pActionDetails);
+        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
+        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
+        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
+        m_pContextMenu->addSeparator();
+        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
+        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
     }
 }
 
@@ -919,26 +787,15 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add toolbar actions: */
-        if (m_pActionAdd)
-            m_pToolBar->addAction(m_pActionAdd);
-        if (m_pActionCopy)
-            m_pToolBar->addAction(m_pActionCopy);
-        if (m_pActionMove)
-            m_pToolBar->addAction(m_pActionMove);
-        if (m_pActionRemove)
-            m_pToolBar->addAction(m_pActionRemove);
-        if (   (m_pActionCopy || m_pActionMove || m_pActionRemove)
-            && (m_pActionRelease || m_pActionDetails))
-            m_pToolBar->addSeparator();
-        if (m_pActionRelease)
-            m_pToolBar->addAction(m_pActionRelease);
-        if (m_pActionDetails)
-            m_pToolBar->addAction(m_pActionDetails);
-        if (   (m_pActionRelease || m_pActionDetails)
-            && (m_pActionRefresh))
-            m_pToolBar->addSeparator();
-        if (m_pActionRefresh)
-            m_pToolBar->addAction(m_pActionRefresh);
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -1026,9 +883,8 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
         pTreeWidget->setSortingEnabled(true);
         connect(pTreeWidget, &QITreeWidget::currentItemChanged,
                 this, &UIMediumManagerWidget::sltHandleCurrentItemChanged);
-        if (m_pActionDetails)
-            connect(pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                    m_pActionDetails, &QAction::setChecked);
+        connect(pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::setChecked);
         connect(pTreeWidget, &QITreeWidget::customContextMenuRequested,
                 this, &UIMediumManagerWidget::sltHandleContextMenuCall);
         connect(pTreeWidget, &QITreeWidget::resized,
@@ -1066,7 +922,7 @@ void UIMediumManagerWidget::prepareDetailsWidget()
 void UIMediumManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionDetails->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
+    m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
 }
 
 void UIMediumManagerWidget::repopulateTreeWidgets()
@@ -1161,81 +1017,30 @@ void UIMediumManagerWidget::updateActions()
     bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
 
     /* Apply actions accessibility: */
-    if (m_pActionCopy)
-    {
-        bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
-        m_pActionCopy->setEnabled(fActionEnabledCopy);
-    }
-    if (m_pActionMove)
-    {
-        bool fActionEnabledMove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Edit);
-        m_pActionMove->setEnabled(fActionEnabledMove);
-    }
-    if (m_pActionRemove)
-    {
-        bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
-        m_pActionRemove->setEnabled(fActionEnabledRemove);
-    }
-    if (m_pActionRelease)
-    {
-        bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
-        m_pActionRelease->setEnabled(fActionEnabledRelease);
-    }
-    if (m_pActionDetails)
-    {
-        bool fActionEnabledDetails = true;
-        m_pActionDetails->setEnabled(fActionEnabledDetails);
-    }
+    bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
+    m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy)->setEnabled(fActionEnabledCopy);
+    bool fActionEnabledMove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Edit);
+    m_pActionPool->action(UIActionIndexST_M_Medium_S_Move)->setEnabled(fActionEnabledMove);
+    bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
+    m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove)->setEnabled(fActionEnabledRemove);
+    bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
+    m_pActionPool->action(UIActionIndexST_M_Medium_S_Release)->setEnabled(fActionEnabledRelease);
+    bool fActionEnabledDetails = true;
+    m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setEnabled(fActionEnabledDetails);
 }
 
 void UIMediumManagerWidget::updateActionIcons()
 {
-    QString strPrefix = "hd";
-    if (m_pTabWidget)
+    const UIMediumType enmCurrentMediumType = currentMediumType();
+    if (enmCurrentMediumType != UIMediumType_Invalid)
     {
-        switch (currentMediumType())
-        {
-            case UIMediumType_HardDisk: strPrefix = "hd"; break;
-            case UIMediumType_DVD:      strPrefix = "cd"; break;
-            case UIMediumType_Floppy:   strPrefix = "fd"; break;
-            default: break;
-        }
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Add)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Move)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Release)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setState((int)enmCurrentMediumType);
     }
-
-    if (m_pActionAdd)
-        m_pActionAdd->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_22px.png").arg(strPrefix),
-                                                       QString(":/%1_add_16px.png").arg(strPrefix),
-                                                       QString(":/%1_add_disabled_22px.png").arg(strPrefix),
-                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
-
-    if (m_pActionCopy)
-        m_pActionCopy->setIcon(UIIconPool::iconSetFull(QString(":/%1_copy_22px.png").arg(strPrefix),
-                                                       QString(":/%1_copy_16px.png").arg(strPrefix),
-                                                       QString(":/%1_copy_disabled_22px.png").arg(strPrefix),
-                                                       QString(":/%1_copy_disabled_16px.png").arg(strPrefix)));
-    if (m_pActionMove)
-        m_pActionMove->setIcon(UIIconPool::iconSetFull(QString(":/%1_move_22px.png").arg(strPrefix),
-                                                       QString(":/%1_move_16px.png").arg(strPrefix),
-                                                       QString(":/%1_move_disabled_22px.png").arg(strPrefix),
-                                                       QString(":/%1_move_disabled_16px.png").arg(strPrefix)));
-    if (m_pActionRemove)
-        m_pActionRemove->setIcon(UIIconPool::iconSetFull(QString(":/%1_remove_22px.png").arg(strPrefix),
-                                                         QString(":/%1_remove_16px.png").arg(strPrefix),
-                                                         QString(":/%1_remove_disabled_22px.png").arg(strPrefix),
-                                                         QString(":/%1_remove_disabled_16px.png").arg(strPrefix)));
-    if (m_pActionRelease)
-        m_pActionRelease->setIcon(UIIconPool::iconSetFull(QString(":/%1_release_22px.png").arg(strPrefix),
-                                                          QString(":/%1_release_16px.png").arg(strPrefix),
-                                                          QString(":/%1_release_disabled_22px.png").arg(strPrefix),
-                                                          QString(":/%1_release_disabled_16px.png").arg(strPrefix)));
-    if (m_pActionDetails)
-        m_pActionDetails->setIcon(UIIconPool::iconSetFull(QString(":/%1_modify_22px.png").arg(strPrefix),
-                                                          QString(":/%1_modify_16px.png").arg(strPrefix),
-                                                          QString(":/%1_modify_disabled_22px.png").arg(strPrefix),
-                                                          QString(":/%1_modify_disabled_16px.png").arg(strPrefix)));
-    if (m_pActionRefresh && m_pActionRefresh->icon().isNull())
-        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_22px.png", ":/refresh_16px.png",
-                                                          ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 }
 
 void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action action)
@@ -1730,9 +1535,14 @@ UIMediumItem* UIMediumManagerWidget::toMediumItem(QTreeWidgetItem *pItem)
 *   Class UIMediumManagerFactory implementation.                                                                                 *
 *********************************************************************************************************************************/
 
+UIMediumManagerFactory::UIMediumManagerFactory(UIActionPool *pActionPool /* = 0 */)
+    : m_pActionPool(pActionPool)
+{
+}
+
 void UIMediumManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIMediumManager(pCenterWidget);
+    pDialog = new UIMediumManager(pCenterWidget, m_pActionPool);
 }
 
 
@@ -1740,8 +1550,9 @@ void UIMediumManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterW
 *   Class UIMediumManagerFactory implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIMediumManager::UIMediumManager(QWidget *pCenterWidget)
+UIMediumManager::UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_pActionPool(pActionPool)
     , m_pProgressBar(0)
 {
 }
@@ -1789,7 +1600,7 @@ void UIMediumManager::configure()
 void UIMediumManager::configureCentralWidget()
 {
     /* Create widget: */
-    UIMediumManagerWidget *pWidget = new UIMediumManagerWidget(EmbedTo_Dialog, this);
+    UIMediumManagerWidget *pWidget = new UIMediumManagerWidget(EmbedTo_Dialog, m_pActionPool, this);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */

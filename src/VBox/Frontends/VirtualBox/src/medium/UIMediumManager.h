@@ -32,6 +32,7 @@ class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QILabel;
 class QITreeWidget;
+class UIActionPool;
 class UIMedium;
 class UIMediumDetailsWidget;
 class UIMediumItem;
@@ -104,10 +105,10 @@ signals:
 public:
 
     /** Constructs Virtual Media Manager widget. */
-    UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
+    UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool, QWidget *pParent = 0);
 
     /** Returns the menu. */
-    QMenu *menu() const { return m_pMenu; }
+    QMenu *menu() const;
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
@@ -204,8 +205,6 @@ private:
         void prepareConnections();
         /** Prepares actions. */
         void prepareActions();
-        /** Prepares menu. */
-        void prepareMenu();
         /** Prepares context-menu. */
         void prepareContextMenu();
         /** Prepares widgets. */
@@ -299,6 +298,9 @@ private:
         /** Holds the widget embedding type. */
         const EmbedTo m_enmEmbedding;
 
+        /** Holds the action-pool reference. */
+        UIActionPool *m_pActionPool;
+
         /** Holds whether Virtual Media Manager should preserve current item change. */
         bool m_fPreventChangeCurrentItem;
     /** @} */
@@ -343,22 +345,6 @@ private:
         UIToolBar *m_pToolBar;
         /** Holds the context-menu object instance. */
         QMenu     *m_pContextMenu;
-        /** Holds the menu object instance. */
-        QMenu     *m_pMenu;
-        /** Holds the Add action instance. */
-        QAction   *m_pActionAdd;
-        /** Holds the Copy action instance. */
-        QAction   *m_pActionCopy;
-        /** Holds the Move action instance. */
-        QAction   *m_pActionMove;
-        /** Holds the Remove action instance. */
-        QAction   *m_pActionRemove;
-        /** Holds the Release action instance. */
-        QAction   *m_pActionRelease;
-        /** Holds the Details action instance. */
-        QAction   *m_pActionDetails;
-        /** Holds the Refresh action instance. */
-        QAction   *m_pActionRefresh;
     /** @} */
 
     /** @name Progress-bar variables.
@@ -372,11 +358,20 @@ private:
 /** QIManagerDialogFactory extension used as a factory for Virtual Media Manager dialog. */
 class UIMediumManagerFactory : public QIManagerDialogFactory
 {
+public:
+
+    /** Constructs Media Manager factory acquiring additional arguments.
+      * @param  pActionPool  Brings the action-pool reference. */
+    UIMediumManagerFactory(UIActionPool *pActionPool = 0);
+
 protected:
 
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Brings the widget reference to center according to. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
+
+    /** Holds the action-pool reference. */
+    UIActionPool *m_pActionPool;
 };
 
 
@@ -403,8 +398,9 @@ private slots:
 private:
 
     /** Constructs Host Network Manager dialog.
-      * @param  pCenterWidget  Brings the widget reference to center according to. */
-    UIMediumManager(QWidget *pCenterWidget);
+      * @param  pCenterWidget  Brings the widget reference to center according to.
+      * @param  pActionPool    Brings the action-pool reference. */
+    UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool);
 
     /** @name Event-handling stuff.
       * @{ */
@@ -428,6 +424,12 @@ private:
       * @{ */
         /** Returns the widget. */
         virtual UIMediumManagerWidget *widget() /* override */;
+    /** @} */
+
+    /** @name Action related variables.
+      * @{ */
+        /** Holds the action-pool reference. */
+        UIActionPool *m_pActionPool;
     /** @} */
 
     /** @name Progress-bar variables.
