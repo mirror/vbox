@@ -151,7 +151,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
     {
         RT_BZERO(pvBuf, cbToClear);
     }
-    else
+    else /* Unsigned formats. */
     {
         switch (pPCMProps->cBytes)
         {
@@ -164,7 +164,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
             case 2: /* 16 bit */
             {
                 uint16_t *p = (uint16_t *)pvBuf;
-                uint16_t  s = 0x8000;
+                uint16_t  s = 0x0080;
 
                 for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames((uint32_t)cbToClear, pPCMProps); i++)
                     p[i] = s;
@@ -177,7 +177,7 @@ void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t 
             case 4: /* 32 bit */
             {
                 uint32_t *p = (uint32_t *)pvBuf;
-                uint32_t  s = 0x80000000;
+                uint32_t  s = 0x00000080;
 
                 for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames((uint32_t)cbToClear, pPCMProps); i++)
                     p[i] = s;
