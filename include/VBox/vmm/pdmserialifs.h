@@ -156,9 +156,8 @@ typedef struct PDMISERIALCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   cbAvail             The amount of data available to be written.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDataAvailWrNotify, (PPDMISERIALCONNECTOR pInterface, size_t cbAvail));
+    DECLR3CALLBACKMEMBER(int, pfnDataAvailWrNotify, (PPDMISERIALCONNECTOR pInterface));
 
     /**
      * Try to read data from the underyling driver.
@@ -218,7 +217,7 @@ typedef struct PDMISERIALCONNECTOR
 
 } PDMISERIALCONNECTOR;
 /** PDMIMEDIA interface ID. */
-#define PDMISERIALCONNECTOR_IID                  "53001e70-931c-42a0-b5cc-245ef708ed49"
+#define PDMISERIALCONNECTOR_IID                  "2f16fda0-4980-4ec8-969c-18c1d10b7b95"
 
 /** @} */
 

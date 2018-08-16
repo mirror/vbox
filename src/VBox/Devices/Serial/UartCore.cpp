@@ -69,7 +69,7 @@
 /** Sets the interrupt identification to the given value. */
 # define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) << 1) & UART_REG_IIR_ID_MASK)
 /** Gets the interrupt identification from the given IIR register value. */
-# define UART_REG_IIR_ID_GET(a_Val)          (((a_Val) >> 1) & UART_REG_IIR_ID_MASK)
+# define UART_REG_IIR_ID_GET(a_Val)          (((a_Val) & UART_REG_IIR_ID_MASK) >> 1)
 /** Receiver Line Status interrupt. */
 #  define UART_REG_IIR_ID_RCL                0x3
 /** Received Data Available interrupt. */
@@ -336,31 +336,15 @@ static void uartIrqUpdate(PUARTCORE pThis)
 }
 
 
-#ifdef IN_RING3
 /**
- * Clears the given FIFO.
+ * Returns the amount of bytes stored in the given FIFO.
  *
- * @returns nothing.
- * @param   pFifo               The FIFO to clear.
- */
-DECLINLINE(void) uartFifoClear(PUARTFIFO pFifo)
-{
-    memset(&pFifo->abBuf[0], 0, sizeof(pFifo->abBuf));
-    pFifo->cbUsed   = 0;
-    pFifo->offWrite = 0;
-    pFifo->offRead  = 0;
-}
-
-
-/**
- * Returns the amount of free bytes in the given FIFO.
- *
- * @returns The amount of bytes free in the given FIFO.
+ * @retrusn Amount of bytes stored in the FIFO.
  * @param   pFifo               The FIFO.
  */
-DECLINLINE(size_t) uartFifoFreeGet(PUARTFIFO pFifo)
+DECLINLINE(size_t) uartFifoUsedGet(PUARTFIFO pFifo)
 {
-    return pFifo->cbMax - pFifo->cbUsed;
+    return pFifo->cbUsed;
 }
 
 
@@ -392,7 +376,6 @@ DECLINLINE(bool) uartFifoPut(PUARTFIFO pFifo, bool fOvrWr, uint8_t bData)
 
     return fOverFlow;
 }
-#endif
 
 
 /**
@@ -417,6 +400,33 @@ DECLINLINE(uint8_t) uartFifoGet(PUARTFIFO pFifo)
 
 
 #ifdef IN_RING3
+/**
+ * Clears the given FIFO.
+ *
+ * @returns nothing.
+ * @param   pFifo               The FIFO to clear.
+ */
+DECLINLINE(void) uartFifoClear(PUARTFIFO pFifo)
+{
+    memset(&pFifo->abBuf[0], 0, sizeof(pFifo->abBuf));
+    pFifo->cbUsed   = 0;
+    pFifo->offWrite = 0;
+    pFifo->offRead  = 0;
+}
+
+
+/**
+ * Returns the amount of free bytes in the given FIFO.
+ *
+ * @returns The amount of bytes free in the given FIFO.
+ * @param   pFifo               The FIFO.
+ */
+DECLINLINE(size_t) uartFifoFreeGet(PUARTFIFO pFifo)
+{
+    return pFifo->cbMax - pFifo->cbUsed;
+}
+
+
 /**
  * Tries to copy the requested amount of data from the given FIFO into the provided buffer.
  *
@@ -747,15 +757,22 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
         if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         {
 #ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_WRITE;
+            if (!uartFifoUsedGet(&pThis->FifoXmit))
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+            else
+            {
+                uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, uVal);
+                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+            }
 #else
             uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, uVal);
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
             pThis->fThreEmptyPending = false;
             uartIrqUpdate(pThis);
-            if (pThis->pDrvSerial)
+            if (   pThis->pDrvSerial
+                && uartFifoUsedGet(&pThis->FifoXmit) == 1)
             {
-                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
+                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
                 if (RT_FAILURE(rc2))
                     LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
             }
@@ -775,7 +792,7 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
                 uartIrqUpdate(pThis);
                 if (pThis->pDrvSerial)
                 {
-                    int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
+                    int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
                     if (RT_FAILURE(rc2))
                         LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
                 }
@@ -820,6 +837,10 @@ DECLINLINE(int) uartRegIerDlmWrite(PUARTCORE pThis, uint8_t uVal)
             pThis->uRegIer = uVal & UART_REG_IER_MASK_WR;
         else
             pThis->uRegIer = uVal & UART_REG_IER_MASK_WR_16750;
+
+        if (pThis->uRegLsr & UART_REG_LSR_THRE)
+            pThis->fThreEmptyPending = true;
+
         uartIrqUpdate(pThis);
     }
 
@@ -1656,7 +1677,7 @@ DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis)
     pThis->uRegMsr        = 0; /* Updated below. */
     pThis->uRegScr        = 0;
     pThis->fIrqCtiPending = false;
-    pThis->fThreEmptyPending = false;
+    pThis->fThreEmptyPending = true;
 
     /* Standard FIFO size for 15550A. */
     pThis->FifoXmit.cbMax = 16;

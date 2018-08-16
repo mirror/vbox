@@ -58,11 +58,13 @@ typedef struct DRVCHAR
     PDMISERIALCONNECTOR         ISerialConnector;
     /** Flag to notify the receive thread it should terminate. */
     volatile bool               fShutdown;
+    /** Flag whether data is available from the device/driver above as notified by the driver. */
+    volatile bool               fAvailWrExt;
+    /** Internal copy of the flag which gets reset when there is no data anymore. */
+    bool                        fAvailWrInt;
     /** I/O thread. */
     PPDMTHREAD                  pThrdIo;
 
-    /** Amount of data available for sending from the device/driver above. */
-    volatile size_t             cbAvailWr;
     /** Small send buffer. */
     uint8_t                     abTxBuf[16];
     /** Amount of data in the buffer. */
@@ -111,14 +113,14 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const ch
 /**
  * @interface_method_impl{PDMISERIALCONNECTOR,pfnDataAvailWrNotify}
  */
-static DECLCALLBACK(int) drvCharDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface, size_t cbAvail)
+static DECLCALLBACK(int) drvCharDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface)
 {
-    LogFlowFunc(("pInterface=%#p cbAvail=%zu\n", pInterface, cbAvail));
+    LogFlowFunc(("pInterface=%#p\n", pInterface));
     PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
 
     int rc = VINF_SUCCESS;
-    size_t cbAvailOld = ASMAtomicAddZ(&pThis->cbAvailWr, cbAvail);
-    if (!cbAvailOld)
+    bool fAvailOld = ASMAtomicXchgBool(&pThis->fAvailWrExt, true);
+    if (!fAvailOld)
         rc = pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
 
     return rc;
@@ -218,10 +220,13 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     {
         uint32_t fEvts = 0;
 
+        if (!pThis->fAvailWrInt)
+            pThis->fAvailWrInt = ASMAtomicXchgBool(&pThis->fAvailWrExt, false);
+
         if (   !pThis->cbRemaining
             && pThis->pDrvStream->pfnRead)
             fEvts |= RTPOLL_EVT_READ;
-        if (   pThis->cbAvailWr
+        if (   pThis->fAvailWrInt
             || pThis->cbTxUsed)
             fEvts |= RTPOLL_EVT_WRITE;
 
@@ -231,24 +236,21 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         {
             if (fEvtsRecv & RTPOLL_EVT_WRITE)
             {
-                if (pThis->cbAvailWr)
+                if (pThis->fAvailWrInt)
                 {
                     /* Stuff as much data into the TX buffer as we can. */
-                    size_t cbToFetch = RT_MIN(RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed, pThis->cbAvailWr);
+                    size_t cbToFetch = RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed;
                     size_t cbFetched = 0;
                     rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &pThis->abTxBuf[pThis->cbTxUsed], cbToFetch,
                                                           &cbFetched);
                     AssertRC(rc);
 
                     if (cbFetched > 0)
-                    {
-                        ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
                         pThis->cbTxUsed  += cbFetched;
-                    }
                     else
                     {
-                        /* The guest reset the send queue and there is no data available anymore. */
-                        pThis->cbAvailWr = 0;
+                        /* There is no data available anymore. */
+                        pThis->fAvailWrInt = false;
                     }
                 }
 
@@ -330,7 +332,8 @@ static DECLCALLBACK(void) drvCharReset(PPDMDRVINS pDrvIns)
     PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
 
     /* Reset TX and RX buffers. */
-    pThis->cbAvailWr   = 0;
+    pThis->fAvailWrExt = false;
+    pThis->fAvailWrInt = false;
     pThis->cbTxUsed    = 0;
     pThis->cbRemaining = 0;
 }

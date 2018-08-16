@@ -62,8 +62,10 @@ typedef struct DRVHOSTSERIAL
     /** the device path */
     char                        *pszDevicePath;
 
-    /** Amount of data available for sending from the device/driver above. */
-    volatile size_t             cbAvailWr;
+    /** Flag whether data is available from the device/driver above as notified by the driver. */
+    volatile bool               fAvailWrExt;
+    /** Internal copy of the flag which gets reset when there is no data anymore. */
+    bool                        fAvailWrInt;
     /** Small send buffer. */
     uint8_t                     abTxBuf[16];
     /** Amount of data in the buffer. */
@@ -186,13 +188,13 @@ static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, co
 /* -=-=-=-=- ISerialConnector -=-=-=-=- */
 
 /** @interface_method_impl{PDMISERIALCONNECTOR,pfnDataAvailWrNotify} */
-static DECLCALLBACK(int) drvHostSerialDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface, size_t cbAvail)
+static DECLCALLBACK(int) drvHostSerialDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface)
 {
     PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
 
     int rc = VINF_SUCCESS;
-    size_t cbAvailOld = ASMAtomicAddZ(&pThis->cbAvailWr, cbAvail);
-    if (!cbAvailOld)
+    bool fAvailOld = ASMAtomicXchgBool(&pThis->fAvailWrExt, true);
+    if (!fAvailOld)
         rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
 
     return rc;
@@ -375,8 +377,11 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
     {
         uint32_t fEvtFlags = RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED | RTSERIALPORT_EVT_F_BREAK_DETECTED;
 
+        if (!pThis->fAvailWrInt)
+            pThis->fAvailWrInt = ASMAtomicXchgBool(&pThis->fAvailWrExt, false);
+
         /* Wait until there is room again if there is anyting to send. */
-        if (   pThis->cbAvailWr
+        if (   pThis->fAvailWrInt
             || pThis->cbTxUsed)
             fEvtFlags |= RTSERIALPORT_EVT_F_DATA_TX;
 
@@ -390,24 +395,21 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
         {
             if (fEvtsRecv & RTSERIALPORT_EVT_F_DATA_TX)
             {
-                if (pThis->cbAvailWr)
+                if (pThis->fAvailWrInt)
                 {
                     /* Stuff as much data into the TX buffer as we can. */
-                    size_t cbToFetch = RT_MIN(RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed, pThis->cbAvailWr);
+                    size_t cbToFetch = RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed;
                     size_t cbFetched = 0;
                     rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &pThis->abTxBuf[pThis->cbTxUsed], cbToFetch,
                                                           &cbFetched);
                     AssertRC(rc);
 
                     if (cbFetched > 0)
-                    {
-                        ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
-                        pThis->cbTxUsed  += cbFetched;
-                    }
+                        pThis->cbTxUsed += cbFetched;
                     else
                     {
-                        /* The guest reset the send queue and there is no data available anymore. */
-                        pThis->cbAvailWr = 0;
+                        /* There is no data available anymore. */
+                        pThis->fAvailWrInt = false;
                     }
                 }
 
@@ -564,7 +566,8 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     pThis->pDrvIns                               = pDrvIns;
     pThis->hSerialPort                           = NIL_RTSERIALPORT;
-    pThis->cbAvailWr                             = 0;
+    pThis->fAvailWrExt                           = false;
+    pThis->fAvailWrInt                           = false;
     pThis->cbTxUsed                              = 0;
     pThis->offWrite                              = 0;
     pThis->offRead                               = 0;
