@@ -1218,65 +1218,48 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 
     uint32_t cfPlayedTotal = 0;
 
-    AssertPtr(pThis->pHostDrvAudio->pfnStreamGetWritable);
-    uint32_t cfWritable = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf,
-                                          pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend));
+    uint8_t auBuf[256]; /** @todo Get rid of this here. */
 
-    Log3Func(("[%s] cfToPlay=%RU32 (%RU64ms), cfWritable=%RU32 (%RU64ms)\n", pStream->szName,
-              cfToPlay, DrvAudioHlpFramesToMilli(cfToPlay, &pStream->Host.Cfg.Props),
-              cfWritable, DrvAudioHlpFramesToMilli(cfWritable, &pStream->Host.Cfg.Props)));
+    uint32_t cfLeft  = cfToPlay;
+    uint32_t cbChunk = sizeof(auBuf);
 
-    if (cfWritable)
+    while (cfLeft)
     {
-        if (cfToPlay > cfWritable) /* More frames available than we can write? Limit. */
-            cfToPlay = cfWritable;
+        uint32_t cfRead = 0;
+        rc = AudioMixBufAcquireReadBlock(&pStream->Host.MixBuf,
+                                         auBuf, RT_MIN(cbChunk, AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfLeft)),
+                                         &cfRead);
+        if (RT_FAILURE(rc))
+            break;
 
-        if (cfToPlay)
+        uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfRead);
+        Assert(cbRead <= cbChunk);
+
+        uint32_t cfPlayed = 0;
+        uint32_t cbPlayed = 0;
+        rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
+                                                 auBuf, cbRead, &cbPlayed);
+        if (   RT_SUCCESS(rc)
+            && cbPlayed)
         {
-            uint8_t auBuf[256]; /** @todo Get rid of this here. */
+            if (pThis->Out.Cfg.Dbg.fEnabled)
+                DrvAudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, auBuf, cbPlayed, 0 /* fFlags */);
 
-            uint32_t cfLeft  = cfToPlay;
-            uint32_t cbChunk = sizeof(auBuf);
+            if (cbRead != cbPlayed)
+                LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
+                         pStream->szName, cbRead, cbPlayed));
 
-            while (cfLeft)
-            {
-                uint32_t cfRead = 0;
-                rc = AudioMixBufAcquireReadBlock(&pStream->Host.MixBuf,
-                                                 auBuf, RT_MIN(cbChunk, AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfLeft)),
-                                                 &cfRead);
-                if (RT_FAILURE(rc))
-                    break;
+            cfPlayed       = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbPlayed);
+            cfPlayedTotal += cfPlayed;
 
-                uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfRead);
-                Assert(cbRead <= cbChunk);
-
-                uint32_t cfPlayed = 0;
-                uint32_t cbPlayed = 0;
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                         auBuf, cbRead, &cbPlayed);
-                if (   RT_SUCCESS(rc)
-                    && cbPlayed)
-                {
-                    if (pThis->Out.Cfg.Dbg.fEnabled)
-                        DrvAudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, auBuf, cbPlayed, 0 /* fFlags */);
-
-                    if (cbRead != cbPlayed)
-                        LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
-                                 pStream->szName, cbRead, cbPlayed));
-
-                    cfPlayed       = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbPlayed);
-                    cfPlayedTotal += cfPlayed;
-
-                    Assert(cfLeft >= cfPlayed);
-                    cfLeft        -= cfPlayed;
-                }
-
-                AudioMixBufReleaseReadBlock(&pStream->Host.MixBuf, cfPlayed);
-
-                if (RT_FAILURE(rc))
-                    break;
-            }
+            Assert(cfLeft >= cfPlayed);
+            cfLeft        -= cfPlayed;
         }
+
+        AudioMixBufReleaseReadBlock(&pStream->Host.MixBuf, cfPlayed);
+
+        if (RT_FAILURE(rc))
+            break;
     }
 
     Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cfPlayedTotal, cfToPlay, rc));
@@ -1321,56 +1304,48 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
 
     uint32_t cfPlayedTotal = 0;
 
-    AssertPtr(pThis->pHostDrvAudio->pfnStreamGetWritable);
-    uint32_t cfWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
-    if (cfWritable)
+    PDMAUDIOFRAME aFrameBuf[_4K]; /** @todo Get rid of this here. */
+
+    uint32_t cfLeft = cfToPlay;
+    while (cfLeft)
     {
-        if (cfToPlay > cfWritable) /* More frames available than we can write? Limit. */
-            cfToPlay = cfWritable;
+        uint32_t cfRead = 0;
+        rc = AudioMixBufPeek(&pStream->Host.MixBuf, cfLeft, aFrameBuf,
+                             RT_MIN(cfLeft, RT_ELEMENTS(aFrameBuf)), &cfRead);
 
-        PDMAUDIOFRAME aFrameBuf[_4K]; /** @todo Get rid of this here. */
-
-        uint32_t cfLeft = cfToPlay;
-        while (cfLeft)
+        if (RT_SUCCESS(rc))
         {
-            uint32_t cfRead = 0;
-            rc = AudioMixBufPeek(&pStream->Host.MixBuf, cfLeft, aFrameBuf,
-                                 RT_MIN(cfLeft, RT_ELEMENTS(aFrameBuf)), &cfRead);
-
-            if (RT_SUCCESS(rc))
+            if (cfRead)
             {
-                if (cfRead)
+                uint32_t cfPlayed;
+
+                /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames
+                 *       rather on bytes. */
+                Assert(cfRead <= RT_ELEMENTS(aFrameBuf));
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
+                                                         aFrameBuf, cfRead, &cfPlayed);
+                if (   RT_FAILURE(rc)
+                    || !cfPlayed)
                 {
-                    uint32_t cfPlayed;
-
-                    /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames
-                     *       rather on bytes. */
-                    Assert(cfRead <= RT_ELEMENTS(aFrameBuf));
-                    rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                             aFrameBuf, cfRead, &cfPlayed);
-                    if (   RT_FAILURE(rc)
-                        || !cfPlayed)
-                    {
-                        break;
-                    }
-
-                    cfPlayedTotal += cfPlayed;
-                    Assert(cfPlayedTotal <= cfToPlay);
-
-                    Assert(cfLeft >= cfRead);
-                    cfLeft        -= cfRead;
-                }
-                else
-                {
-                    if (rc == VINF_AUDIO_MORE_DATA_AVAILABLE) /* Do another peeking round if there is more data available. */
-                        continue;
-
                     break;
                 }
+
+                cfPlayedTotal += cfPlayed;
+                Assert(cfPlayedTotal <= cfToPlay);
+
+                Assert(cfLeft >= cfRead);
+                cfLeft        -= cfRead;
             }
-            else if (RT_FAILURE(rc))
+            else
+            {
+                if (rc == VINF_AUDIO_MORE_DATA_AVAILABLE) /* Do another peeking round if there is more data available. */
+                    continue;
+
                 break;
+            }
         }
+        else if (RT_FAILURE(rc))
+            break;
     }
 
     Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cfPlayedTotal, cfToPlay, rc));
