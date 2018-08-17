@@ -2459,224 +2459,6 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
     return VINF_SUCCESS;
 }
 
-int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3dCopyRect *pRect)
-{
-    PVMSVGA3DSTATE      pState = pThis->svga.p3dState;
-    PVMSVGA3DSURFACE    pSurface;
-    PVMSVGA3DCONTEXT    pContext;
-    HRESULT             hr;
-    int                 rc;
-    IDirect3DSurface9  *pBackBuffer;
-    IDirect3DSurface9  *pSurfaceD3D;
-
-    AssertReturn(pState, VERR_NO_MEMORY);
-
-    rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
-    AssertRCReturn(rc, rc);
-
-    AssertReturn(pSurface->idAssociatedContext != SVGA3D_INVALID_ID, VERR_INTERNAL_ERROR);
-
-    LogFunc(("sid=%x cRects=%d cid=%x\n", sid, cRects, pSurface->idAssociatedContext));
-    for (uint32_t i = 0; i < cRects; ++i)
-    {
-        LogFunc(("rectangle %d src=(%d,%d) (%d,%d)(%d,%d)\n", i, pRect[i].srcx, pRect[i].srcy, pRect[i].x, pRect[i].y, pRect[i].x + pRect[i].w, pRect[i].y + pRect[i].h));
-    }
-
-    rc = vmsvga3dContextFromCid(pState, pSurface->idAssociatedContext, &pContext);
-    AssertRCReturn(rc, rc);
-
-    hr = pContext->pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-    AssertMsgReturn(hr == D3D_OK, ("GetBackBuffer failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-    rc = vmsvga3dGetD3DSurface(pState, pContext, pSurface, 0, 0, false, &pSurfaceD3D);
-    AssertRCReturn(rc, rc);
-
-    /* Read the destination viewport specs in one go to try avoid some unnecessary update races. */
-    VMSVGAVIEWPORT const DstViewport = pThis->svga.viewport;
-    ASMCompilerBarrier(); /* paranoia */
-    Assert(DstViewport.yHighWC >= DstViewport.yLowWC);
-
-    /* If there are no recangles specified, just grab a screenful. */
-    SVGA3dCopyRect DummyRect;
-    if (cRects != 0)
-    { /* likely */ }
-    else
-    {
-        /** @todo Find the usecase for this or check what the original device does.
-         *        The original code was doing some scaling based on the surface
-         *        size... */
-# ifdef DEBUG_bird
-        AssertMsgFailed(("No rects to present. Who is doing that and what do they actually expect?\n"));
-# endif
-        DummyRect.x = DummyRect.srcx = 0;
-        DummyRect.y = DummyRect.srcy = 0;
-        DummyRect.w = pThis->svga.uWidth;
-        DummyRect.h = pThis->svga.uHeight;
-        cRects = 1;
-        pRect  = &DummyRect;
-    }
-
-    /*
-     * Blit the surface rectangle(s) to the back buffer.
-     */
-    Assert(pSurface->cxBlock == 1 && pSurface->cyBlock == 1);
-    uint32_t const cxSurface = pSurface->pMipmapLevels[0].mipmapSize.width;
-    uint32_t const cySurface = pSurface->pMipmapLevels[0].mipmapSize.height;
-    for (uint32_t i = 0; i < cRects; i++)
-    {
-        SVGA3dCopyRect ClippedRect = pRect[i];
-
-        /*
-         * Do some sanity checking and limit width and height, all so we
-         * don't need to think about wrap-arounds below.
-         */
-        if (RT_LIKELY(   ClippedRect.w
-                      && ClippedRect.x    < VMSVGA_MAX_X
-                      && ClippedRect.srcx < VMSVGA_MAX_X
-                      && ClippedRect.h
-                      && ClippedRect.y    < VMSVGA_MAX_Y
-                      && ClippedRect.srcy < VMSVGA_MAX_Y
-                         ))
-        { /* likely */ }
-        else
-            continue;
-
-        if (RT_LIKELY(ClippedRect.w < VMSVGA_MAX_Y))
-        { /* likely */ }
-        else
-            ClippedRect.w = VMSVGA_MAX_Y;
-        if (RT_LIKELY(ClippedRect.w < VMSVGA_MAX_Y))
-        { /* likely */ }
-        else
-            ClippedRect.w = VMSVGA_MAX_Y;
-
-        /*
-         * Source surface clipping (paranoia). Straight forward.
-         */
-        if (RT_LIKELY(ClippedRect.srcx < cxSurface))
-        { /* likely */ }
-        else
-            continue;
-        if (RT_LIKELY(ClippedRect.srcx + ClippedRect.w <= cxSurface))
-        { /* likely */ }
-        else
-        {
-            AssertFailed(); /* remove if annoying. */
-            ClippedRect.w = cxSurface - ClippedRect.srcx;
-        }
-
-        if (RT_LIKELY(ClippedRect.srcy < cySurface))
-        { /* likely */ }
-        else
-            continue;
-        if (RT_LIKELY(ClippedRect.srcy + ClippedRect.h <= cySurface))
-        { /* likely */ }
-        else
-        {
-            AssertFailed(); /* remove if annoying. */
-            ClippedRect.h = cySurface - ClippedRect.srcy;
-        }
-
-        /*
-         * Destination viewport clipping.
-         *
-         * This is very straight forward compared to OpenGL.  There is no Y
-         * inversion anywhere and all the coordinate systems are the same.
-         */
-        /* X */
-        if (ClippedRect.x >= DstViewport.x)
-        {
-            if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
-            { /* typical */ }
-            else if (ClippedRect.x < DstViewport.xRight)
-                ClippedRect.w = DstViewport.xRight - ClippedRect.x;
-            else
-                continue;
-        }
-        else
-        {
-            uint32_t cxAdjust = DstViewport.x - ClippedRect.x;
-            if (cxAdjust < ClippedRect.w)
-            {
-                ClippedRect.w    -= cxAdjust;
-                ClippedRect.x    += cxAdjust;
-                ClippedRect.srcx += cxAdjust;
-            }
-            else
-                continue;
-
-            if (ClippedRect.x + ClippedRect.w <= DstViewport.xRight)
-            { /* typical */ }
-            else
-                ClippedRect.w = DstViewport.xRight - ClippedRect.x;
-        }
-
-        /* Y */
-        if (ClippedRect.y >= DstViewport.y)
-        {
-            if (ClippedRect.y + ClippedRect.h <= DstViewport.y + DstViewport.cy)
-            { /* typical */ }
-            else if (ClippedRect.x < DstViewport.y + DstViewport.cy)
-                ClippedRect.h = DstViewport.y + DstViewport.cy - ClippedRect.y;
-            else
-                continue;
-        }
-        else
-        {
-            uint32_t cyAdjust = DstViewport.y - ClippedRect.y;
-            if (cyAdjust < ClippedRect.h)
-            {
-                ClippedRect.h    -= cyAdjust;
-                ClippedRect.y    += cyAdjust;
-                ClippedRect.srcy += cyAdjust;
-            }
-            else
-                continue;
-
-            if (ClippedRect.y + ClippedRect.h <= DstViewport.y + DstViewport.cy)
-            { /* typical */ }
-            else
-                ClippedRect.h = DstViewport.y + DstViewport.cy - ClippedRect.y;
-        }
-
-        /* Calc source rectangle. */
-        RECT SrcRect;
-        SrcRect.left   = ClippedRect.srcx;
-        SrcRect.right  = ClippedRect.srcx + ClippedRect.w;
-        SrcRect.top    = ClippedRect.srcy;
-        SrcRect.bottom = ClippedRect.srcy + ClippedRect.h;
-
-        /* Calc destination rectangle. */
-        RECT DstRect;
-        DstRect.left   = ClippedRect.x;
-        DstRect.right  = ClippedRect.x + ClippedRect.w;
-        DstRect.top    = ClippedRect.y;
-        DstRect.bottom = ClippedRect.y + ClippedRect.h;
-
-        /* Adjust for viewport. */
-        DstRect.left   -= DstViewport.x;
-        DstRect.right  -= DstViewport.x;
-        DstRect.bottom -= DstViewport.y;
-        DstRect.top    -= DstViewport.y;
-
-        Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
-             SrcRect.left, SrcRect.bottom, SrcRect.right, SrcRect.top,
-             DstRect.left, DstRect.bottom, DstRect.right, DstRect.top));
-        hr = pContext->pDevice->StretchRect(pSurfaceD3D, &SrcRect, pBackBuffer, &DstRect, D3DTEXF_NONE);
-        AssertBreak(hr == D3D_OK);
-    }
-
-    D3D_RELEASE(pSurfaceD3D);
-    D3D_RELEASE(pBackBuffer);
-
-    AssertMsgReturn(hr == D3D_OK, ("StretchRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-    hr = pContext->pDevice->Present(NULL, NULL, NULL, NULL);
-    AssertMsgReturn(hr == D3D_OK, ("Present failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-    return VINF_SUCCESS;
-}
-
 
 /**
  * Create a new 3d context
@@ -2728,13 +2510,17 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aRenderTargets); i++)
         pContext->state.aRenderTargets[i] = SVGA3D_INVALID_ID;
 
-    /* Create a context window. */
+    /* Create a context window with minimal 4x4 size. We will never use the swapchain
+     * to present the rendered image. Rendered images from the guest will be copied to
+     * the VMSVGA SCREEN object, which can be either an offscreen render target or
+     * system memory in the guest VRAM.
+     */
     CREATESTRUCT cs;
 
     AssertReturn(pThis->svga.u64HostWindowId, VERR_INTERNAL_ERROR);
 
     cs.lpCreateParams   = NULL;
-    cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY | WS_EX_TRANSPARENT;
+    cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
 #ifdef DEBUG_GFX_WINDOW
     cs.lpszName         = (char *)RTMemAllocZ(256);
     RTStrPrintf((char *)cs.lpszName, 256, "Context %d OpenGL Window", cid);
@@ -2745,12 +2531,12 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
 #ifdef DEBUG_GFX_WINDOW
     cs.style            = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE | WS_CAPTION;
 #else
-    cs.style            = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_DISABLED | WS_CHILD | WS_VISIBLE;
+    cs.style            = WS_DISABLED | WS_CHILD;
 #endif
     cs.x                = 0;
     cs.y                = 0;
-    cs.cx               = pThis->svga.uWidth;
-    cs.cy               = pThis->svga.uHeight;
+    cs.cx               = 4;
+    cs.cy               = 4;
     cs.hwndParent       = (HWND)pThis->svga.u64HostWindowId;
     cs.hMenu            = NULL;
     cs.hInstance        = pState->hInstance;
@@ -2766,7 +2552,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
 
     PresParam.MultiSampleType               = D3DMULTISAMPLE_NONE;
     PresParam.MultiSampleQuality            = 0;
-    PresParam.SwapEffect                    = D3DSWAPEFFECT_FLIP;
+    PresParam.SwapEffect                    = D3DSWAPEFFECT_DISCARD;
     PresParam.hDeviceWindow                 = pContext->hwnd;
     PresParam.Windowed                      = TRUE;     /** @todo */
     PresParam.EnableAutoDepthStencil        = FALSE;

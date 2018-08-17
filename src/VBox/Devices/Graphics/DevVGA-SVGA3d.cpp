@@ -885,3 +885,63 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
 
     return VINF_SUCCESS;
 }
+
+int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3dCopyRect *pRect)
+{
+    /* Deprecated according to svga3d_reg.h. */
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    AssertReturn(pState, VERR_NO_MEMORY);
+
+    PVMSVGA3DSURFACE pSurface;
+    int rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
+    AssertRCReturn(rc, rc);
+
+    /* If there are no recangles specified, just grab a screenful. */
+    SVGA3dCopyRect DummyRect;
+    if (cRects != 0)
+    { /* likely */ }
+    else
+    {
+        /** @todo Find the usecase for this or check what the original device does.
+         *        The original code was doing some scaling based on the surface
+         *        size... */
+        AssertMsgFailed(("No rects to present. Who is doing that and what do they actually expect?\n"));
+        DummyRect.x = DummyRect.srcx = 0;
+        DummyRect.y = DummyRect.srcy = 0;
+        DummyRect.w = pThis->svga.uWidth;
+        DummyRect.h = pThis->svga.uHeight;
+        cRects = 1;
+        pRect  = &DummyRect;
+    }
+
+    uint32_t i;
+    for (i = 0; i < cRects; ++i)
+    {
+        uint32_t idDstScreen = 0; /** @todo Use virtual coords: SVGA_ID_INVALID. */
+        SVGASignedRect destRect;
+        destRect.left   = pRect[i].x;
+        destRect.top    = pRect[i].y;
+        destRect.right  = pRect[i].x + pRect[i].w;
+        destRect.bottom = pRect[i].y + pRect[i].h;
+
+        SVGA3dSurfaceImageId src;
+        src.sid = sid;
+        src.face = 0;
+        src.mipmap = 0;
+
+        SVGASignedRect srcRect;
+        srcRect.left   = pRect[i].srcx;
+        srcRect.top    = pRect[i].srcy;
+        srcRect.right  = pRect[i].srcx + pRect[i].w;
+        srcRect.bottom = pRect[i].srcy + pRect[i].h;
+
+        /* Entire rect. */
+        uint32_t cRects = 0;
+        SVGASignedRect *pRect = NULL;
+
+        rc = vmsvga3dSurfaceBlitToScreen(pThis, idDstScreen, destRect, src, srcRect, cRects, pRect);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
