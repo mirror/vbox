@@ -2740,8 +2740,8 @@ typedef enum
     kVmxVInstrDiag_Vmxon_Intercept,
     kVmxVInstrDiag_Vmxon_LongModeCS,
     kVmxVInstrDiag_Vmxon_MsrFeatCtl,
-    kVmxVInstrDiag_Vmxon_PtrAlign,
     kVmxVInstrDiag_Vmxon_PtrAbnormal,
+    kVmxVInstrDiag_Vmxon_PtrAlign,
     kVmxVInstrDiag_Vmxon_PtrMap,
     kVmxVInstrDiag_Vmxon_PtrReadPhys,
     kVmxVInstrDiag_Vmxon_PtrWidth,
@@ -2760,6 +2760,17 @@ typedef enum
     kVmxVInstrDiag_Vmxoff_Success,
     kVmxVInstrDiag_Vmxoff_Vmxe,
     kVmxVInstrDiag_Vmxoff_VmxRoot,
+    /* VMPTRLD. */
+    kVmxVInstrDiag_Vmptrld_Cpl,
+    kVmxVInstrDiag_Vmptrld_PtrAbnormal,
+    kVmxVInstrDiag_Vmptrld_PtrAlign,
+    kVmxVInstrDiag_Vmptrld_PtrMap,
+    kVmxVInstrDiag_Vmptrld_PtrReadPhys,
+    kVmxVInstrDiag_Vmptrld_PtrVmxon,
+    kVmxVInstrDiag_Vmptrld_PtrWidth,
+    kVmxVInstrDiag_Vmptrld_ShadowVmcs,
+    kVmxVInstrDiag_Vmptrld_Success,
+    kVmxVInstrDiag_Vmptrld_VmcsRevId,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;

@@ -1020,6 +1020,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("UnrestrictedGuest - Unrestricted guest                 ", fVmxUnrestrictedGuest);
         VMXFEATDUMP("PauseLoopExit - PAUSE-loop exiting                     ", fVmxPauseLoopExit);
         VMXFEATDUMP("Invpcid - Enable INVPCID                               ", fVmxInvpcid);
+        VMXFEATDUMP("VmcsShadowing - VMCS shadowing                         ", fVmxVmcsShadowing);
         /* VM-entry controls. */
         VMXFEATDUMP("EntryLoadDebugCtls - Load debug controls on VM-entry   ", fVmxEntryLoadDebugCtls);
         VMXFEATDUMP("Ia32eModeGuest - IA-32e mode guest                     ", fVmxIa32eModeGuest);
@@ -1107,6 +1108,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
             pHostFeat->fVmxUnrestrictedGuest = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
             pHostFeat->fVmxPauseLoopExit     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
             pHostFeat->fVmxInvpcid           = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_INVPCID);
+            pHostFeat->fVmxVmcsShadowing     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING);
         }
 
         /* VM-entry controls. */
@@ -1175,6 +1177,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     EmuFeat.fVmxUnrestrictedGuest     = 0;
     EmuFeat.fVmxPauseLoopExit         = 0;
     EmuFeat.fVmxInvpcid               = 1;
+    EmuFeat.fVmxVmcsShadowing         = 0;
     EmuFeat.fVmxEntryLoadDebugCtls    = 1;
     EmuFeat.fVmxIa32eModeGuest        = 1;
     EmuFeat.fVmxEntryLoadEferMsr      = 1;
@@ -1235,6 +1238,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     pGuestFeat->fVmxUnrestrictedGuest     = (pBaseFeat->fVmxUnrestrictedGuest     & EmuFeat.fVmxUnrestrictedGuest    );
     pGuestFeat->fVmxPauseLoopExit         = (pBaseFeat->fVmxPauseLoopExit         & EmuFeat.fVmxPauseLoopExit        );
     pGuestFeat->fVmxInvpcid               = (pBaseFeat->fVmxInvpcid               & EmuFeat.fVmxInvpcid              );
+    pGuestFeat->fVmxVmcsShadowing         = (pBaseFeat->fVmxVmcsShadowing         & EmuFeat.fVmxVmcsShadowing        );
     pGuestFeat->fVmxEntryLoadDebugCtls    = (pBaseFeat->fVmxEntryLoadDebugCtls    & EmuFeat.fVmxEntryLoadDebugCtls   );
     pGuestFeat->fVmxIa32eModeGuest        = (pBaseFeat->fVmxIa32eModeGuest        & EmuFeat.fVmxIa32eModeGuest       );
     pGuestFeat->fVmxEntryLoadEferMsr      = (pBaseFeat->fVmxEntryLoadEferMsr      & EmuFeat.fVmxEntryLoadEferMsr);

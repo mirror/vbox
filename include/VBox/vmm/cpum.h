@@ -1202,6 +1202,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxPauseLoopExit : 1;
     /** VMX: Supports INVPCID. */
     uint32_t        fVmxInvpcid : 1;
+    /** VMX: Supports VMCS shadowing. */
+    uint32_t        fVmxVmcsShadowing : 1;
     /** @} */
 
     /** @name VMX VM-entry controls.
@@ -1243,7 +1245,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding0 : 16;
+    uint32_t        fVmxPadding0 : 15;
     uint32_t        fVmxPadding1;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB

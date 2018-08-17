@@ -12585,7 +12585,17 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         else \
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
-#endif
+
+/** The instruction can only be executed in VMX operation (VMX root mode and
+ * non-root mode).
+ */
+# define IEMOP_HLP_IN_VMX_OPERATION() \
+    do \
+    { \
+        if (IEM_IS_VMX_ROOT_MODE(pVCpu)) { /* likely */ } \
+        else return IEMOP_RAISE_INVALID_OPCODE(); \
+    } while (0)
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 /** The instruction is not available in 64-bit mode, throw \#UD if we're in
  * 64-bit mode. */

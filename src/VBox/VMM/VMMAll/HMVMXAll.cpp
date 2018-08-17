@@ -50,8 +50,8 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_Intercept     , "Intercept"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_LongModeCS    , "LongModeCS"   ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_MsrFeatCtl    , "MsrFeatCtl"   ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_PtrAlign      , "PtrAlign"     ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_PtrAbnormal   , "PtrAbnormal"  ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_PtrAlign      , "PtrAlign"     ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_PtrMap        , "PtrMap"       ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_PtrPhysRead   , "PtrPhysRead"  ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_PtrWidth      , "PtrWidth"     ),
@@ -69,7 +69,18 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_RealOrV86Mode, "RealOrV86Mode"),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_Success      , "Success"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_Vmxe         , "Vmxe"         ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_VmxRoot      , "VmxRoot"      )
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_VmxRoot      , "VmxRoot"      ),
+    /* VMPTRLD. */
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_Cpl         , "Cpl"          ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrAbnormal , "PtrAbnormal"  ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrAlign    , "PtrAlign"     ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrMap      , "PtrMap"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrReadPhys , "PtrReadPhys"  ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrVmxon    , "PtrVmxon"     ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrWidth    , "PtrWidth"     ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_ShadowVmcs  , "ShadowVmcs"   ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_Success     , "Success"      ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_VmcsRevId   , "VmcsRevId"    )
     /* kVmxVInstrDiag_Last */
 };
 #undef VMX_INSTR_DIAG_DESC
