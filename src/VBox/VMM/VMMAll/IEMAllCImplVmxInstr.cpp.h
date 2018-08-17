@@ -622,7 +622,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPt
          */
         pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon    = GCPhysVmxon;
         pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
-        /** @todo NSTVMX: init. current VMCS pointer with ~0. */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs     = NIL_RTGCPHYS;
         /** @todo NSTVMX: clear address-range monitoring. */
         /** @todo NSTVMX: Intel PT. */
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_Success;
