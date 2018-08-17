@@ -2087,6 +2087,183 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Network' menu class. */
+class UIActionMenuSelectorNetwork : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorNetwork(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("NetworkMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Network"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the network menu"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Create' action class. */
+class UIActionMenuSelectorNetworkPerformCreate : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorNetworkPerformCreate(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/host_iface_add_22px.png",          ":/host_iface_add_16px.png",
+                         ":/host_iface_add_disabled_22px.png", ":/host_iface_add_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CreateNetwork");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+C");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Create new host-only network"));
+        setToolTip(tr("Create Host-only Network (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Remove' action class. */
+class UIActionMenuSelectorNetworkPerformRemove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorNetworkPerformRemove(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/host_iface_remove_22px.png",          ":/host_iface_remove_16px.png",
+                         ":/host_iface_remove_disabled_22px.png", ":/host_iface_remove_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RemoveNetwork");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+R");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Remove..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove selected host-only network"));
+        setToolTip(tr("Remove Host-only Network (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Toggle action extension, used as 'Toggle Network Properties' action class. */
+class UIActionMenuSelectorNetworkToggleProperties : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorNetworkToggleProperties(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/host_iface_edit_22px.png",          ":/host_iface_edit_16px.png",
+                         ":/host_iface_edit_disabled_22px.png", ":/host_iface_edit_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleNetworkProperties");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Space");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Properties"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected host-only network properties"));
+        setToolTip(tr("Open Host-only Network Properties (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Refresh' action class. */
+class UIActionMenuSelectorNetworkPerformRefresh : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorNetworkPerformRefresh(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/refresh_22px.png",          ":/refresh_16px.png",
+                         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RefreshNetworks");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Re&fresh..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of host-only networks"));
+        setToolTip(tr("Refresh Host-only Networks (%1)").arg(shortcut().toString()));
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIActionPoolSelector implementation.                                                                                   *
 *********************************************************************************************************************************/
@@ -2191,8 +2368,16 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Medium_T_Details] = new UIActionMenuSelectorMediumToggleProperties(this);
     m_pool[UIActionIndexST_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
 
+    /* Host Network Manager actions: */
+    m_pool[UIActionIndexST_M_Network] = new UIActionMenuSelectorNetwork(this);
+    m_pool[UIActionIndexST_M_Network_S_Create] = new UIActionMenuSelectorNetworkPerformCreate(this);
+    m_pool[UIActionIndexST_M_Network_S_Remove] = new UIActionMenuSelectorNetworkPerformRemove(this);
+    m_pool[UIActionIndexST_M_Network_T_Details] = new UIActionMenuSelectorNetworkToggleProperties(this);
+    m_pool[UIActionIndexST_M_Network_S_Refresh] = new UIActionMenuSelectorNetworkPerformRefresh(this);
+
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfs = &UIActionPoolSelector::updateMenuMedium;
+    m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfs = &UIActionPoolSelector::updateMenuNetwork;
 
     /* Call to base-class: */
     UIActionPool::preparePool();
@@ -2218,6 +2403,8 @@ void UIActionPoolSelector::updateMenus()
 
     /* 'Virtual Media Manager' menu: */
     updateMenuMedium();
+    /* 'Host Network Manager' menu: */
+    updateMenuNetwork();
 }
 
 void UIActionPoolSelector::updateMenuMedium()
@@ -2263,6 +2450,45 @@ void UIActionPoolSelector::updateMenuMedium()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Medium);
+}
+
+void UIActionPoolSelector::updateMenuNetwork()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexST_M_Network)->menu();
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator? */
+    bool fSeparator = false;
+
+    /* 'Create' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Create)) || fSeparator;
+    /* 'Remove' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Remove)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Properties' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_T_Details)) || fSeparator;
+
+//    /* Separator? */
+//    if (fSeparator)
+//    {
+//        pMenu->addSeparator();
+//        fSeparator = false;
+//    }
+
+//    /* 'Refresh' action: */
+//    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Refresh)) || fSeparator;;
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Network);
 }
 
 void UIActionPoolSelector::updateShortcuts()

@@ -28,6 +28,7 @@
 /* GUI includes: */
 # include "QIDialogButtonBox.h"
 # include "QITreeWidget.h"
+# include "UIActionPoolSelector.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIHostNetworkDetailsWidget.h"
@@ -191,15 +192,11 @@ int UIItemHostNetwork::maskToCidr(const QString &strMask)
 *   Class UIHostNetworkManagerWidget implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
+UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
+    , m_pActionPool(pActionPool)
     , m_pToolBar(0)
-    , m_pMenu(0)
-    , m_pActionAdd(0)
-    , m_pActionRemove(0)
-    , m_pActionDetails(0)
-    , m_pActionRefresh(0)
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
 {
@@ -207,38 +204,13 @@ UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, QWi
     prepare();
 }
 
+QMenu *UIHostNetworkManagerWidget::menu() const
+{
+    return m_pActionPool->action(UIActionIndexST_M_Network)->menu();
+}
+
 void UIHostNetworkManagerWidget::retranslateUi()
 {
-    /* Translate menu: */
-    if (m_pMenu)
-        m_pMenu->setTitle(UIHostNetworkManager::tr("&Network"));
-
-    /* Translate actions: */
-    if (m_pActionAdd)
-    {
-        m_pActionAdd->setText(UIHostNetworkManager::tr("&Create"));
-        m_pActionAdd->setToolTip(UIHostNetworkManager::tr("Create Host-only Network (%1)").arg(m_pActionAdd->shortcut().toString()));
-        m_pActionAdd->setStatusTip(UIHostNetworkManager::tr("Create new host-only network"));
-    }
-    if (m_pActionRemove)
-    {
-        m_pActionRemove->setText(UIHostNetworkManager::tr("&Remove..."));
-        m_pActionRemove->setToolTip(UIHostNetworkManager::tr("Remove Host-only Network (%1)").arg(m_pActionRemove->shortcut().toString()));
-        m_pActionRemove->setStatusTip(UIHostNetworkManager::tr("Remove selected host-only network"));
-    }
-    if (m_pActionDetails)
-    {
-        m_pActionDetails->setText(UIHostNetworkManager::tr("&Properties..."));
-        m_pActionDetails->setToolTip(UIHostNetworkManager::tr("Open Host-only Network Properties (%1)").arg(m_pActionDetails->shortcut().toString()));
-        m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Open pane with selected host-only network properties"));
-    }
-    if (m_pActionRefresh)
-    {
-        m_pActionRefresh->setText(UIHostNetworkManager::tr("&Refresh..."));
-        m_pActionRefresh->setToolTip(UIHostNetworkManager::tr("Refresh Host-only Networks (%1)").arg(m_pActionRefresh->shortcut().toString()));
-        m_pActionRefresh->setStatusTip(UIHostNetworkManager::tr("Refresh the list of host-only networks"));
-    }
-
     /* Adjust toolbar: */
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
@@ -403,7 +375,7 @@ void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
     }
 }
 
-void UIHostNetworkManagerWidget::sltAddHostNetwork()
+void UIHostNetworkManagerWidget::sltCreateHostNetwork()
 {
     /* Get host for further activities: */
     CHost comHost = vboxGlobal().host();
@@ -667,10 +639,8 @@ void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
 
     /* Update actions availability: */
-    if (m_pActionRemove)
-        m_pActionRemove->setEnabled(pItem);
-    if (m_pActionDetails)
-        m_pActionDetails->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexST_M_Network_S_Remove)->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->setEnabled(pItem);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -683,24 +653,24 @@ void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
     }
 }
 
-void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &pos)
+void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
     /* Compose temporary context-menu: */
     QMenu menu;
-    if (m_pTreeWidget->itemAt(pos))
+    if (m_pTreeWidget->itemAt(position))
     {
-        if (m_pActionRemove)
-            menu.addAction(m_pActionRemove);
-        if (m_pActionDetails)
-            menu.addAction(m_pActionDetails);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
+        menu.addSeparator();
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
     }
     else
     {
-        if (m_pActionAdd)
-            menu.addAction(m_pActionAdd);
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
+//        menu.addSeparator();
+//        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
     }
     /* And show it: */
-    menu.exec(m_pTreeWidget->mapToGlobal(pos));
+    menu.exec(m_pTreeWidget->mapToGlobal(position));
 }
 
 void UIHostNetworkManagerWidget::prepare()
@@ -728,80 +698,15 @@ void UIHostNetworkManagerWidget::prepareThis()
 
 void UIHostNetworkManagerWidget::prepareActions()
 {
-    /* Create 'Add' action: */
-    m_pActionAdd = new QAction(this);
-    AssertPtrReturnVoid(m_pActionAdd);
-    {
-        /* Configure 'Add' action: */
-        m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
-        m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/host_iface_add_22px.png",
-                                                      ":/host_iface_add_16px.png",
-                                                      ":/host_iface_add_disabled_22px.png",
-                                                      ":/host_iface_add_disabled_16px.png"));
-        connect(m_pActionAdd, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltAddHostNetwork);
-    }
-
-    /* Create 'Remove' action: */
-    m_pActionRemove = new QAction(this);
-    AssertPtrReturnVoid(m_pActionRemove);
-    {
-        /* Configure 'Remove' action: */
-        m_pActionRemove->setShortcut(QKeySequence("Del"));
-        m_pActionRemove->setIcon(UIIconPool::iconSetFull(":/host_iface_remove_22px.png",
-                                                         ":/host_iface_remove_16px.png",
-                                                         ":/host_iface_remove_disabled_22px.png",
-                                                         ":/host_iface_remove_disabled_16px.png"));
-        connect(m_pActionRemove, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltRemoveHostNetwork);
-    }
-
-    /* Create 'Details' action: */
-    m_pActionDetails = new QAction(this);
-    AssertPtrReturnVoid(m_pActionDetails);
-    {
-        /* Configure 'Details' action: */
-        m_pActionDetails->setCheckable(true);
-        m_pActionDetails->setShortcut(QKeySequence("Ctrl+Space"));
-        m_pActionDetails->setIcon(UIIconPool::iconSetFull(":/host_iface_edit_22px.png",
-                                                          ":/host_iface_edit_16px.png",
-                                                          ":/host_iface_edit_disabled_22px.png",
-                                                          ":/host_iface_edit_disabled_16px.png"));
-        connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
-    }
-
-    /* Create 'Refresh' action: */
-    m_pActionRefresh = new QAction(this);
-    AssertPtrReturnVoid(m_pActionRefresh);
-    {
-        /* Configure 'Details' action: */
-        m_pActionRefresh->setCheckable(true);
-        m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
-        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_22px.png",
-                                                          ":/refresh_16px.png",
-                                                          ":/refresh_disabled_22px.png",
-                                                          ":/refresh_disabled_16px.png"));
-        connect(m_pActionRefresh, &QAction::toggled, this, &UIHostNetworkManagerWidget::sltRefreshHostNetworks);
-    }
-
-    /* Prepare menu: */
-    prepareMenu();
-}
-
-void UIHostNetworkManagerWidget::prepareMenu()
-{
-    /* Create 'Network' menu: */
-    m_pMenu = new QMenu(this);
-    AssertPtrReturnVoid(m_pMenu);
-    {
-        /* Configure menu: */
-        if (m_pActionAdd)
-            m_pMenu->addAction(m_pActionAdd);
-        if (m_pActionRemove)
-            m_pMenu->addAction(m_pActionRemove);
-        if (m_pActionDetails)
-            m_pMenu->addAction(m_pActionDetails);
-//        if (m_pActionRefresh)
-//            m_pMenu->addAction(m_pActionRefresh);
-    }
+    /* Connect actions: */
+    connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Create), &QAction::triggered,
+            this, &UIHostNetworkManagerWidget::sltCreateHostNetwork);
+    connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove), &QAction::triggered,
+            this, &UIHostNetworkManagerWidget::sltRemoveHostNetwork);
+    connect(m_pActionPool->action(UIActionIndexST_M_Network_T_Details), &QAction::toggled,
+            this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh), &QAction::triggered,
+            this, &UIHostNetworkManagerWidget::sltRefreshHostNetworks);
 }
 
 void UIHostNetworkManagerWidget::prepareWidgets()
@@ -838,18 +743,12 @@ void UIHostNetworkManagerWidget::prepareToolBar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add toolbar actions: */
-        if (m_pActionAdd)
-            m_pToolBar->addAction(m_pActionAdd);
-        if (m_pActionRemove)
-            m_pToolBar->addAction(m_pActionRemove);
-        if ((m_pActionAdd || m_pActionRemove) && m_pActionDetails)
-            m_pToolBar->addSeparator();
-        if (m_pActionDetails)
-            m_pToolBar->addAction(m_pActionDetails);
-//        if (m_pActionDetails && m_pActionRefresh)
-//            m_pToolBar->addSeparator();
-//        if (m_pActionRefresh)
-//            m_pToolBar->addAction(m_pActionRefresh);
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
+//        m_pToolBar->addSeparator();
+//        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
         if (m_enmEmbedding == EmbedTo_Stack)
@@ -885,9 +784,8 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
                 this, &UIHostNetworkManagerWidget::sltHandleContextMenuRequest);
         connect(m_pTreeWidget, &QITreeWidget::itemChanged,
                 this, &UIHostNetworkManagerWidget::sltHandleItemChange);
-        if (m_pActionDetails)
-            connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                    m_pActionDetails, &QAction::setChecked);
+        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                m_pActionPool->action(UIActionIndexST_M_Network_T_Details), &QAction::setChecked);
 
         /* Add into layout: */
         layout()->addWidget(m_pTreeWidget);
@@ -918,7 +816,7 @@ void UIHostNetworkManagerWidget::prepareDetailsWidget()
 void UIHostNetworkManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionDetails->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
+    m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
 }
 
 void UIHostNetworkManagerWidget::loadHostNetworks()
@@ -1049,9 +947,14 @@ void UIHostNetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwor
 *   Class UIHostNetworkManagerFactory implementation.                                                                            *
 *********************************************************************************************************************************/
 
+UIHostNetworkManagerFactory::UIHostNetworkManagerFactory(UIActionPool *pActionPool /* = 0 */)
+    : m_pActionPool(pActionPool)
+{
+}
+
 void UIHostNetworkManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIHostNetworkManager(pCenterWidget);
+    pDialog = new UIHostNetworkManager(pCenterWidget, m_pActionPool);
 }
 
 
@@ -1059,8 +962,9 @@ void UIHostNetworkManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCe
 *   Class UIHostNetworkManager implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
+UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_pActionPool(pActionPool)
 {
 }
 
@@ -1107,7 +1011,7 @@ void UIHostNetworkManager::configure()
 void UIHostNetworkManager::configureCentralWidget()
 {
     /* Create widget: */
-    UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(EmbedTo_Dialog, this);
+    UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(EmbedTo_Dialog, m_pActionPool, this);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */

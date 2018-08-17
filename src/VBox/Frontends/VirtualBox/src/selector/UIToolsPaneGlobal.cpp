@@ -122,7 +122,7 @@ void UIToolsPaneGlobal::openTool(ToolTypeGlobal enmType)
             case ToolTypeGlobal_HostNetwork:
             {
                 /* Create Host Network Manager: */
-                m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack);
+                m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack, m_pActionPool);
                 AssertPtrReturnVoid(m_pPaneNetwork);
                 {
                     /* Configure pane: */

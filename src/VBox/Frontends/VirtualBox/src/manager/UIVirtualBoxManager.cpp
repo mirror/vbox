@@ -427,7 +427,7 @@ void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
     /* Create instance if not yet created: */
     if (!m_pManagerHostNetwork)
     {
-        UIHostNetworkManagerFactory().prepare(m_pManagerHostNetwork, this);
+        UIHostNetworkManagerFactory(m_pActionPool).prepare(m_pManagerHostNetwork, this);
         connect(m_pManagerHostNetwork, &QIManagerDialog::sigClose,
                 this, &UIVirtualBoxManager::sltCloseHostNetworkManagerWindow);
     }

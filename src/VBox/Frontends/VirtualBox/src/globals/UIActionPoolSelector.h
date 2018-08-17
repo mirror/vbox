@@ -125,6 +125,13 @@ enum UIActionIndexST
     UIActionIndexST_M_Medium_T_Details,
     UIActionIndexST_M_Medium_S_Refresh,
 
+    /* Host Network Manager actions: */
+    UIActionIndexST_M_Network,
+    UIActionIndexST_M_Network_S_Create,
+    UIActionIndexST_M_Network_S_Remove,
+    UIActionIndexST_M_Network_T_Details,
+    UIActionIndexST_M_Network_S_Refresh,
+
     /* Maximum index: */
     UIActionIndexST_Max
 };
@@ -153,6 +160,8 @@ protected:
 
     /** Updates 'Medium' menu. */
     void updateMenuMedium();
+    /** Updates 'Network' menu. */
+    void updateMenuNetwork();
 
     /** Updates shortcuts. */
     virtual void updateShortcuts() /* override */;
