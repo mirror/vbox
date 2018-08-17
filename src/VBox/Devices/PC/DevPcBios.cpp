@@ -457,7 +457,7 @@ static DECLCALLBACK(bool) pcbiosFw_IsHardReset(PPDMDEVINS pDevIns, uint32_t fFla
                 PDMDevHlpPhysRead(pDevIns, 0x467, &Far16, sizeof(Far16));
                 pThis->cLoggedSoftResets++;
                 LogRel(("PcBios: Soft reset #%u - shutdown status %#x, warm reset vector (0040:0067) is %04x:%04x%s\n",
-                        pThis->cLoggedSoftResets, bShutdownStatus, Far16.sel, Far16.sel,
+                        pThis->cLoggedSoftResets, bShutdownStatus, Far16.sel, Far16.off,
                         pThis->cLoggedSoftResets < cMaxLogged ? "." : " - won't log any more!"));
             }
             return false;
