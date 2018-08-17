@@ -809,7 +809,6 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3, SVM_VMCB_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3 = NULL;
-            pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0 = NULL;
         }
         pVCpu->cpum.s.Guest.hwvirt.svm.HCPhysVmcb = NIL_RTHCPHYS;
 
@@ -817,14 +816,12 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3 = NULL;
-            pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR0 = NULL;
         }
 
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3, SVM_IOPM_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3 = NULL;
-            pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR0 = NULL;
         }
     }
 }
@@ -917,7 +914,6 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3, VMX_V_VMCS_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3 = NULL;
-            pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR0 = NULL;
         }
     }
 }
