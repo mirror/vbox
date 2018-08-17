@@ -809,6 +809,7 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3, SVM_VMCB_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3 = NULL;
+            pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0 = NULL;
         }
         pVCpu->cpum.s.Guest.hwvirt.svm.HCPhysVmcb = NIL_RTHCPHYS;
 
@@ -816,12 +817,14 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3 = NULL;
+            pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR0 = NULL;
         }
 
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3, SVM_IOPM_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3 = NULL;
+            pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR0 = NULL;
         }
     }
 }
@@ -894,6 +897,67 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
     /* On any failure, cleanup. */
     if (RT_FAILURE(rc))
         cpumR3FreeSvmHwVirtState(pVM);
+
+    return rc;
+}
+
+
+/**
+ * Frees memory allocated for the VMX hardware virtualization state.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void cpumR3FreeVmxHwVirtState(PVM pVM)
+{
+    Assert(pVM->cpum.ro.GuestFeatures.fVmx);
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3, VMX_V_VMCS_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3 = NULL;
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR0 = NULL;
+        }
+    }
+}
+
+
+/**
+ * Allocates memory for the VMX hardware virtualization state.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int cpumR3AllocVmxHwVirtState(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+    LogRel(("CPUM: Allocating %u pages for the nested-guest VMCS\n", pVM->cCpus * VMX_V_VMCS_SIZE));
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        /*
+         * Allocate the nested-guest current VMCS.
+         */
+        SUPPAGE SupNstGstVmcsPage;
+        RT_ZERO(SupNstGstVmcsPage);
+        SupNstGstVmcsPage.Phys = NIL_RTHCPHYS;
+        Assert(VMX_V_VMCS_PAGES == 1);
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3);
+        rc = SUPR3PageAllocEx(VMX_V_VMCS_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR0, &SupNstGstVmcsPage);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCS\n", pVCpu->idCpu, VMX_V_VMCS_PAGES));
+            break;
+        }
+    }
+
+    /* On any failure, cleanup. */
+    if (RT_FAILURE(rc))
+        cpumR3FreeVmxHwVirtState(pVM);
 
     return rc;
 }

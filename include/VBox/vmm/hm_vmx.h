@@ -2684,6 +2684,8 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the virtual VMCS region (we use the maximum allowed size to avoid
  *  complications when teleporation may be implemented). */
 #define VMX_V_VMCS_SIZE                                         X86_PAGE_4K_SIZE
+/** The size of the virtual VMCS region (in pages). */
+#define VMX_V_VMCS_PAGES                                        1
 
 /** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS32_PREEMPT_TIMER_VALUE, VMX_BF_VMCS_ENC_INDEX)

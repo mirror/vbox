@@ -451,7 +451,7 @@ DECLINLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
  */
 DECLINLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs))
+    if (pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS)
     {
         pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
         pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_ZF;
@@ -469,7 +469,7 @@ DECLINLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  */
 DECLINLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs))
+    if (pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS)
     {
         iemVmxVmFailValid(pVCpu, enmInsErr);
         /** @todo Set VM-instruction error field in the current virtual-VMCS.  */
@@ -621,8 +621,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPt
          * Record that we're in VMX operation, block INIT, block and disable A20M.
          */
         pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon    = GCPhysVmxon;
-        pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
         pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs     = NIL_RTGCPHYS;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
         /** @todo NSTVMX: clear address-range monitoring. */
         /** @todo NSTVMX: Intel PT. */
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_Success;
