@@ -348,8 +348,9 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
+    registerField("providerShortName", this, "providerShortName");
     registerField("profileName", this, "profileName");
-    registerField("provider", this, "provider");
+    registerField("profile", this, "profile");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -431,17 +432,9 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
     for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
-        if (m_pAccountComboBox->itemData(i, ProviderID).toString() == "OCI")
-        {
-            m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure: %1", "provider: profile")
-                .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
-        }
-        else
-        {
-            m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-                .arg(m_pAccountComboBox->itemData(i, ProviderID).toString())
-                .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
-        }
+        m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
+            .arg(m_pAccountComboBox->itemData(i, ProviderName).toString())
+            .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
     }
 
     /* Adjust label widths: */

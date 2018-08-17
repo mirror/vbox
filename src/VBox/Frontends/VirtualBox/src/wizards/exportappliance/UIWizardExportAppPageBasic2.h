@@ -55,9 +55,10 @@ Q_DECLARE_METATYPE(MACAddressPolicy);
 /** Account combo data fields. */
 enum
 {
-    ProviderID      = Qt::UserRole + 1,
-    ProviderName    = Qt::UserRole + 2,
-    ProfileName     = Qt::UserRole + 3
+    ProviderID        = Qt::UserRole + 1,
+    ProviderName      = Qt::UserRole + 2,
+    ProviderShortName = Qt::UserRole + 3,
+    ProfileName       = Qt::UserRole + 4
 };
 
 
@@ -130,6 +131,8 @@ protected:
     void setProviderById(const QString &strId);
     /** Returns provider ID. */
     QString providerId() const;
+    /** Returns provider short name. */
+    QString providerShortName() const;
     /** Returns profile name. */
     QString profileName() const;
     /** Returns Cloud Profile object. */
@@ -198,8 +201,9 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(QString providerShortName READ providerShortName);
     Q_PROPERTY(QString profileName READ profileName);
+    Q_PROPERTY(CCloudProfile profile READ profile);
 
 public:
 

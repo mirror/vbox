@@ -151,7 +151,7 @@ QString UIWizardExportApp::uri(bool fWithFile) const
 {
     /* For Cloud Service Providers: */
     if (field("format").toString() == "csp-1.0")
-        return QString("OCI://%1").arg(field("profileName").toString());
+        return QString("%1://%2").arg(field("providerShortName").toString(), field("profileName").toString());
     else
     {
         /* Prepare storage path: */
