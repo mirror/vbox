@@ -868,11 +868,6 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     pStreamDS->Dbg.tsLastTransferredMs = RTTimeMilliTS();
 #endif
 
-    /* Only transfer anything if we have enough data for a DirectSound stream's period *and* are not
-     * in draining mode (already). */
-    if (   !pStreamDS->Out.fDrain
-        && cbToTransfer < DrvAudioHlpFramesToBytes(pStreamDS->Cfg.Backend.cfPeriod, &pStreamDS->Cfg.Props))
-        return VINF_SUCCESS;
 
     while (cbToTransfer)
     {
@@ -1904,9 +1899,6 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     pStreamDS->Out.cbWritten += cbWrittenTotal;
 
-    rc = dsoundPlayTransfer(pThis, pStreamDS);
-    AssertRC(rc);
-
     if (RT_SUCCESS(rc))
     {
         if (pcxWritten)
@@ -2365,7 +2357,13 @@ static DECLCALLBACK(int) drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, P
     PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
 
     if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN)
+    {
         return dsoundCaptureTransfer(pThis, pStreamDS);
+    }
+    else if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT)
+    {
+        return dsoundPlayTransfer(pThis, pStreamDS);
+    }
 
     return VINF_SUCCESS;
 }
