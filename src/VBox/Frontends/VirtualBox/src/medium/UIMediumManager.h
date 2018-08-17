@@ -187,7 +187,7 @@ private slots:
         /** Handles item change case. */
         void sltHandleCurrentItemChanged();
         /** Handles item context-menu-call case. */
-        void sltHandleContextMenuCall(const QPoint &position);
+        void sltHandleContextMenuRequest(const QPoint &position);
     /** @} */
 
     /** @name Tree-widget stuff.
@@ -208,8 +208,6 @@ private:
         void prepareConnections();
         /** Prepares actions. */
         void prepareActions();
-        /** Prepares context-menu. */
-        void prepareContextMenu();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Prepares toolbar. */
@@ -347,8 +345,6 @@ private:
       * @{ */
         /** Holds the toolbar widget instance. */
         UIToolBar *m_pToolBar;
-        /** Holds the context-menu object instance. */
-        QMenu     *m_pContextMenu;
     /** @} */
 
     /** @name Progress-bar variables.

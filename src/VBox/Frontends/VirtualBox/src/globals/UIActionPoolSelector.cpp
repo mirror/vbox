@@ -1834,7 +1834,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Add a Disk Image File"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add a disk image file"));
         setToolTip(tr("Add a Disk Image File (%1)").arg(shortcut().toString()));
     }
 };
@@ -2238,6 +2238,8 @@ void UIActionPoolSelector::updateMenuMedium()
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Move)) || fSeparator;
     /* 'Remove' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Remove)) || fSeparator;
+    /* 'Release' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -2246,8 +2248,6 @@ void UIActionPoolSelector::updateMenuMedium()
         fSeparator = false;
     }
 
-    /* 'Release' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
 

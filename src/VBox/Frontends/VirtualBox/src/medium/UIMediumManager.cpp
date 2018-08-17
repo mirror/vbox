@@ -165,7 +165,6 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool 
     , m_iconFD(UIIconPool::iconSet(":/fd_16px.png", ":/fd_disabled_16px.png"))
     , m_pDetailsWidget(0)
     , m_pToolBar(0)
-    , m_pContextMenu(0)
     , m_pProgressBar(0)
 {
     /* Prepare: */
@@ -188,7 +187,7 @@ void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBa
 
 void UIMediumManagerWidget::retranslateUi()
 {
-    /* Translate toolbar: */
+    /* Adjust toolbar: */
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
     // There is a bug in Qt Cocoa which result in showing a "more arrow" when
@@ -616,23 +615,36 @@ void UIMediumManagerWidget::sltHandleCurrentItemChanged()
     refetchCurrentMediumItem(mediumType(pTreeWidget));
 }
 
-void UIMediumManagerWidget::sltHandleContextMenuCall(const QPoint &position)
+void UIMediumManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
     /* Get current tree-widget: */
     QITreeWidget *pTreeWidget = currentTreeWidget();
     AssertPtrReturnVoid(pTreeWidget);
 
-    /* Make sure underlaying item was found: */
+    /* If underlaying item was found => make sure that item is current one: */
     QTreeWidgetItem *pItem = pTreeWidget->itemAt(position);
-    if (!pItem)
-        return;
+    if (pItem)
+        setCurrentItem(pTreeWidget, pItem);
 
-    /* Make sure that item is current one: */
-    setCurrentItem(pTreeWidget, pItem);
-
-    /* Show item context menu: */
-    if (m_pContextMenu)
-        m_pContextMenu->exec(pTreeWidget->viewport()->mapToGlobal(position));
+    /* Compose temporary context-menu: */
+    QMenu menu;
+    if (pTreeWidget->itemAt(position))
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
+        menu.addSeparator();
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+    }
+    else
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        menu.addSeparator();
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
+    }
+    /* And show it: */
+    menu.exec(pTreeWidget->viewport()->mapToGlobal(position));
 }
 
 void UIMediumManagerWidget::sltPerformTablesAdjustment()
@@ -733,26 +745,6 @@ void UIMediumManagerWidget::prepareActions()
 
     /* Update action icons: */
     updateActionIcons();
-
-    /* Prepare context-menu: */
-    prepareContextMenu();
-}
-
-void UIMediumManagerWidget::prepareContextMenu()
-{
-    /* Create context-menu: */
-    m_pContextMenu = new QMenu(this);
-    AssertPtrReturnVoid(m_pContextMenu);
-    {
-        /* Configure contex-menu: */
-        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
-        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
-        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
-        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
-        m_pContextMenu->addSeparator();
-        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-        m_pContextMenu->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
-    }
 }
 
 void UIMediumManagerWidget::prepareWidgets()
@@ -794,8 +786,8 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
-        m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
+        m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
@@ -889,7 +881,7 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
         connect(pTreeWidget, &QITreeWidget::itemDoubleClicked,
                 m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::setChecked);
         connect(pTreeWidget, &QITreeWidget::customContextMenuRequested,
-                this, &UIMediumManagerWidget::sltHandleContextMenuCall);
+                this, &UIMediumManagerWidget::sltHandleContextMenuRequest);
         connect(pTreeWidget, &QITreeWidget::resized,
                 this, &UIMediumManagerWidget::sltPerformTablesAdjustment, Qt::QueuedConnection);
         connect(pTreeWidget->header(), &QHeaderView::sectionResized,
