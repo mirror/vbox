@@ -74,7 +74,7 @@ HRESULT CloudProviderManager::init(VirtualBox *aParent)
         mcExtPackMgrUpdate = pExtPackMgr->i_getUpdateCounter();
         // Make sure that the current value doesn't match, forcing a refresh.
         mcExtPackMgrUpdate--;
-        iRefreshProviders();
+        i_refreshProviders();
     }
 #else
     ComObjPtr<OCIProvider> pOCIProvider;
@@ -102,9 +102,10 @@ void CloudProviderManager::uninit()
 #ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
 void CloudProviderManager::i_refreshProviders()
 {
+    uint64_t cExtPackMgrUpdate;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        uint64_t cExtPackMgrUpdate = mpExtPackMgr->i_getUpdateCounter();
+        cExtPackMgrUpdate = mpExtPackMgr->i_getUpdateCounter();
         if (cExtPackMgrUpdate == mcExtPackMgrUpdate)
             return;
     }
@@ -112,7 +113,7 @@ void CloudProviderManager::i_refreshProviders()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     // Reread the current value to figure out if some other thead did the work
     // already before this thread got hold of the write lock.
-    cExtPackMgrUpdate = pExtPackMgr->i_getUpdateCounter();
+    cExtPackMgrUpdate = mpExtPackMgr->i_getUpdateCounter();
     if (cExtPackMgrUpdate == mcExtPackMgrUpdate)
         return;
     mcExtPackMgrUpdate = cExtPackMgrUpdate;
@@ -128,7 +129,7 @@ void CloudProviderManager::i_refreshProviders()
     std::vector<ComPtr<IUnknown> > apObjects;
     std::vector<com::Utf8Str> astrExtPackNames;
     com::Guid idObj(COM_IIDOF(ICloudProviderManager));
-    pExtPackMgr->i_queryObjects(idObj.toString(), apObjects, &astrExtPackNames);
+    mpExtPackMgr->i_queryObjects(idObj.toString(), apObjects, &astrExtPackNames);
     for (unsigned i = 0; i < apObjects.size(); i++)
     {
         ComPtr<ICloudProviderManager> pTmp;
