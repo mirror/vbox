@@ -45,6 +45,7 @@
 #include "AutostartDb.h"
 #include "SystemPropertiesImpl.h"
 #include "MachineImplMoveVM.h"
+#include "ExtPackManagerImpl.h"
 
 // generated header
 #include "VBoxEvents.h"
@@ -15278,8 +15279,276 @@ HRESULT Machine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthPara
 
 HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
 {
+    /* it's assumed the machine already registered. If not, it's a problem of the caller */
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(),autoCaller.rc());
+
+    HRESULT rc = S_OK;
+
+    /* get usb device filters from host, before any writes occurred to avoid deadlock */
+    ComPtr<IUSBDeviceFilters> usbDeviceFilters;
+    rc = getUSBDeviceFilters(usbDeviceFilters);
+    if (FAILED(rc)) return rc;
+
     NOREF(aFlags);
-    ReturnComNotImplemented();
+    com::Utf8Str  osTypeId;
+    ComObjPtr<GuestOSType> osType = NULL;
+
+    /* Get the guest os type as a string from the VB. */
+    rc = getOSTypeId(osTypeId);
+    if (FAILED(rc)) return rc;
+
+    /* Get the os type obj that coresponds, can be used to get
+     * the defaults for this guest OS. */
+    rc = mParent->i_findGuestOSType(Bstr(osTypeId), osType);
+    if (FAILED(rc)) return rc;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Let the OS type select 64-bit ness. */
+    mHWData->mLongMode = osType->i_is64Bit()
+                       ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
+
+    /* Apply network adapters defaults */
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
+        mNetworkAdapters[slot]->i_applyDefaults(osType);
+
+    /* Apply serial port defaults */
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
+        mSerialPorts[slot]->i_applyDefaults(osType);
+
+    /* Apply parallel port defaults  - not OS dependent*/
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
+        mParallelPorts[slot]->i_applyDefaults();
+
+
+    /* Let the OS type enable the X2APIC */
+    mHWData->mX2APIC = osType->i_recommendedX2APIC();
+
+    /* This one covers IOAPICEnabled. */
+    mBIOSSettings->i_applyDefaults(osType);
+
+    /* Initialize default BIOS settings here */
+    mHWData->mAPIC = osType->i_recommendedIOAPIC();
+    mHWData->mHWVirtExEnabled = osType->i_recommendedVirtEx();
+
+    rc = osType->COMGETTER(RecommendedRAM)(&mHWData->mMemorySize);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedVRAM)(&mHWData->mVRAMSize);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(Recommended2DVideoAcceleration)(&mHWData->mAccelerate2DVideoEnabled);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(Recommended3DAcceleration)(&mHWData->mAccelerate3DEnabled);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedFirmware)(&mHWData->mFirmwareType);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedPAE)(&mHWData->mPAEEnabled);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedHPET)(&mHWData->mHPETEnabled);
+    if (FAILED(rc)) return rc;
+
+    BOOL mRTCUseUTC;
+    rc = osType->COMGETTER(RecommendedRTCUseUTC)(&mRTCUseUTC);
+    if (FAILED(rc)) return rc;
+
+    setRTCUseUTC(mRTCUseUTC);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedChipset)(&mHWData->mChipsetType);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedTFReset)(&mHWData->mTripleFaultReset);
+    if (FAILED(rc)) return rc;
+
+    /* Audio stuff. */
+    AudioCodecType_T audioCodec;
+    rc = osType->COMGETTER(RecommendedAudioCodec)(&audioCodec);
+    if (FAILED(rc)) return rc;
+
+    rc = mAudioAdapter->COMSETTER(AudioCodec)(audioCodec);
+    if (FAILED(rc)) return rc;
+
+    AudioControllerType_T audioController;
+    rc = osType->COMGETTER(RecommendedAudioController)(&audioController);
+    if (FAILED(rc)) return rc;
+
+    rc = mAudioAdapter->COMSETTER(AudioController)(audioController);
+    if (FAILED(rc)) return rc;
+
+    rc = mAudioAdapter->COMSETTER(Enabled)(true);
+    if (FAILED(rc)) return rc;
+
+    rc = mAudioAdapter->COMSETTER(EnabledOut)(true);
+    if (FAILED(rc)) return rc;
+
+    /* Storage Controllers */
+    StorageControllerType_T hdStorageControllerType;
+    StorageBus_T hdStorageBusType;
+    StorageControllerType_T dvdStorageControllerType;
+    StorageBus_T dvdStorageBusType;
+    BOOL         recommendedFloppy;
+    ComPtr<IStorageController> floppyController;
+    ComPtr<IStorageController> hdController;
+    ComPtr<IStorageController> dvdController;
+    Utf8Str strFloppyName, strDVDName, strHDName;
+
+    /* GUI auto generates these - not accesible here - so hardware, at least for now. */
+    strFloppyName = Bstr("Floppy 1").raw();
+    strDVDName = Bstr("DVD 1").raw();
+    strHDName = Bstr("HDD 1").raw();
+
+    /* Floppy recommended? add one. */
+    rc = osType->COMGETTER(RecommendedFloppy(&recommendedFloppy));
+    if (FAILED(rc)) return rc;
+    if (recommendedFloppy)
+    {
+        rc = addStorageController(strFloppyName,
+                                  StorageBus_Floppy,
+                                  floppyController);
+        if (FAILED(rc)) return rc;
+    }
+
+    /* Setup one DVD storage controller. */
+    rc = osType->COMGETTER(RecommendedDVDStorageController)(&dvdStorageControllerType);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedDVDStorageBus)(&dvdStorageBusType);
+    if (FAILED(rc)) return rc;
+
+    rc = addStorageController(strDVDName,
+                              dvdStorageBusType,
+                              dvdController);
+    if (FAILED(rc)) return rc;
+
+    rc = dvdController->COMSETTER(ControllerType)(dvdStorageControllerType);
+    if (FAILED(rc)) return rc;
+
+    /* Setup one HDD storage controller. */
+    rc = osType->COMGETTER(RecommendedHDStorageController)(&hdStorageControllerType);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedHDStorageBus)(&hdStorageBusType);
+    if (FAILED(rc)) return rc;
+
+    if (hdStorageBusType != dvdStorageBusType && hdStorageControllerType != dvdStorageControllerType)
+    {
+       rc = addStorageController(strHDName,
+                                 hdStorageBusType,
+                                 hdController);
+       if (FAILED(rc)) return rc;
+
+       rc = hdController->COMSETTER(ControllerType)(hdStorageControllerType);
+       if (FAILED(rc)) return rc;
+    }
+    else
+    {
+        /* The HD controller is the same as DVD: */
+        hdController = dvdController;
+        strHDName = Bstr("DVD 1").raw();
+    }
+
+    /* Limit the AHCI port count if it's used because windows has trouble with
+     * too many ports and other guest (OS X in particular) may take extra long
+     * boot: */
+
+    // pParent = static_cast<Medium*>(aP)
+    IStorageController  *temp = hdController;
+    ComObjPtr<StorageController> storageController;
+    storageController = static_cast<StorageController *>(temp);
+
+    // tempHDController = aHDController;
+    if (hdStorageControllerType  == StorageControllerType_IntelAhci)
+        storageController->COMSETTER(PortCount)(1 + (dvdStorageControllerType == StorageControllerType_IntelAhci));
+    else if (dvdStorageControllerType == StorageControllerType_IntelAhci)
+        storageController->COMSETTER(PortCount)(1);
+
+    /* USB stuff */
+
+    bool ohciEnabled = false;
+
+    ComPtr<IUSBController> usbController;
+    BOOL recommendedUSB3;
+    BOOL recommendedUSB;
+    BOOL usbProxyAvailable;
+
+    getUSBProxyAvailable(&usbProxyAvailable);
+    if (FAILED(rc)) return rc;
+
+    rc = osType->COMGETTER(RecommendedUSB3)(&recommendedUSB3);
+    if (FAILED(rc)) return rc;
+    rc = osType->COMGETTER(RecommendedUSB)(&recommendedUSB);
+    if (FAILED(rc)) return rc;
+
+    if (!usbDeviceFilters.isNull() && recommendedUSB3 && usbProxyAvailable)
+    {
+        /* USB 3.0 is only available if the proper ExtPack is installed. */
+        ExtPackManager *aManager = mParent->i_getExtPackManager();
+        if (aManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
+        {
+            rc = addUSBController("XHCI", USBControllerType_XHCI, usbController);
+            if (FAILED(rc)) return rc;
+
+            /* xHci includes OHCI */
+            ohciEnabled = true;
+        }
+    }
+    if (   !ohciEnabled
+        && !usbDeviceFilters.isNull() && recommendedUSB && usbProxyAvailable)
+    {
+        rc = addUSBController("OHCI", USBControllerType_OHCI, usbController);
+        if (FAILED(rc)) return rc;
+        ohciEnabled = true;
+
+        /* USB 2.0 is only available if the proper ExtPack is installed.
+         * Note. Configuring EHCI here and providing messages about
+         * the missing extpack isn't exactly clean, but it is a
+         * necessary evil to patch over legacy compatability issues
+          * introduced by the new distribution model. */
+        ExtPackManager *manager = mParent->i_getExtPackManager();
+        if (manager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
+        {
+            rc = addUSBController("EHCI", USBControllerType_EHCI, usbController);
+            if (FAILED(rc)) return rc;
+        }
+    }
+
+    /* Set recommended human interface device types: */
+    BOOL recommendedUSBHID;
+    rc = osType->COMGETTER(RecommendedUSBHID)(&recommendedUSBHID);
+    if (FAILED(rc)) return rc;
+
+    if (recommendedUSBHID)
+    {
+        mHWData->mKeyboardHIDType = KeyboardHIDType_USBKeyboard;
+        mHWData->mPointingHIDType = PointingHIDType_USBMouse;
+        if (!ohciEnabled && !usbDeviceFilters.isNull())
+        {
+            rc = addUSBController("OHCI", USBControllerType_OHCI, usbController);
+            if (FAILED(rc)) return rc;
+        }
+    }
+
+    BOOL recommendedUSBTablet;
+    rc = osType->COMGETTER(RecommendedUSBTablet)(&recommendedUSBTablet);
+    if (FAILED(rc)) return rc;
+
+    if (recommendedUSBTablet)
+    {
+        mHWData->mPointingHIDType = PointingHIDType_USBTablet;
+        if (!ohciEnabled && !usbDeviceFilters.isNull())
+        {
+            rc = addUSBController("OHCI", USBControllerType_OHCI, usbController);
+            if (FAILED(rc)) return rc;
+        }
+    }
+    return S_OK;
 }
 
 /* This isn't handled entirely by the wrapper generator yet. */

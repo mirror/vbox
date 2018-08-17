@@ -477,6 +477,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--register]\n"
                      "                            [--basefolder <path>]\n"
                      "                            [--uuid <uuid>]\n"
+                     "                            [--default]\n"
                      "\n", SEP);
 
     if (fCategory & USAGE_MODIFYVM)

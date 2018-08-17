@@ -668,6 +668,13 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
     </para>
 
     <para>
+      If the <computeroutput>--default</computeroutput> option is used,
+      default hardware configuration for specified guest operation
+      system will be applied. By default, VM is created with minimal
+      hardware.
+    </para>
+
+    <para>
       By default, this command only creates the XML file without
       automatically registering the VM with your VirtualBox
       installation. To register the VM instantly, use the optional

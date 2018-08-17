@@ -194,6 +194,8 @@ static const RTGETOPTDEF g_aCreateVMOptions[] =
     { "-uuid",            'u', RTGETOPT_REQ_UUID },
     { "--register",       'r', RTGETOPT_REQ_NOTHING },
     { "-register",        'r', RTGETOPT_REQ_NOTHING },
+    { "--default",        'd', RTGETOPT_REQ_NOTHING },
+    { "-default",         'd', RTGETOPT_REQ_NOTHING },
 };
 
 RTEXITCODE handleCreateVM(HandlerArg *a)
@@ -204,6 +206,9 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
     Bstr bstrOsTypeId;
     Bstr bstrUuid;
     bool fRegister = false;
+    bool fDefault = false;
+    /* TBD. Now not used */
+    Bstr bstrDefaultFlags;
     com::SafeArray<BSTR> groups;
 
     int c;
@@ -238,6 +243,10 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
 
             case 'r':   // --register
                 fRegister = true;
+                break;
+
+            case 'd':   // --default
+                fDefault = true;
                 break;
 
             default:
@@ -277,6 +286,12 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
         if (fRegister)
         {
             CHECK_ERROR_BREAK(a->virtualBox, RegisterMachine(machine));
+        }
+        if (fDefault)
+        {
+            /* ApplyDefaults assumes the machine is already registered */
+            CHECK_ERROR_BREAK(machine, ApplyDefaults(bstrDefaultFlags.raw()));
+            CHECK_ERROR_BREAK(machine, SaveSettings());
         }
         Bstr uuid;
         CHECK_ERROR_BREAK(machine, COMGETTER(Id)(uuid.asOutParam()));
