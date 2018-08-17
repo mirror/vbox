@@ -485,6 +485,100 @@ HRESULT Progress::i_notifyCompleteEI(HRESULT aResultCode, const ComPtr<IVirtualB
     return S_OK;
 }
 
+HRESULT Progress::i_waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgressOther)
+{
+    LogFlowThisFuncEnter();
+
+    /* Note: no locking needed, because we just use public methods. */
+
+    HRESULT rc           = S_OK;
+    BOOL fCancelable     = FALSE;
+    BOOL fCompleted      = FALSE;
+    BOOL fCanceled       = FALSE;
+    ULONG prevPercent    = UINT32_MAX;
+    ULONG currentPercent = 0;
+    ULONG cOp            = 0;
+    /* Is the async process cancelable? */
+    rc = aProgressOther->COMGETTER(Cancelable)(&fCancelable);
+    if (FAILED(rc)) return rc;
+    /* Loop as long as the sync process isn't completed. */
+    while (SUCCEEDED(aProgressOther->COMGETTER(Completed(&fCompleted))))
+    {
+        /* We can forward any cancel request to the async process only when
+         * it is cancelable. */
+        if (fCancelable)
+        {
+            rc = COMGETTER(Canceled)(&fCanceled);
+            if (FAILED(rc)) return rc;
+            if (fCanceled)
+            {
+                rc = aProgressOther->Cancel();
+                if (FAILED(rc)) return rc;
+            }
+        }
+        /* Even if the user canceled the process, we have to wait until the
+           async task has finished his work (cleanup and such). Otherwise there
+           will be sync trouble (still wrong state, dead locks, ...) on the
+           used objects. So just do nothing, but wait for the complete
+           notification. */
+        if (!fCanceled)
+        {
+            /* Check if the current operation has changed. It is also possible that
+             * in the meantime more than one async operation was finished. So we
+             * have to loop as long as we reached the same operation count. */
+            ULONG curOp;
+            for (;;)
+            {
+                rc = aProgressOther->COMGETTER(Operation(&curOp));
+                if (FAILED(rc)) return rc;
+                if (cOp != curOp)
+                {
+                    Bstr bstr;
+                    ULONG currentWeight;
+                    rc = aProgressOther->COMGETTER(OperationDescription(bstr.asOutParam()));
+                    if (FAILED(rc)) return rc;
+                    rc = aProgressOther->COMGETTER(OperationWeight(&currentWeight));
+                    if (FAILED(rc)) return rc;
+                    rc = SetNextOperation(bstr.raw(), currentWeight);
+                    if (FAILED(rc)) return rc;
+                    ++cOp;
+                }
+                else
+                    break;
+            }
+
+            rc = aProgressOther->COMGETTER(OperationPercent(&currentPercent));
+            if (FAILED(rc)) return rc;
+            if (currentPercent != prevPercent)
+            {
+                prevPercent = currentPercent;
+                rc = SetCurrentOperationProgress(currentPercent);
+                if (FAILED(rc)) return rc;
+            }
+        }
+        if (fCompleted)
+            break;
+
+        /* Make sure the loop is not too tight */
+        rc = aProgressOther->WaitForCompletion(100);
+        if (FAILED(rc)) return rc;
+    }
+
+    /* Transfer error information if applicable and report the error status
+     * back to the caller to make this as easy as possible. */
+    LONG iRc;
+    rc = aProgressOther->COMGETTER(ResultCode)(&iRc);
+    if (FAILED(rc)) return rc;
+    if (FAILED(iRc))
+    {
+        setError(ProgressErrorInfo(aProgressOther));
+        rc = iRc;
+    }
+
+    LogFlowThisFuncLeave();
+    return rc;
+}
+
 /**
  * Notify the progress object that we're almost at the point of no return.
  *
@@ -977,90 +1071,6 @@ HRESULT Progress::waitForOperationCompletion(ULONG aOperation, LONG aTimeout)
     LogFlowThisFuncLeave();
 
     return S_OK;
-}
-
-HRESULT Progress::waitForAsyncProgressCompletion(const ComPtr<IProgress> &aPProgressAsync)
-{
-    LogFlowThisFuncEnter();
-
-    /* Note: we don't lock here, cause we just using public methods. */
-
-    HRESULT rc           = S_OK;
-    BOOL fCancelable     = FALSE;
-    BOOL fCompleted      = FALSE;
-    BOOL fCanceled       = FALSE;
-    ULONG prevPercent    = UINT32_MAX;
-    ULONG currentPercent = 0;
-    ULONG cOp            = 0;
-    /* Is the async process cancelable? */
-    rc = aPProgressAsync->COMGETTER(Cancelable)(&fCancelable);
-    if (FAILED(rc)) return rc;
-    /* Loop as long as the sync process isn't completed. */
-    while (SUCCEEDED(aPProgressAsync->COMGETTER(Completed(&fCompleted))))
-    {
-        /* We can forward any cancel request to the async process only when
-         * it is cancelable. */
-        if (fCancelable)
-        {
-            rc = COMGETTER(Canceled)(&fCanceled);
-            if (FAILED(rc)) return rc;
-            if (fCanceled)
-            {
-                rc = aPProgressAsync->Cancel();
-                if (FAILED(rc)) return rc;
-            }
-        }
-        /* Even if the user canceled the process, we have to wait until the
-           async task has finished his work (cleanup and such). Otherwise there
-           will be sync trouble (still wrong state, dead locks, ...) on the
-           used objects. So just do nothing, but wait for the complete
-           notification. */
-        if (!fCanceled)
-        {
-            /* Check if the current operation has changed. It is also possible that
-             * in the meantime more than one async operation was finished. So we
-             * have to loop as long as we reached the same operation count. */
-            ULONG curOp;
-            for (;;)
-            {
-                rc = aPProgressAsync->COMGETTER(Operation(&curOp));
-                if (FAILED(rc)) return rc;
-                if (cOp != curOp)
-                {
-                    Bstr bstr;
-                    ULONG currentWeight;
-                    rc = aPProgressAsync->COMGETTER(OperationDescription(bstr.asOutParam()));
-                    if (FAILED(rc)) return rc;
-                    rc = aPProgressAsync->COMGETTER(OperationWeight(&currentWeight));
-                    if (FAILED(rc)) return rc;
-                    rc = SetNextOperation(bstr.raw(), currentWeight);
-                    if (FAILED(rc)) return rc;
-                    ++cOp;
-                }
-                else
-                    break;
-            }
-
-            rc = aPProgressAsync->COMGETTER(OperationPercent(&currentPercent));
-            if (FAILED(rc)) return rc;
-            if (currentPercent != prevPercent)
-            {
-                prevPercent = currentPercent;
-                rc = SetCurrentOperationProgress(currentPercent);
-                if (FAILED(rc)) return rc;
-            }
-        }
-        if (fCompleted)
-            break;
-
-        /* Make sure the loop is not too tight */
-        rc = aPProgressAsync->WaitForCompletion(100);
-        if (FAILED(rc)) return rc;
-    }
-
-    LogFlowThisFuncLeave();
-
-    return rc;
 }
 
 HRESULT Progress::cancel()

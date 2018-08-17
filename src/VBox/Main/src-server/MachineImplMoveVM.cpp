@@ -20,11 +20,17 @@
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/stream.h>
+#include <VBox/com/ErrorInfo.h>
 
 #include "MachineImplMoveVM.h"
 #include "MediumFormatImpl.h"
 #include "VirtualBoxImpl.h"
 #include "Logging.h"
+
+/** @todo r=klaus this file is abusing the release log by putting pretty much
+ * everything there. Should be adjusted to use debug logging where appropriate
+ * and if really necessary some LogRel2 and the like. */
+
 
 /* This variable is global and used in the different places so it must be cleared each time before usage to avoid failure */
 std::vector< ComObjPtr<Machine> > machineList;
@@ -1104,33 +1110,26 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
             if (SUCCEEDED(rc))
             {
                 /* In case of failure moveDiskProgress would be in the invalid state or not initialized at all
-                 * Call WaitForAsyncProgressCompletion only in success
+                 * Call i_waitForOtherProgressCompletion only in success
                  */
-                /* Wait until the async process has finished. */
-                rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+                /* Wait until the other process has finished. */
+                rc = m_pProgress->i_waitForOtherProgressCompletion(moveDiskProgress);
             }
 
             /*acquire the lock back*/
             machineLock.acquire();
 
+            /* @todo r=klaus get rid of custom error handling logic everywhere in this file */
+            if (FAILED(rc))
+            {
+                com::ErrorInfoKeeper eik;
+                Utf8Str errorDesc(eik.getText().raw());
+                errorsList.push_back(ErrorInfoItem(eik.getResultCode(), errorDesc.c_str()));
+            }
+
             if (FAILED(rc)) throw rc;
 
             LogRelFunc(("Moving %s has been finished\n", strTargetImageName.c_str()));
-
-            /* Check the result of the async process. */
-            LONG iRc;
-            rc = moveDiskProgress->COMGETTER(ResultCode)(&iRc);
-            if (FAILED(rc)) throw rc;
-            /* If the thread of the progress object has an error, then
-             * retrieve the error info from there, or it'll be lost. */
-            if (FAILED(iRc))
-            {
-                ProgressErrorInfo pie(moveDiskProgress);
-                Utf8Str errorDesc(pie.getText().raw());
-                errorsList.push_back(ErrorInfoItem(pie.getResultCode(), errorDesc.c_str()));
-
-                throw machine->setError(ProgressErrorInfo(moveDiskProgress));
-            }
 
             ++itMedium;
         }

@@ -14211,7 +14211,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IProgress" extends="$unknown"
-    uuid="e0026dc0-0c55-47b1-aa64-d340a396b418"
+    uuid="64c7fb5c-ce8f-4681-9c8c-d523cb4dea3d"
     wsmap="managed"
     reservedMethods="1" reservedAttributes="2"
     >
@@ -14406,34 +14406,6 @@ and "VAR" for unsetting. -->
       <param name="timeout" type="long" dir="in">
         <desc>
           Maximum time in milliseconds to wait or -1 to wait indefinitely.
-        </desc>
-      </param>
-    </method>
-
-    <method name="waitForAsyncProgressCompletion">
-      <desc>
-          Waits until the other task is completed (including all
-          sub-operations) and forward all changes from the other progress to
-          this progress. This means sub-operation number, description, percent
-          and so on.
-
-          You have to take care on setting up at least the same count on
-          sub-operations in this progress object like there are in the other
-          progress object.
-
-          If the other progress object supports cancel and this object gets any
-          cancel request (when here enabled as well), it will be forwarded to
-          the other progress object.
-
-          If there is an error in the other progress, this error isn't
-          automatically transfered to this progress object. So you have to
-          check any operation error within the other progress object, after
-          this method returns.
-      </desc>
-
-      <param name="pProgressAsync" type="IProgress" dir="in">
-        <desc>
-          The progress object of the asynchrony process.
         </desc>
       </param>
     </method>

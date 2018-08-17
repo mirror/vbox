@@ -2398,20 +2398,12 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                      ComObjPtr<Medium> &pTargetMedium,
                                      ImportStack &stack)
 {
+    HRESULT rc;
     char *pszAbsDstPath = RTPathAbsExDup(stack.strMachineFolder.c_str(),
                                          strDstPath.c_str());
     Utf8Str strAbsDstPath(pszAbsDstPath);
     RTStrFree(pszAbsDstPath);
     pszAbsDstPath = NULL;
-
-    ComObjPtr<Progress> pProgress;
-    pProgress.createObject();
-    HRESULT rc = pProgress->init(mVirtualBox,
-                                 static_cast<IAppliance*>(this),
-                                 BstrFmt(tr("Creating medium '%s'"),
-                                         strAbsDstPath.c_str()).raw(),
-                                 TRUE);
-    if (FAILED(rc)) throw rc;
 
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
@@ -2562,6 +2554,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                          DeviceType_HardDisk);
                 if (FAILED(rc)) throw rc;
 
+                ComPtr<IProgress> pProgressImport;
                 /* If strHref is empty we have to create a new file. */
                 if (strSourceOVF.isEmpty())
                 {
@@ -2571,7 +2564,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* Kick off the creation of a dynamic growing disk image with the given capacity. */
                     rc = pTargetMedium->CreateBaseStorage(di.iCapacity / _1M,
                                                       ComSafeArrayAsInParam(mediumVariant),
-                                                      ComPtr<IProgress>(pProgress).asOutParam());
+                                                      pProgressImport.asOutParam());
                     if (FAILED(rc)) throw rc;
 
                     /* Advance to the next operation. */
@@ -2630,12 +2623,14 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                     /* Start the source image cloning operation. */
                     ComObjPtr<Medium> nullParent;
+                    ComObjPtr<Progress> pProgressImportTmp;
                     rc = pTargetMedium->i_importFile(strSrcFilePath.c_str(),
                                                      srcFormat,
                                                      MediumVariant_Standard,
                                                      hVfsIosReadAhead,
                                                      nullParent,
-                                                     pProgress);
+                                                     pProgressImportTmp);
+                    pProgressImportTmp.queryInterfaceTo(pProgressImport.asOutParam());
                     RTVfsIoStrmRelease(hVfsIosReadAhead);
                     hVfsIosSrc = NIL_RTVFSIOSTREAM;
                     if (FAILED(rc))
@@ -2650,8 +2645,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                 /* Now wait for the background import operation to complete; this throws
                  * HRESULTs on error. */
-                ComPtr<IProgress> pp(pProgress);
-                i_waitForAsyncProgress(stack.pProgress, pp);
+                stack.pProgress->i_waitForOtherProgressCompletion(pProgressImport);
             }
         }
         catch (...)
