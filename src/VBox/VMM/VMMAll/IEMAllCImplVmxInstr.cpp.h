@@ -30,7 +30,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
- * Gets the ModR/M and displacement byte(s) from decoded opcodes given their
+ * Gets the ModR/M, SIB and displacement byte(s) from decoded opcodes given their
  * relative offsets.
  */
 # ifdef IEM_WITH_CODE_TLB
@@ -42,7 +42,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
 #  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp)   do { } while (0)
 #  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)  do { } while (0)
 #  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)   do { } while (0)
-#  error "Implement me: Getting ModR/M, disp. has to work even when the instruction crosses a page boundary."
+#  error "Implement me: Getting ModR/M, SIB, displacement needs to work even when instruction crosses a page boundary."
 # else  /* !IEM_WITH_CODE_TLB */
 #  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm) \
     do \
@@ -563,6 +563,17 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPt
             return VINF_SUCCESS;
         }
 
+        /* VMXON physical-address width limits. */
+        Assert(!VMX_V_VMCS_PHYSADDR_4G_LIMIT);
+        if (GCPhysVmxon >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth)
+        {
+            Log(("vmxon: VMXON region pointer extends beyond physical-address width -> VMFailInvalid\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_PtrWidth;
+            iemVmxVmFailInvalid(pVCpu);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
         /* Ensure VMXON region is not MMIO, ROM etc. This is not an Intel requirement but a
            restriction imposed by our implementation. */
         if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmxon))
@@ -582,18 +593,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPt
             Log(("vmxon: Failed to read VMXON region at %#RGp, rc=%Rrc\n", GCPhysVmxon, rc));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_PtrReadPhys;
             return rc;
-        }
-
-        /* Physical-address width. */
-        uint64_t const uMsrBasic = CPUMGetGuestIa32VmxBasic(pVCpu);
-        if (   RT_BF_GET(uMsrBasic, VMX_BF_BASIC_PHYSADDR_WIDTH)
-            && RT_HI_U32(GCPhysVmxon))
-        {
-            Log(("vmxon: VMXON region pointer extends beyond physical-address width -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_PtrWidth;
-            iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
         }
 
         /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
