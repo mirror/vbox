@@ -128,6 +128,8 @@ typedef enum AUDMIXSINKCMD
     AUDMIXSINKCMD_PAUSE,
     /** Resumes the sink. */
     AUDMIXSINKCMD_RESUME,
+    /** Tells the sink's streams to drop all (buffered) data immediately. */
+    AUDMIXSINKCMD_DROP,
     /** Hack to blow the type up to 32-bit. */
     AUDMIXSINKCMD_32BIT_HACK = 0x7fffffff
 } AUDMIXSINKCMD;

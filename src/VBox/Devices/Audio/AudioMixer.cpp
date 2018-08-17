@@ -648,6 +648,7 @@ static PDMAUDIOSTREAMCMD audioMixerSinkToStreamCmd(AUDMIXSINKCMD enmCmd)
         case AUDMIXSINKCMD_DISABLE:  return PDMAUDIOSTREAMCMD_DISABLE;
         case AUDMIXSINKCMD_PAUSE:    return PDMAUDIOSTREAMCMD_PAUSE;
         case AUDMIXSINKCMD_RESUME:   return PDMAUDIOSTREAMCMD_RESUME;
+        case AUDMIXSINKCMD_DROP:     return PDMAUDIOSTREAMCMD_DROP;
         default:                     break;
     }
 
@@ -710,19 +711,39 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         }
     }
 
-    if (enmSinkCmd == AUDMIXSINKCMD_ENABLE)
+    switch (enmSinkCmd)
     {
-        /* Make sure to clear any other former flags again by assigning AUDMIXSINK_STS_RUNNING directly. */
-        pSink->fStatus = AUDMIXSINK_STS_RUNNING;
-    }
-    else if (enmSinkCmd == AUDMIXSINKCMD_DISABLE)
-    {
-        if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+        case AUDMIXSINKCMD_ENABLE:
         {
-            /* Set the sink in a pending disable state first.
-             * The final status (disabled) will be set in the sink's iteration. */
-            pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+            /* Make sure to clear any other former flags again by assigning AUDMIXSINK_STS_RUNNING directly. */
+            pSink->fStatus = AUDMIXSINK_STS_RUNNING;
+            break;
         }
+
+        case AUDMIXSINKCMD_DISABLE:
+        {
+            if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+            {
+                /* Set the sink in a pending disable state first.
+                 * The final status (disabled) will be set in the sink's iteration. */
+                pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+            }
+            break;
+        }
+
+        case AUDMIXSINKCMD_DROP:
+        {
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+            AudioMixBufReset(&pSink->MixBuf);
+#endif
+            /* Clear dirty bit, keep others. */
+            pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
     }
 
 #ifdef LOG_ENABLED

@@ -1844,6 +1844,14 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
             break;
         }
 
+        case PDMAUDIOSTREAMCMD_DROP:
+        {
+            pStreamDS->Out.cbLastTransferred   = 0;
+            pStreamDS->Out.tsLastTransferredMs = 0;
+            RTCircBufReset(pStreamDS->pCircBuf);
+            break;
+        }
+
         default:
             rc = VERR_NOT_SUPPORTED;
             break;

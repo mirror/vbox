@@ -403,8 +403,17 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
             break;
         }
 
+        case PDMAUDIOSTREAMCMD_DROP:
+        {
+            rc = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DROP);
+            if (RT_SUCCESS(rc))
+            {
+                drvAudioStreamResetInternal(pThis, pStream);
+            }
+            break;
+        }
+
         default:
-            AssertMsgFailed(("Command %s (%RU32) not implemented\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), enmStreamCmd));
             rc = VERR_NOT_IMPLEMENTED;
             break;
     }
@@ -487,6 +496,12 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         case PDMAUDIOSTREAMCMD_DRAIN:
         {
             rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_DRAIN);
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_DROP:
+        {
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_DROP);
             break;
         }
 
