@@ -162,7 +162,7 @@ typedef struct DSOUNDSTREAM
             uint32_t                    cbLastTransferred;
             /** Timestamp (in ms) of the last transfer from the internal buffer
              *  to the DirectSound buffer. */
-            uint64_t                    tsLastTransferred;
+            uint64_t                    tsLastTransferredMs;
             /** Number of buffer underruns happened. Used for logging. */
             uint8_t                     cUnderruns;
         } Out;
@@ -868,7 +868,6 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     pStreamDS->Dbg.tsLastTransferredMs = RTTimeMilliTS();
 #endif
 
-
     while (cbToTransfer)
     {
         DWORD cb1 = 0;
@@ -928,8 +927,11 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     if (   !cbAvail
         && cbTransferred)
     {
-        pStreamDS->Out.cbLastTransferred = cbTransferred;
-        pStreamDS->Out.tsLastTransferred = RTTimeMilliTS();
+        pStreamDS->Out.cbLastTransferred   = cbTransferred;
+        pStreamDS->Out.tsLastTransferredMs = RTTimeMilliTS();
+
+        LogFlowFunc(("cbLastTransferred=%RU32, tsLastTransferredMs=%RU64\n",
+                     pStreamDS->Out.cbLastTransferred, pStreamDS->Out.tsLastTransferredMs));
     }
 
     LogFlowFunc(("cbTransferred=%RU32, cbAvail=%RU32, rc=%Rrc\n", cbTransferred, cbAvail, rc));
@@ -1050,8 +1052,8 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
         pStreamDS->Out.fDrain         = false;
         pStreamDS->Out.cUnderruns     = 0;
 
-        pStreamDS->Out.cbLastTransferred = 0;
-        pStreamDS->Out.tsLastTransferred = 0;
+        pStreamDS->Out.cbLastTransferred   = 0;
+        pStreamDS->Out.tsLastTransferredMs = 0;
 
         pStreamDS->Out.cbTransferred = 0;
         pStreamDS->Out.cbWritten = 0;
@@ -1833,7 +1835,7 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
 
                 pStreamDS->Out.fFirstTransfer    = false;
                 pStreamDS->Out.cbLastTransferred = pStreamDS->Out.cbTransferred; /* All transferred audio data must be played. */
-                pStreamDS->Out.tsLastTransferred = RTTimeMilliTS();
+                pStreamDS->Out.tsLastTransferredMs = RTTimeMilliTS();
 
                 hr = directSoundPlayStart(pThis, pStreamDS);
                 if (FAILED(hr))
@@ -2308,7 +2310,7 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetPending(PPDMIHOSTAUDIO pInte
          * by DirectSound's streaming buffer. */
         if (!cbPending)
         {
-            const uint64_t diffLastTransferredMs  = RTTimeMilliTS() - pStreamDS->Out.tsLastTransferred;
+            const uint64_t diffLastTransferredMs  = RTTimeMilliTS() - pStreamDS->Out.tsLastTransferredMs;
             const uint64_t uLastTranserredChunkMs = DrvAudioHlpBytesToMilli(pStreamDS->Out.cbLastTransferred, &pStreamDS->Cfg.Props);
             if (   uLastTranserredChunkMs
                 && diffLastTransferredMs < uLastTranserredChunkMs)
