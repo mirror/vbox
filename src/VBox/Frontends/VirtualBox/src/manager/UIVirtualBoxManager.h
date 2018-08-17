@@ -253,6 +253,8 @@ private:
         void prepareMenuLogViewer(QMenu *pMenu);
         /** Prepares @a pMenu Medium. */
         void prepareMenuMedium(QMenu *pMenu);
+        /** Prepares @a pMenu Network. */
+        void prepareMenuNetwork(QMenu *pMenu);
         /** Prepares status-bar. */
         void prepareStatusBar();
         /** Prepares toolbar. */
@@ -367,6 +369,11 @@ private:
     QList<UIAction*>  m_virtualMediaManagerActions;
     /** Holds the Virtual Media Manager menu parent action. */
     QAction          *m_pVirtualMediaManagerMenuAction;
+
+    /** Holds the list of Host Network Manager menu actions. */
+    QList<UIAction*>  m_hostNetworkManagerActions;
+    /** Holds the Host Network Manager menu parent action. */
+    QAction          *m_pHostNetworkManagerMenuAction;
 
     /** Holds the Virtual Media Manager window instance. */
     QIManagerDialog *m_pManagerVirtualMedia;

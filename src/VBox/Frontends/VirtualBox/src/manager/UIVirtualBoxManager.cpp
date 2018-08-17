@@ -114,6 +114,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pSnapshotMenuAction(0)
     , m_pLogViewerMenuAction(0)
     , m_pVirtualMediaManagerMenuAction(0)
+    , m_pHostNetworkManagerMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
 {
@@ -1241,6 +1242,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     prepareMenuMedium(actionPool()->action(UIActionIndexST_M_Medium)->menu());
     m_pVirtualMediaManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Medium)->menu());
 
+    /* Prepare 'Network' menu: */
+    prepareMenuNetwork(actionPool()->action(UIActionIndexST_M_Network)->menu());
+    m_pHostNetworkManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Network)->menu());
+
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
     UIWindowMenuManager::create();
@@ -1685,6 +1690,22 @@ void UIVirtualBoxManager::prepareMenuMedium(QMenu *pMenu)
                                  << actionPool()->action(UIActionIndexST_M_Medium_S_Refresh);
 }
 
+void UIVirtualBoxManager::prepareMenuNetwork(QMenu *pMenu)
+{
+    /* We are doing it inside the UIActionPoolSelector. */
+    Q_UNUSED(pMenu);
+
+    /* Do not touch if filled already: */
+    if (!m_hostNetworkManagerActions.isEmpty())
+        return;
+
+    /* Remember action list: */
+    m_hostNetworkManagerActions << actionPool()->action(UIActionIndexST_M_Network_S_Create)
+                                << actionPool()->action(UIActionIndexST_M_Network_S_Remove)
+                                << actionPool()->action(UIActionIndexST_M_Network_T_Details)
+                                << actionPool()->action(UIActionIndexST_M_Network_S_Refresh);
+}
+
 void UIVirtualBoxManager::prepareStatusBar()
 {
     /* We are not using status-bar anymore: */
@@ -1987,6 +2008,10 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_VirtualMedia;
     m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
 
+    /* Determine whether HostNetworkManager actions should be visible: */
+    const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_HostNetwork;
+    m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
+
     /* Hide action shortcuts: */
     if (!fMachineMenuShown)
         foreach (UIAction *pAction, m_machineActions)
@@ -2006,6 +2031,8 @@ void UIVirtualBoxManager::updateActionsVisibility()
         pAction->setVisible(fLogViewerMenuShown);
     foreach (UIAction *pAction, m_virtualMediaManagerActions)
         pAction->setVisible(fMediumMenuShown);
+    foreach (UIAction *pAction, m_hostNetworkManagerActions)
+        pAction->setVisible(fNetworkMenuShown);
 
     /* Show action shortcuts: */
     if (fMachineMenuShown)

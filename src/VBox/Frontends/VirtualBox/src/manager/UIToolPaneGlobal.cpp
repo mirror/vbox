@@ -130,7 +130,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
             case ToolTypeGlobal_HostNetwork:
             {
                 /* Create Host Network Manager: */
-                m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack, m_pActionPool);
+                m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneNetwork);
                 {
 #ifndef VBOX_WS_MAC

@@ -430,6 +430,12 @@ void UIVirtualBoxManagerWidget::prepareToolbar()
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_T_Details));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Refresh));
 
+        /* Add 'Network' actions block: */
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Remove));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_T_Details));
+//        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Refresh));
+
 #ifdef VBOX_WS_MAC
         // WORKAROUND:
         // Actually Qt should do that itself but by some unknown reason it sometimes
