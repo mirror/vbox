@@ -2757,7 +2757,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #endif
 
     /* At least verify VMX is enabled, since we can't check if we're in VMX root mode without #GP'ing. */
-    RTCCUINTREG uHostCR4 = ASMGetCR4();
+    RTCCUINTREG const uHostCR4 = ASMGetCR4();
     if (RT_UNLIKELY(!(uHostCR4 & X86_CR4_VMXE)))
         return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
 
