@@ -2756,6 +2756,33 @@ RT_C_DECLS_END
 #define VERR_CR_KEY_UNKNOWN_TYPE                    (-23800)
 /** Unsupported key format. */
 #define VERR_CR_KEY_FORMAT_NOT_SUPPORTED            (-23801)
+/** Key encrypted but no password was given. */
+#define VERR_CR_KEY_ENCRYPTED                       (-23802)
+/** The key was marked as encrypted by no DEK-Info field with the encryption
+ * algortihms was found. */
+#define VERR_CR_KEY_NO_DEK_INFO                     (-23803)
+/** The algorithms part of the DEK-Info field is too long. */
+#define VERR_CR_KEY_DEK_INFO_TOO_LONG               (-23804)
+/** Key decryption is not supported. */
+#define VERR_CR_KEY_DECRYPTION_NOT_SUPPORTED        (-23805)
+/** Unsupported key encryption cipher. */
+#define VERR_CR_KEY_UNSUPPORTED_CIPHER              (-23806)
+/** Found unexpected cipher parameters for encrypted key. */
+#define VERR_CR_KEY_UNEXPECTED_CIPHER_PARAMS        (-23807)
+/** Missing ciper parameters for encrypted key. */
+#define VERR_CR_KEY_MISSING_CIPHER_PARAMS           (-23808)
+/** To short initialization vector for encrypted key ciper. */
+#define VERR_CR_KEY_TOO_SHORT_CIPHER_IV             (-23809)
+/** Malformed initialization vector for encrypted key ciper. */
+#define VERR_CR_KEY_MALFORMED_CIPHER_IV             (-23810)
+/** Error encoding the password for key decryption. */
+#define VERR_CR_KEY_PASSWORD_ENCODING               (-23811)
+/** EVP_DecryptInit_ex failed. */
+#define VERR_CR_KEY_OSSL_DECRYPT_INIT_ERROR         (-23811)
+/** Key decryption failed, perhaps due to an incorrect password. */
+#define VERR_CR_KEY_DECRYPTION_FAILED               (-23812)
+/** The key was decrypted. */
+#define VINF_CR_KEY_WAS_DECRYPTED                   (23813)
 /** @} */
 
 /** @name RTCrRsa status codes.
@@ -2793,6 +2820,12 @@ RT_C_DECLS_END
 #define VINF_CR_DIGEST_SEVERELY_COMPROMISED         (24204)
 /** Severely compromised digest. */
 #define VERR_CR_DIGEST_SEVERELY_COMPROMISED         (-24204)
+/** @} */
+
+/** @name RTCr misc status codes.
+ * @{ */
+/** Malformed or failed to parse PEM formatted data. */
+#define VERR_CR_MALFORMED_PEM_HEADER                (-24399)
 /** @} */
 
 /** @name RTPath  status codes.

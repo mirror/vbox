@@ -44,7 +44,7 @@ static RTTEST g_hTest;
 /**
  * Key pairs to use when testing.
  */
-static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey; } g_aKeyPairs[] =
+static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey, *pszPassword; } g_aKeyPairs[] =
 {
     {
         4096,
@@ -112,7 +112,8 @@ static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey; 
         "+T9CiQGOjqVUg2Vr1jevcQRHe5ed/R+B2jp6MjYjbr7cKqcXaRxEprGl+U5kIygq\n"
         "l93DTgQaXwX/ZjXmwjXvQ0W4OxxexqyW6YvDBYeNKxstuM5qfgzYf7FD/8lZYkyM\n"
         "AXELgpCqC92xlTbWpRVNpXcCAwEAAQ==\n"
-        "-----END PUBLIC KEY-----\n"
+        "-----END PUBLIC KEY-----\n",
+        NULL
     },
     {
         2048,
@@ -151,7 +152,8 @@ static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey; 
         "BRrcA8qnti+I3I3yA3kslq2O0QtNLHA7ttFYjieCcVv7pm/5g4kI2XyPv56RSem/\n"
         "RNsEv/qoK+g/h+b2C0sVO7eUyM6nx9VT8w+ODunnYWs1HiAGAhzj7NhsnJp0gm88\n"
         "KwIDAQAB\n"
-        "-----END PUBLIC KEY-----\n"
+        "-----END PUBLIC KEY-----\n",
+        NULL
     },
     {
         1024,
@@ -175,7 +177,8 @@ static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey; 
         "XI2YGzXbDnsroXMjAa6pGj9f7+VOGvnBTJnT2FubDSvpaXMIEO0PTjMpS2fKKdn1\n"
         "jljAj3vfF9HpyyKOBgLwY1Plfwj3bNPUomGZ+sgigNYWJ4+lXlSxJ7UlTQuQd7Pi\n"
         "RsgCEIRny+5thH/rSwIDAQAB\n"
-        "-----END PUBLIC KEY-----\n"
+        "-----END PUBLIC KEY-----\n",
+        NULL
     },
     {
         512,
@@ -191,7 +194,55 @@ static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey; 
         "-----BEGIN PUBLIC KEY-----\n"
         "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMgbhgcN8LxMNpEZgOC3hgI61pAwSxn4\n"
         "X8rSBHyTt7pfqbU0g2TkPsNT7J6YS2xN+MwKiYNDeCTjRRbt67o1ZscCAwEAAQ==\n"
-        "-----END PUBLIC KEY-----\n"
+        "-----END PUBLIC KEY-----\n",
+        NULL
+    },
+
+    /*
+     * Keys with passwords.
+     */
+    {
+        2048,
+        "-----BEGIN RSA PRIVATE KEY-----\n"
+        "Proc-Type: 4,ENCRYPTED\n"
+        "DEK-Info: AES-128-CBC,86B32E02F476832DE26291AEF884BFB2\n"
+        "\n"
+        "3vqVAOubNaajTSUj/t0ueXRG11kVOCbQkj6AoB4bO+xYUabtcisM4I34It6GN1ZJ\n"
+        "yXv2DcCE3At31LvvqS8bYGvRhY+oPpCUkC4DX+RX9Tkw5ivl1F9pv/rL3nv2F3LX\n"
+        "KxMUcygwJOG2ItPu+vLI0HDYGn9reR+6boriwQfU6S8An4C6LrIZK0hUN0Bpr6W+\n"
+        "JyTX9B3Tgy/BldW6yziRzYUZHnnKEKKacvHP5l0n/6nn6iFSJSFmnzvsedwOvUI0\n"
+        "eHQ1LvbfQnd5yIalQ5S8UkgpKb5S4s2U0AthAC67m+Nc0E8NcbCMY1JT4FlsWVLD\n"
+        "GqWmjKhwEBgoPRROEiq39KgPnoxnCEIOiQ6l8kZ0uvqlCHhWM4b1UVqb6hyrmY32\n"
+        "SEBiwRqFewVYzPFI1+vT3CH/BJcXCBISNj2c4OZDqhmgncGWpLwqU1GIlLp82o3l\n"
+        "t58WfNuqUM7bc/T6cIKAI2JoR2R96Zo0cgL+419msVUdZXhM/10K3W+wbHUVuSqh\n"
+        "iDOCJhXWIhu47kjbCOh7OvpOtOPayWBLQiGh1Q4+WQU6t6Vdr/i71dKP0/P/QHwk\n"
+        "ELNaWv/RLbE6PqKuXcjtoIqzynTvS/6C7PLEKEX3PB6kZNV+m7C0Dxu4BFj04vtx\n"
+        "5CL71sGaB1ETYUdMRSvCa+f/1zwUXngmozUL+D4PkCz/vT5FYKElWt7RBMt8N+rC\n"
+        "Iga+YqqvnuSPrxGXLCGZBuI2V+0BwG1pUHwk/C3uo/ggacj9+E/Oiei725cEI7H5\n"
+        "FnJdFrubYsoGtyII4H1MJzp768s+bD5Bs9m/6a1m+HtzwjxNt329MyAW4DixNGEp\n"
+        "T1e1e6DMnYU8XlxHkRu3IkgWjY3GPw+mfnxT5ThM16w3XC5bvRPMbIukJxFE3yDL\n"
+        "jsUeVhA9NHBZbrFIjLwBWoxqlmgZjJrMFE8pcdFbNl2nKvOK0DHw6Tc93Qz0pg4q\n"
+        "tvt51k9FR4WNmUY8uElmkhepAAAyzcGAHqxvrzkBmXOh76i5+j32swmmaTdx35I2\n"
+        "GdRPAl75JEKZVKgHZOW6f/eCWdY7z0GAOnn+fkEzxAufU+DQAOuNkgVKySTyov5J\n"
+        "v3aaMBuyrxyhgqt+k7PahlRE00S84+QvEgeiTmP/Beyd2GHwKiQ0G/9mwkVjSB1Y\n"
+        "rFw0pzzud1JcYy3uFKZB+YHrV4YbfUHmJR0CKCqHUD2R95rNBIcS5ZpMm1Ak0d5E\n"
+        "jAQsYlGIbWGx6aNmmf7NWacRpwVPnViU30cumeQxbCLQ2Mfb9N2zuwgplOSNp/2m\n"
+        "KRU7jRs3ZLD21iplVBbmmvpC8HyJ7605bDWBw+eVaS92sEmA5lnD3uRil+7/tM8C\n"
+        "rXrnU8h7vFBSWxcVM1kEiocE8eetSMczI7uA36KWbAWcMlG6hCyQSLuGkxGSZpaM\n"
+        "Ro+IJx/vHNvnVj2ObqHCmSIE0+VkeyV3SlF2MqrdHNss/iOUBYFsE9zVN/oQcibt\n"
+        "dXMXRN81KyHg8keNiwdd18ZWVW2+lix1mbPPgwd5iptnT4Qyder5HJroV52LdRZc\n"
+        "nf3XjVzVp7tTGjGi9T/FvkpQR4tkU+Sl17qDrw9H/Y7k1j90zWFn8kykpwSRt0bV\n"
+        "-----END RSA PRIVATE KEY-----\n",
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvvqfSDO1HN3Els04TSGE\n"
+        "sJ0Himl934+ryfNXYIRWkq91i5+rENyZ475XBMjg8fblhvHy7vy4GfUo0PKVXxWS\n"
+        "nPqOPSLEP3r2vsCX5l+KRBnGi4TeGWDTB8R6oA6HKY5ybtzUr1MHKwa7K7YJu7M9\n"
+        "DW7n2JPLRajUMioO9wbYK70qlbxjeOu0V62D68fWoa3alSWMlMBv9KZW9g2oJHQy\n"
+        "mUO2OdJFdyaah3z6vTKtzxmZ+NB4iwIjD6Go1CMj+FOjjjJb3EgUOIZAsRz/+9MF\n"
+        "S3cRfh/8u9cZQ20Woh5vmw1anXxbwk6Z8uIFYrdgcY5G7ak0/3VukbP7VzvG+voY\n"
+        "AwIDAQAB\n"
+        "-----END PUBLIC KEY-----\n",
+        "password"
     }
 };
 
@@ -216,17 +267,38 @@ static void test1()
          * Load the key pair.
          */
         rc = RTCrKeyCreateFromBuffer(&hPublicKey, 0, g_aKeyPairs[i].pszPublicKey, strlen(g_aKeyPairs[i].pszPublicKey),
-                                     NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
+                                     NULL /*pszPassword*/, NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
         if (RT_FAILURE(rc))
             RTTestIFailed("Error %Rrc decoding public key #%u (%u bits)", rc, i, g_aKeyPairs[i].cBits);
 
         rc = RTCrKeyCreateFromBuffer(&hPrivateKey, 0, g_aKeyPairs[i].pszPrivateKey, strlen(g_aKeyPairs[i].pszPrivateKey),
-                                     NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
+                                     g_aKeyPairs[i].pszPassword, NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
         if (RT_FAILURE(rc))
             RTTestIFailed("Error %Rrc decoding private key #%u (%u bits)", rc, i, g_aKeyPairs[i].cBits);
 
         if (hPrivateKey == NIL_RTCRKEY || hPublicKey == NIL_RTCRKEY)
             continue;
+
+        /*
+         * If we've got a password encrypted key, try some incorrect password.
+         */
+        if (g_aKeyPairs[i].pszPassword)
+        {
+            static const char * const s_apszBadPassword[] =
+            {
+                "bad-password", "", "<>", "really really long long long bad bad bad bad bad password password password password",
+                "a", "ab", "abc", "abcd", "abcde", "fdcba"
+            };
+            for (unsigned iPasswd = 0; iPasswd < RT_ELEMENTS(s_apszBadPassword); iPasswd++)
+            {
+                RTCRKEY hKey = NIL_RTCRKEY;
+                rc = RTCrKeyCreateFromBuffer(&hKey, 0, g_aKeyPairs[i].pszPrivateKey, strlen(g_aKeyPairs[i].pszPrivateKey),
+                                             s_apszBadPassword[iPasswd], NULL /*pErrInfo*/, NULL /*pszErrorTag*/);
+                if (rc != VERR_CR_KEY_DECRYPTION_FAILED)
+                    RTTestIFailed("Unexpected bad password response %Rrc decoding private key #%u (%u bits) using '%s' as password",
+                                  rc, i, g_aKeyPairs[i].cBits, s_apszBadPassword[iPasswd]);
+            }
+        }
 
         /*
          * Create corresponding signing and verifying decoder instances.

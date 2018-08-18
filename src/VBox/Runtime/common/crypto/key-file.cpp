@@ -31,8 +31,10 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/key.h>
 
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/memsafer.h>
@@ -44,6 +46,14 @@
 
 #include "internal/magics.h"
 #include "key-internal.h"
+
+#ifdef IPRT_WITH_OPENSSL
+# include "internal/iprt-openssl.h"
+# include "openssl/evp.h"
+# ifndef OPENSSL_VERSION_NUMBER
+#  error "Missing OPENSSL_VERSION_NUMBER!"
+# endif
+#endif
 
 
 /*********************************************************************************************************************************
@@ -68,16 +78,20 @@ RT_DECL_DATA_CONST(uint32_t const) g_cRTCrKeyPublicMarkers = RT_ELEMENTS(g_aRTCr
 
 /** RSA private key marker words. */
 static RTCRPEMMARKERWORD const g_aWords_RsaPrivateKey[] =
-{ { RT_STR_TUPLE("RSA") }, { RT_STR_TUPLE("PRIVATE") }, { RT_STR_TUPLE("KEY") } };
+{ { RT_STR_TUPLE("RSA") },       { RT_STR_TUPLE("PRIVATE") }, { RT_STR_TUPLE("KEY") } };
+/** Generic encrypted private key marker words. */
+static RTCRPEMMARKERWORD const g_aWords_EncryptedPrivateKey[] =
+{ { RT_STR_TUPLE("ENCRYPTED") }, { RT_STR_TUPLE("PRIVATE") }, { RT_STR_TUPLE("KEY") } };
 /** Generic private key marker words. */
 static RTCRPEMMARKERWORD const g_aWords_PrivateKey[] =
-{                          { RT_STR_TUPLE("PRIVATE") }, { RT_STR_TUPLE("KEY") } };
+{                                { RT_STR_TUPLE("PRIVATE") }, { RT_STR_TUPLE("KEY") } };
 
 /** Private key markers. */
 RT_DECL_DATA_CONST(RTCRPEMMARKER const) g_aRTCrKeyPrivateMarkers[] =
 {
-    { g_aWords_RsaPrivateKey, RT_ELEMENTS(g_aWords_RsaPrivateKey) },
-    { g_aWords_PrivateKey,    RT_ELEMENTS(g_aWords_PrivateKey) },
+    { g_aWords_RsaPrivateKey,       RT_ELEMENTS(g_aWords_RsaPrivateKey) },
+    { g_aWords_EncryptedPrivateKey, RT_ELEMENTS(g_aWords_EncryptedPrivateKey) },
+    { g_aWords_PrivateKey,          RT_ELEMENTS(g_aWords_PrivateKey) },
 };
 /** Number of entries in g_aRTCrKeyPrivateMarkers. */
 RT_DECL_DATA_CONST(uint32_t const) g_cRTCrKeyPrivateMarkers = RT_ELEMENTS(g_aRTCrKeyPrivateMarkers);
@@ -95,8 +109,152 @@ RT_DECL_DATA_CONST(RTCRPEMMARKER const) g_aRTCrKeyAllMarkers[] =
 RT_DECL_DATA_CONST(uint32_t const) g_cRTCrKeyAllMarkers = RT_ELEMENTS(g_aRTCrKeyAllMarkers);
 
 
+/**
+ * Decrypts a PEM message.
+ *
+ * @returns IPRT status code
+ * @param   pszDekInfo          The decryption info.  See RFC-1421 section 4.6.1.3
+ *                              as well as RFC-1423).
+ * @param   pszPassword         The password to use to decrypt the key text.
+ * @param   pbEncrypted         The encrypted key text.
+ * @param   cbEncrypted         The size of the encrypted text.
+ * @param   ppbDecrypted        Where to return the decrypted message. Free using RTMemSaferFree.
+ * @param   pcbDecrypted        Where to return the length of the decrypted message.
+ * @param   pcbDecryptedAlloced Where to return the allocation size.
+ * @param   pErrInfo            Where to return additional error information.
+ */
+static int rtCrKeyDecryptPemMessage(const char *pszDekInfo, const char *pszPassword, uint8_t *pbEncrypted, size_t cbEncrypted,
+                                    uint8_t **ppbDecrypted, size_t *pcbDecrypted, size_t *pcbDecryptedAlloced, PRTERRINFO pErrInfo)
+{
+    /*
+     * Initialize return values.
+     */
+    *ppbDecrypted        = NULL;
+    *pcbDecrypted        = 0;
+    *pcbDecryptedAlloced = 0;
 
-RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSection, uint32_t fFlags,
+    /*
+     * Parse the DEK-Info.
+     */
+    if (!pszDekInfo)
+        return VERR_CR_KEY_NO_DEK_INFO;
+
+    /* Find the end of the algorithm */
+    const char *pszParams = strchr(pszDekInfo, ',');
+    if (!pszParams)
+        pszParams = strchr(pszDekInfo, '\0');
+    size_t cchAlgo = pszParams - pszDekInfo;
+    while (cchAlgo > 0 && RT_C_IS_SPACE(pszDekInfo[cchAlgo - 1]))
+        cchAlgo--;
+
+    /* Copy it out and zero terminating it. */
+    char szAlgo[256];
+    if (cchAlgo >= sizeof(szAlgo))
+        return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_DEK_INFO_TOO_LONG, "Algorithms list is too long (%s)", pszDekInfo);
+    memcpy(szAlgo, pszDekInfo, cchAlgo);
+    szAlgo[cchAlgo] = '\0';
+
+    /* Parameters. */
+    pszParams = RTStrStripL(*pszParams == ',' ? pszParams + 1 : pszParams);
+    size_t const cchParams = strlen(pszParams);
+
+    /*
+     * Do we support the cihper?
+     */
+#ifdef IPRT_WITH_OPENSSL /** @todo abstract encryption & decryption. */
+    const EVP_CIPHER *pCipher = EVP_get_cipherbyname(szAlgo);
+    if (!pCipher)
+        return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_UNSUPPORTED_CIPHER, "Unknown key cipher: %s (params: %s)", szAlgo, pszParams);
+
+    /* Decode the initialization vector if one is required. */
+    uint8_t *pbInitVector = NULL;
+    int const cbInitVector = EVP_CIPHER_iv_length(pCipher);
+    if (cbInitVector > 0)
+    {
+        if (*pszParams == '\0')
+            return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_MISSING_CIPHER_PARAMS,
+                                 "Cipher '%s' expected %u bytes initialization vector, none found", cbInitVector, szAlgo);
+        if ((size_t)cbInitVector > cchParams / 2)
+            return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_TOO_SHORT_CIPHER_IV,
+                                 "Too short initialization vector for '%s', expected %u chars found only %u: %s",
+                                 szAlgo, cbInitVector * 2, cchParams, pszParams);
+        pbInitVector = (uint8_t *)alloca(cbInitVector);
+        int rc = RTStrConvertHexBytes(pszParams, pbInitVector, cbInitVector, 0 /*fFlags*/);
+        if (   RT_FAILURE(rc)
+            && rc != VERR_BUFFER_OVERFLOW /* openssl ignores this condition */)
+            return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_MALFORMED_CIPHER_IV,
+                                 "Malformed initialization vector for '%s': %s (rc=%Rrc)", szAlgo, pszParams, rc);
+    }
+    else if (*pszParams != '\0')
+        return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_UNEXPECTED_CIPHER_PARAMS,
+                             "Cipher '%s' expected no parameters, found: %s", szAlgo, pszParams);
+
+    /*
+     * Do we have a password?  If so try decrypt the key.
+     */
+    if (!pszPassword)
+        return VERR_CR_KEY_ENCRYPTED;
+
+    unsigned char abKey[EVP_MAX_KEY_LENGTH * 2];
+    int cbKey = EVP_BytesToKey(pCipher, EVP_md5(), pbInitVector, (unsigned char const *)pszPassword, (int)strlen(pszPassword),
+                               1, abKey, NULL);
+    if (!cbKey)
+        return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_PASSWORD_ENCODING, "EVP_BytesToKey failed to encode password");
+
+    EVP_CIPHER_CTX *pCipherCtx = EVP_CIPHER_CTX_new();
+    if (!pCipherCtx)
+        return VERR_NO_MEMORY;
+
+    int rc;
+    if (EVP_DecryptInit_ex(pCipherCtx, pCipher, NULL /*pEngine*/, abKey, pbInitVector))
+    {
+        size_t   cbDecryptedAlloced = cbEncrypted;
+        int      cbDecrypted = (int)cbDecryptedAlloced;
+        uint8_t *pbDecrypted = (uint8_t *)RTMemSaferAllocZ(cbDecryptedAlloced);
+        if (pbDecrypted)
+        {
+            if (EVP_DecryptUpdate(pCipherCtx, pbDecrypted, &cbDecrypted, pbEncrypted, (int)cbEncrypted))
+            {
+                int cbFinal = (int)cbDecryptedAlloced - cbDecrypted;
+                if (EVP_DecryptFinal_ex(pCipherCtx, &pbDecrypted[cbDecrypted], &cbFinal))
+                {
+                    cbDecrypted += cbFinal;
+                    Assert((size_t)cbDecrypted <= cbDecryptedAlloced);
+
+                    /*
+                     * Done! Just set the return values.
+                     */
+                    *pcbDecrypted        = cbDecrypted;
+                    *pcbDecryptedAlloced = cbDecryptedAlloced;
+                    *ppbDecrypted        = pbDecrypted;
+                    pbDecrypted = NULL;
+                    rc = VINF_CR_KEY_WAS_DECRYPTED;
+                }
+                else
+                    rc = RTErrInfoSetF(pErrInfo, VERR_CR_KEY_DECRYPTION_FAILED,
+                                       "Incorrect password? EVP_DecryptFinal_ex failed for %s", pszDekInfo);
+            }
+            else
+                rc = RTErrInfoSetF(pErrInfo, VERR_CR_KEY_DECRYPTION_FAILED,
+                                   "Incorrect password? EVP_DecryptUpdate failed for %s", pszDekInfo);
+            if (pbDecrypted)
+                RTMemSaferFree(pbDecrypted, cbDecryptedAlloced);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = RTErrInfoSetF(pErrInfo, VERR_CR_KEY_OSSL_DECRYPT_INIT_ERROR, "EVP_DecryptInit_ex failed for %s", pszDekInfo);
+    EVP_CIPHER_CTX_free(pCipherCtx);
+    return rc;
+#else
+    RT_NOREF(pbEncrypted, cbEncrypted, pszPassword, pErrInfo, cchParams);
+    return VERR_CR_KEY_DECRYPTION_NOT_SUPPORTED;
+#endif
+}
+
+
+RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSection, uint32_t fFlags, const char *pszPassword,
                                         PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
     AssertReturn(!(fFlags & (~RTCRKEYFROM_F_VALID_MASK | RTCRKEYFROM_F_ONLY_PEM)), VERR_INVALID_FLAGS);
@@ -104,6 +262,7 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
     AssertPtrReturn(phKey, VERR_INVALID_POINTER);
     *phKey = NIL_RTCRKEY;
     AssertPtrReturn(pSection, VERR_INVALID_POINTER);
+    NOREF(pszPassword);
 
     /*
      * If the source is PEM section, try identify the format from the markers.
@@ -112,10 +271,13 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
     {
         kKeyFormat_Unknown = 0,
         kKeyFormat_RsaPrivateKey,
+        kKeyFormat_RsaEncryptedPrivateKey,
         kKeyFormat_RsaPublicKey,
+        kKeyFormat_SubjectPublicKeyInfo,
         kKeyFormat_PrivateKeyInfo,
-        kKeyFormat_SubjectPublicKeyInfo
+        kKeyFormat_EncryptedPrivateKeyInfo
     }               enmFormat     = kKeyFormat_Unknown;
+    const char     *pszDekInfo    = NULL;
     PCRTCRPEMMARKER pMarker       = pSection->pMarker;
     if (pMarker)
     {
@@ -126,7 +288,33 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
             if (strcmp(pMarker->paWords[1].pszWord, "PUBLIC") == 0)
                 enmFormat  = kKeyFormat_RsaPublicKey;
             else if (strcmp(pMarker->paWords[1].pszWord, "PRIVATE") == 0)
-                enmFormat  = kKeyFormat_RsaPrivateKey;
+            {
+                enmFormat = kKeyFormat_RsaPrivateKey;
+
+                /* RSA PRIVATE KEY encryption is advertised thru PEM header fields.
+                   We need the DEK field to decrypt the message (see RFC-1421 4.6.1.3). */
+                for (PCRTCRPEMFIELD pField = pSection->pFieldHead; pField; pField = pField->pNext)
+                {
+                    if (   pField->cchName == sizeof("Proc-Type") - 1
+                        && pField->cchValue >= sizeof("4,ENCRYPTED") - 1
+                        && memcmp(pField->szName, RT_STR_TUPLE("Proc-Type")) == 0)
+                    {
+                        const char *pszValue = pField->pszValue;
+                        if (*pszValue == '4')
+                        {
+                            do
+                                pszValue++;
+                            while (RT_C_IS_SPACE(*pszValue) || RT_C_IS_PUNCT(*pszValue));
+                            if (strcmp(pszValue, "ENCRYPTED") == 0)
+                                enmFormat  = kKeyFormat_RsaEncryptedPrivateKey;
+                        }
+                    }
+                    else if (   pField->cchName == sizeof("DEK-Info") - 1
+                             && pField->cchValue > 0
+                             && !pszDekInfo)
+                        pszDekInfo = pField->pszValue;
+                }
+            }
             else
                 AssertFailed();
         }
@@ -140,6 +328,11 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
             else
                 AssertFailed();
         }
+        else if (   pMarker->cWords == 3
+                 && strcmp(pMarker->paWords[0].pszWord, "ENCRYPTED") == 0
+                 && strcmp(pMarker->paWords[1].pszWord, "PRIVATE") == 0
+                 && strcmp(pMarker->paWords[2].pszWord, "KEY") == 0)
+            enmFormat = kKeyFormat_EncryptedPrivateKeyInfo;
         else
             AssertFailed();
     }
@@ -223,13 +416,30 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
     int rc;
     switch (enmFormat)
     {
+        case kKeyFormat_RsaPublicKey:
+            rc = rtCrKeyCreateRsaPublic(phKey, pSection->pbData, (uint32_t)pSection->cbData, pErrInfo, pszErrorTag);
+            break;
+
         case kKeyFormat_RsaPrivateKey:
             rc = rtCrKeyCreateRsaPrivate(phKey, pSection->pbData, (uint32_t)pSection->cbData, pErrInfo, pszErrorTag);
             break;
 
-        case kKeyFormat_RsaPublicKey:
-            rc = rtCrKeyCreateRsaPrivate(phKey, pSection->pbData, (uint32_t)pSection->cbData, pErrInfo, pszErrorTag);
+        case kKeyFormat_RsaEncryptedPrivateKey:
+        {
+            uint8_t *pbDecrypted = NULL;
+            size_t   cbDecrypted = 0;
+            size_t   cbDecryptedAlloced = 0;
+            rc = rtCrKeyDecryptPemMessage(pszDekInfo, pszPassword, pSection->pbData, pSection->cbData,
+                                          &pbDecrypted, &cbDecrypted, &cbDecryptedAlloced, pErrInfo);
+            if (RT_SUCCESS(rc))
+            {
+                int rc2 = rtCrKeyCreateRsaPrivate(phKey, pbDecrypted, (uint32_t)cbDecrypted, pErrInfo, pszErrorTag);
+                if (rc2 != VINF_SUCCESS)
+                    rc = rc2;
+                RTMemSaferFree(pbDecrypted, cbDecryptedAlloced);
+            }
             break;
+        }
 
         case kKeyFormat_SubjectPublicKeyInfo:
         {
@@ -251,6 +461,11 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
                               "Support for PKCS#8 PrivateKeyInfo is not yet implemented");
             break;
 
+        case kKeyFormat_EncryptedPrivateKeyInfo:
+            rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
+                              "Support for encrypted PKCS#8 PrivateKeyInfo is not yet implemented");
+            break;
+
         default:
             AssertFailedStmt(rc = VERR_INTERNAL_ERROR_4);
     }
@@ -258,7 +473,7 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
 }
 
 
-RTDECL(int) RTCrKeyCreateFromBuffer(PRTCRKEY phKey, uint32_t fFlags, void const *pvSrc, size_t cbSrc,
+RTDECL(int) RTCrKeyCreateFromBuffer(PRTCRKEY phKey, uint32_t fFlags, void const *pvSrc, size_t cbSrc, const char *pszPassword,
                                     PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
     AssertReturn(!(fFlags & ~RTCRKEYFROM_F_VALID_MASK), VERR_INVALID_FLAGS);
@@ -268,7 +483,8 @@ RTDECL(int) RTCrKeyCreateFromBuffer(PRTCRKEY phKey, uint32_t fFlags, void const 
     {
         if (pSectionHead)
         {
-            rc = RTCrKeyCreateFromPemSection(phKey, pSectionHead, fFlags  & ~RTCRKEYFROM_F_ONLY_PEM, pErrInfo, pszErrorTag);
+            rc = RTCrKeyCreateFromPemSection(phKey, pSectionHead, fFlags  & ~RTCRKEYFROM_F_ONLY_PEM, pszPassword,
+                                             pErrInfo, pszErrorTag);
             RTCrPemFreeSections(pSectionHead);
         }
         else
@@ -278,7 +494,8 @@ RTDECL(int) RTCrKeyCreateFromBuffer(PRTCRKEY phKey, uint32_t fFlags, void const 
 }
 
 
-RTDECL(int) RTCrKeyCreateFromFile(PRTCRKEY phKey, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo)
+RTDECL(int) RTCrKeyCreateFromFile(PRTCRKEY phKey, uint32_t fFlags, const char *pszFilename,
+                                  const char *pszPassword, PRTERRINFO pErrInfo)
 {
     AssertReturn(!(fFlags & ~RTCRKEYFROM_F_VALID_MASK), VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
@@ -287,7 +504,7 @@ RTDECL(int) RTCrKeyCreateFromFile(PRTCRKEY phKey, uint32_t fFlags, const char *p
     {
         if (pSectionHead)
         {
-            rc = RTCrKeyCreateFromPemSection(phKey, pSectionHead, fFlags & ~RTCRKEYFROM_F_ONLY_PEM,
+            rc = RTCrKeyCreateFromPemSection(phKey, pSectionHead, fFlags & ~RTCRKEYFROM_F_ONLY_PEM, pszPassword,
                                              pErrInfo, RTPathFilename(pszFilename));
             RTCrPemFreeSections(pSectionHead);
         }

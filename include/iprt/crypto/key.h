@@ -65,10 +65,11 @@ RTDECL(int)             RTCrKeyCreateFromPublicAlgorithmAndBits(PRTCRKEY hKey,  
                                                                 PCRTASN1BITSTRING pPublicKey,
                                                                 PRTERRINFO pErrInfo, const char *pszErrorTag);
 RTDECL(int)             RTCrKeyCreateFromPemSection(PRTCRKEY hKey, uint32_t fFlags, struct RTCRPEMSECTION const *pSection,
-                                                    PRTERRINFO pErrInfo, const char *pszErrorTag);
+                                                    const char *pszPassword, PRTERRINFO pErrInfo, const char *pszErrorTag);
 RTDECL(int)             RTCrKeyCreateFromBuffer(PRTCRKEY hKey, uint32_t fFlags, void const *pvSrc, size_t cbSrc,
-                                                PRTERRINFO pErrInfo, const char *pszErrorTag);
-RTDECL(int)             RTCrKeyCreateFromFile(PRTCRKEY hKey, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
+                                                const char *pszPassword, PRTERRINFO pErrInfo, const char *pszErrorTag);
+RTDECL(int)             RTCrKeyCreateFromFile(PRTCRKEY hKey, uint32_t fFlags, const char *pszFilename,
+                                              const char *pszPassword, PRTERRINFO pErrInfo);
 /** @todo add support for decrypting private keys.  */
 /** @name RTCRKEYFROM_F_XXX
  * @{ */
