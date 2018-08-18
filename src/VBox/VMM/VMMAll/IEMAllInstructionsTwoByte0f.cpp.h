@@ -8470,7 +8470,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm)
     IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 0);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
-    IEM_MC_CALL_CIMPL_1(iemCImpl_vmptrld, GCPtrEffDst);
+    IEM_MC_CALL_CIMPL_1(iemCImpl_vmptrst, GCPtrEffDst);
     IEM_MC_END();
     return VINF_SUCCESS;
 }

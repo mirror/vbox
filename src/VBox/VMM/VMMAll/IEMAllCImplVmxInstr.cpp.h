@@ -916,5 +916,16 @@ IEM_CIMPL_DEF_1(iemCImpl_vmptrld, RTGCPTR, GCPtrVmcs)
 }
 
 
+/**
+ * Implements 'VMPTRST'.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_vmptrst, RTGCPTR, GCPtrVmcs)
+{
+    RTGCPTR GCPtrDisp;
+    VMXEXITINSTRINFO ExitInstrInfo;
+    ExitInstrInfo.u = iemVmxGetExitInstrInfo(pVCpu, VMX_EXIT_VMPTRST, VMX_INSTR_ID_NONE, &GCPtrDisp);
+    return iemVmxVmptrst(pVCpu, cbInstr, GCPtrVmcs, &ExitInstrInfo, GCPtrDisp);
+}
+
 #endif
 
