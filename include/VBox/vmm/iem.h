@@ -323,6 +323,8 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrld(PVMCPU pVCpu, uint8_t cbInstr,
                                                   RTGCPTR GCPtrDisp);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrst(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmcs, uint32_t uExitInstrInfo,
                                                   RTGCPTR GCPtrDisp);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmclear(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmcs, uint32_t uExitInstrInfo,
+                                                  RTGCPTR GCPtrDisp);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPTR GCPtrVmxon, uint32_t uExitInstrInfo,
                                                 RTGCPTR GCPtrDisp);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr);

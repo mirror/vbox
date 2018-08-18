@@ -2774,6 +2774,8 @@ typedef enum
     /* VMPTRST. */
     kVmxVInstrDiag_Vmptrst_Cpl,
     kVmxVInstrDiag_Vmptrst_PtrMap,
+    /* VMCLEAR. */
+    kVmxVInstrDiag_Vmclear_Cpl,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;

@@ -480,6 +480,42 @@ DECLINLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 
 
 /**
+ * VMCLEAR instruction execution worker.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   GCPtrVmcs       The linear address of the VMCS pointer.
+ * @param   pExitInstrInfo  Pointer to the VM-exit instruction information field.
+ * @param   GCPtrDisp       The displacement field for @a GCPtrVmcs if any.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmcs, PCVMXEXITINSTRINFO pExitInstrInfo,
+                                      RTGCPTR GCPtrDisp)
+{
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        RT_NOREF(GCPtrDisp);
+        /** @todo NSTVMX: intercept. */
+    }
+    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+
+    /* CPL. */
+    if (CPUMGetGuestCPL(pVCpu) > 0)
+    {
+        Log(("vmclear: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /** @todo NSTVMX: VMCLEAR impl.  */
+    RT_NOREF(GCPtrVmcs); RT_NOREF(pExitInstrInfo); RT_NOREF(cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * VMPTRST instruction execution worker.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -925,6 +961,18 @@ IEM_CIMPL_DEF_1(iemCImpl_vmptrst, RTGCPTR, GCPtrVmcs)
     VMXEXITINSTRINFO ExitInstrInfo;
     ExitInstrInfo.u = iemVmxGetExitInstrInfo(pVCpu, VMX_EXIT_VMPTRST, VMX_INSTR_ID_NONE, &GCPtrDisp);
     return iemVmxVmptrst(pVCpu, cbInstr, GCPtrVmcs, &ExitInstrInfo, GCPtrDisp);
+}
+
+
+/**
+ * Implements 'VMCLEAR'.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_vmclear, RTGCPTR, GCPtrVmcs)
+{
+    RTGCPTR GCPtrDisp;
+    VMXEXITINSTRINFO ExitInstrInfo;
+    ExitInstrInfo.u = iemVmxGetExitInstrInfo(pVCpu, VMX_EXIT_VMCLEAR, VMX_INSTR_ID_NONE, &GCPtrDisp);
+    return iemVmxVmclear(pVCpu, cbInstr, GCPtrVmcs, &ExitInstrInfo, GCPtrDisp);
 }
 
 #endif
