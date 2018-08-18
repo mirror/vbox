@@ -1119,7 +1119,7 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
             /*acquire the lock back*/
             machineLock.acquire();
 
-            /* @todo r=klaus get rid of custom error handling logic everywhere in this file */
+            /** @todo r=klaus get rid of custom error handling logic everywhere in this file */
             if (FAILED(rc))
             {
                 com::ErrorInfoKeeper eik;
