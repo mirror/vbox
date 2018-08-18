@@ -319,9 +319,13 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, u
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrld(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmcs, uint32_t uExitInstrInfo,
+                                                  RTGCPTR GCPtrDisp);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrst(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPtrVmcs, uint32_t uExitInstrInfo,
+                                                  RTGCPTR GCPtrDisp);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPTR GCPtrVmxon, uint32_t uExitInstrInfo,
                                                 RTGCPTR GCPtrDisp);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr);
 #endif
 /** @}  */
 

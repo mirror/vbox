@@ -8460,7 +8460,23 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmxon_Mq, uint8_t, bRm);
 #endif
 
 /** Opcode [0xf3] 0x0f 0xc7 !11/7. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+FNIEMOP_DEF_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(vmptrst, "vmptrst");
+    IEMOP_HLP_IN_VMX_OPERATION();
+    IEMOP_HLP_VMX_INSTR();
+    IEM_MC_BEGIN(1, 0);
+    IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 0);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
+    IEM_MC_CALL_CIMPL_1(iemCImpl_vmptrld, GCPtrEffDst);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+#else
 FNIEMOP_UD_STUB_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm);
+#endif
 
 /** Opcode 0x0f 0xc7 11/7. */
 FNIEMOP_UD_STUB_1(iemOp_Grp9_rdseed_Rv, uint8_t, bRm);

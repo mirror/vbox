@@ -81,6 +81,9 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_ShadowVmcs  , "ShadowVmcs"   ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_Success     , "Success"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_VmcsRevId   , "VmcsRevId"    )
+    /* VMPTRST. */
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_Cpl         , "Cpl"          ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_PtrMap      , "PtrMap"       )
     /* kVmxVInstrDiag_Last */
 };
 #undef VMX_INSTR_DIAG_DESC
