@@ -47,6 +47,8 @@
 
 #ifdef _MSC_VER
 # pragma warning(pop)
+/* VS2010: Something causes this to be re-enabled above and triggering errors using RT_FLEXIBLE_ARRAY. */
+# pragma warning(disable:4200)
 #endif
 
 #endif
