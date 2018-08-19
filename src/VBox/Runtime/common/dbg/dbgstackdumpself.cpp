@@ -123,7 +123,8 @@ static int rtDbgStackDumpSelfSafeMemoryReader(void *pvDst, size_t cbToRead, uint
     }
 #  endif
 # else
-#  error "PORT ME!"
+    /** @todo secure this from SIGSEGV.  */
+    memcpy(pvDst, (void const *)uSrcAddr, cbToRead);
 # endif
     return VINF_SUCCESS;
 }
