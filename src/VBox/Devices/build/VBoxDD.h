@@ -66,9 +66,7 @@ extern const PDMDEVREG g_DeviceACPI;
 extern const PDMDEVREG g_DeviceDMA;
 extern const PDMDEVREG g_DeviceFloppyController;
 extern const PDMDEVREG g_DeviceSerialPort;
-#ifdef VBOX_WITH_NEW_SERIAL
 extern const PDMDEVREG g_DeviceOxPcie958;
-#endif
 extern const PDMDEVREG g_DeviceParallelPort;
 #ifdef VBOX_WITH_AHCI
 extern const PDMDEVREG g_DeviceAHCI;
