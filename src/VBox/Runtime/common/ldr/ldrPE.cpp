@@ -1771,7 +1771,7 @@ static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t
     else if (pModPe->paSections[iSeg].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
         return VERR_LDR_INVALID_SEG_OFFSET;
     else
-        *pRva = offSeg + pModPe->paSections[iSeg].VirtualAddress;
+        *pRva = offSeg + pModPe->paSections[iSeg - 1].VirtualAddress;
     return VINF_SUCCESS;
 }
 
