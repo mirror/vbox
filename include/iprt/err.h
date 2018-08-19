@@ -2778,11 +2778,11 @@ RT_C_DECLS_END
 /** Error encoding the password for key decryption. */
 #define VERR_CR_KEY_PASSWORD_ENCODING               (-23811)
 /** EVP_DecryptInit_ex failed. */
-#define VERR_CR_KEY_OSSL_DECRYPT_INIT_ERROR         (-23811)
+#define VERR_CR_KEY_OSSL_DECRYPT_INIT_ERROR         (-23812)
 /** Key decryption failed, perhaps due to an incorrect password. */
-#define VERR_CR_KEY_DECRYPTION_FAILED               (-23812)
+#define VERR_CR_KEY_DECRYPTION_FAILED               (-23813)
 /** The key was decrypted. */
-#define VINF_CR_KEY_WAS_DECRYPTED                   (23813)
+#define VINF_CR_KEY_WAS_DECRYPTED                   (23814)
 /** @} */
 
 /** @name RTCrRsa status codes.
