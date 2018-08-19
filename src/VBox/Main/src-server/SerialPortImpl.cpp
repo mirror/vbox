@@ -490,6 +490,42 @@ HRESULT SerialPort::setServer(BOOL aServer)
     return S_OK;
 }
 
+HRESULT SerialPort::getUartType(UartType_T *aUartType)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aUartType = m->bd->uartType;
+
+    return S_OK;
+}
+
+HRESULT SerialPort::setUartType(UartType_T aUartType)
+{
+    /* the machine needs to be mutable */
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->uartType != aUartType)
+    {
+        m->bd.backup();
+        m->bd->uartType = aUartType;
+
+        m->fModified = true;
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->i_setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->i_onSerialPortChange(this);
+    }
+
+    return S_OK;
+}
+
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 

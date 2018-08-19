@@ -1492,11 +1492,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 PortMode_T HostMode;
                 Bstr path;
                 BOOL fServer;
+                UartType_T UartType;
                 uart->COMGETTER(IRQ)(&ulIRQ);
                 uart->COMGETTER(IOBase)(&ulIOBase);
                 uart->COMGETTER(Path)(path.asOutParam());
                 uart->COMGETTER(Server)(&fServer);
                 uart->COMGETTER(HostMode)(&HostMode);
+                uart->COMGETTER(UartType)(&UartType);
 
                 if (details == VMINFO_MACHINEREADABLE)
                     RTPrintf("%s=\"%#06x,%d\"\n", szNm, ulIOBase, ulIRQ);
@@ -1509,7 +1511,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("uartmode%d=\"disconnected\"\n", currentUART + 1);
                         else
-                            RTPrintf(", disconnected\n");
+                            RTPrintf(", disconnected");
                         break;
                     case PortMode_RawFile:
                         if (details == VMINFO_MACHINEREADABLE)
@@ -1524,7 +1526,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             RTPrintf("uartmode%d=\"%s,%ls\"\n", currentUART + 1,
                                      fServer ? "tcpserver" : "tcpclient", path.raw());
                         else
-                            RTPrintf(", attached to tcp (%s) '%ls'\n",
+                            RTPrintf(", attached to tcp (%s) '%ls'",
                                      fServer ? "server" : "client", path.raw());
                         break;
                     case PortMode_HostPipe:
@@ -1532,7 +1534,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             RTPrintf("uartmode%d=\"%s,%ls\"\n", currentUART + 1,
                                      fServer ? "server" : "client", path.raw());
                         else
-                            RTPrintf(", attached to pipe (%s) '%ls'\n",
+                            RTPrintf(", attached to pipe (%s) '%ls'",
                                      fServer ? "server" : "client", path.raw());
                         break;
                     case PortMode_HostDevice:
@@ -1540,7 +1542,29 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             RTPrintf("uartmode%d=\"%ls\"\n", currentUART + 1,
                                      path.raw());
                         else
-                            RTPrintf(", attached to device '%ls'\n", path.raw());
+                            RTPrintf(", attached to device '%ls'", path.raw());
+                        break;
+                }
+                switch (UartType)
+                {
+                    default:
+                    case UartType_U16450:
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uarttype%d=\"16450\"\n", currentUART + 1);
+                        else
+                            RTPrintf(", 16450\n");
+                        break;
+                    case UartType_U16550A:
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uarttype%d=\"16550A\"\n", currentUART + 1);
+                        else
+                            RTPrintf(", 16550A\n");
+                        break;
+                    case UartType_U16750:
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uarttype%d=\"16750\"\n", currentUART + 1);
+                        else
+                            RTPrintf(", 16750\n");
                         break;
                 }
             }

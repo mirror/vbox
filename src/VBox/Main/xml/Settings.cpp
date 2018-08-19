@@ -2494,7 +2494,8 @@ SerialPort::SerialPort() :
     ulIOBase(0x3f8),
     ulIRQ(4),
     portMode(PortMode_Disconnected),
-    fServer(false)
+    fServer(false),
+    uartType(UartType_U16550A)
 {
 }
 
@@ -2512,7 +2513,8 @@ bool SerialPort::operator==(const SerialPort &s) const
             && ulIRQ             == s.ulIRQ
             && portMode          == s.portMode
             && strPath           == s.strPath
-            && fServer           == s.fServer);
+            && fServer           == s.fServer
+            && uartType          == s.uartType);
 }
 
 /**
@@ -3635,6 +3637,19 @@ void MachineConfigFile::readSerialPorts(const xml::ElementNode &elmUART,
 
         pelmPort->getAttributeValue("path", port.strPath);
         pelmPort->getAttributeValue("server", port.fServer);
+
+        Utf8Str strUartType;
+        if (pelmPort->getAttributeValue("uartType", strUartType))
+        {
+            if (strUartType == "16450")
+                port.uartType = UartType_U16450;
+            else if (strUartType == "16550A")
+                port.uartType = UartType_U16550A;
+            else if (strUartType == "16750")
+                port.uartType = UartType_U16750;
+            else
+                throw ConfigFileError(this, pelmPort, N_("Invalid value '%s' in UART/Port/@uartType attribute"), strUartType.c_str());
+        }
 
         ll.push_back(port);
     }
@@ -6010,6 +6025,21 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     break;
             }
             pelmPort->setAttribute("hostMode", pcszHostMode);
+
+            if (   m->sv >= SettingsVersion_v1_17
+                && port.uartType != UartType_U16550A)
+            {
+                const char *pcszUartType;
+
+                switch (port.uartType)
+                {
+                    case UartType_U16450: pcszUartType = "16450"; break;
+                    case UartType_U16550A: pcszUartType = "16550A"; break;
+                    case UartType_U16750: pcszUartType = "16750"; break;
+                    default: pcszUartType = "16550A"; break;
+                }
+                pelmPort->setAttribute("uartType", pcszUartType);
+            }
         }
     }
 
@@ -6980,6 +7010,21 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         {
             m->sv = SettingsVersion_v1_17;
             return;
+        }
+
+        /*
+         * Check if any serial port uses a non 16550A serial port.
+         */
+        for (SerialPortsList::const_iterator it = hardwareMachine.llSerialPorts.begin();
+             it != hardwareMachine.llSerialPorts.end();
+             ++it)
+        {
+            const SerialPort &port = *it;
+            if (port.uartType != UartType_U16550A)
+            {
+                m->sv = SettingsVersion_v1_17;
+                return;
+            }
         }
     }
 

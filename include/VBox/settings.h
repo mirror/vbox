@@ -595,6 +595,7 @@ struct SerialPort
     PortMode_T      portMode;
     com::Utf8Str    strPath;
     bool            fServer;
+    UartType_T      uartType;
 };
 
 typedef std::list<SerialPort> SerialPortsList;

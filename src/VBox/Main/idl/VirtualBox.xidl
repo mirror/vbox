@@ -592,7 +592,7 @@
     <const name="v1_17" value="19">
       <desc>Settings version "1.17", written by VirtualBox 6.0.x.</desc>
       <!--
-          Machine changes: nested hardware virtualization.
+          Machine changes: nested hardware virtualization, UART type selection.
       -->
     </const>
 
@@ -18387,11 +18387,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
   </enum>
 
+  <enum
+    name="UartType"
+    uuid="c8899d39-0b90-4265-9d02-1e38bd4d1b39"
+    >
+    <desc>
+      The UART type represents the emulated UART chip for the serial port device.
+    </desc>
+
+    <const name="U16450"            value="0">
+      <desc>The most basic emulated UART which doesn't support FIFO operation.</desc>
+    </const>
+    <const name="U16550A"           value="1">
+      <desc>
+        The successor of the 16450 UART introducing a 16 byte FIFO to reduce
+        operational overhead.
+      </desc>
+    </const>
+    <const name="U16750"            value="2">
+      <desc>
+        This UART developed by Texas Instruments introduced a 64 byte FIFO
+        and hardware flow control.
+      </desc>
+    </const>
+  </enum>
+
   <interface
     name="ISerialPort" extends="$unknown"
     uuid="cb0a4a29-43a3-9040-0c25-34845db7b042"
     wsmap="managed"
-    reservedAttributes="2"
+    reservedAttributes="1"
     >
 
     <desc>
@@ -18469,6 +18494,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         For those cases, setting a @c null or empty string as the attribute's
         value is an error. Otherwise, the value of this property is ignored.
       </desc>
+    </attribute>
+
+    <attribute name="uartType" type="UartType">
+      <desc>Selects the emulated UART implementation.</desc>
     </attribute>
 
   </interface>

@@ -146,6 +146,7 @@ enum
     MODIFYVM_HIDPTR,
     MODIFYVM_HIDKBD,
     MODIFYVM_UARTMODE,
+    MODIFYVM_UARTTYPE,
     MODIFYVM_UART,
 #if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     MODIFYVM_LPTMODE,
@@ -333,6 +334,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--mouse",                    MODIFYVM_HIDPTR,                    RTGETOPT_REQ_STRING },
     { "--keyboard",                 MODIFYVM_HIDKBD,                    RTGETOPT_REQ_STRING },
     { "--uartmode",                 MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--uarttype",                 MODIFYVM_UARTTYPE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--uart",                     MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
 #if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     { "--lptmode",                  MODIFYVM_LPTMODE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -2153,6 +2155,32 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(uart, COMSETTER(Path)(Bstr(ValueUnion.psz).raw()));
                     CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostDevice));
                 }
+                break;
+            }
+
+            case MODIFYVM_UARTTYPE:
+            {
+                ComPtr<ISerialPort> uart;
+
+                CHECK_ERROR_BREAK(sessionMachine, GetSerialPort(GetOptState.uIndex - 1, uart.asOutParam()));
+                ASSERT(uart);
+
+                if (!RTStrICmp(ValueUnion.psz, "16450"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(UartType)(UartType_U16450));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "16550A"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(UartType)(UartType_U16550A));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "16750"))
+                {
+                    CHECK_ERROR(uart, COMSETTER(UartType)(UartType_U16750));
+                }
+                else
+                    return errorSyntax(USAGE_MODIFYVM,
+                                       "Invalid argument to '%s'",
+                                       GetOptState.pDef->pszLong);
                 break;
             }
 

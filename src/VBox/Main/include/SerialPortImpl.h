@@ -78,6 +78,8 @@ private:
     HRESULT setServer(BOOL aServer);
     HRESULT getPath(com::Utf8Str &aPath);
     HRESULT setPath(const com::Utf8Str &aPath);
+    HRESULT getUartType(UartType_T *aUartType);
+    HRESULT setUartType(UartType_T aUartType);
 
     struct Data;
     Data *m;

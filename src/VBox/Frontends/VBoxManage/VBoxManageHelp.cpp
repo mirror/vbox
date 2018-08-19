@@ -607,6 +607,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                                             tcpclient <hostname:port>|\n"
                      "                                             file <file>|\n"
                      "                                             <devicename>]\n"
+                     "                            [--uarttype<1-N> 16450|16550A|16750\n"
 #if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
                      "                            [--lpt<1-N> off|<I/O base> <IRQ>]\n"
                      "                            [--lptmode<1-N> <devicename>]\n"
