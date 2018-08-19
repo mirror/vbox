@@ -328,7 +328,7 @@ static bool rtDbgStackDumpSelfQuerySymbol(PRTDBGSTACKSELFMOD pMod, uintptr_t uRv
         RTDBGSTACKSELFSYMSEARCH SearchInfo = { pMod->uMapping + uRva, ~(uintptr_t)0, pSymInfo };
         int rc = RTLdrEnumSymbols(pMod->hLdrMod, 0, (const void *)pMod->uMapping, pMod->uMapping,
                                   rtDbgStackdumpSelfSymbolSearchCallback, &SearchInfo);
-        if (RT_SUCCESS(rc) && SearchInfo.offBestDist != ~(intptr_t)0)
+        if (RT_SUCCESS(rc) && SearchInfo.offBestDist != ~(uintptr_t)0)
         {
             *poffDisp = SearchInfo.offBestDist;
             return true;
