@@ -610,6 +610,7 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, 
         case RTLDRPROP_TIMESTAMP_SECONDS:
             *pcbRet = sizeof(int64_t);
             AssertReturn(cbBuf == sizeof(int32_t) || cbBuf == sizeof(int64_t), VERR_INVALID_PARAMETER);
+            *pcbRet = cbBuf;
             break;
         case RTLDRPROP_IS_SIGNED:
             *pcbRet = sizeof(bool);
