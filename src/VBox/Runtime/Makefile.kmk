@@ -747,6 +747,8 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMSerializeInstruction-cpuid.asm \
 	common/asm/ASMSerializeInstruction-iret.asm \
 	common/asm/ASMSerializeInstruction-rdtscp.asm \
+	common/dbg/dbgstackdumpself.cpp \
+	common/dbg/dbgstackdumpself-amd64-x86.asm \
 	common/math/bignum-amd64-x86.asm
 RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
@@ -768,6 +770,8 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMSerializeInstruction-cpuid.asm \
 	common/asm/ASMSerializeInstruction-iret.asm \
 	common/asm/ASMSerializeInstruction-rdtscp.asm \
+	common/dbg/dbgstackdumpself.cpp \
+	common/dbg/dbgstackdumpself-amd64-x86.asm \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm
 

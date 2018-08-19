@@ -757,6 +757,7 @@
 # define RTDbgModSymbolByOrdinalA                       RT_MANGLER(RTDbgModSymbolByOrdinalA)
 # define RTDbgModSymbolCount                            RT_MANGLER(RTDbgModSymbolCount)
 # define RTDbgModUnwindFrame                            RT_MANGLER(RTDbgModUnwindFrame)
+# define RTDbgStackDumpSelf                             RT_MANGLER(RTDbgStackDumpSelf)
 # define RTDbgSymbolAlloc                               RT_MANGLER(RTDbgSymbolAlloc)
 # define RTDbgSymbolDup                                 RT_MANGLER(RTDbgSymbolDup)
 # define RTDbgSymbolFree                                RT_MANGLER(RTDbgSymbolFree)
