@@ -71,6 +71,15 @@
 
 RT_C_DECLS_BEGIN
 
+#if  !defined(IPRT_WITHOUT_ASSERT_STACK) \
+  && defined(IN_RING3) \
+  && (defined(RT_ARCH_AMD64) /*|| defined(RT_ARCH_X86)*/) \
+  && (defined(RT_OS_WINDOWS) /*|| ... */)
+/** @def IPRT_WITH_ASSERT_STACK
+ * Indicates that we collect a callstack stack on assertion. */
+# define IPRT_WITH_ASSERT_STACK
+#endif
+
 /**
  * The 1st part of an assert message.
  *
@@ -215,17 +224,21 @@ RTDECL(bool)    RTAssertMayPanic(void);
  * @remarks     This is the full potential set, it
  * @{
  */
-/** The last assert message, 1st part. */
+/** The last assertion message, 1st part. */
 extern RTDATADECL(char)                     g_szRTAssertMsg1[1024];
-/** The last assert message, 2nd part. */
+/** The last assertion message, 2nd part. */
 extern RTDATADECL(char)                     g_szRTAssertMsg2[4096];
-/** The last assert message, expression. */
+#ifdef IPRT_WITH_ASSERT_STACK
+/** The last assertion message, stack part. */
+extern RTDATADECL(char)                     g_szRTAssertStack[4096];
+#endif
+/** The last assertion message, expression. */
 extern RTDATADECL(const char * volatile)    g_pszRTAssertExpr;
-/** The last assert message, file name. */
+/** The last assertion message, file name. */
 extern RTDATADECL(const char * volatile)    g_pszRTAssertFile;
-/** The last assert message, line number. */
+/** The last assertion message, line number. */
 extern RTDATADECL(uint32_t volatile)        g_u32RTAssertLine;
-/** The last assert message, function name. */
+/** The last assertion message, function name. */
 extern RTDATADECL(const char * volatile)    g_pszRTAssertFunction;
 /** @} */
 
