@@ -108,13 +108,11 @@
 #undef LOG_GROUP
 #include "../Parallel/DevParallel.cpp"
 #undef LOG_GROUP
-#ifndef VBOX_WITH_NEW_SERIAL
-# include "../Serial/DevSerial.cpp"
-#else
-# include "../Serial/DevSerialNew.cpp"
-# include "../Serial/DevOxPcie958.cpp"
-# include "../Serial/UartCore.h"
-#endif
+#include "../Serial/DevSerial.cpp"
+#undef LOG_GROUP
+#include "../Serial/DevOxPcie958.cpp"
+#undef LOG_GROUP
+#include "../Serial/UartCore.h"
 #ifdef VBOX_WITH_AHCI
 # undef LOG_GROUP
 # include "../Storage/DevAHCI.cpp"
@@ -1279,45 +1277,6 @@ int main()
     GEN_CHECK_OFF(PARALLELPORT, act_fifo_pos_read);
 #endif
 
-#ifndef VBOX_WITH_NEW_SERIAL
-    /* Serial/DevSerial.cpp */
-    GEN_CHECK_SIZE(SerialState);
-    GEN_CHECK_OFF(SerialState, CritSect);
-    GEN_CHECK_OFF(SerialState, pDevInsR3);
-    GEN_CHECK_OFF(SerialState, pDevInsR0);
-    GEN_CHECK_OFF(SerialState, pDevInsRC);
-    GEN_CHECK_OFF(SerialState, IBase);
-    GEN_CHECK_OFF(SerialState, ICharPort);
-    GEN_CHECK_OFF(SerialState, pDrvBase);
-    GEN_CHECK_OFF(SerialState, pDrvChar);
-    GEN_CHECK_OFF(SerialState, ReceiveSem);
-    GEN_CHECK_OFF(SerialState, base);
-    GEN_CHECK_OFF(SerialState, divider);
-    GEN_CHECK_OFF(SerialState, recv_fifo);
-    GEN_CHECK_OFF(SerialState, xmit_fifo);
-    GEN_CHECK_OFF(SerialState, rbr);
-    GEN_CHECK_OFF(SerialState, thr);
-    GEN_CHECK_OFF(SerialState, tsr);
-    GEN_CHECK_OFF(SerialState, ier);
-    GEN_CHECK_OFF(SerialState, iir);
-    GEN_CHECK_OFF(SerialState, lcr);
-    GEN_CHECK_OFF(SerialState, mcr);
-    GEN_CHECK_OFF(SerialState, lsr);
-    GEN_CHECK_OFF(SerialState, msr);
-    GEN_CHECK_OFF(SerialState, scr);
-    GEN_CHECK_OFF(SerialState, fcr);
-    GEN_CHECK_OFF(SerialState, fcr_vmstate);
-    GEN_CHECK_OFF(SerialState, thr_ipending);
-    GEN_CHECK_OFF(SerialState, timeout_ipending);
-    GEN_CHECK_OFF(SerialState, irq);
-    GEN_CHECK_OFF(SerialState, last_break_enable);
-    GEN_CHECK_OFF(SerialState, tsr_retry);
-    GEN_CHECK_OFF(SerialState, msr_changed);
-    GEN_CHECK_OFF(SerialState, fGCEnabled);
-    GEN_CHECK_OFF(SerialState, fR0Enabled);
-    GEN_CHECK_OFF(SerialState, fYieldOnLSRRead);
-    GEN_CHECK_OFF(SerialState, char_transmit_time);
-#else
     /* Serial/UartCore.cpp */
     GEN_CHECK_SIZE(UARTCORE);
     GEN_CHECK_OFF(UARTCORE, CritSect);
@@ -1355,7 +1314,7 @@ int main()
     GEN_CHECK_OFF(UARTCORE, cSymbolXferTicks);
     GEN_CHECK_OFF(UARTCORE, cbAvailRdr);
 
-    /* Serial/DevSerialNew.cpp */
+    /* Serial/DevSerial.cpp */
     GEN_CHECK_SIZE(DEVSERIAL);
     GEN_CHECK_OFF(DEVSERIAL, pDevInsR3);
     GEN_CHECK_OFF(DEVSERIAL, pDevInsR0);
@@ -1381,7 +1340,6 @@ int main()
     GEN_CHECK_OFF(DEVOX958, GCPhysMMIO);
     GEN_CHECK_OFF(DEVOX958, aUarts);
     GEN_CHECK_OFF(DEVOX958, aUarts[OX958_UARTS_MAX - 1]);
-#endif
 
 #ifdef VBOX_WITH_AHCI
     /* Storage/DevAHCI.cpp */
