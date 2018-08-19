@@ -66,7 +66,7 @@ static DECLCALLBACK(int) rtDbgModExportsAddSymbolCallback(RTLDRMOD hLdrMod, cons
     if (Value >= pArgs->uImageBase)
     {
         char szOrdinalNm[48];
-        if (!pszSymbol)
+        if (!pszSymbol || *pszSymbol == '\0')
         {
             RTStrPrintf(szOrdinalNm, sizeof(szOrdinalNm), "Ordinal%u", uSymbol);
             pszSymbol = szOrdinalNm;
