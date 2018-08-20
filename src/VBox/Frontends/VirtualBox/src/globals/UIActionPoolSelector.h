@@ -116,6 +116,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Snapshot_S_Clone,
 
     /* Virtual Media Manager actions: */
+    UIActionIndexST_M_MediumWindow,
     UIActionIndexST_M_Medium,
     UIActionIndexST_M_Medium_S_Add,
     UIActionIndexST_M_Medium_S_Copy,
@@ -126,6 +127,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Medium_S_Refresh,
 
     /* Host Network Manager actions: */
+    UIActionIndexST_M_NetworkWindow,
     UIActionIndexST_M_Network,
     UIActionIndexST_M_Network_S_Create,
     UIActionIndexST_M_Network_S_Remove,
@@ -158,10 +160,19 @@ protected:
     /** Updates menus. */
     virtual void updateMenus() /* override */;
 
+    /** Updates 'Medium' window menu. */
+    void updateMenuMediumWindow();
     /** Updates 'Medium' menu. */
     void updateMenuMedium();
+    /** Updates 'Medium' @a pMenu. */
+    void updateMenuMediumWrapper(UIMenu *pMenu);
+
+    /** Updates 'Network' window menu. */
+    void updateMenuNetworkWindow();
     /** Updates 'Network' menu. */
     void updateMenuNetwork();
+    /** Updates 'Medium' @a pMenu. */
+    void updateMenuNetworkWrapper(UIMenu *pMenu);
 
     /** Updates shortcuts. */
     virtual void updateShortcuts() /* override */;

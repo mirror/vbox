@@ -1598,6 +1598,7 @@ void UIActionPool::preparePool()
 #endif
 
     /* Create 'Log Viewer' actions: */
+    m_pool[UIActionIndex_M_LogViewerWindow] = new UIActionMenuSelectorLog(this);
     m_pool[UIActionIndex_M_LogViewer] = new UIActionMenuSelectorLog(this);
     m_pool[UIActionIndex_M_LogViewer_T_Find] = new UIActionMenuSelectorLogTogglePaneFind(this);
     m_pool[UIActionIndex_M_LogViewer_T_Filter] = new UIActionMenuSelectorLogTogglePaneFilter(this);
@@ -1612,6 +1613,7 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_M_Window].ptf = &UIActionPool::updateMenuWindow;
 #endif
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
+    m_menuUpdateHandlers[UIActionIndex_M_LogViewerWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
     m_menuUpdateHandlers[UIActionIndex_M_LogViewer].ptf = &UIActionPool::updateMenuLogViewer;
 
     /* Invalidate all known menus: */
@@ -1849,11 +1851,26 @@ void UIActionPool::updateMenuHelp()
     m_invalidations.remove(UIActionIndex_Menu_Help);
 }
 
+void UIActionPool::updateMenuLogViewerWindow()
+{
+    /* Update corresponding menu: */
+    updateMenuLogViewerWrapper(action(UIActionIndex_M_LogViewerWindow)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_LogViewerWindow);
+}
+
 void UIActionPool::updateMenuLogViewer()
 {
-    /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndex_M_LogViewer)->menu();
-    AssertPtrReturnVoid(pMenu);
+    /* Update corresponding menu: */
+    updateMenuLogViewerWrapper(action(UIActionIndex_M_LogViewer)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_LogViewer);
+}
+
+void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
+{
     /* Clear contents: */
     pMenu->clear();
 
@@ -1888,9 +1905,6 @@ void UIActionPool::updateMenuLogViewer()
 
     /* 'Refresh' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_S_Refresh)) || fSeparator;;
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndex_M_LogViewer);
 }
 
 void UIActionPool::retranslateUi()

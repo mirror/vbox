@@ -111,7 +111,7 @@ int UIVMLogViewerWidget::defaultLogPageWidth() const
 
 QMenu *UIVMLogViewerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndex_M_LogViewer)->menu();
+    return m_pActionPool->action(UIActionIndex_M_LogViewerWindow)->menu();
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &comMachine)

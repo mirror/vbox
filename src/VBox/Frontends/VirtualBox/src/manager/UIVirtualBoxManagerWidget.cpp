@@ -115,12 +115,12 @@ ToolTypeGlobal UIVirtualBoxManagerWidget::currentGlobalTool() const
 
 bool UIVirtualBoxManagerWidget::isToolOpened(ToolTypeMachine enmType) const
 {
-    return m_pPaneToolsMachine->isToolOpened(enmType);
+    return m_pPaneToolsMachine ? m_pPaneToolsMachine->isToolOpened(enmType) : false;
 }
 
 bool UIVirtualBoxManagerWidget::isToolOpened(ToolTypeGlobal enmType) const
 {
-    return m_pPaneToolsGlobal->isToolOpened(enmType);
+    return m_pPaneToolsGlobal ? m_pPaneToolsGlobal->isToolOpened(enmType) : false;
 }
 
 void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
@@ -333,6 +333,9 @@ void UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine(ToolTypeMachine enmTy
 
     /* Let the parent know: */
     emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
@@ -347,6 +350,9 @@ void UIVirtualBoxManagerWidget::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType
 
     /* Let the parent know: */
     emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolClosedMachine(ToolTypeMachine enmType)
@@ -356,6 +362,9 @@ void UIVirtualBoxManagerWidget::sltHandleToolClosedMachine(ToolTypeMachine enmTy
 
     /* Let the parent know: */
     emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal(ToolTypeGlobal enmType)
@@ -365,6 +374,9 @@ void UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal(ToolTypeGlobal enmType
 
     /* Let the parent know: */
     emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::prepare()
@@ -397,65 +409,8 @@ void UIVirtualBoxManagerWidget::prepareToolbar()
         m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-        /* Add main actions block: */
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-
-        /* Separator: */
-        m_pToolBar->addSeparator();
-
-        /* Add 'Snapshot' actions block: */
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
-
-        /* Add 'Log Viewer' actions block: */
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_S_Save));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Find));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Filter));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Settings));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh));
-
-        /* Add 'Medium' actions block: */
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Copy));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Move));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Remove));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Release));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_T_Details));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Refresh));
-
-        /* Add 'Network' actions block: */
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Remove));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_T_Details));
-//        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Refresh));
-
-#ifdef VBOX_WS_MAC
-        // WORKAROUND:
-        // Actually Qt should do that itself but by some unknown reason it sometimes
-        // forget to update toolbar after changing its actions on Cocoa platform.
-        connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-        connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-        connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-        connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::changed,
-                m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
-
-        // WORKAROUND:
-        // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-        // the necessary size of the toolbar is increased. Also for some languages
-        // the with doesn't match if the text increase. So manually adjust the size
-        // after changing the text.
-        m_pToolBar->updateLayout();
-#endif /* VBOX_WS_MAC */
+        /* Update finally: */
+        updateToolbar();
     }
 }
 
@@ -621,6 +576,91 @@ void UIVirtualBoxManagerWidget::loadSettings()
         /* But we can't restore previously opened Machine tools here,
          * see the reason in corresponding async sltHandlePolishEvent slot. */
     }
+}
+
+void UIVirtualBoxManagerWidget::updateToolbar()
+{
+    /* Make sure toolbar exists: */
+    AssertPtrReturnVoid(m_pToolBar);
+
+    /* Clear initially: */
+    m_pToolBar->clear();
+
+    /* Add main actions block: */
+    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+
+    /* Separator: */
+    if (   isToolOpened(ToolTypeMachine_Snapshots)
+        || isToolOpened(ToolTypeMachine_LogViewer)
+        || isToolOpened(ToolTypeGlobal_VirtualMedia)
+        || isToolOpened(ToolTypeGlobal_HostNetwork))
+        m_pToolBar->addSeparator();
+
+    /* Add 'Snapshot' actions block: */
+    if (isToolOpened(ToolTypeMachine_Snapshots))
+    {
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
+    }
+
+    /* Add 'Log Viewer' actions block: */
+    if (isToolOpened(ToolTypeMachine_LogViewer))
+    {
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_S_Save));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Find));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Filter));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_T_Settings));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh));
+    }
+
+    /* Add 'Medium' actions block: */
+    if (isToolOpened(ToolTypeGlobal_VirtualMedia))
+    {
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Copy));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Move));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Remove));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Release));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_T_Details));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Refresh));
+    }
+
+    /* Add 'Network' actions block: */
+    if (isToolOpened(ToolTypeGlobal_HostNetwork))
+    {
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Remove));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_T_Details));
+//        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Refresh));
+    }
+
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // Actually Qt should do that itself but by some unknown reason it sometimes
+    // forget to update toolbar after changing its actions on Cocoa platform.
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::changed,
+            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::changed,
+            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::changed,
+            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::changed,
+            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text.
+    m_pToolBar->updateLayout();
+#endif /* VBOX_WS_MAC */
 }
 
 void UIVirtualBoxManagerWidget::saveSettings()

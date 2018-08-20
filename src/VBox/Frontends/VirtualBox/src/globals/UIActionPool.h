@@ -88,6 +88,7 @@ enum UIActionIndex
 #endif
 
     /* 'Log Viewer' menu actions: */
+    UIActionIndex_M_LogViewerWindow,
     UIActionIndex_M_LogViewer,
     UIActionIndex_M_LogViewer_T_Find,
     UIActionIndex_M_LogViewer_T_Filter,
@@ -533,8 +534,12 @@ protected:
 #endif
     /** Updates 'Help' menu. */
     virtual void updateMenuHelp();
+    /** Updates 'Log Viewer Window' menu. */
+    virtual void updateMenuLogViewerWindow();
     /** Updates 'Log Viewer' menu. */
     virtual void updateMenuLogViewer();
+    /** Updates 'Log Viewer' @a pMenu. */
+    virtual void updateMenuLogViewerWrapper(UIMenu *pMenu);
 
     /** Updates shortcuts. */
     virtual void updateShortcuts();

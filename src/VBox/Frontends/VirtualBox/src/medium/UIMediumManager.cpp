@@ -173,7 +173,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool 
 
 QMenu *UIMediumManagerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_Medium)->menu();
+    return m_pActionPool->action(UIActionIndexST_M_MediumWindow)->menu();
 }
 
 void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBar)

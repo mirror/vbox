@@ -2359,6 +2359,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
 
     /* Virtual Medium Manager actions: */
+    m_pool[UIActionIndexST_M_MediumWindow] = new UIActionMenuSelectorMedium(this);
     m_pool[UIActionIndexST_M_Medium] = new UIActionMenuSelectorMedium(this);
     m_pool[UIActionIndexST_M_Medium_S_Add] = new UIActionMenuSelectorMediumPerformAdd(this);
     m_pool[UIActionIndexST_M_Medium_S_Copy] = new UIActionMenuSelectorMediumPerformCopy(this);
@@ -2369,6 +2370,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
 
     /* Host Network Manager actions: */
+    m_pool[UIActionIndexST_M_NetworkWindow] = new UIActionMenuSelectorNetwork(this);
     m_pool[UIActionIndexST_M_Network] = new UIActionMenuSelectorNetwork(this);
     m_pool[UIActionIndexST_M_Network_S_Create] = new UIActionMenuSelectorNetworkPerformCreate(this);
     m_pool[UIActionIndexST_M_Network_S_Remove] = new UIActionMenuSelectorNetworkPerformRemove(this);
@@ -2376,7 +2378,9 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Network_S_Refresh] = new UIActionMenuSelectorNetworkPerformRefresh(this);
 
     /* Prepare update-handlers for known menus: */
+    m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfs = &UIActionPoolSelector::updateMenuMediumWindow;
     m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfs = &UIActionPoolSelector::updateMenuMedium;
+    m_menuUpdateHandlers[UIActionIndexST_M_NetworkWindow].ptfs = &UIActionPoolSelector::updateMenuNetworkWindow;
     m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfs = &UIActionPoolSelector::updateMenuNetwork;
 
     /* Call to base-class: */
@@ -2399,18 +2403,37 @@ void UIActionPoolSelector::updateMenus()
     updateMenuHelp();
 
     /* 'Log Viewer' menu: */
+    updateMenuLogViewerWindow();
     updateMenuLogViewer();
 
     /* 'Virtual Media Manager' menu: */
+    updateMenuMediumWindow();
     updateMenuMedium();
     /* 'Host Network Manager' menu: */
+    updateMenuNetworkWindow();
     updateMenuNetwork();
+}
+
+void UIActionPoolSelector::updateMenuMediumWindow()
+{
+    /* Update corresponding menu: */
+    updateMenuMediumWrapper(action(UIActionIndexST_M_MediumWindow)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_MediumWindow);
 }
 
 void UIActionPoolSelector::updateMenuMedium()
 {
-    /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Medium)->menu();
+    /* Update corresponding menu: */
+    updateMenuMediumWrapper(action(UIActionIndexST_M_Medium)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Medium);
+}
+
+void UIActionPoolSelector::updateMenuMediumWrapper(UIMenu *pMenu)
+{
     /* Clear contents: */
     pMenu->clear();
 
@@ -2447,15 +2470,28 @@ void UIActionPoolSelector::updateMenuMedium()
 
     /* 'Refresh' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Refresh)) || fSeparator;;
+}
+
+void UIActionPoolSelector::updateMenuNetworkWindow()
+{
+    /* Update corresponding menu: */
+    updateMenuMediumWrapper(action(UIActionIndexST_M_NetworkWindow)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Medium);
+    m_invalidations.remove(UIActionIndexST_M_NetworkWindow);
 }
 
 void UIActionPoolSelector::updateMenuNetwork()
 {
-    /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Network)->menu();
+    /* Update corresponding menu: */
+    updateMenuMediumWrapper(action(UIActionIndexST_M_Network)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Network);
+}
+
+void UIActionPoolSelector::updateMenuNetworkWrapper(UIMenu *pMenu)
+{
     /* Clear contents: */
     pMenu->clear();
 
@@ -2486,9 +2522,6 @@ void UIActionPoolSelector::updateMenuNetwork()
 
 //    /* 'Refresh' action: */
 //    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Refresh)) || fSeparator;;
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Network);
 }
 
 void UIActionPoolSelector::updateShortcuts()

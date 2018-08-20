@@ -166,6 +166,9 @@ private:
         /** Loads settings. */
         void loadSettings();
 
+        /** Update toolbar. */
+        void updateToolbar();
+
         /** Saves settings. */
         void saveSettings();
         /** Cleanups window. */

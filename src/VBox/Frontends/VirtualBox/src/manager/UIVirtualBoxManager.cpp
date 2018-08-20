@@ -2002,14 +2002,17 @@ void UIVirtualBoxManager::updateActionsVisibility()
 
     /* Determine whether LogViewer actions should be visible: */
     const bool fLogViewerMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_LogViewer;
+    const bool fLogViewerActionsShown = fLogViewerMenuShown || !m_pWidget->isToolOpened(ToolTypeMachine_LogViewer);
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
 
     /* Determine whether VirtualMediaManager actions should be visible: */
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_VirtualMedia;
+    const bool fMediumActionsShown = fMediumMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_VirtualMedia);
     m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
 
     /* Determine whether HostNetworkManager actions should be visible: */
     const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_HostNetwork;
+    const bool fNetworkActionsShown = fNetworkMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_HostNetwork);
     m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
 
     /* Hide action shortcuts: */
@@ -2028,11 +2031,11 @@ void UIVirtualBoxManager::updateActionsVisibility()
     foreach (UIAction *pAction, m_snapshotActions)
         pAction->setVisible(fSnapshotMenuShown);
     foreach (UIAction *pAction, m_logViewerActions)
-        pAction->setVisible(fLogViewerMenuShown);
+        pAction->setVisible(fLogViewerActionsShown);
     foreach (UIAction *pAction, m_virtualMediaManagerActions)
-        pAction->setVisible(fMediumMenuShown);
+        pAction->setVisible(fMediumActionsShown);
     foreach (UIAction *pAction, m_hostNetworkManagerActions)
-        pAction->setVisible(fNetworkMenuShown);
+        pAction->setVisible(fNetworkActionsShown);
 
     /* Show action shortcuts: */
     if (fMachineMenuShown)

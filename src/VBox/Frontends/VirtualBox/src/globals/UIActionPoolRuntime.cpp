@@ -3426,7 +3426,7 @@ void UIActionPoolRuntime::updateMenus()
     updateMenuHelp();
 
     /* 'Log Viewer' menu: */
-    updateMenuLogViewer();
+    updateMenuLogViewerWindow();
 }
 
 void UIActionPoolRuntime::updateMenuMachine()

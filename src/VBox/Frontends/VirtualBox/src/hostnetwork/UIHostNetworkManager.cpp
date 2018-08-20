@@ -208,7 +208,7 @@ UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, UIA
 
 QMenu *UIHostNetworkManagerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_Network)->menu();
+    return m_pActionPool->action(UIActionIndexST_M_NetworkWindow)->menu();
 }
 
 void UIHostNetworkManagerWidget::retranslateUi()
