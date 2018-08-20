@@ -3093,15 +3093,15 @@ DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pHCPhysVmcs);
  * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
  * @param   uFieldEnc       VMCS field encoding.
- * @param   u32Val          32-bit value.
+ * @param   u32Val          The 32-bit value to set.
  *
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
-DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val);
+DECLASM(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val);
 #else
-DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
+DECLINLINE(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -3116,13 +3116,13 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
        "2:                                                      \n\t"
        :"=rm"(rc)
        :"0"(VINF_SUCCESS),
-        "a"(idxField),
+        "a"(uFieldEnc),
         "d"(u32Val)
        );
     return rc;
 
 # elif VMX_USE_MSC_INTRINSICS
-     unsigned char rcMsc = __vmx_vmwrite(idxField, u32Val);
+     unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u32Val);
      if (RT_LIKELY(rcMsc == 0))
          return VINF_SUCCESS;
      return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
@@ -3132,7 +3132,7 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
     __asm
     {
         push   dword ptr [u32Val]
-        mov    eax, [idxField]
+        mov    eax, [uFieldEnc]
         _emit  0x0f
         _emit  0x79
         _emit  0x04
@@ -3160,32 +3160,32 @@ the_end:
  * @retval  VERR_VMX_INVALID_VMCS_PTR.
  * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index.
- * @param   u64Val          16, 32 or 64-bit value.
+ * @param   uFieldEnc       The VMCS field encoding.
+ * @param   u64Val          The 16, 32 or 64-bit value to set.
  *
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if !defined(RT_ARCH_X86)
 # if !VMX_USE_MSC_INTRINSICS || ARCH_BITS != 64
-DECLASM(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val);
+DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
 # else  /* VMX_USE_MSC_INTRINSICS */
-DECLINLINE(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val)
+DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
 {
-    unsigned char rcMsc = __vmx_vmwrite(idxField, u64Val);
+    unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u64Val);
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
 }
 # endif /* VMX_USE_MSC_INTRINSICS */
 #else
-# define VMXWriteVmcs64(idxField, u64Val)    VMXWriteVmcs64Ex(pVCpu, idxField, u64Val) /** @todo dead ugly, picking up pVCpu like this */
-VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
+# define VMXWriteVmcs64(uFieldEnc, u64Val)    VMXWriteVmcs64Ex(pVCpu, uFieldEnc, u64Val) /** @todo dead ugly, picking up pVCpu like this */
+VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t uFieldEnc, uint64_t u64Val);
 #endif
 
 #if ARCH_BITS == 32
 # define VMXWriteVmcsHstN                       VMXWriteVmcs32
-# define VMXWriteVmcsGstN(idxField, u64Val)     VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
+# define VMXWriteVmcsGstN(uFieldEnc, u64Val)     VMXWriteVmcs64Ex(pVCpu, uFieldEnc, u64Val)
 #else  /* ARCH_BITS == 64 */
 # define VMXWriteVmcsHstN                       VMXWriteVmcs64
 # define VMXWriteVmcsGstN                       VMXWriteVmcs64
@@ -3213,23 +3213,23 @@ DECLASM(int) VMXR0InvVPID(VMXTLBFLUSHVPID enmFlush, uint64_t *pDescriptor);
 
 
 /**
- * Executes VMREAD.
+ * Executes VMREAD for a 32-bit field.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
  * @retval  VERR_VMX_INVALID_VMCS_PTR.
  * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index.
- * @param   pData           Where to store VM field value.
+ * @param   uFieldEnc       The VMCS field encoding.
+ * @param   pData           Where to store VMCS field value.
  *
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
-DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData);
+DECLASM(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData);
 #else
-DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
+DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -3245,7 +3245,7 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
        "2:                                                       \n\t"
        :"=&r"(rc),
         "=d"(*pData)
-       :"a"(idxField),
+       :"a"(uFieldEnc),
         "d"(0)
        );
     return rc;
@@ -3253,10 +3253,10 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
 # elif VMX_USE_MSC_INTRINSICS
     unsigned char rcMsc;
 #  if ARCH_BITS == 32
-    rcMsc = __vmx_vmread(idxField, pData);
+    rcMsc = __vmx_vmread(uFieldEnc, pData);
 #  else
     uint64_t u64Tmp;
-    rcMsc = __vmx_vmread(idxField, &u64Tmp);
+    rcMsc = __vmx_vmread(uFieldEnc, &u64Tmp);
     *pData = (uint32_t)u64Tmp;
 #  endif
     if (RT_LIKELY(rcMsc == 0))
@@ -3269,7 +3269,7 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
     {
         sub     esp, 4
         mov     dword ptr [esp], 0
-        mov     eax, [idxField]
+        mov     eax, [uFieldEnc]
         _emit   0x0f
         _emit   0x78
         _emit   0x04
@@ -3291,34 +3291,34 @@ the_end:
 #endif
 
 /**
- * Executes VMREAD.
+ * Executes VMREAD for a 64-bit field.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
  * @retval  VERR_VMX_INVALID_VMCS_PTR.
  * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index.
- * @param   pData           Where to store VM field value.
+ * @param   uFieldEnc       The VMCS field encoding.
+ * @param   pData           Where to store VMCS field value.
  *
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS)
-DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
+DECLASM(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData);
 #else
-DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
+DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 {
 # if VMX_USE_MSC_INTRINSICS
     unsigned char rcMsc;
 #  if ARCH_BITS == 32
     size_t        uLow;
     size_t        uHigh;
-    rcMsc  = __vmx_vmread(idxField, &uLow);
-    rcMsc |= __vmx_vmread(idxField + 1, &uHigh);
+    rcMsc  = __vmx_vmread(uFieldEnc, &uLow);
+    rcMsc |= __vmx_vmread(uFieldEnc + 1, &uHigh);
     *pData = RT_MAKE_U64(uLow, uHigh);
 # else
-    rcMsc = __vmx_vmread(idxField, pData);
+    rcMsc = __vmx_vmread(uFieldEnc, pData);
 # endif
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
@@ -3327,8 +3327,8 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 # elif ARCH_BITS == 32
     int rc;
     uint32_t val_hi, val;
-    rc  = VMXReadVmcs32(idxField, &val);
-    rc |= VMXReadVmcs32(idxField + 1, &val_hi);
+    rc  = VMXReadVmcs32(uFieldEnc, &val);
+    rc |= VMXReadVmcs32(uFieldEnc + 1, &val_hi);
     AssertRC(rc);
     *pData = RT_MAKE_U64(val, val_hi);
     return rc;
