@@ -694,6 +694,9 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
             if (pStream == pSink->In.pStreamRecSource)
             {
                 int rc2 = audioMixerStreamCtlInternal(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
+                if (rc2 == VERR_NOT_SUPPORTED)
+                    rc2 = VINF_SUCCESS;
+
                 if (RT_SUCCESS(rc))
                     rc = rc2;
                 /* Keep going. Flag? */
@@ -705,6 +708,9 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
         {
             int rc2 = audioMixerStreamCtlInternal(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
+            if (rc2 == VERR_NOT_SUPPORTED)
+                rc2 = VINF_SUCCESS;
+
             if (RT_SUCCESS(rc))
                 rc = rc2;
             /* Keep going. Flag? */
