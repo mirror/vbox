@@ -1780,7 +1780,31 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: Widths
+/** @name VMCS field encoding: Access.
+ * @{ */
+typedef enum
+{
+    VMXVMCSFIELDACCESS_FULL = 0,
+    VMXVMCSFIELDACCESS_HIGH
+} VMXVMCSFIELDACCESS;
+AssertCompileSize(VMXVMCSFIELDACCESS, 4);
+/** @} */
+
+
+/** @name VMCS field encoding: Type.
+ * @{ */
+typedef enum
+{
+    VMXVMCSFIELDTYPE_CONTROL = 0,
+    VMXVMCSFIELDTYPE_VMEXIT_INFO,
+    VMXVMCSFIELDTYPE_GUEST_STATE,
+    VMXVMCSFIELDTYPE_HOST_STATE
+} VMXVMCSFIELDTYPE;
+AssertCompileSize(VMXVMCSFIELDTYPE, 4);
+/** @} */
+
+
+/** @name VMCS field encoding: Width.
  * @{ */
 typedef enum
 {
@@ -2842,6 +2866,22 @@ DECLINLINE(uint32_t) HMVmxGetVmcsFieldWidth(uint32_t uFieldEnc)
 
     /* Bits 13:14 contains the width of the VMCS field, see VMXVMCSFIELDWIDTH_XXX. */
     return (uFieldEnc >> 13) & 0x3;
+}
+
+
+/**
+ * Returns whether the given VMCS field is a read-only VMCS field or not.
+ *
+ * @returns @c true if it's a read-only field, @c false otherwise.
+ * @param   uFieldEnc   The VMCS field encoding.
+ *
+ * @remarks Warning! This function does not verify the encoding is for a valid and
+ *          supported VMCS field.
+ */
+DECLINLINE(bool) HMVmxIsVmcsFieldReadOnly(uint32_t uFieldEnc)
+{
+    /* See Intel spec. B.4.2 "Natural-Width Read-Only Data Fields". */
+    return (RT_BF_GET(uFieldEnc, VMX_BF_VMCS_ENC_TYPE) == VMXVMCSFIELDTYPE_VMEXIT_INFO);
 }
 /** @} */
 
