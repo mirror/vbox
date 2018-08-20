@@ -1164,22 +1164,6 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
 
 void UISnapshotPane::prepare()
 {
-    /* Configure Main event connections: */
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
-            this, &UISnapshotPane::sltHandleMachineDataChange);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
-            this, &UISnapshotPane::sltHandleMachineStateChange);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
-            this, &UISnapshotPane::sltHandleSessionStateChange);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
-            this, &UISnapshotPane::sltHandleSnapshotTake);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
-            this, &UISnapshotPane::sltHandleSnapshotDelete);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
-            this, &UISnapshotPane::sltHandleSnapshotChange);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
-            this, &UISnapshotPane::sltHandleSnapshotRestore);
-
     /* Create read-write locker: */
     m_pLockReadWrite = new QReadWriteLock;
 
@@ -1196,6 +1180,10 @@ void UISnapshotPane::prepare()
         connect(m_pTimerUpdateAge, &QTimer::timeout, this, &UISnapshotPane::sltUpdateSnapshotsAge);
     }
 
+    /* Prepare connections: */
+    prepareConnections();
+    /* Prepare actions: */
+    prepareActions();
     /* Prepare widgets: */
     prepareWidgets();
 
@@ -1204,6 +1192,40 @@ void UISnapshotPane::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UISnapshotPane::prepareConnections()
+{
+    /* Configure Main event connections: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
+            this, &UISnapshotPane::sltHandleMachineDataChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UISnapshotPane::sltHandleMachineStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
+            this, &UISnapshotPane::sltHandleSessionStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
+            this, &UISnapshotPane::sltHandleSnapshotTake);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
+            this, &UISnapshotPane::sltHandleSnapshotDelete);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
+            this, &UISnapshotPane::sltHandleSnapshotChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
+            this, &UISnapshotPane::sltHandleSnapshotRestore);
+}
+
+void UISnapshotPane::prepareActions()
+{
+    /* Connect actions: */
+    connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take), &UIAction::triggered,
+            this, &UISnapshotPane::sltTakeSnapshot);
+    connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete), &UIAction::triggered,
+            this, &UISnapshotPane::sltDeleteSnapshot);
+    connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore), &UIAction::triggered,
+            this, &UISnapshotPane::sltRestoreSnapshot);
+    connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties), &UIAction::toggled,
+            this, &UISnapshotPane::sltToggleSnapshotDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone), &UIAction::triggered,
+            this, &UISnapshotPane::sltCloneSnapshot);
 }
 
 void UISnapshotPane::prepareWidgets()
@@ -1241,34 +1263,14 @@ void UISnapshotPane::prepareToolbar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-        /* Add Take Snapshot action: */
+        /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take));
-        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take), &UIAction::triggered,
-                this, &UISnapshotPane::sltTakeSnapshot);
-
-        /* Add Delete Snapshot action: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete));
-        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete), &UIAction::triggered,
-                this, &UISnapshotPane::sltDeleteSnapshot);
-
         m_pToolBar->addSeparator();
-
-        /* Add Restore Snapshot action: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore));
-        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore), &UIAction::triggered,
-                this, &UISnapshotPane::sltRestoreSnapshot);
-
-        /* Add Show Snapshot Details action: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties));
-        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties), &UIAction::toggled,
-                this, &UISnapshotPane::sltToggleSnapshotDetailsVisibility);
-
         m_pToolBar->addSeparator();
-
-        /* Add Clone Snapshot action: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone));
-        connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone), &UIAction::triggered,
-                this, &UISnapshotPane::sltCloneSnapshot);
 
         /* Add into layout: */
         layout()->addWidget(m_pToolBar);

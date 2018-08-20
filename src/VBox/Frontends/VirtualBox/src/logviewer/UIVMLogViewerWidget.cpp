@@ -417,51 +417,133 @@ void UIVMLogViewerWidget::sltResetSettingsToDefault()
 
 void UIVMLogViewerWidget::prepare()
 {
-    /* Create main layout: */
-    m_pMainLayout = new QVBoxLayout(this);
-
     /* Prepare stuff: */
     prepareActions();
-    if (m_fShowToolbar)
-        prepareToolBar();
+    /* Prepare widgets: */
     prepareWidgets();
     /* Load settings: */
     loadSettings();
 
-    /* Reading log files: */
-    sltRefresh();
-
-    /* Loading language constants: */
+    /* Apply language settings: */
     retranslateUi();
 
+    /* Reading log files: */
+    sltRefresh();
+    /* Setup escape shortcut: */
     manageEscapeShortCut();
 }
 
 void UIVMLogViewerWidget::prepareActions()
 {
-    /* Configure 'Find' action: */
+    /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-
-    /* Configure 'Filter' action: */
     connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-
-    /* Configure 'Bookmark' action: */
     connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-
-    /* Configure 'Settings' action: */
     connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-
-    /* Configure 'Refresh' action: */
     connect(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Refresh), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltRefresh);
-
-    /* Configure 'Save' action: */
     connect(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltSave);
+}
+
+void UIVMLogViewerWidget::prepareWidgets()
+{
+    /* Create main layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    if (m_pMainLayout)
+    {
+        /* Configure layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+        m_pMainLayout->setSpacing(10);
+#else
+        m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
+
+        /* Prepare toolbar, if requested: */
+        if (m_fShowToolbar)
+            prepareToolBar();
+
+        /* Create VM Log-Viewer container: */
+        m_pTabWidget = new QITabWidget;
+        if (m_pTabWidget)
+        {
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pTabWidget);
+        }
+
+        /* Create VM Log-Viewer search-panel: */
+        m_pSearchPanel = new UIVMLogViewerSearchPanel(0, this);
+        if (m_pSearchPanel)
+        {
+            /* Configure panel: */
+            installEventFilter(m_pSearchPanel);
+            m_pSearchPanel->hide();
+            connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
+                    this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
+            m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find));
+
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pSearchPanel);
+        }
+
+        /* Create VM Log-Viewer filter-panel: */
+        m_pFilterPanel = new UIVMLogViewerFilterPanel(0, this);
+        if (m_pFilterPanel)
+        {
+            /* Configure panel: */
+            installEventFilter(m_pFilterPanel);
+            m_pFilterPanel->hide();
+            connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
+                    this, &UIVMLogViewerWidget::sltFilterApplied);
+            m_panelActionMap.insert(m_pFilterPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter));
+
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pFilterPanel);
+        }
+
+        /* Create VM Log-Viewer bookmarks-panel: */
+        m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
+        if (m_pBookmarksPanel)
+        {
+            /* Configure panel: */
+            m_pBookmarksPanel->hide();
+            connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmark,
+                    this, &UIVMLogViewerWidget::sltDeleteBookmark);
+            connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
+                    this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
+            connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
+                    this, &UIVMLogViewerWidget::gotoBookmark);
+            m_panelActionMap.insert(m_pBookmarksPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark));
+
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pBookmarksPanel);
+        }
+
+        /* Create VM Log-Viewer settings-panel: */
+        m_pSettingsPanel = new UIVMLogViewerSettingsPanel(0, this);
+        if (m_pSettingsPanel)
+        {
+            /* Configure panel: */
+            m_pSettingsPanel->hide();
+            m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
+            m_pSettingsPanel->setWrapLines(m_bWrapLines);
+            m_pSettingsPanel->setFontSizeInPoints(m_font.pointSize());
+            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
+            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
+            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
+            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
+            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetSettingsToDefault);
+            m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings));
+
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pSettingsPanel);
+        }
+    }
 }
 
 void UIVMLogViewerWidget::prepareToolBar()
@@ -490,97 +572,12 @@ void UIVMLogViewerWidget::prepareToolBar()
         if (m_enmEmbedding == EmbedTo_Stack)
         {
             /* Add into layout: */
-            layout()->addWidget(m_pToolBar);
+            m_pMainLayout->addWidget(m_pToolBar);
         }
 #else
         /* Add into layout: */
         m_pMainLayout->addWidget(m_pToolBar);
 #endif
-    }
-}
-
-void UIVMLogViewerWidget::prepareWidgets()
-{
-    /* Configure layout: */
-    layout()->setContentsMargins(0, 0, 0, 0);
-#ifdef VBOX_WS_MAC
-    layout()->setSpacing(10);
-#else
-    layout()->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
-#endif
-
-    /* Create VM Log-Viewer container: */
-    m_pTabWidget = new QITabWidget;
-    if (m_pTabWidget)
-    {
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pTabWidget);
-    }
-
-    /* Create VM Log-Viewer search-panel: */
-    m_pSearchPanel = new UIVMLogViewerSearchPanel(0, this);
-    if (m_pSearchPanel)
-    {
-        /* Configure VM Log-Viewer search-panel: */
-        installEventFilter(m_pSearchPanel);
-        m_pSearchPanel->hide();
-        connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
-                this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
-        m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find));
-
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pSearchPanel);
-    }
-
-    /* Create VM Log-Viewer filter-panel: */
-    m_pFilterPanel = new UIVMLogViewerFilterPanel(0, this);
-    if (m_pFilterPanel)
-    {
-        /* Configure VM Log-Viewer filter-panel: */
-        installEventFilter(m_pFilterPanel);
-        m_pFilterPanel->hide();
-        connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
-                this, &UIVMLogViewerWidget::sltFilterApplied);
-        m_panelActionMap.insert(m_pFilterPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter));
-
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pFilterPanel);
-    }
-
-    m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
-    if (m_pBookmarksPanel)
-    {
-        /* Configure VM Log-Viewer bookmarks-panel: */
-        m_pBookmarksPanel->hide();
-        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmark,
-                this, &UIVMLogViewerWidget::sltDeleteBookmark);
-        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
-                this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
-        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
-                this, &UIVMLogViewerWidget::gotoBookmark);
-        m_panelActionMap.insert(m_pBookmarksPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark));
-
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pBookmarksPanel);
-    }
-
-    m_pSettingsPanel = new UIVMLogViewerSettingsPanel(0, this);
-    if (m_pSettingsPanel)
-    {
-        /* Configure VM Log-Viewer settings-panel: */
-        m_pSettingsPanel->hide();
-        m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
-        m_pSettingsPanel->setWrapLines(m_bWrapLines);
-        m_pSettingsPanel->setFontSizeInPoints(m_font.pointSize());
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetSettingsToDefault);
-        m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings));
-
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pSettingsPanel);
     }
 }
 

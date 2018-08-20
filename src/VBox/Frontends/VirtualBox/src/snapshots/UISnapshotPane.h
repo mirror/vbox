@@ -143,6 +143,10 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
+        /** Prepares connections. */
+        void prepareConnections();
+        /** Prepares actions. */
+        void prepareActions();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Prepares toolbar. */

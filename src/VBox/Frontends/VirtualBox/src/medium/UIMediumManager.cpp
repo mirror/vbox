@@ -674,8 +674,12 @@ void UIMediumManagerWidget::sltPerformTablesAdjustment()
 
 void UIMediumManagerWidget::prepare()
 {
-    /* Prepare this: */
-    prepareThis();
+    /* Prepare connections: */
+    prepareConnections();
+    /* Prepare actions: */
+    prepareActions();
+    /* Prepare widgets: */
+    prepareWidgets();
 
     /* Load settings: */
     loadSettings();
@@ -696,16 +700,6 @@ void UIMediumManagerWidget::prepare()
         if (!vboxGlobal().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
-}
-
-void UIMediumManagerWidget::prepareThis()
-{
-    /* Prepare connections: */
-    prepareConnections();
-    /* Prepare actions: */
-    prepareActions();
-    /* Prepare central-widget: */
-    prepareWidgets();
 }
 
 void UIMediumManagerWidget::prepareConnections()
@@ -761,7 +755,7 @@ void UIMediumManagerWidget::prepareWidgets()
         layout()->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
 #endif
 
-        /* Prepare toolbar: */
+        /* Prepare toolbar, if requested: */
         if (m_fShowToolbar)
             prepareToolBar();
         /* Prepare tab-widget: */
@@ -781,6 +775,7 @@ void UIMediumManagerWidget::prepareToolBar()
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
         /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));

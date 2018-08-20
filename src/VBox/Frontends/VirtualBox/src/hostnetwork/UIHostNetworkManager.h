@@ -124,8 +124,6 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares this. */
-        void prepareThis();
         /** Prepares actions. */
         void prepareActions();
         /** Prepares widgets. */

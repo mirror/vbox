@@ -677,8 +677,10 @@ void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &posit
 
 void UIHostNetworkManagerWidget::prepare()
 {
-    /* Prepare this: */
-    prepareThis();
+    /* Prepare actions: */
+    prepareActions();
+    /* Prepare widgets: */
+    prepareWidgets();
 
     /* Load settings: */
     loadSettings();
@@ -688,14 +690,6 @@ void UIHostNetworkManagerWidget::prepare()
 
     /* Load host networks: */
     loadHostNetworks();
-}
-
-void UIHostNetworkManagerWidget::prepareThis()
-{
-    /* Prepare actions: */
-    prepareActions();
-    /* Prepare widget: */
-    prepareWidgets();
 }
 
 void UIHostNetworkManagerWidget::prepareActions()
@@ -725,7 +719,7 @@ void UIHostNetworkManagerWidget::prepareWidgets()
         layout()->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
 #endif
 
-        /* Prepare toolbar: */
+        /* Prepare toolbar, if requested: */
         if (m_fShowToolbar)
             prepareToolBar();
         /* Prepare tree-widget: */
@@ -745,6 +739,7 @@ void UIHostNetworkManagerWidget::prepareToolBar()
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
         /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
@@ -752,6 +747,7 @@ void UIHostNetworkManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
 //        m_pToolBar->addSeparator();
 //        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
+
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
         if (m_enmEmbedding == EmbedTo_Stack)

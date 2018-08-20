@@ -202,8 +202,6 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares this. */
-        void prepareThis();
         /** Prepares connections. */
         void prepareConnections();
         /** Prepares actions. */

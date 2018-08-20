@@ -135,10 +135,10 @@ private:
         void prepare();
         /** Prepares actions. */
         void prepareActions();
-        /** Prepares toolbar. */
-        void prepareToolBar();
         /** Prepares widgets. */
         void prepareWidgets();
+        /** Prepares toolbar. */
+        void prepareToolBar();
         /** Loads settings.  */
         void loadSettings();
 
