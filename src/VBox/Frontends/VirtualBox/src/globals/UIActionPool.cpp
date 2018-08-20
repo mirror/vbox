@@ -270,12 +270,16 @@ void UIActionMenu::updateText()
 *   Class UIActionSimple implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UIActionSimple::UIActionSimple(UIActionPool *pParent,
-                               const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
+UIActionSimple::UIActionSimple(UIActionPool *pParent)
     : UIAction(pParent, UIActionType_Simple)
 {
-    if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
+}
+
+UIActionSimple::UIActionSimple(UIActionPool *pParent,
+                               const QString &strIcon, const QString &strIconDisabled)
+    : UIAction(pParent, UIActionType_Simple)
+{
+    setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
@@ -298,12 +302,16 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
 *   Class UIActionToggle implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UIActionToggle::UIActionToggle(UIActionPool *pParent,
-                               const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
+UIActionToggle::UIActionToggle(UIActionPool *pParent)
     : UIAction(pParent, UIActionType_Toggle)
 {
-    if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
+}
+
+UIActionToggle::UIActionToggle(UIActionPool *pParent,
+                               const QString &strIcon, const QString &strIconDisabled)
+    : UIAction(pParent, UIActionType_Toggle)
+{
+    setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
     prepare();
 }
 
@@ -473,7 +481,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformClose(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/exit_16px.png")
+        : UIActionSimple(pParent, ":/exit_16px.png", ":/exit_16px.png")
     {
         setMenuRole(QAction::QuitRole);
     }
@@ -713,7 +721,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleWebSite(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_16px.png")
+        : UIActionSimple(pParent, ":/site_16px.png", ":/site_16px.png")
     {
         retranslateUi();
     }
@@ -760,7 +768,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleBugTracker(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_bugtracker_16px.png")
+        : UIActionSimple(pParent, ":/site_bugtracker_16px.png", ":/site_bugtracker_16px.png")
     {
         retranslateUi();
     }
@@ -807,7 +815,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleForums(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_forum_16px.png")
+        : UIActionSimple(pParent, ":/site_forum_16px.png", ":/site_forum_16px.png")
     {
         retranslateUi();
     }
@@ -854,7 +862,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleOracle(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_oracle_16px.png")
+        : UIActionSimple(pParent, ":/site_oracle_16px.png", ":/site_oracle_16px.png")
     {
         retranslateUi();
     }
@@ -901,7 +909,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleResetWarnings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/reset_warnings_16px.png")
+        : UIActionSimple(pParent, ":/reset_warnings_16px.png", ":/reset_warnings_16px.png")
     {
         setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
@@ -950,7 +958,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleNetworkAccessManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/download_manager_16px.png")
+        : UIActionSimple(pParent, ":/download_manager_16px.png", ":/download_manager_16px.png")
     {
         setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
@@ -1047,7 +1055,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleAbout(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/about_16px.png")
+        : UIActionSimple(pParent, ":/about_16px.png", ":/about_16px.png")
     {
         setMenuRole(QAction::AboutRole);
         retranslateUi();
@@ -1107,7 +1115,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePreferences(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/global_settings_16px.png")
+        : UIActionSimple(pParent, ":/global_settings_16px.png", ":/global_settings_16px.png")
     {
         setMenuRole(QAction::PreferencesRole);
         retranslateUi();

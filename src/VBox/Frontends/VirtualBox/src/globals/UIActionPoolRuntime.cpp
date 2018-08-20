@@ -755,7 +755,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformMinimizeWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/minimize_16px.png")
+        : UIActionSimple(pParent, ":/minimize_16px.png", ":/minimize_16px.png")
     {}
 
 protected:
@@ -893,7 +893,7 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Perform Take Snapshot' action class. */
+/** Simple action extension, used as 'Perform Take Screenshot' action class. */
 class UIActionSimpleRuntimePerformTakeScreenshot : public UIActionSimple
 {
     Q_OBJECT;
@@ -989,7 +989,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowVideoCaptureSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/video_capture_settings_16px.png")
+        : UIActionSimple(pParent, ":/video_capture_settings_16px.png", ":/video_capture_settings_16px.png")
     {}
 
 protected:
@@ -1207,8 +1207,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleRuntimeMenuBar(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/menubar_on_16px.png", ":/menubar_16px.png",
-                                  ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png")
+        : UIActionToggle(pParent,
+                         ":/menubar_on_16px.png", ":/menubar_16px.png",
+                         ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png")
     {}
 
 protected:
@@ -1334,8 +1335,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleRuntimeStatusBar(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/statusbar_on_16px.png", ":/statusbar_16px.png",
-                                  ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png")
+        : UIActionToggle(pParent,
+                         ":/statusbar_on_16px.png", ":/statusbar_16px.png",
+                         ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png")
     {}
 
 protected:

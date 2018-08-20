@@ -71,7 +71,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowVirtualMediaManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/media_manager_16px.png")
+        : UIActionSimple(pParent, ":/media_manager_16px.png", ":/media_manager_16px.png")
     {}
 
 protected:
@@ -105,7 +105,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowHostNetworkManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/host_iface_manager_16px.png")
+        : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_16px.png")
     {}
 
 protected:
@@ -139,7 +139,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowImportApplianceWizard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/import_16px.png")
+        : UIActionSimple(pParent, ":/import_16px.png", ":/import_16px.png")
     {}
 
 protected:
@@ -173,7 +173,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowExportApplianceWizard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/export_16px.png")
+        : UIActionSimple(pParent, ":/export_16px.png", ":/export_16px.png")
     {}
 
 protected:
@@ -208,7 +208,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowExtraDataManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/edata_manager_16px.png")
+        : UIActionSimple(pParent, ":/edata_manager_16px.png", ":/edata_manager_16px.png")
     {}
 
 protected:
@@ -243,7 +243,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFilePerformExit(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/exit_16px.png")
+        : UIActionSimple(pParent, ":/exit_16px.png", ":/exit_16px.png")
     {
         setMenuRole(QAction::QuitRole);
     }
@@ -337,7 +337,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorGroupPerformAddMachine(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_add_16px.png")
+        : UIActionSimple(pParent, ":/vm_add_16px.png", ":/vm_add_16px.png")
     {}
 
 protected:
@@ -525,7 +525,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorMachinePerformAdd(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_add_16px.png")
+        : UIActionSimple(pParent, ":/vm_add_16px.png", ":/vm_add_16px.png")
     {}
 
 protected:
@@ -817,7 +817,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorCommonPerformStartNormal(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_start_16px.png")
+        : UIActionSimple(pParent, ":/vm_start_16px.png", ":/vm_start_16px.png")
     {}
 
 protected:
@@ -845,7 +845,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorCommonPerformStartHeadless(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_start_headless_16px.png")
+        : UIActionSimple(pParent, ":/vm_start_headless_16px.png", ":/vm_start_headless_16px.png")
     {}
 
 protected:
@@ -873,7 +873,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorCommonPerformStartDetachable(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_start_separate_16px.png")
+        : UIActionSimple(pParent, ":/vm_start_separate_16px.png", ":/vm_start_separate_16px.png")
     {}
 
 protected:
@@ -1300,7 +1300,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleSelectorToolsMachine(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/tools_machine_32px.png")
+        : UIActionToggle(pParent, ":/tools_machine_32px.png", ":/tools_machine_32px.png")
     {}
 
 protected:
@@ -1447,7 +1447,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleSelectorToolsGlobal(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/tools_global_32px.png")
+        : UIActionToggle(pParent, ":/tools_global_32px.png", ":/tools_global_32px.png")
     {}
 
 protected:

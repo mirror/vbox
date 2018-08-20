@@ -288,12 +288,13 @@ class SHARED_LIBRARY_STUFF UIActionSimple : public UIAction
 
 protected:
 
+    /** Constructs simple action passing @a pParent to the base-class. */
+    UIActionSimple(UIActionPool *pParent);
     /** Constructs simple action passing @a pParent to the base-class.
       * @param  strIcon          Brings the normal-icon name.
       * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionSimple(UIActionPool *pParent,
-                   const QString &strIcon = QString(),
-                   const QString &strIconDisabled = QString());
+                   const QString &strIcon, const QString &strIconDisabled);
     /** Constructs simple action passing @a pParent to the base-class.
       * @param  strIconNormal          Brings the normal-icon name.
       * @param  strIconSmall           Brings the small-icon name.
@@ -316,11 +317,13 @@ class SHARED_LIBRARY_STUFF UIActionToggle : public UIAction
 
 protected:
 
+    /** Constructs toggle action passing @a pParent to the base-class. */
+    UIActionToggle(UIActionPool *pParent);
     /** Constructs toggle action passing @a pParent to the base-class.
       * @param  strIcon          Brings the normal-icon name.
       * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionToggle(UIActionPool *pParent,
-                   const QString &strIcon = QString(), const QString &strIconDisabled = QString());
+                   const QString &strIcon, const QString &strIconDisabled);
     /** Constructs toggle action passing @a pParent to the base-class.
       * @param  strIconOn           Brings the on-icon name.
       * @param  strIconOff          Brings the off-icon name.
