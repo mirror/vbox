@@ -1114,6 +1114,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** Pointer to a const VMXMSRS struct. */
 typedef const VMXMSRS *PCVMXMSRS;
 
+
 /** @name VMX Basic Exit Reasons.
  * @{
  */
@@ -3091,7 +3092,7 @@ DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pHCPhysVmcs);
  * @retval  VERR_VMX_INVALID_VMCS_PTR.
  * @retval  VERR_VMX_INVALID_VMCS_FIELD.
  *
- * @param   idxField        VMCS index.
+ * @param   uFieldEnc       VMCS field encoding.
  * @param   u32Val          32-bit value.
  *
  * @remarks The values of the two status codes can be OR'ed together, the result
