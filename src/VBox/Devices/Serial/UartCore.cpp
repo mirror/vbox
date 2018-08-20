@@ -647,6 +647,11 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
     if (cbFilled)
     {
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
+        if (pFifo->cbUsed < pFifo->cbItl)
+        {
+            pThis->fIrqCtiPending = false;
+            TMTimerSetRelative(pThis->CTX_SUFF(pTimerRcvFifoTimeout), pThis->cSymbolXferTicks * 4, NULL);
+        }
         uartIrqUpdate(pThis);
     }
 
@@ -1070,11 +1075,8 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
                     TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
                     UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
                 }
-                else
-                {
-                    uint64_t tsCtiFire = TMTimerGet(pThis->CTX_SUFF(pTimerRcvFifoTimeout)) + pThis->cSymbolXferTicks * 4;
-                    TMTimerSet(pThis->CTX_SUFF(pTimerRcvFifoTimeout), tsCtiFire);
-                }
+                else if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
+                    TMTimerSetRelative(pThis->CTX_SUFF(pTimerRcvFifoTimeout), pThis->cSymbolXferTicks * 4, NULL);
                 uartIrqUpdate(pThis);
             }
         }
@@ -1361,10 +1363,11 @@ DECLHIDDEN(int) uartRegRead(PUARTCORE pThis, uint32_t uReg, uint32_t *pu32, size
  */
 static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    LogFlowFunc(("pDevIns=%#p pTimer=%#p pvUser=%#p\n", pDevIns, pTimer, pvUser));
     RT_NOREF(pDevIns, pTimer);
     PUARTCORE pThis = (PUARTCORE)pvUser;
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    if (pThis->FifoRecv.cbUsed)
+    if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
     {
         pThis->fIrqCtiPending = true;
         uartIrqUpdate(pThis);
