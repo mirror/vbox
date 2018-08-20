@@ -143,7 +143,7 @@ static DECLCALLBACK(int) rtDbgStackDumpSelfModReader(void *pvBuf, size_t cb, siz
 
 
 /**
- * @interface_emthod_impl{RTDBGUNWINDSTATE,pfnReadStack}
+ * @interface_method_impl{RTDBGUNWINDSTATE,pfnReadStack}
  */
 static DECLCALLBACK(int) rtDbgStackDumpSelfReader(PRTDBGUNWINDSTATE pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst)
 {
