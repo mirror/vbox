@@ -1114,7 +1114,6 @@ typedef VMXMSRS *PVMXMSRS;
 /** Pointer to a const VMXMSRS struct. */
 typedef const VMXMSRS *PCVMXMSRS;
 
-
 /** @name VMX Basic Exit Reasons.
  * @{
  */
@@ -1777,6 +1776,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_HOST_SYSENTER_EIP                              0x6c12
 #define VMX_VMCS_HOST_RSP                                       0x6c14
 #define VMX_VMCS_HOST_RIP                                       0x6c16
+/** @} */
+
+
+/** @name VMCS field encoding: Widths
+ * @{ */
+typedef enum
+{
+    VMXVMCSFIELDWIDTH_16BIT = 0,
+    VMXVMCSFIELDWIDTH_64BIT,
+    VMXVMCSFIELDWIDTH_32BIT,
+    VMXVMCSFIELDWIDTH_NATURAL
+} VMXVMCSFIELDWIDTH;
+AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
 /** @} */
 
 
@@ -2806,6 +2818,30 @@ typedef VMXVVMCS *PVMXVVMCS;
 /** Pointer to a const VMXVVMCS struct. */
 typedef const VMXVVMCS *PCVMXVVMCS;
 
+/** @} */
+
+
+/** @defgroup grp_hm_vmx_inline    VMX Inline Helpers
+ * @{
+ */
+/**
+ * Gets the width of a VMCS field given it's encoding.
+ *
+ * @returns The VMCS field width.
+ * @param   uFieldEnc   The VMCS field encoding.
+ *
+ * @remarks Warning! This function does not verify the encoding is for a valid and
+ *          supported VMCS field.
+ */
+DECLINLINE(uint32_t) HMVmxGetVmcsFieldWidth(uint32_t uFieldEnc)
+{
+    /* Only the "HIGH" parts of all 64-bit fields have bit 0 set. */
+    if (uFieldEnc & RT_BIT(0))
+        return VMXVMCSFIELDWIDTH_32BIT;
+
+    /* Bits 13:14 contains the width of the VMCS field, see VMXVMCSFIELDWIDTH_XXX. */
+    return (uFieldEnc >> 13) & 0x3;
+}
 /** @} */
 
 
