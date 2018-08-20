@@ -5510,7 +5510,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
              u8Vector, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, cbInstr, fFlags, uErr, uCr2, pVCpu->iem.s.uCurXcpt,
              pVCpu->iem.s.cXcptRecursions + 1, fPrevXcpt));
 
-        if (pVCpu->iem.s.cXcptRecursions >= 3)
+        if (pVCpu->iem.s.cXcptRecursions >= 4)
         {
 #ifdef DEBUG_bird
             AssertFailed();
