@@ -2708,7 +2708,7 @@ AssertCompileSize(VMXVMCSFIELDENC, 4);
 typedef VMXVMCSFIELDENC *PVMXVMCSFIELDENC;
 /** Pointer to a const VMCS field encoding. */
 typedef const VMXVMCSFIELDENC *PCVMXVMCSFIELDENC;
-/** Bits fields VMCS field encoding. */
+/** Bits fields for VMCS field encoding. */
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_MASK                        UINT32_C(0x00000001)
 #define VMX_BF_VMCS_ENC_INDEX_SHIFT                             1
