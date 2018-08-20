@@ -88,7 +88,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -138,7 +138,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTakeSnapshot(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/snapshot_take_16px.png", ":/snapshot_take_disabled_16px.png")
+        : UIActionSimple(pParent, ":/snapshot_take_16px.png", ":/snapshot_take_disabled_16px.png", true)
     {}
 
 protected:
@@ -188,7 +188,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowInformationDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png")
+        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png", true)
     {}
 
 protected:
@@ -240,7 +240,8 @@ public:
     UIActionToggleRuntimePause(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
-                         ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png")
+                         ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -290,7 +291,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformReset(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png", true)
     {}
 
 protected:
@@ -340,7 +341,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformDetach(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png", true)
     {}
 
 protected:
@@ -384,7 +385,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformSaveState(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png", true)
     {}
 
 protected:
@@ -428,7 +429,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformShutdown(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png", true)
     {}
 
 protected:
@@ -482,7 +483,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformPowerOff(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png", true)
     {}
 
 protected:
@@ -600,7 +601,8 @@ public:
     UIActionToggleRuntimeFullscreenMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/fullscreen_on_16px.png", ":/fullscreen_16px.png",
-                         ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png")
+                         ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -652,7 +654,8 @@ public:
     UIActionToggleRuntimeSeamlessMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/seamless_on_16px.png", ":/seamless_16px.png",
-                         ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png")
+                         ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -704,7 +707,8 @@ public:
     UIActionToggleRuntimeScaledMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/scale_on_16px.png", ":/scale_16px.png",
-                         ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png")
+                         ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -755,7 +759,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformMinimizeWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/minimize_16px.png", ":/minimize_16px.png")
+        : UIActionSimple(pParent, ":/minimize_16px.png", ":/minimize_16px.png", true)
     {}
 
 protected:
@@ -806,7 +810,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformWindowAdjust(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png")
+        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png", true)
     {}
 
 protected:
@@ -858,7 +862,8 @@ public:
     UIActionToggleRuntimeGuestAutoresize(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/auto_resize_on_on_16px.png", ":/auto_resize_on_16px.png",
-                         ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png")
+                         ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -902,7 +907,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTakeScreenshot(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png")
+        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png", true)
     {}
 
 protected:
@@ -989,7 +994,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowVideoCaptureSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/video_capture_settings_16px.png", ":/video_capture_settings_16px.png")
+        : UIActionSimple(pParent, ":/video_capture_settings_16px.png", ":/video_capture_settings_16px.png", true)
     {}
 
 protected:
@@ -1035,7 +1040,8 @@ public:
     UIActionToggleRuntimeVideoCapture(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/video_capture_on_16px.png", ":/video_capture_16px.png",
-                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png")
+                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -1081,7 +1087,8 @@ public:
     UIActionToggleRuntimeVRDEServer(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vrdp_on_16px.png", ":/vrdp_16px.png",
-                         ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png")
+                         ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -1162,7 +1169,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowMenuBarSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/menubar_settings_16px.png", ":/menubar_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/menubar_settings_16px.png", ":/menubar_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -1209,7 +1216,8 @@ public:
     UIActionToggleRuntimeMenuBar(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/menubar_on_16px.png", ":/menubar_16px.png",
-                         ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png")
+                         ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -1291,7 +1299,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowStatusBarSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -1337,7 +1345,8 @@ public:
     UIActionToggleRuntimeStatusBar(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/statusbar_on_16px.png", ":/statusbar_16px.png",
-                         ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png")
+                         ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -1493,7 +1502,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowKeyboardSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -1537,7 +1546,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTypeCAD(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -1588,7 +1597,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTypeCABS(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -1639,7 +1648,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTypeCtrlBreak(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -1683,7 +1692,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTypeInsert(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -1727,7 +1736,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTypePrintScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -1771,7 +1780,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformTypeAltPrintScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -1854,7 +1863,8 @@ public:
     UIActionToggleRuntimeMouseIntegration(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
-                         ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png")
+                         ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png",
+                         true)
     {}
 
 protected:
@@ -1975,7 +1985,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowHardDrivesSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -2136,7 +2146,8 @@ public:
     UIActionToggleRuntimeAudioOutput(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/audio_output_on_16px.png", ":/audio_output_16px.png",
-                         ":/audio_output_on_16px.png", ":/audio_output_16px.png")
+                         ":/audio_output_on_16px.png", ":/audio_output_16px.png",
+                         true)
     {}
 
 protected:
@@ -2182,7 +2193,8 @@ public:
     UIActionToggleRuntimeAudioInput(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/audio_input_on_16px.png", ":/audio_input_16px.png",
-                         ":/audio_input_on_16px.png", ":/audio_input_16px.png")
+                         ":/audio_input_on_16px.png", ":/audio_input_16px.png",
+                         true)
     {}
 
 protected:
@@ -2263,7 +2275,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowNetworkSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -2346,7 +2358,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowUSBDevicesSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -2540,7 +2552,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowSharedFoldersSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png")
+        : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png", true)
     {}
 
 protected:
@@ -2584,7 +2596,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformInstallGuestTools(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png")
+        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png", true)
     {}
 
 protected:
@@ -2666,7 +2678,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowStatistics(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -2709,7 +2721,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowCommandLine(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:
@@ -2752,7 +2764,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleRuntimeLogging(UIActionPool *pParent)
-        : UIActionToggle(pParent)
+        : UIActionToggle(pParent, true)
     {}
 
 protected:
@@ -2795,7 +2807,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowLogs(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, true)
     {}
 
 protected:

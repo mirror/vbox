@@ -105,9 +105,10 @@ bool UIMenu::event(QEvent *pEvent)
 *   Class UIAction implementation.                                                                                               *
 *********************************************************************************************************************************/
 
-UIAction::UIAction(UIActionPool *pParent, UIActionType enmType)
+UIAction::UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction /* = false */)
     : QAction(pParent)
     , m_enmType(enmType)
+    , m_fMachineMenuAction(fMachineMenuAction)
     , m_pActionPool(pParent)
     , m_enmActionPoolType(pParent->type())
     , m_iState(0)
@@ -210,13 +211,20 @@ void UIAction::updateText()
     {
         /* The same as menu name for Selector UI: */
         case UIActionPoolType_Selector:
+        {
             setText(nameInMenu());
             break;
+        }
         /* With shortcut appended for Runtime UI: */
         case UIActionPoolType_Runtime:
-            setText(vboxGlobal().insertKeyToActionText(nameInMenu(),
-                                                       gShortcutPool->shortcut(actionPool(), this).toString()));
+        {
+            if (machineMenuAction())
+                setText(vboxGlobal().insertKeyToActionText(nameInMenu(),
+                                                           gShortcutPool->shortcut(actionPool(), this).toString()));
+            else
+                setText(nameInMenu());
             break;
+        }
     }
 }
 
@@ -270,29 +278,33 @@ void UIActionMenu::updateText()
 *   Class UIActionSimple implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UIActionSimple::UIActionSimple(UIActionPool *pParent)
-    : UIAction(pParent, UIActionType_Simple)
+UIActionSimple::UIActionSimple(UIActionPool *pParent,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
-                               const QString &strIcon, const QString &strIconDisabled)
-    : UIAction(pParent, UIActionType_Simple)
+                               const QString &strIcon, const QString &strIconDisabled,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
     setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                const QString &strIconNormal, const QString &strIconSmall,
-                               const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
-    : UIAction(pParent, UIActionType_Simple)
+                               const QString &strIconNormalDisabled, const QString &strIconSmallDisabled,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
     setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
-                               const QIcon &icon)
-    : UIAction(pParent, UIActionType_Simple)
+                               const QIcon &icon,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
     setIcon(icon);
 }
@@ -302,14 +314,16 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
 *   Class UIActionToggle implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UIActionToggle::UIActionToggle(UIActionPool *pParent)
-    : UIAction(pParent, UIActionType_Toggle)
+UIActionToggle::UIActionToggle(UIActionPool *pParent,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
 }
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
-                               const QString &strIcon, const QString &strIconDisabled)
-    : UIAction(pParent, UIActionType_Toggle)
+                               const QString &strIcon, const QString &strIconDisabled,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
     setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
     prepare();
@@ -317,16 +331,18 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
                                const QString &strIconOn, const QString &strIconOff,
-                               const QString &strIconOnDisabled, const QString &strIconOffDisabled)
-    : UIAction(pParent, UIActionType_Toggle)
+                               const QString &strIconOnDisabled, const QString &strIconOffDisabled,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
     setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff, strIconOnDisabled, strIconOffDisabled));
     prepare();
 }
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
-                               const QIcon &icon)
-    : UIAction(pParent, UIActionType_Toggle)
+                               const QIcon &icon,
+                               bool fMachineMenuAction /* = false */)
+    : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
     if (!icon.isNull())
         setIcon(icon);
@@ -481,7 +497,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformClose(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/exit_16px.png", ":/exit_16px.png")
+        : UIActionSimple(pParent, ":/exit_16px.png", ":/exit_16px.png", true)
     {
         setMenuRole(QAction::QuitRole);
     }
@@ -663,7 +679,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleContents(UIActionPool *pParent)
-        : UIActionSimple(pParent, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogHelp))
+        : UIActionSimple(pParent, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogHelp), true)
     {
         retranslateUi();
     }
@@ -721,7 +737,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleWebSite(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_16px.png", ":/site_16px.png")
+        : UIActionSimple(pParent, ":/site_16px.png", ":/site_16px.png", true)
     {
         retranslateUi();
     }
@@ -768,7 +784,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleBugTracker(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_bugtracker_16px.png", ":/site_bugtracker_16px.png")
+        : UIActionSimple(pParent, ":/site_bugtracker_16px.png", ":/site_bugtracker_16px.png", true)
     {
         retranslateUi();
     }
@@ -815,7 +831,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleForums(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_forum_16px.png", ":/site_forum_16px.png")
+        : UIActionSimple(pParent, ":/site_forum_16px.png", ":/site_forum_16px.png", true)
     {
         retranslateUi();
     }
@@ -862,7 +878,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleOracle(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_oracle_16px.png", ":/site_oracle_16px.png")
+        : UIActionSimple(pParent, ":/site_oracle_16px.png", ":/site_oracle_16px.png", true)
     {
         retranslateUi();
     }
@@ -909,7 +925,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleResetWarnings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/reset_warnings_16px.png", ":/reset_warnings_16px.png")
+        : UIActionSimple(pParent, ":/reset_warnings_16px.png", ":/reset_warnings_16px.png", true)
     {
         setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
@@ -958,7 +974,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleNetworkAccessManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/download_manager_16px.png", ":/download_manager_16px.png")
+        : UIActionSimple(pParent, ":/download_manager_16px.png", ":/download_manager_16px.png", true)
     {
         setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
@@ -1006,7 +1022,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleCheckForUpdates(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/refresh_16px.png", ":/refresh_disabled_16px.png")
+        : UIActionSimple(pParent, ":/refresh_16px.png", ":/refresh_disabled_16px.png", true)
     {
         setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
@@ -1055,7 +1071,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleAbout(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/about_16px.png", ":/about_16px.png")
+        : UIActionSimple(pParent, ":/about_16px.png", ":/about_16px.png", true)
     {
         setMenuRole(QAction::AboutRole);
         retranslateUi();
@@ -1115,7 +1131,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePreferences(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/global_settings_16px.png", ":/global_settings_16px.png")
+        : UIActionSimple(pParent, ":/global_settings_16px.png", ":/global_settings_16px.png", true)
     {
         setMenuRole(QAction::PreferencesRole);
         retranslateUi();

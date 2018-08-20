@@ -163,6 +163,8 @@ public:
 
     /** Returns action type. */
     UIActionType type() const { return m_enmType; }
+    /** Returns whether this is machine-menu action. */
+    bool machineMenuAction() const { return m_fMachineMenuAction; }
 
     /** Returns menu contained by this action. */
     UIMenu *menu() const;
@@ -216,7 +218,7 @@ protected:
 
     /** Constructs action passing @a pParent to the base-class.
       * @param  enmType  Brings the action type. */
-    UIAction(UIActionPool *pParent, UIActionType enmType);
+    UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction = false);
 
     /** Returns current action name in menu. */
     QString nameInMenu() const;
@@ -231,6 +233,8 @@ private:
 
     /** Holds the action type. */
     UIActionType  m_enmType;
+    /** Holds whether this is machine-menu action. */
+    bool          m_fMachineMenuAction;
 
     /** Holds the reference to the action-pool this action belongs to. */
     UIActionPool     *m_pActionPool;
@@ -288,25 +292,33 @@ class SHARED_LIBRARY_STUFF UIActionSimple : public UIAction
 
 protected:
 
-    /** Constructs simple action passing @a pParent to the base-class. */
-    UIActionSimple(UIActionPool *pParent);
     /** Constructs simple action passing @a pParent to the base-class.
-      * @param  strIcon          Brings the normal-icon name.
-      * @param  strIconDisabled  Brings the disabled-icon name. */
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
     UIActionSimple(UIActionPool *pParent,
-                   const QString &strIcon, const QString &strIconDisabled);
+                   bool fMachineMenuAction = false);
+    /** Constructs simple action passing @a pParent to the base-class.
+      * @param  strIcon             Brings the normal-icon name.
+      * @param  strIconDisabled     Brings the disabled-icon name.
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
+    UIActionSimple(UIActionPool *pParent,
+                   const QString &strIcon, const QString &strIconDisabled,
+                   bool fMachineMenuAction = false);
     /** Constructs simple action passing @a pParent to the base-class.
       * @param  strIconNormal          Brings the normal-icon name.
       * @param  strIconSmall           Brings the small-icon name.
       * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
-      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
+      * @param  strIconSmallDisabled   Brings the small-disabled-icon name.
+      * @param  fMachineMenuAction     Brings whether this action is a part of machine menu. */
     UIActionSimple(UIActionPool *pParent,
                    const QString &strIconNormal, const QString &strIconSmall,
-                   const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
+                   const QString &strIconNormalDisabled, const QString &strIconSmallDisabled,
+                   bool fMachineMenuAction = false);
     /** Constructs simple action passing @a pParent to the base-class.
-      * @param  icon  Brings the icon. */
+      * @param  icon                Brings the icon.
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
     UIActionSimple(UIActionPool *pParent,
-                   const QIcon &icon);
+                   const QIcon &icon,
+                   bool fMachineMenuAction = false);
 };
 
 
@@ -317,25 +329,33 @@ class SHARED_LIBRARY_STUFF UIActionToggle : public UIAction
 
 protected:
 
-    /** Constructs toggle action passing @a pParent to the base-class. */
-    UIActionToggle(UIActionPool *pParent);
     /** Constructs toggle action passing @a pParent to the base-class.
-      * @param  strIcon          Brings the normal-icon name.
-      * @param  strIconDisabled  Brings the disabled-icon name. */
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
     UIActionToggle(UIActionPool *pParent,
-                   const QString &strIcon, const QString &strIconDisabled);
+                   bool fMachineMenuAction = false);
+    /** Constructs toggle action passing @a pParent to the base-class.
+      * @param  strIcon             Brings the normal-icon name.
+      * @param  strIconDisabled     Brings the disabled-icon name.
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
+    UIActionToggle(UIActionPool *pParent,
+                   const QString &strIcon, const QString &strIconDisabled,
+                   bool fMachineMenuAction = false);
     /** Constructs toggle action passing @a pParent to the base-class.
       * @param  strIconOn           Brings the on-icon name.
       * @param  strIconOff          Brings the off-icon name.
       * @param  strIconOnDisabled   Brings the on-disabled-icon name.
-      * @param  strIconOffDisabled  Brings the off-disabled-icon name. */
+      * @param  strIconOffDisabled  Brings the off-disabled-icon name.
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
     UIActionToggle(UIActionPool *pParent,
                    const QString &strIconOn, const QString &strIconOff,
-                   const QString &strIconOnDisabled, const QString &strIconOffDisabled);
+                   const QString &strIconOnDisabled, const QString &strIconOffDisabled,
+                   bool fMachineMenuAction = false);
     /** Constructs toggle action passing @a pParent to the base-class.
-      * @param  icon  Brings the icon. */
+      * @param  icon                Brings the icon.
+      * @param  fMachineMenuAction  Brings whether this action is a part of machine menu. */
     UIActionToggle(UIActionPool *pParent,
-                   const QIcon &icon);
+                   const QIcon &icon,
+                   bool fMachineMenuAction = false);
 
 private:
 
