@@ -2683,8 +2683,32 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 
 /** @name VMCS field encoding.
  * @{ */
-#define VMX_VMCS_ENC_GET_INDEX(a)
-
+typedef union
+{
+    struct
+    {
+        /** The access type; 0=full, 1=high of 64-bit fields. */
+        uint32_t    fAccessType  : 1;
+        /** The index. */
+        uint32_t    uIndex       : 8;
+        /** The type; 0=control, 1=VM-exit info, 2=guest-state, 3=host-state.  */
+        uint32_t    uType        : 2;
+        /** Reserved (MBZ). */
+        uint32_t    u1Reserved0  : 1;
+        /** The width; 0=16-bit, 1=64-bit, 2=32-bit, 3=natural-width. */
+        uint32_t    uWidth       : 2;
+        /** Reserved (MBZ). */
+        uint32_t    u18Reserved0 : 18;
+    } n;
+    /* The unsigned integer view. */
+    uint32_t    u;
+} VMXVMCSFIELDENC;
+AssertCompileSize(VMXVMCSFIELDENC, 4);
+/** Pointer to a VMCS field encoding. */
+typedef VMXVMCSFIELDENC *PVMXVMCSFIELDENC;
+/** Pointer to a const VMCS field encoding. */
+typedef const VMXVMCSFIELDENC *PCVMXVMCSFIELDENC;
+/** Bits fields VMCS field encoding. */
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_MASK                        UINT32_C(0x00000001)
 #define VMX_BF_VMCS_ENC_INDEX_SHIFT                             1
@@ -2725,7 +2749,7 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 #define VMX_V_VMCS_PAGES                                        1
 
 /** The highest index value used for supported virtual VMCS field encoding. */
-#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS32_PREEMPT_TIMER_VALUE, VMX_BF_VMCS_ENC_INDEX)
+#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCS_ENC_INDEX)
 
 /** Whether physical addresses of VMXON and VMCS related structures (I/O bitmap
  *  etc.) are limited to 32-bits (4G). Always 0 on 64-bit CPUs. */
