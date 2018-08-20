@@ -2563,8 +2563,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                     /* Kick off the creation of a dynamic growing disk image with the given capacity. */
                     rc = pTargetMedium->CreateBaseStorage(di.iCapacity / _1M,
-                                                      ComSafeArrayAsInParam(mediumVariant),
-                                                      pProgressImport.asOutParam());
+                                                          ComSafeArrayAsInParam(mediumVariant),
+                                                          pProgressImport.asOutParam());
                     if (FAILED(rc)) throw rc;
 
                     /* Advance to the next operation. */
@@ -2624,13 +2624,23 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* Start the source image cloning operation. */
                     ComObjPtr<Medium> nullParent;
                     ComObjPtr<Progress> pProgressImportTmp;
+                    rc = pProgressImportTmp.createObject();
+                    if (FAILED(rc)) throw rc;
+                    rc = pProgressImportTmp->init(mVirtualBox,
+                                                  static_cast<IAppliance*>(this),
+                                                  Utf8StrFmt(tr("Importing medium '%s'"),
+                                                             strAbsDstPath.c_str()),
+                                                  TRUE);
+                    if (FAILED(rc)) throw rc;
+                    pProgressImportTmp.queryInterfaceTo(pProgressImport.asOutParam());
+                    /* pProgressImportTmp is in parameter for Medium::i_importFile,
+                     * which is somewhat unusual and might be changed later. */
                     rc = pTargetMedium->i_importFile(strSrcFilePath.c_str(),
                                                      srcFormat,
                                                      MediumVariant_Standard,
                                                      hVfsIosReadAhead,
                                                      nullParent,
                                                      pProgressImportTmp);
-                    pProgressImportTmp.queryInterfaceTo(pProgressImport.asOutParam());
                     RTVfsIoStrmRelease(hVfsIosReadAhead);
                     hVfsIosSrc = NIL_RTVFSIOSTREAM;
                     if (FAILED(rc))
