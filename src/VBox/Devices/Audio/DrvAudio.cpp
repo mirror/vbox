@@ -2302,6 +2302,15 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             AudioMixBufReleaseReadBlock(&pStream->Guest.MixBuf, cfRead);
         }
 
+        if (cfReadTotal)
+        {
+            if (pThis->In.Cfg.Dbg.fEnabled)
+                DrvAudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
+                                     pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal), 0 /* fFlags */);
+
+            AudioMixBufFinish(&pStream->Guest.MixBuf, cfReadTotal);
+        }
+
         /* If we were not able to read as much data as requested, fill up the returned
          * data with silence.
          *
@@ -2320,16 +2329,7 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             cfReadTotal = cfBuf;
         }
 
-        if (cfReadTotal)
-        {
-            if (pThis->In.Cfg.Dbg.fEnabled)
-                DrvAudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
-                                     pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal), 0 /* fFlags */);
-
-            AudioMixBufFinish(&pStream->Guest.MixBuf, cfReadTotal);
-
-            cbReadTotal = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal);
-        }
+        cbReadTotal = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal);
 
         pStream->tsLastReadWrittenNs = RTTimeNanoTS();
 
