@@ -467,7 +467,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                     }
 
                     /* Create sliding-widget: */
-                    m_pSlidingWidget = new UISlidingWidget;
+                    m_pSlidingWidget = new UISlidingWidget(Qt::Vertical);
                     if (m_pSlidingWidget)
                     {
                         /* Create Machine Tools-pane: */

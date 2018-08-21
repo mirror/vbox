@@ -22,7 +22,7 @@
 #include <QWidget>
 
 /* Forward declarations: */
-class QHBoxLayout;
+class QBoxLayout;
 class QRect;
 class QWidget;
 class UIAnimation;
@@ -55,8 +55,9 @@ public:
         State_GoingBackward
     };
 
-    /** Constructs sliding widget passing @a pParent to the base-class. */
-    UISlidingWidget(QWidget *pParent = 0);
+    /** Constructs sliding widget passing @a pParent to the base-class.
+      * @param  enmOrientation  Brings the widget orientation. */
+    UISlidingWidget(Qt::Orientation enmOrientation, QWidget *pParent = 0);
 
     /** Holds the minimum widget size. */
     virtual QSize minimumSizeHint() const /* pverride */;
@@ -104,6 +105,9 @@ private:
     /** Returns sub-window final-geometry. */
     QRect finalWidgetGeometry() const { return m_finalWidgetGeometry; }
 
+    /** Holds the widget orientation. */
+    Qt::Orientation  m_enmOrientation;
+
     /** Holds whether we are in animation final state. */
     State        m_enmState;
     /** Holds the shift left/right animation instance. */
@@ -116,7 +120,7 @@ private:
     /** Holds the private sliding widget instance. */
     QWidget     *m_pWidget;
     /** Holds the widget layout instance. */
-    QHBoxLayout *m_pLayout;
+    QBoxLayout  *m_pLayout;
     /** Holds the 1st widget reference. */
     QWidget     *m_pWidget1;
     /** Holds the 2nd widget reference. */

@@ -2046,7 +2046,7 @@ void UISelectorWindow::prepareWidgets()
 #endif
 
             /* Create sliding-widget: */
-            m_pSlidingWidget = new UISlidingWidget;
+            m_pSlidingWidget = new UISlidingWidget(Qt::Horizontal);
             AssertPtrReturnVoid(m_pSlidingWidget);
             {
                 /* Create splitter: */

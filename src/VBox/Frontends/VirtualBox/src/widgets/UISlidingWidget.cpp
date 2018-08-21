@@ -18,14 +18,16 @@
 /* Qt includes: */
 #include <QEvent>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIAnimationFramework.h"
 #include "UISlidingWidget.h"
 
 
-UISlidingWidget::UISlidingWidget(QWidget *pParent /* = 0 */)
+UISlidingWidget::UISlidingWidget(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
+    , m_enmOrientation(enmOrientation)
     , m_enmState(State_Start)
     , m_pAnimation(0)
     , m_pWidget(0)
@@ -116,7 +118,11 @@ void UISlidingWidget::prepare()
     if (m_pWidget)
     {
         /* Create layout: */
-        m_pLayout = new QHBoxLayout(m_pWidget);
+        switch (m_enmOrientation)
+        {
+            case Qt::Horizontal: m_pLayout = new QHBoxLayout(m_pWidget); break;
+            case Qt::Vertical:   m_pLayout = new QVBoxLayout(m_pWidget); break;
+        }
         if (m_pLayout)
         {
             /* Configure layout: */
@@ -134,10 +140,25 @@ void UISlidingWidget::prepare()
 void UISlidingWidget::updateAnimation()
 {
     /* Recalculate sub-window geometry animation boundaries based on size-hint: */
-    m_startWidgetGeometry = QRect(  0,           0,
-                                    2 * width(), height());
-    m_finalWidgetGeometry = QRect(- width(),     0,
-                                    2 * width(), height());
+    switch (m_enmOrientation)
+    {
+        case Qt::Horizontal:
+        {
+            m_startWidgetGeometry = QRect(  0,           0,
+                                            2 * width(), height());
+            m_finalWidgetGeometry = QRect(- width(),     0,
+                                            2 * width(), height());
+            break;
+        }
+        case Qt::Vertical:
+        {
+            m_startWidgetGeometry = QRect(0,       0,
+                                          width(), 2 * height());
+            m_finalWidgetGeometry = QRect(0,       -height(),
+                                          width(), 2 * height());
+            break;
+        }
+    }
 
     /* Update animation finally: */
     if (m_pAnimation)
