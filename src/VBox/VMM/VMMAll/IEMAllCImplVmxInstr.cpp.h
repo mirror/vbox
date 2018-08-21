@@ -104,7 +104,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
         uint8_t const bTmp3 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 3]; \
         (a_u64Disp) = (int32_t)RT_MAKE_U32_FROM_U8(bTmp0, bTmp1, bTmp2, bTmp3); \
     } while (0)
-#endif /* !IEM_WITH_CODE_TLB */
+# endif /* !IEM_WITH_CODE_TLB */
 
 
 #if 0 /* Disabled static fn until we use it with VMREAD/VMWRITE instruction implementation. */
