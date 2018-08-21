@@ -152,10 +152,10 @@ void UISlidingWidget::updateAnimation()
         }
         case Qt::Vertical:
         {
-            m_startWidgetGeometry = QRect(0,       0,
-                                          width(), 2 * height());
-            m_finalWidgetGeometry = QRect(0,       -height(),
-                                          width(), 2 * height());
+            m_startWidgetGeometry = QRect(0,         0,
+                                          width(),   2 * height());
+            m_finalWidgetGeometry = QRect(0,       - height(),
+                                          width(),   2 * height());
             break;
         }
     }
