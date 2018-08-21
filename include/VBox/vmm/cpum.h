@@ -1132,6 +1132,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxVirtNmi : 1;
     /** VMX: Supports preemption timer. */
     uint32_t        fVmxPreemptTimer : 1;
+    /** VMX: Supports posted interrupts. */
+    uint32_t        fVmxPostedInt : 1;
     /** @} */
 
     /** @name VMX Processor-based controls.
@@ -1159,7 +1161,7 @@ typedef struct CPUMFEATURES
     /** VMX: Supports CR8-store exiting. */
     uint32_t        fVmxCr8StoreExit : 1;
     /** VMX: Supports TPR shadow. */
-    uint32_t        fVmxTprShadow : 1;
+    uint32_t        fVmxUseTprShadow : 1;
     /** VMX: Supports NMI-window exiting. */
     uint32_t        fVmxNmiWindowExit : 1;
     /** VMX: Supports Mov-DRx exiting. */
@@ -1198,12 +1200,24 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxWbinvdExit : 1;
     /** VMX: Supports Unrestricted guest. */
     uint32_t        fVmxUnrestrictedGuest : 1;
+    /** VMX: Supports APIC-register virtualization. */
+    uint32_t        fVmxApicRegVirt : 1;
+    /** VMX: Supports virtual-interrupt delivery. */
+    uint32_t        fVmxVirtIntDelivery : 1;
     /** VMX: Supports Pause-loop exiting. */
     uint32_t        fVmxPauseLoopExit : 1;
     /** VMX: Supports INVPCID. */
     uint32_t        fVmxInvpcid : 1;
+    /** VMX: Supports VM functions. */
+    uint32_t        fVmxVmFunc : 1;
     /** VMX: Supports VMCS shadowing. */
     uint32_t        fVmxVmcsShadowing : 1;
+    /** VMX: Supports EPT-violations \#VE. */
+    uint32_t        fVmxEptXcptVe : 1;
+    /** VMX: Supports XSAVES/XRSTORS. */
+    uint32_t        fVmxXsavesXrstors : 1;
+    /** VMX: Supports TSC scaling. */
+    uint32_t        fVmxUseTscScaling : 1;
     /** @} */
 
     /** @name VMX VM-entry controls.
@@ -1214,6 +1228,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxIa32eModeGuest : 1;
     /** VMX: Supports load guest EFER MSR on VM-entry. */
     uint32_t        fVmxEntryLoadEferMsr : 1;
+    /** VMX: Supports load guest PAT MSR on VM-entry. */
+    uint32_t        fVmxEntryLoadPatMsr : 1;
     /** @} */
 
     /** @name VMX VM-exit controls.
@@ -1224,6 +1240,10 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxHostAddrSpaceSize : 1;
     /** VMX: Supports acknowledge external interrupt on VM-exit. */
     uint32_t        fVmxExitAckExtInt : 1;
+    /** VMX: Supports save guest PAT MSR on VM-exit. */
+    uint32_t        fVmxExitSavePatMsr : 1;
+    /** VMX: Supports load hsot PAT MSR on VM-exit. */
+    uint32_t        fVmxExitLoadPatMsr : 1;
     /** VMX: Supports save guest EFER MSR on VM-exit. */
     uint32_t        fVmxExitSaveEferMsr : 1;
     /** VMX: Supports load host EFER MSR on VM-exit. */
@@ -1245,7 +1265,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding0 : 15;
+    uint32_t        fVmxPadding0 : 5;
     uint32_t        fVmxPadding1;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
@@ -1304,6 +1324,7 @@ VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32FeatureControl(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32VmxBasic(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32VmxVmFunc(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32SmmMonitorCtl(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);

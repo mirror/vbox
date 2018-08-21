@@ -1346,7 +1346,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, ui
         uint32_t const fFeatures = (pGuestFeatures->fVmxExtIntExit   << VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT )
                                  | (pGuestFeatures->fVmxNmiExit      << VMX_BF_PIN_CTLS_NMI_EXIT_SHIFT     )
                                  | (pGuestFeatures->fVmxVirtNmi      << VMX_BF_PIN_CTLS_VIRT_NMI_SHIFT     )
-                                 | (pGuestFeatures->fVmxPreemptTimer << VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT);
+                                 | (pGuestFeatures->fVmxPreemptTimer << VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT)
+                                 | (pGuestFeatures->fVmxPostedInt    << VMX_BF_PIN_CTLS_POSTED_INT_SHIFT   );
         uint32_t const fVal      = VMX_PIN_CTLS_DEFAULT1;
         uint32_t const fZap      = fFeatures | VMX_PIN_CTLS_DEFAULT1;
         AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
@@ -1377,7 +1378,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, u
                                  | (pGuestFeatures->fVmxCr3StoreExit      << VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT    )
                                  | (pGuestFeatures->fVmxCr8LoadExit       << VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT     )
                                  | (pGuestFeatures->fVmxCr8StoreExit      << VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT    )
-                                 | (pGuestFeatures->fVmxTprShadow         << VMX_BF_PROC_CTLS_USE_TPR_SHADOW_SHIFT    )
+                                 | (pGuestFeatures->fVmxUseTprShadow      << VMX_BF_PROC_CTLS_USE_TPR_SHADOW_SHIFT    )
                                  | (pGuestFeatures->fVmxNmiWindowExit     << VMX_BF_PROC_CTLS_NMI_WINDOW_EXIT_SHIFT   )
                                  | (pGuestFeatures->fVmxMovDRxExit        << VMX_BF_PROC_CTLS_MOV_DR_EXIT_SHIFT       )
                                  | (pGuestFeatures->fVmxUncondIoExit      << VMX_BF_PROC_CTLS_UNCOND_IO_EXIT_SHIFT    )
@@ -1409,6 +1410,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32
         uint32_t const fFeatures = (pGuestFeatures->fVmxExitSaveDebugCtls << VMX_BF_EXIT_CTLS_SAVE_DEBUG_SHIFT          )
                                  | (pGuestFeatures->fVmxHostAddrSpaceSize << VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_SHIFT)
                                  | (pGuestFeatures->fVmxExitAckExtInt     << VMX_BF_EXIT_CTLS_ACK_EXT_INT_SHIFT         )
+                                 | (pGuestFeatures->fVmxExitSavePatMsr    << VMX_BF_EXIT_CTLS_SAVE_PAT_MSR_SHIFT        )
+                                 | (pGuestFeatures->fVmxExitLoadPatMsr    << VMX_BF_EXIT_CTLS_LOAD_PAT_MSR_SHIFT        )
                                  | (pGuestFeatures->fVmxExitSaveEferMsr   << VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxExitLoadEferMsr   << VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  );
@@ -1433,7 +1436,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint3
     {
         uint32_t const fFeatures = (pGuestFeatures->fVmxEntryLoadDebugCtls << VMX_BF_ENTRY_CTLS_LOAD_DEBUG_SHIFT      )
                                  | (pGuestFeatures->fVmxIa32eModeGuest     << VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_SHIFT)
-                                 | (pGuestFeatures->fVmxEntryLoadEferMsr   << VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT   );
+                                 | (pGuestFeatures->fVmxEntryLoadEferMsr   << VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT   )
+                                 | (pGuestFeatures->fVmxEntryLoadPatMsr    << VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_SHIFT    );
         uint32_t const fDefault1 = VMX_ENTRY_CTLS_DEFAULT1;
         uint32_t const fVal      = fDefault1;
         uint32_t const fZap      = fFeatures | fDefault1;
@@ -1564,9 +1568,15 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, 
                                  | (pGuestFeatures->fVmxVpid              << VMX_BF_PROC_CTLS2_VPID_SHIFT              )
                                  | (pGuestFeatures->fVmxWbinvdExit        << VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT       )
                                  | (pGuestFeatures->fVmxUnrestrictedGuest << VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_SHIFT)
+                                 | (pGuestFeatures->fVmxApicRegVirt       << VMX_BF_PROC_CTLS2_APIC_REG_VIRT_SHIFT     )
+                                 | (pGuestFeatures->fVmxVirtIntDelivery   << VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_SHIFT )
                                  | (pGuestFeatures->fVmxPauseLoopExit     << VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT   )
                                  | (pGuestFeatures->fVmxInvpcid           << VMX_BF_PROC_CTLS2_INVPCID_SHIFT           )
-                                 | (pGuestFeatures->fVmxVmcsShadowing     << VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT    );
+                                 | (pGuestFeatures->fVmxVmFunc            << VMX_BF_PROC_CTLS2_VMFUNC_SHIFT            )
+                                 | (pGuestFeatures->fVmxVmcsShadowing     << VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT    )
+                                 | (pGuestFeatures->fVmxEptXcptVe         << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT            )
+                                 | (pGuestFeatures->fVmxXsavesXrstors     << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT    )
+                                 | (pGuestFeatures->fVmxUseTscScaling     << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT       );
         uint32_t const fVal      = 0;
         uint32_t const fZap      = fFeatures;
         *puValue = RT_MAKE_U64(fVal, fZap);
@@ -1622,11 +1632,30 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueEntryCtls(PVMCPU pVCpu, u
 }
 
 
+/**
+ * Gets IA32_VMX_VMFUNC for IEM and cpumMsrRd_Ia32VmxVmFunc.
+ *
+ * @returns IA32_VMX_VMFUNC value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxVmFunc(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
+    if (   pGuestFeatures->fVmx
+        && pGuestFeatures->fVmxVmFunc)
+        uVmxMsr = RT_BF_MAKE(VMX_BF_VMFUNC_EPTP_SWITCHING, 1);
+    else
+        uVmxMsr = 0;
+    return uVmxMsr;
+}
+
+
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmFunc(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    *puValue = CPUMGetGuestIa32VmxVmFunc(pVCpu);
     return VINF_SUCCESS;
 }
 
