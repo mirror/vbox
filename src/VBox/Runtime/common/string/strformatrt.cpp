@@ -1287,6 +1287,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
             }
 
 #ifdef IN_RING3
+
             /*
              * Group 5, XML / HTML escapers.
              */
@@ -1359,11 +1360,81 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                 }
                 break;
             }
-#endif /* IN_RING3 */
-
 
             /*
-             * Groups 6 - CPU Architecture Register Formatters.
+             * Groups 6 - JSON.
+             */
+            case 'J':
+            {
+                char chType = (*ppszFormat)[0];
+                *ppszFormat += 1;
+                switch (chType)
+                {
+                    case 's':
+                    {
+                        const char *pszStr = va_arg(*pArgs, char *);
+                        size_t      cchOutput;
+                        ssize_t     cchStr;
+                        ssize_t     offCur;
+                        ssize_t     offLast;
+
+                        if (!VALID_PTR(pszStr))
+                            pszStr = "<NULL>";
+                        cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
+
+                        cchOutput = pfnOutput(pvArgOutput, "\"", 1);
+                        if (!(fFlags & RTSTR_F_LEFT))
+                            while (--cchWidth >= cchStr)
+                                cchOutput += pfnOutput(pvArgOutput, " ", 1);
+
+                        offLast = offCur = 0;
+                        while (offCur < cchStr)
+                        {
+                            unsigned int const uch = pszStr[offCur];
+                            if (   uch >= 0x5d
+                                || (uch >= 0x20 && uch != 0x22 && uch != 0x5c))
+                                offCur++;
+                            else
+                            {
+                                if (offLast < offCur)
+                                    cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
+                                switch ((char)uch)
+                                {
+                                    case '"':   cchOutput += pfnOutput(pvArgOutput, "\\\"", 2); break;
+                                    case '\\':  cchOutput += pfnOutput(pvArgOutput, "\\\\", 2); break;
+                                    case '/':   cchOutput += pfnOutput(pvArgOutput, "\\/", 2); break;
+                                    case '\b':  cchOutput += pfnOutput(pvArgOutput, "\\b", 2); break;
+                                    case '\f':  cchOutput += pfnOutput(pvArgOutput, "\\f", 2); break;
+                                    case '\n':  cchOutput += pfnOutput(pvArgOutput, "\\n", 2); break;
+                                    case '\t':  cchOutput += pfnOutput(pvArgOutput, "\\t", 2); break;
+                                    default:
+                                        cchOutput += pfnOutput(pvArgOutput, "\\u00", 2);
+                                        cchOutput += pfnOutput(pvArgOutput, &g_szHexDigits[(uch >> 4) & 0xf], 1);
+                                        cchOutput += pfnOutput(pvArgOutput, &g_szHexDigits[uch & 0xf], 1);
+                                        break;
+                                }
+                                offLast = ++offCur;
+                            }
+                        }
+                        if (offLast < offCur)
+                            cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
+
+                        while (--cchWidth >= cchStr)
+                            cchOutput += pfnOutput(pvArgOutput, " ", 1);
+                        cchOutput += pfnOutput(pvArgOutput, "\"", 1);
+                        return cchOutput;
+                    }
+
+                    default:
+                        AssertMsgFailed(("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
+                }
+                break;
+            }
+
+#endif /* IN_RING3 */
+
+            /*
+             * Groups 7 - CPU Architecture Register Formatters.
              *            "%RAarch[reg]"
              */
             case 'A':
