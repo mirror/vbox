@@ -144,6 +144,7 @@ protected:
     RTHTTP  m_hHttp;
 };
 
+/** @} */
 
 #endif
 
