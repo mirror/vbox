@@ -2744,6 +2744,9 @@
         will be deleted.
 
         <note>
+          Key must contain only printable ASCII characters.
+        </note>
+        <note>
           Before performing the actual data change, this method will ask all
           registered event listener using the
           <link to="IExtraDataCanChangeEvent"/>
@@ -2765,6 +2768,9 @@
         </result>
         <result name="E_ACCESSDENIED">
           Modification request refused.
+        </result>
+        <result name="E_INVALIDARG">
+          Key contains invalid characters.
         </result>
 
       </desc>
@@ -6957,6 +6963,9 @@ and "VAR" for unsetting. -->
         @a key will be deleted.
 
         <note>
+          Key must contain only printable ASCII characters.
+        </note>
+        <note>
           Before performing the actual data change, this method will ask all
           registered listeners using the
           <link to="IExtraDataCanChangeEvent"/>
@@ -6980,6 +6989,9 @@ and "VAR" for unsetting. -->
         </result>
         <result name="VBOX_E_XML_ERROR">
           Could not parse the settings file.
+        </result>
+        <result name="E_INVALIDARG">
+          Key contains invalid characters.
         </result>
 
       </desc>

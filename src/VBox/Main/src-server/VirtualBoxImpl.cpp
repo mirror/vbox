@@ -31,6 +31,7 @@
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
 #include <iprt/cpp/xml.h>
+#include <iprt/ctype.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
@@ -2067,11 +2068,22 @@ HRESULT VirtualBox::getExtraData(const com::Utf8Str &aKey,
 HRESULT VirtualBox::setExtraData(const com::Utf8Str &aKey,
                                  const com::Utf8Str &aValue)
 {
-
     Utf8Str strKey(aKey);
     Utf8Str strValue(aValue);
     Utf8Str strOldValue;            // empty
     HRESULT rc = S_OK;
+
+    /* Because non-ASCII characters in aKey have caused problems in the settings
+     * they are rejected unless the key should be deleted. */
+    if (!strValue.isEmpty())
+    {
+        for (int i = 0; i < strKey.length(); ++i)
+        {
+            char ch = strKey[i];
+            if (!RTLocCIsPrint(ch))
+                return E_INVALIDARG;
+        }
+    }
 
     // locking note: we only hold the read lock briefly to look up the old value,
     // then release it and call the onExtraCanChange callbacks. There is a small
