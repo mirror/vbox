@@ -1553,6 +1553,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                     0x200b
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                      0x200c
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                      0x200d
+#define VMX_VMCS64_CTRL_EXEC_PML_ADDR_FULL                      0x200e
+#define VMX_VMCS64_CTRL_EXEC_PML_ADDR_HIGH                      0x200f
 #define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                         0x2010
 #define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                         0x2011
 #define VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL                 0x2012
