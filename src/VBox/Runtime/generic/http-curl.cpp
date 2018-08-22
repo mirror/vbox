@@ -2179,9 +2179,7 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
 /**
  * cURL callback for reporting progress, we use it for checking for abort.
  */
-static int rtHttpProgress(void *pData,
-                          curl_off_t rdTotalDownload, curl_off_t rdDownloaded,
-                          curl_off_t rdTotalUpload, curl_off_t rdUploaded)
+static int rtHttpProgress(void *pData, double rdTotalDownload, double rdDownloaded, double rdTotalUpload, double rdUploaded)
 {
     PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)pData;
     AssertReturn(pThis->u32Magic == RTHTTP_MAGIC, 1);
@@ -2259,10 +2257,10 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
     /*
      * Progress/abort.
      */
-    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_XFERINFOFUNCTION, &rtHttpProgress);
+    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
     if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
-    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_XFERINFODATA, (void *)pThis);
+    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROGRESSDATA, (void *)pThis);
     if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROGRESS, (long)0);
