@@ -38,9 +38,11 @@
 # define VBOXEXTPACK_IF_CS(I)   struct I
 #endif
 
+VBOXEXTPACK_IF_CS(IUnknown);
 VBOXEXTPACK_IF_CS(IConsole);
 VBOXEXTPACK_IF_CS(IMachine);
 VBOXEXTPACK_IF_CS(IVirtualBox);
+VBOXEXTPACK_IF_CS(IProgress);
 
 /**
  * Module kind for use with VBOXEXTPACKHLP::pfnFindModule.
