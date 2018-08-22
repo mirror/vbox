@@ -1914,7 +1914,7 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const 
         if (!DrvAudioHlpStreamStatusCanWrite(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
             continue;
 
-        cbToWriteMin = RT_MIN(cbBuf, RT_MIN(cbToWriteMin, RTCircBufFree(pMixStream->pCircBuf)));
+        cbToWriteMin = RT_MIN(cbBuf, RT_MIN(cbToWriteMin, (uint32_t)RTCircBufFree(pMixStream->pCircBuf)));
     }
 
     if (cbToWriteMin == UINT32_MAX) /* No space at all? */
