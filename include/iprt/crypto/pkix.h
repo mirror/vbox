@@ -226,7 +226,7 @@ typedef struct RTCRPKIXSIGNATUREDESC
      * @param   pDesc           Pointer to this structure (for uProviderSpecific).
      * @param   pvState         The opaque provider state.
      * @param   hKey            The key handle associated with the state at init.
-     * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
+     * @param   hDigest         The handle to the digest.  Calls RTCrDigestFinal to
      *                          complete and retreive the final hash value.
      * @param   pvSignature     The signature to validate.
      * @param   cbSignature     The size of the signature (in bytes).
@@ -250,7 +250,7 @@ typedef struct RTCRPKIXSIGNATUREDESC
      * @param   pDesc           Pointer to this structure (for uProviderSpecific).
      * @param   pvState         The opaque provider state.
      * @param   hKey            The key handle associated with the state at init.
-     * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
+     * @param   hDigest         The handle to the digest.  Calls RTCrDigestFinal to
      *                          complete and retreive the final hash value.
      * @param   pvSignature     The output signature buffer.
      * @param   pcbSignature    On input the variable pointed to holds the size of
@@ -334,8 +334,11 @@ RTDECL(uint32_t) RTCrPkixSignatureRelease(RTCRPKIXSIGNATURE hSignature);
  * @retval  VERR_PKIX_KEY wrong key or some other key issue.
  *
  * @param   hSignature      The signature schema provider handle.
- * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
- *                          complete and retreive the final hash value.
+ * @param   hDigest         The handle to the digest.  All that must have been
+ *                          feed to it via RTCrDigestUpdate() and friends prior
+ *                          to calling this function.  The function will itself
+ *                          call RTCrDigestFinal() to complete and retreive the
+ *                          final hash value.
  * @param   pvSignature     The signature to validate.
  * @param   cbSignature     The size of the signature (in bytes).
  */
@@ -359,8 +362,11 @@ RTDECL(int) RTCrPkixSignatureVerifyOctetString(RTCRPKIXSIGNATURE hSignature, RTC
  *          require buffer size will be available in @a *pcbSignature.
  *
  * @param   hSignature      The signature schema provider handle.
- * @param   hDigest         The handle to the digest.  Call RTCrDigestFinal to
- *                          complete and retreive the final hash value.
+ * @param   hDigest         The handle to the digest.  All that must have been
+ *                          feed to it via RTCrDigestUpdate() and friends prior
+ *                          to calling this function.  The function will itself
+ *                          call RTCrDigestFinal() to complete and retreive the
+ *                          final hash value.
  * @param   pvSignature     The output signature buffer.
  * @param   pcbSignature    On input the variable pointed to holds the size of
  *                          the buffer @a pvSignature points to.

@@ -205,10 +205,45 @@ RTDECL(int)             RTCrDigestCreate(PRTCRDIGEST phDigest, PCRTCRDIGESTDESC 
  * @retval  VINF_CR_DIGEST_SEVERELY_COMPROMISED on success from a severely compromised hash algorithm.
  */
 RTDECL(int)             RTCrDigestClone(PRTCRDIGEST phDigest, RTCRDIGEST hSrc);
+/**
+ * Resets the digest to start calculating a new digest.
+ */
 RTDECL(int)             RTCrDigestReset(RTCRDIGEST hDigest);
+
+/**
+ * Retains a references to the digest.
+ *
+ * @returns New reference count. UINT32_MAX if invalid handle.
+ * @param   hDigest     Handle to the digest.
+ */
 RTDECL(uint32_t)        RTCrDigestRetain(RTCRDIGEST hDigest);
+/**
+ * Releases a references to the digest.
+ *
+ * @returns New reference count. UINT32_MAX if invalid handle.
+ * @param   hDigest     Handle to the digest.  NIL is ignored (returns 0).
+ */
 RTDECL(uint32_t)        RTCrDigestRelease(RTCRDIGEST hDigest);
+
+/**
+ * Updates the digest with more message data.
+ *
+ * @returns IPRT status code.
+ * @param   hDigest     Handle to the digest.
+ * @param   pvData      Pointer to the message data.
+ * @param   cbData      The number of bytes of data @a pvData points to.
+ */
 RTDECL(int)             RTCrDigestUpdate(RTCRDIGEST hDigest, void const *pvData, size_t cbData);
+
+/**
+ * Updates the digest with more message data from the given VFS file handle.
+ *
+ * @returns IPRT status code.
+ * @param   hDigest     Handle to the digest.
+ * @param   hVfsFile    Handle to the VFS file.
+ * @param   fRewindFile Rewind to the start of the file if @a true, start
+ *                      consumption at the current file position if @a false.
+ */
 RTDECL(int)             RTCrDigestUpdateFromVfsFile(RTCRDIGEST hDigest, RTVFSFILE hVfsFile, bool fRewindFile);
 
 /**
