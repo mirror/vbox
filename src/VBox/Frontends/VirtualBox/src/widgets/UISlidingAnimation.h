@@ -71,9 +71,9 @@ public:
 private slots:
 
     /** Handles entering for 'Start' state. */
-    void sltHandleStateEnteredStart() { emit sigAnimationComplete(SlidingDirection_Reverse); }
+    void sltHandleStateEnteredStart();
     /** Handles entering for 'Final' state. */
-    void sltHandleStateEnteredFinal() { emit sigAnimationComplete(SlidingDirection_Forward); }
+    void sltHandleStateEnteredFinal();
 
 private:
 
@@ -95,6 +95,8 @@ private:
     bool             m_fReverse;
     /** Holds the animation instance. */
     UIAnimation     *m_pAnimation;
+    /** Holds whether animation is in progress. */
+    bool             m_fIsInProgress;
     /** Holds sub-window start-geometry. */
     QRect            m_startWidgetGeometry;
     /** Holds sub-window final-geometry. */

@@ -31,6 +31,7 @@ UISlidingAnimation::UISlidingAnimation(Qt::Orientation enmOrientation, bool fRev
     , m_enmOrientation(enmOrientation)
     , m_fReverse(fReverse)
     , m_pAnimation(0)
+    , m_fIsInProgress(false)
     , m_pWidget(0)
     , m_pLabel1(0)
     , m_pLabel2(0)
@@ -50,6 +51,9 @@ void UISlidingAnimation::setWidgets(QWidget *pWidget1, QWidget *pWidget2)
 
 void UISlidingAnimation::animate(SlidingDirection enmDirection)
 {
+    /* Mark animation started: */
+    m_fIsInProgress = true;
+
     /* Acquire parent size: */
     const QSize parentSize = parentWidget()->size();
 
@@ -99,6 +103,30 @@ void UISlidingAnimation::animate(SlidingDirection enmDirection)
             emit sigReverse();
             break;
         }
+    }
+}
+
+void UISlidingAnimation::sltHandleStateEnteredStart()
+{
+    /* If animation started: */
+    if (m_fIsInProgress)
+    {
+        /* Mark animation finished: */
+        m_fIsInProgress = false;
+        /* And notify listeners: */
+        emit sigAnimationComplete(SlidingDirection_Reverse);
+    }
+}
+
+void UISlidingAnimation::sltHandleStateEnteredFinal()
+{
+    /* If animation started: */
+    if (m_fIsInProgress)
+    {
+        /* Mark animation finished: */
+        m_fIsInProgress = false;
+        /* And notify listeners: */
+        emit sigAnimationComplete(SlidingDirection_Forward);
     }
 }
 
