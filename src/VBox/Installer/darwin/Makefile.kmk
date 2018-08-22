@@ -153,9 +153,9 @@ endif
 	$(MKDIR) -m 1333  $(VBOX_PATH_PACK_TMP)/DiskImage/.Trashes
 	@# Change the owners.
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/DiskImage
-	@# Create the image. We calculate the size our selves, adding 8MB for fudging (it's about 100-120MB atm).
+	@# Create the image. We calculate the size our selves, adding 16MB for fudging (min 13MB fudge needed on high sierra).
 	sudo hdiutil create -format UDBZ -volname "VirtualBox" -srcfolder "$(VBOX_PATH_PACK_TMP)/DiskImage" \
-		-size $(DOLLAR)((`/usr/bin/du -d 0 -k "$(VBOX_PATH_PACK_TMP)/DiskImage/" | /usr/bin/cut -f1` + 8192))k \
+		-size $(DOLLAR)((`sudo /usr/bin/du -d 0 -k "$(VBOX_PATH_PACK_TMP)/DiskImage/" | /usr/bin/cut -f1` + 16384))k \
 		"$@"
 	@# Change (back) the owner so it can be deleted by the user.
 	sudo chown "$(shell whoami)" "$@"
