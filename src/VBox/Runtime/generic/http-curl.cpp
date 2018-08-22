@@ -160,7 +160,7 @@ typedef struct RTHTTPINTERNAL
     /** Download size hint set by the progress callback. */
     uint64_t            cbDownloadHint;
     /** Callback called during download. */
-    PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress;
+    PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress;
     /** User pointer parameter for pfnDownloadProgress. */
     void               *pvDownloadProgressUser;
 } RTHTTPINTERNAL;
@@ -2575,7 +2575,7 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
 }
 
 
-RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser)
+RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser)
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
@@ -2587,7 +2587,7 @@ RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PRTHTTPDOWNLDPROGR
 
 
 
-RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PRTHTTPREADCALLBACK pfnRead, void *pvUser)
+RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead, void *pvUser)
 {
     CURLcode rcCurl;
 
@@ -2606,7 +2606,7 @@ RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PRTHTTPREADCALLBACK pfnRead, v
 }
 
 
-RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
+RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
 {
     CURLcode rcCurl;
 
@@ -2625,7 +2625,7 @@ RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pfnWrite
 }
 
 
-RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
+RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
 {
     CURLcode rcCurl;
 

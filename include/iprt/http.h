@@ -44,8 +44,8 @@ typedef RTHTTP                                 *PRTHTTP;
 /** Nil HTTP/HTTPS client handle. */
 #define NIL_RTHTTP                              ((RTHTTP)0)
 /** Callback function to be called during RTHttpGet*(). Register it using RTHttpSetDownloadProgressCallback(). */
-typedef DECLCALLBACK(void) RTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
-typedef RTHTTPDOWNLDPROGRCALLBACK *PRTHTTPDOWNLDPROGRCALLBACK;
+typedef DECLCALLBACK(void) FNRTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
+typedef FNRTHTTPDOWNLDPROGRCALLBACK *PFNRTHTTPDOWNLDPROGRCALLBACK;
 
 
 
@@ -316,23 +316,23 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
  *                          NULL to disable the callback.
  * @param   pvUser          Convenience pointer for the callback function.
  */
-RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
+RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
 
 // ----8<--------8<---- XXX: uwe: quick and dirty curl wrappers for OCI
 
-typedef DECLCALLBACK(size_t) RTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
-typedef RTHTTPREADCALLBACK *PRTHTTPREADCALLBACK;
+typedef DECLCALLBACK(size_t) FNRTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
+typedef FNRTHTTPREADCALLBACK *PFNRTHTTPREADCALLBACK;
 
 #define RT_HTTP_READCALLBACK_ABORT 0x10000000 /* CURL_READFUNC_ABORT */
 
-RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PRTHTTPREADCALLBACK pfnRead, void *pvUser);
+RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead, void *pvUser);
 
 
-typedef DECLCALLBACK(size_t) RTHTTPWRITECALLBACK(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
-typedef RTHTTPWRITECALLBACK *PRTHTTPWRITECALLBACK;
+typedef DECLCALLBACK(size_t) FNRTHTTPWRITECALLBACK(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
+typedef FNRTHTTPWRITECALLBACK *PFNRTHTTPWRITECALLBACK;
 
-RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
-RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
+RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
+RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
 
 
 /* these are thin wrappers for setting one or a few related curl options */
