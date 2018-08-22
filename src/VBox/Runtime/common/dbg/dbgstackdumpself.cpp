@@ -151,6 +151,7 @@ static DECLCALLBACK(int) rtDbgStackDumpSelfReader(PRTDBGUNWINDSTATE pThis, RTUIN
     return rtDbgStackDumpSelfSafeMemoryReader(pvDst, cbToRead, uSp);
 }
 
+
 #ifdef RT_OS_WINDOWS
 /**
  * Figure the size of a loaded PE image.
