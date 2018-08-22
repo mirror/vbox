@@ -834,6 +834,8 @@ static DECLCALLBACK(int) drvAudioVideoRecGetConfig(PPDMIHOSTAUDIO pInterface, PP
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Video recording audio driver");
+
     pBackendCfg->cbStreamOut    = sizeof(AVRECSTREAM);
     pBackendCfg->cbStreamIn     = 0;
     pBackendCfg->cMaxStreamsIn  = 0;

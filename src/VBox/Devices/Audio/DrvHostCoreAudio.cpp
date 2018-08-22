@@ -2181,6 +2181,8 @@ static DECLCALLBACK(int) drvHostCoreAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
 
     RT_BZERO(pBackendCfg, sizeof(PDMAUDIOBACKENDCFG));
 
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Core Audio driver");
+
     pBackendCfg->cbStreamIn  = sizeof(COREAUDIOSTREAM);
     pBackendCfg->cbStreamOut = sizeof(COREAUDIOSTREAM);
 

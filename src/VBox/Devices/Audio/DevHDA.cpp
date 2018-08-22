@@ -2446,15 +2446,24 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
                 {
                     PDMAUDIOBACKENDCFG Cfg;
                     rc = pDrv->pConnector->pfnGetConfig(pDrv->pConnector, &Cfg);
-                    if (   RT_SUCCESS(rc)
-                        && Cfg.cMaxStreamsIn) /* At least one input source available? */
+                    if (RT_SUCCESS(rc))
                     {
-                        rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
-                        LogFlowFunc(("LUN#%RU8: Recording source is now '%s', rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
-                        LogRel2(("HDA: Set recording source to '%s' (LUN#%RU8)\n", pStreamCfg->szName, pDrv->uLUN));
+                        if (Cfg.cMaxStreamsIn) /* At least one input source available? */
+                        {
+                            rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
+                            LogFlowFunc(("LUN#%RU8: Recording source for '%s' -> '%s', rc=%Rrc\n",
+                                         pDrv->uLUN, pStreamCfg->szName, Cfg.szName, rc));
+
+                            if (RT_SUCCESS(rc))
+                                LogRel(("HDA: Set recording source for '%s' to '%s'\n",
+                                        pStreamCfg->szName, Cfg.szName));
+                        }
+                        else
+                            LogRel(("HDA: Backend '%s' currently is not offering any recording source for '%s', muting\n",
+                                    Cfg.szName, pStreamCfg->szName));
                     }
                     else if (RT_FAILURE(rc))
-                        LogFunc(("LUN#%RU8: Unable to retrieve backend configuratio for '%s', rc=%Rrc\n",
+                        LogFunc(("LUN#%RU8: Unable to retrieve backend configuration for '%s', rc=%Rrc\n",
                                  pDrv->uLUN, pStreamCfg->szName, rc));
                 }
             }

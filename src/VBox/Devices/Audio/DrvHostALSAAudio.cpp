@@ -1162,6 +1162,8 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "ALSA audio driver");
+
     pBackendCfg->cbStreamIn  = sizeof(ALSAAUDIOSTREAM);
     pBackendCfg->cbStreamOut = sizeof(ALSAAUDIOSTREAM);
 

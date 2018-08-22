@@ -70,6 +70,8 @@ static DECLCALLBACK(int) drvHostDebugAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Debug audio driver");
+
     pBackendCfg->cbStreamOut    = sizeof(DEBUGAUDIOSTREAM);
     pBackendCfg->cbStreamIn     = sizeof(DEBUGAUDIOSTREAM);
 

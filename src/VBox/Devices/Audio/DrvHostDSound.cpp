@@ -1744,6 +1744,8 @@ static void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDC
         pThis->fEnabledOut = RT_BOOL(cbCtx.cDevOut);
         pThis->fEnabledIn  = RT_BOOL(cbCtx.cDevIn);
 
+        RTStrPrintf2(Cfg.szName, sizeof(Cfg.szName), "DirectSound audio driver");
+
         Cfg.cMaxStreamsIn  = UINT32_MAX;
         Cfg.cMaxStreamsOut = UINT32_MAX;
 

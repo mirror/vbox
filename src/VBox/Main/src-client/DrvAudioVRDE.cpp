@@ -373,6 +373,8 @@ static DECLCALLBACK(int) drvAudioVRDEGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAU
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VRDE audio driver");
+
     pBackendCfg->cbStreamOut    = sizeof(VRDESTREAM);
     pBackendCfg->cbStreamIn     = sizeof(VRDESTREAM);
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;

@@ -343,6 +343,8 @@ typedef struct PDMAUDIODEVICEENUM
  */
 typedef struct PDMAUDIOBACKENDCFG
 {
+    /** The backend's friendly name. */
+    char     szName[32];
     /** Size (in bytes) of the host backend's audio output stream structure. */
     size_t   cbStreamOut;
     /** Size (in bytes) of the host backend's audio input stream structure. */
