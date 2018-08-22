@@ -3024,27 +3024,18 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         return VERR_INVALID_PARAMETER;
     }
 
-    /* Let the user know that the backend changed one of the user's custom values requested above. */
-    if (   pDrvCfg->uBufferSizeMs
-        && pCfgAcq->Backend.cfBufferSize != pCfgReq->Backend.cfBufferSize)
-    {
-        LogRel2(("Audio: Custom buffer size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
+    /* Let the user know that the backend changed one of the values requested above. */
+    if (pCfgAcq->Backend.cfBufferSize != pCfgReq->Backend.cfBufferSize)
+        LogRel2(("Audio: Buffer size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfBufferSize, &pCfgAcq->Props), pCfgAcq->Backend.cfBufferSize));
-    }
 
-    if (   pDrvCfg->uPeriodSizeMs
-        && pCfgAcq->Backend.cfPeriod != pCfgReq->Backend.cfPeriod)
-    {
-        LogRel2(("Audio: Custom period size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
+    if (pCfgAcq->Backend.cfPeriod != pCfgReq->Backend.cfPeriod)
+        LogRel2(("Audio: Period size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPeriod, &pCfgAcq->Props), pCfgAcq->Backend.cfPeriod));
-    }
 
-    if (   pDrvCfg->uPreBufSizeMs != UINT32_MAX
-        && pCfgAcq->Backend.cfPreBuf != pCfgReq->Backend.cfPreBuf)
-    {
-        LogRel2(("Audio: Custom pre-buffering size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
+    if (pCfgAcq->Backend.cfPreBuf != pCfgReq->Backend.cfPreBuf)
+        LogRel2(("Audio: Pre-buffering size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPreBuf, &pCfgAcq->Props), pCfgAcq->Backend.cfPreBuf));
-    }
 
     /* Sanity for detecting buggy backends. */
     AssertMsgReturn(pCfgAcq->Backend.cfPeriod < pCfgAcq->Backend.cfBufferSize,
