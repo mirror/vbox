@@ -1746,15 +1746,15 @@ ExtPack::i_hlpCreateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IUnknown) 
     /*
      * Validate the input and get our bearings.
      */
-    AssertPtrReturn(pcszDescription, E_INVALIDARG);
-    AssertReturn(cOperations >= 1, E_INVALIDARG);
-    AssertReturn(uTotalOperationsWeight >= 1, E_INVALIDARG);
-    AssertPtrReturn(pcszFirstOperationDescription, E_INVALIDARG);
-    AssertReturn(uFirstOperationWeight >= 1, E_INVALIDARG);
-    AssertPtrReturn(ppProgressOut, E_INVALIDARG);
+    AssertPtrReturn(pcszDescription, (uint32_t)E_INVALIDARG);
+    AssertReturn(cOperations >= 1, (uint32_t)E_INVALIDARG);
+    AssertReturn(uTotalOperationsWeight >= 1, (uint32_t)E_INVALIDARG);
+    AssertPtrReturn(pcszFirstOperationDescription, (uint32_t)E_INVALIDARG);
+    AssertReturn(uFirstOperationWeight >= 1, (uint32_t)E_INVALIDARG);
+    AssertPtrReturn(ppProgressOut, (uint32_t)E_INVALIDARG);
 
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
-    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 #ifndef VBOX_COM_INPROC
     ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
 #endif
@@ -1783,11 +1783,11 @@ ExtPack::i_hlpGetCanceledProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProg
     /*
      * Validate the input and get our bearings.
      */
-    AssertPtrReturn(pProgress, E_INVALIDARG);
-    AssertPtrReturn(pfCanceled, E_INVALIDARG);
+    AssertPtrReturn(pProgress, (uint32_t)E_INVALIDARG);
+    AssertPtrReturn(pfCanceled, (uint32_t)E_INVALIDARG);
 
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
-    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     BOOL fCanceled = FALSE;
     HRESULT hrc = pProgress->COMGETTER(Canceled)(&fCanceled);
@@ -1802,11 +1802,11 @@ ExtPack::i_hlpUpdateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress)
     /*
      * Validate the input and get our bearings.
      */
-    AssertPtrReturn(pProgress, E_INVALIDARG);
-    AssertReturn(uPercent <= 100, E_INVALIDARG);
+    AssertPtrReturn(pProgress, (uint32_t)E_INVALIDARG);
+    AssertReturn(uPercent <= 100, (uint32_t)E_INVALIDARG);
 
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
-    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     return pProgress->SetCurrentOperationProgress(uPercent);
 }
@@ -1819,12 +1819,12 @@ ExtPack::i_hlpNextOperationProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IPr
     /*
      * Validate the input and get our bearings.
      */
-    AssertPtrReturn(pProgress, E_INVALIDARG);
-    AssertPtrReturn(pcszNextOperationDescription, E_INVALIDARG);
-    AssertReturn(uNextOperationWeight >= 1, E_INVALIDARG);
+    AssertPtrReturn(pProgress, (uint32_t)E_INVALIDARG);
+    AssertPtrReturn(pcszNextOperationDescription, (uint32_t)E_INVALIDARG);
+    AssertReturn(uNextOperationWeight >= 1, (uint32_t)E_INVALIDARG);
 
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
-    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     return pProgress->SetNextOperation(Bstr(pcszNextOperationDescription).raw(), uNextOperationWeight);
 }
@@ -1836,10 +1836,10 @@ ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgres
     /*
      * Validate the input and get our bearings.
      */
-    AssertPtrReturn(pProgress, E_INVALIDARG);
+    AssertPtrReturn(pProgress, (uint32_t)E_INVALIDARG);
 
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
-    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     Progress *pProgressInt = static_cast<Progress *>(pProgress);
     return pProgressInt->i_notifyComplete(uResultCode);
