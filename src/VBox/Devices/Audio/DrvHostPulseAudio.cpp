@@ -575,9 +575,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
 #ifdef LOG_ENABLED
         pStreamPA->tsStartUs = pa_rtclock_now();
 #endif
-        if (RT_FAILURE(rc))
-            break;
-
         const pa_buffer_attr *pBufAttrObtained = pa_stream_get_buffer_attr(pStream);
         AssertPtr(pBufAttrObtained);
         memcpy(pBufAttr, pBufAttrObtained, sizeof(pa_buffer_attr));
