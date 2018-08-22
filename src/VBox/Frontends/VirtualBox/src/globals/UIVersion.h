@@ -94,7 +94,7 @@ public:
 
     /** Returns effective released version guessed or hardcoded for this one version.
       * This can be even the version itself. */
-    UIVersion effectiveRelasedVersion() const
+    UIVersion effectiveReleasedVersion() const
     {
         /* First, we just copy the current one: */
         UIVersion version = *this;

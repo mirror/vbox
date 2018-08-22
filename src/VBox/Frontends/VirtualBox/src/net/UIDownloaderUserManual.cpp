@@ -54,7 +54,7 @@ UIDownloaderUserManual::UIDownloaderUserManual()
         s_pInstance = this;
 
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
-    const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveRelasedVersion().toString();
+    const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
 
     /* Compose User Manual filename: */
     QString strUserManualFullFileName = vboxGlobal().helpFile();
