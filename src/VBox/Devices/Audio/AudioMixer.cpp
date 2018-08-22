@@ -1793,7 +1793,7 @@ static int audioMixerSinkWriteToStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStre
     if (!pMixStream->pCircBuf)
         return VINF_SUCCESS;
 
-    return audioMixerSinkWriteToStreamEx(pSink, pMixStream, RTCircBufUsed(pMixStream->pCircBuf), NULL /* pcbWritten */);
+    return audioMixerSinkWriteToStreamEx(pSink, pMixStream, (uint32_t)RTCircBufUsed(pMixStream->pCircBuf), NULL /* pcbWritten */);
 }
 
 /**
