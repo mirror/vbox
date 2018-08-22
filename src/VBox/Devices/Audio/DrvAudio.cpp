@@ -871,9 +871,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
 
-    AssertMsg(DrvAudioHlpBytesIsAligned(cbBuf, &pStream->Guest.Cfg.Props),
-              ("Writing audio data (%RU32 bytes) to stream '%s' is not properly aligned\n", cbBuf, pStream->szName));
-
     uint32_t cbWrittenTotal = 0;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -1454,21 +1451,20 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
         if (fDoPlay)
         {
-            uint32_t cfWritable;
-            if (pThis->pHostDrvAudio->pfnStreamGetWritable)
-            {
-                cfWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props,
-                                                  pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend));
-            }
-            else
-                cfWritable = cfPeriod;
+            uint32_t cfWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props,
+                                                       pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend));
 
             uint32_t cfToPlay = 0;
             if (fJustStarted)
                 cfToPlay = RT_MIN(cfWritable, cfPeriod);
 
             if (!cfToPlay)
-                cfToPlay = cfWritable;
+            {
+                /* Did we reach/pass (in real time) the device scheduling slot?
+                 * Play as much as we can write to the backend then. */
+                if (cfPassedReal >= DrvAudioHlpMilliToFrames(pStream->Guest.Cfg.Device.uSchedulingHintMs, &pStream->Host.Cfg.Props))
+                    cfToPlay = cfWritable;
+            }
 
             if (cfToPlay > cfLive) /* Don't try to play more than available. */
                 cfToPlay = cfLive;
@@ -2799,8 +2795,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     {
         cbWritable = AudioMixBufFreeBytes(&pStream->Host.MixBuf);
 
-        /* Make sure to align the writable size to the guest's frame size. */
-        cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pStream->Guest.Cfg.Props);
+        /* Make sure to align the writable size to the host's frame size. */
+        cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pStream->Host.Cfg.Props);
     }
 
     Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
