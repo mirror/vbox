@@ -71,6 +71,9 @@ static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 static void audioMixerSinkReset(PAUDMIXSINK pSink);
 static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink);
+static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWrittenMin);
+static int audioMixerSinkWriteToStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStream);
+static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStream, uint32_t cbToWrite, uint32_t *pcbWritten);
 
 int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
@@ -1565,6 +1568,52 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     /* Number of disabled streams of this sink. */
     uint8_t cStreamsDisabled = pSink->cStreams;
 
+    /* Next, try to write (multiplex) as much audio data as possible to all connected mixer streams. */
+    uint32_t cbToWriteToStreams = AudioMixBufUsedBytes(&pSink->MixBuf);
+
+    uint8_t arrChunkBuf[_1K]; /** @todo Hm ... some zero copy / shared buffers would be nice! */
+    while (cbToWriteToStreams)
+    {
+        uint32_t cfChunk;
+        rc  = AudioMixBufAcquireReadBlock(&pSink->MixBuf, arrChunkBuf, RT_MIN(cbToWriteToStreams, sizeof(arrChunkBuf)), &cfChunk);
+        if (RT_FAILURE(rc))
+            break;
+
+        const uint32_t cbChunk = DrvAudioHlpFramesToBytes(cfChunk, &pSink->PCMProps);
+        Assert(cbChunk <= sizeof(arrChunkBuf));
+
+        /* Multiplex the current chunk in a synchronized fashion to all connected streams. */
+        uint32_t cbChunkWrittenMin = 0;
+        rc = audioMixerSinkMultiplexSync(pSink, AUDMIXOP_COPY, arrChunkBuf, cbChunk, &cbChunkWrittenMin);
+        if (RT_SUCCESS(rc))
+        {
+            PAUDMIXSTREAM pMixStream;
+            RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+            {
+                int rc2 = audioMixerSinkWriteToStream(pSink, pMixStream);
+                AssertRC(rc2);
+            }
+        }
+
+        Log3Func(("[%s] cbChunk=%RU32, cbChunkWrittenMin=%RU32\n", pSink->pszName, cbChunk, cbChunkWrittenMin));
+
+        AudioMixBufReleaseReadBlock(&pSink->MixBuf, AUDIOMIXBUF_B2F(&pSink->MixBuf, cbChunkWrittenMin));
+
+        if (   RT_FAILURE(rc)
+            || cbChunkWrittenMin == 0)
+            break;
+
+        Assert(cbToWriteToStreams >= cbChunkWrittenMin);
+        cbToWriteToStreams -= cbChunkWrittenMin;
+    }
+
+    if (   !(pSink->fStatus & AUDMIXSINK_STS_DIRTY)
+        && AudioMixBufUsed(&pSink->MixBuf)) /* Still audio output data left? Consider the sink as being "dirty" then. */
+    {
+        /* Set dirty bit. */
+        pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
+    }
+
     PAUDMIXSTREAM pMixStream, pMixStreamNext;
     RTListForEachSafe(&pSink->lstStreams, pMixStream, pMixStreamNext, AUDMIXSTREAM, Node)
     {
@@ -1708,22 +1757,131 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
 }
 
 /**
- * Writes audio output data to all connected mixer streams (multiplex).
+ * Writes (buffered) output data of a sink's stream to the bound audio connector stream.
+ *
+ * @returns IPRT status code.
+ * @param   pSink               Sink of stream that contains the mixer stream.
+ * @param   pMixStream          Mixer stream to write output data for.
+ */
+static int audioMixerSinkWriteToStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStream)
+{
+    if (!pMixStream->pCircBuf)
+        return VINF_SUCCESS;
+
+    return audioMixerSinkWriteToStreamEx(pSink, pMixStream, RTCircBufUsed(pMixStream->pCircBuf), NULL /* pcbWritten */);
+}
+
+/**
+ * Writes (buffered) output data of a sink's stream to the bound audio connector stream, extended version.
+ *
+ * @returns IPRT status code.
+ * @param   pSink               Sink of stream that contains the mixer stream.
+ * @param   pMixStream          Mixer stream to write output data for.
+ * @param   cbToWrite           Size (in bytes) to write.
+ * @param   pcbWritten          Size (in bytes) written on success. Optional.
+ */
+static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStream, uint32_t cbToWrite, uint32_t *pcbWritten)
+{
+    /* pcbWritten is optional. */
+
+    if (   !cbToWrite
+        || !DrvAudioHlpStreamStatusCanWrite(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
+    {
+        if (pcbWritten)
+            *pcbWritten = 0;
+
+        return VINF_SUCCESS;
+    }
+
+    PRTCIRCBUF pCircBuf = pMixStream->pCircBuf;
+
+    const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
+                   cbToWrite        = RT_MIN(cbToWrite, RT_MIN((uint32_t)RTCircBufUsed(pCircBuf), cbWritableStream));
+
+    Log3Func(("[%s] cbWritableStream=%RU32, cbToWrite=%RU32\n",
+              pMixStream->pszName, cbWritableStream, cbToWrite));
+
+    uint32_t cbWritten = 0;
+
+    int rc = VINF_SUCCESS;
+
+    while (cbToWrite)
+    {
+        void *pvChunk;
+        size_t cbChunk;
+        RTCircBufAcquireReadBlock(pCircBuf, cbToWrite, &pvChunk, &cbChunk);
+
+        Log3Func(("[%s] cbChunk=%RU32\n", pMixStream->pszName, cbChunk));
+
+        uint32_t cbChunkWritten = 0;
+        if (cbChunk)
+        {
+            rc = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvChunk, (uint32_t)cbChunk,
+                                                   &cbChunkWritten);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_BUFFER_OVERFLOW)
+                {
+                    LogRel2(("Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
+                    break;
+                }
+                else if (rc != VERR_AUDIO_STREAM_NOT_READY)
+                    LogRel2(("Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n",
+                             pMixStream->pszName, pSink->pszName, rc));
+
+                LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc));
+            }
+        }
+
+        RTCircBufReleaseReadBlock(pCircBuf, cbChunkWritten);
+
+        if (   RT_FAILURE(rc)
+            || !cbChunkWritten)
+            break;
+
+        Assert(cbToWrite >= cbChunkWritten);
+        cbToWrite -= (uint32_t)cbChunkWritten;
+
+        cbWritten += (uint32_t)cbChunkWritten;
+    }
+
+    Log3Func(("[%s] cbWritten=%RU32\n", pMixStream->pszName, cbWritten));
+
+    if (pcbWritten)
+        *pcbWritten = cbWritten;
+
+#ifdef DEBUG_andy
+    AssertRC(rc);
+#endif
+
+    return rc;
+}
+
+/**
+ * Multiplexes audio output data to all connected mixer streams in a synchronized fashion, e.g.
+ * only multiplex as much data as all streams can handle at this time.
  *
  * @returns IPRT status code.
  * @param   pSink               Sink to write audio output to.
  * @param   enmOp               What mixing operation to use. Currently not implemented.
  * @param   pvBuf               Pointer to audio data to write.
  * @param   cbBuf               Size (in bytes) of audio data to write.
- * @param   pcbWrittenMin       Returns minimum size (in bytes) successfully written by all mixer streams. Optional.
+ * @param   pcbWrittenMin       Returns minimum size (in bytes) successfully written to all mixer streams. Optional.
  */
-int audioMixerSinkWriteToStreams(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWrittenMin)
+static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf,
+                                       uint32_t *pcbWrittenMin)
 {
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     RT_NOREF(enmOp);
+
+    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
+              ("%s: Can't multiplex to a sink which is not an output sink\n", pSink->pszName));
 
     int rc = VINF_SUCCESS;
 
-    uint32_t cbWrittenMin = UINT32_MAX;
+    uint32_t cbToWriteMin = UINT32_MAX;
+
+    Log3Func(("[%s] cbBuf=%RU32\n", pSink->pszName, cbBuf));
 
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
@@ -1731,84 +1889,48 @@ int audioMixerSinkWriteToStreams(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *
         if (!DrvAudioHlpStreamStatusCanWrite(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
             continue;
 
-        PRTCIRCBUF pCircBuf = pMixStream->pCircBuf;
-        void *pvChunk;
-        size_t cbChunk;
-
-        uint32_t cbWrittenBuf = 0;
-        uint32_t cbToWriteBuf = RT_MIN(cbBuf, (uint32_t)RTCircBufFree(pCircBuf));
-        while (cbToWriteBuf)
-        {
-            RTCircBufAcquireWriteBlock(pCircBuf, cbToWriteBuf, &pvChunk, &cbChunk);
-
-            if (cbChunk)
-                memcpy(pvChunk, (uint8_t *)pvBuf + cbWrittenBuf, cbChunk);
-
-            RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
-
-            cbWrittenBuf += (uint32_t)cbChunk;
-            Assert(cbWrittenBuf <= cbBuf);
-
-            Assert(cbToWriteBuf >= cbChunk);
-            cbToWriteBuf -= (uint32_t)cbChunk;
-        }
-
-        cbWrittenMin = RT_MIN(cbWrittenMin, cbWrittenBuf);
-
-        if (cbWrittenBuf) /* Update the mixer stream's last written time stamp. */
-            pMixStream->tsLastReadWrittenNs = RTTimeNanoTS();
-
-        uint32_t cbToWriteStream = DrvAudioHlpBytesAlign(cbWrittenBuf, &pSink->PCMProps);
-        uint32_t cbWrittenStream = 0;
-
-        int rc2 = VINF_SUCCESS;
-
-        while (cbToWriteStream)
-        {
-            RTCircBufAcquireReadBlock(pCircBuf, cbToWriteStream, &pvChunk, &cbChunk);
-
-            uint32_t cbChunkWritten = 0;
-            if (cbChunk)
-            {
-                rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvChunk, (uint32_t)cbChunk,
-                                                        &cbChunkWritten);
-                if (RT_FAILURE(rc2))
-                {
-                    if (rc2 == VERR_BUFFER_OVERFLOW)
-                    {
-                        LogRel2(("Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
-#ifdef DEBUG_andy
-                        AssertRC(rc2);
-#endif
-                    }
-                    else if (rc2 != VERR_AUDIO_STREAM_NOT_READY)
-                        LogRel2(("Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n", pMixStream->pszName, pSink->pszName, rc2));
-
-                    LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
-                }
-            }
-
-            RTCircBufReleaseReadBlock(pCircBuf, cbChunkWritten);
-
-            if (RT_FAILURE(rc2))
-                break;
-
-            Assert(cbToWriteStream >= cbChunk);
-            cbToWriteStream -= (uint32_t)cbChunk;
-
-            cbWrittenStream += (uint32_t)cbChunk;
-            Assert(cbWrittenStream <= cbBuf);
-        }
-
-        Log3Func(("[%s] cbBuf=%RU32, cbWrittenBuf=%RU32, cbWrittenStream=%RU32\n",
-                  pMixStream->pszName, cbBuf, cbWrittenBuf, cbWrittenStream));
+        cbToWriteMin = RT_MIN(cbBuf, RT_MIN(cbToWriteMin, RTCircBufFree(pMixStream->pCircBuf)));
     }
 
-    if (cbWrittenMin == UINT32_MAX) /* Nothing written? */
-        cbWrittenMin = 0;
+    if (cbToWriteMin == UINT32_MAX) /* No space at all? */
+        cbToWriteMin = 0;
+
+    if (cbToWriteMin)
+    {
+        RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+        {
+            PRTCIRCBUF pCircBuf = pMixStream->pCircBuf;
+            void *pvChunk;
+            size_t cbChunk;
+
+            uint32_t cbWrittenBuf = 0;
+            uint32_t cbToWriteBuf = cbToWriteMin;
+
+            while (cbToWriteBuf)
+            {
+                RTCircBufAcquireWriteBlock(pCircBuf, cbToWriteBuf, &pvChunk, &cbChunk);
+
+                if (cbChunk)
+                    memcpy(pvChunk, (uint8_t *)pvBuf + cbWrittenBuf, cbChunk);
+
+                RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
+
+                cbWrittenBuf += (uint32_t)cbChunk;
+                Assert(cbWrittenBuf <= cbBuf);
+
+                Assert(cbToWriteBuf >= cbChunk);
+                cbToWriteBuf -= (uint32_t)cbChunk;
+            }
+
+            if (cbWrittenBuf) /* Update the mixer stream's last written time stamp. */
+                pMixStream->tsLastReadWrittenNs = RTTimeNanoTS();
+        }
+    }
+
+    Log3Func(("[%s] cbBuf=%RU32, cbToWriteMin=%RU32\n", pSink->pszName, cbBuf, cbToWriteMin));
 
     if (pcbWrittenMin)
-        *pcbWrittenMin = cbWrittenMin;
+        *pcbWrittenMin = cbToWriteMin;
 
     return rc;
 }
@@ -1840,7 +1962,8 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
               ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName));
 
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+    Assert(cbBuf <= AudioMixBufFreeBytes(&pSink->MixBuf));
+
     uint32_t cbWritten = 0;
     uint32_t cbToWrite = cbBuf;
     while (cbToWrite)
@@ -1859,51 +1982,13 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         cbWritten += cbWrittenChunk;
     }
 
-    Assert(cbWritten <= cbBuf);
-
-    if (   RT_FAILURE(rc)
-        || cbWritten < cbBuf)
-    {
-        LogRel2(("Mixer: Buffer overrun for mixer sink '%s' (only %RU32/%RU32 bytes written)\n",
-                 pSink->pszName, cbWritten, cbBuf));
-# ifdef DEBUG_andy
-        AssertFailed();
-# endif
-    }
-
-    /* Next, try to write (multiplex) as much audio data as possible to all connected mixer streams. */
-    uint8_t arrChunkBuf[_1K]; /** @todo Hm ... some zero copy / shared buffers would be nice! */
-    while (cbWritten)
-    {
-        uint32_t cfChunk;
-        rc  = AudioMixBufAcquireReadBlock(&pSink->MixBuf, arrChunkBuf, sizeof(arrChunkBuf), &cfChunk);
-        if (RT_FAILURE(rc))
-            break;
-
-        const uint32_t cbChunk = DrvAudioHlpFramesToBytes(cfChunk, &pSink->PCMProps);
-        Assert(cbChunk <= sizeof(arrChunkBuf));
-        rc = audioMixerSinkWriteToStreams(pSink, enmOp, arrChunkBuf, cbChunk, NULL /* pcbWrittenMin */);
-        AudioMixBufReleaseReadBlock(&pSink->MixBuf, cfChunk);
-
-        Assert(cbWritten >= cbChunk);
-        cbWritten -= cbChunk;
-    }
-
-    if (   !(pSink->fStatus & AUDMIXSINK_STS_DIRTY)
-        && AudioMixBufUsed(&pSink->MixBuf)) /* Still audio output data left? Consider the sink as being "dirty" then. */
-    {
-        /* Set dirty bit. */
-        pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
-    }
-#else
-    rc = audioMixerSinkWriteToStreams(pSink, enmOp, pvBuf, cbBuf, NULL /* pcbWrittenMin */);
-#endif /* VBOX_AUDIO_MIXER_WITH_MIXBUF */
+    Assert(cbWritten == cbBuf);
 
     /* Update the sink's last written time stamp. */
     pSink->tsLastReadWrittenNs = RTTimeNanoTS();
 
     if (pcbWritten)
-        *pcbWritten = cbBuf; /* Always report everything written, as the backends need to keep up themselves. */
+        *pcbWritten = cbWritten;
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
