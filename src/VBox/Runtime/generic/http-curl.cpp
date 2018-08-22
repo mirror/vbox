@@ -2597,11 +2597,11 @@ RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead,
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_READFUNCTION, pfnRead);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_READDATA, pvUser);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2616,11 +2616,11 @@ RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWri
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEFUNCTION, pfnWrite);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEDATA, pvUser);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2635,11 +2635,11 @@ RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK 
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADERFUNCTION, pfnWrite);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADERDATA, pvUser);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2654,7 +2654,7 @@ RTR3DECL(int) RTHttpRawSetUrl(RTHTTP hHttp, const char *pszUrl)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_URL, pszUrl);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2669,7 +2669,7 @@ RTR3DECL(int) RTHttpRawSetGet(RTHTTP hHttp)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPGET, 1L);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2684,11 +2684,11 @@ RTR3DECL(int) RTHttpRawSetHead(RTHTTP hHttp)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPGET, 1L);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 1L);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2703,7 +2703,7 @@ RTR3DECL(int) RTHttpRawSetPost(RTHTTP hHttp)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_POST, 1L);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2718,7 +2718,7 @@ RTR3DECL(int) RTHttpRawSetPut(RTHTTP hHttp)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PUT, 1L);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2740,7 +2740,7 @@ RTR3DECL(int) RTHttpRawSetCustomRequest(RTHTTP hHttp, const char *pszVerb)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CUSTOMREQUEST, pszVerb);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2755,11 +2755,11 @@ RTR3DECL(int) RTHttpRawSetPostFields(RTHTTP hHttp, const void *pv, size_t cb)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_POSTFIELDSIZE, cb);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_POSTFIELDS, pv);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2773,7 +2773,7 @@ RTR3DECL(int) RTHttpRawSetInfileSize(RTHTTP hHttp, RTFOFF cb)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_INFILESIZE_LARGE, cb);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2788,7 +2788,7 @@ RTR3DECL(int) RTHttpRawSetVerbose(RTHTTP hHttp, bool fValue)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_VERBOSE, fValue ? 1L : 0L);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2803,7 +2803,7 @@ RTR3DECL(int) RTHttpRawSetTimeout(RTHTTP hHttp, long sec)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_TIMEOUT, sec);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2818,7 +2818,7 @@ RTR3DECL(int) RTHttpRawPerform(RTHTTP hHttp)
     RTHTTP_VALID_RETURN(pThis);
 
     rcCurl = curl_easy_perform(pThis->pCurl);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
@@ -2834,7 +2834,7 @@ RTR3DECL(int) RTHttpRawGetResponseCode(RTHTTP hHttp, long *plCode)
     AssertPtrReturn(plCode, VERR_INVALID_PARAMETER);
 
     rcCurl = curl_easy_getinfo(pThis->pCurl, CURLINFO_RESPONSE_CODE, plCode);
-    if (rcCurl != CURLE_OK)
+    if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
 
     return VINF_SUCCESS;
