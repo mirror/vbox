@@ -23,14 +23,15 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UISlidingAnimation.h"
 #include "UIToolPaneGlobal.h"
 #include "UIToolPaneMachine.h"
 
 /* Forward declarations: */
+class QStackedWidget;
 class QISplitter;
 class UIActionPool;
 class UIChooser;
-class UISlidingWidget;
 class UITabBar;
 class UIToolBar;
 class UIToolbarTools;
@@ -136,6 +137,10 @@ private slots:
                                              bool fUpdateLogViewer = true);
         /** Handles signal about Chooser-pane index change the default way. */
         void sltHandleChooserPaneIndexChangeDefault() { sltHandleChooserPaneIndexChange(); }
+
+        /** Handles sliding animation complete signal.
+          * @param  enmDirection  Brings which direction was animation finished for. */
+        void sltHandleSlidingAnimationComplete(SlidingDirection enmDirection);
     /** @} */
 
     /** @name Tools stuff.
@@ -181,9 +186,6 @@ private:
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
 
-    /** Holds the sliding-widget isntance. */
-    UISlidingWidget *m_pSlidingWidget;
-
     /** Holds the central splitter instance. */
     QISplitter *m_pSplitter;
 
@@ -199,11 +201,15 @@ private:
     QList<ToolTypeGlobal>   m_orderGlobal;
 
     /** Holds the Chooser-pane instance. */
-    UIChooser         *m_pPaneChooser;
-    /** Holds the Machine Tools-pane instance. */
-    UIToolPaneMachine *m_pPaneToolsMachine;
+    UIChooser          *m_pPaneChooser;
+    /** Holds the stacked-widget. */
+    QStackedWidget     *m_pStackedWidget;
     /** Holds the Global Tools-pane instance. */
-    UIToolPaneGlobal  *m_pPaneToolsGlobal;
+    UIToolPaneGlobal   *m_pPaneToolsGlobal;
+    /** Holds the Machine Tools-pane instance. */
+    UIToolPaneMachine  *m_pPaneToolsMachine;
+    /** Holds the sliding-animation widget instance. */
+    UISlidingAnimation *m_pSlidingAnimation;
 };
 
 #endif /* !___UIVirtualBoxManagerWidget_h___ */

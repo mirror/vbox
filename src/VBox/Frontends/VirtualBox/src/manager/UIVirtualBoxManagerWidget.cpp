@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QHBoxLayout>
+# include <QStackedWidget>
 # include <QStyle>
 # include <QVBoxLayout>
 
@@ -32,7 +33,6 @@
 # include "UIChooser.h"
 # include "UIVirtualBoxManager.h"
 # include "UIVirtualBoxManagerWidget.h"
-# include "UISlidingWidget.h"
 # include "UITabBar.h"
 # include "UIToolBar.h"
 # include "UIVirtualMachineItem.h"
@@ -47,13 +47,14 @@
 UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParent)
     : m_fPolished(false)
     , m_pActionPool(pParent->actionPool())
-    , m_pSlidingWidget(0)
     , m_pSplitter(0)
     , m_pToolBar(0)
     , m_pToolbarTools(0)
     , m_pPaneChooser(0)
-    , m_pPaneToolsMachine(0)
+    , m_pStackedWidget(0)
     , m_pPaneToolsGlobal(0)
+    , m_pPaneToolsMachine(0)
+    , m_pSlidingAnimation(0)
 {
     prepare();
 }
@@ -236,20 +237,22 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
 
     /* If global item is selected and we are on machine tools pane => switch to global tools pane: */
     if (   isGlobalItemSelected()
-        && m_pSlidingWidget->state() == UISlidingWidget::State_Start)
+        && m_pStackedWidget->currentWidget() != m_pPaneToolsGlobal)
     {
-        m_pSlidingWidget->moveForward();
-        m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Global);
+        m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal); // rendering w/a
+        m_pStackedWidget->setCurrentWidget(m_pSlidingAnimation);
+        m_pSlidingAnimation->animate(SlidingDirection_Reverse);
     }
 
     else
 
     /* If machine or group item is selected and we are on global tools pane => switch to machine tools pane: */
     if (   (isMachineItemSelected() || isGroupItemSelected())
-        && m_pSlidingWidget->state() == UISlidingWidget::State_Final)
+        && m_pStackedWidget->currentWidget() != m_pPaneToolsMachine)
     {
-        m_pSlidingWidget->moveBackward();
-        m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Machine);
+        m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine); // rendering w/a
+        m_pStackedWidget->setCurrentWidget(m_pSlidingAnimation);
+        m_pSlidingAnimation->animate(SlidingDirection_Forward);
     }
 
     /* If that was machine or group item selected: */
@@ -307,6 +310,25 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
                 m_pPaneToolsMachine->setItems(currentItems());
             /* Update Snapshots-pane and Logviewer-pane (in any case): */
             m_pPaneToolsMachine->setMachine(CMachine());
+        }
+    }
+}
+
+void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirection enmDirection)
+{
+    switch (enmDirection)
+    {
+        case SlidingDirection_Forward:
+        {
+            m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Machine);
+            m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
+            break;
+        }
+        case SlidingDirection_Reverse:
+        {
+            m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Global);
+            m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal);
+            break;
         }
     }
 }
@@ -466,20 +488,44 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         pLayoutRight->addWidget(m_pToolbarTools);
                     }
 
-                    /* Create sliding-widget: */
-                    m_pSlidingWidget = new UISlidingWidget(Qt::Vertical);
-                    if (m_pSlidingWidget)
+                    /* Create stacked-widget: */
+                    m_pStackedWidget = new QStackedWidget;
+                    if (m_pStackedWidget)
                     {
-                        /* Create Machine Tools-pane: */
-                        m_pPaneToolsMachine = new UIToolPaneMachine(actionPool());
                         /* Create Global Tools-pane: */
                         m_pPaneToolsGlobal = new UIToolPaneGlobal(actionPool());
+                        if (m_pPaneToolsGlobal)
+                        {
+                            /* Add into stack: */
+                            m_pStackedWidget->addWidget(m_pPaneToolsGlobal);
+                        }
 
-                        /* Add left/right widgets into sliding widget: */
-                        m_pSlidingWidget->setWidgets(m_pPaneToolsMachine, m_pPaneToolsGlobal);
+                        /* Create Machine Tools-pane: */
+                        m_pPaneToolsMachine = new UIToolPaneMachine(actionPool());
+                        if (m_pPaneToolsMachine)
+                        {
+                            /* Add into stack: */
+                            m_pStackedWidget->addWidget(m_pPaneToolsMachine);
+                        }
+
+                        /* Create sliding-widget: */
+                        m_pSlidingAnimation = new UISlidingAnimation(Qt::Vertical, true);
+                        if (m_pSlidingAnimation)
+                        {
+                            /* Add first/second widgets into sliding animation: */
+                            m_pSlidingAnimation->setWidgets(m_pPaneToolsGlobal, m_pPaneToolsMachine);
+                            connect(m_pSlidingAnimation, &UISlidingAnimation::sigAnimationComplete,
+                                    this, &UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete);
+
+                            /* Add into stack: */
+                            m_pStackedWidget->addWidget(m_pSlidingAnimation);
+                        }
+
+                        /* Make Machine Tools pane active initially: */
+                        m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
 
                         /* Add into layout: */
-                        pLayoutRight->addWidget(m_pSlidingWidget, 1);
+                        pLayoutRight->addWidget(m_pStackedWidget, 1);
                     }
                 }
 
