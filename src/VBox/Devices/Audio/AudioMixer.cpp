@@ -960,11 +960,9 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
         /* Return how much data we expect since the last write. */
         cbWritable = DrvAudioHlpMilliToBytes(10 /* ms */, &pSink->PCMProps); /** @todo Make this configurable! */
 #endif
-        /* Make sure to align the writable size to the stream's frame size. */
-        cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pSink->PCMProps);
     }
 
-    Log3Func(("Mixer: [%s] cbWritable=%RU32 (%RU64ms)\n",
+    Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
               pSink->pszName, cbWritable, DrvAudioHlpBytesToMilli(cbWritable, &pSink->PCMProps)));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
