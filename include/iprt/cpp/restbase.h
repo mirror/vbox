@@ -52,10 +52,10 @@ public:
     virtual ~RTCRestOutputBase();
 
     /**
-     * RTStrPrintf like function (see @rel pg_rt_str_format).
+     * RTStrPrintf like function (see @ref pg_rt_str_format).
      *
      * @returns Number of bytes outputted.
-     * @param   uDepth      The indentation level.
+     * @param   uIndent     The indentation level.
      * @param   pszFormat   The format string.
      * @param   ...         Argument specfied in @a pszFormat.
      */
@@ -69,10 +69,10 @@ public:
     }
 
     /**
-     * RTStrPrintfV like function (see @rel pg_rt_str_format).
+     * RTStrPrintfV like function (see @ref pg_rt_str_format).
      *
      * @returns Number of bytes outputted.
-     * @param   uDepth      The indentation level.
+     * @param   uIndent     The indentation level.
      * @param   pszFormat   The format string.
      * @param   va          Argument specfied in @a pszFormat.
      */
