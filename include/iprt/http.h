@@ -318,7 +318,6 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
  */
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
 
-// ----8<--------8<---- XXX: uwe: quick and dirty curl wrappers for OCI
 
 typedef DECLCALLBACK(size_t) FNRTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
 typedef FNRTHTTPREADCALLBACK *PFNRTHTTPREADCALLBACK;
