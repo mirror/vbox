@@ -2,6 +2,8 @@
 /** @file
  * Audio mixing routines for multiplexing audio sources in device emulations.
  *
+ * == Overview
+ *
  * This mixer acts as a layer between the audio connector interface and
  * the actual device emulation, providing mechanisms for audio sources (input)
  * and audio sinks (output).
@@ -24,6 +26,31 @@
  * does this with input streams. Each sink / source consists of one or more
  * so-called mixer streams, which then in turn have pointers to the actual
  * PDM audio input/output streams.
+ *
+ * == Playback
+ *
+ * For output sinks there can be one or more mixing stream attached.
+ * As the host sets the overall pace for the device emulation (virtual time
+ * in the guest OS vs. real time on the host OS), an output mixing sink
+ * needs to make sure that all connected output streams are able to accept
+ * all the same amount of data at a time.
+ *
+ * This is called synchronous multiplexing.
+ *
+ * A mixing sink employs an own audio mixing buffer, which in turn can convert
+ * the audio (output) data supplied from the device emulation into the sink's
+ * audio format. As all connected mixing streams in theory could have the same
+ * audio format as the mixing sink (parent), this can save processing time when
+ * it comes to serving a lot of mixing streams at once. That way only one
+ * conversion must be done, instead of each stream having to iterate over the
+ * data.
+ *
+ * == Recording
+ *
+ * For input sinks only one mixing stream at a time can be the recording
+ * source currently. A recording source is optional, e.g. it is possible to
+ * have no current recording source set. Switching to a different recording
+ * source at runtime is possible.
  */
 
 /*
