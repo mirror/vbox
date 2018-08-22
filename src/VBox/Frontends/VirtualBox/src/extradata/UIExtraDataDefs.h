@@ -512,6 +512,7 @@ public:
         RuntimeMenuInputActionType_TypeAltPrintScreen = RT_BIT(7),
         RuntimeMenuInputActionType_Mouse              = RT_BIT(8),
         RuntimeMenuInputActionType_MouseIntegration   = RT_BIT(9),
+        RuntimeMenuInputActionType_TypeHostKeyCombo   = RT_BIT(10),
         RuntimeMenuInputActionType_All                = 0xFFFF
     };
 

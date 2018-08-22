@@ -40,6 +40,7 @@
 #  include "UINetworkManager.h"
 #  include "UIDownloaderAdditions.h"
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIHostComboEditor.h"
 # include "UIIconPool.h"
 # include "UIKeyboardHandler.h"
 # include "UIMouseHandler.h"
@@ -1029,6 +1030,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo));
 
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Detach));
@@ -1148,6 +1150,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTypePrintScreen()));
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen), SIGNAL(triggered()),
             this, SLOT(sltTypeAltPrintScreen()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo), SIGNAL(toggled(bool)),
+            this, SLOT(sltTypeHostKeyComboPressRelease(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleMouseIntegration(bool)));
 
@@ -1673,6 +1677,31 @@ void UIMachineLogic::sltTypeAltPrintScreen()
     sequence[8] = 0x2A | 0x80; /* Print.. up */
     sequence[9] = 0x38 | 0x80; /* Alt up */
     keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool actionToggle)
+{
+    QList<unsigned> shortCodes = UIHostCombo::modifiersToScanCodes(gEDataManager->hostKeyCombination());
+    QVector <LONG> codes;
+    foreach (unsigned idxCode, shortCodes)
+    {
+        /* Check if we need to include extend code for this key: */
+        if (idxCode & 0x100)
+            codes << 0xE0;
+        if (actionToggle)
+        {
+            /* Add the press code: */
+             codes << (idxCode & 0x7F);
+        }
+        else
+        {
+            /* Add the release code: */
+            codes << ((idxCode & 0x7F) | 0x80);
+        }
+    }
+
+    keyboard().PutScancodes(codes);
     AssertWrapperOk(keyboard());
 }
 

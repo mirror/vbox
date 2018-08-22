@@ -1815,6 +1815,64 @@ protected:
     }
 };
 
+/** Toggle action extension, used as 'Perform Host Key Combo press/release' action class. */
+class UIActionToggleRuntimePerformTypeHostKeyCombo : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionToggleRuntimePerformTypeHostKeyCombo(UIActionPool *pParent)
+        : UIActionToggle
+          (pParent,
+           ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
+           ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png",
+           true)
+    {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeHostKeyCombo;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeHostKeyCombo);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeHostKeyCombo);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("TypeHostKeyCode");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+#ifdef VBOX_WS_MAC
+        return QKeySequence("Insert");
+#else
+        return QKeySequence("Insert");
+#endif
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Home Key Combo"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Home Key Combo"));
+    }
+};
+
 /** Menu action extension, used as 'Mouse' menu class. */
 class UIActionMenuRuntimeMouse : public UIActionMenu
 {
@@ -3211,6 +3269,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert] = new UIActionSimpleRuntimePerformTypeInsert(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen] = new UIActionSimpleRuntimePerformTypePrintScreen(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen] = new UIActionSimpleRuntimePerformTypeAltPrintScreen(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo] = new UIActionToggleRuntimePerformTypeHostKeyCombo(this);
     m_pool[UIActionIndexRT_M_Input_M_Mouse] = new UIActionMenuRuntimeMouse(this);
     m_pool[UIActionIndexRT_M_Input_M_Mouse_T_Integration] = new UIActionToggleRuntimeMouseIntegration(this);
 
@@ -3974,6 +4033,7 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen)) || fSeparator;
     /* 'Type Alt Print Screen' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Input_M_Keyboard);

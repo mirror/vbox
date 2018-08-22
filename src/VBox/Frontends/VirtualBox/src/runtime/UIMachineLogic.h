@@ -268,6 +268,7 @@ private slots:
     void sltTypeInsert();
     void sltTypePrintScreen();
     void sltTypeAltPrintScreen();
+    void sltTypeHostKeyComboPressRelease(bool);
     void sltTakeSnapshot();
     void sltShowInformationDialog();
     void sltReset();
