@@ -838,10 +838,7 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEn
     if (fEnable)
         rc = ichac97R3StreamAsyncIOCreate(pThis, pStream);
     if (RT_SUCCESS(rc))
-    {
         ichac97R3StreamAsyncIOLock(pStream);
-        ichac97R3StreamAsyncIOEnable(pStream, fEnable);
-    }
 # endif
 
     if (fEnable)
@@ -1287,6 +1284,7 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
     if (!ASMAtomicReadBool(&pAIO->fStarted))
     {
         pAIO->fShutdown = false;
+        pAIO->fEnabled  = true; /* Enabled by default. */
 
         rc = RTSemEventCreate(&pAIO->Event);
         if (RT_SUCCESS(rc))
@@ -1420,7 +1418,16 @@ static void ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
  * Updates an AC'97 stream by doing its required data transfers.
  * The host sink(s) set the overall pace.
  *
- * This routine is called by both, the synchronous and the asynchronous, implementations.
+ * This routine is called by both, the synchronous and the asynchronous
+ * (VBOX_WITH_AUDIO_AC97_ASYNC_IO), implementations.
+ *
+ * When running synchronously, the device DMA transfers *and* the mixer sink
+ * processing is within the device timer.
+ *
+ * When running asynchronously, only the device DMA transfers are done in the
+ * device timer, whereas the mixer sink processing then is done in the stream's
+ * own async I/O thread. This thread also will call this function
+ * (with fInTimer set to @c false).
  *
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to update.
@@ -1429,6 +1436,8 @@ static void ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
  */
 static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer)
 {
+    RT_NOREF(fInTimer);
+
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThis, pStream->u8SD);
     AssertPtr(pSink);
 
@@ -1439,63 +1448,66 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
 
     if (pStream->u8SD == AC97SOUNDSOURCE_PO_INDEX) /* Output (SDO). */
     {
-#ifdef LOG_ENABLED
-        const uint64_t deltaLastUpdateNs = RTTimeNanoTS() - pStream->State.tsLastUpdateNs;
-#endif
-        pStream->State.tsLastUpdateNs = RTTimeNanoTS();
-
-        PPDMAUDIOPCMPROPS pProps = &pStream->State.Cfg.Props;
-
-        /* Make sure that we don't transfer more than we need for this slot. */
-        uint32_t cbToTransfer = DrvAudioHlpMilliToBytes(pStream->State.Cfg.Device.uSchedulingHintMs, pProps);
-
-        /* Make sure that the transfer is frame-aligned.
-         * Add one additional frame to not transfer too little because of the alignment;
-         * ichac97R3StreamTransfer() will take care of clamping to the correct value then. */
-        cbToTransfer = DrvAudioHlpBytesAlign(cbToTransfer, pProps) + PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
-
-        Log3Func(("[SD%RU8] cbToTransfer=%RU32, deltaLastUpdateNs=%RU64\n", pStream->u8SD, cbToTransfer, deltaLastUpdateNs / RT_NS_1MS));
-
-        if (   fInTimer
-            && cbToTransfer)
-        {
-            /* Do the DMA transfer. */
-            rc2 = ichac97R3StreamTransfer(pThis, pStream, cbToTransfer);
-            AssertRC(rc2);
-        }
-
-        /* Make sure that we don't write more than we need for this slot. */
-        uint32_t cbToWrite = RT_MIN(cbToTransfer, ichac97R3StreamGetUsed(pStream));
-
-        /* Make sure that the write is byte-aligned. */
-        cbToWrite = DrvAudioHlpBytesAlign(cbToWrite, pProps);
-
-        Log3Func(("[SD%RU8] cbToWrite=%RU32, deltaLastUpdateNs=%RU64\n", pStream->u8SD, cbToWrite, deltaLastUpdateNs / RT_NS_1MS));
+        /* How much (guest output) data is available at the moment for the AC'97 stream? */
+        /* Only read from the AC'97 stream at the given scheduling rate. */
+        bool fDoRead = false; /* Whether to read from the AC'97 stream or not. */
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-        if (   fInTimer
-            && cbToWrite)
-        {
-            rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
-            AssertRC(rc2);
-        }
-        else
+        if (fInTimer)
 # endif
         {
-            if (cbToWrite)
+            const uint32_t cbStreamFree = ichac97R3StreamGetFree(pStream);
+            if (cbStreamFree)
             {
-                /* Read (guest output) data and write it to the stream's sink. */
-                uint32_t cbRead;
-                rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbToWrite, &cbRead);
+                /* Do the DMA transfer. */
+                rc2 = ichac97R3StreamTransfer(pThis, pStream, cbStreamFree);
                 AssertRC(rc2);
             }
 
-            /* When running synchronously, update the associated sink here.
-             * Otherwise this will be done in the device timer. */
-            rc2 = AudioMixerSinkUpdate(pSink);
-            AssertRC(rc2);
-
+            /* Only read from the AC'97 stream at the given scheduling rate. */
+            const uint64_t tsNowNs = RTTimeNanoTS();
+            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.uSchedulingHintMs * RT_NS_1MS)
+            {
+                fDoRead = true;
+                pStream->State.tsLastUpdateNs = tsNowNs;
+            }
         }
+
+        Log3Func(("[SD%RU8] fInTimer=%RTbool, fDoRead=%RTbool\n", pStream->u8SD, fInTimer, fDoRead));
+
+# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+        if (fDoRead)
+        {
+            rc2 = ichac97R3StreamAsyncIONotify(pStream);
+            AssertRC(rc2);
+        }
+# endif
+
+# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+        if (!fInTimer) /* In async I/O thread */
+        {
+# else
+        if (fDoRead)
+        {
+# endif
+            const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
+            const uint32_t cbStreamReadable   = ichac97R3StreamGetUsed(pStream);
+            const uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
+
+            Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32\n", pStream->u8SD, cbSinkWritable, cbStreamReadable));
+
+            if (cbToReadFromStream)
+            {
+                /* Read (guest output) data and write it to the stream's sink. */
+                rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbToReadFromStream, NULL);
+                AssertRC(rc2);
+            }
+        }
+
+        /* When running synchronously, update the associated sink here.
+         * Otherwise this will be done in the async I/O thread. */
+        rc2 = AudioMixerSinkUpdate(pSink);
+        AssertRC(rc2);
     }
     else /* Input (SDI). */
     {

@@ -1362,7 +1362,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOLock(pStream);
-        hdaR3StreamAsyncIOEnable(pStream, false /* fEnable */);
 # endif
         /* Make sure to remove the run bit before doing the actual stream reset. */
         HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN;
@@ -1396,9 +1395,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 # endif
             if (fRun)
             {
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-                hdaR3StreamAsyncIOEnable(pStream, fRun /* fEnable */);
-# endif
                 /* (Re-)initialize the stream with current values. */
                 rc2 = hdaR3StreamInit(pStream, pStream->u8SD);
                 AssertRC(rc2);

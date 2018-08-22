@@ -176,6 +176,8 @@ typedef struct HDASTREAMSTATE
     uint16_t                cbDMALeft;
     /** Unused, padding. */
     uint8_t                 abPadding4[2+4];
+   /** Timestamp (in ns) of last stream update. */
+    uint64_t                tsLastUpdateNs;
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
 typedef HDASTREAMSTATE *PHDASTREAMSTATE;
