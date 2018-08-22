@@ -1790,7 +1790,7 @@ ExtPack::i_hlpGetCanceledProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProg
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
 
     BOOL fCanceled = FALSE;
-    HRESULT hrc = pProgress->GetCanceled(&fCanceled);
+    HRESULT hrc = pProgress->COMGETTER(Canceled)(&fCanceled);
     *pfCanceled  = !!fCanceled;
     return hrc;
 }
