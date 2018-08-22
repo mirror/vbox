@@ -1403,10 +1403,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
         const uint32_t cfLive       = AudioMixBufLive(&pStream->Host.MixBuf);
 #ifdef LOG_ENABLED
         const uint8_t  uLivePercent = (100 * cfLive) / AudioMixBufSize(&pStream->Host.MixBuf);
-
-        const uint64_t tsDeltaPlayedCapturedNs = RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs;
 #endif
-        const uint32_t cfPassedReal = DrvAudioHlpNanoToFrames(tsDeltaPlayedCapturedNs, &pStream->Host.Cfg.Props);
+        const uint64_t tsDeltaPlayedCapturedNs = RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs;
+        const uint32_t cfPassedReal            = DrvAudioHlpNanoToFrames(tsDeltaPlayedCapturedNs, &pStream->Host.Cfg.Props);
 
         const uint32_t cfPeriod     = pStream->Host.Cfg.Backend.cfPeriod;
 
