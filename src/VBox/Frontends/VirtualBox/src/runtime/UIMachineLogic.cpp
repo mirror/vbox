@@ -1680,19 +1680,19 @@ void UIMachineLogic::sltTypeAltPrintScreen()
     AssertWrapperOk(keyboard());
 }
 
-void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool actionToggle)
+void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool fToggleSequence)
 {
     QList<unsigned> shortCodes = UIHostCombo::modifiersToScanCodes(gEDataManager->hostKeyCombination());
-    QVector <LONG> codes;
+    QVector<LONG> codes;
     foreach (unsigned idxCode, shortCodes)
     {
-        /* Check if we need to include extend code for this key: */
+        /* Check if we need to include extended code for this key: */
         if (idxCode & 0x100)
             codes << 0xE0;
-        if (actionToggle)
+        if (fToggleSequence)
         {
             /* Add the press code: */
-             codes << (idxCode & 0x7F);
+            codes << (idxCode & 0x7F);
         }
         else
         {

@@ -1815,7 +1815,7 @@ protected:
     }
 };
 
-/** Toggle action extension, used as 'Perform Host Key Combo press/release' action class. */
+/** Toggle action extension, used as 'Perform Host Key Combo Press/Release' action class. */
 class UIActionToggleRuntimePerformTypeHostKeyCombo : public UIActionToggle
 {
     Q_OBJECT;
@@ -1824,11 +1824,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleRuntimePerformTypeHostKeyCombo(UIActionPool *pParent)
-        : UIActionToggle
-          (pParent,
-           ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
-           ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png",
-           true)
+        : UIActionToggle(pParent, true)
     {}
 
 protected:
@@ -1852,7 +1848,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("TypeHostKeyCode");
+        return QString("TypeHostKeyCombo");
     }
 
     /** Returns default shortcut. */
@@ -1868,8 +1864,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Home Key Combo"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Home Key Combo"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Host Key Combo"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Host Key Combo"));
     }
 };
 
@@ -4033,6 +4029,7 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen)) || fSeparator;
     /* 'Type Alt Print Screen' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen)) || fSeparator;
+    /* 'Type Host Key Combo' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo)) || fSeparator;
 
     /* Mark menu as valid: */
