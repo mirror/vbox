@@ -25,7 +25,6 @@
 #include "AutoCaller.h"
 #include <VBox/com/ErrorInfo.h>
 
-#include "MachineImpl.h"
 #include "UnattendedScript.h"
 #include "UnattendedImpl.h"
 
@@ -33,6 +32,7 @@
 
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/vfs.h>
 #include <iprt/getopt.h>
 #include <iprt/path.h>
 

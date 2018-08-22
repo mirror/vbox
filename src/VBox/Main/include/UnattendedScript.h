@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include <iprt/cpp/utils.h>
+#include <vector>
 
 using namespace xml;
 
