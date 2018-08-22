@@ -58,8 +58,9 @@ signals:
 public:
 
     /** Constructs sliding animation passing @a pParent to the base-class.
-      * @param  enmOrientation  Brings the widget orientation. */
-    UISlidingAnimation(Qt::Orientation enmOrientation, QWidget *pParent = 0);
+      * @param  enmOrientation  Brings the widget orientation.
+      * @param  fReverse        Brings whether the animation should be initially reversed. */
+    UISlidingAnimation(Qt::Orientation enmOrientation, bool fReverse, QWidget *pParent = 0);
 
     /** Defines @a pWidget1 and @a pWidget2. */
     void setWidgets(QWidget *pWidget1, QWidget *pWidget2);
@@ -90,6 +91,8 @@ private:
 
     /** Holds the widget orientation. */
     Qt::Orientation  m_enmOrientation;
+    /** Holds whether the animation should be initially reversed. */
+    bool             m_fReverse;
     /** Holds the animation instance. */
     UIAnimation     *m_pAnimation;
     /** Holds sub-window start-geometry. */
