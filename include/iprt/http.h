@@ -319,7 +319,7 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
 
 
-typedef DECLCALLBACK(size_t) FNRTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
+typedef size_t FNRTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
 typedef FNRTHTTPREADCALLBACK *PFNRTHTTPREADCALLBACK;
 
 #define RT_HTTP_READCALLBACK_ABORT 0x10000000 /* CURL_READFUNC_ABORT */
@@ -327,7 +327,7 @@ typedef FNRTHTTPREADCALLBACK *PFNRTHTTPREADCALLBACK;
 RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead, void *pvUser);
 
 
-typedef DECLCALLBACK(size_t) FNRTHTTPWRITECALLBACK(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
+typedef size_t FNRTHTTPWRITECALLBACK(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
 typedef FNRTHTTPWRITECALLBACK *PFNRTHTTPWRITECALLBACK;
 
 RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
