@@ -710,6 +710,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIEmptyFilePathSelector.h \
 	src/widgets/UIGuestOSTypeSelectionButton.h \
 	src/widgets/UILineTextEdit.h \
+	src/widgets/UISlidingAnimation.h \
 	src/widgets/UISlidingWidget.h \
 	src/widgets/UITabBar.h \
 	src/widgets/UIMenuToolBar.h \
@@ -1388,6 +1389,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIEmptyFilePathSelector.cpp \
 	src/widgets/UIGuestOSTypeSelectionButton.cpp \
 	src/widgets/UILineTextEdit.cpp \
+	src/widgets/UISlidingAnimation.cpp \
 	src/widgets/UISlidingWidget.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/UIMenuToolBar.cpp \
