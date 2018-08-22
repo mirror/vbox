@@ -55,7 +55,7 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  Utf8Str aDescription,
+                  const Utf8Str &aDescription,
                   BOOL aCancelable)
     {
         return init(
@@ -87,9 +87,9 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  Utf8Str aDescription, BOOL aCancelable,
+                  const Utf8Str &aDescription, BOOL aCancelable,
                   ULONG cOperations,
-                  Utf8Str aFirstOperationDescription)
+                  const Utf8Str &aFirstOperationDescription)
     {
         return init(
 #if !defined(VBOX_COM_INPROC)
@@ -109,16 +109,16 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  Utf8Str aDescription,
+                  const Utf8Str &aDescription,
                   BOOL aCancelable,
                   ULONG cOperations,
                   ULONG ulTotalOperationsWeight,
-                  Utf8Str aFirstOperationDescription,
+                  const Utf8Str &aFirstOperationDescription,
                   ULONG ulFirstOperationWeight);
 
     HRESULT init(BOOL aCancelable,
                  ULONG aOperationCount,
-                 Utf8Str aOperationDescription);
+                 const Utf8Str &aOperationDescription);
 
     void uninit();
 

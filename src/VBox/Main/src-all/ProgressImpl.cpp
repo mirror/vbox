@@ -147,11 +147,11 @@ HRESULT Progress::init(
                        VirtualBox *aParent,
 #endif
                        IUnknown *aInitiator,
-                       Utf8Str aDescription,
+                       const Utf8Str &aDescription,
                        BOOL aCancelable,
                        ULONG cOperations,
                        ULONG ulTotalOperationsWeight,
-                       Utf8Str aFirstOperationDescription,
+                       const Utf8Str &aFirstOperationDescription,
                        ULONG ulFirstOperationWeight)
 {
     LogFlowThisFunc(("aDescription=\"%s\", cOperations=%d, ulTotalOperationsWeight=%d, aFirstOperationDescription=\"%s\", ulFirstOperationWeight=%d\n",
@@ -260,7 +260,7 @@ HRESULT Progress::init(
  */
 HRESULT Progress::init(BOOL aCancelable,
                        ULONG aOperationCount,
-                       Utf8Str aOperationDescription)
+                       const Utf8Str &aOperationDescription)
 {
     LogFlowThisFunc(("aOperationDescription=\"%s\"\n", aOperationDescription.c_str()));
 
