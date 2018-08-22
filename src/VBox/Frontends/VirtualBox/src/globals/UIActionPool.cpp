@@ -318,6 +318,7 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
                                bool fMachineMenuAction /* = false */)
     : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
+    prepare();
 }
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
