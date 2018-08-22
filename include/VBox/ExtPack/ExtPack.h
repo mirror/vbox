@@ -189,6 +189,95 @@ typedef struct VBOXEXTPACKHLP
     DECLR3CALLBACKMEMBER(int, pfnUnloadVDPlugin,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
                                                  const char *pszPluginLibrary));
 
+    /**
+     * Creates an IProgress object instance for a long running extension
+     * pack provided API operation which is executed asynchronously.
+     *
+     * This implicitly creates a cancellable progress object, since anything
+     * else is user unfriendly. You need to design your code to handle
+     * cancellation with reasonable response time.
+     *
+     * @returns COM status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pInitiator      Pointer to the initiating object.
+     * @param   pcszDescription Description of the overall task.
+     * @param   cOperations     Number of operations for this task.
+     * @param   uTotalOperationsWeight        Overall weight for the entire task.
+     * @param   pcszFirstOperationDescription Description of the first operation.
+     * @param   uFirstOperationWeight         Weight for the first operation.
+     * @param   ppProgressOut   Output parameter for the IProgress object reference.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCreateProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IUnknown) *pInitiator,
+                                                      const char *pcszDescription, uint32_t cOperations,
+                                                      uint32_t uTotalOperationsWeight, const char *pcszFirstOperationDescription,
+                                                      uint32_t uFirstOperationWeight, VBOXEXTPACK_IF_CS(IProgress) **ppProgressOut));
+
+    /**
+     * Checks if the Progress object is marked as canceled.
+     *
+     * @returns COM status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pProgress       Pointer to the IProgress object reference returned
+     *                          by pfnCreateProgress.
+     * @param   pfCanceled      @c true if canceled, @c false otherwise.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetCanceledProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                                           bool *pfCanceled));
+
+    /**
+     * Updates the percentage value of the current operation of the
+     * Progress object.
+     *
+     * @returns COM status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pProgress       Pointer to the IProgress object reference returned
+     *                          by pfnCreateProgress.
+     * @param   uPercent        Result of the overall task.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnUpdateProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                                      uint32_t uPercent));
+
+    /**
+     * Signals that the current operation is successfully completed and
+     * advances to the next operation. The operation percentage is reset
+     * to 0.
+     *
+     * If the operation count is exceeded this returns an error.
+     *
+     * @returns COM status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pProgress       Pointer to the IProgress object reference returned
+     *                          by pfnCreateProgress.
+     * @param   pcszNextOperationDescription Description of the next operation.
+     * @param   uNextOperationWeight         Weight for the next operation.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnNextOperationProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                                             const char *pcszNextOperationDescription,
+                                                             uint32_t uNextOperationWeight));
+
+    /**
+     * Marks the whole task as complete and sets the result code.
+     *
+     * If the result code indicates a failure then this method will store
+     * the currently set COM error info from the current thread in the
+     * the errorInfo attribute of this Progress object instance. If there
+     * is no error information available then an error is returned.
+     *
+     * If the result code indicates success then the task is terminated,
+     * without paying attention to the current operation being the last.
+     *
+     * Note that this must be called only once for the given Progress
+     * object. Subsequent calls will return errors.
+     *
+     * @returns COM status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pProgress       Pointer to the IProgress object reference returned
+     *                          by pfnCreateProgress.
+     * @param   uResultCode     Result of the overall task.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCompleteProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                                        uint32_t uResultCode));
+
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
@@ -200,7 +289,7 @@ typedef struct VBOXEXTPACKHLP
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
 /** Current version of the VBOXEXTPACKHLP structure.  */
-#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(2, 1)
+#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(3, 0)
 
 
 /** Pointer to the extension pack callback table. */

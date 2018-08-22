@@ -142,6 +142,10 @@ public:
     VBOXEXTPACKCTX      enmContext;
     /** Set if we've made the pfnVirtualBoxReady or pfnConsoleReady call. */
     bool                fMadeReadyCall;
+#ifndef VBOX_COM_INPROC
+    /** Pointer to the VirtualBox object so we can create a progress object. */
+    VirtualBox         *pVirtualBox;
+#endif
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
@@ -719,13 +723,14 @@ HRESULT ExtPack::FinalConstruct()
  * Initializes the extension pack by reading its file.
  *
  * @returns COM status code.
+ * @param   a_pVirtualBox   The VirtualBox object.
  * @param   a_enmContext    The context we're in.
  * @param   a_pszName       The name of the extension pack.  This is also the
  *                          name of the subdirector under @a a_pszParentDir
  *                          where the extension pack is installed.
  * @param   a_pszDir        The extension pack directory name.
  */
-HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszDir)
+HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszDir)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -743,6 +748,11 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
         /* pfnLoadHGCMService   = */ ExtPack::i_hlpLoadHGCMService,
         /* pfnLoadVDPlugin      = */ ExtPack::i_hlpLoadVDPlugin,
         /* pfnUnloadVDPlugin    = */ ExtPack::i_hlpUnloadVDPlugin,
+        /* pfnCreateProgress    = */ ExtPack::i_hlpCreateProgress,
+        /* pfnGetCanceledProgress = */ ExtPack::i_hlpGetCanceledProgress,
+        /* pfnUpdateProgress    = */ ExtPack::i_hlpUpdateProgress,
+        /* pfnNextOperationProgress = */ ExtPack::i_hlpNextOperationProgress,
+        /* pfnCompleteProgress  = */ ExtPack::i_hlpCompleteProgress,
         /* pfnReserved1         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved2         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved3         = */ ExtPack::i_hlpReservedN,
@@ -773,6 +783,11 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
     m->pReg                         = NULL;
     m->enmContext                   = a_enmContext;
     m->fMadeReadyCall               = false;
+#ifndef VBOX_COM_INPROC
+    m->pVirtualBox                  = a_pVirtualBox;
+#else
+    RT_NOREF(a_pVirtualBox);
+#endif
 
     /*
      * Make sure the SUPR3Hardened API works (ignoring errors for now).
@@ -1722,6 +1737,114 @@ ExtPack::i_hlpUnloadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBo
 #endif
 }
 
+/*static*/ DECLCALLBACK(uint32_t)
+ExtPack::i_hlpCreateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IUnknown) *pInitiator,
+                             const char *pcszDescription, uint32_t cOperations,
+                             uint32_t uTotalOperationsWeight, const char *pcszFirstOperationDescription,
+                             uint32_t uFirstOperationWeight, VBOXEXTPACK_IF_CS(IProgress) **ppProgressOut)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pcszDescription, E_INVALIDARG);
+    AssertReturn(cOperations >= 1, E_INVALIDARG);
+    AssertReturn(uTotalOperationsWeight >= 1, E_INVALIDARG);
+    AssertPtrReturn(pcszFirstOperationDescription, E_INVALIDARG);
+    AssertReturn(uFirstOperationWeight >= 1, E_INVALIDARG);
+    AssertPtrReturn(ppProgressOut, E_INVALIDARG);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+#ifndef VBOX_COM_INPROC
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+#endif
+
+    ComObjPtr<Progress> pProgress;
+    HRESULT hrc = pProgress.createObject();
+    if (FAILED(hrc))
+        return hrc;
+    hrc = pProgress->init(
+#ifndef VBOX_COM_INPROC
+                          m->pVirtualBox,
+#endif
+                          pInitiator, pcszDescription, TRUE /* aCancelable */,
+                          cOperations, uTotalOperationsWeight,
+                          pcszFirstOperationDescription, uFirstOperationWeight);
+    if (FAILED(hrc))
+        return hrc;
+
+    return pProgress.queryInterfaceTo(ppProgressOut);
+}
+
+/*static*/ DECLCALLBACK(uint32_t)
+ExtPack::i_hlpGetCanceledProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                  bool *pfCanceled)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pProgress, E_INVALIDARG);
+    AssertPtrReturn(pfCanceled, E_INVALIDARG);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+
+    BOOL fCanceled = FALSE;
+    HRESULT hrc = pProgress->GetCanceled(&fCanceled);
+    *pfCanceled  = !!fCanceled;
+    return hrc;
+}
+
+/*static*/ DECLCALLBACK(uint32_t)
+ExtPack::i_hlpUpdateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                             uint32_t uPercent)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pProgress, E_INVALIDARG);
+    AssertReturn(uPercent <= 100, E_INVALIDARG);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+
+    return pProgress->SetCurrentOperationProgress(uPercent);
+}
+
+/*static*/ DECLCALLBACK(uint32_t)
+ExtPack::i_hlpNextOperationProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                    const char *pcszNextOperationDescription,
+                                    uint32_t uNextOperationWeight)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pProgress, E_INVALIDARG);
+    AssertPtrReturn(pcszNextOperationDescription, E_INVALIDARG);
+    AssertReturn(uNextOperationWeight >= 1, E_INVALIDARG);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+
+    return pProgress->SetNextOperation(Bstr(pcszNextOperationDescription).raw(), uNextOperationWeight);
+}
+
+/*static*/ DECLCALLBACK(uint32_t)
+ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                               uint32_t uResultCode)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pProgress, E_INVALIDARG);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+
+    Progress *pProgressInt = static_cast<Progress *>(pProgress);
+    return pProgressInt->i_notifyComplete(uResultCode);
+}
+
 /*static*/ DECLCALLBACK(int)
 ExtPack::i_hlpReservedN(PCVBOXEXTPACKHLP pHlp)
 {
@@ -2004,7 +2127,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
                         ComObjPtr<ExtPack> NewExtPack;
                         HRESULT hrc2 = NewExtPack.createObject();
                         if (SUCCEEDED(hrc2))
-                            hrc2 = NewExtPack->initWithDir(a_enmContext, pstrName->c_str(), szExtPackDir);
+                            hrc2 = NewExtPack->initWithDir(a_pVirtualBox, a_enmContext, pstrName->c_str(), szExtPackDir);
                         delete pstrName;
                         if (SUCCEEDED(hrc2))
                         {
@@ -2589,7 +2712,7 @@ HRESULT ExtPackManager::i_refreshExtPack(const char *a_pszName, bool a_fUnusable
             ComObjPtr<ExtPack> ptrNewExtPack;
             hrc = ptrNewExtPack.createObject();
             if (SUCCEEDED(hrc))
-                hrc = ptrNewExtPack->initWithDir(m->enmContext, a_pszName, szDir);
+                hrc = ptrNewExtPack->initWithDir(m->pVirtualBox, m->enmContext, a_pszName, szDir);
             if (SUCCEEDED(hrc))
             {
                 m->llInstalledExtPacks.push_back(ptrNewExtPack);
