@@ -155,7 +155,7 @@ endif
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/DiskImage
 	@# Create the image. We calculate the size our selves, adding 16MB for fudging (min 13MB fudge needed on high sierra).
 	sudo hdiutil create -format UDBZ -volname "VirtualBox" -srcfolder "$(VBOX_PATH_PACK_TMP)/DiskImage" \
-		-size $(DOLLAR)((`sudo /usr/bin/du -d 0 -k "$(VBOX_PATH_PACK_TMP)/DiskImage/" | /usr/bin/cut -f1` + 16384))k \
+		-size $(DOLLAR)((`sudo /usr/bin/du -sk "$(VBOX_PATH_PACK_TMP)/DiskImage/" | /usr/bin/cut -f1` + 16384))k \
 		"$@"
 	@# Change (back) the owner so it can be deleted by the user.
 	sudo chown "$(shell whoami)" "$@"
