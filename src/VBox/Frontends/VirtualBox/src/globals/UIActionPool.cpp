@@ -1241,6 +1241,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Find"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with searching options"));
         setToolTip(tr("Open Find Pane (%1)").arg(shortcut().toString()));
     }
@@ -1277,6 +1278,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Filter"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with filtering options"));
         setToolTip(tr("Open Filter Pane (%1)").arg(shortcut().toString()));
     }
@@ -1313,6 +1315,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Bookmark"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with bookmarking options"));
         setToolTip(tr("Open Bookmark Pane (%1)").arg(shortcut().toString()));
     }
@@ -1349,6 +1352,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Settings"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer settings"));
         setToolTip(tr("Open Settings Pane (%1)").arg(shortcut().toString()));
     }
@@ -1385,6 +1389,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Refresh"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh selected virtual machine log"));
         setToolTip(tr("Refresh Virtual Machine Log (%1)").arg(shortcut().toString()));
     }
@@ -1421,6 +1426,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Save..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Save selected virtual machine log"));
         setToolTip(tr("Save Virtual Machine Log (%1)").arg(shortcut().toString()));
     }

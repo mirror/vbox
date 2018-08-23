@@ -1615,6 +1615,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Take..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Take a snapshot of the current virtual machine state"));
         setToolTip(tr("Take Snapshot (%1)").arg(shortcut().toString()));
     }
@@ -1652,6 +1653,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Delete..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Delete selected snapshot of the virtual machine"));
         setToolTip(tr("Delete Snapshot (%1)").arg(shortcut().toString()));
     }
@@ -1689,6 +1691,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Restore..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Restore selected snapshot of the virtual machine"));
         setToolTip(tr("Restore Snapshot (%1)").arg(shortcut().toString()));
     }
@@ -1726,6 +1729,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Properties"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with the selected snapshot properties"));
         setToolTip(tr("Open Snapshot Properties (%1)").arg(shortcut().toString()));
     }
@@ -1763,6 +1767,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Clone..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Clone selected virtual machine"));
         setToolTip(tr("Clone Virtual Machine (%1)").arg(shortcut().toString()));
     }
@@ -1834,6 +1839,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Add a disk image file"));
         setToolTip(tr("Add a Disk Image File (%1)").arg(shortcut().toString()));
     }
@@ -1876,6 +1882,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Copy..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Copy selected disk image file"));
         setToolTip(tr("Copy Disk Image File (%1)").arg(shortcut().toString()));
     }
@@ -1918,6 +1925,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Move..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Move selected disk image file"));
         setToolTip(tr("Move Disk Image File (%1)").arg(shortcut().toString()));
     }
@@ -1960,6 +1968,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Remove..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected disk image file"));
         setToolTip(tr("Remove Disk Image File (%1)").arg(shortcut().toString()));
     }
@@ -2002,6 +2011,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Re&lease..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Release selected disk image file"));
         setToolTip(tr("Release Disk Image File (%1)").arg(shortcut().toString()));
     }
@@ -2044,6 +2054,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Properties"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected disk image file properties"));
         setToolTip(tr("Open Disk Image File Properties (%1)").arg(shortcut().toString()));
     }
@@ -2081,6 +2092,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of disk image files"));
         setToolTip(tr("Refresh Disk Image Files (%1)").arg(shortcut().toString()));
     }
@@ -2147,6 +2159,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Create new host-only network"));
         setToolTip(tr("Create Host-only Network (%1)").arg(shortcut().toString()));
     }
@@ -2184,6 +2197,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Remove..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected host-only network"));
         setToolTip(tr("Remove Host-only Network (%1)").arg(shortcut().toString()));
     }
@@ -2221,6 +2235,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Properties"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected host-only network properties"));
         setToolTip(tr("Open Host-only Network Properties (%1)").arg(shortcut().toString()));
     }
@@ -2258,6 +2273,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of host-only networks"));
         setToolTip(tr("Refresh Host-only Networks (%1)").arg(shortcut().toString()));
     }
