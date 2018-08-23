@@ -160,6 +160,11 @@ public:
     /** @todo Add some kind of state? */
 
     /**
+     * Resets the object to all default values.
+     */
+    virtual void resetToDefaults() = 0;
+
+    /**
      * Serialize the object as JSON.
      *
      * @returns a_rDst
@@ -191,6 +196,7 @@ public:
     ~RTCRestArray() {};
 /** @todo more later. */
 
+    virtual void resetToDefaults();
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
     virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo);
 };
@@ -206,6 +212,7 @@ public:
     ~RTCRestStringMap() {};
 /** @todo more later. */
 
+    virtual void resetToDefaults();
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
     virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo);
 };
