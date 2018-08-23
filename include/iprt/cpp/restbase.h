@@ -42,17 +42,6 @@
  */
 
 
-/**
- * Very limited map class that avoids dragging in std::map.
- */
-template<class Type> class RTCRestStringMap
-{
-public:
-    RTCRestStringMap() {};
-    ~RTCRestStringMap() {};
-/** @todo more later. */
-};
-
 
 /**
  * Abstract base class for serializing data objects.
@@ -67,15 +56,14 @@ public:
      * RTStrPrintf like function (see @ref pg_rt_str_format).
      *
      * @returns Number of bytes outputted.
-     * @param   uIndent     The indentation level.
      * @param   pszFormat   The format string.
      * @param   ...         Argument specfied in @a pszFormat.
      */
-    size_t         printf(unsigned uIndent, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3)
+    size_t         printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3)
     {
         va_list va;
         va_start(va, pszFormat);
-        size_t cchWritten = this->vprintf(uIndent, pszFormat, va);
+        size_t cchWritten = this->vprintf(pszFormat, va);
         va_end(va);
         return cchWritten;
     }
@@ -84,11 +72,39 @@ public:
      * RTStrPrintfV like function (see @ref pg_rt_str_format).
      *
      * @returns Number of bytes outputted.
-     * @param   uIndent     The indentation level.
      * @param   pszFormat   The format string.
      * @param   va          Argument specfied in @a pszFormat.
      */
-    virtual size_t vprintf(unsigned uIndent, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0) = 0;
+    virtual size_t vprintf(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0) = 0;
+
+    /**
+     * Sets the indentation level for use when pretty priting things.
+     *
+     * @returns Previous indentation level.
+     * @param   uIndent     The indentation level.
+     */
+    unsigned setIndent(unsigned uIndent)
+    {
+        unsigned const uRet = m_uIndent;
+        m_uIndent = uIndent;
+        return uRet;
+    }
+
+    /**
+     * Increases the indentation level.
+     *
+     * @returns Previous indentation level.
+     */
+    unsigned incrementIndent()
+    {
+        unsigned const uRet = m_uIndent;
+        m_uIndent = uRet + 1;
+        return uRet;
+    }
+
+protected:
+    /** The current indentation level. */
+    unsigned m_uIndent;
 };
 
 
@@ -106,7 +122,7 @@ public:
     RTCRestOutputToString(RTCString *a_pDst);
     virtual ~RTCRestOutputToString();
 
-    size_t vprintf(unsigned uIndent, const char *pszFormat, va_list va);
+    size_t vprintf(const char *pszFormat, va_list va);
 
     /**
      * Finalizes the output and releases the string object to the caller.
@@ -148,10 +164,8 @@ public:
      *
      * @returns a_rDst
      * @param   a_rDst      The destination for the serialization.
-     * @param   uIndent     The indentation level.  Increment by 1 for child
-     *                      objects.
      */
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst, unsigned uIndent) = 0;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) = 0;
 
     /**
      * Deserialize object from the given JSON iterator.
@@ -164,6 +178,36 @@ public:
      * @todo Take a RTJSONVAL?
      */
     virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo) = 0;
+};
+
+
+/**
+ * Limited array class.
+ */
+template<class Type> class RTCRestArray : public RTCRestObjectBase
+{
+public:
+    RTCRestArray() {};
+    ~RTCRestArray() {};
+/** @todo more later. */
+
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
+    virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo);
+};
+
+
+/**
+ * Limited map class.
+ */
+template<class Type> class RTCRestStringMap : public RTCRestObjectBase
+{
+public:
+    RTCRestStringMap() {};
+    ~RTCRestStringMap() {};
+/** @todo more later. */
+
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
+    virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo);
 };
 
 
