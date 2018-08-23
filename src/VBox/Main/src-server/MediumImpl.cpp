@@ -1599,6 +1599,29 @@ HRESULT Medium::setDescription(AutoCaller &autoCaller, const com::Utf8Str &aDesc
     {
         autoCaller.release();
 
+        // to avoid redundant locking, which just takes a time, just call required functions.
+        // the error will be just stored and will be reported after locks will be acquired again
+
+        const char *pszError = NULL;
+
+
+        /* Build the lock list. */
+        rc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                    this /* pToLockWrite */,
+                                    true /* fMediumLockWriteAll */,
+                                    NULL,
+                                    *pMediumLockList);
+        if (FAILED(rc))
+        {
+            pszError = tr("Failed to create medium lock list for '%s'");
+        }
+        else
+        {
+            rc = pMediumLockList->Lock();
+            if (FAILED(rc))
+                pszError = tr("Failed to lock media '%s'");
+        }
+
         // locking: we need the tree lock first because we access parent pointers
         // and we need to write-lock the media involved
         AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -1608,48 +1631,11 @@ HRESULT Medium::setDescription(AutoCaller &autoCaller, const com::Utf8Str &aDesc
 
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        /* Build the lock list. */
-        alock.release();
-        autoCaller.release();
-        treeLock.release();
-        rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    this /* pToLockWrite */,
-                                    true /* fMediumLockWriteAll */,
-                                    NULL,
-                                    *pMediumLockList);
-        treeLock.acquire();
-        autoCaller.add();
-        AssertComRCThrowRC(autoCaller.rc());
-        alock.acquire();
-
         if (FAILED(rc))
-        {
-            throw setError(rc,
-                           tr("Failed to create medium lock list for '%s'"),
-                           i_getLocationFull().c_str());
-        }
-
-        alock.release();
-        autoCaller.release();
-        treeLock.release();
-        rc = pMediumLockList->Lock();
-        treeLock.acquire();
-        autoCaller.add();
-        AssertComRCThrowRC(autoCaller.rc());
-        alock.acquire();
-
-        if (FAILED(rc))
-        {
-            throw setError(rc,
-                           tr("Failed to lock media '%s'"),
-                           i_getLocationFull().c_str());
-        }
+            throw setError(rc, pszError, i_getLocationFull().c_str());
 
         /* Set a new description */
-        if (SUCCEEDED(rc))
-        {
-            m->strDescription = aDescription;
-        }
+        m->strDescription = aDescription;
 
         // save the settings
         alock.release();
