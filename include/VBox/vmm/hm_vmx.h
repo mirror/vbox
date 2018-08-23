@@ -2692,13 +2692,13 @@ typedef union
         /** The access type; 0=full, 1=high of 64-bit fields. */
         uint32_t    fAccessType  : 1;
         /** The index. */
-        uint32_t    uIndex       : 8;
+        uint32_t    u8Index      : 8;
         /** The type; 0=control, 1=VM-exit info, 2=guest-state, 3=host-state.  */
-        uint32_t    uType        : 2;
+        uint32_t    u2Type       : 2;
         /** Reserved (MBZ). */
         uint32_t    u1Reserved0  : 1;
         /** The width; 0=16-bit, 1=64-bit, 2=32-bit, 3=natural-width. */
-        uint32_t    uWidth       : 2;
+        uint32_t    u2Width      : 2;
         /** Reserved (MBZ). */
         uint32_t    u18Reserved0 : 18;
     } n;
@@ -2710,6 +2710,30 @@ AssertCompileSize(VMXVMCSFIELDENC, 4);
 typedef VMXVMCSFIELDENC *PVMXVMCSFIELDENC;
 /** Pointer to a const VMCS field encoding. */
 typedef const VMXVMCSFIELDENC *PCVMXVMCSFIELDENC;
+
+/** VMCS field encoding type: Full. */
+#define VMX_VMCS_ENC_ACCESS_TYPE_FULL                           0
+/** VMCS field encoding type: High. */
+#define VMX_VMCS_ENC_ACCESS_TYPE_HIGH                           1
+
+/** VMCS field encoding type: Control. */
+#define VMX_VMCS_ENC_TYPE_CONTROL                               0
+/** VMCS field encoding type: VM-exit information / read-only fields. */
+#define VMX_VMCS_ENC_TYPE_VMEXIT_INFO                           1
+/** VMCS field encoding type: Guest-state. */
+#define VMX_VMCS_ENC_TYPE_GUEST_STATE                           2
+/** VMCS field encoding type: Host-state. */
+#define VMX_VMCS_ENC_TYPE_HOST_STATE                            3
+
+/** VMCS field encoding width: 16-bit. */
+#define VMX_VMCS_ENC_WIDTH_16BIT                                0
+/** VMCS field encoding width: 64-bit. */
+#define VMX_VMCS_ENC_WIDTH_64BIT                                1
+/** VMCS field encoding width: 32-bit. */
+#define VMX_VMCS_ENC_WIDTH_32BIT                                2
+/** VMCS field encoding width: Natural width. */
+#define VMX_VMCS_ENC_WIDTH_NATURAL                              3
+
 /** Bits fields for VMCS field encoding. */
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_MASK                        UINT32_C(0x00000001)
@@ -2854,21 +2878,442 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
 #pragma pack(1)
 typedef struct
 {
-    /** VMX VMCS revision identifier.   */
-    VMXVMCSREVID        u32VmcsRevId;
-    /** VMX-abort indicator. */
-    uint32_t            u32VmxAbortId;
-    /** @todo VMCS data. We can use RTUINT64U for the full/high 64-bit VMCS fields. */
-    uint8_t             abPadding0[X86_PAGE_4K_SIZE - 8];
+    /** 0x0 - VMX VMCS revision identifier.  */
+    VMXVMCSREVID    u32VmcsRevId;
+    /** 0x4 - VMX-abort indicator. */
+    uint32_t        u32VmxAbortId;
+    /** 0x8 - Reserved for future. */
+    uint32_t        au32Reserved0[8];
+
+    /** @name 16-bit control fields.
+     * @{ */
+    /** 0x28 - Virtual processor ID. */
+    uint16_t        u16Vpid;
+    /** 0x2a - Posted interrupt notify vector. */
+    uint16_t        u16PostIntNotifyVector;
+    /** 0x2c - EPTP index. */
+    uint16_t        u16EptpIndex;
+    /** 0x2e - Reserved for future. */
+    uint16_t        au16Reserved0[8];
+    /** @} */
+
+    /** @name 16-bit Guest-state fields.
+     * @{ */
+    /** 0x3e - Guest ES selector. */
+    RTSEL           GuestEs;
+    /** 0x40 - Guest ES selector. */
+    RTSEL           GuestCs;
+    /** 0x42 - Guest ES selector. */
+    RTSEL           GuestSs;
+    /** 0x44 - Guest ES selector. */
+    RTSEL           GuestDs;
+    /** 0x46 - Guest ES selector. */
+    RTSEL           GuestFs;
+    /** 0x48 - Guest ES selector. */
+    RTSEL           GuestGs;
+    /** 0x4a - Guest interrupt status (virtual-interrupt delivery). */
+    uint16_t        u16GuestIntStatus;
+    /** 0x4c - PML index. */
+    uint16_t        u16PmlIndex;
+    /** 0x4e - Reserved for future. */
+    uint16_t        au16Reserved1[8];
+    /** @} */
+
+    /** name 16-bit Host-state fields.
+     * @{ */
+    /** 0x5e - Host ES selector. */
+    RTSEL           HostEs;
+    /** 0x60 - Host ES selector. */
+    RTSEL           HostCs;
+    /** 0x62 - Host ES selector. */
+    RTSEL           HostSs;
+    /** 0x64 - Host ES selector. */
+    RTSEL           HostDs;
+    /** 0x66 - Host ES selector. */
+    RTSEL           HostFs;
+    /** 0x68 - Host ES selector. */
+    RTSEL           HostGs;
+    /** 0x6a - Reserved for future. */
+    uint16_t        au16Reserved2[11];
+    /** @} */
+
+    /** @name 32-bit Control fields.
+     * @{ */
+    /** 0x80 - Pin-based VM-execution controls. */
+    uint32_t        u32PinCtls;
+    /** 0x84 - Processor-based VM-execution controls. */
+    uint32_t        u32ProcCtls;
+    /** 0x88 - Exception bitmap. */
+    uint32_t        u32XcptBitmap;
+    /** 0x8c - Page-fault exception error mask. */
+    uint32_t        u32XcptPFMask;
+    /** 0x90 - Page-fault exception error match. */
+    uint32_t        u32XcptPFMatch;
+    /** 0x94 - CR3-target count. */
+    uint32_t        u32Cr3TargetCount;
+    /** 0x98 - VM-exit controls. */
+    uint32_t        u32ExitCtls;
+    /** 0x9c - VM-exit MSR store count. */
+    uint32_t        u32ExitMsrStoreCount;
+    /** 0xa0 - VM-exit MSR load count. */
+    uint32_t        u32ExitMsrLoadCount;
+    /** 0xa4 - VM-entry controls. */
+    uint32_t        u32EntryCtls;
+    /** 0xa8 - VM-entry MSR load count. */
+    uint32_t        u32EntryMsrLoadCount;
+    /** 0xac - VM-entry interruption information. */
+    uint32_t        u32EntryIntInfo;
+    /** 0xb0 - VM-entry exception error code. */
+    uint32_t        u32EntryXcptErrCode;
+    /** 0xb4 - VM-entry instruction length. */
+    uint32_t        u32EntryInstrLen;
+    /** 0xb8 - TPR-treshold. */
+    uint32_t        u32TprTreshold;
+    /** 0xbc - Secondary-processor based VM-execution controls. */
+    uint32_t        u32ProcCtls2;
+    /** 0xc0 - Pause-loop exiting Gap. */
+    uint32_t        u32PleGap;
+    /** 0xc4 - Pause-loop exiting Window. */
+    uint32_t        u32PleWindow;
+    /** 0xc8 - Reserved for future. */
+    uint32_t        au32Reserved1[8];
+    /** @} */
+
+    /** @name 32-bit Read-only Data fields.
+     * @{ */
+    /** 0xe8 - VM-instruction error.  */
+    uint32_t        u32RoVmInstrError;
+    /** 0xec - VM-exit reason. */
+    uint32_t        u32RoVmExitReason;
+    /** 0xf0 - VM-exit interruption information. */
+    uint32_t        u32RoVmExitIntInfo;
+    /** 0xf4 - VM-exit interruption error code. */
+    uint32_t        u32RoVmExitErrCode;
+    /** 0xf8 - IDT-vectoring information. */
+    uint32_t        u32RoIdtVectoringInfo;
+    /** 0xfc - IDT-vectoring error code. */
+    uint32_t        u32RoIdtVectoringErrCode;
+    /** 0x100 - VM-exit instruction length. */
+    uint32_t        u32RoVmExitInstrLen;
+    /** 0x104 - VM-exit instruction information. */
+    uint32_t        u32RoVmExitInstrInfo;
+    /** 0x108 - Reserved for future. */
+    uint32_t        au32RoReserved2[8];
+    /** @} */
+
+    /** @name 32-bit Guest-state fields.
+     * @{ */
+    /** 0x128 - Guest ES limit. */
+    uint32_t        u32GuestEsLimit;
+    /** 0x12c - Guest ES limit. */
+    uint32_t        u32GuestCsLimit;
+    /** 0x130 - Guest ES limit. */
+    uint32_t        u32GuestSsLimit;
+    /** 0x134 - Guest ES limit. */
+    uint32_t        u32GuestDsLimit;
+    /** 0x138 - Guest ES limit. */
+    uint32_t        u32GuestFsLimit;
+    /** 0x13c - Guest ES limit. */
+    uint32_t        u32GuestGsLimit;
+    /** 0x140 - Guest LDTR limit. */
+    uint32_t        u32GuestLdtrLimit;
+    /** 0x144 - Guest TR limit. */
+    uint32_t        u32GuestTrLimit;
+    /** 0x148 - Guest GDTR limit. */
+    uint32_t        u32GuestGdtrLimit;
+    /** 0x14c - Guest IDTR limit. */
+    uint32_t        u32GuestIdtrLimit;
+    /** 0x150 - Guest ES attributes. */
+    uint32_t        u32GuestESAttr;
+    /** 0x154 - Guest CS attributes. */
+    uint32_t        u32GuestCSAttr;
+    /** 0x158 - Guest SS attributes. */
+    uint32_t        u32GuestSSAttr;
+    /** 0x15c - Guest DS attributes. */
+    uint32_t        u32GuestDSAttr;
+    /** 0x160 - Guest FS attributes. */
+    uint32_t        u32GuestFSAttr;
+    /** 0x164 - Guest GS attributes. */
+    uint32_t        u32GuestGSAttr;
+    /** 0x168 - Guest LDTR attributes. */
+    uint32_t        u32GuestLdtrAttr;
+    /** 0x16c - Guest TR attributes. */
+    uint32_t        u32GuestTrAttr;
+    /** 0x170 - Guest interruptibility state. */
+    uint32_t        u32GuestIntrState;
+    /** 0x174 - Guest activity state. */
+    uint32_t        u32GuestActivityState;
+    /** 0x178 - Guest SMBASE. */
+    uint32_t        u32GuestSmBase;
+    /** 0x17c - Guest SYSENTER CS. */
+    uint32_t        u32GuestSysenterCS;
+    /** 0x180 - Preemption timer value. */
+    uint32_t        u32PreemptTimer;
+    /** 0x184 - Reserved for future. */
+    uint32_t        au32Reserved3[8];
+    /** @} */
+
+    /** @name 32-bit Host-state fields.
+     * @{ */
+    /** 0x1a4 - Host SYSENTER CS. */
+    uint32_t        u32HostSysenterCs;
+    /** 0x1a8 - Reserved for future. */
+    uint32_t        au32Reserved4[12];
+    /** @} */
+
+    /** @name 64-bit Control fields.
+     * @{ */
+    /** 0x1d8 - I/O bitmap A address. */
+    RTUINT64U       u64AddrIoBitmapA;
+    /** 0x1e0 - I/O bitmap B address. */
+    RTUINT64U       u64AddrIoBitmapB;
+    /** 0x1e8 - MSR bitmap address. */
+    RTUINT64U       u64AddrMsrBitmapA;
+    /** 0x1f0 - VM-exit MSR-store area address. */
+    RTUINT64U       u64AddrVmExitMsrStore;
+    /** 0x1f8 - VM-exit MSR-load area address. */
+    RTUINT64U       u64AddrVmExitMsrLoad;
+    /** 0x200 - VM-entry MSR-load area address. */
+    RTUINT64U       u64AddrVmEntryMsrLoad;
+    /** 0x208 - Executive-VMCS pointer. */
+    RTUINT64U       u64ExecVmcsPtr;
+    /** 0x210 - PML address. */
+    RTUINT64U       u64AddrPml;
+    /** 0x218 - TSC offset. */
+    RTUINT64U       u64TscOffset;
+    /** 0x220 - Virtual-APIC address. */
+    RTUINT64U       u64AddrVirtApic;
+    /** 0x228 - APIC-access address. */
+    RTUINT64U       u64AddrApicAccess;
+    /** 0x230 - Posted-interrupt descriptor address.  */
+    RTUINT64U       u64AddrPostedIntDesc;
+    /** 0x238 - VM-functions control.  */
+    RTUINT64U       u64VmFuncCtls;
+    /** 0x240 - EPTP pointer.  */
+    RTUINT64U       u64EptpPtr;
+    /** 0x248 - EOI-exit bitmap 0.  */
+    RTUINT64U       u64EoiExitBitmap0;
+    /** 0x250 - EOI-exit bitmap 1.  */
+    RTUINT64U       u64EoiExitBitmap1;
+    /** 0x258 - EOI-exit bitmap 2.  */
+    RTUINT64U       u64EoiExitBitmap2;
+    /** 0x260 - EOI-exit bitmap 3.  */
+    RTUINT64U       u64EoiExitBitmap3;
+    /** 0x268 - EPTP-list address.  */
+    RTUINT64U       u64AddrEptpList;
+    /** 0x270 - VMREAD-bitmap address.  */
+    RTUINT64U       u64AddrVmreadBitmap;
+    /** 0x278 - VMWRITE-bitmap address.  */
+    RTUINT64U       u64AddrVmwriteBitmap;
+    /** 0x280 - Virtualization-exception information address.  */
+    RTUINT64U       u64AddrXcptVeInfo;
+    /** 0x288 - XSS-exiting bitmap address.  */
+    RTUINT64U       u64AddrXssBitmap;
+    /** 0x290 - ENCLS-exiting bitmap address.  */
+    RTUINT64U       u64AddrEnclsBitmap;
+    /** 0x298 - TSC multiplier.  */
+    RTUINT64U       u64TscMultiplier;
+    /** 0x2a0 - Reserved for future. */
+    RTUINT64U       au64Reserved0[16];
+    /** @} */
+
+    /** @name 64-bit Read-only Data fields.
+     * @{ */
+    /** 0x320 - Guest-physical address. */
+    RTUINT64U       u64GuestPhysAddr;
+    /** 0x328 - Reserved for future. */
+    RTUINT64U       au64Reserved1[8];
+    /** @} */
+
+    /** @name 64-bit Guest-state fields.
+     * @{ */
+    /** 0x368 - VMCS link pointer. */
+    RTUINT64U       u64VmcsLinkPtr;
+    /** 0x370 - Guest debug-control MSR. */
+    RTUINT64U       u64GuestDebugCtlMsr;
+    /** 0x378 - Guest PAT MSR. */
+    RTUINT64U       u64GuestPatMsr;
+    /** 0x380 - Guest EFER MSR. */
+    RTUINT64U       u64GuestEferMsr;
+    /** 0x388 - Guest global performance-control MSR. */
+    RTUINT64U       u64GuestPerfGlobalCtlMsr;
+    /** 0x390 - Guest PDPTE 0. */
+    RTUINT64U       u64GuestPdpte0;
+    /** 0x398 - Guest PDPTE 0. */
+    RTUINT64U       u64GuestPdpte1;
+    /** 0x3a0 - Guest PDPTE 1. */
+    RTUINT64U       u64GuestPdpte2;
+    /** 0x3a8 - Guest PDPTE 2. */
+    RTUINT64U       u64GuestPdpte3;
+    /** 0x3b0 - Guest Bounds-config MSR (Intel MPX - Memory Protection Extensions). */
+    RTUINT64U       u64GuestBndcfgsMsr;
+    /** 0x3b8 - Reserved for future. */
+    RTUINT64U       au64Reserved2[16];
+    /** @} */
+
+    /** @name 64-bit Host-state Fields.
+     * @{ */
+    /** 0x438 - Host PAT MSR. */
+    RTUINT64U       u64HostPatMsr;
+    /** 0x440 - Host EFER MSR. */
+    RTUINT64U       u64HostEferMsr;
+    /** 0x448 - Host global performance-control MSR. */
+    RTUINT64U       u64HostPerfGlobalCtlMsr;
+    /** 0x450 - Reserved for future. */
+    RTUINT64U       au64Reserved3[16];
+    /** @} */
+
+    /** @name Natural-width Control fields.
+     * @{ */
+    /** 0x4d0 - CR0 guest/host Mask. */
+    RTUINT64U       u64Cr0Mask;
+    /** 0x4d8 - CR4 guest/host Mask. */
+    RTUINT64U       u64Cr4Mask;
+    /** 0x4e0 - CR0 read shadow. */
+    RTUINT64U       u64Cr0ReadShadow;
+    /** 0x4e8 - CR4 read shadow. */
+    RTUINT64U       u64Cr4ReadShadow;
+    /** 0x4f0 - CR3-target value 0. */
+    RTUINT64U       u64Cr3Target0;
+    /** 0x4f8 - CR3-target value 1. */
+    RTUINT64U       u64Cr3Target1;
+    /** 0x500 - CR3-target value 2. */
+    RTUINT64U       u64Cr3Target2;
+    /** 0x508 - CR3-target value 3. */
+    RTUINT64U       u64Cr3Target3;
+    /** 0x510 - Reserved for future. */
+    RTUINT64U       au64Reserved4[32];
+    /** @} */
+
+    /** @name Natural-width Read-only Data fields. */
+    /** 0x610 - Exit qualification. */
+    RTUINT64U       u64ExitQual;
+    /** 0x618 - I/O RCX. */
+    RTUINT64U       u64IoRcx;
+    /** 0x620 - I/O RCX. */
+    RTUINT64U       u64IoRsi;
+    /** 0x628 - I/O RCX. */
+    RTUINT64U       u64IoRdi;
+    /** 0x630 - I/O RCX. */
+    RTUINT64U       u64IoRip;
+    /** 0x638 - I/O RCX. */
+    RTUINT64U       u64AddrGuestLinear;
+    /** 0x640 - Reserved for future. */
+    RTUINT64U       au64Reserved5[16];
+    /** @} */
+
+    /** @name Natural-width Guest-state Fields.
+     * @{ */
+    /** 0x6c0 - Guest CR0. */
+    RTUINT64U       u64GuestCr0;
+    /** 0x6c8 - Guest CR3. */
+    RTUINT64U       u64GuestCr3;
+    /** 0x6d0 - Guest CR4. */
+    RTUINT64U       u64GuestCr4;
+    /** 0x6d8 - Guest ES base. */
+    RTUINT64U       u64GuestESBase;
+    /** 0x6e0 - Guest CS base. */
+    RTUINT64U       u64GuestCSBase;
+    /** 0x6e8 - Guest SS base. */
+    RTUINT64U       u64GuestSSBase;
+    /** 0x6f0 - Guest DS base. */
+    RTUINT64U       u64GuestDSBase;
+    /** 0x6f8 - Guest FS base. */
+    RTUINT64U       u64GuestFSBase;
+    /** 0x700 - Guest GS base. */
+    RTUINT64U       u64GuestGSBase;
+    /** 0x708 - Guest LDTR base. */
+    RTUINT64U       u64GuestLdtrBase;
+    /** 0x710 - Guest TR base. */
+    RTUINT64U       u64GuestTrBase;
+    /** 0x718 - Guest GDTR base.  */
+    RTUINT64U       u64GuestGdtrBase;
+    /** 0x720 - Guest IDTR base.  */
+    RTUINT64U       u64GuestIdtrBase;
+    /** 0x728 - Guest DR7.  */
+    RTUINT64U       u64GuestDr7;
+    /** 0x730 - Guest RSP.  */
+    RTUINT64U       u64GuestRsp;
+    /** 0x738 - Guest RIP.  */
+    RTUINT64U       u64GuestRip;
+    /** 0x740 - Guest RFLAGS.  */
+    RTUINT64U       u64GuestRflags;
+    /** 0x748 - Guest pending debug exception.  */
+    RTUINT64U       u64GuestPendingDbgXcpt;
+    /** 0x750 - Guest SYSENTER ESP.  */
+    RTUINT64U       u64GuestSysenterEsp;
+    /** 0x758 - Guest SYSENTER EIP.  */
+    RTUINT64U       u64GuestSysenterEip;
+    /** 0x760 - Reserved for future. */
+    RTUINT64U       au64Reserved6[32];
+    /** @} */
+
+    /** @name Natural-width Host-state fields.
+     * @{ */
+    /** 0x860 - Host CR0. */
+    RTUINT64U       u64HostCr0;
+    /** 0x868 - Host CR3. */
+    RTUINT64U       u64HostCr3;
+    /** 0x870 - Host CR4. */
+    RTUINT64U       u64HostCr4;
+    /** 0x878 - Host FS base. */
+    RTUINT64U       u64HostFsBase;
+    /** 0x880 - Host GS base. */
+    RTUINT64U       u64HostGsBase;
+    /** 0x888 - Host TR base. */
+    RTUINT64U       u64HostTrBase;
+    /** 0x890 - Host GDTR base. */
+    RTUINT64U       u64HostGdtrBase;
+    /** 0x898 - Host IDTR base. */
+    RTUINT64U       u64HostIdtrBase;
+    /** 0x8a0 - Host SYSENTER ESP base. */
+    RTUINT64U       u64HostSysenterEsp;
+    /** 0x8a8 - Host SYSENTER ESP base. */
+    RTUINT64U       u64HostSysenterEip;
+    /** 0x8b0 - Host RSP. */
+    RTUINT64U       u64HostRsp;
+    /** 0x8b8 - Host RIP. */
+    RTUINT64U       u64HostRip;
+    /** 0x8c0 - Reserved for future. */
+    RTUINT64U       au64Reserved7[32];
+    /** @} */
+
+    /** 0x9c0 - Padding. */
+    uint8_t         abPadding[X86_PAGE_4K_SIZE - 0x9c0];
 } VMXVVMCS;
 #pragma pack()
-AssertCompileSize(VMXVVMCS, X86_PAGE_4K_SIZE);
-AssertCompileMemberOffset(VMXVVMCS, u32VmxAbortId, 4);
 /** Pointer to the VMXVVMCS struct. */
 typedef VMXVVMCS *PVMXVVMCS;
 /** Pointer to a const VMXVVMCS struct. */
 typedef const VMXVVMCS *PCVMXVVMCS;
+AssertCompileSize(VMXVVMCS, X86_PAGE_4K_SIZE);
+AssertCompileMemberOffset(VMXVVMCS, u32VmxAbortId,      0x004);
+AssertCompileMemberOffset(VMXVVMCS, u16Vpid,            0x028);
+AssertCompileMemberOffset(VMXVVMCS, GuestEs,            0x03e);
+AssertCompileMemberOffset(VMXVVMCS, HostEs,             0x05e);
+AssertCompileMemberOffset(VMXVVMCS, u32PinCtls,         0x080);
+AssertCompileMemberOffset(VMXVVMCS, u32RoVmInstrError,  0x0e8);
+AssertCompileMemberOffset(VMXVVMCS, u32GuestEsLimit,    0x128);
+AssertCompileMemberOffset(VMXVVMCS, u32HostSysenterCs,  0x1a4);
+AssertCompileMemberOffset(VMXVVMCS, u64AddrIoBitmapA,   0x1d8);
+AssertCompileMemberOffset(VMXVVMCS, u64GuestPhysAddr,   0x320);
+AssertCompileMemberOffset(VMXVVMCS, u64VmcsLinkPtr,     0x368);
+AssertCompileMemberOffset(VMXVVMCS, u64HostPatMsr,      0x438);
+AssertCompileMemberOffset(VMXVVMCS, u64Cr0Mask,         0x4d0);
+AssertCompileMemberOffset(VMXVVMCS, u64ExitQual,        0x610);
+AssertCompileMemberOffset(VMXVVMCS, u64GuestCr0,        0x6c0);
+AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
 
+/** Get the offset into VMCS data for a VMCS field given its encoding. */
+#define VMX_V_VMCS_FIELD_OFFSET(a_Enc)          (  ((a_VmcsFieldEnc).n.u8Index & 0x1f) \
+                                                 | ((a_VmcsFieldEnc).n.u2Type  << 5) \
+                                                 | ((a_VmcsFieldEnc).n.u2Width << 7))
+
+/** Get the offset into VMCS data for a VMCS field given its encoding as an
+ *  unsigned 32-bit number. */
+#define VMX_V_VMCS_FIELD_OFFSET_U32(a_uEnc)     (  (RT_BF_GET((a_uEnc), VMX_BF_VMCS_ENC_INDEX) & 0x1f) \
+                                                 | (RT_BF_GET((a_uEnc), VMX_BF_VMCS_ENC_TYPE)  << 5) \
+                                                 | (RT_BF_GET((a_uEnc), VMX_BF_VMCS_ENC_WIDTH) << 7))
 /** @} */
 
 
