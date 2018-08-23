@@ -2288,6 +2288,8 @@ Sub Main
    CheckForMinGW32 strOptMinGW32, strOptW32API
    CheckForMinGWw64 strOptMinGWw64
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
+   CfgPrint "VBOX_WITH_LIBVPX := " '' @todo look for libvpx 1.1.0+
+   CfgPrint "VBOX_WITH_LIBOPUS := " '' @todo look for libopus 1.2.1+
    EnvPrint "set PATH=%PATH%;" & g_strPath& "/tools/win." & g_strTargetArch & "/bin;" '' @todo look for yasm
    if blnOptDisableSDL = True then
       DisableSDL "--disable-sdl"
