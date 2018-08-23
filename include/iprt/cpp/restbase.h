@@ -43,6 +43,18 @@
 
 
 /**
+ * Very limited map class that avoids dragging in std::map.
+ */
+template<class Type> class RTCRestStringMap
+{
+public:
+    RTCRestStringMap() {};
+    ~RTCRestStringMap() {};
+/** @todo more later. */
+};
+
+
+/**
  * Abstract base class for serializing data objects.
  */
 class RTCRestOutputBase
@@ -83,7 +95,7 @@ public:
 /**
  * Serialize to a string object.
  */
-class RTCRestOutputToString : public RTCRestOutputBase, public RTCNonCopyable
+class RTCRestOutputToString : public RTCRestOutputBase
 {
 public:
     /**
@@ -113,17 +125,21 @@ protected:
     RTCString  *m_pDst;
     /** Set if we ran out of memory and should ignore subsequent calls. */
     bool        m_fOutOfMemory;
+
+    /* Make non-copyable (RTCNonCopyable causes warnings): */
+    RTCRestOutputToString(RTCRestOutputToString const &);
+    RTCRestOutputToString *operator=(RTCRestOutputToString const &);
 };
 
 
 /**
  * Abstract base class for REST data objects.
  */
-class RTCSRestObjectBase
+class RTCRestObjectBase
 {
 public:
-    RTCSRestObjectBase() {}
-    virtual ~RTCSRestObjectBase() {}
+    RTCRestObjectBase() {}
+    virtual ~RTCRestObjectBase() {}
 
     /** @todo Add some kind of state? */
 
@@ -230,7 +246,7 @@ private:
 /**
  * Base class for REST client responses.
  */
-class RTCRestClientApiBase : public RTCNonCopyable
+class RTCRestClientApiBase
 {
 public:
     RTCRestClientApiBase()
@@ -243,6 +259,10 @@ public:
 protected:
     /** Handle to the HTTP connection object. */
     RTHTTP  m_hHttp;
+
+    /* Make non-copyable (RTCNonCopyable causes warnings): */
+    RTCRestClientApiBase(RTCRestOutputToString const &);
+    RTCRestClientApiBase *operator=(RTCRestOutputToString const &);
 };
 
 /** @} */
