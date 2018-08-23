@@ -225,6 +225,7 @@ if test -n "${my_files[*]}"  -o  -n "${my_directories[*]}"; then
         test -x /bin/rm       || echo "warning: Cannot find /bin/rm or it's not an executable"
         echo ""
         echo "The uninstall failed. Please retry."
+        test "$my_default_prompt" != "Yes" && read -p "Press <ENTER> to exit"
         exit 1;
     fi
 fi
@@ -245,6 +246,7 @@ if test "$my_rc" -eq 0; then
     echo "Successfully unloaded VirtualBox kernel extensions."
 else
     echo "Failed to unload one or more KEXTs, please reboot the machine to complete the uninstall."
+    test "$my_default_prompt" != "Yes" && read -p "Press <ENTER> to exit"
     exit 1;
 fi
 
