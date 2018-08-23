@@ -1392,7 +1392,11 @@ DECLINLINE(ULONG) vboxNetLwfWinCalcSegments(PNET_BUFFER pNetBuf)
 {
     ULONG cSegs = 0;
     for (PMDL pMdl = NET_BUFFER_CURRENT_MDL(pNetBuf); pMdl; pMdl = NDIS_MDL_LINKAGE(pMdl))
-        cSegs++;
+    {
+        /* Skip empty MDLs (see @bugref{9233}) */
+        if (MmGetMdlByteCount(pMdl))
+            cSegs++;
+    }
     return cSegs;
 }
 
@@ -1617,6 +1621,9 @@ static PINTNETSG vboxNetLwfWinNBtoSG(PVBOXNETLWF_MODULE pModule, PNET_BUFFER pNe
             break;
         }
         ULONG cbSrc = MmGetMdlByteCount(pMdl);
+        if (cbSrc == 0)
+            continue; /* Skip empty MDLs (see @bugref{9233}) */
+
         if (uOffset)
         {
             Assert(uOffset < cbSrc);
