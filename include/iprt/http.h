@@ -319,6 +319,9 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
 
 
+/** @name thin wrappers for setting one or a few related curl options
+ * @remarks Subject to change.
+ * @{ */
 typedef size_t FNRTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
 typedef FNRTHTTPREADCALLBACK *PFNRTHTTPREADCALLBACK;
 
@@ -334,7 +337,6 @@ RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWri
 RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
 
 
-/* these are thin wrappers for setting one or a few related curl options */
 RTR3DECL(int) RTHttpRawSetUrl(RTHTTP hHttp, const char *pszUrl);
 
 RTR3DECL(int) RTHttpRawSetGet(RTHTTP hHttp);
@@ -353,6 +355,7 @@ RTR3DECL(int) RTHttpRawSetTimeout(RTHTTP hHttp, long sec);
 RTR3DECL(int) RTHttpRawPerform(RTHTTP hHttp);
 
 RTR3DECL(int) RTHttpRawGetResponseCode(RTHTTP hHttp, long *plCode);
+/** @} */
 
 /** @} */
 
