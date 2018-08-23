@@ -39,21 +39,30 @@ public:
 
     /** Constructs empty shortcut descriptor. */
     UIShortcut()
-        : m_strDescription(QString())
+        : m_strScope(QString())
+        , m_strDescription(QString())
         , m_sequence(QKeySequence())
         , m_defaultSequence(QKeySequence())
     {}
     /** Constructs shortcut descriptor.
+      * @param  strScope         Brings the shortcut scope.
       * @param  strDescription   Brings the shortcut description.
       * @param  sequence         Brings the shortcut sequence.
       * @param  defaultSequence  Brings the default shortcut sequence. */
-    UIShortcut(const QString &strDescription,
+    UIShortcut(const QString &strScope,
+               const QString &strDescription,
                const QKeySequence &sequence,
                const QKeySequence &defaultSequence)
-        : m_strDescription(strDescription)
+        : m_strScope(strScope)
+        , m_strDescription(strDescription)
         , m_sequence(sequence)
         , m_defaultSequence(defaultSequence)
     {}
+
+    /** Defines the shortcut @a strScope. */
+    void setScope(const QString &strScope);
+    /** Returns the shortcut scope. */
+    const QString &scope() const;
 
     /** Defines the shortcut @a strDescription. */
     void setDescription(const QString &strDescription);
@@ -75,6 +84,8 @@ public:
 
 private:
 
+    /** Holds the shortcut scope. */
+    QString      m_strScope;
     /** Holds the shortcut description. */
     QString      m_strDescription;
     /** Holds the shortcut sequence. */

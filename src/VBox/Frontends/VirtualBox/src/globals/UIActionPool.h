@@ -190,6 +190,11 @@ public:
     /** Defines current action name. */
     void setName(const QString &strName);
 
+    /** Returns action shortcut scope. */
+    const QString &shortcutScope() const { return m_strShortcutScope; }
+    /** Defines action @a strShortcutScope. */
+    void setShortcutScope(const QString &strShortcutScope) { m_strShortcutScope = strShortcutScope; }
+
     /** Returns action extra-data ID. */
     virtual int extraDataID() const { return 0; }
     /** Returns action extra-data key. */
@@ -247,6 +252,8 @@ private:
     QVector<QIcon>  m_icons;
     /** Holds the action name. */
     QString         m_strName;
+    /** Holds the action shortcut scope. */
+    QString         m_strShortcutScope;
     /** Holds the action shortcut. */
     QKeySequence    m_shortcut;
     /** Holds whether action shortcut hidden. */

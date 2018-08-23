@@ -36,6 +36,16 @@ using namespace UIExtraDataDefs;
 *   Class UIShortcut implementation.                                                                                             *
 *********************************************************************************************************************************/
 
+void UIShortcut::setScope(const QString &strScope)
+{
+    m_strScope = strScope;
+}
+
+const QString &UIShortcut::scope() const
+{
+    return m_strScope;
+}
+
 void UIShortcut::setDescription(const QString &strDescription)
 {
     m_strDescription = strDescription;
@@ -117,6 +127,7 @@ UIShortcut &UIShortcutPool::shortcut(UIActionPool *pActionPool, UIAction *pActio
         return shortcut(strShortcutKey);
     /* Create and return new one: */
     UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
+    newShortcut.setScope(pAction->shortcutScope());
     newShortcut.setDescription(pAction->name());
     newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
     newShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
@@ -162,6 +173,8 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
         {
             /* Get corresponding shortcut: */
             UIShortcut &existingShortcut = m_shortcuts[strShortcutKey];
+            /* Copy the scope from the action to the shortcut: */
+            existingShortcut.setScope(pAction->shortcutScope());
             /* Copy the description from the action to the shortcut: */
             existingShortcut.setDescription(pAction->name());
             /* Copy the sequence from the shortcut to the action: */
@@ -181,6 +194,7 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             pAction->setShortcut(newShortcut.sequence());
             pAction->retranslateUi();
             /* Copy the description from the action to the shortcut: */
+            newShortcut.setScope(pAction->shortcutScope());
             newShortcut.setDescription(pAction->name());
         }
     }
@@ -280,7 +294,8 @@ void UIShortcutPool::loadDefaultsFor(const QString &strPoolExtraDataID)
     {
         /* Default shortcut for the Runtime Popup Menu: */
         m_shortcuts.insert(s_strShortcutKeyTemplateRuntime.arg("PopupMenu"),
-                           UIShortcut(QApplication::translate("UIActionPool", "Popup Menu"),
+                           UIShortcut(QString(),
+                                      QApplication::translate("UIActionPool", "Popup Menu"),
                                       QString("Home"), QString("Home")));
     }
 }
@@ -318,7 +333,7 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
         const QString strShortcutKey(strShortcutKeyTemplate.arg(strShortcutExtraDataID));
         /* Modify map with composed key/value: */
         if (!m_shortcuts.contains(strShortcutKey))
-            m_shortcuts.insert(strShortcutKey, UIShortcut(QString(), strShortcutSequence, QString()));
+            m_shortcuts.insert(strShortcutKey, UIShortcut(QString(), QString(), strShortcutSequence, QString()));
         else
         {
             /* Get corresponding value: */
