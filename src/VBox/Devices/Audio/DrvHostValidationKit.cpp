@@ -127,7 +127,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostVaKitAudioGetStatus(PPDMIHOSTAUDI
 }
 
 
-static int debugCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
+static int vakitCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     RT_NOREF(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
@@ -136,7 +136,7 @@ static int debugCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStrea
 }
 
 
-static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
+static int vakitCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg,
                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     RT_NOREF(pDrv, pCfgAcq);
@@ -210,9 +210,9 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamCreate(PPDMIHOSTAUDIO pInterface
 
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = debugCreateStreamIn( pDrv, pStreamDbg, pCfgReq, pCfgAcq);
+        rc = vakitCreateStreamIn( pDrv, pStreamDbg, pCfgReq, pCfgAcq);
     else
-        rc = debugCreateStreamOut(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
+        rc = vakitCreateStreamOut(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
 
     if (RT_SUCCESS(rc))
     {
@@ -265,7 +265,7 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     int rc2 = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cxBuf, 0 /* fFlags */);
     if (RT_FAILURE(rc2))
-        LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc2));
+        LogRel(("VaKitAudio: Writing output failed with %Rrc\n", rc2));
 
     *pcxWritten = cxBuf;
 
@@ -290,14 +290,14 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
 }
 
 
-static int debugDestroyStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg)
+static int vakitDestroyStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg)
 {
     RT_NOREF(pDrv, pStreamDbg);
     return VINF_SUCCESS;
 }
 
 
-static int debugDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg)
+static int vakitDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStreamDbg)
 {
     RT_NOREF(pDrv);
 
@@ -333,9 +333,9 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamDestroy(PPDMIHOSTAUDIO pInterfac
 
     int rc;
     if (pStreamDbg->pCfg->enmDir == PDMAUDIODIR_IN)
-        rc = debugDestroyStreamIn (pDrv, pStreamDbg);
+        rc = vakitDestroyStreamIn (pDrv, pStreamDbg);
     else
-        rc = debugDestroyStreamOut(pDrv, pStreamDbg);
+        rc = vakitDestroyStreamOut(pDrv, pStreamDbg);
 
     if (RT_SUCCESS(rc))
     {
