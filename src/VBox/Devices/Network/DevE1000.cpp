@@ -1393,7 +1393,7 @@ static const struct E1kRegMap_st
     { 0x00400, 0x00004, 0x017FFFFA, 0x017FFFFA, e1kRegReadDefault      , e1kRegWriteDefault      , "TCTL"    , "Transmit Control" },
     { 0x00410, 0x00004, 0x3FFFFFFF, 0x3FFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "TIPG"    , "Transmit IPG" },
     { 0x00458, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "AIFS"    , "Adaptive IFS Throttle - AIT" },
-    { 0x00e00, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "LEDCTL"  , "LED Control" },
+    { 0x00e00, 0x00004, 0xCFCFCFCF, 0xCFCFCFCF, e1kRegReadDefault      , e1kRegWriteDefault      , "LEDCTL"  , "LED Control" },
     { 0x01000, 0x00004, 0xFFFF007F, 0x0000007F, e1kRegReadDefault      , e1kRegWritePBA          , "PBA"     , "Packet Buffer Allocation" },
     { 0x02160, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "FCRTL"   , "Flow Control Receive Threshold Low" },
     { 0x02168, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "FCRTH"   , "Flow Control Receive Threshold High" },
@@ -1650,6 +1650,10 @@ static void e1kHardReset(PE1KSTATE pThis)
     TSPMT  = 0x01000400;/* TSMT=0400h TSPBP=0100h */
     Assert(GET_BITS(RCTL, BSIZE) == 0);
     pThis->u16RxBSize = 2048;
+
+    uint16_t u16LedCtl = 0x0602; /* LED0/LINK_UP#, LED2/LINK100# */
+    pThis->eeprom.readWord(0x2F, &u16LedCtl); /* Read LEDCTL defaults from EEPROM */
+    LEDCTL = 0x07008300 | (((uint32_t)u16LedCtl & 0xCF00) << 8) | (u16LedCtl & 0xCF); /* Only LED0 and LED2 defaults come from EEPROM */
 
     /* Reset promiscuous mode */
     if (pThis->pDrvR3)
