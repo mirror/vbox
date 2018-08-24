@@ -1206,12 +1206,18 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxVirtIntDelivery : 1;
     /** VMX: Supports Pause-loop exiting. */
     uint32_t        fVmxPauseLoopExit : 1;
+    /** VMX: Supports RDRAND exiting. */
+    uint32_t        fVmxRdrandExit : 1;
     /** VMX: Supports INVPCID. */
     uint32_t        fVmxInvpcid : 1;
     /** VMX: Supports VM functions. */
     uint32_t        fVmxVmFunc : 1;
     /** VMX: Supports VMCS shadowing. */
     uint32_t        fVmxVmcsShadowing : 1;
+    /** VMX: Supports RDSEED exiting. */
+    uint32_t        fVmxRdseedExit : 1;
+    /** VMX: Supports PML. */
+    uint32_t        fVmxPml : 1;
     /** VMX: Supports EPT-violations \#VE. */
     uint32_t        fVmxEptXcptVe : 1;
     /** VMX: Supports XSAVES/XRSTORS. */
@@ -1265,7 +1271,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding0 : 5;
+    uint32_t        fVmxPadding0 : 2;
     uint32_t        fVmxPadding1;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB

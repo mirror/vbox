@@ -1571,9 +1571,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, 
                                  | (pGuestFeatures->fVmxApicRegVirt       << VMX_BF_PROC_CTLS2_APIC_REG_VIRT_SHIFT     )
                                  | (pGuestFeatures->fVmxVirtIntDelivery   << VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_SHIFT )
                                  | (pGuestFeatures->fVmxPauseLoopExit     << VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT   )
+                                 | (pGuestFeatures->fVmxRdrandExit        << VMX_BF_PROC_CTLS2_RDRAND_EXIT_SHIFT       )
                                  | (pGuestFeatures->fVmxInvpcid           << VMX_BF_PROC_CTLS2_INVPCID_SHIFT           )
                                  | (pGuestFeatures->fVmxVmFunc            << VMX_BF_PROC_CTLS2_VMFUNC_SHIFT            )
                                  | (pGuestFeatures->fVmxVmcsShadowing     << VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT    )
+                                 | (pGuestFeatures->fVmxRdseedExit        << VMX_BF_PROC_CTLS2_RDSEED_EXIT_SHIFT       )
+                                 | (pGuestFeatures->fVmxPml               << VMX_BF_PROC_CTLS2_PML_SHIFT               )
                                  | (pGuestFeatures->fVmxEptXcptVe         << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT            )
                                  | (pGuestFeatures->fVmxXsavesXrstors     << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT    )
                                  | (pGuestFeatures->fVmxUseTscScaling     << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT       );

@@ -1022,9 +1022,12 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("ApicRegVirt - APIC-register virtualization             ", fVmxApicRegVirt);
         VMXFEATDUMP("VirtIntDelivery - Virtual-interrupt delivery           ", fVmxVirtIntDelivery);
         VMXFEATDUMP("PauseLoopExit - PAUSE-loop exiting                     ", fVmxPauseLoopExit);
+        VMXFEATDUMP("RdrandExit - RDRAND exiting                            ", fVmxRdrandExit);
         VMXFEATDUMP("Invpcid - Enable INVPCID                               ", fVmxInvpcid);
         VMXFEATDUMP("VmFuncs - Enable VM Functions                          ", fVmxVmFunc);
         VMXFEATDUMP("VmcsShadowing - VMCS shadowing                         ", fVmxVmcsShadowing);
+        VMXFEATDUMP("RdseedExiting - RDSEED exiting                         ", fVmxRdseedExit);
+        VMXFEATDUMP("PML - Supports Page-Modification Log (PML)             ", fVmxPml);
         VMXFEATDUMP("EptVe - EPT violations can cause #VE                   ", fVmxEptXcptVe);
         VMXFEATDUMP("XsavesXRstors - Enable XSAVES/XRSTORS                  ", fVmxXsavesXrstors);
         /* VM-entry controls. */
@@ -1123,9 +1126,12 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
             pHostFeat->fVmxApicRegVirt       = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT);
             pHostFeat->fVmxVirtIntDelivery   = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
             pHostFeat->fVmxPauseLoopExit     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
+            pHostFeat->fVmxRdrandExit        = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_RDRAND_EXIT);
             pHostFeat->fVmxInvpcid           = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_INVPCID);
             pHostFeat->fVmxVmFunc            = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VMFUNC);
             pHostFeat->fVmxVmcsShadowing     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING);
+            pHostFeat->fVmxRdseedExit        = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_RDSEED_EXIT);
+            pHostFeat->fVmxPml               = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_PML);
             pHostFeat->fVmxEptXcptVe         = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_EPT_VE);
             pHostFeat->fVmxXsavesXrstors     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_XSAVES_XRSTORS);
             pHostFeat->fVmxUseTscScaling     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_TSC_SCALING);
@@ -1202,9 +1208,12 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     EmuFeat.fVmxApicRegVirt           = 0;
     EmuFeat.fVmxVirtIntDelivery       = 0;
     EmuFeat.fVmxPauseLoopExit         = 0;
+    EmuFeat.fVmxRdrandExit            = 0;
     EmuFeat.fVmxInvpcid               = 1;
     EmuFeat.fVmxVmFunc                = 0;
     EmuFeat.fVmxVmcsShadowing         = 0;
+    EmuFeat.fVmxRdseedExit            = 0;
+    EmuFeat.fVmxPml                   = 0;
     EmuFeat.fVmxEptXcptVe             = 0;
     EmuFeat.fVmxXsavesXrstors         = 0;
     EmuFeat.fVmxUseTscScaling         = 0;
@@ -1273,9 +1282,12 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     pGuestFeat->fVmxApicRegVirt           = (pBaseFeat->fVmxApicRegVirt           & EmuFeat.fVmxApicRegVirt          );
     pGuestFeat->fVmxVirtIntDelivery       = (pBaseFeat->fVmxVirtIntDelivery       & EmuFeat.fVmxVirtIntDelivery      );
     pGuestFeat->fVmxPauseLoopExit         = (pBaseFeat->fVmxPauseLoopExit         & EmuFeat.fVmxPauseLoopExit        );
+    pGuestFeat->fVmxRdrandExit            = (pBaseFeat->fVmxRdrandExit            & EmuFeat.fVmxRdrandExit           );
     pGuestFeat->fVmxInvpcid               = (pBaseFeat->fVmxInvpcid               & EmuFeat.fVmxInvpcid              );
     pGuestFeat->fVmxVmFunc                = (pBaseFeat->fVmxVmFunc                & EmuFeat.fVmxVmFunc               );
     pGuestFeat->fVmxVmcsShadowing         = (pBaseFeat->fVmxVmcsShadowing         & EmuFeat.fVmxVmcsShadowing        );
+    pGuestFeat->fVmxRdseedExit            = (pBaseFeat->fVmxRdseedExit            & EmuFeat.fVmxRdseedExit           );
+    pGuestFeat->fVmxPml                   = (pBaseFeat->fVmxPml                   & EmuFeat.fVmxPml                  );
     pGuestFeat->fVmxEptXcptVe             = (pBaseFeat->fVmxEptXcptVe             & EmuFeat.fVmxEptXcptVe            );
     pGuestFeat->fVmxXsavesXrstors         = (pBaseFeat->fVmxXsavesXrstors         & EmuFeat.fVmxXsavesXrstors        );
     pGuestFeat->fVmxUseTscScaling         = (pBaseFeat->fVmxUseTscScaling         & EmuFeat.fVmxUseTscScaling        );

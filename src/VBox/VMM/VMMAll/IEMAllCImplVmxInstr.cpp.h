@@ -392,8 +392,8 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, VMXVMCSFIELDENC encField)
         case VMX_VMCS16_GUEST_GS_SEL:
         case VMX_VMCS16_GUEST_LDTR_SEL:
         case VMX_VMCS16_GUEST_TR_SEL:
-        case VMX_VMCS16_GUEST_INTR_STATUS:                return true;
-        case VMX_VMCS16_GUEST_PML_INDEX:                  return false;
+        case VMX_VMCS16_GUEST_INTR_STATUS:                return pFeat->fVmxVirtIntDelivery;
+        case VMX_VMCS16_GUEST_PML_INDEX:                  return pFeat->fVmxPml;
 
         /* Host-state fields. */
         case VMX_VMCS16_HOST_ES_SEL:
@@ -423,7 +423,7 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, VMXVMCSFIELDENC encField)
         case VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL:
         case VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH:          return true;
         case VMX_VMCS64_CTRL_EXEC_PML_ADDR_FULL:
-        case VMX_VMCS64_CTRL_EXEC_PML_ADDR_HIGH:          return false;
+        case VMX_VMCS64_CTRL_EXEC_PML_ADDR_HIGH:          return pFeat->fVmxPml;
         case VMX_VMCS64_CTRL_TSC_OFFSET_FULL:
         case VMX_VMCS64_CTRL_TSC_OFFSET_HIGH:             return true;
         case VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL:
