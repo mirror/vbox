@@ -278,7 +278,7 @@ public:
      * Deserialize object from the given JSON iterator.
      *
      * @returns IPRT status code.
-     * @parm    a_rCursor    The JSON cursor.
+     * @param   a_rCursor    The JSON cursor.
      */
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
 
