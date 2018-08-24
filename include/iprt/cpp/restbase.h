@@ -240,7 +240,7 @@ public:
      * @param   a_pszDst        Where to put the path.
      * @param   a_cbDst         Size of the destination buffer.
      */
-    virtual char *getPath(RTCRestJsonCursor const &a_rCursor, char *pszDst, size_t cbDst) const;
+    virtual char *getPath(RTCRestJsonCursor const &a_rCursor, char *a_pszDst, size_t a_cbDst) const;
 };
 
 
@@ -272,7 +272,7 @@ public:
      * Deserialize object from the given JSON iterator.
      *
      * @returns IPRT status code.
-     * @parm    pCursor     JSON cursor.
+     * @parm    a_rCursor    The JSON cursor.
      */
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
 
