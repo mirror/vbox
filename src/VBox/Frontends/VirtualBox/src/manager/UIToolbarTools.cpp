@@ -25,10 +25,11 @@
 # include <QHBoxLayout>
 # include <QLabel>
 # include <QStyle>
-# include <QToolButton>
 
 /* GUI includes: */
+# include "QIToolButton.h"
 # include "UIActionPoolSelector.h"
+# include "UIIconPool.h"
 # include "UITabBar.h"
 # include "UIToolBar.h"
 # include "UIToolbarTools.h"
@@ -39,9 +40,11 @@
 UIToolbarTools::UIToolbarTools(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pActionPool(pActionPool)
+    , m_pLayoutMain(0)
     , m_pTabBarMachine(0)
     , m_pTabBarGlobal(0)
-    , m_pLayoutMain(0)
+    , m_pButtonMachine(0)
+    , m_pButtonGlobal(0)
 {
     prepare();
 }
@@ -55,16 +58,24 @@ void UIToolbarTools::switchToTabBar(TabBarType enmType)
         {
             if (m_pTabBarGlobal)
                 m_pTabBarGlobal->setVisible(false);
+            if (m_pButtonGlobal)
+                m_pButtonGlobal->setVisible(false);
             if (m_pTabBarMachine)
                 m_pTabBarMachine->setVisible(true);
+            if (m_pButtonMachine)
+                m_pButtonMachine->setVisible(true);
             break;
         }
         case TabBarType_Global:
         {
             if (m_pTabBarMachine)
                 m_pTabBarMachine->setVisible(false);
+            if (m_pButtonMachine)
+                m_pButtonMachine->setVisible(false);
             if (m_pTabBarGlobal)
                 m_pTabBarGlobal->setVisible(true);
+            if (m_pButtonGlobal)
+                m_pButtonGlobal->setVisible(true);
             break;
         }
     }
@@ -74,12 +85,14 @@ void UIToolbarTools::setTabBarEnabledMachine(bool fEnabled)
 {
     /* Update Machine tab-bar availability: */
     m_pTabBarMachine->setEnabled(fEnabled);
+    m_pButtonMachine->setEnabled(fEnabled);
 }
 
 void UIToolbarTools::setTabBarEnabledGlobal(bool fEnabled)
 {
     /* Update Global tab-bar availability: */
     m_pTabBarGlobal->setEnabled(fEnabled);
+    m_pButtonGlobal->setEnabled(fEnabled);
 }
 
 QList<ToolTypeMachine> UIToolbarTools::tabOrderMachine() const
@@ -284,6 +297,36 @@ void UIToolbarTools::prepareWidgets()
 
             /* Add into layout: */
             m_pLayoutMain->addWidget(m_pTabBarGlobal);
+        }
+
+        /* Let's use the simple button for now: */
+        m_pButtonMachine = new QIToolButton;
+        if (m_pButtonMachine)
+        {
+
+            const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+            m_pButtonMachine->setIconSize(QSize(iMetric, iMetric));
+            m_pButtonMachine->setIcon(UIIconPool::iconSet(":/edata_add_16px.png"));
+            m_pButtonMachine->setMenu(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->menu());
+            m_pButtonMachine->setPopupMode(QToolButton::InstantPopup);
+
+            /* Add into layout: */
+            m_pLayoutMain->addWidget(m_pButtonMachine);
+        }
+
+        /* Let's use the simple button for now: */
+        m_pButtonGlobal = new QIToolButton;
+        if (m_pButtonGlobal)
+        {
+
+            const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+            m_pButtonGlobal->setIconSize(QSize(iMetric, iMetric));
+            m_pButtonGlobal->setIcon(UIIconPool::iconSet(":/edata_add_16px.png"));
+            m_pButtonGlobal->setMenu(m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->menu());
+            m_pButtonGlobal->setPopupMode(QToolButton::InstantPopup);
+
+            /* Add into layout: */
+            m_pLayoutMain->addWidget(m_pButtonGlobal);
         }
 
         /* Let the tab-bars know our opinion: */

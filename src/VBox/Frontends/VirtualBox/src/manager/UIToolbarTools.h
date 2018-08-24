@@ -32,6 +32,7 @@ class QAction;
 class QHBoxLayout;
 class QUuid;
 class QWidget;
+class QIToolButton;
 class UIActionPool;
 class UITabBar;
 class UIToolBar;
@@ -106,11 +107,15 @@ private:
     UIActionPool *m_pActionPool;
 
     /** Holds the main layout instance. */
-    QHBoxLayout *m_pLayoutMain;
+    QHBoxLayout  *m_pLayoutMain;
     /** Holds the Machine tab-bar instance. */
-    UITabBar    *m_pTabBarMachine;
+    UITabBar     *m_pTabBarMachine;
     /** Holds the Global tab-bar instance. */
-    UITabBar    *m_pTabBarGlobal;
+    UITabBar     *m_pTabBarGlobal;
+    /** Holds the Machine tab-bar button. */
+    QIToolButton *m_pButtonMachine;
+    /** Holds the Global tab-bar button. */
+    QIToolButton *m_pButtonGlobal;
 
     /** Holds the map of opened Machine tool IDs. */
     QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;
