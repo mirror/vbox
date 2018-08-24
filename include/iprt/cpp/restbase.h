@@ -133,7 +133,7 @@ public:
      * @remark  This sets m_pDst to NULL and the object cannot be use for any
      *          more output afterwards.
      */
-    virtual RTCString *finalize(void);
+    virtual RTCString *finalize();
 
 
 protected:
@@ -141,6 +141,9 @@ protected:
     RTCString  *m_pDst;
     /** Set if we ran out of memory and should ignore subsequent calls. */
     bool        m_fOutOfMemory;
+
+    /** @callback_method_impl{FNRTSTROUTPUT} */
+    static DECLCALLBACK(size_t) strOutput(void *pvArg, const char *pachChars, size_t cbChars);
 
     /* Make non-copyable (RTCNonCopyable causes warnings): */
     RTCRestOutputToString(RTCRestOutputToString const &);
