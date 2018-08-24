@@ -88,7 +88,7 @@ static DECLCALLBACK(int) drvHostVaKitAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
     pBackendCfg->cbStreamIn     = sizeof(VAKITAUDIOSTREAM);
 
     pBackendCfg->cMaxStreamsOut = 1; /* Output */
-    pBackendCfg->cMaxStreamsIn  = 2; /* Line input + microphone input. */
+    pBackendCfg->cMaxStreamsIn  = 0; /* No input supported yet. */
 
     return VINF_SUCCESS;
 }
