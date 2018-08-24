@@ -138,6 +138,14 @@ RTDECL(uint32_t) RTJsonValueRelease(RTJSONVAL hJsonVal);
 RTDECL(RTJSONVALTYPE) RTJsonValueGetType(RTJSONVAL hJsonVal);
 
 /**
+ * Translates value type to a name.
+ *
+ * @returns Readonly name string
+ * @param   enmType             The JSON value type to name.
+ */
+RTDECL(const char *) RTJsonValueTypeName(RTJSONVALTYPE enmType);
+
+/**
  * Returns the string from a given JSON string value.
  *
  * @returns Pointer to the string of the JSON value, NULL if the value type

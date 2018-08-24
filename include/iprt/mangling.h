@@ -1120,6 +1120,7 @@
 # define RTJsonValueQueryStringByName                   RT_MANGLER(RTJsonValueQueryStringByName)
 # define RTJsonValueRelease                             RT_MANGLER(RTJsonValueRelease)
 # define RTJsonValueRetain                              RT_MANGLER(RTJsonValueRetain)
+# define RTJsonValueTypeName                            RT_MANGLER(RTJsonValueTypeName)
 # define RTKrnlModInfoGetFilePath                       RT_MANGLER(RTKrnlModInfoGetFilePath)
 # define RTKrnlModInfoGetLoadAddr                       RT_MANGLER(RTKrnlModInfoGetLoadAddr)
 # define RTKrnlModInfoGetName                           RT_MANGLER(RTKrnlModInfoGetName)
