@@ -349,12 +349,17 @@ public:
     virtual ~RTCRestClientRequestBase() {};
 
     /**
+     * Reset all members to default values.
+     */
+    virtual void resetToDefaults() = 0;
+
+    /**
      * Prepares the HTTP handle for transmitting this request.
      *
      * @returns IPRT status code.
      * @param   a_hHttp     The HTTP handle to prepare for transmitting.
      */
-    virtual int xmitPrepare(RTHTTP a_hHttp);
+    virtual int xmitPrepare(RTHTTP a_hHttp) = 0;
 
     /**
      * Always called after the request has been transmitted.
@@ -362,7 +367,7 @@ public:
      * @param   a_rcStatus  Negative numbers are IPRT errors, positive are HTTP status codes.
      * @param   a_hHttp     The HTTP handle the request was performed on.
      */
-    virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp);
+    virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) = 0;
 };
 
 
@@ -372,13 +377,26 @@ public:
 class RTCRestClientResponseBase
 {
 public:
+    /** Default constructor. */
     RTCRestClientResponseBase()
         : m_rcStatus(VERR_WRONG_ORDER)
     {}
+
+    /** Destructor. */
+    virtual ~RTCRestClientResponseBase()
+    {}
+
+    /** Copy constructor. */
     RTCRestClientResponseBase(RTCRestClientResponseBase const &a_rThat)
         : m_rcStatus(a_rThat.m_rcStatus)
     {}
-    virtual ~RTCRestClientResponseBase();
+
+    /** Copy assignment operator. */
+    RTCRestClientResponseBase &operator=(RTCRestClientResponseBase const &a_rThat)
+    {
+        m_rcStatus = a_rThat.m_rcStatus;
+        return *this;
+    }
 
     /**
      * Prepares the HTTP handle for receiving the response.
@@ -388,10 +406,23 @@ public:
      * @returns IPRT status code.
      * @param   a_hHttp     The HTTP handle to prepare for receiving.
      */
-    virtual int receivePrepare(RTHTTP a_hHttp);
+    virtual int receivePrepare(RTHTTP a_hHttp)
+    {
+        RT_NOREF(a_hHttp);
+        return VINF_SUCCESS;
+    }
 
-    virtual int consumeHeader(const char *a_pvData, size_t a_cbData); ///< ??
-    virtual int consumeBody(const char *a_pvData, size_t a_cbData);   ///< ??
+    virtual int consumeHeader(const char *a_pvData, size_t a_cbData) ///< ??
+    {
+        RT_NOREF(a_pvData, a_cbData);
+        return VINF_SUCCESS;
+    }
+
+    virtual int consumeBody(const char *a_pvData, size_t a_cbData)   ///< ??
+    {
+        RT_NOREF(a_pvData, a_cbData);
+        return VINF_SUCCESS;
+    }
 
     /**
      * Called when the HTTP request has been completely received.
@@ -400,7 +431,12 @@ public:
      * @param   a_rcStatus  Negative numbers are IPRT errors, positive are HTTP status codes.
      * @param   a_hHttp     The HTTP handle the request was performed on.
      */
-    virtual int receiveComplete(int a_rcStatus, RTHTTP a_hHttp);
+    virtual int receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
+    {
+        RT_NOREF_PV(a_hHttp);
+        m_rcStatus = a_rcStatus;
+        return a_rcStatus;
+    }
 
     /**
      * Getter for m_rcStatus.
@@ -411,7 +447,6 @@ public:
 private:
     /** Negative numbers are IPRT errors, positive are HTTP status codes. */
     int m_rcStatus;
-
 };
 
 
