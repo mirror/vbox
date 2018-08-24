@@ -111,7 +111,7 @@ int UIVMLogViewerWidget::defaultLogPageWidth() const
 
 QMenu *UIVMLogViewerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndex_M_LogViewerWindow)->menu();
+    return m_pActionPool->action(UIActionIndex_M_LogWindow)->menu();
 }
 
 void UIVMLogViewerWidget::setMachine(const CMachine &comMachine)
@@ -189,11 +189,11 @@ void UIVMLogViewerWidget::sltRefresh()
     sltTabIndexChange(tabIndex);
 
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
-    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find)->setEnabled(!noLogsToShow);
-    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter)->setEnabled(!noLogsToShow);
-    m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save)->setEnabled(!noLogsToShow);
-    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark)->setEnabled(!noLogsToShow);
-    m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Find)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Filter)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_Log_S_Save)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Settings)->setEnabled(!noLogsToShow);
 
     m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
@@ -436,17 +436,17 @@ void UIVMLogViewerWidget::prepare()
 void UIVMLogViewerWidget::prepareActions()
 {
     /* Connect actions: */
-    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Find), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Filter), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Settings), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Refresh), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltRefresh);
-    connect(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_S_Save), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltSave);
 }
 
@@ -485,7 +485,7 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pSearchPanel->hide();
             connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
                     this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
-            m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find));
+            m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Find));
 
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pSearchPanel);
@@ -500,7 +500,7 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pFilterPanel->hide();
             connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
                     this, &UIVMLogViewerWidget::sltFilterApplied);
-            m_panelActionMap.insert(m_pFilterPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter));
+            m_panelActionMap.insert(m_pFilterPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
 
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pFilterPanel);
@@ -518,7 +518,7 @@ void UIVMLogViewerWidget::prepareWidgets()
                     this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
             connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
                     this, &UIVMLogViewerWidget::gotoBookmark);
-            m_panelActionMap.insert(m_pBookmarksPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark));
+            m_panelActionMap.insert(m_pBookmarksPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
 
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pBookmarksPanel);
@@ -538,7 +538,7 @@ void UIVMLogViewerWidget::prepareWidgets()
             connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
             connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
             connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetSettingsToDefault);
-            m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings));
+            m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Settings));
 
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pSettingsPanel);
@@ -558,14 +558,14 @@ void UIVMLogViewerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Save));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Save));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Find));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Filter));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Bookmark));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_T_Settings));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Settings));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_LogViewer_S_Refresh));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */

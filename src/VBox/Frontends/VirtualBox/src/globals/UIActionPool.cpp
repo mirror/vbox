@@ -1205,7 +1205,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Log Viewer"));
+        setName(QApplication::translate("UIActionPool", "&Log"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the log menu"));
     }
 };
@@ -1629,14 +1629,14 @@ void UIActionPool::preparePool()
 #endif
 
     /* Create 'Log Viewer' actions: */
-    m_pool[UIActionIndex_M_LogViewerWindow] = new UIActionMenuSelectorLog(this);
-    m_pool[UIActionIndex_M_LogViewer] = new UIActionMenuSelectorLog(this);
-    m_pool[UIActionIndex_M_LogViewer_T_Find] = new UIActionMenuSelectorLogTogglePaneFind(this);
-    m_pool[UIActionIndex_M_LogViewer_T_Filter] = new UIActionMenuSelectorLogTogglePaneFilter(this);
-    m_pool[UIActionIndex_M_LogViewer_T_Bookmark] = new UIActionMenuSelectorLogTogglePaneBookmark(this);
-    m_pool[UIActionIndex_M_LogViewer_T_Settings] = new UIActionMenuSelectorLogTogglePaneSettings(this);
-    m_pool[UIActionIndex_M_LogViewer_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
-    m_pool[UIActionIndex_M_LogViewer_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
+    m_pool[UIActionIndex_M_LogWindow] = new UIActionMenuSelectorLog(this);
+    m_pool[UIActionIndex_M_Log] = new UIActionMenuSelectorLog(this);
+    m_pool[UIActionIndex_M_Log_T_Find] = new UIActionMenuSelectorLogTogglePaneFind(this);
+    m_pool[UIActionIndex_M_Log_T_Filter] = new UIActionMenuSelectorLogTogglePaneFilter(this);
+    m_pool[UIActionIndex_M_Log_T_Bookmark] = new UIActionMenuSelectorLogTogglePaneBookmark(this);
+    m_pool[UIActionIndex_M_Log_T_Settings] = new UIActionMenuSelectorLogTogglePaneSettings(this);
+    m_pool[UIActionIndex_M_Log_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
+    m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
 
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC
@@ -1644,8 +1644,8 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_M_Window].ptf = &UIActionPool::updateMenuWindow;
 #endif
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
-    m_menuUpdateHandlers[UIActionIndex_M_LogViewerWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
-    m_menuUpdateHandlers[UIActionIndex_M_LogViewer].ptf = &UIActionPool::updateMenuLogViewer;
+    m_menuUpdateHandlers[UIActionIndex_M_LogWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
+    m_menuUpdateHandlers[UIActionIndex_M_Log].ptf = &UIActionPool::updateMenuLogViewer;
 
     /* Invalidate all known menus: */
     m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
@@ -1885,19 +1885,19 @@ void UIActionPool::updateMenuHelp()
 void UIActionPool::updateMenuLogViewerWindow()
 {
     /* Update corresponding menu: */
-    updateMenuLogViewerWrapper(action(UIActionIndex_M_LogViewerWindow)->menu());
+    updateMenuLogViewerWrapper(action(UIActionIndex_M_LogWindow)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndex_M_LogViewerWindow);
+    m_invalidations.remove(UIActionIndex_M_LogWindow);
 }
 
 void UIActionPool::updateMenuLogViewer()
 {
     /* Update corresponding menu: */
-    updateMenuLogViewerWrapper(action(UIActionIndex_M_LogViewer)->menu());
+    updateMenuLogViewerWrapper(action(UIActionIndex_M_Log)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndex_M_LogViewer);
+    m_invalidations.remove(UIActionIndex_M_Log);
 }
 
 void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
@@ -1909,7 +1909,7 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     bool fSeparator = false;
 
     /* 'Save' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_S_Save)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Save)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -1919,13 +1919,13 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     }
 
     /* 'Find' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Find)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Find)) || fSeparator;
     /* 'Filter' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Filter)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Filter)) || fSeparator;
     /* 'Bookmarks' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Bookmark)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Bookmark)) || fSeparator;
     /* 'Settings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_T_Settings)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Settings)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -1935,7 +1935,7 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     }
 
     /* 'Refresh' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_LogViewer_S_Refresh)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;;
 }
 
 void UIActionPool::retranslateUi()

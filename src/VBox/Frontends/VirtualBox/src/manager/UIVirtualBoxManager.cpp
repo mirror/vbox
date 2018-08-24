@@ -1235,8 +1235,8 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_pSnapshotMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
 
     /* Prepare 'Log Viewer' menu: */
-    prepareMenuLogViewer(actionPool()->action(UIActionIndex_M_LogViewer)->menu());
-    m_pLogViewerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndex_M_LogViewer)->menu());
+    prepareMenuLogViewer(actionPool()->action(UIActionIndex_M_Log)->menu());
+    m_pLogViewerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndex_M_Log)->menu());
 
     /* Prepare 'Medium' menu: */
     prepareMenuMedium(actionPool()->action(UIActionIndexST_M_Medium)->menu());
@@ -1663,12 +1663,12 @@ void UIVirtualBoxManager::prepareMenuLogViewer(QMenu *pMenu)
         return;
 
     /* Remember action list: */
-    m_logViewerActions << actionPool()->action(UIActionIndex_M_LogViewer_T_Find)
-                       << actionPool()->action(UIActionIndex_M_LogViewer_T_Filter)
-                       << actionPool()->action(UIActionIndex_M_LogViewer_T_Bookmark)
-                       << actionPool()->action(UIActionIndex_M_LogViewer_T_Settings)
-                       << actionPool()->action(UIActionIndex_M_LogViewer_S_Refresh)
-                       << actionPool()->action(UIActionIndex_M_LogViewer_S_Save);
+    m_logViewerActions << actionPool()->action(UIActionIndex_M_Log_T_Find)
+                       << actionPool()->action(UIActionIndex_M_Log_T_Filter)
+                       << actionPool()->action(UIActionIndex_M_Log_T_Bookmark)
+                       << actionPool()->action(UIActionIndex_M_Log_T_Settings)
+                       << actionPool()->action(UIActionIndex_M_Log_S_Refresh)
+                       << actionPool()->action(UIActionIndex_M_Log_S_Save);
 }
 
 void UIVirtualBoxManager::prepareMenuMedium(QMenu *pMenu)
