@@ -2874,6 +2874,12 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
  * execute nested-guest code using hardware-assisted VMX.
  *
  * The first 8 bytes are as per Intel spec. 24.2 "Format of the VMCS Region".
+ *
+ * Although the guest is supposed to access the VMCS only through the execution of
+ * VMX instructions (VMREAD, VMWRITE etc.), since the VMCS may reside in guest
+ * memory (e.g, active but not current VMCS), for saved-states compatibility, and
+ * for teleportation (when implemented) any newly added fields should be added to
+ * the appropriate reserved portions or at the end of the structure.
  */
 #pragma pack(1)
 typedef struct
@@ -2911,154 +2917,160 @@ typedef struct
     RTSEL           GuestFs;
     /** 0x48 - Guest ES selector. */
     RTSEL           GuestGs;
-    /** 0x4a - Guest interrupt status (virtual-interrupt delivery). */
+    /** 0x4a - Guest LDTR selector. */
+    RTSEL           GuestLdtr;
+    /** 0x4c - Guest TR selector. */
+    RTSEL           GuestTr;
+    /** 0x4e - Guest interrupt status (virtual-interrupt delivery). */
     uint16_t        u16GuestIntStatus;
-    /** 0x4c - PML index. */
+    /** 0x50 - PML index. */
     uint16_t        u16PmlIndex;
-    /** 0x4e - Reserved for future. */
+    /** 0x52 - Reserved for future. */
     uint16_t        au16Reserved1[8];
     /** @} */
 
     /** name 16-bit Host-state fields.
      * @{ */
-    /** 0x5e - Host ES selector. */
-    RTSEL           HostEs;
-    /** 0x60 - Host ES selector. */
-    RTSEL           HostCs;
     /** 0x62 - Host ES selector. */
+    RTSEL           HostEs;
+    /** 0x64 - Host CS selector. */
+    RTSEL           HostCs;
+    /** 0x66 - Host SS selector. */
     RTSEL           HostSs;
-    /** 0x64 - Host ES selector. */
+    /** 0x68 - Host DS selector. */
     RTSEL           HostDs;
-    /** 0x66 - Host ES selector. */
+    /** 0x6a - Host FS selector. */
     RTSEL           HostFs;
-    /** 0x68 - Host ES selector. */
+    /** 0x6c - Host GS selector. */
     RTSEL           HostGs;
-    /** 0x6a - Reserved for future. */
-    uint16_t        au16Reserved2[11];
+    /** 0x6e - Host TR selector. */
+    RTSEL           HostTr;
+    /** 0x70 - Reserved for future. */
+    uint16_t        au16Reserved2[10];
     /** @} */
 
     /** @name 32-bit Control fields.
      * @{ */
-    /** 0x80 - Pin-based VM-execution controls. */
+    /** 0x84 - Pin-based VM-execution controls. */
     uint32_t        u32PinCtls;
-    /** 0x84 - Processor-based VM-execution controls. */
+    /** 0x88 - Processor-based VM-execution controls. */
     uint32_t        u32ProcCtls;
-    /** 0x88 - Exception bitmap. */
+    /** 0x8c - Exception bitmap. */
     uint32_t        u32XcptBitmap;
-    /** 0x8c - Page-fault exception error mask. */
+    /** 0x90 - Page-fault exception error mask. */
     uint32_t        u32XcptPFMask;
-    /** 0x90 - Page-fault exception error match. */
+    /** 0x94 - Page-fault exception error match. */
     uint32_t        u32XcptPFMatch;
-    /** 0x94 - CR3-target count. */
+    /** 0x98 - CR3-target count. */
     uint32_t        u32Cr3TargetCount;
-    /** 0x98 - VM-exit controls. */
+    /** 0x9c - VM-exit controls. */
     uint32_t        u32ExitCtls;
-    /** 0x9c - VM-exit MSR store count. */
+    /** 0xa0 - VM-exit MSR store count. */
     uint32_t        u32ExitMsrStoreCount;
-    /** 0xa0 - VM-exit MSR load count. */
+    /** 0xa4 - VM-exit MSR load count. */
     uint32_t        u32ExitMsrLoadCount;
-    /** 0xa4 - VM-entry controls. */
+    /** 0xa8 - VM-entry controls. */
     uint32_t        u32EntryCtls;
-    /** 0xa8 - VM-entry MSR load count. */
+    /** 0xac - VM-entry MSR load count. */
     uint32_t        u32EntryMsrLoadCount;
-    /** 0xac - VM-entry interruption information. */
+    /** 0xb0 - VM-entry interruption information. */
     uint32_t        u32EntryIntInfo;
-    /** 0xb0 - VM-entry exception error code. */
+    /** 0xb4 - VM-entry exception error code. */
     uint32_t        u32EntryXcptErrCode;
-    /** 0xb4 - VM-entry instruction length. */
+    /** 0xb8 - VM-entry instruction length. */
     uint32_t        u32EntryInstrLen;
-    /** 0xb8 - TPR-treshold. */
+    /** 0xbc - TPR-treshold. */
     uint32_t        u32TprTreshold;
-    /** 0xbc - Secondary-processor based VM-execution controls. */
+    /** 0xc0 - Secondary-processor based VM-execution controls. */
     uint32_t        u32ProcCtls2;
-    /** 0xc0 - Pause-loop exiting Gap. */
+    /** 0xc4 - Pause-loop exiting Gap. */
     uint32_t        u32PleGap;
-    /** 0xc4 - Pause-loop exiting Window. */
+    /** 0xc8 - Pause-loop exiting Window. */
     uint32_t        u32PleWindow;
-    /** 0xc8 - Reserved for future. */
+    /** 0xcc - Reserved for future. */
     uint32_t        au32Reserved1[8];
     /** @} */
 
     /** @name 32-bit Read-only Data fields.
      * @{ */
-    /** 0xe8 - VM-instruction error.  */
+    /** 0xec - VM-instruction error.  */
     uint32_t        u32RoVmInstrError;
-    /** 0xec - VM-exit reason. */
+    /** 0xf0 - VM-exit reason. */
     uint32_t        u32RoVmExitReason;
-    /** 0xf0 - VM-exit interruption information. */
+    /** 0xf4 - VM-exit interruption information. */
     uint32_t        u32RoVmExitIntInfo;
-    /** 0xf4 - VM-exit interruption error code. */
+    /** 0xf8 - VM-exit interruption error code. */
     uint32_t        u32RoVmExitErrCode;
-    /** 0xf8 - IDT-vectoring information. */
+    /** 0xfc - IDT-vectoring information. */
     uint32_t        u32RoIdtVectoringInfo;
-    /** 0xfc - IDT-vectoring error code. */
+    /** 0x100 - IDT-vectoring error code. */
     uint32_t        u32RoIdtVectoringErrCode;
-    /** 0x100 - VM-exit instruction length. */
+    /** 0x104 - VM-exit instruction length. */
     uint32_t        u32RoVmExitInstrLen;
-    /** 0x104 - VM-exit instruction information. */
+    /** 0x108 - VM-exit instruction information. */
     uint32_t        u32RoVmExitInstrInfo;
-    /** 0x108 - Reserved for future. */
+    /** 0x10c - Reserved for future. */
     uint32_t        au32RoReserved2[8];
     /** @} */
 
     /** @name 32-bit Guest-state fields.
      * @{ */
-    /** 0x128 - Guest ES limit. */
-    uint32_t        u32GuestEsLimit;
     /** 0x12c - Guest ES limit. */
+    uint32_t        u32GuestEsLimit;
+    /** 0x130 - Guest CS limit. */
     uint32_t        u32GuestCsLimit;
-    /** 0x130 - Guest ES limit. */
+    /** 0x134 - Guest SS limit. */
     uint32_t        u32GuestSsLimit;
-    /** 0x134 - Guest ES limit. */
+    /** 0x138 - Guest DS limit. */
     uint32_t        u32GuestDsLimit;
-    /** 0x138 - Guest ES limit. */
+    /** 0x13c - Guest FS limit. */
     uint32_t        u32GuestFsLimit;
-    /** 0x13c - Guest ES limit. */
+    /** 0x140 - Guest GS limit. */
     uint32_t        u32GuestGsLimit;
-    /** 0x140 - Guest LDTR limit. */
+    /** 0x144 - Guest LDTR limit. */
     uint32_t        u32GuestLdtrLimit;
-    /** 0x144 - Guest TR limit. */
+    /** 0x148 - Guest TR limit. */
     uint32_t        u32GuestTrLimit;
-    /** 0x148 - Guest GDTR limit. */
+    /** 0x14c - Guest GDTR limit. */
     uint32_t        u32GuestGdtrLimit;
-    /** 0x14c - Guest IDTR limit. */
+    /** 0x150 - Guest IDTR limit. */
     uint32_t        u32GuestIdtrLimit;
-    /** 0x150 - Guest ES attributes. */
-    uint32_t        u32GuestESAttr;
-    /** 0x154 - Guest CS attributes. */
-    uint32_t        u32GuestCSAttr;
-    /** 0x158 - Guest SS attributes. */
-    uint32_t        u32GuestSSAttr;
-    /** 0x15c - Guest DS attributes. */
-    uint32_t        u32GuestDSAttr;
-    /** 0x160 - Guest FS attributes. */
-    uint32_t        u32GuestFSAttr;
-    /** 0x164 - Guest GS attributes. */
-    uint32_t        u32GuestGSAttr;
-    /** 0x168 - Guest LDTR attributes. */
+    /** 0x154 - Guest ES attributes. */
+    uint32_t        u32GuestEsAttr;
+    /** 0x158 - Guest CS attributes. */
+    uint32_t        u32GuestCsAttr;
+    /** 0x15c - Guest SS attributes. */
+    uint32_t        u32GuestSsAttr;
+    /** 0x160 - Guest DS attributes. */
+    uint32_t        u32GuestDsAttr;
+    /** 0x164 - Guest FS attributes. */
+    uint32_t        u32GuestFsAttr;
+    /** 0x168 - Guest GS attributes. */
+    uint32_t        u32GuestGsAttr;
+    /** 0x16c - Guest LDTR attributes. */
     uint32_t        u32GuestLdtrAttr;
-    /** 0x16c - Guest TR attributes. */
+    /** 0x170 - Guest TR attributes. */
     uint32_t        u32GuestTrAttr;
-    /** 0x170 - Guest interruptibility state. */
+    /** 0x174 - Guest interruptibility state. */
     uint32_t        u32GuestIntrState;
-    /** 0x174 - Guest activity state. */
+    /** 0x178 - Guest activity state. */
     uint32_t        u32GuestActivityState;
-    /** 0x178 - Guest SMBASE. */
+    /** 0x17c - Guest SMBASE. */
     uint32_t        u32GuestSmBase;
-    /** 0x17c - Guest SYSENTER CS. */
+    /** 0x180 - Guest SYSENTER CS. */
     uint32_t        u32GuestSysenterCS;
-    /** 0x180 - Preemption timer value. */
+    /** 0x184 - Preemption timer value. */
     uint32_t        u32PreemptTimer;
-    /** 0x184 - Reserved for future. */
+    /** 0x188 - Reserved for future. */
     uint32_t        au32Reserved3[8];
     /** @} */
 
     /** @name 32-bit Host-state fields.
      * @{ */
-    /** 0x1a4 - Host SYSENTER CS. */
+    /** 0x1a8 - Host SYSENTER CS. */
     uint32_t        u32HostSysenterCs;
-    /** 0x1a8 - Reserved for future. */
-    uint32_t        au32Reserved4[12];
+    /** 0x1ac - Reserved for future. */
+    uint32_t        au32Reserved4[11];
     /** @} */
 
     /** @name 64-bit Control fields.
@@ -3068,7 +3080,7 @@ typedef struct
     /** 0x1e0 - I/O bitmap B address. */
     RTUINT64U       u64AddrIoBitmapB;
     /** 0x1e8 - MSR bitmap address. */
-    RTUINT64U       u64AddrMsrBitmapA;
+    RTUINT64U       u64AddrMsrBitmap;
     /** 0x1f0 - VM-exit MSR-store area address. */
     RTUINT64U       u64AddrVmExitMsrStore;
     /** 0x1f8 - VM-exit MSR-load area address. */
@@ -3190,14 +3202,14 @@ typedef struct
     RTUINT64U       u64ExitQual;
     /** 0x618 - I/O RCX. */
     RTUINT64U       u64IoRcx;
-    /** 0x620 - I/O RCX. */
+    /** 0x620 - I/O RSI. */
     RTUINT64U       u64IoRsi;
-    /** 0x628 - I/O RCX. */
+    /** 0x628 - I/O RDI. */
     RTUINT64U       u64IoRdi;
-    /** 0x630 - I/O RCX. */
+    /** 0x630 - I/O RIP. */
     RTUINT64U       u64IoRip;
-    /** 0x638 - I/O RCX. */
-    RTUINT64U       u64AddrGuestLinear;
+    /** 0x638 - Guest-linear address. */
+    RTUINT64U       u64GuestLinearAddr;
     /** 0x640 - Reserved for future. */
     RTUINT64U       au64Reserved5[16];
     /** @} */
@@ -3211,17 +3223,17 @@ typedef struct
     /** 0x6d0 - Guest CR4. */
     RTUINT64U       u64GuestCr4;
     /** 0x6d8 - Guest ES base. */
-    RTUINT64U       u64GuestESBase;
+    RTUINT64U       u64GuestEsBase;
     /** 0x6e0 - Guest CS base. */
-    RTUINT64U       u64GuestCSBase;
+    RTUINT64U       u64GuestCsBase;
     /** 0x6e8 - Guest SS base. */
-    RTUINT64U       u64GuestSSBase;
+    RTUINT64U       u64GuestSsBase;
     /** 0x6f0 - Guest DS base. */
-    RTUINT64U       u64GuestDSBase;
+    RTUINT64U       u64GuestDsBase;
     /** 0x6f8 - Guest FS base. */
-    RTUINT64U       u64GuestFSBase;
+    RTUINT64U       u64GuestFsBase;
     /** 0x700 - Guest GS base. */
-    RTUINT64U       u64GuestGSBase;
+    RTUINT64U       u64GuestGsBase;
     /** 0x708 - Guest LDTR base. */
     RTUINT64U       u64GuestLdtrBase;
     /** 0x710 - Guest TR base. */
@@ -3237,7 +3249,7 @@ typedef struct
     /** 0x738 - Guest RIP.  */
     RTUINT64U       u64GuestRip;
     /** 0x740 - Guest RFLAGS.  */
-    RTUINT64U       u64GuestRflags;
+    RTUINT64U       u64GuestRFlags;
     /** 0x748 - Guest pending debug exception.  */
     RTUINT64U       u64GuestPendingDbgXcpt;
     /** 0x750 - Guest SYSENTER ESP.  */
@@ -3290,11 +3302,11 @@ AssertCompileSize(VMXVVMCS, X86_PAGE_4K_SIZE);
 AssertCompileMemberOffset(VMXVVMCS, u32VmxAbortId,      0x004);
 AssertCompileMemberOffset(VMXVVMCS, u16Vpid,            0x028);
 AssertCompileMemberOffset(VMXVVMCS, GuestEs,            0x03e);
-AssertCompileMemberOffset(VMXVVMCS, HostEs,             0x05e);
-AssertCompileMemberOffset(VMXVVMCS, u32PinCtls,         0x080);
-AssertCompileMemberOffset(VMXVVMCS, u32RoVmInstrError,  0x0e8);
-AssertCompileMemberOffset(VMXVVMCS, u32GuestEsLimit,    0x128);
-AssertCompileMemberOffset(VMXVVMCS, u32HostSysenterCs,  0x1a4);
+AssertCompileMemberOffset(VMXVVMCS, HostEs,             0x062);
+AssertCompileMemberOffset(VMXVVMCS, u32PinCtls,         0x084);
+AssertCompileMemberOffset(VMXVVMCS, u32RoVmInstrError,  0x0ec);
+AssertCompileMemberOffset(VMXVVMCS, u32GuestEsLimit,    0x12c);
+AssertCompileMemberOffset(VMXVVMCS, u32HostSysenterCs,  0x1a8);
 AssertCompileMemberOffset(VMXVVMCS, u64AddrIoBitmapA,   0x1d8);
 AssertCompileMemberOffset(VMXVVMCS, u64GuestPhysAddr,   0x320);
 AssertCompileMemberOffset(VMXVVMCS, u64VmcsLinkPtr,     0x368);
