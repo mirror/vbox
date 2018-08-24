@@ -542,6 +542,8 @@ RuntimeR3_SOURCES       = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
+	common/rest/RTCRestJsonPrimaryCursor.cpp \
+	common/rest/RTCRestObjectBase.cpp \
 	common/sort/RTSortIsSorted.cpp \
 	common/sort/RTSortApvIsSorted.cpp \
 	common/sort/shellsort.cpp \

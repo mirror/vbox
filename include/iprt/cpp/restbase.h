@@ -148,6 +148,102 @@ protected:
 };
 
 
+/* forward decl: */
+class RTCRestJsonPrimaryCursor;
+
+/**
+ * JSON cursor structure.
+ *
+ * This reduces the number of parameters passed around when deserializing JSON
+ * input and also helps constructing full object name for logging and error reporting.
+ */
+struct RTCRestJsonCursor
+{
+    /** Handle to the value being parsed. */
+    RTJSONVAL                           m_hValue;
+    /** Name of the value. */
+    const char                         *m_pszName;
+    /** Pointer to the parent, NULL if primary. */
+    struct RTCRestJsonCursor const     *m_pParent;
+    /** Pointer to the primary cursor structure. */
+    RTCRestJsonPrimaryCursor           *m_pPrimary;
+
+    RTCRestJsonCursor(struct RTCRestJsonCursor const &a_rParent)
+        : m_hValue(NIL_RTJSONVAL), m_pszName(NULL), m_pParent(&a_rParent), m_pPrimary(a_rParent.m_pPrimary)
+    { }
+
+    RTCRestJsonCursor(RTJSONVAL hValue, const char *pszName, struct RTCRestJsonCursor *pParent)
+        : m_hValue(hValue), m_pszName(pszName), m_pParent(pParent), m_pPrimary(pParent->m_pPrimary)
+    { }
+
+    RTCRestJsonCursor(RTJSONVAL hValue, const char *pszName)
+        : m_hValue(hValue), m_pszName(pszName), m_pParent(NULL), m_pPrimary(NULL)
+    { }
+
+    ~RTCRestJsonCursor()
+    {
+        if (m_hValue != NIL_RTJSONVAL)
+        {
+            RTJsonValueRelease(m_hValue);
+            m_hValue = NIL_RTJSONVAL;
+        }
+    }
+};
+
+
+/**
+ * The primary JSON cursor class.
+ */
+class RTCRestJsonPrimaryCursor
+{
+public:
+    /** The cursor for the first level. */
+    RTCRestJsonCursor   m_Cursor;
+    /** Error info keeper. */
+    PRTERRINFO          m_pErrInfo;
+
+    /** Creates a primary json cursor with optiona error info. */
+    RTCRestJsonPrimaryCursor(RTJSONVAL hValue, const char *pszName, PRTERRINFO pErrInfo = NULL)
+        : m_Cursor(hValue, pszName)
+        , m_pErrInfo(pErrInfo)
+    {
+        m_Cursor.m_pPrimary = this;
+    }
+
+    virtual ~RTCRestJsonPrimaryCursor()
+    {  }
+
+    /**
+     * Add an error message.
+     *
+     * @returns a_rc
+     * @param   a_rCursor       The cursor reporting the error.
+     * @param   a_rc            The status code.
+     * @param   a_pszFormat     Format string.
+     * @param   ...             Format string arguments.
+     */
+    virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...);
+
+    /**
+     * Reports that the current field is not known.
+     *
+     * @returns Status to propagate.
+     * @param   a_rCursor       The cursor for the field.
+     */
+    virtual int unknownField(RTCRestJsonCursor const &a_rCursor);
+
+    /**
+     * Copies the full path into pszDst.
+     *
+     * @returns pszDst
+     * @param   a_rCursor       The cursor to start walking at.
+     * @param   a_pszDst        Where to put the path.
+     * @param   a_cbDst         Size of the destination buffer.
+     */
+    virtual char *getPath(RTCRestJsonCursor const &a_rCursor, char *pszDst, size_t cbDst) const;
+};
+
+
 /**
  * Abstract base class for REST data objects.
  */
@@ -176,13 +272,24 @@ public:
      * Deserialize object from the given JSON iterator.
      *
      * @returns IPRT status code.
-     * @param   hJsonIt     The JSON iterator for this object.
-     * @param   pErrInfo    Where to return additional error information.
-     *                      Optional.
-     *
-     * @todo Take a RTJSONVAL?
+     * @parm    pCursor     JSON cursor.
      */
-    virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo) = 0;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
+
+    /** @name Helpers for deserializing primitive types and strings.
+     * @{ */
+    static int deserialize_RTCString_FromJson(RTCRestJsonCursor const &a_rCursor, RTCString *a_pDst);
+    static int deserialize_int64_t_FromJson(RTCRestJsonCursor const &a_rCursor, int64_t *a_piDst);
+    static int deserialize_int32_t_FromJson(RTCRestJsonCursor const &a_rCursor, int32_t *a_piDst);
+    static int deserialize_int16_t_FromJson(RTCRestJsonCursor const &a_rCursor, int16_t *a_piDst);
+    static int deserialize_bool_FromJson(RTCRestJsonCursor const &a_rCursor, bool *a_pfDst);
+    static int deserialize_double_FromJson(RTCRestJsonCursor const &a_rCursor, double *a_prdDst);
+    /** @} */
+
+    /** @name Helpers for serializing floating point types.
+     * @{ */
+    static RTCRestOutputBase &serialize_double_AsJson(RTCRestOutputBase &a_rDst, double const *a_prdValue);
+    /** @} */
 };
 
 
@@ -198,7 +305,11 @@ public:
 
     virtual void resetToDefaults();
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
-    virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo);
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+    {
+        RT_NOREF(a_rCursor);
+        return VERR_NOT_IMPLEMENTED;
+    }
 };
 
 
@@ -214,7 +325,11 @@ public:
 
     virtual void resetToDefaults();
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
-    virtual int deserializeFromJson(RTJSONIT hJsonIt, PRTERRINFO pErrInfo);
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+    {
+        RT_NOREF(a_rCursor);
+        return VERR_NOT_IMPLEMENTED;
+    }
 };
 
 
