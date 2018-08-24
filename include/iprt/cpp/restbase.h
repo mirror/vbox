@@ -49,8 +49,11 @@
 class RTCRestOutputBase
 {
 public:
-    RTCRestOutputBase();
-    virtual ~RTCRestOutputBase();
+    RTCRestOutputBase()
+        : m_uIndent(0)
+    { }
+    virtual ~RTCRestOutputBase()
+    { }
 
     /**
      * RTStrPrintf like function (see @ref pg_rt_str_format).
