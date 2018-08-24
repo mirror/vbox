@@ -1682,6 +1682,8 @@ void UIMachineLogic::sltTypeAltPrintScreen()
 
 void UIMachineLogic::sltTypeHostKeyComboPressRelease(bool fToggleSequence)
 {
+    if (keyboardHandler())
+        keyboardHandler()->setHostKeyComboPressedFlag(fToggleSequence);
     QList<unsigned> shortCodes = UIHostCombo::modifiersToScanCodes(gEDataManager->hostKeyCombination());
     QVector<LONG> codes;
     foreach (unsigned idxCode, shortCodes)

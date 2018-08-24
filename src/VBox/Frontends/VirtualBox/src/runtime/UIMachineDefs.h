@@ -55,9 +55,10 @@ enum UIMouseStateType
 /* Machine View states enum: */
 enum UIViewStateType
 {
-    UIViewStateType_KeyboardCaptured = RT_BIT(0),
-    UIViewStateType_HostKeyPressed   = RT_BIT(1)
+    UIViewStateType_KeyboardCaptured          = RT_BIT(0),
+    UIViewStateType_HostKeyPressed            = RT_BIT(1),
+    /* A host key combo press has been inserted to the guest but not a release yet. */
+    UIViewStateType_HostKeyPressedInsertion   = RT_BIT(2)
 };
 
 #endif // __UIMachineDefs_h__
-
