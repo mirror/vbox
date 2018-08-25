@@ -312,13 +312,13 @@ RTR3DECL(int) RTHttpReset(RTHTTP hHttp)
 }
 
 
-RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
+RTR3DECL(int) RTHttpDestroy(RTHTTP hHttp)
 {
     if (hHttp == NIL_RTHTTP)
-        return;
+        return VINF_SUCCESS;
 
     PRTHTTPINTERNAL pThis = hHttp;
-    RTHTTP_VALID_RETURN_VOID(pThis);
+    RTHTTP_VALID_RETURN(pThis);
 
     Assert(!pThis->fBusy);
 
@@ -347,6 +347,8 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     RTMemFree(pThis);
 
     curl_global_cleanup();
+
+    return VINF_SUCCESS;
 }
 
 
