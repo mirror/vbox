@@ -328,20 +328,29 @@ RTR3DECL(int) RTHttpDestroy(RTHTTP hHttp)
     pThis->pCurl = NULL;
 
     if (pThis->pHeaders)
+    {
         curl_slist_free_all(pThis->pHeaders);
+        pThis->pHeaders = NULL;
+    }
 
     rtHttpUnsetCaFile(pThis);
     Assert(!pThis->pszCaFile);
 
     if (pThis->pszRedirLocation)
+    {
         RTStrFree(pThis->pszRedirLocation);
+        pThis->pszRedirLocation = NULL;
+    }
 
     RTStrFree(pThis->pszProxyHost);
+    pThis->pszProxyHost = NULL;
     RTStrFree(pThis->pszProxyUsername);
+    pThis->pszProxyUsername = NULL;
     if (pThis->pszProxyPassword)
     {
         RTMemWipeThoroughly(pThis->pszProxyPassword, strlen(pThis->pszProxyPassword), 2);
         RTStrFree(pThis->pszProxyPassword);
+        pThis->pszProxyPassword = NULL;
     }
 
     RTMemFree(pThis);
@@ -1876,45 +1885,167 @@ RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects)
 }
 
 
+/**
+ * Helper for RTHttpSetHeaders and RTHttpAppendHeader that unsets the user agent
+ * if it is now in one of the headers.
+ */
+static void rtHttpUpdateUserAgentHeader(PRTHTTPINTERNAL pThis)
+{
+    if (   pThis->fHaveUserAgentHeader
+        && pThis->fHaveSetUserAgent)
+    {
+        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
+        Assert(CURL_SUCCESS(rcCurl)); NOREF(rcCurl);
+        pThis->fHaveSetUserAgent = false;
+    }
+}
+
+
 RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const *papszHeaders)
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
 
-    pThis->fHaveUserAgentHeader = false;
-    if (!cHeaders)
+    /*
+     * Drop old headers and reset state.
+     */
+    if (pThis->pHeaders)
     {
-        if (pThis->pHeaders)
-            curl_slist_free_all(pThis->pHeaders);
-        pThis->pHeaders = 0;
-        return VINF_SUCCESS;
+        curl_slist_free_all(pThis->pHeaders);
+        pThis->pHeaders = NULL;
+        curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
     }
+    pThis->fHaveUserAgentHeader = false;
 
+    /*
+     * We're done if no headers specified.
+     */
+    if (!cHeaders)
+        return VINF_SUCCESS;
+
+    /*
+     * Convert the headers into a curl string list, checkig each string for User-Agent.
+     */
     struct curl_slist *pHeaders = NULL;
     for (size_t i = 0; i < cHeaders; i++)
     {
-        pHeaders = curl_slist_append(pHeaders, papszHeaders[i]);
+        struct curl_slist *pNewHeaders = curl_slist_append(pHeaders, papszHeaders[i]);
+        if (pNewHeaders)
+            pHeaders = pNewHeaders;
+        else
+        {
+            if (pHeaders)
+                curl_slist_free_all(pHeaders);
+            return VERR_NO_MEMORY;
+        }
+
         if (strncmp(papszHeaders[i], RT_STR_TUPLE("User-Agent:")) == 0)
             pThis->fHaveUserAgentHeader = true;
     }
 
-    pThis->pHeaders = pHeaders;
     int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pHeaders);
     if (CURL_FAILURE(rcCurl))
-        return VERR_INVALID_PARAMETER;
-
-    /*
-     * Unset the user agent if it's in one of the headers.
-     */
-    if (   pThis->fHaveUserAgentHeader
-        && pThis->fHaveSetUserAgent)
     {
-        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
-        Assert(CURL_SUCCESS(rcCurl));
-        pThis->fHaveSetUserAgent = false;
+        curl_slist_free_all(pHeaders);
+        return VERR_INVALID_PARAMETER;
     }
+    pThis->pHeaders = pHeaders;
+
+    rtHttpUpdateUserAgentHeader(pThis);
 
     return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTHttpAppendRawHeader(RTHTTP hHttp, const char *pszHeader)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+
+    /*
+     * Append it to the header list, checking for User-Agent and such.
+     */
+    struct curl_slist *pHeaders = pThis->pHeaders;
+    struct curl_slist *pNewHeaders = curl_slist_append(pHeaders, pszHeader);
+    if (pNewHeaders)
+        pHeaders = pNewHeaders;
+    else
+        return VERR_NO_MEMORY;
+
+    if (strncmp(pszHeader, RT_STR_TUPLE("User-Agent:")) == 0)
+        pThis->fHaveUserAgentHeader = true;
+
+    /*
+     * If this is the first header, we need to tell curl.
+     */
+    if (!pThis->pHeaders)
+    {
+        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pHeaders);
+        if (CURL_FAILURE(rcCurl))
+        {
+            curl_slist_free_all(pHeaders);
+            return VERR_INVALID_PARAMETER;
+        }
+        pThis->pHeaders = pHeaders;
+    }
+    else
+        Assert(pThis->pHeaders == pHeaders);
+
+    rtHttpUpdateUserAgentHeader(pThis);
+
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags)
+{
+
+    /*
+     * Currently we don't any encoding here, so we just glue the two strings together.
+     */
+    AssertPtr(pszField);
+    size_t const cchField = strlen(pszField);
+    AssertReturn(cchField > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(pszField[cchField - 1] != ':', VERR_INVALID_PARAMETER);
+    AssertReturn(!RT_C_IS_SPACE(pszField[cchField - 1]), VERR_INVALID_PARAMETER);
+#ifdef RT_STRICT
+    for (size_t i = 0; i < cchField; i++)
+    {
+        char const ch = pszField[i];
+        Assert(RT_C_IS_PRINT(ch) && ch != ':');
+    }
+#endif
+
+    AssertPtr(pszValue);
+    size_t const cchValue = strlen(pszValue);
+
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+
+    /*
+     * Allocate a temporary buffer, construct the raw header string in it,
+     * then use RTHttpAppendRawHeader to do the grunt work.
+     */
+    size_t const cbNeeded = cchField + 2 + cchValue + 1;
+    char *pszHeaderFree = NULL;
+    char *pszHeader;
+    if (cbNeeded < _2K)
+        pszHeader = (char *)alloca(cbNeeded);
+    else
+        pszHeaderFree = pszHeader = (char *)RTMemTmpAlloc(cbNeeded);
+    if (!pszHeader)
+        return VERR_NO_TMP_MEMORY;
+
+    memcpy(pszHeader, pszField, cchField);
+    pszHeader[cchField]     = ':';
+    pszHeader[cchField + 1] = ' ';
+    memcpy(&pszHeader[cchField + 2], pszValue, cchValue);
+    pszHeader[cbNeeded - 1] = '\0';
+
+    int rc = RTHttpAppendRawHeader(hHttp, pszHeader);
+
+    if (pszHeaderFree)
+        RTMemTmpFree(pszHeaderFree);
+    return rc;
 }
 
 
