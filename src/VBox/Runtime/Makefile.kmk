@@ -542,6 +542,7 @@ RuntimeR3_SOURCES       = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
+	common/rest/RTCRestClientApiBase.cpp \
 	common/rest/RTCRestJsonPrimaryCursor.cpp \
 	common/rest/RTCRestObjectBase.cpp \
 	common/rest/RTCRestOutputToString.cpp \

@@ -359,7 +359,7 @@ public:
      * @returns IPRT status code.
      * @param   a_hHttp     The HTTP handle to prepare for transmitting.
      */
-    virtual int xmitPrepare(RTHTTP a_hHttp) = 0;
+    virtual int xmitPrepare(RTHTTP a_hHttp) const = 0;
 
     /**
      * Always called after the request has been transmitted.
@@ -367,7 +367,7 @@ public:
      * @param   a_rcStatus  Negative numbers are IPRT errors, positive are HTTP status codes.
      * @param   a_hHttp     The HTTP handle the request was performed on.
      */
-    virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) = 0;
+    virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const = 0;
 };
 
 
@@ -448,6 +448,8 @@ public:
      * @returns IPRT status code?
      * @param   a_rcStatus  Negative numbers are IPRT errors, positive are HTTP status codes.
      * @param   a_hHttp     The HTTP handle the request was performed on.
+     *                      This can be NIL_RTHTTP should something fail early, in
+     *                      which case it is possible receivePrepare() wasn't called.
      */
     virtual int receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
     {
