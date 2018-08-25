@@ -412,13 +412,31 @@ public:
         return VINF_SUCCESS;
     }
 
-    virtual int consumeHeader(const char *a_pvData, size_t a_cbData) ///< ??
+    /**
+     * Callback that consumes HTTP header data from the server.
+     *
+     * @returns IPRT status code?
+     * @param   a_pvData   Body data.
+     * @param   a_cbData   Amount of body data.
+     *
+     * @todo good idea?
+     */
+    virtual int consumeHeader(const char *a_pvData, size_t a_cbData)
     {
         RT_NOREF(a_pvData, a_cbData);
         return VINF_SUCCESS;
     }
 
-    virtual int consumeBody(const char *a_pvData, size_t a_cbData)   ///< ??
+    /**
+     * Callback that consumes HTTP body data from the server.
+     *
+     * @returns IPRT status code?
+     * @param   a_pvData   Body data.
+     * @param   a_cbData   Amount of body data.
+     *
+     * @todo good idea?
+     */
+    virtual int consumeBody(const char *a_pvData, size_t a_cbData)
     {
         RT_NOREF(a_pvData, a_cbData);
         return VINF_SUCCESS;
@@ -461,15 +479,68 @@ public:
     {}
     virtual ~RTCRestClientApiBase();
 
-    bool    isConnected();
+    /** @name Base path (URL) handling.
+     * @{ */
+    /**
+     * Gets the base path we're using.
+     *
+     * @returns Base URL string.  If empty, we'll be using the default one.
+     */
+    RTCString const &getBasePath(void) const
+    {
+        return m_strBasePath;
+    }
+
+    /**
+     * Sets the base path (URL) to use when talking to the server.
+     *
+     * Setting the base path is only required if there is a desire to use a
+     * different server from the one specified in the API specification, like
+     * for instance regional one.
+     *
+     * @param   a_pszPath   The base path to use.
+     */
+    virtual void setBasePath(const char *a_pszPath)
+    {
+        m_strBasePath = a_pszPath;
+    }
+
+    /**
+     * Sets the base path (URL) to use when talking to the server.
+     *
+     * Setting the base path is only required if there is a desire to use a
+     * different server from the one specified in the API specification, like
+     * for instance regional one.
+     *
+     * @param   a_strPath   The base path to use.
+     * @note    Defers to the C-string variant.
+     */
+    void setBasePath(RTCString const &a_strPath) { setBasePath(a_strPath.c_str()); }
+
+    /**
+     * Gets the default base path (URL) as specified in the specs.
+     *
+     * @returns Base path (URL) string.
+     */
+    virtual const char *getDefaultBasePath() = 0;
+    /** @} */
 
 protected:
     /** Handle to the HTTP connection object. */
     RTHTTP  m_hHttp;
+    /** The base path to use. */
+    RTCString m_strBasePath;
 
     /* Make non-copyable (RTCNonCopyable causes warnings): */
     RTCRestClientApiBase(RTCRestOutputToString const &);
     RTCRestClientApiBase *operator=(RTCRestOutputToString const &);
+
+    /**
+     * Re-initializes the HTTP instance.
+     *
+     * @returns IPRT status code.
+     */
+    virtual int reinitHttpInstance();
 };
 
 /** @} */
