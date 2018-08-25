@@ -32,6 +32,7 @@
 #include <iprt/http.h>
 #include "internal/iprt.h"
 
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/cidr.h>
