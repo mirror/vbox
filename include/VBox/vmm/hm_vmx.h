@@ -2861,12 +2861,28 @@ typedef enum
     /* VMPTRST. */
     kVmxVInstrDiag_Vmptrst_Cpl,
     kVmxVInstrDiag_Vmptrst_PtrMap,
+    kVmxVInstrDiag_Vmptrst_Success,
     /* VMCLEAR. */
     kVmxVInstrDiag_Vmclear_Cpl,
+    kVmxVInstrDiag_Vmclear_PtrAbnormal,
+    kVmxVInstrDiag_Vmclear_PtrAlign,
+    kVmxVInstrDiag_Vmclear_PtrMap,
+    kVmxVInstrDiag_Vmclear_PtrReadPhys,
+    kVmxVInstrDiag_Vmclear_PtrVmxon,
+    kVmxVInstrDiag_Vmclear_PtrWidth,
+    kVmxVInstrDiag_Vmclear_Success,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;
 AssertCompileSize(VMXVINSTRDIAG, 4);
+
+/** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS state.
+ * @{ */
+/** VMCS state clear. */
+#define VMX_V_VMCS_STATE_CLEAR          RT_BIT(0)
+/** VMCS state launched. */
+#define VMX_V_VMCS_STATE_LAUNCHED       RT_BIT(1)
+/** @} */
 
 /**
  * Virtual VMCS.
@@ -2874,6 +2890,9 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
  * execute nested-guest code using hardware-assisted VMX.
  *
  * The first 8 bytes are as per Intel spec. 24.2 "Format of the VMCS Region".
+ *
+ * The offset and size of the VMCS state field (fVmcsState) is also fixed as we use
+ * it to offset into guest memory.
  *
  * Although the guest is supposed to access the VMCS only through the execution of
  * VMX instructions (VMREAD, VMWRITE etc.), since the VMCS may reside in guest
@@ -2888,8 +2907,12 @@ typedef struct
     VMXVMCSREVID    u32VmcsRevId;
     /** 0x4 - VMX-abort indicator. */
     uint32_t        u32VmxAbortId;
-    /** 0x8 - Reserved for future. */
-    uint32_t        au32Reserved0[8];
+    /** 0x8 - VMCS state, see VMX_V_VMCS_STATE_XXX. */
+    uint8_t         fVmcsState;
+    /** 0x9 - Reserved for future. */
+    uint8_t         au8Padding0[3];
+    /** 0xc - Reserved for future. */
+    uint32_t        au32Reserved0[7];
 
     /** @name 16-bit control fields.
      * @{ */
@@ -3299,7 +3322,9 @@ typedef VMXVVMCS *PVMXVVMCS;
 /** Pointer to a const VMXVVMCS struct. */
 typedef const VMXVVMCS *PCVMXVVMCS;
 AssertCompileSize(VMXVVMCS, X86_PAGE_4K_SIZE);
+AssertCompileMemberSize(VMXVVMCS, fVmcsState, sizeof(uint8_t));
 AssertCompileMemberOffset(VMXVVMCS, u32VmxAbortId,      0x004);
+AssertCompileMemberOffset(VMXVVMCS, fVmcsState,         0x008);
 AssertCompileMemberOffset(VMXVVMCS, u16Vpid,            0x028);
 AssertCompileMemberOffset(VMXVVMCS, GuestEs,            0x03e);
 AssertCompileMemberOffset(VMXVVMCS, HostEs,             0x062);

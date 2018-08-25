@@ -54,28 +54,28 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     },
     /* VMX_VMCS_ENC_WIDTH_16BIT | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, GuestEs),
-        /*     1 */ RT_OFFSET(VMXVVMCS, GuestCs),
-        /*     2 */ RT_OFFSET(VMXVVMCS, GuestSs),
-        /*     3 */ RT_OFFSET(VMXVVMCS, GuestDs),
-        /*     4 */ RT_OFFSET(VMXVVMCS, GuestFs),
-        /*     5 */ RT_OFFSET(VMXVVMCS, GuestGs),
-        /*     6 */ RT_OFFSET(VMXVVMCS, GuestLdtr),
-        /*     7 */ RT_OFFSET(VMXVVMCS, GuestTr),
-        /*     8 */ RT_OFFSET(VMXVVMCS, u16GuestIntStatus),
-        /*     9 */ RT_OFFSET(VMXVVMCS, u16PmlIndex),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, GuestEs),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, GuestCs),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, GuestSs),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, GuestDs),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, GuestFs),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, GuestGs),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, GuestLdtr),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, GuestTr),
+        /*     8 */ RT_OFFSETOF(VMXVVMCS, u16GuestIntStatus),
+        /*     9 */ RT_OFFSETOF(VMXVVMCS, u16PmlIndex),
         /* 10-17 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 18-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_16BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, HostEs),
-        /*     1 */ RT_OFFSET(VMXVVMCS, HostCs),
-        /*     2 */ RT_OFFSET(VMXVVMCS, HostSs),
-        /*     3 */ RT_OFFSET(VMXVVMCS, HostDs),
-        /*     4 */ RT_OFFSET(VMXVVMCS, HostFs),
-        /*     5 */ RT_OFFSET(VMXVVMCS, HostGs),
-        /*     6 */ RT_OFFSET(VMXVVMCS, HostTr),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, HostEs),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, HostCs),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, HostSs),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, HostDs),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, HostFs),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, HostGs),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, HostTr),
         /*  7-14 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 15-22 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 23-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX
@@ -111,172 +111,172 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     },
     /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64GuestPhysAddr),
-        /*   1-8 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64GuestPhysAddr),
+        /*   1-8 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*  9-16 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 17-24 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*    25 */ UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64VmcsLinkPtr),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u64GuestDebugCtlMsr),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u64GuestPatMsr),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u64GuestEferMsr),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u64GuestPerfGlobalCtlMsr),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u64GuestPdpte0),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u64GuestPdpte1),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u64GuestPdpte2),
-        /*     8 */ RT_OFFSET(VMXVVMCS, u64GuestPdpte3),
-        /*     9 */ RT_OFFSET(VMXVVMCS, u64GuestBndcfgsMsr),
-        /* 10-17 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64VmcsLinkPtr),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u64GuestDebugCtlMsr),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u64GuestPatMsr),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64GuestEferMsr),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64GuestPerfGlobalCtlMsr),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64GuestPdpte0),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u64GuestPdpte1),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u64GuestPdpte2),
+        /*     8 */ RT_OFFSETOF(VMXVVMCS, u64GuestPdpte3),
+        /*     9 */ RT_OFFSETOF(VMXVVMCS, u64GuestBndcfgsMsr),
+        /* 10-17 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 18-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64HostPatMsr),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u64HostEferMsr),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u64HostPerfGlobalCtlMsr),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64HostPatMsr),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u64HostEferMsr),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u64HostPerfGlobalCtlMsr),
         /*  3-10 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 11-18 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 19-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_CONTROL: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u32PinCtls),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u32ProcCtls),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u32XcptBitmap),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u32XcptPFMask),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u32XcptPFMatch),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u32Cr3TargetCount),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u32ExitCtls),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u32ExitMsrStoreCount),
-        /*     8 */ RT_OFFSET(VMXVVMCS, u32ExitMsrLoadCount),
-        /*     9 */ RT_OFFSET(VMXVVMCS, u32EntryCtls),
-        /*    10 */ RT_OFFSET(VMXVVMCS, u32EntryMsrLoadCount),
-        /*    11 */ RT_OFFSET(VMXVVMCS, u32EntryIntInfo),
-        /*    12 */ RT_OFFSET(VMXVVMCS, u32EntryXcptErrCode),
-        /*    13 */ RT_OFFSET(VMXVVMCS, u32EntryInstrLen),
-        /*    14 */ RT_OFFSET(VMXVVMCS, u32TprTreshold),
-        /*    15 */ RT_OFFSET(VMXVVMCS, u32ProcCtls2),
-        /*    16 */ RT_OFFSET(VMXVVMCS, u32PleGap),
-        /*    17 */ RT_OFFSET(VMXVVMCS, u32PleWindow),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u32PinCtls),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u32ProcCtls),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u32XcptBitmap),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u32XcptPFMask),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u32XcptPFMatch),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u32Cr3TargetCount),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u32ExitCtls),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u32ExitMsrStoreCount),
+        /*     8 */ RT_OFFSETOF(VMXVVMCS, u32ExitMsrLoadCount),
+        /*     9 */ RT_OFFSETOF(VMXVVMCS, u32EntryCtls),
+        /*    10 */ RT_OFFSETOF(VMXVVMCS, u32EntryMsrLoadCount),
+        /*    11 */ RT_OFFSETOF(VMXVVMCS, u32EntryIntInfo),
+        /*    12 */ RT_OFFSETOF(VMXVVMCS, u32EntryXcptErrCode),
+        /*    13 */ RT_OFFSETOF(VMXVVMCS, u32EntryInstrLen),
+        /*    14 */ RT_OFFSETOF(VMXVVMCS, u32TprTreshold),
+        /*    15 */ RT_OFFSETOF(VMXVVMCS, u32ProcCtls2),
+        /*    16 */ RT_OFFSETOF(VMXVVMCS, u32PleGap),
+        /*    17 */ RT_OFFSETOF(VMXVVMCS, u32PleWindow),
         /* 18-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u32RoVmInstrError),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u32RoVmExitReason),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u32RoVmExitIntInfo),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u32RoVmExitErrCode),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u32RoIdtVectoringInfo),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u32RoIdtVectoringErrCode),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u32RoVmExitInstrLen),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u32RoVmExitInstrInfo),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u32RoVmInstrError),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitReason),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitIntInfo),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitErrCode),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u32RoIdtVectoringInfo),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u32RoIdtVectoringErrCode),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitInstrLen),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitInstrInfo),
         /*  8-15 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 16-23 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u32GuestEsLimit),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u32GuestCsLimit),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u32GuestSsLimit),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u32GuestDsLimit),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u32GuestEsLimit),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u32GuestFsLimit),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u32GuestGsLimit),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u32GuestLdtrLimit),
-        /*     8 */ RT_OFFSET(VMXVVMCS, u32GuestTrLimit),
-        /*     9 */ RT_OFFSET(VMXVVMCS, u32GuestGdtrLimit),
-        /*    10 */ RT_OFFSET(VMXVVMCS, u32GuestIdtrLimit),
-        /*    11 */ RT_OFFSET(VMXVVMCS, u32GuestEsAttr),
-        /*    12 */ RT_OFFSET(VMXVVMCS, u32GuestCsAttr),
-        /*    13 */ RT_OFFSET(VMXVVMCS, u32GuestSsAttr),
-        /*    14 */ RT_OFFSET(VMXVVMCS, u32GuestDsAttr),
-        /*    15 */ RT_OFFSET(VMXVVMCS, u32GuestFsAttr),
-        /*    16 */ RT_OFFSET(VMXVVMCS, u32GuestGsAttr),
-        /*    17 */ RT_OFFSET(VMXVVMCS, u32GuestLdtrAttr),
-        /*    18 */ RT_OFFSET(VMXVVMCS, u32GuestTrAttr),
-        /*    19 */ RT_OFFSET(VMXVVMCS, u32GuestIntrState),
-        /*    20 */ RT_OFFSET(VMXVVMCS, u32GuestActivityState),
-        /*    21 */ RT_OFFSET(VMXVVMCS, u32GuestSmBase),
-        /*    22 */ RT_OFFSET(VMXVVMCS, u32GuestSysenterCS),
-        /*    23 */ RT_OFFSET(VMXVVMCS, u32PreemptTimer),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u32GuestEsLimit),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u32GuestCsLimit),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u32GuestSsLimit),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u32GuestDsLimit),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u32GuestEsLimit),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u32GuestFsLimit),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u32GuestGsLimit),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u32GuestLdtrLimit),
+        /*     8 */ RT_OFFSETOF(VMXVVMCS, u32GuestTrLimit),
+        /*     9 */ RT_OFFSETOF(VMXVVMCS, u32GuestGdtrLimit),
+        /*    10 */ RT_OFFSETOF(VMXVVMCS, u32GuestIdtrLimit),
+        /*    11 */ RT_OFFSETOF(VMXVVMCS, u32GuestEsAttr),
+        /*    12 */ RT_OFFSETOF(VMXVVMCS, u32GuestCsAttr),
+        /*    13 */ RT_OFFSETOF(VMXVVMCS, u32GuestSsAttr),
+        /*    14 */ RT_OFFSETOF(VMXVVMCS, u32GuestDsAttr),
+        /*    15 */ RT_OFFSETOF(VMXVVMCS, u32GuestFsAttr),
+        /*    16 */ RT_OFFSETOF(VMXVVMCS, u32GuestGsAttr),
+        /*    17 */ RT_OFFSETOF(VMXVVMCS, u32GuestLdtrAttr),
+        /*    18 */ RT_OFFSETOF(VMXVVMCS, u32GuestTrAttr),
+        /*    19 */ RT_OFFSETOF(VMXVVMCS, u32GuestIntrState),
+        /*    20 */ RT_OFFSETOF(VMXVVMCS, u32GuestActivityState),
+        /*    21 */ RT_OFFSETOF(VMXVVMCS, u32GuestSmBase),
+        /*    22 */ RT_OFFSETOF(VMXVVMCS, u32GuestSysenterCS),
+        /*    23 */ RT_OFFSETOF(VMXVVMCS, u32PreemptTimer),
         /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u32HostSysenterCs),
-        /*   1-8 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u32HostSysenterCs),
+        /*   1-8 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*  9-16 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 17-24 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*    25 */ UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_CONTROL: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64Cr0Mask),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u64Cr4Mask),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u64Cr0ReadShadow),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u64Cr4ReadShadow),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u64Cr3Target0),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u64Cr3Target1),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u64Cr3Target2),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u64Cr3Target3),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64Cr0Mask),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u64Cr4Mask),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u64Cr0ReadShadow),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64Cr4ReadShadow),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64Cr3Target0),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64Cr3Target1),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u64Cr3Target2),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u64Cr3Target3),
         /*  8-15 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 16-23 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64ExitQual),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u64IoRcx),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u64IoRsi),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u64IoRdi),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u64IoRip),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u64GuestLinearAddr),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64ExitQual),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u64IoRcx),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u64IoRsi),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64IoRdi),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64IoRip),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64GuestLinearAddr),
         /*  6-13 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 14-21 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 22-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64GuestCr0),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u64GuestCr3),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u64GuestCr4),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u64GuestEsBase),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u64GuestCsBase),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u64GuestSsBase),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u64GuestDsBase),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u64GuestFsBase),
-        /*     8 */ RT_OFFSET(VMXVVMCS, u64GuestGsBase),
-        /*     9 */ RT_OFFSET(VMXVVMCS, u64GuestLdtrBase),
-        /*    10 */ RT_OFFSET(VMXVVMCS, u64GuestTrBase),
-        /*    11 */ RT_OFFSET(VMXVVMCS, u64GuestGdtrBase),
-        /*    12 */ RT_OFFSET(VMXVVMCS, u64GuestIdtrBase),
-        /*    13 */ RT_OFFSET(VMXVVMCS, u64GuestDr7),
-        /*    14 */ RT_OFFSET(VMXVVMCS, u64GuestRsp),
-        /*    15 */ RT_OFFSET(VMXVVMCS, u64GuestRip),
-        /*    16 */ RT_OFFSET(VMXVVMCS, u64GuestRFlags),
-        /*    17 */ RT_OFFSET(VMXVVMCS, u64GuestPendingDbgXcpt),
-        /*    18 */ RT_OFFSET(VMXVVMCS, u64GuestSysenterEsp),
-        /*    19 */ RT_OFFSET(VMXVVMCS, u64GuestSysenterEip),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64GuestCr0),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u64GuestCr3),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u64GuestCr4),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64GuestEsBase),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64GuestCsBase),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64GuestSsBase),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u64GuestDsBase),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u64GuestFsBase),
+        /*     8 */ RT_OFFSETOF(VMXVVMCS, u64GuestGsBase),
+        /*     9 */ RT_OFFSETOF(VMXVVMCS, u64GuestLdtrBase),
+        /*    10 */ RT_OFFSETOF(VMXVVMCS, u64GuestTrBase),
+        /*    11 */ RT_OFFSETOF(VMXVVMCS, u64GuestGdtrBase),
+        /*    12 */ RT_OFFSETOF(VMXVVMCS, u64GuestIdtrBase),
+        /*    13 */ RT_OFFSETOF(VMXVVMCS, u64GuestDr7),
+        /*    14 */ RT_OFFSETOF(VMXVVMCS, u64GuestRsp),
+        /*    15 */ RT_OFFSETOF(VMXVVMCS, u64GuestRip),
+        /*    16 */ RT_OFFSETOF(VMXVVMCS, u64GuestRFlags),
+        /*    17 */ RT_OFFSETOF(VMXVVMCS, u64GuestPendingDbgXcpt),
+        /*    18 */ RT_OFFSETOF(VMXVVMCS, u64GuestSysenterEsp),
+        /*    19 */ RT_OFFSETOF(VMXVVMCS, u64GuestSysenterEip),
         /* 20-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_HOST_STATE: */
     {
-        /*     0 */ RT_OFFSET(VMXVVMCS, u64HostCr0),
-        /*     1 */ RT_OFFSET(VMXVVMCS, u64HostCr3),
-        /*     2 */ RT_OFFSET(VMXVVMCS, u64HostCr4),
-        /*     3 */ RT_OFFSET(VMXVVMCS, u64HostFsBase),
-        /*     4 */ RT_OFFSET(VMXVVMCS, u64HostGsBase),
-        /*     5 */ RT_OFFSET(VMXVVMCS, u64HostTrBase),
-        /*     6 */ RT_OFFSET(VMXVVMCS, u64HostGdtrBase),
-        /*     7 */ RT_OFFSET(VMXVVMCS, u64HostIdtrBase),
-        /*     8 */ RT_OFFSET(VMXVVMCS, u64HostSysenterEsp),
-        /*     9 */ RT_OFFSET(VMXVVMCS, u64HostSysenterEip),
-        /*    10 */ RT_OFFSET(VMXVVMCS, u64HostRsp),
-        /*    11 */ RT_OFFSET(VMXVVMCS, u64HostRip),
+        /*     0 */ RT_OFFSETOF(VMXVVMCS, u64HostCr0),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u64HostCr3),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u64HostCr4),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64HostFsBase),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64HostGsBase),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64HostTrBase),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u64HostGdtrBase),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u64HostIdtrBase),
+        /*     8 */ RT_OFFSETOF(VMXVVMCS, u64HostSysenterEsp),
+        /*     9 */ RT_OFFSETOF(VMXVVMCS, u64HostSysenterEip),
+        /*    10 */ RT_OFFSETOF(VMXVVMCS, u64HostRsp),
+        /*    11 */ RT_OFFSETOF(VMXVVMCS, u64HostRip),
         /* 12-19 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 20-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     }
@@ -359,6 +359,27 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         (a_u64Disp) = (int32_t)RT_MAKE_U32_FROM_U8(bTmp0, bTmp1, bTmp2, bTmp3); \
     } while (0)
 # endif /* !IEM_WITH_CODE_TLB */
+
+/** Whether a current VMCS is present for the given VCPU. */
+#define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)       RT_BOOL((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS)
+
+/** Gets the current VMCS for the given VCPU. */
+#define IEM_VMX_GET_CURRENT_VMCS(a_pVCpu)       ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs)
+
+/** Sets a new VMCS as the current VMCS for the given VCPU. */
+#define IEM_VMX_SET_CURRENT_VMCS(a_pVCpu, a_GCPhysVmcs) \
+    do \
+    { \
+        Assert((a_GCPhysVmcs) != NIL_RTGCPHYS); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = (a_GCPhysVmcs); \
+    } while (0)
+
+/** Clears any current VMCS for the given VCPU. */
+#define IEM_VMX_CLEAR_CURRENT_VMCS(a_pVCpu) \
+    do \
+    { \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = NIL_RTGCPHYS; \
+    } while (0)
 
 
 #if 0 /* Disabled static fn until we use it with VMREAD/VMWRITE instruction implementation. */
@@ -965,7 +986,7 @@ DECLINLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
  */
 DECLINLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    if (pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS)
+    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
         pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_ZF;
@@ -983,13 +1004,29 @@ DECLINLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  */
 DECLINLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    if (pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS)
+    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         iemVmxVmFailValid(pVCpu, enmInsErr);
         /** @todo Set VM-instruction error field in the current virtual-VMCS.  */
     }
     else
         iemVmxVmFailInvalid(pVCpu);
+}
+
+
+/**
+ * Flushes the current VMCS contents back to guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+DECLINLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
+{
+    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), IEM_VMX_GET_CURRENT_VMCS(pVCpu),
+                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), sizeof(VMXVVMCS));
+    IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
+    return rc;
 }
 
 
@@ -1023,9 +1060,83 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GC
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    /** @todo NSTVMX: VMCLEAR impl.  */
-    RT_NOREF(GCPtrVmcs); RT_NOREF(pExitInstrInfo); RT_NOREF(cbInstr);
-    return VINF_SUCCESS;
+    /* Get the VMCS pointer from the location specified by the source memory operand. */
+    RTGCPHYS GCPhysVmcs;
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmcs, pExitInstrInfo->VmxXsave.iSegReg, GCPtrVmcs);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log(("vmclear: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrld_PtrMap;
+        return rcStrict;
+    }
+
+    /* VMCS pointer alignment. */
+    if (GCPhysVmcs & X86_PAGE_4K_OFFSET_MASK)
+    {
+        Log(("vmclear: VMCS pointer not page-aligned -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_PtrAlign;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS physical-address width limits. */
+    Assert(!VMX_V_VMCS_PHYSADDR_4G_LIMIT);
+    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth)
+    {
+        Log(("vmclear: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_PtrWidth;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS is not the VMXON region. */
+    if (GCPhysVmcs == pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
+    {
+        Log(("vmclear: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_PtrVmxon;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_VMXON_PTR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
+       restriction imposed by our implementation. */
+    if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcs))
+    {
+        Log(("vmclear: VMCS not normal memory -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_PtrAbnormal;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * VMCLEAR allows committing and clearing any valid VMCS pointer.
+     *
+     * If the current VMCS is the one being cleared, set its state to 'clear' and commit
+     * to guest memory. Otherwise, set the state of the VMCS referenced in guest memory
+     * to 'clear'.
+     */
+    uint8_t const fVmcsStateClear = VMX_V_VMCS_STATE_CLEAR;
+    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
+    {
+        Assert(GCPhysVmcs != NIL_RTGCPHYS); /* Paranoia. */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsStateClear;
+        iemVmxCommitCurrentVmcsToMemory(pVCpu);
+        Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    }
+    else
+    {
+        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPtrVmcs + RT_OFFSETOF(VMXVVMCS, fVmcsState),
+                                            (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
+    }
+
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_Success;
+    iemVmxVmSucceed(pVCpu);
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return rcStrict;
 }
 
 
@@ -1061,17 +1172,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GC
     }
 
     /* Set the VMCS pointer to the location specified by the destination memory operand. */
-    Assert(NIL_RTGCPHYS == ~(RTGCPHYS)0U);
+    AssertCompile(NIL_RTGCPHYS == ~(RTGCPHYS)0U);
     VBOXSTRICTRC rcStrict = iemMemStoreDataU64(pVCpu, pExitInstrInfo->VmxXsave.iSegReg, GCPtrVmcs,
-                                               pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs);
+                                               IEM_VMX_GET_CURRENT_VMCS(pVCpu));
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrst_Success;
         iemVmxVmSucceed(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return rcStrict;
     }
 
-    Log(("vmptrld: Failed to store VMCS pointer to memory at destination operand %#Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    Log(("vmptrst: Failed to store VMCS pointer to memory at destination operand %#Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrst_PtrMap;
     return rcStrict;
 }
@@ -1192,7 +1304,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GC
         return VINF_SUCCESS;
     }
 
-    pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = GCPhysVmcs;
+    /*
+     * We only maintain only the current VMCS in our virtual CPU context (CPUMCTX). Therefore,
+     * VMPTRLD shall always flush any existing current VMCS back to guest memory before loading
+     * a new VMCS as current.
+     */
+    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
+    {
+        iemVmxCommitCurrentVmcsToMemory(pVCpu);
+        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
+    }
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrld_Success;
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -1342,7 +1463,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPt
          * Record that we're in VMX operation, block INIT, block and disable A20M.
          */
         pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon    = GCPhysVmxon;
-        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs     = NIL_RTGCPHYS;
+        IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
         pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
         /** @todo NSTVMX: clear address-range monitoring. */
         /** @todo NSTVMX: Intel PT. */
