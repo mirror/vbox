@@ -890,7 +890,10 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
                 mode = WriteFile;
                 break;
             case VFSType_WebDav:
+                mode = WriteFile;
+                break;
             case VFSType_32BitHack:
+                mode = WriteFile;
                 break;
         }
         rc = i_setUpProgress(aProgress,
