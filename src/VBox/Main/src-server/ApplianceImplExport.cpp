@@ -876,26 +876,8 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             }
         }
 
-        SetUpProgressMode mode;
-        switch (aLocInfo.storageType)
-        {
-            case VFSType_S3:
-                mode = WriteS3;
-                break;
-            case VFSType_Cloud:
-            case VFSType_OCI:
-                mode = ExportOCI;
-                break;
-            case VFSType_File:
-                mode = WriteFile;
-                break;
-            case VFSType_WebDav:
-                mode = WriteFile;
-                break;
-            case VFSType_32BitHack:
-                mode = WriteFile;
-                break;
-        }
+        SetUpProgressMode mode = ExportOCI;
+
         rc = i_setUpProgress(aProgress,
                              BstrFmt(tr("Export appliance to Cloud '%s'"), aLocInfo.strPath.c_str()),
                              mode);
@@ -933,7 +915,7 @@ HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo 
         rc = i_setUpProgress(aProgress,
                              BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
                              (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
-
+ 
         /* Initialize our worker task */
         TaskOPC* task = NULL;
         try
