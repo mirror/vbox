@@ -58,7 +58,7 @@ RTCRestObjectBase::~RTCRestObjectBase()
 int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t fFlags)
 {
     Assert(fFlags == 0);
-
+    RT_NOREF(fFlags);
     /*
      * Just wrap the JSON serialization method.
      */
@@ -158,7 +158,7 @@ int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestBool::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
 {
     Assert(!fFlags);
-
+    RT_NOREF(fFlags);
     /* Be a little careful here to avoid throwing anything. */
     int rc = a_pDst->reserveNoThrow(m_fValue ? sizeof("true") : sizeof("false"));
     if (RT_SUCCESS(rc))
@@ -256,7 +256,7 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestInt64::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
 {
     Assert(!fFlags);
-
+    RT_NOREF(fFlags);
     /* Be a little careful here to avoid throwing anything. */
     char   szValue[64];
     size_t cchValue = RTStrPrintf(szValue, sizeof(szValue), "%RI64", m_iValue);
@@ -358,7 +358,7 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestInt32::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
 {
     Assert(!fFlags);
-
+    RT_NOREF(fFlags);
     /* Be a little careful here to avoid throwing anything. */
     char   szValue[16];
     size_t cchValue = RTStrPrintf(szValue, sizeof(szValue), "%RI32", m_iValue);
@@ -460,7 +460,7 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestInt16::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
 {
     Assert(!fFlags);
-
+    RT_NOREF(fFlags);
     /* Be a little careful here to avoid throwing anything. */
     char   szValue[8];
     size_t cchValue = RTStrPrintf(szValue, sizeof(szValue), "%RI16", m_iValue);
@@ -542,7 +542,7 @@ int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestDouble::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
 {
     Assert(!fFlags);
-
+    RT_NOREF(fFlags);
     /* Just a simple approximation here. */
     /** @todo implement floating point values for json. */
     char szValue[128];
@@ -649,7 +649,7 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestString::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
 {
     Assert(!fFlags);
-
+    RT_NOREF(fFlags);
     /* Careful as always. */
     if (m_cch)
     {
