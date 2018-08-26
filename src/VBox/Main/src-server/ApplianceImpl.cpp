@@ -1213,6 +1213,102 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
     return VINF_SUCCESS;
 }
 
+/**
+ * Worker for TaskOPC::handler.
+ * @thread  pTask       The task.
+ */
+/* static */
+void Appliance::i_exportOPCThreadTask(TaskOPC *pTask)
+{
+    LogFlowFuncEnter();
+    AssertReturnVoid(pTask);
+
+    Appliance *pAppliance = pTask->pAppliance;
+    LogFlowFunc(("Appliance %p taskType=%d\n", pAppliance, pTask->taskType));
+
+    switch (pTask->taskType)
+    {
+        case TaskOPC::Export:
+            pTask->rc = pAppliance->i_writeFSOPC(pTask);
+            break;
+
+        default:
+            AssertFailed();
+            pTask->rc = E_FAIL;
+            break;
+    }
+
+    if (!pTask->pProgress.isNull())
+        pTask->pProgress->i_notifyComplete(pTask->rc);
+
+    LogFlowFuncLeave();
+}
+
+/* static */
+DECLCALLBACK(int) Appliance::TaskOPC::updateProgress(unsigned uPercent, void *pvUser)
+{
+    Appliance::TaskOPC* pTask = *(Appliance::TaskOPC**)pvUser;
+
+    if (    pTask
+         && !pTask->pProgress.isNull())
+    {
+        BOOL fCanceled;
+        pTask->pProgress->COMGETTER(Canceled)(&fCanceled);
+        if (fCanceled)
+            return -1;
+        pTask->pProgress->SetCurrentOperationProgress(uPercent);
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Worker for TaskOCI::handler.
+ * @thread  pTask       The task.
+ */
+/* static */
+void Appliance::i_exportOCIThreadTask(TaskOCI *pTask)
+{
+    LogFlowFuncEnter();
+    AssertReturnVoid(pTask);
+
+    Appliance *pAppliance = pTask->pAppliance;
+    LogFlowFunc(("Appliance %p taskType=%d\n", pAppliance, pTask->taskType));
+
+    switch (pTask->taskType)
+    {
+        case TaskOCI::Export:
+            pTask->rc = pAppliance->i_writeFSOCI(pTask);
+            break;
+
+        default:
+            AssertFailed();
+            pTask->rc = E_FAIL;
+            break;
+    }
+
+    if (!pTask->pProgress.isNull())
+        pTask->pProgress->i_notifyComplete(pTask->rc);
+
+    LogFlowFuncLeave();
+}
+
+/* static */
+DECLCALLBACK(int) Appliance::TaskOCI::updateProgress(unsigned uPercent, void *pvUser)
+{
+    Appliance::TaskOCI* pTask = *(Appliance::TaskOCI**)pvUser;
+
+    if (    pTask
+         && !pTask->pProgress.isNull())
+    {
+        BOOL fCanceled;
+        pTask->pProgress->COMGETTER(Canceled)(&fCanceled);
+        if (fCanceled)
+            return -1;
+        pTask->pProgress->SetCurrentOperationProgress(uPercent);
+    }
+    return VINF_SUCCESS;
+}
+
 void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)
 {
     /* Check the URI for the protocol */
@@ -1230,6 +1326,11 @@ void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)
     {
         locInfo.storageType = VFSType_S3;
         strUri = strUri.substr(sizeof("S3://") - 1);
+    }
+    else if (strUri.startsWith("OCI://", Utf8Str::CaseInsensitive)) /* OCI service (storage or compute) */
+    {
+        locInfo.storageType = VFSType_OCI;
+        strUri = strUri.substr(sizeof("OCI://") - 1);
     }
     else if (strUri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
         throw E_NOTIMPL;
@@ -1490,8 +1591,8 @@ void VirtualSystemDescription::i_addEntry(VirtualSystemDescriptionType_T aType,
     vsde.type = aType;
     vsde.strRef = strRef;
     vsde.strOvf = aOvfValue;
-    vsde.strVBoxSuggested           // remember original value
-        = vsde.strVBoxCurrent       // and set current value which can be overridden by setFinalValues()
+    vsde.strVBoxSuggested           /* remember original value */
+        = vsde.strVBoxCurrent       /* and set current value which can be overridden by setFinalValues() */
         = aVBoxValue;
     vsde.strExtraConfigSuggested
         = vsde.strExtraConfigCurrent

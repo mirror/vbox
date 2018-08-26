@@ -287,6 +287,89 @@ public:
     }
 };
 
+class Appliance::TaskOPC : public ThreadTask
+{
+public:
+    enum TaskType
+    {
+        Export
+    };
+
+    TaskOPC(Appliance *aThat,
+            TaskType aType,
+            LocationInfo aLocInfo,
+            ComObjPtr<Progress> &aProgress)
+      : ThreadTask("TaskOPC"),
+        pAppliance(aThat),
+        taskType(aType),
+        locInfo(aLocInfo),
+        pProgress(aProgress),
+        rc(S_OK)
+    {
+        m_strTaskName = "OPCExpt";
+    }
+
+    ~TaskOPC()
+    {
+    }
+
+    static DECLCALLBACK(int) updateProgress(unsigned uPercent, void *pvUser);
+
+    Appliance *pAppliance;
+    TaskType taskType;
+    const LocationInfo locInfo;
+    ComObjPtr<Progress> pProgress;
+
+    HRESULT rc;
+
+    void handler()
+    {
+        Appliance::i_exportOPCThreadTask(this);
+    }
+};
+
+
+class Appliance::TaskOCI : public ThreadTask
+{
+public:
+    enum TaskType
+    {
+        Export
+    };
+
+    TaskOCI(Appliance *aThat,
+            TaskType aType,
+            LocationInfo aLocInfo,
+            ComObjPtr<Progress> &aProgress)
+      : ThreadTask("TaskOCI"),
+        pAppliance(aThat),
+        taskType(aType),
+        locInfo(aLocInfo),
+        pProgress(aProgress),
+        rc(S_OK)
+    {
+        m_strTaskName = "OCIExpt";
+    }
+
+    ~TaskOCI()
+    {
+    }
+
+    static DECLCALLBACK(int) updateProgress(unsigned uPercent, void *pvUser);
+
+    Appliance *pAppliance;
+    TaskType taskType;
+    const LocationInfo locInfo;
+    ComObjPtr<Progress> pProgress;
+
+    HRESULT rc;
+
+    void handler()
+    {
+        Appliance::i_exportOCIThreadTask(this);
+    }
+};
+
 struct MyHardDiskAttachment
 {
     ComPtr<IMachine>    pMachine;

@@ -644,86 +644,137 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
         }
     }
 
+    HRESULT rc = S_OK;
 //  AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest)
 //  && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
 
-    m->fExportISOImages = m->optListExport.contains(ExportOptions_ExportDVDImages);
+    /* Parse all necessary info out of the URI */
+    i_parseURI(aPath, m->locInfo);
 
-    if (!m->fExportISOImages)/* remove all ISO images from VirtualSystemDescription */
+    if (m->locInfo.storageType == VFSType_OCI)//(isCloudDestination(aPath))
     {
-        for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
-             it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
+        rc = S_OK;
+        ComObjPtr<Progress> progress;
+        try
         {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
-            std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
-            std::list<VirtualSystemDescriptionEntry*>::const_iterator itSkipped = skipped.begin();
-            while (itSkipped != skipped.end())
+            switch (m->locInfo.storageType)
             {
-                (*itSkipped)->skipIt = true;
-                ++itSkipped;
+                case VFSType_OCI:
+                    rc = i_writeOCIImpl(m->locInfo, progress);
+                    break;
+//              case VFSType_GCP:
+//                  rc = i_writeGCPImpl(m->locInfo, progress);
+//                  break;
+//              case VFSType_Amazon:
+//                  rc = i_writeAmazonImpl(m->locInfo, progress);
+//                  break;
+//              case VFSType_Azure:
+//                  rc = i_writeAzureImpl(m->locInfo, progress);
+//                  break;
+                default:
+                    break;
+            }
+
+        }
+        catch (HRESULT aRC)
+        {
+            rc = aRC;
+        }
+
+        if (SUCCEEDED(rc))
+            /* Return progress to the caller */
+            progress.queryInterfaceTo(aProgress.asOutParam());
+    }
+    else
+    {
+        m->fExportISOImages = m->optListExport.contains(ExportOptions_ExportDVDImages);
+
+        if (!m->fExportISOImages)/* remove all ISO images from VirtualSystemDescription */
+        {
+            for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
+                 it = m->virtualSystemDescriptions.begin();
+                 it != m->virtualSystemDescriptions.end();
+                 ++it)
+            {
+                ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
+                std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
+                std::list<VirtualSystemDescriptionEntry*>::const_iterator itSkipped = skipped.begin();
+                while (itSkipped != skipped.end())
+                {
+                    (*itSkipped)->skipIt = true;
+                    ++itSkipped;
+                }
             }
         }
-    }
 
-    // do not allow entering this method if the appliance is busy reading or writing
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
+        // do not allow entering this method if the appliance is busy reading or writing
+        if (!i_isApplianceIdle())
+            return E_ACCESSDENIED;
 
-    // figure the export format.  We exploit the unknown version value for oracle public cloud.
-    ovf::OVFVersion_T ovfF;
-    if (aFormat == "ovf-0.9")
-        ovfF = ovf::OVFVersion_0_9;
-    else if (aFormat == "ovf-1.0")
-        ovfF = ovf::OVFVersion_1_0;
-    else if (aFormat == "ovf-2.0")
-        ovfF = ovf::OVFVersion_2_0;
-    else if (aFormat == "opc-1.0")
-        ovfF = ovf::OVFVersion_unknown;
-    else
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid format \"%s\" specified"), aFormat.c_str());
-
-    // Check the extension.
-    if (ovfF == ovf::OVFVersion_unknown)
-    {
-        if (!aPath.endsWith(".tar.gz", Utf8Str::CaseInsensitive))
+        // figure the export format.  We exploit the unknown version value for oracle public cloud.
+        ovf::OVFVersion_T ovfF;
+        if (aFormat == "ovf-0.9")
+            ovfF = ovf::OVFVersion_0_9;
+        else if (aFormat == "ovf-1.0")
+            ovfF = ovf::OVFVersion_1_0;
+        else if (aFormat == "ovf-2.0")
+            ovfF = ovf::OVFVersion_2_0;
+        else if (aFormat == "opc-1.0")
+            ovfF = ovf::OVFVersion_unknown;
+        else
             return setError(VBOX_E_FILE_ERROR,
-                            tr("OPC appliance file must have .tar.gz extension"));
+                            tr("Invalid format \"%s\" specified"), aFormat.c_str());
+
+        // Check the extension.
+        if (ovfF == ovf::OVFVersion_unknown)
+        {
+            if (!aPath.endsWith(".tar.gz", Utf8Str::CaseInsensitive))
+                return setError(VBOX_E_FILE_ERROR,
+                                tr("OPC appliance file must have .tar.gz extension"));
+        }
+        else if (   !aPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
+                 && !aPath.endsWith(".ova", Utf8Str::CaseInsensitive))
+            return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
+
+
+        /* As of OVF 2.0 we have to use SHA-256 in the manifest. */
+        m->fManifest = m->optListExport.contains(ExportOptions_CreateManifest);
+        if (m->fManifest)
+            m->fDigestTypes = ovfF >= ovf::OVFVersion_2_0 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1;
+        Assert(m->hOurManifest == NIL_RTMANIFEST);
+
+        /* Check whether all passwords are supplied or error out. */
+        if (m->m_cPwProvided < m->m_vecPasswordIdentifiers.size())
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Appliance export failed because not all passwords were provided for all encrypted media"));
+
+        ComObjPtr<Progress> progress;
+        rc = S_OK;
+        try
+        {
+            /* Parse all necessary info out of the URI */
+            i_parseURI(aPath, m->locInfo);
+
+            switch (ovfF)
+            {
+                case ovf::OVFVersion_unknown:
+                    rc = i_writeOPCImpl(ovfF, m->locInfo, progress);
+                    break;
+                default:
+                    rc = i_writeImpl(ovfF, m->locInfo, progress);
+                    break;
+            }
+
+        }
+        catch (HRESULT aRC)
+        {
+            rc = aRC;
+        }
+
+        if (SUCCEEDED(rc))
+            /* Return progress to the caller */
+            progress.queryInterfaceTo(aProgress.asOutParam());
     }
-    else if (   !aPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
-             && !aPath.endsWith(".ova", Utf8Str::CaseInsensitive))
-        return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
-
-
-    /* As of OVF 2.0 we have to use SHA-256 in the manifest. */
-    m->fManifest = m->optListExport.contains(ExportOptions_CreateManifest);
-    if (m->fManifest)
-        m->fDigestTypes = ovfF >= ovf::OVFVersion_2_0 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1;
-    Assert(m->hOurManifest == NIL_RTMANIFEST);
-
-    /* Check whether all passwords are supplied or error out. */
-    if (m->m_cPwProvided < m->m_vecPasswordIdentifiers.size())
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Appliance export failed because not all passwords were provided for all encrypted media"));
-
-    ComObjPtr<Progress> progress;
-    HRESULT rc = S_OK;
-    try
-    {
-        /* Parse all necessary info out of the URI */
-        i_parseURI(aPath, m->locInfo);
-        rc = i_writeImpl(ovfF, m->locInfo, progress);
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    if (SUCCEEDED(rc))
-        /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }
@@ -790,6 +841,118 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
 
     return rc;
 }
+
+
+HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+{
+    HRESULT rc;
+    try
+    {
+        //remove all disks from the VirtualSystemDescription exept one
+        for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
+             it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
+            std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
+            std::list<VirtualSystemDescriptionEntry*>::const_iterator itSkipped = skipped.begin();
+            while (itSkipped != skipped.end())
+            {
+                (*itSkipped)->skipIt = true;
+                ++itSkipped;
+            }
+ 
+            skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
+            itSkipped = skipped.begin();
+            while (itSkipped != skipped.end())
+            {
+                Utf8Str path = (*itSkipped)->strVBoxCurrent;
+                // Locate the Medium object for this entry (by location/path).
+                Log(("Finding source disk \"%s\"\n", path.c_str()));
+                ComObjPtr<Medium> ptrSourceDisk;
+                rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrSourceDisk);
+                ++itSkipped;
+            }
+        }
+
+        SetUpProgressMode mode;
+        switch (aLocInfo.storageType)
+        {
+            case VFSType_S3:
+                mode = WriteS3;
+                break;
+            case VFSType_OCI:
+                mode = ExportOCI;
+                break;
+
+            case VFSType_File:
+                mode = WriteFile;
+                break;
+        }
+        rc = i_setUpProgress(aProgress,
+                             BstrFmt(tr("Export appliance to Cloud '%s'"), aLocInfo.strPath.c_str()),
+                             mode);
+
+        // Initialize our worker task
+        TaskOCI* task = NULL;
+        try
+        {
+            task = new Appliance::TaskOCI(this, TaskOCI::Export, aLocInfo, aProgress);
+        }
+        catch(...)
+        {
+            delete task;
+            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                                tr("Could not create TaskOCI object for exporting to OCI"));
+        }
+
+        rc = task->createThread();
+        if (FAILED(rc)) throw rc;
+
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    return rc;
+}
+
+HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+{
+    HRESULT rc;
+    try
+    {
+        rc = i_setUpProgress(aProgress,
+                             BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                             (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
+
+        /* Initialize our worker task */
+        TaskOPC* task = NULL;
+        try
+        {
+            task = new Appliance::TaskOPC(this, TaskOPC::Export, aLocInfo, aProgress);
+        }
+        catch(...)
+        {
+            delete task;
+            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                                tr("Could not create TaskOPC object for for writing out the OPC to disk"));
+        }
+
+        rc = task->createThread();
+        if (FAILED(rc)) throw rc;
+
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    return rc;
+}
+
 
 /**
  * Called from Appliance::i_writeFS() for creating a XML document for this
@@ -985,6 +1148,7 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
 
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
+
             // target path needs to be composed from where the output OVF is
             Utf8Str strTargetFilePath(strPath);
             strTargetFilePath.stripFilename();
@@ -1981,9 +2145,7 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
     // callers on this lengthy operations.
     m->state = Data::ApplianceExporting;
 
-    if (pTask->enFormat == ovf::OVFVersion_unknown)
-        rc = i_writeFSOPC(pTask, multiLock);
-    else if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         rc = i_writeFSOVF(pTask, multiLock);
     else
         rc = i_writeFSOVA(pTask, multiLock);
@@ -2087,15 +2249,36 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 }
 
 /**
+ * Upload the image to the OCI Storage service, next import the
+ * uploaded image into internal OCI image format and launch an
+ * instance with this image in the OCI Compute service.
+ */
+HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
+{
+    LogFlowFuncEnter();
+    HRESULT hrc = S_OK;
+
+    return hrc;
+}
+
+/**
  * Writes the Oracle Public Cloud appliance.
  *
  * It expect raw disk images inside a gzipped tarball.  We enable sparse files
  * to save diskspace on the target host system.
  */
-HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
+HRESULT Appliance::i_writeFSOPC(TaskOPC *pTask)
 {
     LogFlowFuncEnter();
     HRESULT hrc = S_OK;
+
+    // Lock the media tree early to make sure nobody else tries to make changes
+    // to the tree. Also lock the IAppliance object for writing.
+    AutoMultiWriteLock2 multiLock(&mVirtualBox->i_getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    // Additional protect the IAppliance object, cause we leave the lock
+    // when starting the disk export and we don't won't block other
+    // callers on this lengthy operations.
+    m->state = Data::ApplianceExporting;
 
     /*
      * We're duplicating parts of i_writeFSImpl here because that's simpler
@@ -2109,7 +2292,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
     XMLStack stack;
     {
         xml::Document doc;
-        i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath, ovf::OVFVersion_2_0);
+        i_buildXML(multiLock, doc, stack, pTask->locInfo.strPath, ovf::OVFVersion_2_0);
     }
 
     /*
@@ -2168,7 +2351,6 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
         Utf8Str strTarballPath = pTask->locInfo.strPath;
         if (cTarballs > 0)
         {
-
             strTarballPath.stripFilename().append(RTPATH_SLASH_STR).append(pDiskEntry->strOvf);
             const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
             if (pszExt && pszExt[0] == '.' && pszExt[1] != '\0')
@@ -2215,7 +2397,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                  * The exporting requests a lock on the media tree. So temporarily
                  * leave the appliance lock.
                  */
-                writeLock.release();
+                multiLock.release();
 
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%Rbn'"), strTarballPath.c_str()).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up
@@ -2223,7 +2405,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                 hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar,
                                                    pTask->pProgress, true /*fSparse*/);
 
-                writeLock.acquire();
+                multiLock.acquire();
                 if (SUCCEEDED(hrc))
                 {
                     /*
@@ -2266,6 +2448,9 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
     if (FAILED(hrc))
         for (list<Utf8Str>::const_iterator it = lstTarballs.begin(); it != lstTarballs.end(); ++it)
             RTFileDelete(it->c_str());
+
+    // reset the state so others can call methods again
+    m->state = Data::ApplianceIdle;
 
     LogFlowFuncLeave();
     return hrc;
@@ -2379,6 +2564,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, R
 
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
+
             // target path needs to be composed from where the output OVF is
             const Utf8Str &strTargetFilePath = strTargetFileNameOnly;
 
