@@ -125,7 +125,7 @@ public:
     RTCRestOutputToString(RTCString *a_pDst);
     virtual ~RTCRestOutputToString();
 
-    size_t vprintf(const char *pszFormat, va_list va);
+    virtual size_t vprintf(const char *pszFormat, va_list va) RT_OVERRIDE;
 
     /**
      * Finalizes the output and releases the string object to the caller.
@@ -256,15 +256,15 @@ public:
 class RTCRestObjectBase
 {
 public:
-    RTCRestObjectBase() {}
-    virtual ~RTCRestObjectBase() {}
+    RTCRestObjectBase();
+    virtual ~RTCRestObjectBase();
 
     /** @todo Add some kind of state? */
 
     /**
      * Resets the object to all default values.
      */
-    virtual void resetToDefaults() = 0;
+    virtual void resetToDefault() = 0;
 
     /**
      * Serialize the object as JSON.
@@ -282,20 +282,204 @@ public:
      */
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
 
-    /** @name Helpers for deserializing primitive types and strings.
-     * @{ */
-    static int deserialize_RTCString_FromJson(RTCRestJsonCursor const &a_rCursor, RTCString *a_pDst);
-    static int deserialize_int64_t_FromJson(RTCRestJsonCursor const &a_rCursor, int64_t *a_piDst);
-    static int deserialize_int32_t_FromJson(RTCRestJsonCursor const &a_rCursor, int32_t *a_piDst);
-    static int deserialize_int16_t_FromJson(RTCRestJsonCursor const &a_rCursor, int16_t *a_piDst);
-    static int deserialize_bool_FromJson(RTCRestJsonCursor const &a_rCursor, bool *a_pfDst);
-    static int deserialize_double_FromJson(RTCRestJsonCursor const &a_rCursor, double *a_prdDst);
-    /** @} */
+    /**
+     * String conversion.
+     *
+     * The default implementation of is a wrapper around serializeAsJson().
+     *
+     * @returns IPRT status code.
+     * @param   a_pDst      Pointer to the destionation string.
+     * @param   a_fFlags    For future tricks, MBZ.
+     */
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0);
 
-    /** @name Helpers for serializing floating point types.
-     * @{ */
-    static RTCRestOutputBase &serialize_double_AsJson(RTCRestOutputBase &a_rDst, double const *a_prdValue);
-    /** @} */
+    /**
+     * String convertsion, naive variant.
+     *
+     * @returns String represenation.
+     */
+    RTCString toString();
+
+    /**
+     * Returns the object type name.
+     */
+    virtual const char *getType(void) = 0;
+};
+
+
+/**
+ * Class wrapping 'bool'.
+ */
+class RTCRestBool : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestBool();
+    /** Copy constructor. */
+    RTCRestBool(RTCRestBool const &a_rThat);
+    /** From value constructor. */
+    RTCRestBool(bool fValue);
+    /** Destructor. */
+    virtual ~RTCRestBool();
+    /** Copy assignment operator. */
+    RTCRestBool &operator=(RTCRestBool const &a_rThat);
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
+
+public:
+    /** The value. */
+    bool    m_fValue;
+};
+
+
+/**
+ * Class wrapping 'int64_t'.
+ */
+class RTCRestInt64 : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestInt64();
+    /** Copy constructor. */
+    RTCRestInt64(RTCRestInt64 const &a_rThat);
+    /** From value constructor. */
+    RTCRestInt64(int64_t iValue);
+    /** Destructor. */
+    virtual ~RTCRestInt64();
+    /** Copy assignment operator. */
+    RTCRestInt64 &operator=(RTCRestInt64 const &a_rThat);
+
+        /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
+
+public:
+    /** The value. */
+    int64_t m_iValue;
+};
+
+
+/**
+ * Class wrapping 'int32_t'.
+ */
+class RTCRestInt32 : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestInt32();
+    /** Copy constructor. */
+    RTCRestInt32(RTCRestInt32 const &a_rThat);
+    /** From value constructor. */
+    RTCRestInt32(int32_t iValue);
+    /** Destructor. */
+    virtual ~RTCRestInt32();
+    /** Copy assignment operator. */
+    RTCRestInt32 &operator=(RTCRestInt32 const &a_rThat);
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
+
+public:
+    /** The value. */
+    int32_t m_iValue;
+};
+
+
+/**
+ * Class wrapping 'int16_t'.
+ */
+class RTCRestInt16 : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestInt16();
+    /** Copy constructor. */
+    RTCRestInt16(RTCRestInt16 const &a_rThat);
+    /** From value constructor. */
+    RTCRestInt16(int16_t iValue);
+    /** Destructor. */
+    virtual ~RTCRestInt16();
+    /** Copy assignment operator. */
+    RTCRestInt16 &operator=(RTCRestInt16 const &a_rThat);
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
+
+public:
+    /** The value. */
+    int16_t m_iValue;
+};
+
+
+/**
+ * Class wrapping 'double'.
+ */
+class RTCRestDouble : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestDouble();
+    /** Copy constructor. */
+    RTCRestDouble(RTCRestDouble const &a_rThat);
+    /** From value constructor. */
+    RTCRestDouble(double rdValue);
+    /** Destructor. */
+    virtual ~RTCRestDouble();
+    /** Copy assignment operator. */
+    RTCRestDouble &operator=(RTCRestDouble const &a_rThat);
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
+
+public:
+    /** The value. */
+    double m_rdValue;
+};
+
+
+/**
+ * Class wrapping 'RTCString'.
+ */
+class RTCRestString : public RTCString, public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestString();
+    /** Copy constructor. */
+    RTCRestString(RTCRestString const &a_rThat);
+    /** From value constructor. */
+    RTCRestString(RTCString const &a_rThat);
+    /** From value constructor. */
+    RTCRestString(const char *a_pszSrc);
+    /** Destructor. */
+    virtual ~RTCRestString();
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
 };
 
 
@@ -309,13 +493,14 @@ public:
     ~RTCRestArray() {};
 /** @todo more later. */
 
-    virtual void resetToDefaults();
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
     {
         RT_NOREF(a_rCursor);
         return VERR_NOT_IMPLEMENTED;
     }
+    virtual const char *getType(void) RT_OVERRIDE;
 };
 
 
@@ -329,13 +514,14 @@ public:
     ~RTCRestStringMap() {};
 /** @todo more later. */
 
-    virtual void resetToDefaults();
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst);
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
     {
         RT_NOREF(a_rCursor);
         return VERR_NOT_IMPLEMENTED;
     }
+    virtual const char *getType(void) RT_OVERRIDE;
 };
 
 
@@ -351,7 +537,7 @@ public:
     /**
      * Reset all members to default values.
      */
-    virtual void resetToDefaults() = 0;
+    virtual void resetToDefault() = 0;
 
     /**
      * Prepares the HTTP handle for transmitting this request.
