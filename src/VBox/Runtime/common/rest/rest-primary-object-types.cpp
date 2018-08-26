@@ -55,10 +55,10 @@ RTCRestObjectBase::~RTCRestObjectBase()
 }
 
 
-int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t fFlags)
+int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(fFlags == 0);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /*
      * Just wrap the JSON serialization method.
      */
@@ -68,7 +68,7 @@ int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t fFlags)
 }
 
 
-RTCString RTCRestObjectBase::toString()
+RTCString RTCRestObjectBase::toString() const
 {
     RTCString strRet;
     toString(&strRet, 0);
@@ -123,7 +123,7 @@ void RTCRestBool::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestBool::serializeAsJson(RTCRestOutputBase &a_rDst)
+RTCRestOutputBase &RTCRestBool::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     a_rDst.printf(m_fValue ? "true" : "false");
     return a_rDst;
@@ -155,10 +155,10 @@ int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestBool::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
+int RTCRestBool::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(!fFlags);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /* Be a little careful here to avoid throwing anything. */
     int rc = a_pDst->reserveNoThrow(m_fValue ? sizeof("true") : sizeof("false"));
     if (RT_SUCCESS(rc))
@@ -224,7 +224,7 @@ void RTCRestInt64::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst)
+RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     a_rDst.printf("%RI64", m_iValue);
     return a_rDst;
@@ -253,10 +253,10 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestInt64::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
+int RTCRestInt64::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(!fFlags);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /* Be a little careful here to avoid throwing anything. */
     char   szValue[64];
     size_t cchValue = RTStrPrintf(szValue, sizeof(szValue), "%RI64", m_iValue);
@@ -320,7 +320,7 @@ void RTCRestInt32::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst)
+RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     a_rDst.printf("%RI32", m_iValue);
     return a_rDst;
@@ -355,10 +355,10 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestInt32::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
+int RTCRestInt32::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(!fFlags);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /* Be a little careful here to avoid throwing anything. */
     char   szValue[16];
     size_t cchValue = RTStrPrintf(szValue, sizeof(szValue), "%RI32", m_iValue);
@@ -422,7 +422,7 @@ void RTCRestInt16::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst)
+RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     a_rDst.printf("%RI16", m_iValue);
     return a_rDst;
@@ -457,10 +457,10 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestInt16::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
+int RTCRestInt16::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(!fFlags);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /* Be a little careful here to avoid throwing anything. */
     char   szValue[8];
     size_t cchValue = RTStrPrintf(szValue, sizeof(szValue), "%RI16", m_iValue);
@@ -516,7 +516,7 @@ void RTCRestDouble::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst)
+RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     /* Just a simple approximation here. */
     /** @todo implement floating point values for json. */
@@ -539,10 +539,10 @@ int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestDouble::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
+int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(!fFlags);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /* Just a simple approximation here. */
     /** @todo implement floating point values for json. */
     char szValue[128];
@@ -612,7 +612,7 @@ void RTCRestString::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst)
+RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     a_rDst.printf("%RJs", m_psz);
     return a_rDst;
@@ -646,10 +646,10 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestString::toString(RTCString *a_pDst, uint32_t fFlags /*= 0*/)
+int RTCRestString::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 {
-    Assert(!fFlags);
-    RT_NOREF(fFlags);
+    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+
     /* Careful as always. */
     if (m_cch)
     {

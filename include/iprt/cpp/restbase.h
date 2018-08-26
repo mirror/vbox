@@ -272,7 +272,7 @@ public:
      * @returns a_rDst
      * @param   a_rDst      The destination for the serialization.
      */
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) = 0;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const = 0;
 
     /**
      * Deserialize object from the given JSON iterator.
@@ -283,22 +283,36 @@ public:
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
 
     /**
+     * Flags for toString().
+     *
+     * The kCollectionFormat_xxx bunch controls multiple values in arrays
+     * are formatted.  They are ignored by everyone else.
+     */
+    enum
+    {
+        kCollectionFormat_cvs = 0,  /**< Comma-separated list. */
+        kCollectionFormat_ssv,      /**< Space-separated list. */
+        kCollectionFormat_tsv,      /**< Tab-separated list. */
+        kCollectionFormat_pipes     /**< Pipe-separated list. */
+    };
+
+    /**
      * String conversion.
      *
      * The default implementation of is a wrapper around serializeAsJson().
      *
      * @returns IPRT status code.
      * @param   a_pDst      Pointer to the destionation string.
-     * @param   a_fFlags    For future tricks, MBZ.
+     * @param   a_fFlags    kCollectionFormat_xxx.
      */
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0);
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_cvs) const;
 
     /**
      * String convertsion, naive variant.
      *
      * @returns String represenation.
      */
-    RTCString toString();
+    RTCString toString() const;
 
     /**
      * Returns the object type name.
@@ -326,9 +340,9 @@ public:
 
     /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -356,9 +370,9 @@ public:
 
         /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -386,9 +400,9 @@ public:
 
     /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -416,9 +430,9 @@ public:
 
     /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -446,9 +460,9 @@ public:
 
     /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -476,9 +490,9 @@ public:
 
     /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t fFlags = 0) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 };
 
@@ -494,7 +508,7 @@ public:
 /** @todo more later. */
 
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
     {
         RT_NOREF(a_rCursor);
@@ -515,7 +529,7 @@ public:
 /** @todo more later. */
 
     virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
     {
         RT_NOREF(a_rCursor);
@@ -543,9 +557,12 @@ public:
      * Prepares the HTTP handle for transmitting this request.
      *
      * @returns IPRT status code.
-     * @param   a_hHttp     The HTTP handle to prepare for transmitting.
+     * @param   a_pstrPath  Where to set path parameters.  Will be appended to the base path.
+     * @param   a_pstrQuery Where to set query parameters.
+     * @param   a_hHttp     Where to set header parameters and such.
+     * @param   a_pstrBody  Where to set body parameters.
      */
-    virtual int xmitPrepare(RTHTTP a_hHttp) const = 0;
+    virtual int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const = 0;
 
     /**
      * Always called after the request has been transmitted.
@@ -591,57 +608,64 @@ public:
      *
      * @returns IPRT status code.
      * @param   a_hHttp     The HTTP handle to prepare for receiving.
+     * @param   a_pppvHdr   If a header callback handler is installed, set the value pointed to to NULL.
+     * @param   a_pppvBody  If a body callback handler is installed, set the value pointed to to NULL.
      */
-    virtual int receivePrepare(RTHTTP a_hHttp)
+    virtual int receivePrepare(RTHTTP a_hHttp, void ***a_pppvHdr, void ***a_pppvBody)
     {
-        RT_NOREF(a_hHttp);
-        return VINF_SUCCESS;
-    }
-
-    /**
-     * Callback that consumes HTTP header data from the server.
-     *
-     * @returns IPRT status code?
-     * @param   a_pvData   Body data.
-     * @param   a_cbData   Amount of body data.
-     *
-     * @todo good idea?
-     */
-    virtual int consumeHeader(const char *a_pvData, size_t a_cbData)
-    {
-        RT_NOREF(a_pvData, a_cbData);
-        return VINF_SUCCESS;
-    }
-
-    /**
-     * Callback that consumes HTTP body data from the server.
-     *
-     * @returns IPRT status code?
-     * @param   a_pvData   Body data.
-     * @param   a_cbData   Amount of body data.
-     *
-     * @todo good idea?
-     */
-    virtual int consumeBody(const char *a_pvData, size_t a_cbData)
-    {
-        RT_NOREF(a_pvData, a_cbData);
+        RT_NOREF(a_hHttp, a_pppvHdr, a_pppvBody);
         return VINF_SUCCESS;
     }
 
     /**
      * Called when the HTTP request has been completely received.
      *
-     * @returns IPRT status code?
      * @param   a_rcStatus  Negative numbers are IPRT errors, positive are HTTP status codes.
      * @param   a_hHttp     The HTTP handle the request was performed on.
      *                      This can be NIL_RTHTTP should something fail early, in
      *                      which case it is possible receivePrepare() wasn't called.
+     *
+     * @note    Called before consumeHeaders() and consumeBody().
      */
-    virtual int receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
+    virtual void receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
     {
         RT_NOREF_PV(a_hHttp);
         m_rcStatus = a_rcStatus;
-        return a_rcStatus;
+    }
+
+    /**
+     * Callback that consumes HTTP header data from the server.
+     *
+     * @param   a_pvData   Body data.
+     * @param   a_cbData   Amount of body data.
+     *
+     * @note    Called after receiveComplete()..
+     */
+    virtual void consumeHeaders(const char *a_pvData, size_t a_cbData)
+    {
+        RT_NOREF(a_pvData, a_cbData);
+    }
+
+    /**
+     * Callback that consumes HTTP body data from the server.
+     *
+     * @param   a_pvData   Body data.
+     * @param   a_cbData   Amount of body data.
+     *
+     * @note    Called after consumeHeaders().
+     */
+    virtual void consumeBody(const char *a_pvData, size_t a_cbData)
+    {
+        RT_NOREF(a_pvData, a_cbData);
+    }
+
+    /**
+     * Called after status, headers and body all have been presented.
+     *
+     * @returns IPRT status code.
+     */
+    virtual void receiveFinal()
+    {
     }
 
     /**
