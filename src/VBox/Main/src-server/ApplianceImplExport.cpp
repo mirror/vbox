@@ -882,12 +882,15 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             case VFSType_S3:
                 mode = WriteS3;
                 break;
+            case VFSType_Cloud:
             case VFSType_OCI:
                 mode = ExportOCI;
                 break;
-
             case VFSType_File:
                 mode = WriteFile;
+                break;
+            case VFSType_WebDav:
+            case VFSType_32BitHack:
                 break;
         }
         rc = i_setUpProgress(aProgress,
