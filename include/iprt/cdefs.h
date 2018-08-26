@@ -1109,6 +1109,20 @@
 #endif
 
 
+/** @def RT_OVERRIDE
+ * Wrapper for the C++11 override keyword.
+ */
+#ifdef __cplusplus
+# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2012, 0) || RT_GNUC_PREREQ(4, 7)
+#  define RT_OVERRIDE           override
+# else
+#  define RT_OVERRIDE
+# endif
+#else
+# define RT_OVERRIDE
+#endif
+
+
 /** @def RT_FALL_THROUGH
  * Tell the compiler that we're falling through to the next case in a switch.
  * @sa RT_FALL_THRU  */
