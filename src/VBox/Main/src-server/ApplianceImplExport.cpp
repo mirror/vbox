@@ -910,6 +910,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
 HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     HRESULT rc;
+    RT_NOREF(aFormat);
     try
     {
         rc = i_setUpProgress(aProgress,
@@ -2244,6 +2245,7 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
 {
     LogFlowFuncEnter();
+    RT_NOREF(pTask);
     HRESULT hrc = S_OK;
 
     return hrc;
