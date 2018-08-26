@@ -192,6 +192,39 @@ RTR3DECL(void) RTHttpFreeResponse(void *pvResponse);
  */
 RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDstFile);
 
+/** HTTP methods. */
+typedef enum RTHTTPMETHOD
+{
+    RTHTTPMETHOD_INVALID = 0,
+    RTHTTPMETHOD_GET,
+    RTHTTPMETHOD_PUT,
+    RTHTTPMETHOD_POST,
+    RTHTTPMETHOD_PATCH,
+    RTHTTPMETHOD_DELETE,
+    RTHTTPMETHOD_HEAD,
+    RTHTTPMETHOD_OPTIONS,
+    RTHTTPMETHOD_TRACE,
+    RTHTTPMETHOD_END,
+    RTHTTPMETHOD_32BIT_HACK = 0x7fffffff
+} RTHTTPMETHOD;
+
+/**
+ * Performs generic blocking HTTP request, optionally returning the body and headers.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client instance.
+ * @param   pszUrl          The URL.
+ * @param   enmMethod       The HTTP method for the request.
+ * @param   puHttpStatus    Where to return the HTTP status code. Optional.
+ * @param   ppvHeaders      Where to return the headers. Optional.
+ * @param   pcbHeaders      Where to return the header size.
+ * @param   ppvBody         Where to return the body.  Optional.
+ * @param   pcbBody         Where to return the body size.
+ */
+RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod,
+                            uint32_t *puHttpStatus, void **ppvHeaders, size_t *pcbHeaders, void **ppvBody, size_t *pcbBody);
+
+
 /**
  * Abort a pending HTTP request. A blocking RTHttpGet() call will return with
  * VERR_HTTP_ABORTED. It may take some time (current cURL implementation needs
