@@ -813,6 +813,8 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
         rc = i_setUpProgress(aProgress,
                              BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
                              (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
+        if (FAILED(rc))
+            return rc;
 
         /* Initialize our worker task */
         TaskOVF* task = NULL;
@@ -822,7 +824,6 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
         }
         catch(...)
         {
-            delete task;
             throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                 tr("Could not create TaskOVF object for for writing out the OVF to disk"));
         }
@@ -881,6 +882,8 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
         rc = i_setUpProgress(aProgress,
                              BstrFmt(tr("Export appliance to Cloud '%s'"), aLocInfo.strPath.c_str()),
                              mode);
+        if (FAILED(rc))
+            return rc;
 
         // Initialize our worker task
         TaskOCI* task = NULL;
@@ -890,7 +893,6 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
         }
         catch(...)
         {
-            delete task;
             throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                 tr("Could not create TaskOCI object for exporting to OCI"));
         }
@@ -911,21 +913,13 @@ HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo 
 {
     HRESULT rc;
     RT_NOREF(aFormat);
-    try /** @todo r=bird: This try..catch(HRESULT) stuff here totally messes up anyones
-         * understanding of what i_setUpProgress and createThread() might throw.  You really
-         * think that they must throw some 'HRESULT' stuff too, right. Otherwise, why would
-         * anyone put their invocations inside these try..catch statements?  But the, WTF
-         * do they return status codes?  ARRRRRRRRRRRRRRG!
-         *
-         * Please rewrite this and all similar places to use nested if (SUCCEEDED(hrc)) rather
-         * than unmaintainable code like this.
-         */
+    try
     {
         rc = i_setUpProgress(aProgress,
                              BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
                              (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
-/** @todo r=bird: You ignore the status code here... You can simply return if this fails, because
- * you don't have any state to clean up. */
+        if (FAILED(rc))
+            return rc;
 
         /* Initialize our worker task */
         TaskOPC* task = NULL;
@@ -935,15 +929,6 @@ HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo 
         }
         catch(...)
         {
-/** @todo r=bird: Task will always be NULL here.  Why? Because the assignment of 'task' is
- * the very last thing that happens above.  Traditionally, when you 'delete (TaskOPC *)NULL'
- * the CRT kills your process.  (On windows, though, this may differ depending on whether we're
- * executing this in a COM worker thread or a IPRT/main worker thread.  We may survive in the
- * former, but not the latter.)
- *
- * P.S. Please make your editor strip trailing spaces on lines you've modified.
- */
-            delete task;
             throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                 tr("Could not create TaskOPC object for for writing out the OPC to disk"));
         }
