@@ -2444,6 +2444,33 @@ void VBoxGlobal::startMediumEnumeration()
     }
 }
 
+void VBoxGlobal::refreshMediums()
+{
+    /* Make sure VBoxGlobal is already valid: */
+    AssertReturnVoid(m_fValid);
+
+    /* Make sure medium-enumerator is already created: */
+    if (!m_pMediumEnumerator)
+        return;
+
+    /* Make sure enumeration is not already started: */
+    if (isMediumEnumerationInProgress())
+        return;
+
+    /* Ignore the request during VBoxGlobal cleanup: */
+    if (s_fCleaningUp)
+        return;
+
+    /* If asked to restore snapshot, don't do this till *after* we're done
+     * restoring or the code with have a heart attack. */
+    if (shouldRestoreCurrentSnapshot())
+        return;
+
+    /* We assume it's safe to call it without locking,
+     * since we are performing blocking operation here. */
+    m_pMediumEnumerator->refreshMediums();
+}
+
 bool VBoxGlobal::isMediumEnumerationInProgress() const
 {
     /* Redirect request to medium-enumerator: */
@@ -3683,7 +3710,7 @@ void VBoxGlobal::retranslateUi()
 
     /* Re-enumerate uimedium since they contain some translations too: */
     if (m_fValid)
-        startMediumEnumeration();
+        refreshMediums();
 
 #ifdef VBOX_WS_X11
     // WORKAROUND:

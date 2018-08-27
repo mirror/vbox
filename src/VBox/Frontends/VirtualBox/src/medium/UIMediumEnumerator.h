@@ -65,6 +65,7 @@ public:
     /* API: Medium-enumeration stuff: */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
     void enumerateMediums();
+    void refreshMediums();
 
 private slots:
 
@@ -104,4 +105,3 @@ private:
 };
 
 #endif /* !___UIMediumEnumerator_h___ */
-

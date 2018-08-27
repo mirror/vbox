@@ -173,6 +173,16 @@ void UIMediumEnumerator::enumerateMediums()
             createMediumEnumerationTask(m_mediums[strMediumID]);
 }
 
+void UIMediumEnumerator::refreshMediums()
+{
+    /* Make sure we are not already in progress: */
+    AssertReturnVoid(!m_fMediumEnumerationInProgress);
+
+    /* Refresh all known media we have: */
+    foreach (const QString &strMediumID, m_mediums.keys())
+        m_mediums[strMediumID].refresh();
+}
+
 void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
 {
     LogRel2(("GUI: UIMediumEnumerator: Machine (or snapshot) event received, ID = %s\n",
@@ -578,4 +588,3 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
 
 
 #include "UIMediumEnumerator.moc"
-

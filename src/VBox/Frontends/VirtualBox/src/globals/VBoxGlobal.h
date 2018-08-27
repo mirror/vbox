@@ -477,6 +477,8 @@ public:
      * @{ */
         /** Starts medium enumeration. */
         void startMediumEnumeration();
+        /** Calls refresh for each medium which has been already enumerated. */
+        void refreshMediums();
         /** Returns whether medium enumeration is in progress. */
         bool isMediumEnumerationInProgress() const;
         /** Returns enumerated medium with certain @a strMediumID. */
