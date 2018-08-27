@@ -316,6 +316,20 @@ public:
     RTCString toString() const;
 
     /**
+     * Convert from (header) string value.
+     *
+     * The default implementation of is a wrapper around deserializeFromJson().
+     *
+     * @returns IPRT status code.
+     * @param   a_rValue    The string value string to parse.
+     * @param   a_pszName   Field name or similar.
+     * @param   a_pErrInfo  Where to return additional error info.  Optional.
+     * @param   a_fFlags    kCollectionFormat_xxx.
+     */
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                                  uint32_t a_fFlags = kCollectionFormat_Unspecified);
+
+    /**
      * Returns the object type name.
      */
     virtual const char *getType(void) = 0;
@@ -344,6 +358,8 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -369,11 +385,13 @@ public:
     /** Copy assignment operator. */
     RTCRestInt64 &operator=(RTCRestInt64 const &a_rThat);
 
-        /* Overridden methods: */
+    /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -404,6 +422,8 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -434,6 +454,8 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -464,6 +486,8 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
 public:
@@ -494,6 +518,8 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 };
 
@@ -515,6 +541,8 @@ public:
         RT_NOREF(a_rCursor);
         return VERR_NOT_IMPLEMENTED;
     }
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 };
 
@@ -536,6 +564,8 @@ public:
         RT_NOREF(a_rCursor);
         return VERR_NOT_IMPLEMENTED;
     }
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 };
 
@@ -605,25 +635,13 @@ class RTCRestClientResponseBase
 {
 public:
     /** Default constructor. */
-    RTCRestClientResponseBase()
-        : m_rcStatus(VERR_WRONG_ORDER)
-    {}
-
+    RTCRestClientResponseBase();
     /** Destructor. */
-    virtual ~RTCRestClientResponseBase()
-    {}
-
+    virtual ~RTCRestClientResponseBase();
     /** Copy constructor. */
-    RTCRestClientResponseBase(RTCRestClientResponseBase const &a_rThat)
-        : m_rcStatus(a_rThat.m_rcStatus)
-    {}
-
+    RTCRestClientResponseBase(RTCRestClientResponseBase const &a_rThat);
     /** Copy assignment operator. */
-    RTCRestClientResponseBase &operator=(RTCRestClientResponseBase const &a_rThat)
-    {
-        m_rcStatus = a_rThat.m_rcStatus;
-        return *this;
-    }
+    RTCRestClientResponseBase &operator=(RTCRestClientResponseBase const &a_rThat);
 
     /**
      * Prepares the HTTP handle for receiving the response.
@@ -635,11 +653,7 @@ public:
      * @param   a_pppvHdr   If a header callback handler is installed, set the value pointed to to NULL.
      * @param   a_pppvBody  If a body callback handler is installed, set the value pointed to to NULL.
      */
-    virtual int receivePrepare(RTHTTP a_hHttp, void ***a_pppvHdr, void ***a_pppvBody)
-    {
-        RT_NOREF(a_hHttp, a_pppvHdr, a_pppvBody);
-        return VINF_SUCCESS;
-    }
+    virtual int receivePrepare(RTHTTP a_hHttp, void ***a_pppvHdr, void ***a_pppvBody);
 
     /**
      * Called when the HTTP request has been completely received.
@@ -651,46 +665,34 @@ public:
      *
      * @note    Called before consumeHeaders() and consumeBody().
      */
-    virtual void receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
-    {
-        RT_NOREF_PV(a_hHttp);
-        m_rcStatus = a_rcStatus;
-    }
+    virtual void receiveComplete(int a_rcStatus, RTHTTP a_hHttp);
 
     /**
      * Callback that consumes HTTP header data from the server.
      *
-     * @param   a_pvData   Body data.
+     * @param   a_pchData  Body data.
      * @param   a_cbData   Amount of body data.
      *
      * @note    Called after receiveComplete()..
      */
-    virtual void consumeHeaders(const char *a_pvData, size_t a_cbData)
-    {
-        RT_NOREF(a_pvData, a_cbData);
-    }
+    virtual void consumeHeaders(const char *a_pchData, size_t a_cbData);
 
     /**
      * Callback that consumes HTTP body data from the server.
      *
-     * @param   a_pvData   Body data.
+     * @param   a_pchData  Body data.
      * @param   a_cbData   Amount of body data.
      *
      * @note    Called after consumeHeaders().
      */
-    virtual void consumeBody(const char *a_pvData, size_t a_cbData)
-    {
-        RT_NOREF(a_pvData, a_cbData);
-    }
+    virtual void consumeBody(const char *a_pchData, size_t a_cbData);
 
     /**
      * Called after status, headers and body all have been presented.
      *
      * @returns IPRT status code.
      */
-    virtual void receiveFinal()
-    {
-    }
+    virtual void receiveFinal();
 
     /**
      * Getter for m_rcStatus.
@@ -698,9 +700,24 @@ public:
      */
     int getStatus() { return m_rcStatus; }
 
-private:
+protected:
     /** Negative numbers are IPRT errors, positive are HTTP status codes. */
     int m_rcStatus;
+
+    /**
+     * Helper that extracts a header field.
+     *
+     * @retval  VINF_SUCCESS
+     * @retval  VERR_NOT_FOUND if not found.
+     * @retval  VERR_NO_STR_MEMORY
+     * @param   a_pszField  The header field header name.
+     * @param   a_cchField  The length of the header field name.
+     * @param   a_pchData   The header blob to search.
+     * @param   a_cbData    The size of the header blob to search.
+     * @param   a_pStrDst   Where to store the header value on successs.
+     */
+    int extractHeaderFromBlob(const char *a_pszField, size_t a_cchField, const char *a_pchData, size_t a_cbData,
+                              RTCString *a_pStrDst);
 };
 
 
