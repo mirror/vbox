@@ -1131,6 +1131,33 @@
 # define RT_OVERRIDE
 #endif
 
+/** @def RT_NOEXCEPT
+ * Wrapper for the C++11 noexcept keyword (only true form).
+ */
+/** @def RT_NOEXCEPT_EX
+ * Wrapper for the C++11 noexcept keyword with expression.
+ */
+#ifdef __cplusplus
+# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0)
+#  define RT_NOEXCEPT           noexcept
+#  define RT_NOEXCEPT_EX(expr)  noexcept(expr)
+# elif RT_GNUC_PREREQ(7, 0)
+#  if __cplusplus >= 201100
+#   define RT_NOEXCEPT          noexcept
+#   define RT_NOEXCEPT_EX(expr) noexcept(expr)
+#  else
+#   define RT_NOEXCEPT
+#   define RT_NOEXCEPT_EX(expr)
+#  endif
+# else
+#  define RT_NOEXCEPT
+#  define RT_NOEXCEPT_EX(expr)
+# endif
+#else
+# define RT_NOEXCEPT
+# define RT_NOEXCEPT_EX(expr)
+#endif
+
 
 /** @def RT_FALL_THROUGH
  * Tell the compiler that we're falling through to the next case in a switch.
