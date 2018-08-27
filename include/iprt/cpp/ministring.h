@@ -263,7 +263,7 @@ public:
      * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
      * @param   cb              New minimum size (in bytes) of member memory buffer.
      */
-    int reserveNoThrow(size_t cb)
+    int reserveNoThrow(size_t cb) RT_NOEXCEPT
     {
         if (    cb != m_cbAllocated
              && cb > m_cch + 1
@@ -337,6 +337,14 @@ public:
     RTCString &assign(const RTCString &a_rSrc);
 
     /**
+     * Assigns a copy of another RTCString.
+     *
+     * @param   a_rSrc          Reference to the source string.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int assignNoThrow(const RTCString &a_rSrc) RT_NOEXCEPT;
+
+    /**
      * Assigns a copy of a C-style string.
      *
      * @param   a_pszSrc        Pointer to the C-style source string.
@@ -346,14 +354,35 @@ public:
     RTCString &assign(const char *a_pszSrc);
 
     /**
+     * Assigns a copy of a C-style string.
+     *
+     * @param   a_pszSrc        Pointer to the C-style source string.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     * @remarks ASSUMES valid
+     */
+    int assignNoThrow(const char *a_pszSrc) RT_NOEXCEPT;
+
+    /**
      * Assigns a partial copy of another RTCString.
      *
      * @param   a_rSrc          The source string.
      * @param   a_offSrc        The byte offset into the source string.
      * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
      *                          to copy from the source string.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
      */
     RTCString &assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc = npos);
+
+    /**
+     * Assigns a partial copy of another RTCString.
+     *
+     * @param   a_rSrc          The source string.
+     * @param   a_offSrc        The byte offset into the source string.
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int assignNoThrow(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc = npos) RT_NOEXCEPT;
 
     /**
      * Assigns a partial copy of a C-style string.
@@ -361,16 +390,37 @@ public:
      * @param   a_pszSrc        The source string (UTF-8).
      * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
      *                          to copy from the source string.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
      */
     RTCString &assign(const char *a_pszSrc, size_t a_cchSrc);
+
+    /**
+     * Assigns a partial copy of a C-style string.
+     *
+     * @param   a_pszSrc        The source string (UTF-8).
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int assignNoThrow(const char *a_pszSrc, size_t a_cchSrc) RT_NOEXCEPT;
 
     /**
      * Assigs a string containing @a a_cTimes repetitions of the character @a a_ch.
      *
      * @param   a_cTimes        The number of times the character is repeated.
      * @param   a_ch            The character to fill the string with.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
      */
     RTCString &assign(size_t a_cTimes, char a_ch);
+
+    /**
+     * Assigs a string containing @a a_cTimes repetitions of the character @a a_ch.
+     *
+     * @param   a_cTimes        The number of times the character is repeated.
+     * @param   a_ch            The character to fill the string with.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int assignNoThrow(size_t a_cTimes, char a_ch) RT_NOEXCEPT;
 
     /**
      * Assigns the output of the string format operation (RTStrPrintf).
@@ -387,6 +437,18 @@ public:
     RTCString &printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
     /**
+     * Assigns the output of the string format operation (RTStrPrintf).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 2);
+
+    /**
      * Assigns the output of the string format operation (RTStrPrintfV).
      *
      * @param   pszFormat       Pointer to the format string,
@@ -401,6 +463,18 @@ public:
     RTCString &printfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
     /**
+     * Assigns the output of the string format operation (RTStrPrintfV).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   va              Argument vector containing the arguments
+     *                          specified by the format string.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 0);
+
+    /**
      * Appends the string @a that to @a rThat.
      *
      * @param   rThat            The string to append.
@@ -410,6 +484,14 @@ public:
     RTCString &append(const RTCString &rThat);
 
     /**
+     * Appends the string @a that to @a rThat.
+     *
+     * @param   rThat            The string to append.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int appendNoThrow(const RTCString &rThat) RT_NOEXCEPT;
+
+    /**
      * Appends the string @a pszSrc to @a this.
      *
      * @param   pszSrc          The C-style string to append.
@@ -417,6 +499,14 @@ public:
      * @returns Reference to the object.
      */
     RTCString &append(const char *pszSrc);
+
+    /**
+     * Appends the string @a pszSrc to @a this.
+     *
+     * @param   pszSrc          The C-style string to append.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int appendNoThrow(const char *pszSrc) RT_NOEXCEPT;
 
     /**
      * Appends the a substring from @a rThat to @a this.
@@ -431,6 +521,17 @@ public:
     RTCString &append(const RTCString &rThat, size_t offStart, size_t cchMax = RTSTR_MAX);
 
     /**
+     * Appends the a substring from @a rThat to @a this.
+     *
+     * @param   rThat           The string to append a substring from.
+     * @param   offStart        The start of the substring to append (byte offset,
+     *                          not codepoint).
+     * @param   cchMax          The maximum number of bytes to append.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int appendNoThrow(const RTCString &rThat, size_t offStart, size_t cchMax = RTSTR_MAX) RT_NOEXCEPT;
+
+    /**
      * Appends the first @a cchMax chars from string @a pszThat to @a this.
      *
      * @param   pszThat         The C-style string to append.
@@ -439,6 +540,15 @@ public:
      * @returns Reference to the object.
      */
     RTCString &append(const char *pszThat, size_t cchMax);
+
+    /**
+     * Appends the first @a cchMax chars from string @a pszThat to @a this.
+     *
+     * @param   pszThat         The C-style string to append.
+     * @param   cchMax          The maximum number of bytes to append.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int appendNoThrow(const char *pszThat, size_t cchMax) RT_NOEXCEPT;
 
     /**
      * Appends the given character to @a this.
@@ -450,6 +560,14 @@ public:
     RTCString &append(char ch);
 
     /**
+     * Appends the given character to @a this.
+     *
+     * @param   ch              The character to append.
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     */
+    int appendNoThrow(char ch) RT_NOEXCEPT;
+
+    /**
      * Appends the given unicode code point to @a this.
      *
      * @param   uc              The unicode code point to append.
@@ -457,6 +575,14 @@ public:
      * @returns Reference to the object.
      */
     RTCString &appendCodePoint(RTUNICP uc);
+
+    /**
+     * Appends the given unicode code point to @a this.
+     *
+     * @param   uc              The unicode code point to append.
+     * @returns VINF_SUCCESS, VERR_INVALID_UTF8_ENCODING or VERR_NO_STRING_MEMORY.
+     */
+    int appendCodePointNoThrow(RTUNICP uc) RT_NOEXCEPT;
 
     /**
      * Shortcut to append(), RTCString variant.
@@ -556,6 +682,17 @@ public:
     RTCString &replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement);
 
     /**
+     * Replaces a span of @a this string with a replacement string.
+     *
+     * @returns VINF_SUCCESS, VERR_OUT_OF_RANGE or VERR_NO_STRING_MEMORY.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   rStrReplacement The replacement string.
+     */
+    int replaceNoThrow(size_t offStart, size_t cchLength, const RTCString &rStrReplacement) RT_NOEXCEPT;
+
+    /**
      * Replaces a span of @a this string with a replacement substring.
      *
      * @returns Reference to the object.
@@ -578,6 +715,21 @@ public:
                        size_t offReplacement, size_t cchReplacement);
 
     /**
+     * Replaces a span of @a this string with a replacement substring.
+     *
+     * @returns VINF_SUCCESS, VERR_OUT_OF_RANGE or VERR_NO_STRING_MEMORY.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   rStrReplacement The string from which a substring is taken.
+     * @param   offReplacement  The offset into @a rStrReplacement where the
+     *                          replacement substring starts.
+     * @param   cchReplacement   The maximum length of the replacement substring.
+     */
+    int replaceNoThrow(size_t offStart, size_t cchLength, const RTCString &rStrReplacement,
+                       size_t offReplacement, size_t cchReplacement) RT_NOEXCEPT;
+
+    /**
      * Replaces a span of @a this string with the replacement string.
      *
      * @returns Reference to the object.
@@ -592,6 +744,17 @@ public:
      *          No change will occure and strict builds hits a debug assertion.
      */
     RTCString &replace(size_t offStart, size_t cchLength, const char *pszReplacement);
+
+    /**
+     * Replaces a span of @a this string with the replacement string.
+     *
+     * @returns VINF_SUCCESS, VERR_OUT_OF_RANGE or VERR_NO_STRING_MEMORY.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   pszReplacement  The replacement string.
+     */
+    int replaceNoThrow(size_t offStart, size_t cchLength, const char *pszReplacement) RT_NOEXCEPT;
 
     /**
      * Replaces a span of @a this string with the replacement string.
@@ -611,6 +774,20 @@ public:
      *          No change will occure and strict builds hits a debug assertion.
      */
     RTCString &replace(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement);
+
+    /**
+     * Replaces a span of @a this string with the replacement string.
+     *
+     * @returns VINF_SUCCESS, VERR_OUT_OF_RANGE or VERR_NO_STRING_MEMORY.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   pszReplacement  The replacement string.
+     * @param   cchReplacement  How much of @a pszReplacement to use at most.  If a
+     *                          zero terminator is found before reaching this value,
+     *                          we'll stop there.
+     */
+    int replaceNoThrow(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement) RT_NOEXCEPT;
 
     /**
      * Index operator.
@@ -1207,6 +1384,17 @@ protected:
     RTCString &appendWorker(const char *pszSrc, size_t cchSrc);
 
     /**
+     * Appends exactly @a cchSrc chars from @a pszSrc to @a this.
+     *
+     * This is an internal worker for the appendNoThrow() methods.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     * @param   pszSrc          The source string.
+     * @param   cchSrc          The source string length (exact).
+     */
+    int appendWorkerNoThrow(const char *pszSrc, size_t cchSrc) RT_NOEXCEPT;
+
+    /**
      * Replaces exatly @a cchLength chars at @a offStart with @a cchSrc from @a
      * pszSrc.
      *
@@ -1221,7 +1409,21 @@ protected:
      */
     RTCString &replaceWorker(size_t offStart, size_t cchLength, const char *pszSrc, size_t cchSrc);
 
+    /**
+     * Replaces exatly @a cchLength chars at @a offStart with @a cchSrc from @a
+     * pszSrc.
+     *
+     * @returns VINF_SUCCESS, VERR_OUT_OF_RANGE or VERR_NO_STRING_MEMORY.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   pszSrc          The replacement string.
+     * @param   cchSrc          The exactly length of the replacement string.
+     */
+    int replaceWorkerNoThrow(size_t offStart, size_t cchLength, const char *pszSrc, size_t cchSrc) RT_NOEXCEPT;
+
     static DECLCALLBACK(size_t) printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars);
+    static DECLCALLBACK(size_t) printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT;
 
     char   *m_psz;                      /**< The string buffer. */
     size_t  m_cch;                      /**< strlen(m_psz) - i.e. no terminator included. */

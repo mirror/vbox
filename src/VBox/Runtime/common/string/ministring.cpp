@@ -65,6 +65,27 @@ RTCString &RTCString::assign(const RTCString &a_rSrc)
 
 }
 
+int RTCString::assignNoThrow(const RTCString &a_rSrc) RT_NOEXCEPT
+{
+    AssertReturn(&a_rSrc != this, VINF_SUCCESS);
+    size_t const cchSrc = a_rSrc.length();
+    if (cchSrc > 0)
+    {
+        int rc = reserveNoThrow(cchSrc + 1);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(m_psz, a_rSrc.c_str(), cchSrc);
+            m_psz[cchSrc] = '\0';
+            m_cch = cchSrc;
+            return VINF_SUCCESS;
+        }
+        return rc;
+    }
+    setNull();
+    return VINF_SUCCESS;
+
+}
+
 RTCString &RTCString::assign(const char *a_pszSrc)
 {
     if (a_pszSrc)
@@ -81,6 +102,28 @@ RTCString &RTCString::assign(const char *a_pszSrc)
     }
     setNull();
     return *this;
+}
+
+int RTCString::assignNoThrow(const char *a_pszSrc) RT_NOEXCEPT
+{
+    if (a_pszSrc)
+    {
+        size_t cchSrc = strlen(a_pszSrc);
+        if (cchSrc)
+        {
+            int rc = reserveNoThrow(cchSrc + 1);
+            if (RT_SUCCESS(rc))
+            {
+                memcpy(m_psz, a_pszSrc, cchSrc);
+                m_psz[cchSrc] = '\0';
+                m_cch = cchSrc;
+                return VINF_SUCCESS;
+            }
+            return rc;
+        }
+    }
+    setNull();
+    return VINF_SUCCESS;
 }
 
 RTCString &RTCString::assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc /*= npos*/)
@@ -101,6 +144,28 @@ RTCString &RTCString::assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_
     return *this;
 }
 
+int RTCString::assignNoThrow(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc /*= npos*/) RT_NOEXCEPT
+{
+    AssertReturn(&a_rSrc != this, VINF_SUCCESS);
+    if (a_offSrc < a_rSrc.length())
+    {
+        size_t cchMax = a_rSrc.length() - a_offSrc;
+        if (a_cchSrc > cchMax)
+            a_cchSrc = cchMax;
+        int rc = reserveNoThrow(a_cchSrc + 1);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(m_psz, a_rSrc.c_str() + a_offSrc, a_cchSrc);
+            m_psz[a_cchSrc] = '\0';
+            m_cch = a_cchSrc;
+            return VINF_SUCCESS;
+        }
+        return rc;
+    }
+    setNull();
+    return VINF_SUCCESS;
+}
+
 RTCString &RTCString::assign(const char *a_pszSrc, size_t a_cchSrc)
 {
     if (a_cchSrc)
@@ -116,11 +181,42 @@ RTCString &RTCString::assign(const char *a_pszSrc, size_t a_cchSrc)
     return *this;
 }
 
+int RTCString::assignNoThrow(const char *a_pszSrc, size_t a_cchSrc) RT_NOEXCEPT
+{
+    if (a_cchSrc)
+    {
+        a_cchSrc = RTStrNLen(a_pszSrc, a_cchSrc);
+        int rc = reserveNoThrow(a_cchSrc + 1);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(m_psz, a_pszSrc, a_cchSrc);
+            m_psz[a_cchSrc] = '\0';
+            m_cch = a_cchSrc;
+            return VINF_SUCCESS;
+        }
+        return rc;
+    }
+    setNull();
+    return VINF_SUCCESS;
+}
+
 RTCString &RTCString::assign(size_t a_cTimes, char a_ch)
 {
     reserve(a_cTimes + 1);
     memset(m_psz, a_ch, a_cTimes);
     return *this;
+}
+
+
+int RTCString::assignNoThrow(size_t a_cTimes, char a_ch) RT_NOEXCEPT
+{
+    int rc = reserveNoThrow(a_cTimes + 1);
+    if (RT_SUCCESS(rc))
+    {
+        memset(m_psz, a_ch, a_cTimes);
+        return VINF_SUCCESS;
+    }
+    return rc;
 }
 
 
@@ -131,6 +227,15 @@ RTCString &RTCString::printf(const char *pszFormat, ...)
     printfV(pszFormat, va);
     va_end(va);
     return *this;
+}
+
+int RTCString::printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = printfVNoThrow(pszFormat, va);
+    va_end(va);
+    return rc;
 }
 
 /**
@@ -148,7 +253,7 @@ RTCString::printfOutputCallback(void *pvArg, const char *pachChars, size_t cbCha
     RTCString *pThis = (RTCString *)pvArg;
     if (cbChars)
     {
-        size_t cchBoth = pThis->m_cch + cbChars;
+        size_t const cchBoth = pThis->m_cch + cbChars;
         if (cchBoth >= pThis->m_cbAllocated)
         {
             /* Double the buffer size, if it's less that _4M. Align sizes like
@@ -177,15 +282,81 @@ RTCString &RTCString::printfV(const char *pszFormat, va_list va)
     return *this;
 }
 
+struct RTCSTRINGOTHROW
+{
+    RTCString  *pThis;
+    int         rc;
+};
+
+/**
+ * Callback used with RTStrFormatV by RTCString::printfVNoThrow.
+ *
+ * @returns The number of bytes added (not used).
+ *
+ * @param   pvArg           Pointer to a RTCSTRINGOTHROW structure.
+ * @param   pachChars       The characters to append.
+ * @param   cbChars         The number of characters.  0 on the final callback.
+ */
+/*static*/ DECLCALLBACK(size_t)
+RTCString::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT
+{
+    RTCString *pThis = ((RTCSTRINGOTHROW *)pvArg)->pThis;
+    if (cbChars)
+    {
+        size_t const cchBoth = pThis->m_cch + cbChars;
+        if (cchBoth >= pThis->m_cbAllocated)
+        {
+            /* Double the buffer size, if it's less that _4M. Align sizes like
+               for append. */
+            size_t cbAlloc = RT_ALIGN_Z(pThis->m_cbAllocated, IPRT_MINISTRING_APPEND_ALIGNMENT);
+            cbAlloc += RT_MIN(cbAlloc, _4M);
+            if (cbAlloc <= cchBoth)
+                cbAlloc = RT_ALIGN_Z(cchBoth + 1, IPRT_MINISTRING_APPEND_ALIGNMENT);
+            int rc = pThis->reserveNoThrow(cbAlloc);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                ((RTCSTRINGOTHROW *)pvArg)->rc = rc;
+                return cbChars;
+            }
+        }
+
+        memcpy(&pThis->m_psz[pThis->m_cch], pachChars, cbChars);
+        pThis->m_cch = cchBoth;
+        pThis->m_psz[cchBoth] = '\0';
+    }
+    return cbChars;
+}
+
+int RTCString::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
+{
+    cleanup();
+    RTCSTRINGOTHROW Args = { this, VINF_SUCCESS };
+    RTStrFormatV(printfOutputCallback, &Args, NULL, NULL, pszFormat, va);
+    return Args.rc;
+}
+
 RTCString &RTCString::append(const RTCString &that)
 {
     Assert(&that != this);
     return appendWorker(that.c_str(), that.length());
 }
 
+int RTCString::appendNoThrow(const RTCString &that) RT_NOEXCEPT
+{
+    Assert(&that != this);
+    return appendWorkerNoThrow(that.c_str(), that.length());
+}
+
 RTCString &RTCString::append(const char *pszThat)
 {
     return appendWorker(pszThat, strlen(pszThat));
+}
+
+int RTCString::appendNoThrow(const char *pszThat) RT_NOEXCEPT
+{
+    return appendWorkerNoThrow(pszThat, strlen(pszThat));
 }
 
 RTCString &RTCString::append(const RTCString &rThat, size_t offStart, size_t cchMax /*= RTSTR_MAX*/)
@@ -198,9 +369,24 @@ RTCString &RTCString::append(const RTCString &rThat, size_t offStart, size_t cch
     return *this;
 }
 
+int RTCString::appendNoThrow(const RTCString &rThat, size_t offStart, size_t cchMax /*= RTSTR_MAX*/) RT_NOEXCEPT
+{
+    if (offStart < rThat.length())
+    {
+        size_t cchLeft = rThat.length() - offStart;
+        return appendWorkerNoThrow(rThat.c_str() + offStart, RT_MIN(cchLeft, cchMax));
+    }
+    return VINF_SUCCESS;
+}
+
 RTCString &RTCString::append(const char *pszThat, size_t cchMax)
 {
     return appendWorker(pszThat, RTStrNLen(pszThat, cchMax));
+}
+
+int RTCString::appendNoThrow(const char *pszThat, size_t cchMax) RT_NOEXCEPT
+{
+    return appendWorkerNoThrow(pszThat, RTStrNLen(pszThat, cchMax));
 }
 
 RTCString &RTCString::appendWorker(const char *pszSrc, size_t cchSrc)
@@ -226,6 +412,29 @@ RTCString &RTCString::appendWorker(const char *pszSrc, size_t cchSrc)
     return *this;
 }
 
+int RTCString::appendWorkerNoThrow(const char *pszSrc, size_t cchSrc) RT_NOEXCEPT
+{
+    if (cchSrc)
+    {
+        size_t cchThis = length();
+        size_t cchBoth = cchThis + cchSrc;
+
+        if (cchBoth >= m_cbAllocated)
+        {
+            int rc = reserveNoThrow(RT_ALIGN_Z(cchBoth + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+                return rc;
+        }
+
+        memcpy(&m_psz[cchThis], pszSrc, cchSrc);
+        m_psz[cchBoth] = '\0';
+        m_cch = cchBoth;
+    }
+    return VINF_SUCCESS;
+}
+
 RTCString &RTCString::append(char ch)
 {
     Assert((unsigned char)ch < 0x80);                  /* Don't create invalid UTF-8. */
@@ -245,6 +454,27 @@ RTCString &RTCString::append(char ch)
         m_psz[++m_cch] = '\0';
     }
     return *this;
+}
+
+int RTCString::appendNoThrow(char ch) RT_NOEXCEPT
+{
+    Assert((unsigned char)ch < 0x80);                  /* Don't create invalid UTF-8. */
+    if (ch)
+    {
+        // allocate in chunks of 20 in case this gets called several times
+        if (m_cch + 1 >= m_cbAllocated)
+        {
+            int rc = reserveNoThrow(RT_ALIGN_Z(m_cch + 2, IPRT_MINISTRING_APPEND_ALIGNMENT));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+                return rc;
+        }
+
+        m_psz[m_cch] = ch;
+        m_psz[++m_cch] = '\0';
+    }
+    return VINF_SUCCESS;
 }
 
 RTCString &RTCString::appendCodePoint(RTUNICP uc)
@@ -277,6 +507,37 @@ RTCString &RTCString::appendCodePoint(RTUNICP uc)
     return *this;
 }
 
+int RTCString::appendCodePointNoThrow(RTUNICP uc) RT_NOEXCEPT
+{
+    /*
+     * Single byte encoding.
+     */
+    if (uc < 0x80)
+        return RTCString::appendNoThrow((char)uc);
+
+    /*
+     * Multibyte encoding.
+     * Assume max encoding length when resizing the string, that's simpler.
+     */
+    AssertReturn(uc <= UINT32_C(0x7fffffff), VERR_INVALID_UTF8_ENCODING);
+
+    if (m_cch + 6 >= m_cbAllocated)
+    {
+        int rc = reserveNoThrow(RT_ALIGN_Z(m_cch + 6 + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            return rc;
+    }
+
+    char *pszNext = RTStrPutCp(&m_psz[m_cch], uc);
+    m_cch = pszNext - m_psz;
+    *pszNext = '\0';
+
+    return VINF_SUCCESS;
+}
+
+
 RTCString &RTCString::erase(size_t offStart /*= 0*/, size_t cchLength /*= npos*/)
 {
     size_t cch = length();
@@ -305,6 +566,11 @@ RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString
     return replaceWorker(offStart, cchLength, rStrReplacement.c_str(), rStrReplacement.length());
 }
 
+int RTCString::replaceNoThrow(size_t offStart, size_t cchLength, const RTCString &rStrReplacement) RT_NOEXCEPT
+{
+    return replaceWorkerNoThrow(offStart, cchLength, rStrReplacement.c_str(), rStrReplacement.length());
+}
+
 RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement,
                               size_t offReplacement, size_t cchReplacement)
 {
@@ -324,14 +590,41 @@ RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString
     return replaceWorker(offStart, cchLength, "", 0);
 }
 
+int RTCString::replaceNoThrow(size_t offStart, size_t cchLength, const RTCString &rStrReplacement,
+                              size_t offReplacement, size_t cchReplacement)
+{
+    Assert(this != &rStrReplacement);
+    if (cchReplacement > 0)
+    {
+        if (offReplacement < rStrReplacement.length())
+        {
+            size_t cchMaxReplacement = rStrReplacement.length() - offReplacement;
+            return replaceWorkerNoThrow(offStart, cchLength, rStrReplacement.c_str() + offReplacement,
+                                        RT_MIN(cchReplacement, cchMaxReplacement));
+        }
+        return VERR_OUT_OF_RANGE;
+    }
+    return replaceWorkerNoThrow(offStart, cchLength, "", 0);
+}
+
 RTCString &RTCString::replace(size_t offStart, size_t cchLength, const char *pszReplacement)
 {
     return replaceWorker(offStart, cchLength, pszReplacement, strlen(pszReplacement));
 }
 
+int RTCString::replaceNoThrow(size_t offStart, size_t cchLength, const char *pszReplacement) RT_NOEXCEPT
+{
+    return replaceWorkerNoThrow(offStart, cchLength, pszReplacement, strlen(pszReplacement));
+}
+
 RTCString &RTCString::replace(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement)
 {
     return replaceWorker(offStart, cchLength, pszReplacement, RTStrNLen(pszReplacement, cchReplacement));
+}
+
+int RTCString::replaceNoThrow(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement) RT_NOEXCEPT
+{
+    return replaceWorkerNoThrow(offStart, cchLength, pszReplacement, RTStrNLen(pszReplacement, cchReplacement));
 }
 
 RTCString &RTCString::replaceWorker(size_t offStart, size_t cchLength, const char *pszSrc, size_t cchSrc)
@@ -374,6 +667,48 @@ RTCString &RTCString::replaceWorker(size_t offStart, size_t cchLength, const cha
     m_cch = cchNew;
 
     return *this;
+}
+
+int RTCString::replaceWorkerNoThrow(size_t offStart, size_t cchLength, const char *pszSrc, size_t cchSrc) RT_NOEXCEPT
+{
+    /*
+     * Our non-standard handling of out_of_range situations.
+     */
+    size_t const cchOldLength = length();
+    AssertMsgReturn(offStart < cchOldLength, ("offStart=%zu (cchLength=%zu); length()=%zu\n", offStart, cchLength, cchOldLength),
+                    VERR_OUT_OF_RANGE);
+
+    /*
+     * Correct the length parameter.
+     */
+    size_t cchMaxLength = cchOldLength - offStart;
+    if (cchMaxLength < cchLength)
+        cchLength = cchMaxLength;
+
+    /*
+     * Adjust string allocation if necessary.
+     */
+    size_t cchNew = cchOldLength - cchLength + cchSrc;
+    if (cchNew >= m_cbAllocated)
+    {
+        int rc = reserveNoThrow(RT_ALIGN_Z(cchNew + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            return rc;
+    }
+
+    /*
+     * Make the change.
+     */
+    size_t cchAfter = cchOldLength - offStart - cchLength;
+    if (cchAfter > 0)
+        memmove(&m_psz[offStart + cchSrc], &m_psz[offStart + cchLength], cchAfter);
+    memcpy(&m_psz[offStart], pszSrc, cchSrc);
+    m_psz[cchNew] = '\0';
+    m_cch = cchNew;
+
+    return VINF_SUCCESS;
 }
 
 
