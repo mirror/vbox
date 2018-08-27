@@ -2383,7 +2383,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
         apszArgs[cArgs++] = a_pstrDisplayInfo->c_str();
     }
 
-    LogRel(("'%s'", a_pszCommand));
+    LogRel((" '%s'", a_pszCommand));
     apszArgs[cArgs++] = a_pszCommand;
 
     va_list va;
