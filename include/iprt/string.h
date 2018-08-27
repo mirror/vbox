@@ -1518,13 +1518,16 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *      - \%RDtimespec      - Takes a PCRTTIMESPEC.
  *
  *
- * Group 5, XML / HTML escapers:
+ * Group 5, XML / HTML, JSON and URI escapers:
  *      - \%RMas            - Takes a string pointer (const char *) and outputs
  *                            it as an attribute value with the proper escaping.
  *                            This typically ends up in double quotes.
  *
  *      - \%RMes            - Takes a string pointer (const char *) and outputs
  *                            it as an element with the necessary escaping.
+ *
+ *      - \%RMjs            - Takes a string pointer (const char *) and outputs
+ *                            it in quotes with proper JSON escaping.
  *
  *      - \%RMpf            - Takes a string pointer (const char *) and outputs
  *                            it percent-encoded (RFC-3986), form style.  This
@@ -1540,12 +1543,7 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *                            means '+' will not be escaped.
  *
  *
- * Group 6, JSON escapers:
- *      - \%RJs             - Takes a string pointer (const char *) and outputs
- *                            it in quotes with proper escaping.
- *
- *
- * Group 7, CPU Architecture Register dumpers:
+ * Group 6, CPU Architecture Register dumpers:
  *      - \%RAx86[reg]      - Takes a 64-bit register value if the register is
  *                            64-bit or smaller.  Check the code wrt which
  *                            registers are implemented.

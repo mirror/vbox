@@ -37,7 +37,6 @@
 
 
 
-
 /*********************************************************************************************************************************
 *   RTCRestObjectBase implementation                                                                                             *
 *********************************************************************************************************************************/
@@ -620,7 +619,7 @@ void RTCRestString::resetToDefault()
 
 RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("%RJs", m_psz);
+    a_rDst.printf("%RMjs", m_psz);
     return a_rDst;
 }
 
