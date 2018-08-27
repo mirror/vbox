@@ -60,6 +60,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static char g_szHexDigits[17] = "0123456789abcdef";
+static char g_szHexDigitsUpper[17] = "0123456789ABCDEF";
 
 
 /**
@@ -1294,70 +1295,134 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
             case 'M':
             {
                 char chWhat = (*ppszFormat)[0];
-                bool fAttr  = chWhat == 'a';
-                char chType = (*ppszFormat)[1];
-                AssertMsgBreak(chWhat == 'a' || chWhat == 'e', ("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
-                *ppszFormat += 2;
-                switch (chType)
+                if (chWhat == 'a' || chWhat == 'e')
                 {
-                    case 's':
+                    bool fAttr  = chWhat == 'a';
+                    char chType = (*ppszFormat)[1];
+                    *ppszFormat += 2;
+                    switch (chType)
                     {
-                        static const char   s_szElemEscape[] = "<>&\"'";
-                        static const char   s_szAttrEscape[] = "<>&\"\n\r"; /* more? */
-                        const char * const  pszEscape =  fAttr ?             s_szAttrEscape  :             s_szElemEscape;
-                        size_t       const  cchEscape = (fAttr ? RT_ELEMENTS(s_szAttrEscape) : RT_ELEMENTS(s_szElemEscape)) - 1;
-                        size_t      cchOutput = 0;
-                        const char *pszStr    = va_arg(*pArgs, char *);
-                        ssize_t     cchStr;
-                        ssize_t     offCur;
-                        ssize_t     offLast;
+                        case 's':
+                        {
+                            static const char   s_szElemEscape[] = "<>&\"'";
+                            static const char   s_szAttrEscape[] = "<>&\"\n\r"; /* more? */
+                            const char * const  pszEscape =  fAttr ?             s_szAttrEscape  :             s_szElemEscape;
+                            size_t       const  cchEscape = (fAttr ? RT_ELEMENTS(s_szAttrEscape) : RT_ELEMENTS(s_szElemEscape)) - 1;
+                            size_t      cchOutput = 0;
+                            const char *pszStr    = va_arg(*pArgs, char *);
+                            ssize_t     cchStr;
+                            ssize_t     offCur;
+                            ssize_t     offLast;
 
-                        if (!VALID_PTR(pszStr))
-                            pszStr = "<NULL>";
-                        cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
+                            if (!VALID_PTR(pszStr))
+                                pszStr = "<NULL>";
+                            cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
 
-                        if (fAttr)
-                            cchOutput += pfnOutput(pvArgOutput, "\"", 1);
-                        if (!(fFlags & RTSTR_F_LEFT))
+                            if (fAttr)
+                                cchOutput += pfnOutput(pvArgOutput, "\"", 1);
+                            if (!(fFlags & RTSTR_F_LEFT))
+                                while (--cchWidth >= cchStr)
+                                    cchOutput += pfnOutput(pvArgOutput, " ", 1);
+
+                            offLast = offCur = 0;
+                            while (offCur < cchStr)
+                            {
+                                if (memchr(pszEscape, pszStr[offCur], cchEscape))
+                                {
+                                    if (offLast < offCur)
+                                        cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
+                                    switch (pszStr[offCur])
+                                    {
+                                        case '<':   cchOutput += pfnOutput(pvArgOutput, "&lt;", 4); break;
+                                        case '>':   cchOutput += pfnOutput(pvArgOutput, "&gt;", 4); break;
+                                        case '&':   cchOutput += pfnOutput(pvArgOutput, "&amp;", 5); break;
+                                        case '\'':  cchOutput += pfnOutput(pvArgOutput, "&apos;", 6); break;
+                                        case '"':   cchOutput += pfnOutput(pvArgOutput, "&quot;", 6); break;
+                                        case '\n':  cchOutput += pfnOutput(pvArgOutput, "&#xA;", 5); break;
+                                        case '\r':  cchOutput += pfnOutput(pvArgOutput, "&#xD;", 5); break;
+                                        default:
+                                            AssertFailed();
+                                    }
+                                    offLast = offCur + 1;
+                                }
+                                offCur++;
+                            }
+                            if (offLast < offCur)
+                                cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
+
                             while (--cchWidth >= cchStr)
                                 cchOutput += pfnOutput(pvArgOutput, " ", 1);
-
-                        offLast = offCur = 0;
-                        while (offCur < cchStr)
-                        {
-                            if (memchr(pszEscape, pszStr[offCur], cchEscape))
-                            {
-                                if (offLast < offCur)
-                                    cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
-                                switch (pszStr[offCur])
-                                {
-                                    case '<':   cchOutput += pfnOutput(pvArgOutput, "&lt;", 4); break;
-                                    case '>':   cchOutput += pfnOutput(pvArgOutput, "&gt;", 4); break;
-                                    case '&':   cchOutput += pfnOutput(pvArgOutput, "&amp;", 5); break;
-                                    case '\'':  cchOutput += pfnOutput(pvArgOutput, "&apos;", 6); break;
-                                    case '"':   cchOutput += pfnOutput(pvArgOutput, "&quot;", 6); break;
-                                    case '\n':  cchOutput += pfnOutput(pvArgOutput, "&#xA;", 5); break;
-                                    case '\r':  cchOutput += pfnOutput(pvArgOutput, "&#xD;", 5); break;
-                                    default:
-                                        AssertFailed();
-                                }
-                                offLast = offCur + 1;
-                            }
-                            offCur++;
+                            if (fAttr)
+                                cchOutput += pfnOutput(pvArgOutput, "\"", 1);
+                            return cchOutput;
                         }
-                        if (offLast < offCur)
-                            cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
 
-                        while (--cchWidth >= cchStr)
-                            cchOutput += pfnOutput(pvArgOutput, " ", 1);
-                        if (fAttr)
-                            cchOutput += pfnOutput(pvArgOutput, "\"", 1);
-                        return cchOutput;
+                        default:
+                            AssertMsgFailed(("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
                     }
-
-                    default:
-                        AssertMsgFailed(("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
                 }
+                else if (chWhat == 'p')
+                {
+                    /* Percent encoded string (RTC-3986). */
+                    char const  chVariant = (*ppszFormat)[1];
+                    char const  chAddSafe = chVariant == 'p' ? '/'
+                                          : chVariant == 'q' ? '+' /* '+' in queries is problematic, so no escape. */
+                                          :                    '~' /* whatever */;
+                    size_t      cchOutput = 0;
+                    const char *pszStr    = va_arg(*pArgs, char *);
+                    ssize_t     cchStr;
+                    ssize_t     offCur;
+                    ssize_t     offLast;
+
+                    *ppszFormat += 2;
+                    AssertMsgBreak(chVariant == 'p' || chVariant == 'q' || chVariant == 'f',
+                                   ("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
+
+                    if (!VALID_PTR(pszStr))
+                        pszStr = "<NULL>";
+                    cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
+
+                    if (!(fFlags & RTSTR_F_LEFT))
+                        while (--cchWidth >= cchStr)
+                            cchOutput += pfnOutput(pvArgOutput, "%20", 3);
+
+                    offLast = offCur = 0;
+                    while (offCur < cchStr)
+                    {
+                        ch = pszStr[offCur];
+                        if (   RT_C_IS_ALPHA(ch)
+                            || RT_C_IS_DIGIT(ch)
+                            || ch == '-'
+                            || ch == '.'
+                            || ch == '_'
+                            || ch == '~'
+                            || ch == chAddSafe)
+                            offCur++;
+                        else
+                        {
+                            if (offLast < offCur)
+                                cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
+                            if (ch != ' ' || chVariant != 'f')
+                            {
+                                szBuf[0] = '%';
+                                szBuf[1] = g_szHexDigitsUpper[((uint8_t)ch >> 4) & 0xf];
+                                szBuf[2] = g_szHexDigitsUpper[(uint8_t)ch & 0xf];
+                                szBuf[3] = '\0';
+                                cchOutput += pfnOutput(pvArgOutput, szBuf, 3);
+                            }
+                            else
+                                cchOutput += pfnOutput(pvArgOutput, "+", 1);
+                            offLast = ++offCur;
+                        }
+                    }
+                    if (offLast < offCur)
+                        cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
+
+                    while (--cchWidth >= cchStr)
+                        cchOutput += pfnOutput(pvArgOutput, "%20", 3);
+                }
+                else
+                    AssertMsgFailed(("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
                 break;
             }
 

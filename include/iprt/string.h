@@ -1526,6 +1526,19 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *      - \%RMes            - Takes a string pointer (const char *) and outputs
  *                            it as an element with the necessary escaping.
  *
+ *      - \%RMpf            - Takes a string pointer (const char *) and outputs
+ *                            it percent-encoded (RFC-3986), form style.  This
+ *                            means '+' is used to escape space (' ') and '%2B'
+ *                            is used to escape '+'.
+ *
+ *      - \%RMpp            - Takes a string pointer (const char *) and outputs
+ *                            it percent-encoded (RFC-3986), path style.  This
+ *                            means '/' will not be escaped.
+ *
+ *      - \%RMpq            - Takes a string pointer (const char *) and outputs
+ *                            it percent-encoded (RFC-3986), query style.  This
+ *                            means '+' will not be escaped.
+ *
  *
  * Group 6, JSON escapers:
  *      - \%RJs             - Takes a string pointer (const char *) and outputs
