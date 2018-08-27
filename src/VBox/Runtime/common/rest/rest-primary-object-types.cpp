@@ -90,7 +90,8 @@ RTCRestBool::RTCRestBool()
 
 /** Copy constructor. */
 RTCRestBool::RTCRestBool(RTCRestBool const &a_rThat)
-    : m_fValue(a_rThat.m_fValue)
+    : RTCRestObjectBase(a_rThat)
+    , m_fValue(a_rThat.m_fValue)
 {
 }
 
@@ -191,7 +192,8 @@ RTCRestInt64::RTCRestInt64()
 
 /** Copy constructor. */
 RTCRestInt64::RTCRestInt64(RTCRestInt64 const &a_rThat)
-    : m_iValue(a_rThat.m_iValue)
+    : RTCRestObjectBase(a_rThat)
+    , m_iValue(a_rThat.m_iValue)
 {
 }
 
@@ -287,7 +289,8 @@ RTCRestInt32::RTCRestInt32()
 
 /** Copy constructor. */
 RTCRestInt32::RTCRestInt32(RTCRestInt32 const &a_rThat)
-    : m_iValue(a_rThat.m_iValue)
+    : RTCRestObjectBase(a_rThat)
+    , m_iValue(a_rThat.m_iValue)
 {
 }
 
@@ -389,7 +392,8 @@ RTCRestInt16::RTCRestInt16()
 
 /** Copy constructor. */
 RTCRestInt16::RTCRestInt16(RTCRestInt16 const &a_rThat)
-    : m_iValue(a_rThat.m_iValue)
+    : RTCRestObjectBase(a_rThat)
+    , m_iValue(a_rThat.m_iValue)
 {
 }
 
@@ -491,7 +495,8 @@ RTCRestDouble::RTCRestDouble()
 
 /** Copy constructor. */
 RTCRestDouble::RTCRestDouble(RTCRestDouble const &a_rThat)
-    : m_rdValue(a_rThat.m_rdValue)
+    : RTCRestObjectBase(a_rThat)
+    , m_rdValue(a_rThat.m_rdValue)
 {
 }
 
@@ -581,6 +586,7 @@ RTCRestString::RTCRestString()
 /** Copy constructor. */
 RTCRestString::RTCRestString(RTCRestString const &a_rThat)
     : RTCString(a_rThat)
+    , RTCRestObjectBase(a_rThat)
 {
 }
 

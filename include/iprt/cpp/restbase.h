@@ -557,10 +557,10 @@ public:
      * Prepares the HTTP handle for transmitting this request.
      *
      * @returns IPRT status code.
-     * @param   a_pstrPath  Where to set path parameters.  Will be appended to the base path.
-     * @param   a_pstrQuery Where to set query parameters.
+     * @param   a_pStrPath  Where to set path parameters.  Will be appended to the base path.
+     * @param   a_pStrQuery Where to set query parameters.
      * @param   a_hHttp     Where to set header parameters and such.
-     * @param   a_pstrBody  Where to set body parameters.
+     * @param   a_pStrBody  Where to set body parameters.
      */
     virtual int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const = 0;
 
