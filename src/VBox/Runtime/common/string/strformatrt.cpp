@@ -60,7 +60,9 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static char g_szHexDigits[17] = "0123456789abcdef";
+#ifdef IN_RING3
 static char g_szHexDigitsUpper[17] = "0123456789ABCDEF";
+#endif
 
 
 /**
