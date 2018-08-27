@@ -1111,10 +1111,19 @@
 
 /** @def RT_OVERRIDE
  * Wrapper for the C++11 override keyword.
+ *
+ * @remarks Recognized by g++ starting 4.7, however causes pedantic warnings
+ *          when used without officially enabling the C++11 features.
  */
 #ifdef __cplusplus
-# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2012, 0) || RT_GNUC_PREREQ(4, 7)
+# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2012, 0)
 #  define RT_OVERRIDE           override
+# elif RT_GNUC_PREREQ(4, 7)
+#  if __cplusplus >= 201100
+#   define RT_OVERRIDE          override
+#  else
+#   define RT_OVERRIDE
+#  endif
 # else
 #  define RT_OVERRIDE
 # endif
