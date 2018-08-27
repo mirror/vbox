@@ -91,7 +91,7 @@ chown -R root:admin /Applications/VirtualBox.app
 #
 SET_UID_BINARIES="VBoxNetAdpCtl"
 SET_UID_BINARIES="${SET_UID_BINARIES} VBoxHeadless VirtualBoxVM VBoxNetDHCP VBoxNetNAT" # WITH_HARDENING
-SET_UID_BINARIES="${SET_UID_BINARIES} VirtualBox"                                       # WITH_HARDENING WITH_SHARED_LIBRARY
+SET_UID_BINARIES="${SET_UID_BINARIES} VirtualBox"                                       # WITH_HARDENING WITHOUT_SHARED_LIBRARY
 for bin in ${SET_UID_BINARIES}; do
     chmod u+s "/Applications/VirtualBox.app/Contents/MacOS/${bin}"
 done

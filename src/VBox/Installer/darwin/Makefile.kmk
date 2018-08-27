@@ -800,7 +800,7 @@ if defined(VBOX_WITH_HARDENING) && !defined(VBOX_GUI_WITH_SHARED_LIBRARY)
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/postflight                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 else
 	$(SED)	$(if-expr !defined(VBOX_WITH_HARDENING),-e '/WITH_HARDENING/d',) \
-		$(if-expr !defined(VBOX_GUI_WITH_SHARED_LIBRARY),-e '/WITH_SHARED_LIBRARY/d',) \
+		$(if-expr !defined(VBOX_GUI_WITH_SHARED_LIBRARY),-e '/WITH_SHARED_LIBRARY/d',-e '/WITHOUT_SHARED_LIBRARY/d') \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/postflight
 	$(CHMOD) 0755 $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight
