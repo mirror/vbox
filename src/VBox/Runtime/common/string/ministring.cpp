@@ -282,6 +282,12 @@ RTCString &RTCString::printfV(const char *pszFormat, va_list va)
     return *this;
 }
 
+RTCString &RTCString::appendPrintfV(const char *pszFormat, va_list va)
+{
+    RTStrFormatV(printfOutputCallback, this, NULL, NULL, pszFormat, va);
+    return *this;
+}
+
 struct RTCSTRINGOTHROW
 {
     RTCString  *pThis;
@@ -335,6 +341,31 @@ int RTCString::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
     RTCSTRINGOTHROW Args = { this, VINF_SUCCESS };
     RTStrFormatV(printfOutputCallback, &Args, NULL, NULL, pszFormat, va);
     return Args.rc;
+}
+
+int RTCString::appendPrintfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
+{
+    RTCSTRINGOTHROW Args = { this, VINF_SUCCESS };
+    RTStrFormatV(printfOutputCallback, &Args, NULL, NULL, pszFormat, va);
+    return Args.rc;
+}
+
+RTCString &RTCString::appendPrintf(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    appendPrintfV(pszFormat, va);
+    va_end(va);
+    return *this;
+}
+
+int RTCString::appendPrintfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = appendPrintfVNoThrow(pszFormat, va);
+    va_end(va);
+    return rc;
 }
 
 RTCString &RTCString::append(const RTCString &that)
@@ -537,8 +568,7 @@ int RTCString::appendCodePointNoThrow(RTUNICP uc) RT_NOEXCEPT
     return VINF_SUCCESS;
 }
 
-
-RTCString &RTCString::erase(size_t offStart /*= 0*/, size_t cchLength /*= npos*/)
+RTCString &RTCString::erase(size_t offStart /*= 0*/, size_t cchLength /*= npos*/) RT_NOEXCEPT
 {
     size_t cch = length();
     if (offStart < cch)
@@ -591,7 +621,7 @@ RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString
 }
 
 int RTCString::replaceNoThrow(size_t offStart, size_t cchLength, const RTCString &rStrReplacement,
-                              size_t offReplacement, size_t cchReplacement)
+                              size_t offReplacement, size_t cchReplacement) RT_NOEXCEPT
 {
     Assert(this != &rStrReplacement);
     if (cchReplacement > 0)
@@ -712,7 +742,7 @@ int RTCString::replaceWorkerNoThrow(size_t offStart, size_t cchLength, const cha
 }
 
 
-size_t RTCString::find(const char *pszNeedle, size_t offStart /*= 0*/) const
+size_t RTCString::find(const char *pszNeedle, size_t offStart /*= 0*/) const RT_NOEXCEPT
 {
     if (offStart < length())
     {
@@ -731,7 +761,7 @@ size_t RTCString::find(const char *pszNeedle, size_t offStart /*= 0*/) const
     return npos;
 }
 
-size_t RTCString::find(const RTCString *pStrNeedle, size_t offStart /*= 0*/) const
+size_t RTCString::find(const RTCString *pStrNeedle, size_t offStart /*= 0*/) const RT_NOEXCEPT
 {
     if (offStart < length())
     {
@@ -754,7 +784,7 @@ size_t RTCString::find(const RTCString *pStrNeedle, size_t offStart /*= 0*/) con
     return npos;
 }
 
-void RTCString::findReplace(char chFind, char chReplace)
+void RTCString::findReplace(char chFind, char chReplace) RT_NOEXCEPT
 {
     Assert((unsigned int)chFind    < 128U);
     Assert((unsigned int)chReplace < 128U);
@@ -767,7 +797,7 @@ void RTCString::findReplace(char chFind, char chReplace)
     }
 }
 
-size_t RTCString::count(char ch) const
+size_t RTCString::count(char ch) const RT_NOEXCEPT
 {
     Assert((unsigned int)ch < 128U);
 
@@ -784,25 +814,25 @@ size_t RTCString::count(char ch) const
 }
 
 #if 0  /** @todo implement these when needed. */
-size_t RTCString::count(const char *psz, CaseSensitivity cs = CaseSensitive) const
+size_t RTCString::count(const char *psz, CaseSensitivity cs = CaseSensitive) const RT_NOEXCEPT
 {
 }
 
-size_t RTCString::count(const RTCString *pStr, CaseSensitivity cs = CaseSensitive) const
+size_t RTCString::count(const RTCString *pStr, CaseSensitivity cs = CaseSensitive) const RT_NOEXCEPT
 {
 
 }
 #endif
 
 
-RTCString &RTCString::strip()
+RTCString &RTCString::strip() RT_NOEXCEPT
 {
     stripRight();
     return stripLeft();
 }
 
 
-RTCString &RTCString::stripLeft()
+RTCString &RTCString::stripLeft() RT_NOEXCEPT
 {
     char        *psz = m_psz;
     size_t const cch = m_cch;
@@ -823,7 +853,7 @@ RTCString &RTCString::stripLeft()
 }
 
 
-RTCString &RTCString::stripRight()
+RTCString &RTCString::stripRight() RT_NOEXCEPT
 {
     char  *psz = m_psz;
     size_t cch = m_cch;
@@ -887,7 +917,7 @@ RTCString RTCString::substrCP(size_t pos /*= 0*/, size_t n /*= npos*/) const
     return ret;
 }
 
-bool RTCString::endsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const
+bool RTCString::endsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     size_t l1 = length();
     if (l1 == 0)
@@ -905,7 +935,7 @@ bool RTCString::endsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensi
     return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
 }
 
-bool RTCString::startsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const
+bool RTCString::startsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     size_t l1 = length();
     size_t l2 = that.length();
@@ -920,7 +950,7 @@ bool RTCString::startsWith(const RTCString &that, CaseSensitivity cs /*= CaseSen
     return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
 }
 
-bool RTCString::startsWithWord(const char *pszWord, CaseSensitivity enmCase /*= CaseSensitive*/) const
+bool RTCString::startsWithWord(const char *pszWord, CaseSensitivity enmCase /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     const char *pszSrc  = RTStrStripL(c_str()); /** @todo RTStrStripL doesn't use RTUniCpIsSpace (nbsp) */
     size_t      cchWord = strlen(pszWord);
@@ -939,12 +969,12 @@ bool RTCString::startsWithWord(const char *pszWord, CaseSensitivity enmCase /*= 
     return false;
 }
 
-bool RTCString::startsWithWord(const RTCString &rThat, CaseSensitivity enmCase /*= CaseSensitive*/) const
+bool RTCString::startsWithWord(const RTCString &rThat, CaseSensitivity enmCase /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     return startsWithWord(rThat.c_str(), enmCase);
 }
 
-bool RTCString::contains(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const
+bool RTCString::contains(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     /** @todo r-bird: Not checking for NULL strings like startsWith does (and
      *        endsWith only does half way). */
@@ -953,7 +983,7 @@ bool RTCString::contains(const RTCString &that, CaseSensitivity cs /*= CaseSensi
     return ::RTStrIStr(m_psz, that.m_psz) != NULL;
 }
 
-bool RTCString::contains(const char *pszNeedle, CaseSensitivity cs /*= CaseSensitive*/) const
+bool RTCString::contains(const char *pszNeedle, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     /** @todo r-bird: Not checking for NULL strings like startsWith does (and
      *        endsWith only does half way). */
@@ -962,14 +992,14 @@ bool RTCString::contains(const char *pszNeedle, CaseSensitivity cs /*= CaseSensi
     return ::RTStrIStr(m_psz, pszNeedle) != NULL;
 }
 
-int RTCString::toInt(uint64_t &i) const
+int RTCString::toInt(uint64_t &i) const RT_NOEXCEPT
 {
     if (!m_psz)
         return VERR_NO_DIGITS;
     return RTStrToUInt64Ex(m_psz, NULL, 0, &i);
 }
 
-int RTCString::toInt(uint32_t &i) const
+int RTCString::toInt(uint32_t &i) const RT_NOEXCEPT
 {
     if (!m_psz)
         return VERR_NO_DIGITS;
