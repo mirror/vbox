@@ -290,10 +290,11 @@ public:
      */
     enum
     {
-        kCollectionFormat_cvs = 0,  /**< Comma-separated list. */
-        kCollectionFormat_ssv,      /**< Space-separated list. */
-        kCollectionFormat_tsv,      /**< Tab-separated list. */
-        kCollectionFormat_pipes     /**< Pipe-separated list. */
+        kCollectionFormat_Unspecified = 0,  /**< Not specified. */
+        kCollectionFormat_csv,              /**< Comma-separated list. */
+        kCollectionFormat_ssv,              /**< Space-separated list. */
+        kCollectionFormat_tsv,              /**< Tab-separated list. */
+        kCollectionFormat_pipes             /**< Pipe-separated list. */
     };
 
     /**
@@ -305,7 +306,7 @@ public:
      * @param   a_pDst      Pointer to the destionation string.
      * @param   a_fFlags    kCollectionFormat_xxx.
      */
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_cvs) const;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const;
 
     /**
      * String convertsion, naive variant.
