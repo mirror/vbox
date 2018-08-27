@@ -28,7 +28,7 @@
 #include "VirtualBox.h"
 #include "RpcChannelHook.h"
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
 
 volatile bool CRpcChannelHook::s_fChannelRegistered = false;
 volatile bool CRpcChannelHook::s_fVBpoxSDSCalledOnce = false;
@@ -216,4 +216,4 @@ STDMETHODIMP_(void) CRpcChannelHook::ServerFillBuffer(REFGUID uExtent, REFIID ri
     RT_NOREF(uExtent, riid, pDataSize, pDataBuffer, hrFault);
 }
 
-#endif
+#endif // defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)

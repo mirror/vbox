@@ -97,6 +97,8 @@ const DWORD dwNormalTimeout = 5000;
 volatile uint32_t dwTimeOut = dwNormalTimeout; /* time for EXE to be idle before shutting down. Can be decreased at system shutdown phase. */
 
 
+#ifdef VBOX_WITH_SDS
+
 BOOL CALLBACK CloseWindowProc(_In_ HWND   hWnd, _In_ LPARAM /* lParam */)
 {
     _ASSERTE(hWnd);
@@ -203,7 +205,6 @@ bool IsWindowsVersionOrGreaterWrap(WORD wMajorVersion, WORD wMinorVersion, WORD 
     return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
 }
 
-
 #if !defined _WIN32_WINNT_WIN8
 
 #define _WIN32_WINNT_WIN8                   0x0602
@@ -214,6 +215,8 @@ bool IsWindows8OrGreaterWrap()
 {
     return IsWindowsVersionOrGreaterWrap(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0);
 }
+
+#endif // !VBOX_WITH_SDS
 
 
 /* Passed to CreateThread to monitor the shutdown event */
@@ -312,6 +315,7 @@ bool CExeModule::StartMonitor()
 
 
 #ifdef VBOX_WITH_SDS
+
 class VBoxSVCRegistration;
 
 /**
@@ -627,7 +631,7 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
     return hrc;
 }
 
-#endif /* VBOX_WITH_SDS */
+#endif // VBOX_WITH_SDS
 
 
 /*
@@ -683,6 +687,7 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                     Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
                          g_pModule->bActivity, g_pModule->GetLockCount()));
 
+#ifdef VBOX_WITH_SDS
                     // On Windows 7 our clients doesn't receive right sequence of Session End events
                     // So we send them all WM_QUIT to forcible close them.
                     // Windows 10 sends end session events correctly
@@ -690,6 +695,7 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                     // application without manifest so I use old compatible functions for detection of Win 7
                     if(!IsWindows8OrGreaterWrap())
                         CloseActiveClients();
+#endif
                 }
                 rc = !fActiveConnection;
             }
