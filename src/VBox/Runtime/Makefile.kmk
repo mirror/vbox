@@ -1653,6 +1653,7 @@ ifdef VBOX_WITH_LIBCURL
  	generic/http-curl.cpp \
  	common/rest/rest-primary-object-types.cpp \
  	common/rest/RTCRestClientApiBase.cpp \
+ 	common/rest/RTCRestClientRequestBase.cpp \
  	common/rest/RTCRestJsonPrimaryCursor.cpp \
  	common/rest/RTCRestOutputToString.cpp
 endif

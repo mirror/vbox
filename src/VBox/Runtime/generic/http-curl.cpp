@@ -2706,6 +2706,14 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
 }
 
 
+RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod,
+                            uint32_t *puHttpStatus, void **ppvHeaders, size_t *pcbHeaders, void **ppvBody, size_t *pcbBody)
+{
+    RT_NOREF(hHttp, pszUrl, enmMethod, puHttpStatus, ppvHeaders, pcbHeaders, ppvBody, pcbBody);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser)
 {
     PRTHTTPINTERNAL pThis = hHttp;

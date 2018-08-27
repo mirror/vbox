@@ -546,8 +546,8 @@ public:
 class RTCRestClientRequestBase
 {
 public:
-    RTCRestClientRequestBase() {}
-    virtual ~RTCRestClientRequestBase() {};
+    RTCRestClientRequestBase();
+    virtual ~RTCRestClientRequestBase();
 
     /**
      * Reset all members to default values.
@@ -572,6 +572,29 @@ public:
      * @param   a_hHttp     The HTTP handle the request was performed on.
      */
     virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const = 0;
+
+protected:
+    /** Path replacement entry. */
+    typedef struct
+    {
+        const char                 *pszName;    /**< The name string to replace (including {}). */
+        size_t                      cchName;    /**< Length of pszName. */
+        RTCRestObjectBase const    *pObj;       /**< Pointer to the parameter object. */
+        size_t                      offName;    /**< Maintained by worker. */
+        uint32_t                    fFlags;     /**< The toString flags. */
+    } PATHREPLACEENTRY;
+
+    /**
+     *
+     * @returns IPRT status code
+     * @param   a_pStrPath          The destination path.
+     * @param   a_pszPathTemplate   The path template string.
+     * @param   a_cchPathTemplate   The length of the path template string.
+     * @param   a_paPathParams      The path parameter descriptors.
+     * @param   a_cPathParams       Number of path parameters.
+     */
+    int doPathParameters(RTCString *a_pStrPath, const char *a_pszPathTemplate, size_t a_cchPathTemplate,
+                         PATHREPLACEENTRY *a_paPathParams, size_t a_cPathParams) const;
 };
 
 
@@ -754,6 +777,16 @@ protected:
      * @returns IPRT status code.
      */
     virtual int reinitHttpInstance();
+
+    /**
+     * Implements stuff for making an API call.
+     *
+     * @param   a_rRequest      Reference to the request object.
+     * @param   a_enmHttpMethod The HTTP request method.
+     * @param   a_pResponse     Pointer to the response object.
+     */
+    virtual void doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
+                        RTCRestClientResponseBase *a_pResponse);
 };
 
 /** @} */
