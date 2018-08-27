@@ -218,9 +218,9 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
     pRoot->cchName    = 0;
     pVM->cfgm.s.pRoot = pRoot;
 
-        /*
-         * Call the constructor if specified, if not use the default one.
-         */
+    /*
+     * Call the constructor if specified, if not use the default one.
+     */
     if (pfnCFGMConstructor)
         rc = pfnCFGMConstructor(pVM->pUVM, pVM, pvUser);
     else
