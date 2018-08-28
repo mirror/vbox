@@ -3535,7 +3535,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="e43225cb-09fc-4e70-a56c-6dad3bcb48a6"
+    uuid="99870ce5-c613-4a49-8ac8-bdad54565c54"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3586,6 +3586,8 @@
     <const name="CloudOCIBucket" value="30" />
     <const name="CloudOCIVCN" value="31" />
     <const name="CloudOCIPublicIP" value="32" />
+    <const name="CloudOCIProfilePath" value="33" />
+    <const name="CloudOCISubnet" value="34" />
   </enum>
 
   <enum
@@ -24874,6 +24876,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <enum
+    name="CloudProviderId"
+    uuid="c3856743-aa5d-404d-847d-14b6cf523677"
+    >
+    <const name="Unknown" value="0"/>
+    <const name="OCI" value="1"/>
+    <const name="GCP" value="2"/>
+    <const name="AWS" value="3"/>
+    <const name="MicrosoftAzure" value="4"/>
+    <const name="IBMCloud" value="5"/>
+    <const name="DigitalOcean" value="6"/>
+  </enum>
+
+  <enum
     name="CloudCommand"
     uuid="1c5cfa19-7754-4071-bf3e-6d21ad432655"
     >
@@ -24883,22 +24898,65 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="pauseInstance" value="0x3"/>
     <const name="stopInstance" value="0x4"/>
     <const name="deleteInstance" value="0x5"/>
-    <const name="getInstanceProperties" value="0x6"/>
+    <const name="getInstance" value="0x6"/>
     <const name="listInstances" value="0x7"/>
-    <const name="importImage" value="0x8"/>
 
-    <const name="uploadFile" value="0x10"/>
-    <const name="downloadObject" value="0x11"/>
-    <const name="deleteObject" value="0x12"/>
-    <const name="getObjectProperties" value="0x13"/>
-    <const name="listObjects" value="0x14"/>
-    <const name="listBuckets" value="0x15"/>
-    <const name="listNetworks" value="0x16"/>
-    <const name="listShapes" value="0x17"/>
-    <const name="listRegions" value="0x18"/>
-    <const name="listAvailabilityDomains" value="0x19"/>
-    <const name="listCompartments" value="0x20"/>
-    <const name="getNamespace" value="0x21"/>
+    <const name="createImage" value="0x10"/>
+    <const name="getImage" value="0x11"/>
+    <const name="importImage" value="0x12"/>
+    <const name="exportImage" value="0x13"/>
+    <const name="deleteImage" value="0x14"/>
+    <const name="updateImage" value="0x15"/>
+    <const name="listImages" value="0x16"/>
+
+    <const name="listNetworks" value="0x20"/>
+    <const name="getNetwork" value="0x21"/>
+    <const name="createNetwork" value="0x22"/>
+    <const name="deleteNetwork" value="0x23"/>
+    <const name="upateNetwork" value="0x24"/>
+
+    <const name="getNetworkCard" value="0x30"/>
+    <const name="updateNetworkCard" value="0x31"/>
+
+    <const name="listNetworkCardAttachements" value="0x32"/>
+    <const name="getNetworkCardAttachement" value="0x33"/>
+    <const name="detachNetworkCard" value="0x34"/>
+    <const name="attachNetworkCard" value="0x35"/>
+
+    <const name="listSubnets" value="0x40"/>
+    <const name="getSubnet" value="0x41"/>
+    <const name="createSubnet" value="0x42"/>
+    <const name="deleteSubnet" value="0x43"/>
+    <const name="updateSubnet" value="0x44"/>
+
+    <const name="listInternetGateways" value="0x50"/>
+    <const name="getInternetGateway" value="0x51"/>
+    <const name="createInternetGateway" value="0x52"/>
+    <const name="deleteInternetGateway" value="0x53"/>
+    <const name="updateInternetGateway" value="0x54"/>
+
+    <const name="listRouteTables" value="0x60"/>
+    <const name="getRouteTable" value="0x61"/>
+    <const name="createRouteTable" value="0x62"/>
+    <const name="deleteRouteTable" value="0x63"/>
+    <const name="updateRouteTable" value="0x64"/>
+
+    <const name="listShapes" value="0x70"/>
+
+    <const name="uploadFile" value="0x100"/>
+    <const name="downloadObject" value="0x101"/>
+    <const name="deleteObject" value="0x102"/>
+    <const name="getObject" value="0x103"/>
+    <const name="listObjects" value="0x104"/>
+
+    <const name="listBuckets" value="0x110"/>
+
+    <const name="getNamespace" value="0x120"/>
+
+    <const name="listRegions" value="0x200"/>
+    <const name="listAvailabilityDomains" value="0x210"/>
+    <const name="listCompartments" value="0x220"/>
+
   </enum>
 
   <enum
@@ -24960,6 +25018,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
       <param name="result" type="CloudCommandResult" dir="return">
+      </param>
+    </method>
+
+    <method name="runSeveralCommands">
+      <desc>
+        Runs a set of prepared cloud operations by their ids
+      </desc>
+      <param name="commandIdList" type="wstring" safearray="yes" dir="in">
+        <desc>
+          The list of UUID of the operations.
+        </desc>
+      </param>
+      <param name="parameterNames" type="wstring" safearray="yes" dir="in">
+        <desc>Initial set of parameter names.</desc>
+      </param>
+      <param name="parameterValues" type="wstring" safearray="yes" dir="in">
+        <desc>Initial set of parameter values.</desc>
       </param>
     </method>
 

@@ -1836,6 +1836,8 @@ RT_C_DECLS_END
 
 /** @name HTTP status codes
  * @{ */
+/** HTTP Internal Server Error. */
+#define VERR_HTTP_STATUS_SERVER_ERROR           (-884)
 /** HTTP initialization failed. */
 #define VERR_HTTP_INIT_FAILED                   (-885)
 /** The server has not found anything matching the URI given. */
