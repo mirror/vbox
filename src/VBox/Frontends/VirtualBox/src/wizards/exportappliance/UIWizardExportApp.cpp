@@ -236,13 +236,13 @@ void UIWizardExportApp::prepare()
 bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
 {
     /* Get the map of the password IDs: */
-    EncryptedMediumMap encryptedMediums;
+    EncryptedMediumMap encryptedMedia;
     foreach (const QString &strPasswordId, comAppliance.GetPasswordIds())
         foreach (const QString &strMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
-            encryptedMediums.insert(strPasswordId, strMediumId);
+            encryptedMedia.insert(strPasswordId, strMediumId);
 
     /* Ask for the disk encryption passwords if necessary: */
-    if (!encryptedMediums.isEmpty())
+    if (!encryptedMedia.isEmpty())
     {
         /* Modal dialog can be destroyed in own event-loop as a part of application
          * termination procedure. We have to make sure that the dialog pointer is
@@ -250,7 +250,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
         QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
              new UIAddDiskEncryptionPasswordDialog(this,
                                                    window()->windowTitle(),
-                                                   encryptedMediums);
+                                                   encryptedMedia);
 
         /* Execute the dialog: */
         if (pDlg->exec() == QDialog::Accepted)

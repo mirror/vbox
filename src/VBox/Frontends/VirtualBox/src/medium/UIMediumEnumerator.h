@@ -64,8 +64,8 @@ public:
 
     /* API: Medium-enumeration stuff: */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
-    void enumerateMediums();
-    void refreshMediums();
+    void enumerateMedia();
+    void refreshMedia();
 
 private slots:
 
@@ -86,9 +86,9 @@ private:
 
     /* Helpers: Medium-enumeration stuff: */
     void createMediumEnumerationTask(const UIMedium &medium);
-    void addNullMediumToMap(UIMediumMap &mediums);
-    void addMediumsToMap(const CMediumVector &inputMediums, UIMediumMap &outputMediums, UIMediumType mediumType);
-    void addHardDisksToMap(const CMediumVector &inputMediums, UIMediumMap &outputMediums);
+    void addNullMediumToMap(UIMediumMap &media);
+    void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia, UIMediumType mediumType);
+    void addHardDisksToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
     /* Helpers: Medium re-caching stuff: */
     void calculateCachedUsage(const QString &strMachineID, QStringList &previousUIMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
@@ -101,7 +101,7 @@ private:
     /* Variables: */
     bool m_fMediumEnumerationInProgress;
     QSet<UITask*> m_tasks;
-    UIMediumMap m_mediums;
+    UIMediumMap m_media;
 };
 
 #endif /* !___UIMediumEnumerator_h___ */

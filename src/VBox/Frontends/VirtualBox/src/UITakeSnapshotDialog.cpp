@@ -46,7 +46,7 @@
 UITakeSnapshotDialog::UITakeSnapshotDialog(QWidget *pParent, const CMachine &comMachine)
     : QIWithRetranslateUI<QIDialog>(pParent)
     , m_comMachine(comMachine)
-    , m_cImmutableMediums(0)
+    , m_cImmutableMedia(0)
     , m_pLabelIcon(0)
     , m_pLabelName(0), m_pEditorName(0)
     , m_pLabelDescription(0), m_pEditorDescription(0)
@@ -105,7 +105,7 @@ void UITakeSnapshotDialog::retranslateUi()
     m_pLabelDescription->setText(tr("Snapshot &Description"));
     m_pLabelInfo->setText(tr("Warning: You are taking a snapshot of a running machine which has %n immutable image(s) "
                              "attached to it. As long as you are working from this snapshot the immutable image(s) "
-                             "will not be reset to avoid loss of data.", "", m_cImmutableMediums));
+                             "will not be reset to avoid loss of data.", "", m_cImmutableMedia));
 }
 
 void UITakeSnapshotDialog::sltHandleNameChanged(const QString &strName)
@@ -262,11 +262,11 @@ void UITakeSnapshotDialog::prepareContents()
                     if (   !comMedium.isNull()
                         && !comMedium.GetParent().isNull()
                         && comMedium.GetBase().GetType() == KMediumType_Immutable)
-                        ++m_cImmutableMediums;
+                        ++m_cImmutableMedia;
                 }
             }
             /* Hide if machine have no immutable attachments: */
-            if (!m_cImmutableMediums)
+            if (!m_cImmutableMedia)
                 m_pLabelInfo->setHidden(true);
 
             /* Add into layout: */

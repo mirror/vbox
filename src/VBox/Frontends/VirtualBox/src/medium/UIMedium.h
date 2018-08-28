@@ -71,14 +71,14 @@ struct NoDiffsCache
   * Unless explicitly stated otherwise, this argument, when set to @c true,
   * will cause the corresponding property of this object's root medium to be returned instead
   * of its own one. This is useful when hard drive medium is reflected in the user-friendly
-  * "don't show diffs" mode. For non-hard drive mediums, the value of this argument is irrelevant
+  * "don't show diffs" mode. For non-hard drive media, the value of this argument is irrelevant
   * because the root object for such medium is the medium itself.
   *
   * Note that this class "abuses" the KMediumState_NotCreated state value to indicate that the
   * accessibility check of the given medium (see #blockAndQueryState()) has not been done yet
   * and therefore some parameters such as #size() are meaningless because they can be read only
   * from the accessible medium. The real KMediumState_NotCreated state is not necessary because
-  * this class is only used with created (existing) mediums. */
+  * this class is only used with created (existing) media. */
 class SHARED_LIBRARY_STUFF UIMedium
 {
 public:

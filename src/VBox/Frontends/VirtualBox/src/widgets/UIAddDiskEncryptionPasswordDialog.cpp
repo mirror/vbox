@@ -108,8 +108,8 @@ class UIEncryptionDataModel : public QAbstractTableModel
 public:
 
     /** Constructs model passing @a pParent to the base-class.
-      * @param  encryptedMediums  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
-    UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums);
+      * @param  encryptedMedia  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
+    UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMedia);
 
     /** Returns the shallow copy of the encryption password map instance. */
     EncryptionPasswordMap encryptionPasswords() const { return m_encryptionPasswords; }
@@ -136,7 +136,7 @@ private:
     void prepare();
 
     /** Holds the encrypted medium map reference. */
-    const EncryptedMediumMap &m_encryptedMediums;
+    const EncryptedMediumMap &m_encryptedMedia;
 
     /** Holds the encryption password map instance. */
     EncryptionPasswordMap  m_encryptionPasswords;
@@ -158,8 +158,8 @@ signals:
 public:
 
     /** Constructs table.
-      * @param  encryptedMediums  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
-    UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums);
+      * @param  encryptedMedia  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
+    UIEncryptionDataTable(const EncryptedMediumMap &encryptedMedia);
 
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataModel instance. */
@@ -174,7 +174,7 @@ private:
     void prepare();
 
     /** Holds the encrypted medium map reference. */
-    const EncryptedMediumMap &m_encryptedMediums;
+    const EncryptedMediumMap &m_encryptedMedia;
 
     /** Holds the encryption-data model instance. */
     UIEncryptionDataModel *m_pModelEncryptionData;
@@ -224,9 +224,9 @@ void UIPasswordEditor::prepare()
 *   Class UIEncryptionDataModel implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums)
+UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMedia)
     : QAbstractTableModel(pParent)
-    , m_encryptedMediums(encryptedMediums)
+    , m_encryptedMedia(encryptedMedia)
 {
     /* Prepare: */
     prepare();
@@ -314,15 +314,15 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
         {
             /* We are generating tool-tip here and not in retranslateUi() because of the tricky plural form handling,
              * but be quiet, it's safe enough because the tool-tip being re-acquired every time on mouse-hovering. */
-            const QStringList encryptedMediums = m_encryptedMediums.values(m_encryptionPasswords.keys().at(index.row()));
+            const QStringList encryptedMedia = m_encryptedMedia.values(m_encryptionPasswords.keys().at(index.row()));
             return UIAddDiskEncryptionPasswordDialog::tr("<nobr>Used by the following %n hard disk(s):</nobr><br>%1",
                                                          "This text is never used with n == 0. "
                                                          "Feel free to drop the %n where possible, "
                                                          "we only included it because of problems with Qt Linguist "
                                                          "(but the user can see how many hard drives are in the tool-tip "
                                                          "and doesn't need to be told).",
-                                                         encryptedMediums.size())
-                                                         .arg(encryptedMediums.join("<br>"));
+                                                         encryptedMedia.size())
+                                                         .arg(encryptedMedia.join("<br>"));
         }
         default:
             break;
@@ -358,7 +358,7 @@ bool UIEncryptionDataModel::setData(const QModelIndex &index, const QVariant &va
 void UIEncryptionDataModel::prepare()
 {
     /* Populate the map of passwords and statuses: */
-    foreach (const QString &strPasswordId, m_encryptedMediums.keys())
+    foreach (const QString &strPasswordId, m_encryptedMedia.keys())
         m_encryptionPasswords.insert(strPasswordId, QString());
 }
 
@@ -367,8 +367,8 @@ void UIEncryptionDataModel::prepare()
 *   Class UIEncryptionDataTable implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIEncryptionDataTable::UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums)
-    : m_encryptedMediums(encryptedMediums)
+UIEncryptionDataTable::UIEncryptionDataTable(const EncryptedMediumMap &encryptedMedia)
+    : m_encryptedMedia(encryptedMedia)
     , m_pModelEncryptionData(0)
 {
     /* Prepare: */
@@ -397,7 +397,7 @@ void UIEncryptionDataTable::editFirstIndex()
 void UIEncryptionDataTable::prepare()
 {
     /* Create encryption-data model: */
-    m_pModelEncryptionData = new UIEncryptionDataModel(this, m_encryptedMediums);
+    m_pModelEncryptionData = new UIEncryptionDataModel(this, m_encryptedMedia);
     if (m_pModelEncryptionData)
     {
         /* Assign configured model to table: */
@@ -457,10 +457,10 @@ void UIEncryptionDataTable::prepare()
 
 UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent,
                                                                      const QString &strMachineName,
-                                                                     const EncryptedMediumMap &encryptedMediums)
+                                                                     const EncryptedMediumMap &encryptedMedia)
     : QIWithRetranslateUI<QDialog>(pParent)
     , m_strMachineName(strMachineName)
-    , m_encryptedMediums(encryptedMediums)
+    , m_encryptedMedia(encryptedMedia)
     , m_pLabelDescription(0)
     , m_pTableEncryptionData(0)
     , m_pButtonBox(0)
@@ -491,15 +491,15 @@ void UIAddDiskEncryptionPasswordDialog::retranslateUi()
                                     "we only included it because of problems with Qt Linguist "
                                     "(but the user can see how many passwords are in the list "
                                     "and doesn't need to be told).",
-                                    m_encryptedMediums.uniqueKeys().size()));
+                                    m_encryptedMedia.uniqueKeys().size()));
 }
 
 void UIAddDiskEncryptionPasswordDialog::accept()
 {
     /* Validate passwords status: */
-    foreach (const QString &strPasswordId, m_encryptedMediums.uniqueKeys())
+    foreach (const QString &strPasswordId, m_encryptedMedia.uniqueKeys())
     {
-        const QString strMediumId = m_encryptedMediums.values(strPasswordId).first();
+        const QString strMediumId = m_encryptedMedia.values(strPasswordId).first();
         const QString strPassword = m_pTableEncryptionData->encryptionPasswords().value(strPasswordId);
         if (!isPasswordValid(strMediumId, strPassword))
         {
@@ -536,7 +536,7 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
             }
 
             /* Create encryption-data table: */
-            m_pTableEncryptionData = new UIEncryptionDataTable(m_encryptedMediums);
+            m_pTableEncryptionData = new UIEncryptionDataTable(m_encryptedMedia);
             if (m_pTableEncryptionData)
             {
                 /* Configure encryption-data table: */

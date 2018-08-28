@@ -2913,8 +2913,8 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
 
 void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
 {
-    /* Prepare the map of the encrypted mediums: */
-    EncryptedMediumMap encryptedMediums;
+    /* Prepare the map of the encrypted media: */
+    EncryptedMediumMap encryptedMedia;
     foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
     {
         /* Acquire hard-drive attachments only: */
@@ -2926,20 +2926,20 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
             QString strCipher;
             const QString strPasswordId = medium.GetEncryptionSettings(strCipher);
             if (medium.isOk())
-                encryptedMediums.insert(strPasswordId, medium.GetId());
+                encryptedMedia.insert(strPasswordId, medium.GetId());
         }
     }
 
     /* Ask for the disk encryption passwords if necessary: */
     EncryptionPasswordMap encryptionPasswords;
-    if (!encryptedMediums.isEmpty())
+    if (!encryptedMedia.isEmpty())
     {
         /* Create the dialog for acquiring encryption passwords: */
         QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
         QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
              new UIAddDiskEncryptionPasswordDialog(pDlgParent,
                                                    machineName(),
-                                                   encryptedMediums);
+                                                   encryptedMedia);
         /* Execute the dialog: */
         if (pDlg->exec() == QDialog::Accepted)
         {

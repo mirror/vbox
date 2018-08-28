@@ -111,7 +111,7 @@ struct UIDataSettingsMachineGeneral
     /** Holds the encryption password. */
     QString                m_strEncryptionPassword;
     /** Holds the encrypted medium ids. */
-    EncryptedMediumMap     m_encryptedMediums;
+    EncryptedMediumMap     m_encryptedMedia;
     /** Holds the encryption passwords. */
     EncryptionPasswordMap  m_encryptionPasswords;
 };
@@ -200,8 +200,8 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Gather old 'Encryption' data: */
     QString strCipher;
     bool fEncryptionCipherCommon = true;
-    /* Prepare the map of the encrypted mediums: */
-    EncryptedMediumMap encryptedMediums;
+    /* Prepare the map of the encrypted media: */
+    EncryptedMediumMap encryptedMedia;
     foreach (const CMediumAttachment &attachment, m_machine.GetMediumAttachments())
     {
         /* Check hard-drive attachments only: */
@@ -214,7 +214,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
             const QString strCurrentPasswordId = comMedium.GetEncryptionSettings(strCurrentCipher);
             if (comMedium.isOk())
             {
-                encryptedMediums.insert(strCurrentPasswordId, comMedium.GetId());
+                encryptedMedia.insert(strCurrentPasswordId, comMedium.GetId());
                 if (strCurrentCipher != strCipher)
                 {
                     if (strCipher.isNull())
@@ -225,14 +225,14 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
             }
         }
     }
-    oldGeneralData.m_fEncryptionEnabled = !encryptedMediums.isEmpty();
+    oldGeneralData.m_fEncryptionEnabled = !encryptedMedia.isEmpty();
     oldGeneralData.m_fEncryptionCipherChanged = false;
     oldGeneralData.m_fEncryptionPasswordChanged = false;
     if (fEncryptionCipherCommon)
         oldGeneralData.m_iEncryptionCipherIndex = m_encryptionCiphers.indexOf(strCipher);
     if (oldGeneralData.m_iEncryptionCipherIndex == -1)
         oldGeneralData.m_iEncryptionCipherIndex = 0;
-    oldGeneralData.m_encryptedMediums = encryptedMediums;
+    oldGeneralData.m_encryptedMedia = encryptedMedia;
 
     /* Cache old general data: */
     m_pCache->cacheInitialData(oldGeneralData);
@@ -311,21 +311,21 @@ void UIMachineSettingsGeneral::putToCache()
     newGeneralData.m_fEncryptionPasswordChanged = m_fEncryptionPasswordChanged;
     newGeneralData.m_iEncryptionCipherIndex = m_pComboCipher->currentIndex();
     newGeneralData.m_strEncryptionPassword = m_pEditorEncryptionPassword->text();
-    newGeneralData.m_encryptedMediums = m_pCache->base().m_encryptedMediums;
+    newGeneralData.m_encryptedMedia = m_pCache->base().m_encryptedMedia;
     /* If encryption status, cipher or password is changed: */
     if (newGeneralData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled ||
         newGeneralData.m_fEncryptionCipherChanged != m_pCache->base().m_fEncryptionCipherChanged ||
         newGeneralData.m_fEncryptionPasswordChanged != m_pCache->base().m_fEncryptionPasswordChanged)
     {
         /* Ask for the disk encryption passwords if necessary: */
-        if (!m_pCache->base().m_encryptedMediums.isEmpty())
+        if (!m_pCache->base().m_encryptedMedia.isEmpty())
         {
             /* Create corresponding dialog: */
             QWidget *pDlgParent = windowManager().realParentWindow(window());
             QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
                  new UIAddDiskEncryptionPasswordDialog(pDlgParent,
                                                        newGeneralData.m_strName,
-                                                       newGeneralData.m_encryptedMediums);
+                                                       newGeneralData.m_encryptedMedia);
             /* Execute it and acquire the result: */
             if (pDlg->exec() == QDialog::Accepted)
                 newGeneralData.m_encryptionPasswords = pDlg->encryptionPasswords();
@@ -900,8 +900,8 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                                                strMachineName : QString();
                         }
 
-                        /* Get the maps of encrypted mediums and their passwords: */
-                        const EncryptedMediumMap &encryptedMedium = newGeneralData.m_encryptedMediums;
+                        /* Get the maps of encrypted media and their passwords: */
+                        const EncryptedMediumMap &encryptedMedium = newGeneralData.m_encryptedMedia;
                         const EncryptionPasswordMap &encryptionPasswords = newGeneralData.m_encryptionPasswords;
 
                         /* Check if old password exists/provided: */

@@ -86,7 +86,7 @@ private:
     QIcon m_icon;
 
     /** Holds the amount of immutable attachments. */
-    int  m_cImmutableMediums;
+    int  m_cImmutableMedia;
 
     /** Holds the icon label instance. */
     QLabel *m_pLabelIcon;

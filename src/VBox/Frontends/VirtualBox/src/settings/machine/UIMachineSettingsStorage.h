@@ -703,7 +703,7 @@ private slots:
     void sltChooseExistingMedium();
     /** Mounts existing host-drive. */
     void sltChooseHostDrive();
-    /** Mounts one of recent mediums. */
+    /** Mounts one of recent media. */
     void sltChooseRecentMedium();
 
     /** Updates action states. */

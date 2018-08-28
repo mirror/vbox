@@ -2079,7 +2079,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("RefreshMediums");
+        return QString("RefreshMedia");
     }
 
     /** Returns default shortcut. */

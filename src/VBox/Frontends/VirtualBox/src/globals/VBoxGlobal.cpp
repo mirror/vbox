@@ -2439,12 +2439,12 @@ void VBoxGlobal::startMediumEnumeration()
     {
         /* Redirect request to medium-enumerator: */
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->enumerateMediums();
+            m_pMediumEnumerator->enumerateMedia();
         m_meCleanupProtectionToken.unlock();
     }
 }
 
-void VBoxGlobal::refreshMediums()
+void VBoxGlobal::refreshMedia()
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(m_fValid);
@@ -2468,7 +2468,7 @@ void VBoxGlobal::refreshMediums()
 
     /* We assume it's safe to call it without locking,
      * since we are performing blocking operation here. */
-    m_pMediumEnumerator->refreshMediums();
+    m_pMediumEnumerator->refreshMedia();
 }
 
 bool VBoxGlobal::isMediumEnumerationInProgress() const
@@ -2497,11 +2497,11 @@ QList<QString> VBoxGlobal::mediumIDs() const
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Redirect call to medium-enumerator: */
-        QList<QString> listOfMediums;
+        QList<QString> listOfMedia;
         if (m_pMediumEnumerator)
-            listOfMediums = m_pMediumEnumerator->mediumIDs();
+            listOfMedia = m_pMediumEnumerator->mediumIDs();
         m_meCleanupProtectionToken.unlock();
-        return listOfMediums;
+        return listOfMedia;
     }
     return QList<QString>();
 }
@@ -2781,15 +2781,15 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     menu.addSeparator();
 
     /* Get existing-host-drive vector: */
-    CMediumVector comMediums;
+    CMediumVector comMedia;
     switch (enmMediumType)
     {
-        case UIMediumType_DVD:    comMediums = host().GetDVDDrives(); break;
-        case UIMediumType_Floppy: comMediums = host().GetFloppyDrives(); break;
+        case UIMediumType_DVD:    comMedia = host().GetDVDDrives(); break;
+        case UIMediumType_Floppy: comMedia = host().GetFloppyDrives(); break;
         default: break;
     }
     /* Prepare choose-existing-host-drive actions: */
-    foreach (const CMedium &comMedium, comMediums)
+    foreach (const CMedium &comMedium, comMedia)
     {
         /* Make sure host-drive usage is unique: */
         bool fIsHostDriveUsed = false;
@@ -3082,7 +3082,7 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
     UIMedium guiMedium = medium(strMediumID);
     if (!comMedium.isNull() && guiMedium.isNull())
     {
-        /* UI medium may be new and not among our mediums, request enumeration: */
+        /* UI medium may be new and not among our media, request enumeration: */
         startMediumEnumeration();
 
         /* Search for corresponding UI medium again: */
@@ -3710,7 +3710,7 @@ void VBoxGlobal::retranslateUi()
 
     /* Re-enumerate uimedium since they contain some translations too: */
     if (m_fValid)
-        refreshMediums();
+        refreshMedia();
 
 #ifdef VBOX_WS_X11
     // WORKAROUND:

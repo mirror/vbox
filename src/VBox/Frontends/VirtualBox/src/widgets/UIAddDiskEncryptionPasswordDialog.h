@@ -47,8 +47,8 @@ public:
 
     /** Constructs dialog passing @a pParent to the base-class.
       * @param  strMachineName    Brings the name of the machine we show this dialog for.
-      * @param  encryptedMediums  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
-    UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const QString &strMachineName, const EncryptedMediumMap &encryptedMediums);
+      * @param  encryptedMedia  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
+    UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const QString &strMachineName, const EncryptedMediumMap &encryptedMedia);
 
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataTable instance. */
@@ -81,7 +81,7 @@ private:
     const QString  m_strMachineName;
 
     /** Holds the encrypted medium map reference. */
-    const EncryptedMediumMap &m_encryptedMediums;
+    const EncryptedMediumMap &m_encryptedMedia;
 
     /** Holds the description label instance. */
     QLabel                *m_pLabelDescription;

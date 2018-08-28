@@ -623,7 +623,7 @@ void UIMediumSelector::repopulateTreeWidget()
         return;
     /* Cache the currently selected items: */
     QList<QTreeWidgetItem*> selectedItems = m_pTreeWidget->selectedItems();
-    QStringList selectedMediums = selectedMediumIds();
+    QStringList selectedMedia = selectedMediumIds();
     /* uuid list of selected items: */
     /* Reset the related data structure: */
     m_mediumItemList.clear();
@@ -666,7 +666,7 @@ void UIMediumSelector::repopulateTreeWidget()
             menuItemVector.push_back(treeItem);
         }
     }
-    restoreSelection(selectedMediums, menuItemVector);
+    restoreSelection(selectedMedia, menuItemVector);
     saveDefaultForeground();
     updateOkButton();
     if (m_pAttachedSubTreeRoot)

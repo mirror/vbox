@@ -325,7 +325,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
 
 void UISelectorWindow::sltHandleMediumEnumerationFinish()
 {
-    /* We try to warn about inaccessible mediums only once
+    /* We try to warn about inaccessible media only once
      * (after media emumeration started from main() at startup),
      * to avoid annoying the user: */
     if (m_fWarningAboutInaccessibleMediaShown)

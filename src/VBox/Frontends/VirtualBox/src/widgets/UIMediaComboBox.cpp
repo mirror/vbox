@@ -111,12 +111,12 @@ void UIMediaComboBox::sltHandleMediumCreated(const QString &strMediumId)
     /* Search for corresponding medium: */
     UIMedium guiMedium = vboxGlobal().medium(strMediumId);
 
-    /* Ignore mediums (and their children) which are
+    /* Ignore media (and their children) which are
      * marked as hidden or attached to hidden machines only: */
     if (UIMedium::isMediumAttachedToHiddenMachinesOnly(guiMedium))
         return;
 
-    /* Add only 1. NULL medium and 2. mediums of required type: */
+    /* Add only 1. NULL medium and 2. media of required type: */
     if (!guiMedium.isNull() && guiMedium.type() != m_enmMediaType)
         return;
 
@@ -140,7 +140,7 @@ void UIMediaComboBox::sltHandleMediumEnumerated(const QString &strMediumId)
     /* Search for corresponding medium: */
     UIMedium guiMedium = vboxGlobal().medium(strMediumId);
 
-    /* Add only 1. NULL medium and 2. mediums of required type: */
+    /* Add only 1. NULL medium and 2. media of required type: */
     if (!guiMedium.isNull() && guiMedium.type() != m_enmMediaType)
         return;
 

@@ -387,11 +387,11 @@ void UIMediumManagerWidget::sltHandleMediumCreated(const QString &strMediumID)
     /* Search for corresponding medium: */
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
-    /* Ignore non-interesting mediums: */
+    /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
         return;
 
-    /* Ignore mediums (and their children) which are
+    /* Ignore media (and their children) which are
      * marked as hidden or attached to hidden machines only: */
     if (UIMedium::isMediumAttachedToHiddenMachinesOnly(medium))
         return;
@@ -463,11 +463,11 @@ void UIMediumManagerWidget::sltHandleMediumEnumerated(const QString &strMediumID
     /* Search for corresponding medium: */
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
-    /* Ignore non-interesting mediums: */
+    /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
         return;
 
-    /* Ignore mediums (and their children) which are
+    /* Ignore media (and their children) which are
      * marked as hidden or attached to hidden machines only: */
     if (UIMedium::isMediumAttachedToHiddenMachinesOnly(medium))
         return;
