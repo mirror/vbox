@@ -294,7 +294,8 @@ public:
         kCollectionFormat_csv,              /**< Comma-separated list. */
         kCollectionFormat_ssv,              /**< Space-separated list. */
         kCollectionFormat_tsv,              /**< Tab-separated list. */
-        kCollectionFormat_pipes             /**< Pipe-separated list. */
+        kCollectionFormat_pipes,            /**< Pipe-separated list. */
+        kCollectionFormat_Mask = 7          /**< Collection type mask. */
     };
 
     /**
@@ -327,12 +328,20 @@ public:
      * @param   a_fFlags    kCollectionFormat_xxx.
      */
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                                  uint32_t a_fFlags = kCollectionFormat_Unspecified);
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified);
 
     /**
      * Returns the object type name.
      */
     virtual const char *getType(void) = 0;
+
+    /**
+     * Factory method.
+     * @returns Pointer to new object on success, NULL if out of memory.
+     */
+    typedef DECLCALLBACK(RTCRestObjectBase *) FNCREATEINSTANCE(void);
+    /** Pointer to factory method. */
+    typedef FNCREATEINSTANCE *PFNCREATEINSTANCE;
 };
 
 
@@ -361,6 +370,9 @@ public:
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
 
 public:
     /** The value. */
@@ -394,6 +406,9 @@ public:
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
 public:
     /** The value. */
     int64_t m_iValue;
@@ -425,6 +440,9 @@ public:
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
 
 public:
     /** The value. */
@@ -458,6 +476,9 @@ public:
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
 public:
     /** The value. */
     int16_t m_iValue;
@@ -490,6 +511,9 @@ public:
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
 
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
 public:
     /** The value. */
     double m_rdValue;
@@ -521,52 +545,113 @@ public:
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
 };
 
 
 /**
  * Limited array class.
  */
-template<class Type> class RTCRestArray : public RTCRestObjectBase
+template<class ElementType> class RTCRestArray : public RTCRestObjectBase
 {
 public:
     RTCRestArray() {};
     ~RTCRestArray() {};
 /** @todo more later. */
 
-    virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual void resetToDefault() RT_OVERRIDE
+    {
+    }
+
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE
+    {
+        RT_NOREF(a_rDst);
+        return a_rDst;
+    }
+
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
     {
         RT_NOREF(a_rCursor);
         return VERR_NOT_IMPLEMENTED;
     }
+
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE
+    {
+        RT_NOREF(a_rValue, a_pszName, a_pErrInfo, a_fFlags);
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    virtual const char *getType(void) RT_OVERRIDE
+    {
+        return "RTCRestArray<ElementType>";
+    }
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
+    {
+        return new RTCRestArray<ElementType>();
+    }
+
+    /** Factory method for elements. */
+    static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void)
+    {
+        return new ElementType();
+    }
 };
 
 
 /**
  * Limited map class.
  */
-template<class Type> class RTCRestStringMap : public RTCRestObjectBase
+template<class ElementType> class RTCRestStringMap : public RTCRestObjectBase
 {
 public:
     RTCRestStringMap() {};
     ~RTCRestStringMap() {};
 /** @todo more later. */
 
-    virtual void resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual void resetToDefault() RT_OVERRIDE
+    {
+    }
+
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE
+    {
+        RT_NOREF(a_rDst);
+        return a_rDst;
+    }
+
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
     {
         RT_NOREF(a_rCursor);
         return VERR_NOT_IMPLEMENTED;
     }
+
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE
+    {
+        RT_NOREF(a_rValue, a_pszName, a_pErrInfo, a_fFlags);
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    virtual const char *getType(void) RT_OVERRIDE
+    {
+        return "RTCRestStringMap<ElementType>";
+    }
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
+    {
+        return new RTCRestStringMap<ElementType>();
+    }
+
+    /** Factory method for elements. */
+    static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void)
+    {
+        return new ElementType();
+    }
 };
 
 
@@ -742,7 +827,41 @@ protected:
      * @param   a_pszFormat The message format string.
      * @param   ...         Message arguments.
      */
-    int         addError(int a_rc, const char *a_pszFormat, ...);
+    int addError(int a_rc, const char *a_pszFormat, ...);
+
+    /** Field flags. */
+    enum
+    {
+        /** Collection map, name is a prefix followed by '*'. */
+        kHdrField_MapCollection   = RT_BIT_32(24),
+        /** Array collection, i.e. the heade field may appear more than once. */
+        kHdrField_ArrayCollection = RT_BIT_32(25),
+    };
+
+    /** Header field descriptor. */
+    typedef struct
+    {
+        /** The header field name. */
+        const char *pszName;
+        /** The length of the field name.*/
+        uint32_t    cchName;
+        /** Flags, TBD. */
+        uint32_t    fFlags;
+        /** Object factory. */
+        RTCRestObjectBase::PFNCREATEINSTANCE pfnCreateInstance;
+    } HEADERFIELDDESC;
+
+    /**
+     * Helper that extracts fields from the HTTP headers.
+     *
+     * @param   a_paFieldsDesc      Pointer to an array of field descriptors.
+     * @param   a_pappFieldValues   Pointer to a parallel array of value pointer pointers.
+     * @param   a_cFields           Number of field descriptors..
+     * @param   a_pchData           The header blob to search.
+     * @param   a_cbData            The size of the header blob to search.
+     */
+    void extracHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs, RTCRestObjectBase ***a_pappFieldValues,
+                                    size_t a_cFields, const char *a_pchData, size_t a_cbData);
 
     /**
      * Helper that extracts a header field.

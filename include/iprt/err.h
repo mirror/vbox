@@ -3213,6 +3213,8 @@ RT_C_DECLS_END
 #define VERR_REST_RESPONSE_INVALID_UTF8_ENCODING        (-25701)
 /** Server response contains embedded zero character(s). */
 #define VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR           (-25702)
+/** Server response contains unexpected repetitive header field. */
+#define VERR_REST_RESPONSE_REPEAT_HEADER_FIELD          (-25703)
 /** @} */
 
 /* SED-END */

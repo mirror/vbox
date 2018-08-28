@@ -100,6 +100,13 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
 *   RTCRestBool implementation                                                                                                   *
 *********************************************************************************************************************************/
 
+/** Factory method. */
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBool::createInstance(void)
+{
+    return new (std::nothrow) RTCRestBool();
+}
+
+
 /** Default destructor. */
 RTCRestBool::RTCRestBool()
     : m_fValue(false)
@@ -205,9 +212,17 @@ const char *RTCRestBool::getType()
 }
 
 
+
 /*********************************************************************************************************************************
 *   RTCRestInt64 implementation                                                                                                  *
 *********************************************************************************************************************************/
+
+/** Factory method. */
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt64::createInstance(void)
+{
+    return new (std::nothrow) RTCRestInt64();
+}
+
 
 /** Default destructor. */
 RTCRestInt64::RTCRestInt64()
@@ -311,6 +326,13 @@ const char *RTCRestInt64::getType()
 /*********************************************************************************************************************************
 *   RTCRestInt32 implementation                                                                                                  *
 *********************************************************************************************************************************/
+
+/** Factory method. */
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt32::createInstance(void)
+{
+    return new (std::nothrow) RTCRestInt32();
+}
+
 
 /** Default destructor. */
 RTCRestInt32::RTCRestInt32()
@@ -421,6 +443,13 @@ const char *RTCRestInt32::getType()
 *   RTCRestInt16 implementation                                                                                                  *
 *********************************************************************************************************************************/
 
+/** Factory method. */
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt16::createInstance(void)
+{
+    return new (std::nothrow) RTCRestInt16();
+}
+
+
 /** Default destructor. */
 RTCRestInt16::RTCRestInt16()
     : m_iValue(0)
@@ -530,6 +559,12 @@ const char *RTCRestInt16::getType()
 *   RTCRestDouble implementation                                                                                                 *
 *********************************************************************************************************************************/
 
+/** Factory method. */
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDouble::createInstance(void)
+{
+    return new (std::nothrow) RTCRestDouble();
+}
+
 /** Default destructor. */
 RTCRestDouble::RTCRestDouble()
     : m_rdValue(0.0)
@@ -632,6 +667,13 @@ const char *RTCRestDouble::getType()
 /*********************************************************************************************************************************
 *   RTCRestString implementation                                                                                                 *
 *********************************************************************************************************************************/
+
+/** Factory method. */
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestString::createInstance(void)
+{
+    return new (std::nothrow) RTCRestString();
+}
+
 
 /** Default destructor. */
 RTCRestString::RTCRestString()

@@ -180,6 +180,123 @@ int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
 }
 
 
+void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs,
+                                                           RTCRestObjectBase ***a_pappFieldValues,
+                                                           size_t a_cFields, const char *a_pchData, size_t a_cbData)
+
+{
+    RTCString strValue; /* (Keep it out here to encourage buffer allocation reuse and default construction call.) */
+
+    /*
+     * Work our way through the header blob.
+     */
+    while (a_cbData >= 2)
+    {
+        /*
+         * Determine length of the header name:value combo.
+         * Note! Multi-line field values are not currently supported.
+         */
+        const char *pchEol = (const char *)memchr(a_pchData, '\n', a_cbData);
+        while (pchEol && (pchEol == a_pchData || pchEol[-1] != '\r'))
+            pchEol = (const char *)memchr(pchEol, '\n', a_cbData - (pchEol - a_pchData));
+
+        size_t const cchField       = pchEol ? pchEol - a_pchData + 1 : a_cbData;
+        size_t const cchFieldNoCrLf = pchEol ? pchEol - a_pchData - 1 : a_cbData;
+
+        const char *pchColon = (const char *)memchr(a_pchData, ':', cchFieldNoCrLf);
+        Assert(pchColon);
+        if (pchColon)
+        {
+            size_t const cchName  = pchColon - a_pchData;
+            size_t const offValue = cchName + (RT_C_IS_BLANK(pchColon[1]) ? 2 : 1);
+            size_t const cchValue = cchFieldNoCrLf - offValue;
+
+            /*
+             * Match headers.
+             */
+            bool fHaveValue = false;
+            for (size_t i = 0; i < a_cFields; i++)
+            {
+                size_t const cchThisName = a_paFieldDescs[i].cchName;
+                if (  !(a_paFieldDescs[i].fFlags & kHdrField_MapCollection)
+                    ?    cchThisName == cchName
+                      && RTStrNICmpAscii(a_pchData, a_paFieldDescs[i].pszName, cchThisName) == 0
+                    :    cchThisName <= cchName
+                      && RTStrNICmpAscii(a_pchData, a_paFieldDescs[i].pszName, cchThisName - 1) == 0)
+                {
+                    /* Get and clean the value. */
+                    int rc = VINF_SUCCESS;
+                    if (!fHaveValue)
+                    {
+                        rc = strValue.assignNoThrow(&a_pchData[offValue], cchValue);
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTStrPurgeEncoding(strValue.mutableRaw()); /** @todo this is probably a little wrong... */
+                            fHaveValue = true;
+                        }
+                        else
+                        {
+                            addError(rc, "Error allocating %u bytes for header field %s", a_paFieldDescs[i].pszName);
+                            break;
+                        }
+                    }
+
+                    /*
+                     * Create field to deserialize.
+                     */
+                    RTCRestObjectBase *pObj = NULL;
+                    if (!(a_paFieldDescs[i].fFlags & (kHdrField_MapCollection | kHdrField_ArrayCollection)))
+                    {
+                        /* Only once. */
+                        if (!*a_pappFieldValues[i])
+                        {
+                            pObj = a_paFieldDescs[i].pfnCreateInstance();
+                            if (pObj)
+                                *a_pappFieldValues[i] = pObj;
+                            else
+                            {
+                                addError(VERR_NO_MEMORY, "out of memory");
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            addError(VERR_REST_RESPONSE_REPEAT_HEADER_FIELD, "Already saw header field '%s'", a_paFieldDescs[i].pszName);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        Assert(a_paFieldDescs[i].pszName[cchThisName - 1] == '*');
+                        AssertMsgFailed(("impl field collections"));
+                        continue;
+                    }
+
+                    /*
+                     * Deserialize it.
+                     */
+                    RTERRINFOSTATIC ErrInfo;
+                    rc = pObj->fromString(strValue, a_paFieldDescs[i].pszName, RTErrInfoInitStatic(&ErrInfo),
+                                          a_paFieldDescs[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask);
+                    if (RT_SUCCESS(rc))
+                    { /* likely */ }
+                    else if (RTErrInfoIsSet(&ErrInfo.Core))
+                        addError(rc, "Error %Rrc parsing header field '%s': %s",
+                                 rc, a_paFieldDescs[i].pszName, ErrInfo.Core.pszMsg);
+                    else
+                        addError(rc, "Error %Rrc parsing header field '%s'", rc, a_paFieldDescs[i].pszName);
+                }
+            }
+        }
+
+        /*
+         * Advance to the next field.
+         */
+        a_cbData  -= cchField;
+        a_pchData += cchField;
+    }
+}
+
 int RTCRestClientResponseBase::extractHeaderFromBlob(const char *a_pszField, size_t a_cchField,
                                                      const char *a_pchData, size_t a_cbData,
                                                      RTCString *a_pStrDst)
