@@ -368,18 +368,17 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium, QITre
             /* Try to create parent medium-item: */
             else
                 pParentMediumItem = createHardDiskItem(parentMedium, pParent);
-            /* If parent medium-item was found: */
-            if (pParentMediumItem)
-            {
-                pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
-                LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
-            }
-            else
-                AssertMsgFailed(("Parent medium with ID={%s} could not be created!\n", medium.parentID().toUtf8().constData()));
-
         }
+        if (pParentMediumItem)
+        {
+            pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
+            LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+        }
+        else
+            AssertMsgFailed(("Parent medium with ID={%s} could not be created!\n", medium.parentID().toUtf8().constData()));
     }
-    /* Else just create item as top-level one: */
+
+    /* No parents, thus just create item as top-level one: */
     else
     {
         pMediumItem = new UIMediumItemHD(medium, pParent);
@@ -635,7 +634,7 @@ void UIMediumSelector::repopulateTreeWidget()
     foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
     {
         UIMedium medium = vboxGlobal().medium(strMediumID);
-
+        //printf("name %s\n", qPrintable(medium.name()));
         if (medium.type() == m_enmMediumType)
         {
             bool isMediumAttached = !(medium.medium().GetMachineIds().isEmpty());
