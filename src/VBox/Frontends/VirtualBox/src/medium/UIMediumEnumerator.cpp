@@ -144,11 +144,11 @@ void UIMediumEnumerator::enumerateMedia()
      * While composing we are using data from already existing media. */
     UIMediumMap media;
     addNullMediumToMap(media);
-    addHardDisksToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
-    addMediaToMap(vboxGlobal().host().GetDVDDrives(), media, UIMediumType_DVD);
-    addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media, UIMediumType_DVD);
-    addMediaToMap(vboxGlobal().host().GetFloppyDrives(), media, UIMediumType_Floppy);
-    addMediaToMap(vboxGlobal().virtualBox().GetFloppyImages(), media, UIMediumType_Floppy);
+    addMediaToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
+    addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
+    addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
+    addMediaToMap(vboxGlobal().host().GetFloppyDrives(), media);
+    addMediaToMap(vboxGlobal().virtualBox().GetFloppyImages(), media);
     if (VBoxGlobal::isCleaningUp())
         return; /* VBoxGlobal is cleaning up, abort immediately. */
     m_media = media;
@@ -377,7 +377,7 @@ void UIMediumEnumerator::addNullMediumToMap(UIMediumMap &media)
     media.insert(strNullMediumID, uimedium);
 }
 
-void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia, UIMediumType mediumType)
+void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia)
 {
     /* Insert hard-disks to the passed uimedium map.
      * Get existing one from the previous map if any. */
@@ -390,33 +390,13 @@ void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMedium
         /* Prepare uimedium on the basis of current medium: */
         QString strMediumID = medium.GetId();
         UIMedium uimedium = m_media.contains(strMediumID) ? m_media[strMediumID] :
-                                                              UIMedium(medium, mediumType);
-
-        /* Insert uimedium into map: */
-        outputMedia.insert(uimedium.id(), uimedium);
-    }
-}
-
-void UIMediumEnumerator::addHardDisksToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia)
-{
-    /* Insert hard-disks to the passed uimedium map.
-     * Get existing one from the previous map if any. */
-    foreach (CMedium medium, inputMedia)
-    {
-        /* If VBoxGlobal is cleaning up, abort immediately: */
-        if (VBoxGlobal::isCleaningUp())
-            break;
-
-        /* Prepare uimedium on the basis of current medium: */
-        QString strMediumID = medium.GetId();
-        UIMedium uimedium = m_media.contains(strMediumID) ? m_media[strMediumID] :
-                                                              UIMedium(medium, UIMediumType_HardDisk);
+            UIMedium(medium, UIMediumDefs::mediumTypeToLocal(medium.GetDeviceType()));
 
         /* Insert uimedium into map: */
         outputMedia.insert(uimedium.id(), uimedium);
 
         /* Insert medium children into map too: */
-        addHardDisksToMap(medium.GetChildren(), outputMedia);
+        addMediaToMap(medium.GetChildren(), outputMedia);
     }
 }
 

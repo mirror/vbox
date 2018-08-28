@@ -87,8 +87,7 @@ private:
     /* Helpers: Medium-enumeration stuff: */
     void createMediumEnumerationTask(const UIMedium &medium);
     void addNullMediumToMap(UIMediumMap &media);
-    void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia, UIMediumType mediumType);
-    void addHardDisksToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
+    void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
     /* Helpers: Medium re-caching stuff: */
     void calculateCachedUsage(const QString &strMachineID, QStringList &previousUIMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
