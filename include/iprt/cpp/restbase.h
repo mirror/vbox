@@ -835,7 +835,7 @@ protected:
         /** Collection map, name is a prefix followed by '*'. */
         kHdrField_MapCollection   = RT_BIT_32(24),
         /** Array collection, i.e. the heade field may appear more than once. */
-        kHdrField_ArrayCollection = RT_BIT_32(25),
+        kHdrField_ArrayCollection = RT_BIT_32(25)
     };
 
     /** Header field descriptor. */
