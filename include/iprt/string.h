@@ -3157,14 +3157,14 @@ typedef PRTSTRSPACECORE *PPRTSTRSPACECORE;
  */
 typedef struct RTSTRSPACECORE
 {
-    /** Hash key. Don't touch. */
-    uint32_t        Key;
     /** Pointer to the left leaf node. Don't touch. */
     PRTSTRSPACECORE pLeft;
     /** Pointer to the left right node. Don't touch. */
     PRTSTRSPACECORE pRight;
-    /** Pointer to the list of string with the same key. Don't touch. */
+    /** Pointer to the list of string with the same hash key value. Don't touch. */
     PRTSTRSPACECORE pList;
+    /** Hash key. Don't touch. */
+    uint32_t        Key;
     /** Height of this tree: max(heigth(left), heigth(right)) + 1. Don't touch */
     unsigned char   uchHeight;
     /** The string length. Read only! */
