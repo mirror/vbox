@@ -890,7 +890,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             ComPtr<IMedium> pBootableBaseMedium;
             // returns pBootableMedium if there are no diff images
             rc = ptrSourceDisk->COMGETTER(Base)(pBootableBaseMedium.asOutParam());
-            if (FAILED(rc)) 
+            if (FAILED(rc))
                 throw rc;
 
             //Get base bootable disk location
@@ -907,7 +907,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
                 // Locate the Medium object for this entry (by location/path).
                 Log(("Finding disk \"%s\"\n", path.c_str()));
                 rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrSourceDisk);
-                if (FAILED(rc)) 
+                if (FAILED(rc))
                     throw rc;
 
                 if (!path.equalsIgnoreCase(strBootLocation))
@@ -919,7 +919,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             //just in case
             if (vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage).empty())
             {
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("Strange, but nothing to export to OCI after preparation steps"));
             }
 
@@ -937,7 +937,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             LogRel(("Exported image: %s\n", m->m_OciExportData.strBootImageName.c_str()));
 
             if (aLocInfo.strPath.isEmpty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: Cloud user profile wasn't found"));
 
             m->m_OciExportData.strProfileName = aLocInfo.strPath;
@@ -947,7 +947,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> shapeId =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIInstanceShape);
             if (shapeId.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: Shape of instance wasn't found"));
 
             m->m_OciExportData.strInstanceShapeId = shapeId.front()->strVBoxCurrent;
@@ -956,7 +956,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> domainName =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIDomain);
             if (domainName.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: Available domain wasn't found"));
 
             m->m_OciExportData.strDomainName = domainName.front()->strVBoxCurrent;
@@ -965,7 +965,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> bootDiskSize =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIBootDiskSize);
             if (bootDiskSize.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: Boot disk size wasn't found"));
 
             m->m_OciExportData.strBootDiskSize = bootDiskSize.front()->strVBoxCurrent;
@@ -974,7 +974,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> bucketId =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIBucket);
             if (bucketId.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: Bucket wasn't found"));
 
             m->m_OciExportData.strBucketId = bucketId.front()->strVBoxCurrent;
@@ -983,7 +983,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> vcn =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIVCN);
             if (vcn.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: VCN wasn't found"));
 
             m->m_OciExportData.strVCN = vcn.front()->strVBoxCurrent;
@@ -992,7 +992,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> publicIP =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIPublicIP);
             if (publicIP.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                     tr("OCI: Public IP setting wasn't found"));
 
             m->m_OciExportData.fPublicIP = (publicIP.front()->strVBoxCurrent == "true") ? true : false;
