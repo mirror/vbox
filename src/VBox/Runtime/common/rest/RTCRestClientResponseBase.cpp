@@ -39,6 +39,8 @@
  */
 RTCRestClientResponseBase::RTCRestClientResponseBase()
     : m_rcStatus(VERR_WRONG_ORDER)
+    , m_rcHttp(VERR_NOT_AVAILABLE)
+    , m_pErrInfo(NULL)
 {
 }
 
@@ -48,7 +50,7 @@ RTCRestClientResponseBase::RTCRestClientResponseBase()
  */
 RTCRestClientResponseBase::~RTCRestClientResponseBase()
 {
-    /* nothing to do here */
+    deleteErrInfo();
 }
 
 
@@ -57,7 +59,12 @@ RTCRestClientResponseBase::~RTCRestClientResponseBase()
  */
 RTCRestClientResponseBase::RTCRestClientResponseBase(RTCRestClientResponseBase const &a_rThat)
     : m_rcStatus(a_rThat.m_rcStatus)
+    , m_rcHttp(a_rThat.m_rcHttp)
+    , m_strContentType(a_rThat.m_strContentType)
+    , m_pErrInfo(NULL)
 {
+    if (m_pErrInfo)
+        copyErrInfo(m_pErrInfo);
 }
 
 
@@ -66,7 +73,14 @@ RTCRestClientResponseBase::RTCRestClientResponseBase(RTCRestClientResponseBase c
  */
 RTCRestClientResponseBase &RTCRestClientResponseBase::operator=(RTCRestClientResponseBase const &a_rThat)
 {
-    m_rcStatus = a_rThat.m_rcStatus;
+    m_rcStatus       = a_rThat.m_rcStatus;
+    m_rcHttp         = a_rThat.m_rcHttp;
+    m_strContentType = a_rThat.m_strContentType;
+    if (a_rThat.m_pErrInfo)
+        copyErrInfo(a_rThat.m_pErrInfo);
+    else if (m_pErrInfo)
+        deleteErrInfo();
+
     return *this;
 }
 
@@ -82,12 +96,20 @@ void RTCRestClientResponseBase::receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
 {
     RT_NOREF_PV(a_hHttp);
     m_rcStatus = a_rcStatus;
+    if (a_rcStatus >= 0)
+        m_rcHttp = a_rcStatus;
 }
 
 
 void RTCRestClientResponseBase::consumeHeaders(const char *a_pchData, size_t a_cbData)
 {
-    RT_NOREF(a_pchData, a_cbData);
+    /*
+     * Get the the content type.
+     */
+    int rc = extractHeaderFromBlob(RT_STR_TUPLE("Content-Type"), a_pchData, a_cbData, &m_strContentType);
+    if (rc == VERR_NOT_FOUND)
+        rc = VINF_SUCCESS;
+    AssertRCReturnVoidStmt(rc, m_rcStatus = rc);
 }
 
 
@@ -99,6 +121,39 @@ void RTCRestClientResponseBase::consumeBody(const char *a_pchData, size_t a_cbDa
 
 void RTCRestClientResponseBase::receiveFinal()
 {
+}
+
+
+PRTERRINFO RTCRestClientResponseBase::allocErrInfo(void)
+{
+    size_t cbMsg = _4K;
+    m_pErrInfo = (PRTERRINFO)RTMemAllocZ(sizeof(*m_pErrInfo) + cbMsg);
+    if (m_pErrInfo)
+        return RTErrInfoInit(m_pErrInfo, (char *)(m_pErrInfo + 1), cbMsg);
+    return NULL;
+}
+
+
+void RTCRestClientResponseBase::deleteErrInfo(void)
+{
+    if (m_pErrInfo)
+    {
+        RTMemFree(m_pErrInfo);
+        m_pErrInfo = NULL;
+    }
+}
+
+
+void RTCRestClientResponseBase::copyErrInfo(PCRTERRINFO pErrInfo)
+{
+    deleteErrInfo();
+    m_pErrInfo = (PRTERRINFO)RTMemDup(pErrInfo, pErrInfo->cbMsg + sizeof(*pErrInfo));
+    if (m_pErrInfo)
+    {
+        m_pErrInfo->pszMsg = (char *)(m_pErrInfo + 1);
+        m_pErrInfo->apvReserved[0] = NULL;
+        m_pErrInfo->apvReserved[1] = NULL;
+    }
 }
 
 

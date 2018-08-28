@@ -700,9 +700,25 @@ public:
      */
     int getStatus() { return m_rcStatus; }
 
+    /**
+     * Getter for m_rcHttp.
+     * @returns HTTP status code or VERR_NOT_AVAILABLE.
+     */
+    int getHttpStatus() { return m_rcHttp; }
+
 protected:
     /** Negative numbers are IPRT errors, positive are HTTP status codes. */
     int m_rcStatus;
+    /** The HTTP status code, VERR_NOT_AVAILABLE if not set. */
+    int m_rcHttp;
+    /** Error information. */
+    PRTERRINFO m_pErrInfo;
+    /** The value of the Content-Type header field. */
+    RTCString m_strContentType;
+
+    PRTERRINFO  allocErrInfo(void);
+    void        deleteErrInfo(void);
+    void        copyErrInfo(PCRTERRINFO pErrInfo);
 
     /**
      * Helper that extracts a header field.
