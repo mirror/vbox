@@ -3193,7 +3193,6 @@ RT_C_DECLS_END
 #define VERR_ISOFS_IPE_4                                (-25394)
 /** Internal processing error \#5.  */
 #define VERR_ISOFS_IPE_5                                (-25395)
-
 /** @} */
 
 
@@ -3203,7 +3202,17 @@ RT_C_DECLS_END
 #define VERR_SERIALPORT_BREAK_DETECTED                  (-25500)
 /** The chosen baudrate is invalid or not supported by the given serial port. */
 #define VERR_SERIALPORT_INVALID_BAUDRATE                (-25501)
+/** @} */
 
+
+/** @name RTCRest status codes
+ * @{ */
+/** Do not know how to handle the content type in the server response. */
+#define VERR_REST_RESPONSE_CONTENT_TYPE_NOT_SUPPORTED   (-25700)
+/** Invalid UTF-8 encoding in the response. */
+#define VERR_REST_RESPONSE_INVALID_UTF8_ENCODING        (-25701)
+/** Server response contains embedded zero character(s). */
+#define VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR           (-25702)
 /** @} */
 
 /* SED-END */

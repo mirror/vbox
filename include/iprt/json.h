@@ -87,6 +87,12 @@ typedef RTJSONIT *PRTJSONIT;
  * @param   pbBuf           The byte buffer containing the JSON document.
  * @param   cbBuf           Size of the buffer.
  * @param   pErrInfo        Where to store extended error info. Optional.
+ *
+ * @todo    r=bird: The use of uint8_t makes no sense here since the parser
+ *          expects ASCII / UTF-8.  What's more, if this is a real buffer the
+ *          type should be 'const void *' rather than 'const uint8_t *'.
+ *          This function should be modified to reflect that it's really for
+ *          handling unterminated strings.
  */
 RTDECL(int) RTJsonParseFromBuf(PRTJSONVAL phJsonVal, const uint8_t *pbBuf, size_t cbBuf, PRTERRINFO pErrInfo);
 

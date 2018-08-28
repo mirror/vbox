@@ -1224,6 +1224,10 @@ RTDECL(int) RTJsonParseFromString(PRTJSONVAL phJsonVal, const char *pszStr, PRTE
     AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
     AssertPtrReturn(pszStr, VERR_INVALID_POINTER);
 
+    /** @todo r=bird: The rtJsonTokenizerParseFromString function does
+     *        strlen() on the whole pszStr for each read.  For larger strings (
+     *        longer than sizeof(Tokenizer.achBuf)) it would be good to join
+     *        forces with RTJsonParseFromBuf. */
     RTJSONTOKENIZER Tokenizer;
     int rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromString, (void *)pszStr);
     if (RT_SUCCESS(rc))

@@ -706,19 +706,43 @@ public:
      */
     int getHttpStatus() { return m_rcHttp; }
 
+    /**
+     * Getter for m_pErrInfo.
+     */
+    PCRTERRINFO  getErrIfno(void) const { return m_pErrInfo; }
+
+    /**
+     * Getter for m_strContentType.
+     */
+    RTCString const &getContentType(void) const { return m_strContentType; }
+
+
 protected:
     /** Negative numbers are IPRT errors, positive are HTTP status codes. */
-    int m_rcStatus;
+    int         m_rcStatus;
     /** The HTTP status code, VERR_NOT_AVAILABLE if not set. */
-    int m_rcHttp;
+    int         m_rcHttp;
     /** Error information. */
-    PRTERRINFO m_pErrInfo;
+    PRTERRINFO  m_pErrInfo;
     /** The value of the Content-Type header field. */
-    RTCString m_strContentType;
+    RTCString   m_strContentType;
 
-    PRTERRINFO  allocErrInfo(void);
+    PRTERRINFO  getErrInfo(void);
     void        deleteErrInfo(void);
     void        copyErrInfo(PCRTERRINFO pErrInfo);
+
+    /**
+     * Reports an error (or warning if a_rc non-negative).
+     *
+     * @returns a_rc
+     * @param   a_rc        The status code to report and return.  The first
+     *                      error status is assigned to m_rcStatus, subsequent
+     *                      ones as well as informational statuses are not
+     *                      recorded by m_rcStatus.
+     * @param   a_pszFormat The message format string.
+     * @param   ...         Message arguments.
+     */
+    int         addError(int a_rc, const char *a_pszFormat, ...);
 
     /**
      * Helper that extracts a header field.
@@ -734,6 +758,27 @@ protected:
      */
     int extractHeaderFromBlob(const char *a_pszField, size_t a_cchField, const char *a_pchData, size_t a_cbData,
                               RTCString *a_pStrDst);
+
+    /**
+     * Helper that does the deserializing of the response body.
+     *
+     * @param   a_pDst      The destination object for the body content.
+     * @param   a_pchData   The body blob.
+     * @param   a_cbData    The size of the body blob.
+     */
+    void deserializeBody(RTCRestObjectBase *a_pDst, const char *a_pchData, size_t a_cbData);
+
+    /**
+     * Primary json cursor for parsing bodies.
+     */
+    class PrimaryJsonCursorForBody : public RTCRestJsonPrimaryCursor
+    {
+    public:
+        RTCRestClientResponseBase *m_pThat; /**< Pointer to response object. */
+        PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName, RTCRestClientResponseBase *a_pThat);
+        virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...) RT_OVERRIDE;
+        virtual int unknownField(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    };
 };
 
 
@@ -820,6 +865,7 @@ protected:
      */
     virtual void doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
                         RTCRestClientResponseBase *a_pResponse);
+
 };
 
 /** @} */

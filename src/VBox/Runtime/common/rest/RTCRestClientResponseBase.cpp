@@ -124,8 +124,10 @@ void RTCRestClientResponseBase::receiveFinal()
 }
 
 
-PRTERRINFO RTCRestClientResponseBase::allocErrInfo(void)
+PRTERRINFO RTCRestClientResponseBase::getErrInfo(void)
 {
+    if (m_pErrInfo)
+        return m_pErrInfo;
     size_t cbMsg = _4K;
     m_pErrInfo = (PRTERRINFO)RTMemAllocZ(sizeof(*m_pErrInfo) + cbMsg);
     if (m_pErrInfo)
@@ -154,6 +156,27 @@ void RTCRestClientResponseBase::copyErrInfo(PCRTERRINFO pErrInfo)
         m_pErrInfo->apvReserved[0] = NULL;
         m_pErrInfo->apvReserved[1] = NULL;
     }
+}
+
+
+int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
+{
+    PRTERRINFO pErrInfo = getErrInfo();
+    if (pErrInfo)
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        if (   !RTErrInfoIsSet(pErrInfo)
+            || pErrInfo->cbMsg == 0
+            || pErrInfo->pszMsg[pErrInfo->cbMsg - 1] == '\n')
+            RTErrInfoAddV(pErrInfo, rc, pszFormat, va);
+        else
+            RTErrInfoAddF(pErrInfo, rc, "\n%N", pszFormat, &va);
+        va_end(va);
+    }
+    if (RT_SUCCESS(m_rcStatus) && RT_FAILURE_NP(rc))
+        m_rcStatus = rc;
+    return rc;
 }
 
 
@@ -197,7 +220,7 @@ int RTCRestClientResponseBase::extractHeaderFromBlob(const char *a_pszField, siz
             /* Return the value. */
             int rc = a_pStrDst->assignNoThrow(a_pchData, cchField);
             if (RT_SUCCESS(rc))
-                RTStrPurgeEncoding(a_pStrDst->mutableRaw());
+                RTStrPurgeEncoding(a_pStrDst->mutableRaw()); /** @todo this is probably a little wrong... */
             return rc;
         }
 
@@ -207,5 +230,72 @@ int RTCRestClientResponseBase::extractHeaderFromBlob(const char *a_pszField, siz
     }
 
     return VERR_NOT_FOUND;
+}
+
+
+
+RTCRestClientResponseBase::PrimaryJsonCursorForBody::PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName,
+                                                                              RTCRestClientResponseBase *a_pThat)
+    : RTCRestJsonPrimaryCursor(hValue, pszName, a_pThat->getErrInfo())
+    , m_pThat(a_pThat)
+{
+}
+
+
+int RTCRestClientResponseBase::PrimaryJsonCursorForBody::addError(RTCRestJsonCursor const &a_rCursor, int a_rc,
+                                                                  const char *a_pszFormat, ...)
+{
+    va_list va;
+    va_start(va, a_pszFormat);
+    char szPath[256];
+    m_pThat->addError(a_rc, "response body/%s: %N", getPath(a_rCursor, szPath, sizeof(szPath)), a_pszFormat, &va);
+    va_end(va);
+    return a_rc;
+}
+
+
+int RTCRestClientResponseBase::PrimaryJsonCursorForBody::unknownField(RTCRestJsonCursor const &a_rCursor)
+{
+    char szPath[256];
+    m_pThat->addError(VWRN_NOT_FOUND, "response body/%s: unknown field (type %s)",
+                      getPath(a_rCursor, szPath, sizeof(szPath)), RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
+    return VWRN_NOT_FOUND;
+}
+
+
+void RTCRestClientResponseBase::deserializeBody(RTCRestObjectBase *a_pDst, const char *a_pchData, size_t a_cbData)
+{
+    if (m_strContentType.startsWith("application/json;"))
+    {
+        int rc = RTStrValidateEncodingEx(a_pchData, a_cbData, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        if (RT_SUCCESS(rc))
+        {
+            RTERRINFOSTATIC ErrInfo;
+            RTJSONVAL hValue;
+            rc = RTJsonParseFromBuf(&hValue, (const uint8_t *)a_pchData, a_cbData, RTErrInfoInitStatic(&ErrInfo));
+            if (RT_SUCCESS(rc))
+            {
+                PrimaryJsonCursorForBody PrimaryCursor(hValue, a_pDst->getType(), this); /* note: consumes hValue */
+                a_pDst->deserializeFromJson(PrimaryCursor.m_Cursor);
+            }
+            else if (RTErrInfoIsSet(&ErrInfo.Core))
+                addError(rc, "Error %Rrc parsing server response as JSON (type %s): %s",
+                         rc, a_pDst->getType(), ErrInfo.Core.pszMsg);
+            else
+                addError(rc, "Error %Rrc parsing server response as JSON (type %s)", rc, a_pDst->getType());
+        }
+        else if (rc == VERR_INVALID_UTF8_ENCODING)
+            addError(VERR_REST_RESPONSE_INVALID_UTF8_ENCODING, "Invalid UTF-8 body encoding (object type %s; Content-Type: %s)",
+                     a_pDst->getType(), m_strContentType.c_str());
+        else if (rc == VERR_BUFFER_UNDERFLOW)
+            addError(VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR, "Embedded zero character in response (object type %s; Content-Type: %s)",
+                     a_pDst->getType(), m_strContentType.c_str());
+        else
+            addError(rc, "Unexpected body validation error (object type %s; Content-Type: %s): %Rrc",
+                     a_pDst->getType(), m_strContentType.c_str(), rc);
+    }
+    else
+        addError(VERR_REST_RESPONSE_CONTENT_TYPE_NOT_SUPPORTED, "Unsupported content type for '%s': %s",
+                 a_pDst->getType(), m_strContentType.c_str());
 }
 
