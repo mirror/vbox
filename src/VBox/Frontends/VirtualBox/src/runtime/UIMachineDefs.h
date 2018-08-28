@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,13 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineDefs_h__
-#define __UIMachineDefs_h__
+#ifndef ___UIMachineDefs_h___
+#define ___UIMachineDefs_h___
 
-/* Global includes */
+/* Other VBox includes: */
 #include <iprt/cdefs.h>
 
-/* Machine elements enum: */
+/** Machine window visual element types. */
 enum UIVisualElement
 {
     UIVisualElement_WindowTitle           = RT_BIT(0),
@@ -39,11 +39,11 @@ enum UIVisualElement
     UIVisualElement_FeaturesStuff         = RT_BIT(12),
 #ifndef VBOX_WS_MAC
     UIVisualElement_MiniToolBar           = RT_BIT(13),
-#endif /* !VBOX_WS_MAC */
+#endif
     UIVisualElement_AllStuff              = 0xFFFF
 };
 
-/* Mouse states enum: */
+/** Mouse state types. */
 enum UIMouseStateType
 {
     UIMouseStateType_MouseCaptured         = RT_BIT(0),
@@ -52,13 +52,12 @@ enum UIMouseStateType
     UIMouseStateType_MouseNeedsHostCursor  = RT_BIT(3)
 };
 
-/* Machine View states enum: */
-enum UIViewStateType
+/** Keyboard state types. */
+enum UIKeyboardStateType
 {
-    UIViewStateType_KeyboardCaptured          = RT_BIT(0),
-    UIViewStateType_HostKeyPressed            = RT_BIT(1),
-    /* A host key combo press has been inserted to the guest but not a release yet. */
-    UIViewStateType_HostKeyPressedInsertion   = RT_BIT(2)
+    UIKeyboardStateType_KeyboardCaptured        = RT_BIT(0),
+    UIKeyboardStateType_HostKeyPressed          = RT_BIT(1),
+    UIKeyboardStateType_HostKeyPressedInsertion = RT_BIT(2)
 };
 
-#endif // __UIMachineDefs_h__
+#endif /* !___UIMachineDefs_h___ */
