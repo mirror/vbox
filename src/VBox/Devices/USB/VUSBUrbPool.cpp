@@ -129,7 +129,7 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
     /* Get the required amount of additional memory to allocate the whole state. */
     size_t cbMem = cbData + sizeof(VUSBURBVUSBINT) + cbHci + cTds * cbHciTd;
 
-    AssertReturn(enmType < RT_ELEMENTS(pUrbPool->aLstFreeUrbs), NULL);
+    AssertReturn((size_t)enmType < RT_ELEMENTS(pUrbPool->aLstFreeUrbs), NULL);
 
     RTCritSectEnter(&pUrbPool->CritSectPool);
     PVUSBURBHDR pHdr = NULL;
@@ -233,7 +233,7 @@ DECLHIDDEN(void) vusbUrbPoolFree(PVUSBURBPOOL pUrbPool, PVUSBURB pUrb)
     {
         /* Put it into the list of free URBs. */
         VUSBXFERTYPE enmType = pUrb->enmType;
-        AssertReturnVoid(enmType < RT_ELEMENTS(pUrbPool->aLstFreeUrbs));
+        AssertReturnVoid((size_t)enmType < RT_ELEMENTS(pUrbPool->aLstFreeUrbs));
         RTCritSectEnter(&pUrbPool->CritSectPool);
         pUrb->enmState = VUSBURBSTATE_FREE;
         RTListAppend(&pUrbPool->aLstFreeUrbs[enmType], &pHdr->NdFree);
