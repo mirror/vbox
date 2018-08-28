@@ -60,8 +60,8 @@ RTCRestClientResponseBase::~RTCRestClientResponseBase()
 RTCRestClientResponseBase::RTCRestClientResponseBase(RTCRestClientResponseBase const &a_rThat)
     : m_rcStatus(a_rThat.m_rcStatus)
     , m_rcHttp(a_rThat.m_rcHttp)
-    , m_strContentType(a_rThat.m_strContentType)
     , m_pErrInfo(NULL)
+    , m_strContentType(a_rThat.m_strContentType)
 {
     if (m_pErrInfo)
         copyErrInfo(m_pErrInfo);
