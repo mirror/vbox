@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -194,13 +194,14 @@ private:
 };
 
 
+/*********************************************************************************************************************************
+*   Class UIChooserItem implementation.                                                                                          *
+*********************************************************************************************************************************/
+
 UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary)
-    : m_fRoot(!pParent)
+    : m_pParent(pParent)
     , m_fTemporary(fTemporary)
-    , m_pParent(pParent)
-    , m_iPreviousMinimumWidthHint(0)
-    , m_iPreviousMinimumHeightHint(0)
-    , m_dragTokenPlace(DragToken_Off)
+    , m_fRoot(!pParent)
     , m_fHovered(false)
     , m_pHighlightMachine(0)
     , m_pForwardAnimation(0)
@@ -209,6 +210,9 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary)
     , m_iDefaultDarkness(100)
     , m_iHighlightDarkness(90)
     , m_iAnimationDarkness(m_iDefaultDarkness)
+    , m_iPreviousMinimumWidthHint(0)
+    , m_iPreviousMinimumHeightHint(0)
+    , m_enmDragTokenPlace(DragToken_Off)
     , m_iDragTokenDarkness(110)
 {
     /* Install Chooser-view item accessibility interface factory: */
@@ -258,42 +262,37 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary)
     }
 }
 
-UIChooserItemGroup* UIChooserItem::toGroupItem()
+UIChooserItemGroup *UIChooserItem::toGroupItem()
 {
     UIChooserItemGroup *pItem = qgraphicsitem_cast<UIChooserItemGroup*>(this);
     AssertMsg(pItem, ("Trying to cast invalid item type to UIChooserItemGroup!"));
     return pItem;
 }
 
-UIChooserItemGlobal* UIChooserItem::toGlobalItem()
+UIChooserItemGlobal *UIChooserItem::toGlobalItem()
 {
     UIChooserItemGlobal *pItem = qgraphicsitem_cast<UIChooserItemGlobal*>(this);
     AssertMsg(pItem, ("Trying to cast invalid item type to UIChooserItemGlobal!"));
     return pItem;
 }
 
-UIChooserItemMachine* UIChooserItem::toMachineItem()
+UIChooserItemMachine *UIChooserItem::toMachineItem()
 {
     UIChooserItemMachine *pItem = qgraphicsitem_cast<UIChooserItemMachine*>(this);
     AssertMsg(pItem, ("Trying to cast invalid item type to UIChooserItemMachine!"));
     return pItem;
 }
 
-UIChooserModel* UIChooserItem::model() const
+UIChooserModel *UIChooserItem::model() const
 {
     UIChooserModel *pModel = qobject_cast<UIChooserModel*>(QIGraphicsWidget::scene()->parent());
     AssertMsg(pModel, ("Incorrect graphics scene parent set!"));
     return pModel;
 }
 
-UIActionPool* UIChooserItem::actionPool() const
+UIActionPool *UIChooserItem::actionPool() const
 {
     return model()->actionPool();
-}
-
-UIChooserItem* UIChooserItem::parentItem() const
-{
-    return m_pParent;
 }
 
 void UIChooserItem::show()
@@ -319,11 +318,6 @@ bool UIChooserItem::isRoot() const
     return m_fRoot;
 }
 
-bool UIChooserItem::isHovered() const
-{
-    return m_fHovered;
-}
-
 void UIChooserItem::setHovered(bool fHovered)
 {
     m_fHovered = fHovered;
@@ -331,6 +325,11 @@ void UIChooserItem::setHovered(bool fHovered)
         emit sigHoverEnter();
     else
         emit sigHoverLeave();
+}
+
+bool UIChooserItem::isHovered() const
+{
+    return m_fHovered;
 }
 
 void UIChooserItem::updateGeometry()
@@ -381,28 +380,22 @@ void UIChooserItem::makeSureItsVisible()
     }
 }
 
-void UIChooserItem::setDragTokenPlace(DragToken where)
+void UIChooserItem::setDragTokenPlace(DragToken enmPlace)
 {
     /* Something changed? */
-    if (m_dragTokenPlace != where)
+    if (m_enmDragTokenPlace != enmPlace)
     {
-        m_dragTokenPlace = where;
+        m_enmDragTokenPlace = enmPlace;
         update();
     }
 }
 
 DragToken UIChooserItem::dragTokenPlace() const
 {
-    return m_dragTokenPlace;
+    return m_enmDragTokenPlace;
 }
 
-
-bool UIChooserItem::isTemporary() const
-{
-    return m_fTemporary;
-}
-
-void UIChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent*)
+void UIChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent *)
 {
     if (!m_fHovered)
     {
@@ -412,7 +405,7 @@ void UIChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent*)
     }
 }
 
-void UIChooserItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
+void UIChooserItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
 {
     if (m_fHovered)
     {
@@ -477,7 +470,7 @@ void UIChooserItem::dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
     pEvent->setAccepted(isDropAllowed(pEvent, dragTokenPlace()));
 }
 
-void UIChooserItem::dragLeaveEvent(QGraphicsSceneDragDropEvent*)
+void UIChooserItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *)
 {
     resetDragToken();
 }
@@ -510,57 +503,6 @@ void UIChooserItem::handleRootStatusChange()
         m_iPreviousMinimumWidthHint = 0;
         m_iPreviousMinimumHeightHint = 0;
     }
-}
-
-/* static */
-void UIChooserItem::configurePainterShape(QPainter *pPainter,
-                                           const QStyleOptionGraphicsItem *pOption,
-                                           int iRadius)
-{
-    /* Rounded corners? */
-    if (iRadius)
-    {
-        /* Setup clipping: */
-        QPainterPath roundedPath;
-        roundedPath.addRoundedRect(pOption->rect, iRadius, iRadius);
-        pPainter->setClipPath(roundedPath);
-    }
-}
-
-/* static */
-void UIChooserItem::paintFrameRect(QPainter *pPainter, const QRect &rect, bool fIsSelected, int iRadius)
-{
-    pPainter->save();
-    QPalette pal = QApplication::palette();
-    QColor base = pal.color(QPalette::Active, fIsSelected ? QPalette::Highlight : QPalette::Window);
-    pPainter->setPen(base.darker(160));
-    if (iRadius)
-        pPainter->drawRoundedRect(rect, iRadius, iRadius);
-    else
-        pPainter->drawRect(rect);
-    pPainter->restore();
-}
-
-/* static */
-void UIChooserItem::paintPixmap(QPainter *pPainter, const QPoint &point, const QPixmap &pixmap)
-{
-    pPainter->drawPixmap(point, pixmap);
-}
-
-/* static */
-void UIChooserItem::paintText(QPainter *pPainter, QPoint point,
-                               const QFont &font, QPaintDevice *pPaintDevice,
-                               const QString &strText)
-{
-    /* Prepare variables: */
-    QFontMetrics fm(font, pPaintDevice);
-    point += QPoint(0, fm.ascent());
-
-    /* Draw text: */
-    pPainter->save();
-    pPainter->setFont(font);
-    pPainter->drawText(point, strText);
-    pPainter->restore();
 }
 
 /* static */
@@ -605,6 +547,62 @@ QString UIChooserItem::compressText(const QFont &font, QPaintDevice *pPaintDevic
     return strText + strEllipsis;
 }
 
+/* static */
+void UIChooserItem::configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius)
+{
+    /* Rounded corners? */
+    if (iRadius)
+    {
+        /* Setup clipping: */
+        QPainterPath roundedPath;
+        roundedPath.addRoundedRect(pOption->rect, iRadius, iRadius);
+        pPainter->setClipPath(roundedPath);
+    }
+}
+
+/* static */
+void UIChooserItem::paintFrameRect(QPainter *pPainter, bool fIsSelected, int iRadius,
+                                   const QRect &rectangle)
+{
+    pPainter->save();
+    QPalette pal = QApplication::palette();
+    QColor base = pal.color(QPalette::Active, fIsSelected ? QPalette::Highlight : QPalette::Window);
+    pPainter->setPen(base.darker(160));
+    if (iRadius)
+        pPainter->drawRoundedRect(rectangle, iRadius, iRadius);
+    else
+        pPainter->drawRect(rectangle);
+    pPainter->restore();
+}
+
+/* static */
+void UIChooserItem::paintPixmap(QPainter *pPainter, const QPoint &point,
+                                const QPixmap &pixmap)
+{
+    pPainter->drawPixmap(point, pixmap);
+}
+
+/* static */
+void UIChooserItem::paintText(QPainter *pPainter, QPoint point,
+                              const QFont &font, QPaintDevice *pPaintDevice,
+                              const QString &strText)
+{
+    /* Prepare variables: */
+    QFontMetrics fm(font, pPaintDevice);
+    point += QPoint(0, fm.ascent());
+
+    /* Draw text: */
+    pPainter->save();
+    pPainter->setFont(font);
+    pPainter->drawText(point, strText);
+    pPainter->restore();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIChooserItemMimeData implementation.                                                                                  *
+*********************************************************************************************************************************/
+
 UIChooserItemMimeData::UIChooserItemMimeData(UIChooserItem *pItem)
     : m_pItem(pItem)
 {
@@ -616,9 +614,3 @@ bool UIChooserItemMimeData::hasFormat(const QString &strMimeType) const
         return true;
     return false;
 }
-
-UIChooserItem* UIChooserItemMimeData::item() const
-{
-    return m_pItem;
-}
-

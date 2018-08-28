@@ -698,13 +698,13 @@ bool UIChooserModel::isGroupSavingInProgress() const
 void UIChooserModel::sltMachineStateChanged(QString strId, KMachineState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAllItems(strId);
 }
 
 void UIChooserModel::sltMachineDataChanged(QString strId)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAllItems(strId);
 }
 
 void UIChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
@@ -735,7 +735,7 @@ void UIChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
     else
     {
         /* Remove machine-items with passed id: */
-        mainRoot()->removeAll(strId);
+        mainRoot()->removeAllItems(strId);
         /* Update model: */
         cleanupGroupTree();
         updateNavigation();
@@ -754,13 +754,13 @@ void UIChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
 void UIChooserModel::sltSessionStateChanged(QString strId, KSessionState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAllItems(strId);
 }
 
 void UIChooserModel::sltSnapshotChanged(QString strId, QString)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAllItems(strId);
 }
 
 void UIChooserModel::sltHandleViewResized()
@@ -1017,7 +1017,7 @@ void UIChooserModel::sltGroupSelectedMachines()
 void UIChooserModel::sltReloadMachine(const QString &strId)
 {
     /* Remove all the items first: */
-    mainRoot()->removeAll(strId);
+    mainRoot()->removeAllItems(strId);
     /* Wipe out empty groups: */
     cleanupGroupTree();
 

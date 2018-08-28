@@ -142,8 +142,8 @@ private:
     QList<UIChooserItem*> items(UIChooserItemType type = UIChooserItemType_Any) const;
     bool hasItems(UIChooserItemType type = UIChooserItemType_Any) const;
     void clearItems(UIChooserItemType type = UIChooserItemType_Any);
-    void updateAll(const QString &strId);
-    void removeAll(const QString &strId);
+    void updateAllItems(const QString &strId);
+    void removeAllItems(const QString &strId);
     UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIChooserItem *firstMachineItem();
     void sortItems();

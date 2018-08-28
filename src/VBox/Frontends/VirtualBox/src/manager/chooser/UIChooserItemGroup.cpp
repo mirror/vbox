@@ -965,18 +965,18 @@ void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemTyp
     updateGeometry();
 }
 
-void UIChooserItemGroup::updateAll(const QString &strId)
+void UIChooserItemGroup::updateAllItems(const QString &strId)
 {
     /* Update all the required items recursively: */
     foreach (UIChooserItem *pItem, items())
-        pItem->updateAll(strId);
+        pItem->updateAllItems(strId);
 }
 
-void UIChooserItemGroup::removeAll(const QString &strId)
+void UIChooserItemGroup::removeAllItems(const QString &strId)
 {
     /* Remove all the required items recursively: */
     foreach (UIChooserItem *pItem, items())
-        pItem->removeAll(strId);
+        pItem->removeAllItems(strId);
 }
 
 UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
