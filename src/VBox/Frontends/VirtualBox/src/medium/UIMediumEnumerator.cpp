@@ -135,7 +135,7 @@ void UIMediumEnumerator::deleteMedium(const QString &strMediumID)
     emit sigMediumDeleted(strMediumID);
 }
 
-void UIMediumEnumerator::enumerateMedia()
+void UIMediumEnumerator::enumerateMedia(const CMediumVector &mediaList /* = CMediumVector() */)
 {
     /* Make sure we are not already in progress: */
     AssertReturnVoid(!m_fMediumEnumerationInProgress);
@@ -144,11 +144,17 @@ void UIMediumEnumerator::enumerateMedia()
      * While composing we are using data from already existing media. */
     UIMediumMap media;
     addNullMediumToMap(media);
-    addMediaToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
-    addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
-    addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
-    addMediaToMap(vboxGlobal().host().GetFloppyDrives(), media);
-    addMediaToMap(vboxGlobal().virtualBox().GetFloppyImages(), media);
+    /* If @p mediaList is empty we start the media enumeration with all known media: */
+    if (mediaList.isEmpty())
+    {
+        addMediaToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
+        addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
+        addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
+        addMediaToMap(vboxGlobal().host().GetFloppyDrives(), media);
+        addMediaToMap(vboxGlobal().virtualBox().GetFloppyImages(), media);
+    }
+    else
+        addMediaToMap(mediaList, media);
     if (VBoxGlobal::isCleaningUp())
         return; /* VBoxGlobal is cleaning up, abort immediately. */
     m_media = media;

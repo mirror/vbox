@@ -33,11 +33,12 @@
 
 /* COM includes: */
 #include "VBox/com/Guid.h"
+#include "CGuestOSType.h"
 #include "CHost.h"
+#include "CMedium.h"
+#include "CSession.h"
 #include "CVirtualBoxClient.h"
 #include "CVirtualBox.h"
-#include "CSession.h"
-#include "CGuestOSType.h"
 
 /* Other includes: */
 #ifdef VBOX_WS_X11
@@ -52,7 +53,6 @@ class QSpinBox;
 class QToolButton;
 class CHostVideoInputDevice;
 class CMachine;
-class CMedium;
 class CUSBDevice;
 class UIMedium;
 class UIMediumEnumerator;
@@ -476,7 +476,7 @@ public:
     /** @name COM: Virtual Media stuff.
      * @{ */
         /** Starts medium enumeration. */
-        void startMediumEnumeration();
+        void startMediumEnumeration(const CMediumVector &mediaList = CMediumVector());
         /** Calls refresh for each medium which has been already enumerated. */
         void refreshMedia();
         /** Returns whether medium enumeration is in progress. */

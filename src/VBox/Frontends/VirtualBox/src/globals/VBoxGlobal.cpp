@@ -2413,7 +2413,7 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
     return comSession;
 }
 
-void VBoxGlobal::startMediumEnumeration()
+void VBoxGlobal::startMediumEnumeration(const CMediumVector &mediaList /* = CMediumVector() */)
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(m_fValid);
@@ -2439,7 +2439,7 @@ void VBoxGlobal::startMediumEnumeration()
     {
         /* Redirect request to medium-enumerator: */
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->enumerateMedia();
+            m_pMediumEnumerator->enumerateMedia(mediaList);
         m_meCleanupProtectionToken.unlock();
     }
 }

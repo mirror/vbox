@@ -64,7 +64,7 @@ public:
 
     /* API: Medium-enumeration stuff: */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
-    void enumerateMedia();
+    void enumerateMedia(const CMediumVector &mediaList = CMediumVector());
     void refreshMedia();
 
 private slots:
