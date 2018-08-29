@@ -126,6 +126,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV()               do { } while (0)
 #define IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV()        do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES()                                    do { } while (0)
+#define IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES()                                 do { } while (0)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 # define IEMOP_HLP_VMX_INSTR()                              do { } while (0)
 # define IEMOP_HLP_IN_VMX_OPERATION()                       do { } while (0)

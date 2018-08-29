@@ -2871,6 +2871,14 @@ typedef enum
     kVmxVInstrDiag_Vmclear_PtrVmxon,
     kVmxVInstrDiag_Vmclear_PtrWidth,
     kVmxVInstrDiag_Vmclear_Success,
+    /* VMWRITE. */
+    kVmxVInstrDiag_Vmwrite_Cpl,
+    kVmxVInstrDiag_Vmwrite_FieldInvalid,
+    kVmxVInstrDiag_Vmwrite_FieldRo,
+    kVmxVInstrDiag_Vmwrite_LinkPtrInvalid,
+    kVmxVInstrDiag_Vmwrite_PtrInvalid,
+    kVmxVInstrDiag_Vmwrite_PtrMap,
+    kVmxVInstrDiag_Vmwrite_Success,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;
@@ -2891,8 +2899,12 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
  *
  * The first 8 bytes are as per Intel spec. 24.2 "Format of the VMCS Region".
  *
- * The offset and size of the VMCS state field (fVmcsState) is also fixed as we use
- * it to offset into guest memory.
+ * The offset and size of the VMCS state field (fVmcsState) is also fixed (not by
+ * Intel but for our own requirements) as we use it to offset into guest memory.
+ *
+ * We always treat natural-width fields as 64-bit in our implementation since
+ * it's easier, allows for teleporation in the future and does not affect guest
+ * software.
  *
  * Although the guest is supposed to access the VMCS only through the execution of
  * VMX instructions (VMREAD, VMWRITE etc.), since the VMCS may reside in guest
@@ -3340,17 +3352,6 @@ AssertCompileMemberOffset(VMXVVMCS, u64Cr0Mask,         0x4d0);
 AssertCompileMemberOffset(VMXVVMCS, u64ExitQual,        0x610);
 AssertCompileMemberOffset(VMXVVMCS, u64GuestCr0,        0x6c0);
 AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
-
-/** Get the offset into VMCS data for a VMCS field given its encoding. */
-#define VMX_V_VMCS_FIELD_OFFSET(a_Enc)          (  ((a_VmcsFieldEnc).n.u8Index & 0x1f) \
-                                                 | ((a_VmcsFieldEnc).n.u2Type  << 5) \
-                                                 | ((a_VmcsFieldEnc).n.u2Width << 7))
-
-/** Get the offset into VMCS data for a VMCS field given its encoding as an
- *  unsigned 32-bit number. */
-#define VMX_V_VMCS_FIELD_OFFSET_U32(a_uEnc)     (  (RT_BF_GET((a_uEnc), VMX_BF_VMCS_ENC_INDEX) & 0x1f) \
-                                                 | (RT_BF_GET((a_uEnc), VMX_BF_VMCS_ENC_TYPE)  << 5) \
-                                                 | (RT_BF_GET((a_uEnc), VMX_BF_VMCS_ENC_WIDTH) << 7))
 /** @} */
 
 
@@ -3358,15 +3359,16 @@ AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
  * @{
  */
 /**
- * Gets the width of a VMCS field given it's encoding.
+ * Gets the effective width of a VMCS field given it's encoding adjusted for
+ * HIGH/FULL access for 64-bit fields.
  *
- * @returns The VMCS field width.
+ * @returns The effective VMCS field width.
  * @param   uFieldEnc   The VMCS field encoding.
  *
  * @remarks Warning! This function does not verify the encoding is for a valid and
  *          supported VMCS field.
  */
-DECLINLINE(uint32_t) HMVmxGetVmcsFieldWidth(uint32_t uFieldEnc)
+DECLINLINE(uint8_t) HMVmxGetVmcsFieldWidthEff(uint32_t uFieldEnc)
 {
     /* Only the "HIGH" parts of all 64-bit fields have bit 0 set. */
     if (uFieldEnc & RT_BIT(0))

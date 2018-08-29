@@ -561,8 +561,18 @@ typedef struct CPUMCTX
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmcsR3Padding;
 #endif
-                /** 0x308 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x308];
+                /** 0X308 - Cache of the nested-guest shadow VMCS - R0 ptr. */
+                R0PTRTYPE(PVMXVVMCS)    pShadowVmcsR0;
+#if HC_ARCH_BITS == 32
+                uint32_t                uShadowVmcsR0Padding;
+#endif
+                /** 0x310 - Cache of the nested-guest shadow VMCS - R3 ptr. */
+                R3PTRTYPE(PVMXVVMCS)    pShadowVmcsR3;
+#if HC_ARCH_BITS == 32
+                uint32_t                uShadowVmcsR3Padding;
+#endif
+                /** 0x318 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x318];
             } vmx;
         } CPUM_UNION_NM(s);
 

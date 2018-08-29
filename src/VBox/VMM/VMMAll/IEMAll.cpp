@@ -12772,6 +12772,19 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
+/**
+ * Done decoding, raise \#UD exception if any operand-size override, repz or repnz
+ * prefixes are present.
+ */
+#define IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES() \
+    do \
+    { \
+        if (RT_LIKELY(!(pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ)))) \
+        { /* likely */ } \
+        else \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
+    } while (0)
+
 
 /**
  * Calculates the effective address of a ModR/M memory operand.
