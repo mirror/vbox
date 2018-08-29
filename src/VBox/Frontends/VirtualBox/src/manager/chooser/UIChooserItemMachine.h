@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIChooserItemMachine_h__
-#define __UIChooserItemMachine_h__
+#ifndef ___UIChooserItemMachine_h___
+#define ___UIChooserItemMachine_h___
 
 /* GUI includes: */
 #include "UIVirtualMachineItem.h"
@@ -24,58 +24,169 @@
 
 /* Forward declarations: */
 class CMachine;
-class UIGraphicsToolBar;
-class UIGraphicsZoomButton;
 
-/* Machine-item enumeration flags: */
+/** Machine-item enumeration flags. */
 enum UIChooserItemMachineEnumerationFlag
 {
     UIChooserItemMachineEnumerationFlag_Unique       = RT_BIT(0),
     UIChooserItemMachineEnumerationFlag_Inaccessible = RT_BIT(1)
 };
 
-/* Graphics machine-item
- * for graphics selector model/view architecture: */
+/** UIChooserItem extension implementing machine item. */
 class UIChooserItemMachine : public UIChooserItem, public UIVirtualMachineItem
 {
     Q_OBJECT;
 
 public:
 
-    /* Class-name used for drag&drop mime-data format: */
-    static QString className();
-
-    /* Graphics-item type: */
+    /** RTTI item type. */
     enum { Type = UIChooserItemType_Machine };
-    int type() const { return Type; }
 
-    /* Constructor (new item): */
-    UIChooserItemMachine(UIChooserItem *pParent, const CMachine &machine, int iPosition = -1);
-    /* Constructor (new item copy): */
+    /** Constructs item with specified @a comMachine and @a iPosition, passing @a pParent to the base-class. */
+    UIChooserItemMachine(UIChooserItem *pParent, const CMachine &comMachine, int iPosition = -1);
+    /** Constructs temporary item with specified @a iPosition as a @a pCopyFrom, passing @a pParent to the base-class. */
     UIChooserItemMachine(UIChooserItem *pParent, UIChooserItemMachine *pCopyFrom, int iPosition = -1);
-    /* Destructor: */
-    ~UIChooserItemMachine();
+    /** Destructs machine item. */
+    virtual ~UIChooserItemMachine() /* override */;
 
-    /* API: Basic stuff: */
-    QString name() const;
-    QString description() const;
-    QString fullName() const;
-    QString definition() const;
-    bool isLockedMachine() const;
+    /** @name Item stuff.
+      * @{ */
+        /** Returns item name. */
+        virtual QString name() const /* override */;
 
-    /* API: Machine-item enumeration stuff: */
-    static void enumerateMachineItems(const QList<UIChooserItem*> &il,
-                                      QList<UIChooserItemMachine*> &ol,
-                                      int iEnumerationFlags = 0);
+        /** Returns whether VM is locked. */
+        bool isLockedMachine() const;
+    /** @} */
+
+    /** @name Navigation stuff.
+      * @{ */
+        /** Class-name used for drag&drop mime-data format. */
+        static QString className();
+
+        /** Enumerates machine items from @a il to @a ol using @a iEnumerationFlags. */
+        static void enumerateMachineItems(const QList<UIChooserItem*> &il,
+                                          QList<UIChooserItemMachine*> &ol,
+                                          int iEnumerationFlags = 0);
+    /** @} */
+
+protected:
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+
+        /** Handles show @a pEvent. */
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
+
+        /** Handles resize @a pEvent. */
+        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+
+        /** Handles mouse press @a pEvent. */
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+
+        /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
+    /** @} */
+
+    /** @name Item stuff.
+      * @{ */
+        /** Returns RTTI item type. */
+        virtual int type() const /* override */ { return Type; }
+
+        /** Starts item editing. */
+        virtual void startEditing() /* override */;
+
+        /** Updates item tool-tip. */
+        virtual void updateToolTip() /* override */;
+
+        /** Returns item description. */
+        virtual QString description() const /* override */;
+        /** Returns item full-name. */
+        virtual QString fullName() const /* override */;
+        /** Returns item definition. */
+        virtual QString definition() const /* override */;
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Adds child @a pItem to certain @a iPosition. */
+        virtual void addItem(UIChooserItem *pItem, int iPosition) /* override */;
+        /** Removes child @a pItem. */
+        virtual void removeItem(UIChooserItem *pItem) /* override */;
+
+        /** Replaces children @a items of certain @a enmType. */
+        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
+
+        /** Updates all children items with specified @a strId. */
+        virtual void updateAllItems(const QString &strId) /* override */;
+        /** Removes all children items with specified @a strId. */
+        virtual void removeAllItems(const QString &strId) /* override */;
+
+        /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
+        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) /* override */;
+
+        /** Searches for a first machine child item. */
+        virtual UIChooserItem *firstMachineItem() /* override */;
+
+        /** Sorts children items. */
+        virtual void sortItems() /* override */;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates layout. */
+        virtual void updateLayout() /* override */;
+
+        /** Returns minimum width-hint. */
+        virtual int minimumWidthHint() const /* override */;
+        /** Returns minimum height-hint. */
+        virtual int minimumHeightHint() const /* override */;
+
+        /** Returns size-hint.
+          * @param  enmWhich    Brings size-hint type.
+          * @param  constraint  Brings size constraint. */
+        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
+    /** @} */
+
+    /** @name Navigation stuff.
+      * @{ */
+        /** Returns pixmap item representation. */
+        virtual QPixmap toPixmap() /* override */;
+
+        /** Returns whether item drop is allowed.
+          * @param  pEvent    Brings information about drop event.
+          * @param  enmPlace  Brings the place of drag token to the drop moment. */
+        virtual bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const /* override */;
+        /** Processes item drop.
+          * @param  pEvent    Brings information about drop event.
+          * @param  pFromWho  Brings the item according to which we choose drop position.
+          * @param  enmPlace  Brings the place of drag token to the drop moment (according to item mentioned above). */
+        virtual void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, DragToken where) /* override */;
+        /** Reset drag token. */
+        virtual void resetDragToken() /* override */;
+
+        /** Returns D&D mime data. */
+        virtual QMimeData *createMimeData() /* override */;
+    /** @} */
 
 private slots:
 
-    /** Handles top-level window remaps. */
-    void sltHandleWindowRemapped();
+    /** @name Item stuff.
+      * @{ */
+        /** Handles top-level window remaps. */
+        void sltHandleWindowRemapped();
+    /** @} */
 
 private:
 
-    /* Data enumerator: */
+    /** Data field types. */
     enum MachineItemData
     {
         /* Layout hints: */
@@ -88,116 +199,128 @@ private:
         MachineItemData_StartButtonPixmap,
         MachineItemData_PauseButtonPixmap,
         MachineItemData_CloseButtonPixmap,
-        /* Sizes: */
-        MachineItemData_ToolBarSize
     };
 
-    /* Data provider: */
-    QVariant data(int iKey) const;
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+    /** @} */
 
-    /* Helpers: Update stuff: */
-    void updatePixmaps();
-    void updatePixmap();
-    void updateStatePixmap();
-    void updateName();
-    void updateSnapshotName();
-    void updateFirstRowMaximumWidth();
-    void updateMinimumNameWidth();
-    void updateMinimumSnapshotNameWidth();
-    void updateMaximumNameWidth();
-    void updateMaximumSnapshotNameWidth();
-    void updateVisibleName();
-    void updateVisibleSnapshotName();
-    void updateStateText();
+    /** @name Item stuff.
+      * @{ */
+        /** Returns abstractly stored data value for certain @a iKey. */
+        QVariant data(int iKey) const;
+    /** @} */
 
-    /* Helper: Translate stuff: */
-    void retranslateUi();
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates pixmaps. */
+        void updatePixmaps();
+        /** Updates pixmap. */
+        void updatePixmap();
+        /** Updates state pixmap. */
+        void updateStatePixmap();
+        /** Updates name. */
+        void updateName();
+        /** Updates snapshot name. */
+        void updateSnapshotName();
+        /** Updates first row maximum width. */
+        void updateFirstRowMaximumWidth();
+        /** Updates minimum name width. */
+        void updateMinimumNameWidth();
+        /** Updates minimum snapshot name width. */
+        void updateMinimumSnapshotNameWidth();
+        /** Updates maximum name width. */
+        void updateMaximumNameWidth();
+        /** Updates maximum snapshot name width. */
+        void updateMaximumSnapshotNameWidth();
+        /** Updates visible name. */
+        void updateVisibleName();
+        /** Updates visible snapshot name. */
+        void updateVisibleSnapshotName();
+        /** Updates state text. */
+        void updateStateText();
+    /** @} */
 
-    /* Helpers: Basic stuff: */
-    void startEditing();
-    void updateToolTip();
+    /** @name Painting stuff.
+      * @{ */
+        /** Paints decorations using specified @a pPainter and certain @a pOptions. */
+        void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
+        /** Paints background using specified @a pPainter and certain @a rect. */
+        void paintBackground(QPainter *pPainter, const QRect &rect);
+        /** Paints frame rectangle using specified @a pPainter and certain @a rect. */
+        void paintFrameRectangle(QPainter *pPainter, const QRect &rect);
+        /** Paints machine info using specified @a pPainter and certain @a pOptions. */
+        void paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
+    /** @} */
 
-    /* Helpers: Children stuff: */
-    void addItem(UIChooserItem *pItem, int iPosition);
-    void removeItem(UIChooserItem *pItem);
-    void setItems(const QList<UIChooserItem*> &items, UIChooserItemType type);
-    QList<UIChooserItem*> items(UIChooserItemType type) const;
-    bool hasItems(UIChooserItemType type) const;
-    void clearItems(UIChooserItemType type);
-    void updateAllItems(const QString &strId);
-    void removeAllItems(const QString &strId);
-    UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags);
-    UIChooserItem *firstMachineItem();
-    void sortItems();
+    /** @name Navigation stuff.
+      * @{ */
+        /** Returns whether machine items @a list contains passed @a pItem. */
+        static bool checkIfContains(const QList<UIChooserItemMachine*> &list,
+                                    UIChooserItemMachine *pItem);
+    /** @} */
 
-    /* Helpers: Layout stuff: */
-    void updateLayout();
-    int minimumWidthHint() const;
-    int minimumHeightHint() const;
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+    /** @name Item stuff.
+      * @{ */
+        /** Holds item hover lightness. */
+        int  m_iHoverLightness;
+        /** Holds item highlight lightness. */
+        int  m_iHighlightLightness;
+        /** Holds item hover highlight lightness. */
+        int  m_iHoverHighlightLightness;
 
-    /* Helpers: Drag and drop stuff: */
-    QPixmap toPixmap();
-    bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const;
-    void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, DragToken where);
-    void resetDragToken();
-    QMimeData* createMimeData();
+        /** Holds item pixmap. */
+        QPixmap  m_pixmap;
+        /** Holds item state pixmap. */
+        QPixmap  m_statePixmap;
 
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
+        /** Holds item name. */
+        QString  m_strName;
+        /** Holds item description. */
+        QString  m_strDescription;
+        /** Holds item visible name. */
+        QString  m_strVisibleName;
+        /** Holds item snapshot name. */
+        QString  m_strSnapshotName;
+        /** Holds item visible snapshot name. */
+        QString  m_strVisibleSnapshotName;
+        /** Holds item state text. */
+        QString  m_strStateText;
 
-    /* Handler: Resize handling stuff: */
-    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
+        /** Holds item name font. */
+        QFont  m_nameFont;
+        /** Holds item snapshot name font. */
+        QFont  m_snapshotNameFont;
+        /** Holds item state text font. */
+        QFont  m_stateTextFont;
+    /** @} */
 
-    /* Handler: Mouse handling stuff: */
-    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
+    /** @name Layout stuff.
+      * @{ */
+        /** Holds pixmap size. */
+        QSize  m_pixmapSize;
+        /** Holds state pixmap size. */
+        QSize  m_statePixmapSize;
+        /** Holds visible name size. */
+        QSize  m_visibleNameSize;
+        /** Holds visible snapshot name size. */
+        QSize  m_visibleSnapshotNameSize;
+        /** Holds state text size. */
+        QSize  m_stateTextSize;
 
-    /* Helpers: Paint stuff: */
-    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
-    void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-    void paintBackground(QPainter *pPainter, const QRect &rect);
-    void paintFrameRectangle(QPainter *pPainter, const QRect &rect);
-    void paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-
-    /* Helpers: Prepare stuff: */
-    void prepare();
-
-    /* Helper: Machine-item enumeration stuff: */
-    static bool contains(const QList<UIChooserItemMachine*> &list,
-                         UIChooserItemMachine *pItem);
-
-    /* Variables: */
-    UIGraphicsToolBar *m_pToolBar;
-    UIGraphicsZoomButton *m_pSettingsButton;
-    UIGraphicsZoomButton *m_pStartButton;
-    UIGraphicsZoomButton *m_pPauseButton;
-    UIGraphicsZoomButton *m_pCloseButton;
-    int m_iHighlightLightness;
-    int m_iHoverLightness;
-    int m_iHoverHighlightLightness;
-    /* Cached values: */
-    QFont m_nameFont;
-    QFont m_snapshotNameFont;
-    QFont m_stateTextFont;
-    QPixmap m_pixmap;
-    QPixmap m_statePixmap;
-    QString m_strName;
-    QString m_strDescription;
-    QString m_strVisibleName;
-    QString m_strSnapshotName;
-    QString m_strVisibleSnapshotName;
-    QString m_strStateText;
-    QSize m_pixmapSize;
-    QSize m_statePixmapSize;
-    QSize m_visibleNameSize;
-    QSize m_visibleSnapshotNameSize;
-    QSize m_stateTextSize;
-    int m_iFirstRowMaximumWidth;
-    int m_iMinimumNameWidth;
-    int m_iMaximumNameWidth;
-    int m_iMinimumSnapshotNameWidth;
-    int m_iMaximumSnapshotNameWidth;
+        /** Holds first row maximum width. */
+        int  m_iFirstRowMaximumWidth;
+        /** Holds minimum name width. */
+        int  m_iMinimumNameWidth;
+        /** Holds maximum name width. */
+        int  m_iMaximumNameWidth;
+        /** Holds minimum snapshot name width. */
+        int  m_iMinimumSnapshotNameWidth;
+        /** Holds maximum snapshot name width. */
+        int  m_iMaximumSnapshotNameWidth;
+    /** @} */
 };
 
-#endif /* __UIChooserItemMachine_h__ */
-
+#endif /* !___UIChooserItemMachine_h___ */
