@@ -47,7 +47,7 @@
 /**
  * Abstract base class for serializing data objects.
  */
-class RTCRestOutputBase
+class RT_DECL_CLASS RTCRestOutputBase
 {
 public:
     RTCRestOutputBase()
@@ -115,7 +115,7 @@ protected:
 /**
  * Serialize to a string object.
  */
-class RTCRestOutputToString : public RTCRestOutputBase
+class RT_DECL_CLASS RTCRestOutputToString : public RTCRestOutputBase
 {
 public:
     /**
@@ -166,7 +166,7 @@ class RTCRestJsonPrimaryCursor;
  * This reduces the number of parameters passed around when deserializing JSON
  * input and also helps constructing full object name for logging and error reporting.
  */
-struct RTCRestJsonCursor
+struct RT_DECL_CLASS RTCRestJsonCursor
 {
     /** Handle to the value being parsed. */
     RTJSONVAL                           m_hValue;
@@ -203,7 +203,7 @@ struct RTCRestJsonCursor
 /**
  * The primary JSON cursor class.
  */
-class RTCRestJsonPrimaryCursor
+class RT_DECL_CLASS RTCRestJsonPrimaryCursor
 {
 public:
     /** The cursor for the first level. */
@@ -256,7 +256,7 @@ public:
 /**
  * Abstract base class for REST data objects.
  */
-class RTCRestObjectBase
+class RT_DECL_CLASS RTCRestObjectBase
 {
 public:
     RTCRestObjectBase();
@@ -356,7 +356,7 @@ public:
 /**
  * Class wrapping 'bool'.
  */
-class RTCRestBool : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestBool : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -391,7 +391,7 @@ public:
 /**
  * Class wrapping 'int64_t'.
  */
-class RTCRestInt64 : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestInt64 : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -426,7 +426,7 @@ public:
 /**
  * Class wrapping 'int32_t'.
  */
-class RTCRestInt32 : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestInt32 : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -461,7 +461,7 @@ public:
 /**
  * Class wrapping 'int16_t'.
  */
-class RTCRestInt16 : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestInt16 : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -496,7 +496,7 @@ public:
 /**
  * Class wrapping 'double'.
  */
-class RTCRestDouble : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestDouble : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -531,7 +531,7 @@ public:
 /**
  * Class wrapping 'RTCString'.
  */
-class RTCRestString : public RTCString, public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestString : public RTCString, public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -562,17 +562,13 @@ public:
 /**
  * Abstract base class for the RTCRestArray template.
  */
-class RTCRestArrayBase : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestArrayBase : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
     RTCRestArrayBase();
-    /** Copy constructor. */
-    RTCRestArrayBase(RTCRestArrayBase const &a_rThat);
     /** Destructor. */
     virtual ~RTCRestArrayBase();
-    /** Copy assignment operator. */
-    RTCRestArrayBase &operator=(RTCRestArrayBase const &a_rThat);
 
     /* Overridden methods: */
     virtual void resetToDefault() RT_OVERRIDE;
@@ -679,6 +675,12 @@ protected:
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
     int insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace);
+
+private:
+    /** Copy constructor on this class should never be used. */
+    RTCRestArrayBase(RTCRestArrayBase const &a_rThat);
+    /** Copy assignment operator on this class should never be used. */
+    RTCRestArrayBase &operator=(RTCRestArrayBase const &a_rThat);
 };
 
 
@@ -689,12 +691,29 @@ protected:
 template<class ElementType> class RTCRestArray : public RTCRestArrayBase
 {
 public:
+    /** Default constructor - empty array. */
     RTCRestArray()
         : RTCRestArrayBase()
     {
     }
+
+    /** Destructor. */
     ~RTCRestArray()
     {
+    }
+
+    /** Copy constructor. */
+    RTCRestArray(RTCRestArray const &a_rThat)
+        : RTCRestArrayBase()
+    {
+        copyArrayWorker(a_rThat, true /*fThrow*/);
+    }
+
+    /** Copy assignment operator. */
+    RTCRestArray &operator=(RTCRestArray const &a_rThat)
+    {
+        copyArrayWorker(a_rThat, true /*fThrow*/);
+        return *this;
     }
 
     virtual const char *getType(void) RT_OVERRIDE
@@ -894,7 +913,7 @@ protected:
 /**
  * Abstract base class for the RTCRestStringMap template.
  */
-class RTCRestStringMapBase : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestStringMapBase : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -1215,7 +1234,7 @@ protected:
  * @todo figure this one out. it's possible this is only used in maps and
  *       could be a specialized map implementation.
  */
-class RTCRestObject : public RTCRestObjectBase
+class /*RT_DECL_CLASS*/ RTCRestObject : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
@@ -1247,7 +1266,7 @@ protected:
 /**
  * Base class for REST client requests.
  */
-class RTCRestClientRequestBase
+class RT_DECL_CLASS RTCRestClientRequestBase
 {
 public:
     RTCRestClientRequestBase();
@@ -1305,7 +1324,7 @@ protected:
 /**
  * Base class for REST client responses.
  */
-class RTCRestClientResponseBase
+class RT_DECL_CLASS RTCRestClientResponseBase
 {
 public:
     /** Default constructor. */
@@ -1493,7 +1512,7 @@ protected:
 /**
  * Base class for REST client responses.
  */
-class RTCRestClientApiBase
+class RT_DECL_CLASS RTCRestClientApiBase
 {
 public:
     RTCRestClientApiBase()
