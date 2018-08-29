@@ -261,8 +261,8 @@ int RTCRestStringMapBase::copyMapWorker(RTCRestStringMapBase const &a_rThat, boo
     Assert(this != &a_rThat);
     clear();
 
-    MapEntry const * pCur;
-    RTListForEachCpp(&m_ListHead, pCur, MapEntry, ListEntry)
+    MapEntry const *pCur;
+    RTListForEachCpp(&a_rThat.m_ListHead, pCur, MapEntry, ListEntry)
     {
         int rc = putCopyWorker(pCur->strKey.c_str(), *pCur->pValue, true /*a_fReplace*/);
         if (RT_SUCCESS(rc))
