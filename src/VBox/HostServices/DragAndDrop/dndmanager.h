@@ -58,8 +58,8 @@ public:
         if (!m_pNextMsg)
             return VERR_NO_DATA;
 
-        *puMsg = m_pNextMsg->message();
-        *pcParms = m_pNextMsg->paramsCount();
+        *puMsg = m_pNextMsg->GetType();
+        *pcParms = m_pNextMsg->GetParamCount();
 
         return VINF_SUCCESS;
     }
@@ -69,8 +69,7 @@ public:
     {
         if (!m_pNextMsg)
             return VERR_NO_DATA;
-
-        int rc = m_pNextMsg->getData(uMsg, cParms, paParms);
+        int rc = m_pNextMsg->GetData(uMsg, cParms, paParms);
 
         clearNextMsg();
 

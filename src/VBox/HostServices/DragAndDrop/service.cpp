@@ -473,7 +473,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
 
     if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */
     {
-        LogFlowFunc(("Client %RU32: Protocol v%RU32\n", pClient->clientId(), pClient->protocol()));
+        LogFlowFunc(("Client %RU32: Protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
 
         rc = VERR_INVALID_PARAMETER; /* Play safe. */
 
@@ -552,10 +552,10 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     if (RT_SUCCESS(rc))
                         rc = paParms[idxProto + 1].getUInt32(&data.uFlags);
                     if (RT_SUCCESS(rc))
-                        rc = pClient->setProtocol(data.uProtocol);
+                        rc = pClient->SetProtocolVer(data.uProtocol);
                     if (RT_SUCCESS(rc))
                     {
-                        LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->clientId(), pClient->protocol()));
+                        LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
                         DO_HOST_CALLBACK();
                     }
                 }
@@ -569,7 +569,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_ACK_OP;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -602,7 +602,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_REQ_DATA;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -637,7 +637,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_EVT_PROGRESS;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -681,7 +681,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_ACK_PENDING;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -760,7 +760,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             case GUEST_DND_GH_SND_DATA:
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_DATA\n"));
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -809,7 +809,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DIR;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -876,7 +876,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_FILE_DATA\n"));
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     /* Protocol v3 adds (optional) checksums. */
                     case 3:
@@ -957,7 +957,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_EVT_ERROR;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -1007,7 +1007,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_EVT_ERROR;
 
-                switch (pClient->protocol())
+                switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
@@ -1164,7 +1164,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
                     int rc2 = pClient->addMessageInfo(HOST_DND_HG_EVT_CANCEL,
                                                       /* Protocol v3+ also contains the context ID. */
-                                                      pClient->protocol() >= 3 ? 1 : 0);
+                                                      pClient->GetProtocolVer() >= 3 ? 1 : 0);
                     pClient->completeDeferred(rc2);
 
                     m_clientQueue.erase(itQueue);
@@ -1232,7 +1232,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
              * message. If so, return the message ID and the parameter
              * count. The message itself has to be queued.
              */
-            uint32_t uMsgClient = pClient->message();
+            uint32_t uMsgClient = pClient->GetMsgType();
 
             uint32_t uMsgNext   = 0;
             uint32_t cParmsNext = 0;
@@ -1264,7 +1264,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 else /* Should not happen; cancel the operation on the guest. */
                 {
                     LogFunc(("Client ID=%RU32 in wrong state with uMsg=%RU32 (next message in queue: %RU32), cancelling\n",
-                             pClient->clientId(), uMsgClient, uMsgNext));
+                             pClient->GetClientID(), uMsgClient, uMsgNext));
 
                     pClient->completeDeferred(VERR_CANCELLED);
                 }

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,10 +39,13 @@
 namespace HGCM
 {
 
+/**
+ * Message class encapsulating HGCM parameters.
+ */
 class Message
 {
-    /* Contains a copy of HGCM parameters. */
 public:
+
     Message(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
         : m_uMsg(0)
         , m_cParms(0)
@@ -56,63 +59,101 @@ public:
         cleanup();
     }
 
-    uint32_t message() const { return m_uMsg; }
-    uint32_t paramsCount() const { return m_cParms; }
+    /**
+     * Returns the type of this message.
+     *
+     * @returns Message type
+     */
+    uint32_t GetType(void) const { return m_uMsg; }
 
-    int getData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) const
+    /**
+     * Returns the parameter count of this message.
+     *
+     * @returns Parameter count.
+     */
+    uint32_t GetParamCount(void) const { return m_cParms; }
+
+    /**
+     * Retrieves the raw HGCM parameter data
+     *
+     * @returns IPRT status code.
+     * @param   uMsg            Message type to retrieve the parameter data for. Needed for sanity.
+     * @param   cParms          Size (in parameters) of @a aParms array.
+     * @param   aParms          Where to store the HGCM parameter data.
+     */
+    int GetData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) const
     {
         if (m_uMsg != uMsg)
         {
-            LogFlowFunc(("Message type does not match (%RU32 (buffer), %RU32 (guest))\n", m_uMsg, uMsg));
+            LogFlowFunc(("Stored message type (%RU32) does not match request (%RU32)\n", m_uMsg, uMsg));
             return VERR_INVALID_PARAMETER;
         }
         if (m_cParms > cParms)
         {
-            LogFlowFunc(("Parameter count does not match (%RU32 (buffer), %RU32 (guest))\n", m_cParms, cParms));
+            LogFlowFunc(("Stored parameter count (%RU32) exceeds request buffer (%RU32)\n", m_cParms, cParms));
             return VERR_INVALID_PARAMETER;
         }
 
         return copyParmsInternal(&aParms[0], cParms, m_paParms, m_cParms, false /* fDeepCopy */);
     }
 
-    int getParmU32Info(uint32_t iParm, uint32_t *pu32Info) const
+    /**
+     * Retrieves a specific parameter value as uint32_t.
+     *
+     * @returns IPRT status code.
+     * @param   uParm           Index of parameter to retrieve.
+     * @param   pu32Info        Where to store the parameter value.
+     */
+    int GetParmU32(uint32_t uParm, uint32_t *pu32Info) const
     {
         AssertPtrNullReturn(pu32Info, VERR_INVALID_PARAMETER);
-        AssertReturn(iParm < m_cParms, VERR_INVALID_PARAMETER);
-        AssertReturn(m_paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_INVALID_PARAMETER);
+        AssertReturn(uParm < m_cParms, VERR_INVALID_PARAMETER);
+        AssertReturn(m_paParms[uParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_INVALID_PARAMETER);
 
-        *pu32Info = m_paParms[iParm].u.uint32;
+        *pu32Info = m_paParms[uParm].u.uint32;
 
         return VINF_SUCCESS;
     }
 
-    int getParmU64Info(uint32_t iParm, uint64_t *pu64Info) const
+    /**
+     * Retrieves a specific parameter value as uint64_t.
+     *
+     * @returns IPRT status code.
+     * @param   uParm           Index of parameter to retrieve.
+     * @param   pu32Info        Where to store the parameter value.
+     */
+    int GetParmU64(uint32_t uParm, uint64_t *pu64Info) const
     {
         AssertPtrNullReturn(pu64Info, VERR_INVALID_PARAMETER);
-        AssertReturn(iParm < m_cParms, VERR_INVALID_PARAMETER);
-        AssertReturn(m_paParms[iParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_INVALID_PARAMETER);
+        AssertReturn(uParm < m_cParms, VERR_INVALID_PARAMETER);
+        AssertReturn(m_paParms[uParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_INVALID_PARAMETER);
 
-        *pu64Info = m_paParms[iParm].u.uint64;
+        *pu64Info = m_paParms[uParm].u.uint64;
 
         return VINF_SUCCESS;
     }
 
-    int getParmPtrInfo(uint32_t iParm, void **ppvAddr, uint32_t *pcSize) const
+    /**
+     * Retrieves a specific parameter value as a data address + size.
+     *
+     * @returns IPRT status code.
+     * @param   uParm           Index of parameter to retrieve.
+     * @param   ppvAddr         Where to store the data address.
+     * @param   pcbSize         Where to store the data size (in bytes).
+     *
+     * @remarks Does not copy (store) the actual content of the pointer (deep copy).
+     */
+    int GetParmPtr(uint32_t uParm, void **ppvAddr, uint32_t *pcbSize) const
     {
         AssertPtrNullReturn(ppvAddr, VERR_INVALID_PARAMETER);
-        AssertPtrNullReturn(pcSize, VERR_INVALID_PARAMETER);
-        AssertReturn(iParm < m_cParms, VERR_INVALID_PARAMETER);
-        AssertReturn(m_paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_INVALID_PARAMETER);
+        AssertPtrNullReturn(pcbSize, VERR_INVALID_PARAMETER);
+        AssertReturn(uParm < m_cParms, VERR_INVALID_PARAMETER);
+        AssertReturn(m_paParms[uParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_INVALID_PARAMETER);
 
-        *ppvAddr = m_paParms[iParm].u.pointer.addr;
-        *pcSize = m_paParms[iParm].u.pointer.size;
+        *ppvAddr = m_paParms[uParm].u.pointer.addr;
+        *pcbSize = m_paParms[uParm].u.pointer.size;
 
         return VINF_SUCCESS;
-    }
-
-    static int copyParms(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst, PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc)
-    {
-        return copyParmsInternal(paParmsDst, cParmsDst, paParmsSrc, cParmsSrc, false /* fDeepCopy */);
     }
 
 private:
@@ -153,6 +194,18 @@ private:
         return rc;
     }
 
+    /**
+     * Copies HGCM parameters from source to destination.
+     *
+     * @returns IPRT status code.
+     * @param   paParmsDst      Destination array to copy parameters to.
+     * @param   cParmsDst       Size (in parameters) of destination array.
+     * @param   paParmsSrc      Source array to copy parameters from.
+     * @param   cParmsSrc       Size (in parameters) of source array.
+     * @param   fDeepCopy       Whether to perform a deep copy of pointer parameters or not.
+     *
+     * @remark Static convenience function.
+     */
     static int copyParmsInternal(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
                                  PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc,
                                  bool fDeepCopy)
@@ -233,7 +286,10 @@ private:
         return rc;
     }
 
-    void cleanup()
+    /**
+     * Cleans up the message by free'ing all allocated parameters and resetting the rest.
+     */
+    void cleanup(void)
     {
         if (m_paParms)
         {
@@ -255,9 +311,13 @@ private:
     }
 };
 
+/**
+ * Class for keeping and tracking a HGCM client.
+ */
 class Client
 {
 public:
+
     Client(uint32_t uClientId, VBOXHGCMCALLHANDLE hHandle = NULL,
            uint32_t uMsg = 0, uint32_t cParms = 0, VBOXHGCMSVCPARM aParms[] = NULL)
       : m_uClientId(uClientId)
@@ -269,14 +329,14 @@ public:
 
 public:
 
-    VBOXHGCMCALLHANDLE handle(void) const { return m_hHandle; }
-    uint32_t message(void) const { return m_uMsg; }
-    uint32_t clientId(void) const { return m_uClientId; }
-    uint32_t protocol(void) const { return m_uProtocol; }
+    VBOXHGCMCALLHANDLE GetHandle(void) const { return m_hHandle; }
+    uint32_t GetMsgType(void) const { return m_uMsg; }
+    uint32_t GetClientID(void) const { return m_uClientId; }
+    uint32_t GetProtocolVer(void) const { return m_uProtocol; }
 
 public:
 
-    int setProtocol(uint32_t uProtocol) { m_uProtocol = uProtocol; return VINF_SUCCESS; }
+    int SetProtocolVer(uint32_t uProtocol) { m_uProtocol = uProtocol; return VINF_SUCCESS; }
 
 public:
 
@@ -296,15 +356,15 @@ public:
         if (m_cParms != 3)
             return VERR_INVALID_PARAMETER;
 
-        m_paParms[0].setUInt32(pMessage->message());
-        m_paParms[1].setUInt32(pMessage->paramsCount());
+        m_paParms[0].setUInt32(pMessage->GetType());
+        m_paParms[1].setUInt32(pMessage->GetParamCount());
 
         return VINF_SUCCESS;
     }
     int addMessage(const Message *pMessage)
     {
         AssertPtrReturn(pMessage, VERR_INVALID_POINTER);
-        return pMessage->getData(m_uMsg, m_cParms, m_paParms);
+        return pMessage->GetData(m_uMsg, m_cParms, m_paParms);
     }
 
 protected:
