@@ -20,16 +20,15 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QGraphicsSceneMouseEvent>
 # include <QPainter>
 # include <QStyleOptionGraphicsItem>
-# include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
 # include "UIChooserItemGlobal.h"
 # include "UIChooserModel.h"
 # include "UIIconPool.h"
-//# include "UIImageTools.h"
 # include "UIVirtualBoxManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -38,6 +37,11 @@
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary())
+    , m_iHoverLightness(0)
+    , m_iHighlightLightness(0)
+    , m_iHoverHighlightLightness(0)
+    , m_iMinimumNameWidth(0)
+    , m_iMaximumNameWidth(0)
 {
     /* Prepare: */
     prepare();
@@ -62,6 +66,11 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          UIChooserItemGlobal * ,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary())
+    , m_iHoverLightness(0)
+    , m_iHighlightLightness(0)
+    , m_iHoverHighlightLightness(0)
+    , m_iMinimumNameWidth(0)
+    , m_iMaximumNameWidth(0)
 {
     /* Prepare: */
     prepare();
@@ -108,6 +117,75 @@ UIChooserItemGlobal::~UIChooserItemGlobal()
     parentItem()->removeItem(this);
 }
 
+void UIChooserItemGlobal::retranslateUi()
+{
+    /* Update description: */
+    m_strName = tr("Global Tools");
+    m_strDescription = m_strName;
+
+    /* Update linked values: */
+    updateMinimumNameWidth();
+    updateVisibleName();
+
+    /* Update tool-tip: */
+    updateToolTip();
+}
+
+void UIChooserItemGlobal::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIChooserItem::showEvent(pEvent);
+
+    /* Update pixmaps: */
+    updatePixmap();
+}
+
+void UIChooserItemGlobal::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIChooserItem::resizeEvent(pEvent);
+
+    /* What is the new geometry? */
+    const QRectF newGeometry = geometry();
+
+    /* Should we update visible name? */
+    if (previousGeometry().width() != newGeometry.width())
+        updateMaximumNameWidth();
+
+    /* Remember the new geometry: */
+    setPreviousGeometry(newGeometry);
+}
+
+void UIChooserItemGlobal::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIChooserItem::mousePressEvent(pEvent);
+    /* No drag at all: */
+    pEvent->ignore();
+}
+
+void UIChooserItemGlobal::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget * /* pWidget = 0 */)
+{
+    /* Setup: */
+    pPainter->setRenderHint(QPainter::Antialiasing);
+
+    /* Paint decorations: */
+    paintDecorations(pPainter, pOption);
+
+    /* Paint global info: */
+    paintGlobalInfo(pPainter, pOption);
+}
+
+void UIChooserItemGlobal::startEditing()
+{
+    AssertMsgFailed(("Global graphics item do NOT support editing yet!"));
+}
+
+void UIChooserItemGlobal::updateToolTip()
+{
+//    setToolTip(toolTipText());
+}
+
 QString UIChooserItemGlobal::name() const
 {
     return m_strName;
@@ -128,9 +206,182 @@ QString UIChooserItemGlobal::definition() const
     return QString("n=%1").arg(name());
 }
 
+void UIChooserItemGlobal::addItem(UIChooserItem *, int)
+{
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
+}
+
+void UIChooserItemGlobal::removeItem(UIChooserItem *)
+{
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
+}
+
+void UIChooserItemGlobal::setItems(const QList<UIChooserItem*> &, UIChooserItemType)
+{
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
+}
+
+QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserItemType) const
+{
+    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), QList<UIChooserItem*>());
+}
+
+bool UIChooserItemGlobal::hasItems(UIChooserItemType) const
+{
+    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), false);
+}
+
+void UIChooserItemGlobal::clearItems(UIChooserItemType)
+{
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
+}
+
+void UIChooserItemGlobal::updateAllItems(const QString &)
+{
+    /* Update this global-item: */
+    updatePixmap();
+    updateToolTip();
+
+    /* Update parent group-item: */
+    parentItem()->updateToolTip();
+    parentItem()->update();
+}
+
+void UIChooserItemGlobal::removeAllItems(const QString &)
+{
+    // Just do nothing ..
+}
+
+UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iItemSearchFlags)
+{
+    /* Ignoring if we are not searching for the global-item? */
+    if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
+        return 0;
+
+    /* Returning this: */
+    return this;
+}
+
+UIChooserItem *UIChooserItemGlobal::firstMachineItem()
+{
+    return 0;
+}
+
+void UIChooserItemGlobal::sortItems()
+{
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
+}
+
+void UIChooserItemGlobal::updateLayout()
+{
+    // Just do nothing ..
+}
+
+QSizeF UIChooserItemGlobal::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+{
+    /* If Qt::MinimumSize requested: */
+    if (which == Qt::MinimumSize)
+        return QSizeF(minimumWidthHint(), minimumHeightHint());
+    /* Else call to base-class: */
+    return UIChooserItem::sizeHint(which, constraint);
+}
+
+int UIChooserItemGlobal::minimumWidthHint() const
+{
+    /* Prepare variables: */
+    int iMargin = data(GlobalItemData_Margin).toInt();
+    int iSpacing = data(GlobalItemData_Spacing).toInt();
+
+    /* Calculating proposed width: */
+    int iProposedWidth = 0;
+
+    /* Two margins: */
+    iProposedWidth += 2 * iMargin;
+    /* And global-item content to take into account: */
+    iProposedWidth += (m_pixmapSize.width() +
+                       iSpacing +
+                       m_iMinimumNameWidth);
+
+    /* Return result: */
+    return iProposedWidth;
+}
+
+int UIChooserItemGlobal::minimumHeightHint() const
+{
+    /* Prepare variables: */
+    int iMargin = data(GlobalItemData_Margin).toInt();
+
+    /* Calculating proposed height: */
+    int iProposedHeight = 0;
+
+    /* Two margins: */
+    iProposedHeight += 2 * iMargin;
+    /* And global-item content to take into account: */
+    iProposedHeight += qMax(m_pixmapSize.height(), m_visibleNameSize.height());
+
+    /* Return result: */
+    return iProposedHeight;
+}
+
+QPixmap UIChooserItemGlobal::toPixmap()
+{
+    /* Ask item to paint itself into pixmap: */
+    const QSize minimumSize = minimumSizeHint().toSize();
+    QPixmap pixmap(minimumSize);
+    QPainter painter(&pixmap);
+    QStyleOptionGraphicsItem options;
+    options.rect = QRect(QPoint(0, 0), minimumSize);
+    paint(&painter, &options);
+    return pixmap;
+}
+
+bool UIChooserItemGlobal::isDropAllowed(QGraphicsSceneDragDropEvent *, DragToken) const
+{
+    /* No drops at all: */
+    return false;
+}
+
+void UIChooserItemGlobal::processDrop(QGraphicsSceneDragDropEvent *, UIChooserItem *, DragToken)
+{
+    /* Nothing to process: */
+}
+
+void UIChooserItemGlobal::resetDragToken()
+{
+    /* Nothing to process: */
+}
+
+QMimeData *UIChooserItemGlobal::createMimeData()
+{
+    /* Nothing to return: */
+    return 0;
+}
+
 void UIChooserItemGlobal::sltHandleWindowRemapped()
 {
     updatePixmap();
+}
+
+void UIChooserItemGlobal::prepare()
+{
+    /* Colors: */
+#ifdef VBOX_WS_MAC
+    m_iHighlightLightness = 115;
+    m_iHoverLightness = 110;
+    m_iHoverHighlightLightness = 120;
+#else /* VBOX_WS_MAC */
+    m_iHighlightLightness = 130;
+    m_iHoverLightness = 155;
+    m_iHoverHighlightLightness = 175;
+#endif /* !VBOX_WS_MAC */
+
+    /* Fonts: */
+    m_nameFont = font();
+    m_nameFont.setWeight(QFont::Bold);
+
+    /* Sizes: */
+    m_iMinimumNameWidth = 0;
+    m_iMaximumNameWidth = 0;
 }
 
 QVariant UIChooserItemGlobal::data(int iKey) const
@@ -232,221 +483,6 @@ void UIChooserItemGlobal::updateVisibleName()
     }
 }
 
-void UIChooserItemGlobal::retranslateUi()
-{
-    /* Update description: */
-    m_strName = tr("Global Tools");
-    m_strDescription = m_strName;
-
-    /* Update linked values: */
-    updateMinimumNameWidth();
-    updateVisibleName();
-
-    /* Update tool-tip: */
-    updateToolTip();
-}
-
-void UIChooserItemGlobal::startEditing()
-{
-    AssertMsgFailed(("Global graphics item do NOT support editing yet!"));
-}
-
-void UIChooserItemGlobal::updateToolTip()
-{
-//    setToolTip(toolTipText());
-}
-
-void UIChooserItemGlobal::addItem(UIChooserItem*, int)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-void UIChooserItemGlobal::removeItem(UIChooserItem*)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-void UIChooserItemGlobal::setItems(const QList<UIChooserItem*>&, UIChooserItemType)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserItemType) const
-{
-    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), QList<UIChooserItem*>());
-}
-
-bool UIChooserItemGlobal::hasItems(UIChooserItemType) const
-{
-    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), false);
-}
-
-void UIChooserItemGlobal::clearItems(UIChooserItemType)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-void UIChooserItemGlobal::updateAllItems(const QString &)
-{
-    /* Update this global-item: */
-    updatePixmap();
-    updateToolTip();
-
-    /* Update parent group-item: */
-    parentItem()->updateToolTip();
-    parentItem()->update();
-}
-
-void UIChooserItemGlobal::removeAllItems(const QString &)
-{
-    // Just do nothing ..
-}
-
-UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iItemSearchFlags)
-{
-    /* Ignoring if we are not searching for the global-item? */
-    if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
-        return 0;
-
-    /* Returning this: */
-    return this;
-}
-
-UIChooserItem *UIChooserItemGlobal::firstMachineItem()
-{
-    return 0;
-}
-
-void UIChooserItemGlobal::sortItems()
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-int UIChooserItemGlobal::minimumWidthHint() const
-{
-    /* Prepare variables: */
-    int iMargin = data(GlobalItemData_Margin).toInt();
-    int iSpacing = data(GlobalItemData_Spacing).toInt();
-
-    /* Calculating proposed width: */
-    int iProposedWidth = 0;
-
-    /* Two margins: */
-    iProposedWidth += 2 * iMargin;
-    /* And global-item content to take into account: */
-    iProposedWidth += (m_pixmapSize.width() +
-                       iSpacing +
-                       m_iMinimumNameWidth);
-
-    /* Return result: */
-    return iProposedWidth;
-}
-
-int UIChooserItemGlobal::minimumHeightHint() const
-{
-    /* Prepare variables: */
-    int iMargin = data(GlobalItemData_Margin).toInt();
-
-    /* Calculating proposed height: */
-    int iProposedHeight = 0;
-
-    /* Two margins: */
-    iProposedHeight += 2 * iMargin;
-    /* And global-item content to take into account: */
-    iProposedHeight += qMax(m_pixmapSize.height(), m_visibleNameSize.height());
-
-    /* Return result: */
-    return iProposedHeight;
-}
-
-QSizeF UIChooserItemGlobal::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
-{
-    /* If Qt::MinimumSize requested: */
-    if (which == Qt::MinimumSize)
-        return QSizeF(minimumWidthHint(), minimumHeightHint());
-    /* Else call to base-class: */
-    return UIChooserItem::sizeHint(which, constraint);
-}
-
-QPixmap UIChooserItemGlobal::toPixmap()
-{
-    /* Ask item to paint itself into pixmap: */
-    const QSize minimumSize = minimumSizeHint().toSize();
-    QPixmap pixmap(minimumSize);
-    QPainter painter(&pixmap);
-    QStyleOptionGraphicsItem options;
-    options.rect = QRect(QPoint(0, 0), minimumSize);
-    paint(&painter, &options);
-    return pixmap;
-}
-
-bool UIChooserItemGlobal::isDropAllowed(QGraphicsSceneDragDropEvent *, DragToken) const
-{
-    /* No drops at all: */
-    return false;
-}
-
-void UIChooserItemGlobal::processDrop(QGraphicsSceneDragDropEvent *, UIChooserItem *, DragToken)
-{
-    /* Nothing to process: */
-}
-
-void UIChooserItemGlobal::resetDragToken()
-{
-    /* Nothing to process: */
-}
-
-QMimeData *UIChooserItemGlobal::createMimeData()
-{
-    /* Nothing to return: */
-    return 0;
-}
-
-void UIChooserItemGlobal::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    UIChooserItem::showEvent(pEvent);
-
-    /* Update pixmaps: */
-    updatePixmap();
-}
-
-void UIChooserItemGlobal::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    UIChooserItem::resizeEvent(pEvent);
-
-    /* What is the new geometry? */
-    const QRectF newGeometry = geometry();
-
-    /* Should we update visible name? */
-    if (previousGeometry().width() != newGeometry.width())
-        updateMaximumNameWidth();
-
-    /* Remember the new geometry: */
-    setPreviousGeometry(newGeometry);
-}
-
-void UIChooserItemGlobal::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
-{
-    /* Call to base-class: */
-    UIChooserItem::mousePressEvent(pEvent);
-    /* No drag at all: */
-    pEvent->ignore();
-}
-
-void UIChooserItemGlobal::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget * /* pWidget = 0 */)
-{
-    /* Setup: */
-    pPainter->setRenderHint(QPainter::Antialiasing);
-
-    /* Paint decorations: */
-    paintDecorations(pPainter, pOption);
-
-    /* Paint machine info: */
-    paintMachineInfo(pPainter, pOption);
-}
-
 void UIChooserItemGlobal::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
     /* Prepare variables: */
@@ -511,7 +547,7 @@ void UIChooserItemGlobal::paintFrameRectangle(QPainter *pPainter, const QRect &r
     pPainter->restore();
 }
 
-void UIChooserItemGlobal::paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
+void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
     /* Prepare variables: */
     const QRect fullRect = pOption->rect;
@@ -579,26 +615,4 @@ void UIChooserItemGlobal::paintMachineInfo(QPainter *pPainter, const QStyleOptio
                   /* Text to paint: */
                   m_strVisibleName);
     }
-}
-
-void UIChooserItemGlobal::prepare()
-{
-    /* Colors: */
-#ifdef VBOX_WS_MAC
-    m_iHighlightLightness = 115;
-    m_iHoverLightness = 110;
-    m_iHoverHighlightLightness = 120;
-#else /* VBOX_WS_MAC */
-    m_iHighlightLightness = 130;
-    m_iHoverLightness = 155;
-    m_iHoverHighlightLightness = 175;
-#endif /* !VBOX_WS_MAC */
-
-    /* Fonts: */
-    m_nameFont = font();
-    m_nameFont.setWeight(QFont::Bold);
-
-    /* Sizes: */
-    m_iMinimumNameWidth = 0;
-    m_iMaximumNameWidth = 0;
 }

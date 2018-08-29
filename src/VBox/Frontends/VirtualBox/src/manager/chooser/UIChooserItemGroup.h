@@ -60,16 +60,16 @@ public:
     /** RTTI item type. */
     enum { Type = UIChooserItemType_Group };
 
-    /** Constructs main-root item passing pScene to the base-class. */
+    /** Constructs main-root item, passing pScene to the base-class. */
     UIChooserItemGroup(QGraphicsScene *pScene);
-    /** Constructs temporary @a fMainRoot item as a @a pCopyFrom passing pScene to the base-class. */
+    /** Constructs temporary @a fMainRoot item as a @a pCopyFrom, passing pScene to the base-class. */
     UIChooserItemGroup(QGraphicsScene *pScene, UIChooserItemGroup *pCopyFrom, bool fMainRoot);
-    /** Constructs non-root item with specified @a strName and @a iPosition, @a fOpened if requested. */
+    /** Constructs non-root item with specified @a strName and @a iPosition, @a fOpened if requested, passing pParent to the base-class. */
     UIChooserItemGroup(UIChooserItem *pParent, const QString &strName, bool fOpened = false, int iPosition  = -1);
-    /** Constructs temporary non-root item with specified @a iPosition as a @a pCopyFrom. */
+    /** Constructs temporary non-root item with specified @a iPosition as a @a pCopyFrom, passing pParent to the base-class. */
     UIChooserItemGroup(UIChooserItem *pParent, UIChooserItemGroup *pCopyFrom, int iPosition = -1);
     /** Destructs group item. */
-    ~UIChooserItemGroup();
+    virtual ~UIChooserItemGroup() /* override */;
 
     /** @name Item stuff.
       * @{ */
