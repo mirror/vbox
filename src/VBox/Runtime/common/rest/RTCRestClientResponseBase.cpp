@@ -124,7 +124,7 @@ void RTCRestClientResponseBase::receiveFinal()
 }
 
 
-PRTERRINFO RTCRestClientResponseBase::getErrInfo(void)
+PRTERRINFO RTCRestClientResponseBase::getErrInfoInternal(void)
 {
     if (m_pErrInfo)
         return m_pErrInfo;
@@ -161,7 +161,7 @@ void RTCRestClientResponseBase::copyErrInfo(PCRTERRINFO pErrInfo)
 
 int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
 {
-    PRTERRINFO pErrInfo = getErrInfo();
+    PRTERRINFO pErrInfo = getErrInfoInternal();
     if (pErrInfo)
     {
         va_list va;
@@ -353,7 +353,7 @@ int RTCRestClientResponseBase::extractHeaderFromBlob(const char *a_pszField, siz
 
 RTCRestClientResponseBase::PrimaryJsonCursorForBody::PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName,
                                                                               RTCRestClientResponseBase *a_pThat)
-    : RTCRestJsonPrimaryCursor(hValue, pszName, a_pThat->getErrInfo())
+    : RTCRestJsonPrimaryCursor(hValue, pszName, a_pThat->getErrInfoInternal())
     , m_pThat(a_pThat)
 {
 }
@@ -382,7 +382,7 @@ int RTCRestClientResponseBase::PrimaryJsonCursorForBody::unknownField(RTCRestJso
 
 void RTCRestClientResponseBase::deserializeBody(RTCRestObjectBase *a_pDst, const char *a_pchData, size_t a_cbData)
 {
-    if (m_strContentType.startsWith("application/json;"))
+    if (m_strContentType.startsWith("application/json"))
     {
         int rc = RTStrValidateEncodingEx(a_pchData, a_cbData, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
         if (RT_SUCCESS(rc))

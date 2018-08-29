@@ -309,7 +309,7 @@ int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bo
     AssertPtrReturn(a_pValue, VERR_INVALID_POINTER);
 
     if (a_idx == ~(size_t)0)
-        a_idx = m_cElements - 1;
+        a_idx = m_cElements;
 
     if (a_idx <= m_cElements)
     {
@@ -332,14 +332,13 @@ int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bo
                 memmove(&m_papElements[a_idx + 1], &m_papElements[a_idx], (m_cElements - a_idx) * sizeof(m_papElements[0]));
             m_papElements[a_idx] = a_pValue;
             m_cElements++;
+            return VINF_SUCCESS;
         }
-        else
-        {
-            /* Replace element. */
-            delete m_papElements[a_idx];
-            m_papElements[a_idx] = a_pValue;
-            return VWRN_ALREADY_EXISTS;
-        }
+
+        /* Replace element. */
+        delete m_papElements[a_idx];
+        m_papElements[a_idx] = a_pValue;
+        return VWRN_ALREADY_EXISTS;
     }
     return VERR_OUT_OF_RANGE;
 }

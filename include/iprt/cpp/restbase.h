@@ -605,6 +605,7 @@ public:
      * Removes the element at @a a_idx.
      * @returns true if @a a_idx is valid, false if out of range.
      * @param   a_idx       The index of the element to remove.
+     *                      The value ~(size_t)0 is an alias for the final element.
      */
     bool removeAt(size_t a_idx);
 
@@ -659,7 +660,7 @@ protected:
      *
      * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
      *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
-     * @param   a_idx           Where to insert it.
+     * @param   a_idx           Where to insert it.  The value ~(size_t)0 is an alias for m_cElements.
      * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
      * @param   a_fReplace      Whether to replace existing entry rather than insert.
      */
@@ -670,7 +671,7 @@ protected:
      *
      * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
      *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
-     * @param   a_idx           Where to insert it.
+     * @param   a_idx           Where to insert it.  The value ~(size_t)0 is an alias for m_cElements.
      * @param   a_rValue        The value to copy into the map.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
@@ -1402,7 +1403,7 @@ public:
     /**
      * Getter for m_pErrInfo.
      */
-    PCRTERRINFO  getErrIfno(void) const { return m_pErrInfo; }
+    PCRTERRINFO getErrInfo(void) const { return m_pErrInfo; }
 
     /**
      * Getter for m_strContentType.
@@ -1420,7 +1421,7 @@ protected:
     /** The value of the Content-Type header field. */
     RTCString   m_strContentType;
 
-    PRTERRINFO  getErrInfo(void);
+    PRTERRINFO  getErrInfoInternal(void);
     void        deleteErrInfo(void);
     void        copyErrInfo(PCRTERRINFO pErrInfo);
 
