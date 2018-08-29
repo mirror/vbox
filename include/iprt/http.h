@@ -215,13 +215,15 @@ typedef enum RTHTTPMETHOD
  * @param   hHttp           The HTTP client instance.
  * @param   pszUrl          The URL.
  * @param   enmMethod       The HTTP method for the request.
+ * @param   pvReqBody       Pointer to the request body. NULL if none.
+ * @param   cbReqBody       Size of the request body. Zero if none.
  * @param   puHttpStatus    Where to return the HTTP status code. Optional.
  * @param   ppvHeaders      Where to return the headers. Optional.
  * @param   pcbHeaders      Where to return the header size.
  * @param   ppvBody         Where to return the body.  Optional.
  * @param   pcbBody         Where to return the body size.
  */
-RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod,
+RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod, void const *pvReqBody, size_t cbReqBody,
                             uint32_t *puHttpStatus, void **ppvHeaders, size_t *pcbHeaders, void **ppvBody, size_t *pcbBody);
 
 

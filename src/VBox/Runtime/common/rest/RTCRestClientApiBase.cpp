@@ -124,7 +124,7 @@ void RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RT
                      * Perform HTTP request.
                      */
                     uint32_t uHttpStatus = 0;
-                    rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod,
+                    rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod, strXmitBody.c_str(), strXmitBody.length(),
                                        &uHttpStatus, ppvHdrs, &cbHdrs, ppvBody, &cbBody);
                     if (RT_SUCCESS(rc))
                     {

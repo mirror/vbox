@@ -80,6 +80,29 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Output collection data. */
+typedef struct RTHTTPOUTPUTDATA
+{
+    /** Pointer to the HTTP client instance structure. */
+    struct RTHTTPINTERNAL  *pHttp;
+    /** Callback specific data. */
+    union
+    {
+        /** For file destination.  */
+        RTFILE          hFile;
+        /** For memory destination. */
+        struct
+        {
+            /** The current size (sans terminator char). */
+            size_t      cb;
+            /** The currently allocated size. */
+            size_t      cbAllocated;
+            /** Pointer to the buffer. */
+            uint8_t    *pb;
+        } Mem;
+    } uData;
+} RTHTTPOUTPUTDATA;
+
 /**
  * Internal HTTP client instance.
  */
@@ -140,24 +163,26 @@ typedef struct RTHTTPINTERNAL
     /** The location field for 301 responses. */
     char               *pszRedirLocation;
 
-    /** Output callback data. */
     union
     {
-        /** For file destination.  */
-        RTFILE          hFile;
-        /** For memory destination. */
         struct
         {
-            /** The current size (sans terminator char). */
-            size_t      cb;
-            /** The currently allocated size. */
-            size_t      cbAllocated;
-            /** Pointer to the buffer. */
-            uint8_t    *pb;
+            /** Pointer to the memory block we're feeding the cURL/server. */
+            void const *pvMem;
+            /** Size of the memory block. */
+            size_t      cbMem;
+            /** Current memory block offset. */
+            size_t      offMem;
         } Mem;
-    } Output;
-    /** Output callback status. */
+    }                   ReadData;
+
+    /** Body output callback data. */
+    RTHTTPOUTPUTDATA    BodyOutput;
+    /** Headers output callback data. */
+    RTHTTPOUTPUTDATA    HeadersOutput;
+    /** The output status.*/
     int                 rcOutput;
+
     /** Download size hint set by the progress callback. */
     uint64_t            cbDownloadHint;
     /** Callback called during download. */
@@ -259,7 +284,6 @@ static void rtHttpUnsetCaFile(PRTHTTPINTERNAL pThis);
 #ifdef RT_OS_DARWIN
 static int rtHttpDarwinTryConfigProxies(PRTHTTPINTERNAL pThis, CFArrayRef hArrayProxies, CFURLRef hUrlTarget, bool fIgnorePacType);
 #endif
-static CURLcode rtHttpSetWriteCallback(PRTHTTPINTERNAL pThis, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
 
 
 RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
@@ -270,7 +294,7 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
      *        problem if multiple threads get here at the same time. */
     int rc = VERR_HTTP_INIT_FAILED;
     CURLcode rcCurl = curl_global_init(CURL_GLOBAL_ALL);
-    if (!CURL_FAILURE(rcCurl))
+    if (CURL_SUCCESS(rcCurl))
     {
         CURL *pCurl = curl_easy_init();
         if (pCurl)
@@ -282,6 +306,8 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
                 pThis->pCurl                    = pCurl;
                 pThis->fUseSystemProxySettings  = true;
                 pThis->cMaxRedirects            = 0; /* no automatic redir following */
+                pThis->BodyOutput.pHttp         = pThis;
+                pThis->HeadersOutput.pHttp      = pThis;
 
                 *phHttp = (RTHTTP)pThis;
 
@@ -385,6 +411,35 @@ RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation)
     return RTStrDupEx(ppszRedirLocation, pThis->pszRedirLocation);
 }
 
+
+RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+    AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
+
+    /*
+     * Update the redirection settings.
+     */
+    if (pThis->cMaxRedirects != cMaxRedirects)
+    {
+        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_MAXREDIRS, (long)cMaxRedirects);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_MAXREDIRS=%u: %d (%#x)\n", cMaxRedirects, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_ERROR);
+
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_FOLLOWLOCATION, (long)(cMaxRedirects > 0));
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_FOLLOWLOCATION=%d: %d (%#x)\n", cMaxRedirects > 0, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_ERROR);
+
+        pThis->cMaxRedirects = cMaxRedirects;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Proxy handling.                                                                                                              *
+*********************************************************************************************************************************/
 
 RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
 {
@@ -1861,30 +1916,10 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
 }
 
 
-RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects)
-{
-    PRTHTTPINTERNAL pThis = hHttp;
-    RTHTTP_VALID_RETURN(pThis);
-    AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
 
-    /*
-     * Update the redirection settings.
-     */
-    if (pThis->cMaxRedirects != cMaxRedirects)
-    {
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_MAXREDIRS, (long)cMaxRedirects);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_MAXREDIRS=%u: %d (%#x)\n", cMaxRedirects, rcCurl, rcCurl),
-                        VERR_HTTP_CURL_ERROR);
-
-        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_FOLLOWLOCATION, (long)(cMaxRedirects > 0));
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_FOLLOWLOCATION=%d: %d (%#x)\n", cMaxRedirects > 0, rcCurl, rcCurl),
-                        VERR_HTTP_CURL_ERROR);
-
-        pThis->cMaxRedirects = cMaxRedirects;
-    }
-    return VINF_SUCCESS;
-}
-
+/*********************************************************************************************************************************
+*   HTTP Headers                                                                                                                 *
+*********************************************************************************************************************************/
 
 /**
  * Helper for RTHttpSetHeaders and RTHttpAppendHeader that unsets the user agent
@@ -2050,6 +2085,11 @@ RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char 
 }
 
 
+
+/*********************************************************************************************************************************
+*   HTTPS and root certficates                                                                                                   *
+*********************************************************************************************************************************/
+
 /**
  * Set the CA file to NULL, deleting any temporary file if necessary.
  *
@@ -2205,14 +2245,21 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
 
 
 
+/*********************************************************************************************************************************
+*   .......
+*********************************************************************************************************************************/
+
+
 /**
  * Figures out the IPRT status code for a GET.
  *
  * @returns IPRT status code.
  * @param   pThis           The HTTP/HTTPS client instance.
  * @param   rcCurl          What curl returned.
+ * @param   puHttpStatus    Where to optionally return the HTTP status.  If specified,
+ *                          the HTTP statuses are not translated to IPRT status codes.
  */
-static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
+static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl, uint32_t *puHttpStatus)
 {
     int rc = VERR_HTTP_CURL_ERROR;
 
@@ -2224,6 +2271,12 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
     if (rcCurl == CURLE_OK)
     {
         curl_easy_getinfo(pThis->pCurl, CURLINFO_RESPONSE_CODE, &pThis->lLastResp);
+        if (puHttpStatus)
+        {
+            *puHttpStatus = pThis->lLastResp;
+            rc = VINF_SUCCESS;
+        }
+
         switch (pThis->lLastResp)
         {
             case 200:
@@ -2243,20 +2296,24 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl)
                 size_t cb = pszRedirect ? strlen(pszRedirect) : 0;
                 if (cb > 0 && cb < 2048)
                     pThis->pszRedirLocation = RTStrDup(pszRedirect);
-                rc = VERR_HTTP_REDIRECTED;
+                if (!puHttpStatus)
+                    rc = VERR_HTTP_REDIRECTED;
                 break;
             }
             case 400:
                 /* bad request */
-                rc = VERR_HTTP_BAD_REQUEST;
+                if (!puHttpStatus)
+                    rc = VERR_HTTP_BAD_REQUEST;
                 break;
             case 403:
                 /* forbidden, authorization will not help */
-                rc = VERR_HTTP_ACCESS_DENIED;
+                if (!puHttpStatus)
+                    rc = VERR_HTTP_ACCESS_DENIED;
                 break;
             case 404:
                 /* URL not found */
-                rc = VERR_HTTP_NOT_FOUND;
+                if (!puHttpStatus)
+                    rc = VERR_HTTP_NOT_FOUND;
                 break;
         }
 
@@ -2429,26 +2486,43 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
 
 
 /**
+ * Resets state.
+ *
+ * @param   pThis        HTTP client instance.
+ */
+static void rtHttpResetState(PRTHTTPINTERNAL pThis)
+{
+    pThis->fAbort                 = false;
+    pThis->rcOutput               = VINF_SUCCESS;
+    pThis->cbDownloadHint         = 0;
+    Assert(pThis->BodyOutput.pHttp == pThis);
+    Assert(pThis->HeadersOutput.pHttp == pThis);
+}
+
+
+
+/**
  * cURL callback for writing data.
  */
 static size_t rtHttpWriteData(char *pcBuf, size_t cbUnit, size_t cUnits, void *pvUser)
 {
-    PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)pvUser;
+    RTHTTPOUTPUTDATA *pOutput = (RTHTTPOUTPUTDATA *)pvUser;
+    PRTHTTPINTERNAL   pThis = pOutput->pHttp;
 
     /*
      * Do max size and overflow checks.
      */
     size_t const cbToAppend = cbUnit * cUnits;
-    size_t const cbCurSize  = pThis->Output.Mem.cb;
+    size_t const cbCurSize  = pOutput->uData.Mem.cb;
     size_t const cbNewSize  = cbCurSize + cbToAppend;
     if (   cbToAppend < RTHTTP_MAX_MEM_DOWNLOAD_SIZE
         && cbNewSize  < RTHTTP_MAX_MEM_DOWNLOAD_SIZE)
     {
-        if (cbNewSize + 1 <= pThis->Output.Mem.cbAllocated)
+        if (cbNewSize + 1 <= pOutput->uData.Mem.cbAllocated)
         {
-            memcpy(&pThis->Output.Mem.pb[cbCurSize], pcBuf, cbToAppend);
-            pThis->Output.Mem.cb = cbNewSize;
-            pThis->Output.Mem.pb[cbNewSize] = '\0';
+            memcpy(&pOutput->uData.Mem.pb[cbCurSize], pcBuf, cbToAppend);
+            pOutput->uData.Mem.cb = cbNewSize;
+            pOutput->uData.Mem.pb[cbNewSize] = '\0';
             return cbToAppend;
         }
 
@@ -2458,18 +2532,19 @@ static size_t rtHttpWriteData(char *pcBuf, size_t cbUnit, size_t cUnits, void *p
         /** @todo this could do with a better strategy wrt growth. */
         size_t cbAlloc = RT_ALIGN_Z(cbNewSize + 1, 64);
         if (   cbAlloc <= pThis->cbDownloadHint
-            && pThis->cbDownloadHint < RTHTTP_MAX_MEM_DOWNLOAD_SIZE)
+            && pThis->cbDownloadHint < RTHTTP_MAX_MEM_DOWNLOAD_SIZE
+            && pOutput == &pThis->BodyOutput)
             cbAlloc = RT_ALIGN_Z(pThis->cbDownloadHint + 1, 64);
 
-        uint8_t *pbNew = (uint8_t *)RTMemRealloc(pThis->Output.Mem.pb, cbAlloc);
+        uint8_t *pbNew = (uint8_t *)RTMemRealloc(pOutput->uData.Mem.pb, cbAlloc);
         if (pbNew)
         {
             memcpy(&pbNew[cbCurSize], pcBuf, cbToAppend);
             pbNew[cbNewSize] = '\0';
 
-            pThis->Output.Mem.cbAllocated = cbAlloc;
-            pThis->Output.Mem.pb = pbNew;
-            pThis->Output.Mem.cb = cbNewSize;
+            pOutput->uData.Mem.cbAllocated = cbAlloc;
+            pOutput->uData.Mem.pb = pbNew;
+            pOutput->uData.Mem.cb = cbNewSize;
             return cbToAppend;
         }
 
@@ -2481,11 +2556,79 @@ static size_t rtHttpWriteData(char *pcBuf, size_t cbUnit, size_t cUnits, void *p
     /*
      * Failure - abort.
      */
-    RTMemFree(pThis->Output.Mem.pb);
-    pThis->Output.Mem.pb = NULL;
-    pThis->Output.Mem.cb = RTHTTP_MAX_MEM_DOWNLOAD_SIZE;
-    pThis->fAbort        = true;
+    RTMemFree(pOutput->uData.Mem.pb);
+    pOutput->uData.Mem.pb = NULL;
+    pOutput->uData.Mem.cb = RTHTTP_MAX_MEM_DOWNLOAD_SIZE;
+    pThis->fAbort   = true;
     return 0;
+}
+
+
+/**
+ * Callback feeding cURL data from RTHTTPINTERNAL::ReadData::Mem.
+ */
+static size_t rtHttpReadData(void *pvDst, size_t cbUnit, size_t cUnits, void *pvUser)
+{
+    PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)pvUser;
+    size_t const cbReq    = cbUnit * cUnits;
+    size_t const offMem   = pThis->ReadData.Mem.offMem;
+    size_t cbToCopy = pThis->ReadData.Mem.cbMem - offMem;
+    if (cbToCopy > cbReq)
+        cbToCopy = cbReq;
+    memcpy(pvDst, (uint8_t const *)pThis->ReadData.Mem.pvMem + offMem, cbToCopy);
+    pThis->ReadData.Mem.offMem = offMem + cbToCopy;
+    return cbToCopy;
+}
+
+
+/**
+ * Helper for installing a (body) write callback function.
+ *
+ * @returns cURL status code.
+ * @param   pThis               The HTTP client instance.
+ * @param   pfnWrite            The callback.
+ * @param   pvUser              The callback user argument.
+ */
+static CURLcode rtHttpSetWriteCallback(PRTHTTPINTERNAL pThis, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
+{
+    CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEFUNCTION, pfnWrite);
+    if (CURL_SUCCESS(rcCurl))
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEDATA, pvUser);
+    return rcCurl;
+}
+
+
+/**
+ * Helper for installing a header write callback function.
+ *
+ * @returns cURL status code.
+ * @param   pThis               The HTTP client instance.
+ * @param   pfnWrite            The callback.
+ * @param   pvUser              The callback user argument.
+ */
+static CURLcode rtHttpSetHeaderCallback(PRTHTTPINTERNAL pThis, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
+{
+    CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADERFUNCTION, pfnWrite);
+    if (CURL_SUCCESS(rcCurl))
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADERDATA, pvUser);
+    return rcCurl;
+}
+
+
+/**
+ * Helper for installing a (body) read callback function.
+ *
+ * @returns cURL status code.
+ * @param   pThis               The HTTP client instance.
+ * @param   pfnRead             The callback.
+ * @param   pvUser              The callback user argument.
+ */
+static CURLcode rtHttpSetReadCallback(PRTHTTPINTERNAL pThis, PFNRTHTTPREADCALLBACK pfnRead, void *pvUser)
+{
+    CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_READFUNCTION, pfnRead);
+    if (CURL_SUCCESS(rcCurl))
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_READDATA, pvUser);
+    return rcCurl;
 }
 
 
@@ -2526,40 +2669,38 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, bool fNoBody, uint8_
     /*
      * Reset the state and apply settings.
      */
-    pThis->fAbort = false;
-    pThis->rcOutput = VINF_SUCCESS;
-    pThis->cbDownloadHint = 0;
-
+    rtHttpResetState(pThis);
     int rc = rtHttpApplySettings(hHttp, pszUrl);
     if (RT_SUCCESS(rc))
     {
-        RT_ZERO(pThis->Output.Mem);
-        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteData, (void *)pThis);
+        RT_ZERO(pThis->BodyOutput.uData.Mem);
+        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteData, (void *)&pThis->BodyOutput);
         if (fNoBody)
         {
-            if (!CURL_FAILURE(rcCurl))
+            if (CURL_SUCCESS(rcCurl))
                 rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 1L);
-            if (!CURL_FAILURE(rcCurl))
+            if (CURL_SUCCESS(rcCurl))
                 rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HEADER, 1L);
         }
-        if (!CURL_FAILURE(rcCurl))
+        if (CURL_SUCCESS(rcCurl))
         {
             /*
              * Perform the HTTP operation.
              */
             rcCurl = curl_easy_perform(pThis->pCurl);
-            rc = rtHttpGetCalcStatus(pThis, rcCurl);
+            rc = rtHttpGetCalcStatus(pThis, rcCurl, NULL);
             if (RT_SUCCESS(rc))
                 rc = pThis->rcOutput;
             if (RT_SUCCESS(rc))
             {
-                *ppvResponse = pThis->Output.Mem.pb;
-                *pcb         = pThis->Output.Mem.cb;
-                Log(("rtHttpGetToMem: %zx bytes (allocated %zx)\n", pThis->Output.Mem.cb, pThis->Output.Mem.cbAllocated));
+                *ppvResponse = pThis->BodyOutput.uData.Mem.pb;
+                *pcb         = pThis->BodyOutput.uData.Mem.cb;
+                Log(("rtHttpGetToMem: %zx bytes (allocated %zx)\n",
+                     pThis->BodyOutput.uData.Mem.cb, pThis->BodyOutput.uData.Mem.cbAllocated));
             }
-            else if (pThis->Output.Mem.pb)
-                RTMemFree(pThis->Output.Mem.pb);
-            RT_ZERO(pThis->Output.Mem);
+            else if (pThis->BodyOutput.uData.Mem.pb)
+                RTMemFree(pThis->BodyOutput.uData.Mem.pb);
+            RT_ZERO(pThis->BodyOutput.uData.Mem);
         }
         else
             rc = VERR_HTTP_CURL_ERROR;
@@ -2640,11 +2781,14 @@ RTR3DECL(void) RTHttpFreeResponse(void *pvResponse)
  */
 static size_t rtHttpWriteDataToFile(char *pcBuf, size_t cbUnit, size_t cUnits, void *pvUser)
 {
-    PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)pvUser;
-    size_t cbWritten = 0;
-    int rc = RTFileWrite(pThis->Output.hFile, pcBuf, cbUnit * cUnits, &cbWritten);
+    RTHTTPOUTPUTDATA *pOutput   = (RTHTTPOUTPUTDATA *)pvUser;
+    PRTHTTPINTERNAL   pThis     = pOutput->pHttp;
+
+    size_t            cbWritten = 0;
+    int rc = RTFileWrite(pOutput->uData.hFile, pcBuf, cbUnit * cUnits, &cbWritten);
     if (RT_SUCCESS(rc))
         return cbWritten;
+
     Log(("rtHttpWriteDataToFile: rc=%Rrc cbUnit=%zd cUnits=%zu\n", rc, cbUnit, cUnits));
     pThis->rcOutput = rc;
     return 0;
@@ -2666,36 +2810,34 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
     /*
      * Reset the state and apply settings.
      */
-    pThis->fAbort = false;
-    pThis->rcOutput = VINF_SUCCESS;
-    pThis->cbDownloadHint = 0;
-
+    rtHttpResetState(pThis);
     int rc = rtHttpApplySettings(hHttp, pszUrl);
     if (RT_SUCCESS(rc))
     {
-        pThis->Output.hFile = NIL_RTFILE;
-        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteDataToFile, (void *)pThis);
-        if (!CURL_FAILURE(rcCurl))
+        pThis->BodyOutput.uData.hFile = NIL_RTFILE;
+        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteDataToFile, (void *)&pThis->BodyOutput);
+        if (CURL_SUCCESS(rcCurl))
         {
             /*
              * Open the output file.
              */
-            rc = RTFileOpen(&pThis->Output.hFile, pszDstFile, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_READWRITE);
+            rc = RTFileOpen(&pThis->BodyOutput.uData.hFile, pszDstFile,
+                            RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_READWRITE);
             if (RT_SUCCESS(rc))
             {
                 /*
                  * Perform the HTTP operation.
                  */
                 rcCurl = curl_easy_perform(pThis->pCurl);
-                rc = rtHttpGetCalcStatus(pThis, rcCurl);
+                rc = rtHttpGetCalcStatus(pThis, rcCurl, NULL);
                 if (RT_SUCCESS(rc))
                      rc = pThis->rcOutput;
 
-                int rc2 = RTFileClose(pThis->Output.hFile);
+                int rc2 = RTFileClose(pThis->BodyOutput.uData.hFile);
                 if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                     rc = rc2;
             }
-            pThis->Output.hFile = NIL_RTFILE;
+            pThis->BodyOutput.uData.hFile = NIL_RTFILE;
         }
         else
             rc = VERR_HTTP_CURL_ERROR;
@@ -2706,13 +2848,164 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
 }
 
 
-RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod,
+RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod, void const *pvReqBody, size_t cbReqBody,
                             uint32_t *puHttpStatus, void **ppvHeaders, size_t *pcbHeaders, void **ppvBody, size_t *pcbBody)
 {
-    RT_NOREF(hHttp, pszUrl, enmMethod, puHttpStatus, ppvHeaders, pcbHeaders, ppvBody, pcbBody);
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Set safe return values and validate input.
+     */
+    Log(("RTHttpPerform: hHttp=%p pszUrl=%s enmMethod=%d pvReqBody=%p cbReqBody=%zu puHttpStatus=%p ppvHeaders=%p ppvBody=%p\n",
+         hHttp, pszUrl, enmMethod, pvReqBody, cbReqBody, puHttpStatus, ppvHeaders, ppvBody));
+
+    if (ppvHeaders)
+        *ppvHeaders = NULL;
+    if (pcbHeaders)
+        *pcbHeaders = 0;
+    if (ppvBody)
+        *ppvBody = NULL;
+    if (pcbBody)
+        *pcbBody = 0;
+    if (puHttpStatus)
+        *puHttpStatus = UINT32_MAX;
+
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+    AssertReturn(enmMethod > RTHTTPMETHOD_INVALID && enmMethod < RTHTTPMETHOD_END, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszUrl, VERR_INVALID_POINTER);
+
+    /*
+     * Set the busy flag (paranoia).
+     */
+    bool fBusy = ASMAtomicXchgBool(&pThis->fBusy, true);
+    AssertReturn(!fBusy, VERR_WRONG_ORDER);
+
+    /*
+     * Reset the state and apply settings.
+     */
+    rtHttpResetState(pThis);
+    int rc = rtHttpApplySettings(hHttp, pszUrl);
+    if (RT_SUCCESS(rc))
+    {
+
+        /* HTTP method. */
+        int rcCurl = 1;
+        switch (enmMethod)
+        {
+            case RTHTTPMETHOD_GET:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPGET, 1L);
+                break;
+            case RTHTTPMETHOD_PUT:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PUT, 1L);
+                break;
+            case RTHTTPMETHOD_POST:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_POST, 1L);
+                break;
+            case RTHTTPMETHOD_PATCH:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CUSTOMREQUEST, "PATCH");
+                break;
+            case RTHTTPMETHOD_DELETE:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CUSTOMREQUEST, "DELETE");
+                break;
+            case RTHTTPMETHOD_HEAD:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPGET, 1L);
+                if (CURL_SUCCESS(rcCurl))
+                    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOBODY, 1L);
+                break;
+            case RTHTTPMETHOD_OPTIONS:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CUSTOMREQUEST, "OPTIONS");
+                break;
+            case RTHTTPMETHOD_TRACE:
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CUSTOMREQUEST, "TRACE");
+                break;
+            case RTHTTPMETHOD_END:
+            case RTHTTPMETHOD_INVALID:
+            case RTHTTPMETHOD_32BIT_HACK:
+                AssertFailed();
+        }
+
+        /* Request body. */
+        if (pvReqBody && cbReqBody > 0 && CURL_SUCCESS(rcCurl))
+        {
+            if (enmMethod == RTHTTPMETHOD_POST)
+            {
+                /** @todo ??? */
+                rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_POSTFIELDSIZE, cbReqBody);
+                if (CURL_SUCCESS(rcCurl))
+                    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_POSTFIELDS, pvReqBody);
+            }
+            else
+            {
+                pThis->ReadData.Mem.pvMem  = pvReqBody;
+                pThis->ReadData.Mem.cbMem  = cbReqBody;
+                pThis->ReadData.Mem.offMem = 0;
+                rcCurl = rtHttpSetReadCallback(pThis, &rtHttpReadData, pThis);
+            }
+        }
+
+        /* Headers. */
+        if (ppvHeaders && CURL_SUCCESS(rcCurl))
+        {
+            RT_ZERO(pThis->HeadersOutput.uData.Mem);
+            rcCurl = rtHttpSetHeaderCallback(pThis, &rtHttpWriteData, &pThis->HeadersOutput);
+        }
+
+        /* Body */
+        if (ppvBody && CURL_SUCCESS(rcCurl))
+        {
+            RT_ZERO(pThis->BodyOutput.uData.Mem);
+            rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteData, &pThis->BodyOutput);
+        }
+
+        if (CURL_SUCCESS(rcCurl))
+        {
+            /*
+             * Perform the HTTP operation.
+             */
+            rcCurl = curl_easy_perform(pThis->pCurl);
+            rc = rtHttpGetCalcStatus(pThis, rcCurl, puHttpStatus);
+            if (RT_SUCCESS(rc))
+                rc = pThis->rcOutput;
+            if (RT_SUCCESS(rc))
+            {
+                if (ppvHeaders)
+                {
+                    *ppvHeaders = pThis->HeadersOutput.uData.Mem.pb;
+                    *pcbHeaders = pThis->HeadersOutput.uData.Mem.cb;
+                    pThis->HeadersOutput.uData.Mem.pb = NULL;
+                    Log(("RTHttpPerform: headers: %zx bytes (allocated %zx)\n",
+                         pThis->HeadersOutput.uData.Mem.cb, pThis->HeadersOutput.uData.Mem.cbAllocated));
+                }
+                if (ppvBody)
+                {
+                    *ppvBody = pThis->BodyOutput.uData.Mem.pb;
+                    *pcbBody = pThis->BodyOutput.uData.Mem.cb;
+                    pThis->BodyOutput.uData.Mem.pb = NULL;
+                    Log(("RTHttpPerform: body: %zx bytes (allocated %zx)\n",
+                         pThis->HeadersOutput.uData.Mem.cb, pThis->HeadersOutput.uData.Mem.cbAllocated));
+                }
+            }
+        }
+        else
+            rc = VERR_HTTP_CURL_ERROR;
+
+        /* Ensure we've freed all unused output and dropped references to input memory.*/
+        if (pThis->HeadersOutput.uData.Mem.pb)
+            RTMemFree(pThis->HeadersOutput.uData.Mem.pb);
+        if (pThis->BodyOutput.uData.Mem.pb)
+            RTMemFree(pThis->BodyOutput.uData.Mem.pb);
+        RT_ZERO(pThis->HeadersOutput.uData.Mem);
+        RT_ZERO(pThis->BodyOutput.uData.Mem);
+        RT_ZERO(pThis->ReadData);
+    }
+
+    ASMAtomicWriteBool(&pThis->fBusy, false);
+    return rc;
 }
 
+
+/*********************************************************************************************************************************
+*   Callback APIs.                                                                                                               *
+*********************************************************************************************************************************/
 
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser)
 {
@@ -2726,6 +3019,7 @@ RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPRO
 
 
 
+/** @todo questionable wrt calling convension */
 RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead, void *pvUser)
 {
     CURLcode rcCurl;
@@ -2745,22 +3039,7 @@ RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead,
 }
 
 
-static CURLcode rtHttpSetWriteCallback(PRTHTTPINTERNAL pThis, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
-{
-    CURLcode rcCurl;
-
-    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEFUNCTION, pfnWrite);
-    if (CURL_FAILURE(rcCurl))
-        return rcCurl;
-
-    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_WRITEDATA, pvUser);
-    if (CURL_FAILURE(rcCurl))
-        return rcCurl;
-
-    return rcCurl;
-}
-
-
+/** @todo questionable wrt calling convension */
 RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
 {
     PRTHTTPINTERNAL pThis = hHttp;
@@ -2774,6 +3053,7 @@ RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWri
 }
 
 
+/** @todo questionable wrt calling convension */
 RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser)
 {
     CURLcode rcCurl;
@@ -2792,6 +3072,12 @@ RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK 
     return VINF_SUCCESS;
 }
 
+
+
+
+/*********************************************************************************************************************************
+*   Temporary raw cURL stuff.                                                                                                    *
+*********************************************************************************************************************************/
 
 RTR3DECL(int) RTHttpRawSetUrl(RTHTTP hHttp, const char *pszUrl)
 {
