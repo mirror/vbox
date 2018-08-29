@@ -882,7 +882,7 @@ public:
      */
     ValueType *get(RTCString const &a_rStrKey)
     {
-        return (ValueType *)getWorker(a_pszKey.c_str());
+        return (ValueType *)getWorker(a_rStrKey.c_str());
     }
 
     /**
@@ -904,7 +904,7 @@ public:
      */
     ValueType const *get(RTCString const &a_rStrKey) const
     {
-        return (ValueType const *)getWorker(a_pszKey.c_str());
+        return (ValueType const *)getWorker(a_rStrKey.c_str());
     }
 
     /** @todo enumerator*/
