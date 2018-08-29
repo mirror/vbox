@@ -81,7 +81,7 @@ class UIChooserItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 
 signals:
 
-    /** @name Basic stuff.
+    /** @name Item stuff.
       * @{ */
         /** Notifies listeners about hover enter. */
         void sigHoverEnter();
@@ -189,7 +189,7 @@ public:
         /** Updates geometry. */
         void updateGeometry();
 
-        /** Updates layout.  */
+        /** Updates layout. */
         virtual void updateLayout() = 0;
 
         /** Returns minimum width-hint. */
@@ -226,24 +226,24 @@ public:
 
 protected:
 
-    /** @name Event-processing stuff.
+    /** @name Event-handling stuff.
       * @{ */
         /** Handles hover enter @a event. */
-        void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
+        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
         /** Handles hover leave @a event. */
-        void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
+        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
 
         /** Handles mouse press @a event. */
-        void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
         /** Handles mouse move @a event. */
-        void mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent);
+        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
 
         /** Handles drag move @a event. */
-        void dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
+        virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent) /* override */;
         /** Handles drag leave @a event. */
-        void dragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent);
+        virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent) /* override */;
         /** Handles drop @a event. */
-        void dropEvent(QGraphicsSceneDragDropEvent *pEvent);
+        virtual void dropEvent(QGraphicsSceneDragDropEvent *pEvent) /* override */;
     /** @} */
 
     /** @name Item stuff.
