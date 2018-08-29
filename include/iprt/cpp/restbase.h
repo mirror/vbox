@@ -772,7 +772,7 @@ public:
      *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    int prepend(size_t a_idx, ElementType *a_pThat)
+    int prepend(ElementType *a_pThat)
     {
         return insertWorker(0, a_pThat, false /*a_fReplace*/);
     }

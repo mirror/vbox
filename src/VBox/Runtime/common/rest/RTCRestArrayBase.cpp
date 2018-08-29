@@ -360,6 +360,5 @@ int RTCRestArrayBase::insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_
     else
         rc = VERR_NO_MEMORY;
     return rc;
-
 }
 
