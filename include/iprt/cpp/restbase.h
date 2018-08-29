@@ -652,7 +652,7 @@ protected:
      *                      the same type as the destination.
      * @param   a_fThrow    Whether to throw error.
      */
-    int copyArrayWorker(RTCRestArrayBase const &a_rThat, bool fThrow);
+    int copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fThrow);
 
     /**
      * Worker for performing inserts.
@@ -1020,7 +1020,7 @@ protected:
      *                      the same type as the destination.
      * @param   a_fThrow    Whether to throw error.
      */
-    int copyMapWorker(RTCRestStringMapBase const &a_rThat, bool fThrow);
+    int copyMapWorker(RTCRestStringMapBase const &a_rThat, bool a_fThrow);
 
     /**
      * Worker for performing inserts.

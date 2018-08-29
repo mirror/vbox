@@ -277,7 +277,7 @@ int RTCRestArrayBase::ensureCapacity(size_t a_cEnsureCapacity)
 }
 
 
-int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool fThrow)
+int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fThrow)
 {
     int rc;
     clear();
@@ -293,7 +293,7 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool fThr
                 rc = insertCopyWorker(i, *a_rThat.m_papElements[i], false);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
-                else if (fThrow)
+                else if (a_fThrow)
                     throw std::bad_alloc();
                 else
                     return rc;
