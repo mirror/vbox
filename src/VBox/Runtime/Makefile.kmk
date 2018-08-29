@@ -1656,6 +1656,7 @@ ifdef VBOX_WITH_LIBCURL
  	common/rest/RTCRestClientRequestBase.cpp \
  	common/rest/RTCRestClientResponseBase.cpp \
  	common/rest/RTCRestJsonPrimaryCursor.cpp \
+ 	common/rest/RTCRestStringMapBase.cpp \
  	common/rest/RTCRestOutputToString.cpp
 endif
 ifdef VBOX_WITH_DTRACE_R3

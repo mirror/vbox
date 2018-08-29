@@ -31,6 +31,7 @@
 #include <iprt/err.h>
 #include <iprt/http.h>
 #include <iprt/json.h>
+#include <iprt/list.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpp/ministring.h>
 #include <iprt/cpp/utils.h>
@@ -592,66 +593,367 @@ public:
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
     {
-        return new RTCRestArray<ElementType>();
+        return new (std::nothrow) RTCRestArray<ElementType>();
     }
 
     /** Factory method for elements. */
     static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void)
     {
-        return new ElementType();
+        return new (std::nothrow) ElementType();
     }
+};
+
+
+/**
+ * Abstract base class for the RTCRestStringMap template.
+ */
+class RTCRestStringMapBase : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestStringMapBase();
+    /** Copy constructor. */
+    RTCRestStringMapBase(RTCRestStringMapBase const &a_rThat);
+    /** Destructor. */
+    virtual ~RTCRestStringMapBase();
+    /** Copy assignment operator. */
+    RTCRestStringMapBase &operator=(RTCRestStringMapBase const &a_rThat);
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    // later?
+    //virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    //virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+    //                       uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+
+    /**
+     * Clear the content of the map.
+     */
+    void clear();
+
+    /**
+     * Gets the number of entries in the map.
+     */
+    size_t size() const;
+
+    /**
+     * Checks if the map contains the given key.
+     * @returns true if key found, false if not.
+     * @param   a_pszKey   The key to check fo.
+     */
+    bool constainsKey(const char *a_pszKey) const;
+
+    /**
+     * Checks if the map contains the given key.
+     * @returns true if key found, false if not.
+     * @param   a_rStrKey   The key to check fo.
+     */
+    bool constainsKey(RTCString const &a_rStrKey) const;
+
+    /**
+     * Remove any key-value pair with the given key.
+     * @returns true if anything was removed, false if not found.
+     * @param   a_pszKey    The key to remove.
+     */
+    bool remove(const char *a_pszKey);
+
+    /**
+     * Remove any key-value pair with the given key.
+     * @returns true if anything was removed, false if not found.
+     * @param   a_rStrKey   The key to remove.
+     */
+    bool remove(RTCString const &a_rStrKey);
+
+
+protected:
+    /** Map entry. */
+    typedef struct MapEntry
+    {
+        /** String space core. */
+        RTSTRSPACECORE      Core;
+        /** List node for enumeration. */
+        RTLISTNODE          ListEntry;
+        /** The key.
+         * @remarks Core.pszString points to the value of this object.  So, consider it const. */
+        RTCString           strKey;
+        /** The value. */
+        RTCRestObjectBase  *pValue;
+    } MapEntry;
+    /** The map tree. */
+    RTSTRSPACE          m_Map;
+    /** The enumeration list head (MapEntry). */
+    RTLISTANCHOR        m_ListHead;
+    /** Number of map entries. */
+    size_t              m_cEntries;
+
+protected:
+    /**
+     * Wrapper around the value constructor.
+     *
+     * @returns Pointer to new value object on success, NULL if out of memory.
+     */
+    virtual RTCRestObjectBase *createValue(void) = 0;
+
+    /**
+     * Wrapper around the value copy constructor.
+     *
+     * @returns Pointer to copy on success, NULL if out of memory.
+     * @param   a_pSrc      The value to copy.
+     */
+    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) = 0;
+
+    /**
+     * Worker for the copy constructor and the assignment operator.
+     *
+     * This will use createEntryCopy to do the copying.
+     *
+     * @returns VINF_SUCCESS on success, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_rThat     The map to copy.  Caller makes 100% sure the it has
+     *                      the same type as the destination.
+     * @param   a_fThrow    Whether to throw error.
+     */
+    int copyMapWorker(RTCRestStringMapBase const &a_rThat, bool fThrow);
+
+    /**
+     * Worker for performing inserts.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_pszKey        The key.
+     * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int putWorker(const char *a_pszKey, RTCRestObjectBase *a_pValue, bool a_fReplace);
+
+    /**
+     * Worker for performing inserts.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_pszKey        The key.
+     * @param   a_rValue        The value to copy into the map.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int putCopyWorker(const char *a_pszKey, RTCRestObjectBase const &a_rValue, bool a_fReplace);
+
+    /**
+     * Worker for getting the value corresponding to the given key.
+     *
+     * @returns Pointer to the value object if found, NULL if key not in the map.
+     * @param   a_pszKey        The key which value to look up.
+     */
+    RTCRestObjectBase *getWorker(const char *a_pszKey);
+
+    /**
+     * Worker for getting the value corresponding to the given key, const variant.
+     *
+     * @returns Pointer to the value object if found, NULL if key not in the map.
+     * @param   a_pszKey        The key which value to look up.
+     */
+    RTCRestObjectBase const *getWorker(const char *a_pszKey) const;
+
+private:
+    static DECLCALLBACK(int) stringSpaceDestructorCallback(PRTSTRSPACECORE pStr, void *pvUser);
 };
 
 
 /**
  * Limited map class.
  */
-template<class ElementType> class RTCRestStringMap : public RTCRestObjectBase
+template<class ValueType> class RTCRestStringMap : public RTCRestStringMapBase
 {
 public:
-    RTCRestStringMap() {};
-    ~RTCRestStringMap() {};
-/** @todo more later. */
+    /** Default constructor, creates emtpy map. */
+    RTCRestStringMap()
+        : RTCRestStringMapBase()
+    {}
 
-    virtual void resetToDefault() RT_OVERRIDE
+    /** Copy constructor. */
+    RTCRestStringMap(RTCRestStringMap const &a_rThat)
+        : RTCRestStringMapBase()
     {
+        copyMapWorker(a_rThat, true /*a_fThrow*/);
     }
 
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE
+    /** Destructor. */
+    virtual ~RTCRestStringMap()
     {
-        RT_NOREF(a_rDst);
-        return a_rDst;
+       /* nothing to do here. */
     }
 
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
+    /** Copy assignment operator. */
+    RTCRestStringMap &operator=(RTCRestStringMap const &a_rThat)
     {
-        RT_NOREF(a_rCursor);
-        return VERR_NOT_IMPLEMENTED;
-    }
-
-    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE
-    {
-        RT_NOREF(a_rValue, a_pszName, a_pErrInfo, a_fFlags);
-        return VERR_NOT_IMPLEMENTED;
+        copyMapWorker(a_rThat, true /*a_fThrow*/);
+        return *this;
     }
 
     virtual const char *getType(void) RT_OVERRIDE
     {
-        return "RTCRestStringMap<ElementType>";
+        return "RTCRestStringMap<ValueType>";
     }
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
     {
-        return new RTCRestStringMap<ElementType>();
+        return new (std::nothrow) RTCRestStringMap<ValueType>();
     }
 
-    /** Factory method for elements. */
-    static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void)
+    /** Factory method for values. */
+    static DECLCALLBACK(RTCRestObjectBase *) createValueInstance(void)
     {
-        return new ElementType();
+        return new (std::nothrow) ValueType();
     }
+
+    /**
+     * Inserts the given object into the map.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_pszKey        The key.
+     * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int put(const char *a_pszKey, ValueType *a_pValue, bool a_fReplace = false)
+    {
+        return putWorker(a_pszKey, a_pValue, a_fReplace);
+    }
+
+    /**
+     * Inserts the given object into the map.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_rStrKey       The key.
+     * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int put(RTCString const &a_rStrKey, ValueType *a_pValue, bool a_fReplace = false)
+    {
+        return putWorker(a_rStrKey.c_str(), a_pValue, a_fReplace);
+    }
+
+    /**
+     * Inserts a copy of the given object into the map.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_pszKey        The key.
+     * @param   a_rValue        The value to insert a copy of.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int putCopy(const char *a_pszKey, const ValueType &a_rValue, bool a_fReplace = false)
+    {
+        return putCopyWorker(a_pszKey, a_rValue, a_fReplace);
+    }
+
+    /**
+     * Inserts a copy of the given object into the map.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_rStrKey       The key.
+     * @param   a_rValue        The value to insert a copy of.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int putCopy(RTCString const &a_rStrKey, const ValueType &a_rValue, bool a_fReplace = false)
+    {
+        return putCopyWorker(a_rStrKey.c_str(), a_rValue, a_fReplace);
+    }
+
+    /**
+     * Gets the value corresponding to the given key.
+     *
+     * @returns Pointer to the value object if found, NULL if key not in the map.
+     * @param   a_pszKey        The key which value to look up.
+     */
+    ValueType *get(const char *a_pszKey)
+    {
+        return (ValueType *)getWorker(a_pszKey);
+    }
+
+    /**
+     * Gets the value corresponding to the given key.
+     *
+     * @returns Pointer to the value object if found, NULL if key not in the map.
+     * @param   a_rStrKey       The key which value to look up.
+     */
+    ValueType *get(RTCString const &a_rStrKey)
+    {
+        return (ValueType *)getWorker(a_pszKey.c_str());
+    }
+
+    /**
+     * Gets the const value corresponding to the given key.
+     *
+     * @returns Pointer to the value object if found, NULL if key not in the map.
+     * @param   a_pszKey        The key which value to look up.
+     */
+    ValueType const *get(const char *a_pszKey) const
+    {
+        return (ValueType const *)getWorker(a_pszKey);
+    }
+
+    /**
+     * Gets the const value corresponding to the given key.
+     *
+     * @returns Pointer to the value object if found, NULL if key not in the map.
+     * @param   a_rStrKey       The key which value to look up.
+     */
+    ValueType const *get(RTCString const &a_rStrKey) const
+    {
+        return (ValueType const *)getWorker(a_pszKey.c_str());
+    }
+
+    /** @todo enumerator*/
+
+protected:
+    virtual RTCRestObjectBase *createValue(void) RT_OVERRIDE
+    {
+        return new (std::nothrow) ValueType();
+    }
+
+    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) RT_OVERRIDE
+    {
+        return new (std::nothrow) ValueType(*(ValueType const *)a_pSrc);
+    }
+};
+
+
+/**
+ * Dynamic REST object.
+ *
+ * @todo figure this one out. it's possible this is only used in maps and
+ *       could be a specialized map implementation.
+ */
+class RTCRestObject : public RTCRestObjectBase
+{
+public:
+    /** Default destructor. */
+    RTCRestObject();
+    /** Copy constructor. */
+    RTCRestObject(RTCRestBool const &a_rThat);
+    /** Destructor. */
+    virtual ~RTCRestObject();
+    /** Copy assignment operator. */
+    RTCRestBool &operator=(RTCRestObject const &a_rThat);
+
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual const char *getType(void) RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
+protected:
+    /** @todo figure out the value stuff here later... */
 };
 
 
