@@ -120,7 +120,7 @@ public:
      *
      * @returns IPRT status code.
      * @param   uParm           Index of parameter to retrieve.
-     * @param   pu32Info        Where to store the parameter value.
+     * @param   pu64Info        Where to store the parameter value.
      */
     int GetParmU64(uint32_t uParm, uint64_t *pu64Info) const
     {
