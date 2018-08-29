@@ -58,12 +58,10 @@ RTCRestObjectBase::~RTCRestObjectBase()
 
 int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == kCollectionFormat_Unspecified); RT_NOREF(a_fFlags);
-
     /*
      * Just wrap the JSON serialization method.
      */
-    RTCRestOutputToString Tmp(a_pDst);
+    RTCRestOutputToString Tmp(a_pDst, RT_BOOL(a_fFlags & kToString_Append));
     serializeAsJson(Tmp);
     return Tmp.finalize() ? VINF_SUCCESS : VERR_NO_MEMORY;
 }
@@ -80,7 +78,7 @@ RTCString RTCRestObjectBase::toString() const
 int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                                   uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == kCollectionFormat_Unspecified); RT_NOREF(a_fFlags);
+    RT_NOREF(a_fFlags);
 
     /*
      * Just wrap the JSON serialization method.
@@ -184,18 +182,23 @@ int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestBool::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-
+    if (!(a_fFlags & kToString_Append))
+    {
+        if (m_fValue)
+            return a_pDst->assignNoThrow(RT_STR_TUPLE("true"));
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("false"));
+    }
     if (m_fValue)
-        return a_pDst->assignNoThrow(RT_STR_TUPLE("true"));
-    return a_pDst->assignNoThrow(RT_STR_TUPLE("false"));
+        return a_pDst->appendNoThrow(RT_STR_TUPLE("true"));
+    return a_pDst->appendNoThrow(RT_STR_TUPLE("false"));
 }
 
 
 int RTCRestBool::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+    RT_NOREF(a_fFlags);
+
     if (a_rValue.startsWithWord("true", RTCString::CaseInsensitive))
         m_fValue = true;
     else if (a_rValue.startsWithWord("false", RTCString::CaseInsensitive))
@@ -298,16 +301,16 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestInt64::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-
-    return a_pDst->printfNoThrow("%RI64", m_iValue);
+    if (!(a_fFlags & kToString_Append))
+        return a_pDst->printfNoThrow("%RI64", m_iValue);
+    return a_pDst->appendPrintfNoThrow("%RI64", m_iValue);
 }
 
 
 int RTCRestInt64::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+    RT_NOREF(a_fFlags);
 
     int rc = RTStrToInt64Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
@@ -414,16 +417,16 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestInt32::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-
-    return a_pDst->printfNoThrow("%RI32", m_iValue);
+    if (!(a_fFlags & kToString_Append))
+        return a_pDst->printfNoThrow("%RI32", m_iValue);
+    return a_pDst->appendPrintfNoThrow("%RI32", m_iValue);
 }
 
 
 int RTCRestInt32::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+    RT_NOREF(a_fFlags);
 
     int rc = RTStrToInt32Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
@@ -530,16 +533,16 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestInt16::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-
-    return a_pDst->printfNoThrow("%RI16", m_iValue);
+    if (!(a_fFlags & kToString_Append))
+        return a_pDst->printfNoThrow("%RI16", m_iValue);
+    return a_pDst->appendPrintfNoThrow("%RI16", m_iValue);
 }
 
 
 int RTCRestInt16::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+    RT_NOREF(a_fFlags);
 
     int rc = RTStrToInt16Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
@@ -625,8 +628,6 @@ int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-
     /* Just a simple approximation here. */
     /** @todo implement floating point values for json. */
     char szValue[128];
@@ -637,14 +638,16 @@ int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollection
 #endif
     size_t const cchValue = strlen(szValue);
 
-    return a_pDst->assignNoThrow(szValue, cchValue);
+    if (!(a_fFlags & kToString_Append))
+        return a_pDst->assignNoThrow(szValue, cchValue);
+    return a_pDst->appendNoThrow(szValue, cchValue);
 }
 
 
 int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                               uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
+    RT_NOREF(a_fFlags);
 
     const char *pszValue = RTStrStripL(a_rValue.c_str());
     errno = 0;
@@ -750,17 +753,16 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestString::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-
-    return a_pDst->assignNoThrow(*this);
+    if (!(a_fFlags & kToString_Append))
+        return a_pDst->assignNoThrow(*this);
+    return a_pDst->appendNoThrow(*this);
 }
 
 
 int RTCRestString::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                               uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    Assert(a_fFlags == 0); RT_NOREF(a_fFlags);
-    RT_NOREF(a_pszName); RT_NOREF(a_pErrInfo);
+    RT_NOREF(a_fFlags); RT_NOREF(a_pszName); RT_NOREF(a_pErrInfo);
 
     return assignNoThrow(a_rValue);
 }

@@ -114,7 +114,7 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
      * Iterate the object values.
      */
     RTJSONIT hIterator;
-    int rcRet = RTJsonIteratorBegin(a_rCursor.m_hValue, &hIterator);
+    int rcRet = RTJsonIteratorBeginObject(a_rCursor.m_hValue, &hIterator);
     if (RT_SUCCESS(rcRet))
     {
         for (;;)
@@ -175,11 +175,10 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
     else
         rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBegin failed: %Rrc", rcRet);
     return rcRet;
-
 }
 
 // later?
-//    virtual int RTCRestStringMapBase::toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const ;
+//    virtual int RTCRestStringMapBase::toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const ;
 //    virtual int RTCRestStringMapBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
 //                           uint32_t a_fFlags = kCollectionFormat_Unspecified) ;
 //

@@ -122,8 +122,10 @@ public:
      * Creates an instance that appends to @a a_pDst.
      * @param   a_pDst      Pointer to the destination string object.
      *                      NULL is not accepted and will assert.
+     * @param   a_fAppend   Whether to append to the current string value, or
+     *                      nuke the string content before starting the output.
      */
-    RTCRestOutputToString(RTCString *a_pDst);
+    RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend = false);
     virtual ~RTCRestOutputToString();
 
     virtual size_t vprintf(const char *pszFormat, va_list va) RT_OVERRIDE;
@@ -288,6 +290,9 @@ public:
      *
      * The kCollectionFormat_xxx bunch controls multiple values in arrays
      * are formatted.  They are ignored by everyone else.
+     *
+     * @note When adding collection format types, make sure to also
+     *       update RTCRestArrayBase::toString().
      */
     enum
     {
@@ -296,7 +301,9 @@ public:
         kCollectionFormat_ssv,              /**< Space-separated list. */
         kCollectionFormat_tsv,              /**< Tab-separated list. */
         kCollectionFormat_pipes,            /**< Pipe-separated list. */
-        kCollectionFormat_Mask = 7          /**< Collection type mask. */
+        kCollectionFormat_Mask = 7,         /**< Collection type mask. */
+
+        kToString_Append = 8                /**< Append to the string (rather than assigning). */
     };
 
     /**
@@ -542,7 +549,7 @@ public:
     virtual void resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;
@@ -553,36 +560,141 @@ public:
 
 
 /**
- * Limited array class.
+ * Abstract base class for the RTCRestArray template.
  */
-template<class ElementType> class RTCRestArray : public RTCRestObjectBase
+class RTCRestArrayBase : public RTCRestObjectBase
 {
 public:
-    RTCRestArray() {};
-    ~RTCRestArray() {};
-/** @todo more later. */
+    /** Default destructor. */
+    RTCRestArrayBase();
+    /** Copy constructor. */
+    RTCRestArrayBase(RTCRestArrayBase const &a_rThat);
+    /** Destructor. */
+    virtual ~RTCRestArrayBase();
+    /** Copy assignment operator. */
+    RTCRestArrayBase &operator=(RTCRestArrayBase const &a_rThat);
 
-    virtual void resetToDefault() RT_OVERRIDE
-    {
-    }
-
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE
-    {
-        RT_NOREF(a_rDst);
-        return a_rDst;
-    }
-
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE
-    {
-        RT_NOREF(a_rCursor);
-        return VERR_NOT_IMPLEMENTED;
-    }
-
+    /* Overridden methods: */
+    virtual void resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+
+    /**
+     * Clear the content of the map.
+     */
+    void clear();
+
+    /**
+     * Check if an list contains any items.
+     *
+     * @return   True if there is more than zero items, false otherwise.
+     */
+    bool isEmpty() const
     {
-        RT_NOREF(a_rValue, a_pszName, a_pErrInfo, a_fFlags);
-        return VERR_NOT_IMPLEMENTED;
+        return m_cElements == 0;
+    }
+
+    /**
+     * Gets the number of entries in the map.
+     */
+    size_t size() const
+    {
+        return m_cElements;
+    }
+
+    /**
+     * Removes the element at @a a_idx.
+     * @returns true if @a a_idx is valid, false if out of range.
+     * @param   a_idx       The index of the element to remove.
+     */
+    bool removeAt(size_t a_idx);
+
+
+    /**
+     * Makes sure the array can hold at the given number of entries.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_MEMORY.
+     * @param   a_cEnsureCapacity   The number of elements to ensure capacity to hold.
+     */
+    int ensureCapacity(size_t a_cEnsureCapacity);
+
+
+protected:
+    /** The array. */
+    RTCRestObjectBase **m_papElements;
+    /** Number of elements in the array. */
+    size_t              m_cElements;
+    /** The number of elements m_papElements can hold.
+     * The difference between m_cCapacity and m_cElements are all NULLs. */
+    size_t              m_cCapacity;
+
+    /**
+     * Wrapper around the value constructor.
+     *
+     * @returns Pointer to new value object on success, NULL if out of memory.
+     */
+    virtual RTCRestObjectBase *createValue(void) = 0;
+
+    /**
+     * Wrapper around the value copy constructor.
+     *
+     * @returns Pointer to copy on success, NULL if out of memory.
+     * @param   a_pSrc      The value to copy.
+     */
+    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) = 0;
+
+    /**
+     * Worker for the copy constructor and the assignment operator.
+     *
+     * This will use createEntryCopy to do the copying.
+     *
+     * @returns VINF_SUCCESS on success, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_rThat     The array to copy.  Caller makes 100% sure the it has
+     *                      the same type as the destination.
+     * @param   a_fThrow    Whether to throw error.
+     */
+    int copyArrayWorker(RTCRestArrayBase const &a_rThat, bool fThrow);
+
+    /**
+     * Worker for performing inserts.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_idx           Where to insert it.
+     * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
+     * @param   a_fReplace      Whether to replace existing entry rather than insert.
+     */
+    int insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bool a_fReplace);
+
+    /**
+     * Worker for performing inserts.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_idx           Where to insert it.
+     * @param   a_rValue        The value to copy into the map.
+     * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     */
+    int insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace);
+};
+
+
+
+/**
+ * Limited array class.
+ */
+template<class ElementType> class RTCRestArray : public RTCRestArrayBase
+{
+public:
+    RTCRestArray()
+        : RTCRestArrayBase()
+    {
+    }
+    ~RTCRestArray()
+    {
     }
 
     virtual const char *getType(void) RT_OVERRIDE
@@ -600,6 +712,181 @@ public:
     static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void)
     {
         return new (std::nothrow) ElementType();
+    }
+
+
+    /**
+     * Insert the given object at the specified index.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_idx           The insertion index.  ~(size_t)0 is an alias for the end.
+     * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
+     */
+    int insert(size_t a_idx, ElementType *a_pThat)
+    {
+        return insertWorker(a_idx, a_pThat, false /*a_fReplace*/);
+    }
+
+    /**
+     * Insert a copy of the object at the specified index.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_idx           The insertion index.  ~(size_t)0 is an alias for the end.
+     * @param   a_rThat         The object to insert a copy of.
+     */
+    int insertCopy(size_t a_idx, ElementType const &a_rThat)
+    {
+        return insertCopyWorker(a_idx, &a_rThat, false /*a_fReplace*/);
+    }
+
+    /**
+     * Appends the given object to the array.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
+     */
+    int append(size_t a_idx, ElementType *a_pThat)
+    {
+        return insertWorker(~(size_t)0, a_pThat, false /*a_fReplace*/);
+    }
+
+    /**
+     * Appends a copy of the object at the specified index.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_rThat         The object to insert a copy of.
+     */
+    int appendCopy(ElementType const &a_rThat)
+    {
+        return insertCopyWorker(~(size_t)0, &a_rThat, false /*a_fReplace*/);
+    }
+
+    /**
+     * Prepends the given object to the array.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
+     */
+    int prepend(size_t a_idx, ElementType *a_pThat)
+    {
+        return insertWorker(0, a_pThat, false /*a_fReplace*/);
+    }
+
+    /**
+     * Prepends a copy of the object at the specified index.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_rThat         The object to insert a copy of.
+     */
+    int prependCopy(ElementType const &a_rThat)
+    {
+        return insertCopyWorker(0, &a_rThat, false /*a_fReplace*/);
+    }
+
+    /**
+     * Insert the given object at the specified index.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_idx           The index of the existing object to replace.
+     * @param   a_pThat         The replacement object.  The array takes ownership of the object on success.
+     */
+    int replace(size_t a_idx, ElementType *a_pThat)
+    {
+        return insertWorker(a_idx, a_pThat, true /*a_fReplace*/);
+    }
+
+    /**
+     * Insert a copy of the object at the specified index.
+     *
+     * @returns VINF_SUCCESS on success.
+     *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
+     * @param   a_idx           The index of the existing object to replace.
+     * @param   a_rThat         The object to insert a copy of.
+     */
+    int replaceCopy(size_t a_idx, ElementType const &a_rThat)
+    {
+        return insertCopyWorker(a_idx, &a_rThat, true /*a_fReplace*/);
+    }
+
+    /**
+     * Returns the object at a given index.
+     *
+     * @returns The object at @a a_idx, NULL if out of range.
+     * @param   a_idx           The array index.
+     */
+    ElementType *at(size_t a_idx)
+    {
+        if (a_idx < m_cElements)
+            return (ElementType *)m_papElements[a_idx];
+        return NULL;
+    }
+
+    /**
+     * Returns the object at a given index, const variant.
+     *
+     * @returns The object at @a a_idx, NULL if out of range.
+     * @param   a_idx           The array index.
+     */
+    ElementType const *at(size_t a_idx) const
+    {
+        if (a_idx < m_cElements)
+            return (ElementType const *)m_papElements[a_idx];
+        return NULL;
+    }
+
+    /**
+     * Returns the first object in the array.
+     * @returns The first object, NULL if empty.
+     */
+    ElementType *first(size_t a_idx)
+    {
+        return at(0);
+    }
+
+    /**
+     * Returns the first object in the array, const variant.
+     * @returns The first object, NULL if empty.
+     */
+    ElementType const *first(size_t a_idx) const
+    {
+        return at(0);
+    }
+
+    /**
+     * Returns the last object in the array.
+     * @returns The last object, NULL if empty.
+     */
+    ElementType *last(size_t a_idx)
+    {
+        return at(m_cElements - 1);
+    }
+
+    /**
+     * Returns the last object in the array, const variant.
+     * @returns The last object, NULL if empty.
+     */
+    ElementType const *last(size_t a_idx) const
+    {
+        return at(m_cElements - 1);
+    }
+
+
+protected:
+    virtual RTCRestObjectBase *createValue(void) RT_OVERRIDE
+    {
+        return new (std::nothrow) ElementType();
+    }
+
+    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) RT_OVERRIDE
+    {
+        return new (std::nothrow) ElementType(*(ElementType const *)a_pSrc);
     }
 };
 
@@ -624,7 +911,7 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     // later?
-    //virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    //virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     //virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
     //                       uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
 
@@ -944,7 +1231,7 @@ public:
     virtual void resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
     virtual const char *getType(void) RT_OVERRIDE;

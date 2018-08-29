@@ -280,6 +280,26 @@ RTDECL(int) RTJsonValueQueryByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL
 RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
 
 /**
+ * Creates an iterator for a given JSON array value.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an array.
+ * @param   hJsonVal        The JSON value handle.
+ * @param   phJsonIt        Where to store the JSON iterator handle on success.
+ */
+RTDECL(int) RTJsonIteratorBeginArray(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
+
+/**
+ * Creates an iterator for a given JSON object value.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object.
+ * @param   hJsonVal        The JSON value handle.
+ * @param   phJsonIt        Where to store the JSON iterator handle on success.
+ */
+RTDECL(int) RTJsonIteratorBeginObject(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
+
+/**
  * Gets the value and optional name for the current iterator position.
  *
  * @returns IPRT status code.

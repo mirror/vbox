@@ -34,10 +34,12 @@
 #include <iprt/string.h>
 
 
-RTCRestOutputToString::RTCRestOutputToString(RTCString *a_pDst)
+RTCRestOutputToString::RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend /*= false*/)
     : m_pDst(a_pDst)
     , m_fOutOfMemory(false)
 {
+    if (!a_fAppend)
+        m_pDst->setNull();
 }
 
 
