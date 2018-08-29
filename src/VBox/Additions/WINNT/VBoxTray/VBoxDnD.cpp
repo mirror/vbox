@@ -141,7 +141,13 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pCtx)
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                             "dndwnd"); /** @todo Include ID if there's more than one proxy window. */
         if (RT_SUCCESS(rc))
-            rc = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
+        {
+            int rc2 = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
+            AssertRC(rc2);
+
+            if (!pCtx->fStarted) /* Did the thread fail to start? */
+                rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+        }
     }
 
     if (RT_FAILURE(rc))
@@ -289,8 +295,6 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
     {
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
         rc = pThis->RegisterAsDropTarget();
-#else
-        rc = VINF_SUCCESS;
 #endif
     }
     else
@@ -299,13 +303,14 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
         rc = VERR_COM_UNEXPECTED;
     }
 
-    bool fSignalled = false;
+    if (RT_SUCCESS(rc))
+        pCtx->fStarted = true; /* Set started indicator on success. */
+
+    int rc2 = RTThreadUserSignal(hThread);
+    bool fSignalled = RT_SUCCESS(rc2);
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadUserSignal(hThread);
-        fSignalled = RT_SUCCESS(rc);
-
         bool fShutdown = false;
         for (;;)
         {
@@ -331,7 +336,7 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
         }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-        int rc2 = pThis->UnregisterAsDropTarget();
+        rc2 = pThis->UnregisterAsDropTarget();
         if (RT_SUCCESS(rc))
             rc = rc2;
 #endif
@@ -340,7 +345,7 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 
     if (!fSignalled)
     {
-        int rc2 = RTThreadUserSignal(hThread);
+        rc2 = RTThreadUserSignal(hThread);
         AssertRC(rc2);
     }
 
