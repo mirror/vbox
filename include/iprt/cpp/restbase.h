@@ -854,7 +854,7 @@ protected:
     /**
      * Helper that extracts fields from the HTTP headers.
      *
-     * @param   a_paFieldsDesc      Pointer to an array of field descriptors.
+     * @param   a_paFieldDescs      Pointer to an array of field descriptors.
      * @param   a_pappFieldValues   Pointer to a parallel array of value pointer pointers.
      * @param   a_cFields           Number of field descriptors..
      * @param   a_pchData           The header blob to search.
