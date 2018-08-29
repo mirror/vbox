@@ -15539,6 +15539,36 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
+ * Interface for HM and EM to emulate the VMWRITE instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr         The instruction length in bytes.
+ * @param   u64Val          The value to write or guest linear address of the value
+ *                          to write.
+ * @param   uFieldEnc       The VMCS field encoding.
+ * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint64_t u64Val, uint32_t uFieldEnc,
+                                                 PCVMXVEXITINFO pExitInfo)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+    Assert(pExitInfo);
+
+    uint8_t const iEffSeg        = pExitInfo->ExitInstrInfo.VmreadVmwrite.iSegReg;
+    IEMMODE const enmEffAddrMode = (IEMMODE)pExitInfo->ExitInstrInfo.VmreadVmwrite.u3AddrSize;
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, u64Val, uFieldEnc, pExitInfo);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate the VMPTRLD instruction.
  *
  * @returns Strict VBox status code.
