@@ -94,7 +94,7 @@ public:
             return VERR_INVALID_PARAMETER;
         }
 
-        return copyParmsInternal(&aParms[0], cParms, m_paParms, m_cParms, false /* fDeepCopy */);
+        return Message::CopyParms(&aParms[0], cParms, m_paParms, m_cParms, false /* fDeepCopy */);
     }
 
     /**
@@ -156,44 +156,6 @@ public:
         return VINF_SUCCESS;
     }
 
-private:
-
-    /** Stored message type. */
-    uint32_t         m_uMsg;
-    /** Number of stored HGCM parameters. */
-    uint32_t         m_cParms;
-    /** Stored HGCM parameters. */
-    PVBOXHGCMSVCPARM m_paParms;
-
-    int initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
-    {
-        AssertReturn(cParms < 256, VERR_INVALID_PARAMETER);
-        AssertPtrNullReturn(aParms, VERR_INVALID_PARAMETER);
-
-        /* Cleanup old messages. */
-        cleanup();
-
-        m_uMsg   = uMsg;
-        m_cParms = cParms;
-
-        int rc = VINF_SUCCESS;
-
-        if (cParms)
-        {
-            m_paParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * m_cParms);
-            if (m_paParms)
-            {
-                rc = copyParmsInternal(m_paParms, m_cParms, &aParms[0], cParms, true /* fDeepCopy */);
-                if (RT_FAILURE(rc))
-                    cleanup();
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-
-        return rc;
-    }
-
     /**
      * Copies HGCM parameters from source to destination.
      *
@@ -206,9 +168,9 @@ private:
      *
      * @remark Static convenience function.
      */
-    static int copyParmsInternal(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
-                                 PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc,
-                                 bool fDeepCopy)
+    static int CopyParms(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
+                         PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc,
+                         bool fDeepCopy)
     {
         AssertPtrReturn(paParmsSrc, VERR_INVALID_POINTER);
         AssertPtrReturn(paParmsDst, VERR_INVALID_POINTER);
@@ -283,6 +245,44 @@ private:
             if (RT_FAILURE(rc))
                 break;
         }
+        return rc;
+    }
+
+private:
+
+    /** Stored message type. */
+    uint32_t         m_uMsg;
+    /** Number of stored HGCM parameters. */
+    uint32_t         m_cParms;
+    /** Stored HGCM parameters. */
+    PVBOXHGCMSVCPARM m_paParms;
+
+    int initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
+    {
+        AssertReturn(cParms < 256, VERR_INVALID_PARAMETER);
+        AssertPtrNullReturn(aParms, VERR_INVALID_PARAMETER);
+
+        /* Cleanup old messages. */
+        cleanup();
+
+        m_uMsg   = uMsg;
+        m_cParms = cParms;
+
+        int rc = VINF_SUCCESS;
+
+        if (cParms)
+        {
+            m_paParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * m_cParms);
+            if (m_paParms)
+            {
+                rc = Message::CopyParms(m_paParms, m_cParms, &aParms[0], cParms, true /* fDeepCopy */);
+                if (RT_FAILURE(rc))
+                    cleanup();
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+
         return rc;
     }
 
