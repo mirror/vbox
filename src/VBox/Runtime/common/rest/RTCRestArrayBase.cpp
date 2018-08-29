@@ -290,7 +290,7 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool fThr
         {
             for (size_t i = 0; i < a_rThat.m_cElements; i++)
             {
-                int rc = insertCopyWorker(i, *a_rThat.m_papElements[i], false);
+                rc = insertCopyWorker(i, *a_rThat.m_papElements[i], false);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
                 else if (fThrow)
@@ -300,7 +300,7 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool fThr
             }
         }
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
