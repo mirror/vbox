@@ -2118,6 +2118,28 @@ QList<int> UISession::listOfVisibleWindows() const
     return visibleWindows;
 }
 
+CMediumVector UISession::getMachineMedia() const
+{
+    CMediumVector media;
+    foreach (const CStorageController &controller, m_machine.GetStorageControllers())
+    {
+        QString strAttData;
+        /* Enumerate all the attachments: */
+        foreach (const CMediumAttachment &attachment, m_machine.GetMediumAttachmentsOfController(controller.GetName()))
+        {
+            /* Skip unrelated attachments: */
+            if (attachment.GetType() != KDeviceType_HardDisk &&
+                attachment.GetType() != KDeviceType_Floppy &&
+                attachment.GetType() != KDeviceType_DVD)
+                continue;
+            if (attachment.GetIsEjected() || attachment.GetMedium().isNull())
+                continue;
+            media.append(attachment.GetMedium());
+        }
+    }
+    return media;
+}
+
 void UISession::loadVMSettings()
 {
     /* Cache IMachine::ExecutionEngine value. */
@@ -2269,4 +2291,3 @@ static void signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSec
             gpMachine->uisession()->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
 }
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
-

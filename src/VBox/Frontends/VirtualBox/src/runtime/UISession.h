@@ -38,6 +38,7 @@
 #include "CMouse.h"
 #include "CKeyboard.h"
 #include "CMachineDebugger.h"
+#include "CMedium.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -278,6 +279,9 @@ public:
 
     /** Returns the list of visible guest windows. */
     QList<int> listOfVisibleWindows() const;
+
+    /** Returns a vector of media attached to the machine. */
+    CMediumVector getMachineMedia() const;
 
 signals:
 
@@ -558,4 +562,3 @@ private:
 };
 
 #endif /* !___UISession_h___ */
-

@@ -212,8 +212,10 @@ bool UIMachine::prepare()
 
     /* Cache medium data early if necessary: */
     if (vboxGlobal().agressiveCaching())
-        vboxGlobal().startMediumEnumeration();
-
+    {
+        AssertReturn(!m_pSession, false);
+        vboxGlobal().startMediumEnumeration(m_pSession->getMachineMedia());
+    }
     /* Prepare machine-logic: */
     prepareMachineLogic();
 
@@ -315,4 +317,3 @@ void UIMachine::enterInitialVisualState()
 {
     sltChangeVisualState(m_initialVisualState);
 }
-
