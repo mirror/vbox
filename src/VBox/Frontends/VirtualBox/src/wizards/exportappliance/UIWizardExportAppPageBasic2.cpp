@@ -118,8 +118,6 @@ void UIWizardExportAppPage2::populateAccounts()
 
     /* Acquire provider list: */
     QVector<CCloudProvider> comProviders = m_comCloudProviderManager.GetProviders();
-    /* Make sure at least one provider is supported: */
-    AssertReturnVoid(!comProviders.isEmpty());
 
     /* Iterate through providers: */
     foreach (const CCloudProvider &comProvider, comProviders)
