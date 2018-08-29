@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -395,11 +395,12 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         case WM_CREATE:
         {
             int rc = OnCreate();
-            /** @todo r=bird: MSDN says this returns 0 on success and -1 on failure, not
-             *        TRUE/FALSE... */
             if (RT_FAILURE(rc))
-                return FALSE;
-            return TRUE;
+            {
+                LogRel(("DnD: Failed to create proxy window, rc=%Rrc\n", rc));
+                return -1;
+            }
+            return 0;
         }
 
         case WM_QUIT:
