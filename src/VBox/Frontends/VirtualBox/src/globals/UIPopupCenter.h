@@ -172,7 +172,7 @@ public:
     void cannotToggleAudioInput(QWidget *pParent, const CAudioAdapter &comAdapter,
                                 const QString &strMachineName, bool fEnable);
     void cannotMountImage(QWidget *pParent, const QString &strMachineName, const QString &strMediumName);
-    void cannotOpenMedium(QWidget *pParent, const CVirtualBox &comVBox, UIMediumType enmType, const QString &strLocation);
+    void cannotOpenMedium(QWidget *pParent, const CVirtualBox &comVBox, UIMediumDeviceType enmType, const QString &strLocation);
     void cannotSaveMachineSettings(QWidget *pParent, const CMachine &comMachine);
 
 private slots:

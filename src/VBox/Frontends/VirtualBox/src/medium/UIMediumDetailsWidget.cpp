@@ -69,7 +69,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(UIMediumManagerWidget *pParent, Emb
     prepare();
 }
 
-void UIMediumDetailsWidget::setCurrentType(UIMediumType enmType)
+void UIMediumDetailsWidget::setCurrentType(UIMediumDeviceType enmType)
 {
     /* If known type was requested => raise corresponding container: */
     if (m_aContainers.contains(enmType))
@@ -542,10 +542,10 @@ void UIMediumDetailsWidget::prepareTabDetails()
         AssertPtrReturnVoid(m_pLayoutDetails);
         {
             /* Create information-containers: */
-            for (int i = (int)UIMediumType_HardDisk; i < (int)UIMediumType_All; ++i)
+            for (int i = (int)UIMediumDeviceType_HardDisk; i < (int)UIMediumDeviceType_All; ++i)
             {
-                const UIMediumType enmType = (UIMediumType)i;
-                prepareInformationContainer(enmType, enmType == UIMediumType_HardDisk ? 5 : 2); /// @todo Remove hard-coded values.
+                const UIMediumDeviceType enmType = (UIMediumDeviceType)i;
+                prepareInformationContainer(enmType, enmType == UIMediumDeviceType_HardDisk ? 5 : 2); /// @todo Remove hard-coded values.
             }
         }
 
@@ -554,7 +554,7 @@ void UIMediumDetailsWidget::prepareTabDetails()
     }
 }
 
-void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, int cFields)
+void UIMediumDetailsWidget::prepareInformationContainer(UIMediumDeviceType enmType, int cFields)
 {
     /* Create information-container: */
     m_aContainers[enmType] = new QWidget;
@@ -627,7 +627,7 @@ void UIMediumDetailsWidget::loadDataForOptions()
         /* Populate type combo-box: */
         switch (m_newData.m_enmType)
         {
-            case UIMediumType_HardDisk:
+            case UIMediumDeviceType_HardDisk:
             {
                 /* No type changes for differencing disks: */
                 if (m_oldData.m_enmVariant & KMediumVariant_Diff)
@@ -645,12 +645,12 @@ void UIMediumDetailsWidget::loadDataForOptions()
                 }
                 break;
             }
-            case UIMediumType_DVD:
+            case UIMediumDeviceType_DVD:
             {
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Readonly));
                 break;
             }
-            case UIMediumType_Floppy:
+            case UIMediumDeviceType_Floppy:
             {
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Writethrough));
                 m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Readonly));
@@ -686,7 +686,7 @@ void UIMediumDetailsWidget::loadDataForOptions()
 
     /* Load size: */
     const bool fEnableResize =    m_newData.m_fValid
-                               && m_newData.m_enmType == UIMediumType_HardDisk
+                               && m_newData.m_enmType == UIMediumDeviceType_HardDisk
                                && !(m_newData.m_enmVariant & KMediumVariant_Fixed);
     m_pLabelSize->setEnabled(fEnableResize);
     m_pEditorSize->setEnabled(fEnableResize);
@@ -828,13 +828,13 @@ QString UIMediumDetailsWidget::mediumTypeTip(KMediumType enmType)
     AssertFailedReturn(QString());
 }
 
-QWidget *UIMediumDetailsWidget::infoContainer(UIMediumType enmType) const
+QWidget *UIMediumDetailsWidget::infoContainer(UIMediumDeviceType enmType) const
 {
     /* Return information-container for known medium type: */
     return m_aContainers.value(enmType, 0);
 }
 
-QLabel *UIMediumDetailsWidget::infoLabel(UIMediumType enmType, int iIndex) const
+QLabel *UIMediumDetailsWidget::infoLabel(UIMediumDeviceType enmType, int iIndex) const
 {
     /* Acquire list of labels: */
     const QList<QLabel*> aLabels = m_aLabels.value(enmType, QList<QLabel*>());
@@ -843,7 +843,7 @@ QLabel *UIMediumDetailsWidget::infoLabel(UIMediumType enmType, int iIndex) const
     return aLabels.value(iIndex, 0);
 }
 
-QILabel *UIMediumDetailsWidget::infoField(UIMediumType enmType, int iIndex) const
+QILabel *UIMediumDetailsWidget::infoField(UIMediumDeviceType enmType, int iIndex) const
 {
     /* Acquire list of fields: */
     const QList<QILabel*> aFields = m_aFields.value(enmType, QList<QILabel*>());

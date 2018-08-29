@@ -2122,8 +2122,8 @@ public:
     QString id() const { return m_strId; }
     void setId(const QString &strId) { m_strId = strId; emit sigChanged(); }
 
-    UIMediumType type() const { return m_type; }
-    void setType(UIMediumType type) { m_type = type; }
+    UIMediumDeviceType type() const { return m_type; }
+    void setType(UIMediumDeviceType type) { m_type = type; }
 
     bool isNull() const { return m_strId == UIMedium().id(); }
 
@@ -2134,7 +2134,7 @@ signals:
 private:
 
     QString m_strId;
-    UIMediumType m_type;
+    UIMediumDeviceType m_type;
 };
 
 
@@ -3035,7 +3035,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
         /* Depending on current medium type: */
         switch (m_pMediumIdHolder->type())
         {
-            case UIMediumType_HardDisk:
+            case UIMediumDeviceType_HardDisk:
             {
                 /* Add "Create a new virtual hard disk" action: */
                 QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create New Hard Disk..."));
@@ -3047,7 +3047,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 break;
             }
-            case UIMediumType_DVD:
+            case UIMediumDeviceType_DVD:
             {
                 /* Add "Choose a virtual optical disk file" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Optical Disk File..."));
@@ -3063,7 +3063,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 connect(pEjectCurrentMedium, SIGNAL(triggered(bool)), this, SLOT(sltUnmountDevice()));
                 break;
             }
-            case UIMediumType_Floppy:
+            case UIMediumDeviceType_Floppy:
             {
                 /* Add "Choose a virtual floppy disk file" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Floppy Disk File..."));
@@ -3123,7 +3123,7 @@ void UIMachineSettingsStorage::sltChooseRecentMedium()
     {
         /* Get recent medium type & name: */
         const QStringList mediumInfoList = pChooseRecentMediumAction->data().toString().split(',');
-        const UIMediumType enmMediumType = (UIMediumType)mediumInfoList[0].toUInt();
+        const UIMediumDeviceType enmMediumType = (UIMediumDeviceType)mediumInfoList[0].toUInt();
         const QString strMediumLocation = mediumInfoList[1];
         const QString strMediumId = vboxGlobal().openMedium(enmMediumType, strMediumLocation, this);
         if (!strMediumId.isNull())
@@ -3794,7 +3794,7 @@ void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KSto
     emit sigStorageChanged();
 }
 
-QString UIMachineSettingsStorage::openMediumSelectorDialog(UIMediumType  enmMediumType)
+QString UIMachineSettingsStorage::openMediumSelectorDialog(UIMediumDeviceType  enmMediumType)
 {
     QWidget *pParent = windowManager().realParentWindow(this);
     QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, m_strMachineName,
@@ -3835,7 +3835,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
             if (iAnswer == AlertButton_Choice1)
                 strMediumId = getWithNewHDWizard();
             else if (iAnswer == AlertButton_Choice2)
-                strMediumId = openMediumSelectorDialog(UIMediumType_HardDisk);
+                strMediumId = openMediumSelectorDialog(UIMediumDeviceType_HardDisk);
             break;
         }
         case KDeviceType_DVD:
@@ -3844,7 +3844,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
             if (iAnswer == AlertButton_Choice1)
                 strMediumId = vboxGlobal().medium(strMediumId).id();
             else if (iAnswer == AlertButton_Choice2)
-                strMediumId = openMediumSelectorDialog(UIMediumType_DVD);
+                strMediumId = openMediumSelectorDialog(UIMediumDeviceType_DVD);
             break;
         }
         case KDeviceType_Floppy:
@@ -3853,7 +3853,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
             if (iAnswer == AlertButton_Choice1)
                 strMediumId = vboxGlobal().medium(strMediumId).id();
             else if (iAnswer == AlertButton_Choice2)
-                strMediumId = openMediumSelectorDialog(UIMediumType_Floppy);
+                strMediumId = openMediumSelectorDialog(UIMediumDeviceType_Floppy);
             break;
         }
         default: break; /* Shut up, MSC! */
@@ -3967,15 +3967,15 @@ void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
     }
 }
 
-void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType enmRecentMediumType)
+void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumDeviceType enmRecentMediumType)
 {
     /* Get recent-medium list: */
     QStringList recentMediumList;
     switch (enmRecentMediumType)
     {
-        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
-        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
-        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
+        case UIMediumDeviceType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumDeviceType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumDeviceType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
         default: break;
     }
     /* For every list-item: */

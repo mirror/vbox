@@ -33,7 +33,7 @@
 
 UIMediaComboBox::UIMediaComboBox(QWidget *pParent)
     : QComboBox(pParent)
-    , m_enmMediaType(UIMediumType_Invalid)
+    , m_enmMediaType(UIMediumDeviceType_Invalid)
     , m_strMachineId(QString())
     , m_strLastItemId(QString())
 {
@@ -51,7 +51,7 @@ void UIMediaComboBox::refresh()
         sltHandleMediumCreated(strMediumId);
 
     /* If at least one real medium present, remove null medium: */
-    if (count() > 1 && m_enmMediaType == UIMediumType_HardDisk)
+    if (count() > 1 && m_enmMediaType == UIMediumDeviceType_HardDisk)
     {
         removeItem(0);
         m_media.erase(m_media.begin());
@@ -121,7 +121,7 @@ void UIMediaComboBox::sltHandleMediumCreated(const QString &strMediumId)
         return;
 
     /* Ignore all diffs: */
-    if (guiMedium.type() == UIMediumType_HardDisk && guiMedium.parentID() != UIMedium::nullID())
+    if (guiMedium.type() == UIMediumDeviceType_HardDisk && guiMedium.parentID() != UIMedium::nullID())
         return;
 
     /* Append medium into combo-box: */

@@ -60,8 +60,8 @@ public:
     /** Defines UIMedium wrapped by <i>this</i> item. */
     void setMedium(const UIMedium &guiMedium);
 
-    /** Returns UIMediumType of the wrapped UIMedium. */
-    UIMediumType mediumType() const { return m_guiMedium.type(); }
+    /** Returns UIMediumDeviceType of the wrapped UIMedium. */
+    UIMediumDeviceType mediumType() const { return m_guiMedium.type(); }
 
     /** Returns KMediumState of the wrapped UIMedium. */
     KMediumState state() const { return m_guiMedium.state(); }

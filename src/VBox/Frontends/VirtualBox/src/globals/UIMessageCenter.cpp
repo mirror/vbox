@@ -1148,26 +1148,26 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                           false /* ok button by default? */);
 }
 
-void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType enmType,
+void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumDeviceType enmType,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)
 {
     QString strMessage;
     switch (enmType)
     {
-        case UIMediumType_HardDisk:
+        case UIMediumDeviceType_HardDisk:
         {
             strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
         {
             strMessage = tr("Failed to attach the optical drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
         {
             strMessage = tr("Failed to attach the floppy drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
@@ -1307,7 +1307,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
     QString strMessage;
     switch (medium.type())
     {
-        case UIMediumType_HardDisk:
+        case UIMediumDeviceType_HardDisk:
         {
             strMessage = tr("<p>Are you sure you want to remove the virtual hard disk "
                             "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
@@ -1326,7 +1326,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             }
             break;
         }
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
         {
             strMessage = tr("<p>Are you sure you want to remove the virtual optical disk "
                             "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
@@ -1334,7 +1334,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
                              "deleted and that it will be possible to use it later again.</p>");
             break;
         }
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
         {
             strMessage = tr("<p>Are you sure you want to remove the virtual floppy disk "
                             "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
@@ -1404,25 +1404,25 @@ void UIMessageCenter::cannotResizeHardDiskStorage(const CProgress &comProgress, 
           UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType enmType, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumDeviceType enmType, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
 {
     /* Prepare the message: */
     QString strMessage;
     switch (enmType)
     {
-        case UIMediumType_HardDisk:
+        case UIMediumDeviceType_HardDisk:
         {
             strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
             break;
         }
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
         {
             strMessage = tr("Failed to detach the optical drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
             break;
         }
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
         {
             strMessage = tr("Failed to detach the floppy drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
@@ -1441,7 +1441,7 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     QString strMessage;
     switch (medium.type())
     {
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
         {
             if (fMount)
             {
@@ -1457,7 +1457,7 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
             }
             break;
         }
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
         {
             if (fMount)
             {
@@ -1489,7 +1489,7 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     return false;
 }
 
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType, const QString &strLocation, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumDeviceType, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     /* Show the error: */
     error(pParent, MessageType_Error,
@@ -2749,7 +2749,7 @@ void UIMessageCenter::prepare()
     qRegisterMetaType<CMachine>();
     qRegisterMetaType<CConsole>();
     qRegisterMetaType<CHostNetworkInterface>();
-    qRegisterMetaType<UIMediumType>();
+    qRegisterMetaType<UIMediumDeviceType>();
     qRegisterMetaType<StorageSlot>();
 
     /* Prepare interthread connection: */

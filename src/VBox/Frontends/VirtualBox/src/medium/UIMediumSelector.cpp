@@ -148,7 +148,7 @@ QString UIMediumSearchWidget::searchTerm() const
 }
 
 
-UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, const QString &machineName /* = QString() */,
+UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName /* = QString() */,
                                    const QString &machineSettigFilePath /* = QString() */, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QIDialog>(pParent)
     , m_pMainLayout(0)
@@ -234,15 +234,15 @@ void UIMediumSelector::prepareActions()
     QString strPrefix("hd");
     switch (m_enmMediumType)
     {
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
             strPrefix = "cd";
             break;
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
             strPrefix = "fd";
             break;
-        case UIMediumType_HardDisk:
-        case UIMediumType_All:
-        case UIMediumType_Invalid:
+        case UIMediumDeviceType_HardDisk:
+        case UIMediumDeviceType_All:
+        case UIMediumDeviceType_Invalid:
         default:
             strPrefix = "hd";
             break;
@@ -261,7 +261,7 @@ void UIMediumSelector::prepareActions()
     }
 
     /* Currently create is supported only for Floppy: */
-    if (m_enmMediumType == UIMediumType_Floppy)
+    if (m_enmMediumType == UIMediumDeviceType_Floppy)
     {
         m_pActionCreate = new QAction(this);
     }
@@ -329,15 +329,15 @@ UIMediumItem* UIMediumSelector::addTreeItem(const UIMedium &medium, QITreeWidget
         return 0;
     switch (m_enmMediumType)
     {
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
             return new UIMediumItemCD(medium, pParent);
             break;
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
             return new UIMediumItemFD(medium, pParent);
             break;
-        case UIMediumType_HardDisk:
-        case UIMediumType_All:
-        case UIMediumType_Invalid:
+        case UIMediumDeviceType_HardDisk:
+        case UIMediumDeviceType_All:
+        case UIMediumDeviceType_Invalid:
         default:
             return createHardDiskItem(medium, pParent);
             break;
@@ -445,7 +445,7 @@ void UIMediumSelector::prepareWidgets()
         m_pTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_pMainLayout->addWidget(m_pTreeWidget);
         m_pTreeWidget->setAlternatingRowColors(true);
-        int iColumnCount = (m_enmMediumType == UIMediumType_HardDisk) ? 3 : 2;
+        int iColumnCount = (m_enmMediumType == UIMediumDeviceType_HardDisk) ? 3 : 2;
         m_pTreeWidget->setColumnCount(iColumnCount);
         m_pTreeWidget->setSortingEnabled(true);
         m_pTreeWidget->sortItems(0, Qt::AscendingOrder);

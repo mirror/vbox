@@ -89,13 +89,13 @@ public:
 
     /** Lazy wrapping constructor.
       * Creates the UIMedium associated with the given @a medium of the given @a type. */
-    UIMedium(const CMedium &medium, UIMediumType type);
+    UIMedium(const CMedium &medium, UIMediumDeviceType type);
 
     /** Wrapping constructor with known medium state.
       * Similarly to the previous one it creates the UIMedium associated with the
       * given @a medium of the given @a type but sets the UIMedium @a state to passed one.
       * Suitable when the medium state is known such as right after the medium creation. */
-    UIMedium(const CMedium &medium, UIMediumType type, KMediumState state);
+    UIMedium(const CMedium &medium, UIMediumDeviceType type, KMediumState state);
 
     /** Copy constructor.
       * Creates the UIMedium on the basis of the passed @a other one. */
@@ -116,7 +116,7 @@ public:
     void refresh();
 
     /** Returns the type of UIMedium object. */
-    UIMediumType type() const { return m_type; }
+    UIMediumDeviceType type() const { return m_type; }
 
     /** Returns the CMedium wrapped by this UIMedium object. */
     const CMedium& medium() const { return m_medium; }
@@ -337,7 +337,7 @@ private:
     static QString mediumTypeToString(const CMedium &comMedium);
 
     /** Holds the type of UIMedium object. */
-    UIMediumType m_type;
+    UIMediumDeviceType m_type;
 
     /** Holds the CMedium wrapped by this UIMedium object. */
     CMedium m_medium;

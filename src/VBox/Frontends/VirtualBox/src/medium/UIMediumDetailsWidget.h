@@ -119,7 +119,7 @@ struct UIDataMedium
     /** Constructs data. */
     UIDataMedium()
         : m_fValid(false)
-        , m_enmType(UIMediumType_Invalid)
+        , m_enmType(UIMediumDeviceType_Invalid)
         , m_enmVariant(KMediumVariant_Max)
         , m_fHasChildren(false)
         , m_options(UIDataMediumOptions())
@@ -127,7 +127,7 @@ struct UIDataMedium
     {}
 
     /** Constructs data with passed @enmType. */
-    UIDataMedium(UIMediumType enmType)
+    UIDataMedium(UIMediumDeviceType enmType)
         : m_fValid(false)
         , m_enmType(enmType)
         , m_enmVariant(KMediumVariant_Max)
@@ -157,7 +157,7 @@ struct UIDataMedium
     /** Holds whether data is valid. */
     bool m_fValid;
     /** Holds the medium type. */
-    UIMediumType m_enmType;
+    UIMediumDeviceType m_enmType;
     /** Holds the medium variant. */
     KMediumVariant m_enmVariant;
     /** Holds whether medium has children. */
@@ -194,7 +194,7 @@ public:
     UIMediumDetailsWidget(UIMediumManagerWidget *pParent, EmbedTo enmEmbedding);
 
     /** Defines the raised details @a enmType. */
-    void setCurrentType(UIMediumType enmType);
+    void setCurrentType(UIMediumDeviceType enmType);
 
     /** Returns the medium data. */
     const UIDataMedium &data() const { return m_newData; }
@@ -245,7 +245,7 @@ private:
         /** Prepares 'Details' tab. */
         void prepareTabDetails();
         /** Prepares information-container. */
-        void prepareInformationContainer(UIMediumType enmType, int cFields);
+        void prepareInformationContainer(UIMediumDeviceType enmType, int cFields);
     /** @} */
 
     /** @name Loading stuff.
@@ -272,11 +272,11 @@ private:
     /** @name Details stuff.
       * @{ */
         /** Returns information-container for passed medium @a enmType. */
-        QWidget *infoContainer(UIMediumType enmType) const;
+        QWidget *infoContainer(UIMediumDeviceType enmType) const;
         /** Returns information-label for passed medium @a enmType and @a iIndex. */
-        QLabel *infoLabel(UIMediumType enmType, int iIndex) const;
+        QLabel *infoLabel(UIMediumDeviceType enmType, int iIndex) const;
         /** Returns information-field for passed medium @a enmType and @a iIndex. */
-        QILabel *infoField(UIMediumType enmType, int iIndex) const;
+        QILabel *infoField(UIMediumDeviceType enmType, int iIndex) const;
     /** @} */
 
     /** @name General variables.
@@ -342,11 +342,11 @@ private:
         QStackedLayout *m_pLayoutDetails;
 
         /** Holds the map of information-container instances. */
-        QMap<UIMediumType, QWidget*>          m_aContainers;
+        QMap<UIMediumDeviceType, QWidget*>          m_aContainers;
         /** Holds the map of information-container label instances. */
-        QMap<UIMediumType, QList<QLabel*> >   m_aLabels;
+        QMap<UIMediumDeviceType, QList<QLabel*> >   m_aLabels;
         /** Holds the information-container field instances. */
-        QMap<UIMediumType, QList<QILabel*> >  m_aFields;
+        QMap<UIMediumDeviceType, QList<QILabel*> >  m_aFields;
     /** @} */
 };
 

@@ -2528,7 +2528,7 @@ void VBoxGlobal::deleteMedium(const QString &strMediumID)
     }
 }
 
-QString VBoxGlobal::openMedium(UIMediumType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
+QString VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
 {
     /* Convert to native separators: */
     strMediumLocation = QDir::toNativeSeparators(strMediumLocation);
@@ -2563,7 +2563,7 @@ QString VBoxGlobal::openMedium(UIMediumType enmMediumType, QString strMediumLoca
     return QString();
 }
 
-QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWidget *pParent,
+QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent,
                                                  const QString &strDefaultFolder /* = QString() */,
                                                  bool fUseLastFolder /* = false */)
 {
@@ -2577,7 +2577,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWi
     QString strLastFolder;
     switch (enmMediumType)
     {
-        case UIMediumType_HardDisk:
+        case UIMediumDeviceType_HardDisk:
         {
             filters = HDDBackends(virtualBox());
             strTitle = tr("Please choose a virtual hard disk file");
@@ -2589,7 +2589,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWi
                 strLastFolder = gEDataManager->recentFolderForFloppyDisks();
             break;
         }
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
         {
             filters = DVDBackends(virtualBox());
             strTitle = tr("Please choose a virtual optical disk file");
@@ -2601,7 +2601,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWi
                 strLastFolder = gEDataManager->recentFolderForHardDrives();
             break;
         }
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
         {
             filters = FloppyBackends(virtualBox());
             strTitle = tr("Please choose a virtual floppy disk file");
@@ -2710,7 +2710,7 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
 
     /* Done. */
     if (RT_SUCCESS(vrc))
-        return openMedium(UIMediumType_DVD, QString(szVisoPath), pParent);
+        return openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
 
     /** @todo error message. */
     return QString();
@@ -2743,8 +2743,8 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     const CMediumAttachmentVector comAttachments = comMachine.GetMediumAttachments();
 
     /* Determine device & medium types: */
-    const UIMediumType enmMediumType = mediumTypeToLocal(comCurrentAttachment.GetType());
-    AssertMsgReturnVoid(enmMediumType != UIMediumType_Invalid, ("Incorrect storage medium type!\n"));
+    const UIMediumDeviceType enmMediumType = mediumTypeToLocal(comCurrentAttachment.GetType());
+    AssertMsgReturnVoid(enmMediumType != UIMediumDeviceType_Invalid, ("Incorrect storage medium type!\n"));
 
     /* Prepare open-existing-medium action: */
     QAction *pActionOpenExistingMedium = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
@@ -2755,7 +2755,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                                                "This is used for hard disks, optical media and floppies"));
 
     /* Prepare create floppy disk action: */
-    if (enmMediumType == UIMediumType_Floppy)
+    if (enmMediumType == UIMediumDeviceType_Floppy)
     {
         QAction *pActionCreateFloppy = menu.addAction(UIIconPool::iconSet(":/fd_add_16px.png"),
                                                       QString(), pListener, pszSlotName);
@@ -2766,7 +2766,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                                              "This is used to create a new floppy disk"));
     }
     /* Prepare ad-hoc-viso action for DVD-ROMs: */
-    if (enmMediumType == UIMediumType_DVD)
+    if (enmMediumType == UIMediumDeviceType_DVD)
     {
         QAction *pActionAdHocViso = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
                                                    QString(), pListener, pszSlotName);
@@ -2784,8 +2784,8 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     CMediumVector comMedia;
     switch (enmMediumType)
     {
-        case UIMediumType_DVD:    comMedia = host().GetDVDDrives(); break;
-        case UIMediumType_Floppy: comMedia = host().GetFloppyDrives(); break;
+        case UIMediumDeviceType_DVD:    comMedia = host().GetDVDDrives(); break;
+        case UIMediumDeviceType_Floppy: comMedia = host().GetFloppyDrives(); break;
         default: break;
     }
     /* Prepare choose-existing-host-drive actions: */
@@ -2825,9 +2825,9 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     QStringList recentMediumListUsed;
     switch (enmMediumType)
     {
-        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
-        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
-        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
+        case UIMediumDeviceType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumDeviceType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumDeviceType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
         default: break;
     }
     /* Prepare choose-recent-medium actions: */
@@ -2875,7 +2875,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     }
 
     /* Last action for optical/floppy attachments only: */
-    if (enmMediumType == UIMediumType_DVD || enmMediumType == UIMediumType_Floppy)
+    if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy)
     {
         /* Insert separator: */
         menu.addSeparator();
@@ -2886,9 +2886,9 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
         pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                          comCurrentAttachment.GetDevice())));
         pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
-        if (enmMediumType == UIMediumType_DVD)
+        if (enmMediumType == UIMediumDeviceType_DVD)
             pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
-        else if (enmMediumType == UIMediumType_Floppy)
+        else if (enmMediumType == UIMediumDeviceType_Floppy)
             pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png", ":/fd_unmount_disabled_16px.png"));
     }
 }
@@ -2922,7 +2922,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
             QString strNewID;
 
             /* Invoke file-open dialog to choose medium ID: */
-            if (target.mediumType != UIMediumType_Invalid && target.data.isNull())
+            if (target.mediumType != UIMediumDeviceType_Invalid && target.data.isNull())
             {
                 /* Keyboard can be captured by machine-view.
                  * So we should clear machine-view focus to let file-open dialog get it.
@@ -2986,7 +2986,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
     }
 
     /* Do not unmount hard-drives: */
-    if (target.mediumType == UIMediumType_HardDisk && !fMount)
+    if (target.mediumType == UIMediumDeviceType_HardDisk && !fMount)
         return;
 
     /* Get editable machine: */
@@ -3015,13 +3015,13 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
     /* Remount medium to the predefined port/device: */
     bool fWasMounted = false;
     /* Hard drive case: */
-    if (target.mediumType == UIMediumType_HardDisk)
+    if (target.mediumType == UIMediumDeviceType_HardDisk)
     {
         /* Detaching: */
         comMachine.DetachDevice(target.name, target.port, target.device);
         fWasMounted = comMachine.isOk();
         if (!fWasMounted)
-            msgCenter().cannotDetachDevice(comMachine, UIMediumType_HardDisk, strCurrentLocation,
+            msgCenter().cannotDetachDevice(comMachine, UIMediumDeviceType_HardDisk, strCurrentLocation,
                                            StorageSlot(enmCurrentStorageBus, target.port, target.device));
         else
         {
@@ -3029,7 +3029,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
             comMachine.AttachDevice(target.name, target.port, target.device, KDeviceType_HardDisk, comMedium);
             fWasMounted = comMachine.isOk();
             if (!fWasMounted)
-                msgCenter().cannotAttachDevice(comMachine, UIMediumType_HardDisk, strCurrentLocation,
+                msgCenter().cannotAttachDevice(comMachine, UIMediumDeviceType_HardDisk, strCurrentLocation,
                                                StorageSlot(enmCurrentStorageBus, target.port, target.device));
         }
     }
@@ -3099,14 +3099,14 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
                       guiMedium.details(true /* no diffs? */, fPredictDiff);
 }
 
-void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumType enmMediumType, QString strMediumLocation)
+void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation)
 {
        /* Remember the path of the last chosen medium: */
     switch (enmMediumType)
     {
-        case UIMediumType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
-        case UIMediumType_DVD:      gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath()); break;
-        case UIMediumType_Floppy:   gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumDeviceType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumDeviceType_DVD:      gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumDeviceType_Floppy:   gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath()); break;
         default: break;
     }
 
@@ -3114,9 +3114,9 @@ void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumType enmMediumTyp
     QStringList recentMediumList;
     switch (enmMediumType)
     {
-        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
-        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
-        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
+        case UIMediumDeviceType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumDeviceType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumDeviceType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
         default: break;
     }
     if (recentMediumList.contains(strMediumLocation))
@@ -3126,9 +3126,9 @@ void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumType enmMediumTyp
         recentMediumList.removeLast();
     switch (enmMediumType)
     {
-        case UIMediumType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
-        case UIMediumType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
-        case UIMediumType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
+        case UIMediumDeviceType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
+        case UIMediumDeviceType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
+        case UIMediumDeviceType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
         default: break;
     }
 }

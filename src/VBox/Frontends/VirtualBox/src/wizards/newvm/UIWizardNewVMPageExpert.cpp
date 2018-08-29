@@ -111,7 +111,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                 pDiskCntLayout->setColumnMinimumWidth(0, iWidth);
                 m_pDiskSelector = new UIMediaComboBox(m_pDiskCnt);
                 {
-                    m_pDiskSelector->setType(UIMediumType_HardDisk);
+                    m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
                     m_pDiskSelector->repopulate();
                 }
                 m_pVMMButton = new QIToolButton(m_pDiskCnt);

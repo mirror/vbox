@@ -279,21 +279,21 @@ bool UIWizardNewVM::createVM()
                 CMedium medium = vmedium.medium();              /// @todo r=dj can this be cached somewhere?
                 machine.AttachDevice(strHDName, 0, 0, KDeviceType_HardDisk, medium);
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, UIMediumType_HardDisk, field("virtualDiskLocation").toString(),
+                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, field("virtualDiskLocation").toString(),
                                                    StorageSlot(ctrHDBus, 0, 0), this);
             }
 
             /* Attach empty optical drive: */
             machine.AttachDevice(strDVDName, 1, 0, KDeviceType_DVD, CMedium());
             if (!machine.isOk())
-                msgCenter().cannotAttachDevice(machine, UIMediumType_DVD, QString(), StorageSlot(strDVDBus, 1, 0), this);
+                msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(), StorageSlot(strDVDBus, 1, 0), this);
 
 
             /* Attach an empty floppy drive if recommended */
             if (type.GetRecommendedFloppy()) {
                 machine.AttachDevice(strFloppyName, 0, 0, KDeviceType_Floppy, CMedium());
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, UIMediumType_Floppy, QString(),
+                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
                                                    StorageSlot(KStorageBus_Floppy, 0, 0), this);
             }
 

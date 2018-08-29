@@ -637,7 +637,7 @@ void UIPopupCenter::cannotMountImage(QWidget *pParent, const QString &strMachine
                                   .arg(strMediumName, strMachineName));
 }
 
-void UIPopupCenter::cannotOpenMedium(QWidget *pParent, const CVirtualBox &comVBox, UIMediumType /* enmType */, const QString &strLocation)
+void UIPopupCenter::cannotOpenMedium(QWidget *pParent, const CVirtualBox &comVBox, UIMediumDeviceType /* enmType */, const QString &strLocation)
 {
     alertWithDetails(pParent, "cannotOpenMedium",
                      QApplication::translate("UIMessageCenter",

@@ -741,7 +741,7 @@ private:
     /** Prepares connections. */
     void prepareConnections();
     /** Opens medium selector dialog and retrieves uuid of a selected medium (if any). */
-    QString openMediumSelectorDialog(UIMediumType  enmMediumType);
+    QString openMediumSelectorDialog(UIMediumDeviceType  enmMediumType);
     /** Cleanups all. */
     void cleanup();
 
@@ -767,7 +767,7 @@ private:
     /** Adds 'Choose Host Drive' actions into passed @a pOpenMediumMenu. */
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
     /** Adds 'Choose Recent Medium' actions of passed @a enmRecentMediumType into passed @a pOpenMediumMenu. */
-    void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType enmRecentMediumType);
+    void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumDeviceType enmRecentMediumType);
 
     /** Saves existing storage data from the cache. */
     bool saveStorageData();

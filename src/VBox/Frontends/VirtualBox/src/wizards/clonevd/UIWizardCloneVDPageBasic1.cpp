@@ -42,7 +42,7 @@ UIWizardCloneVDPage1::UIWizardCloneVDPage1()
 void UIWizardCloneVDPage1::onHandleOpenSourceDiskClick()
 {
     /* Get current virtual-disk medium type: */
-    const UIMediumType enmMediumType = UIMediumDefs::mediumTypeToLocal(sourceVirtualDisk().GetDeviceType());
+    const UIMediumDeviceType enmMediumType = UIMediumDefs::mediumTypeToLocal(sourceVirtualDisk().GetDeviceType());
     /* Get source virtual-disk using file-open dialog: */
     QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(enmMediumType, thisImp());
     if (!strMediumId.isNull())

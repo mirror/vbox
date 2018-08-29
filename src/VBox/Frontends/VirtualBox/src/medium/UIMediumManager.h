@@ -213,9 +213,9 @@ private:
         /** Prepares tab-widget. */
         void prepareTabWidget();
         /** Prepares tab-widget's tab. */
-        void prepareTab(UIMediumType type);
+        void prepareTab(UIMediumDeviceType type);
         /** Prepares tab-widget's tree-widget. */
-        void prepareTreeWidget(UIMediumType type, int iColumns);
+        void prepareTreeWidget(UIMediumDeviceType type, int iColumns);
         /** Prepares details-widget. */
         void prepareDetailsWidget();
         /** Load settings: */
@@ -225,7 +225,7 @@ private:
         void repopulateTreeWidgets();
 
         /** Updates details according latest changes in current item of passed @a type. */
-        void refetchCurrentMediumItem(UIMediumType type);
+        void refetchCurrentMediumItem(UIMediumDeviceType type);
         /** Updates details according latest changes in current item of chosen type. */
         void refetchCurrentChosenMediumItem();
         /** Updates details according latest changes in all current items. */
@@ -251,17 +251,17 @@ private:
         void deleteMediumItem(const QString &strMediumID);
 
         /** Returns tab for passed medium @a type. */
-        QWidget *tab(UIMediumType type) const;
+        QWidget *tab(UIMediumDeviceType type) const;
         /** Returns tree-widget for passed medium @a type. */
-        QITreeWidget *treeWidget(UIMediumType type) const;
+        QITreeWidget *treeWidget(UIMediumDeviceType type) const;
         /** Returns item for passed medium @a type. */
-        UIMediumItem *mediumItem(UIMediumType type) const;
+        UIMediumItem *mediumItem(UIMediumDeviceType type) const;
 
         /** Returns medium type for passed @a pTreeWidget. */
-        UIMediumType mediumType(QITreeWidget *pTreeWidget) const;
+        UIMediumDeviceType mediumType(QITreeWidget *pTreeWidget) const;
 
         /** Returns current medium type. */
-        UIMediumType currentMediumType() const;
+        UIMediumDeviceType currentMediumType() const;
         /** Returns current tree-widget. */
         QITreeWidget *currentTreeWidget() const;
         /** Returns current item. */
@@ -273,8 +273,8 @@ private:
 
     /** @name Helper stuff.
       * @{ */
-        /** Returns tab index for passed UIMediumType. */
-        static int tabIndex(UIMediumType type);
+        /** Returns tab index for passed UIMediumDeviceType. */
+        static int tabIndex(UIMediumDeviceType type);
 
         /** Performs search for the @a pTree child which corresponds to the @a condition but not @a pException. */
         static UIMediumItem *searchItem(QITreeWidget *pTree,

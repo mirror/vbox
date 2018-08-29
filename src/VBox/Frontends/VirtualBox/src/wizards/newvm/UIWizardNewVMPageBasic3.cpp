@@ -67,7 +67,7 @@ void UIWizardNewVMPage3::updateVirtualDiskSource()
 void UIWizardNewVMPage3::getWithFileOpenDialog()
 {
     /* Get opened medium id: */
-    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_HardDisk, thisImp());
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumDeviceType_HardDisk, thisImp());
     if (!strMediumId.isNull())
     {
         /* Update medium-combo if necessary: */
@@ -146,7 +146,7 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
             pDiskLayout->setColumnMinimumWidth(0, iWidth);
             m_pDiskSelector = new UIMediaComboBox(this);
             {
-                m_pDiskSelector->setType(UIMediumType_HardDisk);
+                m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
                 m_pDiskSelector->repopulate();
             }
             m_pVMMButton = new QIToolButton(this);

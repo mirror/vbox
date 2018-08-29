@@ -50,19 +50,19 @@ enum UIMediumFormat
 namespace UIMediumDefs
 {
     /** UIMedium types. */
-    enum UIMediumType
+    enum UIMediumDeviceType
     {
-        UIMediumType_HardDisk,
-        UIMediumType_DVD,
-        UIMediumType_Floppy,
-        UIMediumType_All,
-        UIMediumType_Invalid
+        UIMediumDeviceType_HardDisk,
+        UIMediumDeviceType_DVD,
+        UIMediumDeviceType_Floppy,
+        UIMediumDeviceType_All,
+        UIMediumDeviceType_Invalid
     };
 
-    /** Converts global medium type (KDeviceType) to local (UIMediumType). */
-    SHARED_LIBRARY_STUFF UIMediumType mediumTypeToLocal(KDeviceType globalType);
-    /** Convert local medium type (UIMediumType) to global (KDeviceType). */
-    SHARED_LIBRARY_STUFF KDeviceType mediumTypeToGlobal(UIMediumType localType);
+    /** Converts global medium type (KDeviceType) to local (UIMediumDeviceType). */
+    SHARED_LIBRARY_STUFF UIMediumDeviceType mediumTypeToLocal(KDeviceType globalType);
+    /** Convert local medium type (UIMediumDeviceType) to global (KDeviceType). */
+    SHARED_LIBRARY_STUFF KDeviceType mediumTypeToGlobal(UIMediumDeviceType localType);
 
     /** Returns medium formats which are currently supported by @a comVBox for the given @a enmDeviceType. */
     QList<QPair<QString, QString> > MediumBackends(const CVirtualBox &comVBox, KDeviceType enmDeviceType);
@@ -94,7 +94,7 @@ struct UIMediumTarget
 
     /** Medium-target constructor. */
     UIMediumTarget(const QString &strName = QString(), LONG iPort = 0, LONG iDevice = 0,
-                   UIMediumType aMediumType = UIMediumType_Invalid,
+                   UIMediumDeviceType aMediumType = UIMediumDeviceType_Invalid,
                    UIMediumTargetType aType = UIMediumTargetType_WithID, const QString &strData = QString())
         : name(strName), port(iPort), device(iDevice)
         , mediumType(aMediumType)
@@ -109,7 +109,7 @@ struct UIMediumTarget
     LONG device;
 
     /** Determines medium-target medium-type. */
-    UIMediumType mediumType;
+    UIMediumDeviceType mediumType;
 
     /** Determines medium-target type. */
     UIMediumTargetType type;
@@ -118,7 +118,7 @@ struct UIMediumTarget
 };
 
 /* Let QMetaType know about our types: */
-Q_DECLARE_METATYPE(UIMediumType);
+Q_DECLARE_METATYPE(UIMediumDeviceType);
 Q_DECLARE_METATYPE(UIMediumTarget);
 
 #endif /* !___UIMediumDefs_h___ */

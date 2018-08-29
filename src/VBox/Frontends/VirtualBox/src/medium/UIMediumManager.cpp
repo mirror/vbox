@@ -201,13 +201,13 @@ void UIMediumManagerWidget::retranslateUi()
     /* Translate tab-widget: */
     if (m_pTabWidget)
     {
-        m_pTabWidget->setTabText(tabIndex(UIMediumType_HardDisk), UIMediumManager::tr("&Hard disks"));
-        m_pTabWidget->setTabText(tabIndex(UIMediumType_DVD), UIMediumManager::tr("&Optical disks"));
-        m_pTabWidget->setTabText(tabIndex(UIMediumType_Floppy), UIMediumManager::tr("&Floppy disks"));
+        m_pTabWidget->setTabText(tabIndex(UIMediumDeviceType_HardDisk), UIMediumManager::tr("&Hard disks"));
+        m_pTabWidget->setTabText(tabIndex(UIMediumDeviceType_DVD), UIMediumManager::tr("&Optical disks"));
+        m_pTabWidget->setTabText(tabIndex(UIMediumDeviceType_Floppy), UIMediumManager::tr("&Floppy disks"));
     }
 
     /* Translate HD tree-widget: */
-    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumDeviceType_HardDisk);
     if (pTreeWidgetHD)
     {
         pTreeWidgetHD->headerItem()->setText(0, UIMediumManager::tr("Name"));
@@ -216,7 +216,7 @@ void UIMediumManagerWidget::retranslateUi()
     }
 
     /* Translate CD tree-widget: */
-    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumDeviceType_DVD);
     if (pTreeWidgetCD)
     {
         pTreeWidgetCD->headerItem()->setText(0, UIMediumManager::tr("Name"));
@@ -224,7 +224,7 @@ void UIMediumManagerWidget::retranslateUi()
     }
 
     /* Translate FD tree-widget: */
-    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumDeviceType_Floppy);
     if (pTreeWidgetFD)
     {
         pTreeWidgetFD->headerItem()->setText(0, UIMediumManager::tr("Name"));
@@ -445,9 +445,9 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
     /* Reset tab-widget icons: */
     if (m_pTabWidget)
     {
-        m_pTabWidget->setTabIcon(tabIndex(UIMediumType_HardDisk), m_iconHD);
-        m_pTabWidget->setTabIcon(tabIndex(UIMediumType_DVD), m_iconCD);
-        m_pTabWidget->setTabIcon(tabIndex(UIMediumType_Floppy), m_iconFD);
+        m_pTabWidget->setTabIcon(tabIndex(UIMediumDeviceType_HardDisk), m_iconHD);
+        m_pTabWidget->setTabIcon(tabIndex(UIMediumDeviceType_DVD), m_iconCD);
+        m_pTabWidget->setTabIcon(tabIndex(UIMediumDeviceType_Floppy), m_iconFD);
     }
 
     /* Repopulate tree-widgets content: */
@@ -809,12 +809,12 @@ void UIMediumManagerWidget::prepareTabWidget()
     {
         /* Create tabs: */
         for (int i = 0; i < m_iTabCount; ++i)
-            prepareTab((UIMediumType)i);
+            prepareTab((UIMediumDeviceType)i);
         /* Configure tab-widget: */
         m_pTabWidget->setFocusPolicy(Qt::TabFocus);
-        m_pTabWidget->setTabIcon(tabIndex(UIMediumType_HardDisk), m_iconHD);
-        m_pTabWidget->setTabIcon(tabIndex(UIMediumType_DVD), m_iconCD);
-        m_pTabWidget->setTabIcon(tabIndex(UIMediumType_Floppy), m_iconFD);
+        m_pTabWidget->setTabIcon(tabIndex(UIMediumDeviceType_HardDisk), m_iconHD);
+        m_pTabWidget->setTabIcon(tabIndex(UIMediumDeviceType_DVD), m_iconCD);
+        m_pTabWidget->setTabIcon(tabIndex(UIMediumDeviceType_Floppy), m_iconFD);
         connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIMediumManagerWidget::sltHandleCurrentTabChanged);
 
         /* Add tab-widget into central layout: */
@@ -825,7 +825,7 @@ void UIMediumManagerWidget::prepareTabWidget()
     }
 }
 
-void UIMediumManagerWidget::prepareTab(UIMediumType type)
+void UIMediumManagerWidget::prepareTab(UIMediumDeviceType type)
 {
     /* Create tab: */
     m_pTabWidget->addTab(new QWidget, QString());
@@ -842,12 +842,12 @@ void UIMediumManagerWidget::prepareTab(UIMediumType type)
 #endif
 
             /* Prepare tree-widget: */
-            prepareTreeWidget(type, type == UIMediumType_HardDisk ? 3 : 2);
+            prepareTreeWidget(type, type == UIMediumDeviceType_HardDisk ? 3 : 2);
         }
     }
 }
 
-void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
+void UIMediumManagerWidget::prepareTreeWidget(UIMediumDeviceType type, int iColumns)
 {
     /* Create tree-widget: */
     m_trees.insert(tabIndex(type), new QITreeWidget);
@@ -918,27 +918,27 @@ void UIMediumManagerWidget::loadSettings()
 void UIMediumManagerWidget::repopulateTreeWidgets()
 {
     /* Remember current medium-items: */
-    if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_HardDisk))
+    if (UIMediumItem *pMediumItem = mediumItem(UIMediumDeviceType_HardDisk))
         m_strCurrentIdHD = pMediumItem->id();
-    if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_DVD))
+    if (UIMediumItem *pMediumItem = mediumItem(UIMediumDeviceType_DVD))
         m_strCurrentIdCD = pMediumItem->id();
-    if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_Floppy))
+    if (UIMediumItem *pMediumItem = mediumItem(UIMediumDeviceType_Floppy))
         m_strCurrentIdFD = pMediumItem->id();
 
     /* Clear tree-widgets: */
-    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumDeviceType_HardDisk);
     if (pTreeWidgetHD)
     {
         setCurrentItem(pTreeWidgetHD, 0);
         pTreeWidgetHD->clear();
     }
-    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumDeviceType_DVD);
     if (pTreeWidgetCD)
     {
         setCurrentItem(pTreeWidgetCD, 0);
         pTreeWidgetCD->clear();
     }
-    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumDeviceType_Floppy);
     if (pTreeWidgetFD)
     {
         setCurrentItem(pTreeWidgetFD, 0);
@@ -952,18 +952,18 @@ void UIMediumManagerWidget::repopulateTreeWidgets()
     m_fPreventChangeCurrentItem = false;
 
     /* Select first item as current one if nothing selected: */
-    if (pTreeWidgetHD && !mediumItem(UIMediumType_HardDisk))
+    if (pTreeWidgetHD && !mediumItem(UIMediumDeviceType_HardDisk))
         if (QTreeWidgetItem *pItem = pTreeWidgetHD->topLevelItem(0))
             setCurrentItem(pTreeWidgetHD, pItem);
-    if (pTreeWidgetCD && !mediumItem(UIMediumType_DVD))
+    if (pTreeWidgetCD && !mediumItem(UIMediumDeviceType_DVD))
         if (QTreeWidgetItem *pItem = pTreeWidgetCD->topLevelItem(0))
             setCurrentItem(pTreeWidgetCD, pItem);
-    if (pTreeWidgetFD && !mediumItem(UIMediumType_Floppy))
+    if (pTreeWidgetFD && !mediumItem(UIMediumDeviceType_Floppy))
         if (QTreeWidgetItem *pItem = pTreeWidgetFD->topLevelItem(0))
             setCurrentItem(pTreeWidgetFD, pItem);
 }
 
-void UIMediumManagerWidget::refetchCurrentMediumItem(UIMediumType type)
+void UIMediumManagerWidget::refetchCurrentMediumItem(UIMediumDeviceType type)
 {
     /* Get corresponding medium-item: */
     UIMediumItem *pMediumItem = mediumItem(type);
@@ -993,9 +993,9 @@ void UIMediumManagerWidget::refetchCurrentChosenMediumItem()
 
 void UIMediumManagerWidget::refetchCurrentMediumItems()
 {
-    refetchCurrentMediumItem(UIMediumType_HardDisk);
-    refetchCurrentMediumItem(UIMediumType_DVD);
-    refetchCurrentMediumItem(UIMediumType_Floppy);
+    refetchCurrentMediumItem(UIMediumDeviceType_HardDisk);
+    refetchCurrentMediumItem(UIMediumDeviceType_DVD);
+    refetchCurrentMediumItem(UIMediumDeviceType_Floppy);
 }
 
 void UIMediumManagerWidget::updateActions()
@@ -1021,8 +1021,8 @@ void UIMediumManagerWidget::updateActions()
 
 void UIMediumManagerWidget::updateActionIcons()
 {
-    const UIMediumType enmCurrentMediumType = currentMediumType();
-    if (enmCurrentMediumType != UIMediumType_Invalid)
+    const UIMediumDeviceType enmCurrentMediumType = currentMediumType();
+    if (enmCurrentMediumType != UIMediumDeviceType_Invalid)
     {
         m_pActionPool->action(UIActionIndexST_M_Medium_S_Add)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy)->setState((int)enmCurrentMediumType);
@@ -1041,18 +1041,18 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
     /* Prepare data for tab: */
     const QIcon *pIcon = 0;
     bool *pfInaccessible = 0;
-    const UIMediumType mediumType = pMediumItem->mediumType();
+    const UIMediumDeviceType mediumType = pMediumItem->mediumType();
     switch (mediumType)
     {
-        case UIMediumType_HardDisk:
+        case UIMediumDeviceType_HardDisk:
             pIcon = &m_iconHD;
             pfInaccessible = &m_fInaccessibleHD;
             break;
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
             pIcon = &m_iconCD;
             pfInaccessible = &m_fInaccessibleCD;
             break;
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
             pIcon = &m_iconFD;
             pfInaccessible = &m_fInaccessibleFD;
             break;
@@ -1125,17 +1125,17 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
 UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
 {
     /* Get medium type: */
-    UIMediumType type = medium.type();
+    UIMediumDeviceType type = medium.type();
 
     /* Create medium-item: */
     UIMediumItem *pMediumItem = 0;
     switch (type)
     {
         /* Of hard-drive type: */
-        case UIMediumType_HardDisk:
+        case UIMediumDeviceType_HardDisk:
         {
             /* Make sure corresponding tree-widget exists: */
-            QITreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
+            QITreeWidget *pTreeWidget = treeWidget(UIMediumDeviceType_HardDisk);
             if (pTreeWidget)
             {
                 /* Recursively create hard-drive item: */
@@ -1152,10 +1152,10 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
             break;
         }
         /* Of optical-image type: */
-        case UIMediumType_DVD:
+        case UIMediumDeviceType_DVD:
         {
             /* Make sure corresponding tree-widget exists: */
-            QITreeWidget *pTreeWidget = treeWidget(UIMediumType_DVD);
+            QITreeWidget *pTreeWidget = treeWidget(UIMediumDeviceType_DVD);
             if (pTreeWidget)
             {
                 /* Create optical-disk item: */
@@ -1173,10 +1173,10 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
             break;
         }
         /* Of floppy-image type: */
-        case UIMediumType_Floppy:
+        case UIMediumDeviceType_Floppy:
         {
             /* Make sure corresponding tree-widget exists: */
-            QITreeWidget *pTreeWidget = treeWidget(UIMediumType_Floppy);
+            QITreeWidget *pTreeWidget = treeWidget(UIMediumDeviceType_Floppy);
             if (pTreeWidget)
             {
                 /* Create floppy-disk item: */
@@ -1217,7 +1217,7 @@ UIMediumItem* UIMediumManagerWidget::createHardDiskItem(const UIMedium &medium)
     AssertReturn(!medium.medium().isNull(), 0);
 
     /* Make sure corresponding tree-widget exists: */
-    QITreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
+    QITreeWidget *pTreeWidget = treeWidget(UIMediumDeviceType_HardDisk);
     if (pTreeWidget)
     {
         /* Search for existing medium-item: */
@@ -1268,7 +1268,7 @@ UIMediumItem* UIMediumManagerWidget::createHardDiskItem(const UIMedium &medium)
 void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
 {
     /* Get medium type: */
-    UIMediumType type = medium.type();
+    UIMediumDeviceType type = medium.type();
 
     /* Search for existing medium-item: */
     UIMediumItem *pMediumItem = searchItem(treeWidget(type), CheckIfSuitableByID(medium.id()));
@@ -1296,11 +1296,11 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
 void UIMediumManagerWidget::deleteMediumItem(const QString &strMediumID)
 {
     /* Search for corresponding tree-widget: */
-    QList<UIMediumType> types;
-    types << UIMediumType_HardDisk << UIMediumType_DVD << UIMediumType_Floppy;
+    QList<UIMediumDeviceType> types;
+    types << UIMediumDeviceType_HardDisk << UIMediumDeviceType_DVD << UIMediumDeviceType_Floppy;
     QITreeWidget *pTreeWidget = 0;
     UIMediumItem *pMediumItem = 0;
-    foreach (UIMediumType type, types)
+    foreach (UIMediumDeviceType type, types)
     {
         /* Get iterated tree-widget: */
         pTreeWidget = treeWidget(type);
@@ -1327,7 +1327,7 @@ void UIMediumManagerWidget::deleteMediumItem(const QString &strMediumID)
         setCurrentItem(pTreeWidget, pTreeWidget->topLevelItem(0));
 }
 
-QWidget* UIMediumManagerWidget::tab(UIMediumType type) const
+QWidget* UIMediumManagerWidget::tab(UIMediumDeviceType type) const
 {
     /* Determine tab index for passed medium type: */
     int iIndex = tabIndex(type);
@@ -1340,7 +1340,7 @@ QWidget* UIMediumManagerWidget::tab(UIMediumType type) const
     return 0;
 }
 
-QITreeWidget* UIMediumManagerWidget::treeWidget(UIMediumType type) const
+QITreeWidget* UIMediumManagerWidget::treeWidget(UIMediumDeviceType type) const
 {
     /* Determine tab index for passed medium type: */
     int iIndex = tabIndex(type);
@@ -1353,7 +1353,7 @@ QITreeWidget* UIMediumManagerWidget::treeWidget(UIMediumType type) const
     return 0;
 }
 
-UIMediumItem* UIMediumManagerWidget::mediumItem(UIMediumType type) const
+UIMediumItem* UIMediumManagerWidget::mediumItem(UIMediumDeviceType type) const
 {
     /* Get corresponding tree-widget: */
     QITreeWidget *pTreeWidget = treeWidget(type);
@@ -1361,27 +1361,27 @@ UIMediumItem* UIMediumManagerWidget::mediumItem(UIMediumType type) const
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
 }
 
-UIMediumType UIMediumManagerWidget::mediumType(QITreeWidget *pTreeWidget) const
+UIMediumDeviceType UIMediumManagerWidget::mediumType(QITreeWidget *pTreeWidget) const
 {
     /* Determine tab index of passed tree-widget: */
     int iIndex = m_trees.key(pTreeWidget, -1);
 
     /* Return medium type for known tab index: */
     if (iIndex >= 0 && iIndex < m_iTabCount)
-        return (UIMediumType)iIndex;
+        return (UIMediumDeviceType)iIndex;
 
     /* Invalid by default: */
-    AssertFailedReturn(UIMediumType_Invalid);
+    AssertFailedReturn(UIMediumDeviceType_Invalid);
 }
 
-UIMediumType UIMediumManagerWidget::currentMediumType() const
+UIMediumDeviceType UIMediumManagerWidget::currentMediumType() const
 {
     /* Invalid if tab-widget doesn't exists: */
     if (!m_pTabWidget)
-        return UIMediumType_Invalid;
+        return UIMediumDeviceType_Invalid;
 
     /* Return current medium type: */
-    return (UIMediumType)m_pTabWidget->currentIndex();
+    return (UIMediumDeviceType)m_pTabWidget->currentIndex();
 }
 
 QITreeWidget* UIMediumManagerWidget::currentTreeWidget() const
@@ -1417,14 +1417,14 @@ void UIMediumManagerWidget::setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidge
 }
 
 /* static */
-int UIMediumManagerWidget::tabIndex(UIMediumType type)
+int UIMediumManagerWidget::tabIndex(UIMediumDeviceType type)
 {
     /* Return tab index corresponding to known medium type: */
     switch (type)
     {
-        case UIMediumType_HardDisk: return 0;
-        case UIMediumType_DVD:      return 1;
-        case UIMediumType_Floppy:   return 2;
+        case UIMediumDeviceType_HardDisk: return 0;
+        case UIMediumDeviceType_DVD:      return 1;
+        case UIMediumDeviceType_Floppy:   return 2;
         default: break;
     }
 

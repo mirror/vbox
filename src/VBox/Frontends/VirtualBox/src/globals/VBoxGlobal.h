@@ -495,14 +495,14 @@ public:
           * @param  pParent            Brings the dialog parent.
           * @param  strMediumLocation  Brings the file path to load medium from.
           * @param  pParent            Brings the dialog parent. */
-        QString openMedium(UIMediumType enmMediumType, QString strMediumLocation, QWidget *pParent = 0);
+        QString openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent = 0);
 
         /** Opens external medium using file-open dialog.
           * @param  enmMediumType     Brings the medium type.
           * @param  pParent           Brings the dialog parent.
           * @param  strDefaultFolder  Brings the folder to browse for medium.
           * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
-        QString openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWidget *pParent = 0,
+        QString openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
                                              const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
 
         /** Creates a VISO using the file-open dialog.
@@ -538,7 +538,7 @@ public:
         /** Update extra data related to recently used/referred media.
           * @param  enmMediumType       Passes the medium type.
           * @param  strMediumLocation   Passes the medium location. */
-        void updateRecentlyUsedMediumListAndFolder(UIMediumType enmMediumType, QString strMediumLocation);
+        void updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation);
     /** @} */
 
     /** @name COM: USB stuff.

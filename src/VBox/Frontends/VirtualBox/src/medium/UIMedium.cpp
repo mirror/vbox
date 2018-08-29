@@ -42,7 +42,7 @@ QString UIMedium::m_sstrTable = QString("<table>%1</table>");
 QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
 
 UIMedium::UIMedium()
-    : m_type(UIMediumType_Invalid)
+    : m_type(UIMediumDeviceType_Invalid)
     , m_medium(CMedium())
     , m_state(KMediumState_NotCreated)
     , m_enmMediumType(KMediumType_Max)
@@ -51,7 +51,7 @@ UIMedium::UIMedium()
     refresh();
 }
 
-UIMedium::UIMedium(const CMedium &medium, UIMediumType type)
+UIMedium::UIMedium(const CMedium &medium, UIMediumDeviceType type)
     : m_type(type)
     , m_medium(medium)
     , m_state(KMediumState_NotCreated)
@@ -61,7 +61,7 @@ UIMedium::UIMedium(const CMedium &medium, UIMediumType type)
     refresh();
 }
 
-UIMedium::UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
+UIMedium::UIMedium(const CMedium &medium, UIMediumDeviceType type, KMediumState state)
     : m_type(type)
     , m_medium(medium)
     , m_state(state)
@@ -232,7 +232,7 @@ void UIMedium::refresh()
             {
                 m_uSize = m_medium.GetSize();
                 m_strSize = vboxGlobal().formatSize(m_uSize);
-                if (m_type == UIMediumType_HardDisk)
+                if (m_type == UIMediumDeviceType_HardDisk)
                 {
                     m_uLogicalSize = m_medium.GetLogicalSize();
                     m_strLogicalSize = vboxGlobal().formatSize(m_uLogicalSize);
@@ -253,7 +253,7 @@ void UIMedium::refresh()
         m_enmMediumVariant = (KMediumVariant)iMediumVariant;
 
         /* For hard drive medium: */
-        if (m_type == UIMediumType_HardDisk)
+        if (m_type == UIMediumDeviceType_HardDisk)
         {
             /* Refresh hard drive disk type: */
             m_strHardDiskType = mediumTypeToString(m_medium);
@@ -395,7 +395,7 @@ void UIMedium::refresh()
 
         /* Refresh tool-tip: */
         m_strToolTip = m_sstrRow.arg(QString("<p style=white-space:pre><b>%1</b></p>").arg(m_fHostDrive ? m_strName : m_strLocation));
-        if (m_type == UIMediumType_HardDisk)
+        if (m_type == UIMediumDeviceType_HardDisk)
         {
             m_strToolTip += m_sstrRow.arg(VBoxGlobal::tr("<p style=white-space:pre>Type (Format):  %1 (%2)</p>", "medium")
                                                          .arg(m_strHardDiskType).arg(m_strHardDiskFormat));
@@ -433,7 +433,7 @@ void UIMedium::refresh()
 void UIMedium::updateParentID()
 {
     m_strParentId = nullID();
-    if (m_type == UIMediumType_HardDisk)
+    if (m_type == UIMediumDeviceType_HardDisk)
     {
         CMedium parentMedium = m_medium.GetParent();
         if (!parentMedium.isNull())
@@ -514,7 +514,7 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
     UIMedium rootMedium = root();
     KMediumState eState = m_state;
 
-    if (m_type == UIMediumType_HardDisk)
+    if (m_type == UIMediumDeviceType_HardDisk)
     {
         if (fNoDiffs)
         {
@@ -552,7 +552,7 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
             strDetails += fUseHTML ? QString("<b>%1</b>").arg(strText) : strText;
             break;
         default:
-            strDetails += m_type == UIMediumType_HardDisk ? rootMedium.m_strLogicalSize : rootMedium.m_strSize;
+            strDetails += m_type == UIMediumDeviceType_HardDisk ? rootMedium.m_strLogicalSize : rootMedium.m_strSize;
             break;
     }
 

@@ -47,7 +47,7 @@ signals:
 
 public:
 
-    UIMediumSelector(UIMediumType enmMediumType, const QString &machineName = QString(),
+    UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName = QString(),
                      const QString &machineSettigFilePath = QString(), QWidget *pParent = 0);
     QStringList selectedMediumIds() const;
 
@@ -103,7 +103,7 @@ private:
 
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;
-    UIMediumType          m_enmMediumType;
+    UIMediumDeviceType          m_enmMediumType;
     QIDialogButtonBox    *m_pButtonBox;
     UIToolBar            *m_pToolBar;
     QAction              *m_pActionAdd;

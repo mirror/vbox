@@ -203,9 +203,9 @@ bool UISession::initialize()
 
     /* Apply ad-hoc reconfigurations from the command line: */
     if (vboxGlobal().hasFloppyImageToMount())
-        mountAdHocImage(KDeviceType_Floppy, UIMediumType_Floppy, vboxGlobal().getFloppyImage());
+        mountAdHocImage(KDeviceType_Floppy, UIMediumDeviceType_Floppy, vboxGlobal().getFloppyImage());
     if (vboxGlobal().hasDvdImageToMount())
-        mountAdHocImage(KDeviceType_DVD, UIMediumType_DVD, vboxGlobal().getDvdImage());
+        mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, vboxGlobal().getDvdImage());
 
     /* Power UP if this is NOT separate process: */
     if (!vboxGlobal().isSeparateProcess())
@@ -587,7 +587,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
         return;
 
     /* Mount medium add-hoc: */
-    mountAdHocImage(KDeviceType_DVD, UIMediumType_DVD, strSource);
+    mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, strSource);
 }
 
 void UISession::sltCloseRuntimeUI()
@@ -1904,7 +1904,7 @@ bool UISession::preprocessInitialization()
     return true;
 }
 
-bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, const QString &strMediumName)
+bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName)
 {
     /* Get VBox: */
     CVirtualBox comVBox = vboxGlobal().virtualBox();
