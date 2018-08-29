@@ -339,14 +339,14 @@ int RTCString::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
 {
     cleanup();
     RTCSTRINGOTHROW Args = { this, VINF_SUCCESS };
-    RTStrFormatV(printfOutputCallback, &Args, NULL, NULL, pszFormat, va);
+    RTStrFormatV(printfOutputCallbackNoThrow, &Args, NULL, NULL, pszFormat, va);
     return Args.rc;
 }
 
 int RTCString::appendPrintfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
 {
     RTCSTRINGOTHROW Args = { this, VINF_SUCCESS };
-    RTStrFormatV(printfOutputCallback, &Args, NULL, NULL, pszFormat, va);
+    RTStrFormatV(printfOutputCallbackNoThrow, &Args, NULL, NULL, pszFormat, va);
     return Args.rc;
 }
 
