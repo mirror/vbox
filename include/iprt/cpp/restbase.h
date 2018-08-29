@@ -748,7 +748,7 @@ public:
      *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    int append(size_t a_idx, ElementType *a_pThat)
+    int append(ElementType *a_pThat)
     {
         return insertWorker(~(size_t)0, a_pThat, false /*a_fReplace*/);
     }
@@ -845,7 +845,7 @@ public:
      * Returns the first object in the array.
      * @returns The first object, NULL if empty.
      */
-    ElementType *first(size_t a_idx)
+    ElementType *first()
     {
         return at(0);
     }
@@ -854,7 +854,7 @@ public:
      * Returns the first object in the array, const variant.
      * @returns The first object, NULL if empty.
      */
-    ElementType const *first(size_t a_idx) const
+    ElementType const *first() const
     {
         return at(0);
     }
@@ -863,7 +863,7 @@ public:
      * Returns the last object in the array.
      * @returns The last object, NULL if empty.
      */
-    ElementType *last(size_t a_idx)
+    ElementType *last()
     {
         return at(m_cElements - 1);
     }
@@ -872,7 +872,7 @@ public:
      * Returns the last object in the array, const variant.
      * @returns The last object, NULL if empty.
      */
-    ElementType const *last(size_t a_idx) const
+    ElementType const *last() const
     {
         return at(m_cElements - 1);
     }
