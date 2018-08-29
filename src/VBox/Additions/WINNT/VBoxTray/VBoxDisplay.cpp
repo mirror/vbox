@@ -824,9 +824,9 @@ static BOOL DisplayChangeRequestHandler(PVBOXDISPLAYCONTEXT pCtx)
     uint32_t cDisplays = RT_ELEMENTS(aDisplays);
     int rc = VINF_SUCCESS;
 
-    rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true /* fAck */);
-
-    if (RT_SUCCESS(rc))
+    /* Multidisplay resize is still implemented only for Win7 and newer guests. */
+    if (pCtx->pEnv->dispIf.enmMode >= VBOXDISPIF_MODE_WDDM_W7 &&
+        RT_SUCCESS(rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true /* fAck */)))
     {
         uint32_t i;
 
@@ -844,31 +844,8 @@ static BOOL DisplayChangeRequestHandler(PVBOXDISPLAYCONTEXT pCtx)
                 aDisplays[i].cBitsPerPixel));
         }
 
-        /* Multidisplay resize is still implemented only for Win7 and newer guests.
-           Single display resize request still goes old way. */
-        if (pCtx->pEnv->dispIf.enmMode < VBOXDISPIF_MODE_WDDM_W7 || cDisplays == 1)
-        {
-            for (i = 0; i < cDisplays; ++i)
-            {
-                doResize(pCtx,
-                    aDisplays[i].idDisplay,
-                    aDisplays[i].cx,
-                    aDisplays[i].cy,
-                    aDisplays[i].cBitsPerPixel,
-                    !RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
-                    aDisplays[i].xOrigin,
-                    aDisplays[i].yOrigin,
-                    RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN));
-            }
-        }
-        else
-        {
-            rc = VBoxDispIfResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
-        }
-
-        return rc;
+        return VBoxDispIfResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
     }
-
 
     /* Fall back to the single monitor resize request. */
 
