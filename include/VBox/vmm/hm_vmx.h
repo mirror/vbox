@@ -2893,6 +2893,28 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
 /** @} */
 
 /**
+ * Virtual VM-Exit information.
+ *
+ * This is a convenience structure that bundles some VM-exit information related
+ * fields together.
+ */
+typedef struct
+{
+    /** The VM-exit qualification field. */
+    uint64_t                u64ExitQual;
+    /** The guest-linear address field. */
+    uint64_t                u64GuestLinearAddr;
+    /** The VM-exit instruction information. */
+    VMXEXITINSTRINFO        ExitInstrInfo;
+    /** Padding. */
+    uint32_t                u32Padding0;
+} VMXVEXITINFO;
+/** Pointer to the VMXVEXITINFO struct. */
+typedef VMXVEXITINFO *PVMXVEXITINFO;
+/** Pointer to a const VMXVEXITINFO struct. */
+typedef const VMXVEXITINFO *PCVMXVEXITINFO;
+
+/**
  * Virtual VMCS.
  * This is our custom format and merged into the actual VMCS (/shadow) when we
  * execute nested-guest code using hardware-assisted VMX.
@@ -2910,7 +2932,7 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
  * VMX instructions (VMREAD, VMWRITE etc.), since the VMCS may reside in guest
  * memory (e.g, active but not current VMCS), for saved-states compatibility, and
  * for teleportation (when implemented) any newly added fields should be added to
- * the appropriate reserved portions or at the end of the structure.
+ * the appropriate reserved sections or at the end of the structure.
  */
 #pragma pack(1)
 typedef struct
