@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_REST
 #include <iprt/cpp/restbase.h>
 
 #include <iprt/err.h>
@@ -71,10 +72,11 @@ RTCRestStringMapBase &RTCRestStringMapBase::operator=(RTCRestStringMapBase const
 *   Overridden base object methods                                                                                               *
 *********************************************************************************************************************************/
 
-void RTCRestStringMapBase::resetToDefault()
+int RTCRestStringMapBase::resetToDefault()
 {
     /* Default is an empty map. */
     clear();
+    return VINF_SUCCESS;
 }
 
 

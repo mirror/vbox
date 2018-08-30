@@ -1,6 +1,12 @@
 /* $Id$ */
 /** @file
  * IPRT - HTTP client API, cURL based.
+ *
+ * Logging groups:
+ *      Log4 - request headers.
+ *      Log5 - request body.
+ *      Log6 - response headers.
+ *      Log7 - response body.
  */
 
 /*
@@ -2873,6 +2879,17 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
     AssertReturn(enmMethod > RTHTTPMETHOD_INVALID && enmMethod < RTHTTPMETHOD_END, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszUrl, VERR_INVALID_POINTER);
 
+#ifdef LOG_ENABLED
+    if (LogIs6Enabled() && pThis->pHeaders)
+    {
+        Log4(("RTHttpPerform: headers:\n"));
+        for (struct curl_slist const *pCur = pThis->pHeaders; pCur; pCur = pCur->next)
+            Log4(("%s", pCur->data));
+    }
+    if (pvReqBody && cbReqBody)
+        Log5(("RTHttpPerform: request body:\n%.*Rhxd\n", cbReqBody, pvReqBody));
+#endif
+
     /*
      * Set the busy flag (paranoia).
      */
@@ -2886,8 +2903,7 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
     int rc = rtHttpApplySettings(hHttp, pszUrl);
     if (RT_SUCCESS(rc))
     {
-
-        /* HTTP method. */
+        /* Set the HTTP method. */
         int rcCurl = 1;
         switch (enmMethod)
         {
@@ -2969,19 +2985,21 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
             {
                 if (ppvHeaders)
                 {
+                    Log(("RTHttpPerform: headers: %zx bytes (allocated %zx)\n",
+                         pThis->HeadersOutput.uData.Mem.cb, pThis->HeadersOutput.uData.Mem.cbAllocated));
+                    Log6(("RTHttpPerform: headers blob:\n%.*Rhxd\n", pThis->HeadersOutput.uData.Mem.cb, pThis->HeadersOutput.uData.Mem.pb));
                     *ppvHeaders = pThis->HeadersOutput.uData.Mem.pb;
                     *pcbHeaders = pThis->HeadersOutput.uData.Mem.cb;
                     pThis->HeadersOutput.uData.Mem.pb = NULL;
-                    Log(("RTHttpPerform: headers: %zx bytes (allocated %zx)\n",
-                         pThis->HeadersOutput.uData.Mem.cb, pThis->HeadersOutput.uData.Mem.cbAllocated));
                 }
                 if (ppvBody)
                 {
+                    Log(("RTHttpPerform: body: %zx bytes (allocated %zx)\n",
+                         pThis->BodyOutput.uData.Mem.cb, pThis->BodyOutput.uData.Mem.cbAllocated));
+                    Log7(("RTHttpPerform: body blob:\n%.*Rhxd\n", pThis->BodyOutput.uData.Mem.cb, pThis->BodyOutput.uData.Mem.pb));
                     *ppvBody = pThis->BodyOutput.uData.Mem.pb;
                     *pcbBody = pThis->BodyOutput.uData.Mem.cb;
                     pThis->BodyOutput.uData.Mem.pb = NULL;
-                    Log(("RTHttpPerform: body: %zx bytes (allocated %zx)\n",
-                         pThis->HeadersOutput.uData.Mem.cb, pThis->HeadersOutput.uData.Mem.cbAllocated));
                 }
             }
         }
@@ -3000,6 +3018,28 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
 
     ASMAtomicWriteBool(&pThis->fBusy, false);
     return rc;
+}
+
+
+RTR3DECL(const char *) RTHttpMethodName(RTHTTPMETHOD enmMethod)
+{
+    switch (enmMethod)
+    {
+        case RTHTTPMETHOD_INVALID:  return "invalid";
+        case RTHTTPMETHOD_GET:      return "GET";
+        case RTHTTPMETHOD_PUT:      return "PUT";
+        case RTHTTPMETHOD_POST:     return "POST";
+        case RTHTTPMETHOD_PATCH:    return "PATCH";
+        case RTHTTPMETHOD_DELETE:   return "DELETE";
+        case RTHTTPMETHOD_HEAD:     return "HEAD";
+        case RTHTTPMETHOD_OPTIONS:  return "OPTIONS";
+        case RTHTTPMETHOD_TRACE:    return "TRACE";
+
+        case RTHTTPMETHOD_END:
+        case RTHTTPMETHOD_32BIT_HACK:
+            break;
+    }
+    return "unknown";
 }
 
 

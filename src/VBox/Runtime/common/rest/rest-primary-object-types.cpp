@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_REST
 #include <iprt/cpp/restbase.h>
 
 #include <iprt/err.h>
@@ -142,9 +143,17 @@ RTCRestBool &RTCRestBool::operator=(RTCRestBool const &a_rThat)
 }
 
 
-void RTCRestBool::resetToDefault()
+int RTCRestBool::assignCopy(RTCRestBool const &a_rThat)
+{
+    m_fValue = a_rThat.m_fValue;
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestBool::resetToDefault()
 {
     m_fValue = false;
+    return VINF_SUCCESS;
 }
 
 
@@ -264,9 +273,17 @@ RTCRestInt64 &RTCRestInt64::operator=(RTCRestInt64 const &a_rThat)
 }
 
 
-void RTCRestInt64::resetToDefault()
+int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat)
+{
+    m_iValue = a_rThat.m_iValue;
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestInt64::resetToDefault()
 {
     m_iValue = 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -374,9 +391,17 @@ RTCRestInt32 &RTCRestInt32::operator=(RTCRestInt32 const &a_rThat)
 }
 
 
-void RTCRestInt32::resetToDefault()
+int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat)
+{
+    m_iValue = a_rThat.m_iValue;
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestInt32::resetToDefault()
 {
     m_iValue = 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -490,9 +515,17 @@ RTCRestInt16 &RTCRestInt16::operator=(RTCRestInt16 const &a_rThat)
 }
 
 
-void RTCRestInt16::resetToDefault()
+int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat)
+{
+    m_iValue = a_rThat.m_iValue;
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestInt16::resetToDefault()
 {
     m_iValue = 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -597,9 +630,25 @@ RTCRestDouble::~RTCRestDouble()
 }
 
 
-void RTCRestDouble::resetToDefault()
+/** Copy assignment operator. */
+RTCRestDouble &RTCRestDouble::operator=(RTCRestDouble const &a_rThat)
+{
+    m_rdValue = a_rThat.m_rdValue;
+    return *this;
+}
+
+
+int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat)
+{
+    m_rdValue = a_rThat.m_rdValue;
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestDouble::resetToDefault()
 {
     m_rdValue = 0.0;
+    return VINF_SUCCESS;
 }
 
 
@@ -714,9 +763,22 @@ RTCRestString::~RTCRestString()
 }
 
 
-void RTCRestString::resetToDefault()
+int RTCRestString::assignCopy(RTCString const &a_rThat)
+{
+    return assignNoThrow(a_rThat);
+}
+
+
+int RTCRestString::assignCopy(const char *a_pszThat)
+{
+    return assignNoThrow(a_pszThat);
+}
+
+
+int RTCRestString::resetToDefault()
 {
     setNull();
+    return VINF_SUCCESS;
 }
 
 

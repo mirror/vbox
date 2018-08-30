@@ -60,13 +60,14 @@ typedef enum RTLOGGROUP
     RTLOGGROUP_FS,
     RTLOGGROUP_HTTP,
     RTLOGGROUP_LDR,
+    RTLOGGROUP_LOCALIPC,
     RTLOGGROUP_PATH,
     RTLOGGROUP_PROCESS,
+    RTLOGGROUP_REST,
     RTLOGGROUP_SYMLINK,
     RTLOGGROUP_THREAD,
     RTLOGGROUP_TIME,
     RTLOGGROUP_TIMER,
-    RTLOGGROUP_LOCALIPC,
     RTLOGGROUP_VFS,
     RTLOGGROUP_ZIP = 31,
     RTLOGGROUP_FIRST_USER = 32
@@ -86,24 +87,24 @@ typedef enum RTLOGGROUP
  *              a b c d e f g h i j k l m n o p q r s t u v w x y z
  */
 #define RT_LOGGROUP_NAMES \
-    "DEFAULT",      \
-    "RT_CRYPTO",    \
-    "RT_DBG",       \
+    "DEFAULT", \
+    "RT_CRYPTO", \
+    "RT_DBG", \
     "RT_DBG_DWARF", \
-    "RT_DIR",       \
-    "RT_FILE",      \
-    "RT_FS",        \
+    "RT_DIR", \
+    "RT_FILE", \
+    "RT_FS", \
     "RT_HTTP", \
-    "RT_LDR",       \
-    "RT_PATH",      \
-    "RT_PROCESS",   \
-    "RT_SYMLINK",   \
-    "RT_THREAD",    \
-    "RT_TIME",      \
-    "RT_TIMER",     \
+    "RT_LDR", \
     "RT_LOCALIPC", \
+    "RT_PATH", \
+    "RT_PROCESS", \
+    "RT_REST", \
+    "RT_SYMLINK", \
+    "RT_THREAD", \
+    "RT_TIME", \
+    "RT_TIMER", \
     "RT_VFS", \
-    "RT_17", \
     "RT_18", \
     "RT_19", \
     "RT_20", \
@@ -128,7 +129,7 @@ typedef enum RTLOGGROUP
 #endif
 
 /** @def LOG_FN_FMT
- * You can use this to specify you desired way of printing __PRETTY_FUNCTION__
+ * You can use this to specify your desired way of printing __PRETTY_FUNCTION__
  * if you dislike the default one.
  */
 #ifndef LOG_FN_FMT

@@ -266,8 +266,9 @@ public:
 
     /**
      * Resets the object to all default values.
+     * @returns IPRT status code.
      */
-    virtual void resetToDefault() = 0;
+    virtual int resetToDefault() = 0;
 
     /**
      * Serialize the object as JSON.
@@ -369,9 +370,11 @@ public:
     virtual ~RTCRestBool();
     /** Copy assignment operator. */
     RTCRestBool &operator=(RTCRestBool const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestBool const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
@@ -404,9 +407,11 @@ public:
     virtual ~RTCRestInt64();
     /** Copy assignment operator. */
     RTCRestInt64 &operator=(RTCRestInt64 const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestInt64 const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
@@ -439,9 +444,11 @@ public:
     virtual ~RTCRestInt32();
     /** Copy assignment operator. */
     RTCRestInt32 &operator=(RTCRestInt32 const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestInt32 const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
@@ -474,9 +481,11 @@ public:
     virtual ~RTCRestInt16();
     /** Copy assignment operator. */
     RTCRestInt16 &operator=(RTCRestInt16 const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestInt16 const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
@@ -509,9 +518,11 @@ public:
     virtual ~RTCRestDouble();
     /** Copy assignment operator. */
     RTCRestDouble &operator=(RTCRestDouble const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestDouble const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
@@ -536,17 +547,22 @@ class RT_DECL_CLASS RTCRestString : public RTCString, public RTCRestObjectBase
 public:
     /** Default destructor. */
     RTCRestString();
+    /** Destructor. */
+    virtual ~RTCRestString();
+
     /** Copy constructor. */
     RTCRestString(RTCRestString const &a_rThat);
     /** From value constructor. */
     RTCRestString(RTCString const &a_rThat);
     /** From value constructor. */
     RTCRestString(const char *a_pszSrc);
-    /** Destructor. */
-    virtual ~RTCRestString();
+    /** Safe copy assignment method. */
+    int assignCopy(RTCString const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(const char *a_pszThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
@@ -571,7 +587,7 @@ public:
     virtual ~RTCRestArrayBase();
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
@@ -717,6 +733,12 @@ public:
         return *this;
     }
 
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestArray const &a_rThat)
+    {
+        return copyArrayWorker(a_rThat, false /*fThrow*/);
+    }
+
     virtual const char *getType(void) RT_OVERRIDE
     {
         return "RTCRestArray<ElementType>";
@@ -758,7 +780,7 @@ public:
      */
     int insertCopy(size_t a_idx, ElementType const &a_rThat)
     {
-        return insertCopyWorker(a_idx, &a_rThat, false /*a_fReplace*/);
+        return insertCopyWorker(a_idx, a_rThat, false /*a_fReplace*/);
     }
 
     /**
@@ -782,7 +804,7 @@ public:
      */
     int appendCopy(ElementType const &a_rThat)
     {
-        return insertCopyWorker(~(size_t)0, &a_rThat, false /*a_fReplace*/);
+        return insertCopyWorker(~(size_t)0, a_rThat, false /*a_fReplace*/);
     }
 
     /**
@@ -806,7 +828,7 @@ public:
      */
     int prependCopy(ElementType const &a_rThat)
     {
-        return insertCopyWorker(0, &a_rThat, false /*a_fReplace*/);
+        return insertCopyWorker(0, a_rThat, false /*a_fReplace*/);
     }
 
     /**
@@ -832,7 +854,7 @@ public:
      */
     int replaceCopy(size_t a_idx, ElementType const &a_rThat)
     {
-        return insertCopyWorker(a_idx, &a_rThat, true /*a_fReplace*/);
+        return insertCopyWorker(a_idx, a_rThat, true /*a_fReplace*/);
     }
 
     /**
@@ -906,7 +928,15 @@ protected:
 
     virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) RT_OVERRIDE
     {
-        return new (std::nothrow) ElementType(*(ElementType const *)a_pSrc);
+        ElementType *pCopy = new (std::nothrow) ElementType();
+        if (pCopy)
+        {
+            int rc = pCopy->assignCopy(*(ElementType const *)a_pSrc);
+            if (RT_SUCCESS(rc))
+                return pCopy;
+            delete pCopy;
+        }
+        return NULL;
     }
 };
 
@@ -927,7 +957,7 @@ public:
     RTCRestStringMapBase &operator=(RTCRestStringMapBase const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     // later?
@@ -1097,6 +1127,12 @@ public:
         return *this;
     }
 
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestStringMap const &a_rThat)
+    {
+        return copyMapWorker(a_rThat, false /*a_fThrow*/);
+    }
+
     virtual const char *getType(void) RT_OVERRIDE
     {
         return "RTCRestStringMap<ValueType>";
@@ -1224,7 +1260,15 @@ protected:
 
     virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) RT_OVERRIDE
     {
-        return new (std::nothrow) ValueType(*(ValueType const *)a_pSrc);
+        ValueType *pCopy = new (std::nothrow) ValueType();
+        if (pCopy)
+        {
+            int rc = pCopy->assignCopy(*(ValueType const *)a_pSrc);
+            if (RT_SUCCESS(rc))
+                return pCopy;
+            delete pCopy;
+        }
+        return NULL;
     }
 };
 
@@ -1240,15 +1284,18 @@ class /*RT_DECL_CLASS*/ RTCRestObject : public RTCRestObjectBase
 public:
     /** Default destructor. */
     RTCRestObject();
-    /** Copy constructor. */
-    RTCRestObject(RTCRestBool const &a_rThat);
     /** Destructor. */
     virtual ~RTCRestObject();
+
+    /** Copy constructor. */
+    RTCRestObject(RTCRestObject const &a_rThat);
     /** Copy assignment operator. */
-    RTCRestBool &operator=(RTCRestObject const &a_rThat);
+    RTCRestObject &operator=(RTCRestObject const &a_rThat);
+    /** Safe Safe copy assignment method. */
+    int assignCopy(RTCRestObject const &a_rThat);
 
     /* Overridden methods: */
-    virtual void resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
@@ -1272,11 +1319,14 @@ class RT_DECL_CLASS RTCRestClientRequestBase
 public:
     RTCRestClientRequestBase();
     virtual ~RTCRestClientRequestBase();
+    RTCRestClientRequestBase(RTCRestClientRequestBase const &a_rThat);
+    RTCRestClientRequestBase &operator=(RTCRestClientRequestBase const &a_rThat);
 
     /**
      * Reset all members to default values.
+     * @returns IPRT status code.
      */
-    virtual void resetToDefault() = 0;
+    virtual int resetToDefault() = 0;
 
     /**
      * Prepares the HTTP handle for transmitting this request.
@@ -1297,7 +1347,17 @@ public:
      */
     virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const = 0;
 
+    /**
+     * Checks if there are were any assignment errors.
+     */
+    bool hasAssignmentErrors() const { return m_fErrorSet != 0; }
+
 protected:
+    /** Set of fields that have been explicitly assigned a value. */
+    uint64_t m_fIsSet;
+    /** Set of fields where value assigning failed. */
+    uint64_t m_fErrorSet;
+
     /** Path replacement entry. */
     typedef struct
     {
@@ -1590,9 +1650,10 @@ protected:
      * @param   a_rRequest      Reference to the request object.
      * @param   a_enmHttpMethod The HTTP request method.
      * @param   a_pResponse     Pointer to the response object.
+     * @param   a_pszMethod     The method name, for logging purposes.
      */
     virtual void doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                        RTCRestClientResponseBase *a_pResponse);
+                        RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod);
 
 };
 

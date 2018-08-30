@@ -209,6 +209,13 @@ typedef enum RTHTTPMETHOD
 } RTHTTPMETHOD;
 
 /**
+ * Returns the name of the HTTP method.
+ * @returns Read only string.
+ * @param   enmMethod       The HTTP method to name.
+ */
+RTR3DECL(const char *) RTHttpMethodName(RTHTTPMETHOD enmMethod);
+
+/**
  * Performs generic blocking HTTP request, optionally returning the body and headers.
  *
  * @returns IPRT status code.
