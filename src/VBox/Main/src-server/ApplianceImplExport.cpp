@@ -906,8 +906,8 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
                 Utf8Str path = (*itSkipped)->strVBoxCurrent;
                 // Locate the Medium object for this entry (by location/path).
                 Log(("Finding disk \"%s\"\n", path.c_str()));
-                ComObjPtr<Medium> ptrSourceDisk;
-                rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrSourceDisk);
+                ComObjPtr<Medium> ptrDisk;
+                rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrDisk);
                 if (FAILED(rc)) 
                     throw rc;
 
