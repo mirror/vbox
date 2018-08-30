@@ -2373,7 +2373,6 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
     RT_NOREF(pTask); // XXX
     LogFlowFuncEnter();
     HRESULT hrc = S_OK;
-    int vrc = VINF_SUCCESS;
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
 
