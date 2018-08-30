@@ -302,6 +302,7 @@ public:
         kCollectionFormat_ssv,              /**< Space-separated list. */
         kCollectionFormat_tsv,              /**< Tab-separated list. */
         kCollectionFormat_pipes,            /**< Pipe-separated list. */
+        kCollectionFormat_multi,            /**< Special collection type that must be handled by caller of toString. */
         kCollectionFormat_Mask = 7,         /**< Collection type mask. */
 
         kToString_Append = 8                /**< Append to the string (rather than assigning). */
@@ -1369,6 +1370,7 @@ protected:
     } PATHREPLACEENTRY;
 
     /**
+     * Do path parameters.
      *
      * @returns IPRT status code
      * @param   a_pStrPath          The destination path.
@@ -1379,6 +1381,26 @@ protected:
      */
     int doPathParameters(RTCString *a_pStrPath, const char *a_pszPathTemplate, size_t a_cchPathTemplate,
                          PATHREPLACEENTRY *a_paPathParams, size_t a_cPathParams) const;
+
+    /** Query parameter descriptor. */
+    typedef struct
+    {
+        const char                 *pszName;    /**< The parameter name. */
+        uint32_t                    fFlags;     /**< The toString flags. */
+        bool                        fRequired;  /**< Required or not. */
+    } QUERYPARAMDESC;
+
+    /**
+     * Do query parameters.
+     *
+     * @returns IPRT status code
+     * @param   a_pStrQuery         The destination string.
+     * @param   a_paQueryParams     The query parameter descriptors.
+     * @param   a_papQueryParamObjs The query parameter objects, parallel to @a a_paQueryParams.
+     * @param   a_cQueryParams      Number of query parameters.
+     */
+    int doQueryParameters(RTCString *a_pStrQuery, QUERYPARAMDESC const *a_paQueryParams,
+                          RTCRestObjectBase const **a_papQueryParamObjs, size_t a_cQueryParams) const;
 };
 
 

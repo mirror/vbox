@@ -276,6 +276,7 @@ RTDECL(int) RTJsonValueQueryByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL
  *          object.
  * @param   hJsonVal        The JSON value handle.
  * @param   phJsonIt        Where to store the JSON iterator handle on success.
+ * @todo    Make return VERR_JSON_IS_EMPTY (or remove it).
  */
 RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
 
@@ -284,6 +285,7 @@ RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
  *
  * @returns IPRT status code.
  * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an array.
+ * @retval  VERR_JSON_IS_EMPTY if no members.
  * @param   hJsonVal        The JSON value handle.
  * @param   phJsonIt        Where to store the JSON iterator handle on success.
  */
@@ -294,6 +296,7 @@ RTDECL(int) RTJsonIteratorBeginArray(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
  *
  * @returns IPRT status code.
  * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object.
+ * @retval  VERR_JSON_IS_EMPTY if no members.
  * @param   hJsonVal        The JSON value handle.
  * @param   phJsonIt        Where to store the JSON iterator handle on success.
  */

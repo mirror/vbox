@@ -116,10 +116,8 @@ void RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RT
                 }
                 if (strQuery.isNotEmpty())
                 {
-                    if (RT_SUCCESS(rc))
-                        rc = strFullUrl.appendNoThrow('?');
-                    if (RT_SUCCESS(rc))
-                        rc = strFullUrl.appendNoThrow(strQuery);
+                    Assert(strQuery.startsWith("?"));
+                    rc = strFullUrl.appendNoThrow(strQuery);
                     strQuery.setNull();
                 }
                 if (RT_SUCCESS(rc))

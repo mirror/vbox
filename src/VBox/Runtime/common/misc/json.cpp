@@ -1517,7 +1517,9 @@ RTDECL(int) RTJsonIteratorBeginArray(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt)
     AssertPtrReturn(phJsonIt, VERR_INVALID_POINTER);
     RTJSON_TYPECHECK_RETURN(pThis, RTJSONVALTYPE_ARRAY);
 
-    return rtJsonIteratorBeginWorker(pThis, phJsonIt);
+    if (pThis->Type.Array.cItems > 0)
+        return rtJsonIteratorBeginWorker(pThis, phJsonIt);
+    return VERR_JSON_IS_EMPTY;
 }
 
 RTDECL(int) RTJsonIteratorBeginObject(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt)
@@ -1527,7 +1529,9 @@ RTDECL(int) RTJsonIteratorBeginObject(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt)
     AssertPtrReturn(phJsonIt, VERR_INVALID_POINTER);
     RTJSON_TYPECHECK_RETURN(pThis, RTJSONVALTYPE_OBJECT);
 
-    return rtJsonIteratorBeginWorker(pThis, phJsonIt);
+    if (pThis->Type.Object.cMembers > 0)
+        return rtJsonIteratorBeginWorker(pThis, phJsonIt);
+    return VERR_JSON_IS_EMPTY;
 }
 
 RTDECL(int) RTJsonIteratorQueryValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, const char **ppszName)

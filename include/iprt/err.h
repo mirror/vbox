@@ -2876,6 +2876,8 @@ RT_C_DECLS_END
 #define VERR_JSON_ITERATOR_END                      (-24701)
 /** The JSON document is malformed. */
 #define VERR_JSON_MALFORMED                         (-24702)
+/** Object or array is empty. */
+#define VERR_JSON_IS_EMPTY                          (-24703)
 /** @} */
 
 /** @name RTVfs status codes.

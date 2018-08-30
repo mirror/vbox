@@ -178,6 +178,8 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
         RTJsonIteratorFree(hIterator);
     }
+    else if (rcRet == VERR_JSON_IS_EMPTY)
+        rcRet = VINF_SUCCESS;
     else
         rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBeginArray failed: %Rrc", rcRet);
     return rcRet;
