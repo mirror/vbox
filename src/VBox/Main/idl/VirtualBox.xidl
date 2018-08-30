@@ -24995,6 +24995,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           The type of the supported cloud commands.
         </desc>
       </param>
+      <param name="condition" type="wstring" dir="in">
+        <desc>
+          The successful condition for finishing the command.
+          The command will be repeated if condition isn't in the needed state
+        </desc>
+      </param>
       <param name="Id" type="uuid" mod="string" dir="return">
         <desc>
           UUID of the operation.

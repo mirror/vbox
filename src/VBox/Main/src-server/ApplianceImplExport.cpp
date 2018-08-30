@@ -890,7 +890,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             ComPtr<IMedium> pBootableBaseMedium;
             // returns pBootableMedium if there are no diff images
             rc = ptrSourceDisk->COMGETTER(Base)(pBootableBaseMedium.asOutParam());
-            if (FAILED(rc))
+            if (FAILED(rc)) 
                 throw rc;
 
             //Get base bootable disk location
@@ -906,8 +906,9 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
                 Utf8Str path = (*itSkipped)->strVBoxCurrent;
                 // Locate the Medium object for this entry (by location/path).
                 Log(("Finding disk \"%s\"\n", path.c_str()));
+                ComObjPtr<Medium> ptrSourceDisk;
                 rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrSourceDisk);
-                if (FAILED(rc))
+                if (FAILED(rc)) 
                     throw rc;
 
                 if (!path.equalsIgnoreCase(strBootLocation))
@@ -919,7 +920,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             //just in case
             if (vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage).empty())
             {
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("Strange, but nothing to export to OCI after preparation steps"));
             }
 
@@ -937,7 +938,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             LogRel(("Exported image: %s\n", m->m_OciExportData.strBootImageName.c_str()));
 
             if (aLocInfo.strPath.isEmpty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: Cloud user profile wasn't found"));
 
             m->m_OciExportData.strProfileName = aLocInfo.strPath;
@@ -947,7 +948,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> shapeId =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIInstanceShape);
             if (shapeId.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: Shape of instance wasn't found"));
 
             m->m_OciExportData.strInstanceShapeId = shapeId.front()->strVBoxCurrent;
@@ -956,7 +957,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> domainName =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIDomain);
             if (domainName.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: Available domain wasn't found"));
 
             m->m_OciExportData.strDomainName = domainName.front()->strVBoxCurrent;
@@ -965,7 +966,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> bootDiskSize =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIBootDiskSize);
             if (bootDiskSize.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: Boot disk size wasn't found"));
 
             m->m_OciExportData.strBootDiskSize = bootDiskSize.front()->strVBoxCurrent;
@@ -974,7 +975,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> bucketId =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIBucket);
             if (bucketId.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: Bucket wasn't found"));
 
             m->m_OciExportData.strBucketId = bucketId.front()->strVBoxCurrent;
@@ -983,7 +984,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> vcn =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIVCN);
             if (vcn.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: VCN wasn't found"));
 
             m->m_OciExportData.strVCN = vcn.front()->strVBoxCurrent;
@@ -992,7 +993,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             std::list<VirtualSystemDescriptionEntry*> publicIP =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIPublicIP);
             if (publicIP.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
                                     tr("OCI: Public IP setting wasn't found"));
 
             m->m_OciExportData.fPublicIP = (publicIP.front()->strVBoxCurrent == "true") ? true : false;
@@ -2372,100 +2373,85 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
     RT_NOREF(pTask); // XXX
     LogFlowFuncEnter();
     HRESULT hrc = S_OK;
-    //int vrc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
 
     Utf8Str strProviderName("OCI");
-    ComPtr<ICloudProvider> ociProfile;
-    hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), ociProfile.asOutParam());
-//  initNew(VirtualBox *aVirtualBox,
-//                          OCIProvider *aParent,
-//                          const com::Utf8Str &aProfileName,
-//                          const std::vector<com::Utf8Str> &aNames,
-//                          const std::vector<com::Utf8Str> &aValues)
-
-//  hrc = cpm.i_getProfilesByProvider("OCI", ociProfiles);
-//  if (FAILED(hrc) || ociProfiles.isNull())
-//      return hrc;
+    ComPtr<ICloudProvider> ociProvider;
+    hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), ociProvider.asOutParam());
+    ComPtr<ICloudProfile> ociProfile;
+    hrc = ociProvider->GetProfileByName(Bstr(m->m_OciExportData.strProfileName.c_str()).raw(), ociProfile.asOutParam());
+    ComObjPtr<ICloudClient> cloudClient;
+    hrc = ociProfile->CreateCloudClient(cloudClient.asOutParam());
 
     //fills by values from m->m_OciExportData
     //mostly all names(keys) come from official OCI API documentation (see LaunchInstance description)
-    std::map<Utf8Str, Utf8Str> paramNameValueMap;
-    paramNameValueMap.insert(make_pair("displayName", m->m_OciExportData.strDisplayMachineName));
-    paramNameValueMap.insert(make_pair("objectName", m->m_OciExportData.strBootImageName));
-    paramNameValueMap.insert(make_pair("vcnId", m->m_OciExportData.strVCN));
-    paramNameValueMap.insert(make_pair("bucketName", m->m_OciExportData.strBucketId));
-    paramNameValueMap.insert(make_pair("bootVolumeSizeInGBs", m->m_OciExportData.strBootDiskSize));
-    paramNameValueMap.insert(make_pair("availabilityDomain", m->m_OciExportData.strDomainName));
-    paramNameValueMap.insert(make_pair("shape", m->m_OciExportData.strInstanceShapeId));
-    paramNameValueMap.insert(make_pair("profileName", m->m_OciExportData.strProfileName));
-    paramNameValueMap.insert(make_pair("assignPublicIp", (m->m_OciExportData.fPublicIP == true) ? "true" : "false"));
+    SafeArray <BSTR> paramNames;
+    SafeArray <BSTR> paramValues;
+
+    Bstr("displayName").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strDisplayMachineName).detachTo(paramValues.appendedRaw());
+    Bstr("objectName").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strBootImageName).detachTo(paramValues.appendedRaw());
+    Bstr("vcnId").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strVCN).detachTo(paramValues.appendedRaw());
+    Bstr("bucketName").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strBucketId).detachTo(paramValues.appendedRaw());
+    Bstr("bootVolumeSizeInGBs").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strBootDiskSize).detachTo(paramValues.appendedRaw());
+    Bstr("availabilityDomain").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strDomainName).detachTo(paramValues.appendedRaw());
+    Bstr("shape").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strInstanceShapeId).detachTo(paramValues.appendedRaw());
+    Bstr("profileName").detachTo(paramNames.appendedRaw());
+    Bstr(m->m_OciExportData.strProfileName).detachTo(paramValues.appendedRaw());
+    Bstr("assignPublicIp").detachTo(paramNames.appendedRaw());
+    Utf8Str fIP = (m->m_OciExportData.fPublicIP == true) ? "true" : "false";
+    Bstr(fIP.c_str()).detachTo(paramValues.appendedRaw());
 
     com::SafeArray<CloudCommand_T> commandList;
-/*
-    ComObjPtr<ICloudClient> aCloudClient;
-    hrc = ociProfiles->CreateCloudClient(Bstr(m->m_OciExportData.strProfileName).raw(), aCloudClient.asOutParam());
 
     if (SUCCEEDED(hrc))
     {
         try
         {
-            CloudClient *client = static_cast<CloudClient*>(aCloudClient.operator->());
-
-            hrc = aCloudClient->GetCommandsForOperation(CloudOperation_exportVM, false,
+            hrc = cloudClient->GetCommandsForOperation(CloudOperation_exportVM, false,
                                                         ComSafeArrayAsOutParam(commandList));
             if (SUCCEEDED(hrc))
             {
-                std::vector<com::Guid> commandIdList;
+                SafeArray <BSTR> commandIdList;
 
                 for (ULONG i = 0; i < commandList.size(); i++)
                 {
                     CloudCommand_T cmd = commandList[i];
+                    Utf8Str cond;
+                    switch(cmd)
+                    {
+                        case CloudCommand_getImage:
+                        case CloudCommand_getSubnet:
+                            cond.assign("AVAILABLE");
+                            break;
+                        case CloudCommand_getInstance:
+                            cond.assign("RUNNING");
+                            break;
+                        default:
+                            break;
+                    }
+
                     Bstr bStrId;
-                    hrc = aCloudClient->CreateCommand(cmd, bStrId.asOutParam());
+                    hrc = cloudClient->CreateCommand(cmd, (cond.isEmpty()) ? NULL : Bstr(cond.c_str()).raw(), bStrId.asOutParam());
 
                     if (SUCCEEDED(hrc))
                     {
-                        com::Guid cId(bStrId);
-                        //set conditions
-                        {
-                            CloudCommandCl *cc = NULL;
-                            vrc = client->i_getCommandById(cId, &cc);
-                            if (RT_SUCCESS(vrc))
-                            {
-                                switch(cmd)
-                                {
-                                    case CloudCommand_getImage:
-                                    case CloudCommand_getSubnet:
-                                        vrc = cc->setCondition(new oci::LifecycleStateCondition(Utf8Str("AVAILABLE")));
-                                        break;
-                                    case CloudCommand_getInstance:
-                                        vrc = cc->setCondition(new oci::LifecycleStateCondition(Utf8Str("RUNNING")));
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                if (RT_FAILURE(vrc))
-                                {
-                                    hrc = E_FAIL;
-                                    break;
-                                }
-
-                            }
-                            else
-                            {
-                                hrc = E_FAIL;
-                                break;
-                            }
-                        }
-
-                        commandIdList.push_back(cId);//fills the Id list
+                        bStrId.detachTo(commandIdList.appendedRaw());
                     }
                 }
 
                 if (SUCCEEDED(hrc))
-                    vrc = client->i_runSeveralCommands(commandIdList, paramNameValueMap);
+                    vrc = cloudClient->RunSeveralCommands(ComSafeArrayAsInParam(commandIdList),
+                                                          ComSafeArrayAsInParam(paramNames),
+                                                          ComSafeArrayAsInParam(paramValues));
             }
         }
         catch (HRESULT arc)
@@ -2477,9 +2463,9 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
             LogRel(("Appliance::i_writeFSOCI(): get cought unknown exception\n"));
         }
 
-        aCloudClient.setNull();
+        cloudClient.setNull();
     }
-    */
+
     LogFlowFuncLeave();
     return hrc;
 }
