@@ -1091,7 +1091,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 
     /* If the VMWRITE instruction references memory, access the specified in memory operand. */
     bool const fIsRegOperand = iEffSeg == UINT8_MAX;
-    if (fIsRegOperand)
+    if (!fIsRegOperand)
     {
         static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
         Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
