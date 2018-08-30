@@ -74,15 +74,28 @@ static void tstBasic(RTTEST hTest)
         { "[ ]",           VINF_SUCCESS },
         { "[ 100, 200 ]",  VINF_SUCCESS },
         { "{ \"1\": 1 }",  VINF_SUCCESS },
-        { "{ \"1\": 1, \"2\": 2 }", VINF_SUCCESS }
+        { "{ \"1\": 1, \"2\": 2 }", VINF_SUCCESS },
+        { "20", VINF_SUCCESS },
+        { "-20", VINF_SUCCESS },
+        { "{\"positive\":20}", VINF_SUCCESS },
+        { "{\"negative\":-20}", VINF_SUCCESS },
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
+        RTERRINFOSTATIC ErrInfo;
         RTJSONVAL hJsonVal = NIL_RTJSONVAL;
-        int rc = RTJsonParseFromString(&hJsonVal, aTests[iTest].pszJson, NULL);
+        int rc = RTJsonParseFromString(&hJsonVal, aTests[iTest].pszJson, RTErrInfoInitStatic(&ErrInfo));
         if (rc != aTests[iTest].iRcResult)
-            RTTestFailed(hTest, "RTJsonParseFromString() for \"%s\" failed, expected %Rrc got %Rrc\n",
-                         aTests[iTest].pszJson, aTests[iTest].iRcResult, rc);
+        {
+            if (RTErrInfoIsSet(&ErrInfo.Core))
+                RTTestFailed(hTest, "RTJsonParseFromString() for \"%s\" failed, expected %Rrc got %Rrc\n%s",
+                             aTests[iTest].pszJson, aTests[iTest].iRcResult, rc, ErrInfo.Core.pszMsg);
+            else
+                RTTestFailed(hTest, "RTJsonParseFromString() for \"%s\" failed, expected %Rrc got %Rrc",
+                             aTests[iTest].pszJson, aTests[iTest].iRcResult, rc);
+        }
+        else if (rc == VERR_JSON_MALFORMED && !RTErrInfoIsSet(&ErrInfo.Core))
+            RTTestFailed(hTest, "RTJsonParseFromString() did not return error info for \"%s\" failed", aTests[iTest].pszJson);
         if (RT_SUCCESS(rc))
         {
             if (hJsonVal != NIL_RTJSONVAL)
@@ -274,16 +287,29 @@ static void tstCorrectness(RTTEST hTest)
         RTTestFailed(hTest, "RTJsonParseFromString() returned success but no value\n");
 }
 
-int main()
+int main(int argc, char **argv)
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTJson", &hTest);
+    int rc = RTTestInitExAndCreate(argc, &argv, 0, "tstRTJson", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
 
     tstBasic(hTest);
     tstCorrectness(hTest);
+    for (int i = 1; i < argc; i++)
+    {
+        RTTestSubF(hTest, "file %Rbn", argv[i]);
+        RTERRINFOSTATIC ErrInfo;
+        RTJSONVAL       hFileValue = NIL_RTJSONVAL;
+        rc = RTJsonParseFromFile(&hFileValue, argv[i], RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+            RTJsonValueRelease(hFileValue);
+        else if (RTErrInfoIsSet(&ErrInfo.Core))
+            RTTestFailed(hTest, "%Rrc - %s", rc, ErrInfo.Core.pszMsg);
+        else
+            RTTestFailed(hTest, "%Rrc", rc);
+    }
 
     /*
      * Summary.
