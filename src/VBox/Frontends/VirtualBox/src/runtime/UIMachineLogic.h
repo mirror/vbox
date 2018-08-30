@@ -157,6 +157,8 @@ public:
 
     /** Returns whether VM should perform HID LEDs synchronization. */
     bool isHidLedsSyncEnabled() const { return m_fIsHidLedsSyncEnabled; }
+    /** An public interface to sltTypeHostKeyComboPressRelease. */
+    void typeHostKeyComboPressRelease(bool fToggleSequence);
 
 protected slots:
 

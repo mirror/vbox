@@ -1171,6 +1171,10 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             }
             case QEvent::FocusOut:
             {
+                /* If host key combo press has been inserted (with no release yet) insert a release now: */
+                if (m_fHostKeyComboPressInserted)
+                    machineLogic()->typeHostKeyComboPressRelease(false);
+
 #if defined(VBOX_WS_MAC)
 
                 /* If keyboard-hook is installed: */

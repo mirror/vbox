@@ -2612,6 +2612,17 @@ void UIMachineLogic::sltShowGlobalPreferences()
     showGlobalPreferences();
 }
 
+void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)
+{
+    QAction *pHostKeyAction = actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo);
+    if (!pHostKeyAction)
+        return;
+    /* Do nothing if we try to insert host key combo press (release) and it is already in pressed (released) state: */
+    if (fToggleSequence == pHostKeyAction->isChecked())
+        return;
+    pHostKeyAction->toggle();
+}
+
 void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
 {
     /* Clear contents: */
