@@ -1042,15 +1042,16 @@ DECLINLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
  * @param   cbInstr         The instruction length.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
  *                          Pass UINT8_MAX if it is a register access.
- * @param   enmEffAddrMode  The effective addressing mode.
+ * @param   enmEffAddrMode  The effective addressing mode (only used with memory
+ *                          operand).
  * @param   u64Val          The value to write (or guest linear address to the
  *                          value), @a iEffSeg will indicate if it's a memory
  *                          operand.
  * @param   uFieldEnc       The VMCS field encoding.
  * @param   pExitInfo       Pointer to the VM-exit information struct.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode,
-                                      uint64_t u64Val, uint32_t uFieldEnc, PCVMXVEXITINFO pExitInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode, uint64_t u64Val,
+                                      uint32_t uFieldEnc, PCVMXVEXITINFO pExitInfo)
 {
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
