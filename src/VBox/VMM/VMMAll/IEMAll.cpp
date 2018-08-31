@@ -15539,28 +15539,83 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
+ * Interface for HM and EM to emulate the VMREAD instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmread(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+    Assert(pExitInfo);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    VBOXSTRICTRC   rcStrict;
+    uint8_t const  cbInstr   = pExitInfo->cbInstr;
+    uint32_t const uFieldEnc = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
+    if (pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand)
+    {
+        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+        {
+            uint64_t *pu64Dst = iemGRegRefU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
+            rcStrict = iemVmxVmreadReg64(pVCpu, cbInstr, pu64Dst, uFieldEnc, pExitInfo);
+        }
+        else
+        {
+            uint32_t *pu32Dst = iemGRegRefU32(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
+            rcStrict = iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, uFieldEnc, pExitInfo);
+        }
+    }
+    else
+    {
+        RTGCPTR GCPtrDst       = pExitInfo->GCPtrEffAddr;
+        uint8_t iEffSeg        = pExitInfo->InstrInfo.VmreadVmwrite.iSegReg;
+        IEMMODE enmEffAddrMode = (IEMMODE)pExitInfo->InstrInfo.VmreadVmwrite.u3AddrSize;
+        rcStrict = iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, uFieldEnc, pExitInfo);
+    }
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate the VMWRITE instruction.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   cbInstr         The instruction length in bytes.
- * @param   u64Val          The value to write or guest linear address of the value
- *                          to write.
- * @param   uFieldEnc       The VMCS field encoding.
  * @param   pExitInfo       Pointer to the VM-exit information struct.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint64_t u64Val, uint32_t uFieldEnc,
-                                                 PCVMXVEXITINFO pExitInfo)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 3);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     Assert(pExitInfo);
 
-    uint8_t const iEffSeg        = pExitInfo->ExitInstrInfo.VmreadVmwrite.iSegReg;
-    IEMMODE const enmEffAddrMode = (IEMMODE)pExitInfo->ExitInstrInfo.VmreadVmwrite.u3AddrSize;
-
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    uint64_t u64Val;
+    uint8_t  iEffSeg;
+    IEMMODE  enmEffAddrMode;
+    if (pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand)
+    {
+        u64Val         = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
+        iEffSeg        = UINT8_MAX;
+        enmEffAddrMode = UINT8_MAX;
+    }
+    else
+    {
+        u64Val         = pExitInfo->GCPtrEffAddr;
+        iEffSeg        = pExitInfo->InstrInfo.VmreadVmwrite.iSegReg;
+        enmEffAddrMode = (IEMMODE)pExitInfo->InstrInfo.VmreadVmwrite.u3AddrSize;
+    }
+    uint8_t const  cbInstr   = pExitInfo->cbInstr;
+    uint32_t const uFieldEnc = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
     VBOXSTRICTRC rcStrict = iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, u64Val, uFieldEnc, pExitInfo);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15573,20 +15628,20 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, uint8_t cbInstr, 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of the VMCS pointer.
  * @param   pExitInfo       Pointer to the VM-exit information struct.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                                 PCVMXVEXITINFO pExitInfo)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     Assert(pExitInfo);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    uint8_t const iEffSeg   = pExitInfo->InstrInfo.VmxXsave.iSegReg;
+    uint8_t const cbInstr   = pExitInfo->cbInstr;
+    RTGCPTR const GCPtrVmcs = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmptrld(pVCpu, cbInstr, iEffSeg, GCPtrVmcs, pExitInfo);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15599,20 +15654,20 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrld(PVMCPU pVCpu, uint8_t cbInstr, 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of the VMCS pointer.
  * @param   pExitInfo       Pointer to the VM-exit information struct.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                                 PCVMXVEXITINFO pExitInfo)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrst(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     Assert(pExitInfo);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    uint8_t const iEffSeg   = pExitInfo->InstrInfo.VmxXsave.iSegReg;
+    uint8_t const cbInstr   = pExitInfo->cbInstr;
+    RTGCPTR const GCPtrVmcs = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmptrst(pVCpu, cbInstr, iEffSeg, GCPtrVmcs, pExitInfo);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15625,20 +15680,20 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrst(PVMCPU pVCpu, uint8_t cbInstr, 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of the VMCS pointer.
  * @param   pExitInfo       Pointer to the VM-exit information struct.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                                 PCVMXVEXITINFO pExitInfo)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmclear(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     Assert(pExitInfo);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    uint8_t const iEffSeg   = pExitInfo->InstrInfo.VmxXsave.iSegReg;
+    uint8_t const cbInstr   = pExitInfo->cbInstr;
+    RTGCPTR const GCPtrVmcs = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmclear(pVCpu, cbInstr, iEffSeg, GCPtrVmcs, pExitInfo);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15651,21 +15706,20 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmclear(PVMCPU pVCpu, uint8_t cbInstr, 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a
- *                          GCPtrVmxon.
- * @param   GCPtrVmxon      The linear address of the VMXON pointer.
- * @param   pExitInfo       The VM-exit instruction information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information struct.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmxon,
-                                               PCVMXVEXITINFO pExitInfo)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxon(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     Assert(pExitInfo);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    uint8_t const iEffSeg    = pExitInfo->InstrInfo.VmxXsave.iSegReg;
+    uint8_t const cbInstr    = pExitInfo->cbInstr;
+    RTGCPTR const GCPtrVmxon = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmxon(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, pExitInfo);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);

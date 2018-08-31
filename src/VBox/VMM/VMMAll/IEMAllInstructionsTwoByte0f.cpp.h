@@ -4278,7 +4278,82 @@ FNIEMOP_DEF(iemOp_emms)
 /*  Opcode 0xf2 0x0f 0x77 - invalid */
 
 /** Opcode      0x0f 0x78 - VMREAD Ey, Gy */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
+{
+    IEMOP_MNEMONIC(vmread, "vmread Ey,Gy");
+    IEMOP_HLP_IN_VMX_OPERATION();
+    IEMOP_HLP_VMX_INSTR();
+    IEMMODE const enmEffOpSize = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? IEMMODE_64BIT : IEMMODE_32BIT;
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
+        if (enmEffOpSize == IEMMODE_64BIT)
+        {
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint64_t *, pu64Dst, 0);
+            IEM_MC_ARG(uint64_t,   u64Enc,  1);
+            IEM_MC_FETCH_GREG_U64(u64Enc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+            IEM_MC_REF_GREG_U64(pu64Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_CALL_CIMPL_2(iemCImpl_vmread64_reg, pu64Dst, u64Enc);
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint32_t *, pu32Dst, 0);
+            IEM_MC_ARG(uint32_t,   u32Enc,  1);
+            IEM_MC_FETCH_GREG_U32(u32Enc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+            IEM_MC_REF_GREG_U32(pu32Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_CALL_CIMPL_2(iemCImpl_vmread32_reg, pu32Dst, u32Enc);
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        if (enmEffOpSize == IEMMODE_64BIT)
+        {
+            IEM_MC_BEGIN(4, 0);
+            IEM_MC_ARG(uint8_t,       iEffSeg,                                          0);
+            IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
+            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
+            IEM_MC_ARG(uint64_t,      u64Enc,                                           3);
+            IEM_MC_FETCH_GREG_U64(u64Enc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
+            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_CALL_CIMPL_4(iemCImpl_vmread_mem, iEffSeg, enmEffAddrMode, GCPtrVal, u64Enc);
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(4, 0);
+            IEM_MC_ARG(uint8_t,       iEffSeg,                                          0);
+            IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
+            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
+            IEM_MC_ARG(uint32_t,      u32Enc,                                           3);
+            IEM_MC_FETCH_GREG_U32(u32Enc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
+            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_CALL_CIMPL_4(iemCImpl_vmread_mem, iEffSeg, enmEffAddrMode, GCPtrVal, u32Enc);
+            IEM_MC_END();
+        }
+    }
+    return VINF_SUCCESS;
+}
+#else
 FNIEMOP_STUB(iemOp_vmread_Ey_Gy);
+#endif
+
 /*  Opcode 0x66 0x0f 0x78 - AMD Group 17 */
 FNIEMOP_STUB(iemOp_AmdGrp17);
 /*  Opcode 0xf3 0x0f 0x78 - invalid */

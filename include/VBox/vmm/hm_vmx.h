@@ -971,7 +971,7 @@ typedef union
         uint32_t    iReg1           : 4;
         /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
         uint32_t    u3AddrSize      : 3;
-        /** Memory/Register - Always cleared to 0 to indicate memory operand. */
+        /** Memory or register operand. */
         uint32_t    fIsRegOperand   : 1;
         /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
         uint32_t    u4Undef0        : 4;
@@ -2312,8 +2312,7 @@ typedef uint8_t VMXINSTRID;
 #define VMX_INSTR_ID_VALID                                    RT_BIT(7)
 #define VMX_INSTR_ID_IS_VALID(a)                              (((a) >> 7) & 1)
 #define VMX_INSTR_ID_GET_ID(a)                                ((a) & ~VMX_INSTR_ID_VALID)
-#define VMX_INSTR_ID_NONE                                     0x7f
-/** The following values are in accordance to the VT-x spec: */
+/** The OR'd rvalues are from the VT-x spec (valid bit is VBox specific): */
 #define VMX_INSTR_ID_SGDT                                     ((VMX_INSTR_ID_VALID) | 0)
 #define VMX_INSTR_ID_SIDT                                     ((VMX_INSTR_ID_VALID) | 1)
 #define VMX_INSTR_ID_LGDT                                     ((VMX_INSTR_ID_VALID) | 2)
@@ -2880,6 +2879,13 @@ typedef enum
     kVmxVInstrDiag_Vmwrite_PtrMap,
     kVmxVInstrDiag_Vmwrite_Success,
     /* Last member for determining array index limit. */
+    /* VMREAD. */
+    kVmxVInstrDiag_Vmread_Cpl,
+    kVmxVInstrDiag_Vmread_FieldInvalid,
+    kVmxVInstrDiag_Vmread_LinkPtrInvalid,
+    kVmxVInstrDiag_Vmread_PtrInvalid,
+    kVmxVInstrDiag_Vmread_PtrMap,
+    kVmxVInstrDiag_Vmread_Success,
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;
 AssertCompileSize(VMXVINSTRDIAG, 4);
@@ -2900,14 +2906,25 @@ AssertCompileSize(VMXVINSTRDIAG, 4);
  */
 typedef struct
 {
-    /** The VM-exit qualification field. */
-    uint64_t                u64ExitQual;
-    /** The guest-linear address field. */
-    uint64_t                u64GuestLinearAddr;
+    /** The VM-exit reason. */
+    uint32_t                uReason;
+    /** The VM-exit instruction length. */
+    uint32_t                cbInstr;
     /** The VM-exit instruction information. */
-    VMXEXITINSTRINFO        ExitInstrInfo;
+    VMXEXITINSTRINFO        InstrInfo;
     /** Padding. */
     uint32_t                u32Padding0;
+
+    /** The VM-exit qualification field. */
+    uint64_t                u64Qual;
+    /** The guest-linear address field. */
+    uint64_t                u64GuestLinearAddr;
+    /** The effective guest-linear address if @a InstrInfo indicates a memory-based
+     *  instruction VM-exit. */
+    RTGCPTR                 GCPtrEffAddr;
+
+    /** The VM-exit instruction ID. */
+    VMXINSTRID              uInstrId;
 } VMXVEXITINFO;
 /** Pointer to the VMXVEXITINFO struct. */
 typedef VMXVEXITINFO *PVMXVEXITINFO;

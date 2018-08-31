@@ -322,16 +322,11 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, u
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint64_t u64Val, uint32_t uFieldEnc,
-                                                  PCVMXVEXITINFO pExitInfo);
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                                  PCVMXVEXITINFO pExitInfo);
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                                  PCVMXVEXITINFO pExitInfo);
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                                  PCVMXVEXITINFO pExitInfo);
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmxon,
-                                                PCVMXVEXITINFO pExitInfo);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrst(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmclear(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxon(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr);
 #endif
 /** @}  */
