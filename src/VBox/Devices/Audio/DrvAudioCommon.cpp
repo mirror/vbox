@@ -492,6 +492,32 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(const PPDMAUDIODEVICEENUM 
 }
 
 /**
+ * Returns the number of enumerated devices of a given device enumeration.
+ *
+ * @returns Number of devices if found, or 0 if none found.
+ * @param   pDevEnm             Device enumeration to get default device for.
+ * @param   enmUsage            Usage to get default device for.
+ */
+uint16_t DrvAudioHlpDeviceEnumGetDeviceCount(const PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmUsage)
+{
+    AssertPtrReturn(pDevEnm, 0);
+
+    if (enmUsage == PDMAUDIODIR_ANY)
+        return pDevEnm->cDevices;
+
+    uint32_t cDevs = 0;
+
+    PPDMAUDIODEVICE pDev;
+    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    {
+        if (enmUsage == pDev->enmUsage)
+            cDevs++;
+    }
+
+    return cDevs;
+}
+
+/**
  * Logs an audio device enumeration.
  *
  * @param  pszDesc              Logging description.
