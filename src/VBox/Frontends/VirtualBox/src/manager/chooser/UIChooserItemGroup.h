@@ -241,8 +241,7 @@ private:
         /* Layout hints: */
         GroupItemData_HorizonalMargin,
         GroupItemData_VerticalMargin,
-        GroupItemData_MajorSpacing,
-        GroupItemData_MinorSpacing,
+        GroupItemData_Spacing,
     };
 
     /** @name Prepare/cleanup cascade.
