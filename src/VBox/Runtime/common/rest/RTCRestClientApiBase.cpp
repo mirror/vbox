@@ -62,10 +62,15 @@ int RTCRestClientApiBase::reinitHttpInstance()
 }
 
 
-void RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                                  RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod)
+int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
+                                 RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod)
 {
     LogFlow(("doCall: %s %s\n", a_pszMethod, RTHttpMethodName(a_enmHttpMethod)));
+
+    /*
+     * Reset the response object, allowing reuse of such.
+     */
+    a_pResponse->reset();
 
     /*
      * Initialize the HTTP instance.
@@ -148,7 +153,7 @@ void RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RT
                         }
                         a_pResponse->receiveFinal();
 
-                        return;
+                        return a_pResponse->getStatus();
                     }
                 }
             }
@@ -157,5 +162,7 @@ void RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RT
     }
     a_pResponse->receiveComplete(rc, hHttp);
     RT_NOREF_PV(a_pszMethod);
+
+    return a_pResponse->getStatus();
 }
 

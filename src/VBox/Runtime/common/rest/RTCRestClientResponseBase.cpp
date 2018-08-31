@@ -86,6 +86,17 @@ RTCRestClientResponseBase &RTCRestClientResponseBase::operator=(RTCRestClientRes
 }
 
 
+void RTCRestClientResponseBase::reset()
+{
+    /* Return to default constructor state. */
+    m_rcStatus = VERR_WRONG_ORDER;
+    m_rcHttp   = VERR_NOT_AVAILABLE;
+    if (m_pErrInfo)
+        deleteErrInfo();
+    m_strContentType.setNull();
+}
+
+
 int RTCRestClientResponseBase::receivePrepare(RTHTTP a_hHttp, void ***a_pppvHdr, void ***a_pppvBody)
 {
     RT_NOREF(a_hHttp, a_pppvHdr, a_pppvBody);

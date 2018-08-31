@@ -1454,6 +1454,11 @@ public:
     RTCRestClientResponseBase &operator=(RTCRestClientResponseBase const &a_rThat);
 
     /**
+     * Resets the object state.
+     */
+    virtual void reset(void);
+
+    /**
      * Prepares the HTTP handle for receiving the response.
      *
      * This may install callbacks and such like.
@@ -1703,13 +1708,14 @@ protected:
     /**
      * Implements stuff for making an API call.
      *
+     * @returns a_pResponse->getStatus()
      * @param   a_rRequest      Reference to the request object.
      * @param   a_enmHttpMethod The HTTP request method.
      * @param   a_pResponse     Pointer to the response object.
      * @param   a_pszMethod     The method name, for logging purposes.
      */
-    virtual void doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                        RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod);
+    virtual int doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
+                       RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod);
 
 };
 
