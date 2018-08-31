@@ -1966,7 +1966,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns,
     switch (enmType)
     {
         case PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED:
-            LogRel(("Audio: Host audio device configuration has changed\n"));
+            LogRel(("Audio: Device configuration of driver '%s' has changed\n", pThis->szName));
             rc = drvAudioScheduleReInitInternal(pThis);
             break;
 
@@ -2009,7 +2009,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
         if (RT_SUCCESS(rc))
         {
             if (fLog)
-                LogRel(("Audio: Found %RU16 devices\n", DevEnum.cDevices));
+                LogRel(("Audio: Found %RU16 devices for driver '%s'\n", DevEnum.cDevices, pThis->szName));
 
             PPDMAUDIODEVICE pDev;
             RTListForEach(&DevEnum.lstDevices, pDev, PDMAUDIODEVICE, Node)
@@ -2037,7 +2037,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
         else
         {
             if (fLog)
-                LogRel(("Audio: Device enumeration failed with %Rrc\n", rc));
+                LogRel(("Audio: Device enumeration for driver '%s' failed with %Rrc\n", pThis->szName, rc));
             /* Not fatal. */
         }
     }
@@ -2046,7 +2046,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
         rc = VERR_NOT_SUPPORTED;
 
         if (fLog)
-            LogRel3(("Audio: Host audio backend does not support audio device enumeration, skipping\n"));
+            LogRel2(("Audio: Host driver '%s' does not support audio device enumeration, skipping\n", pThis->szName));
     }
 
     LogFunc(("Returning %Rrc\n", rc));
@@ -2079,7 +2079,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
     int rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Audio: Initialization of host backend failed with %Rrc\n", rc));
+        LogRel(("Audio: Initialization of host driver '%s' failed with %Rrc\n", pThis->szName, rc));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
@@ -2089,7 +2089,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
     rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Audio: Getting host backend configuration failed with %Rrc\n", rc));
+        LogRel(("Audio: Getting host driver configuration failed with %Rrc\n", pThis->szName, rc));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
@@ -2098,7 +2098,8 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
 
     LogFlowFunc(("cStreamsFreeIn=%RU8, cStreamsFreeOut=%RU8\n", pThis->In.cStreamsFree, pThis->Out.cStreamsFree));
 
-    LogRel2(("Audio: Host audio backend supports %RU32 input streams and %RU32 output streams at once\n",
+    LogRel2(("Audio: Host driver '%s' supports %RU32 input streams and %RU32 output streams at once\n",
+             pThis->szName,
              /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
              RT_MIN(64, pThis->In.cStreamsFree), RT_MIN(64, pThis->Out.cStreamsFree)));
 
@@ -2119,7 +2120,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
     {
         rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
         if (RT_FAILURE(rc2))
-             LogRel(("Audio: Error registering backend callback, rc=%Rrc\n", rc2));
+             LogRel(("Audio: Error registering callback for host driver '%s', rc=%Rrc\n", pThis->szName, rc2));
         /* Not fatal. */
     }
 #endif
@@ -2177,7 +2178,7 @@ static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PDRVAUDIOCFG pCfg, PCFGMNODE 
     }
 
     if (pCfg->Dbg.fEnabled)
-        LogRel(("Audio: Debugging enabled (audio data written to '%s')\n", pCfg->Dbg.szPathOut));
+        LogRel(("Audio: Debugging for driver '%s' enabled (audio data written to '%s')\n", pThis->szName, pCfg->Dbg.szPathOut));
 
     /* Buffering stuff. */
     CFGMR3QueryU32Def(pNode, "PeriodSizeMs",    &pCfg->uPeriodSizeMs, 0);
@@ -2202,8 +2203,6 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pDrvIns,    VERR_INVALID_POINTER);
 
-    LogRel2(("Audio: Verbose logging enabled\n"));
-
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
 
     int rc = RTCritSectInit(&pThis->CritSect);
@@ -2227,7 +2226,9 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     CFGMR3QueryBoolDef(pThis->pCFGMNode, "InputEnabled",  &pThis->In.fEnabled,   false);
     CFGMR3QueryBoolDef(pThis->pCFGMNode, "OutputEnabled", &pThis->Out.fEnabled,  false);
 
-    LogRel2(("Audio: Initial status for driver '%s': Input is %s, output is %s\n",
+    LogRel2(("Audio: Verbose logging for driver '%s' enabled\n", pThis->szName));
+
+    LogRel2(("Audio: Initial status for driver '%s' is: input is %s, output is %s\n",
              pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
 
     /*
@@ -2595,8 +2596,8 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
 
     if (fEnable != *pfEnabled)
     {
-        LogRel(("Audio: %s %s\n",
-                fEnable ? "Enabling" : "Disabling", enmDir == PDMAUDIODIR_IN ? "input" : "output"));
+        LogRel(("Audio: %s %s for driver '%s'\n",
+                fEnable ? "Enabling" : "Disabling", enmDir == PDMAUDIODIR_IN ? "input" : "output", pThis->szName));
 
         PPDMAUDIOSTREAM pStream;
         RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
@@ -3192,7 +3193,7 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
         pThis->pHostDrvAudio = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIHOSTAUDIO);
         if (!pThis->pHostDrvAudio)
         {
-            LogRel(("Audio: Failed to query interface for underlying host driver\n"));
+            LogRel(("Audio: Failed to query interface for underlying host driver '%s'\n", pThis->szName));
             rc = PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                   N_("Host audio backend missing or invalid"));
         }
