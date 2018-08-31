@@ -87,26 +87,32 @@ int RTCRestArrayBase::resetToDefault()
 {
     /* The default state of an array is empty. At least for now. */
     clear();
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestArrayBase::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("[\n");
-    unsigned const uOldIndent = a_rDst.incrementIndent();
-
-    for (size_t i = 0; i < m_cElements; i++)
+    if (!m_fNullIndicator)
     {
-        m_papElements[i]->serializeAsJson(a_rDst);
-        if (i < m_cElements)
-            a_rDst.printf(",\n");
-        else
-            a_rDst.printf("\n");
-    }
+        a_rDst.printf("[\n");
+        unsigned const uOldIndent = a_rDst.incrementIndent();
 
-    a_rDst.setIndent(uOldIndent);
-    a_rDst.printf("]");
+        for (size_t i = 0; i < m_cElements; i++)
+        {
+            m_papElements[i]->serializeAsJson(a_rDst);
+            if (i < m_cElements)
+                a_rDst.printf(",\n");
+            else
+                a_rDst.printf("\n");
+        }
+
+        a_rDst.setIndent(uOldIndent);
+        a_rDst.printf("]");
+    }
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
@@ -118,6 +124,7 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
      */
     if (m_cElements > 0)
         clear();
+    m_fNullIndicator = false;
 
     /*
      * Iterate the array values.
@@ -178,10 +185,14 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
         RTJsonIteratorFree(hIterator);
     }
-    else if (   rcRet == VERR_JSON_IS_EMPTY
-             || (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
-                 && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL) )
+    else if (rcRet == VERR_JSON_IS_EMPTY)
         rcRet = VINF_SUCCESS;
+    else if (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
+             && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        rcRet = VINF_SUCCESS;
+    }
     else
         rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet,
                                                "RTJsonIteratorBeginrray failed: %Rrc (type %s)",
@@ -194,24 +205,33 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestArrayBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
     int rc;
-    if (m_cElements)
+    if (!m_fNullIndicator)
     {
-        static char const s_szSep[kCollectionFormat_Mask + 1] = ",, \t|,,";
-        char const chSep = s_szSep[a_fFlags & kCollectionFormat_Mask];
-
-        rc = m_papElements[0]->toString(a_pDst, a_fFlags);
-        for (size_t i = 1; RT_SUCCESS(rc) && i < m_cElements; i++)
+        if (m_cElements)
         {
-            rc = a_pDst->appendNoThrow(chSep);
-            if (RT_SUCCESS(rc))
-                rc = m_papElements[i]->toString(a_pDst, a_fFlags | kToString_Append);
+            static char const s_szSep[kCollectionFormat_Mask + 1] = ",, \t|,,";
+            char const chSep = s_szSep[a_fFlags & kCollectionFormat_Mask];
+
+            rc = m_papElements[0]->toString(a_pDst, a_fFlags);
+            for (size_t i = 1; RT_SUCCESS(rc) && i < m_cElements; i++)
+            {
+                rc = a_pDst->appendNoThrow(chSep);
+                if (RT_SUCCESS(rc))
+                    rc = m_papElements[i]->toString(a_pDst, a_fFlags | kToString_Append);
+            }
+        }
+        else
+        {
+            if (!(a_fFlags & kToString_Append))
+                a_pDst->setNull();
+            rc = VINF_SUCCESS;
         }
     }
+    else if (a_fFlags & kToString_Append)
+        rc = a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
     else
-    {
-        a_pDst->setNull();
-        rc = VINF_SUCCESS;
-    }
+        rc = a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
+
     return rc;
 }
 
@@ -238,6 +258,7 @@ void RTCRestArrayBase::clear()
         m_papElements[i] = NULL;
     }
     m_cElements = 0;
+    m_fNullIndicator = false;
 }
 
 
@@ -290,9 +311,13 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fT
     int rc;
     clear();
     if (a_rThat.m_cElements == 0)
+    {
+        m_fNullIndicator = a_rThat.m_fNullIndicator;
         rc = VINF_SUCCESS;
+    }
     else
     {
+        Assert(!a_rThat.m_fNullIndicator);
         rc = ensureCapacity(a_rThat.m_cElements);
         if (RT_SUCCESS(rc))
         {
@@ -345,12 +370,14 @@ int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bo
             for (size_t i = 0; i < m_cElements; i++)
                 AssertPtr(m_papElements[i]);
 #endif
+            m_fNullIndicator = false;
             return VINF_SUCCESS;
         }
 
         /* Replace element. */
         delete m_papElements[a_idx];
         m_papElements[a_idx] = a_pValue;
+        m_fNullIndicator = false;
         return VWRN_ALREADY_EXISTS;
     }
     return VERR_OUT_OF_RANGE;

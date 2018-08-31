@@ -46,6 +46,14 @@
 
 /** Default constructor. */
 RTCRestObjectBase::RTCRestObjectBase()
+    : m_fNullIndicator(false)
+{
+}
+
+
+/** Copy constructor. */
+RTCRestObjectBase::RTCRestObjectBase(RTCRestObjectBase const &a_rThat)
+    : m_fNullIndicator(a_rThat.m_fNullIndicator)
 {
 }
 
@@ -54,6 +62,20 @@ RTCRestObjectBase::RTCRestObjectBase()
 RTCRestObjectBase::~RTCRestObjectBase()
 {
     /* nothing to do */
+}
+
+
+int RTCRestObjectBase::setNull()
+{
+    int rc = resetToDefault();
+    m_fNullIndicator = true;
+    return rc;
+}
+
+
+void RTCRestObjectBase::setNotNull()
+{
+    m_fNullIndicator = false;
 }
 
 
@@ -106,9 +128,10 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
 }
 
 
-/** Default destructor. */
+/** Default constructor. */
 RTCRestBool::RTCRestBool()
-    : m_fValue(false)
+    : RTCRestObjectBase()
+    , m_fValue(false)
 {
 }
 
@@ -138,6 +161,7 @@ RTCRestBool::~RTCRestBool()
 /** Copy assignment operator. */
 RTCRestBool &RTCRestBool::operator=(RTCRestBool const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_fValue = a_rThat.m_fValue;
     return *this;
 }
@@ -145,6 +169,7 @@ RTCRestBool &RTCRestBool::operator=(RTCRestBool const &a_rThat)
 
 int RTCRestBool::assignCopy(RTCRestBool const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_fValue = a_rThat.m_fValue;
     return VINF_SUCCESS;
 }
@@ -153,13 +178,14 @@ int RTCRestBool::assignCopy(RTCRestBool const &a_rThat)
 int RTCRestBool::resetToDefault()
 {
     m_fValue = false;
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestBool::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf(m_fValue ? "true" : "false");
+    a_rDst.printf(!m_fNullIndicator ? m_fValue ? "true" : "false" : "null");
     return a_rDst;
 }
 
@@ -171,18 +197,23 @@ int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     if (enmType == RTJSONVALTYPE_TRUE)
     {
         m_fValue = true;
+        m_fNullIndicator = false;
         return VINF_SUCCESS;
     }
 
     if (enmType == RTJSONVALTYPE_FALSE)
     {
         m_fValue = false;
+        m_fNullIndicator = false;
         return VINF_SUCCESS;
     }
 
-    /* This is probably non-sense... */
     if (enmType == RTJSONVALTYPE_NULL)
+    {
         m_fValue = false;
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
 
     return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for boolean",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
@@ -193,13 +224,22 @@ int RTCRestBool::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFo
 {
     if (!(a_fFlags & kToString_Append))
     {
-        if (m_fValue)
-            return a_pDst->assignNoThrow(RT_STR_TUPLE("true"));
-        return a_pDst->assignNoThrow(RT_STR_TUPLE("false"));
+        if (!m_fNullIndicator)
+        {
+            if (m_fValue)
+                return a_pDst->assignNoThrow(RT_STR_TUPLE("true"));
+            return a_pDst->assignNoThrow(RT_STR_TUPLE("false"));
+        }
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
     }
-    if (m_fValue)
-        return a_pDst->appendNoThrow(RT_STR_TUPLE("true"));
-    return a_pDst->appendNoThrow(RT_STR_TUPLE("false"));
+
+    if (!m_fNullIndicator)
+    {
+        if (m_fValue)
+            return a_pDst->appendNoThrow(RT_STR_TUPLE("true"));
+        return a_pDst->appendNoThrow(RT_STR_TUPLE("false"));
+    }
+    return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
 }
 
 
@@ -209,9 +249,20 @@ int RTCRestBool::fromString(RTCString const &a_rValue, const char *a_pszName, PR
     RT_NOREF(a_fFlags);
 
     if (a_rValue.startsWithWord("true", RTCString::CaseInsensitive))
+    {
         m_fValue = true;
+        m_fNullIndicator = false;
+    }
     else if (a_rValue.startsWithWord("false", RTCString::CaseInsensitive))
+    {
         m_fValue = false;
+        m_fNullIndicator = false;
+    }
+    else if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        m_fValue = false;
+        m_fNullIndicator = true;
+    }
     else
         return RTErrInfoSetF(a_pErrInfo, VERR_INVALID_PARAMETER, "%s: unable to parse '%s' as bool", a_pszName, a_rValue.c_str());
     return VINF_SUCCESS;
@@ -238,7 +289,8 @@ const char *RTCRestBool::getType()
 
 /** Default destructor. */
 RTCRestInt64::RTCRestInt64()
-    : m_iValue(0)
+    : RTCRestObjectBase()
+    , m_iValue(0)
 {
 }
 
@@ -253,7 +305,8 @@ RTCRestInt64::RTCRestInt64(RTCRestInt64 const &a_rThat)
 
 /** From value constructor. */
 RTCRestInt64::RTCRestInt64(int64_t iValue)
-    : m_iValue(iValue)
+    : RTCRestObjectBase()
+    , m_iValue(iValue)
 {
 }
 
@@ -268,6 +321,7 @@ RTCRestInt64::~RTCRestInt64()
 /** Copy assignment operator. */
 RTCRestInt64 &RTCRestInt64::operator=(RTCRestInt64 const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return *this;
 }
@@ -275,6 +329,7 @@ RTCRestInt64 &RTCRestInt64::operator=(RTCRestInt64 const &a_rThat)
 
 int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return VINF_SUCCESS;
 }
@@ -283,19 +338,26 @@ int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat)
 int RTCRestInt64::resetToDefault()
 {
     m_iValue = 0;
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("%RI64", m_iValue);
+    if (!m_fNullIndicator)
+        a_rDst.printf("%RI64", m_iValue);
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
 
 int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
+    m_iValue = 0;
+    m_fNullIndicator = false;
+
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
     if (enmType == RTJSONVALTYPE_NUMBER)
     {
@@ -305,10 +367,14 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
         return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonValueQueryInteger failed with %Rrc", rc);
     }
 
+    if (enmType == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     /* This is probably non-sense... */
-    if (enmType == RTJSONVALTYPE_NULL || enmType == RTJSONVALTYPE_FALSE)
-        m_iValue = 0;
-    else if (enmType == RTJSONVALTYPE_TRUE)
+    if (enmType == RTJSONVALTYPE_TRUE)
         m_iValue = 1;
 
     return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for 64-bit integer",
@@ -319,8 +385,14 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestInt64::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
     if (!(a_fFlags & kToString_Append))
-        return a_pDst->printfNoThrow("%RI64", m_iValue);
-    return a_pDst->appendPrintfNoThrow("%RI64", m_iValue);
+    {
+        if (!m_fNullIndicator)
+            return a_pDst->printfNoThrow("%RI64", m_iValue);
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
+    }
+    if (!m_fNullIndicator)
+        return a_pDst->appendPrintfNoThrow("%RI64", m_iValue);
+    return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
 }
 
 
@@ -329,9 +401,20 @@ int RTCRestInt64::fromString(RTCString const &a_rValue, const char *a_pszName, P
 {
     RT_NOREF(a_fFlags);
 
+    m_iValue = 0;
+    m_fNullIndicator = false;
+
     int rc = RTStrToInt64Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
         return VINF_SUCCESS;
+
+    if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        m_iValue = 0;
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     return RTErrInfoSetF(a_pErrInfo, rc, "%s: error %Rrc parsing '%s' as int64_t", a_pszName, rc, a_rValue.c_str());
 }
 
@@ -356,7 +439,8 @@ const char *RTCRestInt64::getType()
 
 /** Default destructor. */
 RTCRestInt32::RTCRestInt32()
-    : m_iValue(0)
+    : RTCRestObjectBase()
+    , m_iValue(0)
 {
 }
 
@@ -371,7 +455,8 @@ RTCRestInt32::RTCRestInt32(RTCRestInt32 const &a_rThat)
 
 /** From value constructor. */
 RTCRestInt32::RTCRestInt32(int32_t iValue)
-    : m_iValue(iValue)
+    : RTCRestObjectBase()
+    , m_iValue(iValue)
 {
 }
 
@@ -386,6 +471,7 @@ RTCRestInt32::~RTCRestInt32()
 /** Copy assignment operator. */
 RTCRestInt32 &RTCRestInt32::operator=(RTCRestInt32 const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return *this;
 }
@@ -393,6 +479,7 @@ RTCRestInt32 &RTCRestInt32::operator=(RTCRestInt32 const &a_rThat)
 
 int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return VINF_SUCCESS;
 }
@@ -401,19 +488,26 @@ int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat)
 int RTCRestInt32::resetToDefault()
 {
     m_iValue = 0;
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("%RI32", m_iValue);
+    if (!m_fNullIndicator)
+        a_rDst.printf("%RI32", m_iValue);
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
 
 int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
+    m_iValue = 0;
+    m_fNullIndicator = false;
+
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
     if (enmType == RTJSONVALTYPE_NUMBER)
     {
@@ -429,10 +523,14 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
         return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonValueQueryInteger failed with %Rrc", rc);
     }
 
+    if (enmType == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     /* This is probably non-sense... */
-    if (enmType == RTJSONVALTYPE_NULL || enmType == RTJSONVALTYPE_FALSE)
-        m_iValue = 0;
-    else if (enmType == RTJSONVALTYPE_TRUE)
+    if (enmType == RTJSONVALTYPE_TRUE)
         m_iValue = 1;
 
     return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for 32-bit integer",
@@ -443,8 +541,14 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestInt32::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
     if (!(a_fFlags & kToString_Append))
-        return a_pDst->printfNoThrow("%RI32", m_iValue);
-    return a_pDst->appendPrintfNoThrow("%RI32", m_iValue);
+    {
+        if (!m_fNullIndicator)
+            return a_pDst->printfNoThrow("%RI32", m_iValue);
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
+    }
+    if (!m_fNullIndicator)
+        return a_pDst->appendPrintfNoThrow("%RI32", m_iValue);
+    return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
 }
 
 
@@ -453,9 +557,20 @@ int RTCRestInt32::fromString(RTCString const &a_rValue, const char *a_pszName, P
 {
     RT_NOREF(a_fFlags);
 
+    m_iValue = 0;
+    m_fNullIndicator = false;
+
     int rc = RTStrToInt32Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
         return VINF_SUCCESS;
+
+    if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        m_iValue = 0;
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     return RTErrInfoSetF(a_pErrInfo, rc, "%s: error %Rrc parsing '%s' as int32_t", a_pszName, rc, a_rValue.c_str());
 }
 
@@ -480,7 +595,8 @@ const char *RTCRestInt32::getType()
 
 /** Default destructor. */
 RTCRestInt16::RTCRestInt16()
-    : m_iValue(0)
+    : RTCRestObjectBase()
+    , m_iValue(0)
 {
 }
 
@@ -495,7 +611,8 @@ RTCRestInt16::RTCRestInt16(RTCRestInt16 const &a_rThat)
 
 /** From value constructor. */
 RTCRestInt16::RTCRestInt16(int16_t iValue)
-    : m_iValue(iValue)
+    : RTCRestObjectBase()
+    , m_iValue(iValue)
 {
 }
 
@@ -510,6 +627,7 @@ RTCRestInt16::~RTCRestInt16()
 /** Copy assignment operator. */
 RTCRestInt16 &RTCRestInt16::operator=(RTCRestInt16 const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return *this;
 }
@@ -517,6 +635,7 @@ RTCRestInt16 &RTCRestInt16::operator=(RTCRestInt16 const &a_rThat)
 
 int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return VINF_SUCCESS;
 }
@@ -525,19 +644,26 @@ int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat)
 int RTCRestInt16::resetToDefault()
 {
     m_iValue = 0;
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("%RI16", m_iValue);
+    if (!m_fNullIndicator)
+        a_rDst.printf("%RI16", m_iValue);
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
 
 int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
+    m_iValue = 0;
+    m_fNullIndicator = false;
+
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
     if (enmType == RTJSONVALTYPE_NUMBER)
     {
@@ -553,10 +679,14 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
         return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonValueQueryInteger failed with %Rrc", rc);
     }
 
+    if (enmType == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     /* This is probably non-sense... */
-    if (enmType == RTJSONVALTYPE_NULL || enmType == RTJSONVALTYPE_FALSE)
-        m_iValue = 0;
-    else if (enmType == RTJSONVALTYPE_TRUE)
+    if (enmType == RTJSONVALTYPE_TRUE)
         m_iValue = 1;
 
     return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for 16-bit integer",
@@ -567,8 +697,14 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 int RTCRestInt16::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
     if (!(a_fFlags & kToString_Append))
-        return a_pDst->printfNoThrow("%RI16", m_iValue);
-    return a_pDst->appendPrintfNoThrow("%RI16", m_iValue);
+    {
+        if (!m_fNullIndicator)
+            return a_pDst->printfNoThrow("%RI16", m_iValue);
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
+    }
+    if (!m_fNullIndicator)
+        return a_pDst->appendPrintfNoThrow("%RI16", m_iValue);
+    return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
 }
 
 
@@ -577,9 +713,20 @@ int RTCRestInt16::fromString(RTCString const &a_rValue, const char *a_pszName, P
 {
     RT_NOREF(a_fFlags);
 
+    m_iValue = 0;
+    m_fNullIndicator = false;
+
     int rc = RTStrToInt16Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
         return VINF_SUCCESS;
+
+    if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        m_iValue = 0;
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     return RTErrInfoSetF(a_pErrInfo, rc, "%s: error %Rrc parsing '%s' as int16_t", a_pszName, rc, a_rValue.c_str());
 }
 
@@ -603,7 +750,8 @@ const char *RTCRestInt16::getType()
 
 /** Default destructor. */
 RTCRestDouble::RTCRestDouble()
-    : m_rdValue(0.0)
+    : RTCRestObjectBase()
+    , m_rdValue(0.0)
 {
 }
 
@@ -618,7 +766,8 @@ RTCRestDouble::RTCRestDouble(RTCRestDouble const &a_rThat)
 
 /** From value constructor. */
 RTCRestDouble::RTCRestDouble(double rdValue)
-    : m_rdValue(rdValue)
+    : RTCRestObjectBase()
+    , m_rdValue(rdValue)
 {
 }
 
@@ -633,6 +782,7 @@ RTCRestDouble::~RTCRestDouble()
 /** Copy assignment operator. */
 RTCRestDouble &RTCRestDouble::operator=(RTCRestDouble const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_rdValue = a_rThat.m_rdValue;
     return *this;
 }
@@ -640,6 +790,7 @@ RTCRestDouble &RTCRestDouble::operator=(RTCRestDouble const &a_rThat)
 
 int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat)
 {
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_rdValue = a_rThat.m_rdValue;
     return VINF_SUCCESS;
 }
@@ -648,21 +799,28 @@ int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat)
 int RTCRestDouble::resetToDefault()
 {
     m_rdValue = 0.0;
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    /* Just a simple approximation here. */
-    /** @todo implement floating point values for json. */
-    char szValue[128];
+    if (!m_fNullIndicator)
+    {
+
+        /* Just a simple approximation here. */
+        /** @todo implement floating point values for json. */
+        char szValue[128];
 #ifdef _MSC_VER
-    _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
 #else
-    snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
 #endif
-    a_rDst.printf("%s", szValue);
+        a_rDst.printf("%s", szValue);
+    }
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
@@ -677,19 +835,26 @@ int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
-    /* Just a simple approximation here. */
-    /** @todo implement floating point values for json. */
-    char szValue[128];
+    if (!m_fNullIndicator)
+    {
+        /* Just a simple approximation here. */
+        /** @todo implement floating point values for json. */
+        char szValue[128];
 #ifdef _MSC_VER
-    _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
 #else
-    snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
 #endif
-    size_t const cchValue = strlen(szValue);
+        size_t const cchValue = strlen(szValue);
+
+        if (!(a_fFlags & kToString_Append))
+            return a_pDst->assignNoThrow(szValue, cchValue);
+        return a_pDst->appendNoThrow(szValue, cchValue);
+    }
 
     if (!(a_fFlags & kToString_Append))
-        return a_pDst->assignNoThrow(szValue, cchValue);
-    return a_pDst->appendNoThrow(szValue, cchValue);
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
+    return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
 }
 
 
@@ -698,12 +863,22 @@ int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, 
 {
     RT_NOREF(a_fFlags);
 
+    m_fNullIndicator = false;
+
     const char *pszValue = RTStrStripL(a_rValue.c_str());
     errno = 0;
     char *pszNext = NULL;
     m_rdValue = strtod(pszValue, &pszNext);
     if (errno == 0)
         return VINF_SUCCESS;
+
+    if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        m_rdValue = 0.0;
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
     int rc = RTErrConvertFromErrno(errno);
     return RTErrInfoSetF(a_pErrInfo, rc, "%s: error %Rrc parsing '%s' as double", a_pszName, rc, a_rValue.c_str());
 }
@@ -730,6 +905,7 @@ const char *RTCRestDouble::getType()
 /** Default destructor. */
 RTCRestString::RTCRestString()
     : RTCString()
+    , RTCRestObjectBase()
 {
 }
 
@@ -752,6 +928,7 @@ RTCRestString::RTCRestString(RTCString const &a_rThat)
 /** From value constructor. */
 RTCRestString::RTCRestString(const char *a_pszSrc)
     : RTCString(a_pszSrc)
+    , RTCRestObjectBase()
 {
 }
 
@@ -763,34 +940,57 @@ RTCRestString::~RTCRestString()
 }
 
 
+int RTCRestString::assignCopy(RTCRestString const &a_rThat)
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    return assignNoThrow(a_rThat);
+}
+
+
 int RTCRestString::assignCopy(RTCString const &a_rThat)
 {
+    m_fNullIndicator = false;
     return assignNoThrow(a_rThat);
 }
 
 
 int RTCRestString::assignCopy(const char *a_pszThat)
 {
+    m_fNullIndicator = false;
     return assignNoThrow(a_pszThat);
+}
+
+
+int RTCRestString::setNull()
+{
+    RTCString::setNull();
+    m_fNullIndicator = true;
+    return VINF_SUCCESS;
 }
 
 
 int RTCRestString::resetToDefault()
 {
-    setNull();
+    RTCString::setNull();
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("%RMjs", m_psz);
+    if (!m_fNullIndicator)
+        a_rDst.printf("%RMjs", m_psz);
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
 
 int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
+    m_fNullIndicator = false;
+
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
     if (enmType == RTJSONVALTYPE_STRING)
     {
@@ -802,9 +1002,11 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
         return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "no memory for %zu char long string", cchValue);
     }
 
-    if (enmType == RTJSONVALTYPE_NULL) /** @todo RTJSONVALTYPE_NULL for strings??? */
+    RTCString::setNull();
+
+    if (enmType == RTJSONVALTYPE_NULL)
     {
-        setNull();
+        m_fNullIndicator = true;
         return VINF_SUCCESS;
     }
 
@@ -815,6 +1017,7 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
 int RTCRestString::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
 {
+    /* Note! m_fNullIndicator == true: empty string. */
     if (!(a_fFlags & kToString_Append))
         return a_pDst->assignNoThrow(*this);
     return a_pDst->appendNoThrow(*this);
@@ -826,6 +1029,8 @@ int RTCRestString::fromString(RTCString const &a_rValue, const char *a_pszName, 
 {
     RT_NOREF(a_fFlags); RT_NOREF(a_pszName); RT_NOREF(a_pErrInfo);
 
+    /* Note! Unable to set m_fNullIndicator = true here. */
+    m_fNullIndicator = false;
     return assignNoThrow(a_rValue);
 }
 

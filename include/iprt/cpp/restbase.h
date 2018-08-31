@@ -255,14 +255,33 @@ public:
 
 /**
  * Abstract base class for REST data objects.
+ *
+ * The only information this keeps is the null indicator.
  */
 class RT_DECL_CLASS RTCRestObjectBase
 {
 public:
     RTCRestObjectBase();
+    RTCRestObjectBase(RTCRestObjectBase const &a_rThat);
     virtual ~RTCRestObjectBase();
 
-    /** @todo Add some kind of state? */
+    /**
+     * Tests if the object is @a null.
+     * @returns true if null, false if not.
+     */
+    bool isNull(void) const { return m_fNullIndicator; };
+
+    /**
+     * Sets the object to @a null and fills it with defaults.
+     * @returns IPRT status code (from resetToDefault).
+     */
+    virtual int setNull(void);
+
+    /**
+     * Sets the object to not-null state (i.e. undoes setNull()).
+     * @remarks Only really important for strings.
+     */
+    virtual void setNotNull(void);
 
     /**
      * Resets the object to all default values.
@@ -352,6 +371,17 @@ public:
     typedef DECLCALLBACK(RTCRestObjectBase *) FNCREATEINSTANCE(void);
     /** Pointer to factory method. */
     typedef FNCREATEINSTANCE *PFNCREATEINSTANCE;
+
+
+protected:
+    /** Null indicator.
+     * @remarks The null values could be mapped onto C/C++ NULL pointer values,
+     *          with the consequence that all data members in objects and such would
+     *          have had to been allocated individually, even simple @a bool members.
+     *          Given that we're overly paranoid about heap allocations (std::bad_alloc),
+     *          it's more fitting to use a null indicator for us.
+     */
+    bool    m_fNullIndicator;
 };
 
 
@@ -558,11 +588,14 @@ public:
     /** From value constructor. */
     RTCRestString(const char *a_pszSrc);
     /** Safe copy assignment method. */
+    int assignCopy(RTCRestString const &a_rThat);
+    /** Safe copy assignment method. */
     int assignCopy(RTCString const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(const char *a_pszThat);
 
     /* Overridden methods: */
+    virtual int setNull(void) RT_OVERRIDE; /* (ambigious, so overrider it to make sure.) */
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -1296,6 +1329,7 @@ public:
     int assignCopy(RTCRestObject const &a_rThat);
 
     /* Overridden methods: */
+    virtual int setNull(void) RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;

@@ -39,7 +39,8 @@
  * Default destructor.
  */
 RTCRestStringMapBase::RTCRestStringMapBase()
-    : m_Map(NULL)
+    : RTCRestObjectBase()
+    , m_Map(NULL)
     , m_cEntries(0)
 {
     RTListInit(&m_ListHead);
@@ -76,30 +77,36 @@ int RTCRestStringMapBase::resetToDefault()
 {
     /* Default is an empty map. */
     clear();
+    m_fNullIndicator = false;
     return VINF_SUCCESS;
 }
 
 
 RTCRestOutputBase &RTCRestStringMapBase::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
-    a_rDst.printf("{\n");
-    unsigned const uOldIndent = a_rDst.incrementIndent();
-
-    MapEntry const * const pLast = RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry);
-    MapEntry const * pCur;
-    RTListForEachCpp(&m_ListHead, pCur, MapEntry, ListEntry)
+    if (!m_fNullIndicator)
     {
-        a_rDst.printf("%RJs: ", pCur->strKey.c_str());
-        pCur->pValue->serializeAsJson(a_rDst);
+        a_rDst.printf("{\n");
+        unsigned const uOldIndent = a_rDst.incrementIndent();
 
-        if (pCur != pLast)
-            a_rDst.printf(",\n");
-        else
-            a_rDst.printf("\n");
+        MapEntry const * const pLast = RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry);
+        MapEntry const * pCur;
+        RTListForEachCpp(&m_ListHead, pCur, MapEntry, ListEntry)
+        {
+            a_rDst.printf("%RJs: ", pCur->strKey.c_str());
+            pCur->pValue->serializeAsJson(a_rDst);
+
+            if (pCur != pLast)
+                a_rDst.printf(",\n");
+            else
+                a_rDst.printf("\n");
+        }
+
+        a_rDst.setIndent(uOldIndent);
+        a_rDst.printf("}");
     }
-
-    a_rDst.setIndent(uOldIndent);
-    a_rDst.printf("}");
+    else
+        a_rDst.printf("null");
     return a_rDst;
 }
 
@@ -111,6 +118,7 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
      */
     if (m_cEntries > 0)
         clear();
+    m_fNullIndicator = false;
 
     /*
      * Iterate the object values.
@@ -174,10 +182,14 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
 
         RTJsonIteratorFree(hIterator);
     }
-    else if (   rcRet == VERR_JSON_IS_EMPTY
-             || (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
-                 && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL) )
+    else if (rcRet == VERR_JSON_IS_EMPTY)
         rcRet = VINF_SUCCESS;
+    else if (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
+             && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        rcRet = VINF_SUCCESS;
+    }
     else
         rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBegin failed: %Rrc (type %s)",
                                                rcRet, RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
@@ -219,6 +231,7 @@ void RTCRestStringMapBase::clear()
     RTStrSpaceDestroy(&m_Map, stringSpaceDestructorCallback, NULL);
     RTListInit(&m_ListHead);
     m_cEntries = 0;
+    m_fNullIndicator = false;
 }
 
 
@@ -266,17 +279,21 @@ int RTCRestStringMapBase::copyMapWorker(RTCRestStringMapBase const &a_rThat, boo
 {
     Assert(this != &a_rThat);
     clear();
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
 
-    MapEntry const *pCur;
-    RTListForEachCpp(&a_rThat.m_ListHead, pCur, MapEntry, ListEntry)
+    if (!a_rThat.m_fNullIndicator)
     {
-        int rc = putCopyWorker(pCur->strKey.c_str(), *pCur->pValue, true /*a_fReplace*/);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else if (a_fThrow)
-            throw std::bad_alloc();
-        else
-            return rc;
+        MapEntry const *pCur;
+        RTListForEachCpp(&a_rThat.m_ListHead, pCur, MapEntry, ListEntry)
+        {
+            int rc = putCopyWorker(pCur->strKey.c_str(), *pCur->pValue, true /*a_fReplace*/);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else if (a_fThrow)
+                throw std::bad_alloc();
+            else
+                return rc;
+        }
     }
 
     return VINF_SUCCESS;
@@ -298,9 +315,11 @@ int RTCRestStringMapBase::putWorker(const char *a_pszKey, RTCRestObjectBase *a_p
             if (RTStrSpaceInsert(&m_Map, &pEntry->Core))
             {
                 m_cEntries++;
+                m_fNullIndicator = false;
                 return VINF_SUCCESS;
             }
 
+            Assert(!m_fNullIndicator);
             if (!a_fReplace)
                 rc = VERR_ALREADY_EXISTS;
             else
