@@ -960,7 +960,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
      */
     switch (uExitReason)
     {
-        case VMX_EXIT_XDTR_ACCESS:
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
         {
             Assert(VMX_INSTR_ID_IS_VALID(uInstrId));
             ExitInstrInfo.GdtIdt.u2InstrId = VMX_INSTR_ID_GET_ID(uInstrId);
@@ -968,7 +968,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
             break;
         }
 
-        case VMX_EXIT_TR_ACCESS:
+        case VMX_EXIT_LDTR_TR_ACCESS:
         {
             Assert(VMX_INSTR_ID_IS_VALID(uInstrId));
             ExitInstrInfo.LdtTr.u2InstrId = VMX_INSTR_ID_GET_ID(uInstrId);

@@ -1210,10 +1210,10 @@ typedef const VMXMSRS *PCVMXMSRS;
 #define VMX_EXIT_VIRTUALIZED_EOI                                45
 /** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT,
  *  SGDT, or SIDT. */
-#define VMX_EXIT_XDTR_ACCESS                                    46
+#define VMX_EXIT_GDTR_IDTR_ACCESS                               46
 /** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR,
  *  SLDT, or STR. */
-#define VMX_EXIT_TR_ACCESS                                      47
+#define VMX_EXIT_LDTR_TR_ACCESS                                 47
 /** 48 EPT violation. An attempt to access memory with a guest-physical address
  *  was disallowed by the configuration of the EPT paging structures. */
 #define VMX_EXIT_EPT_VIOLATION                                  48

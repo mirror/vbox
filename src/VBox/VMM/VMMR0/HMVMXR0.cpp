@@ -419,7 +419,6 @@ static FNVMXEXITHANDLERNSRC hmR0VmxExitErrMachineCheck;
 static FNVMXEXITHANDLERNSRC hmR0VmxExitTprBelowThreshold;
 static FNVMXEXITHANDLER     hmR0VmxExitApicAccess;
 static FNVMXEXITHANDLER     hmR0VmxExitXdtrAccess;
-static FNVMXEXITHANDLER     hmR0VmxExitXdtrAccess;
 static FNVMXEXITHANDLER     hmR0VmxExitEptViolation;
 static FNVMXEXITHANDLER     hmR0VmxExitEptMisconfig;
 static FNVMXEXITHANDLER     hmR0VmxExitRdtscp;
@@ -508,8 +507,8 @@ static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 43  VMX_EXIT_TPR_BELOW_THRESHOLD     */  hmR0VmxExitTprBelowThreshold,
  /* 44  VMX_EXIT_APIC_ACCESS             */  hmR0VmxExitApicAccess,
  /* 45  UNDEFINED                        */  hmR0VmxExitErrUndefined,
- /* 46  VMX_EXIT_XDTR_ACCESS             */  hmR0VmxExitXdtrAccess,
- /* 47  VMX_EXIT_TR_ACCESS               */  hmR0VmxExitXdtrAccess,
+ /* 46  VMX_EXIT_GDTR_IDTR_ACCESS        */  hmR0VmxExitXdtrAccess,
+ /* 47  VMX_EXIT_LDTR_TR_ACCESS          */  hmR0VmxExitXdtrAccess,
  /* 48  VMX_EXIT_EPT_VIOLATION           */  hmR0VmxExitEptViolation,
  /* 49  VMX_EXIT_EPT_MISCONFIG           */  hmR0VmxExitEptMisconfig,
  /* 50  VMX_EXIT_INVEPT                  */  hmR0VmxExitSetPendingXcptUD,
@@ -9399,12 +9398,12 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
         || IS_EITHER_ENABLED(pVM, INSTR_LIDT))
     {
         pDbgState->fCpe2Extra |= VMX_PROC_CTLS2_DESC_TABLE_EXIT;
-        ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_XDTR_ACCESS);
+        ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_GDTR_IDTR_ACCESS);
     }
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SGDT,               VMX_EXIT_XDTR_ACCESS);
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SIDT,               VMX_EXIT_XDTR_ACCESS);
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LGDT,               VMX_EXIT_XDTR_ACCESS);
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LIDT,               VMX_EXIT_XDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SGDT,               VMX_EXIT_GDTR_IDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SIDT,               VMX_EXIT_GDTR_IDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LGDT,               VMX_EXIT_GDTR_IDTR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LIDT,               VMX_EXIT_GDTR_IDTR_ACCESS);
 
     if (   IS_EITHER_ENABLED(pVM, INSTR_SLDT)
         || IS_EITHER_ENABLED(pVM, INSTR_STR)
@@ -9412,12 +9411,12 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
         || IS_EITHER_ENABLED(pVM, INSTR_LTR))
     {
         pDbgState->fCpe2Extra |= VMX_PROC_CTLS2_DESC_TABLE_EXIT;
-        ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_TR_ACCESS);
+        ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_LDTR_TR_ACCESS);
     }
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SLDT,               VMX_EXIT_TR_ACCESS);
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_STR,                VMX_EXIT_TR_ACCESS);
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LLDT,               VMX_EXIT_TR_ACCESS);
-    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LTR,                VMX_EXIT_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SLDT,               VMX_EXIT_LDTR_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_STR,                VMX_EXIT_LDTR_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LLDT,               VMX_EXIT_LDTR_TR_ACCESS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LTR,                VMX_EXIT_LDTR_TR_ACCESS);
 
     SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVEPT,         VMX_EXIT_INVEPT);           /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVEPT,         VMX_EXIT_INVEPT);
@@ -9622,7 +9621,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
         case VMX_EXIT_MWAIT:            SET_BOTH(MWAIT); break;
         case VMX_EXIT_MONITOR:          SET_BOTH(MONITOR); break;
         case VMX_EXIT_PAUSE:            SET_BOTH(PAUSE); break;
-        case VMX_EXIT_XDTR_ACCESS:
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
             hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_BF_XDTR_INSINFO_INSTR_ID))
             {
@@ -9633,7 +9632,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
             }
             break;
 
-        case VMX_EXIT_TR_ACCESS:
+        case VMX_EXIT_LDTR_TR_ACCESS:
             hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             switch (RT_BF_GET(pVmxTransient->ExitInstrInfo.u, VMX_BF_YYTR_INSINFO_INSTR_ID))
             {
@@ -9945,8 +9944,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVMCPU pVCpu, PVMXTRANSIENT p
             case VMX_EXIT_MWAIT:
             case VMX_EXIT_MONITOR:
             case VMX_EXIT_PAUSE:
-            case VMX_EXIT_XDTR_ACCESS:
-            case VMX_EXIT_TR_ACCESS:
+            case VMX_EXIT_GDTR_IDTR_ACCESS:
+            case VMX_EXIT_LDTR_TR_ACCESS:
             case VMX_EXIT_INVEPT:
             case VMX_EXIT_RDTSCP:
             case VMX_EXIT_INVVPID:
@@ -10376,8 +10375,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_RSM:                     VMEXIT_CALL_RET(0, hmR0VmxExitRsm(pVCpu, pVmxTransient));
         case VMX_EXIT_MTF:                     VMEXIT_CALL_RET(0, hmR0VmxExitMtf(pVCpu, pVmxTransient));
         case VMX_EXIT_PAUSE:                   VMEXIT_CALL_RET(0, hmR0VmxExitPause(pVCpu, pVmxTransient));
-        case VMX_EXIT_XDTR_ACCESS:             VMEXIT_CALL_RET(0, hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient));
-        case VMX_EXIT_TR_ACCESS:               VMEXIT_CALL_RET(0, hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient));
+        case VMX_EXIT_GDTR_IDTR_ACCESS:        VMEXIT_CALL_RET(0, hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient));
+        case VMX_EXIT_LDTR_TR_ACCESS:          VMEXIT_CALL_RET(0, hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient));
         case VMX_EXIT_WBINVD:                  VMEXIT_CALL_RET(0, hmR0VmxExitWbinvd(pVCpu, pVmxTransient));
         case VMX_EXIT_XSETBV:                  VMEXIT_CALL_RET(0, hmR0VmxExitXsetbv(pVCpu, pVmxTransient));
         case VMX_EXIT_RDRAND:                  VMEXIT_CALL_RET(0, hmR0VmxExitRdrand(pVCpu, pVmxTransient));
