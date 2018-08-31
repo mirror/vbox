@@ -13417,8 +13417,53 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    /** @todo NSTVMX: Vmread. */
-    hmR0VmxSetPendingXcptUD(pVCpu);
+    int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
+
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason     = pVmxTransient->uExitReason;
+    ExitInfo.u64Qual     = pVmxTransient->uExitQual;
+    ExitInfo.InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
+    ExitInfo.cbInstr     = pVmxTransient->cbInstr;
+    if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
+    {
+        RTGCPTR GCPtrVal;
+        VBOXSTRICTRC rcStrict = hmR0VmxDecodeMemOperand(pVCpu, &ExitInfo.InstrInfo, ExitInfo.u64Qual, false /* fIsDstOperand */,
+                                                         &GCPtrVal);
+        if (rcStrict == VINF_SUCCESS)
+        { /* likely */ }
+        else if (rcStrict == VINF_HM_PENDING_XCPT)
+        {
+            Assert(pVCpu->hm.s.Event.fPending);
+            Log4Func(("Memory operand decoding failed, raising xcpt %#x\n",
+                      VMX_ENTRY_INT_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo)));
+            return VINF_SUCCESS;
+        }
+        else
+        {
+            Log4Func(("hmR0VmxCheckExitDueToVmxInstr failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+        ExitInfo.GCPtrEffAddr = GCPtrVal;
+    }
+
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmread(pVCpu, &ExitInfo);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_HWVIRT);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+
+
     return VINF_SUCCESS;
 }
 
