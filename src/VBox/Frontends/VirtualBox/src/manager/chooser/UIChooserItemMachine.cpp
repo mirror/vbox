@@ -617,10 +617,10 @@ QVariant UIChooserItemMachine::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case MachineItemData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+        case MachineItemData_Margin:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3 * 2;
         case MachineItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case MachineItemData_TextSpacing: return 0;
+        case MachineItemData_TextSpacing:  return 0;
 
         /* Pixmaps: */
         case MachineItemData_SettingsButtonPixmap: return UIIconPool::iconSet(":/vm_settings_16px.png");
@@ -927,6 +927,17 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightnessMin));
         pPainter->fillRect(rect, bgGrad);
     }
+    /* Default background: */
+    else
+    {
+        /* Prepare color: */
+        QColor usual = pal.color(QPalette::Active, QPalette::Mid);
+        /* Draw gradient: */
+        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
+        bgGrad.setColorAt(0, usual.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, usual.lighter(m_iHoverLightnessMin));
+        pPainter->fillRect(rect, bgGrad);
+    }
 
     /* Paint drag token UP? */
     if (dragTokenPlace() != DragToken_Off)
@@ -959,16 +970,18 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
 
 void UIChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
 {
-    /* Only chosen and/or hovered item should have a frame: */
-    if (!model()->currentItems().contains(this) && !isHovered())
-        return;
-
     /* Simple frame: */
     pPainter->save();
     QPalette pal = palette();
-    QColor strokeColor = pal.color(QPalette::Active,
-                                   model()->currentItems().contains(this) ?
-                                   QPalette::Mid : QPalette::Highlight);
+    QColor strokeColor;
+
+    /* Selection frame: */
+    if (model()->currentItems().contains(this))
+        strokeColor = pal.color(QPalette::Active, QPalette::Mid).darker(110);
+    /* Default frame: */
+    else
+        strokeColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+
     pPainter->setPen(strokeColor);
     pPainter->drawRect(rect);
     pPainter->restore();
