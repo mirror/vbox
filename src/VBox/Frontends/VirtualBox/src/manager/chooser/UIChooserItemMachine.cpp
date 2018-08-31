@@ -46,9 +46,10 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
                                              int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary())
     , UIVirtualMachineItem(machine)
-    , m_iHoverLightness(0)
-    , m_iHighlightLightness(0)
-    , m_iHoverHighlightLightness(0)
+    , m_iHoverLightnessMin(0)
+    , m_iHoverLightnessMax(0)
+    , m_iHighlightLightnessMin(0)
+    , m_iHighlightLightnessMax(0)
     , m_iFirstRowMaximumWidth(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
@@ -81,9 +82,10 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
                                              int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary())
     , UIVirtualMachineItem(pCopyFrom->machine())
-    , m_iHoverLightness(0)
-    , m_iHighlightLightness(0)
-    , m_iHoverHighlightLightness(0)
+    , m_iHoverLightnessMin(0)
+    , m_iHoverLightnessMax(0)
+    , m_iHighlightLightnessMin(0)
+    , m_iHighlightLightnessMax(0)
     , m_iFirstRowMaximumWidth(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
@@ -584,13 +586,15 @@ void UIChooserItemMachine::prepare()
 {
     /* Colors: */
 #ifdef VBOX_WS_MAC
-    m_iHighlightLightness = 115;
-    m_iHoverLightness = 110;
-    m_iHoverHighlightLightness = 120;
+    m_iHighlightLightnessMin = 105;
+    m_iHighlightLightnessMax = 115;
+    m_iHoverLightnessMin = 110;
+    m_iHoverLightnessMax = 120;
 #else /* VBOX_WS_MAC */
-    m_iHighlightLightness = 130;
-    m_iHoverLightness = 155;
-    m_iHoverHighlightLightness = 175;
+    m_iHighlightLightnessMin = 120;
+    m_iHighlightLightnessMax = 160;
+    m_iHoverLightnessMin = 155;
+    m_iHoverLightnessMax = 175;
 #endif /* !VBOX_WS_MAC */
 
     /* Fonts: */
@@ -908,8 +912,8 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightness));
-        bgGrad.setColorAt(1, highlight);
+        bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightnessMax));
+        bgGrad.setColorAt(1, highlight.lighter(m_iHighlightLightnessMin));
         pPainter->fillRect(rect, bgGrad);
     }
     /* Hovering background: */
@@ -919,8 +923,8 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHoverHighlightLightness));
-        bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightness));
+        bgGrad.setColorAt(0, highlight.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightnessMin));
         pPainter->fillRect(rect, bgGrad);
     }
 
@@ -992,7 +996,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
         /* Prepare color: */
         QPalette pal = palette();
         QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
-        QColor hhl = highlight.lighter(m_iHoverHighlightLightness);
+        QColor hhl = highlight.lighter(m_iHoverLightnessMax);
         if (hhl.value() - hhl.saturation() > 0)
             pPainter->setPen(pal.color(QPalette::Active, QPalette::Text));
         else
