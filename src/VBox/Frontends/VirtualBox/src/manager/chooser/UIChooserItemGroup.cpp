@@ -819,10 +819,10 @@ void UIChooserItemGroup::updateLayout()
         if (m_pNameEditor && m_pNameEditorWidget)
         {
             /* Prepare variables: */
-            int iMajorSpacing = data(GroupItemData_Spacing).toInt();
+            int iSpacing = data(GroupItemData_Spacing).toInt();
             int iToggleButtonWidth = m_toggleButtonSize.width();
             /* Layout name-editor: */
-            int iNameEditorX = iHorizontalMargin + iToggleButtonWidth + iMajorSpacing;
+            int iNameEditorX = iHorizontalMargin + iToggleButtonWidth + iSpacing;
             int iNameEditorY = 1;
             m_pNameEditor->setPos(iNameEditorX, iNameEditorY);
             m_pNameEditorWidget->resize((int)(geometry().width() - iNameEditorX - iHorizontalMargin), m_pNameEditorWidget->height());
@@ -843,7 +843,6 @@ void UIChooserItemGroup::updateLayout()
     else
     {
         /* Prepare variables: */
-        int iHorizontalIndent = isRoot() ? 0 : iHorizontalMargin;
         QRect geo = geometry().toRect();
         int iX = geo.x();
         int iY = geo.y();
@@ -857,9 +856,9 @@ void UIChooserItemGroup::updateLayout()
             /* Get item height-hint: */
             int iMinimumHeight = pItem->minimumHeightHint();
             /* Set item position: */
-            pItem->setPos(iX + iHorizontalIndent, iY + iPreviousVerticalIndent);
+            pItem->setPos(iX, iY + iPreviousVerticalIndent);
             /* Set item size: */
-            pItem->resize(iWidth - 2 * iHorizontalIndent, iMinimumHeight);
+            pItem->resize(iWidth, iMinimumHeight);
             /* Relayout group: */
             pItem->updateLayout();
             /* Update indent for next items: */
@@ -1285,7 +1284,7 @@ QVariant UIChooserItemGroup::data(int iKey) const
         /* Layout hints: */
         case GroupItemData_HorizonalMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case GroupItemData_VerticalMargin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case GroupItemData_Spacing:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GroupItemData_Spacing:         return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
 
         /* Default: */
         default: break;
@@ -1469,16 +1468,11 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         /* But if group-item is opened: */
         if (fGroupOpened)
         {
-            /* Prepare variables: */
-            int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-
             /* We should take into spacing between header and body: */
             iProposedHeight += iVerticalMargin;
             /* And every existing child height: */
             foreach (UIChooserItem *pItem, items())
                 iProposedHeight += pItem->minimumHeightHint();
-            /* And bottom margin at last: */
-            iProposedHeight += iHorizontalMargin;
         }
 
         /* Finally, additional height during animation: */
@@ -1503,7 +1497,7 @@ void UIChooserItemGroup::updateVisibleName()
 
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    int iMajorSpacing = data(GroupItemData_Spacing).toInt();
+    int iSpacing = data(GroupItemData_Spacing).toInt();
     int iToggleButtonWidth = m_toggleButtonSize.width();
     int iEnterButtonWidth = m_enterButtonSize.width();
     int iExitButtonWidth = m_exitButtonSize.width();
@@ -1521,11 +1515,11 @@ void UIChooserItemGroup::updateVisibleName()
     else
         iMaximumWidth -= iToggleButtonWidth;
     /* Spacing between button and name: */
-    iMaximumWidth -= iMajorSpacing;
+    iMaximumWidth -= iSpacing;
     if (isHovered())
     {
         /* Spacing between name and info: */
-        iMaximumWidth -= iMajorSpacing;
+        iMaximumWidth -= iSpacing;
         /* Group info width: */
         if (!m_groupItems.isEmpty())
             iMaximumWidth -= (iGroupPixmapWidth + iGroupCountTextWidth);
@@ -1574,7 +1568,7 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
         return;
 
     /* Prepare variables: */
-    int iMajorSpacing = data(GroupItemData_Spacing).toInt();
+    int iSpacing = data(GroupItemData_Spacing).toInt();
 
     /* Calculate minimum visible name size: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
@@ -1592,11 +1586,11 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
     else
         iHeaderWidth += m_toggleButtonSize.width();
     iHeaderWidth += /* Spacing between button and name: */
-                    iMajorSpacing +
+                    iSpacing +
                     /* Minimum name width: */
                     iMinimumNameWidth +
                     /* Spacing between name and info: */
-                    iMajorSpacing;
+                    iSpacing;
     /* Group info width: */
     if (!m_groupItems.isEmpty())
         iHeaderWidth += (m_pixmapSizeGroups.width() + m_infoSizeGroups.width());
@@ -1776,7 +1770,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
-    int iMajorSpacing = data(GroupItemData_Spacing).toInt();
+    int iSpacing = data(GroupItemData_Spacing).toInt();
     int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Configure painter color: */
@@ -1798,7 +1792,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         iNameX += m_exitButtonSize.width();
     else
         iNameX += m_toggleButtonSize.width();
-    iNameX += iMajorSpacing;
+    iNameX += iSpacing;
     int iNameY = m_visibleNameSize.height() == iFullHeaderHeight ? iVerticalMargin :
                  iVerticalMargin + (iFullHeaderHeight - m_visibleNameSize.height()) / 2;
     paintText(/* Painter: */

@@ -983,7 +983,8 @@ void UIChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &
         strokeColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
 
     pPainter->setPen(strokeColor);
-    pPainter->drawRect(rect);
+    pPainter->drawLine(rect.topLeft(), rect.topRight() + QPoint(1, 0));
+    pPainter->drawLine(rect.bottomLeft() + QPoint(0, 1), rect.bottomRight() + QPoint(1, 1));
     pPainter->restore();
 }
 
