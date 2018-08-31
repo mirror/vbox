@@ -659,6 +659,7 @@ void UIMachineLogic::sltMachineStateChanged()
         {
             /* Insert a host combo release if press has been inserted: */
             typeHostKeyComboPressRelease(false);
+            break;
         }
 #ifdef VBOX_WS_X11
         case KMachineState_Starting:
