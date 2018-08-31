@@ -179,7 +179,7 @@
 #endif
 
 /** Macro for exporting segment registers to the VMCS from the guest-CPU context. */
-# define HMVMX_EXPORT_SREG(Sel, a_pCtxSelReg) \
+#define HMVMX_EXPORT_SREG(Sel, a_pCtxSelReg) \
     hmR0VmxExportGuestSegmentReg(pVCpu, VMX_VMCS16_GUEST_##Sel##_SEL, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
                                  VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, (a_pCtxSelReg))
 
@@ -5890,7 +5890,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
     Assert(pExitInstrInfo);
     Assert(pGCPtrMem);
     Assert(!CPUMIsGuestInRealOrV86Mode(pVCpu));
-    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_CR0);
+    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_CR0);
 
     static uint64_t const s_auAddrSizeMasks[]   = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
     static uint64_t const s_auAccessSizeMasks[] = { sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t) };
