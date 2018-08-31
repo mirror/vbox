@@ -1644,7 +1644,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     QColor headerColor = pal.color(QPalette::Active,
                                    model()->currentItems().contains(this) ?
                                    QPalette::Highlight : QPalette::Midlight);
-    QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
+    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(blackoutDarkness());
 
     /* Root-item: */
     if (isRoot())
@@ -1660,15 +1660,17 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         {
             /* Prepare variables: */
             int iMargin = data(GroupItemData_VerticalMargin).toInt();
-            int iHeaderHeight = m_minimumHeaderSize.height();
-            int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
-            QRect backgroundRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
+            int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+            int iFullBodyHeight = rect.height() - iFullHeaderHeight;
+            QRect headerRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
+            QRect bodyRect = QRect(0, iFullHeaderHeight, rect.width(), iFullBodyHeight);
 
             /* Fill background: */
-            QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
+            QLinearGradient headerGradient(headerRect.bottomLeft(), headerRect.topLeft());
             headerGradient.setColorAt(1, headerColor.darker(blackoutDarkness()));
             headerGradient.setColorAt(0, headerColor.darker(animationDarkness()));
-            pPainter->fillRect(backgroundRect, headerGradient);
+            pPainter->fillRect(headerRect, headerGradient);
+            pPainter->fillRect(bodyRect, bodyColor);
         }
     }
     /* Non-root-item: */
@@ -1676,8 +1678,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     {
         /* Prepare variables: */
         int iMargin = data(GroupItemData_VerticalMargin).toInt();
-        int iHeaderHeight = m_minimumHeaderSize.height();
-        int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
+        int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
