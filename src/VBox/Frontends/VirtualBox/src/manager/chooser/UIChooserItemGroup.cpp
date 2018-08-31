@@ -749,20 +749,13 @@ void UIChooserItemGroup::updateLayout()
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
     int iFullHeaderHeight = m_minimumHeaderSize.height();
-    int iRootIndent = data(GroupItemData_RootIndent).toInt();
     int iPreviousVerticalIndent = 0;
 
     /* Header (root-item): */
     if (isRoot())
     {
-        /* Header (main root-item): */
-        if (isMainRoot())
-        {
-            /* Prepare body indent: */
-            iPreviousVerticalIndent = iRootIndent;
-        }
         /* Header (non-main root-item): */
-        else
+        if (!isMainRoot())
         {
             /* Hide unnecessary buttons: */
             if (m_pToggleButton)
@@ -776,7 +769,7 @@ void UIChooserItemGroup::updateLayout()
                 /* Prepare variables: */
                 int iExitButtonHeight = m_exitButtonSize.height();
                 /* Layout exit-button: */
-                int iExitButtonX = iHorizontalMargin + iRootIndent;
+                int iExitButtonX = iHorizontalMargin;
                 int iExitButtonY = iExitButtonHeight == iFullHeaderHeight ? iVerticalMargin :
                                    iVerticalMargin + (iFullHeaderHeight - iExitButtonHeight) / 2;
                 m_pExitButton->setPos(iExitButtonX, iExitButtonY);
@@ -851,7 +844,7 @@ void UIChooserItemGroup::updateLayout()
     else
     {
         /* Prepare variables: */
-        int iHorizontalIndent = isRoot() ? iRootIndent : iHorizontalMargin;
+        int iHorizontalIndent = isRoot() ? 0 : iHorizontalMargin;
         QRect geo = geometry().toRect();
         int iX = geo.x();
         int iY = geo.y();
@@ -1292,10 +1285,9 @@ QVariant UIChooserItemGroup::data(int iKey) const
     {
         /* Layout hints: */
         case GroupItemData_HorizonalMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case GroupItemData_VerticalMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case GroupItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
-        case GroupItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 5;
-        case GroupItemData_RootIndent: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
+        case GroupItemData_VerticalMargin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+        case GroupItemData_MajorSpacing:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GroupItemData_MinorSpacing:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 5;
 
         /* Default: */
         default: break;
@@ -1415,17 +1407,11 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         /* Main root-item always takes body into account: */
         if (hasItems())
         {
-            /* Prepare variables: */
-            int iRootIndent = data(GroupItemData_RootIndent).toInt();
-
             /* We have to take every child width into account: */
             int iMaximumChildWidth = 0;
             foreach (UIChooserItem *pItem, items())
                 iMaximumChildWidth = qMax(iMaximumChildWidth, pItem->minimumWidthHint());
             iProposedWidth += iMaximumChildWidth;
-
-            /* And 2 indents at last - left and right: */
-            iProposedWidth += 2 * iRootIndent;
         }
     }
     /* Other items, including temporary roots: */
@@ -1469,11 +1455,6 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         /* Main root-item always takes body into account: */
         if (hasItems())
         {
-            /* Prepare variables: */
-            int iRootIndent = data(GroupItemData_RootIndent).toInt();
-
-            /* Main root-item have 2 indents - top and bottom: */
-            iProposedHeight += 2 * iRootIndent;
             /* And every existing: */
             foreach (UIChooserItem *pItem, items())
             {
@@ -1543,7 +1524,6 @@ void UIChooserItemGroup::updateVisibleName()
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
-    int iRootIndent = data(GroupItemData_RootIndent).toInt();
     int iToggleButtonWidth = m_toggleButtonSize.width();
     int iEnterButtonWidth = m_enterButtonSize.width();
     int iExitButtonWidth = m_exitButtonSize.width();
@@ -1554,8 +1534,6 @@ void UIChooserItemGroup::updateVisibleName()
     int iMaximumWidth = (int)geometry().width();
 
     /* Left margin: */
-    if (isRoot())
-        iMaximumWidth -= iRootIndent;
     iMaximumWidth -= iHorizontalMargin;
     /* Button width: */
     if (isRoot())
@@ -1580,8 +1558,6 @@ void UIChooserItemGroup::updateVisibleName()
     }
     /* Right margin: */
     iMaximumWidth -= iHorizontalMargin;
-    if (isRoot())
-        iMaximumWidth -= iRootIndent;
     /* Calculate new visible name and name-size: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     QString strVisibleName = compressText(m_nameFont, pPaintDevice, name(), iMaximumWidth);
@@ -1714,17 +1690,16 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         {
             /* Prepare variables: */
             int iMargin = data(GroupItemData_VerticalMargin).toInt();
-            int iRootIndent = data(GroupItemData_RootIndent).toInt();
             int iHeaderHeight = m_minimumHeaderSize.height();
             int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
             QRect backgroundRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
 
             /* Add clipping: */
             QPainterPath path;
-            path.moveTo(iRootIndent, 0);
+            path.moveTo(0, 0);
             path.lineTo(path.currentPosition().x(), iFullHeaderHeight - iMetric);
             path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(0, -iMetric), 180, 90);
-            path.lineTo(rect.width() - iMetric - iRootIndent, path.currentPosition().y());
+            path.lineTo(rect.width() - iMetric, path.currentPosition().y());
             path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(-iMetric, -2 * iMetric), 270, 90);
             path.lineTo(path.currentPosition().x(), 0);
             path.closeSubpath();
@@ -1823,7 +1798,6 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
-    int iRootIndent = data(GroupItemData_RootIndent).toInt();
     int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Configure painter color: */
@@ -1842,7 +1816,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     /* Paint name: */
     int iNameX = iHorizontalMargin;
     if (isRoot())
-        iNameX += iRootIndent + m_exitButtonSize.width();
+        iNameX += m_exitButtonSize.width();
     else
         iNameX += m_toggleButtonSize.width();
     iNameX += iMajorSpacing;

@@ -243,7 +243,6 @@ private:
         GroupItemData_VerticalMargin,
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
-        GroupItemData_RootIndent,
     };
 
     /** @name Prepare/cleanup cascade.
