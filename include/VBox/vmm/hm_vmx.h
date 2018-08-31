@@ -838,6 +838,7 @@ typedef union
 {
     /** Plain unsigned int representation. */
     uint32_t    u;
+
     /** INS and OUTS information. */
     struct
     {
@@ -849,6 +850,7 @@ typedef union
         uint32_t    iSegReg     : 3;
         uint32_t    uReserved2  : 14;
     } StrIo;
+
     struct
     {
         /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
@@ -872,6 +874,7 @@ typedef union
         /** Register 2 (X86_GREG_XXX). */
         uint32_t    iReg2           : 4;
     } Inv;
+
     /** VMCLEAR, VMPTRLD, VMPTRST, VMXON, XRSTORS, XSAVES information. */
     struct
     {
@@ -896,6 +899,7 @@ typedef union
         /** Register 2 (X86_GREG_XXX). */
         uint32_t    iReg2           : 4;
     } VmxXsave;
+
     /** LIDT, LGDT, SIDT, SGDT information. */
     struct
     {
@@ -923,6 +927,7 @@ typedef union
         uint32_t    u2InstrId       : 2;
         uint32_t    u2Undef0        : 2;
     } GdtIdt;
+
     /** LLDT, LTR, SLDT, STR information. */
     struct
     {
@@ -950,6 +955,7 @@ typedef union
         uint32_t    u2InstrId       : 2;
         uint32_t    u2Undef0        : 2;
     } LdtTr;
+
     /** RDRAND, RDSEED information. */
     struct
     {
@@ -962,6 +968,7 @@ typedef union
         uint32_t    u2OperandSize   : 2;
         uint32_t    u19Def0         : 20;
     } RdrandRdseed;
+
     struct
     {
         /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
@@ -988,8 +995,11 @@ typedef union
         /** Register 2 (X86_GREG_XXX). */
         uint32_t    iReg2           : 4;
     } VmreadVmwrite;
+
     /** This is a combination field of all instruction information. Note! Not all field
-     *  combinations are valid (e.g., iReg1 is undefined for memory operands). */
+     *  combinations are valid (e.g., iReg1 is undefined for memory operands) and
+     *  specialized fields are overwritten by their generic counterparts (e.g. no
+     *  instruction identity field). */
     struct
     {
         /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */

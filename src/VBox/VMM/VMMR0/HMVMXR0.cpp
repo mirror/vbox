@@ -204,6 +204,28 @@
             AssertMsgFailedReturn(("Unexpected failure. rc=%Rrc", rcTmp), rcTmp); \
         } \
     } while (0)
+
+/** Macro that decodes a memory operand for an instruction VM-exit. */
+# define HMVMX_DECODE_MEM_OPERAND(a_pVCpu, a_uExitInstrInfo, a_uExitQual, a_enmMemAccess, a_pGCPtrEffAddr) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrictTmp = hmR0VmxDecodeMemOperand((a_pVCpu), (a_uExitInstrInfo), (a_uExitQual), (a_enmMemAccess), \
+                                                           (a_pGCPtrEffAddr)); \
+        if (rcStrictTmp == VINF_SUCCESS) \
+        { /* likely */ } \
+        else if (rcStrictTmp == VINF_HM_PENDING_XCPT) \
+        { \
+            uint8_t const uXcptTmp = VMX_ENTRY_INT_INFO_VECTOR((a_pVCpu)->hm.s.Event.u64IntInfo); \
+            Log4Func(("Memory operand decoding failed, raising xcpt %#x\n", uXcptTmp)); \
+            return VINF_SUCCESS; \
+        } \
+        else \
+        { \
+            Log4Func(("hmR0VmxCheckExitDueToVmxInstr failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrictTmp))); \
+            return rcStrictTmp; \
+        } \
+    } while (0)
+
 #endif  /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
@@ -284,7 +306,6 @@ AssertCompileMemberSize(VMXTRANSIENT, ExitInstrInfo, sizeof(uint32_t));
 /** Pointer to VMX transient state. */
 typedef VMXTRANSIENT *PVMXTRANSIENT;
 
-
 /**
  * MSR-bitmap read permissions.
  */
@@ -311,6 +332,14 @@ typedef enum VMXMSREXITWRITE
 /** Pointer to MSR-bitmap write permissions. */
 typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
 
+/**
+ * Memory operand read or write access.
+ */
+typedef enum VMXMEMACCESS
+{
+    VMXMEMACCESS_READ  = 0,
+    VMXMEMACCESS_WRITE = 1
+} VMXMEMACCESS;
 
 /**
  * VMX VM-exit handler.
@@ -367,7 +396,6 @@ DECLINLINE(VBOXSTRICTRC)      hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmx
 # define HMVMX_EXIT_DECL      static DECLCALLBACK(VBOXSTRICTRC)
 # define HMVMX_EXIT_NSRC_DECL HMVMX_EXIT_DECL
 #endif
-
 
 /** @name VM-exit handlers.
  * @{
@@ -5877,17 +5905,15 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPU pVCpu, uint32_t u32ErrCode)
  * @retval  VINF_HM_PENDING_XCPT if an exception was raised while decoding the
  *          operand.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pExitInstrInfo  Pointer to the VM-exit instruction information.
- * @param   fIsDstOperand   Whether the operand is a destination memory
- *                          operand (i.e. writeable memory location) or not.
+ * @param   uExitInstrInfo  The VM-exit instruction information field.
+ * @param   enmMemAccess    The memory operand's access type (read or write).
  * @param   GCPtrDisp       The instruction displacement field, if any. For
  *                          RIP-relative addressing pass RIP + displacement here.
  * @param   pGCPtrMem       Where to store the effective destination memory address.
  */
-static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pExitInstrInfo, RTGCPTR GCPtrDisp,
-                                            bool fIsDstOperand, PRTGCPTR pGCPtrMem)
+static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, uint32_t uExitInstrInfo, RTGCPTR GCPtrDisp, VMXMEMACCESS enmMemAccess,
+                                            PRTGCPTR pGCPtrMem)
 {
-    Assert(pExitInstrInfo);
     Assert(pGCPtrMem);
     Assert(!CPUMIsGuestInRealOrV86Mode(pVCpu));
     HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_CR0);
@@ -5896,14 +5922,16 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
     static uint64_t const s_auAccessSizeMasks[] = { sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t) };
     AssertCompile(RT_ELEMENTS(s_auAccessSizeMasks) == RT_ELEMENTS(s_auAddrSizeMasks));
 
-    uint8_t const   uAddrSize     =  pExitInstrInfo->All.u3AddrSize;
-    uint8_t const   iSegReg       =  pExitInstrInfo->All.iSegReg;
-    bool const      fIdxRegValid  = !pExitInstrInfo->All.fIdxRegInvalid;
-    uint8_t const   iIdxReg       =  pExitInstrInfo->All.iIdxReg;
-    uint8_t const   uScale        =  pExitInstrInfo->All.u2Scaling;
-    bool const      fBaseRegValid = !pExitInstrInfo->All.fBaseRegInvalid;
-    uint8_t const   iBaseReg      =  pExitInstrInfo->All.iBaseReg;
-    bool const      fIsMemOperand = !pExitInstrInfo->All.fIsRegOperand;
+    VMXEXITINSTRINFO ExitInstrInfo;
+    ExitInstrInfo.u = uExitInstrInfo;
+    uint8_t const   uAddrSize     =  ExitInstrInfo.All.u3AddrSize;
+    uint8_t const   iSegReg       =  ExitInstrInfo.All.iSegReg;
+    bool const      fIdxRegValid  = !ExitInstrInfo.All.fIdxRegInvalid;
+    uint8_t const   iIdxReg       =  ExitInstrInfo.All.iIdxReg;
+    uint8_t const   uScale        =  ExitInstrInfo.All.u2Scaling;
+    bool const      fBaseRegValid = !ExitInstrInfo.All.fBaseRegInvalid;
+    uint8_t const   iBaseReg      =  ExitInstrInfo.All.iBaseReg;
+    bool const      fIsMemOperand = !ExitInstrInfo.All.fIsRegOperand;
     bool const      fIsLongMode   =  CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
 
     /*
@@ -5911,11 +5939,11 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
      * This shouldn't happen on real hardware but useful while testing our nested hardware-virtualization code.
      */
     AssertLogRelMsgReturn(uAddrSize < RT_ELEMENTS(s_auAddrSizeMasks),
-                          ("Invalid address size. ExitInstrInfo=%#RX32\n", pExitInstrInfo->u), VERR_VMX_IPE_1);
+                          ("Invalid address size. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_1);
     AssertLogRelMsgReturn(iSegReg  < X86_SREG_COUNT,
-                          ("Invalid segment register. ExitInstrInfo=%#RX32\n", pExitInstrInfo->u), VERR_VMX_IPE_2);
+                          ("Invalid segment register. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_2);
     AssertLogRelMsgReturn(fIsMemOperand,
-                          ("Expected memory operand. ExitInstrInfo=%#RX32\n", pExitInstrInfo->u), VERR_VMX_IPE_3);
+                          ("Expected memory operand. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_3);
 
     /*
      * Compute the complete effective address.
@@ -5973,7 +6001,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
         if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_CODE))
         {
             /* Check permissions for the data segment. */
-            if (   fIsDstOperand
+            if (   enmMemAccess == VMXMEMACCESS_WRITE
                 && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_WRITE))
             {
                 Log4Func(("Data segment access invalid. iSegReg=%#x Attr=%#RX32\n", iSegReg, pSel->Attr.u));
@@ -6018,8 +6046,9 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
         else
         {
             /* Check permissions for the code segment. */
-            if (   fIsDstOperand
-                || !(pSel->Attr.n.u4Type & X86_SEL_TYPE_READ))
+            if (   enmMemAccess == VMXMEMACCESS_WRITE
+                || (   enmMemAccess == VMXMEMACCESS_READ
+                    && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_READ)))
             {
                 Log4Func(("Code segment access invalid. Attr=%#RX32\n", pSel->Attr.u));
                 Assert(!CPUMIsGuestInRealOrV86ModeEx(&pVCpu->cpum.GstCtx));
@@ -13431,26 +13460,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     ExitInfo.InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
     ExitInfo.cbInstr     = pVmxTransient->cbInstr;
     if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
-    {
-        RTGCPTR GCPtrVal;
-        VBOXSTRICTRC rcStrict = hmR0VmxDecodeMemOperand(pVCpu, &ExitInfo.InstrInfo, ExitInfo.u64Qual, false /* fIsDstOperand */,
-                                                         &GCPtrVal);
-        if (rcStrict == VINF_SUCCESS)
-        { /* likely */ }
-        else if (rcStrict == VINF_HM_PENDING_XCPT)
-        {
-            Assert(pVCpu->hm.s.Event.fPending);
-            Log4Func(("Memory operand decoding failed, raising xcpt %#x\n",
-                      VMX_ENTRY_INT_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo)));
-            return VINF_SUCCESS;
-        }
-        else
-        {
-            Log4Func(("hmR0VmxCheckExitDueToVmxInstr failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            return rcStrict;
-        }
-        ExitInfo.GCPtrEffAddr = GCPtrVal;
-    }
+        HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_WRITE, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmread(pVCpu, &ExitInfo);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -13500,26 +13510,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     ExitInfo.InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
     ExitInfo.cbInstr     = pVmxTransient->cbInstr;
     if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
-    {
-        RTGCPTR GCPtrVal;
-        VBOXSTRICTRC rcStrict = hmR0VmxDecodeMemOperand(pVCpu, &ExitInfo.InstrInfo, ExitInfo.u64Qual, false /* fIsDstOperand */,
-                                                         &GCPtrVal);
-        if (rcStrict == VINF_SUCCESS)
-        { /* likely */ }
-        else if (rcStrict == VINF_HM_PENDING_XCPT)
-        {
-            Assert(pVCpu->hm.s.Event.fPending);
-            Log4Func(("Memory operand decoding failed, raising xcpt %#x\n",
-                      VMX_ENTRY_INT_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo)));
-            return VINF_SUCCESS;
-        }
-        else
-        {
-            Log4Func(("hmR0VmxCheckExitDueToVmxInstr failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            return rcStrict;
-        }
-        ExitInfo.GCPtrEffAddr = GCPtrVal;
-    }
+        HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmwrite(pVCpu, &ExitInfo);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -13583,25 +13574,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     ExitInfo.u64Qual     = pVmxTransient->uExitQual;
     ExitInfo.InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
     ExitInfo.cbInstr     = pVmxTransient->cbInstr;
+    HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
-    RTGCPTR GCPtrVmxon;
-    VBOXSTRICTRC rcStrict = hmR0VmxDecodeMemOperand(pVCpu, &ExitInfo.InstrInfo, ExitInfo.u64Qual, false /* fIsDstOperand */,
-                                                    &GCPtrVmxon);
-    if (rcStrict == VINF_SUCCESS)
-    { /* likely */ }
-    else if (rcStrict == VINF_HM_PENDING_XCPT)
-    {
-        Log4Func(("Memory operand decoding failed, raising xcpt %#x\n", VMX_ENTRY_INT_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo)));
-        return VINF_SUCCESS;
-    }
-    else
-    {
-        Log4Func(("hmR0VmxCheckExitDueToVmxInstr failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-        return rcStrict;
-    }
-    ExitInfo.GCPtrEffAddr = GCPtrVmxon;
-
-    rcStrict = IEMExecDecodedVmxon(pVCpu, &ExitInfo);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmxon(pVCpu, &ExitInfo);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_HWVIRT);
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
