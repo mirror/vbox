@@ -186,7 +186,7 @@
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** Macro that does the necessary privilege checks and intercepted VM-exits for
  *  guests that attempted to execute a VMX instruction. */
-#define HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(a_pVCpu, a_uExitReason) \
+# define HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(a_pVCpu, a_uExitReason) \
     do \
     { \
         VBOXSTRICTRC rcStrictTmp = hmR0VmxCheckExitDueToVmxInstr((a_pVCpu), (a_uExitReason)); \
