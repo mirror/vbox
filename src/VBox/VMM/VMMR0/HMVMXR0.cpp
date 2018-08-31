@@ -11905,7 +11905,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUndefined(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
 
 /**
  * VM-exit handler for XDTR (LGDT, SGDT, LIDT, SIDT) accesses
- * (VMX_EXIT_XDTR_ACCESS) and LDT and TR access (LLDT, LTR, SLDT, STR).
+ * (VMX_EXIT_GDTR_IDTR_ACCESS) and LDT and TR access (LLDT, LTR, SLDT, STR).
  * Conditional VM-exit.
  */
 HMVMX_EXIT_DECL hmR0VmxExitXdtrAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
