@@ -5890,6 +5890,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, PCVMXEXITINSTRINFO pEx
     Assert(pExitInstrInfo);
     Assert(pGCPtrMem);
     Assert(!CPUMIsGuestInRealOrV86Mode(pVCpu));
+    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_CR0);
 
     static uint64_t const s_auAddrSizeMasks[]   = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
     static uint64_t const s_auAccessSizeMasks[] = { sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t) };
@@ -11355,7 +11356,7 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
      * Get the state we need and update the exit history entry.
      */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict;
@@ -11369,8 +11370,7 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
          */
         rcStrict = IEMExecDecodedCpuid(pVCpu, pVmxTransient->cbInstr);
         if (rcStrict == VINF_SUCCESS)
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RAX
-                                                     | HM_CHANGED_GUEST_RCX | HM_CHANGED_GUEST_RDX    | HM_CHANGED_GUEST_RBX);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
         else if (rcStrict == VINF_IEM_RAISED_XCPT)
         {
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
@@ -11433,8 +11433,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
            we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
-                                                 | HM_CHANGED_GUEST_RAX | HM_CHANGED_GUEST_RDX);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
     }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
@@ -11462,8 +11461,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
            we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
-                                                 | HM_CHANGED_GUEST_RAX | HM_CHANGED_GUEST_RDX | HM_CHANGED_GUEST_RCX);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
     }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
@@ -11553,7 +11551,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_DS);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpg(pVCpu, pVmxTransient->cbInstr, pVmxTransient->uExitQual);
@@ -13418,7 +13416,8 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                          | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -13489,7 +13488,8 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                          | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -13544,7 +13544,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
@@ -13572,7 +13572,8 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                          | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
