@@ -358,6 +358,9 @@ void UIChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsIte
     /* Paint background: */
     paintBackground(pPainter, pOptions->rect);
 
+    /* Paint frame: */
+    paintFrameRectangle(pPainter, pOptions->rect);
+
     /* Paint header: */
     paintHeader(pPainter, pOptions->rect);
 }
@@ -1283,7 +1286,7 @@ QVariant UIChooserItemGroup::data(int iKey) const
     {
         /* Layout hints: */
         case GroupItemData_HorizonalMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case GroupItemData_VerticalMargin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+        case GroupItemData_VerticalMargin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GroupItemData_Spacing:         return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
 
         /* Default: */
@@ -1640,12 +1643,8 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     QPalette pal = palette();
     QColor headerColor = pal.color(QPalette::Active,
                                    model()->currentItems().contains(this) ?
-                                   QPalette::Highlight : QPalette::Button);
-    QColor strokeColor = pal.color(QPalette::Active, QPalette::Mid);
+                                   QPalette::Highlight : QPalette::Midlight);
     QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
-
-    /* Invent pixel metric: */
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
 
     /* Root-item: */
     if (isRoot())
@@ -1665,26 +1664,11 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
             QRect backgroundRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
 
-            /* Add clipping: */
-            QPainterPath path;
-            path.moveTo(0, 0);
-            path.lineTo(path.currentPosition().x(), iFullHeaderHeight - iMetric);
-            path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(0, -iMetric), 180, 90);
-            path.lineTo(rect.width() - iMetric, path.currentPosition().y());
-            path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(-iMetric, -2 * iMetric), 270, 90);
-            path.lineTo(path.currentPosition().x(), 0);
-            path.closeSubpath();
-            pPainter->setClipPath(path);
-
             /* Fill background: */
             QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
             headerGradient.setColorAt(1, headerColor.darker(blackoutDarkness()));
             headerGradient.setColorAt(0, headerColor.darker(animationDarkness()));
             pPainter->fillRect(backgroundRect, headerGradient);
-
-            /* Stroke path: */
-            pPainter->setClipping(false);
-            pPainter->strokePath(path, strokeColor);
         }
     }
     /* Non-root-item: */
@@ -1694,20 +1678,6 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         int iMargin = data(GroupItemData_VerticalMargin).toInt();
         int iHeaderHeight = m_minimumHeaderSize.height();
         int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
-        int iFullHeight = rect.height();
-
-        /* Add clipping: */
-        QPainterPath path;
-        path.moveTo(iMetric, 0);
-        path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(-iMetric, 0), 90, 90);
-        path.lineTo(path.currentPosition().x(), iFullHeight - iMetric);
-        path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(0, -iMetric), 180, 90);
-        path.lineTo(rect.width() - iMetric, path.currentPosition().y());
-        path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(-iMetric, -2 * iMetric), 270, 90);
-        path.lineTo(path.currentPosition().x(), iMetric);
-        path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iMetric, 2 * iMetric)).translated(-2 * iMetric, -iMetric), 0, 90);
-        path.closeSubpath();
-        pPainter->setClipPath(path);
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
@@ -1718,19 +1688,6 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         tGradient.setColorAt(0, headerColor.darker(blackoutDarkness()));
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
-
-        if (rect.height() > tRect.height())
-        {
-            /* Calculate middle rectangle: */
-            QRect midRect = QRect(tRect.bottomLeft(), rect.bottomRight());
-            /* Paint all the stuff: */
-            pPainter->fillRect(midRect, bodyColor);
-        }
-
-         /* Stroke path: */
-        pPainter->setClipping(false);
-        pPainter->strokePath(path, strokeColor);
-        pPainter->setClipPath(path);
 
         /* Paint drag token UP? */
         if (dragTokenPlace() != DragToken_Off)
@@ -1756,6 +1713,25 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     }
 
     /* Restore painter: */
+    pPainter->restore();
+}
+
+void UIChooserItemGroup::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
+{
+    /* Not for roots: */
+    if (isRoot())
+        return;
+
+    /* Simple frame: */
+    pPainter->save();
+    QPalette pal = palette();
+    QColor strokeColor;
+
+    strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
+
+    pPainter->setPen(strokeColor);
+    pPainter->drawLine(rect.topLeft(), rect.topRight() + QPoint(1, 0));
+    pPainter->drawLine(rect.bottomLeft() + QPoint(0, 1), rect.bottomRight() + QPoint(1, 1));
     pPainter->restore();
 }
 

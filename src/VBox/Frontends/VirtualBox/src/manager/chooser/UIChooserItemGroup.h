@@ -307,6 +307,8 @@ private:
       * @{ */
         /** Paints background using specified @a pPainter and certain @a rect. */
         void paintBackground(QPainter *pPainter, const QRect &rect);
+        /** Paints frame rectangle using specified @a pPainter and certain @a rect. */
+        void paintFrameRectangle(QPainter *pPainter, const QRect &rect);
         /** Paints header using specified @a pPainter and certain @a rect. */
         void paintHeader(QPainter *pPainter, const QRect &rect);
     /** @} */
