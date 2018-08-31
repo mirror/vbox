@@ -13461,9 +13461,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-
-
-    return VINF_SUCCESS;
 }
 
 
