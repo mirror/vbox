@@ -178,10 +178,14 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 
         RTJsonIteratorFree(hIterator);
     }
-    else if (rcRet == VERR_JSON_IS_EMPTY)
+    else if (   rcRet == VERR_JSON_IS_EMPTY
+             || (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
+                 && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL) )
         rcRet = VINF_SUCCESS;
     else
-        rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBeginArray failed: %Rrc", rcRet);
+        rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet,
+                                               "RTJsonIteratorBeginrray failed: %Rrc (type %s)",
+                                               rcRet, RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
     return rcRet;
 
 }
@@ -271,7 +275,7 @@ int RTCRestArrayBase::ensureCapacity(size_t a_cEnsureCapacity)
         if (pvNew)
         {
             m_papElements = (RTCRestObjectBase **)pvNew;
-            memset(m_papElements, 0, (a_cEnsureCapacity - m_cCapacity) * sizeof(sizeof(m_papElements[0])));
+            memset(&m_papElements[m_cCapacity], 0, (a_cEnsureCapacity - m_cCapacity) * sizeof(sizeof(m_papElements[0])));
             m_cCapacity   = a_cEnsureCapacity;
         }
         else
@@ -294,6 +298,7 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fT
         {
             for (size_t i = 0; i < a_rThat.m_cElements; i++)
             {
+                AssertPtr(a_rThat.m_papElements[i]);
                 rc = insertCopyWorker(i, *a_rThat.m_papElements[i], false);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
@@ -336,6 +341,10 @@ int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bo
                 memmove(&m_papElements[a_idx + 1], &m_papElements[a_idx], (m_cElements - a_idx) * sizeof(m_papElements[0]));
             m_papElements[a_idx] = a_pValue;
             m_cElements++;
+#ifdef RT_STRICT
+            for (size_t i = 0; i < m_cElements; i++)
+                AssertPtr(m_papElements[i]);
+#endif
             return VINF_SUCCESS;
         }
 

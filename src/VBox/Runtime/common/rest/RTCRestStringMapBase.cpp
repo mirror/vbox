@@ -174,10 +174,13 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
 
         RTJsonIteratorFree(hIterator);
     }
-    else if (rcRet == VERR_JSON_IS_EMPTY)
+    else if (   rcRet == VERR_JSON_IS_EMPTY
+             || (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
+                 && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL) )
         rcRet = VINF_SUCCESS;
     else
-        rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBegin failed: %Rrc", rcRet);
+        rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBegin failed: %Rrc (type %s)",
+                                               rcRet, RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
     return rcRet;
 }
 

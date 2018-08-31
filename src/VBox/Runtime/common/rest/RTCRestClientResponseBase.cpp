@@ -64,8 +64,8 @@ RTCRestClientResponseBase::RTCRestClientResponseBase(RTCRestClientResponseBase c
     , m_pErrInfo(NULL)
     , m_strContentType(a_rThat.m_strContentType)
 {
-    if (m_pErrInfo)
-        copyErrInfo(m_pErrInfo);
+    if (a_rThat.m_pErrInfo)
+        copyErrInfo(a_rThat.m_pErrInfo);
 }
 
 
