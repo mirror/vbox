@@ -748,9 +748,10 @@ void UIChooserItemGroup::sortItems()
 void UIChooserItemGroup::updateLayout()
 {
     /* Prepare variables: */
-    int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
-    int iFullHeaderHeight = m_minimumHeaderSize.height();
+    const int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+    const int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
+    const int iFullHeaderHeight = m_minimumHeaderSize.height();
     int iPreviousVerticalIndent = 0;
 
     /* Header (root-item): */
@@ -796,7 +797,7 @@ void UIChooserItemGroup::updateLayout()
             /* Prepare variables: */
             int iToggleButtonHeight = m_toggleButtonSize.height();
             /* Layout toggle-button: */
-            int iToggleButtonX = iHorizontalMargin;
+            int iToggleButtonX = iHorizontalMargin + iParentIndent * level();
             int iToggleButtonY = iToggleButtonHeight == iFullHeaderHeight ? iVerticalMargin :
                                  iVerticalMargin + (iFullHeaderHeight - iToggleButtonHeight) / 2;
             m_pToggleButton->setPos(iToggleButtonX, iToggleButtonY);
@@ -1288,6 +1289,7 @@ QVariant UIChooserItemGroup::data(int iKey) const
         case GroupItemData_HorizonalMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case GroupItemData_VerticalMargin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GroupItemData_Spacing:         return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GroupItemData_ParentIndent:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3;
 
         /* Default: */
         default: break;
@@ -1418,7 +1420,8 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
     else
     {
         /* Prepare variables: */
-        int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+        const int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+        const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
 
         /* Basically we have to take header width into account: */
         iProposedWidth += m_minimumHeaderSize.width();
@@ -1434,7 +1437,7 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         }
 
         /* And 2 margins at last - left and right: */
-        iProposedWidth += 2 * iHorizontalMargin;
+        iProposedWidth += 2 * iHorizontalMargin + iParentIndent * level();
     }
 
     /* Return result: */
@@ -1743,10 +1746,11 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         return;
 
     /* Prepare variables: */
-    int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
-    int iSpacing = data(GroupItemData_Spacing).toInt();
-    int iFullHeaderHeight = m_minimumHeaderSize.height();
+    const int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+    const int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iSpacing = data(GroupItemData_Spacing).toInt();
+    const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
+    const int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Configure painter color: */
     pPainter->setPen(palette().color(QPalette::Active,
@@ -1762,7 +1766,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         m_pExitButton->setParentSelected(model()->currentItems().contains(this));
 
     /* Paint name: */
-    int iNameX = iHorizontalMargin;
+    int iNameX = iHorizontalMargin + iParentIndent * level();
     if (isRoot())
         iNameX += m_exitButtonSize.width();
     else

@@ -122,6 +122,9 @@ public:
         /** Returns action-pool reference. */
         UIActionPool *actionPool() const;
 
+        /** Returns a level of item. */
+        int level() const;
+
         /** Shows item. */
         virtual void show();
         /** Hides item. */

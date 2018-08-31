@@ -398,15 +398,16 @@ void UIChooserItemMachine::updateLayout()
 int UIChooserItemMachine::minimumWidthHint() const
 {
     /* Prepare variables: */
-    int iMargin = data(MachineItemData_Margin).toInt();
-    int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
-    int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+    const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+    const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
     /* Two margins: */
-    iProposedWidth += 2 * iMargin;
+    iProposedWidth += 2 * iMargin + iParentIndent * level();
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
     if (!m_strSnapshotName.isEmpty())
@@ -621,6 +622,7 @@ QVariant UIChooserItemMachine::data(int iKey) const
         case MachineItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case MachineItemData_TextSpacing:  return 0;
+        case MachineItemData_ParentIndent: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3;
 
         /* Pixmaps: */
         case MachineItemData_SettingsButtonPixmap: return UIIconPool::iconSet(":/vm_settings_16px.png");
@@ -992,11 +994,12 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
 {
     /* Prepare variables: */
     QRect fullRect = pOption->rect;
-    int iFullHeight = fullRect.height();
-    int iMargin = data(MachineItemData_Margin).toInt();
-    int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
-    int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
-    int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
+    const int iFullHeight = fullRect.height();
+    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+    const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+    const int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
+    const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
 
     /* Selected item foreground: */
     if (model()->currentItems().contains(this))
@@ -1018,7 +1021,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
     }
 
     /* Calculate indents: */
-    int iLeftColumnIndent = iMargin;
+    int iLeftColumnIndent = iMargin + iParentIndent * level();
 
     /* Paint left column: */
     {

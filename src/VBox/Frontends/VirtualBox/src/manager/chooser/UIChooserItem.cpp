@@ -295,6 +295,18 @@ UIActionPool *UIChooserItem::actionPool() const
     return model()->actionPool();
 }
 
+int UIChooserItem::level() const
+{
+    int iLevel = 0;
+    UIChooserItem *pParentItem = parentItem();
+    while (pParentItem && !pParentItem->isRoot())
+    {
+        pParentItem = pParentItem->parentItem();
+        ++iLevel;
+    }
+    return iLevel;
+}
+
 void UIChooserItem::show()
 {
     /* Call to base-class: */

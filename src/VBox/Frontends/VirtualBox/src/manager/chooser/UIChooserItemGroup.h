@@ -242,6 +242,7 @@ private:
         GroupItemData_HorizonalMargin,
         GroupItemData_VerticalMargin,
         GroupItemData_Spacing,
+        GroupItemData_ParentIndent,
     };
 
     /** @name Prepare/cleanup cascade.
