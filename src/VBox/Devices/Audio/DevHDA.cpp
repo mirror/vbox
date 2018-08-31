@@ -2459,7 +2459,7 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
                                         pStreamCfg->szName, Cfg.szName));
                         }
                         else
-                            LogRel(("HDA: Backend '%s' currently is not offering any recording source for '%s', muting\n",
+                            LogRel(("HDA: Backend '%s' currently is not offering any recording source for '%s'\n",
                                     Cfg.szName, pStreamCfg->szName));
                     }
                     else if (RT_FAILURE(rc))
