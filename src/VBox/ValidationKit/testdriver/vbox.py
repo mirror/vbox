@@ -782,6 +782,7 @@ class TestDriver(base.TestDriver):                                              
         base.TestDriver.__init__(self);
         self.fImportedVBoxApi   = False;
         self.fpApiVer           = 3.2;
+        self.uRevision          = 0;
         self.oBuild             = None;
         self.oVBoxMgr           = None;
         self.oVBox              = None;
@@ -1317,6 +1318,13 @@ class TestDriver(base.TestDriver):                                              
                     self.fpApiVer += 0.1;
                 else:
                     self.fpApiVer += 1.1;
+
+            try:
+                self.uRevision = oVBox.revision;
+            except:
+                reporter.logXcpt('Failed to get VirtualBox revision, assuming 0');
+                self.uRevision = 0;
+            reporter.log("IVirtualBox.revision=%u" % (self.uRevision,));
 
             # Patch VBox manage to gloss over portability issues (error constants, etc).
             self._patchVBoxMgr();

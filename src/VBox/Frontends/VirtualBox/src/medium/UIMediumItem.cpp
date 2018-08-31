@@ -87,7 +87,7 @@ bool UIMediumItem::move()
         && strFileName != location())
     {
         /* Prepare move storage progress: */
-        CProgress comProgress = comMedium.SetLocation(strFileName);
+        CProgress comProgress = comMedium.MoveTo(strFileName);
 
         /* Show error message if necessary: */
         if (!comMedium.isOk())

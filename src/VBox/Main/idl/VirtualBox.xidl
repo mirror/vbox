@@ -15029,7 +15029,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="c3a390cd-4efa-458d-2afb-d07eb4e105bb"
+    uuid="a570ac5b-d90d-42bb-b577-a3e2697044e4"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -15244,7 +15244,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="location" type="wstring" readonly="yes">
+    <attribute name="location" type="wstring">
       <desc>
         Location of the storage unit holding medium data.
 
@@ -16159,7 +16159,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- other methods -->
 
-    <method name="setLocation" wrap-hint-server="passcaller">
+    <method name="moveTo" wrap-hint-server="passcaller">
       <desc>
         Changes the location of this medium. Some medium types may support
         changing the storage unit location by simply changing the value of the

@@ -286,7 +286,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         sController = self.dsKeys['StandardImage']
         aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
         oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
-        oSubTstDrvMoveMedium1Instance.setLocation(sOldLoc, aoMediumAttachments)
+        oSubTstDrvMoveMedium1Instance.moveTo(sOldLoc, aoMediumAttachments)
 
         del oSubTstDrvMoveMedium1Instance
 

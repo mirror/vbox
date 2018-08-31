@@ -1102,11 +1102,11 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
             rc = pMedium->COMGETTER(DeviceType)(&deviceType);
             if (FAILED(rc)) throw rc;
 
-            /* Drop lock early because IMedium::SetLocation needs to get the VirtualBox one. */
+            /* Drop lock early because IMedium::MoveTo needs to get the VirtualBox one. */
             machineLock.release();
 
             ComPtr<IProgress> moveDiskProgress;
-            rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
+            rc = pMedium->MoveTo(bstrLocation.raw(), moveDiskProgress.asOutParam());
             if (SUCCEEDED(rc))
             {
                 /* In case of failure moveDiskProgress would be in the invalid state or not initialized at all

@@ -2918,7 +2918,7 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
     return rc;
 }
 
-HRESULT Medium::setLocation(AutoCaller &autoCaller, const com::Utf8Str &aLocation, ComPtr<IProgress> &aProgress)
+HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, ComPtr<IProgress> &aProgress)
 {
     ComObjPtr<Medium> pParent;
     ComObjPtr<Progress> pProgress;
@@ -2929,7 +2929,7 @@ HRESULT Medium::setLocation(AutoCaller &autoCaller, const com::Utf8Str &aLocatio
     {
     /// @todo NEWMEDIA for file names, add the default extension if no extension
     /// is present (using the information from the VD backend which also implies
-    /// that one more parameter should be passed to setLocation() requesting
+    /// that one more parameter should be passed to moveTo() requesting
     /// that functionality since it is only allowed when called from this method
 
     /// @todo NEWMEDIA rename the file and set m->location on success, then save
@@ -3195,6 +3195,111 @@ HRESULT Medium::setLocation(AutoCaller &autoCaller, const com::Utf8Str &aLocatio
         if (pTask)
             delete pTask;
     }
+
+    return rc;
+}
+
+HRESULT Medium::setLocation(const com::Utf8Str &aLocation)
+{
+    HRESULT rc = S_OK;
+
+    try
+    {
+        // locking: we need the tree lock first because we access parent pointers
+        // and we need to write-lock the media involved
+        AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        AutoCaller autoCaller(this);
+        AssertComRCThrowRC(autoCaller.rc());
+
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        Utf8Str destPath(aLocation);
+
+        // some check for file based medium
+        if (i_isMediumFormatFile())
+        {
+            /* Path must be absolute */
+            if (!RTPathStartsWithRoot(destPath.c_str()))
+            {
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("The given path '%s' is not fully qualified"),
+                              destPath.c_str());
+                throw rc;
+            }
+
+            /* Simple check for existence */
+            if (!RTFileExists(destPath.c_str()))
+            {
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("The given path '%s' is not an existing file. New location is invalid."),
+                              destPath.c_str());
+                throw rc;
+            }
+        }
+
+        /* Check VMs which have this medium attached to*/
+        std::vector<com::Guid> aMachineIds;
+        rc = getMachineIds(aMachineIds);
+
+        // switch locks only if there are machines with this medium attached
+        if (!aMachineIds.empty())
+        {
+            std::vector<com::Guid>::const_iterator currMachineID = aMachineIds.begin();
+            std::vector<com::Guid>::const_iterator lastMachineID = aMachineIds.end();
+
+            alock.release();
+            autoCaller.release();
+            treeLock.release();
+
+            while (currMachineID != lastMachineID)
+            {
+                Guid id(*currMachineID);
+                ComObjPtr<Machine> aMachine;
+                rc = m->pVirtualBox->i_findMachine(id, false, true, &aMachine);
+                if (SUCCEEDED(rc))
+                {
+                    ComObjPtr<SessionMachine> sm;
+                    ComPtr<IInternalSessionControl> ctl;
+
+                    bool ses = aMachine->i_isSessionOpenVM(sm, &ctl);
+                    if (ses)
+                    {
+                        treeLock.acquire();
+                        autoCaller.add();
+                        AssertComRCThrowRC(autoCaller.rc());
+                        alock.acquire();
+
+                        rc = setError(VERR_VM_UNEXPECTED_VM_STATE,
+                                      tr("At least the VM '%s' to whom this medium '%s' attached has currently an opened session. Stop all VMs before set location for this medium"),
+                                      id.toString().c_str(),
+                                      i_getLocationFull().c_str());
+                        throw rc;
+                    }
+                }
+                ++currMachineID;
+            }
+
+            treeLock.acquire();
+            autoCaller.add();
+            AssertComRCThrowRC(autoCaller.rc());
+            alock.acquire();
+        }
+
+        m->strLocationFull = destPath;
+
+        // save the settings
+        alock.release();
+        autoCaller.release();
+        treeLock.release();
+
+        i_markRegistriesModified();
+        m->pVirtualBox->i_saveModifiedRegistries();
+
+        MediumState_T mediumState;
+        refreshState(autoCaller, &mediumState);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
 
     return rc;
 }
@@ -8153,7 +8258,7 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
         /* The object may request a specific UUID (through a special form of
-        * the setLocation() argument). Otherwise we have to generate it */
+        * the moveTo() argument). Otherwise we have to generate it */
         Guid id = m->id;
 
         fGenerateUuid = id.isZero();
@@ -8331,7 +8436,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
         AutoMultiWriteLock2 mediaLock(this, pTarget COMMA_LOCKVAL_SRC_POS);
 
         /* The object may request a specific UUID (through a special form of
-         * the setLocation() argument). Otherwise we have to generate it */
+         * the moveTo() argument). Otherwise we have to generate it */
         Guid targetId = pTarget->m->id;
 
         fGenerateUuid = targetId.isZero();
@@ -8879,7 +8984,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
         fCreatingTarget = pTarget->m->state == MediumState_Creating;
 
         /* The object may request a specific UUID (through a special form of
-         * the setLocation() argument). Otherwise we have to generate it */
+         * the moveTo() argument). Otherwise we have to generate it */
         Guid targetId = pTarget->m->id;
 
         fGenerateUuid = targetId.isZero();
@@ -9165,7 +9270,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
 /**
  * Implementation code for the "move" task.
  *
- * This only gets started from Medium::SetLocation() and always
+ * This only gets started from Medium::MoveTo() and always
  * runs asynchronously.
  *
  * @param task
@@ -9788,7 +9893,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
         fCreatingTarget = m->state == MediumState_Creating;
 
         /* The object may request a specific UUID (through a special form of
-         * the setLocation() argument). Otherwise we have to generate it */
+         * the moveTo() argument). Otherwise we have to generate it */
         Guid targetId = m->id;
 
         fGenerateUuid = targetId.isZero();

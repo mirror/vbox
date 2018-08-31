@@ -65,7 +65,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
     # Test execution helpers.
     #
 
-    def setLocation(self, sLocation, aoMediumAttachments):
+    def moveTo(self, sLocation, aoMediumAttachments):
         for oAttachment in aoMediumAttachments:
             try:
                 oMedium = oAttachment.medium
@@ -73,11 +73,19 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             except:
                 reporter.errorXcpt('failed to get the medium from the IMediumAttachment "%s"' % (oAttachment))
 
-            try:
-                oProgress = vboxwrappers.ProgressWrapper(oMedium.setLocation(sLocation), self.oTstDrv.oVBoxMgr, self.oTstDrv,
-                                                         'move "%s"' % (oMedium.name,))
-            except:
-                return reporter.errorXcpt('Medium::setLocation("%s") for medium "%s" failed' % (sLocation, oMedium.name,))
+            if self.oTstDrv.fpApiVer >= 5.3 and self.oTstDrv.uRevision > 124748:
+                try:
+                    oProgress = vboxwrappers.ProgressWrapper(oMedium.moveTo(sLocation), self.oTstDrv.oVBoxMgr, self.oTstDrv,
+                                                             'move "%s"' % (oMedium.name,));
+                except:
+                    return reporter.errorXcpt('Medium::moveTo("%s") for medium "%s" failed' % (sLocation, oMedium.name,));
+            else:
+                try:
+                    oProgress = vboxwrappers.ProgressWrapper(oMedium.setLocation(sLocation), self.oTstDrv.oVBoxMgr, self.oTstDrv,
+                                                             'move "%s"' % (oMedium.name,));
+                except:
+                    return reporter.errorXcpt('Medium::setLocation("%s") for medium "%s" failed' % (sLocation, oMedium.name,));
+
 
             oProgress.wait()
             if oProgress.logResult() is False:
@@ -148,11 +156,11 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
 
             aoMediumAttachments = oVM.getMediumAttachmentsOfController(sController)
             #case 1. Only path without file name, with trailing separator
-            fRc = self.setLocation(sNewLoc + os.sep, aoMediumAttachments) and fRc
+            fRc = self.moveTo(sNewLoc + os.sep, aoMediumAttachments) and fRc
             fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asFiles) and fRc
 
             #case 2. Only path without file name, without trailing separator
-            fRc = self.setLocation(sOrigLoc, aoMediumAttachments) and fRc
+            fRc = self.moveTo(sOrigLoc, aoMediumAttachments) and fRc
             fRc = self.checkLocation(sOrigLoc, aoMediumAttachments, asFiles) and fRc
 
             #case 3. Path with file name
@@ -161,7 +169,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             #for the original file. Difficult case, apparently this case should follow mv(1) logic
             #and the file name is processed as folder name (aka mv(1) logic).
             #Be discussed.
-            fRc = self.setLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments) and fRc
+            fRc = self.moveTo(os.path.join(sNewLoc, 'newName'), aoMediumAttachments) and fRc
             asNewFiles = ['newName' + os.path.splitext(s)[1] for s in asFiles]
             fRc = self.checkLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments, asFiles) and fRc
 
@@ -169,7 +177,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             sNewLoc = os.path.join(sNewLoc, 'newName')
 
             #case 4. Only file name
-            fRc = self.setLocation('onlyMediumName', aoMediumAttachments) and fRc
+            fRc = self.moveTo('onlyMediumName', aoMediumAttachments) and fRc
             asNewFiles = ['onlyMediumName' + os.path.splitext(s)[1] for s in asFiles]
             if self.oTstDrv.fpApiVer >= 5.3:
                 fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asNewFiles) and fRc
@@ -182,7 +190,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             if fRc:
                 aoMediumAttachments = oVM.getMediumAttachmentsOfController(sController)
                 asSnapFiles = [os.path.basename(o.medium.name) for o in aoMediumAttachments]
-                fRc = self.setLocation(sOrigLoc, aoMediumAttachments) and fRc
+                fRc = self.moveTo(sOrigLoc, aoMediumAttachments) and fRc
                 fRc = self.checkLocation(sOrigLoc, aoMediumAttachments, asSnapFiles) and fRc
 
             fRc = oSession.close() and fRc

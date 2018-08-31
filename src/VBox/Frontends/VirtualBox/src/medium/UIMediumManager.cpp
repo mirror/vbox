@@ -309,7 +309,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
         && newData.m_options.m_strLocation != oldData.m_options.m_strLocation)
     {
         /* Prepare move storage progress: */
-        CProgress comProgress = comMedium.SetLocation(newData.m_options.m_strLocation);
+        CProgress comProgress = comMedium.MoveTo(newData.m_options.m_strLocation);
 
         /* Show error message if necessary: */
         if (!comMedium.isOk())

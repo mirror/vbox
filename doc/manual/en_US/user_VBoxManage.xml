@@ -5151,7 +5151,8 @@ Virtual system 0:
                          [--property &lt;name=[value]&gt;]
                          [--compact]
                          [--resize &lt;megabytes&gt;|--resizebyte &lt;bytes&gt;]
-                         [--move &lt;path&gt;</screen>
+                         [--move &lt;path&gt;]
+                         [--setlocation &lt;path&gt;]</screen>
 
       <note>
         <para>
@@ -5276,6 +5277,21 @@ Virtual system 0:
           either relative to the current directory or absolute.
         </para>
       </listitem>
+
+     <listitem>
+       <para>
+         The <computeroutput>--setlocation &lt;path&gt;</computeroutput>
+         option can be used to set new location &lt;path&gt; of the
+         medium on the host file system if the medium had been moved
+         for any reasons. The path can be either relative to the
+         current directory or absolute.
+       </para>
+
+       <para>
+         Note, the new location is used as is, without any sanity checks,
+         so user is responsible to set correct path.
+       </para>
+     </listitem>
 
     </itemizedlist>
 

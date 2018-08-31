@@ -981,7 +981,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--property <name=[value]>]\n"
                      "                            [--compact]\n"
                      "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
-                     "                            [--move <path]\n"
+                     "                            [--move <path>]\n"
+                     "                            [--setlocation <path>]\n"
                      "                            [--description <description string>]"
                      "\n", SEP);
 
