@@ -403,6 +403,8 @@ public:
     RTCRestBool &operator=(RTCRestBool const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(RTCRestBool const &a_rThat);
+    /** Assign value and clear null indicator. */
+    void assignValue(bool a_fValue);
 
     /* Overridden methods: */
     virtual int resetToDefault() RT_OVERRIDE;
@@ -433,13 +435,15 @@ public:
     /** Copy constructor. */
     RTCRestInt64(RTCRestInt64 const &a_rThat);
     /** From value constructor. */
-    RTCRestInt64(int64_t iValue);
+    RTCRestInt64(int64_t a_iValue);
     /** Destructor. */
     virtual ~RTCRestInt64();
     /** Copy assignment operator. */
     RTCRestInt64 &operator=(RTCRestInt64 const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(RTCRestInt64 const &a_rThat);
+    /** Assign value and clear null indicator. */
+    void assignValue(int64_t a_iValue);
 
     /* Overridden methods: */
     virtual int resetToDefault() RT_OVERRIDE;
@@ -477,6 +481,8 @@ public:
     RTCRestInt32 &operator=(RTCRestInt32 const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(RTCRestInt32 const &a_rThat);
+    /** Assign value and clear null indicator. */
+    void assignValue(int32_t a_iValue);
 
     /* Overridden methods: */
     virtual int resetToDefault() RT_OVERRIDE;
@@ -514,6 +520,8 @@ public:
     RTCRestInt16 &operator=(RTCRestInt16 const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(RTCRestInt16 const &a_rThat);
+    /** Assign value and clear null indicator. */
+    void assignValue(int16_t a_iValue);
 
     /* Overridden methods: */
     virtual int resetToDefault() RT_OVERRIDE;
@@ -551,6 +559,8 @@ public:
     RTCRestDouble &operator=(RTCRestDouble const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(RTCRestDouble const &a_rThat);
+    /** Assign value and clear null indicator. */
+    void assignValue(double a_rdValue);
 
     /* Overridden methods: */
     virtual int resetToDefault() RT_OVERRIDE;

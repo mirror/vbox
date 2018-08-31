@@ -67,99 +67,108 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
 {
     LogFlow(("doCall: %s %s\n", a_pszMethod, RTHttpMethodName(a_enmHttpMethod)));
 
-    /*
-     * Reset the response object, allowing reuse of such.
-     */
-    a_pResponse->reset();
 
     /*
-     * Initialize the HTTP instance.
+     * Reset the response object (allowing reuse of such) and check the request
+     * object for assignment errors.
      */
+    int    rc;
     RTHTTP hHttp = NIL_RTHTTP;
-    int rc = reinitHttpInstance();
-    if (RT_SUCCESS(rc))
+
+    a_pResponse->reset();
+    if (!a_rRequest.hasAssignmentErrors())
     {
-        hHttp = m_hHttp;
-        Assert(hHttp != NIL_RTHTTP);
-
         /*
-         * Prepare the response side.  This may install output callbacks and
-         * indicate this by clearing the ppvBody/ppvHdr variables.
+         * Initialize the HTTP instance.
          */
-        size_t   cbHdrs  = 0;
-        void    *pvHdrs  = NULL;
-        void   **ppvHdrs = &pvHdrs;
-
-        size_t   cbBody  = 0;
-        void    *pvBody  = NULL;
-        void   **ppvBody = &pvBody;
-
-        rc = a_pResponse->receivePrepare(hHttp, &ppvBody, &ppvHdrs);
+        rc = reinitHttpInstance();
         if (RT_SUCCESS(rc))
         {
+            hHttp = m_hHttp;
+            Assert(hHttp != NIL_RTHTTP);
+
             /*
-             * Prepare the request for the transmission.
+             * Prepare the response side.  This may install output callbacks and
+             * indicate this by clearing the ppvBody/ppvHdr variables.
              */
-            RTCString strExtraPath;
-            RTCString strQuery;
-            RTCString strXmitBody;
-            rc = a_rRequest.xmitPrepare(&strExtraPath, &strQuery, hHttp, &strXmitBody);
+            size_t   cbHdrs  = 0;
+            void    *pvHdrs  = NULL;
+            void   **ppvHdrs = &pvHdrs;
+
+            size_t   cbBody  = 0;
+            void    *pvBody  = NULL;
+            void   **ppvBody = &pvBody;
+
+            rc = a_pResponse->receivePrepare(hHttp, &ppvBody, &ppvHdrs);
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Construct the full URL.
+                 * Prepare the request for the transmission.
                  */
-                RTCString strFullUrl;
-                rc = strFullUrl.assignNoThrow(m_strBasePath);
-                if (strExtraPath.isNotEmpty())
-                {
-                    if (!strExtraPath.startsWith("/") && !strFullUrl.endsWith("/") && RT_SUCCESS(rc))
-                        rc = strFullUrl.appendNoThrow('/');
-                    if (RT_SUCCESS(rc))
-                        rc = strFullUrl.appendNoThrow(strExtraPath);
-                    strExtraPath.setNull();
-                }
-                if (strQuery.isNotEmpty())
-                {
-                    Assert(strQuery.startsWith("?"));
-                    rc = strFullUrl.appendNoThrow(strQuery);
-                    strQuery.setNull();
-                }
+                RTCString strExtraPath;
+                RTCString strQuery;
+                RTCString strXmitBody;
+                rc = a_rRequest.xmitPrepare(&strExtraPath, &strQuery, hHttp, &strXmitBody);
                 if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Perform HTTP request.
+                     * Construct the full URL.
                      */
-                    uint32_t uHttpStatus = 0;
-                    rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod, strXmitBody.c_str(), strXmitBody.length(),
-                                       &uHttpStatus, ppvHdrs, &cbHdrs, ppvBody, &cbBody);
+                    RTCString strFullUrl;
+                    rc = strFullUrl.assignNoThrow(m_strBasePath);
+                    if (strExtraPath.isNotEmpty())
+                    {
+                        if (!strExtraPath.startsWith("/") && !strFullUrl.endsWith("/") && RT_SUCCESS(rc))
+                            rc = strFullUrl.appendNoThrow('/');
+                        if (RT_SUCCESS(rc))
+                            rc = strFullUrl.appendNoThrow(strExtraPath);
+                        strExtraPath.setNull();
+                    }
+                    if (strQuery.isNotEmpty())
+                    {
+                        Assert(strQuery.startsWith("?"));
+                        rc = strFullUrl.appendNoThrow(strQuery);
+                        strQuery.setNull();
+                    }
                     if (RT_SUCCESS(rc))
                     {
-                        a_rRequest.xmitComplete(uHttpStatus, hHttp);
-
                         /*
-                         * Do response processing.
+                         * Perform HTTP request.
                          */
-                        a_pResponse->receiveComplete(uHttpStatus, hHttp);
-                        if (pvHdrs)
+                        uint32_t uHttpStatus = 0;
+                        rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod, strXmitBody.c_str(), strXmitBody.length(),
+                                           &uHttpStatus, ppvHdrs, &cbHdrs, ppvBody, &cbBody);
+                        if (RT_SUCCESS(rc))
                         {
-                            a_pResponse->consumeHeaders((const char *)pvHdrs, cbHdrs);
-                            RTHttpFreeResponse(pvHdrs);
-                        }
-                        if (pvBody)
-                        {
-                            a_pResponse->consumeBody((const char *)pvBody, cbBody);
-                            RTHttpFreeResponse(pvBody);
-                        }
-                        a_pResponse->receiveFinal();
+                            a_rRequest.xmitComplete(uHttpStatus, hHttp);
 
-                        return a_pResponse->getStatus();
+                            /*
+                             * Do response processing.
+                             */
+                            a_pResponse->receiveComplete(uHttpStatus, hHttp);
+                            if (pvHdrs)
+                            {
+                                a_pResponse->consumeHeaders((const char *)pvHdrs, cbHdrs);
+                                RTHttpFreeResponse(pvHdrs);
+                            }
+                            if (pvBody)
+                            {
+                                a_pResponse->consumeBody((const char *)pvBody, cbBody);
+                                RTHttpFreeResponse(pvBody);
+                            }
+                            a_pResponse->receiveFinal();
+
+                            return a_pResponse->getStatus();
+                        }
                     }
                 }
+                a_rRequest.xmitComplete(rc, hHttp);
             }
-            a_rRequest.xmitComplete(rc, hHttp);
         }
     }
+    else
+        rc = VERR_NO_MEMORY;
+
     a_pResponse->receiveComplete(rc, hHttp);
     RT_NOREF_PV(a_pszMethod);
 

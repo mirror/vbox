@@ -175,6 +175,13 @@ int RTCRestBool::assignCopy(RTCRestBool const &a_rThat)
 }
 
 
+void RTCRestBool::assignValue(bool a_fValue)
+{
+    m_fValue = a_fValue;
+    m_fNullIndicator = false;
+}
+
+
 int RTCRestBool::resetToDefault()
 {
     m_fValue = false;
@@ -332,6 +339,13 @@ int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat)
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return VINF_SUCCESS;
+}
+
+
+void RTCRestInt64::assignValue(int64_t a_iValue)
+{
+    m_iValue = a_iValue;
+    m_fNullIndicator = false;
 }
 
 
@@ -493,6 +507,13 @@ int RTCRestInt32::resetToDefault()
 }
 
 
+void RTCRestInt32::assignValue(int32_t a_iValue)
+{
+    m_iValue = a_iValue;
+    m_fNullIndicator = false;
+}
+
+
 RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     if (!m_fNullIndicator)
@@ -638,6 +659,13 @@ int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat)
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return VINF_SUCCESS;
+}
+
+
+void RTCRestInt16::assignValue(int16_t a_iValue)
+{
+    m_iValue = a_iValue;
+    m_fNullIndicator = false;
 }
 
 
@@ -793,6 +821,13 @@ int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat)
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_rdValue = a_rThat.m_rdValue;
     return VINF_SUCCESS;
+}
+
+
+void RTCRestDouble::assignValue(double a_rdValue)
+{
+    m_rdValue = a_rdValue;
+    m_fNullIndicator = false;
 }
 
 
