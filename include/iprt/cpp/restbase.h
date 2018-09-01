@@ -1358,6 +1358,21 @@ protected:
 
 /**
  * Base class for REST client requests.
+ *
+ * This encapsulates parameters and helps transform them into a HTTP request.
+ *
+ * Parameters can be transfered in a number of places:
+ *      - Path part of the URL.
+ *      - Query part of the URL.
+ *      - HTTP header fields.
+ *      - FORM body.
+ *      - JSON body.
+ *      - XML body.
+ *      - ...
+ *
+ * They can be require or optional.  The latter may have default values.  In
+ * swagger 3 they can also be nullable, which means the null-indicator cannot
+ * be used for tracking optional parameters.
  */
 class RT_DECL_CLASS RTCRestClientRequestBase
 {
@@ -1403,15 +1418,21 @@ protected:
     /** Set of fields where value assigning failed. */
     uint64_t m_fErrorSet;
 
-    /** Path replacement entry. */
+    /** Path parameter descriptor. */
     typedef struct
     {
         const char                 *pszName;    /**< The name string to replace (including {}). */
         size_t                      cchName;    /**< Length of pszName. */
+        uint32_t                    fFlags;     /**< The toString flags. */
+        uint8_t                     iBitNo;     /**< The parameter bit number. */
+    } PATHPARAMDESC;
+
+    /** Path parameter state. */
+    typedef struct
+    {
         RTCRestObjectBase const    *pObj;       /**< Pointer to the parameter object. */
         size_t                      offName;    /**< Maintained by worker. */
-        uint32_t                    fFlags;     /**< The toString flags. */
-    } PATHREPLACEENTRY;
+    } PATHPARAMSTATE;
 
     /**
      * Do path parameters.
@@ -1420,11 +1441,12 @@ protected:
      * @param   a_pStrPath          The destination path.
      * @param   a_pszPathTemplate   The path template string.
      * @param   a_cchPathTemplate   The length of the path template string.
-     * @param   a_paPathParams      The path parameter descriptors.
+     * @param   a_paPathParams      The path parameter descriptors (static).
+     * @param   a_paPathParamStates The path parameter objects and states.
      * @param   a_cPathParams       Number of path parameters.
      */
     int doPathParameters(RTCString *a_pStrPath, const char *a_pszPathTemplate, size_t a_cchPathTemplate,
-                         PATHREPLACEENTRY *a_paPathParams, size_t a_cPathParams) const;
+                         PATHPARAMDESC const *a_paPathParams, PATHPARAMSTATE *a_paPathParamStates, size_t a_cPathParams) const;
 
     /** Query parameter descriptor. */
     typedef struct
@@ -1432,6 +1454,7 @@ protected:
         const char                 *pszName;    /**< The parameter name. */
         uint32_t                    fFlags;     /**< The toString flags. */
         bool                        fRequired;  /**< Required or not. */
+        uint8_t                     iBitNo;     /**< The parameter bit number. */
     } QUERYPARAMDESC;
 
     /**
@@ -1445,6 +1468,27 @@ protected:
      */
     int doQueryParameters(RTCString *a_pStrQuery, QUERYPARAMDESC const *a_paQueryParams,
                           RTCRestObjectBase const **a_papQueryParamObjs, size_t a_cQueryParams) const;
+
+    /** Header parameter descriptor. */
+    typedef struct
+    {
+        const char                 *pszName;    /**< The parameter name. */
+        uint32_t                    fFlags;     /**< The toString flags. */
+        bool                        fRequired;  /**< Required or not. */
+        uint8_t                     iBitNo;     /**< The parameter bit number. */
+    } HEADERPARAMDESC;
+
+    /**
+     * Do header parameters.
+     *
+     * @returns IPRT status code
+     * @param   a_hHttp                 Where to set header parameters.
+     * @param   a_paHeaderParams        The header parameter descriptors.
+     * @param   a_papHeaderParamObjs    The header parameter objects, parallel to @a a_paHeaderParams.
+     * @param   a_cHeaderParams         Number of header parameters.
+     */
+    int doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC const *a_paHeaderParams,
+                           RTCRestObjectBase const **a_papHeaderParamObjs, size_t a_cHeaderParams) const;
 };
 
 

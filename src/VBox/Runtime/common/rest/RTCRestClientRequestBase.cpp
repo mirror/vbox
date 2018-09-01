@@ -76,7 +76,8 @@ RTCRestClientRequestBase &RTCRestClientRequestBase::operator=(RTCRestClientReque
 
 
 int RTCRestClientRequestBase::doPathParameters(RTCString *a_pStrPath, const char *a_pszPathTemplate, size_t a_cchPathTemplate,
-                                               PATHREPLACEENTRY *a_paPathParams, size_t a_cPathParams) const
+                                               PATHPARAMDESC const *a_paPathParams, PATHPARAMSTATE *a_paPathParamStates,
+                                               size_t a_cPathParams) const
 {
     int rc = a_pStrPath->assignNoThrow(a_pszPathTemplate, a_cchPathTemplate);
     AssertRCReturn(rc, rc);
@@ -86,26 +87,32 @@ int RTCRestClientRequestBase::doPathParameters(RTCString *a_pStrPath, const char
     {
         char const *psz = strstr(a_pszPathTemplate, a_paPathParams[i].pszName);
         AssertReturn(psz, VERR_INTERNAL_ERROR_5);
-        a_paPathParams[i].offName = psz - a_pszPathTemplate;
+        a_paPathParamStates[i].offName = psz - a_pszPathTemplate;
     }
 
     /* Replace with actual values: */
     RTCString strTmpVal;
     for (size_t i = 0; i < a_cPathParams; i++)
     {
-        rc = a_paPathParams[i].pObj->toString(&strTmpVal, a_paPathParams[i].fFlags);
+        AssertReturn(   (a_paPathParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask)
+                     != RTCRestObjectBase::kCollectionFormat_multi,
+                     VERR_INTERNAL_ERROR_3);
+        AssertMsg(m_fIsSet & RT_BIT_64(a_paPathParams[i].iBitNo),
+                  ("Path parameter '%s' is not set!\n", a_paPathParams[i].pszName));
+
+        rc = a_paPathParamStates[i].pObj->toString(&strTmpVal, a_paPathParams[i].fFlags);
         AssertRCReturn(rc, rc);
 
         /* Replace. */
         ssize_t cchAdjust = strTmpVal.length() - a_paPathParams[i].cchName;
-        rc = a_pStrPath->replaceNoThrow(a_paPathParams[i].offName, a_paPathParams[i].cchName, strTmpVal);
+        rc = a_pStrPath->replaceNoThrow(a_paPathParamStates[i].offName, a_paPathParams[i].cchName, strTmpVal);
         AssertRCReturn(rc, rc);
 
         /* Adjust subsequent fields. */
         if (cchAdjust != 0)
             for (size_t j = i + 1; j < a_cPathParams; j++)
-                if (a_paPathParams[j].offName > a_paPathParams[i].offName)
-                    a_paPathParams[j].offName += cchAdjust;
+                if (a_paPathParamStates[j].offName > a_paPathParamStates[i].offName)
+                    a_paPathParamStates[j].offName += cchAdjust;
     }
 
     return VINF_SUCCESS;
@@ -119,19 +126,54 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
     char chSep = a_pStrQuery->isEmpty() ? '?' : '&';
     for (size_t i = 0; i < a_cQueryParams; i++)
     {
-        if ((a_paQueryParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask) != RTCRestObjectBase::kCollectionFormat_multi)
+        if (   a_paQueryParams[i].fRequired
+            || (m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo)) )
         {
-            int rc = a_papQueryParamObjs[i]->toString(&strTmpVal, a_paQueryParams[i].fFlags);
-            AssertRCReturn(rc, rc);
+            AssertMsg(m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo),
+                      ("Required query parameter '%s' is not set!\n", a_paQueryParams[i].pszName));
 
-            rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpq=%RMpq", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
-            AssertRCReturn(rc, rc);
+            if (   (a_paQueryParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask)
+                != RTCRestObjectBase::kCollectionFormat_multi)
+            {
+                int rc = a_papQueryParamObjs[i]->toString(&strTmpVal, a_paQueryParams[i].fFlags);
+                AssertRCReturn(rc, rc);
 
-            chSep = '&';
+                rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpq=%RMpq", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
+                AssertRCReturn(rc, rc);
+
+                chSep = '&';
+            }
+            else
+            {
+                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            }
         }
-        else
+    }
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC const *a_paHeaderParams,
+                                                 RTCRestObjectBase const **a_papHeaderParamObjs, size_t a_cHeaderParams) const
+{
+    RTCString strTmpVal;
+    for (size_t i = 0; i < a_cHeaderParams; i++)
+    {
+        AssertReturn(   (a_paHeaderParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask)
+                     != RTCRestObjectBase::kCollectionFormat_multi,
+                     VERR_INTERNAL_ERROR_3);
+
+        if (   a_paHeaderParams[i].fRequired
+            || (m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo)) )
         {
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            AssertMsg(m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo),
+                      ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName));
+
+            int rc = a_papHeaderParamObjs[i]->toString(&strTmpVal, a_paHeaderParams[i].fFlags);
+            AssertRCReturn(rc, rc);
+
+            rc = RTHttpAppendHeader(a_hHttp, a_paHeaderParams[i].pszName, strTmpVal.c_str(), 0);
+            AssertRCReturn(rc, rc);
         }
     }
     return VINF_SUCCESS;
