@@ -58,9 +58,9 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_RealOrV86Mode   , "RealOrV86Mode" ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_Success         , "Success"       ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_ShadowVmcs      , "ShadowVmcs"    ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_VmxAlreadyRoot  , "VmxAlreadyRoot"),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_Vmxe            , "Vmxe"          ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_VmcsRevId       , "VmcsRevId"     ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_VmxRoot         , "VmxRoot"       ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxon_VmxRootCpl      , "VmxRootCpl"    ),
     /* VMXOFF. */
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_Cpl            , "Cpl"           ),
@@ -72,43 +72,58 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmxoff_VmxRoot        , "VmxRoot"       ),
     /* VMPTRLD. */
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_Cpl           , "Cpl"           ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_LongModeCS    , "LongModeCS"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrAbnormal   , "PtrAbnormal"   ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrAlign      , "PtrAlign"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrMap        , "PtrMap"        ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrReadPhys   , "PtrReadPhys"   ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrVmxon      , "PtrVmxon"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_PtrWidth      , "PtrWidth"      ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_RealOrV86Mode , "RealOrV86Mode" ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_ShadowVmcs    , "ShadowVmcs"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_Success       , "Success"       ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_VmcsRevId     , "VmcsRevId"     )
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_VmcsRevId     , "VmcsRevId"     ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrld_VmxRoot       , "VmxRoot"       ),
     /* VMPTRST. */
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_Cpl           , "Cpl"           ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_LongModeCS    , "LongModeCS"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_PtrMap        , "PtrMap"        ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_RealOrV86Mode , "RealOrV86Mode" ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_Success       , "Success"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmptrst_VmxRoot       , "VmxRoot"       ),
     /* VMCLEAR. */
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_Cpl           , "Cpl"           ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_LongModeCS    , "LongModeCS"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_PtrAbnormal   , "PtrAbnormal"   ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_PtrAlign      , "PtrAlign"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_PtrMap        , "PtrMap"        ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_PtrReadPhys   , "PtrReadPhys"   ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_PtrVmxon      , "PtrVmxon"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_PtrWidth      , "PtrWidth"      ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_RealOrV86Mode , "RealOrV86Mode" ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_Success       , "Success"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmclear_VmxRoot       , "VmxRoot"       ),
     /* VMWRITE. */
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_Cpl           , "Cpl"           ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_FieldInvalid  , "FieldInvalid"  ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_FieldRo       , "FieldRo"       ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_LinkPtrInvalid, "LinkPtrInvalid"),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_LongModeCS    , "LongModeCS"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_PtrInvalid    , "PtrInvalid"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_PtrMap        , "PtrMap"        ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_RealOrV86Mode , "RealOrV86Mode" ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_Success       , "Success"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmwrite_VmxRoot       , "VmxRoot"       ),
     /* VMREAD. */
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_Cpl            , "Cpl"           ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_FieldInvalid   , "FieldInvalid"  ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_LinkPtrInvalid , "LinkPtrInvalid"),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_LongModeCS     , "LongModeCS"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_PtrInvalid     , "PtrInvalid"    ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_PtrMap         , "PtrMap"        ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_Success        , "Success"       )
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_RealOrV86Mode  , "RealOrV86Mode" ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_Success        , "Success"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmread_VmxRoot        , "VmxRoot"       )
     /* kVmxVInstrDiag_Last */
 };
 #undef VMX_INSTR_DIAG_DESC

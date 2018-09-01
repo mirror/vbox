@@ -247,11 +247,20 @@ FNIEMOP_DEF(iemOp_Grp7_vmcall)
 
 
 /** Opcode 0x0f 0x01 /0. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
+{
+    IEMOP_MNEMONIC(vmlaunch, "vmlaunch");
+    IEMOP_HLP_DONE_DECODING();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmlaunch);
+}
+#else
 FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
 {
     IEMOP_BITCH_ABOUT_STUB();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
+#endif
 
 
 /** Opcode 0x0f 0x01 /0. */
@@ -4282,8 +4291,8 @@ FNIEMOP_DEF(iemOp_emms)
 FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
 {
     IEMOP_MNEMONIC(vmread, "vmread Ey,Gy");
-    IEMOP_HLP_IN_VMX_OPERATION();
-    IEMOP_HLP_VMX_INSTR();
+    IEMOP_HLP_IN_VMX_OPERATION("vmread", kVmxVInstrDiag_Vmread);
+    IEMOP_HLP_VMX_INSTR("vmread", kVmxVInstrDiag_Vmread);
     IEMMODE const enmEffOpSize = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? IEMMODE_64BIT : IEMMODE_32BIT;
 
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -4364,8 +4373,8 @@ FNIEMOP_STUB(iemOp_AmdGrp17);
 FNIEMOP_DEF(iemOp_vmwrite_Gy_Ey)
 {
     IEMOP_MNEMONIC(vmwrite, "vmwrite Gy,Ey");
-    IEMOP_HLP_IN_VMX_OPERATION();
-    IEMOP_HLP_VMX_INSTR();
+    IEMOP_HLP_IN_VMX_OPERATION("vmwrite", kVmxVInstrDiag_Vmwrite);
+    IEMOP_HLP_VMX_INSTR("vmwrite", kVmxVInstrDiag_Vmwrite);
     IEMMODE const enmEffOpSize = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? IEMMODE_64BIT : IEMMODE_32BIT;
 
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -8579,8 +8588,8 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_rdrand_Rv, uint8_t, bRm);
 FNIEMOP_DEF_1(iemOp_Grp9_vmptrld_Mq, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(vmptrld, "vmptrld");
-    IEMOP_HLP_IN_VMX_OPERATION();
-    IEMOP_HLP_VMX_INSTR();
+    IEMOP_HLP_IN_VMX_OPERATION("vmptrld", kVmxVInstrDiag_Vmptrld);
+    IEMOP_HLP_VMX_INSTR("vmptrld", kVmxVInstrDiag_Vmptrld);
     IEM_MC_BEGIN(2, 0);
     IEM_MC_ARG(uint8_t, iEffSeg,     0);
     IEM_MC_ARG(RTGCPTR, GCPtrEffSrc, 1);
@@ -8600,8 +8609,8 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmptrld_Mq, uint8_t, bRm);
 FNIEMOP_DEF_1(iemOp_Grp9_vmclear_Mq, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(vmclear, "vmclear");
-    IEMOP_HLP_IN_VMX_OPERATION();
-    IEMOP_HLP_VMX_INSTR();
+    IEMOP_HLP_IN_VMX_OPERATION("vmclear", kVmxVInstrDiag_Vmclear);
+    IEMOP_HLP_VMX_INSTR("vmclear", kVmxVInstrDiag_Vmclear);
     IEM_MC_BEGIN(2, 0);
     IEM_MC_ARG(uint8_t, iEffSeg,     0);
     IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 1);
@@ -8621,7 +8630,7 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmclear_Mq, uint8_t, bRm);
 FNIEMOP_DEF_1(iemOp_Grp9_vmxon_Mq, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(vmxon, "vmxon");
-    IEMOP_HLP_VMX_INSTR();
+    IEMOP_HLP_VMX_INSTR("vmxon", kVmxVInstrDiag_Vmxon);
     IEM_MC_BEGIN(2, 0);
     IEM_MC_ARG(uint8_t, iEffSeg,     0);
     IEM_MC_ARG(RTGCPTR, GCPtrEffSrc, 1);
@@ -8641,8 +8650,8 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmxon_Mq, uint8_t, bRm);
 FNIEMOP_DEF_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(vmptrst, "vmptrst");
-    IEMOP_HLP_IN_VMX_OPERATION();
-    IEMOP_HLP_VMX_INSTR();
+    IEMOP_HLP_IN_VMX_OPERATION("vmptrst", kVmxVInstrDiag_Vmptrst);
+    IEMOP_HLP_VMX_INSTR("vmptrst", kVmxVInstrDiag_Vmptrst);
     IEM_MC_BEGIN(2, 0);
     IEM_MC_ARG(uint8_t, iEffSeg,     0);
     IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 1);

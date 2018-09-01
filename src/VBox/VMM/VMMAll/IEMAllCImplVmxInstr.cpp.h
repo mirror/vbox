@@ -387,6 +387,47 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = NIL_RTGCPHYS; \
     } while (0)
 
+/** Check the common VMX instruction preconditions.
+ * @note Any changes here, also check if IEMOP_HLP_VMX_INSTR needs updating.
+ */
+#define IEM_VMX_INSTR_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
+    do { \
+        if (   !IEM_IS_REAL_OR_V86_MODE(a_pVCpu) \
+            && (   !IEM_IS_LONG_MODE(a_pVCpu) \
+                ||  IEM_IS_64BIT_CODE(a_pVCpu))) \
+        { /* likely */ } \
+        else \
+        { \
+            if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
+            { \
+                Log((a_szInstr ": Real or v8086 mode -> #UD\n")); \
+                (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_RealOrV86Mode; \
+                return iemRaiseUndefinedOpcode(a_pVCpu); \
+            } \
+            if (IEM_IS_LONG_MODE(a_pVCpu) && !IEM_IS_64BIT_CODE(a_pVCpu)) \
+            { \
+                Log((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
+                (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_LongModeCS; \
+                return iemRaiseUndefinedOpcode(a_pVCpu); \
+            } \
+        } \
+    } while (0)
+
+/** Check for VMX instructions requiring to be in VMX operation.
+ * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs udpating. */
+#define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
+    do \
+    { \
+        if (IEM_IS_VMX_ROOT_MODE(a_pVCpu)) \
+        { /* likely */ } \
+        else \
+        { \
+            Log((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
+            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_VmxRoot; \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+    } while (0)
+
 
 /**
  * Returns whether the given VMCS field is valid and supported by our emulation.
@@ -1899,7 +1940,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
     /* VMXON when already in VMX root mode. */
     iemVmxVmFail(pVCpu, VMXINSTRERR_VMXON_IN_VMXROOTMODE);
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_VmxRoot;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_VmxAlreadyRoot;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 #endif
@@ -1924,13 +1965,8 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
-    IEM_VMX_INSTR_COMMON_CHECKS(pVCpu, "vmxoff", kVmxVInstrDiag_Vmxoff);
-    if (!IEM_IS_VMX_ROOT_MODE(pVCpu))
-    {
-        Log(("vmxoff: Not in VMX root mode -> #GP(0)\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxoff_VmxRoot;
-        return iemRaiseUndefinedOpcode(pVCpu);
-    }
+    IEM_VMX_IN_VMX_OPERATION(pVCpu, "vmxoff", kVmxVInstrDiag_Vmxoff);
+    IEM_VMX_INSTR_CHECKS(pVCpu, "vmxoff", kVmxVInstrDiag_Vmxoff);
 
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
@@ -1974,6 +2010,17 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     return VINF_SUCCESS;
 #  endif
 # endif
+}
+
+
+/**
+ * Implements 'VMLAUNCH'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmlaunch)
+{
+    RT_NOREF2(pVCpu, cbInstr);
+    /** @todo NSTVMX: VMLAUNCH impl. */
+    return VERR_IEM_IPE_2;
 }
 
 
@@ -2048,7 +2095,6 @@ IEM_CIMPL_DEF_4(iemCImpl_vmread_mem, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, 
 {
     return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, uFieldEnc, NULL /* pExitInfo */);
 }
-
 
 #endif
 

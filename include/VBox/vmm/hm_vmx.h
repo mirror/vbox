@@ -2844,9 +2844,9 @@ typedef enum
     kVmxVInstrDiag_Vmxon_RealOrV86Mode,
     kVmxVInstrDiag_Vmxon_ShadowVmcs,
     kVmxVInstrDiag_Vmxon_Success,
+    kVmxVInstrDiag_Vmxon_VmxAlreadyRoot,
     kVmxVInstrDiag_Vmxon_Vmxe,
     kVmxVInstrDiag_Vmxon_VmcsRevId,
-    kVmxVInstrDiag_Vmxon_VmxRoot,
     kVmxVInstrDiag_Vmxon_VmxRootCpl,
     /* VMXOFF. */
     kVmxVInstrDiag_Vmxoff_Cpl,
@@ -2858,44 +2858,60 @@ typedef enum
     kVmxVInstrDiag_Vmxoff_VmxRoot,
     /* VMPTRLD. */
     kVmxVInstrDiag_Vmptrld_Cpl,
+    kVmxVInstrDiag_Vmptrld_LongModeCS,
     kVmxVInstrDiag_Vmptrld_PtrAbnormal,
     kVmxVInstrDiag_Vmptrld_PtrAlign,
     kVmxVInstrDiag_Vmptrld_PtrMap,
     kVmxVInstrDiag_Vmptrld_PtrReadPhys,
     kVmxVInstrDiag_Vmptrld_PtrVmxon,
     kVmxVInstrDiag_Vmptrld_PtrWidth,
+    kVmxVInstrDiag_Vmptrld_RealOrV86Mode,
     kVmxVInstrDiag_Vmptrld_ShadowVmcs,
     kVmxVInstrDiag_Vmptrld_Success,
     kVmxVInstrDiag_Vmptrld_VmcsRevId,
+    kVmxVInstrDiag_Vmptrld_VmxRoot,
     /* VMPTRST. */
     kVmxVInstrDiag_Vmptrst_Cpl,
+    kVmxVInstrDiag_Vmptrst_LongModeCS,
     kVmxVInstrDiag_Vmptrst_PtrMap,
+    kVmxVInstrDiag_Vmptrst_RealOrV86Mode,
     kVmxVInstrDiag_Vmptrst_Success,
+    kVmxVInstrDiag_Vmptrst_VmxRoot,
     /* VMCLEAR. */
     kVmxVInstrDiag_Vmclear_Cpl,
+    kVmxVInstrDiag_Vmclear_LongModeCS,
     kVmxVInstrDiag_Vmclear_PtrAbnormal,
     kVmxVInstrDiag_Vmclear_PtrAlign,
     kVmxVInstrDiag_Vmclear_PtrMap,
     kVmxVInstrDiag_Vmclear_PtrReadPhys,
     kVmxVInstrDiag_Vmclear_PtrVmxon,
     kVmxVInstrDiag_Vmclear_PtrWidth,
+    kVmxVInstrDiag_Vmclear_RealOrV86Mode,
     kVmxVInstrDiag_Vmclear_Success,
+    kVmxVInstrDiag_Vmclear_VmxRoot,
     /* VMWRITE. */
     kVmxVInstrDiag_Vmwrite_Cpl,
     kVmxVInstrDiag_Vmwrite_FieldInvalid,
     kVmxVInstrDiag_Vmwrite_FieldRo,
     kVmxVInstrDiag_Vmwrite_LinkPtrInvalid,
+    kVmxVInstrDiag_Vmwrite_LongModeCS,
     kVmxVInstrDiag_Vmwrite_PtrInvalid,
     kVmxVInstrDiag_Vmwrite_PtrMap,
+    kVmxVInstrDiag_Vmwrite_RealOrV86Mode,
     kVmxVInstrDiag_Vmwrite_Success,
-    /* Last member for determining array index limit. */
+    kVmxVInstrDiag_Vmwrite_VmxRoot,
     /* VMREAD. */
     kVmxVInstrDiag_Vmread_Cpl,
     kVmxVInstrDiag_Vmread_FieldInvalid,
     kVmxVInstrDiag_Vmread_LinkPtrInvalid,
+    kVmxVInstrDiag_Vmread_LongModeCS,
     kVmxVInstrDiag_Vmread_PtrInvalid,
     kVmxVInstrDiag_Vmread_PtrMap,
+    kVmxVInstrDiag_Vmread_RealOrV86Mode,
     kVmxVInstrDiag_Vmread_Success,
+    kVmxVInstrDiag_Vmread_VmxRoot,
+    /* VMLAUNCH. */
+    /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;
 AssertCompileSize(VMXVINSTRDIAG, 4);

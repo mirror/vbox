@@ -385,31 +385,6 @@ typedef enum IEMXCPTCLASS
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
- * Check the common VMX instruction preconditions.
- */
-#define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
-    do { \
-        if (!IEM_IS_VMX_ENABLED(a_pVCpu)) \
-        { \
-            Log((a_szInstr ": CR4.VMXE not enabled -> #UD\n")); \
-            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_Vmxe; \
-            return iemRaiseUndefinedOpcode(a_pVCpu); \
-        } \
-        if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
-        { \
-            Log((a_szInstr ": Real or v8086 mode -> #UD\n")); \
-            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_RealOrV86Mode; \
-            return iemRaiseUndefinedOpcode(a_pVCpu); \
-        } \
-        if (IEM_IS_LONG_MODE(a_pVCpu) && !IEM_IS_64BIT_CODE(a_pVCpu)) \
-        { \
-            Log((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
-            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_LongModeCS; \
-            return iemRaiseUndefinedOpcode(a_pVCpu); \
-        } \
-    } while (0)
-
-/**
  * Check if VMX is enabled.
  */
 # define IEM_IS_VMX_ENABLED(a_pVCpu)                         (CPUMIsGuestVmxEnabled(IEM_GET_CTX(a_pVCpu)))
@@ -417,12 +392,12 @@ typedef enum IEMXCPTCLASS
 /**
  * Check if the guest has entered VMX root operation.
  */
-#define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                        (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(pVCpu)))
+#define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                        (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Check if the guest has entered VMX non-root operation.
  */
-#define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+#define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
 
 #else
 # define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix)  do { } while (0)
@@ -12570,8 +12545,11 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** This instruction raises an \#UD in real and V8086 mode or when not using a
  *  64-bit code segment when in long mode (applicable to all VMX instructions
- *  except VMCALL). */
-# define IEMOP_HLP_VMX_INSTR() \
+ *  except VMCALL).
+ *
+ *  @note Update IEM_VMX_INSTR_CHECKS() if changes are made here.
+ */
+#define IEMOP_HLP_VMX_INSTR(a_szInstr, a_InsDiagPrefix) \
     do \
     { \
         if (   !IEM_IS_REAL_OR_V86_MODE(pVCpu) \
@@ -12579,17 +12557,37 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
                 || IEM_IS_64BIT_CODE(pVCpu))) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+        { \
+            if (IEM_IS_REAL_OR_V86_MODE(pVCpu)) \
+            { \
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_RealOrV86Mode; \
+                Log5((a_szInstr ": Real or v8086 mode -> #UD\n")); \
+                return IEMOP_RAISE_INVALID_OPCODE(); \
+            } \
+            if (IEM_IS_LONG_MODE(pVCpu) && !IEM_IS_64BIT_CODE(pVCpu)) \
+            { \
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_LongModeCS; \
+                Log5((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
+                return IEMOP_RAISE_INVALID_OPCODE(); \
+            } \
+        } \
     } while (0)
 
 /** The instruction can only be executed in VMX operation (VMX root mode and
  * non-root mode).
+ *
+ *  @note Update IEM_VMX_IN_VMX_OPERATION if changes are made here.
  */
-# define IEMOP_HLP_IN_VMX_OPERATION() \
+# define IEMOP_HLP_IN_VMX_OPERATION(a_szInstr, a_InsDiagPrefix) \
     do \
     { \
         if (IEM_IS_VMX_ROOT_MODE(pVCpu)) { /* likely */ } \
-        else return IEMOP_RAISE_INVALID_OPCODE(); \
+        else \
+        { \
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_VmxRoot; \
+            Log5((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
+        } \
     } while (0)
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
