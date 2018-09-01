@@ -1948,6 +1948,40 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
+ * VMLAUNCH instruction execution worker.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
+ *                          Optional, can  be NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmlaunch(PVMCPU pVCpu, uint8_t cbInstr, PCVMXVEXITINFO pExitInfo)
+{
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        RT_NOREF(pExitInfo);
+        /** @todo NSTVMX: intercept. */
+    }
+    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+
+    /* CPL. */
+    if (CPUMGetGuestCPL(pVCpu) > 0)
+    {
+        Log(("vmlaunch: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmlaunch_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /** @todo NSTVMX: VMLAUNCH impl.   */
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VERR_IEM_IPE_2;
+}
+
+
+/**
  * Implements 'VMXON'.
  */
 IEM_CIMPL_DEF_2(iemCImpl_vmxon, uint8_t, iEffSeg, RTGCPTR, GCPtrVmxon)
@@ -1958,6 +1992,9 @@ IEM_CIMPL_DEF_2(iemCImpl_vmxon, uint8_t, iEffSeg, RTGCPTR, GCPtrVmxon)
 
 /**
  * Implements 'VMXOFF'.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
 {
@@ -1965,9 +2002,6 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
-    IEM_VMX_IN_VMX_OPERATION(pVCpu, "vmxoff", kVmxVInstrDiag_Vmxoff);
-    IEM_VMX_INSTR_CHECKS(pVCpu, "vmxoff", kVmxVInstrDiag_Vmxoff);
-
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         /** @todo NSTVMX: intercept. */
@@ -2018,9 +2052,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmlaunch)
 {
-    RT_NOREF2(pVCpu, cbInstr);
-    /** @todo NSTVMX: VMLAUNCH impl. */
-    return VERR_IEM_IPE_2;
+    return iemVmxVmlaunch(pVCpu, cbInstr, NULL /* pExitInfo */);
 }
 
 

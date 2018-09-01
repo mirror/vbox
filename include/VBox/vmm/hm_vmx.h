@@ -2911,6 +2911,10 @@ typedef enum
     kVmxVInstrDiag_Vmread_Success,
     kVmxVInstrDiag_Vmread_VmxRoot,
     /* VMLAUNCH. */
+    kVmxVInstrDiag_Vmlaunch_Cpl,
+    kVmxVInstrDiag_Vmlaunch_LongModeCS,
+    kVmxVInstrDiag_Vmlaunch_RealOrV86Mode,
+    kVmxVInstrDiag_Vmlaunch_VmxRoot,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;
