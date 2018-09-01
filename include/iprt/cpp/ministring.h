@@ -625,7 +625,7 @@ public:
     RTCString &appendPrintfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
     /**
-     * Assigns the output of the string format operation (RTStrPrintfV).
+     * Appends the output of the string format operation (RTStrPrintfV).
      *
      * @param   pszFormat       Pointer to the format string,
      *                          @see pg_rt_str_format.
