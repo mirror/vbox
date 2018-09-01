@@ -1142,7 +1142,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* CPL. */
-    if (CPUMGetGuestCPL(pVCpu) > 0)
+    if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmread: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmread_Cpl;
@@ -1353,7 +1353,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* CPL. */
-    if (CPUMGetGuestCPL(pVCpu) > 0)
+    if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmwrite: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmwrite_Cpl;
@@ -1497,7 +1497,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (CPUMGetGuestCPL(pVCpu) > 0)
+    if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmclear: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_Cpl;
@@ -1609,7 +1609,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (CPUMGetGuestCPL(pVCpu) > 0)
+    if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmptrst: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrst_Cpl;
@@ -1656,7 +1656,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (CPUMGetGuestCPL(pVCpu) > 0)
+    if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmptrld: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrld_Cpl;
@@ -1968,7 +1968,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunch(PVMCPU pVCpu, uint8_t cbInstr, PCVMXVEXIT
     Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (CPUMGetGuestCPL(pVCpu) > 0)
+    if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmlaunch: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmlaunch_Cpl;
