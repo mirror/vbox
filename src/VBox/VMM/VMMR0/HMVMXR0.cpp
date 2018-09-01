@@ -593,7 +593,6 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
 #endif /* VBOX_STRICT */
 
 
-
 /**
  * Updates the VM's last error record.
  *
