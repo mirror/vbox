@@ -2939,8 +2939,11 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
                 AssertFailed();
         }
 
-        /* Request body. */
-        if (pvReqBody && cbReqBody > 0 && CURL_SUCCESS(rcCurl))
+        /* Request body.  POST requests should always have a body. */
+        if (   pvReqBody
+            && CURL_SUCCESS(rcCurl)
+            && (   cbReqBody > 0
+                || enmMethod == RTHTTPMETHOD_POST) )
         {
             if (enmMethod == RTHTTPMETHOD_POST)
             {
