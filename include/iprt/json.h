@@ -50,7 +50,9 @@ typedef enum RTJSONVALTYPE
     RTJSONVALTYPE_ARRAY,
     /** Value containing a string. */
     RTJSONVALTYPE_STRING,
-    /** Value containg a number. */
+    /** Value containg an integer number. */
+    RTJSONVALTYPE_INTEGER,
+    /** Value containg an floating point number. */
     RTJSONVALTYPE_NUMBER,
     /** Value containg the special null value. */
     RTJSONVALTYPE_NULL,
@@ -171,18 +173,26 @@ RTDECL(const char *) RTJsonValueGetString(RTJSONVAL hJsonVal);
 RTDECL(int) RTJsonValueQueryString(RTJSONVAL hJsonVal, const char **ppszStr);
 
 /**
- * Returns the number from a given JSON number value.
+ * Returns the integer from a given JSON integer value.
  *
  * @returns IPRT status code.
  * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not a number.
  * @param   hJsonVal        The JSON value handle.
  * @param   pi64Num         WHere to store the number on success.
- *
- * @note    This JSON implementation does not implement support for floating point
- *          numbers currently.  When it does, it will be in the form of a
- *          RTJsonValueQueryFloat method.
+ * @sa      RTJsonValueQueryNumber
  */
 RTDECL(int) RTJsonValueQueryInteger(RTJSONVAL hJsonVal, int64_t *pi64Num);
+
+/**
+ * Returns the floating point value from a given JSON number value.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not a number.
+ * @param   hJsonVal        The JSON value handle.
+ * @param   prdNum          WHere to store the floating point number on success.
+ * @sa      RTJsonValueQueryInteger
+ */
+RTDECL(int) RTJsonValueQueryNumber(RTJSONVAL hJsonVal, double *prdNum);
 
 /**
  * Returns the value associated with a given name for the given JSON object value.
@@ -201,13 +211,26 @@ RTDECL(int) RTJsonValueQueryByName(RTJSONVAL hJsonVal, const char *pszName, PRTJ
  *
  * @returns IPRT status code.
  * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object or
- *          the name does not point to a number value.
+ *          the name does not point to an integer value.
  * @retval  VERR_NOT_FOUND if the name is not known for this JSON object.
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   pi64Num         Where to store the number on success.
  */
 RTDECL(int) RTJsonValueQueryIntegerByName(RTJSONVAL hJsonVal, const char *pszName, int64_t *pi64Num);
+
+/**
+ * Returns the number of a number value associated with a given name for the given JSON object value.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object or
+ *          the name does not point to a number value.
+ * @retval  VERR_NOT_FOUND if the name is not known for this JSON object.
+ * @param   hJsonVal        The JSON value handle.
+ * @param   pszName         The member name of the object.
+ * @param   prdNum          WHere to store the floating point number on success.
+ */
+RTDECL(int) RTJsonValueQueryNumberByName(RTJSONVAL hJsonVal, const char *pszName, double *prdNum);
 
 /**
  * Returns the string of a string value associated with a given name for the given JSON object value.

@@ -28,14 +28,19 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/json.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/cdefs.h>
 #include <iprt/ctype.h>
-#include <iprt/json.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+
+#include <stdlib.h> /* strtod() */
+#include <errno.h>  /* errno */
 
 
 /*********************************************************************************************************************************
@@ -78,7 +83,9 @@ typedef enum RTJSONTOKENCLASS
     RTJSONTOKENCLASS_VALUE_SEPARATOR,
     /** String */
     RTJSONTOKENCLASS_STRING,
-    /** Number. */
+    /** Integer number. */
+    RTJSONTOKENCLASS_INTEGER,
+    /** Floating point number. */
     RTJSONTOKENCLASS_NUMBER,
     /** null keyword. */
     RTJSONTOKENCLASS_NULL,
@@ -116,7 +123,9 @@ typedef struct RTJSONTOKEN
         struct
         {
             int64_t         i64Num;
-        } Number;
+        } Integer;
+        /** Floating point number. */
+        double              rdNum;
     } Class;
 } RTJSONTOKEN;
 /** Pointer to a JSON token. */
@@ -200,7 +209,9 @@ typedef struct RTJSONVALINT
         {
             /** Signed 64-bit integer. */
             int64_t         i64Num;
-        } Number;
+        } Integer;
+        /** Floating point number . */
+        double              rdNum;
         /** Array type. */
         struct
         {
@@ -495,7 +506,7 @@ static int rtJsonTokenizerGetNumber(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
     size_t cchNum = 0;
     char   szTmp[128]; /* Everything larger is not possible to display in signed 64bit. */
 
-    pToken->enmClass = RTJSONTOKENCLASS_NUMBER;
+    pToken->enmClass = RTJSONTOKENCLASS_INTEGER;
 
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     if (ch == '-')
@@ -517,13 +528,66 @@ static int rtJsonTokenizerGetNumber(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
     int rc = VINF_SUCCESS;
     if (RT_C_IS_DIGIT(ch) && cchNum >= sizeof(szTmp) - 1)
         rc = VERR_NUMBER_TOO_BIG;
-    else
+    else if (ch != '.')
     {
         szTmp[cchNum] = '\0';
-        rc = RTStrToInt64Ex(&szTmp[0], NULL, 0, &pToken->Class.Number.i64Num);
+        rc = RTStrToInt64Ex(&szTmp[0], NULL, 10, &pToken->Class.Integer.i64Num);
         Assert(RT_SUCCESS(rc) || rc == VWRN_NUMBER_TOO_BIG);
         if (rc == VWRN_NUMBER_TOO_BIG)
             rc = VERR_NUMBER_TOO_BIG;
+    }
+    else
+    {
+        /*
+         * A floating point value.
+         */
+        pToken->enmClass = RTJSONTOKENCLASS_NUMBER;
+        rtJsonTokenizerSkipCh(pTokenizer);
+        szTmp[cchNum++] = '.';
+
+        ch = rtJsonTokenizerGetCh(pTokenizer);
+        while (   RT_C_IS_DIGIT(ch)
+               && cchNum < sizeof(szTmp) - 1)
+        {
+            szTmp[cchNum++] = ch;
+            rtJsonTokenizerSkipCh(pTokenizer);
+            ch = rtJsonTokenizerGetCh(pTokenizer);
+        }
+        if (   (ch == 'e' || ch == 'E')
+            && cchNum < sizeof(szTmp) - 2)
+        {
+            szTmp[cchNum++] = 'e';
+            ch = rtJsonTokenizerGetCh(pTokenizer);
+            if (ch == '+' || ch == '-')
+            {
+                szTmp[cchNum++] = ch;
+                rtJsonTokenizerSkipCh(pTokenizer);
+                ch = rtJsonTokenizerGetCh(pTokenizer);
+            }
+            while (   RT_C_IS_DIGIT(ch)
+                   && cchNum < sizeof(szTmp) - 1)
+            {
+                szTmp[cchNum++] = ch;
+                rtJsonTokenizerSkipCh(pTokenizer);
+                ch = rtJsonTokenizerGetCh(pTokenizer);
+            }
+        }
+        if (cchNum < sizeof(szTmp) - 1)
+        {
+            szTmp[cchNum] = '\0';
+
+            /** @todo Not sure if strtod does the 100% right thing here... */
+            errno = 0;
+            char *pszNext = NULL;
+            pToken->Class.rdNum = strtod(szTmp, &pszNext);
+            if (errno == 0)
+            {
+                rc = VINF_SUCCESS;
+                Assert(!pszNext || *pszNext == '\0');
+            }
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
     }
 
     return rc;
@@ -858,6 +922,7 @@ static void rtJsonValDestroy(PRTJSONVALINT pThis)
         case RTJSONVALTYPE_STRING:
             RTStrFree(pThis->Type.String.pszStr);
             break;
+        case RTJSONVALTYPE_INTEGER:
         case RTJSONVALTYPE_NUMBER:
         case RTJSONVALTYPE_NULL:
         case RTJSONVALTYPE_TRUE:
@@ -1095,10 +1160,16 @@ static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken, PR
                 pVal->Type.String.pszStr = pToken->Class.String.pszStr;
             rtJsonTokenizerConsume(pTokenizer);
             break;
+        case RTJSONTOKENCLASS_INTEGER:
+            pVal = rtJsonValueCreate(RTJSONVALTYPE_INTEGER);
+            if (RT_LIKELY(pVal))
+                pVal->Type.Integer.i64Num = pToken->Class.Integer.i64Num;
+            rtJsonTokenizerConsume(pTokenizer);
+            break;
         case RTJSONTOKENCLASS_NUMBER:
             pVal = rtJsonValueCreate(RTJSONVALTYPE_NUMBER);
             if (RT_LIKELY(pVal))
-                pVal->Type.Number.i64Num = pToken->Class.Number.i64Num;
+                pVal->Type.rdNum = pToken->Class.rdNum;
             rtJsonTokenizerConsume(pTokenizer);
             break;
         case RTJSONTOKENCLASS_NULL:
@@ -1341,6 +1412,7 @@ RTDECL(const char *) RTJsonValueTypeName(RTJSONVALTYPE enmType)
         case RTJSONVALTYPE_OBJECT:  return "object";
         case RTJSONVALTYPE_ARRAY:   return "array";
         case RTJSONVALTYPE_STRING:  return "string";
+        case RTJSONVALTYPE_INTEGER: return "integer";
         case RTJSONVALTYPE_NUMBER:  return "number";
         case RTJSONVALTYPE_NULL:    return "null";
         case RTJSONVALTYPE_TRUE:    return "true";
@@ -1396,8 +1468,19 @@ RTDECL(int) RTJsonValueQueryInteger(RTJSONVAL hJsonVal, int64_t *pi64Num)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pi64Num, VERR_INVALID_POINTER);
 
+    RTJSON_TYPECHECK_RETURN(pThis, RTJSONVALTYPE_INTEGER);
+    *pi64Num = pThis->Type.Integer.i64Num;
+    return VINF_SUCCESS;
+}
+
+RTDECL(int) RTJsonValueQueryNumber(RTJSONVAL hJsonVal, double *prdNum)
+{
+    PRTJSONVALINT pThis = hJsonVal;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(prdNum, VERR_INVALID_POINTER);
+
     RTJSON_TYPECHECK_RETURN(pThis, RTJSONVALTYPE_NUMBER);
-    *pi64Num = pThis->Type.Number.i64Num;
+    *prdNum = pThis->Type.rdNum;
     return VINF_SUCCESS;
 }
 
@@ -1432,6 +1515,19 @@ RTDECL(int) RTJsonValueQueryIntegerByName(RTJSONVAL hJsonVal, const char *pszNam
     if (RT_SUCCESS(rc))
     {
         rc = RTJsonValueQueryInteger(hJsonValNum, pi64Num);
+        RTJsonValueRelease(hJsonValNum);
+    }
+
+    return rc;
+}
+
+RTDECL(int) RTJsonValueQueryNumberByName(RTJSONVAL hJsonVal, const char *pszName, double *prdNum)
+{
+    RTJSONVAL hJsonValNum = NIL_RTJSONVAL;
+    int rc = RTJsonValueQueryByName(hJsonVal, pszName, &hJsonValNum);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTJsonValueQueryNumber(hJsonValNum, prdNum);
         RTJsonValueRelease(hJsonValNum);
     }
 

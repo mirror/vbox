@@ -34,7 +34,8 @@
 
 static const char *g_pszJson =
     "{\n"
-    "    \"number\": 100,\n"
+    "    \"integer\": 100,\n"
+    "    \"number\": 22.22,\n"
     "    \"string\": \"test\",\n"
     "    \"array\": [1, 2, 3, 4, 5, \"6\"],\n"
     "    \"subobject\":\n"
@@ -141,10 +142,16 @@ static void tstCorrectnessRcForInvalidType(RTTEST hTest, RTJSONVAL hJsonVal, RTJ
         RTTEST_CHECK_RC(hTest, RTJsonValueQueryByName(hJsonVal, "test", &hJsonValMember), VERR_JSON_VALUE_INVALID_TYPE);
     }
 
-    if (enmType != RTJSONVALTYPE_NUMBER)
+    if (enmType != RTJSONVALTYPE_INTEGER)
     {
         int64_t i64Num = 0;
         RTTEST_CHECK_RC(hTest, RTJsonValueQueryInteger(hJsonVal, &i64Num), VERR_JSON_VALUE_INVALID_TYPE);
+    }
+
+    if (enmType != RTJSONVALTYPE_NUMBER)
+    {
+        double rdNum = 0.0;
+        RTTEST_CHECK_RC(hTest, RTJsonValueQueryNumber(hJsonVal, &rdNum), VERR_JSON_VALUE_INVALID_TYPE);
     }
 
     if (enmType != RTJSONVALTYPE_STRING)
@@ -173,7 +180,7 @@ static void tstArray(RTTEST hTest, RTJSONVAL hJsonVal)
         int64_t i64Num = 0;
         RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
         RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueQueryByIndex(hJsonVal, i - 1, &hJsonValItem));
-        RTTEST_CHECK(hTest, RTJsonValueGetType(hJsonValItem) == RTJSONVALTYPE_NUMBER);
+        RTTEST_CHECK(hTest, RTJsonValueGetType(hJsonValItem) == RTJSONVALTYPE_INTEGER);
         RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueQueryInteger(hJsonValItem, &i64Num));
         RTTEST_CHECK(hTest, i64Num == (int64_t)i);
         RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonValItem) == 1);
@@ -229,12 +236,21 @@ static void tstIterator(RTTEST hTest, RTJSONVAL hJsonVal)
                     RTTEST_CHECK(hTest, strcmp(pszStr, "test") == 0);
                     break;
                 }
-                case RTJSONVALTYPE_NUMBER:
+                case RTJSONVALTYPE_INTEGER:
                 {
-                    RTTEST_CHECK(hTest, strcmp(pszName, "number") == 0);
+                    RTTEST_CHECK(hTest, strcmp(pszName, "integer") == 0);
                     int64_t i64Num = 0;
                     RTTEST_CHECK_RC_OK(hTest, RTJsonValueQueryInteger(hJsonValMember, &i64Num));
                     RTTEST_CHECK(hTest, i64Num == 100);
+                    break;
+                }
+                case RTJSONVALTYPE_NUMBER:
+                {
+                    RTTEST_CHECK(hTest, strcmp(pszName, "number") == 0);
+                    double rdNum = 0.0;
+                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueQueryNumber(hJsonValMember, &rdNum));
+                    double const rdExpect = 22.22;
+                    RTTEST_CHECK(hTest, rdNum == rdExpect);
                     break;
                 }
                 case RTJSONVALTYPE_NULL:

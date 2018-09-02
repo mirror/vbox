@@ -385,7 +385,7 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     m_fNullIndicator = false;
 
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
-    if (enmType == RTJSONVALTYPE_NUMBER)
+    if (enmType == RTJSONVALTYPE_INTEGER)
     {
         int rc = RTJsonValueQueryInteger(a_rCursor.m_hValue, &m_iValue);
         if (RT_SUCCESS(rc))
@@ -548,7 +548,7 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     m_fNullIndicator = false;
 
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
-    if (enmType == RTJSONVALTYPE_NUMBER)
+    if (enmType == RTJSONVALTYPE_INTEGER)
     {
         int64_t iTmp = m_iValue;
         int rc = RTJsonValueQueryInteger(a_rCursor.m_hValue, &iTmp);
@@ -717,7 +717,7 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     m_fNullIndicator = false;
 
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
-    if (enmType == RTJSONVALTYPE_NUMBER)
+    if (enmType == RTJSONVALTYPE_INTEGER)
     {
         int64_t iTmp = m_iValue;
         int rc = RTJsonValueQueryInteger(a_rCursor.m_hValue, &iTmp);
