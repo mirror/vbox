@@ -1182,7 +1182,7 @@ public:
         bool operator!=(ConstIterator const &a_rThat) { return m_pCur != a_rThat.m_pCur; }
 
         /* Map class must be friend so it can use the MapEntry constructor. */
-        friend RTCRestStringMapBase;
+        friend class RTCRestStringMapBase;
     };
 
     /** Returns iterator for the first map entry (unless it's empty and it's also the end). */

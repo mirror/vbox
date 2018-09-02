@@ -151,9 +151,9 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
                 AssertReturn(a_papQueryParamObjs[i]->typeClass() == RTCRestObjectBase::kTypeClass_Array,
                              VERR_REST_INTERAL_ERROR_2);
                 RTCRestArrayBase const *pArray = (RTCRestArrayBase const *)a_papQueryParamObjs[i];
-                for (size_t i = 0; i < pArray->size(); i++)
+                for (size_t j = 0; j < pArray->size(); j++)
                 {
-                    RTCRestObjectBase const *pObj = pArray->atBase(i);
+                    RTCRestObjectBase const *pObj = pArray->atBase(j);
                     int rc = pObj->toString(&strTmpVal, a_paQueryParams[i].fFlags & ~RTCRestObjectBase::kCollectionFormat_Mask);
                     AssertRCReturn(rc, rc);
 
