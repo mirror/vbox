@@ -297,7 +297,7 @@ protected:
     enum
     {
         /** Collection map, name is a prefix followed by '*'. */
-        kHdrField_MapCollection   = RT_BIT_32(24),
+        kHdrField_MapCollection   = RT_BIT_32(24)
     };
 
     /** Header field descriptor. */
