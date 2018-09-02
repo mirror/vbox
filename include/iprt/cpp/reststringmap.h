@@ -118,7 +118,7 @@ public:
      * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
      *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
      * @param   a_ppValue   Where to return the pointer to the value.
-     * @param   a_pszKey    The key to put it under.
+     * @param   a_rStrKey   The key to put it under.
      * @param   a_fReplace  Whether to replace or fail on key collision.
      */
     int putNewValue(RTCRestObjectBase **a_ppValue, RTCString const &a_rStrKey, bool a_fReplace = false);
