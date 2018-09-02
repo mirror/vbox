@@ -875,7 +875,7 @@ RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) con
     {
 
         /* Just a simple approximation here. */
-        /** @todo implement floating point values for json. */
+        /** @todo Not 100% sure printf %g produces the right result for JSON floating point, but it'll have to do for now... */
         char szValue[128];
 #ifdef _MSC_VER
         _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
@@ -892,9 +892,44 @@ RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) con
 
 int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
-    AssertMsgFailed(("RTJson needs to be taught double values."));
-    /** @todo implement floating point values for json. */
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NOT_IMPLEMENTED, "double is not supported yet");
+    m_rdValue = 0.0;
+    m_fNullIndicator = false;
+
+    RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
+    if (enmType == RTJSONVALTYPE_NUMBER)
+    {
+        int rc = RTJsonValueQueryNumber(a_rCursor.m_hValue, &m_rdValue);
+        if (RT_SUCCESS(rc))
+            return rc;
+        return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonValueQueryNumber failed with %Rrc", rc);
+    }
+
+    if (enmType == RTJSONVALTYPE_INTEGER)
+    {
+        int64_t iTmp = 0;
+        int rc = RTJsonValueQueryInteger(a_rCursor.m_hValue, &iTmp);
+        if (RT_SUCCESS(rc))
+        {
+            m_rdValue = iTmp;
+            if (m_rdValue == iTmp)
+                return rc;
+            return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_OUT_OF_RANGE, "value %RI64 does not fit in a double", iTmp);
+        }
+        return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonValueQueryInteger failed with %Rrc", rc);
+    }
+
+    if (enmType == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
+    /* This is probably non-sense... */
+    if (enmType == RTJSONVALTYPE_TRUE)
+        m_rdValue = 1.0;
+
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for a double",
+                                          RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
 
@@ -903,7 +938,7 @@ int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollection
     if (!m_fNullIndicator)
     {
         /* Just a simple approximation here. */
-        /** @todo implement floating point values for json. */
+        /** @todo Not 100% sure printf %g produces the right result for JSON floating point, but it'll have to do for now... */
         char szValue[128];
 #ifdef _MSC_VER
         _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
