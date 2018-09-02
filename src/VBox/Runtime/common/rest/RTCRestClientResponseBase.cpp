@@ -230,17 +230,13 @@ void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const
             for (size_t i = 0; i < a_cFields; i++)
             {
                 size_t const cchThisName = a_paFieldDescs[i].cchName;
-                if (  !(a_paFieldDescs[i].fFlags & kHdrField_MapCollection)
-                    ?    cchThisName == cchName
-                      && RTStrNICmpAscii(a_pchData, a_paFieldDescs[i].pszName, cchThisName) == 0
-                    :    cchThisName <= cchName
-                      && RTStrNICmpAscii(a_pchData, a_paFieldDescs[i].pszName, cchThisName - 1) == 0)
+                if (   (!(a_paFieldDescs[i].fFlags & kHdrField_MapCollection) ? cchThisName == cchName : cchThisName < cchName)
+                    && RTStrNICmpAscii(a_pchData, a_paFieldDescs[i].pszName, cchThisName) == 0)
                 {
                     /* Get and clean the value. */
-                    int rc = VINF_SUCCESS;
                     if (!fHaveValue)
                     {
-                        rc = strValue.assignNoThrow(&a_pchData[offValue], cchValue);
+                        int rc = strValue.assignNoThrow(&a_pchData[offValue], cchValue);
                         if (RT_SUCCESS(rc))
                         {
                             RTStrPurgeEncoding(strValue.mutableRaw()); /** @todo this is probably a little wrong... */
@@ -256,8 +252,9 @@ void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const
                     /*
                      * Create field to deserialize.
                      */
-                    RTCRestObjectBase *pObj = NULL;
-                    if (!(a_paFieldDescs[i].fFlags & (kHdrField_MapCollection | kHdrField_ArrayCollection)))
+                    RTCRestStringMapBase *pMap = NULL;
+                    RTCRestObjectBase    *pObj = NULL;
+                    if (!(a_paFieldDescs[i].fFlags & kHdrField_MapCollection))
                     {
                         /* Only once. */
                         if (!*a_pappFieldValues[i])
@@ -268,7 +265,7 @@ void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const
                             else
                             {
                                 addError(VERR_NO_MEMORY, "out of memory");
-                                continue;
+                                break;
                             }
                         }
                         else
@@ -279,17 +276,37 @@ void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const
                     }
                     else
                     {
-                        Assert(a_paFieldDescs[i].pszName[cchThisName - 1] == '*');
-                        AssertMsgFailed(("impl field collections"));
-                        continue;
+                        /* Make sure we've got a map to work with. */
+                        if (!*a_pappFieldValues[i])
+                            *a_pappFieldValues[i] = pObj = a_paFieldDescs[i].pfnCreateInstance();
+                        else
+                            pObj = *a_pappFieldValues[i];
+                        AssertBreak(pObj->typeClass() == RTCRestObjectBase::kTypeClass_StringMap);
+                        pMap = (RTCRestStringMapBase *)pObj;
+
+                        /* Insert the header field name (sans prefix) into the map.  We then use the
+                           new value object for the deserialization of the header field value below.  */
+                        int rc = pMap->putNewValue(&pObj, &a_pchData[cchThisName], cchName - cchThisName);
+                        if (RT_SUCCESS(rc))
+                        { /* likely */ }
+                        else if (rc == VERR_ALREADY_EXISTS)
+                        {
+                            addError(VERR_REST_RESPONSE_REPEAT_HEADER_FIELD, "Already saw header field '%s'", a_paFieldDescs[i].pszName);
+                            continue;
+                        }
+                        else
+                        {
+                            addError(rc, "out of memory");
+                            break;
+                        }
                     }
 
                     /*
                      * Deserialize it.
                      */
                     RTERRINFOSTATIC ErrInfo;
-                    rc = pObj->fromString(strValue, a_paFieldDescs[i].pszName, RTErrInfoInitStatic(&ErrInfo),
-                                          a_paFieldDescs[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask);
+                    int rc = pObj->fromString(strValue, a_paFieldDescs[i].pszName, RTErrInfoInitStatic(&ErrInfo),
+                                              a_paFieldDescs[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask);
                     if (RT_SUCCESS(rc))
                     { /* likely */ }
                     else if (RTErrInfoIsSet(&ErrInfo.Core))
@@ -404,27 +421,27 @@ void RTCRestClientResponseBase::deserializeBody(RTCRestObjectBase *a_pDst, const
             rc = RTJsonParseFromBuf(&hValue, (const uint8_t *)a_pchData, a_cbData, RTErrInfoInitStatic(&ErrInfo));
             if (RT_SUCCESS(rc))
             {
-                PrimaryJsonCursorForBody PrimaryCursor(hValue, a_pDst->getType(), this); /* note: consumes hValue */
+                PrimaryJsonCursorForBody PrimaryCursor(hValue, a_pDst->typeName(), this); /* note: consumes hValue */
                 a_pDst->deserializeFromJson(PrimaryCursor.m_Cursor);
             }
             else if (RTErrInfoIsSet(&ErrInfo.Core))
                 addError(rc, "Error %Rrc parsing server response as JSON (type %s): %s",
-                         rc, a_pDst->getType(), ErrInfo.Core.pszMsg);
+                         rc, a_pDst->typeName(), ErrInfo.Core.pszMsg);
             else
-                addError(rc, "Error %Rrc parsing server response as JSON (type %s)", rc, a_pDst->getType());
+                addError(rc, "Error %Rrc parsing server response as JSON (type %s)", rc, a_pDst->typeName());
         }
         else if (rc == VERR_INVALID_UTF8_ENCODING)
             addError(VERR_REST_RESPONSE_INVALID_UTF8_ENCODING, "Invalid UTF-8 body encoding (object type %s; Content-Type: %s)",
-                     a_pDst->getType(), m_strContentType.c_str());
+                     a_pDst->typeName(), m_strContentType.c_str());
         else if (rc == VERR_BUFFER_UNDERFLOW)
             addError(VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR, "Embedded zero character in response (object type %s; Content-Type: %s)",
-                     a_pDst->getType(), m_strContentType.c_str());
+                     a_pDst->typeName(), m_strContentType.c_str());
         else
             addError(rc, "Unexpected body validation error (object type %s; Content-Type: %s): %Rrc",
-                     a_pDst->getType(), m_strContentType.c_str(), rc);
+                     a_pDst->typeName(), m_strContentType.c_str(), rc);
     }
     else
         addError(VERR_REST_RESPONSE_CONTENT_TYPE_NOT_SUPPORTED, "Unsupported content type for '%s': %s",
-                 a_pDst->getType(), m_strContentType.c_str());
+                 a_pDst->typeName(), m_strContentType.c_str());
 }
 

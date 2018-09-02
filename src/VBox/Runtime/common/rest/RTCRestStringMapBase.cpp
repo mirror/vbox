@@ -203,6 +203,18 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
 //
 
 
+RTCRestObjectBase::kTypeClass RTCRestStringMapBase::typeClass(void) const
+{
+    return kTypeClass_StringMap;
+}
+
+
+const char *RTCRestStringMapBase::typeName(void) const
+{
+    return "RTCRestStringMap<ValueType>";
+}
+
+
 /*********************************************************************************************************************************
 *   Generic map methods                                                                                                          *
 *********************************************************************************************************************************/
@@ -271,6 +283,33 @@ bool RTCRestStringMapBase::remove(RTCString const &a_rStrKey)
 }
 
 
+int RTCRestStringMapBase::putNewValue(RTCRestObjectBase **a_ppValue, const char *a_pszKey, size_t a_cchKey /*= RTSTR_MAX*/,
+                                      bool a_fReplace /*= false*/)
+{
+    RTCRestObjectBase *pValue = createValue();
+    if (pValue)
+    {
+        int rc = putWorker(a_pszKey, pValue, a_fReplace, a_cchKey);
+        if (RT_SUCCESS(rc))
+            *a_ppValue = pValue;
+        else
+        {
+            delete pValue;
+            *a_ppValue = NULL;
+        }
+        return rc;
+    }
+    *a_ppValue = NULL;
+    return VERR_NO_MEMORY;
+}
+
+
+int RTCRestStringMapBase::putNewValue(RTCRestObjectBase **a_ppValue, RTCString const &a_rStrKey, bool a_fReplace /*= false*/)
+{
+    return putNewValue(a_ppValue, a_rStrKey.c_str(), a_rStrKey.length(), a_fReplace);
+}
+
+
 /*********************************************************************************************************************************
 *   Protected methods                                                                                                            *
 *********************************************************************************************************************************/
@@ -300,13 +339,14 @@ int RTCRestStringMapBase::copyMapWorker(RTCRestStringMapBase const &a_rThat, boo
 }
 
 
-int RTCRestStringMapBase::putWorker(const char *a_pszKey, RTCRestObjectBase *a_pValue, bool a_fReplace)
+int RTCRestStringMapBase::putWorker(const char *a_pszKey, RTCRestObjectBase *a_pValue, bool a_fReplace,
+                                    size_t a_cchKey /*= RTSTR_MAX*/)
 {
     int rc;
     MapEntry *pEntry =  new (std::nothrow) MapEntry;
     if (pEntry)
     {
-        rc = pEntry->strKey.assignNoThrow(a_pszKey);
+        rc = pEntry->strKey.assignNoThrow(a_pszKey, a_cchKey);
         if (RT_SUCCESS(rc))
         {
             pEntry->Core.pszString = pEntry->strKey.c_str();
@@ -346,13 +386,14 @@ int RTCRestStringMapBase::putWorker(const char *a_pszKey, RTCRestObjectBase *a_p
 }
 
 
-int RTCRestStringMapBase::putCopyWorker(const char *a_pszKey, RTCRestObjectBase const &a_rValue, bool a_fReplace)
+int RTCRestStringMapBase::putCopyWorker(const char *a_pszKey, RTCRestObjectBase const &a_rValue, bool a_fReplace,
+                                        size_t a_cchKey /*= RTSTR_MAX*/)
 {
     int rc;
     RTCRestObjectBase *pValueCopy = createValueCopy(&a_rValue);
     if (pValueCopy)
     {
-        rc = putWorker(a_pszKey, pValueCopy, a_fReplace);
+        rc = putWorker(a_pszKey, pValueCopy, a_fReplace, a_cchKey);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else

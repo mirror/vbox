@@ -244,6 +244,18 @@ int RTCRestArrayBase::fromString(RTCString const &a_rValue, const char *a_pszNam
 }
 
 
+RTCRestObjectBase::kTypeClass RTCRestArrayBase::typeClass(void) const
+{
+    return kTypeClass_Array;
+}
+
+
+const char *RTCRestArrayBase::typeName(void) const
+{
+    return "RTCRestArray<ElementType>";
+}
+
+
 
 /*********************************************************************************************************************************
 *   Array methods                                                                                                                *

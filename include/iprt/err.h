@@ -3217,6 +3217,25 @@ RT_C_DECLS_END
 #define VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR           (-25702)
 /** Server response contains unexpected repetitive header field. */
 #define VERR_REST_RESPONSE_REPEAT_HEADER_FIELD          (-25703)
+
+/** Internal error \#1. */
+#define VERR_REST_INTERAL_ERROR_1                       (-25791)
+/** Internal error \#2. */
+#define VERR_REST_INTERAL_ERROR_2                       (-25792)
+/** Internal error \#3. */
+#define VERR_REST_INTERAL_ERROR_3                       (-25793)
+/** Internal error \#4. */
+#define VERR_REST_INTERAL_ERROR_4                       (-25794)
+/** Internal error \#5. */
+#define VERR_REST_INTERAL_ERROR_5                       (-25795)
+/** Internal error \#6. */
+#define VERR_REST_INTERAL_ERROR_6                       (-25796)
+/** Internal error \#7. */
+#define VERR_REST_INTERAL_ERROR_7                       (-25797)
+/** Internal error \#8. */
+#define VERR_REST_INTERAL_ERROR_8                       (-25798)
+/** Internal error \#9. */
+#define VERR_REST_INTERAL_ERROR_9                       (-25799)
 /** @} */
 
 /* SED-END */

@@ -117,6 +117,12 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
 }
 
 
+RTCRestObjectBase::kTypeClass RTCRestObjectBase::typeClass() const
+{
+    return kTypeClass_Object;
+}
+
+
 /*********************************************************************************************************************************
 *   RTCRestBool implementation                                                                                                   *
 *********************************************************************************************************************************/
@@ -276,7 +282,13 @@ int RTCRestBool::fromString(RTCString const &a_rValue, const char *a_pszName, PR
 }
 
 
-const char *RTCRestBool::getType()
+RTCRestObjectBase::kTypeClass RTCRestBool::typeClass() const
+{
+    return kTypeClass_Bool;
+}
+
+
+const char *RTCRestBool::typeName() const
 {
     return "bool";
 }
@@ -433,7 +445,13 @@ int RTCRestInt64::fromString(RTCString const &a_rValue, const char *a_pszName, P
 }
 
 
-const char *RTCRestInt64::getType()
+RTCRestObjectBase::kTypeClass RTCRestInt64::typeClass() const
+{
+    return kTypeClass_Int64;
+}
+
+
+const char *RTCRestInt64::typeName() const
 {
     return "int64_t";
 }
@@ -596,7 +614,13 @@ int RTCRestInt32::fromString(RTCString const &a_rValue, const char *a_pszName, P
 }
 
 
-const char *RTCRestInt32::getType()
+RTCRestObjectBase::kTypeClass RTCRestInt32::typeClass() const
+{
+    return kTypeClass_Int32;
+}
+
+
+const char *RTCRestInt32::typeName() const
 {
     return "int32_t";
 }
@@ -759,7 +783,13 @@ int RTCRestInt16::fromString(RTCString const &a_rValue, const char *a_pszName, P
 }
 
 
-const char *RTCRestInt16::getType()
+RTCRestObjectBase::kTypeClass RTCRestInt16::typeClass() const
+{
+    return kTypeClass_Int16;
+}
+
+
+const char *RTCRestInt16::typeName() const
 {
     return "int16_t";
 }
@@ -919,7 +949,13 @@ int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, 
 }
 
 
-const char *RTCRestDouble::getType()
+RTCRestObjectBase::kTypeClass RTCRestDouble::typeClass() const
+{
+    return kTypeClass_Double;
+}
+
+
+const char *RTCRestDouble::typeName() const
 {
     return "double";
 }
@@ -1070,7 +1106,13 @@ int RTCRestString::fromString(RTCString const &a_rValue, const char *a_pszName, 
 }
 
 
-const char *RTCRestString::getType()
+RTCRestObjectBase::kTypeClass RTCRestString::typeClass() const
+{
+    return kTypeClass_String;
+}
+
+
+const char *RTCRestString::typeName() const
 {
     return "RTCString";
 }

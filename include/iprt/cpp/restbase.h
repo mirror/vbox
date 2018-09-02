@@ -32,6 +32,7 @@
 #include <iprt/http.h>
 #include <iprt/json.h>
 #include <iprt/list.h>
+#include <iprt/string.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpp/ministring.h>
 #include <iprt/cpp/utils.h>
@@ -313,6 +314,7 @@ public:
      *
      * @note When adding collection format types, make sure to also
      *       update RTCRestArrayBase::toString().
+     * @note Bit 24 is reserved (for kHdrField_MapCollection).
      */
     enum
     {
@@ -359,10 +361,30 @@ public:
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified);
 
+    /** Type classification */
+    typedef enum kTypeClass
+    {
+        kTypeClass_Invalid = 0,
+        kTypeClass_Bool,                /**< Primitive: bool. */
+        kTypeClass_Int64,               /**< Primitive: bool. */
+        kTypeClass_Int32,               /**< Primitive: bool. */
+        kTypeClass_Int16,               /**< Primitive: bool. */
+        kTypeClass_Double,              /**< Primitive: bool. */
+        kTypeClass_String,              /**< Primitive: bool. */
+        kTypeClass_Object,              /**< Object (any kind of data model object). */
+        kTypeClass_Array,               /**< Array (containing any kind of object). */
+        kTypeClass_StringMap            /**< String map (containing any kind of object). */
+    } kTypeClass;
+
+    /**
+     * Returns the object type class.
+     */
+    virtual kTypeClass typeClass(void) const;
+
     /**
      * Returns the object type name.
      */
-    virtual const char *getType(void) = 0;
+    virtual const char *typeName(void) const = 0;
 
     /**
      * Factory method.
@@ -413,7 +435,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -452,7 +475,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -491,7 +515,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -530,7 +555,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -569,7 +595,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -612,7 +639,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -637,6 +665,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /**
      * Clear the content of the map.
@@ -662,13 +692,38 @@ public:
     }
 
     /**
+     * Returns the base object pointer at a given index.
+     *
+     * @returns The base object at @a a_idx, NULL if out of range.
+     * @param   a_idx           The array index.
+     */
+    RTCRestObjectBase *atBase(size_t a_idx)
+    {
+        if (a_idx < m_cElements)
+            return m_papElements[a_idx];
+        return NULL;
+    }
+
+    /**
+     * Returns the const base object pointer at a given index.
+     *
+     * @returns The base object at @a a_idx, NULL if out of range.
+     * @param   a_idx           The array index.
+     */
+    RTCRestObjectBase const *atBase(size_t a_idx) const
+    {
+        if (a_idx < m_cElements)
+            return m_papElements[a_idx];
+        return NULL;
+    }
+
+    /**
      * Removes the element at @a a_idx.
      * @returns true if @a a_idx is valid, false if out of range.
      * @param   a_idx       The index of the element to remove.
      *                      The value ~(size_t)0 is an alias for the final element.
      */
     bool removeAt(size_t a_idx);
-
 
     /**
      * Makes sure the array can hold at the given number of entries.
@@ -781,11 +836,6 @@ public:
     int assignCopy(RTCRestArray const &a_rThat)
     {
         return copyArrayWorker(a_rThat, false /*fThrow*/);
-    }
-
-    virtual const char *getType(void) RT_OVERRIDE
-    {
-        return "RTCRestArray<ElementType>";
     }
 
     /** Factory method. */
@@ -1008,6 +1058,8 @@ public:
     //virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     //virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
     //                       uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /**
      * Clear the content of the map.
@@ -1047,6 +1099,28 @@ public:
      */
     bool remove(RTCString const &a_rStrKey);
 
+    /**
+     * Creates a new value and inserts it under the given key, returning the new value.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_ppValue   Where to return the pointer to the value.
+     * @param   a_pszKey    The key to put it under.
+     * @param   a_cchKey    The length of the key.  Default is the entire string.
+     * @param   a_fReplace  Whether to replace or fail on key collision.
+     */
+    int putNewValue(RTCRestObjectBase **a_ppValue, const char *a_pszKey, size_t a_cchKey = RTSTR_MAX, bool a_fReplace = false);
+
+    /**
+     * Creates a new value and inserts it under the given key, returning the new value.
+     *
+     * @returns VINF_SUCCESS or VWRN_ALREADY_EXISTS on success.
+     *          VERR_ALREADY_EXISTS, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
+     * @param   a_ppValue   Where to return the pointer to the value.
+     * @param   a_pszKey    The key to put it under.
+     * @param   a_fReplace  Whether to replace or fail on key collision.
+     */
+    int putNewValue(RTCRestObjectBase **a_ppValue, RTCString const &a_rStrKey, bool a_fReplace = false);
 
 protected:
     /** Map entry. */
@@ -1068,6 +1142,57 @@ protected:
     RTLISTANCHOR        m_ListHead;
     /** Number of map entries. */
     size_t              m_cEntries;
+
+public:
+    /** @name Map Iteration
+     * @{  */
+    /** Const iterator. */
+    class ConstIterator
+    {
+    private:
+        MapEntry            *m_pCur;
+        ConstIterator();
+    protected:
+        ConstIterator(MapEntry *a_pEntry) : m_pCur(a_pEntry) { }
+    public:
+        ConstIterator(ConstIterator const &a_rThat) : m_pCur(a_rThat.m_pCur) { }
+
+        /** Gets the key string. */
+        RTCString const         &getKey()   { return m_pCur->strKey; }
+        /** Gets poitner to the value object. */
+        RTCRestObjectBase const *getValue() { return m_pCur->pValue; }
+
+        /** Advance to the next map entry. */
+        ConstIterator &operator++()
+        {
+            m_pCur = RTListNodeGetNextCpp(&m_pCur->ListEntry, MapEntry, ListEntry);
+            return *this;
+        }
+
+        /** Advance to the previous map entry. */
+        ConstIterator &operator--()
+        {
+            m_pCur = RTListNodeGetPrevCpp(&m_pCur->ListEntry, MapEntry, ListEntry);
+            return *this;
+        }
+
+        /** Compare equal. */
+        bool operator==(ConstIterator const &a_rThat) { return m_pCur == a_rThat.m_pCur; }
+        /** Compare not equal. */
+        bool operator!=(ConstIterator const &a_rThat) { return m_pCur != a_rThat.m_pCur; }
+
+        /* Map class must be friend so it can use the MapEntry constructor. */
+        friend RTCRestStringMapBase;
+    };
+
+    /** Returns iterator for the first map entry (unless it's empty and it's also the end). */
+    ConstIterator begin() const { return ConstIterator(RTListGetFirstCpp(&m_ListHead, MapEntry, ListEntry)); }
+    /** Returns iterator for the last map entry (unless it's empty and it's also the end). */
+    ConstIterator last() const  { return ConstIterator(RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry)); }
+    /** Returns the end iterator.  This does not ever refer to an actual map entry. */
+    ConstIterator end() const   { return ConstIterator(RT_FROM_CPP_MEMBER(&m_ListHead, MapEntry, ListEntry)); }
+    /** @} */
+
 
 protected:
     /**
@@ -1105,8 +1230,9 @@ protected:
      * @param   a_pszKey        The key.
      * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     * @param   a_cchKey        The key length, the whole string by default.
      */
-    int putWorker(const char *a_pszKey, RTCRestObjectBase *a_pValue, bool a_fReplace);
+    int putWorker(const char *a_pszKey, RTCRestObjectBase *a_pValue, bool a_fReplace, size_t a_cchKey = RTSTR_MAX);
 
     /**
      * Worker for performing inserts.
@@ -1116,8 +1242,9 @@ protected:
      * @param   a_pszKey        The key.
      * @param   a_rValue        The value to copy into the map.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
+     * @param   a_cchKey        The key length, the whole string by default.
      */
-    int putCopyWorker(const char *a_pszKey, RTCRestObjectBase const &a_rValue, bool a_fReplace);
+    int putCopyWorker(const char *a_pszKey, RTCRestObjectBase const &a_rValue, bool a_fReplace, size_t a_cchKey = RTSTR_MAX);
 
     /**
      * Worker for getting the value corresponding to the given key.
@@ -1177,11 +1304,6 @@ public:
         return copyMapWorker(a_rThat, false /*a_fThrow*/);
     }
 
-    virtual const char *getType(void) RT_OVERRIDE
-    {
-        return "RTCRestStringMap<ValueType>";
-    }
-
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
     {
@@ -1219,7 +1341,7 @@ public:
      */
     int put(RTCString const &a_rStrKey, ValueType *a_pValue, bool a_fReplace = false)
     {
-        return putWorker(a_rStrKey.c_str(), a_pValue, a_fReplace);
+        return putWorker(a_rStrKey.c_str(), a_pValue, a_fReplace, a_rStrKey.length());
     }
 
     /**
@@ -1247,7 +1369,7 @@ public:
      */
     int putCopy(RTCString const &a_rStrKey, const ValueType &a_rValue, bool a_fReplace = false)
     {
-        return putCopyWorker(a_rStrKey.c_str(), a_rValue, a_fReplace);
+        return putCopyWorker(a_rStrKey.c_str(), a_rValue, a_fReplace, a_rStrKey.length());
     }
 
     /**
@@ -1346,7 +1468,8 @@ public:
     virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
                            uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual const char *getType(void) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
@@ -1451,10 +1574,10 @@ protected:
     /** Query parameter descriptor. */
     typedef struct
     {
-        const char                 *pszName;    /**< The parameter name. */
-        uint32_t                    fFlags;     /**< The toString flags. */
-        bool                        fRequired;  /**< Required or not. */
-        uint8_t                     iBitNo;     /**< The parameter bit number. */
+        const char *pszName;            /**< The parameter name. */
+        uint32_t    fFlags;             /**< The toString flags. */
+        bool        fRequired;          /**< Required or not. */
+        uint8_t     iBitNo;             /**< The parameter bit number. */
     } QUERYPARAMDESC;
 
     /**
@@ -1472,10 +1595,11 @@ protected:
     /** Header parameter descriptor. */
     typedef struct
     {
-        const char                 *pszName;    /**< The parameter name. */
-        uint32_t                    fFlags;     /**< The toString flags. */
-        bool                        fRequired;  /**< Required or not. */
-        uint8_t                     iBitNo;     /**< The parameter bit number. */
+        const char *pszName;            /**< The parameter name. */
+        uint32_t    fFlags;             /**< The toString flags. */
+        bool        fRequired;          /**< Required or not. */
+        uint8_t     iBitNo;             /**< The parameter bit number. */
+        bool        fMapCollection;     /**< Collect headers starting with pszName into a map. */
     } HEADERPARAMDESC;
 
     /**
@@ -1618,8 +1742,6 @@ protected:
     {
         /** Collection map, name is a prefix followed by '*'. */
         kHdrField_MapCollection   = RT_BIT_32(24),
-        /** Array collection, i.e. the heade field may appear more than once. */
-        kHdrField_ArrayCollection = RT_BIT_32(25)
     };
 
     /** Header field descriptor. */

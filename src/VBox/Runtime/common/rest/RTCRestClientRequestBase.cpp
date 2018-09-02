@@ -145,7 +145,23 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
             }
             else
             {
-                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+                /*
+                 * Enumerate array and add 'name=element' for each element in it.
+                 */
+                AssertReturn(a_papQueryParamObjs[i]->typeClass() == RTCRestObjectBase::kTypeClass_Array,
+                             VERR_REST_INTERAL_ERROR_2);
+                RTCRestArrayBase const *pArray = (RTCRestArrayBase const *)a_papQueryParamObjs[i];
+                for (size_t i = 0; i < pArray->size(); i++)
+                {
+                    RTCRestObjectBase const *pObj = pArray->atBase(i);
+                    int rc = pObj->toString(&strTmpVal, a_paQueryParams[i].fFlags & ~RTCRestObjectBase::kCollectionFormat_Mask);
+                    AssertRCReturn(rc, rc);
+
+                    rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpq=%RMpq", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
+                    AssertRCReturn(rc, rc);
+
+                    chSep = '&';
+                }
             }
         }
     }
@@ -169,11 +185,41 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
             AssertMsg(m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo),
                       ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName));
 
-            int rc = a_papHeaderParamObjs[i]->toString(&strTmpVal, a_paHeaderParams[i].fFlags);
-            AssertRCReturn(rc, rc);
+            if (!a_paHeaderParams[i].fMapCollection)
+            {
+                int rc = a_papHeaderParamObjs[i]->toString(&strTmpVal, a_paHeaderParams[i].fFlags);
+                AssertRCReturn(rc, rc);
 
-            rc = RTHttpAppendHeader(a_hHttp, a_paHeaderParams[i].pszName, strTmpVal.c_str(), 0);
-            AssertRCReturn(rc, rc);
+                rc = RTHttpAppendHeader(a_hHttp, a_paHeaderParams[i].pszName, strTmpVal.c_str(), 0);
+                AssertRCReturn(rc, rc);
+            }
+            else if (!a_papHeaderParamObjs[i]->isNull())
+            {
+                /*
+                 * Enumerate the map and produce a series of head fields on the form:
+                 *      (a_paHeaderParams[i].pszName + key): value.toString()
+                 */
+                AssertReturn(a_papHeaderParamObjs[i]->typeClass() == RTCRestObjectBase::kTypeClass_StringMap,
+                             VERR_REST_INTERAL_ERROR_1);
+                RTCRestStringMapBase const *pMap    = (RTCRestStringMapBase const *)a_papHeaderParamObjs[i];
+                const size_t                cchName = strlen(a_paHeaderParams[i].pszName);
+                RTCString                   strTmpName;
+                for (RTCRestStringMapBase::ConstIterator it = pMap->begin(); it != pMap->end(); ++it)
+                {
+                    int rc = strTmpName.assignNoThrow(a_paHeaderParams[i].pszName, cchName);
+                    AssertRCReturn(rc, rc);
+                    rc = strTmpName.appendNoThrow(it.getKey());
+                    AssertRCReturn(rc, rc);
+
+                    rc = it.getValue()->toString(&strTmpVal, a_paHeaderParams[i].fFlags);
+                    AssertRCReturn(rc, rc);
+
+                    rc = RTHttpAppendHeader(a_hHttp, strTmpName.c_str(), strTmpVal.c_str(), 0);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+            else
+                Assert(!a_paHeaderParams[i].fRequired);
         }
     }
     return VINF_SUCCESS;
