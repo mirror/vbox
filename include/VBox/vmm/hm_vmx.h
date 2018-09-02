@@ -2319,19 +2319,24 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_INT_INFO_, UINT32_C(0), UINT32_MAX,
  * instructions.
  * @{ */
 typedef uint8_t VMXINSTRID;
-#define VMX_INSTR_ID_VALID                                    RT_BIT(7)
-#define VMX_INSTR_ID_IS_VALID(a)                              (((a) >> 7) & 1)
-#define VMX_INSTR_ID_GET_ID(a)                                ((a) & ~VMX_INSTR_ID_VALID)
+#define VMXINSTRID_VALID                                        RT_BIT(7)
+#define VMXINSTRID_IS_VALID(a)                                  (((a) >> 7) & 1)
+#define VMXINSTRID_GET_ID(a)                                    ((a) & ~VMXINSTRID_VALID)
+#define VMXINSTRID_NONE                                         0
 /** The OR'd rvalues are from the VT-x spec (valid bit is VBox specific): */
-#define VMX_INSTR_ID_SGDT                                     ((VMX_INSTR_ID_VALID) | 0)
-#define VMX_INSTR_ID_SIDT                                     ((VMX_INSTR_ID_VALID) | 1)
-#define VMX_INSTR_ID_LGDT                                     ((VMX_INSTR_ID_VALID) | 2)
-#define VMX_INSTR_ID_LIDT                                     ((VMX_INSTR_ID_VALID) | 3)
+#define VMXINSTRID_SGDT                                         ((VMXINSTRID_VALID) | 0)
+#define VMXINSTRID_SIDT                                         ((VMXINSTRID_VALID) | 1)
+#define VMXINSTRID_LGDT                                         ((VMXINSTRID_VALID) | 2)
+#define VMXINSTRID_LIDT                                         ((VMXINSTRID_VALID) | 3)
 
-#define VMX_INSTR_ID_SLDT                                     ((VMX_INSTR_ID_VALID) | 0)
-#define VMX_INSTR_ID_STR                                      ((VMX_INSTR_ID_VALID) | 1)
-#define VMX_INSTR_ID_LLDT                                     ((VMX_INSTR_ID_VALID) | 2)
-#define VMX_INSTR_ID_LTR                                      ((VMX_INSTR_ID_VALID) | 3)
+#define VMXINSTRID_SLDT                                         ((VMXINSTRID_VALID) | 0)
+#define VMXINSTRID_STR                                          ((VMXINSTRID_VALID) | 1)
+#define VMXINSTRID_LLDT                                         ((VMXINSTRID_VALID) | 2)
+#define VMXINSTRID_LTR                                          ((VMXINSTRID_VALID) | 3)
+
+/** The following are used internally and are not based on the VT-x spec:   */
+#define VMXINSTRID_VMLAUNCH                                     ((VMXINSTRID_VALID) | 50)
+#define VMXINSTRID_VMRESUME                                     ((VMXINSTRID_VALID) | 51)
 /** @} */
 
 
@@ -2804,128 +2809,12 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 #define VMX_V_MSEG_REV_ID                                       0
 /** @} */
 
-/**
- * Virtual VMX-instruction diagnostics.
- *
- * These are not the same as VM instruction errors that are enumerated in the Intel
- * spec. These are purely internal, fine-grained definitions used for diagnostic
- * purposes and are not reported to guest software under the VM-instruction error
- * field in its VMCS.
- *
- * @note Members of this enum are used as array indices, so no gaps are allowed.
- *       Please update g_apszVmxInstrDiagDesc when you add new fields to this
- *       enum.
- */
-typedef enum
-{
-    /* Internal processing errors. */
-    kVmxVInstrDiag_Ipe_1 = 0,
-    kVmxVInstrDiag_Ipe_2,
-    kVmxVInstrDiag_Ipe_3,
-    kVmxVInstrDiag_Ipe_4,
-    kVmxVInstrDiag_Ipe_5,
-    kVmxVInstrDiag_Ipe_6,
-    kVmxVInstrDiag_Ipe_7,
-    kVmxVInstrDiag_Ipe_8,
-    kVmxVInstrDiag_Ipe_9,
-    /* VMXON. */
-    kVmxVInstrDiag_Vmxon_A20M,
-    kVmxVInstrDiag_Vmxon_Cpl,
-    kVmxVInstrDiag_Vmxon_Cr0Fixed0,
-    kVmxVInstrDiag_Vmxon_Cr4Fixed0,
-    kVmxVInstrDiag_Vmxon_Intercept,
-    kVmxVInstrDiag_Vmxon_LongModeCS,
-    kVmxVInstrDiag_Vmxon_MsrFeatCtl,
-    kVmxVInstrDiag_Vmxon_PtrAbnormal,
-    kVmxVInstrDiag_Vmxon_PtrAlign,
-    kVmxVInstrDiag_Vmxon_PtrMap,
-    kVmxVInstrDiag_Vmxon_PtrReadPhys,
-    kVmxVInstrDiag_Vmxon_PtrWidth,
-    kVmxVInstrDiag_Vmxon_RealOrV86Mode,
-    kVmxVInstrDiag_Vmxon_ShadowVmcs,
-    kVmxVInstrDiag_Vmxon_Success,
-    kVmxVInstrDiag_Vmxon_VmxAlreadyRoot,
-    kVmxVInstrDiag_Vmxon_Vmxe,
-    kVmxVInstrDiag_Vmxon_VmcsRevId,
-    kVmxVInstrDiag_Vmxon_VmxRootCpl,
-    /* VMXOFF. */
-    kVmxVInstrDiag_Vmxoff_Cpl,
-    kVmxVInstrDiag_Vmxoff_Intercept,
-    kVmxVInstrDiag_Vmxoff_LongModeCS,
-    kVmxVInstrDiag_Vmxoff_RealOrV86Mode,
-    kVmxVInstrDiag_Vmxoff_Success,
-    kVmxVInstrDiag_Vmxoff_Vmxe,
-    kVmxVInstrDiag_Vmxoff_VmxRoot,
-    /* VMPTRLD. */
-    kVmxVInstrDiag_Vmptrld_Cpl,
-    kVmxVInstrDiag_Vmptrld_LongModeCS,
-    kVmxVInstrDiag_Vmptrld_PtrAbnormal,
-    kVmxVInstrDiag_Vmptrld_PtrAlign,
-    kVmxVInstrDiag_Vmptrld_PtrMap,
-    kVmxVInstrDiag_Vmptrld_PtrReadPhys,
-    kVmxVInstrDiag_Vmptrld_PtrVmxon,
-    kVmxVInstrDiag_Vmptrld_PtrWidth,
-    kVmxVInstrDiag_Vmptrld_RealOrV86Mode,
-    kVmxVInstrDiag_Vmptrld_ShadowVmcs,
-    kVmxVInstrDiag_Vmptrld_Success,
-    kVmxVInstrDiag_Vmptrld_VmcsRevId,
-    kVmxVInstrDiag_Vmptrld_VmxRoot,
-    /* VMPTRST. */
-    kVmxVInstrDiag_Vmptrst_Cpl,
-    kVmxVInstrDiag_Vmptrst_LongModeCS,
-    kVmxVInstrDiag_Vmptrst_PtrMap,
-    kVmxVInstrDiag_Vmptrst_RealOrV86Mode,
-    kVmxVInstrDiag_Vmptrst_Success,
-    kVmxVInstrDiag_Vmptrst_VmxRoot,
-    /* VMCLEAR. */
-    kVmxVInstrDiag_Vmclear_Cpl,
-    kVmxVInstrDiag_Vmclear_LongModeCS,
-    kVmxVInstrDiag_Vmclear_PtrAbnormal,
-    kVmxVInstrDiag_Vmclear_PtrAlign,
-    kVmxVInstrDiag_Vmclear_PtrMap,
-    kVmxVInstrDiag_Vmclear_PtrReadPhys,
-    kVmxVInstrDiag_Vmclear_PtrVmxon,
-    kVmxVInstrDiag_Vmclear_PtrWidth,
-    kVmxVInstrDiag_Vmclear_RealOrV86Mode,
-    kVmxVInstrDiag_Vmclear_Success,
-    kVmxVInstrDiag_Vmclear_VmxRoot,
-    /* VMWRITE. */
-    kVmxVInstrDiag_Vmwrite_Cpl,
-    kVmxVInstrDiag_Vmwrite_FieldInvalid,
-    kVmxVInstrDiag_Vmwrite_FieldRo,
-    kVmxVInstrDiag_Vmwrite_LinkPtrInvalid,
-    kVmxVInstrDiag_Vmwrite_LongModeCS,
-    kVmxVInstrDiag_Vmwrite_PtrInvalid,
-    kVmxVInstrDiag_Vmwrite_PtrMap,
-    kVmxVInstrDiag_Vmwrite_RealOrV86Mode,
-    kVmxVInstrDiag_Vmwrite_Success,
-    kVmxVInstrDiag_Vmwrite_VmxRoot,
-    /* VMREAD. */
-    kVmxVInstrDiag_Vmread_Cpl,
-    kVmxVInstrDiag_Vmread_FieldInvalid,
-    kVmxVInstrDiag_Vmread_LinkPtrInvalid,
-    kVmxVInstrDiag_Vmread_LongModeCS,
-    kVmxVInstrDiag_Vmread_PtrInvalid,
-    kVmxVInstrDiag_Vmread_PtrMap,
-    kVmxVInstrDiag_Vmread_RealOrV86Mode,
-    kVmxVInstrDiag_Vmread_Success,
-    kVmxVInstrDiag_Vmread_VmxRoot,
-    /* VMLAUNCH. */
-    kVmxVInstrDiag_Vmlaunch_Cpl,
-    kVmxVInstrDiag_Vmlaunch_LongModeCS,
-    kVmxVInstrDiag_Vmlaunch_RealOrV86Mode,
-    kVmxVInstrDiag_Vmlaunch_VmxRoot,
-    /* Last member for determining array index limit. */
-    kVmxVInstrDiag_Last
-} VMXVINSTRDIAG;
-AssertCompileSize(VMXVINSTRDIAG, 4);
-
 /** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS state.
  * @{ */
 /** VMCS state clear. */
-#define VMX_V_VMCS_STATE_CLEAR          RT_BIT(0)
+#define VMX_V_VMCS_STATE_CLEAR          RT_BIT(1)
 /** VMCS state launched. */
-#define VMX_V_VMCS_STATE_LAUNCHED       RT_BIT(1)
+#define VMX_V_VMCS_STATE_LAUNCHED       RT_BIT(2)
 /** @} */
 
 /**
@@ -3422,6 +3311,126 @@ AssertCompileMemberOffset(VMXVVMCS, u64ExitQual,        0x610);
 AssertCompileMemberOffset(VMXVVMCS, u64GuestCr0,        0x6c0);
 AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
 /** @} */
+
+/**
+ * Virtual VMX-instruction diagnostics.
+ *
+ * These are not the same as VM instruction errors that are enumerated in the Intel
+ * spec. These are purely internal, fine-grained definitions used for diagnostic
+ * purposes and are not reported to guest software under the VM-instruction error
+ * field in its VMCS.
+ *
+ * @note Members of this enum are used as array indices, so no gaps are allowed.
+ *       Please update g_apszVmxInstrDiagDesc when you add new fields to this
+ *       enum.
+ */
+typedef enum
+{
+    /* Internal processing errors. */
+    kVmxVInstrDiag_Ipe_1 = 0,
+    kVmxVInstrDiag_Ipe_2,
+    kVmxVInstrDiag_Ipe_3,
+    kVmxVInstrDiag_Ipe_4,
+    kVmxVInstrDiag_Ipe_5,
+    kVmxVInstrDiag_Ipe_6,
+    kVmxVInstrDiag_Ipe_7,
+    kVmxVInstrDiag_Ipe_8,
+    kVmxVInstrDiag_Ipe_9,
+    /* VMXON. */
+    kVmxVInstrDiag_Vmxon_A20M,
+    kVmxVInstrDiag_Vmxon_Cpl,
+    kVmxVInstrDiag_Vmxon_Cr0Fixed0,
+    kVmxVInstrDiag_Vmxon_Cr4Fixed0,
+    kVmxVInstrDiag_Vmxon_Intercept,
+    kVmxVInstrDiag_Vmxon_LongModeCS,
+    kVmxVInstrDiag_Vmxon_MsrFeatCtl,
+    kVmxVInstrDiag_Vmxon_PtrAbnormal,
+    kVmxVInstrDiag_Vmxon_PtrAlign,
+    kVmxVInstrDiag_Vmxon_PtrMap,
+    kVmxVInstrDiag_Vmxon_PtrReadPhys,
+    kVmxVInstrDiag_Vmxon_PtrWidth,
+    kVmxVInstrDiag_Vmxon_RealOrV86Mode,
+    kVmxVInstrDiag_Vmxon_ShadowVmcs,
+    kVmxVInstrDiag_Vmxon_Success,
+    kVmxVInstrDiag_Vmxon_VmxAlreadyRoot,
+    kVmxVInstrDiag_Vmxon_Vmxe,
+    kVmxVInstrDiag_Vmxon_VmcsRevId,
+    kVmxVInstrDiag_Vmxon_VmxRootCpl,
+    /* VMXOFF. */
+    kVmxVInstrDiag_Vmxoff_Cpl,
+    kVmxVInstrDiag_Vmxoff_Intercept,
+    kVmxVInstrDiag_Vmxoff_LongModeCS,
+    kVmxVInstrDiag_Vmxoff_RealOrV86Mode,
+    kVmxVInstrDiag_Vmxoff_Success,
+    kVmxVInstrDiag_Vmxoff_Vmxe,
+    kVmxVInstrDiag_Vmxoff_VmxRoot,
+    /* VMPTRLD. */
+    kVmxVInstrDiag_Vmptrld_Cpl,
+    kVmxVInstrDiag_Vmptrld_LongModeCS,
+    kVmxVInstrDiag_Vmptrld_PtrAbnormal,
+    kVmxVInstrDiag_Vmptrld_PtrAlign,
+    kVmxVInstrDiag_Vmptrld_PtrMap,
+    kVmxVInstrDiag_Vmptrld_PtrReadPhys,
+    kVmxVInstrDiag_Vmptrld_PtrVmxon,
+    kVmxVInstrDiag_Vmptrld_PtrWidth,
+    kVmxVInstrDiag_Vmptrld_RealOrV86Mode,
+    kVmxVInstrDiag_Vmptrld_ShadowVmcs,
+    kVmxVInstrDiag_Vmptrld_Success,
+    kVmxVInstrDiag_Vmptrld_VmcsRevId,
+    kVmxVInstrDiag_Vmptrld_VmxRoot,
+    /* VMPTRST. */
+    kVmxVInstrDiag_Vmptrst_Cpl,
+    kVmxVInstrDiag_Vmptrst_LongModeCS,
+    kVmxVInstrDiag_Vmptrst_PtrMap,
+    kVmxVInstrDiag_Vmptrst_RealOrV86Mode,
+    kVmxVInstrDiag_Vmptrst_Success,
+    kVmxVInstrDiag_Vmptrst_VmxRoot,
+    /* VMCLEAR. */
+    kVmxVInstrDiag_Vmclear_Cpl,
+    kVmxVInstrDiag_Vmclear_LongModeCS,
+    kVmxVInstrDiag_Vmclear_PtrAbnormal,
+    kVmxVInstrDiag_Vmclear_PtrAlign,
+    kVmxVInstrDiag_Vmclear_PtrMap,
+    kVmxVInstrDiag_Vmclear_PtrReadPhys,
+    kVmxVInstrDiag_Vmclear_PtrVmxon,
+    kVmxVInstrDiag_Vmclear_PtrWidth,
+    kVmxVInstrDiag_Vmclear_RealOrV86Mode,
+    kVmxVInstrDiag_Vmclear_Success,
+    kVmxVInstrDiag_Vmclear_VmxRoot,
+    /* VMWRITE. */
+    kVmxVInstrDiag_Vmwrite_Cpl,
+    kVmxVInstrDiag_Vmwrite_FieldInvalid,
+    kVmxVInstrDiag_Vmwrite_FieldRo,
+    kVmxVInstrDiag_Vmwrite_LinkPtrInvalid,
+    kVmxVInstrDiag_Vmwrite_LongModeCS,
+    kVmxVInstrDiag_Vmwrite_PtrInvalid,
+    kVmxVInstrDiag_Vmwrite_PtrMap,
+    kVmxVInstrDiag_Vmwrite_RealOrV86Mode,
+    kVmxVInstrDiag_Vmwrite_Success,
+    kVmxVInstrDiag_Vmwrite_VmxRoot,
+    /* VMREAD. */
+    kVmxVInstrDiag_Vmread_Cpl,
+    kVmxVInstrDiag_Vmread_FieldInvalid,
+    kVmxVInstrDiag_Vmread_LinkPtrInvalid,
+    kVmxVInstrDiag_Vmread_LongModeCS,
+    kVmxVInstrDiag_Vmread_PtrInvalid,
+    kVmxVInstrDiag_Vmread_PtrMap,
+    kVmxVInstrDiag_Vmread_RealOrV86Mode,
+    kVmxVInstrDiag_Vmread_Success,
+    kVmxVInstrDiag_Vmread_VmxRoot,
+    /* VMLAUNCH/VMRESUME. */
+    kVmxVInstrDiag_VmlaunchVmresume_BlocKMovSS,
+    kVmxVInstrDiag_VmlaunchVmresume_Cpl,
+    kVmxVInstrDiag_VmlaunchVmresume_LongModeCS,
+    kVmxVInstrDiag_VmlaunchVmresume_PtrInvalid,
+    kVmxVInstrDiag_VmlaunchVmresume_RealOrV86Mode,
+    kVmxVInstrDiag_VmlaunchVmresume_VmcsClear,
+    kVmxVInstrDiag_VmlaunchVmresume_VmcsLaunch,
+    kVmxVInstrDiag_VmlaunchVmresume_VmxRoot,
+    /* Last member for determining array index limit. */
+    kVmxVInstrDiag_Last
+} VMXVINSTRDIAG;
+AssertCompileSize(VMXVINSTRDIAG, 4);
 
 
 /** @defgroup grp_hm_vmx_inline    VMX Inline Helpers

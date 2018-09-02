@@ -694,8 +694,8 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint32_t uFieldEnc)
  * @returns The VM-exit instruction information.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
- * @param   uInstrId        The VM-exit instruction identity (VMX_INSTR_ID_XXX) if
- *                          any. Pass VMX_INSTR_ID_NONE otherwise.
+ * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_XXX) if
+ *                          any. Pass VMXINSTRID_NONE otherwise.
  * @param   fPrimaryOpRead  If the primary operand of the ModR/M byte (bits 0:3) is
  *                          a read or write.
  * @param   pGCPtrDisp      Where to store the displacement field. Optional, can be
@@ -1003,16 +1003,16 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
     {
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         {
-            Assert(VMX_INSTR_ID_IS_VALID(uInstrId));
-            ExitInstrInfo.GdtIdt.u2InstrId = VMX_INSTR_ID_GET_ID(uInstrId);
+            Assert(VMXINSTRID_IS_VALID(uInstrId));
+            ExitInstrInfo.GdtIdt.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
             ExitInstrInfo.GdtIdt.u2Undef0  = 0;
             break;
         }
 
         case VMX_EXIT_LDTR_TR_ACCESS:
         {
-            Assert(VMX_INSTR_ID_IS_VALID(uInstrId));
-            ExitInstrInfo.LdtTr.u2InstrId = VMX_INSTR_ID_GET_ID(uInstrId);
+            Assert(VMXINSTRID_IS_VALID(uInstrId));
+            ExitInstrInfo.LdtTr.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
             ExitInstrInfo.LdtTr.u2Undef0 = 0;
             break;
         }
@@ -1948,18 +1948,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
- * VMLAUNCH instruction execution worker.
+ * VMLAUNCH/VMRESUME instruction execution worker.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
+ * @param   uInstrId        The instruction identity (either VMXINSTRID_VMLAUNCH or
+ *                          VMXINSTRID_VMRESUME).
  * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
  *                          Optional, can  be NULL.
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmlaunch(PVMCPU pVCpu, uint8_t cbInstr, PCVMXVEXITINFO pExitInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VMXINSTRID uInstrId, PCVMXVEXITINFO pExitInfo)
 {
+    Assert(   uInstrId == VMXINSTRID_VMLAUNCH
+           || uInstrId == VMXINSTRID_VMRESUME);
+
+    const char *pszInstr = uInstrId == VMXINSTRID_VMLAUNCH ? "vmlaunch" : "vmresume";
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         RT_NOREF(pExitInfo);
@@ -1971,12 +1977,61 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunch(PVMCPU pVCpu, uint8_t cbInstr, PCVMXVEXIT
     if (pVCpu->iem.s.uCpl > 0)
     {
         Log(("vmlaunch: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmlaunch_Cpl;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_Cpl;
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    /** @todo NSTVMX: VMLAUNCH impl.   */
+    /* Current VMCS valid. */
+    if (!IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    {
+        Log(("%s: VMCS pointer %#RGp invalid -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_PtrInvalid;
+        iemVmxVmFailInvalid(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /** @todo Distinguish block-by-MOV-SS from block-by-STI. Currently we
+     *        use block-by-STI here which is not quite correct. */
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
+    {
+        Log(("%s: VM entry with events blocked by MOV SS -> VMFail\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_BlocKMovSS;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_BLOCK_MOVSS);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    if (uInstrId == VMXINSTRID_VMLAUNCH)
+    {
+        /* VMLAUNCH with non-clear VMCS. */
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState != VMX_V_VMCS_STATE_CLEAR)
+        {
+            Log(("%s: VMLAUNCH with non-clear VMCS -> VMFail\n", pszInstr));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_VmcsClear;
+            iemVmxVmFail(pVCpu, VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        /* VMRESUME with non-launched VMCS. */
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState != VMX_V_VMCS_STATE_LAUNCHED)
+        {
+            Log(("%s: VMRESUME with non-launched VMCS -> VMFail\n", pszInstr));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_VmcsLaunch;
+            iemVmxVmFail(pVCpu, VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+    }
+
+    /** @todo NSTVMX: VMLAUNCH/VMRESUME impl.   */
+
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    RT_NOREF(pszInstr);
     return VERR_IEM_IPE_2;
 }
 
@@ -2052,7 +2107,16 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmlaunch)
 {
-    return iemVmxVmlaunch(pVCpu, cbInstr, NULL /* pExitInfo */);
+    return iemVmxVmlaunchVmresume(pVCpu, cbInstr, VMXINSTRID_VMLAUNCH, NULL /* pExitInfo */);
+}
+
+
+/**
+ * Implements 'VMRESUME'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmresume)
+{
+    return iemVmxVmlaunchVmresume(pVCpu, cbInstr, VMXINSTRID_VMRESUME, NULL /* pExitInfo */);
 }
 
 
