@@ -29,10 +29,11 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_REST
-#include <iprt/cpp/restbase.h>
+#include <iprt/cpp/restclient.h>
 
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/cpp/reststringmap.h>
 
 
 /**
