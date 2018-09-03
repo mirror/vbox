@@ -2400,11 +2400,14 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         }
 
         /* Note: cbHstStrm will contain the size of the data the backend needs to operate on. */
-        size_t cbHstStrm = 0;
+        size_t cbHstStrm;
         if (pCfgHost->enmDir == PDMAUDIODIR_IN)
         {
             if (!pThis->In.cStreamsFree)
-                LogFunc(("Warning: No more input streams free to use\n"));
+            {
+                LogFlowFunc(("Maximum number of host input streams reached\n"));
+                RC_BREAK(VERR_AUDIO_NO_FREE_INPUT_STREAMS);
+            }
 
             cbHstStrm = pThis->BackendCfg.cbStreamIn;
         }
