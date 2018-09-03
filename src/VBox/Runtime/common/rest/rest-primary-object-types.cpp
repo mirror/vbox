@@ -1152,3 +1152,273 @@ const char *RTCRestString::typeName() const
     return "RTCString";
 }
 
+
+
+/*********************************************************************************************************************************
+*   RTCRestStringEnumBase implementation                                                                                         *
+*********************************************************************************************************************************/
+
+/** Default constructor. */
+RTCRestStringEnumBase::RTCRestStringEnumBase()
+    : RTCRestObjectBase()
+    , m_iEnumValue(0 /*invalid*/)
+    , m_strValue()
+{
+}
+
+
+/** Destructor. */
+RTCRestStringEnumBase::~RTCRestStringEnumBase()
+{
+    /* nothing to do */
+}
+
+
+/** Copy constructor. */
+RTCRestStringEnumBase::RTCRestStringEnumBase(RTCRestStringEnumBase const &a_rThat)
+    : RTCRestObjectBase(a_rThat)
+    , m_iEnumValue(a_rThat.m_iEnumValue)
+    , m_strValue(a_rThat.m_strValue)
+{
+}
+
+
+/** Copy assignment operator. */
+RTCRestStringEnumBase &RTCRestStringEnumBase::operator=(RTCRestStringEnumBase const &a_rThat)
+{
+    RTCRestObjectBase::operator=(a_rThat);
+    m_iEnumValue = a_rThat.m_iEnumValue;
+    m_strValue = a_rThat.m_strValue;
+    return *this;
+}
+
+
+int RTCRestStringEnumBase::assignCopy(RTCRestStringEnumBase const &a_rThat)
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    m_iEnumValue = a_rThat.m_iEnumValue;
+    return m_strValue.assignNoThrow(a_rThat.m_strValue);
+}
+
+
+int RTCRestStringEnumBase::resetToDefault()
+{
+    m_iEnumValue = 0; /*invalid*/
+    m_strValue.setNull();
+    return VINF_SUCCESS;
+}
+
+
+RTCRestOutputBase &RTCRestStringEnumBase::serializeAsJson(RTCRestOutputBase &a_rDst) const
+{
+    if (!m_fNullIndicator)
+        a_rDst.printf("%RMjs", getString());
+    else
+        a_rDst.printf("null");
+    return a_rDst;
+}
+
+
+int RTCRestStringEnumBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+{
+    m_fNullIndicator = false;
+    m_iEnumValue     = 0;
+
+    RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
+    if (enmType == RTJSONVALTYPE_STRING)
+    {
+        const char  *pszValue = RTJsonValueGetString(a_rCursor.m_hValue);
+        const size_t cchValue = strlen(pszValue);
+        int rc = setByString(pszValue, cchValue);
+        if (RT_SUCCESS(rc))
+            return rc;
+        return a_rCursor.m_pPrimary->addError(a_rCursor, rc, "no memory for %zu char long string", cchValue);
+    }
+
+    m_strValue.setNull();
+    if (enmType == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        return VINF_SUCCESS;
+    }
+
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for string/enum",
+                                          RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
+}
+
+
+int RTCRestStringEnumBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+{
+    if (!m_fNullIndicator)
+    {
+        if (m_iEnumValue > 0)
+        {
+            size_t              cEntries  = 0;
+            ENUMMAPENTRY const *paEntries = getMappingTable(&cEntries);
+            AssertReturn((unsigned)(m_iEnumValue - 1) < cEntries, VERR_REST_INTERAL_ERROR_3);
+            Assert(paEntries[m_iEnumValue - 1].iValue == m_iEnumValue);
+
+            if (a_fFlags & kToString_Append)
+                return a_pDst->appendNoThrow(paEntries[m_iEnumValue - 1].pszName, paEntries[m_iEnumValue - 1].cchName);
+            return a_pDst->assignNoThrow(paEntries[m_iEnumValue - 1].pszName, paEntries[m_iEnumValue - 1].cchName);
+        }
+        if (a_fFlags & kToString_Append)
+            return a_pDst->appendNoThrow(m_strValue);
+        return a_pDst->assignNoThrow(m_strValue);
+    }
+    if (a_fFlags & kToString_Append)
+        return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
+    return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
+}
+
+
+int RTCRestStringEnumBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
+                                      uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+{
+    int iEnumValue = stringToEnum(a_rValue);
+    if (iEnumValue > 0)
+    {
+        m_iEnumValue = iEnumValue;
+        m_strValue.setNull();
+        return VINF_SUCCESS;
+    }
+
+    /* No translation.  Check for null... */
+    m_iEnumValue = 0;
+    if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        m_strValue.setNull();
+        setNull();
+        return VINF_SUCCESS;
+    }
+
+    /* Try copy the string. */
+    int rc = m_strValue.assignNoThrow(a_rValue);
+    if (RT_SUCCESS(rc))
+        return VWRN_NOT_FOUND;
+
+    RT_NOREF(a_pszName, a_pErrInfo, a_fFlags);
+    return rc;
+}
+
+
+RTCRestObjectBase::kTypeClass RTCRestStringEnumBase::typeClass(void) const
+{
+    return kTypeClass_StringEnum;
+}
+
+
+int RTCRestStringEnumBase::setByString(const char *a_pszValue, size_t a_cchValue /*= RTSTR_MAX*/)
+{
+    if (a_cchValue == RTSTR_MAX)
+        a_cchValue = strlen(a_pszValue);
+    int iEnumValue = stringToEnum(a_pszValue, a_cchValue);
+    if (iEnumValue > 0)
+    {
+        m_iEnumValue = iEnumValue;
+        m_strValue.setNull();
+        return VINF_SUCCESS;
+    }
+
+    /* No translation. */
+    m_iEnumValue = 0;
+    int rc = m_strValue.assignNoThrow(a_pszValue, a_cchValue);
+    if (RT_SUCCESS(rc))
+        return VWRN_NOT_FOUND;
+    return rc;
+}
+
+
+int RTCRestStringEnumBase::setByString(RTCString const &a_rValue)
+{
+    return setByString(a_rValue.c_str(), a_rValue.length());
+}
+
+
+const char *RTCRestStringEnumBase::getString() const
+{
+    /* We ASSUME a certain mapping table layout here.  */
+    if (m_iEnumValue > 0)
+    {
+        size_t              cEntries  = 0;
+        ENUMMAPENTRY const *paEntries = getMappingTable(&cEntries);
+        AssertReturn((unsigned)(m_iEnumValue - 1) < cEntries, "<internal-error-#1>");
+        Assert(paEntries[m_iEnumValue - 1].iValue == m_iEnumValue);
+        return paEntries[m_iEnumValue - 1].pszName;
+    }
+
+    AssertReturn(m_iEnumValue == 0, "<internal-error-#2>");
+    if (m_strValue.isEmpty())
+        return "invalid";
+
+    return m_strValue.c_str();
+}
+
+
+int RTCRestStringEnumBase::stringToEnum(const char *a_pszValue, size_t a_cchValue)
+{
+    if (a_cchValue == RTSTR_MAX)
+        a_cchValue = strlen(a_pszValue);
+
+    size_t              cEntries  = 0;
+    ENUMMAPENTRY const *paEntries = getMappingTable(&cEntries);
+    for (size_t i = 0; i < cEntries; i++)
+        if (   paEntries[i].cchName == a_cchValue
+            && memcmp(paEntries[i].pszName, a_pszValue, a_cchValue) == 0)
+            return paEntries[i].iValue;
+    return 0;
+}
+
+
+int RTCRestStringEnumBase::stringToEnum(RTCString const &a_rStrValue)
+{
+    return stringToEnum(a_rStrValue.c_str(), a_rStrValue.length());
+}
+
+
+const char *RTCRestStringEnumBase::enumToString(int a_iEnumValue, size_t *a_pcchString)
+{
+    /* We ASSUME a certain mapping table layout here.  */
+    if (a_iEnumValue > 0)
+    {
+        size_t              cEntries  = 0;
+        ENUMMAPENTRY const *paEntries = getMappingTable(&cEntries);
+        if ((unsigned)(a_iEnumValue - 1) < cEntries)
+        {
+            Assert(paEntries[a_iEnumValue - 1].iValue == a_iEnumValue);
+            if (a_pcchString)
+                *a_pcchString = paEntries[a_iEnumValue - 1].cchName;
+            return paEntries[a_iEnumValue - 1].pszName;
+        }
+    }
+    /* Zero is the special invalid value. */
+    else if (a_iEnumValue == 0)
+    {
+        if (a_pcchString)
+            *a_pcchString = 7;
+        return "invalid";
+    }
+    return NULL;
+}
+
+
+bool RTCRestStringEnumBase::setWorker(int a_iEnumValue)
+{
+    /* We ASSUME a certain mapping table layout here.  */
+    if (a_iEnumValue > 0)
+    {
+        size_t              cEntries  = 0;
+        ENUMMAPENTRY const *paEntries = getMappingTable(&cEntries);
+        AssertReturn((unsigned)(a_iEnumValue - 1) < cEntries, false);
+        Assert(paEntries[a_iEnumValue - 1].iValue == a_iEnumValue);
+        RT_NOREF(paEntries);
+    }
+    /* Zero is the special invalid value. */
+    else if (a_iEnumValue != 0)
+        AssertFailedReturn(false);
+
+    m_iEnumValue = a_iEnumValue;
+    m_strValue.setNull();
+    return true;
+}
+

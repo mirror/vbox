@@ -368,7 +368,8 @@ public:
         kTypeClass_String,              /**< Primitive: bool. */
         kTypeClass_Object,              /**< Object (any kind of data model object). */
         kTypeClass_Array,               /**< Array (containing any kind of object). */
-        kTypeClass_StringMap            /**< String map (containing any kind of object). */
+        kTypeClass_StringMap,           /**< String map (containing any kind of object). */
+        kTypeClass_StringEnum           /**< String enum. */
     } kTypeClass;
 
     /**
@@ -389,7 +390,6 @@ public:
     /** Pointer to factory method. */
     typedef FNCREATEINSTANCE *PFNCREATEINSTANCE;
 
-
 protected:
     /** Null indicator.
      * @remarks The null values could be mapped onto C/C++ NULL pointer values,
@@ -408,7 +408,7 @@ protected:
 class RT_DECL_CLASS RTCRestBool : public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestBool();
     /** Copy constructor. */
     RTCRestBool(RTCRestBool const &a_rThat);
@@ -448,7 +448,7 @@ public:
 class RT_DECL_CLASS RTCRestInt64 : public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestInt64();
     /** Copy constructor. */
     RTCRestInt64(RTCRestInt64 const &a_rThat);
@@ -488,7 +488,7 @@ public:
 class RT_DECL_CLASS RTCRestInt32 : public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestInt32();
     /** Copy constructor. */
     RTCRestInt32(RTCRestInt32 const &a_rThat);
@@ -528,7 +528,7 @@ public:
 class RT_DECL_CLASS RTCRestInt16 : public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestInt16();
     /** Copy constructor. */
     RTCRestInt16(RTCRestInt16 const &a_rThat);
@@ -568,7 +568,7 @@ public:
 class RT_DECL_CLASS RTCRestDouble : public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestDouble();
     /** Copy constructor. */
     RTCRestDouble(RTCRestDouble const &a_rThat);
@@ -608,7 +608,7 @@ public:
 class RT_DECL_CLASS RTCRestString : public RTCString, public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestString();
     /** Destructor. */
     virtual ~RTCRestString();
@@ -643,6 +643,105 @@ public:
 
 
 /**
+ * String enum base class.
+ */
+class RT_DECL_CLASS RTCRestStringEnumBase : public RTCRestObjectBase
+{
+public:
+    /** Enum map entry. */
+    typedef struct ENUMMAPENTRY
+    {
+        const char *pszName;
+        uint32_t    cchName;
+        int32_t     iValue;
+    } ENUMMAPENTRY;
+
+    /** Default constructor. */
+    RTCRestStringEnumBase();
+    /** Destructor. */
+    virtual ~RTCRestStringEnumBase();
+
+    /** Copy constructor. */
+    RTCRestStringEnumBase(RTCRestStringEnumBase const &a_rThat);
+    /** Copy assignment operator. */
+    RTCRestStringEnumBase &operator=(RTCRestStringEnumBase const &a_rThat);
+
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestStringEnumBase const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCString const &a_rThat)    { return setByString(a_rThat); }
+    /** Safe copy assignment method. */
+    int assignCopy(const char *a_pszThat)       { return setByString(a_pszThat); }
+
+    /* Overridden methods: */
+    virtual int resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+
+    /**
+     * Sets the value given a C-string value.
+     *
+     * @retval VINF_SUCCESS on success.
+     * @retval VWRN_NOT_FOUND if not mappable to enum value.
+     * @retval VERR_NO_STR_MEMORY if not mappable and we're out of memory.
+     * @param   a_pszValue      The string value.
+     * @param   a_cchValue      The string value length.  Optional.
+     */
+    int setByString(const char *a_pszValue, size_t a_cchValue = RTSTR_MAX);
+
+    /**
+     * Sets the value given a string value.
+     *
+     * @retval VINF_SUCCESS on success.
+     * @retval VWRN_NOT_FOUND if not mappable to enum value.
+     * @retval VERR_NO_STR_MEMORY if not mappable and we're out of memory.
+     * @param   a_pszValue      The string value.
+     */
+    int setByString(RTCString const &a_rValue);
+
+    /**
+     * Gets the string value.
+     */
+    const char *getString() const;
+
+    /** Maps the given string value to an enum. */
+    int stringToEnum(const char *a_pszValue, size_t a_cchValue = RTSTR_MAX);
+    /** Maps the given string value to an enum. */
+    int stringToEnum(RTCString const &a_rStrValue);
+    /** Maps the given string value to an enum. */
+    const char *enumToString(int a_iEnumValue, size_t *a_pcchString);
+
+
+protected:
+    /** The enum value. */
+    int                 m_iEnumValue;
+    /** The string value if not a match. */
+    RTCString           m_strValue;
+
+    /**
+     * Worker for setting the object to the given enum value.
+     *
+     * @retval  true on success.
+     * @retval  false if a_iEnumValue can't be translated.
+     * @param   a_iEnumValue    The enum value to set.
+     */
+    bool                setWorker(int a_iEnumValue);
+
+    /**
+     * Gets the mapping table.
+     *
+     * @returns Pointer to the translation table.
+     * @param   pcEntries   Where to return the translation table size.
+     */
+    virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const = 0;
+};
+
+
+/**
  * Dynamic REST object.
  *
  * @todo figure this one out. it's possible this is only used in maps and
@@ -651,7 +750,7 @@ public:
 class /*RT_DECL_CLASS*/ RTCRestObject : public RTCRestObjectBase
 {
 public:
-    /** Default destructor. */
+    /** Default constructor. */
     RTCRestObject();
     /** Destructor. */
     virtual ~RTCRestObject();
