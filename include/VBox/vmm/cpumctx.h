@@ -574,7 +574,7 @@ typedef struct CPUMCTX
                 /** 0x318 - Cache of the nested-guest Virtual-APIC page - R0 ptr. */
                 R0PTRTYPE(void *)       pvVirtApicPageR0;
 #if HC_ARCH_BITS == 32
-                uint32_t                uVirtApicPageR3Padding;
+                uint32_t                uVirtApicPageR0Padding;
 #endif
                 /** 0x320 - Cache of the nested-guest Virtual-APIC page - R3 ptr. */
                 R3PTRTYPE(void *)       pvVirtApicPageR3;
