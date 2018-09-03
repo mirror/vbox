@@ -239,10 +239,10 @@ typedef char          ** (* PFNLIBPROXYFACTORYGETPROXIES)(PLIBPROXYFACTORY, cons
 #define CURL_FAILURE(rcCurl)    RT_UNLIKELY(rcCurl != CURLE_OK)
 
 /** Validates a handle and returns VERR_INVALID_HANDLE if not valid. */
-#define RTHTTP_VALID_RETURN_RC(hHttp, rcCurl) \
+#define RTHTTP_VALID_RETURN_RC(hHttp, a_rc) \
     do { \
-        AssertPtrReturn((hHttp), (rcCurl)); \
-        AssertReturn((hHttp)->u32Magic == RTHTTP_MAGIC, (rcCurl)); \
+        AssertPtrReturn((hHttp), (a_rc)); \
+        AssertReturn((hHttp)->u32Magic == RTHTTP_MAGIC, (a_rc)); \
     } while (0)
 
 /** Validates a handle and returns VERR_INVALID_HANDLE if not valid. */
@@ -2088,6 +2088,39 @@ RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char 
     if (pszHeaderFree)
         RTMemTmpFree(pszHeaderFree);
     return rc;
+}
+
+
+RTR3DECL(const char *) RTHttpGetHeader(RTHTTP hHttp, const char *pszField, size_t cchField)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN_RC(pThis, NULL);
+
+    struct curl_slist *pCur = pThis->pHeaders;
+    if (pCur)
+    {
+        if (cchField == RTSTR_MAX)
+            cchField = strlen(pszField);
+        do
+        {
+            /* strchr() is probably way faster than RTStrNICmpAscii(), so
+               match the field name length first. */
+            const char *pszColon = strchr(pCur->data, ':');
+            if (   (size_t)(pszColon - pCur->data) == cchField
+                && pszColon != NULL
+                && RTStrNICmpAscii(pCur->data, pszField, cchField) == 0)
+            {
+                pszColon++;
+                if (RT_C_IS_BLANK(*pszColon))
+                    pszColon++;
+                return pszColon;
+            }
+
+            /* next field. */
+            pCur = pCur->next;
+        } while (pCur);
+    }
+    return NULL;
 }
 
 

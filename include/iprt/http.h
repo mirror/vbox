@@ -91,7 +91,7 @@ RTR3DECL(int) RTHttpGetRedirLocation(RTHTTP hHttp, char **ppszRedirLocation);
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszUrl          URL.
  * @param   ppszNotUtf8     Where to return the pointer to the HTTP response.
  *                          The string is of course zero terminated.  Use
@@ -120,7 +120,7 @@ RTR3DECL(int) RTHttpGetText(RTHTTP hHttp, const char *pszUrl, char **ppszNotUtf8
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszUrl          URL.
  * @param   ppszNotUtf8     Where to return the pointer to the HTTP response.
  *                          The string is of course zero terminated.  Use
@@ -153,7 +153,7 @@ RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8);
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszUrl          The URL.
  * @param   ppvResponse     Where to store the HTTP response data.  Use
  *                          RTHttpFreeResponse to free.
@@ -166,7 +166,7 @@ RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pszUrl, void **ppvRespon
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszUrl          The URL.
  * @param   ppvResponse     Where to store the HTTP response data.  Use
  *                          RTHttpFreeResponse to free.
@@ -186,7 +186,7 @@ RTR3DECL(void) RTHttpFreeResponse(void *pvResponse);
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszUrl          The URL.
  * @param   pszDstFile      The destination file name.
  */
@@ -219,7 +219,7 @@ RTR3DECL(const char *) RTHttpMethodName(RTHTTPMETHOD enmMethod);
  * Performs generic blocking HTTP request, optionally returning the body and headers.
  *
  * @returns IPRT status code.
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszUrl          The URL.
  * @param   enmMethod       The HTTP method for the request.
  * @param   pvReqBody       Pointer to the request body. NULL if none.
@@ -241,7 +241,7 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  */
 RTR3DECL(int) RTHttpAbort(RTHTTP hHttp);
 
@@ -249,7 +249,7 @@ RTR3DECL(int) RTHttpAbort(RTHTTP hHttp);
  * Tells the HTTP interface to use the system proxy configuration.
  *
  * @returns iprt status code.
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  */
 RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
 
@@ -258,7 +258,7 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszProxyUrl     URL of the proxy server.
  * @param   uPort           port number of the proxy, use 0 for not specifying a port.
  * @param   pszProxyUser    Username, pass NULL for no authentication.
@@ -275,7 +275,7 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pszProxyUrl, uint32_t uPo
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   cMaxRedirects   Max number of redirects to follow.  Zero if no
  *                          redirects should be followed but instead returned
  *                          to caller.
@@ -287,7 +287,7 @@ RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects);
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   cHeaders        Number of custom headers.
  * @param   papszHeaders    Array of headers in form "foo: bar".
  */
@@ -297,7 +297,7 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
  * Appends a raw header.
  *
  * @returns IPRT status code.
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszHeader       Header string on the form "foo: bar".
  */
 RTR3DECL(int) RTHttpAppendRawHeader(RTHTTP hHttp, const char *pszHeader);
@@ -306,12 +306,23 @@ RTR3DECL(int) RTHttpAppendRawHeader(RTHTTP hHttp, const char *pszHeader);
  * Appends a header field and value.
  *
  * @returns IPRT status code.
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszField        The header field name.
  * @param   pszValue        The header field value.
  * @param   fFlags          Flags reserved for controlling encoding, MBZ.
  */
 RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags);
+
+/**
+ * Gets a header previously added using RTHttpSetHeaders, RTHttpAppendRawHeader
+ * or RTHttpAppendHeader.
+ *
+ * @returns Pointer to the header value on if found, otherwise NULL.
+ * @param   hHttp           The HTTP client handle.
+ * @param   pszField        The field name (no colon).
+ * @param   cchField        The length of the field name or RTSTR_MAX.
+ */
+RTR3DECL(const char *) RTHttpGetHeader(RTHTTP hHttp, const char *pszField, size_t cchField);
 
 /**
  * Tells the HTTP client instance to gather system CA certificates into a
@@ -321,7 +332,7 @@ RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char 
  * RTHttpSetCaFile hasn't been called yet.
  *
  * @returns IPRT status code.
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pErrInfo        Where to store additional error/warning information.
  *                          Optional.
  */
@@ -332,7 +343,7 @@ RTR3DECL(int) RTHttpUseTemporaryCaFile(RTHTTP hHttp, PRTERRINFO pErrInfo);
  *
  * @returns iprt status code.
  *
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pszCAFile       File name containing root certificates.
  *
  * @remarks For portable HTTPS support, use RTHttpGatherCaCertsInFile and pass
@@ -372,7 +383,7 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
  * Set a callback function which is called during RTHttpGet*()
  *
  * @returns IPRT status code.
- * @param   hHttp           The HTTP client instance.
+ * @param   hHttp           The HTTP client handle.
  * @param   pfnDownloadProgress Progress function to be called. Set it to
  *                          NULL to disable the callback.
  * @param   pvUser          Convenience pointer for the callback function.
