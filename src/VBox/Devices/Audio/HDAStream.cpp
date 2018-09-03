@@ -1429,10 +1429,10 @@ void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
                 pStream->State.tsLastUpdateNs = tsNowNs;
             }
 # endif
-            const uint32_t cbStreamFree = hdaR3StreamGetUsed(pStream);
-            if (cbStreamFree)
+            const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStream);
+            if (cbStreamUsed)
             {
-                rc2 = hdaR3StreamTransfer(pStream, cbStreamFree);
+                rc2 = hdaR3StreamTransfer(pStream, cbStreamUsed);
                 AssertRC(rc2);
             }
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
