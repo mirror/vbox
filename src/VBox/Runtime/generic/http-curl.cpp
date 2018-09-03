@@ -3293,6 +3293,17 @@ RTR3DECL(int) RTHttpRawPerform(RTHTTP hHttp)
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
 
+    /*
+     * XXX: Do this here for now as a stop-gap measure as
+     * RTHttpReset() resets this (and proxy settings).
+     */
+    if (pThis->pszCaFile)
+    {
+        rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_CAINFO, pThis->pszCaFile);
+        if (CURL_FAILURE(rcCurl))
+            return VERR_HTTP_CURL_ERROR;
+    }
+
     rcCurl = curl_easy_perform(pThis->pCurl);
     if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
