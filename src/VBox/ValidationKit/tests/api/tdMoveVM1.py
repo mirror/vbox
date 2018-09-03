@@ -47,7 +47,7 @@ from testdriver import base
 from testdriver import reporter
 from testdriver import vboxcon
 from testdriver import vboxwrappers
-from tests.api.tdMoveMedium1 import SubTstDrvMoveMedium1
+from tdMoveMedium1 import SubTstDrvMoveMedium1
 
 
 class SubTstDrvMoveVM1(base.SubTestDriverBase):
@@ -729,6 +729,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from tests.api.tdApi1 import tdApi1
+    from tdApi1 import tdApi1
     sys.exit(tdApi1([SubTstDrvMoveVM1]).main(sys.argv))
 
