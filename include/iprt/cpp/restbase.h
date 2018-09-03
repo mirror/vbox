@@ -699,7 +699,7 @@ public:
      * @retval VINF_SUCCESS on success.
      * @retval VWRN_NOT_FOUND if not mappable to enum value.
      * @retval VERR_NO_STR_MEMORY if not mappable and we're out of memory.
-     * @param   a_pszValue      The string value.
+     * @param   a_rValue        The string value.
      */
     int setByString(RTCString const &a_rValue);
 
