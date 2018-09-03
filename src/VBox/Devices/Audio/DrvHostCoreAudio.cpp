@@ -1268,9 +1268,9 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
     AssertPtr(pCAStream);
     AssertPtr(pCAStream->pCfg);
 
-    LogFunc(("Starting pCAStream=%p\n", pCAStream));
-
     const bool fIn = pCAStream->pCfg->enmDir == PDMAUDIODIR_IN;
+
+    LogFunc(("Thread started for pCAStream=%p, fIn=%RTbool\n", pCAStream, fIn));
 
     /*
      * Create audio queue.
@@ -1343,7 +1343,7 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
 
     AudioQueueDispose(pCAStream->audioQueue, 1);
 
-    LogFunc(("Ended pCAStream=%p\n", pCAStream));
+    LogFunc(("Thread ended for pCAStream=%p, fIn=%RTbool\n", pCAStream, fIn));
     return VINF_SUCCESS;
 }
 
@@ -1520,6 +1520,8 @@ static DECLCALLBACK(void) coreAudioOutputQueueCb(void *pvUser, AudioQueueRef aud
 static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pCAStream)
 {
     int rc = VINF_SUCCESS;
+
+    Log3Func(("pCAStream=%p\n", pCAStream));
 
     for (size_t i = 0; i < RT_ELEMENTS(pCAStream->audioBuffer); i++)
     {
