@@ -2098,7 +2098,9 @@
 /** Failed to enable VMXON-in-SMX bit while enabling VT-x through the MSR. */
 #define VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED          (-4032)
 /** An operation caused a nested-guest VM-exit. */
-#define VINF_VMX_VMEXIT                             4031
+#define VINF_VMX_VMEXIT                             4033
+/** Generic VM-entry failure. */
+#define VERR_VMX_VMENTRY_FAILED                     (-4033)
 /** @} */
 
 

@@ -1287,7 +1287,7 @@ typedef enum
     /** VMRESUME after VMXOFF (VMXOFF and VMXON between VMLAUNCH and VMRESUME). */
     VMXINSTRERR_VMRESUME_AFTER_VMXOFF          = 6,
     /** VM-entry with invalid control field(s). */
-    VMXINSTRERR_VMENTRY_INVALID_CTL            = 7,
+    VMXINSTRERR_VMENTRY_INVALID_CTLS           = 7,
     /** VM-entry with invalid host-state field(s). */
     VMXINSTRERR_VMENTRY_INVALID_HOST_STATE     = 8,
     /** VMPTRLD with invalid physical address. */
@@ -1305,11 +1305,11 @@ typedef enum
     /** VMXON executed in VMX root operation. */
     VMXINSTRERR_VMXON_IN_VMXROOTMODE           = 15,
     /** VM-entry with invalid executive-VMCS pointer. */
-    VMXINSTRERR_VMENTRY_INVALID_VMCS_PTR       = 16,
+    VMXINSTRERR_VMENTRY_EXEC_VMCS_INVALID_PTR  = 16,
     /** VM-entry with non-launched executive VMCS. */
-    VMXINSTRERR_VMENTRY_NON_LAUNCHED_VMCS      = 17,
+    VMXINSTRERR_VMENTRY_EXEC_VMCS_NON_LAUNCHED = 17,
     /** VM-entry with executive-VMCS pointer not VMXON pointer. */
-    VMXINSTRERR_VMENTRY_VMCS_PTR               = 18,
+    VMXINSTRERR_VMENTRY_EXEC_VMCS_PTR          = 18,
     /** VMCALL with non-clear VMCS. */
     VMXINSTRERR_VMCALL_NON_CLEAR_VMCS          = 19,
     /** VMCALL with invalid VM-exit control fields. */
@@ -1321,7 +1321,7 @@ typedef enum
     /** VMCALL with invalid SMM-monitor features. */
     VMXINSTRERR_VMCALL_INVALID_SMMCTLS         = 24,
     /** VM-entry with invalid VM-execution control fields in executive VMCS. */
-    VMXINSTRERR_VMENTRY_INVALID_EXECTLS        = 25,
+    VMXINSTRERR_VMENTRY_EXEC_VMCS_INVALID_CTLS = 25,
     /** VM-entry with events blocked by MOV SS. */
     VMXINSTRERR_VMENTRY_BLOCK_MOVSS            = 26,
     /** Invalid operand to INVEPT/INVVPID. */
@@ -1439,9 +1439,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_MISC_, UINT64_C(0), UINT64_MAX,
                             (PREEMPT_TIMER_TSC, EXIT_STORE_EFER_LMA, ACTIVITY_STATES, RSVD_9_13, PT, SMM_READ_SMBASE_MSR,
                              CR3_TARGET, MAX_MSRS, VMXOFF_BLOCK_SMI, VMWRITE_ALL, ENTRY_INJECT_SOFT_INT, RSVD_31, MSEG_ID));
 /** @} */
-
-/** Maximum number of CR3 target supported by VT-x */
-#define VMX_VMCS_CTRL_CR3_TARGET_COUNT_MAX                      4
 
 /** @name VMX MSR - VMCS enumeration.
  * Bit fields for MSR_IA32_VMX_VMCS_ENUM.
@@ -3419,14 +3416,23 @@ typedef enum
     kVmxVInstrDiag_Vmread_Success,
     kVmxVInstrDiag_Vmread_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
-    kVmxVInstrDiag_VmlaunchVmresume_BlocKMovSS,
-    kVmxVInstrDiag_VmlaunchVmresume_Cpl,
-    kVmxVInstrDiag_VmlaunchVmresume_LongModeCS,
-    kVmxVInstrDiag_VmlaunchVmresume_PtrInvalid,
-    kVmxVInstrDiag_VmlaunchVmresume_RealOrV86Mode,
-    kVmxVInstrDiag_VmlaunchVmresume_VmcsClear,
-    kVmxVInstrDiag_VmlaunchVmresume_VmcsLaunch,
-    kVmxVInstrDiag_VmlaunchVmresume_VmxRoot,
+    kVmxVInstrDiag_Vmentry_BlocKMovSS,
+    kVmxVInstrDiag_Vmentry_Cpl,
+    kVmxVInstrDiag_Vmentry_Cr3TargetCount,
+    kVmxVInstrDiag_Vmentry_LongModeCS,
+    kVmxVInstrDiag_Vmentry_PinCtlsAllowed1,
+    kVmxVInstrDiag_Vmentry_PinCtlsDisallowed0,
+    kVmxVInstrDiag_Vmentry_ProcCtlsDisallowed0,
+    kVmxVInstrDiag_Vmentry_ProcCtlsAllowed1,
+    kVmxVInstrDiag_Vmentry_ProcCtls2Disallowed0,
+    kVmxVInstrDiag_Vmentry_ProcCtls2Allowed1,
+    kVmxVInstrDiag_Vmentry_PtrInvalid,
+    kVmxVInstrDiag_Vmentry_PtrReadPhys,
+    kVmxVInstrDiag_Vmentry_RealOrV86Mode,
+    kVmxVInstrDiag_Vmentry_Success,
+    kVmxVInstrDiag_Vmentry_VmcsClear,
+    kVmxVInstrDiag_Vmentry_VmcsLaunch,
+    kVmxVInstrDiag_Vmentry_VmxRoot,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;

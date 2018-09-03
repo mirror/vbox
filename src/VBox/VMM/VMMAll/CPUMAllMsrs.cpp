@@ -1336,11 +1336,16 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPU pVCpu, uint32_t 
 }
 
 
-/** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+/**
+ * Gets IA32_VMX_PINBASED_CTLS for IEM and cpumMsrRd_Ia32VmxPinbasedCtls.
+ *
+ * @returns IA32_VMX_PINBASED_CTLS value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxPinbasedCtls(PVMCPU pVCpu)
 {
-    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
     if (pGuestFeatures->fVmx)
     {
         uint32_t const fFeatures = (pGuestFeatures->fVmxExtIntExit   << VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT )
@@ -1350,21 +1355,34 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, ui
                                  | (pGuestFeatures->fVmxPostedInt    << VMX_BF_PIN_CTLS_POSTED_INT_SHIFT   );
         uint32_t const fVal      = VMX_PIN_CTLS_DEFAULT1;
         uint32_t const fZap      = fFeatures | VMX_PIN_CTLS_DEFAULT1;
-        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
-                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
-        *puValue = RT_MAKE_U64(fVal, fZap);
+        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fVal, fZap);
     }
     else
-        *puValue = 0;
-    return VINF_SUCCESS;
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32VmxPinbasedCtls(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_PROCBASED_CTLS for IEM and cpumMsrRd_Ia32VmxProcbasedCtls.
+ *
+ * @returns IA32_VMX_PROCBASED_CTLS value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxProcbasedCtls(PVMCPU pVCpu)
+{
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
     if (pGuestFeatures->fVmx)
     {
         uint32_t const fFeatures = (pGuestFeatures->fVmxIntWindowExit     << VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_SHIFT   )
@@ -1390,21 +1408,34 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, u
                                  | (pGuestFeatures->fVmxSecondaryExecCtls << VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_SHIFT);
         uint32_t const fVal      = VMX_PROC_CTLS_DEFAULT1;
         uint32_t const fZap      = fFeatures | VMX_PROC_CTLS_DEFAULT1;
-        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
-                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
-        *puValue = RT_MAKE_U64(fVal, fZap);
+        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fVal, fZap);
     }
     else
-        *puValue = 0;
-    return VINF_SUCCESS;
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32VmxProcbasedCtls(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_EXIT_CTLS for IEM and cpumMsrRd_Ia32VmxProcbasedCtls.
+ *
+ * @returns IA32_VMX_EXIT_CTLS value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxExitCtls(PVMCPU pVCpu)
+{
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
     if (pGuestFeatures->fVmx)
     {
         uint32_t const fFeatures = (pGuestFeatures->fVmxExitSaveDebugCtls << VMX_BF_EXIT_CTLS_SAVE_DEBUG_SHIFT          )
@@ -1417,21 +1448,34 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32
                                  | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  );
         uint32_t const fVal      = VMX_EXIT_CTLS_DEFAULT1;
         uint32_t const fZap      = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
-        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
-                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
-        *puValue = RT_MAKE_U64(fVal, fZap);
+        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fVal, fZap);
     }
     else
-        *puValue = 0;
-    return VINF_SUCCESS;
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32VmxExitCtls(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_ENTRY_CTLS for IEM and cpumMsrRd_Ia32VmxEntryCtls.
+ *
+ * @returns IA32_VMX_ENTRY_CTLS value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxEntryCtls(PVMCPU pVCpu)
+{
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
     if (pGuestFeatures->fVmx)
     {
         uint32_t const fFeatures = (pGuestFeatures->fVmxEntryLoadDebugCtls << VMX_BF_ENTRY_CTLS_LOAD_DEBUG_SHIFT      )
@@ -1441,13 +1485,55 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint3
         uint32_t const fDefault1 = VMX_ENTRY_CTLS_DEFAULT1;
         uint32_t const fVal      = fDefault1;
         uint32_t const fZap      = fFeatures | fDefault1;
-        AssertMsgReturn((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures),
-                        VERR_CPUM_INVALID_HWVIRT_FEAT_COMBO);
-        *puValue = RT_MAKE_U64(fVal, fZap);
+        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fVal, fZap);
     }
     else
-        *puValue = 0;
+        uVmxMsr = 0;
+    return uVmxMsr;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32VmxEntryCtls(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_MISC for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns IA32_VMX_MISC MSR.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxMisc(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
+    if (pGuestFeatures->fVmx)
+    {
+        uint64_t uHostMsr;
+        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), MSR_IA32_VMX_MISC, &uHostMsr);
+        AssertMsgRC(rc, ("HMVmxGetHostMsr failed. rc=%Rrc\n", rc)); RT_NOREF_PV(rc);
+        uint8_t const cMaxMsrs = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_MAX_MSRS);
+        uVmxMsr = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,       VMX_V_PREEMPT_TIMER_SHIFT            )
+                | RT_BF_MAKE(VMX_BF_MISC_EXIT_STORE_EFER_LMA,    pGuestFeatures->fVmxExitStoreEferLma  )
+                | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        VMX_V_GUEST_ACTIVITY_STATE_MASK       )
+                | RT_BF_MAKE(VMX_BF_MISC_PT,                     0                                     )
+                | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                     )
+                | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT                )
+                | RT_BF_MAKE(VMX_BF_MISC_MAX_MSRS,               cMaxMsrs                              )
+                | RT_BF_MAKE(VMX_BF_MISC_VMXOFF_BLOCK_SMI,       0                                     )
+                | RT_BF_MAKE(VMX_BF_MISC_VMWRITE_ALL,            pGuestFeatures->fVmxVmwriteAll        )
+                | RT_BF_MAKE(VMX_BF_MISC_ENTRY_INJECT_SOFT_INT,  pGuestFeatures->fVmxEntryInjectSoftInt)
+                | RT_BF_MAKE(VMX_BF_MISC_MSEG_ID,                VMX_V_MSEG_REV_ID                     );
+    }
+    else
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
@@ -1455,28 +1541,22 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint3
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-    {
-        uint64_t uHostMsr;
-        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), idMsr, &uHostMsr);
-        AssertRCReturn(rc, rc);
-        uint8_t const cMaxMsrs = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_MAX_MSRS);
-        *puValue = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,      VMX_V_PREEMPT_TIMER_SHIFT             )
-                 | RT_BF_MAKE(VMX_BF_MISC_EXIT_STORE_EFER_LMA,    pGuestFeatures->fVmxExitStoreEferLma  )
-                 | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        VMX_V_GUEST_ACTIVITY_STATE_MASK       )
-                 | RT_BF_MAKE(VMX_BF_MISC_PT,                     0                                     )
-                 | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                     )
-                 | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT                )
-                 | RT_BF_MAKE(VMX_BF_MISC_MAX_MSRS,               cMaxMsrs                              )
-                 | RT_BF_MAKE(VMX_BF_MISC_VMXOFF_BLOCK_SMI,       0                                     )
-                 | RT_BF_MAKE(VMX_BF_MISC_VMWRITE_ALL,            pGuestFeatures->fVmxVmwriteAll        )
-                 | RT_BF_MAKE(VMX_BF_MISC_ENTRY_INJECT_SOFT_INT,  pGuestFeatures->fVmxEntryInjectSoftInt)
-                 | RT_BF_MAKE(VMX_BF_MISC_MSEG_ID,                VMX_V_MSEG_REV_ID                     );
-    }
-    else
-        *puValue = 0;
+    *puValue = CPUMGetGuestIa32VmxMisc(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_CR0_FIXED0 for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns IA32_VMX_CR0_FIXED0 value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxCr0Fixed0(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t const uVmxMsr = pGuestFeatures->fVmx ? VMX_V_CR0_FIXED0 : 0;
+    return uVmxMsr;
 }
 
 
@@ -1484,29 +1564,54 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t i
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed0(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-        *puValue = VMX_V_CR0_FIXED0;
-    else
-        *puValue = 0;
+    *puValue = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_CR0_FIXED1 for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns IA32_VMX_CR0_FIXED1 MSR.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxCr0Fixed1(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
+    if (pGuestFeatures->fVmx)
+    {
+        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), MSR_IA32_VMX_CR0_FIXED1, &uVmxMsr);
+        AssertMsgRC(rc, ("HMVmxGetHostMsr failed. rc=%Rrc\n", rc)); RT_NOREF_PV(rc);
+        uVmxMsr |= VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
+    }
+    else
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-    {
-        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), idMsr, puValue);
-        AssertRCReturn(rc, rc);
-        *puValue |= VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
-    }
-    else
-        *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    Assert(idMsr == MSR_IA32_VMX_CR0_FIXED1);
+    *puValue = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_CR4_FIXED0 for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns IA32_VMX_CR4_FIXED0 value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxCr4Fixed0(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t const uVmxMsr = pGuestFeatures->fVmx ? VMX_V_CR4_FIXED0 : 0;
+    return uVmxMsr;
 }
 
 
@@ -1514,29 +1619,58 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPU pVCpu, uint3
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-        *puValue = VMX_V_CR4_FIXED0;
-    else
-        *puValue = 0;
+    *puValue = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_CR4_FIXED1 for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns IA32_VMX_CR4_FIXED1 MSR.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxCr4Fixed1(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
+    if (pGuestFeatures->fVmx)
+    {
+        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), MSR_IA32_VMX_CR4_FIXED1, &uVmxMsr);
+        AssertMsgRC(rc, ("HMVmxGetHostMsr failed. rc=%Rrc\n", rc)); RT_NOREF_PV(rc);
+        uVmxMsr |= VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
+    }
+    else
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-    {
-        int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), idMsr, puValue);
-        AssertRCReturn(rc, rc);
-        *puValue |= VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
-    }
-    else
-        *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    Assert(idMsr == MSR_IA32_VMX_CR4_FIXED1);
+    *puValue = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets IA32_VMX_VMCS_ENUM for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns IA32_VMX_VMCS_ENUM value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxVmcsEnum(PVMCPU pVCpu)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
+    if (pGuestFeatures->fVmx)
+        uVmxMsr = VMX_V_VMCS_MAX_INDEX << VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT;
+    else
+        uVmxMsr = 0;
+    return uVmxMsr;
 }
 
 
@@ -1544,20 +1678,21 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint3
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    if (pGuestFeatures->fVmx)
-        *puValue = VMX_V_VMCS_MAX_INDEX << VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT;
-    else
-        *puValue = 0;
+    *puValue = CPUMGetGuestIa32VmxVmcsEnum(pVCpu);
     return VINF_SUCCESS;
 }
 
 
-/** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+/**
+ * Gets MSR_IA32_VMX_PROCBASED_CTLS2 for IEM and cpumMsrRd_Ia32VmxMisc.
+ *
+ * @returns MSR_IA32_VMX_PROCBASED_CTLS2 value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxProcbasedCtls2(PVMCPU pVCpu)
 {
-    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
+    uint64_t uVmxMsr;
     if (pGuestFeatures->fVmx)
     {
         uint32_t const fFeatures = (pGuestFeatures->fVmxVirtApicAccess    << VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT  )
@@ -1582,10 +1717,19 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, 
                                  | (pGuestFeatures->fVmxUseTscScaling     << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT       );
         uint32_t const fVal      = 0;
         uint32_t const fZap      = fFeatures;
-        *puValue = RT_MAKE_U64(fVal, fZap);
+        uVmxMsr = RT_MAKE_U64(fVal, fZap);
     }
     else
-        *puValue = 0;
+        uVmxMsr = 0;
+    return uVmxMsr;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32VmxProcbasedCtls2(pVCpu);
     return VINF_SUCCESS;
 }
 

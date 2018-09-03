@@ -1948,6 +1948,91 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
+ * Checks VMX controls as part of VM-entry.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckCtls(PVMCPU pVCpu, const char *pszInstr)
+{
+    /*
+     * Check VM-execution controls.
+     * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /* Pin-based VM-execution controls. */
+    {
+        VMXCTLSMSR PinCtls;
+        PinCtls.u = CPUMGetGuestIa32VmxPinbasedCtls(pVCpu);
+        if (~pVmcs->u32PinCtls & PinCtls.n.disallowed0)
+        {
+            Log(("%s: Invalid PinCtls %#RX32 (disallowed0) -> VMFail\n", pszInstr, pVmcs->u32PinCtls));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_PinCtlsDisallowed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+        if (pVmcs->u32PinCtls & ~PinCtls.n.allowed1)
+        {
+            Log(("%s: Invalid PinCtls %#RX32 (allowed1) -> VMFail\n", pszInstr, pVmcs->u32PinCtls));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_PinCtlsAllowed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* Processor-based VM-execution controls. */
+    {
+        VMXCTLSMSR ProcCtls;
+        ProcCtls.u = CPUMGetGuestIa32VmxProcbasedCtls(pVCpu);
+        if (~pVmcs->u32ProcCtls & ProcCtls.n.disallowed0)
+        {
+            Log(("%s: Invalid ProcCtls %#RX32 (disallowed0) -> VMFail\n", pszInstr, pVmcs->u32ProcCtls));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_ProcCtlsDisallowed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+        if (pVmcs->u32ProcCtls & ~ProcCtls.n.allowed1)
+        {
+            Log(("%s: Invalid ProcCtls %#RX32 (allowed1) -> VMFail\n", pszInstr, pVmcs->u32ProcCtls));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_ProcCtlsAllowed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* Secondary processor-based VM-execution controls. */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+    {
+        VMXCTLSMSR ProcCtls2;
+        ProcCtls2.u = CPUMGetGuestIa32VmxProcbasedCtls(pVCpu);
+        if (~pVmcs->u32ProcCtls2 & ProcCtls2.n.disallowed0)
+        {
+            Log(("%s: Invalid ProcCtls2 %#RX32 (disallowed0) -> VMFail\n", pszInstr, pVmcs->u32ProcCtls2));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_ProcCtls2Disallowed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+        if (pVmcs->u32ProcCtls2 & ~ProcCtls2.n.allowed1)
+        {
+            Log(("%s: Invalid ProcCtls2 %#RX32 (allowed1) -> VMFail\n", pszInstr, pVmcs->u32ProcCtls2));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_ProcCtls2Allowed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* CR3-target count. */
+    if (pVmcs->u32Cr3TargetCount > VMX_V_CR3_TARGET_COUNT)
+    {
+        Log(("%s: CR3-target count exceeded %#x -> VMFail\n", pszInstr, pVmcs->u32Cr3TargetCount));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Cr3TargetCount;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /** @todo NSTVMX: rest of Ctls. */
+
+    NOREF(pszInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * VMLAUNCH/VMRESUME instruction execution worker.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -1976,8 +2061,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
     {
-        Log(("vmlaunch: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_Cpl;
+        Log(("%s: CPL %u -> #GP(0)\n", pszInstr, pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Cpl;
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
@@ -1985,7 +2070,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     if (!IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         Log(("%s: VMCS pointer %#RGp invalid -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_PtrInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_PtrInvalid;
         iemVmxVmFailInvalid(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -1997,7 +2082,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
     {
         Log(("%s: VM entry with events blocked by MOV SS -> VMFail\n", pszInstr));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_BlocKMovSS;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_BlocKMovSS;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_BLOCK_MOVSS);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -2008,8 +2093,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         /* VMLAUNCH with non-clear VMCS. */
         if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState != VMX_V_VMCS_STATE_CLEAR)
         {
-            Log(("%s: VMLAUNCH with non-clear VMCS -> VMFail\n", pszInstr));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_VmcsClear;
+            Log(("vmlaunch: VMLAUNCH with non-clear VMCS -> VMFail\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VmcsClear;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
@@ -2020,18 +2105,39 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         /* VMRESUME with non-launched VMCS. */
         if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState != VMX_V_VMCS_STATE_LAUNCHED)
         {
-            Log(("%s: VMRESUME with non-launched VMCS -> VMFail\n", pszInstr));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_VmlaunchVmresume_VmcsLaunch;
+            Log(("vmresume: VMRESUME with non-launched VMCS -> VMFail\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VmcsLaunch;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
         }
     }
 
-    /** @todo NSTVMX: VMLAUNCH/VMRESUME impl.   */
+    /*
+     * Load the current VMCS.
+     */
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs),
+                                     IEM_VMX_GET_CURRENT_VMCS(pVCpu), VMX_V_VMCS_SIZE);
+    if (RT_FAILURE(rc))
+    {
+        Log(("%s: Failed to read VMCS at %#RGp, rc=%Rrc\n", pszInstr, rc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_PtrReadPhys;
+        return rc;
+    }
 
+    rc = iemVmxVmentryCheckCtls(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+    {
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Success;
+    iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    RT_NOREF(pszInstr);
     return VERR_IEM_IPE_2;
 }
 

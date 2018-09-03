@@ -251,8 +251,8 @@ FNIEMOP_DEF(iemOp_Grp7_vmcall)
 FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
 {
     IEMOP_MNEMONIC(vmlaunch, "vmlaunch");
-    IEMOP_HLP_IN_VMX_OPERATION("vmlaunch", kVmxVInstrDiag_VmlaunchVmresume);
-    IEMOP_HLP_VMX_INSTR("vmlaunch", kVmxVInstrDiag_VmlaunchVmresume);
+    IEMOP_HLP_IN_VMX_OPERATION("vmlaunch", kVmxVInstrDiag_Vmentry);
+    IEMOP_HLP_VMX_INSTR("vmlaunch", kVmxVInstrDiag_Vmentry);
     IEMOP_HLP_DONE_DECODING();
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmlaunch);
 }
@@ -270,8 +270,8 @@ FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
 FNIEMOP_DEF(iemOp_Grp7_vmresume)
 {
     IEMOP_MNEMONIC(vmresume, "vmresume");
-    IEMOP_HLP_IN_VMX_OPERATION("vmresume", kVmxVInstrDiag_VmlaunchVmresume);
-    IEMOP_HLP_VMX_INSTR("vmresume", kVmxVInstrDiag_VmlaunchVmresume);
+    IEMOP_HLP_IN_VMX_OPERATION("vmresume", kVmxVInstrDiag_Vmentry);
+    IEMOP_HLP_VMX_INSTR("vmresume", kVmxVInstrDiag_Vmentry);
     IEMOP_HLP_DONE_DECODING();
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmresume);
 }
