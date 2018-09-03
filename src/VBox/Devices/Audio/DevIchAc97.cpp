@@ -665,7 +665,7 @@ static int                ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97S
 static int                ichac97R3StreamAsyncIONotify(PAC97STATE pThis, PAC97STREAM pStream);
 static void               ichac97R3StreamAsyncIOLock(PAC97STREAM pStream);
 static void               ichac97R3StreamAsyncIOUnlock(PAC97STREAM pStream);
-static void               ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable);
+/*static void               ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable); Unused */
 # endif
 
 DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
@@ -1297,7 +1297,7 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
                 char szThreadName[64];
                 RTStrPrintf2(szThreadName, sizeof(szThreadName), "ac97AIO%RU8", pStream->u8SD);
 
-                rc = RTThreadCreate(&pAIO->Thread, ichac97StreamAsyncIOThread, &Ctx,
+                rc = RTThreadCreate(&pAIO->Thread, ichac97R3StreamAsyncIOThread, &Ctx,
                                     0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
                 if (RT_SUCCESS(rc))
                     rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
@@ -1398,6 +1398,7 @@ static void ichac97R3StreamAsyncIOUnlock(PAC97STREAM pStream)
     AssertRC(rc2);
 }
 
+#if 0 /* Unused */
 /**
  * Enables (resumes) or disables (pauses) the async I/O thread.
  *
@@ -1411,6 +1412,7 @@ static void ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
     PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
     ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
 }
+#endif
 
 # endif /* VBOX_WITH_AUDIO_AC97_ASYNC_IO */
 
@@ -1478,7 +1480,7 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (fDoRead)
         {
-            rc2 = ichac97R3StreamAsyncIONotify(pStream);
+            rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
             AssertRC(rc2);
         }
 # endif
@@ -1512,51 +1514,59 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
     else /* Input (SDI). */
     {
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-        if (fInTimer)
+        if (!fInTimer)
         {
-            rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
-            AssertRC(rc2);
-        }
-        else
 # endif
-        {
             rc2 = AudioMixerSinkUpdate(pSink);
             AssertRC(rc2);
 
             /* Is the sink ready to be read (host input data) from? If so, by how much? */
-            const uint32_t cbReadable = AudioMixerSinkGetReadable(pSink);
+            uint32_t cbSinkReadable = AudioMixerSinkGetReadable(pSink);
 
-            /* How much (guest input) data is free at the moment? */
-            uint32_t cbToTransfer = ichac97R3StreamGetFree(pStream);
+            /* How much (guest input) data is available for writing at the moment for the AC'97 stream? */
+            uint32_t cbStreamFree = ichac97R3StreamGetFree(pStream);
 
-            Log3Func(("[SD%RU8] cbReadable=%RU32, cbFree=%RU32\n", pStream->u8SD, cbReadable, cbToTransfer));
+            Log3Func(("[SD%RU8] cbSinkReadable=%RU32, cbStreamFree=%RU32\n", pStream->u8SD, cbSinkReadable, cbStreamFree));
 
             /* Do not read more than the sink can provide at the moment.
              * The host sets the overall pace. */
-            if (cbToTransfer > cbReadable)
-                cbToTransfer = cbReadable;
+            if (cbSinkReadable > cbStreamFree)
+                cbSinkReadable = cbStreamFree;
 
-            if (cbToTransfer)
+            if (cbSinkReadable)
             {
                 /* Write (guest input) data to the stream which was read from stream's sink before. */
-                rc2 = ichac97R3StreamWrite(pThis, pStream, pSink, cbToTransfer, NULL /* pcbWritten */);
+                rc2 = ichac97R3StreamWrite(pThis, pStream, pSink, cbSinkReadable, NULL /* pcbWritten */);
                 AssertRC(rc2);
             }
+# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
+        else /* fInTimer */
+        {
+# endif
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-        if (fInTimer)
+            const uint64_t tsNowNs = RTTimeNanoTS();
+            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.uSchedulingHintMs * RT_NS_1MS)
+            {
+                rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
+                AssertRC(rc2);
+
+                pStream->State.tsLastUpdateNs = tsNowNs;
+            }
 # endif
-        {
-            const uint32_t cbToTransfer = ichac97R3StreamGetUsed(pStream);
-            if (cbToTransfer)
+
+            const uint32_t cbStreamUsed = ichac97R3StreamGetUsed(pStream);
+            if (cbStreamUsed)
             {
                 /* When running synchronously, do the DMA data transfers here.
                  * Otherwise this will be done in the stream's async I/O thread. */
-                rc2 = ichac97R3StreamTransfer(pThis, pStream, cbToTransfer);
+                rc2 = ichac97R3StreamTransfer(pThis, pStream, cbStreamUsed);
                 AssertRC(rc2);
             }
+# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
+# endif
     }
 }
 
@@ -1698,12 +1708,20 @@ static int ichac97R3MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PP
                 {
                     PDMAUDIOBACKENDCFG Cfg;
                     rc = pDrv->pConnector->pfnGetConfig(pDrv->pConnector, &Cfg);
-                    if (   RT_SUCCESS(rc)
-                        && Cfg.cMaxStreamsIn) /* At least one input source available? */
+                    if (RT_SUCCESS(rc))
                     {
-                        rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
-                        LogFlowFunc(("LUN#%RU8: Recording source is now '%s', rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName, rc));
-                        LogRel2(("AC97: Set recording source to '%s'\n", pStreamCfg->szName));
+                        if (Cfg.cMaxStreamsIn) /* At least one input source available? */
+                        {
+                            rc = AudioMixerSinkSetRecordingSource(pMixSink, pMixStrm);
+                            LogFlowFunc(("LUN#%RU8: Recording source for '%s' -> '%s', rc=%Rrc\n",
+                                         pDrv->uLUN, pStreamCfg->szName, Cfg.szName, rc));
+
+                            if (RT_SUCCESS(rc))
+                                LogRel2(("AC97: Set recording source for '%s' to '%s'\n", pStreamCfg->szName, Cfg.szName));
+                        }
+                        else
+                            LogRel(("AC97: Backend '%s' currently is not offering any recording source for '%s'\n",
+                                    Cfg.szName, pStreamCfg->szName));
                     }
                     else if (RT_FAILURE(rc))
                         LogFunc(("LUN#%RU8: Unable to retrieve backend configuratio for '%s', rc=%Rrc\n",
