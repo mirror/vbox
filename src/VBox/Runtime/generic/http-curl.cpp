@@ -3162,6 +3162,10 @@ RTR3DECL(int) RTHttpRawSetUrl(RTHTTP hHttp, const char *pszUrl)
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
 
+    int rc = rtHttpConfigureProxyForUrl(pThis, pszUrl);
+    if (RT_FAILURE(rc))
+        return rc;
+
     rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_URL, pszUrl);
     if (CURL_FAILURE(rcCurl))
         return VERR_HTTP_CURL_ERROR;
