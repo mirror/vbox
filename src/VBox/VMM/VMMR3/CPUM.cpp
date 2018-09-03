@@ -915,6 +915,11 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3, VMX_V_VMCS_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3 = NULL;
         }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3, VMX_V_VIRT_APIC_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3 = NULL;
+        }
     }
 }
 
@@ -947,6 +952,20 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         {
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCS\n", pVCpu->idCpu, VMX_V_VMCS_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the Virtual-APIC page.
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3);
+        rc = SUPR3PageAllocEx(VMX_V_VIRT_APIC_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's Virtual-APIC page\n", pVCpu->idCpu,
+                    VMX_V_VIRT_APIC_PAGES));
             break;
         }
     }

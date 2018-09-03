@@ -157,7 +157,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    11 */ RT_OFFSETOF(VMXVVMCS, u32EntryIntInfo),
         /*    12 */ RT_OFFSETOF(VMXVVMCS, u32EntryXcptErrCode),
         /*    13 */ RT_OFFSETOF(VMXVVMCS, u32EntryInstrLen),
-        /*    14 */ RT_OFFSETOF(VMXVVMCS, u32TprTreshold),
+        /*    14 */ RT_OFFSETOF(VMXVVMCS, u32TprThreshold),
         /*    15 */ RT_OFFSETOF(VMXVVMCS, u32ProcCtls2),
         /*    16 */ RT_OFFSETOF(VMXVVMCS, u32PleGap),
         /*    17 */ RT_OFFSETOF(VMXVVMCS, u32PleWindow),
@@ -1960,7 +1960,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckCtls(PVMCPU pVCpu, const char *pszInst
      * Check VM-execution controls.
      * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
      */
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
     /* Pin-based VM-execution controls. */
     {
@@ -2016,12 +2016,114 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckCtls(PVMCPU pVCpu, const char *pszInst
             return VERR_VMX_VMENTRY_FAILED;
         }
     }
+    else
+        pVmcs->u32ProcCtls2 = 0;
 
     /* CR3-target count. */
     if (pVmcs->u32Cr3TargetCount > VMX_V_CR3_TARGET_COUNT)
     {
         Log(("%s: CR3-target count exceeded %#x -> VMFail\n", pszInstr, pVmcs->u32Cr3TargetCount));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Cr3TargetCount;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* IO bitmaps physical addresses. */
+    uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
+    Assert(!VMX_V_VMCS_PHYSADDR_4G_LIMIT);
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
+    {
+        if (   (pVmcs->u64AddrIoBitmapA.u & X86_PAGE_4K_OFFSET_MASK)
+            || (pVmcs->u64AddrIoBitmapA.u >> cMaxPhysAddrWidth))
+        {
+            Log(("%s: I/O Bitmap A physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrIoBitmapA.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrIoBitmapA;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        if (   (pVmcs->u64AddrIoBitmapB.u & X86_PAGE_4K_OFFSET_MASK)
+            || (pVmcs->u64AddrIoBitmapB.u >> cMaxPhysAddrWidth))
+        {
+            Log(("%s: I/O Bitmap B physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrIoBitmapB.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrIoBitmapB;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* MSR bitmap physical address. */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+    {
+        if (   (pVmcs->u64AddrMsrBitmap.u & X86_PAGE_4K_OFFSET_MASK)
+            || (pVmcs->u64AddrMsrBitmap.u >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrMsrBitmap.u))
+        {
+            Log(("%s: MSR Bitmap physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrMsrBitmap.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrMsrBitmap;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* TPR shadow related controls. */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+    {
+        /* Virtual-APIC page physical address. */
+        RTGCPHYS GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+        if (   (GCPhysVirtApic & X86_PAGE_4K_OFFSET_MASK)
+            || (GCPhysVirtApic >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic))
+        {
+            Log(("%s: Virtual-APIC page physaddr invalid %#RX64 -> VMFail\n", pszInstr, GCPhysVirtApic));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrVirtApicPage;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* Read the Virtual-APIC page. */
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage),
+                                         GCPhysVirtApic, VMX_V_VIRT_APIC_PAGES);
+        if (RT_FAILURE(rc))
+        {
+            Log(("%s: Failed to read Virtual-APIC page at %#RGp, rc=%Rrc\n", pszInstr, GCPhysVirtApic, rc));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VirtApicPagePtrReadPhys;
+            return rc;
+        }
+
+        /* TPR threshold without virtual-interrupt delivery. */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+            &&  (pVmcs->u32TprThreshold & VMX_TPR_THRESHOLD_MASK))
+        {
+            Log(("%s: TPR-threshold (%#RX32) invalid -> VMFail\n", pszInstr, pVmcs->u32TprThreshold));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_TprThreshold;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* TPR threshold and VTPR. */
+        uint8_t const *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+        uint8_t const u8VTpr = *(pbVirtApic + XAPIC_OFF_TPR);
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+            && RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) > ((u8VTpr >> 4) & UINT32_C(0xf)) /* Bits 4:7 */)
+        {
+            Log(("%s: TPR-threshold (%#x) exceeds VTPR (%#x) -> VMFail\n", pszInstr,
+                 (pVmcs->u32TprThreshold & VMX_TPR_THRESHOLD_MASK), u8VTpr));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_TprThresholdVTpr;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* NMI exiting and virtual-NMIs. */
+    if (   !(pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT)
+        &&  (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
+    {
+        Log(("%s: Virtual-NMIs invalid without NMI-exiting -> VMFail\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VirtNmi;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* Virtual-NMIs and NMI-window exiting. */
+    if (   !(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+        && (pVmcs->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
+    {
+        Log(("%s: NMI-window exiting invalid without virtual-NMIs -> VMFail\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_NmiWindowExit;
         return VERR_VMX_VMENTRY_FAILED;
     }
 

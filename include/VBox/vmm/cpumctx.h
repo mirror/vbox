@@ -571,8 +571,18 @@ typedef struct CPUMCTX
 #if HC_ARCH_BITS == 32
                 uint32_t                uShadowVmcsR3Padding;
 #endif
-                /** 0x318 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x318];
+                /** 0x318 - Cache of the nested-guest Virtual-APIC page - R0 ptr. */
+                R0PTRTYPE(void *)       pvVirtApicPageR0;
+#if HC_ARCH_BITS == 32
+                uint32_t                uVirtApicPageR3Padding;
+#endif
+                /** 0x320 - Cache of the nested-guest Virtual-APIC page - R3 ptr. */
+                R3PTRTYPE(void *)       pvVirtApicPageR3;
+#if HC_ARCH_BITS == 32
+                uint32_t                uVirtApicPageR3Padding;
+#endif
+                /** 0x328 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x328];
             } vmx;
         } CPUM_UNION_NM(s);
 

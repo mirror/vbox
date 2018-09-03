@@ -2376,6 +2376,21 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_IDT_VECTORING_INFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
+/** @name TPR threshold.
+ * @{ */
+/** Mask of the TPR threshold field (bits 31:4 MBZ). */
+#define VMX_TPR_THRESHOLD_MASK                                   UINT32_C(0xf)
+
+/** Bit fields for TPR threshold. */
+#define VMX_BF_TPR_THRESHOLD_TPR_SHIFT                           0
+#define VMX_BF_TPR_THRESHOLD_TPR_MASK                            UINT32_C(0x0000000f)
+#define VMX_BF_TPR_THRESHOLD_RSVD_4_31_SHIFT                     4
+#define VMX_BF_TPR_THRESHOLD_RSVD_4_31_MASK                      UINT32_C(0xfffffff0)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_TPR_THRESHOLD_, UINT32_C(0), UINT32_MAX,
+                            (TPR, RSVD_4_31));
+/** @} */
+
+
 /** @name Guest-activity states.
  * @{
  */
@@ -2785,6 +2800,11 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the virtual VMCS region (in pages). */
 #define VMX_V_VMCS_PAGES                                        1
 
+/** The size of the Virtual-APIC page (in bytes).  */
+#define VMX_V_VIRT_APIC_SIZE                                    X86_PAGE_4K_SIZE
+/** The size of the Virtual-APIC page (in pages). */
+#define VMX_V_VIRT_APIC_PAGES                                   1
+
 /** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCS_ENC_INDEX)
 
@@ -2969,8 +2989,8 @@ typedef struct
     uint32_t        u32EntryXcptErrCode;
     /** 0xb8 - VM-entry instruction length. */
     uint32_t        u32EntryInstrLen;
-    /** 0xbc - TPR-treshold. */
-    uint32_t        u32TprTreshold;
+    /** 0xbc - TPR-threshold. */
+    uint32_t        u32TprThreshold;
     /** 0xc0 - Secondary-processor based VM-execution controls. */
     uint32_t        u32ProcCtls2;
     /** 0xc4 - Pause-loop exiting Gap. */
@@ -3416,10 +3436,15 @@ typedef enum
     kVmxVInstrDiag_Vmread_Success,
     kVmxVInstrDiag_Vmread_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
+    kVmxVInstrDiag_Vmentry_AddrIoBitmapA,
+    kVmxVInstrDiag_Vmentry_AddrIoBitmapB,
+    kVmxVInstrDiag_Vmentry_AddrMsrBitmap,
+    kVmxVInstrDiag_Vmentry_AddrVirtApicPage,
     kVmxVInstrDiag_Vmentry_BlocKMovSS,
     kVmxVInstrDiag_Vmentry_Cpl,
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
     kVmxVInstrDiag_Vmentry_LongModeCS,
+    kVmxVInstrDiag_Vmentry_NmiWindowExit,
     kVmxVInstrDiag_Vmentry_PinCtlsAllowed1,
     kVmxVInstrDiag_Vmentry_PinCtlsDisallowed0,
     kVmxVInstrDiag_Vmentry_ProcCtlsDisallowed0,
@@ -3430,6 +3455,10 @@ typedef enum
     kVmxVInstrDiag_Vmentry_PtrReadPhys,
     kVmxVInstrDiag_Vmentry_RealOrV86Mode,
     kVmxVInstrDiag_Vmentry_Success,
+    kVmxVInstrDiag_Vmentry_TprThreshold,
+    kVmxVInstrDiag_Vmentry_TprThresholdVTpr,
+    kVmxVInstrDiag_Vmentry_VirtApicPagePtrReadPhys,
+    kVmxVInstrDiag_Vmentry_VirtNmi,
     kVmxVInstrDiag_Vmentry_VmcsClear,
     kVmxVInstrDiag_Vmentry_VmcsLaunch,
     kVmxVInstrDiag_Vmentry_VmxRoot,
