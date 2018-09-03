@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,18 +22,18 @@
 /* Qt includes: */
 # include <QAccessibleObject>
 # include <QApplication>
-# include <QPainter>
 # include <QGraphicsScene>
+# include <QPainter>
 # include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
 # include "UIGraphicsTextPane.h"
-# include "UIDetailsGroup.h"
-# include "UIDetailsSet.h"
-# include "UIDetailsElement.h"
-# include "UIDetailsModel.h"
-# include "UIDetailsView.h"
 # include "UIDetails.h"
+# include "UIDetailsElement.h"
+# include "UIDetailsGroup.h"
+# include "UIDetailsModel.h"
+# include "UIDetailsSet.h"
+# include "UIDetailsView.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -192,6 +192,10 @@ private:
 };
 
 
+/*********************************************************************************************************************************
+*   Class UIDetailsItem implementation.                                                                                          *
+*********************************************************************************************************************************/
+
 UIDetailsItem::UIDetailsItem(UIDetailsItem *pParent)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
     , m_pParent(pParent)
@@ -213,41 +217,37 @@ UIDetailsItem::UIDetailsItem(UIDetailsItem *pParent)
     }
 
     /* Setup connections: */
-    connect(this, SIGNAL(sigBuildStep(QString, int)),
-            this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
+    connect(this, &UIDetailsItem::sigBuildStep,
+            this, &UIDetailsItem::sltBuildStep,
+            Qt::QueuedConnection);
 }
 
-UIDetailsGroup* UIDetailsItem::toGroup()
+UIDetailsGroup *UIDetailsItem::toGroup()
 {
     UIDetailsGroup *pItem = qgraphicsitem_cast<UIDetailsGroup*>(this);
     AssertMsg(pItem, ("Trying to cast invalid item type to UIDetailsGroup!"));
     return pItem;
 }
 
-UIDetailsSet* UIDetailsItem::toSet()
+UIDetailsSet *UIDetailsItem::toSet()
 {
     UIDetailsSet *pItem = qgraphicsitem_cast<UIDetailsSet*>(this);
     AssertMsg(pItem, ("Trying to cast invalid item type to UIDetailsSet!"));
     return pItem;
 }
 
-UIDetailsElement* UIDetailsItem::toElement()
+UIDetailsElement *UIDetailsItem::toElement()
 {
     UIDetailsElement *pItem = qgraphicsitem_cast<UIDetailsElement*>(this);
     AssertMsg(pItem, ("Trying to cast invalid item type to UIDetailsElement!"));
     return pItem;
 }
 
-UIDetailsModel* UIDetailsItem::model() const
+UIDetailsModel *UIDetailsItem::model() const
 {
     UIDetailsModel *pModel = qobject_cast<UIDetailsModel*>(QIGraphicsWidget::scene()->parent());
     AssertMsg(pModel, ("Incorrect graphics scene parent set!"));
     return pModel;
-}
-
-UIDetailsItem* UIDetailsItem::parentItem() const
-{
-    return m_pParent;
 }
 
 void UIDetailsItem::updateGeometry()
@@ -277,15 +277,15 @@ void UIDetailsItem::sltBuildStep(QString, int)
 
 /* static */
 void UIDetailsItem::configurePainterShape(QPainter *pPainter,
-                                           const QStyleOptionGraphicsItem *pOption,
-                                           int iRadius)
+                                          const QStyleOptionGraphicsItem *pOptions,
+                                          int iRadius)
 {
     /* Rounded corners? */
     if (iRadius)
     {
         /* Setup clipping: */
         QPainterPath roundedPath;
-        roundedPath.addRoundedRect(pOption->rect, iRadius, iRadius);
+        roundedPath.addRoundedRect(pOptions->rect, iRadius, iRadius);
         pPainter->setRenderHint(QPainter::Antialiasing);
         pPainter->setClipPath(roundedPath);
     }
@@ -313,8 +313,8 @@ void UIDetailsItem::paintPixmap(QPainter *pPainter, const QRect &rect, const QPi
 
 /* static */
 void UIDetailsItem::paintText(QPainter *pPainter, QPoint point,
-                               const QFont &font, QPaintDevice *pPaintDevice,
-                               const QString &strText, const QColor &color)
+                              const QFont &font, QPaintDevice *pPaintDevice,
+                              const QString &strText, const QColor &color)
 {
     /* Prepare variables: */
     QFontMetrics fm(font, pPaintDevice);
@@ -328,18 +328,26 @@ void UIDetailsItem::paintText(QPainter *pPainter, QPoint point,
     pPainter->restore();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIPrepareStep implementation.                                                                                          *
+*********************************************************************************************************************************/
+
 UIPrepareStep::UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QString &strStepId, int iStepNumber)
     : QObject(pParent)
     , m_strStepId(strStepId)
     , m_iStepNumber(iStepNumber)
 {
-    /* Prepare connections: */
-    connect(pBuildObject, SIGNAL(sigBuildDone()), this, SLOT(sltStepDone()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigStepDone(QString, int)), pParent, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
+    /* Prepare connections (old style, polymorph): */
+    connect(pBuildObject, SIGNAL(sigBuildDone()),
+            this, SLOT(sltStepDone()),
+            Qt::QueuedConnection);
+    connect(this, SIGNAL(sigStepDone(QString, int)),
+            pParent, SLOT(sltBuildStep(QString, int)),
+            Qt::QueuedConnection);
 }
 
 void UIPrepareStep::sltStepDone()
 {
     emit sigStepDone(m_strStepId, m_iStepNumber);
 }
-

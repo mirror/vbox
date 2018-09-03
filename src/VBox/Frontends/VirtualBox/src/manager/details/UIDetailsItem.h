@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,126 +15,180 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIDetailsItem_h__
-#define __UIDetailsItem_h__
+#ifndef ___UIDetailsItem_h___
+#define ___UIDetailsItem_h___
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declaration: */
-class UIDetailsModel;
 class QGraphicsSceneHoverEvent;
 class QGraphicsSceneMouseEvent;
-class UIDetailsGroup;
-class UIDetailsSet;
 class UIDetailsElement;
+class UIDetailsGroup;
+class UIDetailsModel;
+class UIDetailsSet;
 
-/* UIDetailsItem types: */
+
+/** UIDetailsItem types. */
 enum UIDetailsItemType
 {
     UIDetailsItemType_Any     = QGraphicsItem::UserType,
-    UIDetailsItemType_Group   = QGraphicsItem::UserType + 1,
-    UIDetailsItemType_Set     = QGraphicsItem::UserType + 2,
-    UIDetailsItemType_Element = QGraphicsItem::UserType + 3,
-    UIDetailsItemType_Preview = QGraphicsItem::UserType + 10
+    UIDetailsItemType_Group,
+    UIDetailsItemType_Set,
+    UIDetailsItemType_Element,
+    UIDetailsItemType_Preview
 };
 
-/* Details item interface
- * for graphics details model/view architecture: */
+
+/** QIGraphicsWidget extension used as interface
+  * for graphics details model/view architecture. */
 class UIDetailsItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: Build stuff: */
-    void sigBuildStep(QString strStepId, int iStepNumber);
-    void sigBuildDone();
+    /** @name Item stuff.
+      * @{ */
+        /** Notifies listeners about step build should be started.
+          * @param  strStepId    Brings the step ID.
+          * @param  iStepNumber  Brings the step number. */
+        void sigBuildStep(QString strStepId, int iStepNumber);
+        /** Notifies listeners about step build complete. */
+        void sigBuildDone();
+    /** @} */
 
 public:
 
-    /* Constructor: */
+    /** Constructs item passing @a pParent to the base-class. */
     UIDetailsItem(UIDetailsItem *pParent);
 
-    /* API: Cast stuff: */
-    UIDetailsGroup* toGroup();
-    UIDetailsSet* toSet();
-    UIDetailsElement* toElement();
+    /** @name Item stuff.
+      * @{ */
+        /** Returns parent  reference. */
+        UIDetailsItem *parentItem() const { return m_pParent; }
 
-    /* API: Model stuff: */
-    UIDetailsModel* model() const;
+        /** Casts item to group one. */
+        UIDetailsGroup *toGroup();
+        /** Casts item to set one. */
+        UIDetailsSet *toSet();
+        /** Casts item to element one. */
+        UIDetailsElement *toElement();
 
-    /* API: Parent stuff: */
-    UIDetailsItem* parentItem() const;
+        /** Returns model reference. */
+        UIDetailsModel *model() const;
 
-    /** Returns the description of the item. */
-    virtual QString description() const = 0;
+        /** Returns the description of the item. */
+        virtual QString description() const = 0;
+    /** @} */
 
-    /* API: Children stuff: */
-    virtual void addItem(UIDetailsItem *pItem) = 0;
-    virtual void removeItem(UIDetailsItem *pItem) = 0;
-    virtual QList<UIDetailsItem*> items(UIDetailsItemType type = UIDetailsItemType_Any) const = 0;
-    virtual bool hasItems(UIDetailsItemType type = UIDetailsItemType_Any) const = 0;
-    virtual void clearItems(UIDetailsItemType type = UIDetailsItemType_Any) = 0;
+    /** @name Children stuff.
+      * @{ */
+        /** Adds child @a pItem. */
+        virtual void addItem(UIDetailsItem *pItem) = 0;
+        /** Removes child @a pItem. */
+        virtual void removeItem(UIDetailsItem *pItem) = 0;
 
-    /* API: Layout stuff: */
-    void updateGeometry();
-    virtual int minimumWidthHint() const = 0;
-    virtual int minimumHeightHint() const = 0;
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
-    virtual void updateLayout() = 0;
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType = UIDetailsItemType_Any) const = 0;
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIDetailsItemType enmType = UIDetailsItemType_Any) const = 0;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIDetailsItemType enmType = UIDetailsItemType_Any) = 0;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates geometry. */
+        void updateGeometry();
+
+        /** Updates layout. */
+        virtual void updateLayout() = 0;
+
+        /** Returns minimum width-hint. */
+        virtual int minimumWidthHint() const = 0;
+        /** Returns minimum height-hint. */
+        virtual int minimumHeightHint() const = 0;
+
+        /** Returns size-hint.
+          * @param  enmWhich    Brings size-hint type.
+          * @param  constraint  Brings size constraint. */
+        QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const;
+    /** @} */
 
 protected slots:
 
-    /* Handler: Build stuff: */
+    /** @name Item stuff.
+      * @{ */
+        /** Handles request about starting step build.
+          * @param  strStepId    Brings the step ID.
+          * @param  iStepNumber  Brings the step number. */
+    /** @} */
     virtual void sltBuildStep(QString strStepId, int iStepNumber);
 
 protected:
 
-    /* Helper: Translate stuff: */
-    void retranslateUi() {}
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */ {}
+    /** @} */
 
-    /* Helpers: Paint stuff: */
-    static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
-    static void paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius);
-    static void paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap);
-    static void paintText(QPainter *pPainter, QPoint point,
-                          const QFont &font, QPaintDevice *pPaintDevice,
-                          const QString &strText, const QColor &color);
+    /** @name Painting stuff.
+      * @{ */
+        /** Configures painting shape using passed @a pPainter, @a pOptions and spified @a iRadius. */
+        static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, int iRadius);
+        /** Paints frame @a rect using passed @a pPainter and spified @a iRadius. */
+        static void paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius);
+        /** Paints @a pixmap using passed @a pPainter and spified @a rect. */
+        static void paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap);
+        /** Paints @a strText using passed @a pPainter, @a font, @a color, @a pPaintDevice and spified @a point. */
+        static void paintText(QPainter *pPainter, QPoint point,
+                              const QFont &font, QPaintDevice *pPaintDevice,
+                              const QString &strText, const QColor &color);
+    /** @} */
 
 private:
 
-    /* Variables: */
+    /** Holds the parent item reference. */
     UIDetailsItem *m_pParent;
 };
 
-/* Allows to build item content synchronously: */
+
+/** QObject extension used to prepare details steps. */
 class UIPrepareStep : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Build stuff: */
+    /** Notifies listeners about step preparing is complete.
+      * @param  strStepId    Brings the step ID.
+      * @param  iStepNumber  Brings the step number. */
     void sigStepDone(QString strStepId, int iStepNumber);
 
 public:
 
-    /* Constructor: */
+    /** Constructs step preparing object passing @a pParent to the base-class.
+      * @param  pBuildObject  Brings the build object reference.
+      * @param  strStepId     Brings the step ID.
+      * @param  iStepNumber   Brings the step number.*/
     UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QString &strStepId, int iStepNumber);
 
 private slots:
 
-    /* Handler: Build stuff: */
+    /** Handles step prepare completion. */
     void sltStepDone();
 
 private:
 
-    /* Variables: */
-    QString m_strStepId;
-    int m_iStepNumber;
+    /** Holds the step ID. */
+    QString  m_strStepId;
+    /** Holds the step number. */
+    int      m_iStepNumber;
 };
 
-#endif /* __UIDetailsItem_h__ */
 
+#endif /* !___UIDetailsItem_h___ */
