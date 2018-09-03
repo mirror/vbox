@@ -260,14 +260,14 @@ void UIDetailsItem::updateGeometry()
         parentItem()->updateGeometry();
 }
 
-QSizeF UIDetailsItem::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+QSizeF UIDetailsItem::sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint /* = QSizeF() */) const
 {
     /* If Qt::MinimumSize or Qt::PreferredSize requested: */
-    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
+    if (enmWhich == Qt::MinimumSize || enmWhich == Qt::PreferredSize)
         /* Return wrappers: */
         return QSizeF(minimumWidthHint(), minimumHeightHint());
     /* Call to base-class: */
-    return QIGraphicsWidget::sizeHint(which, constraint);
+    return QIGraphicsWidget::sizeHint(enmWhich, constraint);
 }
 
 void UIDetailsItem::sltBuildStep(QString, int)

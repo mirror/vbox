@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,20 +25,20 @@
 
 /* GUI includes: */
 # include "UIDetailsGroup.h"
-# include "UIDetailsSet.h"
 # include "UIDetailsModel.h"
+# include "UIDetailsSet.h"
 # include "UIExtraDataManager.h"
-# include "VBoxGlobal.h"
 # include "UIVirtualMachineItem.h"
+# include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 UIDetailsGroup::UIDetailsGroup(QGraphicsScene *pParent)
     : UIDetailsItem(0)
+    , m_pBuildStep(0)
     , m_iPreviousMinimumWidthHint(0)
     , m_iPreviousMinimumHeightHint(0)
-    , m_pBuildStep(0)
 {
     /* Add group to the parent scene: */
     pParent->addItem(this);
@@ -88,6 +88,44 @@ void UIDetailsGroup::stopBuildingGroup()
     m_strGroupId = QUuid::createUuid().toString();
 }
 
+QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType enmType /* = UIDetailsItemType_Set */) const
+{
+    switch (enmType)
+    {
+        case UIDetailsItemType_Set: return m_items;
+        case UIDetailsItemType_Any: return items(UIDetailsItemType_Set);
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+    return QList<UIDetailsItem*>();
+}
+
+void UIDetailsGroup::updateLayout()
+{
+    /* Prepare variables: */
+    int iMargin = data(GroupData_Margin).toInt();
+    int iSpacing = data(GroupData_Spacing).toInt();
+    int iMaximumWidth = (int)geometry().width() - 2 * iMargin;
+    int iVerticalIndent = iMargin;
+
+    /* Layout all the sets: */
+    foreach (UIDetailsItem *pItem, items())
+    {
+        /* Ignore sets with no details: */
+        if (UIDetailsSet *pSetItem = pItem->toSet())
+            if (!pSetItem->hasDetails())
+                continue;
+        /* Move set: */
+        pItem->setPos(iMargin, iVerticalIndent);
+        /* Resize set: */
+        int iWidth = iMaximumWidth;
+        pItem->resize(iWidth, pItem->minimumHeightHint());
+        /* Layout set content: */
+        pItem->updateLayout();
+        /* Advance indent: */
+        iVerticalIndent += (pItem->minimumHeightHint() + iSpacing);
+    }
+}
+
 void UIDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
 {
     /* Cleanup build-step: */
@@ -122,20 +160,6 @@ void UIDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
     }
 }
 
-QVariant UIDetailsGroup::data(int iKey) const
-{
-    /* Provide other members with required data: */
-    switch (iKey)
-    {
-        /* Layout hints: */
-        case GroupData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
-        case GroupData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
-        /* Default: */
-        default: break;
-    }
-    return QVariant();
-}
-
 void UIDetailsGroup::addItem(UIDetailsItem *pItem)
 {
     switch (pItem->type())
@@ -154,20 +178,9 @@ void UIDetailsGroup::removeItem(UIDetailsItem *pItem)
     }
 }
 
-QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType type /* = UIDetailsItemType_Set */) const
+bool UIDetailsGroup::hasItems(UIDetailsItemType enmType /* = UIDetailsItemType_Set */) const
 {
-    switch (type)
-    {
-        case UIDetailsItemType_Set: return m_items;
-        case UIDetailsItemType_Any: return items(UIDetailsItemType_Set);
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-    return QList<UIDetailsItem*>();
-}
-
-bool UIDetailsGroup::hasItems(UIDetailsItemType type /* = UIDetailsItemType_Set */) const
-{
-    switch (type)
+    switch (enmType)
     {
         case UIDetailsItemType_Set: return !m_items.isEmpty();
         case UIDetailsItemType_Any: return hasItems(UIDetailsItemType_Set);
@@ -176,23 +189,14 @@ bool UIDetailsGroup::hasItems(UIDetailsItemType type /* = UIDetailsItemType_Set 
     return false;
 }
 
-void UIDetailsGroup::clearItems(UIDetailsItemType type /* = UIDetailsItemType_Set */)
+void UIDetailsGroup::clearItems(UIDetailsItemType enmType /* = UIDetailsItemType_Set */)
 {
-    switch (type)
+    switch (enmType)
     {
         case UIDetailsItemType_Set: while (!m_items.isEmpty()) { delete m_items.last(); } break;
         case UIDetailsItemType_Any: clearItems(UIDetailsItemType_Set); break;
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
-}
-
-void UIDetailsGroup::prepareConnections()
-{
-    /* Prepare group-item connections: */
-    connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
-            model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
-    connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
-            model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
 }
 
 void UIDetailsGroup::updateGeometry()
@@ -278,30 +282,25 @@ int UIDetailsGroup::minimumHeightHint() const
     return iMinimumHeightHint;
 }
 
-void UIDetailsGroup::updateLayout()
+void UIDetailsGroup::prepareConnections()
 {
-    /* Prepare variables: */
-    int iMargin = data(GroupData_Margin).toInt();
-    int iSpacing = data(GroupData_Spacing).toInt();
-    int iMaximumWidth = (int)geometry().width() - 2 * iMargin;
-    int iVerticalIndent = iMargin;
-
-    /* Layout all the sets: */
-    foreach (UIDetailsItem *pItem, items())
-    {
-        /* Ignore sets with no details: */
-        if (UIDetailsSet *pSetItem = pItem->toSet())
-            if (!pSetItem->hasDetails())
-                continue;
-        /* Move set: */
-        pItem->setPos(iMargin, iVerticalIndent);
-        /* Resize set: */
-        int iWidth = iMaximumWidth;
-        pItem->resize(iWidth, pItem->minimumHeightHint());
-        /* Layout set content: */
-        pItem->updateLayout();
-        /* Advance indent: */
-        iVerticalIndent += (pItem->minimumHeightHint() + iSpacing);
-    }
+    /* Prepare group-item connections: */
+    connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
+    connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
 }
 
+QVariant UIDetailsGroup::data(int iKey) const
+{
+    /* Provide other members with required data: */
+    switch (iKey)
+    {
+        /* Layout hints: */
+        case GroupData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
+        case GroupData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        /* Default: */
+        default: break;
+    }
+    return QVariant();
+}

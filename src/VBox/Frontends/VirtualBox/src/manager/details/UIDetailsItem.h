@@ -102,7 +102,7 @@ public:
     /** @name Layout stuff.
       * @{ */
         /** Updates geometry. */
-        void updateGeometry();
+        virtual void updateGeometry() /* override */;
 
         /** Updates layout. */
         virtual void updateLayout() = 0;
@@ -115,7 +115,7 @@ public:
         /** Returns size-hint.
           * @param  enmWhich    Brings size-hint type.
           * @param  constraint  Brings size constraint. */
-        QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const;
+        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
     /** @} */
 
 protected slots:

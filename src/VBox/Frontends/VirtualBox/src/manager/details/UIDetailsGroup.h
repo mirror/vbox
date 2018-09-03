@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,51 +15,111 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIDetailsGroup_h__
-#define __UIDetailsGroup_h__
+#ifndef ___UIDetailsGroup_h___
+#define ___UIDetailsGroup_h___
 
 /* GUI includes: */
 #include "UIDetailsItem.h"
 
 /* Forward declarations: */
-class UIVirtualMachineItem;
 class QGraphicsScene;
+class UIVirtualMachineItem;
 
-/* Details group
- * for graphics details model/view architecture: */
+/** UIDetailsItem extension implementing group item. */
 class UIDetailsGroup : public UIDetailsItem
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: Size-hint stuff: */
-    void sigMinimumWidthHintChanged(int iMinimumWidthHint);
-    void sigMinimumHeightHintChanged(int iMinimumHeightHint);
+    /** @name Layout stuff.
+      * @{ */
+        /** Notifies listeners about @a iMinimumWidthHint changed. */
+        void sigMinimumWidthHintChanged(int iMinimumWidthHint);
+        /** Notifies listeners about @a iMinimumHeightHint changed. */
+        void sigMinimumHeightHintChanged(int iMinimumHeightHint);
+    /** @} */
 
 public:
 
-    /* Graphics-item type: */
+    /** RTTI item type. */
     enum { Type = UIDetailsItemType_Group };
-    int type() const { return Type; }
 
-    /* Constructor/destructor: */
-    UIDetailsGroup(QGraphicsScene *pParent);
+    /** Constructs group item, passing pScene to the base-class. */
+    UIDetailsGroup(QGraphicsScene *pScene);
+    /** Destructs group item. */
     ~UIDetailsGroup();
 
-    /* API: Build stuff: */
-    void buildGroup(const QList<UIVirtualMachineItem*> &machineItems);
-    void rebuildGroup();
-    void stopBuildingGroup();
+    /** @name Item stuff.
+      * @{ */
+        /** Builds group based on passed @a machineItems. */
+        void buildGroup(const QList<UIVirtualMachineItem*> &machineItems);
+        /** Builds group based on cached machine items. */
+        void rebuildGroup();
+        /** Stops currently building group. */
+        void stopBuildingGroup();
+    /** @} */
 
-private slots:
+    /** @name Children stuff.
+      * @{ */
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType = UIDetailsItemType_Set) const /* override */;
+    /** @} */
 
-    /* Handler: Build stuff: */
-    void sltBuildStep(QString strStepId, int iStepNumber);
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates layout. */
+        virtual void updateLayout() /* override */;
+    /** @} */
+
+protected slots:
+
+    /** @name Item stuff.
+      * @{ */
+        /** Handles request about starting step build.
+          * @param  strStepId    Brings the step ID.
+          * @param  iStepNumber  Brings the step number. */
+    /** @} */
+    virtual void sltBuildStep(QString strStepId, int iStepNumber) /* override */;
+
+protected:
+
+    /** @name Item stuff.
+      * @{ */
+        /** Returns RTTI item type. */
+        virtual int type() const /* override */ { return Type; }
+
+        /** Returns the description of the item. */
+        virtual QString description() const /* override */ { return QString(); }
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Adds child @a pItem. */
+        virtual void addItem(UIDetailsItem *pItem) /* override */;
+        /** Removes child @a pItem. */
+        virtual void removeItem(UIDetailsItem *pItem) /* override */;
+
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIDetailsItemType enmType = UIDetailsItemType_Set) const /* override */;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIDetailsItemType enmType = UIDetailsItemType_Set) /* override */;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates geometry. */
+        virtual void updateGeometry() /* override */;
+
+        /** Returns minimum width-hint. */
+        virtual int minimumWidthHint() const /* override */;
+        /** Returns minimum height-hint. */
+        virtual int minimumHeightHint() const /* override */;
+    /** @} */
 
 private:
 
-    /* Data enumerator: */
+    /** Data field types. */
     enum GroupItemData
     {
         /* Layout hints: */
@@ -67,39 +127,40 @@ private:
         GroupData_Spacing
     };
 
-    /** Returns the description of the item. */
-    virtual QString description() const /* override */ { return QString(); }
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares connections. */
+        void prepareConnections();
+    /** @} */
 
-    /* Data provider: */
-    QVariant data(int iKey) const;
+    /** @name Item stuff.
+      * @{ */
+        /** Returns abstractly stored data value for certain @a iKey. */
+        QVariant data(int iKey) const;
+    /** @} */
 
-    /* Hidden API: Children stuff: */
-    void addItem(UIDetailsItem *pItem);
-    void removeItem(UIDetailsItem *pItem);
-    QList<UIDetailsItem*> items(UIDetailsItemType type = UIDetailsItemType_Set) const;
-    bool hasItems(UIDetailsItemType type = UIDetailsItemType_Set) const;
-    void clearItems(UIDetailsItemType type = UIDetailsItemType_Set);
+    /** @name Item stuff.
+      * @{ */
+        /** Holds the build step instance. */
+        UIPrepareStep *m_pBuildStep;
+        /** Holds the generated group ID. */
+        QString        m_strGroupId;
+    /** @} */
 
-    /* Helpers: Prepare stuff: */
-    void prepareConnections();
+    /** @name Children stuff.
+      * @{ */
+        /** Holds the cached machine item list. */
+        QList<UIVirtualMachineItem*> m_machineItems;
 
-    /* Helpers: Layout stuff: */
-    void updateGeometry();
-    int minimumWidthHint() const;
-    int minimumHeightHint() const;
-    void updateLayout();
+        /** Holds the child list (a list of sets). */
+        QList<UIDetailsItem*> m_items;
+    /** @} */
 
-    /* Variables: */
-    int m_iPreviousMinimumWidthHint;
-    int m_iPreviousMinimumHeightHint;
-    QList<UIDetailsItem*> m_items;
-    QList<UIVirtualMachineItem*> m_machineItems;
-    UIPrepareStep *m_pBuildStep;
-    QString m_strGroupId;
-
-    /* Friends: */
-    friend class UIDetailsModel;
+    /** @name Layout stuff.
+      * @{ */
+        int m_iPreviousMinimumWidthHint;
+        int m_iPreviousMinimumHeightHint;
+    /** @} */
 };
 
-#endif /* __UIDetailsGroup_h__ */
-
+#endif /* !___UIDetailsGroup_h___ */
