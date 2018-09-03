@@ -2181,6 +2181,8 @@ static DECLCALLBACK(int) drvHostCoreAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
+    PDRVHOSTCOREAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
+
     RT_BZERO(pBackendCfg, sizeof(PDMAUDIOBACKENDCFG));
 
     RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Core Audio driver");
@@ -2188,8 +2190,9 @@ static DECLCALLBACK(int) drvHostCoreAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
     pBackendCfg->cbStreamIn  = sizeof(COREAUDIOSTREAM);
     pBackendCfg->cbStreamOut = sizeof(COREAUDIOSTREAM);
 
-    pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
-    pBackendCfg->cMaxStreamsOut = UINT32_MAX;
+    /* For Core Audio we provide one stream per device for now. */
+    pBackendCfg->cMaxStreamsIn  = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->Devices, PDMAUDIODIR_IN);
+    pBackendCfg->cMaxStreamsOut = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->Devices, PDMAUDIODIR_OUT);
 
     LogFlowFunc(("Returning %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
