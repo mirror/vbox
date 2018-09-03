@@ -33,7 +33,7 @@ class UIVirtualMachineItem;
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-/** UIDetailsItem extension implementing group item. */
+/** UIDetailsItem extension implementing set item. */
 class UIDetailsSet : public UIDetailsItem
 {
     Q_OBJECT;
@@ -87,16 +87,16 @@ protected:
     /** @name Children stuff.
       * @{ */
         /** Adds child @a pItem. */
-        void addItem(UIDetailsItem *pItem);
+        virtual void addItem(UIDetailsItem *pItem) /* override */;
         /** Removes child @a pItem. */
-        void removeItem(UIDetailsItem *pItem);
+        virtual void removeItem(UIDetailsItem *pItem) /* override */;
 
         /** Returns children items of certain @a enmType. */
-        QList<UIDetailsItem*> items(UIDetailsItemType type = UIDetailsItemType_Element) const;
+        virtual QList<UIDetailsItem*> items(UIDetailsItemType type = UIDetailsItemType_Element) const /* override */;
         /** Returns whether there are children items of certain @a enmType. */
-        bool hasItems(UIDetailsItemType type = UIDetailsItemType_Element) const;
+        virtual bool hasItems(UIDetailsItemType type = UIDetailsItemType_Element) const /* override */;
         /** Clears children items of certain @a enmType. */
-        void clearItems(UIDetailsItemType type = UIDetailsItemType_Element);
+        virtual void clearItems(UIDetailsItemType type = UIDetailsItemType_Element) /* override */;
 
         /** Returns details element of certain @a enmElementType. */
         UIDetailsElement *element(DetailsElementType enmElementType) const;
@@ -105,12 +105,12 @@ protected:
     /** @name Layout stuff.
       * @{ */
         /** Updates layout. */
-        void updateLayout();
+        virtual void updateLayout() /* override */;
 
         /** Returns minimum width-hint. */
-        int minimumWidthHint() const;
+        virtual int minimumWidthHint() const /* override */;
         /** Returns minimum height-hint. */
-        int minimumHeightHint() const;
+        virtual int minimumHeightHint() const /* override */;
     /** @} */
 
 private slots:

@@ -140,12 +140,12 @@ void UIDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
             /* Check if this element is of required type: */
             if (pElement->elementType() == type)
             {
-                if (fToggled && pElement->closed())
+                if (fToggled && pElement->isClosed())
                 {
                     m_pAnimationCallback->addNotifier(pElement);
                     pElement->open();
                 }
-                else if (!fToggled && pElement->opened())
+                else if (!fToggled && pElement->isOpened())
                 {
                     m_pAnimationCallback->addNotifier(pElement);
                     pElement->close();

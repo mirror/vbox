@@ -100,7 +100,7 @@ private:
     /** Returns minimum height hint.
       * @param fClosed allows to specify whether the hint should
       *                be calculated for the closed element. */
-    int minimumHeightHint(bool fClosed) const;
+    int minimumHeightHintForElement(bool fClosed) const;
     /** Updates layout. */
     void updateLayout();
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,21 +20,21 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QGraphicsSceneMouseEvent>
 # include <QGraphicsView>
-# include <QStateMachine>
 # include <QPropertyAnimation>
 # include <QSignalTransition>
+# include <QStateMachine>
 # include <QStyleOptionGraphicsItem>
-# include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
+# include "UIActionPool.h"
+# include "UIConverter.h"
 # include "UIDetailsElement.h"
 # include "UIDetailsSet.h"
 # include "UIDetailsModel.h"
 # include "UIGraphicsRotatorButton.h"
 # include "UIGraphicsTextPane.h"
-# include "UIActionPool.h"
-# include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIVirtualBoxManager.h"
 # include "VBoxGlobal.h"
@@ -42,18 +42,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType type, bool fOpened)
+UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enmType, bool fOpened)
     : UIDetailsItem(pParent)
     , m_pSet(pParent)
-    , m_type(type)
+    , m_enmType(enmType)
     , m_iCornerRadius(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2)
-    , m_iMinimumHeaderWidth(0)
-    , m_iMinimumHeaderHeight(0)
-    , m_pButton(0)
-    , m_fClosed(!fOpened)
-    , m_iAdditionalHeight(0)
-    , m_fAnimationRunning(false)
-    , m_pTextPane(0)
     , m_fHovered(false)
     , m_fNameHovered(false)
     , m_pHighlightMachine(0)
@@ -63,6 +56,13 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType typ
     , m_iDefaultDarkness(100)
     , m_iHighlightDarkness(90)
     , m_iAnimationDarkness(m_iDefaultDarkness)
+    , m_pButton(0)
+    , m_fClosed(!fOpened)
+    , m_fAnimationRunning(false)
+    , m_iAdditionalHeight(0)
+    , m_pTextPane(0)
+    , m_iMinimumHeaderWidth(0)
+    , m_iMinimumHeaderHeight(0)
 {
     /* Prepare element: */
     prepareElement();
@@ -86,6 +86,18 @@ UIDetailsElement::~UIDetailsElement()
     parentItem()->removeItem(this);
 }
 
+void UIDetailsElement::setText(const UITextTable &text)
+{
+    /* Pass text to text-pane: */
+    m_pTextPane->setText(text);
+}
+
+UITextTable &UIDetailsElement::text() const
+{
+    /* Retrieve text from text-pane: */
+    return m_pTextPane->text();
+}
+
 void UIDetailsElement::close(bool fAnimated /* = true */)
 {
     m_pButton->setToggled(false, fAnimated);
@@ -94,6 +106,17 @@ void UIDetailsElement::close(bool fAnimated /* = true */)
 void UIDetailsElement::open(bool fAnimated /* = true */)
 {
     m_pButton->setToggled(true, fAnimated);
+}
+
+void UIDetailsElement::markAnimationFinished()
+{
+    /* Mark animation as non-running: */
+    m_fAnimationRunning = false;
+
+    /* Recursively update size-hint: */
+    updateGeometry();
+    /* Repaint: */
+    update();
 }
 
 void UIDetailsElement::updateAppearance()
@@ -108,27 +131,245 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
 }
 
-void UIDetailsElement::markAnimationFinished()
+int UIDetailsElement::minimumWidthHint() const
 {
-    /* Mark animation as non-running: */
-    m_fAnimationRunning = false;
+    /* Prepare variables: */
+    int iMargin = data(ElementData_Margin).toInt();
+    int iMinimumWidthHint = 0;
 
-    /* Recursively update size-hint: */
-    updateGeometry();
+    /* Maximum width: */
+    iMinimumWidthHint = qMax(m_iMinimumHeaderWidth, (int)m_pTextPane->minimumSizeHint().width());
+
+    /* And 4 margins: 2 left and 2 right: */
+    iMinimumWidthHint += 4 * iMargin;
+
+    /* Return result: */
+    return iMinimumWidthHint;
+}
+
+int UIDetailsElement::minimumHeightHint() const
+{
+    return minimumHeightHintForElement(m_fClosed);
+}
+
+void UIDetailsElement::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIDetailsItem::showEvent(pEvent);
+
+    /* Update icon: */
+    updateIcon();
+}
+
+void UIDetailsElement::resizeEvent(QGraphicsSceneResizeEvent*)
+{
+    /* Update layout: */
+    updateLayout();
+}
+
+void UIDetailsElement::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Update hover state: */
+    if (!m_fHovered)
+    {
+        m_fHovered = true;
+        emit sigHoverEnter();
+    }
+
+    /* Update name-hover state: */
+    handleHoverEvent(pEvent);
+}
+
+void UIDetailsElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Update hover state: */
+    if (m_fHovered)
+    {
+        m_fHovered = false;
+        emit sigHoverLeave();
+    }
+
+    /* Update name-hover state: */
+    handleHoverEvent(pEvent);
+}
+
+void UIDetailsElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
+{
+    /* Only for hovered header: */
+    if (!m_fNameHovered)
+        return;
+
+    /* Process link click: */
+    pEvent->accept();
+    QString strCategory;
+    if (m_enmType >= DetailsElementType_General &&
+        m_enmType < DetailsElementType_Description)
+        strCategory = QString("#%1").arg(gpConverter->toInternalString(m_enmType));
+    else if (m_enmType == DetailsElementType_Description)
+        strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_enmType));
+    emit sigLinkClicked(strCategory, QString(), machine().GetId());
+}
+
+void UIDetailsElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent)
+{
+    /* Only for left-button: */
+    if (pEvent->button() != Qt::LeftButton)
+        return;
+
+    /* Process left-button double-click: */
+    emit sigToggleElement(m_enmType, isClosed());
+}
+
+void UIDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *)
+{
+    /* Update button visibility: */
+    updateButtonVisibility();
+
+    /* Configure painter shape: */
+    configurePainterShape(pPainter, pOptions, m_iCornerRadius);
+
+    /* Paint decorations: */
+    paintDecorations(pPainter, pOptions);
+
+    /* Paint element info: */
+    paintElementInfo(pPainter, pOptions);
+}
+
+QString UIDetailsElement::description() const
+{
+    return tr("%1 details", "like 'General details' or 'Storage details'").arg(m_strName);
+}
+
+const CMachine &UIDetailsElement::machine()
+{
+    return m_pSet->machine();
+}
+
+void UIDetailsElement::setName(const QString &strName)
+{
+    /* Cache name: */
+    m_strName = strName;
+    QFontMetrics fm(m_nameFont, model()->paintDevice());
+    m_nameSize = QSize(fm.width(m_strName), fm.height());
+
+    /* Update linked values: */
+    updateMinimumHeaderWidth();
+    updateMinimumHeaderHeight();
+}
+
+void UIDetailsElement::setAdditionalHeight(int iAdditionalHeight)
+{
+    /* Cache new value: */
+    m_iAdditionalHeight = iAdditionalHeight;
+    /* Update layout: */
+    updateLayout();
     /* Repaint: */
     update();
 }
 
-UITextTable &UIDetailsElement::text() const
+QVariant UIDetailsElement::data(int iKey) const
 {
-    /* Retrieve text from text-pane: */
-    return m_pTextPane->text();
+    /* Provide other members with required data: */
+    switch (iKey)
+    {
+        /* Hints: */
+        case ElementData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+        case ElementData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        /* Default: */
+        default: break;
+    }
+    return QVariant();
 }
 
-void UIDetailsElement::setText(const UITextTable &text)
+void UIDetailsElement::addItem(UIDetailsItem*)
 {
-    /* Pass text to text-pane: */
-    m_pTextPane->setText(text);
+    AssertMsgFailed(("Details element do NOT support children!"));
+}
+
+void UIDetailsElement::removeItem(UIDetailsItem*)
+{
+    AssertMsgFailed(("Details element do NOT support children!"));
+}
+
+QList<UIDetailsItem*> UIDetailsElement::items(UIDetailsItemType) const
+{
+    AssertMsgFailed(("Details element do NOT support children!"));
+    return QList<UIDetailsItem*>();
+}
+
+bool UIDetailsElement::hasItems(UIDetailsItemType) const
+{
+    AssertMsgFailed(("Details element do NOT support children!"));
+    return false;
+}
+
+void UIDetailsElement::clearItems(UIDetailsItemType)
+{
+    AssertMsgFailed(("Details element do NOT support children!"));
+}
+
+void UIDetailsElement::updateLayout()
+{
+    /* Prepare variables: */
+    QSize size = geometry().size().toSize();
+    int iMargin = data(ElementData_Margin).toInt();
+
+    /* Layout button: */
+    int iButtonWidth = m_buttonSize.width();
+    int iButtonHeight = m_buttonSize.height();
+    int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
+    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
+                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
+    m_pButton->setPos(iButtonX, iButtonY);
+
+    /* If closed: */
+    if (isClosed())
+    {
+        /* Hide text-pane if still visible: */
+        if (m_pTextPane->isVisible())
+            m_pTextPane->hide();
+    }
+    /* If opened: */
+    else
+    {
+        /* Layout text-pane: */
+        int iTextPaneX = 2 * iMargin;
+        int iTextPaneY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
+        m_pTextPane->setPos(iTextPaneX, iTextPaneY);
+        m_pTextPane->resize(size.width() - 4 * iMargin,
+                            size.height() - 4 * iMargin - m_iMinimumHeaderHeight);
+        /* Show text-pane if still invisible and animation finished: */
+        if (!m_pTextPane->isVisible() && !isAnimationRunning())
+            m_pTextPane->show();
+    }
+}
+
+int UIDetailsElement::minimumHeightHintForElement(bool fClosed) const
+{
+    /* Prepare variables: */
+    int iMargin = data(ElementData_Margin).toInt();
+    int iMinimumHeightHint = 0;
+
+    /* Two margins: */
+    iMinimumHeightHint += 2 * iMargin;
+
+    /* Header height: */
+    iMinimumHeightHint += m_iMinimumHeaderHeight;
+
+    /* Element is opened? */
+    if (!fClosed)
+    {
+        /* Add text height: */
+        if (!m_pTextPane->isEmpty())
+            iMinimumHeightHint += 2 * iMargin + (int)m_pTextPane->minimumSizeHint().height();
+    }
+
+    /* Additional height during animation: */
+    if (m_fAnimationRunning)
+        iMinimumHeightHint += m_iAdditionalHeight;
+
+    /* Return value: */
+    return iMinimumHeightHint;
 }
 
 void UIDetailsElement::sltHandleWindowRemapped()
@@ -139,7 +380,7 @@ void UIDetailsElement::sltHandleWindowRemapped()
 
 void UIDetailsElement::sltToggleButtonClicked()
 {
-    emit sigToggleElement(m_type, closed());
+    emit sigToggleElement(m_enmType, isClosed());
 }
 
 void UIDetailsElement::sltElementToggleStart()
@@ -203,223 +444,6 @@ void UIDetailsElement::sltMountStorageMedium()
 
     /* Update current machine mount-target: */
     vboxGlobal().updateMachineStorage(machine(), target);
-}
-
-void UIDetailsElement::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    UIDetailsItem::showEvent(pEvent);
-
-    /* Update icon: */
-    updateIcon();
-}
-
-void UIDetailsElement::resizeEvent(QGraphicsSceneResizeEvent*)
-{
-    /* Update layout: */
-    updateLayout();
-}
-
-QString UIDetailsElement::description() const
-{
-    return tr("%1 details", "like 'General details' or 'Storage details'").arg(m_strName);
-}
-
-QVariant UIDetailsElement::data(int iKey) const
-{
-    /* Provide other members with required data: */
-    switch (iKey)
-    {
-        /* Hints: */
-        case ElementData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case ElementData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
-        /* Default: */
-        default: break;
-    }
-    return QVariant();
-}
-
-void UIDetailsElement::updateMinimumHeaderWidth()
-{
-    /* Prepare variables: */
-    int iSpacing = data(ElementData_Spacing).toInt();
-
-    /* Update minimum-header-width: */
-    m_iMinimumHeaderWidth = m_pixmapSize.width() +
-                            iSpacing + m_nameSize.width() +
-                            iSpacing + m_buttonSize.width();
-}
-
-void UIDetailsElement::updateMinimumHeaderHeight()
-{
-    /* Update minimum-header-height: */
-    m_iMinimumHeaderHeight = qMax(m_pixmapSize.height(), m_nameSize.height());
-    m_iMinimumHeaderHeight = qMax(m_iMinimumHeaderHeight, m_buttonSize.height());
-}
-
-void UIDetailsElement::updateIcon()
-{
-    /* Prepare whole icon first of all: */
-    const QIcon icon = gpConverter->toIcon(elementType());
-
-    /* Cache icon: */
-    if (icon.isNull())
-    {
-        /* No icon provided: */
-        m_pixmapSize = QSize();
-        m_pixmap = QPixmap();
-    }
-    else
-    {
-        /* Determine default icon size: */
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        m_pixmapSize = QSize(iIconMetric, iIconMetric);
-        /* Acquire the icon of corresponding size (taking top-level widget DPI into account): */
-        m_pixmap = icon.pixmap(gpManager->windowHandle(), m_pixmapSize);
-    }
-
-    /* Update linked values: */
-    updateMinimumHeaderWidth();
-    updateMinimumHeaderHeight();
-}
-
-void UIDetailsElement::setName(const QString &strName)
-{
-    /* Cache name: */
-    m_strName = strName;
-    QFontMetrics fm(m_nameFont, model()->paintDevice());
-    m_nameSize = QSize(fm.width(m_strName), fm.height());
-
-    /* Update linked values: */
-    updateMinimumHeaderWidth();
-    updateMinimumHeaderHeight();
-}
-
-const CMachine& UIDetailsElement::machine()
-{
-    return m_pSet->machine();
-}
-
-int UIDetailsElement::minimumWidthHint() const
-{
-    /* Prepare variables: */
-    int iMargin = data(ElementData_Margin).toInt();
-    int iMinimumWidthHint = 0;
-
-    /* Maximum width: */
-    iMinimumWidthHint = qMax(m_iMinimumHeaderWidth, (int)m_pTextPane->minimumSizeHint().width());
-
-    /* And 4 margins: 2 left and 2 right: */
-    iMinimumWidthHint += 4 * iMargin;
-
-    /* Return result: */
-    return iMinimumWidthHint;
-}
-
-int UIDetailsElement::minimumHeightHint(bool fClosed) const
-{
-    /* Prepare variables: */
-    int iMargin = data(ElementData_Margin).toInt();
-    int iMinimumHeightHint = 0;
-
-    /* Two margins: */
-    iMinimumHeightHint += 2 * iMargin;
-
-    /* Header height: */
-    iMinimumHeightHint += m_iMinimumHeaderHeight;
-
-    /* Element is opened? */
-    if (!fClosed)
-    {
-        /* Add text height: */
-        if (!m_pTextPane->isEmpty())
-            iMinimumHeightHint += 2 * iMargin + (int)m_pTextPane->minimumSizeHint().height();
-    }
-
-    /* Additional height during animation: */
-    if (m_fAnimationRunning)
-        iMinimumHeightHint += m_iAdditionalHeight;
-
-    /* Return value: */
-    return iMinimumHeightHint;
-}
-
-int UIDetailsElement::minimumHeightHint() const
-{
-    return minimumHeightHint(m_fClosed);
-}
-
-void UIDetailsElement::updateLayout()
-{
-    /* Prepare variables: */
-    QSize size = geometry().size().toSize();
-    int iMargin = data(ElementData_Margin).toInt();
-
-    /* Layout button: */
-    int iButtonWidth = m_buttonSize.width();
-    int iButtonHeight = m_buttonSize.height();
-    int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
-    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
-                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
-    m_pButton->setPos(iButtonX, iButtonY);
-
-    /* If closed: */
-    if (closed())
-    {
-        /* Hide text-pane if still visible: */
-        if (m_pTextPane->isVisible())
-            m_pTextPane->hide();
-    }
-    /* If opened: */
-    else
-    {
-        /* Layout text-pane: */
-        int iTextPaneX = 2 * iMargin;
-        int iTextPaneY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
-        m_pTextPane->setPos(iTextPaneX, iTextPaneY);
-        m_pTextPane->resize(size.width() - 4 * iMargin,
-                            size.height() - 4 * iMargin - m_iMinimumHeaderHeight);
-        /* Show text-pane if still invisible and animation finished: */
-        if (!m_pTextPane->isVisible() && !isAnimationRunning())
-            m_pTextPane->show();
-    }
-}
-
-void UIDetailsElement::setAdditionalHeight(int iAdditionalHeight)
-{
-    /* Cache new value: */
-    m_iAdditionalHeight = iAdditionalHeight;
-    /* Update layout: */
-    updateLayout();
-    /* Repaint: */
-    update();
-}
-
-void UIDetailsElement::addItem(UIDetailsItem*)
-{
-    AssertMsgFailed(("Details element do NOT support children!"));
-}
-
-void UIDetailsElement::removeItem(UIDetailsItem*)
-{
-    AssertMsgFailed(("Details element do NOT support children!"));
-}
-
-QList<UIDetailsItem*> UIDetailsElement::items(UIDetailsItemType) const
-{
-    AssertMsgFailed(("Details element do NOT support children!"));
-    return QList<UIDetailsItem*>();
-}
-
-bool UIDetailsElement::hasItems(UIDetailsItemType) const
-{
-    AssertMsgFailed(("Details element do NOT support children!"));
-    return false;
-}
-
-void UIDetailsElement::clearItems(UIDetailsItemType)
-{
-    AssertMsgFailed(("Details element do NOT support children!"));
 }
 
 void UIDetailsElement::prepareElement()
@@ -492,25 +516,109 @@ void UIDetailsElement::prepareTextPane()
     connect(m_pTextPane, SIGNAL(sigAnchorClicked(const QString&)), this, SLOT(sltHandleAnchorClicked(const QString&)));
 }
 
-void UIDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget*)
+void UIDetailsElement::updateIcon()
 {
-    /* Update button visibility: */
-    updateButtonVisibility();
+    /* Prepare whole icon first of all: */
+    const QIcon icon = gpConverter->toIcon(elementType());
 
-    /* Configure painter shape: */
-    configurePainterShape(pPainter, pOption, m_iCornerRadius);
+    /* Cache icon: */
+    if (icon.isNull())
+    {
+        /* No icon provided: */
+        m_pixmapSize = QSize();
+        m_pixmap = QPixmap();
+    }
+    else
+    {
+        /* Determine default icon size: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pixmapSize = QSize(iIconMetric, iIconMetric);
+        /* Acquire the icon of corresponding size (taking top-level widget DPI into account): */
+        m_pixmap = icon.pixmap(gpManager->windowHandle(), m_pixmapSize);
+    }
 
-    /* Paint decorations: */
-    paintDecorations(pPainter, pOption);
-
-    /* Paint element info: */
-    paintElementInfo(pPainter, pOption);
+    /* Update linked values: */
+    updateMinimumHeaderWidth();
+    updateMinimumHeaderHeight();
 }
 
-void UIDetailsElement::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
+void UIDetailsElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Not for 'preview' element type: */
+    if (m_enmType == DetailsElementType_Preview)
+        return;
+
+    /* Prepare variables: */
+    int iMargin = data(ElementData_Margin).toInt();
+    int iSpacing = data(ElementData_Spacing).toInt();
+    int iNameHeight = m_nameSize.height();
+    int iElementNameX = 2 * iMargin + m_pixmapSize.width() + iSpacing;
+    int iElementNameY = iNameHeight == m_iMinimumHeaderHeight ?
+                        iMargin : iMargin + (m_iMinimumHeaderHeight - iNameHeight) / 2;
+
+    /* Simulate hyperlink hovering: */
+    QPoint point = pEvent->pos().toPoint();
+    bool fNameHovered = QRect(QPoint(iElementNameX, iElementNameY), m_nameSize).contains(point);
+    if (   m_pSet->configurationAccessLevel() != ConfigurationAccessLevel_Null
+        && m_fNameHovered != fNameHovered)
+    {
+        m_fNameHovered = fNameHovered;
+        updateNameHoverLink();
+    }
+}
+
+void UIDetailsElement::updateNameHoverLink()
+{
+    if (m_fNameHovered)
+        VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
+    else
+        VBoxGlobal::unsetCursor(this);
+    update();
+}
+
+void UIDetailsElement::updateAnimationParameters()
+{
+    /* Recalculate animation parameters: */
+    int iOpenedHeight = minimumHeightHintForElement(false);
+    int iClosedHeight = minimumHeightHintForElement(true);
+    int iAdditionalHeight = iOpenedHeight - iClosedHeight;
+    if (m_fClosed)
+        m_iAdditionalHeight = 0;
+    else
+        m_iAdditionalHeight = iAdditionalHeight;
+    m_pButton->setAnimationRange(0, iAdditionalHeight);
+}
+
+void UIDetailsElement::updateButtonVisibility()
+{
+    if (m_fHovered && !m_pButton->isVisible())
+        m_pButton->show();
+    else if (!m_fHovered && m_pButton->isVisible())
+        m_pButton->hide();
+}
+
+void UIDetailsElement::updateMinimumHeaderWidth()
+{
+    /* Prepare variables: */
+    int iSpacing = data(ElementData_Spacing).toInt();
+
+    /* Update minimum-header-width: */
+    m_iMinimumHeaderWidth = m_pixmapSize.width() +
+                            iSpacing + m_nameSize.width() +
+                            iSpacing + m_buttonSize.width();
+}
+
+void UIDetailsElement::updateMinimumHeaderHeight()
+{
+    /* Update minimum-header-height: */
+    m_iMinimumHeaderHeight = qMax(m_pixmapSize.height(), m_nameSize.height());
+    m_iMinimumHeaderHeight = qMax(m_iMinimumHeaderHeight, m_buttonSize.height());
+}
+
+void UIDetailsElement::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions)
 {
     /* Paint background: */
-    paintBackground(pPainter, pOption);
+    paintBackground(pPainter, pOptions);
 }
 
 void UIDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem*)
@@ -560,7 +668,7 @@ void UIDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGr
               m_fNameHovered ? linkTextColor : buttonTextColor);
 }
 
-void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
+void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions)
 {
     /* Save painter: */
     pPainter->save();
@@ -568,7 +676,7 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
     /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
     int iHeaderHeight = 2 * iMargin + m_iMinimumHeaderHeight;
-    QRect optionRect = pOption->rect;
+    QRect optionRect = pOptions->rect;
     QRect fullRect = !m_fAnimationRunning ? optionRect :
                      QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeaderHeight + m_iAdditionalHeight));
     int iFullHeight = fullRect.height();
@@ -614,112 +722,4 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
 
     /* Restore painter: */
     pPainter->restore();
-}
-
-void UIDetailsElement::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
-{
-    /* Update hover state: */
-    if (!m_fHovered)
-    {
-        m_fHovered = true;
-        emit sigHoverEnter();
-    }
-
-    /* Update name-hover state: */
-    handleHoverEvent(pEvent);
-}
-
-void UIDetailsElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
-{
-    /* Update hover state: */
-    if (m_fHovered)
-    {
-        m_fHovered = false;
-        emit sigHoverLeave();
-    }
-
-    /* Update name-hover state: */
-    handleHoverEvent(pEvent);
-}
-
-void UIDetailsElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
-{
-    /* Only for hovered header: */
-    if (!m_fNameHovered)
-        return;
-
-    /* Process link click: */
-    pEvent->accept();
-    QString strCategory;
-    if (m_type >= DetailsElementType_General &&
-        m_type < DetailsElementType_Description)
-        strCategory = QString("#%1").arg(gpConverter->toInternalString(m_type));
-    else if (m_type == DetailsElementType_Description)
-        strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_type));
-    emit sigLinkClicked(strCategory, QString(), machine().GetId());
-}
-
-void UIDetailsElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent)
-{
-    /* Only for left-button: */
-    if (pEvent->button() != Qt::LeftButton)
-        return;
-
-    /* Process left-button double-click: */
-    emit sigToggleElement(m_type, closed());
-}
-
-void UIDetailsElement::updateButtonVisibility()
-{
-    if (m_fHovered && !m_pButton->isVisible())
-        m_pButton->show();
-    else if (!m_fHovered && m_pButton->isVisible())
-        m_pButton->hide();
-}
-
-void UIDetailsElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
-{
-    /* Not for 'preview' element type: */
-    if (m_type == DetailsElementType_Preview)
-        return;
-
-    /* Prepare variables: */
-    int iMargin = data(ElementData_Margin).toInt();
-    int iSpacing = data(ElementData_Spacing).toInt();
-    int iNameHeight = m_nameSize.height();
-    int iElementNameX = 2 * iMargin + m_pixmapSize.width() + iSpacing;
-    int iElementNameY = iNameHeight == m_iMinimumHeaderHeight ?
-                        iMargin : iMargin + (m_iMinimumHeaderHeight - iNameHeight) / 2;
-
-    /* Simulate hyperlink hovering: */
-    QPoint point = pEvent->pos().toPoint();
-    bool fNameHovered = QRect(QPoint(iElementNameX, iElementNameY), m_nameSize).contains(point);
-    if (   m_pSet->configurationAccessLevel() != ConfigurationAccessLevel_Null
-        && m_fNameHovered != fNameHovered)
-    {
-        m_fNameHovered = fNameHovered;
-        updateNameHoverLink();
-    }
-}
-
-void UIDetailsElement::updateNameHoverLink()
-{
-    if (m_fNameHovered)
-        VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
-    else
-        VBoxGlobal::unsetCursor(this);
-    update();
-}
-
-void UIDetailsElement::updateAnimationParameters()
-{
-    /* Recalculate animation parameters: */
-    int iOpenedHeight = minimumHeightHint(false);
-    int iClosedHeight = minimumHeightHint(true);
-    int iAdditionalHeight = iOpenedHeight - iClosedHeight;
-    if (m_fClosed)
-        m_iAdditionalHeight = 0;
-    else
-        m_iAdditionalHeight = iAdditionalHeight;
-    m_pButton->setAnimationRange(0, iAdditionalHeight);
 }

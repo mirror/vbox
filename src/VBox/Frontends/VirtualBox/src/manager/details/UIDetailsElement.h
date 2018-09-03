@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIDetailsElement_h__
-#define __UIDetailsElement_h__
+#ifndef ___UIDetailsElement_h___
+#define ___UIDetailsElement_h___
 
 /* Qt includes: */
 #include <QIcon>
@@ -26,21 +26,19 @@
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
+class QPropertyAnimation;
+class QStateMachine;
+class QTextLayout;
 class UIDetailsSet;
-class CMachine;
 class UIGraphicsRotatorButton;
 class UIGraphicsTextPane;
-class QTextLayout;
-class QStateMachine;
-class QPropertyAnimation;
 class UITextTableLine;
+class CMachine;
 
 /* Typedefs: */
 typedef QList<UITextTableLine> UITextTable;
 
-
-/* Details element
- * for graphics details model/view architecture: */
+/** UIDetailsItem extension implementing element item. */
 class UIDetailsElement : public UIDetailsItem
 {
     Q_OBJECT;
@@ -49,69 +47,75 @@ class UIDetailsElement : public UIDetailsItem
 
 signals:
 
-    /* Notifiers: Hover stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
+    /** @name Item stuff.
+      * @{ */
+        /** Notifies about hover enter. */
+        void sigHoverEnter();
+        /** Notifies about hover leave. */
+        void sigHoverLeave();
 
-    /* Notifiers: Toggle stuff: */
-    void sigToggleElement(DetailsElementType type, bool fToggled);
-    void sigToggleElementFinished();
+        /** Notifies about @a enmType element @a fToggled. */
+        void sigToggleElement(DetailsElementType enmType, bool fToggled);
+        /** Notifies about element toggle finished. */
+        void sigToggleElementFinished();
 
-    /* Notifier: Link-click stuff: */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+        /** Notifies about element link clicked.
+          * @param  strCategory  Brings the link category.
+          * @param  strControl   Brings the wanted settings control.
+          * @param  strId        Brings the ID. */
+        void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+    /** @} */
 
 public:
 
-    /* Graphics-item type: */
+    /** RTTI item type. */
     enum { Type = UIDetailsItemType_Element };
-    int type() const { return Type; }
 
-    /* Constructor/destructor: */
-    UIDetailsElement(UIDetailsSet *pParent, DetailsElementType type, bool fOpened);
-    ~UIDetailsElement();
+    /** Constructs element item, passing pParent to the base-class.
+      * @param  enmType  Brings element type.
+      * @param  fOpened  Brings whether element is opened. */
+    UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enmType, bool fOpened);
+    /** Destructs element item. */
+    virtual ~UIDetailsElement() /* override */;
 
-    /* API: Element type: */
-    DetailsElementType elementType() const { return m_type; }
+    /** @name Item stuff.
+      * @{ */
+        /** Returns element type. */
+        DetailsElementType elementType() const { return m_enmType; }
 
-    /* API: Open/close stuff: */
-    bool closed() const { return m_fClosed; }
-    bool opened() const { return !m_fClosed; }
-    void close(bool fAnimated = true);
-    void open(bool fAnimated = true);
+        /** Defines the @a text table as the passed one. */
+        void setText(const UITextTable &text);
+        /** Returns the reference to the text table. */
+        UITextTable &text() const;
 
-    /* API: Update stuff: */
-    virtual void updateAppearance();
+        /** Closes group in @a fAnimated way if requested. */
+        void close(bool fAnimated = true);
+        /** Returns whether group is closed. */
+        bool isClosed() const { return m_fClosed; }
 
-    /* API: Animation stuff: */
-    void markAnimationFinished();
+        /** Opens group in @a fAnimated way if requested. */
+        void open(bool fAnimated = true);
+        /** Returns whether group is opened. */
+        bool isOpened() const { return !m_fClosed; }
 
-    /** Returns the reference to the text table. */
-    UITextTable &text() const;
-    /** Defines the @a text table as the passed one. */
-    void setText(const UITextTable &text);
+        /** Marks animation finished. */
+        void markAnimationFinished();
 
-protected slots:
+        /** Updates element appearance. */
+        virtual void updateAppearance();
+    /** @} */
 
-    /** Handles top-level window remaps. */
-    void sltHandleWindowRemapped();
-
-    /* Handlers: Toggle stuff: */
-    void sltToggleButtonClicked();
-    void sltElementToggleStart();
-    void sltElementToggleFinish(bool fToggled);
-
-    /** Handles children geometry changes. */
-    void sltUpdateGeometry() { updateGeometry(); }
-
-    /** Handles children anchor clicks. */
-    void sltHandleAnchorClicked(const QString &strAnchor);
-
-    /** Handles mount storage medium requests. */
-    void sltMountStorageMedium();
+    /** @name Layout stuff.
+      * @{ */
+        /** Returns minimum width-hint. */
+        virtual int minimumWidthHint() const /* override */;
+        /** Returns minimum height-hint. */
+        virtual int minimumHeightHint() const /* override */;
+    /** @} */
 
 protected:
 
-    /* Data enumerator: */
+    /** Data field types. */
     enum ElementData
     {
         /* Hints: */
@@ -119,120 +123,230 @@ protected:
         ElementData_Spacing
     };
 
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles show @a pEvent. */
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
 
-    /** This event handler is delivered after the widget has been resized. */
-    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
+        /** This event handler is delivered after the widget has been resized. */
+        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
 
-    /** Returns the description of the item. */
-    virtual QString description() const /* override */;
+        /** Handles hover enter @a event. */
+        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+        /** Handles hover leave @a event. */
+        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
 
-    /* Data provider: */
-    QVariant data(int iKey) const;
+        /** Handles mouse press @a event. */
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+        /** Handles mouse double-click @a event. */
+        virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
 
-    /* Helpers: Update stuff: */
-    void updateMinimumHeaderWidth();
-    void updateMinimumHeaderHeight();
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0) /* override */;
+    /** @} */
 
-    /* API: Icon stuff: */
-    void updateIcon();
+    /** @name Item stuff.
+      * @{ */
+        /** Returns RTTI item type. */
+        virtual int type() const /* override */ { return Type; }
 
-    /* API: Name stuff: */
-    void setName(const QString &strName);
+        /** Returns the description of the item. */
+        virtual QString description() const /* override */;
 
-    /* API: Machine stuff: */
-    const CMachine& machine();
+        /** Returns cached machine reference. */
+        const CMachine &machine();
 
-    /* Helpers: Layout stuff: */
-    int minimumHeaderWidth() const { return m_iMinimumHeaderWidth; }
-    int minimumHeaderHeight() const { return m_iMinimumHeaderHeight; }
-    int minimumWidthHint() const;
-    virtual int minimumHeightHint(bool fClosed) const;
-    int minimumHeightHint() const;
-    void updateLayout();
+        /** Defines element @a strName. */
+        void setName(const QString &strName);
 
-    /* Helpers: Hover stuff: */
-    int animationDarkness() const { return m_iAnimationDarkness; }
-    void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
+        /** Defines @a iAdditionalHeight during toggle animation. */
+        void setAdditionalHeight(int iAdditionalHeight);
+        /** Returns additional height during toggle animation. */
+        int additionalHeight() const { return m_iAdditionalHeight; }
+        /** Returns toggle button instance. */
+        UIGraphicsRotatorButton *button() const { return m_pButton; }
+        /** Returns whether toggle animation is running. */
+        bool isAnimationRunning() const { return m_fAnimationRunning; }
 
-    /* Helpers: Animation stuff: */
-    void setAdditionalHeight(int iAdditionalHeight);
-    int additionalHeight() const { return m_iAdditionalHeight; }
-    UIGraphicsRotatorButton* button() const { return m_pButton; }
-    bool isAnimationRunning() const { return m_fAnimationRunning; }
+        /** Returns abstractly stored data value for certain @a iKey. */
+        QVariant data(int iKey) const;
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Adds child @a pItem. */
+        virtual void addItem(UIDetailsItem *pItem) /* override */;
+        /** Removes child @a pItem. */
+        virtual void removeItem(UIDetailsItem *pItem) /* override */;
+
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType) const /* override */;
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIDetailsItemType enmType) const /* override */;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIDetailsItemType enmType) /* override */;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates layout. */
+        virtual void updateLayout() /* override */;
+
+        /** Returns minimum width-hint for @a fClosed element. */
+        virtual int minimumHeightHintForElement(bool fClosed) const;
+
+        /** Returns minimum header width. */
+        int minimumHeaderWidth() const { return m_iMinimumHeaderWidth; }
+        /** Returns minimum header height. */
+        int minimumHeaderHeight() const { return m_iMinimumHeaderHeight; }
+    /** @} */
+
+private slots:
+
+    /** @name Item stuff.
+      * @{ */
+        /** Handles top-level window remaps. */
+        void sltHandleWindowRemapped();
+
+        /** Handles toggle button click. */
+        void sltToggleButtonClicked();
+        /** Handles toggle start. */
+        void sltElementToggleStart();
+        /** Handles toggle finish. */
+        void sltElementToggleFinish(bool fToggled);
+
+        /** Handles children anchor clicks. */
+        void sltHandleAnchorClicked(const QString &strAnchor);
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Handles children geometry changes. */
+        void sltUpdateGeometry() { updateGeometry(); }
+    /** @} */
+
+    /** @name Move to sub-class.
+      * @{ */
+        /** Handles mount storage medium requests. */
+        void sltMountStorageMedium();
+    /** @} */
 
 private:
 
-    /* API: Children stuff: */
-    void addItem(UIDetailsItem *pItem);
-    void removeItem(UIDetailsItem *pItem);
-    QList<UIDetailsItem*> items(UIDetailsItemType type) const;
-    bool hasItems(UIDetailsItemType type) const;
-    void clearItems(UIDetailsItemType type);
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares element. */
+        void prepareElement();
+        /** Prepares toggle button. */
+        void prepareButton();
+        /** Prepares text pane. */
+        void prepareTextPane();
+    /** @} */
 
-    /* Helpers: Prepare stuff: */
-    void prepareElement();
-    void prepareButton();
-    void prepareTextPane();
+    /** @name Item stuff.
+      * @{ */
+        /** Updates icon. */
+        void updateIcon();
 
-    /* Helpers: Paint stuff: */
-    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
-    void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-    void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-    void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
+        /** Defines @a iAnimationDarkness. */
+        void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
+        /** Returns animation darkness. */
+        int animationDarkness() const { return m_iAnimationDarkness; }
 
-    /* Handlers: Mouse stuff: */
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
-    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
-    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent);
+        /** Handles any kind of hover @a pEvent. */
+        void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
+        /** Updates hovered link. */
+        void updateNameHoverLink();
 
-    /* Helpers: Mouse stuff: */
-    void updateButtonVisibility();
-    void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
-    void updateNameHoverLink();
+        /** Updates animation parameters. */
+        void updateAnimationParameters();
+        /** Updates toggle button visibility.  */
+        void updateButtonVisibility();
+    /** @} */
 
-    /* Helper: Animation stuff: */
-    void updateAnimationParameters();
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates minimum header width. */
+        void updateMinimumHeaderWidth();
+        /** Updates minimum header height. */
+        void updateMinimumHeaderHeight();
+    /** @} */
 
-    /* Variables: */
-    UIDetailsSet *m_pSet;
-    DetailsElementType m_type;
-    QPixmap m_pixmap;
-    QString m_strName;
-    int m_iCornerRadius;
-    QFont m_nameFont;
-    QFont m_textFont;
-    QSize m_pixmapSize;
-    QSize m_nameSize;
-    QSize m_buttonSize;
-    int m_iMinimumHeaderWidth;
-    int m_iMinimumHeaderHeight;
+    /** @name Painting stuff.
+      * @{ */
+        /** Paints decorations using specified @a pPainter and certain @a pOptions. */
+        void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions);
+        /** Paints element info using specified @a pPainter and certain @a pOptions. */
+        void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions);
+        /** Paints background using specified @a pPainter and certain @a pOptions. */
+        void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions);
+    /** @} */
 
-    /* Variables: Toggle-button stuff: */
-    UIGraphicsRotatorButton *m_pButton;
-    bool m_fClosed;
-    int m_iAdditionalHeight;
-    bool m_fAnimationRunning;
+    /** @name Item stuff.
+      * @{ */
+        /** Holds the parent reference. */
+        UIDetailsSet       *m_pSet;
+        /** Holds the element type. */
+        DetailsElementType  m_enmType;
 
-    /* Variables: Text-pane stuff: */
-    UIGraphicsTextPane *m_pTextPane;
+        /** Holds the element pixmap. */
+        QPixmap  m_pixmap;
+        /** Holds the element name. */
+        QString  m_strName;
 
-    /* Variables: Hover stuff: */
-    bool m_fHovered;
-    bool m_fNameHovered;
-    QStateMachine *m_pHighlightMachine;
-    QPropertyAnimation *m_pForwardAnimation;
-    QPropertyAnimation *m_pBackwardAnimation;
-    int m_iAnimationDuration;
-    int m_iDefaultDarkness;
-    int m_iHighlightDarkness;
-    int m_iAnimationDarkness;
+        /** Holds the corner radius. */
+        int  m_iCornerRadius;
 
-    /* Friends: */
-    friend class UIDetailsSet;
+        /** Holds the name font. */
+        QFont  m_nameFont;
+        /** Holds the text font. */
+        QFont  m_textFont;
+
+        /** Holds whether element is hovered. */
+        bool                m_fHovered;
+        /** Holds whether element name is hovered. */
+        bool                m_fNameHovered;
+        /** Holds the highlight machine instance. */
+        QStateMachine      *m_pHighlightMachine;
+        /** Holds the forward highlight animation instance. */
+        QPropertyAnimation *m_pForwardAnimation;
+        /** Holds the backward highlight animation instance. */
+        QPropertyAnimation *m_pBackwardAnimation;
+        /** Holds the animation duration. */
+        int                 m_iAnimationDuration;
+        /** Holds the default darkness. */
+        int                 m_iDefaultDarkness;
+        /** Holds the highlight darkness. */
+        int                 m_iHighlightDarkness;
+        /** Holds the animation darkness. */
+        int                 m_iAnimationDarkness;
+
+        /** Holds the toggle button instance. */
+        UIGraphicsRotatorButton *m_pButton;
+        /** Holds whether element is closed. */
+        bool  m_fClosed;
+        /** Holds whether animation is running. */
+        bool  m_fAnimationRunning;
+        /** Holds the additional height. */
+        int   m_iAdditionalHeight;
+
+        /** Holds the graphics text pane instance. */
+        UIGraphicsTextPane *m_pTextPane;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Holds the pixmap size. */
+        QSize  m_pixmapSize;
+        /** Holds the name size. */
+        QSize  m_nameSize;
+        /** Holds the button size. */
+        QSize  m_buttonSize;
+
+        /** Holds minimum header width. */
+        int  m_iMinimumHeaderWidth;
+        /** Holds minimum header height. */
+        int  m_iMinimumHeaderHeight;
+    /** @} */
 };
 
-#endif /* __UIDetailsElement_h__ */
-
+#endif /* !___UIDetailsElement_h___ */
