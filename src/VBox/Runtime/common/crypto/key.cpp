@@ -246,6 +246,7 @@ DECLHIDDEN(int) rtCrKeyCreateRsaPrivate(PRTCRKEY phKey, const void *pvKeyBits, u
 RTDECL(uint32_t) RTCrKeyRetain(RTCRKEY hKey)
 {
     PRTCRKEYINT pThis = hKey;
+    AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->u32Magic == RTCRKEYINT_MAGIC, UINT32_MAX);
 
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);

@@ -420,6 +420,12 @@ public:
     virtual const char *getDefaultBasePath() = 0;
     /** @} */
 
+    /** Flags to doCall. */
+    enum
+    {
+        kDoCall_OciReqSignExcludeBody = 1 /**< Exclude the body when doing OCI request signing. */
+    };
+
 protected:
     /** Handle to the HTTP connection object. */
     RTHTTP  m_hHttp;
@@ -438,6 +444,21 @@ protected:
     virtual int reinitHttpInstance();
 
     /**
+     * Hook that's called when doCall has fully assembled the request.
+     *
+     * Can be used for request signing and similar final steps.
+     *
+     * @returns IPRT status code.
+     * @param   a_hHttp         The HTTP client instance.
+     * @param   a_rStrFullUrl   The full URL.
+     * @param   a_enmHttpMethod The HTTP request method.
+     * @param   a_rStrXmitBody  The body text.
+     * @param   a_fFlags        kDoCall_XXX.
+     */
+    virtual int xmitReady(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
+                          RTCString const &a_rStrXmitBody, uint32_t a_fFlags);
+
+    /**
      * Implements stuff for making an API call.
      *
      * @returns a_pResponse->getStatus()
@@ -445,10 +466,28 @@ protected:
      * @param   a_enmHttpMethod The HTTP request method.
      * @param   a_pResponse     Pointer to the response object.
      * @param   a_pszMethod     The method name, for logging purposes.
+     * @param   a_fFlags        kDoCall_XXX.
      */
     virtual int doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                       RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod);
+                       RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod, uint32_t a_fFlags);
 
+    /**
+     * Implements OCI style request signing.
+     *
+     * @returns IPRT status code.
+     * @param   a_hHttp         The HTTP client instance.
+     * @param   a_rStrFullUrl   The full URL.
+     * @param   a_enmHttpMethod The HTTP request method.
+     * @param   a_rStrXmitBody  The body text.
+     * @param   a_fFlags        kDoCall_XXX.
+     * @param   a_hKey          The key to use for signing.
+     * @param   a_rStrKeyId     The key ID.
+     *
+     * @remarks The signing scheme is covered by a series of drafts RFC, the latest being:
+     *                  https://tools.ietf.org/html/draft-cavage-http-signatures-10
+     */
+    int ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
+                       RTCString const &a_rStrXmitBody, uint32_t a_fFlags, RTCRKEY a_hKey, RTCString const &a_rStrKeyId);
 };
 
 /** @} */

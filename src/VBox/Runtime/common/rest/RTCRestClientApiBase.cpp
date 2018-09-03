@@ -62,8 +62,16 @@ int RTCRestClientApiBase::reinitHttpInstance()
 }
 
 
+int RTCRestClientApiBase::xmitReady(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
+                                    RTCString const &a_rStrXmitBody, uint32_t a_fFlags)
+{
+    RT_NOREF(a_hHttp, a_rStrFullUrl, a_enmHttpMethod, a_rStrXmitBody, a_fFlags);
+    return VINF_SUCCESS;
+}
+
+
 int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                                 RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod)
+                                 RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod, uint32_t a_fFlags)
 {
     LogFlow(("doCall: %s %s\n", a_pszMethod, RTHttpMethodName(a_enmHttpMethod)));
 
@@ -132,33 +140,38 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
                     }
                     if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Perform HTTP request.
-                         */
-                        uint32_t uHttpStatus = 0;
-                        rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod, strXmitBody.c_str(), strXmitBody.length(),
-                                           &uHttpStatus, ppvHdrs, &cbHdrs, ppvBody, &cbBody);
+                        rc = xmitReady(hHttp, strFullUrl, a_enmHttpMethod, strXmitBody, a_fFlags);
                         if (RT_SUCCESS(rc))
                         {
-                            a_rRequest.xmitComplete(uHttpStatus, hHttp);
-
                             /*
-                             * Do response processing.
+                             * Perform HTTP request.
                              */
-                            a_pResponse->receiveComplete(uHttpStatus, hHttp);
-                            if (pvHdrs)
+                            uint32_t uHttpStatus = 0;
+                            rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod,
+                                               strXmitBody.c_str(), strXmitBody.length(),
+                                               &uHttpStatus, ppvHdrs, &cbHdrs, ppvBody, &cbBody);
+                            if (RT_SUCCESS(rc))
                             {
-                                a_pResponse->consumeHeaders((const char *)pvHdrs, cbHdrs);
-                                RTHttpFreeResponse(pvHdrs);
-                            }
-                            if (pvBody)
-                            {
-                                a_pResponse->consumeBody((const char *)pvBody, cbBody);
-                                RTHttpFreeResponse(pvBody);
-                            }
-                            a_pResponse->receiveFinal();
+                                a_rRequest.xmitComplete(uHttpStatus, hHttp);
 
-                            return a_pResponse->getStatus();
+                                /*
+                                 * Do response processing.
+                                 */
+                                a_pResponse->receiveComplete(uHttpStatus, hHttp);
+                                if (pvHdrs)
+                                {
+                                    a_pResponse->consumeHeaders((const char *)pvHdrs, cbHdrs);
+                                    RTHttpFreeResponse(pvHdrs);
+                                }
+                                if (pvBody)
+                                {
+                                    a_pResponse->consumeBody((const char *)pvBody, cbBody);
+                                    RTHttpFreeResponse(pvBody);
+                                }
+                                a_pResponse->receiveFinal();
+
+                                return a_pResponse->getStatus();
+                            }
                         }
                     }
                 }
