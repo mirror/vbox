@@ -994,6 +994,18 @@ AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink)
 }
 
 /**
+ * Returns the sink's (friendly) name.
+ *
+ * @returns The sink's (friendly) name.
+ */
+const char *AudioMixerSinkGetName(const PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, "<Unknown>");
+
+    return pSink->pszName;
+}
+
+/**
  * Returns a specific mixer stream from a sink, based on its index.
  *
  * @returns Mixer stream if found, or NULL if not found.
