@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIDetailsSet_h__
-#define __UIDetailsSet_h__
+#ifndef ___UIDetailsSet_h___
+#define ___UIDetailsSet_h___
 
 /* GUI includes: */
 #include "UIDetailsItem.h"
@@ -33,47 +33,105 @@ class UIVirtualMachineItem;
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-/* Details set
- * for graphics details model/view architecture: */
+/** UIDetailsItem extension implementing group item. */
 class UIDetailsSet : public UIDetailsItem
 {
     Q_OBJECT;
 
 public:
 
-    /* Graphics-item type: */
+    /** RTTI item type. */
     enum { Type = UIDetailsItemType_Set };
-    int type() const { return Type; }
 
-    /* Constructor/destructor: */
+    /** Constructs set item, passing pParent to the base-class. */
     UIDetailsSet(UIDetailsItem *pParent);
-    ~UIDetailsSet();
+    /** Destructs set item. */
+    virtual ~UIDetailsSet() /* override */;
 
-    /* API: Build stuff: */
-    void buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings);
+    /** @name Item stuff.
+      * @{ */
+        /** Builds set based on passed @a pMachineItem.
+          * @param  fFullSet  Brigns whether full set should be built.
+          * @param  settings  Brings details related settings. */
+        void buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings);
 
-    /* API: Machine stuff: */
-    const CMachine& machine() const { return m_machine; }
-    bool hasDetails() const { return m_fHasDetails; }
+        /** Returns cached machine. */
+        const CMachine &machine() const { return m_machine; }
+        /** Returns whether set has cached details. */
+        bool hasDetails() const { return m_fHasDetails; }
+        /** Returns configuration access level. */
+        ConfigurationAccessLevel configurationAccessLevel() const { return m_configurationAccessLevel; }
+    /** @} */
 
-    /** Returns configuration access level. */
-    ConfigurationAccessLevel configurationAccessLevel() const { return m_configurationAccessLevel; }
+protected slots:
+
+    /** @name Item stuff.
+      * @{ */
+        /** Handles request about starting step build.
+          * @param  strStepId    Brings the step ID.
+          * @param  iStepNumber  Brings the step number. */
+    /** @} */
+    virtual void sltBuildStep(QString strStepId, int iStepNumber) /* override */;
+
+protected:
+
+    /** @name Item stuff.
+      * @{ */
+        /** Returns RTTI item type. */
+        virtual int type() const /* override */ { return Type; }
+
+        /** Returns the description of the item. */
+        virtual QString description() const /* override */;
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Adds child @a pItem. */
+        void addItem(UIDetailsItem *pItem);
+        /** Removes child @a pItem. */
+        void removeItem(UIDetailsItem *pItem);
+
+        /** Returns children items of certain @a enmType. */
+        QList<UIDetailsItem*> items(UIDetailsItemType type = UIDetailsItemType_Element) const;
+        /** Returns whether there are children items of certain @a enmType. */
+        bool hasItems(UIDetailsItemType type = UIDetailsItemType_Element) const;
+        /** Clears children items of certain @a enmType. */
+        void clearItems(UIDetailsItemType type = UIDetailsItemType_Element);
+
+        /** Returns details element of certain @a enmElementType. */
+        UIDetailsElement *element(DetailsElementType enmElementType) const;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Updates layout. */
+        void updateLayout();
+
+        /** Returns minimum width-hint. */
+        int minimumWidthHint() const;
+        /** Returns minimum height-hint. */
+        int minimumHeightHint() const;
+    /** @} */
 
 private slots:
 
-    /* Handler: Build stuff: */
-    void sltBuildStep(QString strStepId, int iStepNumber);
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles machine-state change for item with @a strId. */
+        void sltMachineStateChange(QString strId);
+        /** Handles machine-attribute change for item with @a strId. */
+        void sltMachineAttributesChange(QString strId);
+    /** @} */
 
-    /* Handlers: Global event stuff: */
-    void sltMachineStateChange(QString strId);
-    void sltMachineAttributesChange(QString strId);
-
-    /* Handler: Update stuff: */
-    void sltUpdateAppearance();
+    /** @name Item stuff.
+      * @{ */
+        /** Updates item appearance. */
+        void sltUpdateAppearance();
+    /** @} */
 
 private:
 
-    /* Data enumerator: */
+    /** Data field types. */
     enum SetItemData
     {
         /* Layout hints: */
@@ -81,51 +139,55 @@ private:
         SetData_Spacing
     };
 
-    /** Returns the description of the item. */
-    virtual QString description() const /* override */;
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares set. */
+        void prepareSet();
+        /** Prepares connections. */
+        void prepareConnections();
+    /** @} */
 
-    /* Data provider: */
-    QVariant data(int iKey) const;
+    /** @name Item stuff.
+      * @{ */
+        /** Returns abstractly stored data value for certain @a iKey. */
+        QVariant data(int iKey) const;
 
-    /* Hidden API: Children stuff: */
-    void addItem(UIDetailsItem *pItem);
-    void removeItem(UIDetailsItem *pItem);
-    QList<UIDetailsItem*> items(UIDetailsItemType type = UIDetailsItemType_Element) const;
-    bool hasItems(UIDetailsItemType type = UIDetailsItemType_Element) const;
-    void clearItems(UIDetailsItemType type = UIDetailsItemType_Element);
-    UIDetailsElement* element(DetailsElementType elementType) const;
+        /** Rebuilds set based on cached machine item. */
+        void rebuildSet();
 
-    /* Helpers: Prepare stuff: */
-    void prepareSet();
-    void prepareConnections();
+        /** Creates element of specified @a enmElementType in @a fOpen state. */
+        UIDetailsElement *createElement(DetailsElementType enmElementType, bool fOpen);
+    /** @} */
 
-    /* Helpers: Layout stuff: */
-    int minimumWidthHint() const;
-    int minimumHeightHint() const;
-    void updateLayout();
+    /** @name Item stuff.
+      * @{ */
+        /** Holds the machine-item this set is built for. */
+        UIVirtualMachineItem           *m_pMachineItem;
+        /** Holds whether whether full set should be built. */
+        bool                            m_fFullSet;
+        /** Holds the details related settings. */
+        QMap<DetailsElementType, bool>  m_settings;
 
-    /* Helpers: Build stuff: */
-    void rebuildSet();
-    UIDetailsElement* createElement(DetailsElementType elementType, bool fOpen);
+        /** Holds the machine reference. */
+        CMachine                  m_machine;
+        /** Holds whether set has details. */
+        bool                      m_fHasDetails;
+        /** Holds configuration access level. */
+        ConfigurationAccessLevel  m_configurationAccessLevel;
 
-    /** Machine-item this set built for. */
-    UIVirtualMachineItem *m_pMachineItem;
+        /** Holds the build step instance. */
+        UIPrepareStep *m_pBuildStep;
+        /** Holds the last step number. */
+        int            m_iLastStepNumber;
+        /** Holds the generated set ID. */
+        QString        m_strSetId;
+    /** @} */
 
-    /* Main variables: */
-    CMachine m_machine;
-    QMap<int, UIDetailsItem*> m_elements;
-    bool m_fHasDetails;
-
-    /** Holds configuration access level. */
-    ConfigurationAccessLevel m_configurationAccessLevel;
-
-    /* Prepare variables: */
-    bool m_fFullSet;
-    UIPrepareStep *m_pBuildStep;
-    int m_iLastStepNumber;
-    QString m_strSetId;
-    QMap<DetailsElementType, bool> m_settings;
+    /** @name Children stuff.
+      * @{ */
+        /** Holds the map of generated detail elements. */
+        QMap<int, UIDetailsItem*>  m_elements;
+    /** @} */
 };
 
-#endif /* __UIDetailsSet_h__ */
-
+#endif /* !___UIDetailsSet_h___ */

@@ -48,7 +48,7 @@ public:
     /** Constructs group item, passing pScene to the base-class. */
     UIDetailsGroup(QGraphicsScene *pScene);
     /** Destructs group item. */
-    ~UIDetailsGroup();
+    virtual ~UIDetailsGroup() /* override */;
 
     /** @name Item stuff.
       * @{ */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,11 +23,11 @@
 # include <QStyle>
 
 /* GUI includes: */
-# include "UIDetailsSet.h"
-# include "UIDetailsModel.h"
 # include "UIDetailsElements.h"
-# include "UIVirtualMachineItem.h"
+# include "UIDetailsModel.h"
+# include "UIDetailsSet.h"
 # include "UIVirtualBoxEventHandler.h"
+# include "UIVirtualMachineItem.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -40,9 +40,9 @@
 UIDetailsSet::UIDetailsSet(UIDetailsItem *pParent)
     : UIDetailsItem(pParent)
     , m_pMachineItem(0)
+    , m_fFullSet(true)
     , m_fHasDetails(false)
     , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
-    , m_fFullSet(true)
     , m_pBuildStep(0)
     , m_iLastStepNumber(-1)
 {
@@ -126,14 +126,14 @@ void UIDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
     if (iStepNumber >= 0 && iStepNumber <= m_iLastStepNumber)
     {
         /* Load details settings: */
-        DetailsElementType elementType = (DetailsElementType)iStepNumber;
+        DetailsElementType enmElementType = (DetailsElementType)iStepNumber;
         /* Should the element be visible? */
-        bool fVisible = m_settings.contains(elementType);
+        bool fVisible = m_settings.contains(enmElementType);
         /* Should the element be opened? */
-        bool fOpen = fVisible && m_settings[elementType];
+        bool fOpen = fVisible && m_settings[enmElementType];
 
         /* Check if element is present already: */
-        UIDetailsElement *pElement = element(elementType);
+        UIDetailsElement *pElement = element(enmElementType);
         if (pElement && fOpen)
             pElement->open(false);
         /* Create element if necessary: */
@@ -141,7 +141,7 @@ void UIDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         if (!pElement)
         {
             fJustCreated = true;
-            pElement = createElement(elementType, fOpen);
+            pElement = createElement(enmElementType, fOpen);
         }
 
         /* Show element if necessary: */
@@ -197,49 +197,9 @@ void UIDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
     }
 }
 
-void UIDetailsSet::sltMachineStateChange(QString strId)
-{
-    /* Is this our VM changed? */
-    if (m_machine.GetId() != strId)
-        return;
-
-    /* Update appearance: */
-    rebuildSet();
-}
-
-void UIDetailsSet::sltMachineAttributesChange(QString strId)
-{
-    /* Is this our VM changed? */
-    if (m_machine.GetId() != strId)
-        return;
-
-    /* Update appearance: */
-    rebuildSet();
-}
-
-void UIDetailsSet::sltUpdateAppearance()
-{
-    /* Update appearance: */
-    rebuildSet();
-}
-
 QString UIDetailsSet::description() const
 {
     return tr("Contains the details of virtual machine '%1'").arg(m_pMachineItem->name());
-}
-
-QVariant UIDetailsSet::data(int iKey) const
-{
-    /* Provide other members with required data: */
-    switch (iKey)
-    {
-        /* Layout hints: */
-        case SetData_Margin: return 0;
-        case SetData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 5;
-        /* Default: */
-        default: break;
-    }
-    return QVariant();
 }
 
 void UIDetailsSet::addItem(UIDetailsItem *pItem)
@@ -282,9 +242,9 @@ void UIDetailsSet::removeItem(UIDetailsItem *pItem)
     }
 }
 
-QList<UIDetailsItem*> UIDetailsSet::items(UIDetailsItemType type /* = UIDetailsItemType_Element */) const
+QList<UIDetailsItem*> UIDetailsSet::items(UIDetailsItemType enmType /* = UIDetailsItemType_Element */) const
 {
-    switch (type)
+    switch (enmType)
     {
         case UIDetailsItemType_Element: return m_elements.values();
         case UIDetailsItemType_Any: return items(UIDetailsItemType_Element);
@@ -293,9 +253,9 @@ QList<UIDetailsItem*> UIDetailsSet::items(UIDetailsItemType type /* = UIDetailsI
     return QList<UIDetailsItem*>();
 }
 
-bool UIDetailsSet::hasItems(UIDetailsItemType type /* = UIDetailsItemType_Element */) const
+bool UIDetailsSet::hasItems(UIDetailsItemType enmType /* = UIDetailsItemType_Element */) const
 {
-    switch (type)
+    switch (enmType)
     {
         case UIDetailsItemType_Element: return !m_elements.isEmpty();
         case UIDetailsItemType_Any: return hasItems(UIDetailsItemType_Element);
@@ -304,9 +264,9 @@ bool UIDetailsSet::hasItems(UIDetailsItemType type /* = UIDetailsItemType_Elemen
     return false;
 }
 
-void UIDetailsSet::clearItems(UIDetailsItemType type /* = UIDetailsItemType_Element */)
+void UIDetailsSet::clearItems(UIDetailsItemType enmType /* = UIDetailsItemType_Element */)
 {
-    switch (type)
+    switch (enmType)
     {
         case UIDetailsItemType_Element:
         {
@@ -328,34 +288,92 @@ void UIDetailsSet::clearItems(UIDetailsItemType type /* = UIDetailsItemType_Elem
     }
 }
 
-UIDetailsElement* UIDetailsSet::element(DetailsElementType elementType) const
+UIDetailsElement *UIDetailsSet::element(DetailsElementType enmElementType) const
 {
-    UIDetailsItem *pItem = m_elements.value(elementType, 0);
+    UIDetailsItem *pItem = m_elements.value(enmElementType, 0);
     if (pItem)
         return pItem->toElement();
     return 0;
 }
 
-void UIDetailsSet::prepareSet()
+void UIDetailsSet::updateLayout()
 {
-    /* Setup size-policy: */
-    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-}
+    /* Prepare variables: */
+    int iMargin = data(SetData_Margin).toInt();
+    int iSpacing = data(SetData_Spacing).toInt();
+    int iMaximumWidth = geometry().size().toSize().width();
+    int iVerticalIndent = iMargin;
 
-void UIDetailsSet::prepareConnections()
-{
-    /* Global-events connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    /* Layout all the elements: */
+    foreach (UIDetailsItem *pItem, items())
+    {
+        /* Skip hidden: */
+        if (!pItem->isVisible())
+            continue;
 
-    /* Meidum-enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateAppearance()));
+        /* For each particular element: */
+        UIDetailsElement *pElement = pItem->toElement();
+        switch (pElement->elementType())
+        {
+            case DetailsElementType_General:
+            case DetailsElementType_System:
+            case DetailsElementType_Display:
+            case DetailsElementType_Storage:
+            case DetailsElementType_Audio:
+            case DetailsElementType_Network:
+            case DetailsElementType_Serial:
+            case DetailsElementType_USB:
+            case DetailsElementType_SF:
+            case DetailsElementType_UI:
+            case DetailsElementType_Description:
+            {
+                /* Move element: */
+                pElement->setPos(iMargin, iVerticalIndent);
+                /* Calculate required width: */
+                int iWidth = iMaximumWidth - 2 * iMargin;
+                if (pElement->elementType() == DetailsElementType_General ||
+                    pElement->elementType() == DetailsElementType_System)
+                    if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
+                        if (pPreviewElement->isVisible())
+                            iWidth -= (iSpacing + pPreviewElement->minimumWidthHint());
+                /* If element width is wrong: */
+                if (pElement->geometry().width() != iWidth)
+                {
+                    /* Resize element to required width: */
+                    pElement->resize(iWidth, pElement->geometry().height());
+                }
+                /* Acquire required height: */
+                int iHeight = pElement->minimumHeightHint();
+                /* If element height is wrong: */
+                if (pElement->geometry().height() != iHeight)
+                {
+                    /* Resize element to required height: */
+                    pElement->resize(pElement->geometry().width(), iHeight);
+                }
+                /* Layout element content: */
+                pItem->updateLayout();
+                /* Advance indent: */
+                iVerticalIndent += (iHeight + iSpacing);
+                break;
+            }
+            case DetailsElementType_Preview:
+            {
+                /* Prepare variables: */
+                int iWidth = pElement->minimumWidthHint();
+                int iHeight = pElement->minimumHeightHint();
+                /* Move element: */
+                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
+                /* Resize element: */
+                pElement->resize(iWidth, iHeight);
+                /* Layout element content: */
+                pItem->updateLayout();
+                /* Advance indent: */
+                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
+                break;
+            }
+            case DetailsElementType_Invalid: AssertFailed(); break; /* Shut up, MSC! */
+        }
+    }
 }
 
 int UIDetailsSet::minimumWidthHint() const
@@ -472,84 +490,66 @@ int UIDetailsSet::minimumHeightHint() const
     return iMinimumHeightHint;
 }
 
-void UIDetailsSet::updateLayout()
+void UIDetailsSet::sltMachineStateChange(QString strId)
 {
-    /* Prepare variables: */
-    int iMargin = data(SetData_Margin).toInt();
-    int iSpacing = data(SetData_Spacing).toInt();
-    int iMaximumWidth = geometry().size().toSize().width();
-    int iVerticalIndent = iMargin;
+    /* Is this our VM changed? */
+    if (m_machine.GetId() != strId)
+        return;
 
-    /* Layout all the elements: */
-    foreach (UIDetailsItem *pItem, items())
+    /* Update appearance: */
+    rebuildSet();
+}
+
+void UIDetailsSet::sltMachineAttributesChange(QString strId)
+{
+    /* Is this our VM changed? */
+    if (m_machine.GetId() != strId)
+        return;
+
+    /* Update appearance: */
+    rebuildSet();
+}
+
+void UIDetailsSet::sltUpdateAppearance()
+{
+    /* Update appearance: */
+    rebuildSet();
+}
+
+void UIDetailsSet::prepareSet()
+{
+    /* Setup size-policy: */
+    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+}
+
+void UIDetailsSet::prepareConnections()
+{
+    /* Global-events connections: */
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+
+    /* Meidum-enumeration connections: */
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateAppearance()));
+}
+
+QVariant UIDetailsSet::data(int iKey) const
+{
+    /* Provide other members with required data: */
+    switch (iKey)
     {
-        /* Skip hidden: */
-        if (!pItem->isVisible())
-            continue;
-
-        /* For each particular element: */
-        UIDetailsElement *pElement = pItem->toElement();
-        switch (pElement->elementType())
-        {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_UI:
-            case DetailsElementType_Description:
-            {
-                /* Move element: */
-                pElement->setPos(iMargin, iVerticalIndent);
-                /* Calculate required width: */
-                int iWidth = iMaximumWidth - 2 * iMargin;
-                if (pElement->elementType() == DetailsElementType_General ||
-                    pElement->elementType() == DetailsElementType_System)
-                    if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
-                        if (pPreviewElement->isVisible())
-                            iWidth -= (iSpacing + pPreviewElement->minimumWidthHint());
-                /* If element width is wrong: */
-                if (pElement->geometry().width() != iWidth)
-                {
-                    /* Resize element to required width: */
-                    pElement->resize(iWidth, pElement->geometry().height());
-                }
-                /* Acquire required height: */
-                int iHeight = pElement->minimumHeightHint();
-                /* If element height is wrong: */
-                if (pElement->geometry().height() != iHeight)
-                {
-                    /* Resize element to required height: */
-                    pElement->resize(pElement->geometry().width(), iHeight);
-                }
-                /* Layout element content: */
-                pItem->updateLayout();
-                /* Advance indent: */
-                iVerticalIndent += (iHeight + iSpacing);
-                break;
-            }
-            case DetailsElementType_Preview:
-            {
-                /* Prepare variables: */
-                int iWidth = pElement->minimumWidthHint();
-                int iHeight = pElement->minimumHeightHint();
-                /* Move element: */
-                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
-                /* Resize element: */
-                pElement->resize(iWidth, iHeight);
-                /* Layout element content: */
-                pItem->updateLayout();
-                /* Advance indent: */
-                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
-                break;
-            }
-            case DetailsElementType_Invalid: AssertFailed(); break; /* Shut up, MSC! */
-        }
+        /* Layout hints: */
+        case SetData_Margin: return 0;
+        case SetData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 5;
+        /* Default: */
+        default: break;
     }
+    return QVariant();
 }
 
 void UIDetailsSet::rebuildSet()
@@ -572,10 +572,10 @@ void UIDetailsSet::rebuildSet()
     emit sigBuildStep(m_strSetId, DetailsElementType_General);
 }
 
-UIDetailsElement* UIDetailsSet::createElement(DetailsElementType elementType, bool fOpen)
+UIDetailsElement *UIDetailsSet::createElement(DetailsElementType enmElementType, bool fOpen)
 {
     /* Element factory: */
-    switch (elementType)
+    switch (enmElementType)
     {
         case DetailsElementType_General:     return new UIDetailsElementGeneral(this, fOpen);
         case DetailsElementType_System:      return new UIDetailsElementSystem(this, fOpen);
@@ -593,4 +593,3 @@ UIDetailsElement* UIDetailsSet::createElement(DetailsElementType elementType, bo
     }
     return 0;
 }
-
