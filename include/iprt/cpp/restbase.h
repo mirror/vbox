@@ -742,6 +742,142 @@ protected:
 
 
 /**
+ * Class for handling strings on the binary format.
+ *
+ * This can only be used for body parameters.
+ */
+class RT_DECL_CLASS RTCRestBinaryString : public RTCRestObjectBase
+{
+public:
+    /** Default constructor. */
+    RTCRestBinaryString();
+    /** Destructor. */
+    virtual ~RTCRestBinaryString();
+
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestBinaryString const &a_rThat);
+
+    /* Overridden methods: */
+    virtual int resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
+    /**
+     * Gets the data size.
+     *
+     * This can be used from a consumer callback to get the Content-Length field
+     * value if available.  Returns UINT64_MAX if not available.
+     */
+    uint64_t getDataSize() const { return m_cbData; }
+
+    /**
+     * Sets the data to upload.
+     *
+     * @returns IPRT status code.
+     * @param   a_pvData    The data buffer.  NULL can be used to actively
+     *                      deregister previous data.
+     * @param   a_cbData    The amount of data to upload from that buffer.
+     * @param   a_fCopy     Whether to make a copy (@a true) or use the
+     *                      buffer directly (@a false).  In the latter case
+     *                      the caller must make sure the data remains available
+     *                      for the entire lifetime of this object (or until
+     *                      setUploadData is called with NULL parameters).
+     */
+    int setUploadData(void const *m_pvData, size_t a_cbData, bool a_fCopy);
+
+    /** @name Data callbacks.
+     * @{ */
+    /**
+     * Callback for producing bytes to upload.
+     *
+     * @returns IPRT status code.
+     * @param   a_pThis     The related string object.
+     * @param   a_pvDst     Where to put the bytes.
+     * @param   a_cbDst     Max number of bytes to produce.
+     * @param   a_pcbActual Where to return the number of bytes actually produced.
+     * @remarks Use getCallbackData to get the user data.
+     */
+    typedef DECLCALLBACK(int) FNPRODUCER(RTCRestBinaryString *a_pThis, void *a_pvDst, size_t a_cbDst, size_t *a_pcbActual);
+    /** Pointer to a byte producer callback. */
+    typedef FNPRODUCER *PFNPRODUCER;
+
+    /**
+     * Callback for consuming downloaded bytes.
+     *
+     * @returns IPRT status code.
+     * @param   a_pThis     The related string object.
+     * @param   a_pvSrc     Buffer containing the bytes.
+     * @param   a_cbSrc     The number of bytes in the buffer.
+     * @remarks Use getCallbackData to get the user data.
+     */
+    typedef DECLCALLBACK(int) FNCONSUMER(RTCRestBinaryString *a_pThis, const void *a_pvSrc, size_t a_cbSrc);
+    /** Pointer to a byte consumer callback. */
+    typedef FNCONSUMER *PFNCONSUMER;
+
+    /**
+     * Retrieves the callback data.
+     */
+    void *getCallbackData() const  { return m_pvCallbackData; }
+
+    /**
+     * Sets the consumer callback.
+     *
+     * @returns IPRT status code.
+     * @param   a_pfnConsumer       The callback function for consuming downloaded data.
+     *                              NULL if data should be stored in m_pbData/m_cbData (the default).
+     * @param   a_pvCallbackData    Data the can be retrieved from the callback
+     *                              using getCallbackData().
+     */
+    int setConsumerCallback(PFNCONSUMER a_pfnConsumer, void *a_pvCallbackData = NULL);
+
+    /**
+     * Sets the producer callback.
+     *
+     * @returns IPRT status code.
+     * @param   a_pfnProducer       The callback function for producing data.
+     * @param   a_pvCallbackData    Data the can be retrieved from the callback
+     *                              using getCallbackData().
+     * @param   a_cbData            The amount of data that will be uploaded,
+     *                              UINT64_MAX if not unknown.
+     *
+     * @note    This will drop any buffer previously registered using
+     *          setUploadData(), unless a_pfnProducer is NULL.
+     */
+    int setProducerCallback(PFNPRODUCER a_pfnProducer, void *a_pvCallbackData = NULL, uint64_t a_cbData = UINT64_MAX);
+    /** @} */
+
+protected:
+    /** Pointer to the bytes, if provided directly. */
+    uint8_t    *m_pbData;
+    /** Number of bytes.  UINT64_MAX if not known. */
+    uint64_t    m_cbData;
+    /** User argument for callbacks. */
+    void       *m_pvCallbackData;
+    /** Pointer to user-registered consumer callback function. */
+    PFNCONSUMER m_pfnConsumer;
+    /** Pointer to user-registered producer callback function. */
+    PFNPRODUCER m_pfnProducer;
+    /** Set if m_pbData must be freed. */
+    bool        m_fFreeData;
+    /** Set if it is an upload, clear if download. */
+    bool        m_fIsUpload;
+
+private:
+    /* No copy constructor or copy assignment: */
+    RTCRestBinaryString(RTCRestBinaryString const &a_rThat);
+    RTCRestDouble &operator=(RTCRestDouble const &a_rThat);
+};
+
+
+/**
  * Dynamic REST object.
  *
  * @todo figure this one out. it's possible this is only used in maps and
