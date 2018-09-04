@@ -8023,9 +8023,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
     }
 
     /* Validate. */
-    Assert(VMX_EXIT_INT_INFO_IS_VALID(u32IntInfo));                      /* Bit 31 (Valid bit) must be set by caller. */
-    Assert(!VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(u32IntInfo));          /* Bit 12 MBZ. */
-    Assert(!(u32IntInfo & 0x7ffff000));                                  /* Bits 30:12 MBZ. */
+    Assert(VMX_ENTRY_INT_INFO_IS_VALID(u32IntInfo));                     /* Bit 31 (Valid bit) must be set by caller. */
+    Assert(!(u32IntInfo & VMX_BF_ENTRY_INT_INFO_RSVD_12_30_MASK));       /* Bits 30:12 MBZ. */
 
     /* Inject. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);

@@ -1828,6 +1828,12 @@ typedef enum
 AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
 /** @} */
 
+/** @name VM-entry instruction length.
+ * @{ */
+/** The maximum valid value for VM-entry instruction length while injecting a
+ *  software interrupt, software exception or privileged software exception. */
+#define VMX_ENTRY_INSTR_LEN_MAX                                 15
+/** @} */
 
 /** @name Pin-based VM-execution controls.
  * @{
@@ -2253,6 +2259,16 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
                             (VECTOR, TYPE, ERR_CODE_VALID, RSVD_12_30, VALID));
 /** @} */
 
+/** @name VM-entry exception error code.
+ * @{ */
+/** Error code valid mask. */
+/** @todo r=ramshankar: Intel spec. 26.2.1.3 "VM-Entry Control Fields" states that
+ *        bits 31:15 MBZ. However, Intel spec. 6.13 "Error Code" states "To keep the
+ *        stack aligned for doubleword pushes, the upper half of the error code is
+ *        reserved" which implies bits 31:16 MBZ (and not 31:15) which is what we
+ *        use below. */
+#define VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK                   UINT32_C(0xffff)
+/** @} */
 
 /** @name VM-entry interruption information types.
  * @{
@@ -3458,6 +3474,12 @@ typedef enum
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
     kVmxVInstrDiag_Vmentry_EntryCtlsAllowed1,
     kVmxVInstrDiag_Vmentry_EntryCtlsDisallowed0,
+    kVmxVInstrDiag_Vmentry_EntryInstrLen,
+    kVmxVInstrDiag_Vmentry_EntryInstrLenZero,
+    kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe,
+    kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodeVec,
+    kVmxVInstrDiag_Vmentry_EntryIntInfoTypeVecRsvd,
+    kVmxVInstrDiag_Vmentry_EntryXcptErrCodeRsvd,
     kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1,
     kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0,
     kVmxVInstrDiag_Vmentry_LongModeCS,
@@ -3515,7 +3537,6 @@ DECLINLINE(uint8_t) HMVmxGetVmcsFieldWidthEff(uint32_t uFieldEnc)
     return (uFieldEnc >> 13) & 0x3;
 }
 
-
 /**
  * Returns whether the given VMCS field is a read-only VMCS field or not.
  *
@@ -3529,6 +3550,56 @@ DECLINLINE(bool) HMVmxIsVmcsFieldReadOnly(uint32_t uFieldEnc)
 {
     /* See Intel spec. B.4.2 "Natural-Width Read-Only Data Fields". */
     return (RT_BF_GET(uFieldEnc, VMX_BF_VMCS_ENC_TYPE) == VMXVMCSFIELDTYPE_VMEXIT_INFO);
+}
+
+/**
+ * Returns whether the given VM-entry interruption-information type is valid or not.
+ *
+ * @returns @c true if it's a valid type, @c false otherwise.
+ * @param   fSupportsMtf    Whether the monitor-trap flag CPU feature is supported.
+ * @param   uType           The VM-entry interruption-information type.
+ */
+DECLINLINE(bool) HMVmxIsEntryIntInfoTypeValid(bool fSupportsMtf, uint8_t uType)
+{
+    /* See Intel spec. 26.2.1.3 "VM-Entry Control Fields". */
+    switch (uType)
+    {
+        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
+        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:           return true;
+        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:       return fSupportsMtf;
+        default:
+            return false;
+    }
+}
+
+/**
+ * Returns whether the given VM-entry interruption-information vector and type
+ * combination is valid or not.
+ *
+ * @returns @c true if it's a valid vector/type combination, @c false otherwise.
+ * @param   uVector     The VM-entry interruption-information vector.
+ * @param   uType       The VM-entry interruption-information type.
+ *
+ * @remarks Warning! This function does not validate the type field individually.
+ *          Use it after verifying type is valid using HMVmxIsEntryIntInfoTypeValid.
+ */
+DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
+{
+    /* See Intel spec. 26.2.1.3 "VM-Entry Control Fields". */
+    if (   uType == VMX_ENTRY_INT_INFO_TYPE_NMI
+        && uVector != X86_XCPT_NMI)
+        return false;
+    if (   uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+        && uVector > X86_XCPT_LAST)
+        return false;
+    if (   uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT
+        && uVector != 0)
+        return false;
+    return true;
 }
 /** @} */
 

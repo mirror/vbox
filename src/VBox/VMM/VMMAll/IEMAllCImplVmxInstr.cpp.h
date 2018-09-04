@@ -1984,7 +1984,87 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *ps
         return VERR_VMX_VMENTRY_FAILED;
     }
 
-    /** @todo NSTVMX: rest of entry ctls. */
+    /* Event injection. */
+    uint32_t const uIntInfo = pVmcs->u32EntryIntInfo;
+    if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VALID))
+    {
+        /* Type and vector. */
+        uint8_t const uType         = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_TYPE);
+        uint8_t const uVector       = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
+        uint8_t const uRsvd         = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
+        if (   uRsvd == 0
+            && HMVmxIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
+            && HMVmxIsEntryIntInfoVectorValid(uVector, uType))
+        { /* likely */ }
+        else
+        {
+            Log(("%s: VM-entry interruption info (%#RX32) invalid (rsvd/type/vector) -> VMFail\n", pszInstr, uIntInfo));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryIntInfoTypeVecRsvd;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* Error code. */
+        if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID))
+        {
+            /* Delivery possible only in Unrestricted-guest mode when CR0.PE is set. */
+            if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
+                ||  (pVmcs->u64GuestCr0.s.Lo & X86_CR0_PE))
+            { /* likely */ }
+            else
+            {
+                Log(("%s: VM-entry interruption (%#RX32) invalid error-code (paging-mode) -> VMFail\n", pszInstr, uIntInfo));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+
+            if (   uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+                && (   uVector == X86_XCPT_DF
+                    || uVector == X86_XCPT_TS
+                    || uVector == X86_XCPT_NP
+                    || uVector == X86_XCPT_SS
+                    || uVector == X86_XCPT_GP
+                    || uVector == X86_XCPT_PF
+                    || uVector == X86_XCPT_AC))
+            { /* likely */ }
+            else
+            {
+                Log(("%s: VM-entry interruption (%#RX32) invalid error-code (vector) -> VMFail\n", pszInstr, uIntInfo));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodeVec;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+
+            /* Exception error-code reserved bits. */
+            if (pVmcs->u32EntryXcptErrCode & ~VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK)
+            {
+                Log(("%s: VM-entry exception error-code (%#RX32) invalid -> VMFail\n", pszInstr, uIntInfo));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryXcptErrCodeRsvd;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+
+            /* Injecting a software interrupt, software exception or privileged software exception. */
+            if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
+                || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
+                || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
+            {
+                /* Instruction length must be in the range 0-15. */
+                if (pVmcs->u32EntryInstrLen > VMX_ENTRY_INSTR_LEN_MAX)
+                {
+                    Log(("%s: VM-entry instruction length (%#RX32) invalid -> VMFail\n", pszInstr, pVmcs->u32EntryInstrLen));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryInstrLen;
+                    return VERR_VMX_VMENTRY_FAILED;
+                }
+
+                /* Zero instruction length is only allowed when the CPU supports it explicitly.  */
+                if (   pVmcs->u32EntryInstrLen == 0
+                    && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEntryInjectSoftInt)
+                {
+                    Log(("%s: VM-entry instruction length zero invalid (swint/xcpt/priv) -> VMFail\n", pszInstr));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryInstrLenZero;
+                    return VERR_VMX_VMENTRY_FAILED;
+                }
+            }
+        }
+    }
 
     /* VM-entry MSR-load count and VM-entry MSR-load area address. */
     uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
