@@ -31,213 +31,105 @@
 #define LOG_GROUP RTLOGGROUP_REST
 #include <iprt/cpp/restclient.h>
 
+#include <iprt/assert.h>
 #include <iprt/base64.h>
 #include <iprt/err.h>
 #include <iprt/http.h>
 #include <iprt/log.h>
-#include <iprt/uri.h>
 #include <iprt/sha.h>
-#include <iprt/crypto/digest.h>
-#include <iprt/crypto/pkix.h>
+#include <iprt/time.h>
+#include <iprt/uri.h>
+
 
 
 /**
- * Worker for ociSignRequestAddAllFields().
+ * Ensures that we've got a 'Content-Length' header.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp       The HTTP client handle.
+ * @param   pvContent
  */
-static int ociSignRequestAddField(RTCRDIGEST hDigest, RTCString *pStrAuth, const char *pszField, size_t cchField,
-                                  const char *pszValue, size_t cchValue)
+static int ociSignRequestEnsureDateOrXDate(RTHTTP hHttp)
 {
-    /* First? */
-    bool const fFirst = pStrAuth->endsWith("\"");
+    if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("x-date")))
+        return VINF_SUCCESS;
+    if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("date")))
+        return VINF_SUCCESS;
 
-    /* Append the field to the list, in lowercased form: */
-    int rc = VINF_SUCCESS;
-    if (!fFirst)
-        rc = pStrAuth->appendNoThrow(' ');
-    if (RT_SUCCESS(rc))
-    {
-        size_t offStart = pStrAuth->length();
-        rc = pStrAuth->appendNoThrow(pszField, cchField);
-        if (RT_SUCCESS(rc))
-        {
-            RTStrToLower(pStrAuth->mutableRaw() + offStart);
+    RTTIMESPEC NowSpec;
+    RTTIME     Now;
+    char       szDate[RTTIME_RTC2822_LEN];
+    ssize_t cch = RTTimeToRfc2822(RTTimeExplode(&Now, RTTimeNow(&NowSpec)), szDate, sizeof(szDate));
+    AssertRCReturn((int)cch, (int)cch);
 
-            /* 2.3 (3) If not the first field, add newline separator. */
-            rc = RTCrDigestUpdate(hDigest, "\n", 1);
-
-
-            /* Update the digest with the field name followed by ': ' */
-            rc = RTCrDigestUpdate(hDigest, pStrAuth->c_str() + offStart, pStrAuth->length() - offStart);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTCrDigestUpdate(hDigest, RT_STR_TUPLE(": "));
-                if (RT_SUCCESS(rc))
-                {
-                    /* Update the digest with the field value: */
-                    if (cchValue == RTSTR_MAX)
-                        cchValue = strlen(pszValue);
-                    rc = RTCrDigestUpdate(hDigest, pszValue, cchValue);
-                }
-            }
-        }
-    }
-    return rc;
+    return RTHttpAddHeader(hHttp, "x-date", szDate, cch, RTHTTPADDHDR_F_BACK);
 }
 
 
 /**
- * Worker for ociSignRequest().
+ * Ensures that we've got a 'x-content-sha256' header.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp       The HTTP client handle.
+ * @param   pvContent
  */
-static int ociSignRequestAddAllFields(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
-                                      RTCString const &a_rStrXmitBody, uint32_t a_fFlags,
-                                      RTCRDIGEST hDigest, RTCString *pStrAuth)
+static int ociSignRequestEnsureXContentSha256(RTHTTP hHttp, void const *pvContent, size_t cbContent)
 {
-    char szTmp[256];
+    if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("x-content-sha256")))
+        return VINF_SUCCESS;
 
-    /** @todo This is a little ugly.  I think that instead of this uglyness, we should just
-     *  ensure the presence of required fields and sign all headers.  That way all parameters
-     *  will be covered by the signature. */
-
-    /*
-     * (request-target) and host.
-     */
-    RTURIPARSED ParsedUrl;
-    int rc = RTUriParse(a_rStrFullUrl.c_str(), &ParsedUrl);
-    AssertRCReturn(rc, rc);
-
-    const char *pszMethod = NULL;
-    switch (a_enmHttpMethod)
-    {
-        case RTHTTPMETHOD_GET:      pszMethod = "get "; break;
-        case RTHTTPMETHOD_PUT:      pszMethod = "put "; break;
-        case RTHTTPMETHOD_POST:     pszMethod = "post "; break;
-        case RTHTTPMETHOD_PATCH:    pszMethod = "patch "; break;
-        case RTHTTPMETHOD_DELETE:   pszMethod = "delete "; break;
-        case RTHTTPMETHOD_HEAD:     pszMethod = "head "; break;
-        case RTHTTPMETHOD_OPTIONS:  pszMethod = "options "; break;
-        case RTHTTPMETHOD_TRACE:    pszMethod = "trace "; break;
-        case RTHTTPMETHOD_END:
-        case RTHTTPMETHOD_INVALID:
-        case RTHTTPMETHOD_32BIT_HACK:
-            break;
-    }
-    AssertReturn(pszMethod, VERR_REST_INTERAL_ERROR_6);
-    rc = ociSignRequestAddField(hDigest, pStrAuth, RT_STR_TUPLE("(request-target)"),
-                                pszMethod, strlen(pszMethod));
-    AssertRCReturn(rc, rc);
-    const char *pszValue = a_rStrFullUrl.c_str() + ParsedUrl.offPath; /* Add the path. */
-    rc = RTCrDigestUpdate(hDigest, pszValue, strlen(pszValue));
-
-    rc = ociSignRequestAddField(hDigest,pStrAuth, RT_STR_TUPLE("host"),
-                                a_rStrFullUrl.c_str() + ParsedUrl.offAuthorityHost, ParsedUrl.cchAuthorityHost);
-    AssertRCReturn(rc, rc);
-
-    /*
-     * Content-Length - required for POST and PUT.
-     * Note! We add it to the digest a little bit later to preserve documented order..
-     */
-    static char s_szContentLength[] = "content-length";
-    const char *pszContentLength = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szContentLength));
-    if (   !pszContentLength
-        && (   a_rStrXmitBody.isNotEmpty()
-            || a_enmHttpMethod == RTHTTPMETHOD_POST
-            || a_enmHttpMethod == RTHTTPMETHOD_PUT))
-    {
-        RTStrPrintf(szTmp, sizeof(szTmp), "%zu", a_rStrXmitBody.length());
-
-        rc = RTHttpAddHeader(a_hHttp, s_szContentLength, szTmp, RTHTTPADDHDR_F_BACK);
-        AssertRCReturn(rc, rc);
-        pszContentLength = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szContentLength));
-        AssertPtrReturn(pszContentLength, VERR_REST_INTERAL_ERROR_4);
-    }
-    if (pszContentLength)
-    {
-        rc = ociSignRequestAddField(hDigest, pStrAuth, RT_STR_TUPLE(s_szContentLength), pszContentLength, RTSTR_MAX);
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * x-content-sha256 - required when there is a body.
-     */
-    static char s_szXContentSha256[] = "x-content-sha256";
-    pszValue = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szXContentSha256));
-    if (   !pszValue
-        && pszContentLength
-        && strcmp(pszContentLength, "0") != 0
-        && !(a_fFlags & RTCRestClientApiBase::kDoCall_OciReqSignExcludeBody) )
-    {
 #ifdef RT_STRICT
-        RTStrPrintf(szTmp, sizeof(szTmp), "%zu", a_rStrXmitBody.length());
-        AssertMsgReturn(strcmp(szTmp, pszContentLength) == 0, ("szTmp=%s; pszContentLength=%s\n", szTmp, pszContentLength),
-                        VERR_REST_INTERAL_ERROR_5);
+    const char *pszContentLength = RTHttpGetHeader(hHttp, RT_STR_TUPLE("Content-Length"));
+    Assert(pszContentLength);
+    AssertMsg(!pszContentLength || RTStrToUInt64(pszContentLength) == cbContent, ("'%s' vs %RU64\n", pszContentLength, cbContent));
 #endif
 
-        uint8_t abHash[RTSHA256_HASH_SIZE];
-        RTSha256(a_rStrXmitBody.c_str(), a_rStrXmitBody.length(), abHash);
-        rc = RTBase64EncodeEx(abHash, sizeof(abHash), RTBASE64_FLAGS_NO_LINE_BREAKS, szTmp, sizeof(szTmp), NULL);
+    uint8_t abHash[RTSHA256_HASH_SIZE];
+    RTSha256(pvContent, cbContent, abHash);
 
-        rc = RTHttpAddHeader(a_hHttp, s_szXContentSha256, szTmp, RTHTTPADDHDR_F_BACK);
-        AssertRCReturn(rc, rc);
-        pszValue = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szXContentSha256));
-        AssertPtrReturn(pszValue, VERR_REST_INTERAL_ERROR_4);
-    }
-    if (pszValue)
-    {
-        rc = ociSignRequestAddField(hDigest, pStrAuth, RT_STR_TUPLE(s_szXContentSha256), pszValue, RTSTR_MAX);
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * Content-Type
-     */
-    pszValue = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE("content-type"));
-    Assert(   pszValue
-           || !pszContentLength
-           || strcmp(pszContentLength, "0") == 0);
-    if (pszValue)
-    {
-        rc = ociSignRequestAddField(hDigest, pStrAuth, RT_STR_TUPLE("content-type"), pszValue, RTSTR_MAX);
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * x-date or/and date.
-     */
-    static char const s_szDate[] = "date";
-    pszValue = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szDate));
-    static char const s_szXDate[] = "x-date";
-    const char *pszXDate = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szXDate));
-    if (!pszValue && !pszXDate)
-    {
-        RTTIMESPEC TimeSpec;
-        RTTIME     Time;
-        RT_ZERO(Time); /* paranoia */
-        RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
-
-        /* Date format: Tue, 16 Nov 2018 12:15:00 GMT */
-        /** @todo make RTTimeXxx api that does exactly this (RFC-1123). */
-        static const char * const s_apszWeekDays[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-        static const char * const s_apszMonths[] = { "000", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-        RTStrPrintf(szTmp, sizeof(szTmp), "%s, %u %s %u %u02:%u02:%u02 GMT",
-                    s_apszWeekDays[Time.u8WeekDay], Time.u8MonthDay, s_apszMonths[Time.u8Month], Time.i32Year,
-                    Time.u8Hour, Time.u8Minute, Time.u8Second);
-
-        rc = RTHttpAddHeader(a_hHttp, s_szXDate, szTmp, RTHTTPADDHDR_F_BACK);
-        AssertRCReturn(rc, rc);
-        pszXDate = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szXDate));
-        AssertPtrReturn(pszXDate, VERR_REST_INTERAL_ERROR_4);
-    }
-    if (pszXDate)
-        rc = ociSignRequestAddField(hDigest, pStrAuth, RT_STR_TUPLE(s_szXDate), pszXDate, RTSTR_MAX);
-    else
-        rc = ociSignRequestAddField(hDigest, pStrAuth, RT_STR_TUPLE(s_szDate), pszValue, RTSTR_MAX);
+    char szBase64[RTSHA256_DIGEST_LEN + 1]; /* (base64 should be shorter) */
+    int rc = RTBase64EncodeEx(abHash, sizeof(abHash), RTBASE64_FLAGS_NO_LINE_BREAKS, szBase64, sizeof(szBase64), NULL);
     AssertRCReturn(rc, rc);
 
-    /*
-     * We probably should add all parameter fields ...
-     */
-    /** @todo sign more header fields */
-    return VINF_SUCCESS;
+    return RTHttpAddHeader(hHttp, "x-content-sha256", szBase64, RTSTR_MAX, RTHTTPADDHDR_F_BACK);
+}
+
+
+/**
+ * Ensures that we've got a 'Content-Length' header.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp       The HTTP client handle.
+ * @param   cbContent   The content length.
+ */
+static int ociSignRequestEnsureContentLength(RTHTTP hHttp, uint64_t cbContent)
+{
+    if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("Content-Length")))
+        return VINF_SUCCESS;
+    char    szValue[64];
+    ssize_t cchValue = RTStrFormatU64(szValue, sizeof(szValue), cbContent, 10, 0, 0, 0);
+    AssertRCReturn((int)cchValue, (int)cchValue);
+    return RTHttpAddHeader(hHttp, "Content-Length", szValue, cchValue, RTHTTPADDHDR_F_BACK);
+}
+
+
+/**
+ * Ensures that we've got a host header.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp       The HTTP client handle.
+ * @param   pszUrl      The URL.
+ */
+static int ociSignRequestEnsureHost(RTHTTP hHttp, const char *pszUrl)
+{
+    if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("host")))
+        return VINF_SUCCESS;
+
+    RTURIPARSED ParsedUrl;
+    int rc = RTUriParse(pszUrl, &ParsedUrl);
+    AssertRCReturn(rc, rc);
+
+    return RTHttpAddHeader(hHttp, "host", &pszUrl[ParsedUrl.offAuthorityHost], ParsedUrl.cchAuthorityHost, RTHTTPADDHDR_F_BACK);
 }
 
 
@@ -246,80 +138,29 @@ int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStr
                                          RTCRKEY a_hKey, RTCString const &a_rStrKeyId)
 {
     /*
-     * Start the signature.
+     * First make sure required headers are present, adding them as needed.
      */
-    RTCString strAuth;
-    int rc = strAuth.printfNoThrow("Signature version=\"1\",keyId=\"%s\",algorithm=\"rsa-sha256\",headers=\"",
-                                   a_rStrKeyId.c_str());
+    int rc = ociSignRequestEnsureHost(a_hHttp, a_rStrFullUrl.c_str());
     if (RT_SUCCESS(rc))
     {
-        RTCRDIGEST hDigest;
-        rc = RTCrDigestCreateByType(&hDigest, RTDIGESTTYPE_SHA256);
+        if (   a_rStrXmitBody.isNotEmpty()
+            || a_enmHttpMethod == RTHTTPMETHOD_POST
+            || a_enmHttpMethod == RTHTTPMETHOD_PUT)
+            rc = ociSignRequestEnsureContentLength(a_hHttp, a_rStrXmitBody.length());
+        if (   RT_SUCCESS(rc)
+            && a_rStrXmitBody.isNotEmpty())
+            rc = ociSignRequestEnsureXContentSha256(a_hHttp, a_rStrXmitBody.c_str(), a_rStrXmitBody.length());
+        if (RT_SUCCESS(rc))
+            rc = ociSignRequestEnsureDateOrXDate(a_hHttp);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Call worker for adding the fields.  Simpler to clean up hDigest this way.
+             * Do the signing.
              */
-            rc = ociSignRequestAddAllFields(a_hHttp, a_rStrFullUrl, a_enmHttpMethod, a_rStrXmitBody, a_fFlags, hDigest, &strAuth);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Do the signing.
-                 */
-                RTCRPKIXSIGNATURE hSigner;
-                rc = RTCrPkixSignatureCreateByObjIdString(&hSigner, RTCR_PKCS1_SHA256_WITH_RSA_OID, a_hKey,
-                                                          NULL, true /*fSigning*/);
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Figure the signature size first. */
-                    size_t cbSignature = 0;
-                    RTCrPkixSignatureSign(hSigner, hDigest, NULL, &cbSignature);
-                    if (cbSignature == 0)
-                        cbSignature = _32K;
-                    size_t cbBase64Sign = RTBase64EncodedLengthEx(cbSignature, RTBASE64_FLAGS_NO_LINE_BREAKS) + 2;
-
-                    /* Allocate temporary heap buffer and calc the signature. */
-                    uint8_t *pbSignature = (uint8_t *)RTMemTmpAllocZ(cbSignature + cbBase64Sign);
-                    if (pbSignature)
-                    {
-                        size_t cbActual = cbSignature;
-                        rc = RTCrPkixSignatureSign(hSigner, hDigest, pbSignature, &cbActual);
-                        AssertRC(rc);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /*
-                             * Convert the signature to Base64 and add it to the auth value.
-                             */
-                            char *pszBase64 = (char *)(pbSignature + cbSignature);
-                            rc = RTBase64EncodeEx(pbSignature, cbActual, RTBASE64_FLAGS_NO_LINE_BREAKS,
-                                                  pszBase64, cbBase64Sign, NULL);
-                            AssertRC(rc);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = strAuth.appendPrintfNoThrow("\",signature=\"Base64(RSA-SHA256(%s))\"", pszBase64);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * Finally, add the authorization header.
-                                     */
-                                    rc = RTHttpAddHeader(a_hHttp, "Authorization", strAuth.c_str(), RTHTTPADDHDR_F_FRONT);
-                                    AssertRC(rc);
-                                }
-                            }
-                        }
-                        RT_BZERO(pbSignature, cbSignature + cbBase64Sign);
-                        RTMemTmpFree(pbSignature);
-                    }
-                    else
-                        rc = VERR_NO_TMP_MEMORY;
-                    uint32_t cRefs = RTCrPkixSignatureRelease(hSigner);
-                    Assert(cRefs == 0); NOREF(cRefs);
-                }
-            }
-            RTCrDigestRelease(hDigest);
+            rc = RTHttpSignHeaders(a_hHttp, a_enmHttpMethod, a_rStrFullUrl.c_str(), a_hKey, a_rStrKeyId.c_str(), 0 /*fFlags*/);
         }
     }
+    RT_NOREF_PV(a_fFlags); /* We don't need to use the kDoCall_OciReqSignExcludeBody flag it turns out. */
     return rc;
 }
 

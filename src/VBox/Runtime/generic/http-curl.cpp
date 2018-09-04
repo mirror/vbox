@@ -2152,7 +2152,7 @@ RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t f
 #endif
 
 
-RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags)
+RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, size_t cchValue, uint32_t fFlags)
 {
     /*
      * Validate input and calc string lengths.
@@ -2174,7 +2174,8 @@ RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *ps
 #endif
 
     AssertPtr(pszValue);
-    size_t const cchValue = strlen(pszValue);
+    if (cchValue == RTSTR_MAX)
+        cchValue = strlen(pszValue);
 
     /*
      * Just pass it along to the worker.

@@ -316,11 +316,12 @@ RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t f
  * @param   hHttp           The HTTP client handle.
  * @param   pszField        The header field name.
  * @param   pszValue        The header field value.
+ * @param   cchValue        The value length or RTSTR_MAX.
  * @param   fFlags          Only RTHTTPADDHDR_F_FRONT or RTHTTPADDHDR_F_BACK,
  *                          may be extended with encoding controlling flags if
  *                          needed later.
  */
-RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags);
+RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, size_t cchValue, uint32_t fFlags);
 
 /**
  * Gets a header previously added using RTHttpSetHeaders, RTHttpAppendRawHeader
