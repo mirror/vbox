@@ -2395,6 +2395,7 @@
 # define RTTimeSystemNanoTS                             RT_MANGLER(RTTimeSystemNanoTS)
 # define RTTimeFromString                               RT_MANGLER(RTTimeFromString)
 # define RTTimeToString                                 RT_MANGLER(RTTimeToString)
+# define RTTimeToRfc2822                                RT_MANGLER(RTTimeToRfc2822)
 # define RTTimeZoneGetInfoByUnixName                    RT_MANGLER(RTTimeZoneGetInfoByUnixName)
 # define RTTimeZoneGetInfoByWindowsName                 RT_MANGLER(RTTimeZoneGetInfoByWindowsName)
 # define RTTimeZoneGetInfoByWindowsIndex                RT_MANGLER(RTTimeZoneGetInfoByWindowsIndex)

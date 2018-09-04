@@ -236,6 +236,17 @@ int main()
 }
 */
 
+/** RFC-1123 week day names. */
+static const char * const g_apszWeekDays[7] =
+{
+    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+};
+/** RFC-1123 month of the year names. */
+static const char * const g_apszMonths[1+12] =
+{
+    "000", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
 
 /**
  * Checks if a year is a leap year or not.
@@ -979,6 +990,61 @@ RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszStrin
     return NULL;
 }
 RT_EXPORT_SYMBOL(RTTimeSpecFromString);
+
+
+/**
+ * Formats the given time on a RTC-2822 compliant format.
+ *
+ * @returns Output string length on success (positive), VERR_BUFFER_OVERFLOW
+ *          (negative) on failure.
+ * @param   pTime       The time. Caller should've normalized this.
+ * @param   psz         Where to store the string.
+ * @param   cb          The size of the buffer.
+ */
+RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb)
+{
+    Assert(pTime->u8Month > 0 && pTime->u8Month <= 12);
+    Assert(pTime->u8WeekDay < 7);
+
+    /* (Default to UTC if not specified) */
+    if (   (pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL
+        && pTime->offUTC)
+    {
+        /* Calc the UTC offset part. */
+        int32_t offUtc = pTime->offUTC;
+        Assert(offUtc <= 840 && offUtc >= -840);
+        char     chSign;
+        if (offUtc >= 0)
+            chSign = '+';
+        else
+        {
+            chSign = '-';
+            offUtc = -offUtc;
+        }
+        uint32_t offUtcHour   = (uint32_t)offUtc / 60;
+        uint32_t offUtcMinute = (uint32_t)offUtc % 60;
+
+        /* Example:                       "Mon, 31 Aug 2018 00:00:00 +0200" */
+        size_t cch = RTStrPrintf(psz, cb, "%s, %u %s %04RI32 %02u:%02u:%02u %c%02u%02u", g_apszWeekDays[pTime->u8WeekDay],
+                                 pTime->u8MonthDay, g_apszMonths[pTime->u8Month], pTime->i32Year,
+                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second, chSign, offUtcHour, offUtcMinute);
+        if (   cch >= 27
+            && psz[cch - 5] == chSign)
+            return cch;
+    }
+    else
+    {
+        /* Example:                       "Mon, 1 Jan 1971 00:00:00 -0000" */
+        size_t cch = RTStrPrintf(psz, cb, "%s, %u %s %04RI32 %02u:%02u:%02u -0000", g_apszWeekDays[pTime->u8WeekDay],
+                                 pTime->u8MonthDay, g_apszMonths[pTime->u8Month], pTime->i32Year,
+                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second);
+        if (   cch >= 27
+            && psz[cch - 5] == '-')
+            return cch;
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
+RT_EXPORT_SYMBOL(RTTimeToRfc2822);
 
 
 /**

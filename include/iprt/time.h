@@ -802,6 +802,21 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb);
 RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString);
 
 /**
+ * Formats the given time on a RTC-2822 compliant format.
+ *
+ * @returns Output string length on success (positive), VERR_BUFFER_OVERFLOW
+ *          (negative) on failure.
+ * @param   pTime       The time. Caller should've normalized this.
+ * @param   psz         Where to store the string.
+ * @param   cb          The size of the buffer.
+ * @sa      RTTIME_RTC2822_LEN
+ */
+RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb);
+
+/** Suggested buffer length for RTTimeToRfc2822 output, including terminator. */
+#define RTTIME_RTC2822_LEN      40
+
+/**
  * Checks if a year is a leap year or not.
  *
  * @returns true if it's a leap year.
