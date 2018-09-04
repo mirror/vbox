@@ -1037,7 +1037,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-DECLINLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
+DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
 {
     pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
 }
@@ -1048,7 +1048,7 @@ DECLINLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-DECLINLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
+DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
 {
     pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
     pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_CF;
@@ -1061,7 +1061,7 @@ DECLINLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   enmInsErr   The VM instruction error.
  */
-DECLINLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
+DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
     if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
@@ -1079,7 +1079,7 @@ DECLINLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   enmInsErr   The VM instruction error.
  */
-DECLINLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
+DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
     if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
@@ -1097,7 +1097,7 @@ DECLINLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  */
-DECLINLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
+DECL_FORCE_INLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
 {
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
     int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), IEM_VMX_GET_CURRENT_VMCS(pVCpu),
@@ -1112,7 +1112,7 @@ DECLINLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  */
-DECLINLINE(void) iemVmxVmreadSuccess(PVMCPU pVCpu, uint8_t cbInstr)
+DECL_FORCE_INLINE(void) iemVmxVmreadSuccess(PVMCPU pVCpu, uint8_t cbInstr)
 {
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmread_Success;
     iemVmxVmSucceed(pVCpu);
