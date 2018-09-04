@@ -1053,6 +1053,9 @@ typedef VMXAUTOMSR *PVMXAUTOMSR;
 /** Pointer to a const MSR load/store element. */
 typedef const VMXAUTOMSR *PCVMXAUTOMSR;
 
+/** VMX auto load-store MSR (VMXAUTOMSR) offset mask. */
+#define VMX_AUTOMSR_OFFSET_MASK         0xf
+
 /**
  * VMX tagged-TLB flush types.
  */
@@ -3009,19 +3012,19 @@ typedef struct
     /** 0xec - VM-instruction error.  */
     uint32_t        u32RoVmInstrError;
     /** 0xf0 - VM-exit reason. */
-    uint32_t        u32RoVmExitReason;
+    uint32_t        u32RoExitReason;
     /** 0xf4 - VM-exit interruption information. */
-    uint32_t        u32RoVmExitIntInfo;
+    uint32_t        u32RoExitIntInfo;
     /** 0xf8 - VM-exit interruption error code. */
-    uint32_t        u32RoVmExitErrCode;
+    uint32_t        u32RoExitErrCode;
     /** 0xfc - IDT-vectoring information. */
     uint32_t        u32RoIdtVectoringInfo;
     /** 0x100 - IDT-vectoring error code. */
     uint32_t        u32RoIdtVectoringErrCode;
     /** 0x104 - VM-exit instruction length. */
-    uint32_t        u32RoVmExitInstrLen;
+    uint32_t        u32RoExitInstrLen;
     /** 0x108 - VM-exit instruction information. */
-    uint32_t        u32RoVmExitInstrInfo;
+    uint32_t        u32RoExitInstrInfo;
     /** 0x10c - Reserved for future. */
     uint32_t        au32RoReserved2[8];
     /** @} */
@@ -3095,11 +3098,11 @@ typedef struct
     /** 0x1e8 - MSR bitmap address. */
     RTUINT64U       u64AddrMsrBitmap;
     /** 0x1f0 - VM-exit MSR-store area address. */
-    RTUINT64U       u64AddrVmExitMsrStore;
+    RTUINT64U       u64AddrExitMsrStore;
     /** 0x1f8 - VM-exit MSR-load area address. */
-    RTUINT64U       u64AddrVmExitMsrLoad;
+    RTUINT64U       u64AddrExitMsrLoad;
     /** 0x200 - VM-entry MSR-load area address. */
-    RTUINT64U       u64AddrVmEntryMsrLoad;
+    RTUINT64U       u64AddrEntryMsrLoad;
     /** 0x208 - Executive-VMCS pointer. */
     RTUINT64U       u64ExecVmcsPtr;
     /** 0x210 - PML address. */
@@ -3440,6 +3443,9 @@ typedef enum
     kVmxVInstrDiag_Vmread_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
     kVmxVInstrDiag_Vmentry_AddrApicAccess,
+    kVmxVInstrDiag_Vmentry_AddrEntryMsrLoad,
+    kVmxVInstrDiag_Vmentry_AddrExitMsrLoad,
+    kVmxVInstrDiag_Vmentry_AddrExitMsrStore,
     kVmxVInstrDiag_Vmentry_AddrIoBitmapA,
     kVmxVInstrDiag_Vmentry_AddrIoBitmapB,
     kVmxVInstrDiag_Vmentry_AddrMsrBitmap,
@@ -3450,6 +3456,8 @@ typedef enum
     kVmxVInstrDiag_Vmentry_BlocKMovSS,
     kVmxVInstrDiag_Vmentry_Cpl,
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
+    kVmxVInstrDiag_Vmentry_EntryCtlsAllowed1,
+    kVmxVInstrDiag_Vmentry_EntryCtlsDisallowed0,
     kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1,
     kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0,
     kVmxVInstrDiag_Vmentry_LongModeCS,

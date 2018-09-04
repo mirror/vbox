@@ -85,9 +85,9 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*     0 */ RT_OFFSETOF(VMXVVMCS, u64AddrIoBitmapA),
         /*     1 */ RT_OFFSETOF(VMXVVMCS, u64AddrIoBitmapB),
         /*     2 */ RT_OFFSETOF(VMXVVMCS, u64AddrMsrBitmap),
-        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64AddrVmExitMsrStore),
-        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64AddrVmExitMsrLoad),
-        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64AddrVmEntryMsrLoad),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u64AddrExitMsrStore),
+        /*     4 */ RT_OFFSETOF(VMXVVMCS, u64AddrExitMsrLoad),
+        /*     5 */ RT_OFFSETOF(VMXVVMCS, u64AddrEntryMsrLoad),
         /*     6 */ RT_OFFSETOF(VMXVVMCS, u64ExecVmcsPtr),
         /*     7 */ RT_OFFSETOF(VMXVVMCS, u64AddrPml),
         /*     8 */ RT_OFFSETOF(VMXVVMCS, u64TscOffset),
@@ -166,13 +166,13 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
     {
         /*     0 */ RT_OFFSETOF(VMXVVMCS, u32RoVmInstrError),
-        /*     1 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitReason),
-        /*     2 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitIntInfo),
-        /*     3 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitErrCode),
+        /*     1 */ RT_OFFSETOF(VMXVVMCS, u32RoExitReason),
+        /*     2 */ RT_OFFSETOF(VMXVVMCS, u32RoExitIntInfo),
+        /*     3 */ RT_OFFSETOF(VMXVVMCS, u32RoExitErrCode),
         /*     4 */ RT_OFFSETOF(VMXVVMCS, u32RoIdtVectoringInfo),
         /*     5 */ RT_OFFSETOF(VMXVVMCS, u32RoIdtVectoringErrCode),
-        /*     6 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitInstrLen),
-        /*     7 */ RT_OFFSETOF(VMXVVMCS, u32RoVmExitInstrInfo),
+        /*     6 */ RT_OFFSETOF(VMXVVMCS, u32RoExitInstrLen),
+        /*     7 */ RT_OFFSETOF(VMXVVMCS, u32RoExitInstrInfo),
         /*  8-15 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 16-23 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 24-25 */ UINT16_MAX, UINT16_MAX
@@ -1957,6 +1957,58 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
+ * Checks VM-entry controls fields as part of VM-entry.
+ * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /* VM-entry controls. */
+    VMXCTLSMSR EntryCtls;
+    EntryCtls.u = CPUMGetGuestIa32VmxEntryCtls(pVCpu);
+    if (~pVmcs->u32EntryCtls & EntryCtls.n.disallowed0)
+    {
+        Log(("%s: Invalid EntryCtls %#RX32 (disallowed0) -> VMFail\n", pszInstr, pVmcs->u32EntryCtls));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryCtlsDisallowed0;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+    if (pVmcs->u32EntryCtls & ~EntryCtls.n.allowed1)
+    {
+        Log(("%s: Invalid EntryCtls %#RX32 (allowed1) -> VMFail\n", pszInstr, pVmcs->u32EntryCtls));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryCtlsAllowed1;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /** @todo NSTVMX: rest of entry ctls. */
+
+    /* VM-entry MSR-load count and VM-entry MSR-load area address. */
+    uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
+    if (pVmcs->u32EntryMsrLoadCount)
+    {
+        if (   (pVmcs->u64AddrEntryMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
+            || (pVmcs->u64AddrEntryMsrLoad.u >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrEntryMsrLoad.u))
+        {
+            Log(("%s: VM-entry MSR-load area address %#RX64 invalid -> VMFail\n", pszInstr, pVmcs->u64AddrEntryMsrLoad.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrEntryMsrLoad;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM));           /* We don't support SMM yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_DEACTIVATE_DUAL_MON));    /* We don't support dual-monitor treatment yet. */
+
+    NOREF(pszInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Checks VM-exit controls fields as part of VM-entry.
  * See Intel spec. 26.2.1.2 "VM-Exit Control Fields".
  *
@@ -1993,7 +2045,32 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *psz
         return VERR_VMX_VMENTRY_FAILED;
     }
 
-    /** @todo NSTVMX: rest of exit ctls. */
+    /* VM-exit MSR-store count and VM-exit MSR-store area address. */
+    uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
+    if (pVmcs->u32ExitMsrStoreCount)
+    {
+        if (   (pVmcs->u64AddrExitMsrStore.u & VMX_AUTOMSR_OFFSET_MASK)
+            || (pVmcs->u64AddrExitMsrStore.u >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrStore.u))
+        {
+            Log(("%s: VM-exit MSR-store area address %#RX64 invalid -> VMFail\n", pszInstr, pVmcs->u64AddrExitMsrStore.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrExitMsrStore;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* VM-exit MSR-load count and VM-exit MSR-load area address. */
+    if (pVmcs->u32ExitMsrLoadCount)
+    {
+        if (   (pVmcs->u64AddrExitMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
+            || (pVmcs->u64AddrExitMsrLoad.u >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrLoad.u))
+        {
+            Log(("%s: VM-exit MSR-store area address %#RX64 invalid -> VMFail\n", pszInstr, pVmcs->u64AddrExitMsrLoad.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrExitMsrLoad;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
@@ -2082,7 +2159,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *psz
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
     {
         if (   (pVmcs->u64AddrIoBitmapA.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64AddrIoBitmapA.u >> cMaxPhysAddrWidth))
+            || (pVmcs->u64AddrIoBitmapA.u >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrIoBitmapA.u))
         {
             Log(("%s: I/O Bitmap A physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrIoBitmapA.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrIoBitmapA;
@@ -2090,7 +2168,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *psz
         }
 
         if (   (pVmcs->u64AddrIoBitmapB.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64AddrIoBitmapB.u >> cMaxPhysAddrWidth))
+            || (pVmcs->u64AddrIoBitmapB.u >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrIoBitmapB.u))
         {
             Log(("%s: I/O Bitmap B physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrIoBitmapB.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrIoBitmapB;
@@ -2412,9 +2491,22 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     }
 
     /*
-     * Check VM-exit fields.
+     * Check VM-exit control fields.
      */
     rc = iemVmxVmentryCheckExitCtls(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+    {
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Check VM-entry control fields.
+     */
+    rc = iemVmxVmentryCheckEntryCtls(pVCpu, pszInstr);
     if (rc == VINF_SUCCESS)
     { /* likely */ }
     else
