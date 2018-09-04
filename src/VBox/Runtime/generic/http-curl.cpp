@@ -2040,9 +2040,12 @@ static int rtHttpAddHeaderWorker(PRTHTTPINTERNAL pThis, const char *pchName, siz
         AssertCompile(RTHTTPADDHDR_F_FRONT != 0);
         if (!(fFlags & RTHTTPADDHDR_F_FRONT))
         {
+            bool const fDone = pThis->pHeaders != NULL;
+            ASMCompilerBarrier(); /* aliasing paranoia */
+
             *pThis->ppHeadersTail = &pHdr->Core;
             pThis->ppHeadersTail  = &pHdr->Core.next;
-            if (pThis->pHeaders != NULL)
+            if (fDone)
                 return rtHttpUpdateUserAgentHeader(pThis, pHdr);
 
             /* Need to update curl about the new list head. */
@@ -2051,7 +2054,7 @@ static int rtHttpAddHeaderWorker(PRTHTTPINTERNAL pThis, const char *pchName, siz
         {
             pHdr->Core.next = pThis->pHeaders;
             if (!pThis->pHeaders)
-                pThis->ppHeadersTail  = &pHdr->Core.next;
+                pThis->ppHeadersTail = &pHdr->Core.next;
         }
         pThis->pHeaders = &pHdr->Core;
 

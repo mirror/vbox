@@ -31,6 +31,7 @@
 #include <iprt/http.h>
 
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
@@ -67,6 +68,7 @@ int main(int argc, char **argv)
         { "--output",       'o', RTGETOPT_REQ_STRING },
         { "--quiet",        'q', RTGETOPT_REQ_NOTHING },
         { "--verbose",      'v', RTGETOPT_REQ_NOTHING },
+        { "--set-header",   's', RTGETOPT_REQ_STRING },
     };
 
     RTEXITCODE      rcExit          = RTEXITCODE_SUCCESS;
@@ -110,6 +112,22 @@ int main(int argc, char **argv)
             case 'V':
                 RTPrintf("$Revision$\n");
                 return RTEXITCODE_SUCCESS;
+
+            case 's':
+            {
+                char *pszColon = (char *)strchr(ValueUnion.psz, ':');
+                if (!pszColon)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "No colon in --set-header value: %s", ValueUnion.psz);
+                *pszColon = '\0'; /* evil */
+                const char *pszValue = pszColon + 1;
+                if (RT_C_IS_BLANK(*pszValue))
+                    pszValue++;
+                int rc = RTHttpAddHeader(hHttp, ValueUnion.psz, pszValue, RTSTR_MAX, RTHTTPADDHDR_F_BACK);
+                *pszColon = ':';
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTHttpAddHeader failed: %Rrc (on %s)", rc, ValueUnion.psz);
+                break;
+            }
 
             case VINF_GETOPT_NOT_OPTION:
             {
