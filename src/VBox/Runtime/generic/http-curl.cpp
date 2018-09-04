@@ -41,6 +41,7 @@
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/base64.h>
 #include <iprt/cidr.h>
 #include <iprt/crypto/store.h>
 #include <iprt/ctype.h>
@@ -57,6 +58,10 @@
 #include <iprt/string.h>
 #include <iprt/uni.h>
 #include <iprt/uri.h>
+#include <iprt/crypto/digest.h>
+#include <iprt/crypto/pkix.h>
+#include <iprt/crypto/key.h>
+
 
 #include "internal/magics.h"
 
@@ -110,6 +115,23 @@ typedef struct RTHTTPOUTPUTDATA
 } RTHTTPOUTPUTDATA;
 
 /**
+ * HTTP header.
+ */
+typedef struct RTHTTPHEADER
+{
+    /** The core list structure. */
+    struct curl_slist   Core;
+    /** The field name length. */
+    uint32_t            cchName;
+    /** The value offset. */
+    uint32_t            offValue;
+    /** The full header field. */
+    char                szData[RT_FLEXIBLE_ARRAY];
+} RTHTTPHEADER;
+/** Pointer to a HTTP header. */
+typedef RTHTTPHEADER *PRTHTTPHEADER;
+
+/**
  * Internal HTTP client instance.
  */
 typedef struct RTHTTPINTERNAL
@@ -120,8 +142,12 @@ typedef struct RTHTTPINTERNAL
     CURL               *pCurl;
     /** The last response code. */
     long                lLastResp;
-    /** Custom headers/ */
+    /** Custom headers (PRTHTTPHEADER).
+     * The list head is registered with curl, though we do all the allocating. */
     struct curl_slist  *pHeaders;
+    /** Where to append the next header. */
+    struct curl_slist **ppHeadersTail;
+
     /** CA certificate file for HTTPS authentication. */
     char               *pszCaFile;
     /** Whether to delete the CA on destruction. */
@@ -290,6 +316,7 @@ static void rtHttpUnsetCaFile(PRTHTTPINTERNAL pThis);
 #ifdef RT_OS_DARWIN
 static int rtHttpDarwinTryConfigProxies(PRTHTTPINTERNAL pThis, CFArrayRef hArrayProxies, CFURLRef hUrlTarget, bool fIgnorePacType);
 #endif
+static void rtHttpFreeHeaders(PRTHTTPINTERNAL pThis);
 
 
 RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
@@ -310,10 +337,14 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
             {
                 pThis->u32Magic                 = RTHTTP_MAGIC;
                 pThis->pCurl                    = pCurl;
+                pThis->ppHeadersTail            = &pThis->pHeaders;
+                pThis->fHaveSetUserAgent        = false;
+                pThis->fHaveUserAgentHeader     = false;
                 pThis->fUseSystemProxySettings  = true;
                 pThis->cMaxRedirects            = 0; /* no automatic redir following */
                 pThis->BodyOutput.pHttp         = pThis;
                 pThis->HeadersOutput.pHttp      = pThis;
+
 
                 *phHttp = (RTHTTP)pThis;
 
@@ -360,11 +391,7 @@ RTR3DECL(int) RTHttpDestroy(RTHTTP hHttp)
     curl_easy_cleanup(pThis->pCurl);
     pThis->pCurl = NULL;
 
-    if (pThis->pHeaders)
-    {
-        curl_slist_free_all(pThis->pHeaders);
-        pThis->pHeaders = NULL;
-    }
+    rtHttpFreeHeaders(pThis);
 
     rtHttpUnsetCaFile(pThis);
     Assert(!pThis->pszCaFile);
@@ -1931,15 +1958,109 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
  * Helper for RTHttpSetHeaders and RTHttpAddRawHeader that unsets the user agent
  * if it is now in one of the headers.
  */
-static void rtHttpUpdateUserAgentHeader(PRTHTTPINTERNAL pThis)
+static int rtHttpUpdateUserAgentHeader(PRTHTTPINTERNAL pThis, PRTHTTPHEADER pNewHdr)
 {
-    if (   pThis->fHaveUserAgentHeader
-        && pThis->fHaveSetUserAgent)
+    static const char s_szUserAgent[] = "User-Agent";
+    if (   pNewHdr->cchName == sizeof(s_szUserAgent) - 1
+        && RTStrNICmpAscii(pNewHdr->szData, RT_STR_TUPLE(s_szUserAgent)) == 0)
     {
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
-        Assert(CURL_SUCCESS(rcCurl)); NOREF(rcCurl);
-        pThis->fHaveSetUserAgent = false;
+        pThis->fHaveUserAgentHeader = true;
+        if (pThis->fHaveSetUserAgent)
+        {
+            int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
+            Assert(CURL_SUCCESS(rcCurl)); NOREF(rcCurl);
+            pThis->fHaveSetUserAgent = false;
+        }
     }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Free the headers associated with the insance (w/o telling cURL about it).
+ *
+ * @param   pThis       The HTTP client instance.
+ */
+static void rtHttpFreeHeaders(PRTHTTPINTERNAL pThis)
+{
+    struct curl_slist *pHead = pThis->pHeaders;
+    pThis->pHeaders = NULL;
+    pThis->ppHeadersTail = &pThis->pHeaders;
+    pThis->fHaveUserAgentHeader = false;
+
+    while (pHead)
+    {
+        struct curl_slist *pFree = pHead;
+        pHead = pHead->next;
+        ASMCompilerBarrier(); /* paranoia */
+
+        pFree->next = NULL;
+        pFree->data = NULL;
+        RTMemFree(pFree);
+    }
+}
+
+
+/**
+ * Worker for RTHttpSetHeaders and RTHttpAddHeader.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The HTTP client instance.
+ * @param   pchName     The field name.  Does not need to be terminated.
+ * @param   cchName     The field name length.
+ * @param   pchValue    The field value.  Does not need to be terminated.
+ * @param   cchValue    The field value length.
+ * @param   fFlags      RTHTTPADDHDR_F_XXX.
+ */
+static int rtHttpAddHeaderWorker(PRTHTTPINTERNAL pThis, const char *pchName, size_t cchName,
+                                 const char *pchValue, size_t cchValue, uint32_t fFlags)
+{
+    /*
+     * Create the list entry.
+     */
+    size_t        cbData = cchName + 2 + cchValue + 1;
+    PRTHTTPHEADER pHdr   = (PRTHTTPHEADER)RTMemAlloc(RT_UOFFSETOF_DYN(RTHTTPHEADER, szData[cbData]));
+    if (pHdr)
+    {
+        pHdr->Core.next = NULL;
+        pHdr->Core.data = pHdr->szData;
+        pHdr->cchName   = (uint32_t)cchName;
+        pHdr->offValue  = (uint32_t)(cchName + 2);
+        char *psz = pHdr->szData;
+        memcpy(psz, pchName, cchName);
+        psz += cchName;
+        *psz++ = ':';
+        *psz++ = ' ';
+        memcpy(psz, pchValue, cchValue);
+        psz[cchValue] = '\0';
+
+        /*
+         * Append or prepend the header.
+         */
+        AssertCompile(RTHTTPADDHDR_F_FRONT != 0);
+        if (!(fFlags & RTHTTPADDHDR_F_FRONT))
+        {
+            *pThis->ppHeadersTail = &pHdr->Core;
+            pThis->ppHeadersTail  = &pHdr->Core.next;
+            if (pThis->pHeaders != NULL)
+                return rtHttpUpdateUserAgentHeader(pThis, pHdr);
+
+            /* Need to update curl about the new list head. */
+        }
+        else
+        {
+            pHdr->Core.next = pThis->pHeaders;
+            if (!pThis->pHeaders)
+                pThis->ppHeadersTail  = &pHdr->Core.next;
+        }
+        pThis->pHeaders = &pHdr->Core;
+
+        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
+        if (CURL_SUCCESS(rcCurl))
+            return rtHttpUpdateUserAgentHeader(pThis, pHdr);
+        return VERR_HTTP_CURL_ERROR;
+    }
+    return VERR_NO_MEMORY;
 }
 
 
@@ -1953,10 +2074,10 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
      */
     if (pThis->pHeaders)
     {
-        curl_slist_free_all(pThis->pHeaders);
-        pThis->pHeaders = NULL;
-        curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
+        rtHttpFreeHeaders(pThis);
+        curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, (struct curl_slist *)NULL);
     }
+    pThis->ppHeadersTail = &pThis->pHeaders;
     pThis->fHaveUserAgentHeader = false;
 
     /*
@@ -1966,39 +2087,28 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
         return VINF_SUCCESS;
 
     /*
-     * Convert the headers into a curl string list, checking each string for User-Agent.
+     * Add the headers, one by one.
      */
-    struct curl_slist *pHeaders = NULL;
+    int rc = VINF_SUCCESS;
     for (size_t i = 0; i < cHeaders; i++)
     {
-        struct curl_slist *pNewHeaders = curl_slist_append(pHeaders, papszHeaders[i]);
-        if (pNewHeaders)
-            pHeaders = pNewHeaders;
-        else
-        {
-            if (pHeaders)
-                curl_slist_free_all(pHeaders);
-            return VERR_NO_MEMORY;
-        }
-
-        if (strncmp(papszHeaders[i], RT_STR_TUPLE("User-Agent:")) == 0)
-            pThis->fHaveUserAgentHeader = true;
+        const char *pszHeader = papszHeaders[i];
+        size_t      cchHeader = strlen(pszHeader);
+        size_t      cchName   = (const char *)memchr(pszHeader, ':', cchHeader) - pszHeader;
+        AssertBreakStmt(cchName < cchHeader, rc = VERR_INVALID_PARAMETER);
+        size_t      offValue  = RT_C_IS_BLANK(pszHeader[cchName + 1]) ? cchName + 2 : cchName + 1;
+        rc = rtHttpAddHeaderWorker(pThis, pszHeader, cchName, &pszHeader[offValue], cchHeader - offValue, RTHTTPADDHDR_F_BACK);
+        AssertRCBreak(rc);
     }
-
-    int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pHeaders);
-    if (CURL_FAILURE(rcCurl))
-    {
-        curl_slist_free_all(pHeaders);
-        return VERR_INVALID_PARAMETER;
-    }
-    pThis->pHeaders = pHeaders;
-
-    rtHttpUpdateUserAgentHeader(pThis);
-
-    return VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+        return rc;
+    rtHttpFreeHeaders(pThis);
+    curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, (struct curl_slist *)NULL);
+    return rc;
 }
 
 
+#if 0 /** @todo reimplement RTHttpAddRawHeader if ever actually needed. */
 RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t fFlags)
 {
     PRTHTTPINTERNAL pThis = hHttp;
@@ -2039,14 +2149,17 @@ RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t f
 
     return VINF_SUCCESS;
 }
+#endif
 
 
 RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags)
 {
-
     /*
-     * Currently we don't any encoding here, so we just glue the two strings together.
+     * Validate input and calc string lengths.
      */
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+    AssertReturn(!(fFlags & ~RTHTTPADDHDR_F_BACK), VERR_INVALID_FLAGS);
     AssertPtr(pszField);
     size_t const cchField = strlen(pszField);
     AssertReturn(cchField > 0, VERR_INVALID_PARAMETER);
@@ -2063,33 +2176,10 @@ RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *ps
     AssertPtr(pszValue);
     size_t const cchValue = strlen(pszValue);
 
-    AssertReturn(!(fFlags & ~RTHTTPADDHDR_F_BACK), VERR_INVALID_FLAGS);
-
     /*
-     * Allocate a temporary buffer, construct the raw header string in it,
-     * then use RTHttpAppendRawHeader to do the grunt work.
+     * Just pass it along to the worker.
      */
-    size_t const cbNeeded = cchField + 2 + cchValue + 1;
-    char *pszHeaderFree = NULL;
-    char *pszHeader;
-    if (cbNeeded < _2K)
-        pszHeader = (char *)alloca(cbNeeded);
-    else
-        pszHeaderFree = pszHeader = (char *)RTMemTmpAlloc(cbNeeded);
-    if (!pszHeader)
-        return VERR_NO_TMP_MEMORY;
-
-    memcpy(pszHeader, pszField, cchField);
-    pszHeader[cchField]     = ':';
-    pszHeader[cchField + 1] = ' ';
-    memcpy(&pszHeader[cchField + 2], pszValue, cchValue);
-    pszHeader[cbNeeded - 1] = '\0';
-
-    int rc = RTHttpAddRawHeader(hHttp, pszHeader, fFlags & RTHTTPADDHDR_F_FRONT);
-
-    if (pszHeaderFree)
-        RTMemTmpFree(pszHeaderFree);
-    return rc;
+    return rtHttpAddHeaderWorker(pThis, pszField, cchField, pszValue, cchValue, fFlags);
 }
 
 
@@ -2098,33 +2188,210 @@ RTR3DECL(const char *) RTHttpGetHeader(RTHTTP hHttp, const char *pszField, size_
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN_RC(pThis, NULL);
 
-    struct curl_slist *pCur = pThis->pHeaders;
+    PRTHTTPHEADER pCur = (PRTHTTPHEADER)pThis->pHeaders;
     if (pCur)
     {
         if (cchField == RTSTR_MAX)
             cchField = strlen(pszField);
         do
         {
-            /* strchr() is probably way faster than RTStrNICmpAscii(), so
-               match the field name length first. */
-            const char *pszColon = strchr(pCur->data, ':');
-            if (   (size_t)(pszColon - pCur->data) == cchField
-                && pszColon != NULL
-                && RTStrNICmpAscii(pCur->data, pszField, cchField) == 0)
-            {
-                pszColon++;
-                if (RT_C_IS_BLANK(*pszColon))
-                    pszColon++;
-                return pszColon;
-            }
+            if (   pCur->cchName == cchField
+                && RTStrNICmpAscii(pCur->szData, pszField, cchField) == 0)
+                return &pCur->szData[pCur->offValue];
 
             /* next field. */
-            pCur = pCur->next;
+            pCur = (PRTHTTPHEADER)pCur->Core.next;
         } while (pCur);
     }
     return NULL;
 }
 
+
+RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char *pszUrl, uint32_t fFlags,
+                                RTCRKEY hKey, const char *pszKeyId)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN_RC(pThis, NULL);
+    AssertReturn(enmMethod > RTHTTPMETHOD_INVALID && enmMethod < RTHTTPMETHOD_END, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszUrl, VERR_INVALID_POINTER);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertPtrReturn(pszKeyId, VERR_INVALID_POINTER);
+
+    /*
+     * Do a little bit of preprocessing while we can easily return without
+     * needing clean anything up..
+     */
+    RTURIPARSED ParsedUrl;
+    int rc = RTUriParse(pszUrl, &ParsedUrl);
+    AssertRCReturn(rc, rc);
+    const char * const pszPath = pszUrl + ParsedUrl.offPath;
+
+    const char *pszMethodSp = NULL;
+    switch (enmMethod)
+    {
+        case RTHTTPMETHOD_GET:      pszMethodSp = "get "; break;
+        case RTHTTPMETHOD_PUT:      pszMethodSp = "put "; break;
+        case RTHTTPMETHOD_POST:     pszMethodSp = "post "; break;
+        case RTHTTPMETHOD_PATCH:    pszMethodSp = "patch "; break;
+        case RTHTTPMETHOD_DELETE:   pszMethodSp = "delete "; break;
+        case RTHTTPMETHOD_HEAD:     pszMethodSp = "head "; break;
+        case RTHTTPMETHOD_OPTIONS:  pszMethodSp = "options "; break;
+        case RTHTTPMETHOD_TRACE:    pszMethodSp = "trace "; break;
+        /* no default! */
+        case RTHTTPMETHOD_INVALID:
+        case RTHTTPMETHOD_END:
+        case RTHTTPMETHOD_32BIT_HACK:
+            break;
+    }
+    AssertReturn(pszMethodSp, VERR_INTERNAL_ERROR_4);
+
+    /*
+     * We work the authorization header entry directly here to avoid extra copying and stuff.
+     */
+
+    /* Estimate required string length first. */
+    static const char s_szSuffixFmt[]    = "Authorization: Signature version=\"1\",keyId=\"%s\",algorithm=\"rsa-sha256\",headers=\"";
+    static const char s_szInfix[]        = "\",signature=\"Base64(RSA-SHA256(";
+    static const char s_szPostfix[]      = "))\"";
+    static const char s_szRequestField[] = "(request-target)";
+    size_t const      cchKeyId           = strlen(pszKeyId);
+    size_t const      cbSigRaw           = (RTCrKeyGetBitCount(hKey) + 8) / 8; /** @todo ?? */
+    size_t const      cbSigRawAligned    = RT_ALIGN_Z(cbSigRaw, 8);
+    size_t const      cchSigStr          = RTBase64EncodedLengthEx(cbSigRaw, RTBASE64_FLAGS_NO_LINE_BREAKS);
+    size_t cbEstimated = sizeof(s_szSuffixFmt) + sizeof(s_szInfix) + sizeof(s_szPostfix)
+                       + cchKeyId + sizeof(s_szRequestField) + cchSigStr;
+    for (PRTHTTPHEADER pCur = (PRTHTTPHEADER)pThis->pHeaders; pCur; pCur = (PRTHTTPHEADER)pCur->Core.next)
+        cbEstimated += pCur->cchName + 1;
+    cbEstimated += 32; /* safetype fudge */
+    /* Lazy bird: Put the raw signature at the end. */
+    cbEstimated = RT_ALIGN_Z(cbEstimated, 8) + cbSigRawAligned;
+
+    /* Allocate and initialize header entry. */
+    PRTHTTPHEADER const pHdr = (PRTHTTPHEADER)RTMemAllocZ(cbEstimated);
+    AssertPtrReturn(pHdr, VERR_NO_MEMORY);
+    uint8_t * const pbSigRaw = (uint8_t *)pHdr + cbEstimated - cbSigRawAligned;
+
+    pHdr->cchName  = sizeof("Authorization") - 1;
+    pHdr->offValue = sizeof("Authorization") + 1;
+    char  *pszLeft = pHdr->szData;
+    size_t cbLeft  = cbEstimated - RT_UOFFSETOF(RTHTTPHEADER, szData) - cbSigRawAligned;
+
+    size_t cch = RTStrPrintf(pszLeft, cbLeft, s_szSuffixFmt, pszKeyId);
+    cbLeft -= cch;
+    pszLeft += cch;
+
+    /*
+     * Instantiate the digest.
+     */
+    RTCRDIGEST hDigest = NIL_RTCRDIGEST;
+    rc = RTCrDigestCreateByType(&hDigest, RTDIGESTTYPE_SHA256);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Add the request-target pseudo header first.
+         */
+        Assert(cbLeft > sizeof(s_szRequestField));
+        memcpy(pszLeft, RT_STR_TUPLE(s_szRequestField));
+        pszLeft += sizeof(s_szRequestField);
+
+        rc = RTCrDigestUpdate(hDigest, RT_STR_TUPLE(s_szRequestField));
+        if (RT_SUCCESS(rc))
+            rc = RTCrDigestUpdate(hDigest, RT_STR_TUPLE(": "));
+        if (RT_SUCCESS(rc))
+            rc = RTCrDigestUpdate(hDigest, pszMethodSp, strlen(pszMethodSp));
+        if (RT_SUCCESS(rc))
+            rc = RTCrDigestUpdate(hDigest, pszPath, strlen(pszPath));
+
+        /*
+         * Add the header fields.
+         */
+        for (PRTHTTPHEADER pCur = (PRTHTTPHEADER)pThis->pHeaders; pCur && RT_SUCCESS(rc); pCur = (PRTHTTPHEADER)pCur->Core.next)
+        {
+            AssertBreakStmt(cbLeft > pCur->cchName, rc = VERR_INTERNAL_ERROR_3);
+            memcpy(pszLeft, pCur->szData, pCur->cchName);
+            pszLeft[pCur->cchName] = '\0';
+            RTStrToLower(pszLeft);
+
+            rc = RTCrDigestUpdate(hDigest, RT_STR_TUPLE("\n"));
+            AssertRCBreak(rc);
+            rc = RTCrDigestUpdate(hDigest, pszLeft, pCur->cchName);
+            AssertRCBreak(rc);
+            rc = RTCrDigestUpdate(hDigest, RT_STR_TUPLE(": "));
+            AssertRCBreak(rc);
+            const char *pszValue = &pCur->szData[pCur->offValue];
+            rc = RTCrDigestUpdate(hDigest, pszValue, strlen(pszValue));
+            AssertRCBreak(rc);
+
+            pszLeft += pCur->cchName;
+            cbLeft -= pCur->cchName;
+        }
+        if (RT_SUCCESS(rc))
+            AssertStmt(cbLeft > sizeof(s_szInfix) + cchSigStr + sizeof(s_szPostfix), rc = VERR_INTERNAL_ERROR_3);
+        if (RT_SUCCESS(rc))
+        {
+            /* Complete the header field part. */
+            memcpy(pszLeft, RT_STR_TUPLE(s_szInfix));
+            pszLeft += sizeof(s_szInfix) - 1;
+            cbLeft  -= sizeof(s_szInfix) - 1;
+
+            /*
+             * Sign the digest.
+             */
+            RTCRPKIXSIGNATURE hSigner;
+            rc = RTCrPkixSignatureCreateByObjIdString(&hSigner, RTCR_PKCS1_SHA256_WITH_RSA_OID, hKey, NULL, true /*fSigning*/);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                size_t cbActual = cbSigRawAligned;
+                rc = RTCrPkixSignatureSign(hSigner, hDigest, pbSigRaw, &cbActual);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    RTCrPkixSignatureRelease(hSigner);
+                    hSigner = NIL_RTCRPKIXSIGNATURE;
+                    RTCrDigestRelease(hDigest);
+                    hDigest = NIL_RTCRDIGEST;
+
+                    /*
+                     * Convert the signature to Base64 and append it to the string.
+                     */
+                    size_t cchActual;
+                    rc = RTBase64EncodeEx(pbSigRaw, cbActual, RTBASE64_FLAGS_NO_LINE_BREAKS, pszLeft, cbLeft, &cchActual);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        Assert(cchActual == cchSigStr);
+                        pszLeft += cchActual;
+                        cbLeft  -= cchActual;
+
+                        /*
+                         * Append the postfix and add the header to the front of the list.
+                         */
+                        AssertStmt(cbLeft >= sizeof(s_szPostfix), rc = VERR_INTERNAL_ERROR_3);
+                        if (RT_SUCCESS(rc))
+                        {
+                            memcpy(pszLeft, s_szPostfix, sizeof(s_szPostfix));
+
+                            pHdr->Core.next = pThis->pHeaders;
+                            if (!pThis->pHeaders)
+                                pThis->ppHeadersTail  = &pHdr->Core.next;
+                            pThis->pHeaders = &pHdr->Core;
+
+                            int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
+                            if (CURL_SUCCESS(rcCurl))
+                                return VINF_SUCCESS;
+                            rc = VERR_HTTP_CURL_ERROR;
+                        }
+                    }
+                }
+                RTCrPkixSignatureRelease(hSigner);
+            }
+        }
+        RTCrDigestRelease(hDigest);
+    }
+    RTMemFree(pHdr);
+    return rc;
+}
 
 
 /*********************************************************************************************************************************
