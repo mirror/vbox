@@ -1389,7 +1389,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     {
         if (!pThis->pHostDrvAudio)
         {
-            rc = VERR_AUDIO_STREAM_NOT_READY;
+            rc = VERR_PDM_NO_ATTACHED_DRIVER;
             break;
         }
 
@@ -1762,7 +1762,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
     {
         if (!pThis->pHostDrvAudio)
         {
-            rc = VERR_AUDIO_STREAM_NOT_READY;
+            rc = VERR_PDM_NO_ATTACHED_DRIVER;
             break;
         }
 
@@ -2682,7 +2682,7 @@ static DECLCALLBACK(int) drvAudioGetConfig(PPDMIAUDIOCONNECTOR pInterface, PPDMA
             rc = VERR_NOT_SUPPORTED;
     }
     else
-        AssertFailed();
+        rc = VERR_PDM_NO_ATTACHED_DRIVER;
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2740,7 +2740,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
 
     uint32_t cbReadable = 0;
 
-    if (DrvAudioHlpStreamStatusCanRead(pStream->fStatus))
+    if (   pThis->pHostDrvAudio
+        && DrvAudioHlpStreamStatusCanRead(pStream->fStatus))
     {
         const uint32_t cfReadable = AudioMixBufLive(&pStream->Guest.MixBuf);
 
