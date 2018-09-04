@@ -122,7 +122,7 @@ int main(int argc, char **argv)
                 const char *pszValue = pszColon + 1;
                 if (RT_C_IS_BLANK(*pszValue))
                     pszValue++;
-                int rc = RTHttpAddHeader(hHttp, ValueUnion.psz, pszValue, RTSTR_MAX, RTHTTPADDHDR_F_BACK);
+                rc = RTHttpAddHeader(hHttp, ValueUnion.psz, pszValue, RTSTR_MAX, RTHTTPADDHDR_F_BACK);
                 *pszColon = ':';
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTHttpAddHeader failed: %Rrc (on %s)", rc, ValueUnion.psz);
