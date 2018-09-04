@@ -920,6 +920,16 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3, VMX_V_VIRT_APIC_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3 = NULL;
         }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR3 = NULL;
+        }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3 = NULL;
+        }
     }
 }
 
@@ -966,6 +976,35 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's Virtual-APIC page\n", pVCpu->idCpu,
                     VMX_V_VIRT_APIC_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the VMREAD-bitmap.
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR3);
+        rc = SUPR3PageAllocEx(VMX_V_VMREAD_VMWRITE_BITMAP_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmreadBitmapR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMREAD-bitmap\n", pVCpu->idCpu,
+                    VMX_V_VMREAD_VMWRITE_BITMAP_PAGES));
+            break;
+        }
+
+        /*
+         * Allocatge the VMWRITE-bitmap.
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3);
+        rc = SUPR3PageAllocEx(VMX_V_VMREAD_VMWRITE_BITMAP_PAGES, 0 /* fFlags */,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMWRITE-bitmap\n", pVCpu->idCpu,
+                    VMX_V_VMREAD_VMWRITE_BITMAP_PAGES));
             break;
         }
     }
@@ -1172,7 +1211,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
         pHostFeat->fVmxExitLoadPatMsr       = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_LOAD_PAT_MSR);
         pHostFeat->fVmxExitSaveEferMsr       = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_SAVE_EFER_MSR);
         pHostFeat->fVmxExitLoadEferMsr       = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR);
-        pHostFeat->fVmxSavePreemptTimer      = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER);
+        pHostFeat->fVmxSavePreemptTimer      = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
 
         /* Miscellaneous data. */
         uint32_t const fMiscData = VmxMsrs.u64Misc;

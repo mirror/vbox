@@ -1551,7 +1551,7 @@ static void hmR3VmxReportExitCtlsMsr(PCVMXCTLSMSR pVmxMsr)
     HMVMX_REPORT_FEAT(val, zap, "LOAD_PAT_MSR",           VMX_EXIT_CTLS_LOAD_PAT_MSR);
     HMVMX_REPORT_FEAT(val, zap, "SAVE_EFER_MSR",          VMX_EXIT_CTLS_SAVE_EFER_MSR);
     HMVMX_REPORT_FEAT(val, zap, "LOAD_EFER_MSR",          VMX_EXIT_CTLS_LOAD_EFER_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "SAVE_VMX_PREEMPT_TIMER", VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER);
+    HMVMX_REPORT_FEAT(val, zap, "SAVE_PREEMPT_TIMER",     VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
 }
 
 
@@ -3171,7 +3171,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_LOAD_PAT_MSR          );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_SAVE_EFER_MSR         );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_LOAD_EFER_MSR         );
-                        HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER);
+                        HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER    );
                     }
                     LogRel(("HM: CPU[%u] HCPhysMsrBitmap  %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysMsrBitmap));
                     LogRel(("HM: CPU[%u] HCPhysGuestMsr   %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysGuestMsr));

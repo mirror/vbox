@@ -2158,7 +2158,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 /** Whether the host IA32_EFER MSR is loaded on VM-exit. */
 #define VMX_EXIT_CTLS_LOAD_EFER_MSR                             RT_BIT(21)
 /** Whether the value of the VMX preemption timer is saved on every VM-exit. */
-#define VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER                    RT_BIT(22)
+#define VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER                        RT_BIT(22)
 /** Default1 class when true-capability MSRs are not supported.  */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
 
@@ -2803,6 +2803,11 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the Virtual-APIC page (in pages). */
 #define VMX_V_VIRT_APIC_PAGES                                   1
 
+/** The size of the VMREAD/VMWRITE bitmap (in bytes). */
+#define VMX_V_VMREAD_VMWRITE_BITMAP_SIZE                        X86_PAGE_4K_SIZE
+/** The size of the VMREAD/VMWRITE-bitmap (in pages). */
+#define VMX_V_VMREAD_VMWRITE_BITMAP_PAGES                       1
+
 /** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCS_ENC_INDEX)
 
@@ -3445,6 +3450,8 @@ typedef enum
     kVmxVInstrDiag_Vmentry_BlocKMovSS,
     kVmxVInstrDiag_Vmentry_Cpl,
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
+    kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1,
+    kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0,
     kVmxVInstrDiag_Vmentry_LongModeCS,
     kVmxVInstrDiag_Vmentry_NmiWindowExit,
     kVmxVInstrDiag_Vmentry_PinCtlsAllowed1,
@@ -3456,6 +3463,7 @@ typedef enum
     kVmxVInstrDiag_Vmentry_PtrInvalid,
     kVmxVInstrDiag_Vmentry_PtrReadPhys,
     kVmxVInstrDiag_Vmentry_RealOrV86Mode,
+    kVmxVInstrDiag_Vmentry_SavePreemptTimer,
     kVmxVInstrDiag_Vmentry_Success,
     kVmxVInstrDiag_Vmentry_TprThreshold,
     kVmxVInstrDiag_Vmentry_TprThresholdVTpr,
@@ -3466,6 +3474,8 @@ typedef enum
     kVmxVInstrDiag_Vmentry_VirtX2ApicVirtApic,
     kVmxVInstrDiag_Vmentry_VmcsClear,
     kVmxVInstrDiag_Vmentry_VmcsLaunch,
+    kVmxVInstrDiag_Vmentry_VmreadBitmapPtrReadPhys,
+    kVmxVInstrDiag_Vmentry_VmwriteBitmapPtrReadPhys,
     kVmxVInstrDiag_Vmentry_VmxRoot,
     kVmxVInstrDiag_Vmentry_Vpid,
     /* Last member for determining array index limit. */

@@ -3377,8 +3377,8 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu)
 
         /* Enable saving of the VMX preemption timer value on VM-exit. */
         if (    pVM->hm.s.vmx.fUsePreemptTimer
-            && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER))
-            fVal |= VMX_EXIT_CTLS_SAVE_VMX_PREEMPT_TIMER;
+            && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
+            fVal |= VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER;
 
         if ((fVal & fZap) != fVal)
         {
