@@ -1524,11 +1524,11 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
  * @return  IPRT status code.
  * @param   pSink               Input mixer sink to set recording source for.
  * @param   pStream             Mixer stream to set as current recording source. Must be an input stream.
+ *                              Set to NULL to un-set the current recording source.
  */
 int AudioMixerSinkSetRecordingSource(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))
