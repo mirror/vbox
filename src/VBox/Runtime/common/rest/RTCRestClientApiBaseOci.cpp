@@ -145,7 +145,7 @@ static int ociSignRequestAddAllFields(RTHTTP a_hHttp, RTCString const &a_rStrFul
     {
         RTStrPrintf(szTmp, sizeof(szTmp), "%zu", a_rStrXmitBody.length());
 
-        rc = RTHttpAppendHeader(a_hHttp, s_szContentLength, szTmp, 0);
+        rc = RTHttpAddHeader(a_hHttp, s_szContentLength, szTmp, RTHTTPADDHDR_F_BACK);
         AssertRCReturn(rc, rc);
         pszContentLength = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szContentLength));
         AssertPtrReturn(pszContentLength, VERR_REST_INTERAL_ERROR_4);
@@ -176,7 +176,7 @@ static int ociSignRequestAddAllFields(RTHTTP a_hHttp, RTCString const &a_rStrFul
         RTSha256(a_rStrXmitBody.c_str(), a_rStrXmitBody.length(), abHash);
         rc = RTBase64EncodeEx(abHash, sizeof(abHash), RTBASE64_FLAGS_NO_LINE_BREAKS, szTmp, sizeof(szTmp), NULL);
 
-        rc = RTHttpAppendHeader(a_hHttp, s_szXContentSha256, szTmp, 0);
+        rc = RTHttpAddHeader(a_hHttp, s_szXContentSha256, szTmp, RTHTTPADDHDR_F_BACK);
         AssertRCReturn(rc, rc);
         pszValue = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szXContentSha256));
         AssertPtrReturn(pszValue, VERR_REST_INTERAL_ERROR_4);
@@ -222,7 +222,7 @@ static int ociSignRequestAddAllFields(RTHTTP a_hHttp, RTCString const &a_rStrFul
                     s_apszWeekDays[Time.u8WeekDay], Time.u8MonthDay, s_apszMonths[Time.u8Month], Time.i32Year,
                     Time.u8Hour, Time.u8Minute, Time.u8Second);
 
-        rc = RTHttpAppendHeader(a_hHttp, s_szXDate, szTmp, 0);
+        rc = RTHttpAddHeader(a_hHttp, s_szXDate, szTmp, RTHTTPADDHDR_F_BACK);
         AssertRCReturn(rc, rc);
         pszXDate = RTHttpGetHeader(a_hHttp, RT_STR_TUPLE(s_szXDate));
         AssertPtrReturn(pszXDate, VERR_REST_INTERAL_ERROR_4);
@@ -303,7 +303,7 @@ int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStr
                                     /*
                                      * Finally, add the authorization header.
                                      */
-                                    rc = RTHttpAppendHeader(a_hHttp, "Authorization", strAuth.c_str(), 0);
+                                    rc = RTHttpAddHeader(a_hHttp, "Authorization", strAuth.c_str(), RTHTTPADDHDR_F_FRONT);
                                     AssertRC(rc);
                                 }
                             }

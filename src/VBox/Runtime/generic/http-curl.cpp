@@ -1928,7 +1928,7 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
 *********************************************************************************************************************************/
 
 /**
- * Helper for RTHttpSetHeaders and RTHttpAppendHeader that unsets the user agent
+ * Helper for RTHttpSetHeaders and RTHttpAddRawHeader that unsets the user agent
  * if it is now in one of the headers.
  */
 static void rtHttpUpdateUserAgentHeader(PRTHTTPINTERNAL pThis)
@@ -1966,7 +1966,7 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
         return VINF_SUCCESS;
 
     /*
-     * Convert the headers into a curl string list, checkig each string for User-Agent.
+     * Convert the headers into a curl string list, checking each string for User-Agent.
      */
     struct curl_slist *pHeaders = NULL;
     for (size_t i = 0; i < cHeaders; i++)
@@ -1999,10 +1999,12 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const
 }
 
 
-RTR3DECL(int) RTHttpAppendRawHeader(RTHTTP hHttp, const char *pszHeader)
+RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t fFlags)
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
+    AssertReturn(!(fFlags & ~RTHTTPADDHDR_F_BACK), VERR_INVALID_FLAGS);
+/** @todo implement RTHTTPADDHDR_F_FRONT */
 
     /*
      * Append it to the header list, checking for User-Agent and such.
@@ -2039,7 +2041,7 @@ RTR3DECL(int) RTHttpAppendRawHeader(RTHTTP hHttp, const char *pszHeader)
 }
 
 
-RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags)
+RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags)
 {
 
     /*
@@ -2061,7 +2063,7 @@ RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char 
     AssertPtr(pszValue);
     size_t const cchValue = strlen(pszValue);
 
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTHTTPADDHDR_F_BACK), VERR_INVALID_FLAGS);
 
     /*
      * Allocate a temporary buffer, construct the raw header string in it,
@@ -2083,7 +2085,7 @@ RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char 
     memcpy(&pszHeader[cchField + 2], pszValue, cchValue);
     pszHeader[cbNeeded - 1] = '\0';
 
-    int rc = RTHttpAppendRawHeader(hHttp, pszHeader);
+    int rc = RTHttpAddRawHeader(hHttp, pszHeader, fFlags & RTHTTPADDHDR_F_FRONT);
 
     if (pszHeaderFree)
         RTMemTmpFree(pszHeaderFree);

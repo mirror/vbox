@@ -192,7 +192,7 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
                 int rc = a_papHeaderParamObjs[i]->toString(&strTmpVal, a_paHeaderParams[i].fFlags);
                 AssertRCReturn(rc, rc);
 
-                rc = RTHttpAppendHeader(a_hHttp, a_paHeaderParams[i].pszName, strTmpVal.c_str(), 0);
+                rc = RTHttpAddHeader(a_hHttp, a_paHeaderParams[i].pszName, strTmpVal.c_str(), RTHTTPADDHDR_F_BACK);
                 AssertRCReturn(rc, rc);
             }
             else if (!a_papHeaderParamObjs[i]->isNull())
@@ -216,7 +216,7 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
                     rc = it.getValue()->toString(&strTmpVal, a_paHeaderParams[i].fFlags);
                     AssertRCReturn(rc, rc);
 
-                    rc = RTHttpAppendHeader(a_hHttp, strTmpName.c_str(), strTmpVal.c_str(), 0);
+                    rc = RTHttpAddHeader(a_hHttp, strTmpName.c_str(), strTmpVal.c_str(), RTHTTPADDHDR_F_BACK);
                     AssertRCReturn(rc, rc);
                 }
             }

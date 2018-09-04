@@ -293,25 +293,34 @@ RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects);
  */
 RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const *papszHeaders);
 
+/** @name RTHTTPADDHDR_F_XXX - Flags for RTHttpAddRawHeader and RTHttpAddHeader
+ * @{ */
+#define RTHTTPADDHDR_F_BACK     UINT32_C(0) /**< Append the header. */
+#define RTHTTPADDHDR_F_FRONT    UINT32_C(1) /**< Prepend the header. */
+/** @} */
+
 /**
- * Appends a raw header.
+ * Adds a raw header.
  *
  * @returns IPRT status code.
  * @param   hHttp           The HTTP client handle.
  * @param   pszHeader       Header string on the form "foo: bar".
+ * @param   fFlags          RTHTTPADDHDR_F_FRONT or RTHTTPADDHDR_F_BACK.
  */
-RTR3DECL(int) RTHttpAppendRawHeader(RTHTTP hHttp, const char *pszHeader);
+RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t fFlags);
 
 /**
- * Appends a header field and value.
+ * Adds a header field and value.
  *
  * @returns IPRT status code.
  * @param   hHttp           The HTTP client handle.
  * @param   pszField        The header field name.
  * @param   pszValue        The header field value.
- * @param   fFlags          Flags reserved for controlling encoding, MBZ.
+ * @param   fFlags          Only RTHTTPADDHDR_F_FRONT or RTHTTPADDHDR_F_BACK,
+ *                          may be extended with encoding controlling flags if
+ *                          needed later.
  */
-RTR3DECL(int) RTHttpAppendHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags);
+RTR3DECL(int) RTHttpAddHeader(RTHTTP hHttp, const char *pszField, const char *pszValue, uint32_t fFlags);
 
 /**
  * Gets a header previously added using RTHttpSetHeaders, RTHttpAppendRawHeader
