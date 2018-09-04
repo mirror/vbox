@@ -1492,7 +1492,7 @@ static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
     HMVMX_REPORT_FEAT(val, zap, "EPT",                   VMX_PROC_CTLS2_EPT);
     HMVMX_REPORT_FEAT(val, zap, "DESC_TABLE_EXIT",       VMX_PROC_CTLS2_DESC_TABLE_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "RDTSCP",                VMX_PROC_CTLS2_RDTSCP);
-    HMVMX_REPORT_FEAT(val, zap, "VIRT_X2APIC_ACCESS",    VMX_PROC_CTLS2_VIRT_X2APIC_ACCESS);
+    HMVMX_REPORT_FEAT(val, zap, "VIRT_X2APIC_MODE",      VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
     HMVMX_REPORT_FEAT(val, zap, "VPID",                  VMX_PROC_CTLS2_VPID);
     HMVMX_REPORT_FEAT(val, zap, "WBINVD_EXIT",           VMX_PROC_CTLS2_WBINVD_EXIT);
     HMVMX_REPORT_FEAT(val, zap, "UNRESTRICTED_GUEST",    VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
@@ -3130,7 +3130,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_EPT               );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_DESC_TABLE_EXIT   );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_RDTSCP            );
-                        HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_VIRT_X2APIC_ACCESS);
+                        HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_VIRT_X2APIC_MODE  );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_VPID              );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_WBINVD_EXIT       );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_UNRESTRICTED_GUEST);

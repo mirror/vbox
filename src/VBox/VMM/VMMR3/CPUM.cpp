@@ -1034,7 +1034,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("Ept - Extended Page Tables                             ", fVmxEpt);
         VMXFEATDUMP("DescTableExit - Descriptor-table exiting               ", fVmxDescTableExit);
         VMXFEATDUMP("Rdtscp - Enable RDTSCP                                 ", fVmxRdtscp);
-        VMXFEATDUMP("VirtX2Apic - Virtualize-x2APIC accesses                ", fVmxVirtX2ApicAccess);
+        VMXFEATDUMP("VirtX2ApicMode - Virtualize-x2APIC mode                ", fVmxVirtX2ApicMode);
         VMXFEATDUMP("Vpid - Enable VPID                                     ", fVmxVpid);
         VMXFEATDUMP("WbinvdExit - WBINVD exiting                            ", fVmxWbinvdExit);
         VMXFEATDUMP("UnrestrictedGuest - Unrestricted guest                 ", fVmxUnrestrictedGuest);
@@ -1138,7 +1138,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
             pHostFeat->fVmxEpt               = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_EPT);
             pHostFeat->fVmxDescTableExit     = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_DESC_TABLE_EXIT);
             pHostFeat->fVmxRdtscp            = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_RDTSCP);
-            pHostFeat->fVmxVirtX2ApicAccess  = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_ACCESS);
+            pHostFeat->fVmxVirtX2ApicMode    = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
             pHostFeat->fVmxVpid              = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_VPID);
             pHostFeat->fVmxWbinvdExit        = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_WBINVD_EXIT);
             pHostFeat->fVmxUnrestrictedGuest = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
@@ -1220,7 +1220,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     EmuFeat.fVmxEpt                   = 0;
     EmuFeat.fVmxDescTableExit         = 1;
     EmuFeat.fVmxRdtscp                = 1;
-    EmuFeat.fVmxVirtX2ApicAccess      = 0;
+    EmuFeat.fVmxVirtX2ApicMode        = 0;
     EmuFeat.fVmxVpid                  = 0;
     EmuFeat.fVmxWbinvdExit            = 1;
     EmuFeat.fVmxUnrestrictedGuest     = 0;
@@ -1294,7 +1294,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     pGuestFeat->fVmxEpt                   = (pBaseFeat->fVmxEpt                   & EmuFeat.fVmxEpt                  );
     pGuestFeat->fVmxDescTableExit         = (pBaseFeat->fVmxDescTableExit         & EmuFeat.fVmxDescTableExit        );
     pGuestFeat->fVmxRdtscp                = (pBaseFeat->fVmxRdtscp                & EmuFeat.fVmxRdtscp               );
-    pGuestFeat->fVmxVirtX2ApicAccess      = (pBaseFeat->fVmxVirtX2ApicAccess      & EmuFeat.fVmxVirtX2ApicAccess     );
+    pGuestFeat->fVmxVirtX2ApicMode        = (pBaseFeat->fVmxVirtX2ApicMode        & EmuFeat.fVmxVirtX2ApicMode       );
     pGuestFeat->fVmxVpid                  = (pBaseFeat->fVmxVpid                  & EmuFeat.fVmxVpid                 );
     pGuestFeat->fVmxWbinvdExit            = (pBaseFeat->fVmxWbinvdExit            & EmuFeat.fVmxWbinvdExit           );
     pGuestFeat->fVmxUnrestrictedGuest     = (pBaseFeat->fVmxUnrestrictedGuest     & EmuFeat.fVmxUnrestrictedGuest    );

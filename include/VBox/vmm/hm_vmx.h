@@ -1829,11 +1829,9 @@ AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
 /** @name Pin-based VM-execution controls.
  * @{
  */
-/** External interrupts cause VM-exits if set; otherwise dispatched through the
- *  guest's IDT. */
+/** External interrupt exiting. */
 #define VMX_PIN_CTLS_EXT_INT_EXIT                               RT_BIT(0)
-/** Non-maskable interrupts cause VM-exits if set; otherwise dispatched through
- *  the guest's IDT. */
+/** NMI exiting. */
 #define VMX_PIN_CTLS_NMI_EXIT                                   RT_BIT(3)
 /** Virtual NMIs. */
 #define VMX_PIN_CTLS_VIRT_NMI                                   RT_BIT(5)
@@ -1994,7 +1992,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 /** RDTSCP supported/enabled. */
 #define VMX_PROC_CTLS2_RDTSCP                                   RT_BIT(3)
 /** Virtualize x2APIC mode. */
-#define VMX_PROC_CTLS2_VIRT_X2APIC_ACCESS                       RT_BIT(4)
+#define VMX_PROC_CTLS2_VIRT_X2APIC_MODE                         RT_BIT(4)
 /** VPID supported/enabled. */
 #define VMX_PROC_CTLS2_VPID                                     RT_BIT(5)
 /** VM-exit when executing the WBINVD instruction. */
@@ -2040,8 +2038,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_MASK                  UINT32_C(0x00000004)
 #define VMX_BF_PROC_CTLS2_RDTSCP_SHIFT                          3
 #define VMX_BF_PROC_CTLS2_RDTSCP_MASK                           UINT32_C(0x00000008)
-#define VMX_BF_PROC_CTLS2_VIRT_X2APIC_ACCESS_SHIFT              4
-#define VMX_BF_PROC_CTLS2_VIRT_X2APIC_ACCESS_MASK               UINT32_C(0x00000010)
+#define VMX_BF_PROC_CTLS2_VIRT_X2APIC_MODE_SHIFT                4
+#define VMX_BF_PROC_CTLS2_VIRT_X2APIC_MODE_MASK                 UINT32_C(0x00000010)
 #define VMX_BF_PROC_CTLS2_VPID_SHIFT                            5
 #define VMX_BF_PROC_CTLS2_VPID_MASK                             UINT32_C(0x00000020)
 #define VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT                     6
@@ -2081,7 +2079,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_UNDEF_26_31_SHIFT                     26
 #define VMX_BF_PROC_CTLS2_UNDEF_26_31_MASK                      UINT32_C(0xfc000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
-                            (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_ACCESS, VPID, WBINVD_EXIT,
+                            (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_MODE, VPID, WBINVD_EXIT,
                              UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
                              VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_FROM_PT, XSAVES_XRSTORS, UNDEF_21_24,
                              TSC_SCALING, UNDEF_26_31));
@@ -3436,10 +3434,14 @@ typedef enum
     kVmxVInstrDiag_Vmread_Success,
     kVmxVInstrDiag_Vmread_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
+    kVmxVInstrDiag_Vmentry_AddrApicAccess,
     kVmxVInstrDiag_Vmentry_AddrIoBitmapA,
     kVmxVInstrDiag_Vmentry_AddrIoBitmapB,
     kVmxVInstrDiag_Vmentry_AddrMsrBitmap,
     kVmxVInstrDiag_Vmentry_AddrVirtApicPage,
+    kVmxVInstrDiag_Vmentry_AddrVmreadBitmap,
+    kVmxVInstrDiag_Vmentry_AddrVmwriteBitmap,
+    kVmxVInstrDiag_Vmentry_ApicRegVirt,
     kVmxVInstrDiag_Vmentry_BlocKMovSS,
     kVmxVInstrDiag_Vmentry_Cpl,
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
@@ -3458,10 +3460,14 @@ typedef enum
     kVmxVInstrDiag_Vmentry_TprThreshold,
     kVmxVInstrDiag_Vmentry_TprThresholdVTpr,
     kVmxVInstrDiag_Vmentry_VirtApicPagePtrReadPhys,
+    kVmxVInstrDiag_Vmentry_VirtIntDelivery,
     kVmxVInstrDiag_Vmentry_VirtNmi,
+    kVmxVInstrDiag_Vmentry_VirtX2ApicTprShadow,
+    kVmxVInstrDiag_Vmentry_VirtX2ApicVirtApic,
     kVmxVInstrDiag_Vmentry_VmcsClear,
     kVmxVInstrDiag_Vmentry_VmcsLaunch,
     kVmxVInstrDiag_Vmentry_VmxRoot,
+    kVmxVInstrDiag_Vmentry_Vpid,
     /* Last member for determining array index limit. */
     kVmxVInstrDiag_Last
 } VMXVINSTRDIAG;

@@ -1948,13 +1948,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
- * Checks VMX controls as part of VM-entry.
+ * Checks VM-execution controls fields as part of VM-entry.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckCtls(PVMCPU pVCpu, const char *pszInstr)
+IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 {
     /*
      * Check VM-execution controls.
@@ -2108,6 +2108,35 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckCtls(PVMCPU pVCpu, const char *pszInst
             return VERR_VMX_VMENTRY_FAILED;
         }
     }
+    else
+    {
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
+            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
+        { /* likely */ }
+        else
+        {
+            if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
+            {
+                Log(("%s: Virtualize x2APIC access without TPR shadowing -> VMFail\n", pszInstr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VirtX2ApicTprShadow;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+            else if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+            {
+                Log(("%s: APIC-register virtualization without TPR shadowing -> VMFail\n", pszInstr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_ApicRegVirt;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+            else
+            {
+                Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+                Log(("%s: Virtual-interrupt delivery without TPR shadowing -> VMFail\n", pszInstr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VirtIntDelivery;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+        }
+    }
 
     /* NMI exiting and virtual-NMIs. */
     if (   !(pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT)
@@ -2127,7 +2156,82 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckCtls(PVMCPU pVCpu, const char *pszInst
         return VERR_VMX_VMENTRY_FAILED;
     }
 
-    /** @todo NSTVMX: rest of Ctls. */
+    /* Virtualize APIC accesses. */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+    {
+        /* APIC-access physical address. */
+        RTGCPHYS GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
+        if (   (GCPhysApicAccess & X86_PAGE_4K_OFFSET_MASK)
+            || (GCPhysApicAccess >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
+        {
+            Log(("%s: APIC-access address invalid %#RX64 -> VMFail\n", pszInstr, GCPhysApicAccess));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrApicAccess;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */
+    if (   (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
+        && (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+    {
+        Log(("%s: Virtualize-APIC access when virtualize-x2APIC mode is enabled -> VMFail", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VirtX2ApicVirtApic;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* Virtual-interrupt delivery requires external interrupt exiting. */
+    if (   (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+        && !(pVmcs->u32PinCtls & VMX_PIN_CTLS_EXT_INT_EXIT))
+    {
+        Log(("%s: Virtual-interrupt delivery without external interrupt exiting -> VMFail\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_VirtX2ApicVirtApic;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* VPID. */
+    if (   (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VPID)
+        && pVmcs->u16Vpid == 0)
+    {
+        Log(("%s: VPID invalid -> VMFail\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Vpid;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_POSTED_INT));             /* We don't support posted interrupts yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* We don't support EPT yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PML));                /* We don't support PML yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* We don't support Unrestricted-guests yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMFUNC));             /* We don't support VM functions yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT_VE));             /* We don't support EPT-violation #VE yet. */
+
+    /* VMCS shadowing. */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+    {
+        /* VMREAD-bitmap physical address. */
+        RTGCPHYS GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
+        if (   ( GCPhysVmreadBitmap & X86_PAGE_4K_OFFSET_MASK)
+            || ( GCPhysVmreadBitmap >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmreadBitmap))
+        {
+            Log(("%s: VMREAD-bitmap address invalid %#RX64 -> VMFail\n", pszInstr,  GCPhysVmreadBitmap));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrVmreadBitmap;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* VMWRITE-bitmap physical address. */
+        RTGCPHYS GCPhysVmwriteBitmap = pVmcs->u64AddrVmreadBitmap.u;
+        if (   ( GCPhysVmwriteBitmap & X86_PAGE_4K_OFFSET_MASK)
+            || ( GCPhysVmwriteBitmap >> cMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmwriteBitmap))
+        {
+            Log(("%s: VMWRITE-bitmap address invalid %#RX64 -> VMFail\n", pszInstr,  GCPhysVmwriteBitmap));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_AddrVmwriteBitmap;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /** @todo NSTVMX: Read VMREAD-bitmap, VMWRITE-bitmap. */
+    }
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
@@ -2227,7 +2331,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         return rc;
     }
 
-    rc = iemVmxVmentryCheckCtls(pVCpu, pszInstr);
+    /*
+     * Check VM-execution control fields.
+     */
+    rc = iemVmxVmentryCheckExecCtls(pVCpu, pszInstr);
     if (rc == VINF_SUCCESS)
     { /* likely */ }
     else
@@ -2236,6 +2343,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
     }
+
+#if 0
+    /*
+     * Check VM-exit fields.
+     */
+    rc = iemVmxVmentryCheckExitCtls(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+    {
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+#endif
 
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Success;
     iemVmxVmSucceed(pVCpu);

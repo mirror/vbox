@@ -1192,8 +1192,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxDescTableExit : 1;
     /** VMX: Supports RDTSCP. */
     uint32_t        fVmxRdtscp : 1;
-    /** VMX: Supports virtualize-x2APIC access. */
-    uint32_t        fVmxVirtX2ApicAccess : 1;
+    /** VMX: Supports virtualize-x2APIC mode. */
+    uint32_t        fVmxVirtX2ApicMode : 1;
     /** VMX: Supports VPID. */
     uint32_t        fVmxVpid : 1;
     /** VMX: Supports WBIND exiting. */
