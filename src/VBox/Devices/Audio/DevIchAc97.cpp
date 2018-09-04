@@ -395,14 +395,6 @@ typedef struct AC97STREAMTHREADCTX
  */
 typedef struct AC97DRIVERSTREAM
 {
-    union
-    {
-        /** Desired playback destination (for an output stream). */
-        PDMAUDIOPLAYBACKDEST           Dest;
-        /** Desired recording source (for an input stream). */
-        PDMAUDIORECSOURCE              Source;
-    } DestSource;
-    uint8_t                            Padding1[4];
     /** Associated mixer stream handle. */
     R3PTRTYPE(PAUDMIXSTREAM)           pMixStrm;
 } AC97DRIVERSTREAM, *PAC97DRIVERSTREAM;
@@ -653,8 +645,10 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 # endif
 static void               ichac97R3DoTransfers(PAC97STATE pThis);
 
+static int                ichac97R3MixerAddDrv(PAC97STATE pThis, PAC97DRIVER pDrv);
 static int                ichac97R3MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv);
 static int                ichac97R3MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg);
+static void               ichac97R3MixerRemoveDrv(PAC97STATE pThis, PAC97DRIVER pDrv);
 static void               ichac97R3MixerRemoveDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc, PAC97DRIVER pDrv);
 static void               ichac97R3MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc);
 
@@ -1780,6 +1774,83 @@ static int ichac97R3MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, P
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Adds a specific AC'97 driver to the driver chain.
+ *
+ * @return IPRT status code.
+ * @param  pThis                AC'97 state.
+ * @param  pDrv                 AC'97 driver to add.
+ */
+static int ichac97R3MixerAddDrv(PAC97STATE pThis, PAC97DRIVER pDrv)
+{
+    int rc = VINF_SUCCESS;
+
+    if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamLineIn.State.Cfg))
+    {
+        int rc2 = ichac97R3MixerAddDrvStream(pThis, pThis->pSinkLineIn, &pThis->StreamLineIn.State.Cfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamMicIn.State.Cfg))
+    {
+        int rc2 = ichac97R3MixerAddDrvStream(pThis, pThis->pSinkMicIn,  &pThis->StreamMicIn.State.Cfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamOut.State.Cfg))
+    {
+        int rc2 = ichac97R3MixerAddDrvStream(pThis, pThis->pSinkOut,    &pThis->StreamOut.State.Cfg, pDrv);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+/**
+ * Removes a specific AC'97 driver from the driver chain and destroys its
+ * associated streams.
+ *
+ * @param pThis                 AC'97 state.
+ * @param pDrv                  AC'97 driver to remove.
+ */
+static void ichac97R3MixerRemoveDrv(PAC97STATE pThis, PAC97DRIVER pDrv)
+{
+    AssertPtrReturnVoid(pThis);
+    AssertPtrReturnVoid(pDrv);
+
+    if (pDrv->MicIn.pMixStrm)
+    {
+        if (AudioMixerSinkGetRecordingSource(pThis->pSinkMicIn) == pDrv->MicIn.pMixStrm)
+            AudioMixerSinkSetRecordingSource(pThis->pSinkMicIn, NULL);
+
+        AudioMixerSinkRemoveStream(pThis->pSinkMicIn,  pDrv->MicIn.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm);
+        pDrv->MicIn.pMixStrm = NULL;
+    }
+
+    if (pDrv->LineIn.pMixStrm)
+    {
+        if (AudioMixerSinkGetRecordingSource(pThis->pSinkLineIn) == pDrv->LineIn.pMixStrm)
+            AudioMixerSinkSetRecordingSource(pThis->pSinkLineIn, NULL);
+
+        AudioMixerSinkRemoveStream(pThis->pSinkLineIn, pDrv->LineIn.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm);
+        pDrv->LineIn.pMixStrm = NULL;
+    }
+
+    if (pDrv->Out.pMixStrm)
+    {
+        AudioMixerSinkRemoveStream(pThis->pSinkOut,    pDrv->Out.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
+        pDrv->Out.pMixStrm = NULL;
+    }
+
+    RTListNodeRemove(&pDrv->Node);
 }
 
 /**
@@ -3692,7 +3763,7 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
  *
  * @returns VBox status code.
  * @param   pThis       AC'97 state.
- * @param   uLUN        The logical unit which is being detached.
+ * @param   uLUN        The logical unit which is being attached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   ppDrv       Attached driver instance on success. Optional.
  */
@@ -3765,26 +3836,51 @@ static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFl
  *
  * @returns VBox status code.
  * @param   pThis       AC'97 state.
- * @param   pDrv        Driver to detach device from.
+ * @param   pDrv        Driver to detach from device.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
 static int ichac97R3DetachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
 
-    AudioMixerSinkRemoveStream(pThis->pSinkMicIn,  pDrv->MicIn.pMixStrm);
-    AudioMixerStreamDestroy(pDrv->MicIn.pMixStrm);
-    pDrv->MicIn.pMixStrm = NULL;
+    /* First, remove the driver from our list and destory it's associated streams.
+     * This also will un-set the driver as a recording source (if associated). */
+    ichac97R3MixerRemoveDrv(pThis, pDrv);
 
-    AudioMixerSinkRemoveStream(pThis->pSinkLineIn, pDrv->LineIn.pMixStrm);
-    AudioMixerStreamDestroy(pDrv->LineIn.pMixStrm);
-    pDrv->LineIn.pMixStrm = NULL;
+    /* Next, search backwards for a capable (attached) driver which now will be the
+     * new recording source. */
+    PDMAUDIODESTSOURCE dstSrc;
+    PAC97DRIVER pDrvCur;
+    RTListForEachReverse(&pThis->lstDrv, pDrvCur, AC97DRIVER, Node)
+    {
+        if (!pDrvCur->pConnector)
+            continue;
 
-    AudioMixerSinkRemoveStream(pThis->pSinkOut,    pDrv->Out.pMixStrm);
-    AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
-    pDrv->Out.pMixStrm = NULL;
+        PDMAUDIOBACKENDCFG Cfg;
+        int rc2 = pDrvCur->pConnector->pfnGetConfig(pDrvCur->pConnector, &Cfg);
+        if (RT_FAILURE(rc2))
+            continue;
 
-    RTListNodeRemove(&pDrv->Node);
+        dstSrc.Source = PDMAUDIORECSOURCE_MIC;
+        PAC97DRIVERSTREAM pDrvStrm = ichac97R3MixerGetDrvStream(pThis, pDrvCur, PDMAUDIODIR_IN, dstSrc);
+        if (   pDrvStrm
+            && pDrvStrm->pMixStrm)
+        {
+            rc2 = AudioMixerSinkSetRecordingSource(pThis->pSinkMicIn, pDrvStrm->pMixStrm);
+            if (RT_SUCCESS(rc2))
+                LogRel2(("AC97: Set recording source for 'Mic In' to '%s'\n", Cfg.szName));
+        }
+
+        dstSrc.Source = PDMAUDIORECSOURCE_LINE;
+        pDrvStrm = ichac97R3MixerGetDrvStream(pThis, pDrvCur, PDMAUDIODIR_IN, dstSrc);
+        if (   pDrvStrm
+            && pDrvStrm->pMixStrm)
+        {
+            rc2 = AudioMixerSinkSetRecordingSource(pThis->pSinkLineIn, pDrvStrm->pMixStrm);
+            if (RT_SUCCESS(rc2))
+                LogRel2(("AC97: Set recording source for 'Line In' to '%s'\n", Cfg.szName));
+        }
+    }
 
     LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
     return VINF_SUCCESS;
@@ -3804,16 +3900,10 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint
     PAC97DRIVER pDrv;
     int rc2 = ichac97R3AttachInternal(pThis, uLUN, fFlags, &pDrv);
     if (RT_SUCCESS(rc2))
-    {
-        if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamLineIn.State.Cfg))
-            ichac97R3MixerAddDrvStream(pThis, pThis->pSinkLineIn, &pThis->StreamLineIn.State.Cfg, pDrv);
+        rc2 = ichac97R3MixerAddDrv(pThis, pDrv);
 
-        if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamMicIn.State.Cfg))
-            ichac97R3MixerAddDrvStream(pThis, pThis->pSinkMicIn,  &pThis->StreamMicIn.State.Cfg, pDrv);
-
-        if (DrvAudioHlpStreamCfgIsValid(&pThis->StreamOut.State.Cfg))
-            ichac97R3MixerAddDrvStream(pThis, pThis->pSinkOut,    &pThis->StreamOut.State.Cfg, pDrv);
-    }
+    if (RT_FAILURE(rc2))
+        LogFunc(("Failed with %Rrc\n", rc2));
 
     DEVAC97_UNLOCK(pThis);
 
