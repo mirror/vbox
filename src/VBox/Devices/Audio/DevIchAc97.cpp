@@ -3868,7 +3868,7 @@ static int ichac97R3DetachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint32_t 
         {
             rc2 = AudioMixerSinkSetRecordingSource(pThis->pSinkMicIn, pDrvStrm->pMixStrm);
             if (RT_SUCCESS(rc2))
-                LogRel2(("AC97: Set recording source for 'Mic In' to '%s'\n", Cfg.szName));
+                LogRel2(("AC97: Set new recording source for 'Mic In' to '%s'\n", Cfg.szName));
         }
 
         dstSrc.Source = PDMAUDIORECSOURCE_LINE;
@@ -3878,7 +3878,7 @@ static int ichac97R3DetachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint32_t 
         {
             rc2 = AudioMixerSinkSetRecordingSource(pThis->pSinkLineIn, pDrvStrm->pMixStrm);
             if (RT_SUCCESS(rc2))
-                LogRel2(("AC97: Set recording source for 'Line In' to '%s'\n", Cfg.szName));
+                LogRel2(("AC97: Set new recording source for 'Line In' to '%s'\n", Cfg.szName));
         }
     }
 
