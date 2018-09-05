@@ -47,6 +47,7 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enm
     , m_pSet(pParent)
     , m_enmType(enmType)
     , m_iCornerRadius(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2)
+    , m_iHeaderDarkness(110)
     , m_fHovered(false)
     , m_fNameHovered(false)
     , m_pHoveringMachine(0)
@@ -740,7 +741,7 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
 
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-    tGradient.setColorAt(0, headerColor.darker(110));
+    tGradient.setColorAt(0, headerColor.darker(headerDarkness()));
     tGradient.setColorAt(1, headerColor.darker(animatedValue()));
 
     /* Paint all the stuff: */
