@@ -136,20 +136,6 @@ protected:
         virtual void retranslateUi() /* override */ {}
     /** @} */
 
-    /** @name Painting stuff.
-      * @{ */
-        /** Configures painting shape using passed @a pPainter, @a pOptions and spified @a iRadius. */
-        static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, int iRadius);
-        /** Paints frame @a rect using passed @a pPainter and spified @a iRadius. */
-        static void paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius);
-        /** Paints @a pixmap using passed @a pPainter and spified @a rect. */
-        static void paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap);
-        /** Paints @a strText using passed @a pPainter, @a font, @a color, @a pPaintDevice and spified @a point. */
-        static void paintText(QPainter *pPainter, QPoint point,
-                              const QFont &font, QPaintDevice *pPaintDevice,
-                              const QString &strText, const QColor &color);
-    /** @} */
-
 private:
 
     /** Holds the parent item reference. */
