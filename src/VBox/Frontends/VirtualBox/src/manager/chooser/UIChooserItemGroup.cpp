@@ -52,8 +52,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     , m_fMainRoot(true)
     , m_fClosed(false)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(0)
-    , m_iBlackoutDarkness(0)
+    , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
     , m_pEnterButton(0)
     , m_pExitButton(0)
@@ -84,8 +83,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene,
     , m_fMainRoot(fMainRoot)
     , m_fClosed(pCopyFrom->isClosed())
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(0)
-    , m_iBlackoutDarkness(0)
+    , m_iHeaderDarkness(110)
     , m_strName(pCopyFrom->name())
     , m_pToggleButton(0)
     , m_pEnterButton(0)
@@ -120,8 +118,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_fMainRoot(false)
     , m_fClosed(!fOpened)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(0)
-    , m_iBlackoutDarkness(0)
+    , m_iHeaderDarkness(110)
     , m_strName(strName)
     , m_pToggleButton(0)
     , m_pEnterButton(0)
@@ -167,8 +164,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_fMainRoot(false)
     , m_fClosed(pCopyFrom->isClosed())
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(0)
-    , m_iBlackoutDarkness(0)
+    , m_iHeaderDarkness(110)
     , m_strName(pCopyFrom->name())
     , m_pToggleButton(0)
     , m_pEnterButton(0)
@@ -1206,17 +1202,7 @@ void UIChooserItemGroup::sltUnindentRoot()
 
 void UIChooserItemGroup::prepare()
 {
-    /* Buttons: */
-    m_pToggleButton = 0;
-    m_pEnterButton = 0;
-    m_pExitButton = 0;
-    /* Name editor: */
-    m_pNameEditorWidget = 0;
-    m_pNameEditor = 0;
     /* Painting stuff: */
-    m_iAdditionalHeight = 0;
-    m_iCornerRadius = 10;
-    m_iBlackoutDarkness = 110;
     m_nameFont = font();
     m_nameFont.setWeight(QFont::Bold);
     m_infoFont = font();
@@ -1647,7 +1633,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     QColor headerColor = pal.color(QPalette::Active,
                                    model()->currentItems().contains(this) ?
                                    QPalette::Highlight : QPalette::Midlight);
-    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(blackoutDarkness());
+    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(headerDarkness());
 
     /* Root-item: */
     if (isRoot())
@@ -1670,7 +1656,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
             /* Fill background: */
             QLinearGradient headerGradient(headerRect.bottomLeft(), headerRect.topLeft());
-            headerGradient.setColorAt(1, headerColor.darker(blackoutDarkness()));
+            headerGradient.setColorAt(1, headerColor.darker(headerDarkness()));
             headerGradient.setColorAt(0, headerColor.darker(animatedValue()));
             pPainter->fillRect(headerRect, headerGradient);
             pPainter->fillRect(bodyRect, bodyColor);
@@ -1689,7 +1675,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
         tGradient.setColorAt(1, headerColor.darker(animatedValue()));
-        tGradient.setColorAt(0, headerColor.darker(blackoutDarkness()));
+        tGradient.setColorAt(0, headerColor.darker(headerDarkness()));
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
 

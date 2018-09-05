@@ -262,8 +262,8 @@ private:
         /** Returns whether group is main-root. */
         bool isMainRoot() const { return m_fMainRoot; }
 
-        /** Returns blackout item darkness. */
-        int blackoutDarkness() const { return m_iBlackoutDarkness; }
+        /** Returns item's header darkness. */
+        int headerDarkness() const { return m_iHeaderDarkness; }
 
         /** Defines @a iAdditionalHeight. */
         void setAdditionalHeight(int iAdditionalHeight);
@@ -323,10 +323,8 @@ private:
 
         /** Holds aditional height. */
         int  m_iAdditionalHeight;
-        /** Holds corner radious. */
-        int  m_iCornerRadius;
-        /** Holds blackout item darkness. */
-        int  m_iBlackoutDarkness;
+        /** Holds the header darkness. */
+        int  m_iHeaderDarkness;
 
         /** Holds the cached name. */
         QString m_strName;
