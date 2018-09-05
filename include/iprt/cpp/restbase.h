@@ -876,47 +876,6 @@ private:
     RTCRestDouble &operator=(RTCRestDouble const &a_rThat);
 };
 
-
-/**
- * Dynamic REST object.
- *
- * @todo figure this one out. it's possible this is only used in maps and
- *       could be a specialized map implementation.
- */
-class /*RT_DECL_CLASS*/ RTCRestObject : public RTCRestObjectBase
-{
-public:
-    /** Default constructor. */
-    RTCRestObject();
-    /** Destructor. */
-    virtual ~RTCRestObject();
-
-    /** Copy constructor. */
-    RTCRestObject(RTCRestObject const &a_rThat);
-    /** Copy assignment operator. */
-    RTCRestObject &operator=(RTCRestObject const &a_rThat);
-    /** Safe Safe copy assignment method. */
-    int assignCopy(RTCRestObject const &a_rThat);
-
-    /* Overridden methods: */
-    virtual int setNull(void) RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
-    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
-
-    /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-
-protected:
-    /** @todo figure out the value stuff here later... */
-};
-
-
 /** @} */
 
 #endif
