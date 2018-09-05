@@ -32,6 +32,31 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** QSplitterHandle subclass representing flat line. */
+class QIFlatSplitterHandle : public QSplitterHandle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs flat splitter handle passing @a enmOrientation and @a pParent to the base-class. */
+    QIFlatSplitterHandle(Qt::Orientation enmOrientation, QISplitter *pParent);
+
+    /** Defines @a color. */
+    void configureColor(const QColor &color);
+
+protected:
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+private:
+
+    /** Holds the main color. */
+    QColor m_color;
+};
+
+
 /** QSplitterHandle subclass representing shaded line. */
 class QIShadeSplitterHandle : public QSplitterHandle
 {
@@ -81,6 +106,28 @@ protected:
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 };
 #endif /* VBOX_WS_MAC */
+
+
+/*********************************************************************************************************************************
+*   Class QIFlatSplitterHandle implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+QIFlatSplitterHandle::QIFlatSplitterHandle(Qt::Orientation enmOrientation, QISplitter *pParent)
+    : QSplitterHandle(enmOrientation, pParent)
+{
+}
+
+void QIFlatSplitterHandle::configureColor(const QColor &color)
+{
+    m_color = color;
+    update();
+}
+
+void QIFlatSplitterHandle::paintEvent(QPaintEvent *pEvent)
+{
+    QPainter painter(this);
+    painter.fillRect(pEvent->rect(), m_color);
+}
 
 
 /*********************************************************************************************************************************
@@ -204,6 +251,14 @@ QISplitter::QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pP
 #endif
 {
     qApp->installEventFilter(this);
+}
+
+void QISplitter::configureColor(const QColor &color)
+{
+    m_color = color;
+    QIFlatSplitterHandle *pHandle = qobject_cast<QIFlatSplitterHandle*>(handle(1));
+    if (pHandle && m_color.isValid())
+        pHandle->configureColor(m_color);
 }
 
 void QISplitter::configureColors(const QColor &color1, const QColor &color2)
@@ -331,6 +386,13 @@ QSplitterHandle *QISplitter::createHandle()
     /* Create native handle: */
     switch (m_enmType)
     {
+        case Flat:
+        {
+            QIFlatSplitterHandle *pHandle = new QIFlatSplitterHandle(orientation(), this);
+            if (m_color.isValid())
+                pHandle->configureColor(m_color);
+            return pHandle;
+        }
         case Shade:
         {
             QIShadeSplitterHandle *pHandle = new QIShadeSplitterHandle(orientation(), this);

@@ -35,7 +35,7 @@ class SHARED_LIBRARY_STUFF QISplitter : public QSplitter
 public:
 
     /** Handle types. */
-    enum Type { Shade, Native };
+    enum Type { Flat, Shade, Native };
 
     /** Constructs splitter passing @a pParent to the base-class. */
     QISplitter(QWidget *pParent = 0);
@@ -43,6 +43,8 @@ public:
       * @param  enmType  Brings the splitter handle type. */
     QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pParent = 0);
 
+    /** Configure custom color defined as @a color. */
+    void configureColor(const QColor &color);
     /** Configure custom colors defined as @a color1 and @a color2. */
     void configureColors(const QColor &color1, const QColor &color2);
 
@@ -72,6 +74,8 @@ private:
     bool m_fHandleGrabbed : 1;
 #endif
 
+    /** Holds color. */
+    QColor m_color;
     /** Holds color1. */
     QColor m_color1;
     /** Holds color2. */
