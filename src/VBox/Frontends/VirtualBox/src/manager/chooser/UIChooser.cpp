@@ -116,7 +116,8 @@ void UIChooser::preparePalette()
     /* Setup palette: */
     setAutoFillBackground(true);
     QPalette pal = palette();
-    pal.setColor(QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
+    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+    pal.setColor(QPalette::Window, bodyColor);
     setPalette(pal);
 }
 

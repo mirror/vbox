@@ -105,6 +105,9 @@ UIChooserView::UIChooserView(UIChooser *pParent)
     /* Install Chooser-view accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
 
+    /* Prepare palette: */
+    preparePalette();
+
     /* Setup frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
@@ -165,6 +168,15 @@ void UIChooserView::retranslateUi()
 {
     /* Translate this: */
     setToolTip(tr("Contains a tree of Virtual Machines and their groups"));
+}
+
+void UIChooserView::preparePalette()
+{
+    /* Setup palette: */
+    QPalette pal = qApp->palette();
+    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+    pal.setColor(QPalette::Base, bodyColor);
+    setPalette(pal);
 }
 
 void UIChooserView::resizeEvent(QResizeEvent *pEvent)

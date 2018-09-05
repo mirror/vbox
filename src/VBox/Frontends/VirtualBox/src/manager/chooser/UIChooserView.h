@@ -59,6 +59,9 @@ private:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
+    /* Helper: Prepare stuff: */
+    void preparePalette();
+
     /* Handler: Resize-event stuff: */
     void resizeEvent(QResizeEvent *pEvent);
 

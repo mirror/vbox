@@ -1629,45 +1629,35 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     pPainter->save();
 
     /* Prepare color: */
-    QPalette pal = palette();
-    QColor headerColor = pal.color(QPalette::Active,
-                                   model()->currentItems().contains(this) ?
-                                   QPalette::Highlight : QPalette::Midlight);
-    QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(headerDarkness());
+    const QPalette pal = palette();
+    const QColor headerColor = pal.color(QPalette::Active,
+                                         model()->currentItems().contains(this) ?
+                                         QPalette::Highlight : QPalette::Midlight);
 
     /* Root-item: */
     if (isRoot())
     {
-        /* Main root-item: */
-        if (isMainRoot())
-        {
-            /* Simple and clear: */
-            pPainter->fillRect(rect, bodyColor);
-        }
         /* Non-main root-item: */
-        else
+        if (!isMainRoot())
         {
             /* Prepare variables: */
-            int iMargin = data(GroupItemData_VerticalMargin).toInt();
-            int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
-            int iFullBodyHeight = rect.height() - iFullHeaderHeight;
+            const int iMargin = data(GroupItemData_VerticalMargin).toInt();
+            const int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
             QRect headerRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
-            QRect bodyRect = QRect(0, iFullHeaderHeight, rect.width(), iFullBodyHeight);
 
             /* Fill background: */
             QLinearGradient headerGradient(headerRect.bottomLeft(), headerRect.topLeft());
             headerGradient.setColorAt(1, headerColor.darker(headerDarkness()));
             headerGradient.setColorAt(0, headerColor.darker(animatedValue()));
             pPainter->fillRect(headerRect, headerGradient);
-            pPainter->fillRect(bodyRect, bodyColor);
         }
     }
     /* Non-root-item: */
     else
     {
         /* Prepare variables: */
-        int iMargin = data(GroupItemData_VerticalMargin).toInt();
-        int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+        const int iMargin = data(GroupItemData_VerticalMargin).toInt();
+        const int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
