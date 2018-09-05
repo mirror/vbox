@@ -43,10 +43,6 @@ typedef R3PTRTYPE(struct RTHTTPINTERNAL *)      RTHTTP;
 typedef RTHTTP                                 *PRTHTTP;
 /** Nil HTTP/HTTPS client handle. */
 #define NIL_RTHTTP                              ((RTHTTP)0)
-/** Callback function to be called during RTHttpGet*(). Register it using RTHttpSetDownloadProgressCallback(). */
-typedef DECLCALLBACK(void) FNRTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
-typedef FNRTHTTPDOWNLDPROGRCALLBACK *PFNRTHTTPDOWNLDPROGRCALLBACK;
-
 
 
 /**
@@ -412,15 +408,31 @@ RTR3DECL(int) RTHttpGatherCaCertsInStore(RTCRSTORE hStore, uint32_t fFlags, PRTE
 RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, PRTERRINFO pErrInfo);
 
 /**
+ * Callback function to be called during RTHttpGet*().
+ *
+ * Register it using RTHttpSetDownloadProgressCallback().
+ *
+ * @param   hHttp           The HTTP client handle.
+ * @param   pvUser          The user parameter specified when registering the callback.
+ * @param   cbDowloadTotal  The content-length value, if available.
+ *                          Warning! Not entirely clear what it will be if
+ *                                   unavailable, probably 0.
+ * @param   cbDowloaded     How much was downloaded thus far.
+ */
+typedef DECLCALLBACK(void) FNRTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
+/** Pointer to a download progress callback. */
+typedef FNRTHTTPDOWNLDPROGRCALLBACK *PFNRTHTTPDOWNLDPROGRCALLBACK;
+
+/**
  * Set a callback function which is called during RTHttpGet*()
  *
  * @returns IPRT status code.
  * @param   hHttp           The HTTP client handle.
- * @param   pfnDownloadProgress Progress function to be called. Set it to
+ * @param   pfnCallback     Progress function to be called. Set it to
  *                          NULL to disable the callback.
  * @param   pvUser          Convenience pointer for the callback function.
  */
-RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser);
+RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnCallback, void *pvUser);
 
 
 /** @name thin wrappers for setting one or a few related curl options

@@ -3354,16 +3354,15 @@ RTR3DECL(const char *) RTHttpMethodName(RTHTTPMETHOD enmMethod)
 *   Callback APIs.                                                                                                               *
 *********************************************************************************************************************************/
 
-RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnDownloadProgress, void *pvUser)
+RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnCallback, void *pvUser)
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
 
-    pThis->pfnDownloadProgress = pfnDownloadProgress;
+    pThis->pfnDownloadProgress    = pfnCallback;
     pThis->pvDownloadProgressUser = pvUser;
     return VINF_SUCCESS;
 }
-
 
 
 /** @todo questionable wrt calling convension */
