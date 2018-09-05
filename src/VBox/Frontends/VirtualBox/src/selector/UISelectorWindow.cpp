@@ -2055,7 +2055,9 @@ void UISelectorWindow::prepareWidgets()
                 {
                     /* Configure splitter: */
 #ifdef VBOX_WS_X11
-                    m_pSplitter->setHandleType(QISplitter::Native);
+                    m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Native);
+#else
+                    m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Flat);
 #endif
 
                     /* Create Chooser-pane: */
