@@ -35,20 +35,16 @@ class SHARED_LIBRARY_STUFF QISplitter : public QSplitter
 public:
 
     /** Handle types. */
-    enum Type { Native, Shade };
+    enum Type { Shade, Native };
 
     /** Constructs splitter passing @a pParent to the base-class. */
     QISplitter(QWidget *pParent = 0);
-    /** Constructs splitter passing @a orientation and @a pParent to the base-class. */
-    QISplitter(Qt::Orientation orientation, QWidget *pParent = 0);
-
-    /** Defines handle @a type. */
-    void setHandleType(Type type) { m_type = type; }
-    /** Returns handle type. */
-    Type handleType() const { return m_type; }
+    /** Constructs splitter passing @a enmOrientation and @a pParent to the base-class.
+      * @param  enmType  Brings the splitter handle type. */
+    QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pParent = 0);
 
     /** Configure custom colors defined as @a color1 and @a color2. */
-    void configureColors(const QColor &color1, const QColor &color2) { m_color1 = color1; m_color2 = color2; }
+    void configureColors(const QColor &color1, const QColor &color2);
 
 protected:
 
@@ -67,14 +63,14 @@ private:
     QByteArray m_baseState;
 
     /** Holds the handle type. */
-    Type m_type;
+    Type m_enmType;
 
     /** Holds whether the splitter is polished. */
     bool m_fPolished : 1;
 #ifdef VBOX_WS_MAC
     /** Holds whether handle is grabbed. */
     bool m_fHandleGrabbed : 1;
-#endif /* VBOX_WS_MAC */
+#endif
 
     /** Holds color1. */
     QColor m_color1;

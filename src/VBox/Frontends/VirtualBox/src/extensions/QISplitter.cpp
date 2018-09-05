@@ -186,24 +186,32 @@ void QIDarwinSplitterHandle::paintEvent(QPaintEvent *)
 
 QISplitter::QISplitter(QWidget *pParent /* = 0 */)
     : QSplitter(pParent)
-    , m_type(Shade)
+    , m_enmType(Shade)
     , m_fPolished(false)
 #ifdef VBOX_WS_MAC
     , m_fHandleGrabbed(false)
-#endif /* VBOX_WS_MAC */
+#endif
 {
     qApp->installEventFilter(this);
 }
 
-QISplitter::QISplitter(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
+QISplitter::QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pParent /* = 0 */)
     : QSplitter(enmOrientation, pParent)
-    , m_type(Shade)
+    , m_enmType(enmType)
     , m_fPolished(false)
 #ifdef VBOX_WS_MAC
     , m_fHandleGrabbed(false)
-#endif /* VBOX_WS_MAC */
+#endif
 {
-    qApp->installEventFilter (this);
+    qApp->installEventFilter(this);
+}
+
+void QISplitter::configureColors(const QColor &color1, const QColor &color2)
+{
+    m_color1 = color1; m_color2 = color2;
+    QIShadeSplitterHandle *pHandle = qobject_cast<QIShadeSplitterHandle*>(handle(1));
+    if (pHandle && m_color1.isValid() && m_color2.isValid())
+        pHandle->configureColors(m_color1, m_color2);
 }
 
 bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -228,7 +236,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
     // pixel wide, its hard to catch. Therefor we make some invisible area
     // around the handle and forwarding the mouse events to the handle, if the
     // user presses the left mouse button.
-    else if (   m_type == Native
+    else if (   m_enmType == Native
              && orientation() == Qt::Horizontal
              && count() > 1
              && qApp->activeWindow() == window())
@@ -321,22 +329,25 @@ void QISplitter::showEvent(QShowEvent *pEvent)
 QSplitterHandle *QISplitter::createHandle()
 {
     /* Create native handle: */
-    if (m_type == Native)
+    switch (m_enmType)
     {
+        case Shade:
+        {
+            QIShadeSplitterHandle *pHandle = new QIShadeSplitterHandle(orientation(), this);
+            if (m_color1.isValid() && m_color2.isValid())
+                pHandle->configureColors(m_color1, m_color2);
+            return pHandle;
+        }
+        case Native:
+        {
 #ifdef VBOX_WS_MAC
-        return new QIDarwinSplitterHandle(orientation(), this);
+            return new QIDarwinSplitterHandle(orientation(), this);
 #else
-        return new QSplitterHandle(orientation(), this);
+            return new QSplitterHandle(orientation(), this);
 #endif
+        }
     }
-    /* Create our own handle: */
-    else
-    {
-        QIShadeSplitterHandle *pHandle = new QIShadeSplitterHandle(orientation(), this);
-        if (m_color1.isValid() && m_color2.isValid())
-            pHandle->configureColors(m_color1, m_color2);
-        return pHandle;
-    }
+    return 0;
 }
 
 
