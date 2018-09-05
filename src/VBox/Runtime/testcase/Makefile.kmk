@@ -173,7 +173,7 @@ PROGRAMS.darwin += \
 	tstRTDarwinMachKernel
 ifdef VBOX_WITH_LIBCURL
  PROGRAMS += \
-	tstRTHttp \
+	tstRTHttp-1 \
 	tstRTS3
 endif
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
@@ -317,9 +317,9 @@ endif
 tstRTDigest-2_SOURCES = tstRTDigest-2.cpp
 
 ifdef VBOX_WITH_LIBCURL
-tstRTHttp_TEMPLATE = VBOXR3TSTEXE
-tstRTHttp_SOURCES = tstRTHttp.cpp
-tstRTHttp_SDKS = VBOX_LIBCURL
+tstRTHttp-1_TEMPLATE = VBOXR3TSTEXE
+tstRTHttp-1_SOURCES = tstRTHttp-1.cpp
+tstRTHttp-1_SDKS = VBOX_LIBCURL
 endif
 
 tstDir_TEMPLATE = VBOXR3TSTEXE

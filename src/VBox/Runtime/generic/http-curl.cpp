@@ -2299,7 +2299,7 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
     static const char s_szPostfix[]      = "))\"";
     static const char s_szRequestField[] = "(request-target)";
     size_t const      cchKeyId           = strlen(pszKeyId);
-    size_t const      cbSigRaw           = (RTCrKeyGetBitCount(hKey) + 8) / 8; /** @todo ?? */
+    size_t const      cbSigRaw           = (RTCrKeyGetBitCount(hKey) + 7) / 8;
     size_t const      cbSigRawAligned    = RT_ALIGN_Z(cbSigRaw, 8);
     size_t const      cchSigStr          = RTBase64EncodedLengthEx(cbSigRaw, RTBASE64_FLAGS_NO_LINE_BREAKS);
     size_t cbEstimated = sizeof(s_szSuffixFmt) + sizeof(s_szInfix) + sizeof(s_szPostfix)
@@ -2336,7 +2336,7 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
          */
         Assert(cbLeft > sizeof(s_szRequestField));
         memcpy(pszLeft, RT_STR_TUPLE(s_szRequestField));
-        pszLeft += sizeof(s_szRequestField);
+        pszLeft += sizeof(s_szRequestField) - 1;
 
         rc = RTCrDigestUpdate(hDigest, RT_STR_TUPLE(s_szRequestField));
         if (RT_SUCCESS(rc))
@@ -2352,6 +2352,8 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
         for (PRTHTTPHEADER pCur = (PRTHTTPHEADER)pThis->pHeaders; pCur && RT_SUCCESS(rc); pCur = (PRTHTTPHEADER)pCur->Core.next)
         {
             AssertBreakStmt(cbLeft > pCur->cchName, rc = VERR_INTERNAL_ERROR_3);
+            *pszLeft++ = ' ';
+            cbLeft--;
             memcpy(pszLeft, pCur->szData, pCur->cchName);
             pszLeft[pCur->cchName] = '\0';
             RTStrToLower(pszLeft);
@@ -2367,7 +2369,7 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
             AssertRCBreak(rc);
 
             pszLeft += pCur->cchName;
-            cbLeft -= pCur->cchName;
+            cbLeft  -= pCur->cchName;
         }
         if (RT_SUCCESS(rc))
             AssertStmt(cbLeft > sizeof(s_szInfix) + cchSigStr + sizeof(s_szPostfix), rc = VERR_INTERNAL_ERROR_3);
