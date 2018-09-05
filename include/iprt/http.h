@@ -463,6 +463,8 @@ typedef FNRTHTTPDOWNLOADCALLBACK *PFNRTHTTPDOWNLOADCALLBACK;
  * @remarks There can only be one download callback, so it is not possible to
  *          call this method for different status codes.  Only the last one
  *          with be honored.
+ *
+ * @note    This only works reliably with RTHttpPerform at the moment.
  */
 RTR3DECL(int) RTHttpSetDownloadCallback(RTHTTP hHttp, uint32_t fFlags, PFNRTHTTPDOWNLOADCALLBACK pfnCallback, void *pvUser);
 
@@ -500,6 +502,8 @@ typedef FNRTHTTPUPLOADCALLBACK *PFNRTHTTPUPLOADCALLBACK;
  * @param   cbContent       The content length, UINT64_MAX if not know or specified separately.
  * @param   pfnCallback     The callback function.  Pass NULL to reset the callback.
  * @param   pvUser          Convenience pointer for the callback function.
+ *
+ * @note    This only works reliably with RTHttpPerform at the moment.
  */
 RTR3DECL(int) RTHttpSetUploadCallback(RTHTTP hHttp, uint64_t cbContent, PFNRTHTTPUPLOADCALLBACK pfnCallback, void *pvUser);
 
@@ -527,6 +531,8 @@ typedef FNRTHTTPHEADERCALLBACK *PFNRTHTTPHEADERCALLBACK;
  * @param   hHttp           The HTTP client handle.
  * @param   pfnCallback     The callback function.  Pass NULL to reset the callback.
  * @param   pvUser          Convenience pointer for the callback function.
+ *
+ * @note    This only works reliably with RTHttpPerform at the moment.
  */
 RTR3DECL(int) RTHttpSetHeaderCallback(RTHTTP hHttp, PFNRTHTTPHEADERCALLBACK pfnCallback, void *pvUser);
 
