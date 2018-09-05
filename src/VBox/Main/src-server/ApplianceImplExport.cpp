@@ -2370,13 +2370,14 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
  */
 HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
 {
+    LogRel(("Appliance::i_writeFSOCI\n"));
+
     RT_NOREF(pTask); // XXX
     LogFlowFuncEnter();
-    int vrc = VINF_SUCCESS;
+
     HRESULT hrc = S_OK;
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
-
     Utf8Str strProviderName("OCI");
     ComPtr<ICloudProvider> ociProvider;
     hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), ociProvider.asOutParam());
@@ -2387,6 +2388,7 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
 
 #ifndef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS
 
+    int vrc = VINF_SUCCESS;
     //fills by values from m->m_OciExportData
     //mostly all names(keys) come from official OCI API documentation (see LaunchInstance description)
     SafeArray <BSTR> paramNames;
@@ -2464,22 +2466,22 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
         }
         catch (...)
         {
-            LogRel(("Appliance::i_writeFSOCI(): get cought unknown exception\n"));
+            LogRel(("Appliance::i_writeFSOCI(): get caught unknown exception\n"));
         }
 
         cloudClient.setNull();
     }
 #else
+    LogRel(("Appliance::i_writeFSOCI(): #ifdef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS section \n"));
     if (SUCCEEDED(hrc))
     {
         LogRel(("Appliance::i_writeFSOCI(): calling OCICloudClient::exportVM\n"));
 
         if (m->virtualSystemDescriptions.size() == 1) {
-            cloudClient.exportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
+            cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
         } else {
             //TODO: fail here
-        }
-    }
+        }    }
 #endif
 
     LogFlowFuncLeave();
