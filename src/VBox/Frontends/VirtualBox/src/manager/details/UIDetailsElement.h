@@ -247,9 +247,6 @@ private:
         /** Updates icon. */
         void updateIcon();
 
-        /** Returns header darkness. */
-        int headerDarkness() const { return m_iHeaderDarkness; }
-
         /** Defines animated @a iValue. */
         void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
         /** Returns animated value. */
@@ -276,17 +273,13 @@ private:
 
     /** @name Painting stuff.
       * @{ */
-        /** Paints decorations using specified @a pPainter and certain @a pOptions. */
-        void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions);
-        /** Paints element info using specified @a pPainter and certain @a pOptions. */
-        void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions);
         /** Paints background using specified @a pPainter and certain @a pOptions. */
-        void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions);
+        void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const;
+        /** Paints frame rectangle using passed @a pPainter and certain @a pOptions. */
+        void paintFrameRect(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const;
+        /** Paints element info using specified @a pPainter and certain @a pOptions. */
+        void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const;
 
-        /** Configures painting shape using passed @a pPainter, @a pOptions and spified @a iRadius. */
-        static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, int iRadius);
-        /** Paints frame @a rect using passed @a pPainter and spified @a iRadius. */
-        static void paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius);
         /** Paints @a pixmap using passed @a pPainter and spified @a rect. */
         static void paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap);
         /** Paints @a strText using passed @a pPainter, @a font, @a color, @a pPaintDevice and spified @a point. */
@@ -307,15 +300,15 @@ private:
         /** Holds the element name. */
         QString  m_strName;
 
-        /** Holds the corner radius. */
-        int  m_iCornerRadius;
-        /** Holds the header darkness. */
-        int  m_iHeaderDarkness;
-
         /** Holds the name font. */
         QFont  m_nameFont;
         /** Holds the text font. */
         QFont  m_textFont;
+
+        /** Holds the start lightness tone. */
+        int m_iLightnessToneStart;
+        /** Holds the final lightness tone. */
+        int m_iLightnessToneFinal;
 
         /** Holds whether element is hovered. */
         bool                m_fHovered;

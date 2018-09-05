@@ -46,16 +46,16 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enm
     : UIDetailsItem(pParent)
     , m_pSet(pParent)
     , m_enmType(enmType)
-    , m_iCornerRadius(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2)
-    , m_iHeaderDarkness(110)
+    , m_iLightnessToneStart(155)
+    , m_iLightnessToneFinal(175)
     , m_fHovered(false)
     , m_fNameHovered(false)
     , m_pHoveringMachine(0)
     , m_pHoveringAnimationForward(0)
     , m_pHoveringAnimationBackward(0)
     , m_iAnimationDuration(300)
-    , m_iDefaultValue(100)
-    , m_iHoveredValue(90)
+    , m_iDefaultValue(0)
+    , m_iHoveredValue(255)
     , m_iAnimatedValue(m_iDefaultValue)
     , m_pButton(0)
     , m_fClosed(!fOpened)
@@ -226,12 +226,10 @@ void UIDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem 
     /* Update button visibility: */
     updateButtonVisibility();
 
-    /* Configure painter shape: */
-    configurePainterShape(pPainter, pOptions, m_iCornerRadius);
-
-    /* Paint decorations: */
-    paintDecorations(pPainter, pOptions);
-
+    /* Paint background: */
+    paintBackground(pPainter, pOptions);
+    /* Paint frame rectangle: */
+    paintFrameRect(pPainter, pOptions);
     /* Paint element info: */
     paintElementInfo(pPainter, pOptions);
 }
@@ -647,27 +645,81 @@ void UIDetailsElement::updateMinimumHeaderHeight()
     m_iMinimumHeaderHeight = qMax(m_iMinimumHeaderHeight, m_buttonSize.height());
 }
 
-void UIDetailsElement::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions)
+void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
 {
-    /* Paint background: */
-    paintBackground(pPainter, pOptions);
+    /* Save painter: */
+    pPainter->save();
+
+    /* Prepare variables: */
+    const int iMargin = data(ElementData_Margin).toInt();
+    const int iHeadHeight = 2 * iMargin + m_iMinimumHeaderHeight;
+    const QRect optionRect = pOptions->rect;
+    const QRect headRect = QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeadHeight));
+    const QRect fullRect = m_fAnimationRunning
+                         ? QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeadHeight + m_iAdditionalHeight))
+                         : optionRect;
+
+    /* Acquire palette: */
+    const QPalette pal = palette();
+
+    /* Paint default background: */
+    const QColor defaultColor = pal.color(QPalette::Active, QPalette::Mid);
+    const QColor dcTone1 = defaultColor.lighter(m_iLightnessToneFinal);
+    const QColor dcTone2 = defaultColor.lighter(m_iLightnessToneStart);
+    QLinearGradient gradientDefault(fullRect.topLeft(), fullRect.bottomLeft());
+    gradientDefault.setColorAt(0, dcTone1);
+    gradientDefault.setColorAt(1, dcTone2);
+    pPainter->fillRect(fullRect, gradientDefault);
+
+    /* If element is hovered: */
+    if (m_fHovered)
+    {
+        /* Paint hovered background: */
+        const QColor hoveredColor = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor hcTone1 = hoveredColor.lighter(m_iLightnessToneFinal);
+        QColor hcTone2 = hoveredColor.lighter(m_iLightnessToneStart);
+        hcTone1.setAlpha(m_iAnimatedValue);
+        hcTone2.setAlpha(m_iAnimatedValue);
+        QLinearGradient gradientHovered(headRect.topLeft(), headRect.bottomLeft());
+        gradientHovered.setColorAt(0, hcTone1);
+        gradientHovered.setColorAt(1, hcTone2);
+        pPainter->fillRect(headRect, gradientHovered);
+    }
+
+    /* Restore painter: */
+    pPainter->restore();
 }
 
-void UIDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem*)
+void UIDetailsElement::paintFrameRect(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
+{
+    /* Save painter: */
+    pPainter->save();
+
+    /* Paint frame: */
+    const QPalette pal = palette();
+    const QColor frameColor = pal.color(QPalette::Active, QPalette::Mid);
+    pPainter->setPen(frameColor.lighter(m_iLightnessToneStart));
+    pPainter->drawRect(pOptions->rect);
+
+    /* Restore painter: */
+    pPainter->restore();
+}
+
+void UIDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *) const
 {
     /* Initialize some necessary variables: */
-    int iMargin = data(ElementData_Margin).toInt();
-    int iSpacing = data(ElementData_Spacing).toInt();
+    const int iMargin = data(ElementData_Margin).toInt();
+    const int iSpacing = data(ElementData_Spacing).toInt();
 
     /* Calculate attributes: */
-    int iPixmapHeight = m_pixmapSize.height();
-    int iNameHeight = m_nameSize.height();
-    int iMaximumHeight = qMax(iPixmapHeight, iNameHeight);
+    const int iPixmapHeight = m_pixmapSize.height();
+    const int iNameHeight = m_nameSize.height();
+    const int iMaximumHeight = qMax(iPixmapHeight, iNameHeight);
 
     /* Prepare color: */
-    QPalette pal = palette();
-    QColor buttonTextColor = pal.color(QPalette::Active, QPalette::ButtonText);
-    QColor linkTextColor = pal.color(QPalette::Active, QPalette::Link);
+    const QPalette pal = palette();
+    const QColor buttonTextColor = pal.color(QPalette::Active, QPalette::ButtonText);
+    const QColor linkTextColor = pal.color(QPalette::Active, QPalette::Link);
 
     /* Paint pixmap: */
     int iElementPixmapX = 2 * iMargin;
@@ -700,92 +752,6 @@ void UIDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGr
               m_fNameHovered ? linkTextColor : buttonTextColor);
 }
 
-void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions)
-{
-    /* Save painter: */
-    pPainter->save();
-
-    /* Prepare variables: */
-    int iMargin = data(ElementData_Margin).toInt();
-    int iHeaderHeight = 2 * iMargin + m_iMinimumHeaderHeight;
-    QRect optionRect = pOptions->rect;
-    QRect fullRect = !m_fAnimationRunning ? optionRect :
-                     QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeaderHeight + m_iAdditionalHeight));
-    int iFullHeight = fullRect.height();
-
-    /* Prepare color: */
-    QPalette pal = palette();
-    QColor headerColor = pal.color(QPalette::Active, QPalette::Button);
-    QColor strokeColor = pal.color(QPalette::Active, QPalette::Mid);
-    QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
-
-    /* Add clipping: */
-    QPainterPath path;
-    path.moveTo(m_iCornerRadius, 0);
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(-m_iCornerRadius, 0), 90, 90);
-    path.lineTo(path.currentPosition().x(), iFullHeight - m_iCornerRadius);
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(0, -m_iCornerRadius), 180, 90);
-    path.lineTo(fullRect.width() - m_iCornerRadius, path.currentPosition().y());
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(-m_iCornerRadius, -2 * m_iCornerRadius), 270, 90);
-    path.lineTo(path.currentPosition().x(), m_iCornerRadius);
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(-2 * m_iCornerRadius, -m_iCornerRadius), 0, 90);
-    path.closeSubpath();
-    pPainter->setClipPath(path);
-
-    /* Calculate top rectangle: */
-    QRect tRect = fullRect;
-    tRect.setBottom(tRect.top() + iHeaderHeight);
-    /* Calculate bottom rectangle: */
-    QRect bRect = fullRect;
-    bRect.setTop(tRect.bottom());
-
-    /* Prepare top gradient: */
-    QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-    tGradient.setColorAt(0, headerColor.darker(headerDarkness()));
-    tGradient.setColorAt(1, headerColor.darker(animatedValue()));
-
-    /* Paint all the stuff: */
-    pPainter->fillRect(tRect, tGradient);
-    pPainter->fillRect(bRect, bodyColor);
-
-    /* Stroke path: */
-    pPainter->setClipping(false);
-    pPainter->strokePath(path, strokeColor);
-
-    /* Restore painter: */
-    pPainter->restore();
-}
-
-/* static */
-void UIDetailsElement::configurePainterShape(QPainter *pPainter,
-                                          const QStyleOptionGraphicsItem *pOptions,
-                                          int iRadius)
-{
-    /* Rounded corners? */
-    if (iRadius)
-    {
-        /* Setup clipping: */
-        QPainterPath roundedPath;
-        roundedPath.addRoundedRect(pOptions->rect, iRadius, iRadius);
-        pPainter->setRenderHint(QPainter::Antialiasing);
-        pPainter->setClipPath(roundedPath);
-    }
-}
-
-/* static */
-void UIDetailsElement::paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius)
-{
-    pPainter->save();
-    QPalette pal = QApplication::palette();
-    QColor base = pal.color(QPalette::Active, QPalette::Window);
-    pPainter->setPen(base.darker(160));
-    if (iRadius)
-        pPainter->drawRoundedRect(rect, iRadius, iRadius);
-    else
-        pPainter->drawRect(rect);
-    pPainter->restore();
-}
-
 /* static */
 void UIDetailsElement::paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap)
 {
@@ -794,8 +760,8 @@ void UIDetailsElement::paintPixmap(QPainter *pPainter, const QRect &rect, const 
 
 /* static */
 void UIDetailsElement::paintText(QPainter *pPainter, QPoint point,
-                              const QFont &font, QPaintDevice *pPaintDevice,
-                              const QString &strText, const QColor &color)
+                                 const QFont &font, QPaintDevice *pPaintDevice,
+                                 const QString &strText, const QColor &color)
 {
     /* Prepare variables: */
     QFontMetrics fm(font, pPaintDevice);

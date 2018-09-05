@@ -65,7 +65,8 @@ void UIDetails::preparePalette()
     /* Setup palette: */
     setAutoFillBackground(true);
     QPalette pal = qApp->palette();
-    pal.setColor(QPalette::Window, pal.color(QPalette::Active, QPalette::Window));
+    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+    pal.setColor(QPalette::Base, bodyColor);
     setPalette(pal);
 }
 
