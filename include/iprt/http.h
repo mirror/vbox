@@ -424,7 +424,7 @@ typedef DECLCALLBACK(void) FNRTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUse
 typedef FNRTHTTPDOWNLDPROGRCALLBACK *PFNRTHTTPDOWNLDPROGRCALLBACK;
 
 /**
- * Set a callback function which is called during RTHttpGet*()
+ * Set the callback function which is called during (GET)
  *
  * @returns IPRT status code.
  * @param   hHttp           The HTTP client handle.
@@ -434,24 +434,115 @@ typedef FNRTHTTPDOWNLDPROGRCALLBACK *PFNRTHTTPDOWNLDPROGRCALLBACK;
  */
 RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPROGRCALLBACK pfnCallback, void *pvUser);
 
+/**
+ * Callback function for receiving body data.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   pvBuf           Pointer to buffer with body bytes.
+ * @param   cbBuf           Number of bytes in the buffer.
+ * @param   uHttpStatus     The HTTP status code.
+ * @param   offContent      The byte offset corresponding to the start of @a pvBuf.
+ * @param   cbContent       The content length field value, UINT64_MAX if not available.
+ * @param   pvUser          The user parameter.
+ */
+typedef DECLCALLBACK(int) FNRTHTTPDOWNLOADCALLBACK(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
+                                                   uint64_t offContent, uint64_t cbContent, void *pvUser);
+/** Pointer to a download data receiver callback. */
+typedef FNRTHTTPDOWNLOADCALLBACK *PFNRTHTTPDOWNLOADCALLBACK;
+
+/**
+ * Set the callback function for downloading data (HTTP GET).
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   fFlags          RTHTTPDOWNLOAD_F_XXX.
+ * @param   pfnCallback     The callback function.  Pass NULL to reset the callback.
+ * @param   pvUser          Convenience pointer for the callback function.
+ *
+ * @remarks There can only be one download callback, so it is not possible to
+ *          call this method for different status codes.  Only the last one
+ *          with be honored.
+ */
+RTR3DECL(int) RTHttpSetDownloadCallback(RTHTTP hHttp, uint32_t fFlags, PFNRTHTTPDOWNLOADCALLBACK pfnCallback, void *pvUser);
+
+/** @name RTHTTPDOWNLOAD_F_XXX */
+/** The lower 10 bits gives the HTTP status required by the callback.
+ * For all other status codes, any body data will be returned via the
+ * RTHttpPerform ppvBody/pcbBody return parameters. */
+#define RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK     UINT32_C(0x000003ff)
+/** Callback requires no special HTTP status. */
+#define RTHTTPDOWNLOAD_F_F_ANY_STATUS           UINT32_C(0x000003ff)
+/** @} */
+
+
+/**
+ * Callback function for producing body data for uploading.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   pvBuf           Where to put the data to upload
+ * @param   cbBuf           Max number of bytes to provide.
+ * @param   offContent      The byte offset corresponding to the start of @a pvBuf.
+ * @param   pcbActual       Actual number of bytes provided.
+ * @param   pvUser          The user parameter.
+ */
+typedef DECLCALLBACK(int) FNRTHTTPUPLOADCALLBACK(RTHTTP hHttp, void *pvBuf, size_t cbBuf, uint64_t offContent,
+                                                 size_t *pcbActual, void *pvUser);
+/** Pointer to an upload data producer callback. */
+typedef FNRTHTTPUPLOADCALLBACK *PFNRTHTTPUPLOADCALLBACK;
+
+/**
+ * Set the callback function for providing upload data (HTTP PUT / POST).
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   cbContent       The content length, UINT64_MAX if not know or specified separately.
+ * @param   pfnCallback     The callback function.  Pass NULL to reset the callback.
+ * @param   pvUser          Convenience pointer for the callback function.
+ */
+RTR3DECL(int) RTHttpSetUploadCallback(RTHTTP hHttp, uint64_t cbContent, PFNRTHTTPUPLOADCALLBACK pfnCallback, void *pvUser);
+
+
+/**
+ * Callback for consuming header fields.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   pszField        The field name.
+ * @param   cchField        The length of the field.
+ * @param   pszValue        The field value.
+ * @param   cchValue        The length of the value.
+ * @param   pvUser          The user parameter.
+ */
+typedef DECLCALLBACK(int) FNRTHTTPHEADERCALLBACK(RTHTTP hHttp, const char *pszField, size_t cchField,
+                                                 const char *pszValue, size_t cchValue, void *pvUser);
+/** Pointer to a header field consumer callback. */
+typedef FNRTHTTPHEADERCALLBACK *PFNRTHTTPHEADERCALLBACK;
+
+/**
+ * Set the callback function for processing header fields in the response.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   pfnCallback     The callback function.  Pass NULL to reset the callback.
+ * @param   pvUser          Convenience pointer for the callback function.
+ */
+RTR3DECL(int) RTHttpSetHeaderCallback(RTHTTP hHttp, PFNRTHTTPHEADERCALLBACK pfnCallback, void *pvUser);
+
 
 /** @name thin wrappers for setting one or a few related curl options
- * @remarks Subject to change.
+ * @remarks Temporary. Will not be included in the 6.0 release!
  * @{ */
-typedef size_t FNRTHTTPREADCALLBACK(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
-typedef FNRTHTTPREADCALLBACK *PFNRTHTTPREADCALLBACK;
-
+typedef size_t FNRTHTTPREADCALLBACKRAW(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
+typedef FNRTHTTPREADCALLBACKRAW *PFNRTHTTPREADCALLBACKRAW;
 #define RT_HTTP_READCALLBACK_ABORT 0x10000000 /* CURL_READFUNC_ABORT */
+RTR3DECL(int) RTHttpRawSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACKRAW pfnRead, void *pvUser);
 
-RTR3DECL(int) RTHttpSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACK pfnRead, void *pvUser);
-
-
-typedef size_t FNRTHTTPWRITECALLBACK(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
-typedef FNRTHTTPWRITECALLBACK *PFNRTHTTPWRITECALLBACK;
-
-RTR3DECL(int) RTHttpSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
-RTR3DECL(int) RTHttpSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACK pfnWrite, void *pvUser);
-
+typedef size_t FNRTHTTPWRITECALLBACKRAW(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
+typedef FNRTHTTPWRITECALLBACKRAW *PFNRTHTTPWRITECALLBACKRAW;
+RTR3DECL(int) RTHttpRawSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACKRAW pfnWrite, void *pvUser);
+RTR3DECL(int) RTHttpRawSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACKRAW pfnWrite, void *pvUser);
 
 RTR3DECL(int) RTHttpRawSetUrl(RTHTTP hHttp, const char *pszUrl);
 
