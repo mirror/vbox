@@ -791,7 +791,7 @@ public:
      *                      for the entire lifetime of this object (or until
      *                      setUploadData is called with NULL parameters).
      */
-    int setUploadData(void const *m_pvData, size_t a_cbData, bool a_fCopy);
+    int setUploadData(void const *a_pvData, size_t a_cbData, bool a_fCopy);
 
     /** @name Data callbacks.
      * @{ */
