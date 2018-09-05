@@ -77,7 +77,7 @@ enum DragToken
 class UIChooserItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
-    Q_PROPERTY(int animationDarkness READ animationDarkness WRITE setAnimationDarkness);
+    Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);
 
 signals:
 
@@ -254,20 +254,20 @@ protected:
         /** Handles root status change. */
         virtual void handleRootStatusChange();
 
-        /** Defines item's @a iDefaultDarkness. */
-        void setDefaultDarkness(int iDefaultDarkness) { m_iDefaultDarkness = iDefaultDarkness; update(); }
-        /** Returns default item darkness. */
-        int defaultDarkness() const { return m_iDefaultDarkness; }
+        /** Defines item's default animation @a iValue. */
+        void setDefaultValue(int iValue) { m_iDefaultValue = iValue; update(); }
+        /** Returns item's default animation value. */
+        int defaultValue() const { return m_iDefaultValue; }
 
-        /** Defines item's @a iHighlightDarkness. */
-        void setHighlightDarkness(int iHighlightDarkness) { m_iHighlightDarkness = iHighlightDarkness; update(); }
-        /** Returns highlight item darkness. */
-        int highlightDarkness() const { return m_iHighlightDarkness; }
+        /** Defines item's hovered animation @a iValue. */
+        void setHoveredValue(int iValue) { m_iHoveredValue = iValue; update(); }
+        /** Returns item's hovered animation value. */
+        int hoveredValue() const { return m_iHoveredValue; }
 
-        /** Defines item's @a iAnimationDarkness. */
-        void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
-        /** Returns animation item darkness. */
-        int animationDarkness() const { return m_iAnimationDarkness; }
+        /** Defines item's animated @a iValue. */
+        void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
+        /** Returns item's animated value. */
+        int animatedValue() const { return m_iAnimatedValue; }
     /** @} */
 
     /** @name Layout stuff.
@@ -326,26 +326,23 @@ private:
 
         /** Holds whether item is root. */
         bool  m_fRoot;
+
         /** Holds whether item is hovered. */
-        bool  m_fHovered;
-
-        /** Holds item highlight machine instance. */
-        QStateMachine *m_pHighlightMachine;
-
-        /** Holds item forward animation instance. */
-        QPropertyAnimation *m_pForwardAnimation;
-        /** Holds item backward animation instance. */
-        QPropertyAnimation *m_pBackwardAnimation;
-
-        /** Holds item animation duration. */
-        int  m_iAnimationDuration;
-
-        /** Holds default item darkness. */
-        int  m_iDefaultDarkness;
-        /** Holds highlight item darkness. */
-        int  m_iHighlightDarkness;
-        /** Holds animation item darkness. */
-        int  m_iAnimationDarkness;
+        bool                m_fHovered;
+        /** Holds the hovering animation machine instance. */
+        QStateMachine      *m_pHoveringMachine;
+        /** Holds the forward hovering animation instance. */
+        QPropertyAnimation *m_pHoveringAnimationForward;
+        /** Holds the backward hovering animation instance. */
+        QPropertyAnimation *m_pHoveringAnimationBackward;
+        /** Holds the animation duration. */
+        int                 m_iAnimationDuration;
+        /** Holds the default animation value. */
+        int                 m_iDefaultValue;
+        /** Holds the hovered animation value. */
+        int                 m_iHoveredValue;
+        /** Holds the animated value. */
+        int                 m_iAnimatedValue;
     /** @} */
 
     /** @name Layout stuff.
