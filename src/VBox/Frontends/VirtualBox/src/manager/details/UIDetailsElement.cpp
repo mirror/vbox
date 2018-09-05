@@ -49,13 +49,13 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enm
     , m_iCornerRadius(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2)
     , m_fHovered(false)
     , m_fNameHovered(false)
-    , m_pHighlightMachine(0)
-    , m_pForwardAnimation(0)
-    , m_pBackwardAnimation(0)
-    , m_iAnimationDuration(400)
-    , m_iDefaultDarkness(100)
-    , m_iHighlightDarkness(90)
-    , m_iAnimationDarkness(m_iDefaultDarkness)
+    , m_pHoveringMachine(0)
+    , m_pHoveringAnimationForward(0)
+    , m_pHoveringAnimationBackward(0)
+    , m_iAnimationDuration(300)
+    , m_iDefaultValue(100)
+    , m_iHoveredValue(90)
+    , m_iAnimatedValue(m_iDefaultValue)
     , m_pButton(0)
     , m_fClosed(!fOpened)
     , m_fAnimationRunning(false)
@@ -456,37 +456,68 @@ void UIDetailsElement::prepareElement()
     /* Update icon: */
     updateIcon();
 
-    /* Create highlight machine: */
-    m_pHighlightMachine = new QStateMachine(this);
-    /* Create 'default' state: */
-    QState *pStateDefault = new QState(m_pHighlightMachine);
-    pStateDefault->assignProperty(this, "animationDarkness", m_iDefaultDarkness);
-    /* Create 'highlighted' state: */
-    QState *pStateHighlighted = new QState(m_pHighlightMachine);
-    pStateHighlighted->assignProperty(this, "animationDarkness", m_iHighlightDarkness);
+    /* Create hovering animation machine: */
+    m_pHoveringMachine = new QStateMachine(this);
+    if (m_pHoveringMachine)
+    {
+        /* Create 'default' state: */
+        QState *pStateDefault = new QState(m_pHoveringMachine);
+        /* Create 'hovered' state: */
+        QState *pStateHovered = new QState(m_pHoveringMachine);
 
-    /* Forward animation: */
-    m_pForwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
-    m_pForwardAnimation->setDuration(m_iAnimationDuration);
-    m_pForwardAnimation->setStartValue(m_iDefaultDarkness);
-    m_pForwardAnimation->setEndValue(m_iHighlightDarkness);
+        /* Configure 'default' state: */
+        if (pStateDefault)
+        {
+            /* When we entering default state => we assigning animatedValue to m_iDefaultValue: */
+            pStateDefault->assignProperty(this, "animatedValue", m_iDefaultValue);
 
-    /* Backward animation: */
-    m_pBackwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
-    m_pBackwardAnimation->setDuration(m_iAnimationDuration);
-    m_pBackwardAnimation->setStartValue(m_iHighlightDarkness);
-    m_pBackwardAnimation->setEndValue(m_iDefaultDarkness);
+            /* Add state transition: */
+            QSignalTransition *pDefaultToHovered = pStateDefault->addTransition(this, SIGNAL(sigHoverEnter()), pStateHovered);
+            if (pDefaultToHovered)
+            {
+                /* Create forward animation: */
+                m_pHoveringAnimationForward = new QPropertyAnimation(this, "animatedValue", this);
+                if (m_pHoveringAnimationForward)
+                {
+                    m_pHoveringAnimationForward->setDuration(m_iAnimationDuration);
+                    m_pHoveringAnimationForward->setStartValue(m_iDefaultValue);
+                    m_pHoveringAnimationForward->setEndValue(m_iHoveredValue);
 
-    /* Add state transitions: */
-    QSignalTransition *pDefaultToHighlighted = pStateDefault->addTransition(this, SIGNAL(sigHoverEnter()), pStateHighlighted);
-    pDefaultToHighlighted->addAnimation(m_pForwardAnimation);
-    QSignalTransition *pHighlightedToDefault = pStateHighlighted->addTransition(this, SIGNAL(sigHoverLeave()), pStateDefault);
-    pHighlightedToDefault->addAnimation(m_pBackwardAnimation);
+                    /* Add to transition: */
+                    pDefaultToHovered->addAnimation(m_pHoveringAnimationForward);
+                }
+            }
+        }
 
-    /* Initial state is 'default': */
-    m_pHighlightMachine->setInitialState(pStateDefault);
-    /* Start state-machine: */
-    m_pHighlightMachine->start();
+        /* Configure 'hovered' state: */
+        if (pStateHovered)
+        {
+            /* When we entering hovered state => we assigning animatedValue to m_iHoveredValue: */
+            pStateHovered->assignProperty(this, "animatedValue", m_iHoveredValue);
+
+            /* Add state transition: */
+            QSignalTransition *pHoveredToDefault = pStateHovered->addTransition(this, SIGNAL(sigHoverLeave()), pStateDefault);
+            if (pHoveredToDefault)
+            {
+                /* Create backward animation: */
+                m_pHoveringAnimationBackward = new QPropertyAnimation(this, "animatedValue", this);
+                if (m_pHoveringAnimationBackward)
+                {
+                    m_pHoveringAnimationBackward->setDuration(m_iAnimationDuration);
+                    m_pHoveringAnimationBackward->setStartValue(m_iHoveredValue);
+                    m_pHoveringAnimationBackward->setEndValue(m_iDefaultValue);
+
+                    /* Add to transition: */
+                    pHoveredToDefault->addAnimation(m_pHoveringAnimationBackward);
+                }
+            }
+        }
+
+        /* Initial state is 'default': */
+        m_pHoveringMachine->setInitialState(pStateDefault);
+        /* Start state-machine: */
+        m_pHoveringMachine->start();
+    }
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
@@ -710,7 +741,7 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
     tGradient.setColorAt(0, headerColor.darker(110));
-    tGradient.setColorAt(1, headerColor.darker(animationDarkness()));
+    tGradient.setColorAt(1, headerColor.darker(animatedValue()));
 
     /* Paint all the stuff: */
     pPainter->fillRect(tRect, tGradient);

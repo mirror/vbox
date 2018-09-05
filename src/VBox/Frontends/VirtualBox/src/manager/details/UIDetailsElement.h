@@ -42,7 +42,7 @@ typedef QList<UITextTableLine> UITextTable;
 class UIDetailsElement : public UIDetailsItem
 {
     Q_OBJECT;
-    Q_PROPERTY(int animationDarkness READ animationDarkness WRITE setAnimationDarkness);
+    Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);
     Q_PROPERTY(int additionalHeight READ additionalHeight WRITE setAdditionalHeight);
 
 signals:
@@ -247,10 +247,10 @@ private:
         /** Updates icon. */
         void updateIcon();
 
-        /** Defines @a iAnimationDarkness. */
-        void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
-        /** Returns animation darkness. */
-        int animationDarkness() const { return m_iAnimationDarkness; }
+        /** Defines animated @a iValue. */
+        void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
+        /** Returns animated value. */
+        int animatedValue() const { return m_iAnimatedValue; }
 
         /** Handles any kind of hover @a pEvent. */
         void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
@@ -305,20 +305,20 @@ private:
         bool                m_fHovered;
         /** Holds whether element name is hovered. */
         bool                m_fNameHovered;
-        /** Holds the highlight machine instance. */
-        QStateMachine      *m_pHighlightMachine;
-        /** Holds the forward highlight animation instance. */
-        QPropertyAnimation *m_pForwardAnimation;
-        /** Holds the backward highlight animation instance. */
-        QPropertyAnimation *m_pBackwardAnimation;
+        /** Holds the hovering animation machine instance. */
+        QStateMachine      *m_pHoveringMachine;
+        /** Holds the forward hovering animation instance. */
+        QPropertyAnimation *m_pHoveringAnimationForward;
+        /** Holds the backward hovering animation instance. */
+        QPropertyAnimation *m_pHoveringAnimationBackward;
         /** Holds the animation duration. */
         int                 m_iAnimationDuration;
-        /** Holds the default darkness. */
-        int                 m_iDefaultDarkness;
-        /** Holds the highlight darkness. */
-        int                 m_iHighlightDarkness;
-        /** Holds the animation darkness. */
-        int                 m_iAnimationDarkness;
+        /** Holds the default animation value. */
+        int                 m_iDefaultValue;
+        /** Holds the hovered animation value. */
+        int                 m_iHoveredValue;
+        /** Holds the animated value. */
+        int                 m_iAnimatedValue;
 
         /** Holds the toggle button instance. */
         UIGraphicsRotatorButton *m_pButton;
