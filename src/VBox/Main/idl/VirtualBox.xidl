@@ -25184,6 +25184,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="getExportParameters" const="yes">
+      <desc>
+        Returns the parameters required to be shown to user for export a VM to a cloud operation.
+      </desc>
+      <param name="jsonString" type="wstring" dir="return">
+        <desc>the parameters with values in json format.</desc>
+      </param>
+    </method>
+
+    <method name="exportVM">
+      <desc>
+        Exports a VM described in description parameter
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+
+
+
   </interface>
 
   <!--
