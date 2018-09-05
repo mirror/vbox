@@ -2035,27 +2035,24 @@ static int rtHttpAddHeaderWorker(PRTHTTPINTERNAL pThis, const char *pchName, siz
         psz[cchValue] = '\0';
 
         /*
-         * Append or prepend the header.
+         * Appending to an existing list requires no cURL interaction.
          */
         AssertCompile(RTHTTPADDHDR_F_FRONT != 0);
-        if (!(fFlags & RTHTTPADDHDR_F_FRONT))
+        if (   !(fFlags & RTHTTPADDHDR_F_FRONT)
+            && pThis->pHeaders != NULL)
         {
-            bool const fDone = pThis->pHeaders != NULL;
-            ASMCompilerBarrier(); /* aliasing paranoia */
-
             *pThis->ppHeadersTail = &pHdr->Core;
             pThis->ppHeadersTail  = &pHdr->Core.next;
-            if (fDone)
-                return rtHttpUpdateUserAgentHeader(pThis, pHdr);
+            return rtHttpUpdateUserAgentHeader(pThis, pHdr);
+        }
 
-            /* Need to update curl about the new list head. */
-        }
-        else
-        {
-            pHdr->Core.next = pThis->pHeaders;
-            if (!pThis->pHeaders)
-                pThis->ppHeadersTail = &pHdr->Core.next;
-        }
+        /*
+         * When prepending or adding the first header we need to inform cURL
+         * about the new list head.
+         */
+        pHdr->Core.next = pThis->pHeaders;
+        if (!pThis->pHeaders)
+            pThis->ppHeadersTail = &pHdr->Core.next;
         pThis->pHeaders = &pHdr->Core;
 
         int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
