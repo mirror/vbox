@@ -591,19 +591,6 @@ QString UIChooserItem::compressText(const QFont &font, QPaintDevice *pPaintDevic
 }
 
 /* static */
-void UIChooserItem::configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius)
-{
-    /* Rounded corners? */
-    if (iRadius)
-    {
-        /* Setup clipping: */
-        QPainterPath roundedPath;
-        roundedPath.addRoundedRect(pOption->rect, iRadius, iRadius);
-        pPainter->setClipPath(roundedPath);
-    }
-}
-
-/* static */
 void UIChooserItem::paintFrameRect(QPainter *pPainter, bool fIsSelected, int iRadius,
                                    const QRect &rectangle)
 {
