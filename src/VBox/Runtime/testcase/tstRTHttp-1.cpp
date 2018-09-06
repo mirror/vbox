@@ -91,7 +91,7 @@ void testHeaderSigning()
                                                   NULL /*pErrInfo*/, NULL /*pszErrorTag*/), VINF_SUCCESS);
 
     /*
-     * C.2 Basic Test - tweaked a little with 'version="1"' and Base64(RSA-SHA256()) wrapping.
+     * C.2 Basic Test - tweaked a little with 'version="1"'.
      */
     RTHTTP hHttp;
     RTTESTI_CHECK_RC_RETV(RTHttpCreate(&hHttp), VINF_SUCCESS);
@@ -103,7 +103,7 @@ void testHeaderSigning()
     //const char *pszExpect = "Signature keyId=\"Test\",algorithm=\"rsa-sha256\",headers=\"(request-target) host date\",signature=\"qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0=\"";
     const char *pszExpect = "Signature version=\"1\",keyId=\"Test\",algorithm=\"rsa-sha256\","
                             "headers=\"(request-target) host date\","
-                            "signature=\"Base64(RSA-SHA256(qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0=))\"";
+                            "signature=\"qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0=\"";
     if (strcmp(pszAuth, pszExpect) != 0)
     {
         RTTestIFailed("Test C.2 failed");
@@ -113,7 +113,7 @@ void testHeaderSigning()
     RTTESTI_CHECK_RC(RTHttpDestroy(hHttp), VINF_SUCCESS);
 
     /*
-     * C.3 All Headers Test - tweaked a little with 'version="1"' and Base64(RSA-SHA256()) wrapping.
+     * C.3 All Headers Test - tweaked a little with 'version="1"'.
      *
      * Note! Draft #10 has an incorrect signed digest.  The decrypting digest
      *       does not match the documented plaintext.
@@ -134,8 +134,8 @@ void testHeaderSigning()
     //pszExpect = "Signature keyId=\"Test\",algorithm=\"rsa-sha256\",headers=\"(request-target) host date content-type digest content-length\",signature=\"jgSqYK0yKclIHfF9zdApVEbDp5eqj8C4i4X76pE+XHoxugXv7qnVrGR+30bmBgtpR39I4utq17s9ghz/2QFVxlnToYAvbSVZJ9ulLd1HQBugO0jOyn9sXOtcN7uNHBjqNCqUsnt0sw/cJA6B6nJZpyNqNyAXKdxZZItOuhIs78w=\"";
     pszExpect = "Signature version=\"1\",keyId=\"Test\",algorithm=\"rsa-sha256\","
                 "headers=\"(request-target) host date content-type digest content-length\","
-                // bad rfc draft? "signature=\"Base64(RSA-SHA256(jgSqYK0yKclIHfF9zdApVEbDp5eqj8C4i4X76pE+XHoxugXv7qnVrGR+30bmBgtpR39I4utq17s9ghz/2QFVxlnToYAvbSVZJ9ulLd1HQBugO0jOyn9sXOtcN7uNHBjqNCqUsnt0sw/cJA6B6nJZpyNqNyAXKdxZZItOuhIs78w=))\"";
-                "signature=\"Base64(RSA-SHA256(vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE=))\"";
+                // bad rfc draft #10? "signature=\"jgSqYK0yKclIHfF9zdApVEbDp5eqj8C4i4X76pE+XHoxugXv7qnVrGR+30bmBgtpR39I4utq17s9ghz/2QFVxlnToYAvbSVZJ9ulLd1HQBugO0jOyn9sXOtcN7uNHBjqNCqUsnt0sw/cJA6B6nJZpyNqNyAXKdxZZItOuhIs78w=\"";
+                "signature=\"vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE=\"";
     if (strcmp(pszAuth, pszExpect) != 0)
     {
         RTTestIFailed("Test C.3 failed");
