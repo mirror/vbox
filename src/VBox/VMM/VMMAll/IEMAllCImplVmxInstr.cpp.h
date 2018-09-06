@@ -2031,6 +2031,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
+    /*
+     * Host Control Registers and MSRs.
+     * See Intel spec. 26.2.2 "Checks on Host Control Registers and MSRs".
+     */
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
@@ -2038,7 +2042,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         if (~pVmcs->u64HostCr0.u & u64Cr0Fixed0)
         {
             Log(("%s: Invalid host CR0 %#RX32 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr0));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr0Fixed0;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr0Fixed0;
             return VERR_VMX_VMENTRY_FAILED;
         }
 
@@ -2047,7 +2051,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         if (pVmcs->u64HostCr0.u & ~u64Cr0Fixed1)
         {
             Log(("%s: Invalid host CR0 %#RX32 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr0));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr0Fixed1;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr0Fixed1;
             return VERR_VMX_VMENTRY_FAILED;
         }
     }
@@ -2059,7 +2063,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         if (~pVmcs->u64HostCr4.u & u64Cr4Fixed0)
         {
             Log(("%s: Invalid host CR4 %#RX64 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr4));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr4Fixed0;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr4Fixed0;
             return VERR_VMX_VMENTRY_FAILED;
         }
 
@@ -2068,7 +2072,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         if (pVmcs->u64HostCr4.u & ~u64Cr4Fixed1)
         {
             Log(("%s: Invalid host CR4 %#RX64 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr4));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr4Fixed1;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr4Fixed1;
             return VERR_VMX_VMENTRY_FAILED;
         }
     }
@@ -2080,7 +2084,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         if (pVmcs->u64HostCr3.u >> cMaxPhysAddrWidth)
         {
             Log(("%s: Invalid host CR3 %#RX64 -> VMFail\n", pszInstr, pVmcs->u64HostCr3));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr3;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr3;
             return VERR_VMX_VMENTRY_FAILED;
         }
 
@@ -2092,23 +2096,120 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         {
             Log(("%s: Host Sysenter ESP (%#RX64) / EIP (%#RX64) not canonical -> VMFail\n", pszInstr,
                  pVmcs->u64HostSysenterEsp.u, pVmcs->u64HostSysenterEip.u));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostSysenterEspEip;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostSysenterEspEip;
             return VERR_VMX_VMENTRY_FAILED;
         }
     }
 
+    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PERF_MSR));   /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+
     /* PAT MSR. */
-    if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxExitLoadPatMsr
+    if (   (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PAT_MSR)
         && !CPUMIsPatMsrValid(pVmcs->u64HostPatMsr.u))
     {
         Log(("%s: Host PAT MSR (%#RX64) invalid\n", pszInstr, pVmcs->u64HostPatMsr.u));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostPatMsr;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostPatMsr;
         return VERR_VMX_VMENTRY_FAILED;
     }
 
-    /** @todo NSTVMX: EFER and others. */
+    /* EFER MSR. */
+    uint64_t const uValidEferMask = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
+    if (   (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+        && (pVmcs->u64GuestEferMsr.u & ~uValidEferMask))
+    {
+        Log(("%s: Host EFER MSR (%#RX64) reserved bits set\n", pszInstr, pVmcs->u64HostEferMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostEferMsr;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+    bool const fHostLongMode        = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    bool const fHostLongModeActive  = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LMA);
+    bool const fHostLongModeEnabled = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LME);
+    if (fHostLongModeEnabled == fHostLongModeActive == fHostLongMode)
+    { /* likely */ }
+    else
+    {
+        Log(("%s: Host EFER MSR (%#RX64) LMA, LME, host addr-space size mismatch\n", pszInstr, pVmcs->u64HostEferMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostAddrSpace;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
 
-    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PERF_MSR));   /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+    /*
+     * Host Segment and Descriptor-Table Registers.
+     * See Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers".
+     */
+    /* Selector RPL and TI. */
+    if (   !(pVmcs->HostCs & (X86_SEL_RPL | X86_SEL_LDT))
+        && !(pVmcs->HostSs & (X86_SEL_RPL | X86_SEL_LDT))
+        && !(pVmcs->HostDs & (X86_SEL_RPL | X86_SEL_LDT))
+        && !(pVmcs->HostEs & (X86_SEL_RPL | X86_SEL_LDT))
+        && !(pVmcs->HostFs & (X86_SEL_RPL | X86_SEL_LDT))
+        && !(pVmcs->HostGs & (X86_SEL_RPL | X86_SEL_LDT))
+        && !(pVmcs->HostTr & (X86_SEL_RPL | X86_SEL_LDT)))
+    { /* likely */ }
+    else
+    {
+        Log(("%s: One or more host selector registers invalid\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostSel;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* CS and TR selectors cannot be 0. */
+    if (   pVmcs->HostCs
+        && pVmcs->HostTr)
+    { /* likely */ }
+    else
+    {
+        Log(("%s: Host CS/TR selector is invalid\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCsTr;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* SS cannot be 0 if 32-bit host. */
+    if (   fHostLongMode
+        || pVmcs->HostSs)
+    { /* likely */ }
+    else
+    {
+        Log(("%s: Host SS selector invalid for 32-bit host\n", pszInstr));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostSs;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        /* FS, GS, GDTR, IDTR, TR base address. */
+        if (   X86_IS_CANONICAL(pVmcs->u64HostFsBase.u)
+            && X86_IS_CANONICAL(pVmcs->u64HostFsBase.u)
+            && X86_IS_CANONICAL(pVmcs->u64HostGdtrBase.u)
+            && X86_IS_CANONICAL(pVmcs->u64HostIdtrBase.u)
+            && X86_IS_CANONICAL(pVmcs->u64HostTrBase.u))
+        { /* likely */ }
+        else
+        {
+            Log(("%s: Host segment register (FS/GS/GDTR/IDTR/TR) base address is not canonical\n", pszInstr));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostSegBase;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /*
+         * Host address-space size for 64-bit CPUs.
+         * See Intel spec. 26.2.4 "Checks Related to Address-Space Size".
+         */
+    }
+    else
+    {
+        /* Host address-space size for 32-bit CPUs. */
+        bool const fGuestLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+        if (   !fGuestLongMode
+            && !fHostLongMode)
+        { /* likely */ }
+        else
+        {
+            Log(("%s: Host/guest cannot be in long mode on 32-bit CPUs\n", pszInstr));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostGuestLongMode;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
