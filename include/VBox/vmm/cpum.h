@@ -1999,8 +1999,8 @@ VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestMxCsrMask(PVM pVM);
 VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
 VMMDECL(uint64_t)       CPUMGetGuestEferMsrValidMask(PVM pVM);
-VMMDECL(int)            CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
-                                                    uint64_t *puValidEfer);
+VMMDECL(int)            CPUMIsGuestEferMsrWriteValid(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
+                                                     uint64_t *puValidEfer);
 VMMDECL(void)           CPUMSetGuestEferMsrNoChecks(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
 VMMDECL(bool)           CPUMIsPatMsrValid(uint64_t uValue);
 

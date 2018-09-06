@@ -619,13 +619,13 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
         /*
          * Continue validating guest-state and controls.
          *
-         * We pass CR0 as 0 to CPUMQueryValidatedGuestEfer below to skip the illegal
+         * We pass CR0 as 0 to CPUMIsGuestEferMsrWriteValid() below to skip the illegal
          * EFER.LME bit transition check. We pass the nested-guest's EFER as both the
          * old and new EFER value to not have any guest EFER bits influence the new
          * nested-guest EFER.
          */
         uint64_t uValidEfer;
-        rc = CPUMQueryValidatedGuestEfer(pVM, 0 /* CR0 */, pVmcbNstGst->u64EFER, pVmcbNstGst->u64EFER, &uValidEfer);
+        rc = CPUMIsGuestEferMsrWriteValid(pVM, 0 /* CR0 */, pVmcbNstGst->u64EFER, pVmcbNstGst->u64EFER, &uValidEfer);
         if (RT_FAILURE(rc))
         {
             Log(("iemSvmVmrun: EFER invalid uOldEfer=%#RX64 -> #VMEXIT\n", pVmcbNstGst->u64EFER));
