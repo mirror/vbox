@@ -2315,10 +2315,12 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
     AssertPtrReturn(pHdr, VERR_NO_MEMORY);
     uint8_t * const pbSigRaw = (uint8_t *)pHdr + cbEstimated - cbSigRawAligned;
 
-    pHdr->cchName  = sizeof("Authorization") - 1;
-    pHdr->offValue = sizeof("Authorization") + 1;
-    char  *pszLeft = pHdr->szData;
-    size_t cbLeft  = cbEstimated - RT_UOFFSETOF(RTHTTPHEADER, szData) - cbSigRawAligned;
+    pHdr->cchName   = sizeof("Authorization") - 1;
+    pHdr->offValue  = sizeof("Authorization") + 1;
+    pHdr->Core.next = NULL;
+    pHdr->Core.data = pHdr->szData;
+    char  *pszLeft  = pHdr->szData;
+    size_t cbLeft   = cbEstimated - RT_UOFFSETOF(RTHTTPHEADER, szData) - cbSigRawAligned;
 
     size_t cch = RTStrPrintf(pszLeft, cbLeft, s_szSuffixFmt, pszKeyId);
     cbLeft -= cch;
