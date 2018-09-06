@@ -2481,7 +2481,8 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
             cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
         } else {
             //TODO: fail here
-        }    }
+        }
+    }
 #endif
 
     LogFlowFuncLeave();
