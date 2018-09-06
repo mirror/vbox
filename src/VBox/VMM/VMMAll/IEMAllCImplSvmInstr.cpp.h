@@ -727,7 +727,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
         pVCpu->cpum.GstCtx.rax        = pVmcbNstGst->u64RAX;
         pVCpu->cpum.GstCtx.rsp        = pVmcbNstGst->u64RSP;
         pVCpu->cpum.GstCtx.rip        = pVmcbNstGst->u64RIP;
-        CPUMSetGuestMsrEferNoCheck(pVCpu, pVCpu->cpum.GstCtx.msrEFER, uValidEfer);
+        CPUMSetGuestEferMsrNoChecks(pVCpu, pVCpu->cpum.GstCtx.msrEFER, uValidEfer);
         if (pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging)
             pVCpu->cpum.GstCtx.msrPAT = pVmcbNstGst->u64PAT;
 

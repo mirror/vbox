@@ -2774,7 +2774,7 @@ VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx)
     pCtx->ds         = pHostState->ds;
     pCtx->gdtr       = pHostState->gdtr;
     pCtx->idtr       = pHostState->idtr;
-    CPUMSetGuestMsrEferNoCheck(pVCpu, pCtx->msrEFER, pHostState->uEferMsr);
+    CPUMSetGuestEferMsrNoChecks(pVCpu, pCtx->msrEFER, pHostState->uEferMsr);
     CPUMSetGuestCR0(pVCpu, pHostState->uCr0 | X86_CR0_PE);
     pCtx->cr3        = pHostState->uCr3;
     CPUMSetGuestCR4(pVCpu, pHostState->uCr4);

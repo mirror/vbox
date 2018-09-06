@@ -2001,7 +2001,7 @@ VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
 VMMDECL(uint64_t)       CPUMGetGuestEferMsrValidMask(PVM pVM);
 VMMDECL(int)            CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
                                                     uint64_t *puValidEfer);
-VMMDECL(void)           CPUMSetGuestMsrEferNoCheck(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
+VMMDECL(void)           CPUMSetGuestEferMsrNoChecks(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
 VMMDECL(bool)           CPUMIsPatMsrValid(uint64_t uValue);
 
 /** @name Typical scalable bus frequency values.
