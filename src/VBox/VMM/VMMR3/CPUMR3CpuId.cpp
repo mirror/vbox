@@ -3948,8 +3948,8 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     {
         /** @cfgm{/CPUM/NestedHWVirt, bool, false}
          * Whether to expose the hardware virtualization (VMX/SVM) feature to the guest.
-         * The default is false, and when enabled requires nested paging and AMD-V or
-         * unrestricted guest mode.
+         * The default is false, and when enabled requires a 64-bit CPU with support for
+         * nested-paging and AMD-V or unrestricted guest mode.
          */
         rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedHWVirt", &pConfig->fNestedHWVirt, false);
         AssertLogRelRCReturn(rc, rc);
@@ -3965,6 +3965,13 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used!\n"));
             pConfig->fNestedHWVirt = false;
         }
+
+#if HC_ARCH_BITS == 32
+        /* We don't support nested hardware virtualization on 32-bit hosts. */
+        if (pConfig->fNestedHWVirt)
+            return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
+                              "Cannot enable nested VT-x/AMD-V on a 32-bit host\n");
+#endif
     }
 
     /*
