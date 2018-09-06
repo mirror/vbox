@@ -2214,6 +2214,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
  * @{
  */
 #define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
+#define VMX_EXIT_REASON_HAS_ENTRY_FAILED(a)                     (((a) >> 31) & 1)
 /** @} */
 
 
