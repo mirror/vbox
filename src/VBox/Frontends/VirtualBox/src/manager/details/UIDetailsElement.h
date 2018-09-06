@@ -98,6 +98,8 @@ public:
         /** Returns whether group is opened. */
         bool isOpened() const { return !m_fClosed; }
 
+        /** Returns whether toggle animation is running. */
+        bool isAnimationRunning() const { return m_fAnimationRunning; }
         /** Marks animation finished. */
         void markAnimationFinished();
 
@@ -141,7 +143,8 @@ protected:
         /** Handles mouse double-click @a event. */
         virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
 
-        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0) /* override */;
+        /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
     /** @} */
 
     /** @name Item stuff.
@@ -164,8 +167,6 @@ protected:
         int additionalHeight() const { return m_iAdditionalHeight; }
         /** Returns toggle button instance. */
         UIGraphicsRotatorButton *button() const { return m_pButton; }
-        /** Returns whether toggle animation is running. */
-        bool isAnimationRunning() const { return m_fAnimationRunning; }
 
         /** Returns abstractly stored data value for certain @a iKey. */
         QVariant data(int iKey) const;

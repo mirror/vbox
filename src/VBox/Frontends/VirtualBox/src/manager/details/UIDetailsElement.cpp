@@ -695,11 +695,18 @@ void UIDetailsElement::paintFrameRect(QPainter *pPainter, const QStyleOptionGrap
     /* Save painter: */
     pPainter->save();
 
+    /* Prepare variables: */
+    const int iMargin = data(ElementData_Margin).toInt();
+    const int iHeadHeight = 2 * iMargin + m_iMinimumHeaderHeight;
+    const QRect optionRect = pOptions->rect;
+    const QRect fullRect = m_fAnimationRunning
+                         ? QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeadHeight + m_iAdditionalHeight))
+                         : optionRect;
+
     /* Paint frame: */
-    const QPalette pal = palette();
-    const QColor frameColor = pal.color(QPalette::Active, QPalette::Mid);
+    const QColor frameColor = palette().color(QPalette::Active, QPalette::Mid);
     pPainter->setPen(frameColor.lighter(m_iLightnessToneStart));
-    pPainter->drawRect(pOptions->rect);
+    pPainter->drawRect(fullRect);
 
     /* Restore painter: */
     pPainter->restore();

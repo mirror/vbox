@@ -344,7 +344,7 @@ void UIDetailsSet::updateLayout()
                 }
                 /* Acquire required height: */
                 int iHeight = pElement->minimumHeightHint();
-                if (pElement->elementType() == DetailsElementType_System)
+                if (pElement->elementType() == DetailsElementType_System && !pElement->isAnimationRunning() && !pElement->isClosed())
                     if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
                         if (pPreviewElement->isVisible())
                         {
