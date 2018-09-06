@@ -851,6 +851,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 31 - PG - Paging. */
 #define X86_CR0_PG                          RT_BIT_32(31)
 #define X86_CR0_PAGING                      RT_BIT_32(31)
+#define X86_CR0_BIT_PG                      31 /**< Bit number of X86_CR0_PG */
 /** @} */
 
 
@@ -1550,8 +1551,10 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define  MSR_K6_EFER_SCE                     RT_BIT_32(0)
 /** Bit 8 - LME - Long mode enabled. (R/W) */
 #define  MSR_K6_EFER_LME                     RT_BIT_32(8)
+#define  MSR_K6_EFER_BIT_LME                 8 /**< Bit number of MSR_K6_EFER_LME */
 /** Bit 10 - LMA - Long mode active. (R) */
 #define  MSR_K6_EFER_LMA                     RT_BIT_32(10)
+#define  MSR_K6_EFER_BIT_LMA                 10 /**< Bit number of MSR_K6_EFER_LMA */
 /** Bit 11 - NXE - No-Execute Page Protection Enabled. (R/W) */
 #define  MSR_K6_EFER_NXE                     RT_BIT_32(11)
 #define  MSR_K6_EFER_BIT_NXE                 11 /**< Bit number of MSR_K6_EFER_NXE */
