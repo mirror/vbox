@@ -1001,15 +1001,18 @@ RT_EXPORT_SYMBOL(RTTimeSpecFromString);
  * @param   psz         Where to store the string.
  * @param   cb          The size of the buffer.
  */
-RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb)
+RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb, uint32_t fFlags)
 {
     Assert(pTime->u8Month > 0 && pTime->u8Month <= 12);
     Assert(pTime->u8WeekDay < 7);
+    Assert(!(fFlags & ~RTTIME_RFC2822_F_GMT));
 
     /* (Default to UTC if not specified) */
     if (   (pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL
         && pTime->offUTC)
     {
+        Assert(!(fFlags & RTTIME_RFC2822_F_GMT) /* don't call with local time. duh! */ );
+
         /* Calc the UTC offset part. */
         int32_t offUtc = pTime->offUTC;
         Assert(offUtc <= 840 && offUtc >= -840);
@@ -1030,6 +1033,16 @@ RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb)
                                  pTime->u8Hour, pTime->u8Minute, pTime->u8Second, chSign, offUtcHour, offUtcMinute);
         if (   cch >= 27
             && psz[cch - 5] == chSign)
+            return cch;
+    }
+    else if (fFlags & RTTIME_RFC2822_F_GMT)
+    {
+        /* Example:                       "Mon, 1 Jan 1971 23:55:59 GMT" */
+        size_t cch = RTStrPrintf(psz, cb, "%s, %u %s %04RI32 %02u:%02u:%02u GMT", g_apszWeekDays[pTime->u8WeekDay],
+                                 pTime->u8MonthDay, g_apszMonths[pTime->u8Month], pTime->i32Year,
+                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second);
+        if (   cch >= 27
+            && psz[cch - 1] == 'T')
             return cch;
     }
     else
