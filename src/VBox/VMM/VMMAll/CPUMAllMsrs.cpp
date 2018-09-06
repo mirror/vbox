@@ -6618,6 +6618,51 @@ VMMDECL(bool) CPUMIsPatMsrValid(uint64_t uValue)
  */
 VMMDECL(int) CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer, uint64_t *puValidEfer)
 {
+    /* #GP(0) If anything outside the allowed bits is set. */
+    uint64_t fMask = CPUMGetGuestEferMsrValidMask(pVM);
+    if (uNewEfer & ~fMask)
+    {
+        Log(("CPUM: Settings disallowed EFER bit. uNewEfer=%#RX64 fAllowed=%#RX64 -> #GP(0)\n", uNewEfer, fMask));
+        return VERR_CPUM_RAISE_GP_0;
+    }
+
+    /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if
+       paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+    if (   (uOldEfer & MSR_K6_EFER_LME) != (uNewEfer & MSR_K6_EFER_LME)
+        && (uCr0 & X86_CR0_PG))
+    {
+        Log(("CPUM: Illegal MSR_K6_EFER_LME change: paging is enabled!!\n"));
+        return VERR_CPUM_RAISE_GP_0;
+    }
+
+    /* There are a few more: e.g. MSR_K6_EFER_LMSLE. */
+    AssertMsg(!(uNewEfer & ~(  MSR_K6_EFER_NXE
+                             | MSR_K6_EFER_LME
+                             | MSR_K6_EFER_LMA /* ignored anyway */
+                             | MSR_K6_EFER_SCE
+                             | MSR_K6_EFER_FFXSR
+                             | MSR_K6_EFER_SVME)),
+              ("Unexpected value %#RX64\n", uNewEfer));
+
+    /* Ignore EFER.LMA, it's updated when setting CR0. */
+    fMask &= ~MSR_K6_EFER_LMA;
+
+    *puValidEfer = (uOldEfer & ~fMask) | (uNewEfer & fMask);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the mask of valid EFER bits depending on supported guest-CPU features.
+ *
+ * @returns Mask of valid EFER bits.
+ * @param   pVM     The cross context VM structure.
+ *
+ * @remarks EFER.LMA is included as part of the valid mask. It's not invalid but
+ *          rather a read-only bit.
+ */
+VMMDECL(uint64_t) CPUMGetGuestEferMsrValidMask(PVM pVM)
+{
     uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdPatmExt[0].uEax >= 0x80000001
                                  ? pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx
                                  : 0;
@@ -6636,33 +6681,7 @@ VMMDECL(int) CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEf
     if (pVM->cpum.s.GuestFeatures.fSvm)
         fMask |= MSR_K6_EFER_SVME;
 
-    /* #GP(0) If anything outside the allowed bits is set. */
-    if (uNewEfer & ~(fIgnoreMask | fMask))
-    {
-        Log(("CPUM: Settings disallowed EFER bit. uNewEfer=%#RX64 fAllowed=%#RX64 -> #GP(0)\n", uNewEfer, fMask));
-        return VERR_CPUM_RAISE_GP_0;
-    }
-
-    /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if
-       paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-    if (   (uOldEfer & MSR_K6_EFER_LME) != (uNewEfer & fMask & MSR_K6_EFER_LME)
-        && (uCr0 & X86_CR0_PG))
-    {
-        Log(("CPUM: Illegal MSR_K6_EFER_LME change: paging is enabled!!\n"));
-        return VERR_CPUM_RAISE_GP_0;
-    }
-
-    /* There are a few more: e.g. MSR_K6_EFER_LMSLE */
-    AssertMsg(!(uNewEfer & ~(  MSR_K6_EFER_NXE
-                             | MSR_K6_EFER_LME
-                             | MSR_K6_EFER_LMA /* ignored anyway */
-                             | MSR_K6_EFER_SCE
-                             | MSR_K6_EFER_FFXSR
-                             | MSR_K6_EFER_SVME)),
-              ("Unexpected value %#RX64\n", uNewEfer));
-
-    *puValidEfer = (uOldEfer & ~fMask) | (uNewEfer & fMask);
-    return VINF_SUCCESS;
+    return (fIgnoreMask | fMask);
 }
 
 
