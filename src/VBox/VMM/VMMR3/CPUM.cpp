@@ -1038,6 +1038,8 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         pHlp->pfnPrintf(pHlp, "Nested hardware virtualization - VMX features\n");
         pHlp->pfnPrintf(pHlp, "  Mnemonic - Description                                  = guest (host)\n");
         VMXFEATDUMP("VMX - Virtual-Machine Extensions                       ", fVmx);
+        if (!pGuestFeatures->fVmx)
+            return;
         /* Basic. */
         VMXFEATDUMP("InsOutInfo - INS/OUTS instruction info.                ", fVmxInsOutInfo);
         /* Pin-based controls. */
