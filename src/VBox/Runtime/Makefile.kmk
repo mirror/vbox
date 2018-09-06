@@ -1654,6 +1654,7 @@ ifdef VBOX_WITH_LIBCURL
  	common/rest/rest-primary-object-types.cpp \
  	common/rest/RTCRestAnyObject.cpp \
  	common/rest/RTCRestArrayBase.cpp \
+ 	common/rest/RTCRestBinaryString.cpp \
  	common/rest/RTCRestClientApiBase.cpp \
  	common/rest/RTCRestClientApiBaseOci.cpp \
  	common/rest/RTCRestClientRequestBase.cpp \

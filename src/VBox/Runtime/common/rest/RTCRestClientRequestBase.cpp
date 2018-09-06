@@ -206,6 +206,7 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
                              VERR_REST_INTERNAL_ERROR_1);
                 RTCRestStringMapBase const *pMap    = (RTCRestStringMapBase const *)a_papHeaderParamObjs[i];
                 const size_t                cchName = strlen(a_paHeaderParams[i].pszName);
+                Assert(a_paHeaderParams[i].pszName[cchName - 1] != '*');
                 RTCString                   strTmpName;
                 for (RTCRestStringMapBase::ConstIterator it = pMap->begin(); it != pMap->end(); ++it)
                 {
