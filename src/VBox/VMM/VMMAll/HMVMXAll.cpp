@@ -150,6 +150,7 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostCsTr                 , "HostCsTr"                ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostEferMsr              , "HostEferMsr"             ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostGuestLongMode        , "HostGuestLongMode"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostGuestLongModeNoCpu   , "HostGuestLongModeNoCpu"  ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostSysenterEspEip       , "HostSysenterEspEip"      ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostPatMsr               , "HostPatMsr"              ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostSel                  , "HostSel"                 ),

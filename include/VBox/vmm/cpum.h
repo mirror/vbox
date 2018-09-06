@@ -965,10 +965,10 @@ typedef struct CPUMFEATURES
 #else
     uint32_t        enmMicroarch;
 #endif
-    /** The maximum physical address with of the CPU. */
+    /** The maximum physical address width of the CPU. */
     uint8_t         cMaxPhysAddrWidth;
-    /** Alignment padding. */
-    uint8_t         abPadding[1];
+    /** The maximum physical address width for VMX/VMCS structures. */
+    uint8_t         cVmxMaxPhysAddrWidth;
     /** Max size of the extended state (or FPU state if no XSAVE). */
     uint16_t        cbMaxExtendedState;
 

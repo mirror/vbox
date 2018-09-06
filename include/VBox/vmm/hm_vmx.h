@@ -2830,10 +2830,6 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCS_ENC_INDEX)
 
-/** Whether physical addresses of VMXON and VMCS related structures (I/O bitmap
- *  etc.) are limited to 32-bits (4G). Always 0 on 64-bit CPUs. */
-#define VMX_V_VMCS_PHYSADDR_4G_LIMIT                            0
-
 /** @name Virtual VMX MSR - Miscellaneous data.
  * @{ */
 /** Number of CR3-target values supported. */
@@ -3483,6 +3479,7 @@ typedef enum
     kVmxVInstrDiag_Vmentry_HostCsTr,
     kVmxVInstrDiag_Vmentry_HostEferMsr,
     kVmxVInstrDiag_Vmentry_HostGuestLongMode,
+    kVmxVInstrDiag_Vmentry_HostGuestLongModeNoCpu,
     kVmxVInstrDiag_Vmentry_HostSysenterEspEip,
     kVmxVInstrDiag_Vmentry_HostPatMsr,
     kVmxVInstrDiag_Vmentry_HostSel,

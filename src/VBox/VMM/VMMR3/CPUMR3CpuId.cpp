@@ -1781,6 +1781,9 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
                                                              | X86_CPUID_AMD_FEATURE_EDX_3DNOW));
         }
 
+        /* VMX (VMXON, VMCS region and related data structures') physical address width (depends on long-mode). */
+        pFeatures->cVmxMaxPhysAddrWidth = pFeatures->fLongMode ? pFeatures->cMaxPhysAddrWidth : 32;
+
         if (   pExtLeaf
             && pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD)
         {

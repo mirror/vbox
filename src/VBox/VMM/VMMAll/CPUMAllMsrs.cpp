@@ -1315,7 +1315,7 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxBasic(PVMCPU pVCpu)
     {
         uVmxMsr = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,         VMX_V_VMCS_REVISION_ID        )
                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_SIZE,       VMX_V_VMCS_SIZE               )
-                | RT_BF_MAKE(VMX_BF_BASIC_PHYSADDR_WIDTH,  VMX_V_VMCS_PHYSADDR_4G_LIMIT  )
+                | RT_BF_MAKE(VMX_BF_BASIC_PHYSADDR_WIDTH,  !pGuestFeatures->fLongMode    )
                 | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,        0                             )
                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE,   VMX_BASIC_MEM_TYPE_WB         )
                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS,   pGuestFeatures->fVmxInsOutInfo)
