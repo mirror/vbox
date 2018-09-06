@@ -166,9 +166,9 @@ public:
      * This also indicates the intention to download to a memory buffer, so it
      * will drop any previously registered consumer callback and its user data.
      *
-     * @param   a_cbMax Maximum number of bytes to download to memory.
-     *                  If 0, a default is selected (currently 32MiB for
-     *                  32-bit hosts and 128MiB for 64-bit).
+     * @param   a_cbMaxDownload Maximum number of bytes to download to memory.
+     *                          If 0, a default is selected (currently 32MiB for
+     *                          32-bit hosts and 128MiB for 64-bit).
      */
     void setMaxDownloadSize(size_t a_cbMaxDownload);
 
@@ -270,6 +270,8 @@ private:
     RTCRestBinaryString(RTCRestBinaryString const &a_rThat);
     RTCRestBinaryString &operator=(RTCRestBinaryString const &a_rThat);
 };
+
+/** @} */
 
 #endif
 
