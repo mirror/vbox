@@ -303,7 +303,7 @@ void RTCRestBinaryString::setConsumerCallback(PFNCONSUMER a_pfnConsumer, void *a
 {
     freeData();
 
-    a_pfnConsumer    = a_pfnConsumer;
+    m_pfnConsumer    = a_pfnConsumer;
     m_pvCallbackData = a_pvCallbackData;
 }
 
