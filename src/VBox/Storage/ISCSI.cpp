@@ -1611,7 +1611,7 @@ static int iscsiLogin(PISCSIIMAGE pImage)
                                     substate = 0;
                                     break;
                                 }
-                                else if (targetCSG == 1 && targetNSG == 1 && !targetTransit)
+                                else if (targetCSG == 1 && (targetNSG == 1 || !targetTransit))
                                 {
                                     /* Target wants to negotiate certain parameters and
                                      * stay in login operational negotiation. */
