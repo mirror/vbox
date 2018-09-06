@@ -62,6 +62,23 @@ static int ociSignRequestEnsureDateOrXDate(RTHTTP hHttp)
     ssize_t cch = RTTimeToRfc2822(RTTimeExplode(&Now, RTTimeNow(&NowSpec)), szDate, sizeof(szDate));
     AssertRCReturn((int)cch, (int)cch);
 
+    /*
+     * RFC2822 (RFC5322) marks "GMT" as obsolete,
+     * but RFC7231 explicitly specifies in the grammar:
+     *
+     *   GMT = %x47.4D.54 ; "GMT", case-sensitive
+     */
+    if (   cch >= 5
+        && (szDate[cch-5] == '-' || szDate[cch-5] == '+')
+        && strcmp(&szDate[cch-5+1], "0000") == 0)
+    {
+        szDate[cch-5+0] = 'G';
+        szDate[cch-5+1] = 'M';
+        szDate[cch-5+2] = 'T';
+        szDate[cch-5+3] = '\0';
+        cch -= 2;
+    }
+
     return RTHttpAddHeader(hHttp, "x-date", szDate, cch, RTHTTPADDHDR_F_BACK);
 }
 
