@@ -3346,7 +3346,7 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
     {
         Log4(("RTHttpPerform: headers:\n"));
         for (struct curl_slist const *pCur = pThis->pHeaders; pCur; pCur = pCur->next)
-            Log4(("%s", pCur->data));
+            Log4(("%s\n", pCur->data));
     }
     if (pvReqBody && cbReqBody)
         Log5(("RTHttpPerform: request body:\n%.*Rhxd\n", cbReqBody, pvReqBody));
