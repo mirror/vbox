@@ -217,7 +217,6 @@ void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const
         size_t const cchFieldNoCrLf = pchEol ? pchEol - a_pchData - 1 : a_cbData;
 
         const char *pchColon = (const char *)memchr(a_pchData, ':', cchFieldNoCrLf);
-        Assert(pchColon);
         if (pchColon)
         {
             size_t const cchName  = pchColon - a_pchData;
@@ -318,6 +317,9 @@ void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const
                 }
             }
         }
+        /*
+         * else { verify that it's the HTTP/... line at the start }
+         */
 
         /*
          * Advance to the next field.
