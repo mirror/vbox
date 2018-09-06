@@ -2147,7 +2147,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
                 { /* likely */ }
                 else
                 {
-                    /* fail. */
+                    Log(("%s: Host CR4.PAE not set when logical CPU is in long mode\n", pszInstr));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr4Pae;
+                    return VERR_VMX_VMENTRY_FAILED;
                 }
 
                 /* RIP must be canonical. */
@@ -2155,12 +2157,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
                 { /* likely */ }
                 else
                 {
-                    /* fail. */
+                    Log(("%s: Host RIP must be canonicalwhen logical CPU in long mode\n", pszInstr));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostRip;
+                    return VERR_VMX_VMENTRY_FAILED;
                 }
             }
             else
             {
-                /* fail. */
+                Log(("%s: Host must be in long mode when logical CPU in long mode\n", pszInstr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostLongMode;
+                return VERR_VMX_VMENTRY_FAILED;
             }
         }
         else
@@ -2174,19 +2180,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
                 { /* likely */ }
                 else
                 {
+                    Log(("%s: Host CR4.PCIDE must be clear when logical CPU is not in long mode\n", pszInstr));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr4Pcide;
+                    return VERR_VMX_VMENTRY_FAILED;
                 }
 
-                /* Bits 63:32 of RIP MBZ. */
+                /* The high 32-bits of RIP MBZ. */
                 if (!pVmcs->u64HostRip.s.Hi)
                 { /* likely */ }
                 else
                 {
-                    /* fail */
+                    Log(("%s: Host RIP high 32-bits must be clear when logical CPU is not in long mode\n", pszInstr));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostRipRsvd;
+                    return VERR_VMX_VMENTRY_FAILED;
                 }
             }
             else
             {
-                Log(("%s: Host/guest cannot be in long mode when logical processor is not in long mode\n", pszInstr));
+                Log(("%s: Host/guest cannot be in long mode when logical CPU is not in long mode\n", pszInstr));
                 pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostGuestLongMode;
                 return VERR_VMX_VMENTRY_FAILED;
             }
