@@ -2905,8 +2905,8 @@ static size_t rtHttpWriteData(char *pchBuf, size_t cbUnit, size_t cUnits, void *
         if (pThis->offDownloadContent == 0)
             rtHttpGetDownloadStatusAndLength(pThis);
 
-        if (   (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK) == RTHTTPDOWNLOAD_F_F_ANY_STATUS
-            || (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK) == pThis->uDownloadHttpStatus)
+        if (   (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == RTHTTPDOWNLOAD_F_ANY_STATUS
+            || (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == pThis->uDownloadHttpStatus)
         {
             int rc = pThis->pfnDownloadCallback(pThis, pchBuf, cbToAppend, pThis->uDownloadHttpStatus, pThis->offDownloadContent,
                                                 pThis->cbDownloadContent, pThis->pvUploadCallbackUser);
@@ -2989,8 +2989,8 @@ static size_t rtHttpWriteDataToDownloadCallback(char *pchBuf, size_t cbUnit, siz
         rtHttpGetDownloadStatusAndLength(pThis);
 
     /* Call the callback if the HTTP status code matches, otherwise let it go to /dev/null. */
-    if (   (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK) == RTHTTPDOWNLOAD_F_F_ANY_STATUS
-        || (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK) == pThis->uDownloadHttpStatus)
+    if (   (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == RTHTTPDOWNLOAD_F_ANY_STATUS
+        || (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == pThis->uDownloadHttpStatus)
     {
         int rc = pThis->pfnDownloadCallback(pThis, pchBuf, cbBuf, pThis->uDownloadHttpStatus, pThis->offDownloadContent,
                                             pThis->cbDownloadContent, pThis->pvUploadCallbackUser);
@@ -3540,7 +3540,7 @@ RTR3DECL(int) RTHttpSetDownloadCallback(RTHTTP hHttp, uint32_t fFlags, PFNRTHTTP
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
-    AssertReturn(!pfnCallback || (fFlags & RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK) != 0, VERR_INVALID_FLAGS);
+    AssertReturn(!pfnCallback || (fFlags & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) != 0, VERR_INVALID_FLAGS);
 
     pThis->pfnDownloadCallback      = pfnCallback;
     pThis->pvDownloadCallbackUser   = pvUser;

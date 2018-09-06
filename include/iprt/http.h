@@ -472,9 +472,9 @@ RTR3DECL(int) RTHttpSetDownloadCallback(RTHTTP hHttp, uint32_t fFlags, PFNRTHTTP
 /** The lower 10 bits gives the HTTP status required by the callback.
  * For all other status codes, any body data will be returned via the
  * RTHttpPerform ppvBody/pcbBody return parameters. */
-#define RTHTTPDOWNLOAD_F_F_ONLY_STATUS_MASK     UINT32_C(0x000003ff)
+#define RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK       UINT32_C(0x000003ff)
 /** Callback requires no special HTTP status. */
-#define RTHTTPDOWNLOAD_F_F_ANY_STATUS           UINT32_C(0x000003ff)
+#define RTHTTPDOWNLOAD_F_ANY_STATUS             UINT32_C(0x000003ff)
 /** @} */
 
 
