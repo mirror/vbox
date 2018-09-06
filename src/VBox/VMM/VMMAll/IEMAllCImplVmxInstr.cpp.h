@@ -2121,10 +2121,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostEferMsr;
         return VERR_VMX_VMENTRY_FAILED;
     }
-    bool const fHostLongMode        = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-    bool const fHostLongModeActive  = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LMA);
-    bool const fHostLongModeEnabled = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LME);
-    if (fHostLongModeEnabled == fHostLongModeActive == fHostLongMode)
+    bool const fVirtHostLongMode      = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    bool const fNstGstLongModeActive  = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LMA);
+    bool const fNstGstLongModeEnabled = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LME);
+    if (fVirtHostLongMode == fNstGstLongModeActive == fNstGstLongModeEnabled)
     { /* likely */ }
     else
     {
@@ -2165,7 +2165,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
     }
 
     /* SS cannot be 0 if 32-bit host. */
-    if (   fHostLongMode
+    if (   fVirtHostLongMode
         || pVmcs->HostSs)
     { /* likely */ }
     else
@@ -2199,9 +2199,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
     else
     {
         /* Host address-space size for 32-bit CPUs. */
-        bool const fGuestLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
-        if (   !fGuestLongMode
-            && !fHostLongMode)
+        bool const fNstGstLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+        if (   !fNstGstLongMode
+            && !fVirtHostLongMode)
         { /* likely */ }
         else
         {
