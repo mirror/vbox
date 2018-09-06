@@ -104,9 +104,9 @@ QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType enmType /* = UIDet
 void UIDetailsGroup::updateLayout()
 {
     /* Prepare variables: */
-    int iMargin = data(GroupData_Margin).toInt();
-    int iSpacing = data(GroupData_Spacing).toInt();
-    int iMaximumWidth = (int)geometry().width() - 2 * iMargin;
+    const int iMargin = data(GroupData_Margin).toInt();
+    const int iSpacing = data(GroupData_Spacing).toInt();
+    const int iMaximumWidth = geometry().size().toSize().width();
     int iVerticalIndent = iMargin;
 
     /* Layout all the sets: */
@@ -117,10 +117,9 @@ void UIDetailsGroup::updateLayout()
             if (!pSetItem->hasDetails())
                 continue;
         /* Move set: */
-        pItem->setPos(iMargin, iVerticalIndent);
+        pItem->setPos(0, iVerticalIndent);
         /* Resize set: */
-        int iWidth = iMaximumWidth;
-        pItem->resize(iWidth, pItem->minimumHeightHint());
+        pItem->resize(iMaximumWidth, pItem->minimumHeightHint());
         /* Layout set content: */
         pItem->updateLayout();
         /* Advance indent: */
@@ -131,7 +130,6 @@ void UIDetailsGroup::updateLayout()
 int UIDetailsGroup::minimumWidthHint() const
 {
     /* Prepare variables: */
-    int iMargin = data(GroupData_Margin).toInt();
     int iMinimumWidthHint = 0;
 
     /* For each the set we have: */
@@ -148,10 +146,6 @@ int UIDetailsGroup::minimumWidthHint() const
             fHasItems = true;
     }
 
-    /* Add two margins finally: */
-    if (fHasItems)
-        iMinimumWidthHint += 2 * iMargin;
-
     /* Return result: */
     return iMinimumWidthHint;
 }
@@ -159,12 +153,12 @@ int UIDetailsGroup::minimumWidthHint() const
 int UIDetailsGroup::minimumHeightHint() const
 {
     /* Prepare variables: */
-    int iMargin = data(GroupData_Margin).toInt();
-    int iSpacing = data(GroupData_Spacing).toInt();
+    const int iMargin = data(GroupData_Margin).toInt();
+    const int iSpacing = data(GroupData_Spacing).toInt();
     int iMinimumHeightHint = 0;
+    bool fHasItems = false;
 
     /* For each the set we have: */
-    bool fHasItems = false;
     foreach (UIDetailsItem *pItem, items())
     {
         /* Ignore which are with no details: */
@@ -306,7 +300,7 @@ QVariant UIDetailsGroup::data(int iKey) const
     {
         /* Layout hints: */
         case GroupData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
-        case GroupData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GroupData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
         /* Default: */
         default: break;
     }

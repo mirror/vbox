@@ -299,10 +299,10 @@ UIDetailsElement *UIDetailsSet::element(DetailsElementType enmElementType) const
 void UIDetailsSet::updateLayout()
 {
     /* Prepare variables: */
-    int iMargin = data(SetData_Margin).toInt();
-    int iSpacing = data(SetData_Spacing).toInt();
-    int iMaximumWidth = geometry().size().toSize().width();
-    int iVerticalIndent = iMargin;
+    const int iMargin = data(SetData_Margin).toInt();
+    const int iSpacing = data(SetData_Spacing).toInt();
+    const int iMaximumWidth = geometry().size().toSize().width();
+    int iVerticalIndent = 0;
 
     /* Layout all the elements: */
     foreach (UIDetailsItem *pItem, items())
@@ -328,9 +328,9 @@ void UIDetailsSet::updateLayout()
             case DetailsElementType_Description:
             {
                 /* Move element: */
-                pElement->setPos(iMargin, iVerticalIndent);
+                pElement->setPos(0, iVerticalIndent);
                 /* Calculate required width: */
-                int iWidth = iMaximumWidth - 2 * iMargin;
+                int iWidth = iMaximumWidth;
                 if (pElement->elementType() == DetailsElementType_General ||
                     pElement->elementType() == DetailsElementType_System)
                     if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
@@ -344,6 +344,16 @@ void UIDetailsSet::updateLayout()
                 }
                 /* Acquire required height: */
                 int iHeight = pElement->minimumHeightHint();
+                if (pElement->elementType() == DetailsElementType_System)
+                    if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
+                        if (pPreviewElement->isVisible())
+                        {
+                            int iSpareHeight = pPreviewElement->minimumHeightHint();
+                            if (UIDetailsElement *pGeneralElement = element(DetailsElementType_General))
+                                if (pGeneralElement->isVisible())
+                                    iSpareHeight -= (iSpacing + pGeneralElement->minimumHeightHint());
+                            iHeight = qMax(iHeight, iSpareHeight);
+                        }
                 /* If element height is wrong: */
                 if (pElement->geometry().height() != iHeight)
                 {
@@ -362,7 +372,7 @@ void UIDetailsSet::updateLayout()
                 int iWidth = pElement->minimumWidthHint();
                 int iHeight = pElement->minimumHeightHint();
                 /* Move element: */
-                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
+                pElement->setPos(iMaximumWidth - iWidth, iMargin);
                 /* Resize element: */
                 pElement->resize(iWidth, iHeight);
                 /* Layout element content: */
@@ -383,8 +393,7 @@ int UIDetailsSet::minimumWidthHint() const
         return 0;
 
     /* Prepare variables: */
-    int iMargin = data(SetData_Margin).toInt();
-    int iSpacing = data(SetData_Spacing).toInt();
+    const int iSpacing = data(SetData_Spacing).toInt();
     int iMinimumWidthHint = 0;
 
     /* Take into account all the elements: */
@@ -426,9 +435,6 @@ int UIDetailsSet::minimumWidthHint() const
             case DetailsElementType_Invalid: AssertFailed(); break; /* Shut up, MSC! */
         }
     }
-
-    /* And two margins finally: */
-    iMinimumWidthHint += 2 * iMargin;
 
     /* Return result: */
     return iMinimumWidthHint;
@@ -545,7 +551,7 @@ QVariant UIDetailsSet::data(int iKey) const
     {
         /* Layout hints: */
         case SetData_Margin: return 0;
-        case SetData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 5;
+        case SetData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
         /* Default: */
         default: break;
     }
