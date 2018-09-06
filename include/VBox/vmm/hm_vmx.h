@@ -2154,7 +2154,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_SAVE_DEBUG                                RT_BIT(2)
 /** Return to long mode after a VM-exit. */
 #define VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE                      RT_BIT(9)
-/** Whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-exit. */
+/** Whether the host IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-exit. */
 #define VMX_EXIT_CTLS_LOAD_PERF_MSR                             RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
 #define VMX_EXIT_CTLS_ACK_EXT_INT                               RT_BIT(15)
@@ -3474,6 +3474,13 @@ typedef enum
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
     kVmxVInstrDiag_Vmentry_EntryCtlsAllowed1,
     kVmxVInstrDiag_Vmentry_EntryCtlsDisallowed0,
+    kVmxVInstrDiag_Vmentry_EntryHostCr0Fixed0,
+    kVmxVInstrDiag_Vmentry_EntryHostCr0Fixed1,
+    kVmxVInstrDiag_Vmentry_EntryHostCr3,
+    kVmxVInstrDiag_Vmentry_EntryHostCr4Fixed0,
+    kVmxVInstrDiag_Vmentry_EntryHostCr4Fixed1,
+    kVmxVInstrDiag_Vmentry_EntryHostSysenterEspEip,
+    kVmxVInstrDiag_Vmentry_EntryHostPatMsr,
     kVmxVInstrDiag_Vmentry_EntryInstrLen,
     kVmxVInstrDiag_Vmentry_EntryInstrLenZero,
     kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe,
@@ -3556,10 +3563,10 @@ DECLINLINE(bool) HMVmxIsVmcsFieldReadOnly(uint32_t uFieldEnc)
  * Returns whether the given VM-entry interruption-information type is valid or not.
  *
  * @returns @c true if it's a valid type, @c false otherwise.
- * @param   fSupportsMtf    Whether the monitor-trap flag CPU feature is supported.
+ * @param   fSupportsMTF    Whether the Monitor-Trap Flag CPU feature is supported.
  * @param   uType           The VM-entry interruption-information type.
  */
-DECLINLINE(bool) HMVmxIsEntryIntInfoTypeValid(bool fSupportsMtf, uint8_t uType)
+DECLINLINE(bool) HMVmxIsEntryIntInfoTypeValid(bool fSupportsMTF, uint8_t uType)
 {
     /* See Intel spec. 26.2.1.3 "VM-Entry Control Fields". */
     switch (uType)
@@ -3570,7 +3577,7 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoTypeValid(bool fSupportsMtf, uint8_t uType)
         case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
         case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
         case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:           return true;
-        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:       return fSupportsMtf;
+        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:       return fSupportsMTF;
         default:
             return false;
     }

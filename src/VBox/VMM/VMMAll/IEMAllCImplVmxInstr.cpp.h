@@ -1003,8 +1003,8 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
     }
 
     /*
-     * Handle exceptions for certain instructions.
-     * (e.g. some instructions convey an instruction identity).
+     * Handle exceptions to the norm for certain instructions.
+     * (e.g. some instructions convey an instruction identity in place of iReg2).
      */
     switch (uExitReason)
     {
@@ -1091,7 +1091,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
     if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         iemVmxVmFailValid(pVCpu, enmInsErr);
-        /** @todo Set VM-instruction error field in the current virtual-VMCS.  */
+        /** @todo Set VM-instruction error field in the current virtual-VMCS. */
     }
     else
         iemVmxVmFailInvalid(pVCpu);
@@ -1575,7 +1575,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     uint8_t const fVmcsStateClear = VMX_V_VMCS_STATE_CLEAR;
     if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
     {
-        Assert(GCPhysVmcs != NIL_RTGCPHYS); /* Paranoia. */
+        Assert(GCPhysVmcs != NIL_RTGCPHYS);                     /* Paranoia. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
         pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsStateClear;
         iemVmxCommitCurrentVmcsToMemory(pVCpu);
         Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
@@ -1957,6 +1958,164 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
+ * Clears the high 32-bits of all natural-width fields in the given VMCS.
+ *
+ * @param   pVmcs       Pointer to the virtual VMCS.
+ */
+IEM_STATIC void iemVmxVmcsFixNaturalWidthFields(PVMXVVMCS pVmcs)
+{
+    /* Natural-width Control fields. */
+    pVmcs->u64Cr0Mask.s.Hi = 0;
+    pVmcs->u64Cr4Mask.s.Hi = 0;
+    pVmcs->u64Cr0ReadShadow.s.Hi = 0;
+    pVmcs->u64Cr4ReadShadow.s.Hi = 0;
+    pVmcs->u64Cr3Target0.s.Hi = 0;
+    pVmcs->u64Cr3Target1.s.Hi = 0;
+    pVmcs->u64Cr3Target2.s.Hi = 0;
+    pVmcs->u64Cr3Target3.s.Hi = 0;
+
+    /* Natural-width Read-only data fields. */
+    pVmcs->u64ExitQual.s.Hi = 0;
+    pVmcs->u64IoRcx.s.Hi = 0;
+    pVmcs->u64IoRsi.s.Hi = 0;
+    pVmcs->u64IoRdi.s.Hi = 0;
+    pVmcs->u64IoRip.s.Hi = 0;
+    pVmcs->u64GuestLinearAddr.s.Hi = 0;
+
+    /* Natural-width Guest-state Fields. */
+    pVmcs->u64GuestCr0.s.Hi = 0;
+    pVmcs->u64GuestCr3.s.Hi = 0;
+    pVmcs->u64GuestCr4.s.Hi = 0;
+    pVmcs->u64GuestEsBase.s.Hi = 0;
+    pVmcs->u64GuestCsBase.s.Hi = 0;
+    pVmcs->u64GuestSsBase.s.Hi = 0;
+    pVmcs->u64GuestDsBase.s.Hi = 0;
+    pVmcs->u64GuestFsBase.s.Hi = 0;
+    pVmcs->u64GuestGsBase.s.Hi = 0;
+    pVmcs->u64GuestLdtrBase.s.Hi = 0;
+    pVmcs->u64GuestTrBase.s.Hi = 0;
+    pVmcs->u64GuestGdtrBase.s.Hi = 0;
+    pVmcs->u64GuestIdtrBase.s.Hi = 0;
+    pVmcs->u64GuestDr7.s.Hi = 0;
+    pVmcs->u64GuestRsp.s.Hi = 0;
+    pVmcs->u64GuestRip.s.Hi = 0;
+    pVmcs->u64GuestRFlags.s.Hi = 0;
+    pVmcs->u64GuestPendingDbgXcpt.s.Hi = 0;
+    pVmcs->u64GuestSysenterEsp.s.Hi = 0;
+    pVmcs->u64GuestSysenterEip.s.Hi = 0;
+
+    /* Natural-width Host-state fields. */
+    pVmcs->u64HostCr0.s.Hi = 0;
+    pVmcs->u64HostCr3.s.Hi = 0;
+    pVmcs->u64HostCr4.s.Hi = 0;
+    pVmcs->u64HostFsBase.s.Hi = 0;
+    pVmcs->u64HostGsBase.s.Hi = 0;
+    pVmcs->u64HostTrBase.s.Hi = 0;
+    pVmcs->u64HostGdtrBase.s.Hi = 0;
+    pVmcs->u64HostIdtrBase.s.Hi = 0;
+    pVmcs->u64HostSysenterEsp.s.Hi = 0;
+    pVmcs->u64HostSysenterEip.s.Hi = 0;
+    pVmcs->u64HostRsp.s.Hi = 0;
+    pVmcs->u64HostRip.s.Hi = 0;
+}
+
+
+/**
+ * Checks host state as part of VM-entry.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /* CR0 reserved bits. */
+    {
+        /* CR0 MB1 bits. */
+        uint64_t const u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        if (~pVmcs->u64HostCr0.u & u64Cr0Fixed0)
+        {
+            Log(("%s: Invalid host CR0 %#RX32 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr0));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr0Fixed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* CR0 MBZ bits. */
+        uint64_t const u64Cr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+        if (pVmcs->u64HostCr0.u & ~u64Cr0Fixed1)
+        {
+            Log(("%s: Invalid host CR0 %#RX32 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr0));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr0Fixed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* CR4 reserved bits. */
+    {
+        /* CR4 MB1 bits. */
+        uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        if (~pVmcs->u64HostCr4.u & u64Cr4Fixed0)
+        {
+            Log(("%s: Invalid host CR4 %#RX64 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr4));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr4Fixed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* CR4 MBZ bits. */
+        uint64_t const u64Cr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+        if (pVmcs->u64HostCr4.u & ~u64Cr4Fixed1)
+        {
+            Log(("%s: Invalid host CR4 %#RX64 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr4));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr4Fixed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        /* CR3 reserved bits. */
+        uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
+        if (pVmcs->u64HostCr3.u >> cMaxPhysAddrWidth)
+        {
+            Log(("%s: Invalid host CR3 %#RX64 -> VMFail\n", pszInstr, pVmcs->u64HostCr3));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostCr3;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* SYSENTER ESP and SYSENTER EIP. */
+        if (   X86_IS_CANONICAL(pVmcs->u64HostSysenterEsp.u)
+            && X86_IS_CANONICAL(pVmcs->u64HostSysenterEip.u))
+        { /* likely */ }
+        else
+        {
+            Log(("%s: Host Sysenter ESP (%#RX64) / EIP (%#RX64) not canonical -> VMFail\n", pszInstr,
+                 pVmcs->u64HostSysenterEsp.u, pVmcs->u64HostSysenterEip.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostSysenterEspEip;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* PAT MSR. */
+    if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxExitLoadPatMsr
+        && !CPUMIsPatMsrValid(pVmcs->u64HostPatMsr.u))
+    {
+        Log(("%s: Host PAT MSR (%#RX64) invalid\n", pszInstr, pVmcs->u64HostPatMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_EntryHostPatMsr;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /** @todo NSTVMX: EFER and others. */
+
+    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PERF_MSR));   /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+
+    NOREF(pszInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Checks VM-entry controls fields as part of VM-entry.
  * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
  *
@@ -2055,7 +2214,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *ps
                     return VERR_VMX_VMENTRY_FAILED;
                 }
 
-                /* Zero instruction length is only allowed when the CPU supports it explicitly.  */
+                /* Zero instruction length is allowed only when the CPU supports it explicitly. */
                 if (   pVmcs->u32EntryInstrLen == 0
                     && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEntryInjectSoftInt)
                 {
@@ -2165,6 +2324,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *psz
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
+ *
+ * @remarks This may update secondary-processor based VM-execution control fields
+ *          in the current VMCS if necessary.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -2224,7 +2386,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *psz
         }
     }
     else
+    {
+        /*
+         * The guest is always capable of corrupting the VMCS by writing to the VMCS is guest
+         * memory directly rather than follow the rules. So we don't make any assumptions that
+         * u32ProcCtls2 will be 0 if no secondary-processor based VM-execution control support
+         * is reported to the guest.
+         */
         pVmcs->u32ProcCtls2 = 0;
+    }
 
     /* CR3-target count. */
     if (pVmcs->u32Cr3TargetCount > VMX_V_CR3_TARGET_COUNT)
@@ -2286,6 +2456,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *psz
         }
 
         /* Read the Virtual-APIC page. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
         int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage),
                                          GCPhysVirtApic, VMX_V_VIRT_APIC_PAGES);
         if (RT_FAILURE(rc))
@@ -2440,6 +2611,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *psz
         }
 
         /* Read the VMREAD-bitmap. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
         int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),
                                          GCPhysVmreadBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
         if (RT_FAILURE(rc))
@@ -2450,6 +2622,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *psz
         }
 
         /* Read the VMWRITE-bitmap. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap));
         rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap),
                                      GCPhysVmwriteBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
         if (RT_FAILURE(rc))
@@ -2549,6 +2722,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     /*
      * Load the current VMCS.
      */
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
     int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs),
                                      IEM_VMX_GET_CURRENT_VMCS(pVCpu), VMX_V_VMCS_SIZE);
     if (RT_FAILURE(rc))
@@ -2557,6 +2731,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_PtrReadPhys;
         return rc;
     }
+
+    /*
+     * Clear the high 32-bits of all natural-width fields in the VMCS if the guest
+     * does not support long mode.
+     */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+        iemVmxVmcsFixNaturalWidthFields(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
 
     /*
      * Check VM-execution control fields.
@@ -2593,6 +2774,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     else
     {
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Check host-state fields.
+     */
+    rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+    {
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
     }
