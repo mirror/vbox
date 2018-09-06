@@ -2295,8 +2295,8 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
 
     /* Estimate required string length first. */
     static const char s_szSuffixFmt[]    = "Authorization: Signature version=\"1\",keyId=\"%s\",algorithm=\"rsa-sha256\",headers=\"";
-    static const char s_szInfix[]        = "\",signature=\"Base64(RSA-SHA256(";
-    static const char s_szPostfix[]      = "))\"";
+    static const char s_szInfix[]        = "\",signature=\"";
+    static const char s_szPostfix[]      = "\"";
     static const char s_szRequestField[] = "(request-target)";
     size_t const      cchKeyId           = strlen(pszKeyId);
     size_t const      cbSigRaw           = (RTCrKeyGetBitCount(hKey) + 7) / 8;
