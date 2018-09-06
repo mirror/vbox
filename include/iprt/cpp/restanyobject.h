@@ -48,7 +48,7 @@
  * known structure and maps to fixed types.  So, the data model was optimized
  * for that rather than flexiblity here.
  */
-class /*RT_DECL_CLASS*/ RTCRestAnyObject : public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestAnyObject : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
