@@ -21,7 +21,9 @@
 
 /* Qt include: */
 # include <QGraphicsScene>
+# include <QPainter>
 # include <QStyle>
+# include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
 # include "UIDetailsGroup.h"
@@ -158,6 +160,12 @@ void UIDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
         /* Notify listener about build done: */
         emit sigBuildDone();
     }
+}
+
+void UIDetailsGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *)
+{
+    /* Paint background: */
+    paintBackground(pPainter, pOptions);
 }
 
 void UIDetailsGroup::addItem(UIDetailsItem *pItem)
@@ -303,4 +311,20 @@ QVariant UIDetailsGroup::data(int iKey) const
         default: break;
     }
     return QVariant();
+}
+
+void UIDetailsGroup::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
+{
+    /* Save painter: */
+    pPainter->save();
+
+    /* Prepare variables: */
+    const QRect optionRect = pOptions->rect;
+
+    /* Paint default background: */
+    const QColor defaultColor = palette().color(QPalette::Active, QPalette::Midlight).darker(110);
+    pPainter->fillRect(optionRect, defaultColor);
+
+    /* Restore painter: */
+    pPainter->restore();
 }

@@ -181,7 +181,7 @@ void UIDetailsView::preparePalette()
 {
     /* Setup palette: */
     QPalette pal = qApp->palette();
-    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
     pal.setColor(QPalette::Base, bodyColor);
     setPalette(pal);
 }
