@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QLayout>
 # include <QMainWindow>
+# include <QResizeEvent>
 
 /* GUI includes: */
 # include "UIToolBar.h"
@@ -80,6 +81,15 @@ void UIToolBar::updateLayout()
     layout()->activate();
 }
 #endif /* VBOX_WS_MAC */
+
+void UIToolBar::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QToolBar::resizeEvent(pEvent);
+
+    /* Notify listeners about new size: */
+    emit sigResized(pEvent->size());
+}
 
 void UIToolBar::prepare()
 {
