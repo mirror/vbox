@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -3125,7 +3125,16 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                         rc = m_pCurDnD->hgDrop(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos, e.hgcm.u.a.uDefAction);
                         break;
                     }
-                    case DragAndDropSvc::HOST_DND_HG_SND_DATA:
+                    /* Note: VbglR3DnDRecvNextMsg() will return HOST_DND_HG_SND_DATA_HDR when
+                     *       the host has finished copying over all the data to the guest.
+                     *
+                     *       The actual data transfer (and message processing for it) will be done
+                     *       internally by VbglR3DnDRecvNextMsg() to not duplicate any code for different
+                     *       platforms.
+                     *
+                     *       The data header now will contain all the (meta) data the guest needs in
+                     *       order to complete the DnD operation. */
+                    case DragAndDropSvc::HOST_DND_HG_SND_DATA_HDR:
                     {
                         rc = m_pCurDnD->hgDataReceived(e.hgcm.u.b.pvData, e.hgcm.u.b.cbData);
                         break;
