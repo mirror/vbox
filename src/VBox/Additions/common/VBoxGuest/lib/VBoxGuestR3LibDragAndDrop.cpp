@@ -393,11 +393,10 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     /* Anything to do at all? */
     if (fDoAccounting)
     {
-        if (   !cbToRecvBytes
-            && !cToRecvObjs)
-        {
+        /* Note: Do not check for cbToRecvBytes == 0 here, as this might be just
+         *       a bunch of 0-byte files to be transferred. */
+        if (!cToRecvObjs)
             return VINF_SUCCESS;
-        }
     }
 
     /*
