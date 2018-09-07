@@ -10759,6 +10759,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
             HMVMX_CHECK_BREAK(RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(  pVCpu->hm.s.vmx.u32EntryCtls
                                                                            & VMX_ENTRY_CTLS_IA32E_MODE_GUEST),
                               VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
+            /** @todo r=ramshankar: Unrestricted check here is probably wrong, see
+             *        iemVmxVmentryCheckGuestState(). */
             HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                               || !(u32GuestCr0 & X86_CR0_PG)
                               || RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(u64Val & MSR_K6_EFER_LME),
