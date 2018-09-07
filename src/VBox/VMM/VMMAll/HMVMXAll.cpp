@@ -141,7 +141,14 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_Cr3TargetCount           , "Cr3TargetCount"          ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryCtlsAllowed1        , "EntryCtlsAllowed1"       ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryCtlsDisallowed0     , "EntryCtlsDisallowed0"    ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostAddrSpace            , "HostAddrSpace"           ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryInstrLen            , "EntryInstrLen"           ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryInstrLenZero        , "EntryInstrLenZero"       ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe    , "EntryIntInfoErrCodePe"   ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodeVec   , "EntryIntInfoErrCodeVec"  ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryIntInfoTypeVecRsvd  , "EntryIntInfoTypeVecRsvd" ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryXcptErrCodeRsvd     , "EntryXcptErrCodeRsvd"    ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1         , "ExitCtlsAllowed1"        ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0      , "ExitCtlsDisallowed0"     ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostCr0Fixed0            , "HostCr0Fixed0"           ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostCr0Fixed1            , "HostCr0Fixed1"           ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostCr3                  , "HostCr3"                 ),
@@ -151,6 +158,7 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostCr4Pcide             , "HostCr4Pcide"            ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostCsTr                 , "HostCsTr"                ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostEferMsr              , "HostEferMsr"             ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostEferMsrRsvd          , "HostEferMsrRsvd"         ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostGuestLongMode        , "HostGuestLongMode"       ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostGuestLongModeNoCpu   , "HostGuestLongModeNoCpu"  ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostLongMode             , "HostLongMode"            ),
@@ -161,14 +169,20 @@ static const char * const g_apszVmxInstrDiagDesc[kVmxVInstrDiag_Last] =
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostSegBase              , "HostSegBase"             ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostSs                   , "HostSs"                  ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_HostSysenterEspEip       , "HostSysenterEspEip"      ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryInstrLen            , "EntryInstrLen"           ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryInstrLenZero        , "EntryInstrLenZero"       ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe    , "EntryIntInfoErrCodePe"   ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodeVec   , "EntryIntInfoErrCodeVec"  ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryIntInfoTypeVecRsvd  , "EntryIntInfoTypeVecRsvd" ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_EntryXcptErrCodeRsvd     , "EntryXcptErrCodeRsvd"    ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1         , "ExitCtlsAllowed1"        ),
-    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0      , "ExitCtlsDisallowed0"     ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestCr0Fixed0           , "GuestCr0Fixed0"          ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestCr0Fixed1           , "GuestCr0Fixed1"          ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestCr0PgPe             , "GuestCr0PgPe"            ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestCr3                 , "GuestCr3"                ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestCr4Fixed0           , "GuestCr4Fixed0"          ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestCr4Fixed1           , "GuestCr4Fixed1"          ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestDebugCtl            , "GuestDebugCtl"           ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestDr7                 , "GuestDr7"                ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestEferMsr             , "GuestEferMsr"            ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestEferMsrRsvd         , "GuestEferMsrRsvd"        ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestPae                 , "GuestPae"                ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestPatMsr              , "GuestPatMsr"             ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestPcide               , "GuestPcide"              ),
+    VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_GuestSysenterEspEip      , "GuestSysenterEspEip"     ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_LongModeCS               , "LongModeCS"              ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_NmiWindowExit            , "NmiWindowExit"           ),
     VMX_INSTR_DIAG_DESC(kVmxVInstrDiag_Vmentry_PinCtlsAllowed1          , "PinCtlsAllowed1"         ),
@@ -590,7 +604,7 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
         if (fSupportsRealMode)
         {
             /* We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
-            uCr0Mask &= ~(X86_CR0_PG|X86_CR0_PE);
+            uCr0Mask &= ~(X86_CR0_PG | X86_CR0_PE);
         }
         else
         {

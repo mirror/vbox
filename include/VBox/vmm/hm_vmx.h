@@ -2113,6 +2113,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 #define VMX_ENTRY_CTLS_LOAD_PAT_MSR                             RT_BIT(14)
 /** Whether the guest IA32_EFER MSR is loaded on VM-entry. */
 #define VMX_ENTRY_CTLS_LOAD_EFER_MSR                            RT_BIT(15)
+/** Whether the guest IA32_BNDCFGS MSR is loaded on VM-entry. */
+#define VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR                         RT_BIT(16)
+/** Whether to conceal VMX from Intel PT (Processor Trace). */
+#define VMX_ENTRY_CTLS_CONCEAL_VMX_PT                           RT_BIT(17)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_ENTRY_CTLS_DEFAULT1                                 UINT32_C(0x000011ff)
 
@@ -2138,11 +2142,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_MASK                     UINT32_C(0x00004000)
 #define VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT                   15
 #define VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_MASK                    UINT32_C(0x00008000)
-#define VMX_BF_ENTRY_CTLS_UNDEF_16_31_SHIFT                     16
-#define VMX_BF_ENTRY_CTLS_UNDEF_16_31_MASK                      UINT32_C(0xffff0000)
+#define VMX_BF_ENTRY_CTLS_LOAD_BNDCFGS_MSR_SHIFT                16
+#define VMX_BF_ENTRY_CTLS_LOAD_BNDCFGS_MSR_MASK                 UINT32_C(0x00010000)
+#define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_PT_SHIFT                  17
+#define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_PT_MASK                   UINT32_C(0x00020000)
+#define VMX_BF_ENTRY_CTLS_UNDEF_18_31_SHIFT                     18
+#define VMX_BF_ENTRY_CTLS_UNDEF_18_31_MASK                      UINT32_C(0xfffc0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
                             (UNDEF_0_1, LOAD_DEBUG, UNDEF_3_8, IA32E_MODE_GUEST, ENTRY_SMM, DEACTIVATE_DUAL_MON, UNDEF_12,
-                             LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, UNDEF_16_31));
+                             LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, LOAD_BNDCFGS_MSR, CONCEAL_VMX_PT, UNDEF_18_31));
 /** @} */
 
 
@@ -3471,7 +3479,28 @@ typedef enum
     kVmxVInstrDiag_Vmentry_Cr3TargetCount,
     kVmxVInstrDiag_Vmentry_EntryCtlsAllowed1,
     kVmxVInstrDiag_Vmentry_EntryCtlsDisallowed0,
-    kVmxVInstrDiag_Vmentry_HostAddrSpace,
+    kVmxVInstrDiag_Vmentry_EntryInstrLen,
+    kVmxVInstrDiag_Vmentry_EntryInstrLenZero,
+    kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe,
+    kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodeVec,
+    kVmxVInstrDiag_Vmentry_EntryIntInfoTypeVecRsvd,
+    kVmxVInstrDiag_Vmentry_EntryXcptErrCodeRsvd,
+    kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1,
+    kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0,
+    kVmxVInstrDiag_Vmentry_GuestCr0Fixed0,
+    kVmxVInstrDiag_Vmentry_GuestCr0Fixed1,
+    kVmxVInstrDiag_Vmentry_GuestCr0PgPe,
+    kVmxVInstrDiag_Vmentry_GuestCr3,
+    kVmxVInstrDiag_Vmentry_GuestCr4Fixed0,
+    kVmxVInstrDiag_Vmentry_GuestCr4Fixed1,
+    kVmxVInstrDiag_Vmentry_GuestDebugCtl,
+    kVmxVInstrDiag_Vmentry_GuestDr7,
+    kVmxVInstrDiag_Vmentry_GuestEferMsr,
+    kVmxVInstrDiag_Vmentry_GuestEferMsrRsvd,
+    kVmxVInstrDiag_Vmentry_GuestPae,
+    kVmxVInstrDiag_Vmentry_GuestPatMsr,
+    kVmxVInstrDiag_Vmentry_GuestPcide,
+    kVmxVInstrDiag_Vmentry_GuestSysenterEspEip,
     kVmxVInstrDiag_Vmentry_HostCr0Fixed0,
     kVmxVInstrDiag_Vmentry_HostCr0Fixed1,
     kVmxVInstrDiag_Vmentry_HostCr3,
@@ -3481,6 +3510,7 @@ typedef enum
     kVmxVInstrDiag_Vmentry_HostCr4Pcide,
     kVmxVInstrDiag_Vmentry_HostCsTr,
     kVmxVInstrDiag_Vmentry_HostEferMsr,
+    kVmxVInstrDiag_Vmentry_HostEferMsrRsvd,
     kVmxVInstrDiag_Vmentry_HostGuestLongMode,
     kVmxVInstrDiag_Vmentry_HostGuestLongModeNoCpu,
     kVmxVInstrDiag_Vmentry_HostLongMode,
@@ -3491,14 +3521,6 @@ typedef enum
     kVmxVInstrDiag_Vmentry_HostSegBase,
     kVmxVInstrDiag_Vmentry_HostSs,
     kVmxVInstrDiag_Vmentry_HostSysenterEspEip,
-    kVmxVInstrDiag_Vmentry_EntryInstrLen,
-    kVmxVInstrDiag_Vmentry_EntryInstrLenZero,
-    kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodePe,
-    kVmxVInstrDiag_Vmentry_EntryIntInfoErrCodeVec,
-    kVmxVInstrDiag_Vmentry_EntryIntInfoTypeVecRsvd,
-    kVmxVInstrDiag_Vmentry_EntryXcptErrCodeRsvd,
-    kVmxVInstrDiag_Vmentry_ExitCtlsAllowed1,
-    kVmxVInstrDiag_Vmentry_ExitCtlsDisallowed0,
     kVmxVInstrDiag_Vmentry_LongModeCS,
     kVmxVInstrDiag_Vmentry_NmiWindowExit,
     kVmxVInstrDiag_Vmentry_PinCtlsAllowed1,

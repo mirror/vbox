@@ -360,9 +360,6 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     } while (0)
 # endif /* !IEM_WITH_CODE_TLB */
 
-/** The maximum physical address width in bits. */
-#define IEM_VMX_MAX_PHYSADDR_WIDTH(a_pVCpu)         (IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->cVmxMaxPhysAddrWidth)
-
 /** Whether a shadow VMCS is present for the given VCPU. */
 #define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)            RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
 
@@ -1537,7 +1534,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* VMCS physical-address width limits. */
-    if (GCPhysVmcs >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
     {
         Log(("vmclear: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmclear_PtrWidth;
@@ -1696,7 +1693,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* VMCS physical-address width limits. */
-    if (GCPhysVmcs >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
     {
         Log(("vmptrld: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmptrld_PtrWidth;
@@ -1863,7 +1860,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         }
 
         /* VMXON physical-address width limits. */
-        if (GCPhysVmxon >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+        if (GCPhysVmxon >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
         {
             Log(("vmxon: VMXON region pointer extends beyond physical-address width -> VMFailInvalid\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmxon_PtrWidth;
@@ -1958,7 +1955,187 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
 
 /**
- * Checks host state as part of VM-entry.
+ * Checks guest-state as part of VM-entry.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /*
+     * Guest Control Registers, Debug Registers, and MSRs.
+     * See Intel spec. 26.3.1.1 "Checks on Guest Control Registers, Debug Registers, and MSRs".
+     */
+    bool const fUnrestrictedGuest = pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST;
+    /* CR0 reserved bits. */
+    {
+        /* CR0 MB1 bits. */
+        uint64_t u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        Assert(u64Cr0Fixed0 & (X86_CR0_NW | X86_CR0_CD));
+        if (fUnrestrictedGuest)
+            u64Cr0Fixed0 &= ~(X86_CR0_PE | X86_CR0_PG);
+        if (~pVmcs->u64GuestCr0.u & u64Cr0Fixed0)
+        {
+            Log(("%s: Invalid guest CR0 %#RX32 (fixed0) -> VM-exit\n", pszInstr, pVmcs->u64GuestCr0.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestCr0Fixed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* CR0 MBZ bits. */
+        uint64_t const u64Cr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+        if (pVmcs->u64GuestCr0.u & ~u64Cr0Fixed1)
+        {
+            Log(("%s: Invalid guest CR0 %#RX64 (fixed1) -> VM-exit\n", pszInstr, pVmcs->u64GuestCr0.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestCr0Fixed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* Without unrestricted guest support, VT-x supports does not support unpaged protected mode. */
+        if (   !fUnrestrictedGuest
+            &&  (pVmcs->u64GuestCr0.u & X86_CR0_PG)
+            && !(pVmcs->u64GuestCr0.u & X86_CR0_PE))
+        {
+            Log(("%s: Invalid guest CR0.PG and CR0.PE combination %#RX64 -> VM-exit\n", pszInstr, pVmcs->u64GuestCr0.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestCr0PgPe;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* CR4 reserved bits. */
+    {
+        /* CR4 MB1 bits. */
+        uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        if (~pVmcs->u64GuestCr4.u & u64Cr4Fixed0)
+        {
+            Log(("%s: Invalid host CR4 %#RX64 (fixed0) -> VM-exit\n", pszInstr, pVmcs->u64GuestCr4.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestCr4Fixed0;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* CR4 MBZ bits. */
+        uint64_t const u64Cr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+        if (pVmcs->u64GuestCr4.u & ~u64Cr4Fixed1)
+        {
+            Log(("%s: Invalid host CR4 %#RX64 (fixed1) -> VM-exit\n", pszInstr, pVmcs->u64GuestCr4.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestCr4Fixed1;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    /* DEBUGCTL MSR. */
+    if (   (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+        && (pVmcs->u64GuestDebugCtlMsr.u & ~MSR_IA32_DEBUGCTL_VALID_MASK_INTEL))
+    {
+        Log(("%s: DEBUGCTL MSR (%#RX64) reserved bits set -> VM-exit\n", pszInstr, pVmcs->u64GuestDebugCtlMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestDebugCtl;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* 64-bit CPU checks. */
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+        if (fGstInLongMode)
+        {
+            /* PAE must be set. */
+            if (   (pVmcs->u64GuestCr0.u & X86_CR0_PG)
+                && (pVmcs->u64GuestCr0.u & X86_CR4_PAE))
+            { /* likely */ }
+            else
+            {
+                Log(("%s: Guest PAE not set when guest is in long mode\n", pszInstr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestPae;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+        }
+        else
+        {
+            /* PCIDE should not be set. */
+            if (!(pVmcs->u64GuestCr4.u & X86_CR4_PCIDE))
+            { /* likely */ }
+            else
+            {
+                Log(("%s: Guest PCIDE set when guest is not in long mode\n", pszInstr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestPcide;
+                return VERR_VMX_VMENTRY_FAILED;
+            }
+        }
+
+        /* CR3. */
+        if (pVmcs->u64GuestCr3.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth)
+        {
+            Log(("%s: Guest CR3 (%#RX64) invalid\n", pszInstr, pVmcs->u64GuestCr3.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestCr3;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* DR7. */
+        if (   (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+            && (pVmcs->u64GuestDr7.u & X86_DR7_MBZ_MASK))
+        {
+            Log(("%s: Guest DR7 (%#RX64) invalid", pszInstr, pVmcs->u64GuestDr7.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestDr7;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+
+        /* SYSENTER ESP and SYSENTER EIP. */
+        if (   X86_IS_CANONICAL(pVmcs->u64GuestSysenterEsp.u)
+            && X86_IS_CANONICAL(pVmcs->u64GuestSysenterEip.u))
+        { /* likely */ }
+        else
+        {
+            Log(("%s: Guest Sysenter ESP (%#RX64) / EIP (%#RX64) not canonical -> VMFail\n", pszInstr,
+                 pVmcs->u64GuestSysenterEsp.u, pVmcs->u64GuestSysenterEip.u));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestSysenterEspEip;
+            return VERR_VMX_VMENTRY_FAILED;
+        }
+    }
+
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));  /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+
+    /* PAT MSR. */
+    if (   (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR)
+        && !CPUMIsPatMsrValid(pVmcs->u64GuestPatMsr.u))
+    {
+        Log(("%s: Guest PAT MSR (%#RX64) invalid\n", pszInstr, pVmcs->u64GuestPatMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestPatMsr;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    /* EFER MSR. */
+    uint64_t const uValidEferMask = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
+    if (   (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+        && (pVmcs->u64GuestEferMsr.u & ~uValidEferMask))
+    {
+        Log(("%s: Guest EFER MSR (%#RX64) reserved bits set\n", pszInstr, pVmcs->u64GuestEferMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestEferMsrRsvd;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+    bool const fGstLma        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LMA);
+    bool const fGstLme        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LME);
+    if (   fGstInLongMode == fGstLma
+        && (   !(pVmcs->u64GuestCr0.u & X86_CR0_PG)
+            || fGstLma == fGstLme))
+    { /* likely */ }
+    else
+    {
+        Log(("%s: Guest EFER MSR (%#RX64) invalid\n", pszInstr, pVmcs->u64GuestEferMsr.u));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_GuestEferMsr;
+        return VERR_VMX_VMENTRY_FAILED;
+    }
+
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));   /* We don't support loading IA32_BNDCFGS MSR yet. */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks host-state as part of VM-entry.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -1978,7 +2155,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
         uint64_t const u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
         if (~pVmcs->u64HostCr0.u & u64Cr0Fixed0)
         {
-            Log(("%s: Invalid host CR0 %#RX32 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr0));
+            Log(("%s: Invalid host CR0 %#RX64 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr0.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr0Fixed0;
             return VERR_VMX_VMENTRY_FAILED;
         }
@@ -1987,7 +2164,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
         uint64_t const u64Cr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
         if (pVmcs->u64HostCr0.u & ~u64Cr0Fixed1)
         {
-            Log(("%s: Invalid host CR0 %#RX32 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr0));
+            Log(("%s: Invalid host CR0 %#RX64 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr0.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr0Fixed1;
             return VERR_VMX_VMENTRY_FAILED;
         }
@@ -1999,7 +2176,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
         uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
         if (~pVmcs->u64HostCr4.u & u64Cr4Fixed0)
         {
-            Log(("%s: Invalid host CR4 %#RX64 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr4));
+            Log(("%s: Invalid host CR4 %#RX64 (fixed0) -> VMFail\n", pszInstr, pVmcs->u64HostCr4.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr4Fixed0;
             return VERR_VMX_VMENTRY_FAILED;
         }
@@ -2008,7 +2185,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
         uint64_t const u64Cr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
         if (pVmcs->u64HostCr4.u & ~u64Cr4Fixed1)
         {
-            Log(("%s: Invalid host CR4 %#RX64 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr4));
+            Log(("%s: Invalid host CR4 %#RX64 (fixed1) -> VMFail\n", pszInstr, pVmcs->u64HostCr4.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr4Fixed1;
             return VERR_VMX_VMENTRY_FAILED;
         }
@@ -2017,9 +2194,9 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
     {
         /* CR3 reserved bits. */
-        if (pVmcs->u64HostCr3.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+        if (pVmcs->u64HostCr3.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth)
         {
-            Log(("%s: Invalid host CR3 %#RX64 -> VMFail\n", pszInstr, pVmcs->u64HostCr3));
+            Log(("%s: Invalid host CR3 %#RX64 -> VMFail\n", pszInstr, pVmcs->u64HostCr3.u));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostCr3;
             return VERR_VMX_VMENTRY_FAILED;
         }
@@ -2051,22 +2228,22 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     /* EFER MSR. */
     uint64_t const uValidEferMask = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
     if (   (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
-        && (pVmcs->u64GuestEferMsr.u & ~uValidEferMask))
+        && (pVmcs->u64HostEferMsr.u & ~uValidEferMask))
     {
         Log(("%s: Host EFER MSR (%#RX64) reserved bits set\n", pszInstr, pVmcs->u64HostEferMsr.u));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostEferMsr;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostEferMsrRsvd;
         return VERR_VMX_VMENTRY_FAILED;
     }
-    bool const fVirtHostInLongMode    = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-    bool const fNstGstLongModeActive  = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LMA);
-    bool const fNstGstLongModeEnabled = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LME);
-    if (   fVirtHostInLongMode == fNstGstLongModeActive
-        && fVirtHostInLongMode == fNstGstLongModeEnabled)
+    bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    bool const fHostLma        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LMA);
+    bool const fHostLme        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LME);
+    if (   fHostInLongMode == fHostLma
+        && fHostInLongMode == fHostLme)
     { /* likely */ }
     else
     {
         Log(("%s: Host EFER MSR (%#RX64) LMA, LME, host addr-space size mismatch\n", pszInstr, pVmcs->u64HostEferMsr.u));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostAddrSpace;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_HostEferMsr;
         return VERR_VMX_VMENTRY_FAILED;
     }
 
@@ -2102,7 +2279,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     }
 
     /* SS cannot be 0 if 32-bit host. */
-    if (   fVirtHostInLongMode
+    if (   fHostInLongMode
         || pVmcs->HostSs)
     { /* likely */ }
     else
@@ -2133,15 +2310,15 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
      * Host address-space size for 64-bit CPUs.
      * See Intel spec. 26.2.4 "Checks Related to Address-Space Size".
      */
+    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
     {
-        bool const fGstInLongMode    = CPUMIsGuestInLongMode(pVCpu);
-        bool const fNstGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+        bool const fCpuInLongMode = CPUMIsGuestInLongMode(pVCpu);
 
         /* Logical processor in IA-32e mode. */
-        if (fGstInLongMode)
+        if (fCpuInLongMode)
         {
-            if (fVirtHostInLongMode)
+            if (fHostInLongMode)
             {
                 /* PAE must be set. */
                 if (pVmcs->u64HostCr4.u & X86_CR4_PAE)
@@ -2173,8 +2350,8 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
         else
         {
             /* Logical processor is outside IA-32e mode. */
-            if (   !fNstGstInLongMode
-                && !fVirtHostInLongMode)
+            if (   !fGstInLongMode
+                && !fHostInLongMode)
             {
                 /* PCIDE should not be set. */
                 if (!(pVmcs->u64HostCr4.u & X86_CR4_PCIDE))
@@ -2207,9 +2384,8 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     else
     {
         /* Host address-space size for 32-bit CPUs. */
-        bool const fNstGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
-        if (   !fNstGstInLongMode
-            && !fVirtHostInLongMode)
+        if (   !fGstInLongMode
+            && !fHostInLongMode)
         { /* likely */ }
         else
         {
@@ -2339,7 +2515,7 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32EntryMsrLoadCount)
     {
         if (   (pVmcs->u64AddrEntryMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
-            || (pVmcs->u64AddrEntryMsrLoad.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (pVmcs->u64AddrEntryMsrLoad.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrEntryMsrLoad.u))
         {
             Log(("%s: VM-entry MSR-load area address %#RX64 invalid -> VMFail\n", pszInstr, pVmcs->u64AddrEntryMsrLoad.u));
@@ -2397,7 +2573,7 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ExitMsrStoreCount)
     {
         if (   (pVmcs->u64AddrExitMsrStore.u & VMX_AUTOMSR_OFFSET_MASK)
-            || (pVmcs->u64AddrExitMsrStore.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (pVmcs->u64AddrExitMsrStore.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrStore.u))
         {
             Log(("%s: VM-exit MSR-store area address %#RX64 invalid -> VMFail\n", pszInstr, pVmcs->u64AddrExitMsrStore.u));
@@ -2410,7 +2586,7 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ExitMsrLoadCount)
     {
         if (   (pVmcs->u64AddrExitMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
-            || (pVmcs->u64AddrExitMsrLoad.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (pVmcs->u64AddrExitMsrLoad.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrLoad.u))
         {
             Log(("%s: VM-exit MSR-store area address %#RX64 invalid -> VMFail\n", pszInstr, pVmcs->u64AddrExitMsrLoad.u));
@@ -2515,7 +2691,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
     {
         if (   (pVmcs->u64AddrIoBitmapA.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64AddrIoBitmapA.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (pVmcs->u64AddrIoBitmapA.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrIoBitmapA.u))
         {
             Log(("%s: I/O Bitmap A physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrIoBitmapA.u));
@@ -2524,7 +2700,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         }
 
         if (   (pVmcs->u64AddrIoBitmapB.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64AddrIoBitmapB.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (pVmcs->u64AddrIoBitmapB.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrIoBitmapB.u))
         {
             Log(("%s: I/O Bitmap B physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrIoBitmapB.u));
@@ -2537,7 +2713,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         if (   (pVmcs->u64AddrMsrBitmap.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64AddrMsrBitmap.u >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (pVmcs->u64AddrMsrBitmap.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrMsrBitmap.u))
         {
             Log(("%s: MSR Bitmap physaddr invalid %#RX64 -> VMFail\n", pszInstr, pVmcs->u64AddrMsrBitmap.u));
@@ -2552,7 +2728,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         /* Virtual-APIC page physical address. */
         RTGCPHYS GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
         if (   (GCPhysVirtApic & X86_PAGE_4K_OFFSET_MASK)
-            || (GCPhysVirtApic >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (GCPhysVirtApic >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic))
         {
             Log(("%s: Virtual-APIC page physaddr invalid %#RX64 -> VMFail\n", pszInstr, GCPhysVirtApic));
@@ -2647,7 +2823,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         /* APIC-access physical address. */
         RTGCPHYS GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
         if (   (GCPhysApicAccess & X86_PAGE_4K_OFFSET_MASK)
-            || (GCPhysApicAccess >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || (GCPhysApicAccess >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
         {
             Log(("%s: APIC-access address invalid %#RX64 -> VMFail\n", pszInstr, GCPhysApicAccess));
@@ -2696,7 +2872,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         /* VMREAD-bitmap physical address. */
         RTGCPHYS GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
         if (   ( GCPhysVmreadBitmap & X86_PAGE_4K_OFFSET_MASK)
-            || ( GCPhysVmreadBitmap >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || ( GCPhysVmreadBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmreadBitmap))
         {
             Log(("%s: VMREAD-bitmap address invalid %#RX64 -> VMFail\n", pszInstr,  GCPhysVmreadBitmap));
@@ -2707,7 +2883,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         /* VMWRITE-bitmap physical address. */
         RTGCPHYS GCPhysVmwriteBitmap = pVmcs->u64AddrVmreadBitmap.u;
         if (   ( GCPhysVmwriteBitmap & X86_PAGE_4K_OFFSET_MASK)
-            || ( GCPhysVmwriteBitmap >> IEM_VMX_MAX_PHYSADDR_WIDTH(pVCpu))
+            || ( GCPhysVmwriteBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmwriteBitmap))
         {
             Log(("%s: VMWRITE-bitmap address invalid %#RX64 -> VMFail\n", pszInstr,  GCPhysVmwriteBitmap));
@@ -2888,6 +3064,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
     }
+
+    /*
+     * Check guest-state fields.
+     */
+    rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+    {
+        /* VMExit. */
+        return VINF_SUCCESS;
+    }
+
 
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_Success;
     iemVmxVmSucceed(pVCpu);
