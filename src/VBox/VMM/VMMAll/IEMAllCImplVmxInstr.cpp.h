@@ -1964,7 +1964,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
@@ -2060,7 +2060,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
     bool const fVirtHostInLongMode    = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
     bool const fNstGstLongModeActive  = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LMA);
     bool const fNstGstLongModeEnabled = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_BIT_LME);
-    if (fVirtHostInLongMode == fNstGstLongModeActive == fNstGstLongModeEnabled)
+    if (   fVirtHostInLongMode == fNstGstLongModeActive
+        && fVirtHostInLongMode == fNstGstLongModeEnabled)
     { /* likely */ }
     else
     {
@@ -2231,7 +2232,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *ps
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
@@ -2363,7 +2364,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *ps
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
@@ -2387,7 +2388,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *psz
     if (   !(pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
         && (pVmcs->u32ProcCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
     {
-        Log(("%s: Save Preempt-Timer without activate Preempt timer -> VMFail\n", pszInstr, pVmcs->u32ExitCtls));
+        Log(("%s: Save Preemption timer without Activate Preempt timer -> VMFail\n", pszInstr));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_SavePreemptTimer;
         return VERR_VMX_VMENTRY_FAILED;
     }
@@ -2434,7 +2435,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *psz
  * @remarks This may update secondary-processor based VM-execution control fields
  *          in the current VMCS if necessary.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 {
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     /* Pin-based VM-execution controls. */
@@ -2831,7 +2832,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                      IEM_VMX_GET_CURRENT_VMCS(pVCpu), VMX_V_VMCS_SIZE);
     if (RT_FAILURE(rc))
     {
-        Log(("%s: Failed to read VMCS at %#RGp, rc=%Rrc\n", pszInstr, rc));
+        Log(("%s: Failed to read VMCS at %#RGp, rc=%Rrc\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu), rc));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = kVmxVInstrDiag_Vmentry_PtrReadPhys;
         return rc;
     }
