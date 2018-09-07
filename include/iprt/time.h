@@ -28,6 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/assertcompile.h>
 
 RT_C_DECLS_BEGIN
 
@@ -585,7 +586,6 @@ RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszStrin
 /**
  * Exploded time.
  */
-#pragma pack(1)
 typedef struct RTTIME
 {
     /** The year number. */
@@ -614,7 +614,7 @@ typedef struct RTTIME
      * & RTTimeLocalDeltaNanoFor returns, just different unit. */
     int32_t     offUTC;
 } RTTIME;
-#pragma pack()
+AssertCompileSize(RTTIME, 24);
 /** Pointer to a exploded time structure. */
 typedef RTTIME *PRTTIME;
 /** Pointer to a const exploded time structure. */
