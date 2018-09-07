@@ -74,7 +74,8 @@ void UIWizardExportAppPage3::populateCloudClientParameters()
 #endif
 
     /* Create JSON document on the basis of it, make sure it isn't empty: */
-    const QJsonDocument document = QJsonDocument::fromJson(strJSON.toUtf8());    AssertMsgReturnVoid(!document.isEmpty(), ("JSON document is empty!"));
+    const QJsonDocument document = QJsonDocument::fromJson(strJSON.toUtf8());
+    AssertMsgReturnVoid(!document.isEmpty(), ("JSON document is empty!"));
 
     /* Parse JSON document: */
     m_listCloudClientParameters = parseJsonDocument(document);
