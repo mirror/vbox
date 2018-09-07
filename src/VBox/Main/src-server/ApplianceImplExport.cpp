@@ -1000,6 +1000,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             LogRel(("OCI public IP: %s\n", m->m_OciExportData.fPublicIP ? "yes" : "no"));
         }
 
+#ifndef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS
         SetUpProgressMode mode = ExportOCI;
 
         rc = i_setUpProgress(aProgress,
@@ -1007,7 +1008,10 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
                              mode);
         if (FAILED(rc))
             return rc;
-
+#else
+        // we need to do that as otherwise Task won't be created successfully
+        aProgress.createObject();
+#endif
         // Initialize our worker task
         TaskOCI* task = NULL;
         try
@@ -2477,11 +2481,20 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
     {
         LogRel(("Appliance::i_writeFSOCI(): calling OCICloudClient::exportVM\n"));
 
+        /// @todo that's to be moved to ExpTack, but we need to have that method
+        /// exposed in .xidl
         if (m->virtualSystemDescriptions.size() == 1) {
+            pTask->pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                         Bstr("Test progress").raw(),
+                         TRUE /* aCancelable */,
+                         5, // ULONG cOperations,
+                         100, // ULONG ulTotalOperationsWeight,
+                         Bstr("Do something").raw(), // aFirstOperationDescription
+                         25); // ULONG ulFirstOperationWeight,
+
             cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
         } else {
-            /// @todo Fail here with user notification. We do export 1 VM only
-        }
+            /// @todo Fail here with user notification. We do export 1 VM only        }
     }
 #endif
 
