@@ -111,6 +111,12 @@ bool UIChooser::isGroupSavingInProgress() const
     return m_pChooserModel->isGroupSavingInProgress();
 }
 
+void UIChooser::sltHandleToolbarResize(const QSize &newSize)
+{
+    /* Pass height to a model: */
+    model()->setGlobalItemHeightHint(newSize.height());
+}
+
 void UIChooser::preparePalette()
 {
     /* Setup palette: */

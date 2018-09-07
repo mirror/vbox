@@ -81,6 +81,11 @@ public:
     /* API: Group-saving stuff: */
     bool isGroupSavingInProgress() const;
 
+public slots:
+
+    /** Handles toolbar resize to @a newSize. */
+    void sltHandleToolbarResize(const QSize &newSize);
+
 private:
 
     /* Helpers: Prepare stuff: */

@@ -190,6 +190,22 @@ void UIChooserModel::updateLayout()
     root()->show();
 }
 
+void UIChooserModel::setGlobalItemHeightHint(int iHint)
+{
+    /* Walk thrugh all the items of navigation list: */
+    foreach (UIChooserItem *pItem, navigationList())
+    {
+        /* And for each global item: */
+        if (pItem->type() == UIChooserItemType_Global)
+        {
+            /* Apply the height hint we have: */
+            UIChooserItemGlobal *pGlobalItem = pItem->toGlobalItem();
+            if (pGlobalItem)
+                pGlobalItem->setHeightHint(iHint);
+        }
+    }
+}
+
 const QList<UIChooserItem*>& UIChooserModel::navigationList() const
 {
     return m_navigationList;

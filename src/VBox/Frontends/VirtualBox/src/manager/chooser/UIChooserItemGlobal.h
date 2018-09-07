@@ -45,6 +45,12 @@ public:
     /** Destructs global item. */
     virtual ~UIChooserItemGlobal() /* override */;
 
+    /** @name Layout stuff.
+      * @{ */
+        /** Defines height @a iHint. */
+        void setHeightHint(int iHint);
+    /** @} */
+
 protected:
 
     /** @name Event-handling stuff.
@@ -242,6 +248,9 @@ private:
         int  m_iMinimumNameWidth;
         /** Holds maximum name width. */
         int  m_iMaximumNameWidth;
+
+        /** Holds the height hint. */
+        int  m_iHeightHint;
     /** @} */
 };
 

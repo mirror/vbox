@@ -102,6 +102,8 @@ public:
 
     /* API: Layout stuff: */
     void updateLayout();
+    /** Defines global item height @a iHint. */
+    void setGlobalItemHeightHint(int iHint);
 
     /* API: Navigation stuff: */
     const QList<UIChooserItem*>& navigationList() const;

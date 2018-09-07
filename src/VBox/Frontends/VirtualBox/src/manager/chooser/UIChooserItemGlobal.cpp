@@ -42,6 +42,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     , m_iHoverHighlightLightness(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
+    , m_iHeightHint(0)
 {
     /* Prepare: */
     prepare();
@@ -115,6 +116,16 @@ UIChooserItemGlobal::~UIChooserItemGlobal()
     /* Remove item from the parent: */
     AssertMsg(parentItem(), ("No parent set for global-item!"));
     parentItem()->removeItem(this);
+}
+
+void UIChooserItemGlobal::setHeightHint(int iHint)
+{
+    /* Remember a new hint: */
+    m_iHeightHint = iHint;
+
+    /* Update geometry and the model layout: */
+    updateGeometry();
+    model()->updateLayout();
 }
 
 void UIChooserItemGlobal::retranslateUi()
@@ -289,15 +300,15 @@ QSizeF UIChooserItemGlobal::sizeHint(Qt::SizeHint which, const QSizeF &constrain
 int UIChooserItemGlobal::minimumWidthHint() const
 {
     /* Prepare variables: */
-    int iMargin = data(GlobalItemData_Margin).toInt();
-    int iSpacing = data(GlobalItemData_Spacing).toInt();
+    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iSpacing = data(GlobalItemData_Spacing).toInt();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
     /* Two margins: */
     iProposedWidth += 2 * iMargin;
-    /* And global-item content to take into account: */
+    /* And global-item content width: */
     iProposedWidth += (m_pixmapSize.width() +
                        iSpacing +
                        m_iMinimumNameWidth);
@@ -309,15 +320,28 @@ int UIChooserItemGlobal::minimumWidthHint() const
 int UIChooserItemGlobal::minimumHeightHint() const
 {
     /* Prepare variables: */
-    int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMargin = data(GlobalItemData_Margin).toInt();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
 
-    /* Two margins: */
-    iProposedHeight += 2 * iMargin;
-    /* And global-item content to take into account: */
-    iProposedHeight += qMax(m_pixmapSize.height(), m_visibleNameSize.height());
+    /* Global-item content height: */
+    const int iContentHeight = qMax(m_pixmapSize.height(), m_visibleNameSize.height());
+
+    /* If we have height hint: */
+    if (m_iHeightHint)
+    {
+        /* Take the largest value between height hint and content height: */
+        iProposedHeight += qMax(m_iHeightHint, iContentHeight);
+    }
+    /* Otherwise: */
+    else
+    {
+        /* Two margins: */
+        iProposedHeight += 2 * iMargin;
+        /* And content height: */
+        iProposedHeight += iContentHeight;
+    }
 
     /* Return result: */
     return iProposedHeight;
@@ -390,7 +414,7 @@ QVariant UIChooserItemGlobal::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GlobalItemData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+        case GlobalItemData_Margin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3 * 2;
         case GlobalItemData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
 
         /* Default: */

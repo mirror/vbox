@@ -549,6 +549,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
 void UIVirtualBoxManagerWidget::prepareConnections()
 {
     /* Tool-bar connections: */
+    connect(m_pToolBar, &UIToolBar::sigResized,
+            m_pPaneChooser, &UIChooser::sltHandleToolbarResize);
     connect(m_pToolBar, &UIToolBar::customContextMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
     connect(m_pToolbarTools, &UIToolbarTools::sigToolOpenedMachine,
