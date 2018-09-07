@@ -232,7 +232,7 @@ const char *RTCRestBinary::typeName(void) const
 
 
 /** Factory method. */
-static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinary::createInstance(void)
 {
     return new (std::nothrow) RTCRestBinary();
 }
