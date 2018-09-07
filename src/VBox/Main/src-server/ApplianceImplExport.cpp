@@ -2480,7 +2480,7 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
         if (m->virtualSystemDescriptions.size() == 1) {
             cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
         } else {
-            //TODO: fail here
+            /// @todo Fail here with user notification. We do export 1 VM only
         }
     }
 #endif
