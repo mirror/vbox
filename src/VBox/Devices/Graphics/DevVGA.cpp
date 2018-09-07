@@ -973,7 +973,7 @@ static uint32_t calc_line_width(uint16_t bpp, uint32_t pitch)
 }
 #endif
 
-static void recalculate_data(PVGASTATE pThis, bool fVirtHeightOnly)
+static void recalculate_data(PVGASTATE pThis)
 {
     uint16_t cBPP        = pThis->vbe_regs[VBE_DISPI_INDEX_BPP];
     uint16_t cVirtWidth  = pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH];
@@ -985,19 +985,16 @@ static void recalculate_data(PVGASTATE pThis, bool fVirtHeightOnly)
         cbLinePitch      = calc_line_pitch(cBPP, cX);
     Assert(cbLinePitch != 0);
     uint32_t cVirtHeight = pThis->vram_size / cbLinePitch;
-    if (!fVirtHeightOnly)
-    {
-        uint16_t offX        = pThis->vbe_regs[VBE_DISPI_INDEX_X_OFFSET];
-        uint16_t offY        = pThis->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET];
-        uint32_t offStart    = cbLinePitch * offY;
-        if (cBPP == 4)
-            offStart += offX >> 1;
-        else
-            offStart += offX * ((cBPP + 7) >> 3);
-        offStart >>= 2;
-        pThis->vbe_line_offset = RT_MIN(cbLinePitch, pThis->vram_size);
-        pThis->vbe_start_addr  = RT_MIN(offStart, pThis->vram_size);
-    }
+    uint16_t offX        = pThis->vbe_regs[VBE_DISPI_INDEX_X_OFFSET];
+    uint16_t offY        = pThis->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET];
+    uint32_t offStart    = cbLinePitch * offY;
+    if (cBPP == 4)
+        offStart += offX >> 1;
+    else
+        offStart += offX * ((cBPP + 7) >> 3);
+    offStart >>= 2;
+    pThis->vbe_line_offset = RT_MIN(cbLinePitch, pThis->vram_size);
+    pThis->vbe_start_addr  = RT_MIN(offStart, pThis->vram_size);
 
     /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than
      * the VRAM size permits. It is used instead of VBE_DISPI_INDEX_YRES *only* in case
@@ -1229,7 +1226,7 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
         }
         if (fRecalculate)
         {
-            recalculate_data(pThis, false);
+            recalculate_data(pThis);
         }
     }
     return VINF_SUCCESS;
@@ -2816,7 +2813,7 @@ static int vga_load(PSSMHANDLE pSSM, PVGASTATE pThis, int version_id)
     for(i = 0; i < (int)u8; i++)
         SSMR3GetU16(pSSM, &pThis->vbe_regs[i]);
     if (version_id <= VGA_SAVEDSTATE_VERSION_INV_VHEIGHT)
-        recalculate_data(pThis, false); /* <- re-calculate the pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
+        recalculate_data(pThis);    /* <- re-calculate the pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
     SSMR3GetU32(pSSM, &pThis->vbe_start_addr);
     SSMR3GetU32(pSSM, &pThis->vbe_line_offset);
     if (version_id < 2)
