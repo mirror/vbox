@@ -221,7 +221,7 @@ int RTCRestBinary::fromString(RTCString const &a_rValue, const char *a_pszName, 
 
 RTCRestObjectBase::kTypeClass RTCRestBinary::typeClass(void) const
 {
-    return kTypeClass_BinaryString;
+    return kTypeClass_Binary;
 }
 
 

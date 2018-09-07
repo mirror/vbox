@@ -58,7 +58,7 @@ static int ociSignRequestEnsureDateOrXDate(RTHTTP hHttp)
 
     RTTIMESPEC NowSpec;
     RTTIME     Now;
-    char       szDate[RTTIME_RTC2822_LEN];
+    char       szDate[RTTIME_RFC2822_LEN];
     ssize_t cch = RTTimeToRfc2822(RTTimeExplode(&Now, RTTimeNow(&NowSpec)), szDate, sizeof(szDate), RTTIME_RFC2822_F_GMT);
     AssertRCReturn((int)cch, (int)cch);
 

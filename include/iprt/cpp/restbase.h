@@ -30,6 +30,7 @@
 #include <iprt/types.h>
 #include <iprt/json.h>
 #include <iprt/stdarg.h>
+#include <iprt/time.h>
 #include <iprt/cpp/ministring.h>
 
 
@@ -361,16 +362,18 @@ public:
     {
         kTypeClass_Invalid = 0,
         kTypeClass_Bool,                /**< Primitive: bool. */
-        kTypeClass_Int64,               /**< Primitive: bool. */
-        kTypeClass_Int32,               /**< Primitive: bool. */
-        kTypeClass_Int16,               /**< Primitive: bool. */
-        kTypeClass_Double,              /**< Primitive: bool. */
-        kTypeClass_String,              /**< Primitive: bool. */
+        kTypeClass_Int64,               /**< Primitive: int64_t. */
+        kTypeClass_Int32,               /**< Primitive: int32_t. */
+        kTypeClass_Int16,               /**< Primitive: int16_t. */
+        kTypeClass_Double,              /**< Primitive: double. */
+        kTypeClass_String,              /**< Primitive: string. */
+        kTypeClass_Date,                /**< Date. */
+        kTypeClass_Uuid,                /**< UUID. */
+        kTypeClass_Binary,              /**< Binary blob. */
         kTypeClass_Object,              /**< Object (any kind of data model object). */
         kTypeClass_Array,               /**< Array (containing any kind of object). */
         kTypeClass_StringMap,           /**< String map (containing any kind of object). */
-        kTypeClass_StringEnum,          /**< String enum. */
-        kTypeClass_BinaryString         /**< Binary string. */
+        kTypeClass_StringEnum           /**< String enum. */
     } kTypeClass;
 
     /**
@@ -641,6 +644,152 @@ public:
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
 };
+
+
+/**
+ * Date class.
+ *
+ * There are numerous ways of formatting a timestamp and the specifications
+ * we're currently working with doesn't have a way of telling it seems.
+ * Thus, decoding need to have fail safes built in so the user can give hints.
+ * The formatting likewise needs to be told which format to use by the user.
+ *
+ * Two side-effects of the format stuff is that the default constructor creates
+ * an object that is null, and resetToDefault will do the same bug leave the
+ * format as a hint.
+ */
+class RT_DECL_CLASS RTCRestDate : public RTCRestObjectBase
+{
+public:
+    /** Default constructor.
+     * @note The result is a null-object.   */
+    RTCRestDate();
+    /** Copy constructor. */
+    RTCRestDate(RTCRestDate const &a_rThat);
+    /** Destructor. */
+    virtual ~RTCRestDate();
+    /** Copy assignment operator. */
+    RTCRestDate &operator=(RTCRestDate const &a_rThat);
+    /** Safe copy assignment method. */
+    int assignCopy(RTCRestDate const &a_rThat);
+
+    /* Overridden methods: */
+    virtual int resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
+    /** Date formats. */
+    typedef enum
+    {
+        kFormat_Invalid = 0,
+        kFormat_Rfc2822,            /**< Format it according to RFC-2822. */
+        kFormat_Rfc7131,            /**< Format it according to RFC-7131 (HTTP). */
+        kFormat_Rfc3339,            /**< Format it according to RFC-3339 (ISO-8601) (no fraction). */
+        kFormat_Rfc3339_Fraction_2, /**< Format it according to RFC-3339 (ISO-8601) with two digit fraction (hundreths). */
+        kFormat_Rfc3339_Fraction_3, /**< Format it according to RFC-3339 (ISO-8601) with three digit fraction (milliseconds). */
+        kFormat_Rfc3339_Fraction_6, /**< Format it according to RFC-3339 (ISO-8601) with six digit fraction (microseconds). */
+        kFormat_Rfc3339_Fraction_9, /**< Format it according to RFC-3339 (ISO-8601) with nine digit fraction (nanoseconds). */
+        kFormat_End
+    } kFormat;
+
+    /**
+     * Assigns the value, formats it as a string and clears the null indicator.
+     *
+     * @returns VINF_SUCCESS, VERR_NO_STR_MEMORY or VERR_INVALID_PARAMETER.
+     * @param   a_pTimeSpec     The time spec to set.
+     * @param   a_enmFormat     The date format to use when formatting it.
+     */
+    int assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat);
+    int assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method. */
+    int assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method. */
+    int assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method. */
+
+    /**
+     * Assigns the current UTC time and clears the null indicator .
+     *
+     * @returns VINF_SUCCESS, VERR_NO_STR_MEMORY or VERR_INVALID_PARAMETER.
+     * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
+     * @param   a_enmFormat     The date format to use when formatting it.
+     */
+    int assignNow(kFormat a_enmFormat);
+    int assignNowRfc2822(); /**< Convenience method. */
+    int assignNowRfc7131(); /**< Convenience method. */
+    int assignNowRfc3339(); /**< Convenience method. */
+
+    /**
+     * Sets the format to help deal with decoding issues.
+     *
+     * This can also be used to change the date format for an okay timespec.
+     * @returns IPRT status code.
+     * @param   a_enmFormat     The date format to try/set.
+     */
+    int setFormat(kFormat a_enmFormat);
+
+    /** Check if the value is okay (m_TimeSpec & m_Exploded). */
+    bool              isOkay() const        { return m_fTimeSpecOkay; }
+    /** Get the timespec value. */
+    RTTIMESPEC const &getTimeSpec() const   { return m_TimeSpec; }
+    /** Get the exploded time. */
+    RTTIME const     &getExploded() const   { return m_Exploded; }
+    /** Get the formatted/raw string value. */
+    RTCString const  &getString() const     { return m_strFormatted; }
+
+protected:
+    /** The value. */
+    RTTIMESPEC  m_TimeSpec;
+    /** The exploded time value. */
+    RTTIME      m_Exploded;
+    /** Set if m_TimeSpec is okay, consult m_strFormatted if not. */
+    bool        m_fTimeSpecOkay;
+    /** The format / format hint. */
+    kFormat     m_enmFormat;
+    /** The formatted date string.
+     * This will be the raw input string for a deserialized value, where as for
+     * a value set by the user it will be the formatted value. */
+    RTCString   m_strFormatted;
+
+    /**
+     * Explodes and formats the m_TimeSpec value.
+     *
+     * Sets m_Exploded, m_strFormatted, m_fTimeSpecOkay, and m_enmFormat, clears m_fNullIndicator.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
+     * @param   a_enmFormat The format to use.
+     */
+    int explodeAndFormat(kFormat a_enmFormat);
+
+    /**
+     * Formats the m_Exploded value.
+     *
+     * Sets m_strFormatted, m_fTimeSpecOkay, and m_enmFormat, clears m_fNullIndicator.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
+     * @param   a_enmFormat The format to use.
+     */
+    int format(kFormat a_enmFormat);
+
+    /**
+     * Internal worker that attempts to decode m_strFormatted.
+     *
+     * Sets m_fTimeSpecOkay.
+     *
+     * @returns IPRT status code.
+     * @param   enmFormat   Specific format to try, kFormat_Invalid (default) to try guess it.
+     */
+    int decodeFormattedString(kFormat enmFormat = kFormat_Invalid);
+};
+
+
+/** We should provide a proper UUID class eventually.  Currently it is not used. */
+typedef RTCRestString RTCRestUuid;
 
 
 /**

@@ -31,6 +31,7 @@
 #define LOG_GROUP RTLOGGROUP_REST
 #include <iprt/cpp/restbase.h>
 
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 
@@ -1152,6 +1153,438 @@ const char *RTCRestString::typeName() const
     return "RTCString";
 }
 
+
+
+/*********************************************************************************************************************************
+*   RTCRestDate implementation                                                                                                   *
+*********************************************************************************************************************************/
+
+RTCRestDate::RTCRestDate()
+    : RTCRestObjectBase()
+    , m_fTimeSpecOkay(false)
+    , m_enmFormat(kFormat_Invalid)
+    , m_strFormatted()
+{
+    RTTimeSpecSetNano(&m_TimeSpec, 0);
+    RT_ZERO(m_Exploded);
+
+    /* Since we need to know the format, all date-time values default to 'null'. */
+    m_fNullIndicator = true;
+}
+
+
+RTCRestDate::RTCRestDate(RTCRestDate const &a_rThat)
+    : RTCRestObjectBase(a_rThat)
+    , m_fTimeSpecOkay(a_rThat.m_fTimeSpecOkay)
+    , m_enmFormat(a_rThat.m_enmFormat)
+    , m_strFormatted(a_rThat.m_strFormatted)
+{
+    m_TimeSpec = a_rThat.m_TimeSpec;
+    m_Exploded = a_rThat.m_Exploded;
+}
+
+
+RTCRestDate::~RTCRestDate()
+{
+    /* nothing to do */
+}
+
+
+RTCRestDate &RTCRestDate::operator=(RTCRestDate const &a_rThat)
+{
+    RTCRestObjectBase::operator=(a_rThat);
+    m_TimeSpec      = a_rThat.m_TimeSpec;
+    m_Exploded      = a_rThat.m_Exploded;
+    m_fTimeSpecOkay = a_rThat.m_fTimeSpecOkay;
+    m_enmFormat     = a_rThat.m_enmFormat;
+    m_strFormatted  = a_rThat.m_strFormatted;
+    return *this;
+}
+
+
+int RTCRestDate::assignCopy(RTCRestDate const &a_rThat)
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    m_TimeSpec       = a_rThat.m_TimeSpec;
+    m_Exploded       = a_rThat.m_Exploded;
+    m_fTimeSpecOkay  = a_rThat.m_fTimeSpecOkay;
+    m_enmFormat      = a_rThat.m_enmFormat;
+    return m_strFormatted.assignNoThrow(a_rThat.m_strFormatted);
+}
+
+
+int RTCRestDate::resetToDefault()
+{
+    m_fNullIndicator = true;
+    RTTimeSpecSetNano(&m_TimeSpec, 0);
+    RT_ZERO(m_Exploded);
+    m_fTimeSpecOkay = false;
+    m_strFormatted.setNull();
+    /*m_enmFormat - leave as hint. */
+    return VINF_SUCCESS;
+}
+
+
+RTCRestOutputBase &RTCRestDate::serializeAsJson(RTCRestOutputBase &a_rDst) const
+{
+    if (m_fNullIndicator)
+        a_rDst.printf("null");
+    else
+        a_rDst.printf("%RMjs", m_strFormatted.c_str());
+    return a_rDst;
+}
+
+
+int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+{
+    RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
+    if (enmType == RTJSONVALTYPE_STRING)
+    {
+        int rc = m_strFormatted.assignNoThrow(RTJsonValueGetString(a_rCursor.m_hValue));
+        AssertRCReturn(rc, rc);
+
+        m_fNullIndicator = false;
+        rc = decodeFormattedString(m_enmFormat);
+        if (RT_SUCCESS(rc))
+            return rc;
+        if (m_enmFormat != kFormat_Invalid)
+        {
+            rc = decodeFormattedString();
+            if (RT_SUCCESS(rc))
+                return rc;
+        }
+        return a_rCursor.m_pPrimary->addError(a_rCursor, VWRN_REST_UNABLE_TO_DECODE_DATE,
+                                              "Unable to decode date value: %s", m_strFormatted.c_str());
+    }
+
+    if (enmType == RTJSONVALTYPE_NULL)
+    {
+        setNull();
+        return VINF_SUCCESS;
+    }
+
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type for date: %s",
+                                          RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
+}
+
+
+int RTCRestDate::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
+{
+    if (m_fNullIndicator)
+    {
+        if (a_fFlags & kToString_Append)
+            return a_pDst->appendNoThrow(RT_STR_TUPLE("null"));
+        return a_pDst->assignNoThrow(RT_STR_TUPLE("null"));
+    }
+    if (a_fFlags & kToString_Append)
+        return a_pDst->appendNoThrow(m_strFormatted);
+    return a_pDst->assignNoThrow(m_strFormatted);
+}
+
+
+int RTCRestDate::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
+                            uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+{
+    if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        setNull();
+        return VINF_SUCCESS;
+    }
+
+    int rc = m_strFormatted.assignNoThrow(a_rValue);
+    AssertRCReturn(rc, rc);
+
+    m_fNullIndicator = false;
+    rc = decodeFormattedString(m_enmFormat);
+    if (RT_SUCCESS(rc))
+        return rc;
+    if (m_enmFormat != kFormat_Invalid)
+    {
+        rc = decodeFormattedString();
+        if (RT_SUCCESS(rc))
+            return rc;
+    }
+    RT_NOREF(a_fFlags);
+    return RTErrInfoSetF(a_pErrInfo, VERR_REST_UNABLE_TO_DECODE_DATE,
+                         "Unable to decode date value (%s): %s", a_pszName, m_strFormatted.c_str());
+}
+
+
+RTCRestObjectBase::kTypeClass RTCRestDate::typeClass(void) const
+{
+    return kTypeClass_Date;
+}
+
+
+const char *RTCRestDate::typeName(void) const
+{
+    return "RTCRestDate";
+}
+
+
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDate::createInstance(void)
+{
+    return new (std::nothrow) RTCRestDate();
+}
+
+int RTCRestDate::assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat)
+{
+    AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
+    AssertReturn(a_enmFormat > kFormat_Invalid && a_enmFormat < kFormat_End, VERR_INVALID_PARAMETER);
+
+    m_TimeSpec = *a_pTimeSpec;
+    return explodeAndFormat(a_enmFormat);
+}
+
+
+int RTCRestDate::assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec)
+{
+    AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
+    m_TimeSpec = *a_pTimeSpec;
+    return explodeAndFormat(kFormat_Rfc2822);
+}
+
+
+int RTCRestDate::assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec)
+{
+    AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
+    m_TimeSpec = *a_pTimeSpec;
+    return explodeAndFormat(kFormat_Rfc7131);
+}
+
+
+int RTCRestDate::assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec)
+{
+    AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
+    m_TimeSpec = *a_pTimeSpec;
+    return explodeAndFormat(kFormat_Rfc3339);
+}
+
+
+int RTCRestDate::assignNow(kFormat a_enmFormat)
+{
+    RTTIMESPEC Now;
+    return assignValue(RTTimeNow(&Now), a_enmFormat);
+}
+
+
+int RTCRestDate::assignNowRfc2822()
+{
+    RTTIMESPEC Now;
+    return assignValueRfc2822(RTTimeNow(&Now));
+}
+
+
+int RTCRestDate::assignNowRfc7131()
+{
+    RTTIMESPEC Now;
+    return assignValueRfc7131(RTTimeNow(&Now));
+}
+
+
+int RTCRestDate::assignNowRfc3339()
+{
+    RTTIMESPEC Now;
+    return assignValueRfc3339(RTTimeNow(&Now));
+}
+
+
+int RTCRestDate::setFormat(kFormat a_enmFormat)
+{
+    /*
+     * If this is a null object, just set the format as a hint for upcoming deserialization.
+     */
+    if (m_fNullIndicator)
+    {
+        AssertReturn(a_enmFormat >= kFormat_Invalid && a_enmFormat < kFormat_End, VERR_INVALID_PARAMETER);
+        m_enmFormat = a_enmFormat;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * If the tiem spec is okay, just reformat the string value accordingly.
+     */
+    if (m_fTimeSpecOkay)
+    {
+        AssertReturn(a_enmFormat > kFormat_Invalid && a_enmFormat < kFormat_End, VERR_INVALID_PARAMETER);
+        if (a_enmFormat ==  m_enmFormat)
+            return VINF_SUCCESS;
+        return format(a_enmFormat);
+    }
+
+    /*
+     * Try decode
+     */
+    AssertReturn(a_enmFormat > kFormat_Invalid && a_enmFormat < kFormat_End, VERR_INVALID_PARAMETER);
+    return decodeFormattedString(a_enmFormat);
+}
+
+
+int RTCRestDate::explodeAndFormat(kFormat a_enmFormat)
+{
+    RTTimeExplode(&m_Exploded, &m_TimeSpec);
+    return format(a_enmFormat);
+}
+
+
+/**
+ * Formats the m_Exploded value.
+ *
+ * Sets m_strFormatted, m_fTimeSpecOkay, and m_enmFormat, clears m_fNullIndicator.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
+ * @param   a_enmFormat The format to use.
+ */
+int RTCRestDate::format(kFormat a_enmFormat)
+{
+    m_fNullIndicator = true;
+    m_enmFormat = a_enmFormat;
+    int rc;
+    switch (a_enmFormat)
+    {
+        case kFormat_Rfc2822:
+        case kFormat_Rfc7131:
+            rc = m_strFormatted.reserveNoThrow(RTTIME_RFC2822_LEN);
+            AssertRCReturn(rc, rc);
+            RTTimeToRfc2822(&m_Exploded, m_strFormatted.mutableRaw(), m_strFormatted.capacity(),
+                            a_enmFormat == kFormat_Rfc7131 ? RTTIME_RFC2822_F_GMT : 0);
+            m_strFormatted.jolt();
+            return VINF_SUCCESS;
+
+        case kFormat_Rfc3339:
+        case kFormat_Rfc3339_Fraction_2:
+        case kFormat_Rfc3339_Fraction_3:
+        case kFormat_Rfc3339_Fraction_6:
+        case kFormat_Rfc3339_Fraction_9:
+            rc = m_strFormatted.reserveNoThrow(RTTIME_STR_LEN);
+            AssertRCReturn(rc, rc);
+            RTTimeToStringEx(&m_Exploded, m_strFormatted.mutableRaw(), m_strFormatted.capacity(),
+                             a_enmFormat == kFormat_Rfc3339 ? 0
+                             : a_enmFormat == kFormat_Rfc3339_Fraction_2 ? 2
+                             : a_enmFormat == kFormat_Rfc3339_Fraction_3 ? 3
+                             : a_enmFormat == kFormat_Rfc3339_Fraction_6 ? 6 : 9);
+            m_strFormatted.jolt();
+            return VINF_SUCCESS;
+
+        /* no default */
+        case kFormat_Invalid:
+        case kFormat_End:
+            break;
+    }
+    AssertFailedReturn(VERR_REST_INTERNAL_ERROR_7);
+}
+
+
+/**
+ * Internal worker that attempts to decode m_strFormatted.
+ *
+ * Sets m_fTimeSpecOkay.
+ *
+ * @returns IPRT status code.
+ * @param   enmFormat   Specific format to try, kFormat_Invalid (default) to try guess it.
+ */
+int RTCRestDate::decodeFormattedString(kFormat enmFormat /*= kFormat_Invalid*/)
+{
+    /*
+     * Take empty string to mean null.
+     */
+    const char *pszTmp = RTStrStripL(m_strFormatted.c_str());
+    if (*pszTmp == '\0')
+    {
+        setNull();
+        return VINF_SUCCESS;
+    }
+
+    switch (enmFormat)
+    {
+        case kFormat_Invalid:
+        {
+            size_t cch = strlen(pszTmp);
+            if (cch >= 6)
+            {
+                if (   !RT_C_IS_DIGIT(pszTmp[0])
+                    || RT_C_IS_SPACE(pszTmp[5])
+                    || RT_C_IS_SPACE(pszTmp[2])
+                    || RT_C_IS_SPACE(pszTmp[1])
+                    || RT_C_IS_SPACE(pszTmp[3])
+                    || RT_C_IS_SPACE(pszTmp[4]))
+                    return decodeFormattedString(kFormat_Rfc2822);
+                return decodeFormattedString(kFormat_Rfc3339);
+            }
+            return VERR_REST_UNABLE_TO_DECODE_DATE;
+        }
+
+        /*
+         * Examples:
+         *      Fri, 31 Aug 2018 00:00:00 +0200
+         *      Mon, 3 Sep 2018 00:00:00 GMT
+         *      Mon, 3 Sep 2018 00:00:00 -0000
+         *      3 Sep 2018 00:00:00 -0000 (?)
+         *      3 Sep 2018 00:00:00 GMT   (?)
+         */
+        case kFormat_Rfc2822:
+        case kFormat_Rfc7131:
+            if (RTTimeFromRfc2822(&m_Exploded, pszTmp))
+            {
+                RTTimeImplode(&m_TimeSpec, &m_Exploded);
+
+                pszTmp = strchr(pszTmp, '\0');
+                if (pszTmp[-1] == 'T' || pszTmp[-1] == 't')
+                    m_enmFormat = kFormat_Rfc7131;
+                else
+                    m_enmFormat = kFormat_Rfc2822;
+                m_fTimeSpecOkay = true;
+                return VINF_SUCCESS;
+            }
+            return VERR_REST_UNABLE_TO_DECODE_DATE;
+
+        /*
+         * Examples:
+         *      2018-08-31T00:00:00+0200
+         *      2018-09-03T00:00:00Z
+         *      2018-09-03T00:00:00+0000
+         *      2018-09-03T00:00:00.123456789Z
+         */
+        case kFormat_Rfc3339:
+        case kFormat_Rfc3339_Fraction_2:
+        case kFormat_Rfc3339_Fraction_3:
+        case kFormat_Rfc3339_Fraction_6:
+        case kFormat_Rfc3339_Fraction_9:
+            if (RTTimeFromString(&m_Exploded, pszTmp))
+            {
+                RTTimeImplode(&m_TimeSpec, &m_Exploded);
+
+                pszTmp = strchr(pszTmp, '.');
+                if (!pszTmp)
+                    m_enmFormat = kFormat_Rfc3339;
+                else
+                {
+                    size_t cchFraction = 0;
+                    pszTmp++;
+                    while (RT_C_IS_DIGIT(pszTmp[cchFraction]))
+                        cchFraction++;
+                    if (cchFraction == 0)
+                        m_enmFormat = kFormat_Rfc3339;
+                    else if (cchFraction <= 2)
+                        m_enmFormat = kFormat_Rfc3339_Fraction_2;
+                    else if (cchFraction <= 3)
+                        m_enmFormat = kFormat_Rfc3339_Fraction_3;
+                    else if (cchFraction <= 6)
+                        m_enmFormat = kFormat_Rfc3339_Fraction_6;
+                    else
+                        m_enmFormat = kFormat_Rfc3339_Fraction_9;
+                }
+                m_fTimeSpecOkay = true;
+                return VINF_SUCCESS;
+            }
+            return VERR_REST_UNABLE_TO_DECODE_DATE;
+
+        /* no default */
+        case kFormat_End:
+            break;
+    }
+    AssertFailedReturn(VERR_INVALID_PARAMETER);
+}
 
 
 /*********************************************************************************************************************************

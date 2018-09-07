@@ -3217,6 +3217,10 @@ RT_C_DECLS_END
 #define VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR           (-25702)
 /** Server response contains unexpected repetitive header field. */
 #define VERR_REST_RESPONSE_REPEAT_HEADER_FIELD          (-25703)
+/** Unable to decode date value. */
+#define VWRN_REST_UNABLE_TO_DECODE_DATE                 (25704)
+/** Unable to decode date value. */
+#define VERR_REST_UNABLE_TO_DECODE_DATE                 (-25704)
 
 /** Internal error \#1. */
 #define VERR_REST_INTERNAL_ERROR_1                      (-25791)
