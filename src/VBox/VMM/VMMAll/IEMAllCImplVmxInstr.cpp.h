@@ -695,6 +695,88 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
 
 
 /**
+ * Gets a segment register from the VMCS given its index.
+ *
+ * @returns VBox status code.
+ * @param   pVmcs       Pointer to the virtual VMCS.
+ * @param   iSegReg     The index of the segment register (X86_SREG_XXX).
+ * @param   pSelReg     Where to store the segment register (only updated when
+ *                      VINF_SUCCESS is returned).
+ *
+ * @remarks Warning! This does not validate the contents of the retreived segment
+ *          register.
+ */
+IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUMSELREG pSelReg)
+{
+    Assert(pSelReg);
+    Assert(iSegReg < X86_SREG_COUNT);
+
+    /* Selector. */
+    uint16_t u16Sel;
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t  const *pbField    = pbVmcs + offField;
+        u16Sel = *(uint16_t *)pbField;
+    }
+
+    /* Limit. */
+    uint32_t u32Limit;
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
+        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t  const *pbField    = pbVmcs + offField;
+        u32Limit = *(uint32_t *)pbField;
+    }
+
+    /* Base. */
+    uint64_t u64Base;
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_NATURAL;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
+        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t  const *pbField    = pbVmcs + offField;
+        u64Base = *(uint64_t *)pbField;
+        /** @todo NSTVMX: Should we zero out high bits here for 32-bit virtual CPUs? */
+    }
+
+    /* Attributes. */
+    uint32_t u32Attr;
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
+        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t  const *pbField    = pbVmcs + offField;
+        u32Attr = *(uint32_t *)pbField;
+    }
+
+    pSelReg->Sel      = u16Sel;
+    pSelReg->u32Limit = u32Limit;
+    pSelReg->u64Base  = u64Base;
+    pSelReg->Attr.u   = u32Attr;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Gets VM-exit instruction information along with any displacement for an
  * instruction VM-exit.
  *
