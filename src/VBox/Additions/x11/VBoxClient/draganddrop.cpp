@@ -1887,7 +1887,7 @@ int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
     char szFormat[] = { "text/uri-list" };
 
     int rc = VbglR3DnDHGSendReqData(&m_dndCtx, szFormat);
-    logInfo("Drop event from host resuled in: %Rrc\n", rc);
+    logInfo("Drop event from host resulted in: %Rrc\n", rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
