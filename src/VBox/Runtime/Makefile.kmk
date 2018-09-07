@@ -1652,9 +1652,9 @@ ifdef VBOX_WITH_LIBCURL
  	common/misc/s3.cpp \
  	generic/http-curl.cpp \
  	common/rest/rest-primary-object-types.cpp \
+ 	common/rest/rest-binary.cpp \
  	common/rest/RTCRestAnyObject.cpp \
  	common/rest/RTCRestArrayBase.cpp \
- 	common/rest/RTCRestBinaryString.cpp \
  	common/rest/RTCRestClientApiBase.cpp \
  	common/rest/RTCRestClientApiBaseOci.cpp \
  	common/rest/RTCRestClientRequestBase.cpp \

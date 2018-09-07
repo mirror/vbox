@@ -741,6 +741,71 @@ protected:
     virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const = 0;
 };
 
+
+/**
+ * Class for handling binary blobs (strings).
+ *
+ * There are specializations of this class for body parameters and responses,
+ * see RTCRestBinaryParameter and RTCRestBinaryResponse.
+ */
+class RT_DECL_CLASS RTCRestBinary : public RTCRestObjectBase
+{
+public:
+    /** Default constructor. */
+    RTCRestBinary();
+    /** Destructor. */
+    virtual ~RTCRestBinary();
+
+    /** Safe copy assignment method. */
+    virtual int assignCopy(RTCRestBinary const &a_rThat);
+    /** Safe buffer copy method. */
+    virtual int assignCopy(void const *a_pvData, size_t a_cbData);
+
+    /** Use the specified data buffer directly. */
+    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData);
+    /** Use the specified data buffer directly. */
+    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf);
+    /** Frees the data held by the object and resets it default state. */
+    virtual void freeData();
+
+    /** Returns a pointer to the data blob. */
+    const uint8_t  *getPtr()  const { return m_pbData; }
+    /** Gets the size of the data. */
+    size_t          getSize() const { return m_cbData; }
+
+    /* Overridden methods: */
+    virtual int setNull(void) RT_OVERRIDE;
+    virtual int resetToDefault(void) RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_OVERRIDE;
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
+protected:
+    /** Pointer to data blob. */
+    uint8_t    *m_pbData;
+    /** Amount of valid data in the blob. */
+    size_t      m_cbData;
+    /** Number of bytes allocated for the m_pbData buffer. */
+    size_t      m_cbAllocated;
+    /** Set if the data is freeable, only ever clear if user data. */
+    bool        m_fFreeable;
+    /** Set if the data blob is readonly user provided data. */
+    bool        m_fReadOnly;
+
+private:
+    /* No copy constructor or copy assignment: */
+    RTCRestBinary(RTCRestBinary const &a_rThat);
+    RTCRestBinary &operator=(RTCRestBinary const &a_rThat);
+};
+
+
 /** @} */
 
 #endif
