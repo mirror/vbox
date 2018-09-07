@@ -948,6 +948,8 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
                          ? g_aiDayOfYearLeap[pTime->u8Month - 1]
                          : g_aiDayOfYear[pTime->u8Month - 1]);
 
+    pTime->u8WeekDay = UINT8_MAX; /* later */
+
     /*
      * The time part.
      */
@@ -979,11 +981,11 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
     if (pTime->u8Second > 59)
         return NULL;
 
-    /* Just in case there is a fraction of seconds (should be!). */
+    /* We generally put a 9 digit fraction here, but it's entirely optional. */
     if (*pszString == '.')
     {
-        const char * const pszStart = pszString;
-        rc = RTStrToUInt32Ex(pszString + 1, (char **)&pszString, 10, &pTime->u32Nanosecond);
+        const char * const pszStart = ++pszString;
+        rc = RTStrToUInt32Ex(pszString, (char **)&pszString, 10, &pTime->u32Nanosecond);
         if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
             return NULL;
         if (pTime->u32Nanosecond >= 1000000000)
@@ -1015,7 +1017,7 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
     {
         pszString++;
         pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
-        pTime->fFlags |= ~RTTIME_FLAGS_TYPE_UTC;
+        pTime->fFlags |= RTTIME_FLAGS_TYPE_UTC;
         pTime->offUTC = 0;
     }
     else if (   *pszString == '+'
@@ -1051,6 +1053,8 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
         if (!RT_C_IS_BLANK(ch))
             return NULL;
 
+    /* Calc week day. */
+    rtTimeNormalizeInternal(pTime);
     return pTime;
 }
 RT_EXPORT_SYMBOL(RTTimeFromString);
@@ -1182,12 +1186,10 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
      */
 
     /* Optional day of week: */
-    if (RT_C_IS_ALPHA(pszString[0]))
-        pTime->u8WeekDay = UINT8_MAX;
-    else if (pszString[0] != '\0' && pszString[1] != '\0')
+    if (RT_C_IS_ALPHA(pszString[0]) && pszString[1] != '\0')
     {
-        uint32_t uWeekDay = RT_MAKE_U32_FROM_U8(RT_C_TO_LOWER(pszString[0]), RT_C_TO_LOWER(pszString[0]),
-                                                RT_C_TO_LOWER(pszString[1]), 0);
+        uint32_t uWeekDay = RT_MAKE_U32_FROM_U8(RT_C_TO_LOWER(pszString[0]), RT_C_TO_LOWER(pszString[1]),
+                                                RT_C_TO_LOWER(pszString[2]), 0);
         if (     uWeekDay == RT_MAKE_U32_FROM_U8('m', 'o', 'n', 0))     pTime->u8WeekDay = 0;
         else if (uWeekDay == RT_MAKE_U32_FROM_U8('t', 'u', 'e', 0))     pTime->u8WeekDay = 1;
         else if (uWeekDay == RT_MAKE_U32_FROM_U8('w', 'e', 'd', 0))     pTime->u8WeekDay = 2;
@@ -1207,6 +1209,8 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
         if (!RT_C_IS_DIGIT(pszString[0]))
             return NULL;
     }
+    else if (RT_C_IS_DIGIT(pszString[0]))
+        pTime->u8WeekDay = UINT8_MAX;
     else
         return NULL;
 
@@ -1220,8 +1224,8 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
     /* Month of the year. */
     if (pszString[0] == '\0' || pszString[1] == '\0' || pszString[2] == '\0')
         return NULL;
-    uint32_t uMonth = RT_MAKE_U32_FROM_U8(RT_C_TO_LOWER(pszString[0]), RT_C_TO_LOWER(pszString[0]),
-                                          RT_C_TO_LOWER(pszString[1]), 0);
+    uint32_t uMonth = RT_MAKE_U32_FROM_U8(RT_C_TO_LOWER(pszString[0]), RT_C_TO_LOWER(pszString[1]),
+                                          RT_C_TO_LOWER(pszString[2]), 0);
     if (     uMonth == RT_MAKE_U32_FROM_U8('j', 'a', 'n', 0))     pTime->u8Month = 1;
     else if (uMonth == RT_MAKE_U32_FROM_U8('f', 'e', 'b', 0))     pTime->u8Month = 2;
     else if (uMonth == RT_MAKE_U32_FROM_U8('m', 'a', 'r', 0))     pTime->u8Month = 3;
@@ -1243,8 +1247,17 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
         pszString++;
 
     /* Year */
+    const char * const pszStartYear = pszString;
     rc = RTStrToInt32Ex(pszString, (char **)&pszString, 10, &pTime->i32Year);
     if (rc != VWRN_TRAILING_CHARS)
+        return NULL;
+    if (pszString - pszStartYear >= 4 )
+    { /* likely */ }
+    else if (pszString - pszStartYear == 3)
+        pTime->i32Year += 1900;
+    else if (pszString - pszStartYear == 2)
+        pTime->i32Year += pTime->i32Year >= 50 ? 1900 : 2000;
+    else
         return NULL;
 
     bool const fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
@@ -1295,11 +1308,11 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
     if (pTime->u8Second > 59)
         return NULL;
 
-    /* Nanoseconds  and probably non-standard. */
+    /* Non-standard fraction.  Handy for testing, though. */
     if (*pszString == '.')
     {
-        const char * const pszStart = pszString;
-        rc = RTStrToUInt32Ex(pszString + 1, (char **)&pszString, 10, &pTime->u32Nanosecond);
+        const char * const pszStart = ++pszString;
+        rc = RTStrToUInt32Ex(pszString, (char **)&pszString, 10, &pTime->u32Nanosecond);
         if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
             return NULL;
         if (pTime->u32Nanosecond >= 1000000000)
@@ -1323,27 +1336,21 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
     }
     else
         pTime->u32Nanosecond = 0;
+    while (RT_C_IS_SPACE(*pszString))
+        pszString++;
 
     /*
      * Time zone.
      */
-    if (   (pszString[0] == 'G' || pszString[0] == 'g')
-        && (pszString[1] == 'M' || pszString[1] == 'm')
-        && (pszString[2] == 'T' || pszString[2] == 't') )
-    {
-        pszString++;
-        pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
-        pTime->fFlags |= ~RTTIME_FLAGS_TYPE_UTC;
-        pTime->offUTC = 0;
-    }
-    else if (   *pszString == '+'
-             || *pszString == '-')
+    if (   *pszString == '+'
+        || *pszString == '-')
     {
         if (   !RT_C_IS_DIGIT(pszString[1])
             || !RT_C_IS_DIGIT(pszString[2]))
             return NULL;
         int8_t cUtcHours = (pszString[1] - '0') * 10 + (pszString[2] - '0');
-        if (*pszString == '-')
+        char   chSign    = *pszString;
+        if (chSign == '-')
             cUtcHours = -cUtcHours;
         pszString += 3;
 
@@ -1362,6 +1369,57 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
             pTime->offUTC = cUtcHours * 60 - cUtcMin;
         if (RT_ABS(pTime->offUTC) > 840)
             return NULL;
+
+        /* -0000: GMT isn't necessarily the local time zone, so change flags from local to UTC. */
+        if (pTime->offUTC == 0 && chSign == '-')
+        {
+            pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
+            pTime->fFlags |= RTTIME_FLAGS_TYPE_UTC;
+        }
+    }
+    else if (RT_C_IS_ALPHA(*pszString))
+    {
+        uint32_t uTimeZone = RT_MAKE_U32_FROM_U8(RT_C_TO_LOWER(pszString[0]), RT_C_TO_LOWER(pszString[1]),
+                                                 RT_C_TO_LOWER(pszString[2]), 0);
+        if (uTimeZone == RT_MAKE_U32_FROM_U8('g', 'm', 't', 0))
+        {
+            pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
+            pTime->fFlags |= RTTIME_FLAGS_TYPE_UTC;
+            pTime->offUTC = 0;
+            pszString += 3;
+        }
+        else if ((uint16_t)uTimeZone == RT_MAKE_U16('u', 't'))
+        {
+            pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
+            pTime->fFlags |= RTTIME_FLAGS_TYPE_UTC;
+            pTime->offUTC = 0;
+            pszString += 2;
+        }
+        else
+        {
+            static const struct { uint32_t uTimeZone; int32_t offUtc; } s_aLegacyTimeZones[] =
+            {
+                { RT_MAKE_U32_FROM_U8('e', 'd', 't', 0), -4*60 },
+                { RT_MAKE_U32_FROM_U8('e', 's', 't', 0), -5*60 },
+                { RT_MAKE_U32_FROM_U8('c', 'd', 't', 0), -5*60 },
+                { RT_MAKE_U32_FROM_U8('c', 's', 't', 0), -6*60 },
+                { RT_MAKE_U32_FROM_U8('m', 'd', 't', 0), -6*60 },
+                { RT_MAKE_U32_FROM_U8('m', 's', 't', 0), -7*60 },
+                { RT_MAKE_U32_FROM_U8('p', 'd', 't', 0), -7*60 },
+                { RT_MAKE_U32_FROM_U8('p', 's', 't', 0), -8*60 },
+            };
+            size_t i = RT_ELEMENTS(s_aLegacyTimeZones);
+            while (i-- > 0)
+                if (s_aLegacyTimeZones[i].uTimeZone == uTimeZone)
+                {
+                    pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
+                    pTime->fFlags |= RTTIME_FLAGS_TYPE_LOCAL;
+                    pTime->offUTC = s_aLegacyTimeZones[i].offUtc;
+                    pszString += 3;
+                    break;
+                }
+        }
+
     }
     /* else: No time zone given, local with offUTC = 0. */
 
@@ -1373,6 +1431,7 @@ RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
         if (!RT_C_IS_BLANK(ch))
             return NULL;
 
+    rtTimeNormalizeInternal(pTime);
     return pTime;
 }
 RT_EXPORT_SYMBOL(RTTimeFromRfc2822);

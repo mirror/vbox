@@ -36,6 +36,7 @@
 #endif
 #include <iprt/time.h>
 
+#include <iprt/rand.h>
 #include <iprt/test.h>
 #include <iprt/string.h>
 
@@ -671,12 +672,40 @@ int main()
                 RTTestFailed(hTest, "Got %s (%zd bytes) expected %s (%zu bytes); line " RT_XSTR(__LINE__), \
                              szValue, cchResult, a_szExpect, sizeof(a_szExpect) - 1); \
         } while (0)
+#define RTTESTI_CHECK_FROM(a_FromCall) \
+        do { \
+            RTRandBytes(&T2, sizeof(T2)); \
+            PRTTIME pResult = a_FromCall; \
+            if (!pResult) \
+                RTTestFailed(hTest, "%s failed on line " RT_XSTR(__LINE__), #a_FromCall); \
+            else if (memcmp(&T1, &T2, sizeof(T2)) != 0) \
+                RTTestFailed(hTest, "%s produced incorrect result on line " RT_XSTR(__LINE__)": %s", #a_FromCall, ToString(&T2)); \
+        } while (0)
     SET_TIME(&T1, 1969,12,31, 23,59,58,999995000, 365, 2, 0, RTTIME_FLAGS_TYPE_UTC | RTTIME_FLAGS_COMMON_YEAR);
     RTTESTI_CHECK_FMT(RTTimeToRfc2822(&T1, szValue, sizeof(szValue),                    0), "Wed, 31 Dec 1969 23:59:58 -0000");
     RTTESTI_CHECK_FMT(RTTimeToRfc2822(&T1, szValue, sizeof(szValue), RTTIME_RFC2822_F_GMT), "Wed, 31 Dec 1969 23:59:58 GMT");
+    RTTESTI_CHECK_FMT(RTTimeToStringEx(&T1, szValue, sizeof(szValue), 0), "1969-12-31T23:59:58Z");
+    RTTESTI_CHECK_FMT(RTTimeToStringEx(&T1, szValue, sizeof(szValue), 1), "1969-12-31T23:59:58.9Z");
+    RTTESTI_CHECK_FMT(RTTimeToStringEx(&T1, szValue, sizeof(szValue), 5), "1969-12-31T23:59:58.99999Z");
+    RTTESTI_CHECK_FMT(RTTimeToStringEx(&T1, szValue, sizeof(szValue), 9), "1969-12-31T23:59:58.999995000Z");
+    RTTESTI_CHECK_FROM(RTTimeFromString(&T2, "1969-12-31T23:59:58.999995000Z"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Wed, 31 Dec 1969 23:59:58.999995 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Wed, 31 Dec 69 23:59:58.999995 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "31 Dec 69 23:59:58.999995 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "31 Dec 1969 23:59:58.999995 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "31 dec 1969 23:59:58.999995 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "wEd, 31 Dec 69 23:59:58.999995 UT"));
+
     SET_TIME(&T1, 2018, 9, 6,  4, 9, 8,        0, 249, 3, 0, RTTIME_FLAGS_TYPE_UTC | RTTIME_FLAGS_COMMON_YEAR);
     RTTESTI_CHECK_FMT(RTTimeToRfc2822(&T1, szValue, sizeof(szValue),                    0), "Thu, 6 Sep 2018 04:09:08 -0000");
-    RTTESTI_CHECK_FMT(RTTimeToRfc2822(&T1, szValue, sizeof(szValue), RTTIME_RFC2822_F_GMT), "Thu, 6 Sep 2018 04:09:08 GMT");
+    RTTESTI_CHECK_FMT(RTTimeToStringEx(&T1, szValue, sizeof(szValue), 0), "2018-09-06T04:09:08Z");
+    RTTESTI_CHECK_FROM(RTTimeFromString(&T2, "2018-09-06T04:09:08Z"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Thu, 6 Sep 2018 04:09:08 -0000"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Thu, 6 Sep 2018 04:09:08 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Thu, 06 Sep 2018 04:09:08 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Thu, 00006 Sep 2018 04:09:08 GMT"));
+    RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, " 00006 Sep 2018 04:09:08 GMT "));
+
 
     /*
      * Summary
