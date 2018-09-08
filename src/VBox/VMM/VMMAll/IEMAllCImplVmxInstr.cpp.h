@@ -2778,6 +2778,52 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Checks guest GDTR and IDTR as part of VM-entry.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPU pVCpu,  const char *pszInstr)
+{
+    /*
+     * GDTR and IDTR.
+     * See Intel spec. 26.3.1.3 "Checks on Guest Descriptor-Table Registers".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VM-exit";
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        /* Base. */
+        if (X86_IS_CANONICAL(pVmcs->u64GuestGdtrBase.u))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVInstrDiag_Vmentry_GuestGdtrBase);
+
+        if (X86_IS_CANONICAL(pVmcs->u64GuestIdtrBase.u))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVInstrDiag_Vmentry_GuestIdtrBase);
+    }
+
+    /* Limit. */
+    if (!RT_HI_U16(pVmcs->u32GuestGdtrLimit))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVInstrDiag_Vmentry_GuestGdtrLimit);
+
+    if (!RT_HI_U16(pVmcs->u32GuestIdtrLimit))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVInstrDiag_Vmentry_GuestIdtrLimit);
+
+    NOREF(pszInstr);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Checks guest-state as part of VM-entry.
  *
@@ -2798,6 +2844,13 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
     { /* likely */ }
     else
         return rc;
+
+    rc = iemVmxVmentryCheckGuestGdtrIdtr(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rc;
+
 
     return VINF_SUCCESS;
 }
