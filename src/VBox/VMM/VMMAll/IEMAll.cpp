@@ -12560,13 +12560,13 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         { \
             if (IEM_IS_REAL_OR_V86_MODE(pVCpu)) \
             { \
-                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_RealOrV86Mode; \
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_RealOrV86Mode; \
                 Log5((a_szInstr ": Real or v8086 mode -> #UD\n")); \
                 return IEMOP_RAISE_INVALID_OPCODE(); \
             } \
             if (IEM_IS_LONG_MODE(pVCpu) && !IEM_IS_64BIT_CODE(pVCpu)) \
             { \
-                pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_LongModeCS; \
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_LongModeCS; \
                 Log5((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
                 return IEMOP_RAISE_INVALID_OPCODE(); \
             } \
@@ -12584,7 +12584,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if (IEM_IS_VMX_ROOT_MODE(pVCpu)) { /* likely */ } \
         else \
         { \
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmInstrDiag = a_InsDiagPrefix##_VmxRoot; \
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_VmxRoot; \
             Log5((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
             return IEMOP_RAISE_INVALID_OPCODE(); \
         } \

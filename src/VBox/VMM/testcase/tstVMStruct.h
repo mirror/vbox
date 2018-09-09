@@ -147,7 +147,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HCPhysVmcb);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.GCPhysVmxon);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.GCPhysVmcs);
-    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.enmInstrDiag);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.enmDiag);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInVmxRootMode);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInVmxNonRootMode);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pVmcsR0);

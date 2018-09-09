@@ -543,8 +543,8 @@ typedef struct CPUMCTX
                 RTGCPHYS                GCPhysVmxon;
                 /** 0x2e8 - Guest physical address of the current VMCS pointer. */
                 RTGCPHYS                GCPhysVmcs;
-                /** 0x2f0 - Last emulated VMX instruction diagnostic. */
-                VMXVINSTRDIAG           enmInstrDiag;
+                /** 0x2f0 - Last emulated VMX instruction/VM-exit diagnostic. */
+                VMXVDIAG                enmDiag;
                 /** 0x2f4 - Whether the guest is in VMX root mode. */
                 bool                    fInVmxRootMode;
                 /** 0x2f5 - Whether the guest is in VMX non-root mode. */
@@ -681,7 +681,7 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysVmxon,            0x2e0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysVmcs,             0x2e8);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmInstrDiag,           0x2f0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmDiag,                0x2f0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxRootMode,         0x2f4);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxNonRootMode,      0x2f5);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,                0x2f8);

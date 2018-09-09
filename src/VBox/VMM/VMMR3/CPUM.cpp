@@ -3025,8 +3025,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  fInVmxNonRootMode          = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxNonRootMode);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmxon                = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmxon);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcs                 = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmcs);
-        pHlp->pfnPrintf(pHlp, "  enmInstrDiag               = %u (%s)\n",   pCtx->hwvirt.vmx.enmInstrDiag,
-                        HMVmxGetInstrDiagDesc(pCtx->hwvirt.vmx.enmInstrDiag));
+        pHlp->pfnPrintf(pHlp, "  enmDiag                    = %u (%s)\n",   pCtx->hwvirt.vmx.enmDiag,
+                        HMVmxGetDiagDesc(pCtx->hwvirt.vmx.enmDiag));
         /** @todo NSTVMX: Dump remaining/new fields. */
     }
 

@@ -144,7 +144,6 @@ VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGM
  * @{ */
 VMM_INT_DECL(int)               HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs);
 VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue);
-VMM_INT_DECL(const char *)      HMVmxGetInstrDiagDesc(VMXVINSTRDIAG enmInstrDiag);
 VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 /** @} */
 
@@ -175,6 +174,9 @@ VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
 # endif
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+VMM_INT_DECL(const char *)      HMVmxGetDiagDesc(VMXVDIAG enmDiag);
+# endif
 VMM_INT_DECL(int)               HMSvmIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
 #else /* Nops in RC: */
@@ -189,6 +191,7 @@ VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
 # define HMSvmIsVGifActive(pVM)                                       false
 # define HMSvmNstGstApplyTscOffset(pVCpu, uTicks)                     (uTicks)
 # define HMSvmNstGstVmExitNotify(pVCpu, pCtx)                         do { } while (0)
+# define HMVmxGetDiagDesc(VMXVDIAG)                                    NULL
 # define HMSvmIsSubjectToErratum170(puFamily, puModel, puStepping)    false
 # define HMHCSvmMaybeMovTprHypercall(pVCpu)                           do { } while (0)
 #endif
