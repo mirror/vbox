@@ -294,6 +294,7 @@ static void testBool(void)
 class Int64Constants
 {
 public:
+    Int64Constants() {}
     const char *getSubName()  const { return "RTCRestInt64"; }
     int64_t     getMin()      const { return INT64_MIN; }
     const char *getMinStr()   const { return "-9223372036854775808"; }
@@ -306,6 +307,7 @@ public:
 class Int32Constants
 {
 public:
+    Int32Constants() { }
     const char *getSubName()  const { return "RTCRestInt32"; }
     int32_t     getMin()      const { return INT32_MIN; }
     const char *getMinStr()   const { return "-2147483648"; }
@@ -318,6 +320,7 @@ public:
 class Int16Constants
 {
 public:
+    Int16Constants() { }
     const char *getSubName()  const { return "RTCRestInt16"; }
     int16_t     getMin()      const { return INT16_MIN; }
     const char *getMinStr()   const { return "-32768"; }
