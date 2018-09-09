@@ -55,6 +55,7 @@ PROGRAMS += \
 	tstRTCrPkix-1 \
 	tstRTCrX509-1 \
 	tstRTCType \
+	tstRTCRest-1 \
 	tstRTDigest \
 	tstRTDigest-2 \
 	tstDir \
@@ -306,6 +307,9 @@ $$(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h: \
 
 tstRTCType_TEMPLATE = VBOXR3TSTEXE
 tstRTCType_SOURCES = tstRTCType.cpp
+
+tstRTCRest-1_TEMPLATE = VBOXR3TSTEXE
+tstRTCRest-1_SOURCES = tstRTCRest-1.cpp
 
 tstRTDigest_TEMPLATE = VBOXR3TSTEXE
 tstRTDigest_SOURCES = tstRTDigest.cpp

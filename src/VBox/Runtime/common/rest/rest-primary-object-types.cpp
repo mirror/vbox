@@ -206,30 +206,27 @@ RTCRestOutputBase &RTCRestBool::serializeAsJson(RTCRestOutputBase &a_rDst) const
 
 int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
+    m_fValue = false;
+    m_fNullIndicator = false;
+
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
 
     if (enmType == RTJSONVALTYPE_TRUE)
     {
         m_fValue = true;
-        m_fNullIndicator = false;
         return VINF_SUCCESS;
     }
 
     if (enmType == RTJSONVALTYPE_FALSE)
-    {
-        m_fValue = false;
-        m_fNullIndicator = false;
         return VINF_SUCCESS;
-    }
 
     if (enmType == RTJSONVALTYPE_NULL)
     {
-        m_fValue = false;
         m_fNullIndicator = true;
         return VINF_SUCCESS;
     }
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for boolean",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_BOOL, "wrong JSON type %s for boolean",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -278,7 +275,8 @@ int RTCRestBool::fromString(RTCString const &a_rValue, const char *a_pszName, PR
         m_fNullIndicator = true;
     }
     else
-        return RTErrInfoSetF(a_pErrInfo, VERR_INVALID_PARAMETER, "%s: unable to parse '%s' as bool", a_pszName, a_rValue.c_str());
+        return RTErrInfoSetF(a_pErrInfo, VERR_REST_UNABLE_TO_PARSE_STRING_AS_BOOL,
+                             "%s: unable to parse '%s' as bool", a_pszName, a_rValue.c_str());
     return VINF_SUCCESS;
 }
 
@@ -404,7 +402,7 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     if (enmType == RTJSONVALTYPE_TRUE)
         m_iValue = 1;
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for 64-bit integer",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_INTEGER, "wrong JSON type %s for 64-bit integer",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -431,7 +429,8 @@ int RTCRestInt64::fromString(RTCString const &a_rValue, const char *a_pszName, P
     m_iValue = 0;
     m_fNullIndicator = false;
 
-    int rc = RTStrToInt64Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
+/** @todo RTStrStripL and RTStrToInt64Full has a different idea what consitutes spaces... */
+    int rc = RTStrToInt64Full(RTStrStripL(a_rValue.c_str()), 0, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
         return VINF_SUCCESS;
 
@@ -573,7 +572,7 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     if (enmType == RTJSONVALTYPE_TRUE)
         m_iValue = 1;
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for 32-bit integer",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_INTEGER, "wrong JSON type %s for 32-bit integer",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -600,7 +599,8 @@ int RTCRestInt32::fromString(RTCString const &a_rValue, const char *a_pszName, P
     m_iValue = 0;
     m_fNullIndicator = false;
 
-    int rc = RTStrToInt32Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
+/** @todo RTStrStripL and RTStrToInt32Full has a different idea what consitutes spaces... */
+    int rc = RTStrToInt32Full(RTStrStripL(a_rValue.c_str()), 0, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
         return VINF_SUCCESS;
 
@@ -742,7 +742,7 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     if (enmType == RTJSONVALTYPE_TRUE)
         m_iValue = 1;
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for 16-bit integer",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_INTEGER, "wrong JSON type %s for 16-bit integer",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -769,7 +769,8 @@ int RTCRestInt16::fromString(RTCString const &a_rValue, const char *a_pszName, P
     m_iValue = 0;
     m_fNullIndicator = false;
 
-    int rc = RTStrToInt16Full(RTStrStripL(a_rValue.c_str()), 10, &m_iValue);
+/** @todo RTStrStripL and RTStrToInt16Full has a different idea what consitutes spaces... */
+    int rc = RTStrToInt16Full(RTStrStripL(a_rValue.c_str()), 0, &m_iValue);
     if (rc == VINF_SUCCESS || rc == VERR_TRAILING_SPACES)
         return VINF_SUCCESS;
 
@@ -929,7 +930,7 @@ int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     if (enmType == RTJSONVALTYPE_TRUE)
         m_rdValue = 1.0;
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for a double",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE, "wrong JSON type %s for a double",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -1117,7 +1118,7 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
         return VINF_SUCCESS;
     }
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for string",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_STRING, "wrong JSON type %s for string",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -1263,7 +1264,7 @@ int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
         return VINF_SUCCESS;
     }
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type for date: %s",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_DATE, "wrong JSON type for date: %s",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 
@@ -1675,7 +1676,7 @@ int RTCRestStringEnumBase::deserializeFromJson(RTCRestJsonCursor const &a_rCurso
         return VINF_SUCCESS;
     }
 
-    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_WRONG_TYPE, "wrong JSON type %s for string/enum",
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_STRING, "wrong JSON type %s for string/enum",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
 }
 

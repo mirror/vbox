@@ -3221,6 +3221,18 @@ RT_C_DECLS_END
 #define VWRN_REST_UNABLE_TO_DECODE_DATE                 (25704)
 /** Unable to decode date value. */
 #define VERR_REST_UNABLE_TO_DECODE_DATE                 (-25704)
+/** Wrong JSON type for bool value. */
+#define VERR_REST_WRONG_JSON_TYPE_FOR_BOOL              (-25705)
+/** Wrong JSON type for integer value. */
+#define VERR_REST_WRONG_JSON_TYPE_FOR_INTEGER           (-25706)
+/** Wrong JSON type for double value. */
+#define VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE            (-25707)
+/** Wrong JSON type for string value. */
+#define VERR_REST_WRONG_JSON_TYPE_FOR_STRING            (-25708)
+/** Wrong JSON type for date value. */
+#define VERR_REST_WRONG_JSON_TYPE_FOR_DATE              (-25709)
+/** Unable to parse string as bool. */
+#define VERR_REST_UNABLE_TO_PARSE_STRING_AS_BOOL        (-25710)
 
 /** Internal error \#1. */
 #define VERR_REST_INTERNAL_ERROR_1                      (-25791)
