@@ -382,7 +382,6 @@ VMM_INT_DECL(int) HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue)
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Gets the description of a VMX instruction/Vm-exit diagnostic.
  *
@@ -395,7 +394,7 @@ VMM_INT_DECL(const char *) HMVmxGetDiagDesc(VMXVDIAG enmDiag)
         return g_apszVmxVDiagDesc[enmDiag];
     return "Unknown/invalid";
 }
-#endif
+
 
 /**
  * Checks if a code selector (CS) is suitable for execution using hardware-assisted
