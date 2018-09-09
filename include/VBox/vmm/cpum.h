@@ -967,8 +967,8 @@ typedef struct CPUMFEATURES
 #endif
     /** The maximum physical address width of the CPU. */
     uint8_t         cMaxPhysAddrWidth;
-    /** The maximum physical address width for VMX/VMCS structures. */
-    uint8_t         cVmxMaxPhysAddrWidth;
+    /** The maximum linear address width of the CPU. */
+    uint8_t         cMaxLinearAddrWidth;;
     /** Max size of the extended state (or FPU state if no XSAVE). */
     uint16_t        cbMaxExtendedState;
 
@@ -1115,6 +1115,13 @@ typedef struct CPUMFEATURES
     uint32_t        fSvmPadding0 : 19;
     /** SVM: Maximum supported ASID. */
     uint32_t        uSvmMaxAsid;
+
+    /** VMX: Maximum physical address width. */
+    uint8_t         cVmxMaxPhysAddrWidth;
+    /** VMX: Padding / reserved for future. */
+    uint8_t         abVmxPadding[3];
+    /** VMX: Padding / reserved for future.  */
+    uint32_t        fVmxPadding0;
 
     /** @name VMX basic controls.
      * @{ */
@@ -1271,11 +1278,11 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding0 : 2;
-    uint32_t        fVmxPadding1;
+    uint32_t        fVmxPadding1 : 2;
+    uint32_t        fVmxPadding2;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(CPUMFEATURES, 40);
+AssertCompileSize(CPUMFEATURES, 48);
 #endif
 /** Pointer to a CPU feature structure. */
 typedef CPUMFEATURES *PCPUMFEATURES;

@@ -2825,6 +2825,80 @@ IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPU pVCpu,  const char *pszIns
 
 
 /**
+ * Checks guest RIP and RFLAGS as part of VM-entry.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszInstr)
+{
+    /*
+     * RIP and RFLAGS.
+     * See Intel spec. 26.3.1.4 "Checks on Guest RIP and RFLAGS".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VM-exit";
+    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+
+    /* RIP. */
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        X86DESCATTR CsAttr; CsAttr.u = pVmcs->u32GuestCsAttr;
+        if (   !fGstInLongMode
+            || !CsAttr.n.u1Long)
+        {
+            if (!RT_HI_U32(pVmcs->u64GuestRip.u))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRipRsvd);
+        }
+
+        if (   fGstInLongMode
+            && CsAttr.n.u1Long)
+        {
+            Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxLinearAddrWidth == 48);   /* Canonical. */
+            if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxLinearAddrWidth < 64
+                && X86_IS_CANONICAL(pVmcs->u64GuestRip.u))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRip);
+        }
+    }
+
+    /* RFLAGS (bits 63:22 (or 31:22), bits 15, 5, 3 are reserved, bit 1 MB1). */
+    uint64_t fMbzMask = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode ? UINT64_C(0xffffffffffc08028) : UINT32_C(0xffc08028);
+    uint64_t fMb1Mask = X86_EFL_RA1_MASK;
+    if (   !(pVmcs->u64GuestRFlags.u & fMbzMask)
+        &&  (pVmcs->u64GuestRFlags.u & fMb1Mask) == fMb1Mask)
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsRsvd);
+
+    if (   fGstInLongMode
+        || !(pVmcs->u64GuestCr0.u & X86_CR0_PE))
+    {
+        if (!(pVmcs->u64GuestRFlags.u & X86_EFL_VM))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsVm);
+    }
+
+    if (   VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo)
+        && VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
+    {
+        if (pVmcs->u64GuestRFlags.u & X86_EFL_IF)
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsIf);
+    }
+
+    NOREF(pszInstr);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Checks guest-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -2851,6 +2925,11 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
     else
         return rc;
 
+    rc = iemVmxVmentryCheckGuestRipRFlags(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rc;
 
     return VINF_SUCCESS;
 }
