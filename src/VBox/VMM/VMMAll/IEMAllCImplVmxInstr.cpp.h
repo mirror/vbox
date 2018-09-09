@@ -2899,6 +2899,96 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
 
 
 /**
+ * Checks guest non-register state as part of VM-entry.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *pszInstr)
+{
+    /*
+     * Guest non-register state.
+     * See Intel spec. 26.3.1.5 "Checks on Guest Non-Register State".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VM-exit";
+
+    /*
+     * Activity state.
+     */
+    if (!(pVmcs->u32GuestActivityState & VMX_V_GUEST_ACTIVITY_STATE_MASK))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateRsvd);
+
+    X86DESCATTR SsAttr; SsAttr.u = pVmcs->u32GuestSsAttr;
+    if (SsAttr.n.u2Dpl != 0)
+    {
+        if (pVmcs->u32GuestActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT)
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateSsDpl);
+    }
+
+    if (   pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_STI
+        || pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)
+    {
+        if (pVmcs->u32GuestActivityState == VMX_VMCS_GUEST_ACTIVITY_ACTIVE)
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateStiMovSs);
+    }
+
+    if (VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo))
+    {
+        uint8_t const uIntType = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
+        uint8_t const uVector  = VMX_ENTRY_INT_INFO_VECTOR(pVmcs->u32EntryIntInfo);
+        switch (pVmcs->u32GuestActivityState)
+        {
+            case VMX_VMCS_GUEST_ACTIVITY_HLT:
+            {
+                if (   uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT
+                    || uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI
+                    || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+                        && (   uVector == X86_XCPT_DB
+                            || uVector == X86_XCPT_MC))
+                    || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT
+                        && uVector == 0))
+                { /* likely */ }
+                else
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateHlt);
+                break;
+            }
+
+            case VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN:
+            {
+                if (   uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI
+                    || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+                        && uVector == X86_XCPT_MC))
+                { /* likely */ }
+                else
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateShutdown);
+                break;
+            }
+
+            case VMX_VMCS_GUEST_ACTIVITY_ACTIVE:
+            default:
+                break;
+        }
+    }
+
+    /*
+     * Interruptibility state.
+     */
+    /** @todo NSTVMX: interruptibility-state. */
+
+    NOREF(pszInstr);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Checks guest-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -2926,6 +3016,12 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
         return rc;
 
     rc = iemVmxVmentryCheckGuestRipRFlags(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rc;
+
+    rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
     if (rc == VINF_SUCCESS)
     { /* likely */ }
     else
@@ -3651,7 +3747,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         /* VMExit. */
         return VINF_SUCCESS;
     }
-
 
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_Success;
     iemVmxVmSucceed(pVCpu);
