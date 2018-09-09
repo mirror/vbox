@@ -968,7 +968,7 @@ typedef struct CPUMFEATURES
     /** The maximum physical address width of the CPU. */
     uint8_t         cMaxPhysAddrWidth;
     /** The maximum linear address width of the CPU. */
-    uint8_t         cMaxLinearAddrWidth;;
+    uint8_t         cMaxLinearAddrWidth;
     /** Max size of the extended state (or FPU state if no XSAVE). */
     uint16_t        cbMaxExtendedState;
 
