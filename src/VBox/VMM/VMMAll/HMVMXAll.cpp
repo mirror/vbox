@@ -391,7 +391,7 @@ VMM_INT_DECL(int) HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue)
  * Gets the description of a VMX instruction/Vm-exit diagnostic.
  *
  * @returns The descriptive string.
- * @param   enmInstrDiag    The VMX instruction diagnostic.
+ * @param   enmDiag    The VMX diagnostic.
  */
 VMM_INT_DECL(const char *) HMVmxGetDiagDesc(VMXVDIAG enmDiag)
 {
