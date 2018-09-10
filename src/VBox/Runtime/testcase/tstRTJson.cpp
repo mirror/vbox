@@ -32,7 +32,11 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
-static const char *g_pszJson =
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static const char g_szJson[] =
     "{\n"
     "    \"integer\": 100,\n"
     "    \"number\": 22.22,\n"
@@ -307,7 +311,7 @@ static void tstCorrectness(RTTEST hTest)
     RTTestSub(hTest, "Correctness");
 
     RTJSONVAL hJsonVal = NIL_RTJSONVAL;
-    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonParseFromString(&hJsonVal, g_pszJson, NULL));
+    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonParseFromString(&hJsonVal, g_szJson, NULL));
 
     if (hJsonVal != NIL_RTJSONVAL)
     {
