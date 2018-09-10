@@ -1518,10 +1518,11 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxMisc(PVMCPU pVCpu)
         uint64_t uHostMsr;
         int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), MSR_IA32_VMX_MISC, &uHostMsr);
         AssertMsgRC(rc, ("HMVmxGetHostMsr failed. rc=%Rrc\n", rc)); RT_NOREF_PV(rc);
-        uint8_t const cMaxMsrs = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_MAX_MSRS);
+        uint8_t const cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_MAX_MSRS);
+        uint8_t const fActivityState = RT_BF_GET(uHostMsr, VMX_BF_MISC_ACTIVITY_STATES) & VMX_V_GUEST_ACTIVITY_STATE_MASK;
         uVmxMsr = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,       VMX_V_PREEMPT_TIMER_SHIFT            )
                 | RT_BF_MAKE(VMX_BF_MISC_EXIT_STORE_EFER_LMA,    pGuestFeatures->fVmxExitStoreEferLma  )
-                | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        VMX_V_GUEST_ACTIVITY_STATE_MASK       )
+                | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        fActivityState                        )
                 | RT_BF_MAKE(VMX_BF_MISC_PT,                     0                                     )
                 | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                     )
                 | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT                )
@@ -1602,7 +1603,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPU pVCpu, uint3
 
 
 /**
- * Gets IA32_VMX_CR4_FIXED0 for IEM and cpumMsrRd_Ia32VmxMisc.
+ * Gets IA32_VMX_CR4_FIXED0 for IEM and cpumMsrRd_Ia32VmxCr4Fixed0.
  *
  * @returns IA32_VMX_CR4_FIXED0 value.
  * @param   pVCpu           The cross context per CPU structure.
@@ -1625,7 +1626,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPU pVCpu, uint3
 
 
 /**
- * Gets IA32_VMX_CR4_FIXED1 for IEM and cpumMsrRd_Ia32VmxMisc.
+ * Gets IA32_VMX_CR4_FIXED1 for IEM and cpumMsrRd_Ia32VmxCr4Fixed1.
  *
  * @returns IA32_VMX_CR4_FIXED1 MSR.
  * @param   pVCpu           The cross context per CPU structure.
@@ -1657,7 +1658,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint3
 
 
 /**
- * Gets IA32_VMX_VMCS_ENUM for IEM and cpumMsrRd_Ia32VmxMisc.
+ * Gets IA32_VMX_VMCS_ENUM for IEM and cpumMsrRd_Ia32VmxVmcsEnum.
  *
  * @returns IA32_VMX_VMCS_ENUM value.
  * @param   pVCpu           The cross context per CPU structure.
@@ -1684,7 +1685,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPU pVCpu, uint32
 
 
 /**
- * Gets MSR_IA32_VMX_PROCBASED_CTLS2 for IEM and cpumMsrRd_Ia32VmxMisc.
+ * Gets MSR_IA32_VMX_PROCBASED_CTLS2 for IEM and cpumMsrRd_Ia32VmxProcBasedCtls2.
  *
  * @returns MSR_IA32_VMX_PROCBASED_CTLS2 value.
  * @param   pVCpu           The cross context per CPU structure.

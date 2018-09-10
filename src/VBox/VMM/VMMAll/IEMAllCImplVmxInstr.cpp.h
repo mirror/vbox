@@ -2916,19 +2916,20 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
     /*
      * Activity state.
      */
-    if (!(pVmcs->u32GuestActivityState & VMX_V_GUEST_ACTIVITY_STATE_MASK))
+    uint64_t const u64GuestVmxMiscMsr = CPUMGetGuestIa32VmxMisc(pVCpu);
+    uint32_t const fActivityStateMask = RT_BF_GET(u64GuestVmxMiscMsr, VMX_BF_MISC_ACTIVITY_STATES);
+    if (!(pVmcs->u32GuestActivityState & fActivityStateMask))
     { /* likely */ }
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateRsvd);
 
     X86DESCATTR SsAttr; SsAttr.u = pVmcs->u32GuestSsAttr;
-    if (SsAttr.n.u2Dpl != 0)
-    {
-        if (pVmcs->u32GuestActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT)
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateSsDpl);
-    }
+
+    if (   !SsAttr.n.u2Dpl
+        || pVmcs->u32GuestActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT)
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateSsDpl);
 
     if (   pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_STI
         || pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)
@@ -2943,6 +2944,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
     {
         uint8_t const uIntType = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
         uint8_t const uVector  = VMX_ENTRY_INT_INFO_VECTOR(pVmcs->u32EntryIntInfo);
+        AssertCompile(VMX_V_GUEST_ACTIVITY_STATE_MASK == (VMX_VMCS_GUEST_ACTIVITY_HLT | VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN));
         switch (pVmcs->u32GuestActivityState)
         {
             case VMX_VMCS_GUEST_ACTIVITY_HLT:
@@ -2980,7 +2982,61 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
     /*
      * Interruptibility state.
      */
-    /** @todo NSTVMX: interruptibility-state. */
+    if (!(pVmcs->u32GuestIntrState & ~VMX_VMCS_GUEST_INT_STATE_MASK))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateRsvd);
+
+    if ((pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
+                                 != (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateStiMovSs);
+
+    if (    (pVmcs->u64GuestRFlags.u & X86_EFL_IF)
+        || !(pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateRFlagsSti);
+
+    if (VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo))
+    {
+        uint8_t const uIntType = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
+        if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
+        {
+            if (!(pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateExtInt);
+        }
+        else if (uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI)
+        {
+            if (!(pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateNmi);
+
+            if (   !(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+                || !(pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI))
+            { /* likely */ }
+            else
+               IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateVirtNmi);
+        }
+    }
+
+    /* We don't support SMM yet. So blocking-by-SMIs must not be set. */
+    if (!(pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateSmi);
+
+    /* We don't support SGX yet. So enclave-interruption must not be set. */
+    if (!(pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_ENCLAVE))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateEnclave);
+
+    /** @todo NSTVMX: Pending debug exceptions, VMCS link pointer. */
 
     NOREF(pszInstr);
     NOREF(pszFailure);
@@ -3479,8 +3535,8 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 
         /* TPR threshold without virtual-interrupt delivery. */
         if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
-            &&  (pVmcs->u32TprThreshold & VMX_TPR_THRESHOLD_MASK))
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThreshold);
+            &&  (pVmcs->u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK))
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdRsvd);
 
         /* TPR threshold and VTPR. */
         uint8_t const *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);

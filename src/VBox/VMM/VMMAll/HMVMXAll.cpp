@@ -168,6 +168,14 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestGdtrLimit           , "GuestGdtrLimit"            ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIdtrBase            , "GuestIdtrBase"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIdtrLimit           , "GuestIdtrLimit"            ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateEnclave     , "GuestIntStateEnclave"      ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateExtInt      , "GuestIntStateExtInt"       ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateNmi         , "GuestIntStateNmi"          ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateRFlagsSti   , "GuestIntStateRFlagsSti"    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateRsvd        , "GuestIntStateRsvd"         ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateSmi         , "GuestIntStateSmi"          ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateStiMovSs    , "GuestIntStateStiMovSs"     ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestIntStateVirtNmi     , "GuestIntStateVirtNmi"      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestPae                 , "GuestPae"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestPatMsr              , "GuestPatMsr"               ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_GuestPcide               , "GuestPcide"                ),
@@ -295,7 +303,7 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_RealOrV86Mode            , "RealOrV86Mode"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_SavePreemptTimer         , "SavePreemptTimer"          ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_Success                  , "Success"                   ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_TprThreshold             , "TprThreshold"              ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_TprThresholdRsvd         , "TprThresholdRsvd"          ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_TprThresholdVTpr         , "TprThresholdVTpr"          ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys  , "VirtApicPageReadPhys"      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_VirtIntDelivery          , "VirtIntDelivery"           ),
@@ -357,38 +365,39 @@ VMM_INT_DECL(int) HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue)
     AssertPtrReturn(pVM,     VERR_INVALID_PARAMETER);
     AssertPtrReturn(puValue, VERR_INVALID_PARAMETER);
 
-    if (!pVM->hm.s.vmx.fSupported)
-        return VERR_VMX_NOT_SUPPORTED;
-
-    PCVMXMSRS pVmxMsrs = &pVM->hm.s.vmx.Msrs;
-    switch (idMsr)
+    if (pVM->hm.s.vmx.fSupported)
     {
-        case MSR_IA32_FEATURE_CONTROL:         *puValue =  pVmxMsrs->u64FeatCtrl;      break;
-        case MSR_IA32_VMX_BASIC:               *puValue =  pVmxMsrs->u64Basic;         break;
-        case MSR_IA32_VMX_PINBASED_CTLS:       *puValue =  pVmxMsrs->PinCtls.u;        break;
-        case MSR_IA32_VMX_PROCBASED_CTLS:      *puValue =  pVmxMsrs->ProcCtls.u;       break;
-        case MSR_IA32_VMX_PROCBASED_CTLS2:     *puValue =  pVmxMsrs->ProcCtls2.u;      break;
-        case MSR_IA32_VMX_EXIT_CTLS:           *puValue =  pVmxMsrs->ExitCtls.u;       break;
-        case MSR_IA32_VMX_ENTRY_CTLS:          *puValue =  pVmxMsrs->EntryCtls.u;      break;
-        case MSR_IA32_VMX_TRUE_PINBASED_CTLS:  *puValue =  pVmxMsrs->TruePinCtls.u;    break;
-        case MSR_IA32_VMX_TRUE_PROCBASED_CTLS: *puValue =  pVmxMsrs->TrueProcCtls.u;   break;
-        case MSR_IA32_VMX_TRUE_ENTRY_CTLS:     *puValue =  pVmxMsrs->TrueEntryCtls.u;  break;
-        case MSR_IA32_VMX_TRUE_EXIT_CTLS:      *puValue =  pVmxMsrs->TrueExitCtls.u;   break;
-        case MSR_IA32_VMX_MISC:                *puValue =  pVmxMsrs->u64Misc;          break;
-        case MSR_IA32_VMX_CR0_FIXED0:          *puValue =  pVmxMsrs->u64Cr0Fixed0;     break;
-        case MSR_IA32_VMX_CR0_FIXED1:          *puValue =  pVmxMsrs->u64Cr0Fixed1;     break;
-        case MSR_IA32_VMX_CR4_FIXED0:          *puValue =  pVmxMsrs->u64Cr4Fixed0;     break;
-        case MSR_IA32_VMX_CR4_FIXED1:          *puValue =  pVmxMsrs->u64Cr4Fixed1;     break;
-        case MSR_IA32_VMX_VMCS_ENUM:           *puValue =  pVmxMsrs->u64VmcsEnum;      break;
-        case MSR_IA32_VMX_VMFUNC:              *puValue =  pVmxMsrs->u64VmFunc;        break;
-        case MSR_IA32_VMX_EPT_VPID_CAP:        *puValue =  pVmxMsrs->u64EptVpidCaps;   break;
-        default:
+        PCVMXMSRS pVmxMsrs = &pVM->hm.s.vmx.Msrs;
+        switch (idMsr)
         {
-            AssertMsgFailed(("Invalid MSR %#x\n", idMsr));
-            return VERR_NOT_FOUND;
+            case MSR_IA32_FEATURE_CONTROL:         *puValue =  pVmxMsrs->u64FeatCtrl;      break;
+            case MSR_IA32_VMX_BASIC:               *puValue =  pVmxMsrs->u64Basic;         break;
+            case MSR_IA32_VMX_PINBASED_CTLS:       *puValue =  pVmxMsrs->PinCtls.u;        break;
+            case MSR_IA32_VMX_PROCBASED_CTLS:      *puValue =  pVmxMsrs->ProcCtls.u;       break;
+            case MSR_IA32_VMX_PROCBASED_CTLS2:     *puValue =  pVmxMsrs->ProcCtls2.u;      break;
+            case MSR_IA32_VMX_EXIT_CTLS:           *puValue =  pVmxMsrs->ExitCtls.u;       break;
+            case MSR_IA32_VMX_ENTRY_CTLS:          *puValue =  pVmxMsrs->EntryCtls.u;      break;
+            case MSR_IA32_VMX_TRUE_PINBASED_CTLS:  *puValue =  pVmxMsrs->TruePinCtls.u;    break;
+            case MSR_IA32_VMX_TRUE_PROCBASED_CTLS: *puValue =  pVmxMsrs->TrueProcCtls.u;   break;
+            case MSR_IA32_VMX_TRUE_ENTRY_CTLS:     *puValue =  pVmxMsrs->TrueEntryCtls.u;  break;
+            case MSR_IA32_VMX_TRUE_EXIT_CTLS:      *puValue =  pVmxMsrs->TrueExitCtls.u;   break;
+            case MSR_IA32_VMX_MISC:                *puValue =  pVmxMsrs->u64Misc;          break;
+            case MSR_IA32_VMX_CR0_FIXED0:          *puValue =  pVmxMsrs->u64Cr0Fixed0;     break;
+            case MSR_IA32_VMX_CR0_FIXED1:          *puValue =  pVmxMsrs->u64Cr0Fixed1;     break;
+            case MSR_IA32_VMX_CR4_FIXED0:          *puValue =  pVmxMsrs->u64Cr4Fixed0;     break;
+            case MSR_IA32_VMX_CR4_FIXED1:          *puValue =  pVmxMsrs->u64Cr4Fixed1;     break;
+            case MSR_IA32_VMX_VMCS_ENUM:           *puValue =  pVmxMsrs->u64VmcsEnum;      break;
+            case MSR_IA32_VMX_VMFUNC:              *puValue =  pVmxMsrs->u64VmFunc;        break;
+            case MSR_IA32_VMX_EPT_VPID_CAP:        *puValue =  pVmxMsrs->u64EptVpidCaps;   break;
+            default:
+            {
+                AssertMsgFailed(("Invalid MSR %#x\n", idMsr));
+                return VERR_NOT_FOUND;
+            }
         }
+        return VINF_SUCCESS;
     }
-    return VINF_SUCCESS;
+    return VERR_VMX_NOT_SUPPORTED;
 }
 
 

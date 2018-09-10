@@ -2422,7 +2422,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_TPR_THRESHOLD_, UINT32_C(0), UINT32_MAX,
  */
 /** The logical processor is active. */
 #define VMX_VMCS_GUEST_ACTIVITY_ACTIVE                          0x0
-/** The logical processor is inactive, because executed a HLT instruction. */
+/** The logical processor is inactive, because it executed a HLT instruction. */
 #define VMX_VMCS_GUEST_ACTIVITY_HLT                             0x1
 /** The logical processor is inactive, because of a triple fault or other serious error. */
 #define VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN                        0x2
@@ -2438,6 +2438,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_TPR_THRESHOLD_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS                    RT_BIT(1)
 #define VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI                      RT_BIT(2)
 #define VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI                      RT_BIT(3)
+#define VMX_VMCS_GUEST_INT_STATE_ENCLAVE                        RT_BIT(4)
+
+/** Mask of the guest-interruptibility state field (bits 31:5 MBZ). */
+#define VMX_VMCS_GUEST_INT_STATE_MASK                           UINT32_C(0x1f)
 /** @} */
 
 
@@ -2844,7 +2848,7 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** Number of CR3-target values supported. */
 #define VMX_V_CR3_TARGET_COUNT                                  4
 /** Activity states supported. */
-#define VMX_V_GUEST_ACTIVITY_STATE_MASK                         (VMX_VMCS_GUEST_ACTIVITY_HLT)
+#define VMX_V_GUEST_ACTIVITY_STATE_MASK                         (VMX_VMCS_GUEST_ACTIVITY_HLT | VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN)
 /** VMX preemption-timer shift (Core i7-2600 taken as reference). */
 #define VMX_V_PREEMPT_TIMER_SHIFT                               5
 /** Maximum number of MSRs in the auto-load/store MSR areas, (n+1) * 512. */
@@ -3509,6 +3513,14 @@ typedef enum
     kVmxVDiag_Vmentry_GuestGdtrLimit,
     kVmxVDiag_Vmentry_GuestIdtrBase,
     kVmxVDiag_Vmentry_GuestIdtrLimit,
+    kVmxVDiag_Vmentry_GuestIntStateEnclave,
+    kVmxVDiag_Vmentry_GuestIntStateExtInt,
+    kVmxVDiag_Vmentry_GuestIntStateNmi,
+    kVmxVDiag_Vmentry_GuestIntStateRFlagsSti,
+    kVmxVDiag_Vmentry_GuestIntStateRsvd,
+    kVmxVDiag_Vmentry_GuestIntStateSmi,
+    kVmxVDiag_Vmentry_GuestIntStateStiMovSs,
+    kVmxVDiag_Vmentry_GuestIntStateVirtNmi,
     kVmxVDiag_Vmentry_GuestPae,
     kVmxVDiag_Vmentry_GuestPatMsr,
     kVmxVDiag_Vmentry_GuestPcide,
@@ -3636,7 +3648,7 @@ typedef enum
     kVmxVDiag_Vmentry_RealOrV86Mode,
     kVmxVDiag_Vmentry_SavePreemptTimer,
     kVmxVDiag_Vmentry_Success,
-    kVmxVDiag_Vmentry_TprThreshold,
+    kVmxVDiag_Vmentry_TprThresholdRsvd,
     kVmxVDiag_Vmentry_TprThresholdVTpr,
     kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys,
     kVmxVDiag_Vmentry_VirtIntDelivery,
