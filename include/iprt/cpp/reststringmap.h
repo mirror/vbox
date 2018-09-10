@@ -159,39 +159,39 @@ public:
         ConstIterator(ConstIterator const &a_rThat) : m_pCur(a_rThat.m_pCur) { }
 
         /** Gets the key string. */
-        RTCString const         &getKey()   { return m_pCur->strKey; }
+        inline RTCString const         &getKey()   { return m_pCur->strKey; }
         /** Gets poitner to the value object. */
-        RTCRestObjectBase const *getValue() { return m_pCur->pValue; }
+        inline RTCRestObjectBase const *getValue() { return m_pCur->pValue; }
 
         /** Advance to the next map entry. */
-        ConstIterator &operator++()
+        inline ConstIterator &operator++()
         {
             m_pCur = RTListNodeGetNextCpp(&m_pCur->ListEntry, MapEntry, ListEntry);
             return *this;
         }
 
         /** Advance to the previous map entry. */
-        ConstIterator &operator--()
+        inline ConstIterator &operator--()
         {
             m_pCur = RTListNodeGetPrevCpp(&m_pCur->ListEntry, MapEntry, ListEntry);
             return *this;
         }
 
         /** Compare equal. */
-        bool operator==(ConstIterator const &a_rThat) { return m_pCur == a_rThat.m_pCur; }
+        inline bool operator==(ConstIterator const &a_rThat) { return m_pCur == a_rThat.m_pCur; }
         /** Compare not equal. */
-        bool operator!=(ConstIterator const &a_rThat) { return m_pCur != a_rThat.m_pCur; }
+        inline bool operator!=(ConstIterator const &a_rThat) { return m_pCur != a_rThat.m_pCur; }
 
         /* Map class must be friend so it can use the MapEntry constructor. */
         friend class RTCRestStringMapBase;
     };
 
     /** Returns iterator for the first map entry (unless it's empty and it's also the end). */
-    ConstIterator begin() const { return ConstIterator(RTListGetFirstCpp(&m_ListHead, MapEntry, ListEntry)); }
+    inline ConstIterator begin() const { return ConstIterator(RTListGetFirstCpp(&m_ListHead, MapEntry, ListEntry)); }
     /** Returns iterator for the last map entry (unless it's empty and it's also the end). */
-    ConstIterator last() const  { return ConstIterator(RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry)); }
+    inline ConstIterator last() const  { return ConstIterator(RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry)); }
     /** Returns the end iterator.  This does not ever refer to an actual map entry. */
-    ConstIterator end() const   { return ConstIterator(RT_FROM_CPP_MEMBER(&m_ListHead, MapEntry, ListEntry)); }
+    inline ConstIterator end() const   { return ConstIterator(RT_FROM_CPP_MEMBER(&m_ListHead, MapEntry, ListEntry)); }
     /** @} */
 
 
@@ -326,7 +326,7 @@ public:
      * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
-    int put(const char *a_pszKey, ValueType *a_pValue, bool a_fReplace = false)
+    inline int put(const char *a_pszKey, ValueType *a_pValue, bool a_fReplace = false)
     {
         return putWorker(a_pszKey, a_pValue, a_fReplace);
     }
@@ -340,7 +340,7 @@ public:
      * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
-    int put(RTCString const &a_rStrKey, ValueType *a_pValue, bool a_fReplace = false)
+    inline int put(RTCString const &a_rStrKey, ValueType *a_pValue, bool a_fReplace = false)
     {
         return putWorker(a_rStrKey.c_str(), a_pValue, a_fReplace, a_rStrKey.length());
     }
@@ -354,7 +354,7 @@ public:
      * @param   a_rValue        The value to insert a copy of.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
-    int putCopy(const char *a_pszKey, const ValueType &a_rValue, bool a_fReplace = false)
+    inline int putCopy(const char *a_pszKey, const ValueType &a_rValue, bool a_fReplace = false)
     {
         return putCopyWorker(a_pszKey, a_rValue, a_fReplace);
     }
@@ -368,7 +368,7 @@ public:
      * @param   a_rValue        The value to insert a copy of.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
-    int putCopy(RTCString const &a_rStrKey, const ValueType &a_rValue, bool a_fReplace = false)
+    inline int putCopy(RTCString const &a_rStrKey, const ValueType &a_rValue, bool a_fReplace = false)
     {
         return putCopyWorker(a_rStrKey.c_str(), a_rValue, a_fReplace, a_rStrKey.length());
     }
@@ -379,7 +379,7 @@ public:
      * @returns Pointer to the value object if found, NULL if key not in the map.
      * @param   a_pszKey        The key which value to look up.
      */
-    ValueType *get(const char *a_pszKey)
+    inline ValueType *get(const char *a_pszKey)
     {
         return (ValueType *)getWorker(a_pszKey);
     }
@@ -390,7 +390,7 @@ public:
      * @returns Pointer to the value object if found, NULL if key not in the map.
      * @param   a_rStrKey       The key which value to look up.
      */
-    ValueType *get(RTCString const &a_rStrKey)
+    inline ValueType *get(RTCString const &a_rStrKey)
     {
         return (ValueType *)getWorker(a_rStrKey.c_str());
     }
@@ -401,7 +401,7 @@ public:
      * @returns Pointer to the value object if found, NULL if key not in the map.
      * @param   a_pszKey        The key which value to look up.
      */
-    ValueType const *get(const char *a_pszKey) const
+    inline ValueType const *get(const char *a_pszKey) const
     {
         return (ValueType const *)getWorker(a_pszKey);
     }
@@ -412,7 +412,7 @@ public:
      * @returns Pointer to the value object if found, NULL if key not in the map.
      * @param   a_rStrKey       The key which value to look up.
      */
-    ValueType const *get(RTCString const &a_rStrKey) const
+    inline ValueType const *get(RTCString const &a_rStrKey) const
     {
         return (ValueType const *)getWorker(a_rStrKey.c_str());
     }

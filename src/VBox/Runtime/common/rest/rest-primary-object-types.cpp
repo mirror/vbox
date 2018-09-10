@@ -1397,6 +1397,8 @@ RTCRestOutputBase &RTCRestDate::serializeAsJson(RTCRestOutputBase &a_rDst) const
 
 int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 {
+    setNull();
+
     RTJSONVALTYPE enmType = RTJsonValueGetType(a_rCursor.m_hValue);
     if (enmType == RTJSONVALTYPE_STRING)
     {
@@ -1418,10 +1420,7 @@ int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     }
 
     if (enmType == RTJSONVALTYPE_NULL)
-    {
-        setNull();
         return VINF_SUCCESS;
-    }
 
     return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_WRONG_JSON_TYPE_FOR_DATE, "wrong JSON type for date: %s",
                                           RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
@@ -1445,11 +1444,9 @@ int RTCRestDate::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 int RTCRestDate::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
+    setNull();
     if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
-    {
-        setNull();
         return VINF_SUCCESS;
-    }
 
     int rc = m_strFormatted.assignNoThrow(a_rValue);
     AssertRCReturn(rc, rc);
@@ -1597,8 +1594,9 @@ int RTCRestDate::explodeAndFormat(kFormat a_enmFormat)
  */
 int RTCRestDate::format(kFormat a_enmFormat)
 {
-    m_fNullIndicator = true;
-    m_enmFormat = a_enmFormat;
+    m_fNullIndicator = false;
+    m_fTimeSpecOkay  = true;
+    m_enmFormat      = a_enmFormat;
     int rc;
     switch (a_enmFormat)
     {

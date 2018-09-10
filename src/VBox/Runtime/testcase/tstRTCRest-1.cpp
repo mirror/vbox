@@ -382,6 +382,7 @@ void testInteger(void)
         RTTESTI_CHECK(obj3.m_iValue == Consts.getMin());
         RTTESTI_CHECK(obj3.isNull() == false);
 
+        /* Reset to default: */
         RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
         RTTESTI_CHECK(obj3.m_iValue == 0);
         RTTESTI_CHECK(obj3.isNull() == false);
@@ -636,6 +637,7 @@ void testDouble(void)
         RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
         RTTESTI_CHECK(obj3.isNull() == false);
 
+        /* Reset to default: */
         RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
         RTTESTI_CHECK(obj3.m_rdValue == 0.0);
         RTTESTI_CHECK(obj3.isNull() == false);
@@ -989,6 +991,17 @@ void testString(const char *pszDummy, ...)
         RTTESTI_CHECK(obj3 == "asdf");
         RTTESTI_CHECK(obj3.isNull() == false);
 
+        /* Reset to default: */
+        RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.isEmpty());
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        obj3 = "1";
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.isEmpty());
+        RTTESTI_CHECK(obj3.isNull() == false);
+
         /* Copy assignments: */
         RTCRestString const obj3Max("max");
         RTTESTI_CHECK(obj3Max == "max");
@@ -1159,6 +1172,291 @@ void testString(const char *pszDummy, ...)
 }
 
 
+void testDate()
+{
+    RTTestSub(g_hTest, "RTCRestDate");
+    int64_t const iRecent    = INT64_C(1536580687739632500);
+    int64_t const iRecentSec = INT64_C(1536580687000000000);
+    RTTIMESPEC TimeSpec;
+
+#define CHECK_DATE(a_obj, a_fNull, a_fOkay, a_i64Nano, a_sz, a_fUtc) \
+    do { \
+        RTTESTI_CHECK((a_obj).isOkay() == (a_fOkay)); \
+        if ((a_obj).getEpochNano() != (a_i64Nano)) \
+            RTTestIFailed("line " RT_XSTR(__LINE__) ": getEpochNano=%RI64, expected %RI64", (a_obj).getEpochNano(), (int64_t)(a_i64Nano)); \
+        if (!(a_obj).getString().equals(a_sz)) \
+            RTTestIFailed("line " RT_XSTR(__LINE__) ": getString=%s, expected %s", (a_obj).getString().c_str(), a_sz); \
+        RTTESTI_CHECK((a_obj).isUtc() == (a_fUtc)); \
+        RTTESTI_CHECK((a_obj).isNull() == (a_fNull)); \
+    } while (0)
+#define CHECK_DATE_FMT(a_obj, a_fNull, a_fOkay, a_i64Nano, a_sz, a_fUtc, a_enmFormat) \
+    do { \
+        CHECK_DATE(a_obj, a_fNull, a_fOkay, a_i64Nano, a_sz, a_fUtc); \
+        if ((a_obj).getFormat() != (a_enmFormat)) \
+            RTTestIFailed("line " RT_XSTR(__LINE__) ": getFormat=%d, expected %d (%s)", (a_obj).getFormat(), (a_enmFormat), #a_enmFormat); \
+    } while (0)
+
+    {
+        RTCRestDate obj1;
+        CHECK_DATE(obj1, true, false, 0, "", true);
+        RTTESTI_CHECK(strcmp(obj1.typeName(), "RTCRestDate") == 0);
+        RTTESTI_CHECK(obj1.typeClass() == RTCRestObjectBase::kTypeClass_Date);
+    }
+
+    {
+        /* Value assignments: */
+        RTCRestDate obj3;
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00Z", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        CHECK_DATE(obj3, true, false, 0, "", true);
+        RTTESTI_CHECK_RC(obj3.assignValueRfc3339(RTTimeSpecSetNano(&TimeSpec, 0)), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00Z", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        CHECK_DATE(obj3, true, false, 0, "", true);
+        RTTESTI_CHECK_RC(obj3.assignValueRfc2822(RTTimeSpecSetNano(&TimeSpec, 0)), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "Thu, 1 Jan 1970 00:00:00 -0000", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValueRfc7131(RTTimeSpecSetNano(&TimeSpec, 0)), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "Thu, 1 Jan 1970 00:00:00 -0000", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc7131), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.000000000Z", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339_Fraction_6), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.000000Z", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339_Fraction_3), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.000Z", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339_Fraction_2), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.00Z", true);
+
+        /* Format changes: */
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 59123456789), RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123456789Z", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "Thu, 1 Jan 1970 00:00:59 -0000", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc7131), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "Thu, 1 Jan 1970 00:00:59 GMT", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59Z", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_2), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.12Z", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_3), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123Z", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_6), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123456Z", true);
+        RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123456789Z", true);
+
+        /* Reset to default and setNull works identically: */
+        RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
+        CHECK_DATE(obj3, true, false, 0, "", true);
+
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339_Fraction_2), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.00Z", true);
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        CHECK_DATE(obj3, true, false, 0, "", true);
+
+        /* Copy assignments: */
+        RTCRestDate obj3Epoch_3339_9;
+        RTTESTI_CHECK_RC(obj3Epoch_3339_9.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
+        CHECK_DATE(obj3Epoch_3339_9, false, true, 0, "1970-01-01T00:00:00.000000000Z", true);
+
+        RTCRestDate obj3Epoch_7131;
+        RTTESTI_CHECK_RC(obj3Epoch_7131.assignValue(RTTimeSpecSetNano(&TimeSpec, 0), RTCRestDate::kFormat_Rfc7131), VINF_SUCCESS);
+        CHECK_DATE(obj3Epoch_7131, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true);
+
+        RTCRestDate obj3Recent_3339;
+        RTTESTI_CHECK_RC(obj3Recent_3339.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc3339), VINF_SUCCESS);
+        CHECK_DATE(obj3Recent_3339, false, true, iRecent, "2018-09-10T11:58:07Z", true);
+
+        RTCRestDate obj3Recent_2822;
+        RTTESTI_CHECK_RC(obj3Recent_2822.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        CHECK_DATE(obj3Recent_2822, false, true, iRecent, "Mon, 10 Sep 2018 11:58:07 -0000", true);
+
+        RTCRestDate const obj3Null;
+        CHECK_DATE(obj3Null, true, false, 0, "", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Epoch_3339_9), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.000000000Z", true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Epoch_7131), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true);
+
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Recent_3339), VINF_SUCCESS);
+        CHECK_DATE(obj3Recent_2822, false, true, iRecent, "Mon, 10 Sep 2018 11:58:07 -0000", true);
+
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Null), VINF_SUCCESS);
+        CHECK_DATE(obj3, true, false, 0, "", true);
+
+        obj3 = obj3Recent_2822;
+        CHECK_DATE(obj3Recent_2822, false, true, iRecent, "Mon, 10 Sep 2018 11:58:07 -0000", true);
+
+        obj3 = obj3Epoch_3339_9;
+        CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.000000000Z", true);
+
+        obj3 = obj3Null;
+        CHECK_DATE(obj3, true, false, 0, "", true);
+
+        /* Copy constructors: */
+        {
+            RTCRestDate obj3a(obj3Epoch_3339_9);
+            CHECK_DATE(obj3a, false, true, 0, "1970-01-01T00:00:00.000000000Z", true);
+        }
+        {
+            RTCRestDate obj3b(obj3Epoch_7131);
+            CHECK_DATE(obj3b, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true);
+        }
+        {
+            RTCRestDate obj3c(obj3Recent_3339);
+            CHECK_DATE(obj3Recent_3339, false, true, iRecent, "2018-09-10T11:58:07Z", true);
+        }
+        {
+            RTCRestDate obj3d(obj3Recent_2822);
+            CHECK_DATE(obj3d, false, true, iRecent, "Mon, 10 Sep 2018 11:58:07 -0000", true);
+        }
+        {
+            RTCRestDate obj3e(obj3Null);
+            CHECK_DATE(obj3e, true, false, 0, "", true);
+        }
+
+        /* Serialization to json: */
+        const char *pszJson = toJson(&obj3Epoch_3339_9);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, "\"1970-01-01T00:00:00.000000000Z\"") == 0, ("pszJson=%s\n", pszJson));
+        pszJson = toJson(&obj3Epoch_7131);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, "\"Thu, 1 Jan 1970 00:00:00 GMT\"") == 0, ("pszJson=%s\n", pszJson));
+        pszJson = toJson(&obj3Recent_3339);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, "\"2018-09-10T11:58:07Z\"") == 0, ("pszJson=%s\n", pszJson));
+        pszJson = toJson(&obj3Recent_2822);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, "\"Mon, 10 Sep 2018 11:58:07 -0000\"") == 0, ("pszJson=%s\n", pszJson));
+        pszJson = toJson(&obj3Null);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, "null") == 0, ("pszJson=%s\n", pszJson));
+
+        /* Serialization to string. */
+        RTCString str;
+        str = "lead-in:";
+        RTTESTI_CHECK_RC(obj3Epoch_7131.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("lead-in:Thu, 1 Jan 1970 00:00:00 GMT"), ("str=%s\n", str.c_str()));
+        RTTESTI_CHECK_RC(obj3Epoch_7131.toString(&str), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("Thu, 1 Jan 1970 00:00:00 GMT"), ("str=%s\n", str.c_str()));
+
+        str = "lead-in:";
+        RTTESTI_CHECK_RC(obj3Recent_3339.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("lead-in:2018-09-10T11:58:07Z"), ("str=%s\n", str.c_str()));
+        RTTESTI_CHECK_RC(obj3Recent_3339.toString(&str), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("2018-09-10T11:58:07Z"), ("str=%s\n", str.c_str()));
+
+        str = "lead-in:";
+        RTTESTI_CHECK_RC(obj3Null.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("lead-in:null"), ("str=%s\n", str.c_str()));
+        RTTESTI_CHECK_RC(obj3Null.toString(&str), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("null"), ("str=%s\n", str.c_str()));
+    }
+
+    /* deserialize: */
+    RTERRINFOSTATIC ErrInfo;
+    {
+        RTCRestDate obj4;
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"Thu, 1 Jan 1970 00:00:00 GMT\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true, RTCRestDate::kFormat_Rfc7131);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"Thu, 1 Jan 1970 00:00:00.0000 GMT\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "Thu, 1 Jan 1970 00:00:00.0000 GMT", true, RTCRestDate::kFormat_Rfc7131);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"1 Jan 1970 00:00:00 GMT\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "1 Jan 1970 00:00:00 GMT", true, RTCRestDate::kFormat_Rfc7131);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"1 Jan 1970 00:00:00\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "1 Jan 1970 00:00:00", false, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"1 Jan 070 00:00:00\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "1 Jan 070 00:00:00", false, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"2018-09-10T11:58:07Z\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, iRecentSec , "2018-09-10T11:58:07Z", true, RTCRestDate::kFormat_Rfc3339);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"1 Jan 70 00:00:00\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "1 Jan 70 00:00:00", false, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"2018-09-10T11:58:07.739632500Z\"", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, iRecent, "2018-09-10T11:58:07.739632500Z", true, RTCRestDate::kFormat_Rfc3339_Fraction_9);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, true, false, 0, "", true, RTCRestDate::kFormat_Rfc3339_Fraction_9);
+
+        /* object goes to default state if not string and to non-okay if string: */
+        RTTESTI_CHECK_RC(obj4.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "true", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DATE);
+        CHECK_DATE_FMT(obj4, true, false, 0, "", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(obj4.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"string\"", &ErrInfo, RT_XSTR(__LINE__)), VWRN_REST_UNABLE_TO_DECODE_DATE);
+        CHECK_DATE_FMT(obj4, false, false, 0, "string", false, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(obj4.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"0x199 string\"", &ErrInfo, RT_XSTR(__LINE__)), VWRN_REST_UNABLE_TO_DECODE_DATE);
+        CHECK_DATE_FMT(obj4, false, false, 0, "0x199 string", false, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(obj4.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "[ null ]", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DATE);
+        CHECK_DATE_FMT(obj4, true, false, 0, "", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(obj4.assignValue(RTTimeSpecSetNano(&TimeSpec, iRecent), RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "{ \"foo\": 1 }", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DATE);
+        CHECK_DATE_FMT(obj4, true, false, 0, "", true, RTCRestDate::kFormat_Rfc2822);
+
+        /* From string: */
+        obj4.setNull();
+        RTTESTI_CHECK_RC(fromString(&obj4, "Thu, 1 Jan 1970 00:00:00 GMT", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "Thu, 1 Jan 1970 00:00:00 GMT", true, RTCRestDate::kFormat_Rfc7131);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "Mon, 10 Sep 2018 11:58:07 -0000", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, iRecentSec, "Mon, 10 Sep 2018 11:58:07 -0000", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "\t\n\rnull;\r\n\t", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, true, false, 0, "", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "Mon, 10 Sep 2018 11:58:07 +0000", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, iRecentSec, "Mon, 10 Sep 2018 11:58:07 +0000", false, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "1970-01-01T00:00:00.000000000Z", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, 0, "1970-01-01T00:00:00.000000000Z", true, RTCRestDate::kFormat_Rfc3339_Fraction_9);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "10 Sep 2018 11:58:07 -0000", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, iRecentSec, "10 Sep 2018 11:58:07 -0000", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, true, false, 0, "", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "Mon, 10 Sep 18 11:58:07 -0000", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        CHECK_DATE_FMT(obj4, false, true, iRecentSec, "Mon, 10 Sep 18 11:58:07 -0000", true, RTCRestDate::kFormat_Rfc2822);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "fa;se", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_UNABLE_TO_DECODE_DATE);
+        CHECK_DATE_FMT(obj4, false, false, 0, "fa;se", false, RTCRestDate::kFormat_Rfc2822);
+    }
+}
+
+
 int main()
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTRest-1", &g_hTest);
@@ -1170,6 +1468,7 @@ int main()
         testInteger<RTCRestInt16, int16_t, Int16Constants>();
         testDouble();
         testString("dummy", 1, 2);
+        testDate();
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
     }

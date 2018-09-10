@@ -84,7 +84,7 @@ public:
      * @returns Previous indentation level.
      * @param   uIndent     The indentation level.
      */
-    unsigned setIndent(unsigned uIndent)
+    inline unsigned setIndent(unsigned uIndent)
     {
         unsigned const uRet = m_uIndent;
         m_uIndent = uIndent;
@@ -96,7 +96,7 @@ public:
      *
      * @returns Previous indentation level.
      */
-    unsigned incrementIndent()
+    inline unsigned incrementIndent()
     {
         unsigned const uRet = m_uIndent;
         m_uIndent = uRet + 1;
@@ -266,7 +266,7 @@ public:
      * Tests if the object is @a null.
      * @returns true if null, false if not.
      */
-    bool isNull(void) const { return m_fNullIndicator; };
+    inline bool isNull(void) const { return m_fNullIndicator; };
 
     /**
      * Sets the object to @a null and fills it with defaults.
@@ -729,9 +729,9 @@ public:
      * @param   a_enmFormat     The date format to use when formatting it.
      */
     int assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat);
-    int assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method. */
-    int assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method. */
-    int assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method. */
+    int assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method for email/whatnot. */
+    int assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method for HTTP date. */
+    int assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method for ISO-8601 timstamp. */
 
     /**
      * Assigns the current UTC time and clears the null indicator .
@@ -741,9 +741,9 @@ public:
      * @param   a_enmFormat     The date format to use when formatting it.
      */
     int assignNow(kFormat a_enmFormat);
-    int assignNowRfc2822(); /**< Convenience method. */
-    int assignNowRfc7131(); /**< Convenience method. */
-    int assignNowRfc3339(); /**< Convenience method. */
+    int assignNowRfc2822(); /**< Convenience method for email/whatnot. */
+    int assignNowRfc7131(); /**< Convenience method for HTTP date. */
+    int assignNowRfc3339(); /**< Convenience method for ISO-8601 timstamp. */
 
     /**
      * Sets the format to help deal with decoding issues.
@@ -755,13 +755,24 @@ public:
     int setFormat(kFormat a_enmFormat);
 
     /** Check if the value is okay (m_TimeSpec & m_Exploded). */
-    bool              isOkay() const        { return m_fTimeSpecOkay; }
+    inline bool              isOkay() const             { return m_fTimeSpecOkay; }
     /** Get the timespec value. */
-    RTTIMESPEC const &getTimeSpec() const   { return m_TimeSpec; }
+    inline RTTIMESPEC const &getTimeSpec() const        { return m_TimeSpec; }
     /** Get the exploded time. */
-    RTTIME const     &getExploded() const   { return m_Exploded; }
+    inline RTTIME const     &getExploded() const        { return m_Exploded; }
+    /** Gets the format. */
+    inline kFormat           getFormat() const          { return m_enmFormat; }
     /** Get the formatted/raw string value. */
-    RTCString const  &getString() const     { return m_strFormatted; }
+    inline RTCString const  &getString() const          { return m_strFormatted; }
+
+    /** Get nanoseconds since unix epoch. */
+    inline int64_t           getEpochNano() const       { return RTTimeSpecGetNano(&m_TimeSpec); }
+    /** Get seconds since unix epoch. */
+    inline int64_t           getEpochSeconds() const    { return RTTimeSpecGetSeconds(&m_TimeSpec); }
+    /** Checks if UTC time. */
+    inline bool              isUtc() const              { return (m_Exploded.fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL; }
+    /** Checks if local time. */
+    inline bool              isLocal() const            { return (m_Exploded.fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL; }
 
 protected:
     /** The value. */
@@ -840,9 +851,9 @@ public:
     /** Safe copy assignment method. */
     int assignCopy(RTCRestStringEnumBase const &a_rThat);
     /** Safe copy assignment method. */
-    int assignCopy(RTCString const &a_rThat)    { return setByString(a_rThat); }
+    inline int assignCopy(RTCString const &a_rThat)    { return setByString(a_rThat); }
     /** Safe copy assignment method. */
-    int assignCopy(const char *a_pszThat)       { return setByString(a_pszThat); }
+    inline int assignCopy(const char *a_pszThat)       { return setByString(a_pszThat); }
 
     /* Overridden methods: */
     virtual int resetToDefault() RT_OVERRIDE;
@@ -939,9 +950,9 @@ public:
     virtual void freeData();
 
     /** Returns a pointer to the data blob. */
-    const uint8_t  *getPtr()  const { return m_pbData; }
+    inline const uint8_t  *getPtr()  const { return m_pbData; }
     /** Gets the size of the data. */
-    size_t          getSize() const { return m_cbData; }
+    inline size_t          getSize() const { return m_cbData; }
 
     /* Overridden methods: */
     virtual int setNull(void) RT_OVERRIDE;

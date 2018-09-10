@@ -65,7 +65,7 @@ public:
      *
      * @return   True if there is more than zero items, false otherwise.
      */
-    bool isEmpty() const
+    inline bool isEmpty() const
     {
         return m_cElements == 0;
     }
@@ -73,7 +73,7 @@ public:
     /**
      * Gets the number of entries in the map.
      */
-    size_t size() const
+    inline size_t size() const
     {
         return m_cElements;
     }
@@ -84,7 +84,7 @@ public:
      * @returns The base object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    RTCRestObjectBase *atBase(size_t a_idx)
+    inline RTCRestObjectBase *atBase(size_t a_idx)
     {
         if (a_idx < m_cElements)
             return m_papElements[a_idx];
@@ -97,7 +97,7 @@ public:
      * @returns The base object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    RTCRestObjectBase const *atBase(size_t a_idx) const
+    inline RTCRestObjectBase const *atBase(size_t a_idx) const
     {
         if (a_idx < m_cElements)
             return m_papElements[a_idx];
@@ -246,7 +246,7 @@ public:
      * @param   a_idx           The insertion index.  ~(size_t)0 is an alias for the end.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    int insert(size_t a_idx, ElementType *a_pThat)
+    inline int insert(size_t a_idx, ElementType *a_pThat)
     {
         return insertWorker(a_idx, a_pThat, false /*a_fReplace*/);
     }
@@ -259,7 +259,7 @@ public:
      * @param   a_idx           The insertion index.  ~(size_t)0 is an alias for the end.
      * @param   a_rThat         The object to insert a copy of.
      */
-    int insertCopy(size_t a_idx, ElementType const &a_rThat)
+    inline int insertCopy(size_t a_idx, ElementType const &a_rThat)
     {
         return insertCopyWorker(a_idx, a_rThat, false /*a_fReplace*/);
     }
@@ -271,7 +271,7 @@ public:
      *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    int append(ElementType *a_pThat)
+    inline int append(ElementType *a_pThat)
     {
         return insertWorker(~(size_t)0, a_pThat, false /*a_fReplace*/);
     }
@@ -283,7 +283,7 @@ public:
      *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_rThat         The object to insert a copy of.
      */
-    int appendCopy(ElementType const &a_rThat)
+    inline int appendCopy(ElementType const &a_rThat)
     {
         return insertCopyWorker(~(size_t)0, a_rThat, false /*a_fReplace*/);
     }
@@ -295,7 +295,7 @@ public:
      *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    int prepend(ElementType *a_pThat)
+    inline int prepend(ElementType *a_pThat)
     {
         return insertWorker(0, a_pThat, false /*a_fReplace*/);
     }
@@ -307,7 +307,7 @@ public:
      *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_rThat         The object to insert a copy of.
      */
-    int prependCopy(ElementType const &a_rThat)
+    inline int prependCopy(ElementType const &a_rThat)
     {
         return insertCopyWorker(0, a_rThat, false /*a_fReplace*/);
     }
@@ -320,7 +320,7 @@ public:
      * @param   a_idx           The index of the existing object to replace.
      * @param   a_pThat         The replacement object.  The array takes ownership of the object on success.
      */
-    int replace(size_t a_idx, ElementType *a_pThat)
+    inline int replace(size_t a_idx, ElementType *a_pThat)
     {
         return insertWorker(a_idx, a_pThat, true /*a_fReplace*/);
     }
@@ -333,7 +333,7 @@ public:
      * @param   a_idx           The index of the existing object to replace.
      * @param   a_rThat         The object to insert a copy of.
      */
-    int replaceCopy(size_t a_idx, ElementType const &a_rThat)
+    inline int replaceCopy(size_t a_idx, ElementType const &a_rThat)
     {
         return insertCopyWorker(a_idx, a_rThat, true /*a_fReplace*/);
     }
@@ -344,7 +344,7 @@ public:
      * @returns The object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    ElementType *at(size_t a_idx)
+    inline ElementType *at(size_t a_idx)
     {
         if (a_idx < m_cElements)
             return (ElementType *)m_papElements[a_idx];
@@ -357,7 +357,7 @@ public:
      * @returns The object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    ElementType const *at(size_t a_idx) const
+    inline ElementType const *at(size_t a_idx) const
     {
         if (a_idx < m_cElements)
             return (ElementType const *)m_papElements[a_idx];
@@ -368,7 +368,7 @@ public:
      * Returns the first object in the array.
      * @returns The first object, NULL if empty.
      */
-    ElementType *first()
+    inline ElementType *first()
     {
         return at(0);
     }
@@ -377,7 +377,7 @@ public:
      * Returns the first object in the array, const variant.
      * @returns The first object, NULL if empty.
      */
-    ElementType const *first() const
+    inline ElementType const *first() const
     {
         return at(0);
     }
@@ -386,7 +386,7 @@ public:
      * Returns the last object in the array.
      * @returns The last object, NULL if empty.
      */
-    ElementType *last()
+    inline ElementType *last()
     {
         return at(m_cElements - 1);
     }
@@ -395,7 +395,7 @@ public:
      * Returns the last object in the array, const variant.
      * @returns The last object, NULL if empty.
      */
-    ElementType const *last() const
+    inline ElementType const *last() const
     {
         return at(m_cElements - 1);
     }

@@ -74,7 +74,7 @@ public:
     /**
      * Retrieves the callback data.
      */
-    void *getCallbackData() const  { return m_pvCallbackData; }
+    inline void *getCallbackData() const  { return m_pvCallbackData; }
 
     /**
      * Sets the content-type for an upload.
@@ -88,7 +88,7 @@ public:
     /**
      * Gets the content type that was set.
      */
-    RTCString const &getContentType() const { return m_strContentType; }
+    inline RTCString const &getContentType() const { return m_strContentType; }
 
     /**
      * Callback for producing bytes to upload.
@@ -198,7 +198,7 @@ public:
     /**
      * Retrieves the callback data.
      */
-    void *getCallbackData() const  { return m_pvCallbackData; }
+    inline void *getCallbackData() const  { return m_pvCallbackData; }
 
     /**
      * Sets the max size to download to memory.
@@ -215,7 +215,7 @@ public:
     /**
      * Gets the content-length value (UINT64_MAX if not available).
      */
-    uint64_t getContentLength() const { return m_cbContentLength; }
+    inline uint64_t getContentLength() const { return m_cbContentLength; }
 
     /**
      * Callback for consuming downloaded bytes.
@@ -339,7 +339,7 @@ public:
     /**
      * Checks if there are were any assignment errors.
      */
-    bool hasAssignmentErrors() const { return m_fErrorSet != 0; }
+    inline bool hasAssignmentErrors() const { return m_fErrorSet != 0; }
 
 protected:
     /** Set of fields that have been explicitly assigned a value. */
@@ -497,23 +497,23 @@ public:
      * Getter for m_rcStatus.
      * @returns Negative numbers are IPRT errors, positive are HTTP status codes.
      */
-    int getStatus() { return m_rcStatus; }
+    inline int getStatus() { return m_rcStatus; }
 
     /**
      * Getter for m_rcHttp.
      * @returns HTTP status code or VERR_NOT_AVAILABLE.
      */
-    int getHttpStatus() { return m_rcHttp; }
+    inline int getHttpStatus() { return m_rcHttp; }
 
     /**
      * Getter for m_pErrInfo.
      */
-    PCRTERRINFO getErrInfo(void) const { return m_pErrInfo; }
+    inline PCRTERRINFO getErrInfo(void) const { return m_pErrInfo; }
 
     /**
      * Getter for m_strContentType.
      */
-    RTCString const &getContentType(void) const { return m_strContentType; }
+    inline RTCString const &getContentType(void) const { return m_strContentType; }
 
 
 protected:
@@ -631,7 +631,7 @@ public:
      *
      * @returns Base URL string.  If empty, we'll be using the default one.
      */
-    RTCString const &getBasePath(void) const
+    inline RTCString const &getBasePath(void) const
     {
         return m_strBasePath;
     }
@@ -660,7 +660,7 @@ public:
      * @param   a_strPath   The base path to use.
      * @note    Defers to the C-string variant.
      */
-    void setBasePath(RTCString const &a_strPath) { setBasePath(a_strPath.c_str()); }
+    inline void setBasePath(RTCString const &a_strPath) { setBasePath(a_strPath.c_str()); }
 
     /**
      * Gets the default base path (URL) as specified in the specs.
