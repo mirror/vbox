@@ -106,9 +106,12 @@ UIChooserView::UIChooserView(UIChooser *pParent)
     prepare();
 }
 
-void UIChooserView::sltFocusChanged(UIChooserItem *pFocusItem)
+void UIChooserView::sltFocusChanged()
 {
     /* Make sure focus-item set: */
+    const UIChooserItem *pFocusItem = chooser() && chooser()->model()
+                                    ? chooser()->model()->focusItem()
+                                    : 0;
     if (!pFocusItem)
         return;
 

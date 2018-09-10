@@ -82,16 +82,18 @@ public:
 
     /** @name Current item stuff.
       * @{ */
+        /** Returns current item. */
+        UIVirtualMachineItem *currentItem() const;
+        /** Returns a list of current items. */
+        QList<UIVirtualMachineItem*> currentItems() const;
+
         /** Returns whether group item is selected. */
         bool isGroupItemSelected() const;
         /** Returns whether global item is selected. */
         bool isGlobalItemSelected() const;
         /** Returns whether machine item is selected. */
         bool isMachineItemSelected() const;
-        /** Returns current item. */
-        UIVirtualMachineItem *currentItem() const;
-        /** Returns current items. */
-        QList<UIVirtualMachineItem*> currentItems() const;
+
         /** Returns whether single group is selected. */
         bool isSingleGroupSelected() const;
         /** Returns whether all machine items of one group is selected. */

@@ -24,7 +24,6 @@
 
 /* Forward declarations: */
 class UIChooser;
-class UIChooserItem;
 
 /** QIGraphicsView extension used as VM chooser pane view. */
 class UIChooserView : public QIWithRetranslateUI<QIGraphicsView>
@@ -53,7 +52,7 @@ public slots:
     /** @name General stuff.
       * @{ */
         /** Handles focus change to @a pFocusItem. */
-        void sltFocusChanged(UIChooserItem *pFocusItem);
+        void sltFocusChanged();
     /** @} */
 
     /** @name Layout stuff.
