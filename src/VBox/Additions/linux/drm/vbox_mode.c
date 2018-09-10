@@ -241,7 +241,7 @@ static bool vbox_set_up_input_mapping(struct vbox_private *vbox)
 	return old_single_framebuffer != vbox->single_framebuffer;
 }
 
-static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
+static int vbox_crtc_set_base(struct drm_crtc *crtc,
 				 struct drm_framebuffer *old_fb, int x, int y)
 {
 	struct vbox_private *vbox = crtc->dev->dev_private;
@@ -251,19 +251,6 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
 	struct vbox_bo *bo;
 	int ret;
 	u64 gpu_addr;
-
-	/* Unpin the previous fb. */
-	if (old_fb) {
-		vbox_fb = to_vbox_framebuffer(old_fb);
-		obj = vbox_fb->obj;
-		bo = gem_to_vbox_bo(obj);
-		ret = vbox_bo_reserve(bo, false);
-		if (ret)
-			return ret;
-
-		vbox_bo_unpin(bo);
-		vbox_bo_unreserve(bo);
-	}
 
 	vbox_fb = to_vbox_framebuffer(CRTC_FB(crtc));
 	obj = vbox_fb->obj;
@@ -277,6 +264,21 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
 	vbox_bo_unreserve(bo);
 	if (ret)
 		return ret;
+
+	/* Unpin the previous fb.  Do this after the new one has been pinned rather
+	 * than before and re-pinning it on failure in case that fails too. */
+	if (old_fb) {
+		vbox_fb = to_vbox_framebuffer(old_fb);
+		obj = vbox_fb->obj;
+		bo = gem_to_vbox_bo(obj);
+		ret = vbox_bo_reserve(bo, false);
+		/* This should never fail, as no one else should be accessing it and we
+		 * should be running under the modeset locks. */
+		if (!ret) {
+			vbox_bo_unpin(bo);
+			vbox_bo_unreserve(bo);
+		}
+	}
 
 	vbox_crtc->fb_offset = gpu_addr;
 	if (vbox_set_up_input_mapping(vbox)) {
@@ -292,22 +294,15 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
 	return 0;
 }
 
-static int vbox_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
-				   struct drm_framebuffer *old_fb)
-{
-	return vbox_crtc_do_set_base(crtc, old_fb, x, y);
-}
-
 static int vbox_crtc_mode_set(struct drm_crtc *crtc,
 			      struct drm_display_mode *mode,
 			      struct drm_display_mode *adjusted_mode,
 			      int x, int y, struct drm_framebuffer *old_fb)
 {
 	struct vbox_private *vbox = crtc->dev->dev_private;
-	int rc = 0;
-
-	vbox_crtc_mode_set_base(crtc, x, y, old_fb);
-
+	int rc = vbox_crtc_set_base(crtc, old_fb, x, y);
+	if (rc)
+		return rc;
 	mutex_lock(&vbox->hw_mutex);
 	rc = vbox_set_view(crtc);
 	if (!rc)
@@ -336,7 +331,6 @@ static const struct drm_crtc_helper_funcs vbox_crtc_helper_funcs = {
 	.dpms = vbox_crtc_dpms,
 	.mode_fixup = vbox_crtc_mode_fixup,
 	.mode_set = vbox_crtc_mode_set,
-	/* .mode_set_base = vbox_crtc_mode_set_base, */
 	.disable = vbox_crtc_disable,
 	.prepare = vbox_crtc_prepare,
 	.commit = vbox_crtc_commit,
