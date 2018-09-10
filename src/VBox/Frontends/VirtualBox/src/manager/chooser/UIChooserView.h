@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIChooserView_h__
-#define __UIChooserView_h__
+#ifndef ___UIChooserView_h___
+#define ___UIChooserView_h___
 
 /* GUI includes: */
 #include "QIGraphicsView.h"
@@ -26,14 +26,14 @@
 class UIChooser;
 class UIChooserItem;
 
-/* Graphics chooser-view: */
+/** QIGraphicsView extension used as VM chooser pane view. */
 class UIChooserView : public QIWithRetranslateUI<QIGraphicsView>
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Resize stuff: */
+    /** Notifies listeners about resize. */
     void sigResized();
 
 public:
@@ -42,39 +42,68 @@ public:
       * @param  pParent  Brings the chooser container to embed into. */
     UIChooserView(UIChooser *pParent);
 
-    /** Returns the chooser reference. */
-    UIChooser *chooser() const { return m_pChooser; }
+    /** @name General stuff.
+      * @{ */
+        /** Returns the chooser reference. */
+        UIChooser *chooser() const { return m_pChooser; }
+    /** @} */
 
 public slots:
 
-    /* Handlers: Size-hint stuff: */
-    void sltMinimumWidthHintChanged(int iMinimumWidthHint);
-    void sltMinimumHeightHintChanged(int iMinimumHeightHint);
+    /** @name General stuff.
+      * @{ */
+        /** Handles focus change to @a pFocusItem. */
+        void sltFocusChanged(UIChooserItem *pFocusItem);
+    /** @} */
 
-    /* Handler: Focus-item stuff: */
-    void sltFocusChanged(UIChooserItem *pFocusItem);
+    /** @name Layout stuff.
+      * @{ */
+        /** Handles minimum width @a iHint change. */
+        void sltMinimumWidthHintChanged(int iHint);
+        /** Handles minimum height @a iHint change. */
+        void sltMinimumHeightHintChanged(int iHint);
+    /** @} */
+
+protected:
+
+    /** @name Event handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+
+        /** Handles resize @a pEvent. */
+        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    /** @} */
 
 private:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares palette. */
+        void preparePalette();
+    /** @} */
 
-    /* Helper: Prepare stuff: */
-    void preparePalette();
+    /** @name General stuff.
+      * @{ */
+        /** Updates scene rectangle. */
+        void updateSceneRect();
+    /** @} */
 
-    /* Handler: Resize-event stuff: */
-    void resizeEvent(QResizeEvent *pEvent);
+    /** @name General stuff.
+      * @{ */
+        /** Holds the chooser pane reference. */
+        UIChooser *m_pChooser;
+    /** @} */
 
-    /* Helper: Update stuff: */
-    void updateSceneRect();
-
-    /** Holds the chooser reference. */
-    UIChooser *m_pChooser;
-
-    /* Variables: */
-    int m_iMinimumWidthHint;
-    int m_iMinimumHeightHint;
+    /** @name Layout stuff.
+      * @{ */
+        /** Holds the minimum width hint. */
+        int m_iMinimumWidthHint;
+        /** Holds the minimum height hint. */
+        int m_iMinimumHeightHint;
+    /** @} */
 };
 
-#endif /* __UIChooserView_h__ */
-
+#endif /* !___UIChooserView_h___ */

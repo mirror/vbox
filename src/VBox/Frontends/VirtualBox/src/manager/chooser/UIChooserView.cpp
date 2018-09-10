@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,14 +20,14 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QScrollBar>
 # include <QAccessibleWidget>
+# include <QScrollBar>
 
 /* GUI includes: */
 # include "UIChooser.h"
+# include "UIChooserItem.h"
 # include "UIChooserModel.h"
 # include "UIChooserView.h"
-# include "UIChooserItem.h"
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
@@ -102,6 +102,59 @@ UIChooserView::UIChooserView(UIChooser *pParent)
     , m_iMinimumWidthHint(0)
     , m_iMinimumHeightHint(0)
 {
+    /* Prepare: */
+    prepare();
+}
+
+void UIChooserView::sltFocusChanged(UIChooserItem *pFocusItem)
+{
+    /* Make sure focus-item set: */
+    if (!pFocusItem)
+        return;
+
+    const QSize viewSize = viewport()->size();
+    QRectF geo = pFocusItem->geometry();
+    geo &= QRectF(geo.topLeft(), viewSize);
+    ensureVisible(geo, 0, 0);
+}
+
+void UIChooserView::sltMinimumWidthHintChanged(int iHint)
+{
+    /* Is there something changed? */
+    if (m_iMinimumWidthHint == iHint)
+        return;
+
+    /* Remember new value: */
+    m_iMinimumWidthHint = iHint;
+
+    /* Set minimum view width according passed width-hint: */
+    setMinimumWidth(2 * frameWidth() + m_iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
+
+    /* Update scene-rect: */
+    updateSceneRect();
+}
+
+void UIChooserView::sltMinimumHeightHintChanged(int iHint)
+{
+    /* Is there something changed? */
+    if (m_iMinimumHeightHint == iHint)
+        return;
+
+    /* Remember new value: */
+    m_iMinimumHeightHint = iHint;
+
+    /* Update scene-rect: */
+    updateSceneRect();
+}
+
+void UIChooserView::retranslateUi()
+{
+    /* Translate this: */
+    setToolTip(tr("Contains a tree of Virtual Machines and their groups"));
+}
+
+void UIChooserView::prepare()
+{
     /* Install Chooser-view accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
 
@@ -119,55 +172,8 @@ UIChooserView::UIChooserView(UIChooser *pParent)
     /* Update scene-rect: */
     updateSceneRect();
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
-}
-
-void UIChooserView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
-{
-    /* Is there something changed? */
-    if (m_iMinimumWidthHint == iMinimumWidthHint)
-        return;
-
-    /* Remember new value: */
-    m_iMinimumWidthHint = iMinimumWidthHint;
-
-    /* Set minimum view width according passed width-hint: */
-    setMinimumWidth(2 * frameWidth() + iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
-
-    /* Update scene-rect: */
-    updateSceneRect();
-}
-
-void UIChooserView::sltMinimumHeightHintChanged(int iMinimumHeightHint)
-{
-    /* Is there something changed? */
-    if (m_iMinimumHeightHint == iMinimumHeightHint)
-        return;
-
-    /* Remember new value: */
-    m_iMinimumHeightHint = iMinimumHeightHint;
-
-    /* Update scene-rect: */
-    updateSceneRect();
-}
-
-void UIChooserView::sltFocusChanged(UIChooserItem *pFocusItem)
-{
-    /* Make sure focus-item set: */
-    if (!pFocusItem)
-        return;
-
-    QSize viewSize = viewport()->size();
-    QRectF geo = pFocusItem->geometry();
-    geo &= QRectF(geo.topLeft(), viewSize);
-    ensureVisible(geo, 0, 0);
-}
-
-void UIChooserView::retranslateUi()
-{
-    /* Translate this: */
-    setToolTip(tr("Contains a tree of Virtual Machines and their groups"));
 }
 
 void UIChooserView::preparePalette()
@@ -191,4 +197,3 @@ void UIChooserView::updateSceneRect()
 {
     setSceneRect(0, 0, m_iMinimumWidthHint, m_iMinimumHeightHint);
 }
-
