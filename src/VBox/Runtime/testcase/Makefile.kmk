@@ -55,7 +55,6 @@ PROGRAMS += \
 	tstRTCrPkix-1 \
 	tstRTCrX509-1 \
 	tstRTCType \
-	tstRTCRest-1 \
 	tstRTDigest \
 	tstRTDigest-2 \
 	tstDir \
@@ -174,8 +173,9 @@ PROGRAMS.darwin += \
 	tstRTDarwinMachKernel
 ifdef VBOX_WITH_LIBCURL
  PROGRAMS += \
-	tstRTHttp-1 \
-	tstRTS3
+ 	tstRTHttp-1 \
+ 	tstRTCRest-1 \
+ 	tstRTS3
 endif
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  PROGRAMS += \
@@ -308,8 +308,10 @@ $$(tstRTCrX509-1_0_OUTDIR)/tstRTCrX509-1.h: \
 tstRTCType_TEMPLATE = VBOXR3TSTEXE
 tstRTCType_SOURCES = tstRTCType.cpp
 
-tstRTCRest-1_TEMPLATE = VBOXR3TSTEXE
-tstRTCRest-1_SOURCES = tstRTCRest-1.cpp
+ifdef VBOX_WITH_LIBCURL
+ tstRTCRest-1_TEMPLATE = VBOXR3TSTEXE
+ tstRTCRest-1_SOURCES = tstRTCRest-1.cpp
+endif
 
 tstRTDigest_TEMPLATE = VBOXR3TSTEXE
 tstRTDigest_SOURCES = tstRTDigest.cpp
