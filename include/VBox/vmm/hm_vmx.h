@@ -1034,6 +1034,23 @@ typedef VMXEXITINSTRINFO *PVMXEXITINSTRINFO;
 /** Pointer to a const VMX VM-exit instruction info. struct. */
 typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 
+
+/** @name VM-entry failure reported in VM-exit qualification.
+ * See Intel spec. 26.7 "VM-entry failures during or after loading guest-state".
+ */
+/** No errors during VM-entry. */
+#define VMX_ENTRY_FAIL_QUAL_NO_ERROR                            (0)
+/** Not used. */
+#define VMX_ENTRY_FAIL_QUAL_NOT_USED                            (1)
+/** Error while loading PDPTEs. */
+#define VMX_ENTRY_FAIL_QUAL_PDPTE                               (2)
+/** NMI injection when blocking-by-STI is set. */
+#define VMX_ENTRY_FAIL_QUAL_NMI_INJECT                          (3)
+/** Invalid VMCS link pointer. */
+#define VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR                       (4)
+/** @} */
+
+
 /**
  * VMX MSR autoload/store element.
  * In accordance to the VT-x spec.
@@ -2723,19 +2740,55 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
  * @{
  */
 /** Hardware breakpoint 0 was met. */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0                   RT_BIT(0)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0                   RT_BIT_64(0)
 /** Hardware breakpoint 1 was met. */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1                   RT_BIT(1)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1                   RT_BIT_64(1)
 /** Hardware breakpoint 2 was met. */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2                   RT_BIT(2)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2                   RT_BIT_64(2)
 /** Hardware breakpoint 3 was met. */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3                   RT_BIT(3)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3                   RT_BIT_64(3)
 /** At least one data or IO breakpoint was hit. */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP                 RT_BIT(12)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP                 RT_BIT_64(12)
 /** A debug exception would have been triggered by single-step execution mode. */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS                    RT_BIT(14)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS                    RT_BIT_64(14)
 /** A debug exception occurred inside an RTM region.   */
-#define VMX_VMCS_GUEST_PENDING_DEBUG_RTM                        RT_BIT(16)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_RTM                        RT_BIT_64(16)
+/** Mask of valid bits. */
+#define VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK                 (  VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0 \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1 \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2 \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3 \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_RTM)
+#define VMX_VMCS_GUEST_PENDING_DEBUG_RTM_MASK                   (  VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS \
+                                                                 | VMX_VMCS_GUEST_PENDING_DEBUG_RTM)
+/** Bit fields for Pending debug exceptions. */
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP0_SHIFT                  0
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP0_MASK                   UINT64_C(0x0000000000000001)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP1_SHIFT                  1
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP1_MASK                   UINT64_C(0x0000000000000002)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP2_SHIFT                  2
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP2_MASK                   UINT64_C(0x0000000000000004)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP3_SHIFT                  3
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BP3_MASK                   UINT64_C(0x0000000000000008)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_4_11_SHIFT            4
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_4_11_MASK             UINT64_C(0x0000000000000ff0)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_EN_BP_SHIFT                12
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_EN_BP_MASK                 UINT64_C(0x0000000000001000)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_13_SHIFT              13
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_13_MASK               UINT64_C(0x0000000000002000)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BS_SHIFT                   14
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_BS_MASK                    UINT64_C(0x0000000000004000)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_15_SHIFT              15
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_15_MASK               UINT64_C(0x0000000000008000)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RTM_SHIFT                  16
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RTM_MASK                   UINT64_C(0x0000000000010000)
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_17_63_SHIFT           17
+#define VMX_BF_VMCS_PENDING_DBG_XCPT_RSVD_17_63_MASK            UINT64_C(0xfffffffffffe0000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_PENDING_DBG_XCPT_, UINT64_C(0), UINT64_MAX,
+                            (BP0, BP1, BP2, BP3, RSVD_4_11, EN_BP, RSVD_13, BS, RSVD_15, RTM, RSVD_17_63));
 /** @} */
 
 
@@ -3478,6 +3531,7 @@ typedef enum
     kVmxVDiag_Vmentry_AddrIoBitmapB,
     kVmxVDiag_Vmentry_AddrMsrBitmap,
     kVmxVDiag_Vmentry_AddrVirtApicPage,
+    kVmxVDiag_Vmentry_AddrVmcsLinkPtr,
     kVmxVDiag_Vmentry_AddrVmreadBitmap,
     kVmxVDiag_Vmentry_AddrVmwriteBitmap,
     kVmxVDiag_Vmentry_ApicRegVirt,
@@ -3524,6 +3578,10 @@ typedef enum
     kVmxVDiag_Vmentry_GuestPae,
     kVmxVDiag_Vmentry_GuestPatMsr,
     kVmxVDiag_Vmentry_GuestPcide,
+    kVmxVDiag_Vmentry_GuestPndDbgXcptBsNoTf,
+    kVmxVDiag_Vmentry_GuestPndDbgXcptBsTf,
+    kVmxVDiag_Vmentry_GuestPndDbgXcptRsvd,
+    kVmxVDiag_Vmentry_GuestPndDbgXcptRtm,
     kVmxVDiag_Vmentry_GuestRip,
     kVmxVDiag_Vmentry_GuestRipRsvd,
     kVmxVDiag_Vmentry_GuestRFlagsIf,
@@ -3615,6 +3673,10 @@ typedef enum
     kVmxVDiag_Vmentry_GuestSegSelLdtr,
     kVmxVDiag_Vmentry_GuestSegSelTr,
     kVmxVDiag_Vmentry_GuestSysenterEspEip,
+    kVmxVDiag_Vmentry_VmcsLinkPtrCurVmcs,
+    kVmxVDiag_Vmentry_VmcsLinkPtrReadPhys,
+    kVmxVDiag_Vmentry_VmcsLinkPtrRevId,
+    kVmxVDiag_Vmentry_VmcsLinkPtrShadow,
     kVmxVDiag_Vmentry_HostCr0Fixed0,
     kVmxVDiag_Vmentry_HostCr0Fixed1,
     kVmxVDiag_Vmentry_HostCr3,

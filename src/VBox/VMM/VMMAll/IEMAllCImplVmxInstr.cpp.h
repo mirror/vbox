@@ -363,9 +363,11 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
 /** Whether a shadow VMCS is present for the given VCPU. */
 #define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)            RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
 
-
 /** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
 #define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)            ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u64VmcsLinkPtr.u)
+
+/** Gets the VMXON region pointer. */
+#define IEM_VMX_GET_VMXON_PTR(a_pVCpu)              ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
 
 /** Whether a current VMCS is present for the given VCPU. */
 #define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
@@ -2866,10 +2868,12 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
     }
 
     /* RFLAGS (bits 63:22 (or 31:22), bits 15, 5, 3 are reserved, bit 1 MB1). */
-    uint64_t const fMbzMask = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode ? UINT64_C(0xffffffffffc08028) : UINT32_C(0xffc08028);
-    uint64_t const fMb1Mask = X86_EFL_RA1_MASK;
-    if (   !(pVmcs->u64GuestRFlags.u & fMbzMask)
-        &&  (pVmcs->u64GuestRFlags.u & fMb1Mask) == fMb1Mask)
+    uint64_t const uGuestRFlags = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode ? pVmcs->u64GuestRFlags.u
+                                : pVmcs->u64GuestRFlags.s.Lo;
+    uint64_t const fMbzMask = ~X86_EFL_LIVE_MASK;
+    uint64_t const fMb1Mask =  X86_EFL_RA1_MASK;
+    if (   !(uGuestRFlags & fMbzMask)
+        &&  (uGuestRFlags & fMb1Mask) == fMb1Mask)
     { /* likely */ }
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsRsvd);
@@ -2877,7 +2881,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
     if (   fGstInLongMode
         || !(pVmcs->u64GuestCr0.u & X86_CR0_PE))
     {
-        if (!(pVmcs->u64GuestRFlags.u & X86_EFL_VM))
+        if (!(uGuestRFlags & X86_EFL_VM))
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsVm);
@@ -2886,7 +2890,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
     if (   VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo)
         && VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
     {
-        if (pVmcs->u64GuestRFlags.u & X86_EFL_IF)
+        if (uGuestRFlags & X86_EFL_IF)
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsIf);
@@ -2910,7 +2914,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
      * Guest non-register state.
      * See Intel spec. 26.3.1.5 "Checks on Guest Non-Register State".
      */
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     const char *const pszFailure = "VM-exit";
 
     /*
@@ -3036,7 +3040,87 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateEnclave);
 
-    /** @todo NSTVMX: Pending debug exceptions, VMCS link pointer. */
+    /*
+     * Pending debug exceptions.
+     */
+    uint64_t const uPendingDbgXcpt = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode
+                                   ? pVmcs->u64GuestPendingDbgXcpt.u
+                                   : pVmcs->u64GuestPendingDbgXcpt.s.Lo;
+    if (!(uPendingDbgXcpt & ~VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK))
+    { /* likely */ }
+    else
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptRsvd);
+
+    if (   (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
+        || pVmcs->u32GuestActivityState == VMX_VMCS_GUEST_ACTIVITY_HLT)
+    {
+        if (   (pVmcs->u64GuestRFlags.u & X86_EFL_TF)
+            && !(pVmcs->u64GuestDebugCtlMsr.u & MSR_IA32_DEBUGCTL_BTF)
+            && !(uPendingDbgXcpt & VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS))
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptBsTf);
+
+        if (   (   !(pVmcs->u64GuestRFlags.u & X86_EFL_TF)
+                ||  (pVmcs->u64GuestDebugCtlMsr.u & MSR_IA32_DEBUGCTL_BTF))
+            && (uPendingDbgXcpt & VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS))
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptBsNoTf);
+    }
+
+    /* We don't support RTM (Real-time Transactional Memory) yet. */
+    if (uPendingDbgXcpt & VMX_VMCS_GUEST_PENDING_DEBUG_RTM)
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptRtm);
+
+    /*
+     * VMCS link pointer.
+     */
+    if (pVmcs->u64VmcsLinkPtr.u != UINT64_C(0xffffffffffffffff))
+    {
+        /* We don't support SMM yet (so VMCS link pointer cannot be the current VMCS). */
+        if (pVmcs->u64VmcsLinkPtr.u != IEM_VMX_GET_CURRENT_VMCS(pVCpu))
+        { /* likely */ }
+        else
+        {
+            pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrCurVmcs);
+        }
+
+        /* Validate the address. */
+        if (   (pVmcs->u64VmcsLinkPtr.u & X86_PAGE_4K_OFFSET_MASK)
+            || (pVmcs->u64VmcsLinkPtr.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64VmcsLinkPtr.u))
+        {
+            pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmcsLinkPtr);
+        }
+
+        /* Read the VMCS-link pointer from guest memory. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs),
+                                         pVmcs->u64VmcsLinkPtr.u, VMX_V_VMCS_SIZE);
+        if (RT_FAILURE(rc))
+        {
+            pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrReadPhys);
+        }
+
+        /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.u31RevisionId == VMX_V_VMCS_REVISION_ID)
+        { /* likely */ }
+        else
+        {
+            pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrRevId);
+        }
+
+        /* Verify the shadow bit is set if VMCS shadowing is enabled . */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+            || pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.fIsShadowVmcs)
+        { /* likely */ }
+        else
+        {
+            pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrShadow);
+        }
+    }
 
     NOREF(pszInstr);
     NOREF(pszFailure);
