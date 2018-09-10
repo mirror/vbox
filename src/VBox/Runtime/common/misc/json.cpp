@@ -366,9 +366,9 @@ DECLINLINE(void) rtJsonTokenizerSkipCh(PRTJSONTOKENIZER pTokenizer)
  */
 DECLINLINE(char) rtJsonTokenizerPeekCh(PRTJSONTOKENIZER pTokenizer)
 {
-    return   rtJsonTokenizerIsEos(pTokenizer)
-           ? '\0'
-           : pTokenizer->achBuf[pTokenizer->offBuf + 1]; /** @todo Read out of bounds */
+    return   !rtJsonTokenizerIsEos(pTokenizer)
+           ? pTokenizer->achBuf[pTokenizer->offBuf + 1] /** @todo Read out of bounds */
+           : '\0';
 }
 
 /**
@@ -382,10 +382,10 @@ DECLINLINE(char) rtJsonTokenizerGetCh(PRTJSONTOKENIZER pTokenizer)
 {
     char ch;
 
-    if (rtJsonTokenizerIsEos(pTokenizer))
-        ch = '\0';
-    else
+    if (!rtJsonTokenizerIsEos(pTokenizer))
         ch = pTokenizer->achBuf[pTokenizer->offBuf];
+    else
+        ch = '\0';
 
     return ch;
 }
@@ -603,14 +603,9 @@ static int rtJsonTokenizerGetNumber(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
  */
 static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken)
 {
-    int rc = VINF_SUCCESS;
-    size_t cchStr = 0;
-    size_t cchStrMax = _4K;
-    char *pszTmp = (char *)RTMemAllocZ(cchStrMax * sizeof(char));
-    if (RT_UNLIKELY(!pszTmp))
-        return VERR_NO_STR_MEMORY;
-
-    RT_BZERO(pszTmp, cchStrMax);
+    size_t cchStrMax = 64;
+    char *pszDecoded = (char *)RTStrAlloc(cchStrMax);
+    AssertReturn(pszDecoded, VERR_NO_STR_MEMORY);
 
     Assert(rtJsonTokenizerGetCh(pTokenizer) == '\"');
     rtJsonTokenizerSkipCh(pTokenizer); /* Skip " */
@@ -618,12 +613,17 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
     pToken->enmClass = RTJSONTOKENCLASS_STRING;
     pToken->Pos      = pTokenizer->Pos;
 
+    size_t cchStr = 0;
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     while (   ch != '\"'
-           && ch != '\0'
-           && RT_SUCCESS(rc))
+           && ch != '\0')
     {
-        if (ch == '\\')
+        if (ch != '\\')
+        {
+            pszDecoded[cchStr++] = ch;
+            rtJsonTokenizerSkipCh(pTokenizer);
+        }
+        else
         {
             /* Escape sequence, check the next character  */
             rtJsonTokenizerSkipCh(pTokenizer);
@@ -631,80 +631,175 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
             switch (chNext)
             {
                 case '\"':
-                    pszTmp[cchStr] = '\"';
+                    pszDecoded[cchStr++] = '\"';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '\\':
-                    pszTmp[cchStr] = '\\';
+                    pszDecoded[cchStr++] = '\\';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '/':
-                    pszTmp[cchStr] = '/';
+                    pszDecoded[cchStr++] = '/';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '\b':
-                    pszTmp[cchStr] = '\b';
+                    pszDecoded[cchStr++] = '\b';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '\n':
-                    pszTmp[cchStr] = '\n';
+                    pszDecoded[cchStr++] = '\n';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '\f':
-                    pszTmp[cchStr] = '\f';
+                    pszDecoded[cchStr++] = '\f';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '\r':
-                    pszTmp[cchStr] = '\r';
+                    pszDecoded[cchStr++] = '\r';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case '\t':
-                    pszTmp[cchStr] = '\t';
+                    pszDecoded[cchStr++] = '\t';
+                    rtJsonTokenizerSkipCh(pTokenizer);
                     break;
                 case 'u':
-                    rc = VERR_NOT_SUPPORTED;
-                    break;
+                {
+                    /* \uXXXX */
+                    int rc = VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE;
+                    rtJsonTokenizerSkipCh(pTokenizer);
+                    char chX1 = rtJsonTokenizerGetCh(pTokenizer);
+                    if (RT_C_IS_XDIGIT(chX1))
+                    {
+                        rtJsonTokenizerSkipCh(pTokenizer);
+                        char chX2 = rtJsonTokenizerGetCh(pTokenizer);
+                        if (RT_C_IS_XDIGIT(chX2))
+                        {
+                            rtJsonTokenizerSkipCh(pTokenizer);
+                            char chX3 = rtJsonTokenizerGetCh(pTokenizer);
+                            if (RT_C_IS_XDIGIT(chX3))
+                            {
+                                rtJsonTokenizerSkipCh(pTokenizer);
+                                char chX4 = rtJsonTokenizerGetCh(pTokenizer);
+                                if (RT_C_IS_XDIGIT(chX4))
+                                {
+                                    rtJsonTokenizerSkipCh(pTokenizer);
+
+                                    RTUNICP uc = ((RTUTF16)(chX1 <= '9' ? chX1 - '0' : (chX1 & 7) + 9) << 12)
+                                               | ((RTUTF16)(chX2 <= '9' ? chX2 - '0' : (chX2 & 7) + 9) <<  8)
+                                               | ((RTUTF16)(chX3 <= '9' ? chX3 - '0' : (chX3 & 7) + 9) <<  4)
+                                               | ((RTUTF16)(chX4 <= '9' ? chX4 - '0' : (chX4 & 7) + 9));
+                                    if (   !RTUtf16IsHighSurrogate((RTUTF16)uc)
+                                        && !RTUtf16IsLowSurrogate((RTUTF16)uc))
+                                        rc = VINF_SUCCESS;
+                                    else if (RTUtf16IsHighSurrogate((RTUTF16)uc))
+                                    {
+                                        /* The must be a low surrogate pair following the high one: */
+                                        ch = rtJsonTokenizerGetCh(pTokenizer);
+                                        if (ch == '\\')
+                                            rtJsonTokenizerSkipCh(pTokenizer);
+                                        else
+                                            rc = VERR_JSON_MISSING_SURROGATE_PAIR;
+                                        ch = rtJsonTokenizerGetCh(pTokenizer);
+                                        if (ch == 'u')
+                                            rtJsonTokenizerSkipCh(pTokenizer);
+                                        else
+                                            rc = VERR_JSON_MISSING_SURROGATE_PAIR;
+                                        chX1 = rtJsonTokenizerGetCh(pTokenizer);
+                                        if (RT_C_IS_XDIGIT(chX1))
+                                            rtJsonTokenizerSkipCh(pTokenizer);
+                                        else if (RT_SUCCESS_NP(rc))
+                                            rc = VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE;
+                                        chX2 = rtJsonTokenizerGetCh(pTokenizer);
+                                        if (RT_C_IS_XDIGIT(chX2))
+                                            rtJsonTokenizerSkipCh(pTokenizer);
+                                        else if (RT_SUCCESS_NP(rc))
+                                            rc = VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE;
+                                        chX3 = rtJsonTokenizerGetCh(pTokenizer);
+                                        if (RT_C_IS_XDIGIT(chX3))
+                                            rtJsonTokenizerSkipCh(pTokenizer);
+                                        else if (RT_SUCCESS_NP(rc))
+                                            rc = VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE;
+                                        chX4 = rtJsonTokenizerGetCh(pTokenizer);
+                                        if (RT_C_IS_XDIGIT(chX4))
+                                            rtJsonTokenizerSkipCh(pTokenizer);
+                                        else if (RT_SUCCESS_NP(rc))
+                                            rc = VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE;
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            RTUTF16 wc2 = ((RTUTF16)(chX1 <= '9' ? chX1 - '0' : (chX1 & 7) + 9) << 12)
+                                                        | ((RTUTF16)(chX2 <= '9' ? chX2 - '0' : (chX2 & 7) + 9) <<  8)
+                                                        | ((RTUTF16)(chX3 <= '9' ? chX3 - '0' : (chX3 & 7) + 9) <<  4)
+                                                        | ((RTUTF16)(chX4 <= '9' ? chX4 - '0' : (chX4 & 7) + 9));
+                                            if (RTUtf16IsLowSurrogate(wc2))
+                                                uc = 0x10000 + (((uc & 0x3ff) << 10) | (wc2 & 0x3ff));
+                                            else
+                                                rc = VERR_JSON_BAD_SURROGATE_PAIR_SEQUENCE;
+                                        }
+                                    }
+                                    else
+                                        rc = VERR_JSON_BAD_SURROGATE_PAIR_SEQUENCE;
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        Assert(cchStr + RTStrCpSize(uc) < cchStrMax);
+                                        char *pszNext = RTStrPutCp(&pszDecoded[cchStr], uc);
+                                        Assert((size_t)(pszNext - &pszDecoded[cchStr]) == RTStrCpSize(uc));
+                                        cchStr += pszNext - &pszDecoded[cchStr];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    RTStrFree(pszDecoded);
+                    if (rc == VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE)
+                        rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Invalid \u escape sequence (line %zu col %zu)",
+                                           pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
+                    else if (rc == VERR_JSON_MISSING_SURROGATE_PAIR)
+                        rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Missing UTF-16 surrogate pair (line %zu col %zu)",
+                                           pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
+                    else
+                        rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Invalid UTF-16 surrogate pair (line %zu col %zu)",
+                                           pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
+                    return rc;
+                }
+
                 default:
-                    rc = RTErrInfoSetF(pTokenizer->pErrInfo, VERR_JSON_MALFORMED, "bad escape sequence (line %zu col %zu)",
-                                       pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
-                    break;
+                    RTStrFree(pszDecoded);
+                    return RTErrInfoSetF(pTokenizer->pErrInfo, VERR_JSON_MALFORMED, "bad escape sequence (line %zu col %zu)",
+                                         pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
             }
         }
+
+
+        if (cchStr < cchStrMax - 4)
+        { /* likely */ }
         else
-            pszTmp[cchStr] = ch;
-
-        if (RT_FAILURE(rc))
-            break;
-
-        cchStr++;
-        rtJsonTokenizerSkipCh(pTokenizer);
-        if (cchStr == cchStrMax - 1)
         {
             /* Increase string space. */
-            size_t cchStrMaxNew = cchStrMax + _4K;
-            char *pszTmpNew = (char *)RTMemRealloc(pszTmp, cchStrMaxNew * sizeof(char));
-            if (RT_UNLIKELY(!pszTmpNew))
+            size_t cchStrMaxNew =  cchStrMax < _4K ? cchStrMax * 2 : cchStrMax + _4K;
+            int rc = RTStrRealloc(&pszDecoded, cchStrMaxNew);
+            if (RT_SUCCESS(rc))
+                cchStrMax = cchStrMaxNew;
+            else
             {
-                rc = VERR_NO_STR_MEMORY;
-                break;
+                RTStrFree(pszDecoded);
+                return rc;
             }
-
-            RT_BZERO(&pszTmpNew[cchStr], _4K);
-            pszTmp = pszTmpNew;
-            cchStrMax = cchStrMaxNew;
         }
         ch = rtJsonTokenizerGetCh(pTokenizer);
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        if (rtJsonTokenizerGetCh(pTokenizer) == '\"')
-            rtJsonTokenizerSkipCh(pTokenizer); /* Skip closing " */
+    if (ch == '\"')
+        rtJsonTokenizerSkipCh(pTokenizer); /* Skip closing " */
 
-        pToken->Class.String.pszStr = RTStrDupN(pszTmp, cchStr);
-        if (pToken->Class.String.pszStr)
-            pToken->Pos.iChEnd += cchStr;
-        else
-            rc = VERR_NO_STR_MEMORY;
-    }
+    Assert(cchStr < cchStrMax);
+    pszDecoded[cchStr] = '\0';
+    if (cchStrMax - cchStr >= cchStrMax / 2)
+        RTStrRealloc(&pszDecoded, cchStr + 1);
+    pToken->Class.String.pszStr = pszDecoded;
 
-    if (pszTmp)
-        RTMemFree(pszTmp);
-
-    return rc;
+    pToken->Pos.iChEnd = pTokenizer->Pos.iChEnd;
+    return VINF_SUCCESS;
 }
 
 /**

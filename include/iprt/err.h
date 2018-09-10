@@ -2878,6 +2878,12 @@ RT_C_DECLS_END
 #define VERR_JSON_MALFORMED                         (-24702)
 /** Object or array is empty. */
 #define VERR_JSON_IS_EMPTY                          (-24703)
+/** Invalid UTF-16 escape sequence. */
+#define VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE     (-24704)
+/** Missing UTF-16 surrogate pair. */
+#define VERR_JSON_MISSING_SURROGATE_PAIR            (-24705)
+/** Bad UTF-16 surrogate pair sequence. */
+#define VERR_JSON_BAD_SURROGATE_PAIR_SEQUENCE       (-24706)
 /** @} */
 
 /** @name RTVfs status codes.
