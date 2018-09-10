@@ -160,6 +160,11 @@ public:
     void saveGroupSettings();
     bool isGroupSavingInProgress() const;
 
+public slots:
+
+    /* Handler: Chooser-view stuff: */
+    void sltHandleViewResized();
+
 private slots:
 
     /* Handlers: Global events: */
@@ -168,9 +173,6 @@ private slots:
     void sltMachineRegistered(QString strId, bool fRegistered);
     void sltSessionStateChanged(QString strId, KSessionState state);
     void sltSnapshotChanged(QString strId, QString strSnapshotId);
-
-    /* Handler: Chooser-view stuff: */
-    void sltHandleViewResized();
 
     /* Handler: Focus-item stuff: */
     void sltFocusItemDestroyed();

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,9 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
 # include <QStatusBar>
 # include <QStyle>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "UIChooser.h"
@@ -41,32 +41,17 @@ UIChooser::UIChooser(UIVirtualBoxManagerWidget *pParent)
     , m_pChooserModel(0)
     , m_pChooserView(0)
 {
-    /* Prepare palette: */
-    preparePalette();
-
-    /* Prepare layout: */
-    prepareLayout();
-
-    /* Prepare model: */
-    prepareModel();
-
-    /* Prepare view: */
-    prepareView();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Load: */
-    load();
+    /* Prepare: */
+    prepare();
 }
 
 UIChooser::~UIChooser()
 {
-    /* Save: */
-    save();
+    /* Cleanup: */
+    cleanup();
 }
 
-UIActionPool* UIChooser::actionPool() const
+UIActionPool *UIChooser::actionPool() const
 {
     return managerWidget()->actionPool();
 }
@@ -117,6 +102,23 @@ void UIChooser::sltHandleToolbarResize(const QSize &newSize)
     model()->setGlobalItemHeightHint(newSize.height());
 }
 
+void UIChooser::prepare()
+{
+    /* Prepare palette: */
+    preparePalette();
+    /* Prepare layout: */
+    prepareLayout();
+    /* Prepare model: */
+    prepareModel();
+    /* Prepare view: */
+    prepareView();
+    /* Prepare connections: */
+    prepareConnections();
+
+    /* Load settings: */
+    loadSettings();
+}
+
 void UIChooser::preparePalette()
 {
     /* Setup palette: */
@@ -129,16 +131,19 @@ void UIChooser::preparePalette()
 
 void UIChooser::prepareLayout()
 {
-    /* Setup main-layout: */
+    /* Create main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
-    const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 9;
-    m_pMainLayout->setContentsMargins(0, 0, iR, 0);
-    m_pMainLayout->setSpacing(0);
+    if (m_pMainLayout)
+    {
+        /* Configure main-layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setSpacing(0);
+    }
 }
 
 void UIChooser::prepareModel()
 {
-    /* Setup chooser-model: */
+    /* Create chooser-model: */
     m_pChooserModel = new UIChooserModel(this);
 }
 
@@ -146,36 +151,47 @@ void UIChooser::prepareView()
 {
     /* Setup chooser-view: */
     m_pChooserView = new UIChooserView(this);
-    m_pChooserView->setScene(m_pChooserModel->scene());
-    m_pChooserView->show();
-    setFocusProxy(m_pChooserView);
-    m_pMainLayout->addWidget(m_pChooserView);
+    if (m_pChooserView)
+    {
+        /* Configure chooser-view. */
+        m_pChooserView->setScene(m_pChooserModel->scene());
+        m_pChooserView->show();
+        setFocusProxy(m_pChooserView);
+
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pChooserView);
+    }
 }
 
 void UIChooser::prepareConnections()
 {
     /* Setup chooser-model connections: */
-    connect(m_pChooserModel, SIGNAL(sigRootItemMinimumWidthHintChanged(int)),
-            m_pChooserView, SLOT(sltMinimumWidthHintChanged(int)));
-    connect(m_pChooserModel, SIGNAL(sigRootItemMinimumHeightHintChanged(int)),
-            m_pChooserView, SLOT(sltMinimumHeightHintChanged(int)));
-    connect(m_pChooserModel, SIGNAL(sigFocusChanged(UIChooserItem*)),
-            m_pChooserView, SLOT(sltFocusChanged(UIChooserItem*)));
+    connect(m_pChooserModel, &UIChooserModel::sigRootItemMinimumWidthHintChanged,
+            m_pChooserView, &UIChooserView::sltMinimumWidthHintChanged);
+    connect(m_pChooserModel, &UIChooserModel::sigRootItemMinimumHeightHintChanged,
+            m_pChooserView, &UIChooserView::sltMinimumHeightHintChanged);
+    connect(m_pChooserModel, &UIChooserModel::sigFocusChanged,
+            m_pChooserView, &UIChooserView::sltFocusChanged);
 
     /* Setup chooser-view connections: */
-    connect(m_pChooserView, SIGNAL(sigResized()),
-            m_pChooserModel, SLOT(sltHandleViewResized()));
+    connect(m_pChooserView, &UIChooserView::sigResized,
+            m_pChooserModel, &UIChooserModel::sltHandleViewResized);
 }
 
-void UIChooser::load()
+void UIChooser::loadSettings()
 {
     /* Prepare model: */
     m_pChooserModel->prepare();
 }
 
-void UIChooser::save()
+void UIChooser::saveSettings()
 {
     /* Cleanup model: */
     m_pChooserModel->cleanup();
 }
 
+void UIChooser::cleanup()
+{
+    /* Save settings: */
+    saveSettings();
+}

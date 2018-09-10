@@ -45,7 +45,7 @@ public:
     /** Returns the chooser reference. */
     UIChooser *chooser() const { return m_pChooser; }
 
-private slots:
+public slots:
 
     /* Handlers: Size-hint stuff: */
     void sltMinimumWidthHintChanged(int iMinimumWidthHint);

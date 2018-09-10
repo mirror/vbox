@@ -711,6 +711,12 @@ bool UIChooserModel::isGroupSavingInProgress() const
            UIThreadGroupOrderSave::instance();
 }
 
+void UIChooserModel::sltHandleViewResized()
+{
+    /* Relayout: */
+    updateLayout();
+}
+
 void UIChooserModel::sltMachineStateChanged(QString strId, KMachineState)
 {
     /* Update machine-items with passed id: */
@@ -777,12 +783,6 @@ void UIChooserModel::sltSnapshotChanged(QString strId, QString)
 {
     /* Update machine-items with passed id: */
     mainRoot()->updateAllItems(strId);
-}
-
-void UIChooserModel::sltHandleViewResized()
-{
-    /* Relayout: */
-    updateLayout();
 }
 
 void UIChooserModel::sltFocusItemDestroyed()

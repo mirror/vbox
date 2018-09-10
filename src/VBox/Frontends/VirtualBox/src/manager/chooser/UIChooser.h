@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIChooser_h__
-#define __UIChooser_h__
+#ifndef ___UIChooser_h___
+#define ___UIChooser_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -24,89 +24,131 @@
 /* GUI includes: */
 #include "UIChooserItem.h"
 
-/* Forward declartions: */
-class UIVirtualMachineItem;
+/* Forward declarations: */
 class QVBoxLayout;
-class UIVirtualBoxManagerWidget;
 class UIActionPool;
 class UIChooserModel;
 class UIChooserView;
-class QStatusBar;
+class UIVirtualBoxManagerWidget;
+class UIVirtualMachineItem;
 
-/* Graphics selector widget: */
+/** QWidget extension used as VM chooser pane. */
 class UIChooser : public QWidget
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Selection change: */
-    void sigSelectionChanged();
+    /** @name General stuff.
+      * @{ */
+        /** Notifies listeners about selection changed. */
+        void sigSelectionChanged();
 
-    /* Notifier: Sliding stuff: */
-    void sigSlidingStarted();
+        /** Notifies listeners about sliding started. */
+        void sigSlidingStarted();
 
-    /* Notifiers: Toggle stuff: */
-    void sigToggleStarted();
-    void sigToggleFinished();
+        /** Notifies listeners about toggling started. */
+        void sigToggleStarted();
+        /** Notifies listeners about toggling finished. */
+        void sigToggleFinished();
+    /** @} */
 
-    /* Notifier: Group-saving stuff: */
-    void sigGroupSavingStateChanged();
+    /** @name Group saving stuff.
+      * @{ */
+        /** Notifies listeners about group saving state change. */
+        void sigGroupSavingStateChanged();
+    /** @} */
 
 public:
 
-    /* Constructor/destructor: */
+    /** Constructs chooser pane passing @a pParent to the base-class. */
     UIChooser(UIVirtualBoxManagerWidget *pParent);
-    ~UIChooser();
+    /** Destructs chooser pane. */
+    virtual ~UIChooser() /* override */;
 
-    /** Returns the manager-widget reference. */
-    UIVirtualBoxManagerWidget *managerWidget() const { return m_pManagerWidget; }
-    /** Returns the action-pool reference. */
-    UIActionPool* actionPool() const;
+    /** @name General stuff.
+      * @{ */
+        /** Returns the manager-widget reference. */
+        UIVirtualBoxManagerWidget *managerWidget() const { return m_pManagerWidget; }
 
-    /** Return the Chooser-model instance. */
-    UIChooserModel *model() const { return m_pChooserModel; }
-    /** Return the Chooser-view instance. */
-    UIChooserView *view() const { return m_pChooserView; }
+        /** Returns the action-pool reference. */
+        UIActionPool *actionPool() const;
 
-    /* API: Current-item stuff: */
-    bool isGroupItemSelected() const;
-    bool isGlobalItemSelected() const;
-    bool isMachineItemSelected() const;
-    UIVirtualMachineItem *currentItem() const;
-    QList<UIVirtualMachineItem*> currentItems() const;
-    bool isSingleGroupSelected() const;
-    bool isAllItemsOfOneGroupSelected() const;
+        /** Return the Chooser-model instance. */
+        UIChooserModel *model() const { return m_pChooserModel; }
+        /** Return the Chooser-view instance. */
+        UIChooserView *view() const { return m_pChooserView; }
+    /** @} */
 
-    /* API: Group-saving stuff: */
-    bool isGroupSavingInProgress() const;
+    /** @name Current item stuff.
+      * @{ */
+        /** Returns whether group item is selected. */
+        bool isGroupItemSelected() const;
+        /** Returns whether global item is selected. */
+        bool isGlobalItemSelected() const;
+        /** Returns whether machine item is selected. */
+        bool isMachineItemSelected() const;
+        /** Returns current item. */
+        UIVirtualMachineItem *currentItem() const;
+        /** Returns current items. */
+        QList<UIVirtualMachineItem*> currentItems() const;
+        /** Returns whether single group is selected. */
+        bool isSingleGroupSelected() const;
+        /** Returns whether all machine items of one group is selected. */
+        bool isAllItemsOfOneGroupSelected() const;
+    /** @} */
+
+    /** @name Group saving stuff.
+      * @{ */
+        /** Returns whether group saving is in progress. */
+        bool isGroupSavingInProgress() const;
+    /** @} */
 
 public slots:
 
-    /** Handles toolbar resize to @a newSize. */
-    void sltHandleToolbarResize(const QSize &newSize);
+    /** @name General stuff.
+      * @{ */
+        /** Handles toolbar resize to @a newSize. */
+        void sltHandleToolbarResize(const QSize &newSize);
+    /** @} */
 
 private:
 
-    /* Helpers: Prepare stuff: */
-    void preparePalette();
-    void prepareLayout();
-    void prepareModel();
-    void prepareView();
-    void prepareConnections();
-    void load();
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares palette. */
+        void preparePalette();
+        /** Prepares layout. */
+        void prepareLayout();
+        /** Prepares model. */
+        void prepareModel();
+        /** Prepares view. */
+        void prepareView();
+        /** Prepares connections. */
+        void prepareConnections();
+        /** Loads settings. */
+        void loadSettings();
 
-    /* Helper: Cleanup stuff: */
-    void save();
+        /** Saves settings. */
+        void saveSettings();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
 
-    /** Holds the manager-widget reference. */
-    UIVirtualBoxManagerWidget *m_pManagerWidget;
+    /** @name General stuff.
+      * @{ */
+        /** Holds the manager-widget reference. */
+        UIVirtualBoxManagerWidget *m_pManagerWidget;
 
-    /* Variables: */
-    QVBoxLayout *m_pMainLayout;
-    UIChooserModel *m_pChooserModel;
-    UIChooserView *m_pChooserView;
+        /** Holds the main layout instane. */
+        QVBoxLayout    *m_pMainLayout;
+        /** Holds the chooser model instane. */
+        UIChooserModel *m_pChooserModel;
+        /** Holds the chooser view instane. */
+        UIChooserView  *m_pChooserView;
+    /** @} */
 };
 
-#endif /* __UIChooser_h__ */
-
+#endif /* !___UIChooser_h___ */
