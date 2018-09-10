@@ -557,6 +557,7 @@ static int rtJsonTokenizerGetNumber(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
             && cchNum < sizeof(szTmp) - 2)
         {
             szTmp[cchNum++] = 'e';
+            rtJsonTokenizerSkipCh(pTokenizer);
             ch = rtJsonTokenizerGetCh(pTokenizer);
             if (ch == '+' || ch == '-')
             {

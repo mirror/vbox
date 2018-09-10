@@ -35,6 +35,8 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
+#include <float.h> /* DBL_MIN, DBL_MAX */
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -361,6 +363,7 @@ void testInteger(void)
         RestType obj3;
         RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
         RTTESTI_CHECK(obj3.isNull() == true);
+        RTTESTI_CHECK(obj3.m_iValue == 0);
         obj3.assignValue(-1);
         RTTESTI_CHECK(obj3.m_iValue == -1);
         RTTESTI_CHECK(obj3.isNull() == false);
@@ -513,7 +516,7 @@ void testInteger(void)
         RTTESTI_CHECK(obj4.isNull() == false);
 
         RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
-        RTTESTI_CHECK(obj4.m_iValue == false);
+        RTTESTI_CHECK(obj4.m_iValue == 0);
         RTTESTI_CHECK(obj4.isNull() == true);
 
         /* object goes to default state on failure: */
@@ -583,6 +586,274 @@ void testInteger(void)
 }
 
 
+void testDouble(void)
+{
+    RTTestSub(g_hTest, "RTCRestDouble");
+#define DBL_MAX_STRING  "1.7976931348623157e+308"
+#define DBL_MIN_STRING  "2.2250738585072014e-308"
+
+    {
+        RTCRestDouble obj1;
+        RTTESTI_CHECK(obj1.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj1.isNull() == false);
+        RTTESTI_CHECK(strcmp(obj1.typeName(), "double") == 0);
+        RTTESTI_CHECK(obj1.typeClass() == RTCRestObjectBase::kTypeClass_Double);
+    }
+
+    {
+        RTCRestDouble obj2(2398.1);
+        RTTESTI_CHECK(obj2.m_rdValue == 2398.1);
+        RTTESTI_CHECK(obj2.isNull() == false);
+    }
+
+    {
+        RTCRestDouble obj2(-7345.2);
+        RTTESTI_CHECK(obj2.m_rdValue == -7345.2);
+        RTTESTI_CHECK(obj2.isNull() == false);
+    }
+
+    {
+        /* Value assignments: */
+        RTCRestDouble obj3;
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.isNull() == true);
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+        obj3.assignValue(-1.0);
+        RTTESTI_CHECK(obj3.m_rdValue == -1.0);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.isNull() == true);
+        obj3.assignValue(42.42);
+        RTTESTI_CHECK(obj3.m_rdValue == 42.42);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        obj3.assignValue(DBL_MAX);
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        obj3.assignValue(DBL_MIN);
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        obj3.assignValue(42);
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        /* Copy assignments: */
+        RTCRestDouble obj3Max(DBL_MAX);
+        RTTESTI_CHECK(obj3Max.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3Max.isNull() == false);
+        RTCRestDouble obj3Min(DBL_MIN);
+        RTTESTI_CHECK(obj3Min.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj3Min.isNull() == false);
+        RTCRestDouble obj3Null;
+        obj3Null.setNull();
+        RTTESTI_CHECK(obj3Null.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj3Null.isNull() == true);
+
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Max), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Null), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj3.isNull() == true);
+
+        RTTESTI_CHECK_RC(obj3.assignCopy(obj3Min), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        obj3 = obj3Null;
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj3.isNull() == true);
+
+        obj3 = obj3Max;
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        obj3 = obj3Null;
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj3.isNull() == true);
+
+        obj3 = obj3Min;
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj3.isNull() == false);
+
+        /* setNull implies resetToDefault: */
+        obj3 = obj3Max;
+        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.isNull() == false);
+        RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK(obj3.isNull() == true);
+        RTTESTI_CHECK(obj3.m_rdValue == 0.0);
+
+        /* Copy constructors: */
+        {
+            RTCRestDouble obj3a(obj3Max);
+            RTTESTI_CHECK(obj3a.m_rdValue == DBL_MAX);
+            RTTESTI_CHECK(obj3a.isNull() == false);
+        }
+        {
+            RTCRestDouble obj3b(obj3Min);
+            RTTESTI_CHECK(obj3b.m_rdValue == DBL_MIN);
+            RTTESTI_CHECK(obj3b.isNull() == false);
+        }
+        {
+            RTCRestDouble obj3c(obj3Null);
+            RTTESTI_CHECK(obj3c.m_rdValue == 0.0);
+            RTTESTI_CHECK(obj3c.isNull() == true);
+        }
+
+        /* Serialization to json: */
+        const char *pszJson = toJson(&obj3Max);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, DBL_MAX_STRING) == 0, ("pszJson=%s\n", pszJson));
+        pszJson = toJson(&obj3Min);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, DBL_MIN_STRING) == 0, ("pszJson=%s\n", pszJson));
+        pszJson = toJson(&obj3Null);
+        RTTESTI_CHECK_MSG(strcmp(pszJson, "null") == 0, ("pszJson=%s\n", pszJson));
+
+        /* Serialization to string. */
+        RTCString str;
+        RTCString strExpect;
+        str = "lead-in:";
+        RTTESTI_CHECK_RC(obj3Max.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
+        strExpect.printf("lead-in:%s", DBL_MAX_STRING);
+        RTTESTI_CHECK_MSG(str.equals(strExpect), ("str=%s strExpect=%s\n", str.c_str(), strExpect.c_str()));
+        RTTESTI_CHECK_RC(obj3Max.toString(&str), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals(DBL_MAX_STRING), ("str=%s\n", str.c_str()));
+
+        str = "lead-in:";
+        RTTESTI_CHECK_RC(obj3Min.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
+        strExpect.printf("lead-in:%s", DBL_MIN_STRING);
+        RTTESTI_CHECK_MSG(str.equals(strExpect), ("str=%s strExpect=%s\n", str.c_str(), strExpect.c_str()));
+        RTTESTI_CHECK_RC(obj3Min.toString(&str), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals(DBL_MIN_STRING), ("str=%s\n", str.c_str()));
+
+        str = "lead-in:";
+        RTTESTI_CHECK_RC(obj3Null.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("lead-in:null"), ("str=%s\n", str.c_str()));
+        RTTESTI_CHECK_RC(obj3Null.toString(&str), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(str.equals("null"), ("str=%s\n", str.c_str()));
+    }
+
+    /* deserialize: */
+    RTERRINFOSTATIC ErrInfo;
+    {
+        /* from json: */
+        RTCRestDouble obj4;
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "42.42", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 42.42);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "-22.22", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == -22.22);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, DBL_MAX_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, DBL_MIN_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == true);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "14323", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 14323.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "-234875", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == -234875.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        /* object goes to default state on failure: */
+        obj4.assignValue(DBL_MIN);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "false", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+        RTTESTI_CHECK(RTErrInfoIsSet(&ErrInfo.Core));
+
+        obj4.assignValue(DBL_MAX);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"false\"", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+        RTTESTI_CHECK(RTErrInfoIsSet(&ErrInfo.Core));
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "[ null ]", NULL, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        /* from string: */
+        obj4.setNull();
+        RTTESTI_CHECK_RC(fromString(&obj4, "22.42", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 22.42);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "-42.22", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == -42.22);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, DBL_MAX_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, DBL_MIN_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        obj4.m_rdValue = 33.33;
+        RTTESTI_CHECK_RC(fromString(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == true);
+
+        obj4.m_rdValue = 33.33;
+        RTTESTI_CHECK_RC(fromString(&obj4, " nULl;", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == true);
+
+        obj4.setNull();
+        RTTESTI_CHECK_RC(fromString(&obj4, " 42.22 ", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 42.22);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "\t010\t", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue ==10.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "\r\t03495.344\t\r\n", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 3495.344);
+        RTTESTI_CHECK(obj4.isNull() == false);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "1.1;", &ErrInfo, RT_XSTR(__LINE__)), VERR_TRAILING_CHARS);
+        RTTESTI_CHECK(RTErrInfoIsSet(&ErrInfo.Core));
+
+        RTTESTI_CHECK_RC(fromString(&obj4, "false", NULL, RT_XSTR(__LINE__)), VERR_NO_DIGITS);
+
+        RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VERR_TRAILING_CHARS);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+        RTTESTI_CHECK(obj4.isNull() == false);
+    }
+}
+
+
 int main()
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTRest-1", &g_hTest);
@@ -592,11 +863,11 @@ int main()
         testInteger<RTCRestInt64, int64_t, Int64Constants>();
         testInteger<RTCRestInt32, int32_t, Int32Constants>();
         testInteger<RTCRestInt16, int16_t, Int16Constants>();
+        testDouble();
 
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
     }
     return rcExit;
 }
-
 

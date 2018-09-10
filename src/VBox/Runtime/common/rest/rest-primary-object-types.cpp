@@ -305,7 +305,7 @@ const char *RTCRestBool::typeName() const
 }
 
 
-/** Default destructor. */
+/** Default constructor. */
 RTCRestInt64::RTCRestInt64()
     : RTCRestObjectBase()
     , m_iValue(0)
@@ -469,7 +469,7 @@ const char *RTCRestInt64::typeName() const
 }
 
 
-/** Default destructor. */
+/** Default constructor. */
 RTCRestInt32::RTCRestInt32()
     : RTCRestObjectBase()
     , m_iValue(0)
@@ -639,7 +639,7 @@ const char *RTCRestInt32::typeName() const
 }
 
 
-/** Default destructor. */
+/** Default constructor. */
 RTCRestInt16::RTCRestInt16()
     : RTCRestObjectBase()
     , m_iValue(0)
@@ -808,7 +808,7 @@ const char *RTCRestInt16::typeName() const
     return new (std::nothrow) RTCRestDouble();
 }
 
-/** Default destructor. */
+/** Default constructor. */
 RTCRestDouble::RTCRestDouble()
     : RTCRestObjectBase()
     , m_rdValue(0.0)
@@ -880,10 +880,15 @@ RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) con
         /** @todo Not 100% sure printf %g produces the right result for JSON floating point, but it'll have to do for now... */
         char szValue[128];
 #ifdef _MSC_VER
-        _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        _snprintf(szValue, sizeof(szValue), "%.18g", m_rdValue);
 #else
-        snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        snprintf(szValue, sizeof(szValue), "%.18g", m_rdValue);
 #endif
+        size_t cchValue = strlen(szValue);
+        while (cchValue > 0 && szValue[-1] == '0')
+            cchValue--;
+        szValue[cchValue] = '\0';
+
         a_rDst.printf("%s", szValue);
     }
     else
@@ -943,11 +948,14 @@ int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollection
         /** @todo Not 100% sure printf %g produces the right result for JSON floating point, but it'll have to do for now... */
         char szValue[128];
 #ifdef _MSC_VER
-        _snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        _snprintf(szValue, sizeof(szValue), "%.18g", m_rdValue);
 #else
-        snprintf(szValue, sizeof(szValue), "%g", m_rdValue);
+        snprintf(szValue, sizeof(szValue), "%.18g", m_rdValue);
 #endif
-        size_t const cchValue = strlen(szValue);
+        size_t cchValue = strlen(szValue);
+        while (cchValue > 0 && szValue[-1] == '0')
+            cchValue--;
+        szValue[cchValue] = '\0';
 
         if (!(a_fFlags & kToString_Append))
             return a_pDst->assignNoThrow(szValue, cchValue);
@@ -965,15 +973,6 @@ int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, 
 {
     RT_NOREF(a_fFlags);
 
-    m_fNullIndicator = false;
-
-    const char *pszValue = RTStrStripL(a_rValue.c_str());
-    errno = 0;
-    char *pszNext = NULL;
-    m_rdValue = strtod(pszValue, &pszNext);
-    if (errno == 0)
-        return VINF_SUCCESS;
-
     if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
     {
         m_rdValue = 0.0;
@@ -981,6 +980,29 @@ int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, 
         return VINF_SUCCESS;
     }
 
+    m_fNullIndicator = false;
+
+    const char *pszValue = RTStrStripL(a_rValue.c_str());
+    errno = 0;
+    char *pszNext = NULL;
+    m_rdValue = strtod(pszValue, &pszNext);
+    if (errno == 0 && pszNext != pszValue)
+    {
+        if (!pszNext || *pszNext == '\0')
+            return VINF_SUCCESS;
+
+        while (RT_C_IS_SPACE(*pszNext))
+            pszNext++;
+        if (*pszNext == '\0')
+            return VINF_SUCCESS;
+
+        return RTErrInfoSetF(a_pErrInfo, VERR_TRAILING_CHARS, "%s: error VERR_TRAILING_CHARS parsing '%s' as double",
+                             a_pszName, a_rValue.c_str());
+    }
+
+    if (!RT_C_IS_DIGIT(*pszValue) && *pszValue != '.')
+        return RTErrInfoSetF(a_pErrInfo, VERR_NO_DIGITS, "%s: error VERR_NO_DIGITS parsing '%s' as double",
+                             a_pszName, a_rValue.c_str());
     int rc = RTErrConvertFromErrno(errno);
     return RTErrInfoSetF(a_pErrInfo, rc, "%s: error %Rrc parsing '%s' as double", a_pszName, rc, a_rValue.c_str());
 }
@@ -1010,7 +1032,7 @@ const char *RTCRestDouble::typeName() const
 }
 
 
-/** Default destructor. */
+/** Default constructor. */
 RTCRestString::RTCRestString()
     : RTCString()
     , RTCRestObjectBase()
