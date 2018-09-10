@@ -643,6 +643,27 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+
+    /** @name RTCString assignment methods we need to replace to manage the null indicator
+     * @{ */
+    int assignNoThrow(const RTCString &a_rSrc) RT_NOEXCEPT;
+    int assignNoThrow(const char *a_pszSrc) RT_NOEXCEPT;
+    int assignNoThrow(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc = npos) RT_NOEXCEPT;
+    int assignNoThrow(const char *a_pszSrc, size_t a_cchSrc) RT_NOEXCEPT;
+    int assignNoThrow(size_t a_cTimes, char a_ch) RT_NOEXCEPT;
+    int printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 2);
+    int printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 0);
+    RTCRestString &operator=(const char *a_pcsz);
+    RTCRestString &operator=(const RTCString &a_rThat);
+    RTCRestString &operator=(const RTCRestString &a_rThat);
+    RTCRestString &assign(const RTCString &a_rSrc);
+    RTCRestString &assign(const char *a_pszSrc);
+    RTCRestString &assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc = npos);
+    RTCRestString &assign(const char *a_pszSrc, size_t a_cchSrc);
+    RTCRestString &assign(size_t a_cTimes, char a_ch);
+    RTCRestString &printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+    RTCRestString &printfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+    /** @} */
 };
 
 

@@ -1072,8 +1072,9 @@ RTCRestString::~RTCRestString()
 
 int RTCRestString::assignCopy(RTCRestString const &a_rThat)
 {
+    int rc = assignNoThrow(a_rThat);
     m_fNullIndicator = a_rThat.m_fNullIndicator;
-    return assignNoThrow(a_rThat);
+    return rc;
 }
 
 
@@ -1110,7 +1111,7 @@ int RTCRestString::resetToDefault()
 RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     if (!m_fNullIndicator)
-        a_rDst.printf("%RMjs", m_psz);
+        a_rDst.printf("%RMjs", m_psz ? m_psz : "");
     else
         a_rDst.printf("null");
     return a_rDst;
@@ -1174,6 +1175,142 @@ RTCRestObjectBase::kTypeClass RTCRestString::typeClass() const
 const char *RTCRestString::typeName() const
 {
     return "RTCString";
+}
+
+
+int RTCRestString::assignNoThrow(const RTCString &a_rSrc) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    return RTCString::assignNoThrow(a_rSrc);
+}
+
+
+int RTCRestString::assignNoThrow(const char *a_pszSrc) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    return RTCString::assignNoThrow(a_pszSrc);
+}
+
+
+int RTCRestString::assignNoThrow(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc /*= npos*/) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    return RTCString::assignNoThrow(a_rSrc, a_offSrc, a_cchSrc);
+}
+
+
+int RTCRestString::assignNoThrow(const char *a_pszSrc, size_t a_cchSrc) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    return RTCString::assignNoThrow(a_pszSrc, a_cchSrc);
+}
+
+
+int RTCRestString::assignNoThrow(size_t a_cTimes, char a_ch) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    return RTCString::assignNoThrow(a_cTimes, a_ch);
+}
+
+
+int RTCRestString::printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTCString::printfVNoThrow(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+int RTCRestString::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
+{
+    m_fNullIndicator = false;
+    return RTCString::printfVNoThrow(pszFormat, va);
+}
+
+
+RTCRestString &RTCRestString::operator=(const char *a_pcsz)
+{
+    m_fNullIndicator = false;
+    RTCString::operator=(a_pcsz);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::operator=(const RTCString &a_rThat)
+{
+    m_fNullIndicator = false;
+    RTCString::operator=(a_rThat);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::operator=(const RTCRestString &a_rThat)
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    RTCString::operator=(a_rThat);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::assign(const RTCString &a_rSrc)
+{
+    m_fNullIndicator = false;
+    RTCString::assign(a_rSrc);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::assign(const char *a_pszSrc)
+{
+    m_fNullIndicator = false;
+    RTCString::assign(a_pszSrc);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc /*= npos*/)
+{
+    m_fNullIndicator = false;
+    RTCString::assign(a_rSrc, a_offSrc, a_cchSrc);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::assign(const char *a_pszSrc, size_t a_cchSrc)
+{
+    m_fNullIndicator = false;
+    RTCString::assign(a_pszSrc, a_cchSrc);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::assign(size_t a_cTimes, char a_ch)
+{
+    m_fNullIndicator = false;
+    RTCString::assign(a_cTimes, a_ch);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::printf(const char *pszFormat, ...)
+{
+    m_fNullIndicator = false;
+    va_list va;
+    va_start(va, pszFormat);
+    RTCString::printfV(pszFormat, va);
+    va_end(va);
+    return *this;
+}
+
+
+RTCRestString &RTCRestString::printfV(const char *pszFormat, va_list va)
+{
+    m_fNullIndicator = false;
+    RTCString::printfV(pszFormat, va);
+    return *this;
 }
 
 
