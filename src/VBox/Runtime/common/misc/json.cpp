@@ -752,7 +752,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
                     }
                     RTStrFree(pszDecoded);
                     if (rc == VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE)
-                        rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Invalid \u escape sequence (line %zu col %zu)",
+                        rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Invalid \\u escape sequence (line %zu col %zu)",
                                            pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
                     else if (rc == VERR_JSON_MISSING_SURROGATE_PAIR)
                         rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Missing UTF-16 surrogate pair (line %zu col %zu)",
