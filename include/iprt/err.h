@@ -2884,6 +2884,8 @@ RT_C_DECLS_END
 #define VERR_JSON_MISSING_SURROGATE_PAIR            (-24705)
 /** Bad UTF-16 surrogate pair sequence. */
 #define VERR_JSON_BAD_SURROGATE_PAIR_SEQUENCE       (-24706)
+/** Invalid codepoint. */
+#define VERR_JSON_INVALID_CODEPOINT                 (-24707)
 /** @} */
 
 /** @name RTVfs status codes.

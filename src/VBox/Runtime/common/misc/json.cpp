@@ -694,6 +694,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
                                     else if (RTUtf16IsHighSurrogate((RTUTF16)uc))
                                     {
                                         /* The must be a low surrogate pair following the high one: */
+                                        rc = VINF_SUCCESS;
                                         ch = rtJsonTokenizerGetCh(pTokenizer);
                                         if (ch == '\\')
                                             rtJsonTokenizerSkipCh(pTokenizer);
@@ -740,11 +741,19 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
                                         rc = VERR_JSON_BAD_SURROGATE_PAIR_SEQUENCE;
                                     if (RT_SUCCESS(rc))
                                     {
-                                        Assert(cchStr + RTStrCpSize(uc) < cchStrMax);
-                                        char *pszNext = RTStrPutCp(&pszDecoded[cchStr], uc);
-                                        Assert((size_t)(pszNext - &pszDecoded[cchStr]) == RTStrCpSize(uc));
-                                        cchStr += pszNext - &pszDecoded[cchStr];
-                                        break;
+                                        if (   uc != 0
+                                            && uc != 0xfffe
+                                            && uc != 0xffff)
+                                        {
+                                            Assert(cchStr + RTStrCpSize(uc) < cchStrMax);
+                                            char *pszNext = RTStrPutCp(&pszDecoded[cchStr], uc);
+                                            Assert((size_t)(pszNext - &pszDecoded[cchStr]) == RTStrCpSize(uc));
+                                            cchStr += pszNext - &pszDecoded[cchStr];
+                                            break;
+                                        }
+                                        rc = RTErrInfoSetF(pTokenizer->pErrInfo, VERR_JSON_INVALID_CODEPOINT,
+                                                           "Invalid \\u code point: %#x (line %zu col %zu)",
+                                                           uc, pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
                                     }
                                 }
                             }
@@ -757,7 +766,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
                     else if (rc == VERR_JSON_MISSING_SURROGATE_PAIR)
                         rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Missing UTF-16 surrogate pair (line %zu col %zu)",
                                            pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
-                    else
+                    else if (rc == VERR_JSON_BAD_SURROGATE_PAIR_SEQUENCE)
                         rc = RTErrInfoSetF(pTokenizer->pErrInfo, rc, "Invalid UTF-16 surrogate pair (line %zu col %zu)",
                                            pTokenizer->Pos.iLine, pTokenizer->Pos.iChStart);
                     return rc;

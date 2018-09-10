@@ -1117,6 +1117,12 @@ void testString(const char *pszDummy, ...)
         RTTESTI_CHECK(obj4 == "OMG! :-)");
         RTTESTI_CHECK(obj4.isNull() == false);
 
+        obj4.setNull();
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"42:\\uD801\\udC37\\ud852\\uDf62:42\"",  /* U+10437 U+24B62 */
+                                             &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4 == "42:" "\xf0\x90\x90\xb7" "\xf0\xa4\xad\xa2" ":42");
+        RTTESTI_CHECK(obj4.isNull() == false);
+
         /* object goes to default state on failure: */
         obj4 = "asdf";
         RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "false", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_STRING);
