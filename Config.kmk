@@ -777,7 +777,7 @@ endif
 VBOX_WITH_EXTPACK = 1A
 # Enables implementing cloud providers as part of an extension pack.
 # (temp hack, disabled but enabled for OSE below, but will be for all soon)
-VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK=
+VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK = 1
 # Enables separating code into the Oracle VM VirtualBox Extension Pack, dubbed PUEL.
 VBOX_WITH_EXTPACK_PUEL = 1
 # Enables building+packing the Oracle VM VirtualBox Extension Pack, includes VBOX_WITH_EXTPACK_PUEL
