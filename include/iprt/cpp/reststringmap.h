@@ -68,6 +68,11 @@ public:
     void clear();
 
     /**
+     * Checks if the map is empty.
+     */
+    inline bool isEmpty() const { return m_cEntries == 0; }
+
+    /**
      * Gets the number of entries in the map.
      */
     size_t size() const;
