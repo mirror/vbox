@@ -1534,16 +1534,17 @@ static void testArray()
         verifyArray(Arr2, __LINE__, 9,  0, 1, 3, 4, 5, 6, 7, 8, 9);
         RTTESTI_CHECK_RC(Arr2.insert(2, new MyRestInt16(2)), VINF_SUCCESS);
         verifyArray(Arr2, __LINE__, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
 
         RTTESTI_CHECK(Arr2.size() == 10);
 
         for (size_t i = 0; i < Arr2.size(); i++)
         {
             MyRestInt16 *pCur = Arr2.at(i);
-            RTTESTI_CHECK(pCur->m_iValue == i);
+            RTTESTI_CHECK(pCur->m_iValue == (int16_t)i);
 
             MyRestInt16 const *pCur2 = pConstArr2->at(i);
-            RTTESTI_CHECK(pCur2->m_iValue == i);
+            RTTESTI_CHECK(pCur2->m_iValue == (int16_t)i);
         }
 
         RTTESTI_CHECK_RC(Arr2.replace(2, new MyRestInt16(22)), VWRN_ALREADY_EXISTS);
@@ -1557,6 +1558,7 @@ static void testArray()
 
         RTTESTI_CHECK_RC(Arr2.replaceCopy(2, MyRestInt16(2)), VWRN_ALREADY_EXISTS);
         verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
 
         /* copy constructor: */
         {
@@ -1564,6 +1566,7 @@ static void testArray()
             verifyArray(Arr2Copy, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
         }
         verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
 
         {
             RTCRestArray<MyRestInt16> Arr2Copy2(Arr2);
@@ -1572,8 +1575,9 @@ static void testArray()
             verifyArray(Arr2Copy2, __LINE__, 10, 0, 1, 2, 3, 4, 5, 6, 8, 9, 10);
         }
         verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
 
-        /* copy method: */
+        /* copy method + clear: */
         {
             RTCRestArray<MyRestInt16> Arr2Copy3;
             RTTESTI_CHECK_RC(Arr2Copy3.assignCopy(Arr2), VINF_SUCCESS);
@@ -1585,6 +1589,42 @@ static void testArray()
             RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
         }
         verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
+
+        /* Check setNull and resetToDefaults with copies: */
+        {
+            RTCRestArray<MyRestInt16> Arr2Copy4(Arr2);
+            verifyArray(Arr2Copy4, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+
+            RTTESTI_CHECK_RC(Arr2Copy4.setNull(), VINF_SUCCESS);
+            verifyArray(Arr2Copy4, __LINE__, 0);
+            RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
+            RTTESTI_CHECK(Arr2Copy4.isNull() == true);
+
+            RTTESTI_CHECK_RC(Arr2Copy4.resetToDefault(), VINF_SUCCESS);
+            RTTESTI_CHECK(Arr2Copy4.isNull() == false);
+            verifyArray(Arr2Copy4, __LINE__, 0);
+        }
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        {
+            RTCRestArray<MyRestInt16> Arr2Copy5(Arr2);
+            verifyArray(Arr2Copy5, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+
+            RTTESTI_CHECK_RC(Arr2Copy5.resetToDefault(), VINF_SUCCESS);
+            verifyArray(Arr2Copy5, __LINE__, 0);
+            RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
+            RTTESTI_CHECK(Arr2Copy5.isNull() == false);
+
+            RTTESTI_CHECK_RC(Arr2Copy5.setNull(), VINF_SUCCESS);
+            RTTESTI_CHECK(Arr2Copy5.isNull() == true);
+
+            RTTESTI_CHECK_RC(Arr2Copy5.append(new MyRestInt16(100)), VINF_SUCCESS);
+            RTTESTI_CHECK(Arr2Copy5.isNull() == false);
+            verifyArray(Arr2Copy5, __LINE__, 1, 100);
+            RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size() + 1, ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size() + 1));
+        }
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+
         RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
     }
     RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == 0, ("%zu\n", MyRestInt16::s_cInstances));
@@ -1639,7 +1679,7 @@ static void testArray()
         {
             RTTESTI_CHECK_RC(Arr3.removeAt(i), VINF_SUCCESS);
             cElements--;
-            RTTESTI_CHECK(Arr3.size() == cElements);
+            RTTESTI_CHECK((ssize_t)Arr3.size() == cElements);
         }
 
         /* Verify after removal: */
