@@ -1962,26 +1962,33 @@ void testStringMap(void)
 }
 
 
-class TestRequest1 : public RTCRestClientRequestBase
+class TestRequest : public RTCRestClientRequestBase
 {
 public:
     RTCRestString m_strValue;
     RTCRestInt64  m_iValue;
+    RTCRestArray<RTCRestString> m_Array;
+    RTCRestStringMap<RTCRestString> m_Map;
     /** @todo add more attributes. */
 
-    TestRequest1(const char *a_pszValue, int64_t a_iValue)
+    TestRequest(const char *a_pszValue, int64_t a_iValue, unsigned a_cElements, ...)
         : RTCRestClientRequestBase()
         , m_strValue(a_pszValue)
         , m_iValue(a_iValue)
     {
         m_fIsSet = UINT64_MAX;
+        va_list va;
+        va_start(va, a_cElements);
+        for (unsigned i = 0; i < a_cElements; i++)
+            m_Array.append(new RTCRestString(va_arg(va, const char *)));
+        va_end(va);
     }
 
     int resetToDefault() RT_OVERRIDE
     {
         m_strValue = "";
         m_iValue = 0;
-        return VINF_SUCCESS;
+        return m_Array.resetToDefault();
     }
 
     int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const RT_OVERRIDE
@@ -1995,34 +2002,92 @@ public:
         RT_NOREF(a_rcStatus, a_hHttp);
     }
 
-    void testPath()
+    void testPath(const char *a_pszExpected)
     {
         static PATHPARAMDESC const s_aParams[] =
         {
             { RT_STR_TUPLE("{string}"), 0, 0 },
             { RT_STR_TUPLE("{integer}"), 0, 0 },
+            { RT_STR_TUPLE("{array}"), 0, 0 },
         };
-        PATHPARAMSTATE aState[] = { { &m_strValue, 0 }, { &m_iValue, 0 } };
+        PATHPARAMSTATE aState[] = { { &m_strValue, 0 }, { &m_iValue, 0 }, { &m_Array, 0 } };
         RTCString strPath;
-        RTTESTI_CHECK_RC(doPathParameters(&strPath, RT_STR_TUPLE("my/{integer}/{string}/path"),
+        RTTESTI_CHECK_RC(doPathParameters(&strPath, RT_STR_TUPLE("my/{integer}/{string}/array:{array}/path"),
                                           s_aParams, aState, RT_ELEMENTS(aState)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strPath.equals("my/123456789/this-is-a-string/path"), ("actual: '%s'\n", strPath.c_str()));
+        RTTESTI_CHECK_MSG(strPath.equals(a_pszExpected), ("actual: '%s'\nexpect: %s\n", strPath.c_str(), a_pszExpected));
     }
 
-    void testQuery()
+    void testQuery(const char *a_pszCsv,
+                   const char *a_pszSsv,
+                   const char *a_pszTsv,
+                   const char *a_pszPipes,
+                   const char *a_pszMulti)
     {
-        static QUERYPARAMDESC const s_aParams[] =
+        QUERYPARAMDESC aParams[] =
         {
             { "string", 0, true, 0 },
             { "integer", 0, true, 0 },
+            { "array", 0, true, 0 },
         };
-        RTCRestObjectBase const *apObjects[] =  { &m_strValue,  &m_iValue, };
+
+        RTCRestObjectBase const *apObjects[] =  { &m_strValue,  &m_iValue, &m_Array };
         RTCString strQuery;
-        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, s_aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals("?string=this-is-a-string&integer=123456789"), ("actual: '%s'\n", strQuery.c_str()));
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszCsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszCsv));
+
+        strQuery.setNull();
+        aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_csv;
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszCsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszCsv));
+
+        strQuery.setNull();
+        aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_ssv;
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszSsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszSsv));
+
+        strQuery.setNull();
+        aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_tsv;
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszTsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszTsv));
+
+        strQuery.setNull();
+        aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_pipes;
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszPipes), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszPipes));
+
+        strQuery.setNull();
+        aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_multi;
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszMulti), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszMulti));
     }
 
-    /** @todo doHeaderParameters */
+    void testHeader(unsigned a_cHeaders, ...)
+    {
+        HEADERPARAMDESC aParams[] =
+        {
+            { "x-string", 0, true, 0, false },
+            { "x-integer", 0, true, 0, false },
+            { "x-array", 0, true, 0, false },
+            { "x-map-", 0, true, 0, true },
+        };
+        RTCRestObjectBase const *apObjects[] =  { &m_strValue,  &m_iValue, &m_Array, &m_Map };
+        RTHTTP hHttp = NIL_RTHTTP;
+        RTTESTI_CHECK_RC(RTHttpCreate(&hHttp), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(doHeaderParameters(hHttp, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK(RTHttpGetHeaderCount(hHttp) == a_cHeaders);
+        va_list va;
+        va_start(va, a_cHeaders);
+        for (size_t i = 0; i < a_cHeaders; i++)
+        {
+            const char *pszField  = va_arg(va, const char *);
+            const char *pszValue  = va_arg(va, const char *);
+            const char *pszActual = RTHttpGetHeader(hHttp, pszField, RTSTR_MAX);
+            RTTESTI_CHECK_MSG(RTStrCmp(pszActual, pszValue) == 0,
+                              ("Header '%s' value is '%s' rather than '%s'", pszField, pszActual, pszValue));
+        }
+        va_end(va);
+        RTTESTI_CHECK_RC(RTHttpDestroy(hHttp), VINF_SUCCESS);
+    }
 };
 
 
@@ -2031,9 +2096,30 @@ void testClientRequestBase()
     RTTestSub(g_hTest, "RTCRestClientRequestBase");
 
     {
-        TestRequest1 Req1("this-is-a-string", 123456789);
-        Req1.testPath();
-        Req1.testQuery();
+        TestRequest Req1("this-is-a-string", 123456789, 5, "1", "22", "333", "444", "555");
+        Req1.testPath("my/123456789/this-is-a-string/array:1,22,333,444,555/path");
+        Req1.testQuery("?string=this-is-a-string&integer=123456789&array=1%2C22%2C333%2C444%2C555",
+                       "?string=this-is-a-string&integer=123456789&array=1%2022%20333%20444%20555",
+                       "?string=this-is-a-string&integer=123456789&array=1%0922%09333%09444%09555",
+                       "?string=this-is-a-string&integer=123456789&array=1%7C22%7C333%7C444%7C555",
+                       "?string=this-is-a-string&integer=123456789&array=1&array=22&array=333&array=444&array=555");
+        Req1.testHeader(3, "x-string","this-is-a-string", "x-integer","123456789", "x-array","1,22,333,444,555");
+    }
+    {
+        TestRequest Req2(";'[]", 42, 3, "null", "foo", "bar");
+        RTTESTI_CHECK_RC(Req2.m_Map.put("stuff-1", new RTCRestString("stuffy-value-1")), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(Req2.m_Map.put("stuff-2", new RTCRestString("stuffy-value-2")), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(Req2.m_Map.put("2222", new RTCRestString("33")), VINF_SUCCESS);
+        Req2.testPath("my/42/;'[]/array:null,foo,bar/path"); /// @todo shouldn't the string chars (;'[]) be escaped?
+        Req2.testQuery("?string=%3B%27%5B%5D&integer=42&array=null%2Cfoo%2Cbar",
+                       "?string=%3B%27%5B%5D&integer=42&array=null%20foo%20bar",
+                       "?string=%3B%27%5B%5D&integer=42&array=null%09foo%09bar",
+                       "?string=%3B%27%5B%5D&integer=42&array=null%7Cfoo%7Cbar",
+                       "?string=%3B%27%5B%5D&integer=42&array=null&array=foo&array=bar");
+        Req2.testHeader(6, "x-string",";'[]", "x-integer","42", "x-array","null,foo,bar",
+                        "x-map-stuff-1","stuffy-value-1",
+                        "x-map-stuff-2","stuffy-value-2",
+                        "x-map-2222","33");
     }
 }
 

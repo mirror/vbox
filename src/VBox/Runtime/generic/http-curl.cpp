@@ -2251,6 +2251,37 @@ RTR3DECL(const char *) RTHttpGetHeader(RTHTTP hHttp, const char *pszField, size_
 }
 
 
+RTR3DECL(size_t) RTHttpGetHeaderCount(RTHTTP hHttp)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN_RC(pThis, 0);
+
+    /* Note! Only for test cases and debugging, so we don't care about performance. */
+    size_t cHeaders = 0;
+    for (PRTHTTPHEADER pCur = (PRTHTTPHEADER)pThis->pHeaders; pCur != NULL; pCur = (PRTHTTPHEADER)pCur->Core.next)
+        cHeaders++;
+    return cHeaders;
+}
+
+
+RTR3DECL(const char *) RTHttpGetByOrdinal(RTHTTP hHttp, size_t iOrdinal)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN_RC(pThis, NULL);
+
+    /* Note! Only for test cases and debugging, so we don't care about performance. */
+    for (PRTHTTPHEADER pCur = (PRTHTTPHEADER)pThis->pHeaders; pCur != NULL; pCur = (PRTHTTPHEADER)pCur->Core.next)
+    {
+        if (iOrdinal == 0)
+            return pCur->szData;
+        iOrdinal--;
+    }
+
+    return NULL;
+}
+
+
+
 RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char *pszUrl,
                                 RTCRKEY hKey, const char *pszKeyId, uint32_t fFlags)
 {
