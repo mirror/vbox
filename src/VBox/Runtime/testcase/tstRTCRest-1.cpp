@@ -1718,7 +1718,7 @@ static void testArray()
                 else
                     RTTESTI_CHECK_RC(Arr4.prepend(pDirect), VINF_SUCCESS);
             }
-            RTTESTI_CHECK(Arr4.size() == i + 1);
+            RTTESTI_CHECK((ssize_t)Arr4.size() == i + 1);
             RTTESTI_CHECK(Arr4.isEmpty() == false);
         }
 
