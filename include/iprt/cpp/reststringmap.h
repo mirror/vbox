@@ -82,14 +82,14 @@ public:
      * @returns true if key found, false if not.
      * @param   a_pszKey   The key to check fo.
      */
-    bool constainsKey(const char *a_pszKey) const;
+    bool containsKey(const char *a_pszKey) const;
 
     /**
      * Checks if the map contains the given key.
      * @returns true if key found, false if not.
      * @param   a_rStrKey   The key to check fo.
      */
-    bool constainsKey(RTCString const &a_rStrKey) const;
+    bool containsKey(RTCString const &a_rStrKey) const;
 
     /**
      * Remove any key-value pair with the given key.
@@ -192,11 +192,24 @@ public:
     };
 
     /** Returns iterator for the first map entry (unless it's empty and it's also the end). */
-    inline ConstIterator begin() const { return ConstIterator(RTListGetFirstCpp(&m_ListHead, MapEntry, ListEntry)); }
+    inline ConstIterator begin() const
+    {
+        if (!RTListIsEmpty(&m_ListHead))
+            return ConstIterator(RTListNodeGetNextCpp(&m_ListHead, MapEntry, ListEntry));
+        return end();
+    }
     /** Returns iterator for the last map entry (unless it's empty and it's also the end). */
-    inline ConstIterator last() const  { return ConstIterator(RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry)); }
+    inline ConstIterator last() const
+    {
+        if (!RTListIsEmpty(&m_ListHead))
+            return ConstIterator(RTListNodeGetPrevCpp(&m_ListHead, MapEntry, ListEntry));
+        return end();
+    }
     /** Returns the end iterator.  This does not ever refer to an actual map entry. */
-    inline ConstIterator end() const   { return ConstIterator(RT_FROM_CPP_MEMBER(&m_ListHead, MapEntry, ListEntry)); }
+    inline ConstIterator end() const
+    {
+        return ConstIterator(RT_FROM_CPP_MEMBER(&m_ListHead, MapEntry, ListEntry));
+    }
     /** @} */
 
 

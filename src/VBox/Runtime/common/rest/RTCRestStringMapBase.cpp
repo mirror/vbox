@@ -253,24 +253,26 @@ size_t RTCRestStringMapBase::size() const
 }
 
 
-bool RTCRestStringMapBase::constainsKey(const char *a_pszKey) const
+bool RTCRestStringMapBase::containsKey(const char *a_pszKey) const
 {
     return RTStrSpaceGet((PRTSTRSPACE)&m_Map, a_pszKey) != NULL;
 }
 
 
-bool RTCRestStringMapBase::constainsKey(RTCString const &a_rStrKey) const
+bool RTCRestStringMapBase::containsKey(RTCString const &a_rStrKey) const
 {
-    return constainsKey(a_rStrKey.c_str());
+    return containsKey(a_rStrKey.c_str());
 }
 
 
 bool RTCRestStringMapBase::remove(const char *a_pszKey)
 {
-    PRTSTRSPACECORE pRemoved = RTStrSpaceRemove(&m_Map, a_pszKey);
+    MapEntry *pRemoved = (MapEntry *)RTStrSpaceRemove(&m_Map, a_pszKey);
     if (pRemoved)
     {
-        stringSpaceDestructorCallback(pRemoved, NULL);
+        m_cEntries--;
+        RTListNodeRemove(&pRemoved->ListEntry);
+        stringSpaceDestructorCallback(&pRemoved->Core, NULL);
         return true;
     }
     return false;
@@ -354,6 +356,7 @@ int RTCRestStringMapBase::putWorker(const char *a_pszKey, RTCRestObjectBase *a_p
             pEntry->pValue = a_pValue;
             if (RTStrSpaceInsert(&m_Map, &pEntry->Core))
             {
+                RTListAppend(&m_ListHead, &pEntry->ListEntry);
                 m_cEntries++;
                 m_fNullIndicator = false;
                 return VINF_SUCCESS;

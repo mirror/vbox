@@ -1739,6 +1739,64 @@ static void testArray()
 }
 
 
+static void verifyMap(RTCRestStringMap<MyRestInt16> const &rMap, int iLine, unsigned cEntries, ...)
+{
+    if (rMap.size() != cEntries)
+        RTTestIFailed("line %u: size() -> %zu, expected %u", iLine, rMap.size(), cEntries);
+    if (rMap.isEmpty() != (cEntries ? false : true))
+        RTTestIFailed("line %u: isEmpty() -> %RTbool, with %u entries", iLine, rMap.isEmpty(), cEntries);
+
+    va_list va;
+    va_start(va, cEntries);
+    for (unsigned i = 0; i < cEntries; i++)
+    {
+        const char *pszKey = va_arg(va, const char *);
+        int         iValue = va_arg(va, int);
+        if (   rMap.containsKey(pszKey) != true
+            || rMap.containsKey(RTCString(pszKey)) != true
+            || rMap.get(pszKey) == NULL
+            || rMap.get(RTCString(pszKey)) == NULL)
+            RTTestIFailed("line %u: entry '%s' not found!", iLine, pszKey);
+        else if (rMap.get(pszKey)->m_iValue != iValue)
+            RTTestIFailed("line %u: entry '%s' value mismatch: %d, expected %d",
+                          iLine, pszKey, rMap.get(pszKey)->m_iValue, iValue);
+        RTTESTI_CHECK(rMap.get(pszKey) == rMap.get(RTCString(pszKey)));
+    }
+    va_end(va);
+    RTTESTI_CHECK(rMap.isNull() == false);
+
+    uint64_t fFound = 0;
+    for (RTCRestStringMapBase::ConstIterator it = rMap.begin(); it != rMap.end(); ++it)
+    {
+        MyRestInt16 const *pObj = (MyRestInt16 const *)it.getValue();
+        RTTESTI_CHECK(RT_VALID_PTR(pObj));
+
+        bool fFoundIt = false;
+        va_start(va, cEntries);
+        for (unsigned i = 0; i < cEntries; i++)
+        {
+            const char *pszKey = va_arg(va, const char *);
+            int         iValue = va_arg(va, int);
+            if (it.getKey().equals(pszKey))
+            {
+                if (fFound & RT_BIT_64(i))
+                    RTTestIFailed("line %u: base enum: entry '%s' returned more than once!", iLine, pszKey);
+                if (pObj->m_iValue != iValue)
+                    RTTestIFailed("line %u: base enum: entry '%s' value mismatch: %d, expected %d",
+                                  iLine, pszKey, pObj->m_iValue, iValue);
+                fFound |= RT_BIT_64(i);
+                fFoundIt = true;
+                va_end(va);
+                return;
+            }
+        }
+        va_end(va);
+        if (!fFoundIt)
+            RTTestIFailed("line %u: base enum: entry '%s' not expected!", iLine, it.getKey().c_str());
+    }
+}
+
+
 void testStringMap(void)
 {
     RTTestSub(g_hTest, "RTCRestMap");
@@ -1752,6 +1810,154 @@ void testStringMap(void)
         RTTESTI_CHECK(obj1.typeClass() == RTCRestObjectBase::kTypeClass_StringMap);
     }
 
+    /* Basic operations: */
+    {
+        MyRestInt16::s_cInstances = 0;
+        RTCRestStringMap<MyRestInt16> Map2;
+        verifyMap(Map2, __LINE__, 0);
+
+        RTTESTI_CHECK_RC(Map2.putCopy("0x0004", MyRestInt16(4)), VINF_SUCCESS);
+        verifyMap(Map2, __LINE__, 1, "0x0004", 4);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 1);
+        RTTESTI_CHECK_RC(Map2.put("0x0001", new MyRestInt16(1)), VINF_SUCCESS);
+        verifyMap(Map2, __LINE__, 2, "0x0004",4, "0x0001",1);
+        RTTESTI_CHECK_RC(Map2.put("0x0003", new MyRestInt16(3)), VINF_SUCCESS);
+        verifyMap(Map2, __LINE__, 3, "0x0004",4, "0x0001",1, "0x0003",3);
+        RTTESTI_CHECK_RC(Map2.put("0x0002", new MyRestInt16(2)), VINF_SUCCESS);
+        verifyMap(Map2, __LINE__, 4, "0x0004",4, "0x0001",1, "0x0003",3, "0x0002",2);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 4);
+        RTTESTI_CHECK_RC(Map2.put("0x0000", new MyRestInt16(0)), VINF_SUCCESS);
+        verifyMap(Map2, __LINE__, 5, "0x0004",4, "0x0001",1, "0x0003",3, "0x0002",2, "0x0000",0);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 5);
+        RTTESTI_CHECK_RC(Map2.putCopy("towel", MyRestInt16(42)), VINF_SUCCESS);
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0003",3, "0x0002",2, "0x0000",0, "towel",42);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+
+        RTTESTI_CHECK(Map2.containsKey("0x0005") == false);
+        RTTESTI_CHECK(Map2.get("0x0005") == NULL);
+
+        RTTESTI_CHECK(Map2.remove("0x0003") == true);
+        verifyMap(Map2, __LINE__, 5, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 5);
+
+        RTTESTI_CHECK(Map2.remove("0x0003") == false);
+        verifyMap(Map2, __LINE__, 5, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 5);
+
+        RTCRestObjectBase *pNewBase = NULL;
+        RTTESTI_CHECK_RC(Map2.putNewValue(&pNewBase, "putNewValue"), VINF_SUCCESS);
+        ((MyRestInt16 *)pNewBase)->m_iValue = 88;
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",88);
+
+        pNewBase = NULL;
+        RTTESTI_CHECK_RC(Map2.putNewValue(&pNewBase, RTCString("putNewValue")), VERR_ALREADY_EXISTS);
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",88);
+        pNewBase = NULL;
+        RTTESTI_CHECK_RC(Map2.putNewValue(&pNewBase, RTCString("putNewValue"), true /*a_fReplace*/), VWRN_ALREADY_EXISTS);
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+        RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+
+        /* Make copy and remove all: */
+        {
+            RTCRestStringMap<MyRestInt16> Map2Copy1;
+
+            RTTESTI_CHECK_RC(Map2Copy1.assignCopy(Map2), VINF_SUCCESS);
+            verifyMap(Map2Copy1, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 12);
+
+            RTTESTI_CHECK(Map2Copy1.remove("0x0004") == true);
+            verifyMap(Map2Copy1, __LINE__, 5, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 11);
+
+            RTTESTI_CHECK(Map2Copy1.remove("putNewValue") == true);
+            verifyMap(Map2Copy1, __LINE__, 4, "0x0001",1, "0x0002",2, "0x0000",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 10);
+
+            RTTESTI_CHECK(Map2Copy1.remove("towel") == true);
+            verifyMap(Map2Copy1, __LINE__, 3, "0x0001",1, "0x0002",2, "0x0000",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 9);
+
+            RTTESTI_CHECK(Map2Copy1.remove("0x0002") == true);
+            verifyMap(Map2Copy1, __LINE__, 2, "0x0001",1, "0x0000",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 8);
+
+            RTTESTI_CHECK(Map2Copy1.remove("0x0000") == true);
+            verifyMap(Map2Copy1, __LINE__, 1, "0x0001",1);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 7);
+
+            RTTESTI_CHECK(Map2Copy1.remove("0x0001") == true);
+            verifyMap(Map2Copy1, __LINE__, 0);
+            RTTESTI_CHECK(Map2Copy1.isEmpty() == true);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+        }
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+
+        /* Make copy and use clear: */
+        {
+            RTCRestStringMap<MyRestInt16> Map2Copy2(Map2);
+            verifyMap(Map2Copy2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 12);
+            Map2Copy2.clear();
+            verifyMap(Map2Copy2, __LINE__, 0);
+            RTTESTI_CHECK(Map2Copy2.isEmpty() == true);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+        }
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+
+        /* Make copy and reset to default: */
+        {
+            RTCRestStringMap<MyRestInt16> Map2Copy3(Map2);
+            verifyMap(Map2Copy3, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 12);
+            RTTESTI_CHECK_RC(Map2Copy3.resetToDefault(), VINF_SUCCESS);
+            verifyMap(Map2Copy3, __LINE__, 0);
+            RTTESTI_CHECK(Map2Copy3.isEmpty() == true);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+        }
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+
+        /* Make copy and set to null: */
+        {
+            RTCRestStringMap<MyRestInt16> Map2Copy4;
+            Map2Copy4 = Map2;
+            verifyMap(Map2Copy4, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 12);
+            RTTESTI_CHECK_RC(Map2Copy4.setNull(), VINF_SUCCESS);
+            RTTESTI_CHECK(Map2Copy4.size() == 0);
+            RTTESTI_CHECK(Map2Copy4.isEmpty() == true);
+            RTTESTI_CHECK(Map2Copy4.isNull() == true);
+            RTTESTI_CHECK(MyRestInt16::s_cInstances == 6);
+        }
+        verifyMap(Map2, __LINE__, 6, "0x0004",4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42, "putNewValue",0);
+    }
+    RTTESTI_CHECK(MyRestInt16::s_cInstances == 0);
+
+    /* Check that null indicator is reset when it should: */
+    {
+        RTCRestStringMap<MyRestInt16> Map3;
+        Map3.setNull();
+        RTTESTI_CHECK_RC(Map3.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK(Map3.size() == 0);
+        RTTESTI_CHECK(Map3.isEmpty() == true);
+        RTTESTI_CHECK(Map3.isNull() == true);
+        RTTESTI_CHECK_RC(Map3.putCopy("not-null-anymore", MyRestInt16(1)), VINF_SUCCESS);
+        verifyMap(Map3, __LINE__, 1, "not-null-anymore",1);
+    }
+    RTTESTI_CHECK(MyRestInt16::s_cInstances == 0);
+
+    {
+        RTCRestStringMap<MyRestInt16> Map4;
+        Map4.setNull();
+        RTTESTI_CHECK_RC(Map4.setNull(), VINF_SUCCESS);
+        RTTESTI_CHECK(Map4.size() == 0);
+        RTTESTI_CHECK(Map4.isEmpty() == true);
+        RTTESTI_CHECK(Map4.isNull() == true);
+        RTCRestObjectBase *pNewBase = NULL;
+        RTTESTI_CHECK_RC(Map4.putNewValue(&pNewBase, "putNewValue"), VINF_SUCCESS);
+        verifyMap(Map4, __LINE__, 1, "putNewValue",0);
+    }
+    RTTESTI_CHECK(MyRestInt16::s_cInstances == 0);
 }
 
 
@@ -1767,7 +1973,7 @@ int main()
         testDouble();
         testString("dummy", 1, 2);
         testDate();
-        testArray();
+        //testArray();
         testStringMap();
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
