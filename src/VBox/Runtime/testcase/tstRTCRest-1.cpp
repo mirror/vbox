@@ -31,6 +31,7 @@
 #include <iprt/cpp/restbase.h>
 #include <iprt/cpp/restarray.h>
 #include <iprt/cpp/reststringmap.h>
+#include <iprt/cpp/restclient.h>
 
 #include <iprt/err.h>
 #include <iprt/message.h>
@@ -1961,6 +1962,82 @@ void testStringMap(void)
 }
 
 
+class TestRequest1 : public RTCRestClientRequestBase
+{
+public:
+    RTCRestString m_strValue;
+    RTCRestInt64  m_iValue;
+    /** @todo add more attributes. */
+
+    TestRequest1(const char *a_pszValue, int64_t a_iValue)
+        : RTCRestClientRequestBase()
+        , m_strValue(a_pszValue)
+        , m_iValue(a_iValue)
+    {
+        m_fIsSet = UINT64_MAX;
+    }
+
+    int resetToDefault() RT_OVERRIDE
+    {
+        m_strValue = "";
+        m_iValue = 0;
+        return VINF_SUCCESS;
+    }
+
+    int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const RT_OVERRIDE
+    {
+        RT_NOREF(a_pStrPath, a_pStrQuery, a_hHttp, a_pStrBody);
+        return VINF_SUCCESS;
+    }
+
+    void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const RT_OVERRIDE
+    {
+        RT_NOREF(a_rcStatus, a_hHttp);
+    }
+
+    void testPath()
+    {
+        static PATHPARAMDESC const s_aParams[] =
+        {
+            { RT_STR_TUPLE("{string}"), 0, 0 },
+            { RT_STR_TUPLE("{integer}"), 0, 0 },
+        };
+        PATHPARAMSTATE aState[] = { { &m_strValue, 0 }, { &m_iValue, 0 } };
+        RTCString strPath;
+        RTTESTI_CHECK_RC(doPathParameters(&strPath, RT_STR_TUPLE("my/{integer}/{string}/path"),
+                                          s_aParams, aState, RT_ELEMENTS(aState)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strPath.equals("my/123456789/this-is-a-string/path"), ("actual: '%s'\n", strPath.c_str()));
+    }
+
+    void testQuery()
+    {
+        static QUERYPARAMDESC const s_aParams[] =
+        {
+            { "string", 0, true, 0 },
+            { "integer", 0, true, 0 },
+        };
+        RTCRestObjectBase const *apObjects[] =  { &m_strValue,  &m_iValue, };
+        RTCString strQuery;
+        RTTESTI_CHECK_RC(doQueryParameters(&strQuery, s_aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(strQuery.equals("?string=this-is-a-string&integer=123456789"), ("actual: '%s'\n", strQuery.c_str()));
+    }
+
+    /** @todo doHeaderParameters */
+};
+
+
+void testClientRequestBase()
+{
+    RTTestSub(g_hTest, "RTCRestClientRequestBase");
+
+    {
+        TestRequest1 Req1("this-is-a-string", 123456789);
+        Req1.testPath();
+        Req1.testQuery();
+    }
+}
+
+
 int main()
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTRest-1", &g_hTest);
@@ -1975,7 +2052,8 @@ int main()
         testDate();
         testArray();
         testStringMap();
-        /** @todo test request & response base classes too.   */
+        testClientRequestBase();
+        /** @todo test the response base class too. */
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
     }
