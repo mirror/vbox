@@ -25042,6 +25042,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="parameterValues" type="wstring" safearray="yes" dir="in">
         <desc>Initial set of parameter values.</desc>
       </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
     </method>
 
     <method name="validateCommand">

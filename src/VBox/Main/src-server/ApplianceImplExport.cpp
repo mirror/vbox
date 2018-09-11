@@ -1012,6 +1012,7 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
         // we need to do that as otherwise Task won't be created successfully
         aProgress.createObject();
 #endif
+
         // Initialize our worker task
         TaskOCI* task = NULL;
         try
@@ -2459,7 +2460,8 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
                 if (SUCCEEDED(hrc))
                     vrc = cloudClient->RunSeveralCommands(ComSafeArrayAsInParam(commandIdList),
                                                           ComSafeArrayAsInParam(paramNames),
-                                                          ComSafeArrayAsInParam(paramValues));
+                                                          ComSafeArrayAsInParam(paramValues),
+                                                          pTask->pProgress);
                 if (RT_FAILURE(vrc))
                     hrc = E_FAIL;
             }
