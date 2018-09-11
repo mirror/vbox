@@ -1216,7 +1216,6 @@ DECL_FORCE_INLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
  */
 DECL_FORCE_INLINE(void) iemVmxVmreadSuccess(PVMCPU pVCpu, uint8_t cbInstr)
 {
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_Success;
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 }
@@ -1570,7 +1569,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         case VMX_VMCS_ENC_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
     }
 
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_Success;
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
@@ -1681,7 +1679,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                                             (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
     }
 
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_Success;
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return rcStrict;
@@ -1725,7 +1722,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     VBOXSTRICTRC rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrVmcs, IEM_VMX_GET_CURRENT_VMCS(pVCpu));
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_Success;
         iemVmxVmSucceed(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return rcStrict;
@@ -1861,7 +1857,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         iemVmxCommitCurrentVmcsToMemory(pVCpu);
         IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
     }
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_Success;
+
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
@@ -2013,9 +2009,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon    = GCPhysVmxon;
         IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
         pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
+
         /** @todo NSTVMX: clear address-range monitoring. */
         /** @todo NSTVMX: Intel PT. */
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Success;
+
         iemVmxVmSucceed(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
@@ -3985,7 +3982,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         return VINF_SUCCESS;
     }
 
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_Success;
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VERR_IEM_IPE_2;
@@ -4043,10 +4039,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
 
     if (fSmmMonitorCtl & MSR_IA32_SMM_MONITOR_VMXOFF_UNBLOCK_SMI)
     { /** @todo NSTVMX: Unblock SMI. */ }
+
     /** @todo NSTVMX: Unblock and enable A20M. */
     /** @todo NSTVMX: Clear address-range monitoring. */
 
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxoff_Success;
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 #  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)

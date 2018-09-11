@@ -30,6 +30,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 #define VMXV_DIAG_DESC(a_Def, a_Desc)      #a_Def " - " #a_Desc
+/** VMX virtual-instructions and VM-exit diagnostics. */
 static const char * const g_apszVmxVDiagDesc[] =
 {
     /* Internal processing errors. */
@@ -57,7 +58,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_PtrWidth                   , "PtrWidth"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_RealOrV86Mode              , "RealOrV86Mode"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_ShadowVmcs                 , "ShadowVmcs"                ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmxon_Success                    , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_VmxAlreadyRoot             , "VmxAlreadyRoot"            ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_Vmxe                       , "Vmxe"                      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_VmcsRevId                  , "VmcsRevId"                 ),
@@ -67,7 +67,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmxoff_Intercept                 , "Intercept"                 ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxoff_LongModeCS                , "LongModeCS"                ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxoff_RealOrV86Mode             , "RealOrV86Mode"             ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmxoff_Success                   , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxoff_Vmxe                      , "Vmxe"                      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxoff_VmxRoot                   , "VmxRoot"                   ),
     /* VMPTRLD. */
@@ -81,7 +80,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_PtrWidth                 , "PtrWidth"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_RealOrV86Mode            , "RealOrV86Mode"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_ShadowVmcs               , "ShadowVmcs"                ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_Success                  , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_VmcsRevId                , "VmcsRevId"                 ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_VmxRoot                  , "VmxRoot"                   ),
     /* VMPTRST. */
@@ -89,7 +87,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrst_LongModeCS               , "LongModeCS"                ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrst_PtrMap                   , "PtrMap"                    ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrst_RealOrV86Mode            , "RealOrV86Mode"             ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmptrst_Success                  , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrst_VmxRoot                  , "VmxRoot"                   ),
     /* VMCLEAR. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmclear_Cpl                      , "Cpl"                       ),
@@ -101,7 +98,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmclear_PtrVmxon                 , "PtrVmxon"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmclear_PtrWidth                 , "PtrWidth"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmclear_RealOrV86Mode            , "RealOrV86Mode"             ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmclear_Success                  , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmclear_VmxRoot                  , "VmxRoot"                   ),
     /* VMWRITE. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmwrite_Cpl                      , "Cpl"                       ),
@@ -112,7 +108,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmwrite_PtrInvalid               , "PtrInvalid"                ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmwrite_PtrMap                   , "PtrMap"                    ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmwrite_RealOrV86Mode            , "RealOrV86Mode"             ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmwrite_Success                  , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmwrite_VmxRoot                  , "VmxRoot"                   ),
     /* VMREAD. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_Cpl                       , "Cpl"                       ),
@@ -122,7 +117,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_PtrInvalid                , "PtrInvalid"                ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_PtrMap                    , "PtrMap"                    ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_RealOrV86Mode             , "RealOrV86Mode"             ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmread_Success                   , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_VmxRoot                   , "VmxRoot"                   ),
     /* VMLAUNCH/VMRESUME. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrApicAccess           , "AddrApicAccess"            ),
@@ -316,7 +310,6 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_PtrReadPhys              , "PtrReadPhys"               ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_RealOrV86Mode            , "RealOrV86Mode"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_SavePreemptTimer         , "SavePreemptTimer"          ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_Success                  , "Success"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_TprThresholdRsvd         , "TprThresholdRsvd"          ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_TprThresholdVTpr         , "TprThresholdVTpr"          ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys  , "VirtApicPageReadPhys"      ),

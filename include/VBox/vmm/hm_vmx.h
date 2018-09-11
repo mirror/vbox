@@ -3455,7 +3455,6 @@ typedef enum
     kVmxVDiag_Vmxon_PtrWidth,
     kVmxVDiag_Vmxon_RealOrV86Mode,
     kVmxVDiag_Vmxon_ShadowVmcs,
-    kVmxVDiag_Vmxon_Success,
     kVmxVDiag_Vmxon_VmxAlreadyRoot,
     kVmxVDiag_Vmxon_Vmxe,
     kVmxVDiag_Vmxon_VmcsRevId,
@@ -3465,7 +3464,6 @@ typedef enum
     kVmxVDiag_Vmxoff_Intercept,
     kVmxVDiag_Vmxoff_LongModeCS,
     kVmxVDiag_Vmxoff_RealOrV86Mode,
-    kVmxVDiag_Vmxoff_Success,
     kVmxVDiag_Vmxoff_Vmxe,
     kVmxVDiag_Vmxoff_VmxRoot,
     /* VMPTRLD. */
@@ -3479,7 +3477,6 @@ typedef enum
     kVmxVDiag_Vmptrld_PtrWidth,
     kVmxVDiag_Vmptrld_RealOrV86Mode,
     kVmxVDiag_Vmptrld_ShadowVmcs,
-    kVmxVDiag_Vmptrld_Success,
     kVmxVDiag_Vmptrld_VmcsRevId,
     kVmxVDiag_Vmptrld_VmxRoot,
     /* VMPTRST. */
@@ -3487,7 +3484,6 @@ typedef enum
     kVmxVDiag_Vmptrst_LongModeCS,
     kVmxVDiag_Vmptrst_PtrMap,
     kVmxVDiag_Vmptrst_RealOrV86Mode,
-    kVmxVDiag_Vmptrst_Success,
     kVmxVDiag_Vmptrst_VmxRoot,
     /* VMCLEAR. */
     kVmxVDiag_Vmclear_Cpl,
@@ -3499,7 +3495,6 @@ typedef enum
     kVmxVDiag_Vmclear_PtrVmxon,
     kVmxVDiag_Vmclear_PtrWidth,
     kVmxVDiag_Vmclear_RealOrV86Mode,
-    kVmxVDiag_Vmclear_Success,
     kVmxVDiag_Vmclear_VmxRoot,
     /* VMWRITE. */
     kVmxVDiag_Vmwrite_Cpl,
@@ -3510,7 +3505,6 @@ typedef enum
     kVmxVDiag_Vmwrite_PtrInvalid,
     kVmxVDiag_Vmwrite_PtrMap,
     kVmxVDiag_Vmwrite_RealOrV86Mode,
-    kVmxVDiag_Vmwrite_Success,
     kVmxVDiag_Vmwrite_VmxRoot,
     /* VMREAD. */
     kVmxVDiag_Vmread_Cpl,
@@ -3520,7 +3514,6 @@ typedef enum
     kVmxVDiag_Vmread_PtrInvalid,
     kVmxVDiag_Vmread_PtrMap,
     kVmxVDiag_Vmread_RealOrV86Mode,
-    kVmxVDiag_Vmread_Success,
     kVmxVDiag_Vmread_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
     kVmxVDiag_Vmentry_AddrApicAccess,
@@ -3714,7 +3707,6 @@ typedef enum
     kVmxVDiag_Vmentry_PtrReadPhys,
     kVmxVDiag_Vmentry_RealOrV86Mode,
     kVmxVDiag_Vmentry_SavePreemptTimer,
-    kVmxVDiag_Vmentry_Success,
     kVmxVDiag_Vmentry_TprThresholdRsvd,
     kVmxVDiag_Vmentry_TprThresholdVTpr,
     kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys,
