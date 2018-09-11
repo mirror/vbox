@@ -1465,6 +1465,37 @@ void testDate()
     }
 }
 
+
+/** Wraps RTCRestInt16 to check for leaks.    */
+class MyRestInt16 : public RTCRestInt16
+{
+public:
+    static size_t s_cInstances;
+    MyRestInt16() : RTCRestInt16() { s_cInstances++; }
+    MyRestInt16(MyRestInt16 const &a_rThat) : RTCRestInt16(a_rThat) { s_cInstances++; }
+    MyRestInt16(int16_t a_iValue) : RTCRestInt16(a_iValue) { s_cInstances++; }
+    ~MyRestInt16() { s_cInstances--; }
+};
+
+size_t MyRestInt16::s_cInstances = 0;
+
+
+static void verifyArray(RTCRestArray<MyRestInt16> const &rArray, int iLine, unsigned cElements, ...)
+{
+    if (rArray.size() != cElements)
+        RTTestIFailed("line %u: size() -> %zu, expected %u", iLine, rArray.size(), cElements);
+    va_list va;
+    va_start(va, cElements);
+    for (unsigned i = 0; i < cElements; i++)
+    {
+        int iExpected = va_arg(va, int);
+        if (rArray.at(i)->m_iValue != iExpected)
+            RTTestIFailed("line %u: element #%u: %d, expected %d", iLine, i, rArray.at(i)->m_iValue, iExpected);
+    }
+    va_end(va);
+}
+
+
 static void testArray()
 {
     RTTestSub(g_hTest, "RTCRestArray");
@@ -1472,60 +1503,198 @@ static void testArray()
     {
         RTCRestArray<RTCRestBool> obj1;
         RTTESTI_CHECK(obj1.size() == 0);
+        RTTESTI_CHECK(obj1.isEmpty() == true);
         RTTESTI_CHECK(obj1.isNull() == false);
         RTTESTI_CHECK(strcmp(obj1.typeName(), "RTCRestArray<ElementType>") == 0);
         RTTESTI_CHECK(obj1.typeClass() == RTCRestObjectBase::kTypeClass_Array);
     }
 
+    /* Some random order insertion and manipulations: */
     {
+        RTCRestArray<MyRestInt16> Arr2;
+        RTCRestArray<MyRestInt16> const *pConstArr2 = &Arr2;
+
+        RTTESTI_CHECK_RC(Arr2.insert(0, new MyRestInt16(3)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 1,  3);
+        RTTESTI_CHECK_RC(Arr2.append(  new MyRestInt16(7)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 2,  3, 7);
+        RTTESTI_CHECK_RC(Arr2.insert(1, new MyRestInt16(5)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 3,  3, 5, 7);
+        RTTESTI_CHECK_RC(Arr2.insert(2, new MyRestInt16(6)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 4,  3, 5, 6, 7);
+        RTTESTI_CHECK_RC(Arr2.prepend(  new MyRestInt16(0)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 5,  0, 3, 5, 6, 7);
+        RTTESTI_CHECK_RC(Arr2.append(   new MyRestInt16(9)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 6,  0, 3, 5, 6, 7, 9);
+        RTTESTI_CHECK_RC(Arr2.insert(5, new MyRestInt16(8)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 7,  0, 3, 5, 6, 7, 8, 9);
+        RTTESTI_CHECK_RC(Arr2.insert(1, new MyRestInt16(1)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 8,  0, 1, 3, 5, 6, 7, 8, 9);
+        RTTESTI_CHECK_RC(Arr2.insert(3, new MyRestInt16(4)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 9,  0, 1, 3, 4, 5, 6, 7, 8, 9);
+        RTTESTI_CHECK_RC(Arr2.insert(2, new MyRestInt16(2)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        RTTESTI_CHECK(Arr2.size() == 10);
+
+        for (size_t i = 0; i < Arr2.size(); i++)
+        {
+            MyRestInt16 *pCur = Arr2.at(i);
+            RTTESTI_CHECK(pCur->m_iValue == i);
+
+            MyRestInt16 const *pCur2 = pConstArr2->at(i);
+            RTTESTI_CHECK(pCur2->m_iValue == i);
+        }
+
+        RTTESTI_CHECK_RC(Arr2.replace(2, new MyRestInt16(22)), VWRN_ALREADY_EXISTS);
+        verifyArray(Arr2, __LINE__, 10, 0, 1, 22, 3, 4, 5, 6, 7, 8, 9);
+
+        RTTESTI_CHECK_RC(Arr2.replace(7, new MyRestInt16(77)), VWRN_ALREADY_EXISTS);
+        verifyArray(Arr2, __LINE__, 10, 0, 1, 22, 3, 4, 5, 6, 77, 8, 9);
+
+        RTTESTI_CHECK_RC(Arr2.replace(10, new MyRestInt16(10)), VINF_SUCCESS);
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 22, 3, 4, 5, 6, 77, 8, 9, 10);
+
+        RTTESTI_CHECK_RC(Arr2.replaceCopy(2, MyRestInt16(2)), VWRN_ALREADY_EXISTS);
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+
+        /* copy constructor: */
+        {
+            RTCRestArray<MyRestInt16> const Arr2Copy(Arr2);
+            verifyArray(Arr2Copy, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        }
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+
+        {
+            RTCRestArray<MyRestInt16> Arr2Copy2(Arr2);
+            verifyArray(Arr2Copy2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+            RTTESTI_CHECK_RC(Arr2Copy2.removeAt(7), VINF_SUCCESS);
+            verifyArray(Arr2Copy2, __LINE__, 10, 0, 1, 2, 3, 4, 5, 6, 8, 9, 10);
+        }
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+
+        /* copy method: */
+        {
+            RTCRestArray<MyRestInt16> Arr2Copy3;
+            RTTESTI_CHECK_RC(Arr2Copy3.assignCopy(Arr2), VINF_SUCCESS);
+            verifyArray(Arr2Copy3, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+            Arr2Copy3.at(3)->m_iValue = 33;
+            verifyArray(Arr2Copy3, __LINE__, 11, 0, 1, 2, 33, 4, 5, 6, 77, 8, 9, 10);
+            Arr2Copy3.clear();
+            verifyArray(Arr2Copy3, __LINE__, 0);
+            RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
+        }
+        verifyArray(Arr2, __LINE__, 11, 0, 1, 2, 3, 4, 5, 6, 77, 8, 9, 10);
+        RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == Arr2.size(), ("%zu vs %zu\n", MyRestInt16::s_cInstances, Arr2.size()));
+    }
+    RTTESTI_CHECK_MSG(MyRestInt16::s_cInstances == 0, ("%zu\n", MyRestInt16::s_cInstances));
+
+    {
+        RTCRestArray<RTCRestInt64> Arr3;
+        RTCRestArray<RTCRestInt64> const *pConstArr3 = &Arr3;
+
         /* Insert a range of numbers into a int64 array. */
-        RTCRestArray<RTCRestInt64> Arr2;
         for (int64_t i = 0; i < _64K; i++)
         {
             if (i & 1)
             {
                 RTCRestInt64 toCopy(i);
                 if (i & 2)
-                    RTTESTI_CHECK_RC(Arr2.insertCopy(i, toCopy), VINF_SUCCESS);
+                    RTTESTI_CHECK_RC(Arr3.insertCopy(i, toCopy), VINF_SUCCESS);
                 else
-                    RTTESTI_CHECK_RC(Arr2.appendCopy(toCopy), VINF_SUCCESS);
+                    RTTESTI_CHECK_RC(Arr3.appendCopy(toCopy), VINF_SUCCESS);
             }
             else
             {
                 RTCRestInt64 *pDirect = new RTCRestInt64(i);
                 if (i & 2)
-                    RTTESTI_CHECK_RC(Arr2.insert(i, pDirect), VINF_SUCCESS);
+                    RTTESTI_CHECK_RC(Arr3.insert(i, pDirect), VINF_SUCCESS);
                 else
-                    RTTESTI_CHECK_RC(Arr2.append(pDirect), VINF_SUCCESS);
+                    RTTESTI_CHECK_RC(Arr3.append(pDirect), VINF_SUCCESS);
             }
+            RTTESTI_CHECK(Arr3.size() == (size_t)i + 1);
+            RTTESTI_CHECK(Arr3.isEmpty() == false);
         }
 
-        /* verify: */
-        RTCRestArray<RTCRestInt64> const *pConstArr2 = &Arr2;
+        /* Verify insertions: */
+        size_t cElements = _64K;
+        RTTESTI_CHECK(Arr3.size() == cElements);
+
         for (int64_t i = 0; i < _64K; i++)
         {
-            RTCRestInt64 *pCur = Arr2.at(i);
+            RTCRestInt64 *pCur = Arr3.at(i);
             RTTESTI_CHECK(pCur->m_iValue == i);
 
-            RTCRestInt64 const *pCur2 = pConstArr2->at(i);
+            RTCRestInt64 const *pCur2 = pConstArr3->at(i);
             RTTESTI_CHECK(pCur2->m_iValue == i);
         }
-        RTTESTI_CHECK(Arr2.first()->m_iValue == 0);
-        RTTESTI_CHECK(Arr2.last()->m_iValue == _64K - 1);
-        RTTESTI_CHECK(pConstArr2->first()->m_iValue == 0);
-        RTTESTI_CHECK(pConstArr2->last()->m_iValue == _64K - 1);
+        RTTESTI_CHECK(Arr3.first()->m_iValue == 0);
+        RTTESTI_CHECK(Arr3.last()->m_iValue == _64K - 1);
+        RTTESTI_CHECK(pConstArr3->first()->m_iValue == 0);
+        RTTESTI_CHECK(pConstArr3->last()->m_iValue == _64K - 1);
 
-        /* Remove every 3rd element. */
-        for (int64_t i = _64K - 1; i > 0; i -= 3)
-            RTTESTI_CHECK_RC(Arr2.removeAt(i), VINF_SUCCESS);
-#if 0
-        for (int64_t i = 0, iValue = 0; i < (ssize_t)Arr2.size(); i++, iValue++)
+        /* Remove every 3rd element: */
+        RTTESTI_CHECK(Arr3.size() == cElements);
+        for (int64_t i = _64K - 1; i >= 0; i -= 3)
+        {
+            RTTESTI_CHECK_RC(Arr3.removeAt(i), VINF_SUCCESS);
+            cElements--;
+            RTTESTI_CHECK(Arr3.size() == cElements);
+        }
+
+        /* Verify after removal: */
+        for (int64_t i = 0, iValue = 0; i < (ssize_t)Arr3.size(); i++, iValue++)
         {
             if ((iValue % 3) == 0)
                 iValue++;
-            RTTESTI_CHECK_MSG(Arr2.at(i)->m_iValue == iValue, ("%RI64: %RI64 vs %RI64", i, Arr2.at(i)->m_iValue, iValue));
+            RTTESTI_CHECK_MSG(Arr3.at(i)->m_iValue == iValue, ("%RI64: %RI64 vs %RI64\n", i, Arr3.at(i)->m_iValue, iValue));
         }
-#endif
+
+        /* Clear it and we're done: */
+        Arr3.clear();
+        RTTESTI_CHECK(Arr3.size() == 0);
+        RTTESTI_CHECK(Arr3.isEmpty() == true);
+    }
+
+    {
+        RTCRestArray<RTCRestInt32> Arr4;
+
+        /* Insert a range of numbers into a int32 array, in reverse order. */
+        for (int32_t i = 0; i < 2048; i++)
+        {
+            if (i & 1)
+            {
+                RTCRestInt32 toCopy(i);
+                if (i & 2)
+                    RTTESTI_CHECK_RC(Arr4.insertCopy(0, toCopy), VINF_SUCCESS);
+                else
+                    RTTESTI_CHECK_RC(Arr4.prependCopy(toCopy), VINF_SUCCESS);
+            }
+            else
+            {
+                RTCRestInt32 *pDirect = new RTCRestInt32(i);
+                if (i & 2)
+                    RTTESTI_CHECK_RC(Arr4.insert(0, pDirect), VINF_SUCCESS);
+                else
+                    RTTESTI_CHECK_RC(Arr4.prepend(pDirect), VINF_SUCCESS);
+            }
+            RTTESTI_CHECK(Arr4.size() == i + 1);
+            RTTESTI_CHECK(Arr4.isEmpty() == false);
+        }
+
+        for (int32_t i = 0, iValue = (int32_t)Arr4.size() - 1; i < (ssize_t)Arr4.size(); i++, iValue--)
+            RTTESTI_CHECK_MSG(Arr4.at(i)->m_iValue == iValue, ("%RI32: %RI32 vs %RI32\n", i, Arr4.at(i)->m_iValue, iValue));
+
+        for (int32_t i = 0; i < 512; i++)
+            RTTESTI_CHECK_RC(Arr4.removeAt(0), VINF_SUCCESS);
+        RTTESTI_CHECK(Arr4.size() == 1536);
+
+        for (int32_t i = 0; i < 512; i++)
+            RTTESTI_CHECK_RC(Arr4.removeAt(~(size_t)0), VINF_SUCCESS);
+        RTTESTI_CHECK(Arr4.size() == 1024);
+
+        for (int32_t i = 0, iValue = 1535; i < (ssize_t)Arr4.size(); i++, iValue--)
+            RTTESTI_CHECK_MSG(Arr4.at(i)->m_iValue == iValue, ("%RI32: %RI32 vs %RI32\n", i, Arr4.at(i)->m_iValue, iValue));
     }
 }
 

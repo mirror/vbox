@@ -286,8 +286,6 @@ bool RTCRestArrayBase::removeAt(size_t a_idx)
         m_cElements--;
         if (a_idx < m_cElements)
             memmove(&m_papElements[a_idx], &m_papElements[a_idx + 1], (m_cElements - a_idx) * sizeof(m_papElements[0]));
-
-        m_cElements--;
     }
     return false;
 }
