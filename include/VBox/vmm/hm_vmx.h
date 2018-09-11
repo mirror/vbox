@@ -2240,6 +2240,32 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
  */
 #define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
 #define VMX_EXIT_REASON_HAS_ENTRY_FAILED(a)                     (((a) >> 31) & 1)
+
+/** Bit fields for VM-exit reason. */
+/** The exit reason. */
+#define VMX_BF_EXIT_REASON_BASIC_SHIFT                          0
+#define VMX_BF_EXIT_REASON_BASIC_MASK                           UINT32_C(0x0000ffff)
+/** Bits 16:26 are reseved and MBZ. */
+#define VMX_BF_EXIT_REASON_RSVD_16_26_SHIFT                     16
+#define VMX_BF_EXIT_REASON_RSVD_16_26_MASK                      UINT32_C(0x07ff0000)
+/** Whether the VM-exit was incident to enclave mode. */
+#define VMX_BF_EXIT_REASON_ENCLAVE_MODE_SHIFT                   27
+#define VMX_BF_EXIT_REASON_ENCLAVE_MODE_MASK                    UINT32_C(0x08000000)
+/** Pending MTF (Monitor Trap Flag) VM-exit. */
+#define VMX_BF_EXIT_REASON_PENDING_MTF_SHIFT                    28
+#define VMX_BF_EXIT_REASON_PENDING_MTF_MASK                     UINT32_C(0x10000000)
+/** VM-exit from VMX root operation (only possible with SMM). */
+#define VMX_BF_EXIT_REASON_VMX_ROOT_MODE_SHIFT                  29
+#define VMX_BF_EXIT_REASON_VMX_ROOT_MODE_MASK                   UINT32_C(0x20000000)
+/** Bit 30 is reserved and MBZ. */
+#define VMX_BF_EXIT_REASON_RSVD_30_SHIFT                        30
+#define VMX_BF_EXIT_REASON_RSVD_30_MASK                         UINT32_C(0x40000000)
+/** Whether VM-entry failed (currently only happens during loading guest-state
+ *  or MSRs or machine check exceptions). */
+#define VMX_BF_EXIT_REASON_ENTRY_FAILED_SHIFT                   31
+#define VMX_BF_EXIT_REASON_ENTRY_FAILED_MASK                    UINT32_C(0x80000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_REASON_, UINT32_C(0), UINT32_MAX,
+                            (BASIC, RSVD_16_26, ENCLAVE_MODE, PENDING_MTF, VMX_ROOT_MODE, RSVD_30, ENTRY_FAILED));
 /** @} */
 
 
@@ -2271,14 +2297,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                 ((a) & ~RT_BIT(12))
 
 /** Bit fields for VM-entry interruption information. */
+/** The VM-entry interruption vector. */
 #define VMX_BF_ENTRY_INT_INFO_VECTOR_SHIFT                       0
 #define VMX_BF_ENTRY_INT_INFO_VECTOR_MASK                        UINT32_C(0x000000ff)
+/** The VM-entry interruption type (see VMX_ENTRY_INT_INFO_TYPE_XXX). */
 #define VMX_BF_ENTRY_INT_INFO_TYPE_SHIFT                         8
 #define VMX_BF_ENTRY_INT_INFO_TYPE_MASK                          UINT32_C(0x00000700)
+/** Whether this event has an error code.   */
 #define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_SHIFT               11
 #define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_MASK                UINT32_C(0x00000800)
+/** Bits 12:30 are reserved and MBZ. */
 #define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_SHIFT                   12
 #define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_MASK                    UINT32_C(0x7ffff000)
+/** Whether this VM-entry interruption info is valid.  */
 #define VMX_BF_ENTRY_INT_INFO_VALID_SHIFT                        31
 #define VMX_BF_ENTRY_INT_INFO_VALID_MASK                         UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
@@ -2323,16 +2354,22 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_INT_INFO_IS_VALID(a)                           (((a) >> 31) & 1)
 
 /** Bit fields for VM-exit interruption infomration. */
+/** The VM-exit interruption vector. */
 #define VMX_BF_EXIT_INT_INFO_VECTOR_SHIFT                       0
 #define VMX_BF_EXIT_INT_INFO_VECTOR_MASK                        UINT32_C(0x000000ff)
+/** The VM-exit interruption type (see VMX_EXIT_INT_INFO_TYPE_XXX). */
 #define VMX_BF_EXIT_INT_INFO_TYPE_SHIFT                         8
 #define VMX_BF_EXIT_INT_INFO_TYPE_MASK                          UINT32_C(0x00000700)
+/** Whether this event has an error code. */
 #define VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID_SHIFT               11
 #define VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID_MASK                UINT32_C(0x00000800)
+/** Whether NMI-unblocking due to IRET is active. */
 #define VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET_SHIFT             12
 #define VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET_MASK              UINT32_C(0x00001000)
+/** Bits 13:30 is reserved (MBZ). */
 #define VMX_BF_EXIT_INT_INFO_RSVD_13_30_SHIFT                   13
 #define VMX_BF_EXIT_INT_INFO_RSVD_13_30_MASK                    UINT32_C(0x7fffe000)
+/** Whether this VM-exit interruption info is valid. */
 #define VMX_BF_EXIT_INT_INFO_VALID_SHIFT                        31
 #define VMX_BF_EXIT_INT_INFO_VALID_MASK                         UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_INT_INFO_, UINT32_C(0), UINT32_MAX,
@@ -2389,16 +2426,22 @@ typedef uint8_t VMXINSTRID;
 #define VMX_IDT_VECTORING_INFO_IS_VALID(a)                      (((a) >> 31) & 1)
 
 /** Bit fields for IDT-vectoring information. */
+/** The IDT-vectoring info vector. */
 #define VMX_BF_IDT_VECTORING_INFO_VECTOR_SHIFT                  0
 #define VMX_BF_IDT_VECTORING_INFO_VECTOR_MASK                   UINT32_C(0x000000ff)
+/** The IDT-vectoring info type (see VMX_IDT_VECTORING_INFO_TYPE_XXX). */
 #define VMX_BF_IDT_VECTORING_INFO_TYPE_SHIFT                    8
 #define VMX_BF_IDT_VECTORING_INFO_TYPE_MASK                     UINT32_C(0x00000700)
+/** Whether the event has an error code. */
 #define VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID_SHIFT          11
 #define VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID_MASK           UINT32_C(0x00000800)
+/** Bit 12 is undefined. */
 #define VMX_BF_IDT_VECTORING_INFO_UNDEF_12_SHIFT                12
 #define VMX_BF_IDT_VECTORING_INFO_UNDEF_12_MASK                 UINT32_C(0x00001000)
+/** Bits 13:30 is reserved (MBZ). */
 #define VMX_BF_IDT_VECTORING_INFO_RSVD_13_30_SHIFT              13
 #define VMX_BF_IDT_VECTORING_INFO_RSVD_13_30_MASK               UINT32_C(0x7fffe000)
+/** Whether this IDT-vectoring info is valid. */
 #define VMX_BF_IDT_VECTORING_INFO_VALID_SHIFT                   31
 #define VMX_BF_IDT_VECTORING_INFO_VALID_MASK                    UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_IDT_VECTORING_INFO_, UINT32_C(0), UINT32_MAX,
