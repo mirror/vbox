@@ -3978,7 +3978,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     { /* likely */ }
     else
     {
-        /* VMExit. */
+        /** @todo NSTVMX: VMExit with VMX_EXIT_ERR_INVALID_GUEST_STATE and set
+         *        VMX_BF_EXIT_REASON_ENTRY_FAILED. */
         return VINF_SUCCESS;
     }
 
