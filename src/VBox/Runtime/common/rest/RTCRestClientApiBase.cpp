@@ -53,7 +53,18 @@ RTCRestClientApiBase::~RTCRestClientApiBase()
 int RTCRestClientApiBase::reinitHttpInstance()
 {
     if (m_hHttp != NIL_RTHTTP)
+    {
+#if 0
+        /*
+         * XXX: disable for now as it causes the RTHTTP handle state
+         * and curl state to get out of sync.
+         */
         return RTHttpReset(m_hHttp);
+#else
+        RTHttpDestroy(m_hHttp);
+        m_hHttp = NIL_RTHTTP;
+#endif
+    }
 
     int rc = RTHttpCreate(&m_hHttp);
     if (RT_FAILURE(rc))
