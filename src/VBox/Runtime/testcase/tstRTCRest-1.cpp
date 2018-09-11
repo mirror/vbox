@@ -1973,8 +1973,9 @@ int main()
         testDouble();
         testString("dummy", 1, 2);
         testDate();
-        //testArray();
+        testArray();
         testStringMap();
+        /** @todo test request & response base classes too.   */
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
     }
