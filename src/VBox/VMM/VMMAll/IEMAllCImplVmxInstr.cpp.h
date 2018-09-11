@@ -2870,10 +2870,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
     /* RFLAGS (bits 63:22 (or 31:22), bits 15, 5, 3 are reserved, bit 1 MB1). */
     uint64_t const uGuestRFlags = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode ? pVmcs->u64GuestRFlags.u
                                 : pVmcs->u64GuestRFlags.s.Lo;
-    uint64_t const fMbzMask = ~X86_EFL_LIVE_MASK;
-    uint64_t const fMb1Mask =  X86_EFL_RA1_MASK;
-    if (   !(uGuestRFlags & fMbzMask)
-        &&  (uGuestRFlags & fMb1Mask) == fMb1Mask)
+    if (   !(uGuestRFlags & ~(X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK))
+        &&  (uGuestRFlags &  X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK)
     { /* likely */ }
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsRsvd);
