@@ -708,7 +708,7 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
 
 
 /**
- * Gets a segment register from the VMCS given its index.
+ * Gets a guest segment register from the VMCS given its index.
  *
  * @returns VBox status code.
  * @param   pVmcs       Pointer to the virtual VMCS.
@@ -2064,7 +2064,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegBase(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegBaseEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegBaseFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegBaseGs;
-        default:          return kVmxVDiag_Vmentry_GuestSegBaseSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegBaseSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2084,9 +2085,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegBaseV86(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegBaseV86Es;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegBaseV86Fs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegBaseV86Gs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegBaseV86Ss;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegBaseV86Ss;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2106,9 +2106,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegLimitV86(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegLimitV86Es;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegLimitV86Fs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegLimitV86Gs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegLimitV86Ss;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegLimitV86Ss;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2128,9 +2127,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrV86(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrV86Es;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrV86Fs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrV86Gs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrV86Ss;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrV86Ss;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2150,9 +2148,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrRsvd(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrRsvdEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrRsvdFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrRsvdGs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrRsvdSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrRsvdSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2172,9 +2169,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrDescType(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeGs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrDescTypeSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2194,9 +2190,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrPresent(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrPresentEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrPresentFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrPresentGs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrPresentSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrPresentSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2216,9 +2211,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrGran(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrGranEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrGranFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrGranGs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrGranSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrGranSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2237,9 +2231,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrDplRpl(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrDplRplEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrDplRplFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrDplRplGs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrDplRplSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrDplRplSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2259,9 +2252,28 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrTypeAcc(unsigned iSegReg)
         case X86_SREG_ES: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccEs;
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccGs;
-        default:
-            Assert(iSegReg == X86_SREG_SS);
-            return kVmxVDiag_Vmentry_GuestSegAttrTypeAccSs;
+        case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccSs;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+    }
+}
+
+
+/**
+ * Gets the instruction diagnostic for CR3 referenced PDPTE reserved bits failure
+ * during VM-entry of a nested-guest.
+ *
+ * @param   iSegReg     The PDPTE entry index.
+ */
+IEM_STATIC VMXVDIAG iemVmxGetDiagVmentryPdpteRsvd(unsigned iPdpte)
+{
+    Assert(iPdpte < X86_PG_PAE_PDPE_ENTRIES);
+    switch (iPdpte)
+    {
+        case 0: return kVmxVDiag_Vmentry_GuestPdpte0Rsvd;
+        case 1: return kVmxVDiag_Vmentry_GuestPdpte1Rsvd;
+        case 2: return kVmxVDiag_Vmentry_GuestPdpte2Rsvd;
+        case 3: return kVmxVDiag_Vmentry_GuestPdpte3Rsvd;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
     }
 }
 
@@ -2871,7 +2883,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
     uint64_t const uGuestRFlags = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode ? pVmcs->u64GuestRFlags.u
                                 : pVmcs->u64GuestRFlags.s.Lo;
     if (   !(uGuestRFlags & ~(X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK))
-        &&  (uGuestRFlags &  X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK)
+        &&  (uGuestRFlags & X86_EFL_RA1_MASK) == X86_EFL_RA1_MASK)
     { /* likely */ }
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsRsvd);
@@ -3127,6 +3139,87 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
 
 
 /**
+ * Checks if the PDPTEs referenced by the nested-guest CR3 are valid as part of
+ * VM-entry.
+ *
+ * @returns @c true if all PDPTEs are valid, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ * @param   pVmcs       Pointer to the virtual VMCS.
+ */
+IEM_STATIC int iemVmxVmentryCheckGuestPdptesForCr3(PVMCPU pVCpu, const char *pszInstr, PVMXVVMCS pVmcs)
+{
+    /*
+     * Check PDPTEs.
+     * See Intel spec. 4.4.1 "PDPTE Registers".
+     */
+    uint64_t const uGuestCr3 = pVmcs->u64GuestCr3.u & X86_CR3_PAE_PAGE_MASK;
+    const char *const pszFailure = "VM-exit";
+
+    X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uGuestCr3, sizeof(aPdptes));
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned iPdpte = 0; iPdpte < RT_ELEMENTS(aPdptes); iPdpte++)
+        {
+            if (   !(aPdptes[iPdpte].u & X86_PDPE_P)
+                || !(aPdptes[iPdpte].u & X86_PDPE_PAE_MBZ_MASK))
+            { /* likely */ }
+            else
+            {
+                pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_PDPTE;
+                VMXVDIAG const enmDiag = iemVmxGetDiagVmentryPdpteRsvd(iPdpte);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
+            }
+        }
+    }
+    else
+    {
+        pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_PDPTE;
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpteCr3ReadPhys);
+    }
+
+    NOREF(pszFailure);
+    return rc;
+}
+
+
+/**
+ * Checks guest PDPTEs as part of VM-entry.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPU pVCpu, const char *pszInstr)
+{
+    /*
+     * Guest PDPTEs.
+     * See Intel spec. 26.3.1.5 "Checks on Guest Page-Directory-Pointer-Table Entries".
+     */
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+
+    /* Check PDPTes if the VM-entry is to a guest using PAE paging. */
+    int rc;
+    if (   !fGstInLongMode
+        && (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
+        && (pVmcs->u64GuestCr0.u & X86_CR0_PG))
+    {
+        /*
+         * We don't support nested-paging for nested-guests yet.
+         *
+         * Without nested-paging for nested-guests, PDPTEs in the VMCS are not used,
+         * rather we need to check the PDPTEs referenced by the guest CR3.
+         */
+        rc = iemVmxVmentryCheckGuestPdptesForCr3(pVCpu, pszInstr, pVmcs);
+    }
+    else
+        rc = VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
  * Checks guest-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -3160,6 +3253,12 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
         return rc;
 
     rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rc;
+
+    rc = iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
     if (rc == VINF_SUCCESS)
     { /* likely */ }
     else
