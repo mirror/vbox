@@ -29,6 +29,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/cpp/restbase.h>
+#include <iprt/cpp/restarray.h>
+#include <iprt/cpp/reststringmap.h>
 
 #include <iprt/err.h>
 #include <iprt/message.h>
@@ -1460,7 +1462,70 @@ void testDate()
         obj4.setNull();
         RTTESTI_CHECK_RC(fromString(&obj4, "10 Sep 118 11:58:07", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
         CHECK_DATE_FMT(obj4, false, true, iRecentSec, "10 Sep 118 11:58:07", false, RTCRestDate::kFormat_Rfc2822);
+    }
+}
 
+static void testArray()
+{
+    RTTestSub(g_hTest, "RTCRestArray");
+
+    {
+        RTCRestArray<RTCRestBool> obj1;
+        RTTESTI_CHECK(obj1.size() == 0);
+        RTTESTI_CHECK(obj1.isNull() == false);
+        RTTESTI_CHECK(strcmp(obj1.typeName(), "RTCRestArray<ElementType>") == 0);
+        RTTESTI_CHECK(obj1.typeClass() == RTCRestObjectBase::kTypeClass_Array);
+    }
+
+    {
+        /* Insert a range of numbers into a int64 array. */
+        RTCRestArray<RTCRestInt64> Arr2;
+        for (int64_t i = 0; i < _64K; i++)
+        {
+            if (i & 1)
+            {
+                RTCRestInt64 toCopy(i);
+                if (i & 2)
+                    RTTESTI_CHECK_RC(Arr2.insertCopy(i, toCopy), VINF_SUCCESS);
+                else
+                    RTTESTI_CHECK_RC(Arr2.appendCopy(toCopy), VINF_SUCCESS);
+            }
+            else
+            {
+                RTCRestInt64 *pDirect = new RTCRestInt64(i);
+                if (i & 2)
+                    RTTESTI_CHECK_RC(Arr2.insert(i, pDirect), VINF_SUCCESS);
+                else
+                    RTTESTI_CHECK_RC(Arr2.append(pDirect), VINF_SUCCESS);
+            }
+        }
+
+        /* verify: */
+        RTCRestArray<RTCRestInt64> const *pConstArr2 = &Arr2;
+        for (int64_t i = 0; i < _64K; i++)
+        {
+            RTCRestInt64 *pCur = Arr2.at(i);
+            RTTESTI_CHECK(pCur->m_iValue == i);
+
+            RTCRestInt64 const *pCur2 = pConstArr2->at(i);
+            RTTESTI_CHECK(pCur2->m_iValue == i);
+        }
+        RTTESTI_CHECK(Arr2.first()->m_iValue == 0);
+        RTTESTI_CHECK(Arr2.last()->m_iValue == _64K - 1);
+        RTTESTI_CHECK(pConstArr2->first()->m_iValue == 0);
+        RTTESTI_CHECK(pConstArr2->last()->m_iValue == _64K - 1);
+
+        /* Remove every 3rd element. */
+        for (int64_t i = _64K - 1; i > 0; i -= 3)
+            RTTESTI_CHECK_RC(Arr2.removeAt(i), VINF_SUCCESS);
+#if 0
+        for (int64_t i = 0, iValue = 0; i < (ssize_t)Arr2.size(); i++, iValue++)
+        {
+            if ((iValue % 3) == 0)
+                iValue++;
+            RTTESTI_CHECK_MSG(Arr2.at(i)->m_iValue == iValue, ("%RI64: %RI64 vs %RI64", i, Arr2.at(i)->m_iValue, iValue));
+        }
+#endif
     }
 }
 
@@ -1477,6 +1542,7 @@ int main()
         testDouble();
         testString("dummy", 1, 2);
         testDate();
+        testArray();
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
     }
