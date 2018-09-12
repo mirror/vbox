@@ -28,12 +28,14 @@ endif
 #
 # Include sub-makefile(s).
 #
-ifdef VBOX_WITH_WEBSERVICES
- include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
+ifndef VBOX_ONLY_EXTPACKS
+ ifdef VBOX_WITH_WEBSERVICES
+  include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
+ endif
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
 endif
-include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
-include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
 
 
 #
@@ -245,7 +247,7 @@ VBox-main-xidl_INST = $(INST_SDK)bindings/
 VBox-main-xidl_MODE = a+r,u+w
 VBox-main-xidl_SOURCES = $(VBOX_XIDL_FILE_SRC)
 
-ifdef VBOX_WITH_PYTHON
+if defined(VBOX_WITH_PYTHON) && !defined(VBOX_ONLY_EXTPACKS)
  INSTALLS += VBox-python-glue
  VBox-python-glue_INST = $(INST_SDK)installer/vboxapi/
  VBox-python-glue_MODE = a+r,u+w
@@ -263,9 +265,9 @@ ifdef VBOX_WITH_PYTHON
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,Python constants,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl $(VBOX_XIDL_FILE)
-endif # VBOX_WITH_PYTHON
+endif # VBOX_WITH_PYTHON && !VBOX_ONLY_EXTPACKS
 
-ifndef VBOX_ONLY_SDK # Note this goes on for *very* long
+if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on for *very* long
 
 #
 # Generate SchemaDefs.h and SchemaDefs.cpp from XML Schema
@@ -607,7 +609,7 @@ endif
 
 $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSVC) # Sets VBoxSVC_0_OUTDIR
 
-ifdef VBOX_WITH_MAIN_USB_ID_DATABASE  # Generate a database of USB vendor IDs and device IDs.
+ifdef VBOX_WITH_MAIN_USB_ID_DATABASE # Generate a database of USB vendor IDs and device IDs.
  VBoxSVC_DEFS    += VBOX_WITH_MAIN_USB_ID_DATABASE
  VBoxSVC_SOURCES += $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp
  VBoxSVC_CLEAN   += $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp
@@ -703,9 +705,9 @@ ifdef VBOX_WITH_XPCOM
 DLLS += VBoxSVCM
 VBoxSVCM_TEMPLATE       = VBOXMAINCOMP
 VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
-ifdef VBOX_WITH_HARDENING
- VBoxSVCM_DEFS         += VBOX_WITH_HARDENING
-endif
+ ifdef VBOX_WITH_HARDENING
+VBoxSVCM_DEFS         += VBOX_WITH_HARDENING
+ endif
 VBoxSVCM_INCS           = \
 	include \
 	$(VBoxC_0_OUTDIR) \
@@ -884,7 +886,7 @@ VBoxC_SOURCES += \
 	src-all/SecretKeyStore.cpp \
 	src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
-        src-all/ThreadTask.cpp \
+	src-all/ThreadTask.cpp \
 	src-all/VirtualBoxBase.cpp \
 	src-all/VirtualBoxErrorInfoImpl.cpp \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
@@ -1063,6 +1065,37 @@ endif
 		$(VBOX_XIDL_FILE)
 endif
 
+#
+# The VBoxExtPackHelperApp.
+#
+ifdef VBOX_WITH_EXTPACK
+ PROGRAMS += VBoxExtPackHelperApp
+ VBoxExtPackHelperApp_TEMPLATE = VBoxR3SetUidToRoot
+ VBoxExtPackHelperApp_LDFLAGS.darwin = -framework Security
+ VBoxExtPackHelperApp_LDFLAGS.win = /SUBSYSTEM:windows
+ VBoxExtPackHelperApp_SOURCES = \
+	src-helper-apps/VBoxExtPackHelperApp.cpp \
+	src-all/ExtPackUtil.cpp
+ VBoxExtPackHelperApp_SOURCES.win = \
+	src-helper-apps/VBoxExtPackHelperApp.rc
+ VBoxExtPackHelperApp_LIBS = \
+	$(LIB_RUNTIME)
+endif # VBOX_WITH_EXTPACK
+
+#
+# VolInfo
+#
+ifdef VBOX_WITH_DEVMAPPER
+ PROGRAMS.linux      += VBoxVolInfo
+ VBoxVolInfo_TEMPLATE = VBoxR3SetUidToRoot
+ VBoxVolInfo_SOURCES  = src-helper-apps/VBoxVolInfo.cpp
+ VBoxVolInfo_LIBS     = devmapper
+endif
+
+
+endif # !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) (the ifndef is far above)
+ifndef VBOX_ONLY_SDK
+
 
 #
 # VBoxCOM - COM Abstraction Layer library
@@ -1114,7 +1147,7 @@ endif # !win
 glue/VBoxLogRelCreate.cpp_DEFS = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
 
 # 32-bit version of VBoxCOM.
-ifdef VBOX_WITH_32_ON_64_MAIN_API
+if defined(VBOX_WITH_32_ON_64_MAIN_API) && !defined(VBOX_ONLY_EXTPACKS)
  LIBRARIES += VBoxCOM-x86
  VBoxCOM-x86_TEMPLATE = VBoxMainLib-x86
  VBoxCOM-x86_EXTENDS  = VBoxCOM
@@ -1130,42 +1163,15 @@ endif
 
 # -MD version for the GUI in -MDd builds.
 ifeq ($(KBUILD_TARGET).$(VBOX_VCC_CRT_TYPE),win.d)
- LIBRARIES += VBoxCOM-GUI
- USES += qt5
- VBoxCOM-GUI_TEMPLATE = VBOXQTGUI$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
- VBoxCOM-GUI_EXTENDS  = VBoxCOM
+ ifndef VBOX_ONLY_EXTPACKS
+  LIBRARIES += VBoxCOM-GUI
+  USES += qt5
+  VBoxCOM-GUI_TEMPLATE = VBOXQTGUI$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
+  VBoxCOM-GUI_EXTENDS  = VBoxCOM
+ endif
 endif
 
-
-
-#
-# The VBoxExtPackHelperApp.
-#
-ifdef VBOX_WITH_EXTPACK
- PROGRAMS += VBoxExtPackHelperApp
- VBoxExtPackHelperApp_TEMPLATE = VBoxR3SetUidToRoot
- VBoxExtPackHelperApp_LDFLAGS.darwin = -framework Security
- VBoxExtPackHelperApp_LDFLAGS.win = /SUBSYSTEM:windows
- VBoxExtPackHelperApp_SOURCES = \
-	src-helper-apps/VBoxExtPackHelperApp.cpp \
-	src-all/ExtPackUtil.cpp
- VBoxExtPackHelperApp_SOURCES.win = \
-	src-helper-apps/VBoxExtPackHelperApp.rc
- VBoxExtPackHelperApp_LIBS = \
-	$(LIB_RUNTIME)
-endif # VBOX_WITH_EXTPACK
-
-#
-# VolInfo
-#
-ifdef VBOX_WITH_DEVMAPPER
- PROGRAMS.linux      += VBoxVolInfo
- VBoxVolInfo_TEMPLATE = VBoxR3SetUidToRoot
- VBoxVolInfo_SOURCES  = src-helper-apps/VBoxVolInfo.cpp
- VBoxVolInfo_LIBS     = devmapper
-endif
-
-endif # !VBOX_ONLY_SDK (the ifndef is far above)
+endif # !VBOX_ONLY_SDK
 
 
 #
@@ -1177,7 +1183,7 @@ VBoxMain-com-inst_MODE = a+r,u+w
 VBoxMain-com-inst_SOURCES = src-all/win/comregister.cmd
 
 
-if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux"
+if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux" && !defined(VBOX_ONLY_EXTPACKS)
  #
  # Installs linux/hardening related things to components.
  #
@@ -1192,7 +1198,7 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux"
 endif
 
 
-if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
+if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS)
  #
  # Experimental COM proxy + stub DLL w/ automatic registration updating.
  #
