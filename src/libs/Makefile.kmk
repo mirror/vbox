@@ -72,7 +72,6 @@ endif
 # Main related things - XPCOM and XSLT.
 if defined(VBOX_WITH_MAIN) \
  && !defined(VBOX_ONLY_ADDITIONS) \
- && !defined(VBOX_ONLY_EXTPACKS) \
  && !defined(VBOX_ONLY_VALIDATIONKIT)
 
  if defined(VBOX_WITH_XPCOM) && !defined(VBOX_ONLY_DOCS)
@@ -80,13 +79,13 @@ if defined(VBOX_WITH_MAIN) \
  endif
 
  # VPX for video capture.
- if defined(VBOX_WITH_LIBVPX) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) \
+ if defined(VBOX_WITH_LIBVPX) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
    && ("$(SDK_VBOX_VPX_INCS)" == "$(SDK_VBOX_VPX_DEFAULT_INCS)")
   include $(PATH_SUB_CURRENT)/libvpx-1.6.1/Makefile.kmk
  endif
 
  # Opus for supporting audio when doing video capturing.
- if defined(VBOX_WITH_LIBOPUS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) \
+ if defined(VBOX_WITH_LIBOPUS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
    && ("$(SDK_VBOX_OPUS_INCS)" == "$(SDK_VBOX_OPUS_DEFAULT_INCS)")
   include $(PATH_SUB_CURRENT)/libopus-1.2.1/Makefile.kmk
  endif

@@ -71,7 +71,7 @@ BLDDIRS  += \
 # We build several libraries so that any linker command line
 # length restrictions limit will be avoided. (Solaris, Mac?)
 #
-ifndef VBOX_ONLY_SDK
+if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACK)
 
 VBOX_XPCOM_LIBRARIES := \
 	VBox-xpcom-nspr \
@@ -132,7 +132,7 @@ PROGRAMS += \
  endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
 
-endif # !VBOX_ONLY_SDK
+endif # !VBOX_ONLY_SDK && !VBOX_ONLY_EXTPACK
 
 
 
