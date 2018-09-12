@@ -24,6 +24,7 @@
 # include <QResizeEvent>
 # include <QStandardPaths>
 # include <QStatusBar>
+# include <QStyle>
 # include <QToolButton>
 # include <QTimer>
 
