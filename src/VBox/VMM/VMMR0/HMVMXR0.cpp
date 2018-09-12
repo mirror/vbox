@@ -12652,8 +12652,11 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             else
                 GCPtrFaultAddress = 0;
 
+            rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+            AssertRCReturn(rc, rc);
+
             hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
-                                   0 /* cbInstr */, uErrCode, GCPtrFaultAddress);
+                                   pVmxTransient->cbInstr, uErrCode, GCPtrFaultAddress);
 
             Log4Func(("Pending event. uIntType=%#x uVector=%#x\n", uIntType, uVector));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);

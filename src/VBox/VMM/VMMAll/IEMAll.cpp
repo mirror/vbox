@@ -4833,7 +4833,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
         }
 
         /* Do the actual task switch. */
-        return iemTaskSwitch(pVCpu, IEMTASKSWITCH_INT_XCPT, pVCpu->cpum.GstCtx.eip, fFlags, uErr, uCr2, SelTSS, &DescTSS);
+        return iemTaskSwitch(pVCpu, IEMTASKSWITCH_INT_XCPT, (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pVCpu->cpum.GstCtx.eip + cbInstr : pVCpu->cpum.GstCtx.eip, fFlags, uErr, uCr2, SelTSS, &DescTSS);
     }
 
     /* A null CS is bad. */
