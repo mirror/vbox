@@ -37,7 +37,7 @@ public:
     HRESULT init(VirtualBox *aParent);
     void uninit();
 
-#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
+#if defined(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK) && defined(VBOX_WITH_EXTPACK)
     // Safe helpers, take care of caller and lock themselves.
     void i_refreshProviders();
 #endif
