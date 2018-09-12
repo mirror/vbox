@@ -286,8 +286,8 @@ private:
 
 /* Some xHelpers convenience defines. */
 #define gX11 xHelpers::getInstance()
-#define xAtom(xa) gX11->xAtom((xa))
-#define xAtomToString(xa) gX11->xAtomToString((xa))
+#define xAtom(xa) xHelpers::getInstance()->xAtom((xa))
+#define xAtomToString(xa) xHelpers::getInstance()->xAtomToString((xa))
 
 /*******************************************************************************
  *
