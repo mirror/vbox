@@ -189,6 +189,17 @@ VMM_INT_DECL(int) EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx)
 }
 
 
+/**
+ * Clears any address-range monitoring that is active.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ */
+VMM_INT_DECL(void) EMMonitorWaitClear(PVMCPU pVCpu)
+{
+    LogFlowFunc(("Clearing MWAIT\n"));
+    pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+}
+
 
 /**
  * Determine if we should continue execution in HM after encountering an mwait
