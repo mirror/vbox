@@ -263,6 +263,8 @@ int RTCRestBinaryParameter::assignCopy(RTCRestBinaryParameter const &a_rThat)
     if (RT_SUCCESS(rc))
         rc = m_strContentType.assignNoThrow(a_rThat.m_strContentType);
     m_cbContentLength = a_rThat.m_cbContentLength;
+    m_pfnProducer = a_rThat.m_pfnProducer;
+    m_pvCallbackData = a_rThat.m_pvCallbackData;
     return VINF_SUCCESS;
 }
 
