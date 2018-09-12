@@ -235,11 +235,11 @@ int DragAndDropService::clientConnect(uint32_t u32ClientID, void *pvClient)
         if (RT_SUCCESS(rc))
         {
             /*
-             * Clear the message queue as soon as a new clients connect
+             * Reset the message queue as soon as a new clients connect
              * to ensure that every client has the same state.
              */
             if (m_pManager)
-                m_pManager->clear();
+                m_pManager->Reset();
         }
     }
 
@@ -428,7 +428,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 LogFlowFunc(("GUEST_DND_GET_NEXT_HOST_MSG\n"));
                 if (cParms == 3)
                 {
-                    rc = m_pManager->nextMessageInfo(&paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
+                    rc = m_pManager->GetNextMsgInfo(&paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
                     if (RT_FAILURE(rc)) /* No queued messages available? */
                     {
                         if (m_SvcCtx.pfnHostCallback) /* Try asking the host. */
@@ -448,7 +448,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             rc = VERR_NOT_SUPPORTED;
 
                         if (RT_FAILURE(rc))
-                            rc = m_pManager->nextMessage(u32Function, cParms, paParms);
+                            rc = m_pManager->GetNextMsg(u32Function, cParms, paParms);
 
                         /* Some error occurred or no (new) messages available? */
                         if (RT_FAILURE(rc))
@@ -974,7 +974,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             default:
             {
                 /* All other messages are handled by the DnD manager. */
-                rc = m_pManager->nextMessage(u32Function, cParms, paParms);
+                rc = m_pManager->GetNextMsg(u32Function, cParms, paParms);
                 if (rc == VERR_NO_DATA) /* Manager has no new messsages? Try asking the host. */
                 {
                     if (m_SvcCtx.pfnHostCallback)
@@ -1071,8 +1071,8 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
             case HOST_DND_HG_EVT_ENTER:
             {
-                /* Clear the message queue as a new DnD operation just began. */
-                m_pManager->clear();
+                /* Reset the message queue as a new DnD operation just began. */
+                m_pManager->Reset();
 
                 fSendToGuest = true;
                 rc = VINF_SUCCESS;
@@ -1083,8 +1083,8 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             {
                 LogFlowFunc(("Cancelling all waiting clients ...\n"));
 
-                /* Clear the message queue as the host cancelled the whole operation. */
-                m_pManager->clear();
+                /* Reset the message queue as the host cancelled the whole operation. */
+                m_pManager->Reset();
 
                 /*
                  * Wake up all deferred clients and tell them to process
@@ -1143,7 +1143,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 break;
             }
 
-            rc = m_pManager->addMessage(u32Function, cParms, paParms, true /* fAppend */);
+            rc = m_pManager->AddMsg(u32Function, cParms, paParms, true /* fAppend */);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("Adding new message of type=%RU32 failed with rc=%Rrc\n", u32Function, rc));
@@ -1173,7 +1173,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
             uint32_t uMsgNext   = 0;
             uint32_t cParmsNext = 0;
-            int rcNext = m_pManager->nextMessageInfo(&uMsgNext, &cParmsNext);
+            int rcNext = m_pManager->GetNextMsgInfo(&uMsgNext, &cParmsNext);
 
             LogFlowFunc(("uMsgClient=%RU32, uMsgNext=%RU32, cParmsNext=%RU32, rcNext=%Rrc\n",
                          uMsgClient, uMsgNext, cParmsNext, rcNext));
@@ -1193,7 +1193,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                  */
                 else if (uMsgClient == uMsgNext)
                 {
-                    rc = m_pManager->nextMessage(u32Function, cParms, paParms);
+                    rc = m_pManager->GetNextMsg(u32Function, cParms, paParms);
 
                     /* Note: Report the current rc back to the guest. */
                     pClient->CompleteDeferred(rc);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,21 +38,44 @@
 *   DnDManager                                                                                                                   *
 *********************************************************************************************************************************/
 
-int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fAppend /* = true */)
+/**
+ * Adds a DnD message to the manager's queue.
+ *
+ * @returns IPRT status code.
+ * @param   pMsg                Pointer to DnD message to add. The queue then owns the pointer.
+ * @param   fAppend             Whether to append or prepend the message to the queue.
+ */
+int DnDManager::AddMsg(DnDMessage *pMsg, bool fAppend /* = true */)
+{
+    AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("uMsg=%RU32, cParms=%RU32, fAppend=%RTbool\n", pMsg->GetType(), pMsg->GetParamCount(), fAppend));
+
+    if (fAppend)
+        m_queueMsg.append(pMsg);
+    else
+        m_queueMsg.prepend(pMsg);
+
+    /** @todo Catch / handle OOM? */
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Adds a DnD message to the manager's queue.
+ *
+ * @returns IPRT status code.
+ * @param   pMsg                Pointer to DnD message to add. The queue then owns the pointer.
+ * @param   fAppend             Whether to append or prepend the message to the queue.
+ */
+int DnDManager::AddMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fAppend /* = true */)
 {
     int rc;
 
     try
     {
-        LogFlowFunc(("uMsg=%RU32, cParms=%RU32, fAppend=%RTbool\n", uMsg, cParms, fAppend));
-
-        DnDMessage *pMessage = new DnDGenericMessage(uMsg, cParms, paParms);
-        if (fAppend)
-            m_dndMessageQueue.append(pMessage);
-        else
-            m_dndMessageQueue.prepend(pMessage);
-
-        rc = VINF_SUCCESS;
+        DnDMessage *pMsg = new DnDGenericMessage(uMsg, cParms, paParms);
+        rc = AddMsg(pMsg, fAppend);
     }
     catch(std::bad_alloc &)
     {
@@ -63,60 +86,64 @@ int DnDManager::addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPar
     return rc;
 }
 
-HGCM::Message* DnDManager::nextHGCMMessage(void)
+/**
+ * Retrieves information about the next message in the queue.
+ *
+ * @returns IPRT status code. VERR_NO_DATA if no next message is available.
+ * @param   puType              Where to store the message type.
+ * @param   pcParms             Where to store the message parameter count.
+ */
+int DnDManager::GetNextMsgInfo(uint32_t *puType, uint32_t *pcParms)
 {
-    if (m_pCurMsg)
-        return m_pCurMsg->nextHGCMMessage();
-
-    if (m_dndMessageQueue.isEmpty())
-        return NULL;
-
-    return m_dndMessageQueue.first()->nextHGCMMessage();
-}
-
-int DnDManager::nextMessageInfo(uint32_t *puMsg, uint32_t *pcParms)
-{
-    AssertPtrReturn(puMsg, VERR_INVALID_POINTER);
+    AssertPtrReturn(puType, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
 
     int rc;
-    if (m_pCurMsg)
-        rc = m_pCurMsg->currentMessageInfo(puMsg, pcParms);
+
+    if (m_queueMsg.isEmpty())
+    {
+        rc = VERR_NO_DATA;
+    }
     else
     {
-        if (m_dndMessageQueue.isEmpty())
-            rc = VERR_NO_DATA;
-        else
-            rc = m_dndMessageQueue.first()->currentMessageInfo(puMsg, pcParms);
+        DnDMessage *pMsg = m_queueMsg.first();
+        AssertPtr(pMsg);
+
+        *puType  = pMsg->GetType();
+        *pcParms = pMsg->GetParamCount();
+
+        rc = VINF_SUCCESS;
     }
 
-    LogFlowFunc(("Returning puMsg=%RU32, pcParms=%RU32, rc=%Rrc\n", *puMsg, *pcParms, rc));
+    LogFlowFunc(("Returning puMsg=%RU32, pcParms=%RU32, rc=%Rrc\n", *puType, *pcParms, rc));
     return rc;
 }
 
-int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+/**
+ * Retrieves the next queued up message and removes it from the queue on success.
+ * Will return VERR_NO_DATA if no next message is available.
+ *
+ * @returns IPRT status code.
+ * @param   uMsg                Message type to retrieve.
+ * @param   cParms              Number of parameters the \@a paParms array can store.
+ * @param   paParms             Where to store the message parameters.
+ */
+int DnDManager::GetNextMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFunc(("uMsg=%RU32, cParms=%RU32\n", uMsg, cParms));
 
-    if (!m_pCurMsg)
-    {
-        /* Check for pending messages in our queue. */
-        if (m_dndMessageQueue.isEmpty())
-            return VERR_NO_DATA;
+    /* Check for pending messages in our queue. */
+    if (m_queueMsg.isEmpty())
+        return VERR_NO_DATA;
 
-        m_pCurMsg = m_dndMessageQueue.first();
-        AssertPtr(m_pCurMsg);
-        m_dndMessageQueue.removeFirst();
-    }
+    /* Get the current message. */
+    DnDMessage *pMsg = m_queueMsg.first();
+    AssertPtr(pMsg);
 
-    /* Fetch the current message info */
-    int rc = m_pCurMsg->currentMessage(uMsg, cParms, paParms);
-    /* If this message doesn't provide any additional sub messages, clear it. */
-    if (!m_pCurMsg->isMessageWaiting())
-    {
-        delete m_pCurMsg;
-        m_pCurMsg = NULL;
-    }
+    m_queueMsg.removeFirst(); /* Remove the current message from the queue. */
+
+    /* Fetch the current message info. */
+    int rc = pMsg->GetData(uMsg, cParms, paParms);
 
     /*
      * If there was an error handling the current message or the user has canceled
@@ -126,7 +153,7 @@ int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPa
     if (RT_FAILURE(rc))
     {
         /* Clear any pending messages. */
-        clear();
+        Reset();
 
         /* Create a new cancel message to inform the guest + call
          * the host whether the current transfer was canceled or aborted
@@ -136,8 +163,10 @@ int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPa
             if (rc == VERR_CANCELLED)
                 LogFlowFunc(("Operation was cancelled\n"));
 
-            Assert(!m_pCurMsg);
-            m_pCurMsg = new DnDHGCancelMessage();
+            DnDHGCancelMessage *pMsgCancel = new DnDHGCancelMessage();
+
+            int rc2 = AddMsg(pMsgCancel, false /* Prepend */);
+            AssertRC(rc2);
 
             if (m_pfnProgressCallback)
             {
@@ -159,42 +188,17 @@ int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPa
     return rc;
 }
 
-void DnDManager::clear(void)
+/**
+ * Resets the manager by clearing the message queue and internal state.
+ */
+void DnDManager::Reset(void)
 {
     LogFlowFuncEnter();
 
-    if (m_pCurMsg)
+    while (!m_queueMsg.isEmpty())
     {
-        delete m_pCurMsg;
-        m_pCurMsg = NULL;
+        delete m_queueMsg.last();
+        m_queueMsg.removeLast();
     }
-
-    while (!m_dndMessageQueue.isEmpty())
-    {
-        delete m_dndMessageQueue.last();
-        m_dndMessageQueue.removeLast();
-    }
-}
-
-/**
- * Triggers a rescheduling of the manager's message queue by setting the first
- * message available in the queue as the current one to process.
- *
- * @return  IPRT status code. VERR_NO_DATA if not message to process is available at
- *          the time of calling.
- */
-int DnDManager::doReschedule(void)
-{
-    LogFlowFunc(("Rescheduling ...\n"));
-
-    if (!m_dndMessageQueue.isEmpty())
-    {
-        m_pCurMsg = m_dndMessageQueue.first();
-        m_dndMessageQueue.removeFirst();
-
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NO_DATA;
 }
 
