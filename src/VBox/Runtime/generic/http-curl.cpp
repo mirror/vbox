@@ -217,7 +217,7 @@ typedef struct RTHTTPINTERNAL
 
     /** @name Upload callback
      * @{ */
-    /** Pointer to the download callback function, if anyn. */
+    /** Pointer to the download callback function, if any. */
     PFNRTHTTPUPLOADCALLBACK         pfnUploadCallback;
     /** The user argument for the upload callback function. */
     void                           *pvUploadCallbackUser;
@@ -227,9 +227,9 @@ typedef struct RTHTTPINTERNAL
     uint64_t                        offUploadContent;
     /** @} */
 
-    /** @name Download callback
+    /** @name Download callback.
      * @{ */
-    /** Pointer to the download callback function, if anyn. */
+    /** Pointer to the download callback function, if any. */
     PFNRTHTTPDOWNLOADCALLBACK       pfnDownloadCallback;
     /** The user argument for the download callback function. */
     void                           *pvDownloadCallbackUser;
@@ -246,12 +246,21 @@ typedef struct RTHTTPINTERNAL
     /** @name Download progress callback.
      * @{ */
     /** Download size hint set by the progress callback. */
-    uint64_t                       cbDownloadHint;
+    uint64_t                        cbDownloadHint;
     /** Callback called during download. */
-    PFNRTHTTPDOWNLDPROGRCALLBACK   pfnDownloadProgress;
+    PFNRTHTTPDOWNLDPROGRCALLBACK    pfnDownloadProgress;
     /** User pointer parameter for pfnDownloadProgress. */
     void                           *pvDownloadProgressUser;
     /** @} */
+
+    /** @name Header callback.
+     * @{ */
+    /** Pointer to the header callback function, if any. */
+    PFNRTHTTPHEADERCALLBACK         pfnHeaderCallback;
+    /** User pointer parameter for pfnHeaderCallback. */
+    void                           *pvHeaderCallbackUser;
+    /** @} */
+
 } RTHTTPINTERNAL;
 /** Pointer to an internal HTTP client instance. */
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
@@ -2919,40 +2928,10 @@ static void rtHttpGetDownloadStatusAndLength(PRTHTTPINTERNAL pThis)
 
 
 /**
- * cURL callback for writing data.
+ * Worker for rtHttpWriteHeaderData and rtHttpWriteBodyData.
  */
-static size_t rtHttpWriteData(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser)
+static size_t rtHttpWriteDataToMemOutput(PRTHTTPINTERNAL pThis, RTHTTPOUTPUTDATA *pOutput, char const *pchBuf, size_t cbToAppend)
 {
-    RTHTTPOUTPUTDATA *pOutput    = (RTHTTPOUTPUTDATA *)pvUser;
-    PRTHTTPINTERNAL   pThis      = pOutput->pHttp;
-    size_t const      cbToAppend = cbUnit * cUnits;
-
-    /*
-     * If called on the body, check if this belongs to the body download callback.
-     */
-    if (   pThis->pfnDownloadCallback
-        && pOutput == &pThis->BodyOutput)
-    {
-        if (pThis->offDownloadContent == 0)
-            rtHttpGetDownloadStatusAndLength(pThis);
-
-        if (   (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == RTHTTPDOWNLOAD_F_ANY_STATUS
-            || (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == pThis->uDownloadHttpStatus)
-        {
-            int rc = pThis->pfnDownloadCallback(pThis, pchBuf, cbToAppend, pThis->uDownloadHttpStatus, pThis->offDownloadContent,
-                                                pThis->cbDownloadContent, pThis->pvUploadCallbackUser);
-            if (RT_SUCCESS(rc))
-            {
-                pThis->offDownloadContent += cbToAppend;
-                return cbToAppend;
-            }
-            if (RT_SUCCESS(pThis->rcOutput))
-                pThis->rcOutput = rc;
-            pThis->fAbort = true;
-            return 0;
-        }
-    }
-
     /*
      * Do max size and overflow checks.
      */
@@ -3004,6 +2983,116 @@ static size_t rtHttpWriteData(char *pchBuf, size_t cbUnit, size_t cUnits, void *
     pOutput->uData.Mem.cb = RTHTTP_MAX_MEM_DOWNLOAD_SIZE;
     pThis->fAbort   = true;
     return 0;
+}
+
+
+/**
+ * cURL callback for writing body data.
+ */
+static size_t rtHttpWriteBodyData(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser)
+{
+    PRTHTTPINTERNAL   pThis      = (PRTHTTPINTERNAL)pvUser;
+    size_t const      cbToAppend = cbUnit * cUnits;
+
+    /*
+     * Check if this belongs to the body download callback.
+     */
+    if (pThis->pfnDownloadCallback)
+    {
+        if (pThis->offDownloadContent == 0)
+            rtHttpGetDownloadStatusAndLength(pThis);
+
+        if (   (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == RTHTTPDOWNLOAD_F_ANY_STATUS
+            || (pThis->fDownloadCallback & RTHTTPDOWNLOAD_F_ONLY_STATUS_MASK) == pThis->uDownloadHttpStatus)
+        {
+            int rc = pThis->pfnDownloadCallback(pThis, pchBuf, cbToAppend, pThis->uDownloadHttpStatus, pThis->offDownloadContent,
+                                                pThis->cbDownloadContent, pThis->pvUploadCallbackUser);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->offDownloadContent += cbToAppend;
+                return cbToAppend;
+            }
+            if (RT_SUCCESS(pThis->rcOutput))
+                pThis->rcOutput = rc;
+            pThis->fAbort = true;
+            return 0;
+        }
+    }
+
+    /*
+     * Otherwise, copy to memory output buffer.
+     */
+    return rtHttpWriteDataToMemOutput(pThis, &pThis->BodyOutput, pchBuf, cbToAppend);
+}
+
+
+/**
+ * cURL callback for writing header data.
+ */
+static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser)
+{
+    PRTHTTPINTERNAL   pThis      = (PRTHTTPINTERNAL)pvUser;
+    size_t const      cbToAppend = cbUnit * cUnits;
+
+    /*
+     * Work the header callback, if one.
+     * ASSUMES cURL is giving us one header at a time.
+     */
+    if (pThis->pfnHeaderCallback)
+    {
+        /* Find the end of the field name first.  Since cURL gives us the
+           "HTTP/{version} {code} {status}" line too, we slap a fictitious
+           field name ':http-status-line' in front of it. */
+        uint32_t    uMatchWord;
+        size_t      cchField;
+        const char *pchField = pchBuf;
+        size_t      cchValue;
+        const char *pchValue = (const char *)memchr(pchBuf, ':', cbToAppend);
+        if (pchValue)
+        {
+            cchField = pchValue - pchField;
+            if (RT_LIKELY(cchField >= 3))
+                uMatchWord = RTHTTP_MAKE_HDR_MATCH_WORD(cchField, RT_C_TO_LOWER(pchBuf[0]),
+                                                        RT_C_TO_LOWER(pchBuf[1]), RT_C_TO_LOWER(pchBuf[2]));
+            else
+                uMatchWord = RTHTTP_MAKE_HDR_MATCH_WORD(cchField,
+                                                        cchField >= 1 ? RT_C_TO_LOWER(pchBuf[0]) : 0,
+                                                        cchField >= 2 ? RT_C_TO_LOWER(pchBuf[1]) : 0,
+                                                        0);
+            pchValue++;
+            cchValue = cbToAppend - cchField - 1;
+        }
+        else if (pchBuf[0] == 'H' && pchBuf[1] == 'T' && pchBuf[2] == 'T' && pchBuf[1] == 'P')
+        {
+            pchField   = ":http-status-line";
+            cchField   = 17;
+            uMatchWord = RTHTTP_MAKE_HDR_MATCH_WORD(17, ':', 'h', 't');
+            pchValue   = pchBuf;
+            cchValue   = cbToAppend;
+        }
+        else
+            AssertMsgFailedReturn(("pchBuf=%.*s\n", cbToAppend, pchBuf), cbToAppend);
+
+        /* Determin the field value, stripping one leading blank and all
+           trailing spaces. */
+        if (cchValue > 0 && RT_C_IS_BLANK(*pchValue))
+            pchValue++, cchValue--;
+        while (cchValue > 0 && RT_C_IS_SPACE(pchValue[cchValue - 1]))
+            cchValue--;
+
+        /* Pass it to the callback. */
+        int rc = pThis->pfnHeaderCallback(pThis, uMatchWord, pchBuf, cchField,
+                                          pchValue, cchValue, pThis->pvHeaderCallbackUser);
+        if (RT_SUCCESS(rc))
+            return cbToAppend;
+
+        if (RT_SUCCESS(pThis->rcOutput))
+            pThis->rcOutput = rc;
+        pThis->fAbort = true;
+        return 0;
+    }
+
+    return rtHttpWriteDataToMemOutput(pThis, &pThis->HeadersOutput, pchBuf, cbToAppend);
 }
 
 
@@ -3173,7 +3262,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, bool fNoBody, uint8_
     if (RT_SUCCESS(rc))
     {
         RT_ZERO(pThis->BodyOutput.uData.Mem);
-        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteData, (void *)&pThis->BodyOutput);
+        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteBodyData, pThis);
         if (fNoBody)
         {
             if (CURL_SUCCESS(rcCurl))
@@ -3460,14 +3549,14 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
         if (ppvHeaders && CURL_SUCCESS(rcCurl))
         {
             RT_ZERO(pThis->HeadersOutput.uData.Mem);
-            rcCurl = rtHttpSetHeaderCallback(pThis, rtHttpWriteData, &pThis->HeadersOutput);
+            rcCurl = rtHttpSetHeaderCallback(pThis, rtHttpWriteHeaderData, pThis);
         }
 
         /* Body */
         if (ppvBody && CURL_SUCCESS(rcCurl))
         {
             RT_ZERO(pThis->BodyOutput.uData.Mem);
-            rcCurl = rtHttpSetWriteCallback(pThis, rtHttpWriteData, &pThis->BodyOutput);
+            rcCurl = rtHttpSetWriteCallback(pThis, rtHttpWriteBodyData, pThis);
         }
         else if (pThis->pfnDownloadCallback && CURL_SUCCESS(rcCurl))
             rcCurl = rtHttpSetWriteCallback(pThis, rtHttpWriteDataToDownloadCallback, pThis);
@@ -3595,7 +3684,15 @@ RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPRO
 }
 
 
-/** @todo header field callback. */
+RTR3DECL(int) RTHttpSetHeaderCallback(RTHTTP hHttp, PFNRTHTTPHEADERCALLBACK pfnCallback, void *pvUser)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+
+    pThis->pfnHeaderCallback    = pfnCallback;
+    pThis->pvHeaderCallbackUser = pvUser;
+    return VINF_SUCCESS;
+}
 
 
 /*********************************************************************************************************************************

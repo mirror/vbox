@@ -535,16 +535,29 @@ RTR3DECL(int) RTHttpSetUploadCallback(RTHTTP hHttp, uint64_t cbContent, PFNRTHTT
  *
  * @returns IPRT status code.
  * @param   hHttp           The HTTP client handle.
- * @param   pszField        The field name.
+ * @param   uMatchWord      Match word constructed by RTHTTP_MAKE_HDR_MATCH_WORD
+ * @param   pchField        The field name (not zero terminated).
  * @param   cchField        The length of the field.
- * @param   pszValue        The field value.
+ * @param   pchValue        The field value (not zero terminated).
  * @param   cchValue        The length of the value.
  * @param   pvUser          The user parameter.
  */
-typedef DECLCALLBACK(int) FNRTHTTPHEADERCALLBACK(RTHTTP hHttp, const char *pszField, size_t cchField,
-                                                 const char *pszValue, size_t cchValue, void *pvUser);
+typedef DECLCALLBACK(int) FNRTHTTPHEADERCALLBACK(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
+                                                 const char *pchValue, size_t cchValue, void *pvUser);
 /** Pointer to a header field consumer callback. */
 typedef FNRTHTTPHEADERCALLBACK *PFNRTHTTPHEADERCALLBACK;
+
+/**
+ * Forms a fast header match word.
+ *
+ * @returns Fast header match word.
+ * @param   a_cchField      The length of the header field name.
+ * @param   a_chLower1      The first character in the name, lowercased.
+ * @param   a_chLower2      The second character in the name, lowercased.
+ * @param   a_chLower3      The third character in the name, lowercased.
+ */
+#define RTHTTP_MAKE_HDR_MATCH_WORD(a_cchField, a_chLower1, a_chLower2, a_chLower3)   \
+    RT_MAKE_U32_FROM_U8(a_cchField, a_chLower1, a_chLower2, a_chLower3)
 
 /**
  * Set the callback function for processing header fields in the response.
