@@ -1,0 +1,146 @@
+; $Id$
+;; @file
+; VirtualBox Runtime DLL - Stable C++ Interface Definition file, 32-bit Visual C++.
+
+;
+; Copyright (C) 2018 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+EXPORTS
+    ; class RTCString:
+    ??0RTCString@@QEAA@AEBV0@@Z
+    ??0RTCString@@QEAA@AEBV0@_K1@Z
+    ??0RTCString@@QEAA@PEBD@Z
+    ??0RTCString@@QEAA@PEBDPEAD@Z
+    ??0RTCString@@QEAA@PEBD_K@Z
+    ??0RTCString@@QEAA@XZ
+    ??0RTCString@@QEAA@_KD@Z
+    ??1RTCString@@UEAA@XZ
+    ??4RTCString@@QEAAAEAV0@AEBV0@@Z
+    ??4RTCString@@QEAAAEAV0@PEBD@Z
+    ??8RTCString@@QEBA_NAEBV0@@Z
+    ??8RTCString@@QEBA_NPEBD@Z
+    ??9RTCString@@QEBA_NAEBV0@@Z
+    ??9RTCString@@QEBA_NPEBD@Z
+    ??ARTCString@@QEBAD_K@Z
+    ??MRTCString@@QEBA_NAEBV0@@Z
+    ??MRTCString@@QEBA_NPEBD@Z
+    ??ORTCString@@QEBA_NAEBV0@@Z
+    ??ORTCString@@QEBA_NPEBD@Z
+    ??YRTCString@@QEAAAEAV0@AEBV0@@Z
+    ??YRTCString@@QEAAAEAV0@D@Z
+    ??YRTCString@@QEAAAEAV0@PEBD@Z
+    ??_7RTCString@@6B@
+    ?append@RTCString@@QEAAAEAV1@AEBV1@@Z
+    ?append@RTCString@@QEAAAEAV1@AEBV1@_K1@Z
+    ?append@RTCString@@QEAAAEAV1@D@Z
+    ?append@RTCString@@QEAAAEAV1@PEBD@Z
+    ?append@RTCString@@QEAAAEAV1@PEBD_K@Z
+    ?appendCodePoint@RTCString@@QEAAAEAV1@I@Z
+    ?appendCodePointNoThrow@RTCString@@QEAAHI@Z
+    ?appendNoThrow@RTCString@@QEAAHAEBV1@@Z
+    ?appendNoThrow@RTCString@@QEAAHAEBV1@_K1@Z
+    ?appendNoThrow@RTCString@@QEAAHD@Z
+    ?appendNoThrow@RTCString@@QEAAHPEBD@Z
+    ?appendNoThrow@RTCString@@QEAAHPEBD_K@Z
+    ?appendPrintf@RTCString@@QEAAAEAV1@PEBDZZ
+    ?appendPrintfNoThrow@RTCString@@QEAAHPEBDZZ
+    ?appendPrintfV@RTCString@@QEAAAEAV1@PEBDPEAD@Z
+    ?appendPrintfVNoThrow@RTCString@@QEAAHPEBDPEAD@Z
+    ?appendWorker@RTCString@@IEAAAEAV1@PEBD_K@Z
+    ?appendWorkerNoThrow@RTCString@@IEAAHPEBD_K@Z
+    ?assign@RTCString@@QEAAAEAV1@AEBV1@@Z
+    ?assign@RTCString@@QEAAAEAV1@AEBV1@_K1@Z
+    ?assign@RTCString@@QEAAAEAV1@PEBD@Z
+    ?assign@RTCString@@QEAAAEAV1@PEBD_K@Z
+    ?assign@RTCString@@QEAAAEAV1@_KD@Z
+    ?assignNoThrow@RTCString@@QEAAHAEBV1@@Z
+    ?assignNoThrow@RTCString@@QEAAHAEBV1@_K1@Z
+    ?assignNoThrow@RTCString@@QEAAHPEBD@Z
+    ?assignNoThrow@RTCString@@QEAAHPEBD_K@Z
+    ?assignNoThrow@RTCString@@QEAAH_KD@Z
+    ?c_str@RTCString@@QEBAPEBDXZ
+    ?capacity@RTCString@@QEBA_KXZ
+    ?cleanup@RTCString@@IEAAXXZ
+    ?compare@RTCString@@QEBAHAEBV1@W4CaseSensitivity@1@@Z
+    ?compare@RTCString@@QEBAHPEBDW4CaseSensitivity@1@@Z
+    ?contains@RTCString@@QEBA_NAEBV1@W4CaseSensitivity@1@@Z
+    ?contains@RTCString@@QEBA_NPEBDW4CaseSensitivity@1@@Z
+    ?copyFromN@RTCString@@IEAAXPEBD_K@Z
+    ?count@RTCString@@QEBA_KD@Z
+    ?endsWith@RTCString@@QEBA_NAEBV1@W4CaseSensitivity@1@@Z
+    ?equals@RTCString@@QEBA_NAEBV1@@Z
+    ?equals@RTCString@@QEBA_NPEBD@Z
+    ?equalsIgnoreCase@RTCString@@QEBA_NAEBV1@@Z
+    ?equalsIgnoreCase@RTCString@@QEBA_NPEBD@Z
+    ?erase@RTCString@@QEAAAEAV1@_K0@Z
+    ?find@RTCString@@QEBA_KPEBD_K@Z
+    ?find@RTCString@@QEBA_KPEBV1@_K@Z
+    ?findReplace@RTCString@@QEAAXDD@Z
+    ?isEmpty@RTCString@@QEBA_NXZ
+    ?isNotEmpty@RTCString@@QEBA_NXZ
+    ?join@RTCString@@SA?AV1@AEBV?$RTCList@VRTCString@@PEAV1@@@AEBV1@@Z
+    ?joinEx@RTCString@@SA?AV1@AEBV?$RTCList@VRTCString@@PEAV1@@@AEBV1@1@Z
+    ?jolt@RTCString@@QEAAXXZ
+    ?length@RTCString@@QEBA_KXZ
+    ?mutableRaw@RTCString@@QEAAPEADXZ
+    ?npos@RTCString@@2_KB
+    ?printf@RTCString@@QEAAAEAV1@PEBDZZ
+    ?printfNoThrow@RTCString@@QEAAHPEBDZZ
+    ?printfOutputCallback@RTCString@@KA_KPEAXPEBD_K@Z
+    ?printfOutputCallbackNoThrow@RTCString@@KA_KPEAXPEBD_K@Z
+    ?printfV@RTCString@@QEAAAEAV1@PEBDPEAD@Z
+    ?printfVNoThrow@RTCString@@QEAAHPEBDPEAD@Z
+    ?replace@RTCString@@QEAAAEAV1@_K0AEBV1@00@Z
+    ?replace@RTCString@@QEAAAEAV1@_K0AEBV1@@Z
+    ?replace@RTCString@@QEAAAEAV1@_K0PEBD0@Z
+    ?replace@RTCString@@QEAAAEAV1@_K0PEBD@Z
+    ?replaceNoThrow@RTCString@@QEAAH_K0AEBV1@00@Z
+    ?replaceNoThrow@RTCString@@QEAAH_K0AEBV1@@Z
+    ?replaceNoThrow@RTCString@@QEAAH_K0PEBD0@Z
+    ?replaceNoThrow@RTCString@@QEAAH_K0PEBD@Z
+    ?replaceWorker@RTCString@@IEAAAEAV1@_K0PEBD0@Z
+    ?replaceWorkerNoThrow@RTCString@@IEAAH_K0PEBD0@Z
+    ?reserve@RTCString@@QEAAX_K@Z
+    ?reserveNoThrow@RTCString@@QEAAH_K@Z
+    ?setNull@RTCString@@QEAAXXZ
+    ?split@RTCString@@QEBA?AV?$RTCList@VRTCString@@PEAV1@@@AEBV1@W4SplitMode@1@@Z
+    ?startsWith@RTCString@@QEBA_NAEBV1@W4CaseSensitivity@1@@Z
+    ?startsWithWord@RTCString@@QEBA_NAEBV1@W4CaseSensitivity@1@@Z
+    ?startsWithWord@RTCString@@QEBA_NPEBDW4CaseSensitivity@1@@Z
+    ?strip@RTCString@@QEAAAEAV1@XZ
+    ?stripLeft@RTCString@@QEAAAEAV1@XZ
+    ?stripRight@RTCString@@QEAAAEAV1@XZ
+    ?substr@RTCString@@QEBA?AV1@_K0@Z
+    ?substrCP@RTCString@@QEBA?AV1@_K0@Z
+    ?swap@RTCString@@QEAAXAEAV1@@Z
+    ?toInt32@RTCString@@QEBAHXZ
+    ?toInt64@RTCString@@QEBA_JXZ
+    ?toInt@RTCString@@QEBAHAEAI@Z
+    ?toInt@RTCString@@QEBAHAEA_K@Z
+    ?toLower@RTCString@@QEAAAEAV1@XZ
+    ?toUInt32@RTCString@@QEBAIXZ
+    ?toUInt64@RTCString@@QEBA_KXZ
+    ?toUpper@RTCString@@QEAAAEAV1@XZ
+    ?uniLength@RTCString@@QEBA_KXZ
+    ; Related to RTCString:
+    ??H@YA?BVRTCString@@AEBV0@0@Z
+    ??H@YA?BVRTCString@@AEBV0@PEBD@Z
+    ??H@YA?BVRTCString@@PEBDAEBV0@@Z
+

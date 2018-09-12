@@ -252,9 +252,13 @@ EXPORTS
     RTAvlrooGCPtrRangeRemove
     RTAvlrooGCPtrRemove
     RTBase64Decode
+    RTBase64DecodeEx
     RTBase64DecodedSize
+    RTBase64DecodedSizeEx
     RTBase64Encode
+    RTBase64EncodeEx
     RTBase64EncodedLength
+    RTBase64EncodedLengthEx
     RTBldCfgCompiler
     RTBldCfgRevision
     RTBldCfgRevisionStr
@@ -298,9 +302,77 @@ EXPORTS
     RTCritSectInitEx
     RTCritSectLeave
     RTCritSectLeaveMultiple
+    RTCritSectRwDelete
+    RTCritSectRwEnterExcl
+    RTCritSectRwEnterExclDebug
+    RTCritSectRwEnterShared
+    RTCritSectRwEnterSharedDebug
+    RTCritSectRwGetReadCount
+    RTCritSectRwGetWriteRecursion
+    RTCritSectRwGetWriterReadRecursion
+    RTCritSectRwInit
+    RTCritSectRwInitEx
+    RTCritSectRwIsReadOwner
+    RTCritSectRwIsWriteOwner
+    RTCritSectRwLeaveExcl
+    RTCritSectRwLeaveShared
+    RTCritSectRwSetSubClass
+    RTCritSectRwTryEnterExcl
+    RTCritSectRwTryEnterExclDebug
+    RTCritSectRwTryEnterShared
+    RTCritSectRwTryEnterSharedDebug
     RTCritSectSetSubClass
     RTCritSectTryEnter
     RTCritSectTryEnterDebug
+    RTCrDigestClone
+    RTCrDigestCreate
+    RTCrDigestCreateByObjId
+    RTCrDigestCreateByObjIdString
+    RTCrDigestCreateByType
+    RTCrDigestFinal
+    RTCrDigestFindByObjId
+    RTCrDigestFindByObjIdString
+    RTCrDigestFindByType
+    RTCrDigestGetAlgorithmOid
+    RTCrDigestGetConsumedSize
+    RTCrDigestGetFlags
+    RTCrDigestGetHash
+    RTCrDigestGetHashSize
+    RTCrDigestGetType
+    RTCrDigestIsFinalized
+    RTCrDigestMatch
+    RTCrDigestRelease
+    RTCrDigestReset
+    RTCrDigestRetain
+    RTCrDigestTypeToAlgorithmOid
+    RTCrDigestTypeToHashSize
+    RTCrDigestTypeToName
+    RTCrDigestUpdate
+    RTCrDigestUpdateFromVfsFile
+    RTCrKeyCreateFromBuffer
+    RTCrKeyCreateFromFile
+    RTCrKeyCreateFromPublicAlgorithmAndBits
+    RTCrKeyCreateFromSubjectPublicKeyInfo
+    RTCrKeyGetBitCount
+    RTCrKeyGetType
+    RTCrKeyHasPrivatePart
+    RTCrKeyHasPublicPart
+    RTCrKeyRelease
+    RTCrKeyRetain
+    RTCrPkixGetCiperOidFromSignatureAlgorithm
+    RTCrPkixPubKeySignDigest
+    RTCrPkixPubKeyVerifySignature
+    RTCrPkixPubKeyVerifySignedDigest
+    RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo
+    RTCrPkixSignatureCreate
+    RTCrPkixSignatureCreateByObjId
+    RTCrPkixSignatureCreateByObjIdString
+    RTCrPkixSignatureRelease
+    RTCrPkixSignatureRetain
+    RTCrPkixSignatureSign
+    RTCrPkixSignatureVerify
+    RTCrPkixSignatureVerifyBitString
+    RTCrPkixSignatureVerifyOctetString
     RTDbgAsCreate
     RTDbgAsCreateF
     RTDbgAsCreateV
@@ -503,10 +575,61 @@ EXPORTS
     RTHeapSimpleInit
     RTHeapSimpleRelocate
     RTHeapSimpleSize
-    RTIsoFsClose
-    RTIsoFsExtractFile
-    RTIsoFsGetFileInfo
-    RTIsoFsOpen
+    RTHttpAbort
+    RTHttpAddHeader
+    RTHttpCreate
+    RTHttpDestroy
+    RTHttpFreeResponse
+    RTHttpFreeResponseText
+    RTHttpGatherCaCertsInFile
+    RTHttpGatherCaCertsInStore
+    RTHttpGetBinary
+    RTHttpGetByOrdinal
+    RTHttpGetFile
+    RTHttpGetHeader
+    RTHttpGetHeaderBinary
+    RTHttpGetHeaderCount
+    RTHttpGetHeaderText
+    RTHttpGetRedirLocation
+    RTHttpGetText
+    RTHttpMethodName
+    RTHttpPerform
+    RTHttpReset
+    RTHttpSetCAFile
+    RTHttpSetDownloadCallback
+    RTHttpSetDownloadProgressCallback
+    RTHttpSetFollowRedirects
+    RTHttpSetHeaders
+    RTHttpSetProxy
+    RTHttpSetUploadCallback
+    RTHttpSignHeaders
+    RTHttpUseSystemProxySettings
+    RTHttpUseTemporaryCaFile
+    RTJsonIteratorBegin
+    RTJsonIteratorBeginArray
+    RTJsonIteratorBeginObject
+    RTJsonIteratorFree
+    RTJsonIteratorNext
+    RTJsonIteratorQueryValue
+    RTJsonParseFromBuf
+    RTJsonParseFromFile
+    RTJsonParseFromString
+    RTJsonValueGetArraySize
+    RTJsonValueGetString
+    RTJsonValueGetType
+    RTJsonValueQueryArraySize
+    RTJsonValueQueryBooleanByName
+    RTJsonValueQueryByIndex
+    RTJsonValueQueryByName
+    RTJsonValueQueryInteger
+    RTJsonValueQueryIntegerByName
+    RTJsonValueQueryNumber
+    RTJsonValueQueryNumberByName
+    RTJsonValueQueryString
+    RTJsonValueQueryStringByName
+    RTJsonValueRelease
+    RTJsonValueRetain
+    RTJsonValueTypeName
     RTLatin1CalcUtf16Len
     RTLatin1CalcUtf16LenEx
     RTLatin1CalcUtf8Len
@@ -919,18 +1042,6 @@ EXPORTS
     RTReqRetain
     RTReqSubmit
     RTReqWait
-    RTS3BucketsDestroy
-    RTS3Create
-    RTS3CreateBucket
-    RTS3DeleteBucket
-    RTS3DeleteKey
-    RTS3Destroy
-    RTS3GetBucketKeys
-    RTS3GetBuckets
-    RTS3GetKey
-    RTS3KeysDestroy
-    RTS3PutKey
-    RTS3SetProgressCallback
     RTSemEventAddSignaller
     RTSemEventCreate
     RTSemEventCreateEx
@@ -1072,7 +1183,11 @@ EXPORTS
     RTStrCacheCreate
     RTStrCacheDestroy
     RTStrCacheEnter
+    RTStrCacheEnterLower
+    RTStrCacheEnterLowerN
     RTStrCacheEnterN
+    RTStrCacheGetStats
+    RTStrCacheIsRealImpl
     RTStrCacheLength
     RTStrCacheRelease
     RTStrCacheRetain
@@ -1082,37 +1197,65 @@ EXPORTS
     RTStrCalcUtf16LenEx
     RTStrCat
     RTStrCatEx
+    RTStrCatP
+    RTStrCatPEx
     RTStrCmp
     RTStrConvertHexBytes
     RTStrCopy
     RTStrCopyEx
+    RTStrCopyP
+    RTStrCopyPEx
     RTStrCurrentCPToUtf8Tag
     RTStrDupExTag
     RTStrDupNTag
     RTStrDupTag
     RTStrFormat
     RTStrFormatNumber
+    RTStrFormatR80
+    RTStrFormatR80u2
     RTStrFormatTypeDeregister
     RTStrFormatTypeRegister
     RTStrFormatTypeSetUser
+    RTStrFormatU128
+    RTStrFormatU16
+    RTStrFormatU256
+    RTStrFormatU32
+    RTStrFormatU512
+    RTStrFormatU64
+    RTStrFormatU8
     RTStrFormatV
     RTStrFree
     RTStrGetCpExInternal
     RTStrGetCpInternal
     RTStrGetCpNExInternal
+    RTStrHash1
+    RTStrHash1ExN
+    RTStrHash1ExNV
+    RTStrHash1N
     RTStrICmp
+    RTStrICmpAscii
+    RTStrIStartsWith
     RTStrIStr
+    RTStrIsCaseFoldable
+    RTStrIsLowerCased
+    RTStrIsUpperCased
     RTStrIsValidEncoding
     RTStrNCmp
     RTStrNICmp
+    RTStrNICmpAscii
     RTStrNLen
     RTStrNLenEx
     RTStrPrevCp
     RTStrPrintHexBytes
     RTStrPrintf
+    RTStrPrintf2
+    RTStrPrintf2Ex
+    RTStrPrintf2ExV
+    RTStrPrintf2V
     RTStrPrintfEx
     RTStrPrintfExV
     RTStrPrintfV
+    RTStrPurgeComplementSet
     RTStrPurgeEncoding
     RTStrPutCpInternal
     RTStrReallocTag
@@ -1122,8 +1265,10 @@ EXPORTS
     RTStrSpaceDestroy
     RTStrSpaceEnumerate
     RTStrSpaceGet
+    RTStrSpaceGetN
     RTStrSpaceInsert
     RTStrSpaceRemove
+    RTStrStartsWith
     RTStrStr
     RTStrStrip
     RTStrStripL
@@ -1158,6 +1303,8 @@ EXPORTS
     RTStrToUni
     RTStrToUniEx
     RTStrToUpper
+    RTStrToUtf16BigExTag
+    RTStrToUtf16BigTag
     RTStrToUtf16ExTag
     RTStrToUtf16Tag
     RTStrUniLen
@@ -1427,34 +1574,74 @@ EXPORTS
     RTVfsChainOpenFile
     RTVfsChainOpenIoStream
     RTVfsChainSpecFree
+    RTVfsDirCreateDir
+    RTVfsDirFromRTDir
+    RTVfsDirOpen
+    RTVfsDirOpenDir
+    RTVfsDirOpenFile
+    RTVfsDirOpenFileAsIoStream
+    RTVfsDirOpenNormal
+    RTVfsDirOpenObj
+    RTVfsDirQueryPathInfo
+    RTVfsDirReadEx
     RTVfsDirRelease
+    RTVfsDirRemoveDir
     RTVfsDirRetain
+    RTVfsDirRetainDebug
+    RTVfsFileFlush
+    RTVfsFileFromBuffer
     RTVfsFileFromRTFile
+    RTVfsFileGetMaxSize
+    RTVfsFileGetOpenFlags
+    RTVfsFileGetSize
     RTVfsFileOpen
+    RTVfsFileOpenNormal
+    RTVfsFilePoll
+    RTVfsFileQueryInfo
+    RTVfsFileQueryMaxSize
+    RTVfsFileRead
+    RTVfsFileReadAt
     RTVfsFileRelease
     RTVfsFileRetain
+    RTVfsFileRetainDebug
     RTVfsFileSeek
+    RTVfsFileSetSize
+    RTVfsFileSgRead
+    RTVfsFileSgWrite
+    RTVfsFileTell
     RTVfsFileToIoStream
+    RTVfsFileWrite
+    RTVfsFileWriteAt
     RTVfsFsStrmNext
     RTVfsFsStrmQueryInfo
     RTVfsFsStrmRelease
     RTVfsFsStrmRetain
     RTVfsIoStreamToPrivate
     RTVfsIoStrmFlush
+    RTVfsIoStrmFromBuffer
     RTVfsIoStrmFromRTFile
+    RTVfsIoStrmFromRTPipe
     RTVfsIoStrmFromStdHandle
+    RTVfsIoStrmGetOpenFlags
     RTVfsIoStrmIsAtEnd
+    RTVfsIoStrmOpenNormal
     RTVfsIoStrmPoll
     RTVfsIoStrmQueryInfo
     RTVfsIoStrmRead
+    RTVfsIoStrmReadAll
+    RTVfsIoStrmReadAllFree
+    RTVfsIoStrmReadAt
     RTVfsIoStrmRelease
     RTVfsIoStrmRetain
+    RTVfsIoStrmRetainDebug
     RTVfsIoStrmSgRead
     RTVfsIoStrmSgWrite
     RTVfsIoStrmSkip
     RTVfsIoStrmTell
     RTVfsIoStrmToFile
+    RTVfsIoStrmValidateUtf8Encoding
     RTVfsIoStrmWrite
+    RTVfsIoStrmWriteAt
     RTVfsIoStrmZeroFill
     RTVfsLockAcquireReadSlow
     RTVfsLockAcquireWriteSlow
@@ -1523,4 +1710,22 @@ EXPORTS
     SUPR3LoadModule
     SUPR3TracerOpen
     SUPR3TracerIoCtl
+
+    ; Very temporary stuff:
+    RTHttpRawGetResponseCode
+    RTHttpRawPerform
+    RTHttpRawSetCustomRequest
+    RTHttpRawSetDelete
+    RTHttpRawSetGet
+    RTHttpRawSetHead
+    RTHttpRawSetInfileSize
+    RTHttpRawSetPost
+    RTHttpRawSetPostFields
+    RTHttpRawSetPut
+    RTHttpRawSetReadCallback
+    RTHttpRawSetTimeout
+    RTHttpRawSetUrl
+    RTHttpRawSetVerbose
+    RTHttpRawSetWriteCallback
+    RTHttpRawSetWriteHeaderCallback
 
