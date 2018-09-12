@@ -1036,8 +1036,8 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
         }
         case ExportOCI:
             cOperations = 1 + 7;
-            m->ulWeightForXmlOperation = 1;
-            ulTotalOperationsWeight = 100;
+            ulTotalOperationsWeight = 100*cOperations;
+            m->ulWeightForXmlOperation = 100;
             break;
     }
     Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
