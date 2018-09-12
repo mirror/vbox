@@ -258,6 +258,33 @@ typedef struct VBOXEXTPACKHLP
                                                              uint32_t uNextOperationWeight));
 
     /**
+     * Waits until the other task is completed (including all sub-operations)
+     * and forward all changes from the other progress to this progress. This
+     * means sub-operation number, description, percent and so on.
+     *
+     * The caller is responsible for having at least the same count of
+     * sub-operations in this progress object as there are in the other
+     * progress object.
+     *
+     * If the other progress object supports cancel and this object gets any
+     * cancel request (when here enabled as well), it will be forwarded to
+     * the other progress object.
+     *
+     * Error information is automatically preserved (by transferring it to
+     * the current thread's error information). If the caller wants to set it
+     * as the completion state of this progress it needs to be done separately.
+     *
+     * @returns COM status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pProgress       Pointer to the IProgress object reference returned
+     *                          by pfnCreateProgress.
+     * @param   pProgressOther  Pointer to an IProgress object reference, the one
+     *                          to be waited for.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnWaitOtherProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
+                                                         VBOXEXTPACK_IF_CS(IProgress) *pProgressOther));
+
+    /**
      * Marks the whole task as complete and sets the result code.
      *
      * If the result code indicates a failure then this method will store
