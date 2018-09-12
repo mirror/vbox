@@ -3205,8 +3205,9 @@ static int hmR0VmxExportHostMsrs(PVMCPU pVCpu)
 static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu)
 {
 #ifdef HMVMX_ALWAYS_SWAP_EFER
+    RT_NOREF(pVCpu);
     return true;
-#endif
+#else
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
@@ -3244,6 +3245,7 @@ static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu)
     }
 
     return false;
+#endif
 }
 
 
