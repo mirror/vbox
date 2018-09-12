@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VirtualBox Runtime DLL - Stable C++ Interface Definition file, 32-bit Visual C++.
+; VirtualBox Runtime DLL - Stable C++ Interface Definition file, 64-bit Visual C++.
 
 ;
 ; Copyright (C) 2018 Oracle Corporation
