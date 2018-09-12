@@ -34,6 +34,7 @@
 static const char * const g_apszVmxVDiagDesc[] =
 {
     /* Internal processing errors. */
+    VMXV_DIAG_DESC(kVmxVDiag_None                             , "None"                      ),
     VMXV_DIAG_DESC(kVmxVDiag_Ipe_1                            , "Ipe_1"                     ),
     VMXV_DIAG_DESC(kVmxVDiag_Ipe_2                            , "Ipe_2"                     ),
     VMXV_DIAG_DESC(kVmxVDiag_Ipe_3                            , "Ipe_3"                     ),
@@ -43,6 +44,13 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Ipe_7                            , "Ipe_7"                     ),
     VMXV_DIAG_DESC(kVmxVDiag_Ipe_8                            , "Ipe_8"                     ),
     VMXV_DIAG_DESC(kVmxVDiag_Ipe_9                            , "Ipe_9"                     ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_10                           , "Ipe_10"                    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_11                           , "Ipe_11"                    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_12                           , "Ipe_12"                    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_13                           , "Ipe_13"                    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_14                           , "Ipe_14"                    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_15                           , "Ipe_15"                    ),
+    VMXV_DIAG_DESC(kVmxVDiag_Ipe_16                           , "Ipe_16"                    ),
     /* VMXON. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_A20M                       , "A20M"                      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmxon_Cpl                        , "Cpl"                       ),

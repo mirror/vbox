@@ -2010,7 +2010,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
         pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
 
-        /** @todo NSTVMX: clear address-range monitoring. */
+        EMMonitorWaitClear(pVCpu);
         /** @todo NSTVMX: Intel PT. */
 
         iemVmxVmSucceed(pVCpu);
@@ -2062,7 +2062,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegBase(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegBaseFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegBaseGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegBaseSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_1);
     }
 }
 
@@ -2104,7 +2104,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegLimitV86(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegLimitV86Fs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegLimitV86Gs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegLimitV86Ss;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_3);
     }
 }
 
@@ -2125,7 +2125,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrV86(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrV86Fs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrV86Gs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrV86Ss;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_4);
     }
 }
 
@@ -2146,7 +2146,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrRsvd(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrRsvdFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrRsvdGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrRsvdSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_5);
     }
 }
 
@@ -2167,7 +2167,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrDescType(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrDescTypeSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_6);
     }
 }
 
@@ -2188,7 +2188,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrPresent(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrPresentFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrPresentGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrPresentSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_7);
     }
 }
 
@@ -2209,7 +2209,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrGran(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrGranFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrGranGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrGranSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_8);
     }
 }
 
@@ -2229,7 +2229,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrDplRpl(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrDplRplFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrDplRplGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrDplRplSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_9);
     }
 }
 
@@ -2250,7 +2250,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrTypeAcc(unsigned iSegReg)
         case X86_SREG_FS: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccFs;
         case X86_SREG_GS: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccGs;
         case X86_SREG_SS: return kVmxVDiag_Vmentry_GuestSegAttrTypeAccSs;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_10);
     }
 }
 
@@ -2270,7 +2270,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentryPdpteRsvd(unsigned iPdpte)
         case 1: return kVmxVDiag_Vmentry_GuestPdpte1Rsvd;
         case 2: return kVmxVDiag_Vmentry_GuestPdpte2Rsvd;
         case 3: return kVmxVDiag_Vmentry_GuestPdpte3Rsvd;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_2);
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_11);
     }
 }
 
@@ -2574,8 +2574,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
             else if (   uSegType == (X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
                      || uSegType == (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_ACCESSED))
             {
-                X86DESCATTR SsAttr; SsAttr.u = pVmcs->u32GuestSsAttr;
-                if (uDpl == SsAttr.n.u2Dpl)
+                X86DESCATTR AttrSs; AttrSs.u = pVmcs->u32GuestSsAttr;
+                if (uDpl == AttrSs.n.u2Dpl)
                 { /* likely */ }
                 else
                     IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestSegAttrCsDplEqSs);
@@ -2583,8 +2583,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
             else if ((uSegType & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF | X86_SEL_TYPE_ACCESSED))
                               == (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF | X86_SEL_TYPE_ACCESSED))
             {
-                X86DESCATTR SsAttr; SsAttr.u = pVmcs->u32GuestSsAttr;
-                if (uDpl <= SsAttr.n.u2Dpl)
+                X86DESCATTR AttrSs; AttrSs.u = pVmcs->u32GuestSsAttr;
+                if (uDpl <= AttrSs.n.u2Dpl)
                 { /* likely */ }
                 else
                     IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestSegAttrCsDplLtSs);
@@ -2620,8 +2620,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
                 else
                     IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestSegAttrSsDplEqRpl);
             }
-            X86DESCATTR CsAttr; CsAttr.u = pVmcs->u32GuestCsAttr;
-            if (   CsAttr.n.u4Type == (X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED)
+            X86DESCATTR AttrCs; AttrCs.u = pVmcs->u32GuestCsAttr;
+            if (   AttrCs.n.u4Type == (X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED)
                 || (pVmcs->u64GuestCr0.u & X86_CR0_PE))
             {
                 if (uDpl == 0)
@@ -2854,9 +2854,9 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
     /* RIP. */
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
     {
-        X86DESCATTR CsAttr; CsAttr.u = pVmcs->u32GuestCsAttr;
+        X86DESCATTR AttrCs; AttrCs.u = pVmcs->u32GuestCsAttr;
         if (   !fGstInLongMode
-            || !CsAttr.n.u1Long)
+            || !AttrCs.n.u1Long)
         {
             if (!RT_HI_U32(pVmcs->u64GuestRip.u))
             { /* likely */ }
@@ -2865,7 +2865,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszIn
         }
 
         if (   fGstInLongMode
-            && CsAttr.n.u1Long)
+            && AttrCs.n.u1Long)
         {
             Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxLinearAddrWidth == 48);   /* Canonical. */
             if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxLinearAddrWidth < 64
@@ -2934,9 +2934,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateRsvd);
 
-    X86DESCATTR SsAttr; SsAttr.u = pVmcs->u32GuestSsAttr;
-
-    if (   !SsAttr.n.u2Dpl
+    X86DESCATTR AttrSs; AttrSs.u = pVmcs->u32GuestSsAttr;
+    if (   !AttrSs.n.u2Dpl
         || pVmcs->u32GuestActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT)
     { /* likely */ }
     else
@@ -3225,43 +3224,34 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPU pVCpu, const char *pszInstr)
  */
 IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
 {
+    /* Check control registers, debug registers and MSRs. */
     int rc = iemVmxVmentryCheckGuestControlRegsMsrs(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-        return rc;
-
-    rc = iemVmxVmentryCheckGuestSegRegs(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-        return rc;
-
-    rc = iemVmxVmentryCheckGuestGdtrIdtr(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-        return rc;
-
-    rc = iemVmxVmentryCheckGuestRipRFlags(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-        return rc;
-
-    rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-        return rc;
-
-    rc = iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-        return rc;
-
-    return VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+    {
+        /* Check guest segment registers, LDTR, TR. */
+        rc = iemVmxVmentryCheckGuestSegRegs(pVCpu, pszInstr);
+        if (RT_SUCCESS(rc))
+        {
+            /* Check guest GDTR and IDTR. */
+            rc = iemVmxVmentryCheckGuestGdtrIdtr(pVCpu, pszInstr);
+            if (RT_SUCCESS(rc))
+            {
+                /* Check guest RIP, RSP and RFLAGS. */
+                rc = iemVmxVmentryCheckGuestRipRFlags(pVCpu, pszInstr);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Check guest non-register state. */
+                    rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Check guest PDPTEs. */
+                        return iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
+                    }
+                }
+            }
+        }
+    }
+    return rc;
 }
 
 
@@ -3486,9 +3476,9 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
     if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VALID))
     {
         /* Type and vector. */
-        uint8_t const uType         = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_TYPE);
-        uint8_t const uVector       = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
-        uint8_t const uRsvd         = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
+        uint8_t const uType   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_TYPE);
+        uint8_t const uVector = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
+        uint8_t const uRsvd   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
         if (   uRsvd == 0
             && HMVmxIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
             && HMVmxIsEntryIntInfoVectorValid(uVector, uType))
@@ -3626,7 +3616,7 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
  */
 IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 {
-    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     const char * const pszFailure = "VMFail";
 
     /* Pin-based VM-execution controls. */
@@ -3825,6 +3815,215 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 
 
 /**
+ * Loads the guest control registers, debug register and some MSRs as part of
+ * VM-entry.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsr(PVMCPU pVCpu)
+{
+    /*
+     * Load guest control registers, debug registers and MSRs.
+     * See Intel spec. 26.3.2.1 "Loading Guest Control Registers, Debug Registers and MSRs".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    uint64_t const uGstCr0 = (pVmcs->u64GuestCr0.u   & ~VMX_ENTRY_CR0_IGNORE_MASK)
+                           | (pVCpu->cpum.GstCtx.cr0 &  VMX_ENTRY_CR0_IGNORE_MASK);
+    CPUMSetGuestCR0(pVCpu, uGstCr0);
+    CPUMSetGuestCR4(pVCpu, pVmcs->u64GuestCr4.u);
+    pVCpu->cpum.GstCtx.cr3 = pVmcs->u64GuestCr3.u;
+
+    if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+        pVCpu->cpum.GstCtx.dr[7] = (pVmcs->u64GuestDr7.u & ~VMX_ENTRY_DR7_MBZ_MASK) | VMX_ENTRY_DR7_MB1_MASK;
+
+    pVCpu->cpum.GstCtx.SysEnter.eip = pVmcs->u64GuestSysenterEip.s.Lo;
+    pVCpu->cpum.GstCtx.SysEnter.esp = pVmcs->u64GuestSysenterEsp.s.Lo;
+    pVCpu->cpum.GstCtx.SysEnter.cs  = pVmcs->u32GuestSysenterCS;
+
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        /* FS base and GS base are loaded  while loading the rest of the guest segment registers. */
+
+        /* EFER MSR. */
+        if (!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR))
+        {
+            bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+            bool const fGstPaging     = RT_BOOL(uGstCr0 & X86_CR0_PG);
+            uint64_t const uHostEfer  = pVCpu->cpum.GstCtx.msrEFER;
+            if (fGstInLongMode)
+            {
+                /* If the nested-guest is in long mode, LMA and LME are both set. */
+                Assert(fGstPaging);
+                pVCpu->cpum.GstCtx.msrEFER = uHostEfer | (MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
+            }
+            else
+            {
+                /*
+                 * If the nested-guest is outside long mode:
+                 *   - With paging:    LMA is cleared, LME is cleared.
+                 *   - Without paging: LMA is cleared, LME is left unmodified.
+                 */
+                uint64_t const fLmaLmeMask = MSR_K6_EFER_LMA | (fGstPaging ? MSR_K6_EFER_LME : 0);
+                pVCpu->cpum.GstCtx.msrEFER = uHostEfer & ~fLmaLmeMask;
+            }
+        }
+        /* else: see below. */
+    }
+
+    /* PAT MSR. */
+    if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR)
+        pVCpu->cpum.GstCtx.msrPAT = pVmcs->u64GuestPatMsr.u;
+
+    /* EFER MSR. */
+    if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+        pVCpu->cpum.GstCtx.msrEFER = pVmcs->u64GuestEferMsr.u;
+
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));   /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));         /* We don't support loading IA32_BNDCFGS MSR yet. */
+    /* Nothing to do for SMBASE register - We don't support SMM yet. */
+}
+
+
+/**
+ * Loads the guest segment registers as part of VM-entry.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmentryLoadGuestSegRegs(PVMCPU pVCpu)
+{
+    /*
+     * Load guest segment registers, GDTR, IDTR, LDTR and TR.
+     * See Intel spec. 26.3.2.2 "Loading Guest Segment Registers and Descriptor-Table Registers".
+     */
+    /* CS, SS, ES, DS, FS, GS. */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    for (unsigned iSegReg = 0; iSegReg < X86_SREG_COUNT; iSegReg++)
+    {
+        PCPUMSELREG pGstSelReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
+        CPUMSELREG  VmcsSelReg;
+        int rc = iemVmxVmcsGetGuestSegReg(pVmcs, iSegReg, &VmcsSelReg);
+        AssertRC(rc); NOREF(rc);
+        if (!(VmcsSelReg.Attr.u & X86DESCATTR_UNUSABLE))
+        {
+            pGstSelReg->Sel      = VmcsSelReg.Sel;
+            pGstSelReg->ValidSel = VmcsSelReg.Sel;
+            pGstSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
+            pGstSelReg->u64Base  = VmcsSelReg.u64Base;
+            pGstSelReg->u32Limit = VmcsSelReg.u32Limit;
+            pGstSelReg->Attr.u   = VmcsSelReg.Attr.u;
+        }
+        else
+        {
+            pGstSelReg->Sel      = VmcsSelReg.Sel;
+            pGstSelReg->ValidSel = VmcsSelReg.Sel;
+            pGstSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
+            switch (iSegReg)
+            {
+                case X86_SREG_CS:
+                    pGstSelReg->u64Base  = VmcsSelReg.u64Base;
+                    pGstSelReg->u32Limit = VmcsSelReg.u32Limit;
+                    pGstSelReg->Attr.u   = VmcsSelReg.Attr.u;
+                    break;
+
+                case X86_SREG_SS:
+                    pGstSelReg->u64Base  = VmcsSelReg.u64Base & UINT32_C(0xfffffff0);
+                    pGstSelReg->u32Limit = 0;
+                    pGstSelReg->Attr.u   = (VmcsSelReg.Attr.u & X86DESCATTR_DPL) | X86DESCATTR_D | X86DESCATTR_UNUSABLE;
+                    break;
+
+                case X86_SREG_ES:
+                case X86_SREG_DS:
+                    pGstSelReg->u64Base  = 0;
+                    pGstSelReg->u32Limit = 0;
+                    pGstSelReg->Attr.u   = X86DESCATTR_UNUSABLE;
+                    break;
+
+                case X86_SREG_FS:
+                case X86_SREG_GS:
+                    pGstSelReg->u64Base  = VmcsSelReg.u64Base;
+                    pGstSelReg->u32Limit = 0;
+                    pGstSelReg->Attr.u   = X86DESCATTR_UNUSABLE;
+                    break;
+            }
+            Assert(pGstSelReg->Attr.n.u1Unusable);
+        }
+    }
+
+    /* LDTR. */
+    pVCpu->cpum.GstCtx.ldtr.Sel      = pVmcs->GuestLdtr;
+    pVCpu->cpum.GstCtx.ldtr.ValidSel = pVmcs->GuestLdtr;
+    pVCpu->cpum.GstCtx.ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
+    if (!(pVmcs->u32GuestLdtrAttr & X86DESCATTR_UNUSABLE))
+    {
+        pVCpu->cpum.GstCtx.ldtr.u64Base  = pVmcs->u64GuestLdtrBase.u;
+        pVCpu->cpum.GstCtx.ldtr.u32Limit = pVmcs->u32GuestLdtrLimit;
+        pVCpu->cpum.GstCtx.ldtr.Attr.u   = pVmcs->u32GuestLdtrAttr;
+    }
+    else
+    {
+        pVCpu->cpum.GstCtx.ldtr.u64Base  = 0;
+        pVCpu->cpum.GstCtx.ldtr.u32Limit = 0;
+        pVCpu->cpum.GstCtx.ldtr.Attr.u   = X86DESCATTR_UNUSABLE;
+    }
+
+    /* TR. */
+    Assert(!(pVmcs->u32GuestTrAttr & X86DESCATTR_UNUSABLE));
+    pVCpu->cpum.GstCtx.tr.Sel      = pVmcs->GuestTr;
+    pVCpu->cpum.GstCtx.tr.ValidSel = pVmcs->GuestTr;
+    pVCpu->cpum.GstCtx.tr.fFlags   = CPUMSELREG_FLAGS_VALID;
+    pVCpu->cpum.GstCtx.tr.u64Base  = pVmcs->u64GuestTrBase.u;
+    pVCpu->cpum.GstCtx.tr.u32Limit = pVmcs->u32GuestTrLimit;
+    pVCpu->cpum.GstCtx.tr.Attr.u   = pVmcs->u32GuestTrAttr;
+
+    /* GDTR. */
+    pVCpu->cpum.GstCtx.gdtr.cbGdt = pVmcs->u32GuestGdtrLimit;
+    pVCpu->cpum.GstCtx.gdtr.pGdt  = pVmcs->u64GuestGdtrBase.u;
+
+    /* IDTR. */
+    pVCpu->cpum.GstCtx.idtr.cbIdt = pVmcs->u32GuestIdtrLimit;
+    pVCpu->cpum.GstCtx.idtr.pIdt  = pVmcs->u64GuestIdtrBase.u;
+}
+
+
+/**
+ * Loads the guest-state as part of VM-entry.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ *
+ * @remarks This must be done after all the necessary steps prior to loading of
+ *          guest-state (e.g. checking various VMCS state).
+ */
+IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
+{
+    iemVmxVmentryLoadGuestControlRegsMsr(pVCpu);
+    iemVmxVmentryLoadGuestSegRegs(pVCpu);
+
+    /*
+     * Load guest RIP, RSP and RFLAGS.
+     * See Intel spec. 26.3.2.3 "Loading Guest RIP, RSP and RFLAGS".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVCpu->cpum.GstCtx.rsp      = pVmcs->u64GuestRsp.u;
+    pVCpu->cpum.GstCtx.rip      = pVmcs->u64GuestRip.u;
+    pVCpu->cpum.GstCtx.rflags.u = pVmcs->u64GuestRFlags.u;
+
+    /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
+
+    /* Nothing to do for VPID. */
+
+    /* Clear address-range monitoring. */
+    EMMonitorWaitClear(pVCpu);
+
+    /* Load MSRs. */
+
+    NOREF(pszInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * VMLAUNCH/VMRESUME instruction execution worker.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -3918,74 +4117,50 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         return rc;
     }
 
-    /*
-     * Check VM-execution control fields.
-     */
+    /* Check VM-execution control fields. */
     rc = iemVmxVmentryCheckExecCtls(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
+    if (RT_SUCCESS(rc))
     {
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
+        /* Check VM-exit control fields. */
+        rc = iemVmxVmentryCheckExitCtls(pVCpu, pszInstr);
+        if (RT_SUCCESS(rc))
+        {
+            /* Check VM-entry control fields. */
+            rc = iemVmxVmentryCheckEntryCtls(pVCpu, pszInstr);
+            if (RT_SUCCESS(rc))
+            {
+                /* Check host-state fields. */
+                rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Check guest-state fields. */
+                    rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Load guest-state fields. */
+                        rc = iemVmxVmentryLoadGuestState(pVCpu, pszInstr);
+                        if (RT_SUCCESS(rc))
+                        {
+                            iemVmxVmSucceed(pVCpu);
+                            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                            return VINF_SUCCESS;
+                        }
+                    }
+                    /** @todo NSTVMX: VMExit with VMX_EXIT_ERR_INVALID_GUEST_STATE and set
+                     *        VMX_BF_EXIT_REASON_ENTRY_FAILED. */
+                    return VINF_SUCCESS;
+                }
+
+                iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                return VINF_SUCCESS;
+            }
+        }
     }
 
-    /*
-     * Check VM-exit control fields.
-     */
-    rc = iemVmxVmentryCheckExitCtls(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-    {
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Check VM-entry control fields.
-     */
-    rc = iemVmxVmentryCheckEntryCtls(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-    {
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Check host-state fields.
-     */
-    rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-    {
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Check guest-state fields.
-     */
-    rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
-    if (rc == VINF_SUCCESS)
-    { /* likely */ }
-    else
-    {
-        /** @todo NSTVMX: VMExit with VMX_EXIT_ERR_INVALID_GUEST_STATE and set
-         *        VMX_BF_EXIT_REASON_ENTRY_FAILED. */
-        return VINF_SUCCESS;
-    }
-
-    iemVmxVmSucceed(pVCpu);
+    iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VERR_IEM_IPE_2;
+    return VINF_SUCCESS;
 }
 
 
@@ -4041,8 +4216,8 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     if (fSmmMonitorCtl & MSR_IA32_SMM_MONITOR_VMXOFF_UNBLOCK_SMI)
     { /** @todo NSTVMX: Unblock SMI. */ }
 
+    EMMonitorWaitClear(pVCpu);
     /** @todo NSTVMX: Unblock and enable A20M. */
-    /** @todo NSTVMX: Clear address-range monitoring. */
 
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);

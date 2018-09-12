@@ -1852,6 +1852,19 @@ AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
 #define VMX_ENTRY_INSTR_LEN_MAX                                 15
 /** @} */
 
+
+/** @name VM-entry register masks.
+ * @{ */
+/** CR0 bits ignored on VM-entry (ET, NW, CD and reserved bits bits 6:15, bit 17,
+ *  bits 19:28). */
+#define VMX_ENTRY_CR0_IGNORE_MASK                               UINT64_C(0x7ffaffc0)
+/** DR7 bits set here are always cleared on VM-entry (bit 12, bits 14:15). */
+#define VMX_ENTRY_DR7_MBZ_MASK                                  UINT64_C(0xd000)
+/** DR7 bits set here are always set on VM-entry (bit 10). */
+#define VMX_ENTRY_DR7_MB1_MASK                                  UINT64_C(0x400)
+/** @} */
+
+
 /** @name Pin-based VM-execution controls.
  * @{
  */
@@ -3474,7 +3487,8 @@ AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
 typedef enum
 {
     /* Internal processing errors. */
-    kVmxVDiag_Ipe_1 = 0,
+    kVmxVDiag_None = 0,
+    kVmxVDiag_Ipe_1,
     kVmxVDiag_Ipe_2,
     kVmxVDiag_Ipe_3,
     kVmxVDiag_Ipe_4,
@@ -3483,6 +3497,13 @@ typedef enum
     kVmxVDiag_Ipe_7,
     kVmxVDiag_Ipe_8,
     kVmxVDiag_Ipe_9,
+    kVmxVDiag_Ipe_10,
+    kVmxVDiag_Ipe_11,
+    kVmxVDiag_Ipe_12,
+    kVmxVDiag_Ipe_13,
+    kVmxVDiag_Ipe_14,
+    kVmxVDiag_Ipe_15,
+    kVmxVDiag_Ipe_16,
     /* VMXON. */
     kVmxVDiag_Vmxon_A20M,
     kVmxVDiag_Vmxon_Cpl,
