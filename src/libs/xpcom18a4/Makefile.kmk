@@ -1201,15 +1201,16 @@ endif
 #
 # Include sub-makefiles for the Python<->XPCOM and Java<->XPCOM bridges.
 #
+ifndef VBOX_ONLY_EXTPACK
+ # Find the Python headers for the Python<->XPCOM bridge if enabled.
+ ifdef VBOX_WITH_PYTHON
+  include $(PATH_SUB_CURRENT)/python/Makefile.kmk
+ endif
 
-# Find the Python headers for the Python<->XPCOM bridge if enabled.
-ifdef VBOX_WITH_PYTHON
- include $(PATH_SUB_CURRENT)/python/Makefile.kmk
-endif
-
-ifdef VBOX_WITH_JXPCOM
- include $(PATH_SUB_CURRENT)/java/Makefile.kmk
-endif
+ ifdef VBOX_WITH_JXPCOM
+  include $(PATH_SUB_CURRENT)/java/Makefile.kmk
+ endif
+endif # !VBOX_ONLY_EXTPACK
 
 
 #
