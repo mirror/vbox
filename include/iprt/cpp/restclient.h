@@ -99,7 +99,12 @@ public:
      * @param   a_cbDst         Max number of bytes to produce.
      * @param   a_offContent    The byte offset corresponding to the start of @a a_pvDst.
      * @param   a_pcbActual     Where to return the number of bytes actually produced.
+     *
      * @remarks Use getCallbackData to get the user data.
+     *
+     * @note    The @a a_offContent parameter does not imply random access or anthing
+     *          like that, it is just a convenience provided by the caller.  The value
+     *          is the sum of the previously returned @a *pcbActual values.
      */
     typedef DECLCALLBACK(int) FNPRODUCER(RTCRestBinaryParameter *a_pThis, void *a_pvDst, size_t a_cbDst,
                                          uint64_t a_offContent, size_t *a_pcbActual);
@@ -227,7 +232,12 @@ public:
      * @param   a_uHttpStatus   The HTTP status code.
      * @param   a_offContent    The byte offset corresponding to the start of @a a_pvSrc.
      * @param   a_cbContent     The content length field value, UINT64_MAX if not available.
+     *
      * @remarks Use getCallbackData to get the user data.
+     *
+     * @note    The @a a_offContent parameter does not imply random access or anthing
+     *          like that, it is just a convenience provided by the caller.  The value
+     *          is the sum of the previous @a a_cbSrc values.
      */
     typedef DECLCALLBACK(int) FNCONSUMER(RTCRestBinaryResponse *a_pThis, const void *a_pvSrc, size_t a_cbSrc,
                                          uint32_t a_uHttpStatus, uint64_t a_offContent, uint64_t a_cbContent);

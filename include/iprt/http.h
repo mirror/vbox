@@ -467,6 +467,10 @@ RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPRO
  * @param   offContent      The byte offset corresponding to the start of @a pvBuf.
  * @param   cbContent       The content length field value, UINT64_MAX if not available.
  * @param   pvUser          The user parameter.
+ *
+ * @note    The @a offContent parameter does not imply random access or anthing
+ *          like that, it is just a convenience provided by the caller.  The
+ *          value is the sum of the previous @a cbBuf values.
  */
 typedef DECLCALLBACK(int) FNRTHTTPDOWNLOADCALLBACK(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
                                                    uint64_t offContent, uint64_t cbContent, void *pvUser);
@@ -510,6 +514,10 @@ RTR3DECL(int) RTHttpSetDownloadCallback(RTHTTP hHttp, uint32_t fFlags, PFNRTHTTP
  * @param   offContent      The byte offset corresponding to the start of @a pvBuf.
  * @param   pcbActual       Actual number of bytes provided.
  * @param   pvUser          The user parameter.
+ *
+ * @note    The @a offContent parameter does not imply random access or anthing
+ *          like that, it is just a convenience provided by the caller.  The
+ *          value is the sum of the previously returned @a *pcbActual values.
  */
 typedef DECLCALLBACK(int) FNRTHTTPUPLOADCALLBACK(RTHTTP hHttp, void *pvBuf, size_t cbBuf, uint64_t offContent,
                                                  size_t *pcbActual, void *pvUser);
