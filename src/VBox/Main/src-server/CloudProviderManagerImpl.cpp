@@ -88,7 +88,7 @@ void CloudProviderManager::uninit()
         return;
 }
 
-#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
+#if defined(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK) && defined(VBOX_WITH_EXTPACK)
 void CloudProviderManager::i_refreshProviders()
 {
     uint64_t cExtPackMgrUpdate;
