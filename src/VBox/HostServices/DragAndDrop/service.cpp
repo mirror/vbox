@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,10 +50,8 @@ class DragAndDropClient : public HGCM::Client
 {
 public:
 
-    DragAndDropClient(uint32_t uClientId, VBOXHGCMCALLHANDLE hHandle = NULL,
-                      uint32_t uMsg = 0, uint32_t cParms = 0, VBOXHGCMSVCPARM aParms[] = NULL)
-        : HGCM::Client(uClientId, hHandle, uMsg, cParms, aParms)
-        , m_fDeferred(false)
+    DragAndDropClient(uint32_t uClientID)
+        : HGCM::Client(uClientID)
     {
         RT_ZERO(m_SvcCtx);
     }
@@ -65,20 +63,7 @@ public:
 
 public:
 
-    void complete(VBOXHGCMCALLHANDLE hHandle, int rcOp);
-    void completeDeferred(int rcOp);
     void disconnect(void);
-    bool isDeferred(void) const { return m_fDeferred; }
-    void setDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    void setSvcContext(const HGCM::VBOXHGCMSVCTX &SvcCtx) { m_SvcCtx = SvcCtx; }
-
-protected:
-
-    /** The HGCM service context this client is bound to. */
-    HGCM::VBOXHGCMSVCTX m_SvcCtx;
-    /** Flag indicating whether this client currently is deferred mode,
-     *  meaning that it did not return to the caller yet. */
-    bool                m_fDeferred;
 };
 
 /** Map holding pointers to drag and drop clients. Key is the (unique) HGCM client ID. */
@@ -136,36 +121,6 @@ protected:
 *********************************************************************************************************************************/
 
 /**
- * Completes the call by returning the control back to the guest
- * side code.
- */
-void DragAndDropClient::complete(VBOXHGCMCALLHANDLE hHandle, int rcOp)
-{
-    LogFlowThisFunc(("uClientID=%RU32\n", m_uClientId));
-
-    if (   m_SvcCtx.pHelpers
-        && m_SvcCtx.pHelpers->pfnCallComplete)
-    {
-        m_SvcCtx.pHelpers->pfnCallComplete(hHandle, rcOp);
-    }
-}
-
-/**
- * Completes a deferred call by returning the control back to the guest
- * side code.
- */
-void DragAndDropClient::completeDeferred(int rcOp)
-{
-    AssertMsg(m_fDeferred, ("Client %RU32 is not in deferred mode\n", m_uClientId));
-    Assert(m_hHandle != NULL);
-
-    LogFlowThisFunc(("uClientID=%RU32\n", m_uClientId));
-
-    complete(m_hHandle, rcOp);
-    m_fDeferred = false;
-}
-
-/**
  * Called when the HGCM client disconnected on the guest side.
  * This function takes care of the client's data cleanup and also lets the host
  * know that the client has been disconnected.
@@ -173,10 +128,10 @@ void DragAndDropClient::completeDeferred(int rcOp)
  */
 void DragAndDropClient::disconnect(void)
 {
-    LogFlowThisFunc(("uClient=%RU32\n", m_uClientId));
+    LogFlowThisFunc(("uClient=%RU32\n", m_uClientID));
 
-    if (isDeferred())
-        completeDeferred(VERR_INTERRUPTED);
+    if (IsDeferred())
+        CompleteDeferred(VERR_INTERRUPTED);
 
     /*
      * Let the host know.
@@ -190,28 +145,10 @@ void DragAndDropClient::disconnect(void)
     {
         int rc2 = m_SvcCtx.pfnHostCallback(m_SvcCtx.pvHostData, GUEST_DND_DISCONNECT, &data, sizeof(data));
         if (RT_FAILURE(rc2))
-            LogFlowFunc(("Warning: Unable to notify host about client %RU32 disconnect, rc=%Rrc\n", m_uClientId, rc2));
+            LogFlowFunc(("Warning: Unable to notify host about client %RU32 disconnect, rc=%Rrc\n", m_uClientID, rc2));
         /* Not fatal. */
     }
 }
-
-/**
- * Set the client's status to deferred, meaning that it does not return to the caller
- * on the guest side yet.
- */
-void DragAndDropClient::setDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
-{
-    LogFlowThisFunc(("uClient=%RU32\n", m_uClientId));
-
-    AssertMsg(m_fDeferred == false, ("Client already in deferred mode\n"));
-    m_fDeferred = true;
-
-    m_hHandle = hHandle;
-    m_uMsg    = u32Function;
-    m_cParms  = cParms;
-    m_paParms = paParms;
-}
-
 
 /*********************************************************************************************************************************
 *   Service class implementation                                                                                                 *
@@ -287,7 +224,7 @@ int DragAndDropService::clientConnect(uint32_t u32ClientID, void *pvClient)
         try
         {
             DragAndDropClient *pClient = new DragAndDropClient(u32ClientID);
-            pClient->setSvcContext(m_SvcCtx);
+            pClient->SetSvcContext(m_SvcCtx);
             m_clientMap[u32ClientID] = pClient;
         }
         catch(std::bad_alloc &)
@@ -552,7 +489,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     if (RT_SUCCESS(rc))
                         rc = paParms[idxProto + 1].getUInt32(&data.uFlags);
                     if (RT_SUCCESS(rc))
-                        rc = pClient->SetProtocolVer(data.uProtocol);
+                        pClient->SetProtocolVer(data.uProtocol);
                     if (RT_SUCCESS(rc))
                     {
                         LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
@@ -1087,7 +1024,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
         try
         {
             AssertPtr(pClient);
-            pClient->setDeferred(callHandle, u32Function, cParms, paParms);
+            pClient->SetDeferred(callHandle, u32Function, cParms, paParms);
             m_clientQueue.push_back(u32ClientID);
         }
         catch (std::bad_alloc &)
@@ -1097,7 +1034,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
         }
     }
     else if (pClient)
-        pClient->complete(callHandle, rc);
+        pClient->Complete(callHandle, rc);
     else
     {
         AssertMsgFailed(("Guest call failed with %Rrc\n", rc));
@@ -1162,10 +1099,10 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                     DragAndDropClient *pClient = itClient->second;
                     AssertPtr(pClient);
 
-                    int rc2 = pClient->addMessageInfo(HOST_DND_HG_EVT_CANCEL,
-                                                      /* Protocol v3+ also contains the context ID. */
-                                                      pClient->GetProtocolVer() >= 3 ? 1 : 0);
-                    pClient->completeDeferred(rc2);
+                    int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_HG_EVT_CANCEL,
+                                                          /* Protocol v3+ also contains the context ID. */
+                                                          pClient->GetProtocolVer() >= 3 ? 1 : 0);
+                    pClient->CompleteDeferred(rc2);
 
                     m_clientQueue.erase(itQueue);
                     itQueue = m_clientQueue.begin();
@@ -1245,10 +1182,10 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             {
                 if (uMsgClient == GUEST_DND_GET_NEXT_HOST_MSG)
                 {
-                    rc = pClient->addMessageInfo(uMsgNext, cParmsNext);
+                    rc = pClient->SetDeferredMsgInfo(uMsgNext, cParmsNext);
 
                     /* Note: Report the current rc back to the guest. */
-                    pClient->completeDeferred(rc);
+                    pClient->CompleteDeferred(rc);
                 }
                 /*
                  * Does the message the client is waiting for match the message
@@ -1259,14 +1196,14 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                     rc = m_pManager->nextMessage(u32Function, cParms, paParms);
 
                     /* Note: Report the current rc back to the guest. */
-                    pClient->completeDeferred(rc);
+                    pClient->CompleteDeferred(rc);
                 }
                 else /* Should not happen; cancel the operation on the guest. */
                 {
                     LogFunc(("Client ID=%RU32 in wrong state with uMsg=%RU32 (next message in queue: %RU32), cancelling\n",
                              pClient->GetClientID(), uMsgClient, uMsgNext));
 
-                    pClient->completeDeferred(VERR_CANCELLED);
+                    pClient->CompleteDeferred(VERR_CANCELLED);
                 }
 
                 m_clientQueue.pop_front();
