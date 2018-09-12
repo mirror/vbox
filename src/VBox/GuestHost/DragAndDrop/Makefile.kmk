@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2014-2017 Oracle Corporation
+# Copyright (C) 2014-2018 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -48,6 +48,12 @@ LIBRARIES += VBoxDnDHostR3Lib
 VBoxDnDHostR3Lib_TEMPLATE   = VBOXR3
 VBoxDnDHostR3Lib_DEFS       =
 VBoxDnDHostR3Lib_SOURCES    = $(VBOX_DND_GUESTHOST_FILES)
+
+# Include the common host services code.
+VBOX_PATH_HOSTSERVICES_COMMON = $(PATH_ROOT)/src/VBox/HostServices/common
+VBoxDnDHostR3Lib_SOURCES   += \
+	$(VBOX_PATH_HOSTSERVICES_COMMON)/client.cpp \
+	$(VBOX_PATH_HOSTSERVICES_COMMON)/message.cpp
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
