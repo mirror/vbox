@@ -65,7 +65,9 @@ int DnDManager::AddMsg(DnDMessage *pMsg, bool fAppend /* = true */)
  * Adds a DnD message to the manager's queue.
  *
  * @returns IPRT status code.
- * @param   pMsg                Pointer to DnD message to add. The queue then owns the pointer.
+ * @param   uMsg                Type (function number) of message to add.
+ * @param   cParms              Number of parameters of message to add.
+ * @param   paParms             Array of parameters of message to add.
  * @param   fAppend             Whether to append or prepend the message to the queue.
  */
 int DnDManager::AddMsg(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fAppend /* = true */)
