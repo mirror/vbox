@@ -60,8 +60,7 @@ HRESULT CloudProviderManager::init(VirtualBox *aParent)
 
     m_apCloudProviders.clear();
 
-#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
-# ifdef VBOX_WITH_EXTPACK
+#if defined(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK) && defined(VBOX_WITH_EXTPACK)
     // Engage the extension pack manager and get all the implementations of
     // this class and all implemented cloud providers.
     ExtPackManager *pExtPackMgr = aParent->i_getExtPackManager();
@@ -73,7 +72,6 @@ HRESULT CloudProviderManager::init(VirtualBox *aParent)
         mcExtPackMgrUpdate--;
         i_refreshProviders();
     }
-# endif
 #else
     RT_NOREF(aParent);
 #endif
