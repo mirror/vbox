@@ -587,8 +587,8 @@ protected:
      * @param   a_pchData           The header blob to search.
      * @param   a_cbData            The size of the header blob to search.
      */
-    void extracHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs, RTCRestObjectBase ***a_pappFieldValues,
-                                    size_t a_cFields, const char *a_pchData, size_t a_cbData);
+    void extractHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs, RTCRestObjectBase ***a_pappFieldValues,
+                                     size_t a_cFields, const char *a_pchData, size_t a_cbData);
 
     /**
      * Helper that extracts a header field.

@@ -193,9 +193,9 @@ int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
 }
 
 
-void RTCRestClientResponseBase::extracHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs,
-                                                           RTCRestObjectBase ***a_pappFieldValues,
-                                                           size_t a_cFields, const char *a_pchData, size_t a_cbData)
+void RTCRestClientResponseBase::extractHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs,
+                                                            RTCRestObjectBase ***a_pappFieldValues,
+                                                            size_t a_cFields, const char *a_pchData, size_t a_cbData)
 
 {
     RTCString strValue; /* (Keep it out here to encourage buffer allocation reuse and default construction call.) */
