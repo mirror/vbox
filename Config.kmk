@@ -774,9 +774,8 @@ endif
 ## @name Extension pack
 ## @{
 # Enables the extension pack feature.
-VBOX_WITH_EXTPACK = 1A
+VBOX_WITH_EXTPACK = 1
 # Enables implementing cloud providers as part of an extension pack.
-# (temp hack, disabled but enabled for OSE below, but will be for all soon)
 VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK = 1
 # Enables separating code into the Oracle VM VirtualBox Extension Pack, dubbed PUEL.
 VBOX_WITH_EXTPACK_PUEL = 1
@@ -1167,8 +1166,6 @@ ifdef VBOX_OSE
  VBOX_WITH_XHCI_IMPL=
  VBOX_WITH_USB_VIDEO_IMPL=
  VBOX_WITH_NVME_IMPL=
- ## @todo hack, see above, remove me as soon as possible
- VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK=1
  VBOX_WITH_EXTPACK_PUEL=
  VBOX_WITH_EXTPACK_PUEL_BUILD=
  VBOX_WITH_PCI_PASSTHROUGH_IMPL=
