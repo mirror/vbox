@@ -26,6 +26,7 @@
 
 # Source dirs.
 --filter-out-files /src-all/VBoxAPI-end.d
+--filter-out-files /src-all/VBoxAPI-end-alternative.d
 --filter-out-files /src-client/README.testing
 --filter-out-files /src-server/custom.ids
 --filter-out-files /src-server/usb.ids
