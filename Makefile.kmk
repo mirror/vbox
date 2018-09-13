@@ -1413,7 +1413,7 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 extension packs)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
-	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'PATH=$$PATH:/opt/local/bin; cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
 	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 extension packs)
 endif
