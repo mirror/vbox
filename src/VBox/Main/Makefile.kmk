@@ -1552,9 +1552,9 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 		--stringparam generating "dtrace-probes" \
 		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(SED) -e '' -o "$@.tmp" \
-		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d" \
+		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start$(if-expr "$(VBOX_HOST_DTRACE_VERSION)" == "dtrace: Sun D 1.6.2",-alternative,).d" \
 		"$@" \
-		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d"
+		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end$(if-expr "$(VBOX_HOST_DTRACE_VERSION)" == "dtrace: Sun D 1.6.2",-alternative,).d"
 	$(QUIET)$(MV) -- "$@.tmp" "$@"
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d"
 
