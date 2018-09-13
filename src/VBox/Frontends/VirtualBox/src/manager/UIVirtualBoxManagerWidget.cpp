@@ -507,7 +507,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         }
 
                         /* Create sliding-widget: */
-                        m_pSlidingAnimation = new UISlidingAnimation(Qt::Vertical, true);
+                        // Reverse initial animation direction if group or machine selected!
+                        const bool fReverse = !m_pPaneChooser->isGlobalItemSelected();
+                        m_pSlidingAnimation = new UISlidingAnimation(Qt::Vertical, fReverse);
                         if (m_pSlidingAnimation)
                         {
                             /* Add first/second widgets into sliding animation: */
@@ -519,8 +521,11 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                             m_pStackedWidget->addWidget(m_pSlidingAnimation);
                         }
 
-                        /* Make Machine Tools pane active initially: */
-                        m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
+                        /* Choose which pane should be active initially: */
+                        if (m_pPaneChooser->isGlobalItemSelected())
+                            m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal);
+                        else
+                            m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
 
                         /* Add into layout: */
                         pLayoutRight->addWidget(m_pStackedWidget, 1);
