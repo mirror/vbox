@@ -125,13 +125,19 @@ BEGINPROC_EXPORTED RTDbgStackDumpSelf
 %endif
 SEH64_END_PROLOGUE
 
-%ifdef RT_ARCH_AMD64
-        call    NAME(rtDbgStackDumpSelfWorker)
-%else
+%ifndef RT_ARCH_AMD64
         push    eax
         push    dword [xBP + xCB * 4]
         push    dword [xBP + xCB * 3]
         push    dword [xBP + xCB * 2]
+%endif
+%ifdef ASM_FORMAT_ELF
+ %ifdef PIC
+        call    NAME(rtDbgStackDumpSelfWorker) wrt ..plt
+ %else
+        call    NAME(rtDbgStackDumpSelfWorker)
+ %endif
+%else
         call    NAME(rtDbgStackDumpSelfWorker)
 %endif
 
