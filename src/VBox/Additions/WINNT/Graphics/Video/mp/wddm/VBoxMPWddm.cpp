@@ -759,7 +759,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
                            break;
                        case CmResourceTypeMemory:
                            /* we assume there is one memory segment */
-                           Assert(pHwResources->phVRAM.QuadPart == 0);
+                           AssertBreak(pHwResources->phVRAM.QuadPart == 0);
                            pHwResources->phVRAM = pPRc->u.Memory.Start;
                            Assert(pHwResources->phVRAM.QuadPart != 0);
                            pHwResources->ulApertureSize = pPRc->u.Memory.Length;
