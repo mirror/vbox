@@ -288,8 +288,10 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
  *  Vista, and W2K8 requires KB2533623 to be installed to support this; not
  *  supported on XP, W2K3 or earlier.  Ignored on other platforms. */
 #define RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR  RT_BIT_32(2)
+/** Do not append default suffix.   */
+#define RTLDRLOAD_FLAGS_NO_SUFFIX               RT_BIT_32(3)
 /** The mask of valid flag bits. */
-#define RTLDRLOAD_FLAGS_VALID_MASK              UINT32_C(0x00000007)
+#define RTLDRLOAD_FLAGS_VALID_MASK              UINT32_C(0x0000000f)
 /** @} */
 
 /**
