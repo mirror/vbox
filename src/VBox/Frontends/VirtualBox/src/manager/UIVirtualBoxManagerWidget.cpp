@@ -403,6 +403,13 @@ void UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal(ToolTypeGlobal enmType
 
 void UIVirtualBoxManagerWidget::prepare()
 {
+    /* Configure palette: */
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
+    pal.setColor(QPalette::Window, color);
+    setPalette(pal);
+
     /* Prepare: */
     prepareToolbar();
     prepareWidgets();
@@ -421,7 +428,7 @@ void UIVirtualBoxManagerWidget::prepare()
 void UIVirtualBoxManagerWidget::prepareToolbar()
 {
     /* Create Main toolbar: */
-    m_pToolBar = new UIToolBar(this);
+    m_pToolBar = new UIToolBar;
     if (m_pToolBar)
     {
         /* Configure toolbar: */
@@ -470,6 +477,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                 if(pLayoutRight)
                 {
                     /* Configure layout: */
+                    pLayoutRight->setSpacing(0);
                     pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
                     /* Add tool-bar into layout: */
