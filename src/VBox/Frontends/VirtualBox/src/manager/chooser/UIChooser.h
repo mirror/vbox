@@ -21,9 +21,6 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* GUI includes: */
-#include "UIChooserItem.h"
-
 /* Forward declarations: */
 class QVBoxLayout;
 class UIActionPool;
@@ -32,7 +29,7 @@ class UIChooserView;
 class UIVirtualBoxManagerWidget;
 class UIVirtualMachineItem;
 
-/** QWidget extension used as VM chooser pane. */
+/** QWidget extension used as VM Chooser-pane. */
 class UIChooser : public QWidget
 {
     Q_OBJECT;
@@ -61,9 +58,9 @@ signals:
 
 public:
 
-    /** Constructs chooser pane passing @a pParent to the base-class. */
+    /** Constructs Chooser-pane passing @a pParent to the base-class. */
     UIChooser(UIVirtualBoxManagerWidget *pParent);
-    /** Destructs chooser pane. */
+    /** Destructs Chooser-pane. */
     virtual ~UIChooser() /* override */;
 
     /** @name General stuff.
@@ -146,9 +143,9 @@ private:
 
         /** Holds the main layout instane. */
         QVBoxLayout    *m_pMainLayout;
-        /** Holds the chooser model instane. */
+        /** Holds the Chooser-model instane. */
         UIChooserModel *m_pChooserModel;
-        /** Holds the chooser view instane. */
+        /** Holds the Chooser-view instane. */
         UIChooserView  *m_pChooserView;
     /** @} */
 };

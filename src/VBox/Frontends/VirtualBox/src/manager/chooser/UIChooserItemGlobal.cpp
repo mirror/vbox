@@ -59,7 +59,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     /* Init: */
     updatePixmap();
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -88,7 +88,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     /* Init: */
     updatePixmap();
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -214,7 +214,7 @@ QString UIChooserItemGlobal::fullName() const
 
 QString UIChooserItemGlobal::definition() const
 {
-    return QString("n=%1").arg(name());
+    return QString("n=%1").arg("GLOBAL");
 }
 
 void UIChooserItemGlobal::addItem(UIChooserItem *, int)

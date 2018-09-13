@@ -388,7 +388,7 @@ void UIChooserItem::updateGeometry()
     if (isRoot())
     {
         /* Root-item should notify chooser-view if minimum-width-hint was changed: */
-        int iMinimumWidthHint = minimumWidthHint();
+        const int iMinimumWidthHint = minimumWidthHint();
         if (m_iPreviousMinimumWidthHint != iMinimumWidthHint)
         {
             /* Save new minimum-width-hint, notify listener: */
@@ -396,7 +396,7 @@ void UIChooserItem::updateGeometry()
             emit sigMinimumWidthHintChanged(m_iPreviousMinimumWidthHint);
         }
         /* Root-item should notify chooser-view if minimum-height-hint was changed: */
-        int iMinimumHeightHint = minimumHeightHint();
+        const int iMinimumHeightHint = minimumHeightHint();
         if (m_iPreviousMinimumHeightHint != iMinimumHeightHint)
         {
             /* Save new minimum-height-hint, notify listener: */
@@ -577,7 +577,7 @@ QString UIChooserItem::compressText(const QFont &font, QPaintDevice *pPaintDevic
     if (strText.isEmpty())
         return strText;
 
-    /* Check if passed text feats maximum width: */
+    /* Check if passed text fits maximum width: */
     QFontMetrics fm(font, pPaintDevice);
     if (fm.width(strText) <= iWidth)
         return strText;

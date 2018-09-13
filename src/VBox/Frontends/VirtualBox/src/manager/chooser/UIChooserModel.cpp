@@ -141,9 +141,9 @@ QGraphicsScene *UIChooserModel::scene() const
 
 QPaintDevice *UIChooserModel::paintDevice() const
 {
-    if (!scene() || scene()->views().isEmpty())
-        return 0;
-    return scene()->views().first();
+    if (scene() && !scene()->views().isEmpty())
+        return scene()->views().first();
+    return 0;
 }
 
 QGraphicsItem *UIChooserModel::itemAt(const QPointF &position, const QTransform &deviceTransform /* = QTransform() */) const
@@ -153,7 +153,7 @@ QGraphicsItem *UIChooserModel::itemAt(const QPointF &position, const QTransform 
 
 void UIChooserModel::setCurrentItems(const QList<UIChooserItem*> &items)
 {
-    /* Is there something seems to be changed? */
+    /* Is there something changed? */
     if (m_currentItems == items)
         return;
 
@@ -170,7 +170,7 @@ void UIChooserModel::setCurrentItems(const QList<UIChooserItem*> &items)
         if (pItem && navigationList().contains(pItem))
             m_currentItems << pItem;
         else
-            AssertMsgFailed(("Passed item not in navigation list!"));
+            AssertMsgFailed(("Passed item is not in navigation list!"));
     }
 
     /* Is there something really changed? */
@@ -1607,6 +1607,9 @@ QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
     /* Prepare navigation list: */
     QList<UIChooserItem*> navigationItems;
 
+    /* Iterate over all the global-items: */
+    foreach (UIChooserItem *pGlobalItem, pItem->items(UIChooserItemType_Global))
+        navigationItems << pGlobalItem;
     /* Iterate over all the group-items: */
     foreach (UIChooserItem *pGroupItem, pItem->items(UIChooserItemType_Group))
     {
@@ -1614,9 +1617,6 @@ QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
         if (pGroupItem->toGroupItem()->isOpened())
             navigationItems << createNavigationList(pGroupItem);
     }
-    /* Iterate over all the global-items: */
-    foreach (UIChooserItem *pGlobalItem, pItem->items(UIChooserItemType_Global))
-        navigationItems << pGlobalItem;
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pMachineItem, pItem->items(UIChooserItemType_Machine))
         navigationItems << pMachineItem;

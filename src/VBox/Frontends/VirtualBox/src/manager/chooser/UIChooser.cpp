@@ -20,8 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QStatusBar>
-# include <QStyle>
 # include <QVBoxLayout>
 
 /* GUI includes: */

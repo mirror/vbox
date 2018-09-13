@@ -32,7 +32,6 @@
 #include "COMEnums.h"
 
 /* Forward declaration: */
-class QAction;
 class QDrag;
 class QGraphicsItem;
 class QGraphicsScene;
@@ -56,7 +55,7 @@ enum UIGraphicsSelectorContextMenuType
 };
 
 
-/** QObject extension used as VM chooser pane model: */
+/** QObject extension used as VM Chooser-pane model: */
 class UIChooserModel : public QObject
 {
     Q_OBJECT;
@@ -97,9 +96,9 @@ signals:
 
 public:
 
-    /** Constructs chooser model passing @a pParent to the base-class. */
+    /** Constructs Chooser-model passing @a pParent to the base-class. */
     UIChooserModel(UIChooser *pParent);
-    /** Destructs chooser model. */
+    /** Destructs Chooser-model. */
     virtual ~UIChooserModel() /* override */;
 
     /** @name General stuff.
@@ -109,7 +108,7 @@ public:
         /** Deinits model. */
         void deinit();
 
-        /** Returns the chooser reference. */
+        /** Returns the Chooser reference. */
         UIChooser *chooser() const;
         /** Returns the action-pool reference. */
         UIActionPool *actionPool() const;
@@ -238,7 +237,7 @@ public slots:
 
     /** @name General stuff.
       * @{ */
-        /** Handles chooser view resize. */
+        /** Handles Chooser-view resize. */
         void sltHandleViewResized();
     /** @} */
 
@@ -448,7 +447,7 @@ private:
 
     /** @name General stuff.
       * @{ */
-        /** Holds the chooser reference. */
+        /** Holds the Chooser reference. */
         UIChooser *m_pChooser;
 
         /** Holds the scene reference. */
@@ -468,7 +467,7 @@ private:
     /** @name Selection stuff.
       * @{ */
         /** Holds the focus item reference. */
-        QPointer<UIChooserItem> m_pFocusItem;
+        QPointer<UIChooserItem>  m_pFocusItem;
     /** @} */
 
     /** @name Children stuff.
@@ -485,29 +484,29 @@ private:
         QPointer<UIChooserItem>  m_pAfterSlidingFocus;
 
         /** Holds the navigation list. */
-        QList<UIChooserItem*> m_navigationList;
-        QList<UIChooserItem*> m_currentItems;
+        QList<UIChooserItem*>  m_navigationList;
+        QList<UIChooserItem*>  m_currentItems;
 
         /** Holds the current drag object instance. */
         QPointer<QDrag>  m_pCurrentDragObject;
         /** Holds the drag scrolling token size. */
-        int m_iScrollingTokenSize;
+        int              m_iScrollingTokenSize;
         /** Holds whether drag scrolling is in progress. */
-        bool m_fIsScrollingInProgress;
+        bool             m_fIsScrollingInProgress;
 
         /** Holds the item lookup timer instance. */
-        QTimer *m_pLookupTimer;
+        QTimer  *m_pLookupTimer;
         /** Holds the item lookup string. */
-        QString m_strLookupString;
+        QString  m_strLookupString;
 
         /** Holds the Id of last VM created from the GUI side. */
-        QString m_strLastCreatedMachineId;
+        QString  m_strLastCreatedMachineId;
     /** @} */
 
     /** @name Group saving stuff.
       * @{ */
         /** Holds the consolidated map of group definitions/orders. */
-        QMap<QString, QStringList> m_groups;
+        QMap<QString, QStringList>  m_groups;
     /** @} */
 };
 

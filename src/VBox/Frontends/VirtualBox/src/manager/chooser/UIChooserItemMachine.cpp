@@ -73,7 +73,7 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
     updateName();
     updateSnapshotName();
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -109,7 +109,7 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
     updateName();
     updateSnapshotName();
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -225,7 +225,7 @@ void UIChooserItemMachine::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
     UIChooserItem::resizeEvent(pEvent);
 
     /* What is the new geometry? */
-    QRectF newGeometry = geometry();
+    const QRectF newGeometry = geometry();
 
     /* Should we update visible name? */
     if (previousGeometry().width() != newGeometry.width())
@@ -251,7 +251,6 @@ void UIChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsI
 
     /* Paint decorations: */
     paintDecorations(pPainter, pOption);
-
     /* Paint machine info: */
     paintMachineInfo(pPainter, pOption);
 }
@@ -454,13 +453,13 @@ int UIChooserItemMachine::minimumHeightHint() const
     return iProposedHeight;
 }
 
-QSizeF UIChooserItemMachine::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+QSizeF UIChooserItemMachine::sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint /* = QSizeF() */) const
 {
     /* If Qt::MinimumSize requested: */
-    if (which == Qt::MinimumSize)
+    if (enmWhich == Qt::MinimumSize)
         return QSizeF(minimumWidthHint(), minimumHeightHint());
     /* Else call to base-class: */
-    return UIChooserItem::sizeHint(which, constraint);
+    return UIChooserItem::sizeHint(enmWhich, constraint);
 }
 
 QPixmap UIChooserItemMachine::toPixmap()
@@ -585,7 +584,7 @@ void UIChooserItemMachine::sltHandleWindowRemapped()
 
 void UIChooserItemMachine::prepare()
 {
-    /* Colors: */
+    /* Color tones: */
 #ifdef VBOX_WS_MAC
     m_iHighlightLightnessMin = 105;
     m_iHighlightLightnessMax = 115;
@@ -666,9 +665,8 @@ void UIChooserItemMachine::updatePixmap()
 
 void UIChooserItemMachine::updateStatePixmap()
 {
-    /* Determine the icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+    /* Determine icon metric: */
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     /* Get new state-pixmap and state-pixmap size: */
     const QIcon stateIcon = machineStateIcon();
     AssertReturnVoid(!stateIcon.isNull());
@@ -890,11 +888,10 @@ void UIChooserItemMachine::updateStateText()
 void UIChooserItemMachine::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
     /* Prepare variables: */
-    QRect fullRect = pOption->rect;
+    const QRect fullRect = pOption->rect;
 
     /* Paint background: */
     paintBackground(pPainter, fullRect);
-
     /* Paint frame: */
     paintFrameRectangle(pPainter, fullRect);
 }

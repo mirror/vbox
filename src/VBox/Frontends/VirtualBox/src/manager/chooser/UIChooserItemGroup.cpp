@@ -66,7 +66,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     AssertMsg(pScene, ("Incorrect scene passed!"));
     pScene->addItem(this);
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Prepare connections: */
@@ -101,7 +101,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene,
     /* Copy content to 'this': */
     copyContent(pCopyFrom, this);
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Init: */
@@ -141,7 +141,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
             this, &UIChooserItemGroup::sltHandleWindowRemapped);
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Init: */
@@ -189,7 +189,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     /* Copy content to 'this': */
     copyContent(pCopyFrom, this);
 
-    /* Translate finally: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Init: */
