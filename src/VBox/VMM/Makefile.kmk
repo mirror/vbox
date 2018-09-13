@@ -861,6 +861,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
 		-D IN_RING0 \
 		-D RT_C_DECLS_BEGIN= \
 		-D RT_C_DECLS_END= \
+		-D RT_GCC_EXTENSION= \
 		-D 'RCPTRTYPE(a_Type)=RTRCPTR' \
 		-D 'R3PTRTYPE(a_Type)=RTR3PTR' \
 		-D 'R0PTRTYPE(a_Type)=a_Type' \
