@@ -1430,8 +1430,6 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_CR4_FIXED1             0x489
 /** Information for enumerating fields in the VMCS. */
 #define MSR_IA32_VMX_VMCS_ENUM              0x48A
-/** Allowed settings for the VM-functions controls. */
-#define MSR_IA32_VMX_VMFUNC                 0x491
 /** Allowed settings for secondary proc-based VM execution controls */
 #define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 /** EPT capabilities. */
