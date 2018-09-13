@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -53,6 +53,11 @@
  *         + VBOXDNDHGSENDDATAMSG and VBOXDNDGHSENDDATAMSG can now contain an optional checksum for the current data block.
  *         | VBOXDNDHGSENDFILEDATAMSG and VBOXDNDGHSENDFILEDATAMSG are now sharing the same HGCM mesasge.
  *         - Removed unused HOST_DND_GH_RECV_DIR, HOST_DND_GH_RECV_FILE_DATA and HOST_DND_GH_RECV_FILE_HDR commands.
+ *
+ * Protocol TODO:
+ *
+ *     - Split up messages which use VBOXDNDHGACTIONMSG into own functions and remove parameters which
+ *       are not actually needed / used by a function. Why does HOST_DND_HG_EVT_MOVE need all the format stuff, for example?
  */
 
 #ifndef ___VBox_HostService_DragAndDropSvc_h
