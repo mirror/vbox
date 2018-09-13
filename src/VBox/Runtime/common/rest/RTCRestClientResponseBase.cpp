@@ -299,7 +299,7 @@ int RTCRestClientResponseBase::deserializeHeaderIntoMap(RTCRestStringMapBase *a_
                  * Create a value object and put it into the map.
                  */
                 RTCRestObjectBase *pValue;
-                int rc = a_pMap->putNewValue(&pValue, a_pchField, a_cchField);
+                rc = a_pMap->putNewValue(&pValue, a_pchField, a_cchField);
                 if (RT_SUCCESS(rc))
                 {
                     /*
