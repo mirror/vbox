@@ -256,17 +256,23 @@ QISplitter::QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pP
 void QISplitter::configureColor(const QColor &color)
 {
     m_color = color;
-    QIFlatSplitterHandle *pHandle = qobject_cast<QIFlatSplitterHandle*>(handle(1));
-    if (pHandle && m_color.isValid())
-        pHandle->configureColor(m_color);
+    for (int i = 1; i < count(); ++i)
+    {
+        QIFlatSplitterHandle *pHandle = qobject_cast<QIFlatSplitterHandle*>(handle(i));
+        if (pHandle && m_color.isValid())
+            pHandle->configureColor(m_color);
+    }
 }
 
 void QISplitter::configureColors(const QColor &color1, const QColor &color2)
 {
     m_color1 = color1; m_color2 = color2;
-    QIShadeSplitterHandle *pHandle = qobject_cast<QIShadeSplitterHandle*>(handle(1));
-    if (pHandle && m_color1.isValid() && m_color2.isValid())
-        pHandle->configureColors(m_color1, m_color2);
+    for (int i = 1; i < count(); ++i)
+    {
+        QIShadeSplitterHandle *pHandle = qobject_cast<QIShadeSplitterHandle*>(handle(i));
+        if (pHandle && m_color1.isValid() && m_color2.isValid())
+            pHandle->configureColors(m_color1, m_color2);
+    }
 }
 
 bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
