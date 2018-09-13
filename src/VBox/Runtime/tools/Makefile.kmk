@@ -60,11 +60,13 @@ if !defined(VBOX_ONLY_DOCS)
  bldRTSignTool_DEFS = IPRT_IN_BUILD_TOOL
  bldRTSignTool_POST_CMDS.win = $(VBOX_SIGN_IMAGE_CMDS)
 
- # RTLdrCheckImports - import checker.
- PROGRAMS += bldRTLdrCheckImports
- bldRTLdrCheckImports_TEMPLATE = VBoxAdvBldProg
- bldRTLdrCheckImports_DEFS = IPRT_IN_BUILD_TOOL
- bldRTLdrCheckImports_SOURCES = RTLdrCheckImports.cpp
+ if !defined(VBOX_ONLY_EXTPACKS)
+  # RTLdrCheckImports - import checker.
+  PROGRAMS += bldRTLdrCheckImports
+  bldRTLdrCheckImports_TEMPLATE = VBoxAdvBldProg
+  bldRTLdrCheckImports_DEFS = IPRT_IN_BUILD_TOOL
+  bldRTLdrCheckImports_SOURCES = RTLdrCheckImports.cpp
+ endif
 
 endif
 
