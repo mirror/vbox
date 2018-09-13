@@ -36,7 +36,7 @@
 # include "UITabBar.h"
 # include "UIToolBar.h"
 # include "UIVirtualMachineItem.h"
-# include "UIToolbarTools.h"
+# include "UITools.h"
 # ifndef VBOX_WS_MAC
 #  include "UIMenuBar.h"
 # endif
@@ -49,12 +49,12 @@ UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParen
     , m_pActionPool(pParent->actionPool())
     , m_pSplitter(0)
     , m_pToolBar(0)
-    , m_pToolbarTools(0)
     , m_pPaneChooser(0)
     , m_pStackedWidget(0)
     , m_pPaneToolsGlobal(0)
     , m_pPaneToolsMachine(0)
     , m_pSlidingAnimation(0)
+    , m_pPaneTools(0)
 {
     prepare();
 }
@@ -126,12 +126,46 @@ bool UIVirtualBoxManagerWidget::isToolOpened(ToolTypeGlobal enmType) const
 
 void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
 {
-    sltHandleToolOpenedMachine(enmType);
+    /* First, make sure corresponding tool set opened: */
+    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked()
+        && actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->property("watch_child_activation").toBool())
+        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
+
+    /* Open corresponding tool: */
+    m_pPaneToolsMachine->openTool(enmType);
+    /* If that was 'Details' => pass there current items: */
+    if (   enmType == ToolTypeMachine_Details
+        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+        m_pPaneToolsMachine->setItems(currentItems());
+    /* If that was 'Snapshot' or 'LogViewer' => pass there current or null machine: */
+    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_LogViewer)
+    {
+        UIVirtualMachineItem *pItem = currentItem();
+        m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
+    }
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::switchToTool(ToolTypeGlobal enmType)
 {
-    sltHandleToolOpenedGlobal(enmType);
+    /* First, make sure corresponding tool set opened: */
+    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked()
+        && actionPool()->action(UIActionIndexST_M_Tools_T_Global)->property("watch_child_activation").toBool())
+        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setChecked(true);
+
+    /* Open corresponding tool: */
+    m_pPaneToolsGlobal->openTool(enmType);
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
@@ -264,8 +298,9 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
         /* Update Tools-pane: */
         m_pPaneToolsMachine->setCurrentItem(pItem);
 
+        /// @todo implement!
         /* Update Machine tab-bar availability: */
-        m_pToolbarTools->setTabBarEnabledMachine(pItem && pItem->accessible());
+        //m_pToolbarTools->setTabBarEnabledMachine(pItem && pItem->accessible());
 
         /* If current item exists & accessible: */
         if (pItem && pItem->accessible())
@@ -320,85 +355,51 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     {
         case SlidingDirection_Forward:
         {
-            m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Machine);
+            m_pPaneTools->setToolsClass(UIToolsClass_Machine);
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
             break;
         }
         case SlidingDirection_Reverse:
         {
-            m_pToolbarTools->switchToTabBar(UIToolbarTools::TabBarType_Global);
+            m_pPaneTools->setToolsClass(UIToolsClass_Global);
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal);
             break;
         }
     }
 }
 
-void UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
+void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
 {
-    /* First, make sure corresponding tool set opened: */
-    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked()
-        && actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->property("watch_child_activation").toBool())
-        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
-
-    /* Open corresponding tool: */
-    m_pPaneToolsMachine->openTool(enmType);
-    /* If that was 'Details' => pass there current items: */
-    if (   enmType == ToolTypeMachine_Details
-        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-        m_pPaneToolsMachine->setItems(currentItems());
-    /* If that was 'Snapshot' or 'LogViewer' => pass there current or null machine: */
-    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_LogViewer)
+    switch (m_pPaneTools->toolsClass())
     {
-        UIVirtualMachineItem *pItem = currentItem();
-        m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
+        case UIToolsClass_Global:
+        {
+            ToolTypeGlobal enmType = ToolTypeGlobal_Invalid;
+            switch (m_pPaneTools->toolsType())
+            {
+                case UIToolsType_Media:   enmType = ToolTypeGlobal_VirtualMedia; break;
+                case UIToolsType_Network: enmType = ToolTypeGlobal_HostNetwork; break;
+                default: break;
+            }
+            if (enmType != ToolTypeGlobal_Invalid)
+                switchToTool(enmType);
+            break;
+        }
+        case UIToolsClass_Machine:
+        {
+            ToolTypeMachine enmType = ToolTypeMachine_Invalid;
+            switch (m_pPaneTools->toolsType())
+            {
+                case UIToolsType_Details:   enmType = ToolTypeMachine_Details; break;
+                case UIToolsType_Snapshots: enmType = ToolTypeMachine_Snapshots; break;
+                case UIToolsType_Logs:      enmType = ToolTypeMachine_LogViewer; break;
+                default: break;
+            }
+            if (enmType != ToolTypeMachine_Invalid)
+                switchToTool(enmType);
+            break;
+        }
     }
-
-    /* Let the parent know: */
-    emit sigToolTypeChange();
-
-    /* Update toolbar: */
-    updateToolbar();
-}
-
-void UIVirtualBoxManagerWidget::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
-{
-    /* First, make sure corresponding tool set opened: */
-    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked()
-        && actionPool()->action(UIActionIndexST_M_Tools_T_Global)->property("watch_child_activation").toBool())
-        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setChecked(true);
-
-    /* Open corresponding tool: */
-    m_pPaneToolsGlobal->openTool(enmType);
-
-    /* Let the parent know: */
-    emit sigToolTypeChange();
-
-    /* Update toolbar: */
-    updateToolbar();
-}
-
-void UIVirtualBoxManagerWidget::sltHandleToolClosedMachine(ToolTypeMachine enmType)
-{
-    /* Close corresponding tool: */
-    m_pPaneToolsMachine->closeTool(enmType);
-
-    /* Let the parent know: */
-    emit sigToolTypeChange();
-
-    /* Update toolbar: */
-    updateToolbar();
-}
-
-void UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal(ToolTypeGlobal enmType)
-{
-    /* Close corresponding tool: */
-    m_pPaneToolsGlobal->closeTool(enmType);
-
-    /* Let the parent know: */
-    emit sigToolTypeChange();
-
-    /* Update toolbar: */
-    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::prepare()
@@ -446,7 +447,7 @@ void UIVirtualBoxManagerWidget::prepareToolbar()
 void UIVirtualBoxManagerWidget::prepareWidgets()
 {
     /* Create main-layout: */
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    QHBoxLayout *pLayoutMain = new QHBoxLayout(this);
     if (pLayoutMain)
     {
         /* Configure layout: */
@@ -482,17 +483,6 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
 
                     /* Add tool-bar into layout: */
                     pLayoutRight->addWidget(m_pToolBar);
-
-                    /* Create Tools toolbar: */
-                    m_pToolbarTools = new UIToolbarTools(actionPool());
-                    if (m_pToolbarTools)
-                    {
-                        /* Configure toolbar: */
-                        m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-
-                        /* Add into layout: */
-                        pLayoutRight->addWidget(m_pToolbarTools);
-                    }
 
                     /* Create stacked-widget: */
                     m_pStackedWidget = new QStackedWidget;
@@ -553,6 +543,20 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             /* Add into layout: */
             pLayoutMain->addWidget(m_pSplitter);
         }
+
+        /* Create Tools-pane: */
+        m_pPaneTools = new UITools(this);
+        if (m_pPaneTools)
+        {
+            /* Choose which pane should be active initially: */
+            if (m_pPaneChooser->isGlobalItemSelected())
+                m_pPaneTools->setToolsClass(UIToolsClass_Global);
+            else
+                m_pPaneTools->setToolsClass(UIToolsClass_Machine);
+
+            /* Add into layout: */
+            pLayoutMain->addWidget(m_pPaneTools);
+        }
     }
 
     /* Bring the VM list to the focus: */
@@ -566,14 +570,6 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             m_pPaneChooser, &UIChooser::sltHandleToolbarResize);
     connect(m_pToolBar, &UIToolBar::customContextMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolOpenedMachine,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolOpenedMachine);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolOpenedGlobal,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolOpenedGlobal);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolClosedMachine,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolClosedMachine);
-    connect(m_pToolbarTools, &UIToolbarTools::sigToolClosedGlobal,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolClosedGlobal);
 
     /* Chooser-pane connections: */
     connect(m_pPaneChooser, &UIChooser::sigSelectionChanged,
@@ -590,6 +586,10 @@ void UIVirtualBoxManagerWidget::prepareConnections()
     /* Details-pane connections: */
     connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigLinkClicked,
             this, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked);
+
+    /* Tools-pane connections: */
+    connect(m_pPaneTools, &UITools::sigSelectionChanged,
+            this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
 }
 
 void UIVirtualBoxManagerWidget::loadSettings()
@@ -723,12 +723,6 @@ void UIVirtualBoxManagerWidget::updateToolbar()
 
 void UIVirtualBoxManagerWidget::saveSettings()
 {
-    /* Save toolbar Machine/Global tools orders: */
-    {
-        gEDataManager->setSelectorWindowToolsOrderMachine(m_pToolbarTools->tabOrderMachine());
-        gEDataManager->setSelectorWindowToolsOrderGlobal(m_pToolbarTools->tabOrderGlobal());
-    }
-
     /* Save toolbar visibility: */
     {
         gEDataManager->setSelectorWindowToolBarVisible(!m_pToolBar->isHidden());

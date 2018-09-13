@@ -379,7 +379,8 @@ ifdef VBOX_GUI_WITH_NEW_MANAGER
 VBOX_GUI_INC_DIRS += \
 	./src/manager \
 	./src/manager/chooser \
-	./src/manager/details
+	./src/manager/details \
+	./src/manager/tools
 endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -772,7 +773,13 @@ ifdef VBOX_GUI_WITH_NEW_MANAGER
 	src/manager/details/UIDetailsSet.h \
 	src/manager/details/UIDetailsElement.h \
 	src/manager/details/UIDetailsElements.h \
-	src/manager/details/UIMachinePreview.h
+	src/manager/details/UIMachinePreview.h \
+	src/manager/tools/UITools.h \
+	src/manager/tools/UIToolsModel.h \
+	src/manager/tools/UIToolsView.h \
+	src/manager/tools/UIToolsHandlerMouse.h \
+	src/manager/tools/UIToolsHandlerKeyboard.h \
+	src/manager/tools/UIToolsItem.h
 endif
 
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
@@ -1451,7 +1458,13 @@ ifdef VBOX_GUI_WITH_NEW_MANAGER
 	src/manager/details/UIDetailsSet.cpp \
 	src/manager/details/UIDetailsElement.cpp \
 	src/manager/details/UIDetailsElements.cpp \
-	src/manager/details/UIMachinePreview.cpp
+	src/manager/details/UIMachinePreview.cpp \
+	src/manager/tools/UITools.cpp \
+	src/manager/tools/UIToolsModel.cpp \
+	src/manager/tools/UIToolsView.cpp \
+	src/manager/tools/UIToolsHandlerMouse.cpp \
+	src/manager/tools/UIToolsHandlerKeyboard.cpp \
+	src/manager/tools/UIToolsItem.cpp
 endif
 
 VirtualBox_SOURCES.darwin += \

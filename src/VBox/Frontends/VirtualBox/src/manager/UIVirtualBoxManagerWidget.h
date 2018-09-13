@@ -34,7 +34,7 @@ class UIActionPool;
 class UIChooser;
 class UITabBar;
 class UIToolBar;
-class UIToolbarTools;
+class UITools;
 class UIVirtualBoxManager;
 class UIVirtualMachineItem;
 
@@ -145,15 +145,8 @@ private slots:
 
     /** @name Tools stuff.
       * @{ */
-        /** Handles rquest to open Machine tool of passed @a enmType. */
-        void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
-        /** Handles rquest to open Global tool of passed @a enmType. */
-        void sltHandleToolOpenedGlobal(ToolTypeGlobal enmType);
-
-        /** Handles rquest to close Machine tool of passed @a enmType. */
-        void sltHandleToolClosedMachine(ToolTypeMachine enmType);
-        /** Handles rquest to close Global tool of passed @a enmType. */
-        void sltHandleToolClosedGlobal(ToolTypeGlobal enmType);
+        /** Handles signal abour Tools-pane index change. */
+        void sltHandleToolsPaneIndexChange();
     /** @} */
 
 private:
@@ -192,9 +185,6 @@ private:
     /** Holds the main toolbar instance. */
     UIToolBar *m_pToolBar;
 
-    /** Holds the Tools-toolbar instance. */
-    UIToolbarTools *m_pToolbarTools;
-
     /** Holds the Machine Tools order. */
     QList<ToolTypeMachine>  m_orderMachine;
     /** Holds the Global Tools order. */
@@ -210,6 +200,8 @@ private:
     UIToolPaneMachine  *m_pPaneToolsMachine;
     /** Holds the sliding-animation widget instance. */
     UISlidingAnimation *m_pSlidingAnimation;
+    /** Holds the Tools-pane instance. */
+    UITools            *m_pPaneTools;
 };
 
 #endif /* !___UIVirtualBoxManagerWidget_h___ */
