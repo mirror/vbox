@@ -91,6 +91,11 @@ public:
     inline RTCString const &getContentType() const { return m_strContentType; }
 
     /**
+     * Gets the content-length value (UINT64_MAX if not available).
+     */
+    inline uint64_t getContentLength() const { return m_cbContentLength; }
+
+    /**
      * Callback for producing bytes to upload.
      *
      * @returns IPRT status code.
