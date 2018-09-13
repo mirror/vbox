@@ -2768,8 +2768,10 @@ typedef union X86XMMREG
     uint64_t    au64[2];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[1];
+#ifndef VBOX_FOR_DTRACE_LIB
     /** Confusing nested 128-bit union view (this is what xmm should've been). */
     RTUINT128U  uXmm;
+#endif
 } X86XMMREG;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86XMMREG, 16);
