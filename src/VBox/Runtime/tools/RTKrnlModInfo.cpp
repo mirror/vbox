@@ -48,6 +48,13 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
+    /** @todo proper argument parsing, please. */
+    if (argc != 1)
+    {
+        RTMsgError("Syntax error: This tool takes no parameters.  It just lists the modules\n");
+        return RTEXITCODE_SYNTAX;
+    }
+
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     uint32_t cKrnlMods = RTKrnlModLoadedGetCount();
     if (cKrnlMods)
