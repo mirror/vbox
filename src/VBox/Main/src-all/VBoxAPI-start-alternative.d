@@ -15,11 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#pragma D attributes Evolving/Evolving/Common provider vboxapi provider
+/*#pragma D attributes Evolving/Evolving/Common provider vboxapi provider
 #pragma D attributes Private/Private/Unknown  provider vboxapi module
 #pragma D attributes Private/Private/Unknown  provider vboxapi function
 #pragma D attributes Evolving/Evolving/Common provider vboxapi name
-#pragma D attributes Evolving/Evolving/Common provider vboxapi args
+#pragma D attributes Evolving/Evolving/Common provider vboxapi args*/
 
 provider vboxapi
 {
