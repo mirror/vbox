@@ -545,10 +545,16 @@ RTR3DECL(int) RTHttpSetUploadCallback(RTHTTP hHttp, uint64_t cbContent, PFNRTHTT
  * @param   hHttp           The HTTP client handle.
  * @param   uMatchWord      Match word constructed by RTHTTP_MAKE_HDR_MATCH_WORD
  * @param   pchField        The field name (not zero terminated).
+ *                          Not necessarily valid UTF-8!
  * @param   cchField        The length of the field.
  * @param   pchValue        The field value (not zero terminated).
+ *                          Not necessarily valid UTF-8!
  * @param   cchValue        The length of the value.
  * @param   pvUser          The user parameter.
+ *
+ * @remarks This is called with two fictitious header fields too:
+ *              - ':http-status-line' -- the HTTP/{version} {status-code} stuff.
+ *              - ':end-of-headers'   -- marks the end of header callbacks.
  */
 typedef DECLCALLBACK(int) FNRTHTTPHEADERCALLBACK(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
                                                  const char *pchValue, size_t cchValue, void *pvUser);

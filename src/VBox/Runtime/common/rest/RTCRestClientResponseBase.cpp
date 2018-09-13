@@ -98,9 +98,11 @@ void RTCRestClientResponseBase::reset()
 }
 
 
-int RTCRestClientResponseBase::receivePrepare(RTHTTP a_hHttp, void ***a_pppvHdr, void ***a_pppvBody)
+int RTCRestClientResponseBase::receivePrepare(RTHTTP a_hHttp)
 {
-    RT_NOREF(a_hHttp, a_pppvHdr, a_pppvBody);
+    int rc = RTHttpSetHeaderCallback(a_hHttp, receiveHttpHeaderCallback, this);
+    AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -111,18 +113,35 @@ void RTCRestClientResponseBase::receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
     m_rcStatus = a_rcStatus;
     if (a_rcStatus >= 0)
         m_rcHttp = a_rcStatus;
+
+    int rc = RTHttpSetHeaderCallback(a_hHttp, NULL, NULL);
+    AssertRC(rc);
 }
 
 
-void RTCRestClientResponseBase::consumeHeaders(const char *a_pchData, size_t a_cbData)
+int RTCRestClientResponseBase::consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
+                                             const char *a_pchValue, size_t a_cchValue)
 {
-    /*
-     * Get the the content type.
-     */
-    int rc = extractHeaderFromBlob(RT_STR_TUPLE("Content-Type"), a_pchData, a_cbData, &m_strContentType);
-    if (rc == VERR_NOT_FOUND)
-        rc = VINF_SUCCESS;
-    AssertRCReturnVoidStmt(rc, m_rcStatus = rc);
+    if (   a_uMatchWord == RTHTTP_MAKE_HDR_MATCH_WORD(sizeof("Content-Type") - 1, 'c', 'o', 'n')
+        && RTStrNICmpAscii(a_pchField, RT_STR_TUPLE("Content-Type")) == 0)
+    {
+        int rc = RTStrValidateEncodingEx(a_pchValue, a_cchValue, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            return m_strContentType.assignNoThrow(a_pchValue, a_cchValue);
+    }
+    RT_NOREF(a_cchField);
+    return VINF_SUCCESS;
+}
+
+
+/*static*/ DECLCALLBACK(int)
+RTCRestClientResponseBase::receiveHttpHeaderCallback(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
+                                                     const char *pchValue, size_t cchValue, void *pvUser)
+{
+    RTCRestClientResponseBase *pThis = (RTCRestClientResponseBase *)pvUser;
+    RT_NOREF(hHttp);
+    return pThis->consumeHeader(uMatchWord, pchField, cchField, pchValue, cchValue);
 }
 
 
@@ -193,196 +212,6 @@ int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
 }
 
 
-void RTCRestClientResponseBase::extractHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs,
-                                                            RTCRestObjectBase ***a_pappFieldValues,
-                                                            size_t a_cFields, const char *a_pchData, size_t a_cbData)
-
-{
-    RTCString strValue; /* (Keep it out here to encourage buffer allocation reuse and default construction call.) */
-
-    /*
-     * Work our way through the header blob.
-     */
-    while (a_cbData >= 2)
-    {
-        /*
-         * Determine length of the header name:value combo.
-         * Note! Multi-line field values are not currently supported.
-         */
-        const char *pchEol = (const char *)memchr(a_pchData, '\n', a_cbData);
-        while (pchEol && (pchEol == a_pchData || pchEol[-1] != '\r'))
-            pchEol = (const char *)memchr(pchEol, '\n', a_cbData - (pchEol - a_pchData));
-
-        size_t const cchField       = pchEol ? pchEol - a_pchData + 1 : a_cbData;
-        size_t const cchFieldNoCrLf = pchEol ? pchEol - a_pchData - 1 : a_cbData;
-
-        const char *pchColon = (const char *)memchr(a_pchData, ':', cchFieldNoCrLf);
-        if (pchColon)
-        {
-            size_t const cchName  = pchColon - a_pchData;
-            size_t const offValue = cchName + (RT_C_IS_BLANK(pchColon[1]) ? 2 : 1);
-            size_t const cchValue = cchFieldNoCrLf - offValue;
-
-            /*
-             * Match headers.
-             */
-            bool fHaveValue = false;
-            for (size_t i = 0; i < a_cFields; i++)
-            {
-                size_t const cchThisName = a_paFieldDescs[i].cchName;
-                if (   (!(a_paFieldDescs[i].fFlags & kHdrField_MapCollection) ? cchThisName == cchName : cchThisName < cchName)
-                    && RTStrNICmpAscii(a_pchData, a_paFieldDescs[i].pszName, cchThisName) == 0)
-                {
-                    /* Get and clean the value. */
-                    if (!fHaveValue)
-                    {
-                        int rc = strValue.assignNoThrow(&a_pchData[offValue], cchValue);
-                        if (RT_SUCCESS(rc))
-                        {
-                            RTStrPurgeEncoding(strValue.mutableRaw()); /** @todo this is probably a little wrong... */
-                            fHaveValue = true;
-                        }
-                        else
-                        {
-                            addError(rc, "Error allocating %u bytes for header field %s", a_paFieldDescs[i].pszName);
-                            break;
-                        }
-                    }
-
-                    /*
-                     * Create field to deserialize.
-                     */
-                    RTCRestStringMapBase *pMap = NULL;
-                    RTCRestObjectBase    *pObj = NULL;
-                    if (!(a_paFieldDescs[i].fFlags & kHdrField_MapCollection))
-                    {
-                        /* Only once. */
-                        if (!*a_pappFieldValues[i])
-                        {
-                            pObj = a_paFieldDescs[i].pfnCreateInstance();
-                            if (pObj)
-                                *a_pappFieldValues[i] = pObj;
-                            else
-                            {
-                                addError(VERR_NO_MEMORY, "out of memory");
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            addError(VERR_REST_RESPONSE_REPEAT_HEADER_FIELD, "Already saw header field '%s'", a_paFieldDescs[i].pszName);
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        /* Make sure we've got a map to work with. */
-                        if (!*a_pappFieldValues[i])
-                            *a_pappFieldValues[i] = pObj = a_paFieldDescs[i].pfnCreateInstance();
-                        else
-                            pObj = *a_pappFieldValues[i];
-                        AssertBreak(pObj->typeClass() == RTCRestObjectBase::kTypeClass_StringMap);
-                        pMap = (RTCRestStringMapBase *)pObj;
-
-                        /* Insert the header field name (sans prefix) into the map.  We then use the
-                           new value object for the deserialization of the header field value below.  */
-                        int rc = pMap->putNewValue(&pObj, &a_pchData[cchThisName], cchName - cchThisName);
-                        if (RT_SUCCESS(rc))
-                        { /* likely */ }
-                        else if (rc == VERR_ALREADY_EXISTS)
-                        {
-                            addError(VERR_REST_RESPONSE_REPEAT_HEADER_FIELD, "Already saw header field '%s'", a_paFieldDescs[i].pszName);
-                            continue;
-                        }
-                        else
-                        {
-                            addError(rc, "out of memory");
-                            break;
-                        }
-                    }
-
-                    /*
-                     * Deserialize it.
-                     */
-                    RTERRINFOSTATIC ErrInfo;
-                    int rc = pObj->fromString(strValue, a_paFieldDescs[i].pszName, RTErrInfoInitStatic(&ErrInfo),
-                                              a_paFieldDescs[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask);
-                    if (RT_SUCCESS(rc))
-                    { /* likely */ }
-                    else if (RTErrInfoIsSet(&ErrInfo.Core))
-                        addError(rc, "Error %Rrc parsing header field '%s': %s",
-                                 rc, a_paFieldDescs[i].pszName, ErrInfo.Core.pszMsg);
-                    else
-                        addError(rc, "Error %Rrc parsing header field '%s'", rc, a_paFieldDescs[i].pszName);
-                }
-            }
-        }
-        /*
-         * else { verify that it's the HTTP/... line at the start }
-         */
-
-        /*
-         * Advance to the next field.
-         */
-        a_cbData  -= cchField;
-        a_pchData += cchField;
-    }
-}
-
-int RTCRestClientResponseBase::extractHeaderFromBlob(const char *a_pszField, size_t a_cchField,
-                                                     const char *a_pchData, size_t a_cbData,
-                                                     RTCString *a_pStrDst)
-{
-    char const chUpper0 = RT_C_TO_UPPER(a_pszField[0]);
-    char const chLower0 = RT_C_TO_LOWER(a_pszField[0]);
-    Assert(!RT_C_IS_SPACE(chUpper0));
-
-    while (a_cbData > a_cchField)
-    {
-        /* Determine length of the header name:value combo.
-           Note! Multi-line field values are not currently supported. */
-        const char *pchEol = (const char *)memchr(a_pchData, '\n', a_cbData);
-        while (pchEol && (pchEol == a_pchData || pchEol[-1] != '\r'))
-            pchEol = (const char *)memchr(pchEol, '\n', a_cbData - (pchEol - a_pchData));
-
-        size_t cchField = pchEol ? pchEol - a_pchData + 1 : a_cbData;
-
-        /* Try match */
-        if (   a_pchData[a_cchField] == ':'
-            && (   a_pchData[0] == chUpper0
-                || a_pchData[0] == chLower0)
-            && RTStrNICmpAscii(a_pchData, a_pszField, a_cchField) == 0)
-        {
-            /* Drop CRLF. */
-            if (pchEol)
-                cchField -= 2;
-
-            /* Drop the field name and optional whitespace. */
-            cchField  -= a_cchField + 1;
-            a_pchData += a_cchField + 1;
-            if (cchField > 0 && RT_C_IS_BLANK(*a_pchData))
-            {
-                a_pchData++;
-                cchField--;
-            }
-
-            /* Return the value. */
-            int rc = a_pStrDst->assignNoThrow(a_pchData, cchField);
-            if (RT_SUCCESS(rc))
-                RTStrPurgeEncoding(a_pStrDst->mutableRaw()); /** @todo this is probably a little wrong... */
-            return rc;
-        }
-
-        /* Advance to the next field. */
-        a_pchData += cchField;
-        a_cbData  -= cchField;
-    }
-
-    return VERR_NOT_FOUND;
-}
-
-
-
 RTCRestClientResponseBase::PrimaryJsonCursorForBody::PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName,
                                                                               RTCRestClientResponseBase *a_pThat)
     : RTCRestJsonPrimaryCursor(hValue, pszName, a_pThat->getErrInfoInternal())
@@ -409,6 +238,100 @@ int RTCRestClientResponseBase::PrimaryJsonCursorForBody::unknownField(RTCRestJso
     m_pThat->addError(VWRN_NOT_FOUND, "response body/%s: unknown field (type %s)",
                       getPath(a_rCursor, szPath, sizeof(szPath)), RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
     return VWRN_NOT_FOUND;
+}
+
+
+int RTCRestClientResponseBase::deserializeHeader(RTCRestObjectBase *a_pObj, const char *a_pchValue, size_t a_cchValue,
+                                                 uint32_t a_fFlags, const char *a_pszErrorTag)
+{
+    /*
+     * Start by checking the encoding and transfering the value to a RTCString object.
+     */
+    int rc = RTStrValidateEncodingEx(a_pchValue, a_cchValue, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+    if (RT_SUCCESS(rc))
+    {
+        RTCString strValue;
+        rc = strValue.assignNoThrow(a_pchValue, a_cchValue);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Try deserialize it.
+             */
+            RTERRINFOSTATIC ErrInfo;
+            rc = a_pObj->fromString(strValue, a_pszErrorTag, RTErrInfoInitStatic(&ErrInfo), a_fFlags);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else if (RTErrInfoIsSet(&ErrInfo.Core))
+                addError(rc, "Error %Rrc parsing header field '%s': %s", rc, a_pszErrorTag, ErrInfo.Core.pszMsg);
+            else
+                addError(rc, "Error %Rrc parsing header field '%s'", rc, a_pszErrorTag);
+        }
+    }
+    else
+    {
+        addError(rc, "Error %Rrc validating value necoding of header field '%s': %.*Rhxs",
+                 rc, a_pszErrorTag, a_cchValue, a_pchValue);
+        rc = VINF_SUCCESS; /* ignore */
+    }
+    return rc;
+}
+
+
+int RTCRestClientResponseBase::deserializeHeaderIntoMap(RTCRestStringMapBase *a_pMap, const char *a_pchField, size_t a_cchField,
+                                                        const char *a_pchValue, size_t a_cchValue, uint32_t a_fFlags,
+                                                        const char *a_pszErrorTag)
+{
+    /*
+     * Start by checking the encoding of both the field and value,
+     * then transfering the value to a RTCString object.
+     */
+    int rc = RTStrValidateEncodingEx(a_pchField, a_cchField, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrValidateEncodingEx(a_pchValue, a_cchValue, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        if (RT_SUCCESS(rc))
+        {
+            RTCString strValue;
+            rc = strValue.assignNoThrow(a_pchValue, a_cchValue);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Create a value object and put it into the map.
+                 */
+                RTCRestObjectBase *pValue;
+                int rc = a_pMap->putNewValue(&pValue, a_pchField, a_cchField);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Try deserialize the value.
+                     */
+                    RTERRINFOSTATIC ErrInfo;
+                    rc = pValue->fromString(strValue, a_pszErrorTag, RTErrInfoInitStatic(&ErrInfo), a_fFlags);
+                    if (RT_SUCCESS(rc))
+                    { /* likely */ }
+                    else if (RTErrInfoIsSet(&ErrInfo.Core))
+                        addError(rc, "Error %Rrc parsing header field '%s' subfield '%.*s': %s",
+                                 rc, a_pszErrorTag, a_cchField, a_pchField, ErrInfo.Core.pszMsg);
+                    else
+                        addError(rc, "Error %Rrc parsing header field '%s' subfield '%.*s'",
+                                 rc, a_pszErrorTag, a_cchField, a_pchField);
+                }
+            }
+        }
+        else
+        {
+            addError(rc, "Error %Rrc validating value encoding of header field '%s': %.*Rhxs",
+                     rc, a_pszErrorTag, a_cchValue, a_pchValue);
+            rc = VINF_SUCCESS; /* ignore */
+        }
+    }
+    else
+    {
+        addError(rc, "Error %Rrc validating sub-field encoding of header field '%s*': %.*Rhxs",
+                 rc, a_pszErrorTag, a_cchField, a_pchField);
+        rc = VINF_SUCCESS; /* ignore */
+    }
+    return rc;
 }
 
 

@@ -28,6 +28,7 @@
 
 #include <iprt/http.h>
 #include <iprt/cpp/restbase.h>
+#include <iprt/cpp/reststringmap.h>
 
 
 /** @defgroup grp_rt_cpp_restclient     C++ Representational State Transfer (REST) Client Classes.
@@ -462,12 +463,12 @@ public:
      *
      * This may install callbacks and such like.
      *
+     * When overridden, the parent class must always be called.
+     *
      * @returns IPRT status code.
      * @param   a_hHttp     The HTTP handle to prepare for receiving.
-     * @param   a_pppvHdr   If a header callback handler is installed, set the value pointed to to NULL.
-     * @param   a_pppvBody  If a body callback handler is installed, set the value pointed to to NULL.
      */
-    virtual int receivePrepare(RTHTTP a_hHttp, void ***a_pppvHdr, void ***a_pppvBody);
+    virtual int receivePrepare(RTHTTP a_hHttp);
 
     /**
      * Called when the HTTP request has been completely received.
@@ -477,19 +478,9 @@ public:
      *                      This can be NIL_RTHTTP should something fail early, in
      *                      which case it is possible receivePrepare() wasn't called.
      *
-     * @note    Called before consumeHeaders() and consumeBody().
+     * @note    Called before consumeBody() but after consumeHeader().
      */
     virtual void receiveComplete(int a_rcStatus, RTHTTP a_hHttp);
-
-    /**
-     * Callback that consumes HTTP header data from the server.
-     *
-     * @param   a_pchData  Body data.
-     * @param   a_cbData   Amount of body data.
-     *
-     * @note    Called after receiveComplete()..
-     */
-    virtual void consumeHeaders(const char *a_pchData, size_t a_cbData);
 
     /**
      * Callback that consumes HTTP body data from the server.
@@ -497,7 +488,7 @@ public:
      * @param   a_pchData  Body data.
      * @param   a_cbData   Amount of body data.
      *
-     * @note    Called after consumeHeaders().
+     * @note    Called after consumeHeader().
      */
     virtual void consumeBody(const char *a_pchData, size_t a_cbData);
 
@@ -558,52 +549,36 @@ protected:
      */
     int addError(int a_rc, const char *a_pszFormat, ...);
 
-    /** Field flags. */
-    enum
-    {
-        /** Collection map, name is a prefix followed by '*'. */
-        kHdrField_MapCollection   = RT_BIT_32(24)
-    };
-
-    /** Header field descriptor. */
-    typedef struct
-    {
-        /** The header field name. */
-        const char *pszName;
-        /** The length of the field name.*/
-        uint32_t    cchName;
-        /** Flags, TBD. */
-        uint32_t    fFlags;
-        /** Object factory. */
-        RTCRestObjectBase::PFNCREATEINSTANCE pfnCreateInstance;
-    } HEADERFIELDDESC;
+    /**
+     * Deserializes a header field value.
+     *
+     * @returns IPRT status code.
+     * @param   a_pObj              The object to deserialize into.
+     * @param   a_pchValue          Pointer to the value (not zero terminated).
+     *                              Not necessarily valid UTF-8!
+     * @param   a_cchValue          The value length.
+     * @param   a_fFlags            Flags to pass to fromString().
+     * @param   a_pszErrorTag       The error tag (field name).
+     */
+    int deserializeHeader(RTCRestObjectBase *a_pObj, const char *a_pchValue, size_t a_cchValue,
+                          uint32_t a_fFlags, const char *a_pszErrorTag);
 
     /**
-     * Helper that extracts fields from the HTTP headers.
+     * Deserializes a header field value.
      *
-     * @param   a_paFieldDescs      Pointer to an array of field descriptors.
-     * @param   a_pappFieldValues   Pointer to a parallel array of value pointer pointers.
-     * @param   a_cFields           Number of field descriptors..
-     * @param   a_pchData           The header blob to search.
-     * @param   a_cbData            The size of the header blob to search.
+     * @returns IPRT status code.
+     * @param   a_pMap              The string map object to deserialize into.
+     * @param   a_pchField          Pointer to the map field name.  (Caller dropped the prefix.)
+     *                              Not necessarily valid UTF-8!
+     * @param   a_cchField          Length of field name.
+     * @param   a_pchValue          Pointer to the value (not zero terminated).
+     *                              Not necessarily valid UTF-8!
+     * @param   a_cchValue          The value length.
+     * @param   a_fFlags            Flags to pass to fromString().
+     * @param   a_pszErrorTag       The error tag (field name).
      */
-    void extractHeaderFieldsFromBlob(HEADERFIELDDESC const *a_paFieldDescs, RTCRestObjectBase ***a_pappFieldValues,
-                                     size_t a_cFields, const char *a_pchData, size_t a_cbData);
-
-    /**
-     * Helper that extracts a header field.
-     *
-     * @retval  VINF_SUCCESS
-     * @retval  VERR_NOT_FOUND if not found.
-     * @retval  VERR_NO_STR_MEMORY
-     * @param   a_pszField  The header field header name.
-     * @param   a_cchField  The length of the header field name.
-     * @param   a_pchData   The header blob to search.
-     * @param   a_cbData    The size of the header blob to search.
-     * @param   a_pStrDst   Where to store the header value on successs.
-     */
-    int extractHeaderFromBlob(const char *a_pszField, size_t a_cchField, const char *a_pchData, size_t a_cbData,
-                              RTCString *a_pStrDst);
+    int deserializeHeaderIntoMap(RTCRestStringMapBase *a_pMap, const char *a_pchField, size_t a_cchField,
+                                 const char *a_pchValue, size_t a_cchValue, uint32_t a_fFlags, const char *a_pszErrorTag);
 
     /**
      * Helper that does the deserializing of the response body.
@@ -625,6 +600,28 @@ protected:
         virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...) RT_OVERRIDE;
         virtual int unknownField(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     };
+
+
+    /**
+     * Consumes a header.
+     *
+     * Child classes can override this to pick up their header fields, but must
+     * always call the parent class.
+     *
+     * @returns IPRT status code.
+     * @param   a_uMatchWord    Match word constructed by RTHTTP_MAKE_HDR_MATCH_WORD
+     * @param   a_pchField      The field name (not zero terminated).
+     *                          Not necessarily valid UTF-8!
+     * @param   a_cchField      The length of the field.
+     * @param   a_pchValue      The field value (not zero terminated).
+     * @param   a_cchValue      The length of the value.
+     */
+    virtual int consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
+                              const char *a_pchValue, size_t a_cchValue);
+
+private:
+    /** Callback for use with RTHttpSetHeaderCallback. */
+    static FNRTHTTPHEADERCALLBACK receiveHttpHeaderCallback;
 };
 
 

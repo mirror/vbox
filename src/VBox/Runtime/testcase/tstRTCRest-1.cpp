@@ -33,6 +33,7 @@
 #include <iprt/cpp/reststringmap.h>
 #include <iprt/cpp/restclient.h>
 
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/message.h>
 #include <iprt/string.h>
@@ -2094,7 +2095,6 @@ public:
 void testClientRequestBase()
 {
     RTTestSub(g_hTest, "RTCRestClientRequestBase");
-
     {
         TestRequest Req1("this-is-a-string", 123456789, 5, "1", "22", "333", "444", "555");
         Req1.testPath("my/123456789/this-is-a-string/array:1,22,333,444,555/path");
@@ -2124,6 +2124,121 @@ void testClientRequestBase()
 }
 
 
+class TestResponse : public RTCRestClientResponseBase
+{
+public:
+    RTCRestArray<RTCRestString>         *m_pArray;
+    RTCRestStringMap<RTCRestString>     *m_pMap;
+    RTCRestInt64                        *m_pInteger;
+    RTCRestString                       *m_pStrContentType;
+
+    TestResponse() : m_pArray(NULL), m_pMap(NULL), m_pInteger(NULL), m_pStrContentType(NULL)
+    { }
+
+protected:
+    virtual int consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
+                              const char *a_pchValue, size_t a_cchValue) RT_OVERRIDE
+    {
+        int rc = RTCRestClientResponseBase::consumeHeader(a_uMatchWord, a_pchField, a_cchField, a_pchValue, a_cchValue);
+        AssertRCReturn(rc, rc);
+
+#define MATCH_FIELD(a_sz) (sizeof(a_sz) - 1 == a_cchField && RTStrNICmpAscii(a_pchField, RT_STR_TUPLE(a_sz)) == 0)
+        if (MATCH_FIELD("x-array"))
+        {
+            if (!m_pArray)
+            {
+                m_pArray = new (std::nothrow) RTCRestArray<RTCRestString>();
+                AssertReturn(m_pArray, VERR_NO_MEMORY);
+                return deserializeHeader(m_pArray, a_pchValue, a_cchValue, RTCRestObjectBase::kCollectionFormat_csv, "x-array");
+            }
+        }
+        else if (a_cchField >= sizeof("x-map-") - 1 && RTStrNICmpAscii(a_pchField, RT_STR_TUPLE("x-map-")) == 0)
+        {
+            if (!m_pMap)
+            {
+                m_pMap = new (std::nothrow) RTCRestStringMap<RTCRestString>();
+                AssertReturn(m_pMap, VERR_NO_MEMORY);
+            }
+            return deserializeHeaderIntoMap(m_pMap, a_pchField + 6, a_cchField - 6, a_pchValue, a_cchValue, 0, "x-map-");
+        }
+        else if (MATCH_FIELD("x-integer"))
+        {
+            if (!m_pInteger)
+            {
+                m_pInteger = new (std::nothrow) RTCRestInt64();
+                AssertReturn(m_pInteger, VERR_NO_MEMORY);
+                return deserializeHeader(m_pInteger, a_pchValue, a_cchValue, 0, "x-integer");
+            }
+        }
+        else if (MATCH_FIELD("content-type"))
+        {
+            if (!m_pStrContentType)
+            {
+                m_pStrContentType = new (std::nothrow) RTCRestString();
+                AssertReturn(m_pStrContentType, VERR_NO_MEMORY);
+                return deserializeHeader(m_pStrContentType, a_pchValue, a_cchValue, 0, "content-type");
+            }
+        }
+        else
+            return VWRN_NOT_FOUND;
+        RT_NOREF(a_uMatchWord);
+        return addError(VERR_ALREADY_EXISTS, "Already have field '%.*s'!", a_cchField, a_pchField);
+    }
+
+public:
+    int pushHeader(const char *pszField, const char *pszValue)
+    {
+        size_t const cchField = strlen(pszField);
+        void *pvFieldCopy = RTTestGuardedAllocTail(g_hTest, cchField);
+        RTTESTI_CHECK_RET(pvFieldCopy, VERR_NO_MEMORY);
+        memcpy(pvFieldCopy, pszField, cchField);
+
+        size_t const cchValue = strlen(pszValue);
+        void *pvValueCopy = RTTestGuardedAllocTail(g_hTest, cchValue);
+        RTTESTI_CHECK_RET(pvValueCopy, VERR_NO_MEMORY);
+        memcpy(pvValueCopy, pszValue, cchValue);
+
+        uint32_t uWord = RTHTTP_MAKE_HDR_MATCH_WORD(cchField,
+                                                    cchField >= 1 ? RT_C_TO_LOWER(pszField[0]) : 0,
+                                                    cchField >= 2 ? RT_C_TO_LOWER(pszField[1]) : 0,
+                                                    cchField >= 3 ? RT_C_TO_LOWER(pszField[2]) : 0);
+        int rc = consumeHeader(uWord, (const char *)pvFieldCopy, cchField, (const char *)pvValueCopy, cchValue);
+        RTTestGuardedFree(g_hTest, pvValueCopy);
+        RTTestGuardedFree(g_hTest, pvFieldCopy);
+        return rc;
+    }
+};
+
+
+void testClientResponseBase()
+{
+    RTTestSub(g_hTest, "RTCRestClientResponseBase");
+    {
+        TestResponse Resp1;
+        RTTESTI_CHECK_RC(Resp1.pushHeader("content-type", "application/json; charset=utf-8"), VINF_SUCCESS);
+        RTTESTI_CHECK(Resp1.getContentType().equals("application/json; charset=utf-8"));
+        RTTESTI_CHECK(Resp1.m_pStrContentType && Resp1.m_pStrContentType->equals("application/json; charset=utf-8"));
+
+        RTTESTI_CHECK_RC(Resp1.pushHeader("content-typ2", "oopsy daisy"), VWRN_NOT_FOUND);
+        RTTESTI_CHECK_RC(Resp1.pushHeader("content-type2", "oopsy daisy"), VWRN_NOT_FOUND);
+        RTTESTI_CHECK(Resp1.getContentType().equals("application/json; charset=utf-8"));
+        RTTESTI_CHECK(Resp1.m_pStrContentType && Resp1.m_pStrContentType->equals("application/json; charset=utf-8"));
+
+        RTTESTI_CHECK_RC(Resp1.pushHeader("x-integer", "398679406"), VINF_SUCCESS);
+        RTTESTI_CHECK(Resp1.m_pInteger && Resp1.m_pInteger->m_iValue == 398679406);
+
+        //RTTESTI_CHECK_RC(Resp1.pushHeader("x-array", "zero,one,two,three"), VINF_SUCCESS);
+        //RTTESTI_CHECK(Resp1.m_pArray && Resp1.m_pArray->size() == 4);
+
+        RTTESTI_CHECK_RC(Resp1.pushHeader("x-map-", "empty-key"), VINF_SUCCESS);
+        RTTESTI_CHECK(Resp1.m_pMap && Resp1.m_pMap->size() == 1 && Resp1.m_pMap->get("") != NULL && Resp1.m_pMap->get("")->equals("empty-key"));
+
+        RTTESTI_CHECK_RC(Resp1.pushHeader("x-map-42", "key-is-42"), VINF_SUCCESS);
+        RTTESTI_CHECK(Resp1.m_pMap && Resp1.m_pMap->size() == 2 && Resp1.m_pMap->get("42") != NULL && Resp1.m_pMap->get("42")->equals("key-is-42"));
+    }
+}
+
+
 int main()
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTRest-1", &g_hTest);
@@ -2139,7 +2254,7 @@ int main()
         testArray();
         testStringMap();
         testClientRequestBase();
-        /** @todo test the response base class too. */
+        testClientResponseBase();
 
         rcExit = RTTestSummaryAndDestroy(g_hTest);
     }

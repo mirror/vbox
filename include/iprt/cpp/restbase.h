@@ -386,14 +386,6 @@ public:
      */
     virtual const char *typeName(void) const = 0;
 
-    /**
-     * Factory method.
-     * @returns Pointer to new object on success, NULL if out of memory.
-     */
-    typedef DECLCALLBACK(RTCRestObjectBase *) FNCREATEINSTANCE(void);
-    /** Pointer to factory method. */
-    typedef FNCREATEINSTANCE *PFNCREATEINSTANCE;
-
 protected:
     /** Null indicator.
      * @remarks The null values could be mapped onto C/C++ NULL pointer values,

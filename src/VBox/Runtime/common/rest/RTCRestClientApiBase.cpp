@@ -107,18 +107,9 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
             Assert(hHttp != NIL_RTHTTP);
 
             /*
-             * Prepare the response side.  This may install output callbacks and
-             * indicate this by clearing the ppvBody/ppvHdr variables.
+             * Prepare the response side.
              */
-            size_t   cbHdrs  = 0;
-            void    *pvHdrs  = NULL;
-            void   **ppvHdrs = &pvHdrs;
-
-            size_t   cbBody  = 0;
-            void    *pvBody  = NULL;
-            void   **ppvBody = &pvBody;
-
-            rc = a_pResponse->receivePrepare(hHttp, &ppvBody, &ppvHdrs);
+            rc = a_pResponse->receivePrepare(hHttp);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -158,9 +149,11 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
                              * Perform HTTP request.
                              */
                             uint32_t uHttpStatus = 0;
+                            size_t   cbBody      = 0;
+                            void    *pvBody      = NULL;
                             rc = RTHttpPerform(hHttp, strFullUrl.c_str(), a_enmHttpMethod,
                                                strXmitBody.c_str(), strXmitBody.length(),
-                                               &uHttpStatus, ppvHdrs, &cbHdrs, ppvBody, &cbBody);
+                                               &uHttpStatus, NULL /*ppvHdrs*/, NULL /*pcbHdrs*/, &pvBody, &cbBody);
                             if (RT_SUCCESS(rc))
                             {
                                 a_rRequest.xmitComplete(uHttpStatus, hHttp);
@@ -169,11 +162,6 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
                                  * Do response processing.
                                  */
                                 a_pResponse->receiveComplete(uHttpStatus, hHttp);
-                                if (pvHdrs)
-                                {
-                                    a_pResponse->consumeHeaders((const char *)pvHdrs, cbHdrs);
-                                    RTHttpFreeResponse(pvHdrs);
-                                }
                                 if (pvBody)
                                 {
                                     a_pResponse->consumeBody((const char *)pvBody, cbBody);

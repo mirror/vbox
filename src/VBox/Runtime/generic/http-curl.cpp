@@ -3040,9 +3040,9 @@ static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, 
      */
     if (pThis->pfnHeaderCallback)
     {
-        /* Find the end of the field name first.  Since cURL gives us the
-           "HTTP/{version} {code} {status}" line too, we slap a fictitious
-           field name ':http-status-line' in front of it. */
+        /*
+         * Find the end of the field name first.
+         */
         uint32_t    uMatchWord;
         size_t      cchField;
         const char *pchField = pchBuf;
@@ -3062,7 +3062,9 @@ static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, 
             pchValue++;
             cchValue = cbToAppend - cchField - 1;
         }
-        else if (pchBuf[0] == 'H' && pchBuf[1] == 'T' && pchBuf[2] == 'T' && pchBuf[1] == 'P')
+        /* Since cURL gives us the "HTTP/{version} {code} {status}" line too,
+           we slap a fictitious field name ':http-status-line' in front of it. */
+        else if (cbToAppend > 5 && pchBuf[0] == 'H' && pchBuf[1] == 'T' && pchBuf[2] == 'T' && pchBuf[3] == 'P' && pchBuf[4] == '/')
         {
             pchField   = ":http-status-line";
             cchField   = 17;
@@ -3070,22 +3072,38 @@ static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, 
             pchValue   = pchBuf;
             cchValue   = cbToAppend;
         }
+        /* cURL also gives us the empty line before the body, so we slap another
+           fictitious field name ':end-of-headers' in front of it as well. */
+        else if (cbToAppend == 2 && pchBuf[0] == '\r' && pchBuf[1] == '\n')
+        {
+            pchField   = ":end-of-headers";
+            cchField   = 15;
+            uMatchWord = RTHTTP_MAKE_HDR_MATCH_WORD(15, ':', 'e', 'n');
+            pchValue   = pchBuf;
+            cchValue   = cbToAppend;
+        }
         else
             AssertMsgFailedReturn(("pchBuf=%.*s\n", cbToAppend, pchBuf), cbToAppend);
 
-        /* Determin the field value, stripping one leading blank and all
-           trailing spaces. */
+        /*
+         * Determin the field value, stripping one leading blank and all
+         * trailing spaces.
+         */
         if (cchValue > 0 && RT_C_IS_BLANK(*pchValue))
             pchValue++, cchValue--;
         while (cchValue > 0 && RT_C_IS_SPACE(pchValue[cchValue - 1]))
             cchValue--;
 
-        /* Pass it to the callback. */
+        /*
+         * Pass it to the callback.
+         */
+        Log6(("rtHttpWriteHeaderData: %.*s: %.*s\n", cchField, pchBuf, cchValue, pchValue));
         int rc = pThis->pfnHeaderCallback(pThis, uMatchWord, pchBuf, cchField,
                                           pchValue, cchValue, pThis->pvHeaderCallbackUser);
         if (RT_SUCCESS(rc))
             return cbToAppend;
 
+        /* Abort on error. */
         if (RT_SUCCESS(pThis->rcOutput))
             pThis->rcOutput = rc;
         pThis->fAbort = true;
@@ -3546,7 +3564,7 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
             rcCurl = rtHttpSetReadCallback(pThis, rtHttpReadDataFromUploadCallback, pThis);
 
         /* Headers. */
-        if (ppvHeaders && CURL_SUCCESS(rcCurl))
+        if (CURL_SUCCESS(rcCurl))
         {
             RT_ZERO(pThis->HeadersOutput.uData.Mem);
             rcCurl = rtHttpSetHeaderCallback(pThis, rtHttpWriteHeaderData, pThis);
