@@ -91,6 +91,13 @@ typedef struct RTDBGSTACKSELFSYMSEARCH
 typedef RTDBGSTACKSELFSYMSEARCH *PRTDBGSTACKSELFSYMSEARCH;
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+RT_C_DECLS_BEGIN
+DECLASM(DECLHIDDEN(size_t)) rtDbgStackDumpSelfWorker(char *pszStack, size_t cbStack, uint32_t fFlags, PCRTCCUINTREG pauRegs);
+RT_C_DECLS_END
+
 
 /**
  * Worker for stack and module reader callback.
