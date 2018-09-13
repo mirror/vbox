@@ -102,7 +102,7 @@ RTCRestOutputBase &RTCRestArrayBase::serializeAsJson(RTCRestOutputBase &a_rDst) 
         for (size_t i = 0; i < m_cElements; i++)
         {
             m_papElements[i]->serializeAsJson(a_rDst);
-            if (i < m_cElements)
+            if (i < m_cElements - 1)
                 a_rDst.printf(",\n");
             else
                 a_rDst.printf("\n");
