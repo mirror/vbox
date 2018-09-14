@@ -1081,7 +1081,11 @@ VBoxXPCOM-x86_LDFLAGS.solaris += -Wl,-z,allextract \
 #
 # VBoxXPCOMImp - Import library/hack.
 #
+ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxXPCOMImp,VBoxXPCOM,VBoxXPCOM-mangled.def)
+else
 $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxXPCOMImp,VBoxXPCOM,VBoxXPCOM.def)
+endif
 
 
 #
