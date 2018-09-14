@@ -6053,7 +6053,6 @@ ifdef VBOX_WITH_EXTPACK
   TEMPLATE_VBoxR3ExtPackApi_LIBS = \
   	$(TEMPLATE_LIBS_VBOXR3) \
   	$(LIB_RUNTIME) \
-  	$(if-expr "$(KBUILD_TARGET)" == "win", , $(LIB_XPCOM)) \
   	$(VBOX_LIB_VMM_LAZY)
  endif
 
