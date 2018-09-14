@@ -560,6 +560,9 @@ void UIVirtualBoxManagerWidget::loadSettings()
                                        ? Qt::ToolButtonTextUnderIcon
                                        : Qt::ToolButtonIconOnly);
     }
+
+    /* Open tool currently chosen in Tools-pane:  */
+    sltHandleToolsPaneIndexChange();
 }
 
 void UIVirtualBoxManagerWidget::updateToolbar()

@@ -41,6 +41,7 @@ enum UIToolsClass
 /** Item types. */
 enum UIToolsType
 {
+    UIToolsType_Invalid,
     /* Global class: */
     UIToolsType_Media,
     UIToolsType_Network,
@@ -48,8 +49,6 @@ enum UIToolsType
     UIToolsType_Details,
     UIToolsType_Snapshots,
     UIToolsType_Logs,
-    /* Max */
-    UIToolsType_Max
 };
 
 

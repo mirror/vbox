@@ -318,6 +318,11 @@ public:
         /** Defines selector-window global tools @a aOrder. */
         void setSelectorWindowToolsOrderGlobal(const QList<ToolTypeGlobal> &aOrder);
 
+        /** Returns last selected tool set of VirtualBox Manager. */
+        QString toolsPaneLastItemsChosen();
+        /** Defines last selected tool @a strSet of VirtualBox Manager. */
+        void setToolsPaneLastItemsChosen(const QString &strSet);
+
         /** Returns whether selector-window status-bar visible. */
         bool selectorWindowStatusBarVisible();
         /** Defines whether selector-window status-bar @a fVisible. */

@@ -205,6 +205,19 @@ private:
 
     /** @name General stuff.
       * @{ */
+        /** Returns @a enmType string representation.
+          * @todo move to UIConverter one day .. */
+        static QString typeToString(UIToolsType enmType);
+        /** Returns @a strType converted to corresponding UIToolsType.
+          * @todo move to UIConverter one day .. */
+        static UIToolsType typeFromString(const QString &strType);
+
+        /** Returns whether passed @a enmType is of passed @a enmClass. */
+        static bool isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass);
+    /** @} */
+
+    /** @name General stuff.
+      * @{ */
         /** Holds the Tools reference. */
         UITools *m_pTools;
 
@@ -238,6 +251,11 @@ private:
       * @{ */
         /** Holds the navigation list. */
         QList<UIToolsItem*>  m_navigationList;
+
+        /** Holds the last chosen navigation item of global class. */
+        QPointer<UIToolsItem> m_pLastItemGlobal;
+        /** Holds the last chosen navigation item of machine class. */
+        QPointer<UIToolsItem> m_pLastItemMachine;
     /** @} */
 };
 

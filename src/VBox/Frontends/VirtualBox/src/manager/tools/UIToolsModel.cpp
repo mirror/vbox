@@ -151,7 +151,14 @@ void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
     {
         /* Set this item to current if navigation list contains it: */
         if (navigationList().contains(pItem))
+        {
             m_pCurrentItem = pItem;
+            switch (m_pCurrentItem->itemClass())
+            {
+                case UIToolsClass_Global:  m_pLastItemGlobal  = m_pCurrentItem; break;
+                case UIToolsClass_Machine: m_pLastItemMachine = m_pCurrentItem; break;
+            }
+        }
         /* Otherwise it's error: */
         else
             AssertMsgFailed(("Passed item is not in navigation list!"));
@@ -249,6 +256,12 @@ void UIToolsModel::updateNavigation()
     foreach (UIToolsItem *pItem, items())
         if (pItem->isVisible())
             m_navigationList << pItem;
+
+    /* Choose last selected item of current class: */
+    UIToolsItem *pLastSelectedItem = m_enmCurrentClass == UIToolsClass_Global
+                                   ? m_pLastItemGlobal : m_pLastItemMachine;
+    if (navigationList().contains(pLastSelectedItem))
+        setCurrentItem(pLastSelectedItem);
 }
 
 QList<UIToolsItem*> UIToolsModel::items() const
@@ -417,12 +430,40 @@ void UIToolsModel::prepareConnections()
 
 void UIToolsModel::loadLastSelectedItems()
 {
-    /// @todo implement
+    /* Load selected items data: */
+    const QString strData = gEDataManager->toolsPaneLastItemsChosen();
+
+    /* Split serialized data to pair of values: */
+    const QStringList values = strData.split(",");
+
+    /* First of them is current global class item definition: */
+    UIToolsType enmTypeGlobal = typeFromString(values.value(0));
+    if (!isTypeOfClass(enmTypeGlobal, UIToolsClass_Global))
+        enmTypeGlobal = UIToolsType_Media;
+    foreach (UIToolsItem *pItem, items())
+        if (pItem->itemType() == enmTypeGlobal)
+            m_pLastItemGlobal = pItem;
+    AssertPtr(m_pLastItemGlobal.data());
+
+    /* Second of them is current machine class item definition: */
+    UIToolsType enmTypeMachine = typeFromString(values.value(1));
+    if (!isTypeOfClass(enmTypeMachine, UIToolsClass_Machine))
+        enmTypeMachine = UIToolsType_Details;
+    foreach (UIToolsItem *pItem, items())
+        if (pItem->itemType() == enmTypeMachine)
+            m_pLastItemMachine = pItem;
+    AssertPtr(m_pLastItemMachine.data());
 }
 
 void UIToolsModel::saveLastSelectedItems()
 {
-    /// @todo implement
+    /* Prepare selected items data: */
+    const QString strData = QString("%1,%2")
+          .arg(typeToString(m_pLastItemGlobal->itemType()))
+          .arg(typeToString(m_pLastItemMachine->itemType()));
+
+    /* Save selected items data: */
+    gEDataManager->setToolsPaneLastItemsChosen(strData);
 }
 
 void UIToolsModel::cleanupHandlers()
@@ -454,4 +495,68 @@ void UIToolsModel::cleanup()
     cleanupItems();
     /* Cleanup scene: */
     cleanupScene();
+}
+
+/* static */
+QString UIToolsModel::typeToString(UIToolsType enmType)
+{
+    switch (enmType)
+    {
+        /* Global classes: */
+        case UIToolsType_Media:     return "Media";
+        case UIToolsType_Network:   return "Network";
+        /* Machine classes: */
+        case UIToolsType_Details:   return "Details";
+        case UIToolsType_Snapshots: return "Snapshots";
+        case UIToolsType_Logs:      return "Logs";
+        default: break;
+    }
+    return QString();
+}
+
+/* static */
+UIToolsType UIToolsModel::typeFromString(const QString &strType)
+{
+    /* Global classes: */
+    if      (strType == "Media")     return UIToolsType_Media;
+    else if (strType == "Network")   return UIToolsType_Network;
+    /* Machine classes: */
+    else if (strType == "Details")   return UIToolsType_Details;
+    else if (strType == "Snapshots") return UIToolsType_Snapshots;
+    else if (strType == "Logs")      return UIToolsType_Logs;
+    return UIToolsType_Invalid;
+}
+
+/* static */
+bool UIToolsModel::isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass)
+{
+    switch (enmClass)
+    {
+        case UIToolsClass_Global:
+        {
+            switch (enmType)
+            {
+                case UIToolsType_Media:
+                case UIToolsType_Network:
+                    return true;
+                default:
+                    break;
+            }
+            break;
+        }
+        case UIToolsClass_Machine:
+        {
+            switch (enmType)
+            {
+                case UIToolsType_Details:
+                case UIToolsType_Snapshots:
+                case UIToolsType_Logs:
+                    return true;
+                default:
+                    break;
+            }
+            break;
+        }
+    }
+    return false;
 }

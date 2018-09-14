@@ -1972,6 +1972,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
            << GUI_Toolbar << GUI_Toolbar_Text
            << GUI_Toolbar_MachineTools_Order << GUI_Toolbar_GlobalTools_Order
+           << GUI_Tools_LastItemsSelected
            << GUI_Statusbar
            << GUI_GroupDefinitions << GUI_LastItemSelected
            << GUI_DetailsPageBoxes << GUI_PreviewUpdate
@@ -2793,6 +2794,16 @@ void UIExtraDataManager::setSelectorWindowToolsOrderGlobal(const QList<ToolTypeG
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_Toolbar_GlobalTools_Order, aSavedOrder);
+}
+
+QString UIExtraDataManager::toolsPaneLastItemsChosen()
+{
+    return extraDataString(GUI_Tools_LastItemsSelected);
+}
+
+void UIExtraDataManager::setToolsPaneLastItemsChosen(const QString &strSet)
+{
+    setExtraDataString(GUI_Tools_LastItemsSelected, strSet);
 }
 
 bool UIExtraDataManager::selectorWindowStatusBarVisible()
