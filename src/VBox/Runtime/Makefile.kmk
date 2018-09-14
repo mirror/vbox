@@ -1910,7 +1910,7 @@ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/V
 else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
 $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-vcc32.def r3/win/VBoxRT-win32.def)
 else
-$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def)
+$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/VBoxRTImp-gcc.def)
 endif
 
 
