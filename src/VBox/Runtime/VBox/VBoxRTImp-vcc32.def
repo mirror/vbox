@@ -23,126 +23,529 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 EXPORTS
-    ; class RTCString:
-    ??0RTCString@@QAE@ABV0@@Z
-    ??0RTCString@@QAE@ABV0@II@Z
-    ??0RTCString@@QAE@ID@Z
-    ??0RTCString@@QAE@PBD@Z
-    ??0RTCString@@QAE@PBDI@Z
-    ??0RTCString@@QAE@PBDPAD@Z
-    ??0RTCString@@QAE@XZ
-    ??1RTCString@@UAE@XZ
-    ??4RTCString@@QAEAAV0@ABV0@@Z
-    ??4RTCString@@QAEAAV0@PBD@Z
-    ??8RTCString@@QBE_NABV0@@Z
-    ??8RTCString@@QBE_NPBD@Z
-    ??9RTCString@@QBE_NABV0@@Z
-    ??9RTCString@@QBE_NPBD@Z
-    ??ARTCString@@QBEDI@Z
-    ??MRTCString@@QBE_NABV0@@Z
-    ??MRTCString@@QBE_NPBD@Z
-    ??ORTCString@@QBE_NABV0@@Z
-    ??ORTCString@@QBE_NPBD@Z
-    ??YRTCString@@QAEAAV0@ABV0@@Z
-    ??YRTCString@@QAEAAV0@D@Z
-    ??YRTCString@@QAEAAV0@PBD@Z
-    ??_7RTCString@@6B@
-    ?append@RTCString@@QAEAAV1@ABV1@@Z
-    ?append@RTCString@@QAEAAV1@ABV1@II@Z
-    ?append@RTCString@@QAEAAV1@D@Z
-    ?append@RTCString@@QAEAAV1@PBD@Z
-    ?append@RTCString@@QAEAAV1@PBDI@Z
-    ?appendCodePoint@RTCString@@QAEAAV1@I@Z
-    ?appendCodePointNoThrow@RTCString@@QAEHI@Z
-    ?appendNoThrow@RTCString@@QAEHABV1@@Z
-    ?appendNoThrow@RTCString@@QAEHABV1@II@Z
-    ?appendNoThrow@RTCString@@QAEHD@Z
-    ?appendNoThrow@RTCString@@QAEHPBD@Z
-    ?appendNoThrow@RTCString@@QAEHPBDI@Z
-    ?appendPrintf@RTCString@@QAAAAV1@PBDZZ
-    ?appendPrintfNoThrow@RTCString@@QAAHPBDZZ
-    ?appendPrintfV@RTCString@@QAEAAV1@PBDPAD@Z
-    ?appendPrintfVNoThrow@RTCString@@QAEHPBDPAD@Z
-    ?appendWorker@RTCString@@IAEAAV1@PBDI@Z
-    ?appendWorkerNoThrow@RTCString@@IAEHPBDI@Z
-    ?assign@RTCString@@QAEAAV1@ABV1@@Z
-    ?assign@RTCString@@QAEAAV1@ABV1@II@Z
-    ?assign@RTCString@@QAEAAV1@ID@Z
-    ?assign@RTCString@@QAEAAV1@PBD@Z
-    ?assign@RTCString@@QAEAAV1@PBDI@Z
-    ?assignNoThrow@RTCString@@QAEHABV1@@Z
-    ?assignNoThrow@RTCString@@QAEHABV1@II@Z
-    ?assignNoThrow@RTCString@@QAEHID@Z
-    ?assignNoThrow@RTCString@@QAEHPBD@Z
-    ?assignNoThrow@RTCString@@QAEHPBDI@Z
-    ?c_str@RTCString@@QBEPBDXZ
-    ?capacity@RTCString@@QBEIXZ
-    ?cleanup@RTCString@@IAEXXZ
-    ?compare@RTCString@@QBEHABV1@W4CaseSensitivity@1@@Z
-    ?compare@RTCString@@QBEHPBDW4CaseSensitivity@1@@Z
-    ?contains@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z
-    ?contains@RTCString@@QBE_NPBDW4CaseSensitivity@1@@Z
-    ?copyFromN@RTCString@@IAEXPBDI@Z
-    ?count@RTCString@@QBEID@Z
-    ?endsWith@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z
-    ?equals@RTCString@@QBE_NABV1@@Z
-    ?equals@RTCString@@QBE_NPBD@Z
-    ?equalsIgnoreCase@RTCString@@QBE_NABV1@@Z
-    ?equalsIgnoreCase@RTCString@@QBE_NPBD@Z
-    ?erase@RTCString@@QAEAAV1@II@Z
-    ?find@RTCString@@QBEIABV1@I@Z
-    ?find@RTCString@@QBEIDI@Z
-    ?find@RTCString@@QBEIPBDI@Z
-    ?find@RTCString@@QBEIPBV1@I@Z
-    ?findReplace@RTCString@@QAEXDD@Z
-    ?isEmpty@RTCString@@QBE_NXZ
-    ?isNotEmpty@RTCString@@QBE_NXZ
-    ?join@RTCString@@SA?AV1@ABV?$RTCList@VRTCString@@PAV1@@@ABV1@@Z
-    ?joinEx@RTCString@@SA?AV1@ABV?$RTCList@VRTCString@@PAV1@@@ABV1@1@Z
-    ?jolt@RTCString@@QAEXXZ
-    ?length@RTCString@@QBEIXZ
-    ?mutableRaw@RTCString@@QAEPADXZ
-    ?npos@RTCString@@2IB
-    ?printf@RTCString@@QAAAAV1@PBDZZ
-    ?printfNoThrow@RTCString@@QAAHPBDZZ
-    ?printfOutputCallback@RTCString@@KAIPAXPBDI@Z
-    ?printfOutputCallbackNoThrow@RTCString@@KAIPAXPBDI@Z
-    ?printfV@RTCString@@QAEAAV1@PBDPAD@Z
-    ?printfVNoThrow@RTCString@@QAEHPBDPAD@Z
-    ?replace@RTCString@@QAEAAV1@IIABV1@@Z
-    ?replace@RTCString@@QAEAAV1@IIABV1@II@Z
-    ?replace@RTCString@@QAEAAV1@IIPBD@Z
-    ?replace@RTCString@@QAEAAV1@IIPBDI@Z
-    ?replaceNoThrow@RTCString@@QAEHIIABV1@@Z
-    ?replaceNoThrow@RTCString@@QAEHIIABV1@II@Z
-    ?replaceNoThrow@RTCString@@QAEHIIPBD@Z
-    ?replaceNoThrow@RTCString@@QAEHIIPBDI@Z
-    ?replaceWorker@RTCString@@IAEAAV1@IIPBDI@Z
-    ?replaceWorkerNoThrow@RTCString@@IAEHIIPBDI@Z
-    ?reserve@RTCString@@QAEXI@Z
-    ?reserveNoThrow@RTCString@@QAEHI@Z
-    ?setNull@RTCString@@QAEXXZ
-    ?split@RTCString@@QBE?AV?$RTCList@VRTCString@@PAV1@@@ABV1@W4SplitMode@1@@Z
-    ?startsWith@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z
-    ?startsWithWord@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z
-    ?startsWithWord@RTCString@@QBE_NPBDW4CaseSensitivity@1@@Z
-    ?strip@RTCString@@QAEAAV1@XZ
-    ?stripLeft@RTCString@@QAEAAV1@XZ
-    ?stripRight@RTCString@@QAEAAV1@XZ
-    ?substr@RTCString@@QBE?AV1@II@Z
-    ?substrCP@RTCString@@QBE?AV1@II@Z
-    ?swap@RTCString@@QAEXAAV1@@Z
-    ?toInt32@RTCString@@QBEHXZ
-    ?toInt64@RTCString@@QBE_JXZ
-    ?toInt@RTCString@@QBEHAAI@Z
-    ?toInt@RTCString@@QBEHAA_K@Z
-    ?toLower@RTCString@@QAEAAV1@XZ
-    ?toUInt32@RTCString@@QBEIXZ
-    ?toUInt64@RTCString@@QBE_KXZ
-    ?toUpper@RTCString@@QAEAAV1@XZ
-    ?uniLength@RTCString@@QBEIXZ
-    ; Related to RTCString:
-    ??H@YA?BVRTCString@@ABV0@0@Z
-    ??H@YA?BVRTCString@@ABV0@PBD@Z
-    ??H@YA?BVRTCString@@PBDABV0@@Z
-
+EXPORTS
+    ;
+    ; RTCString & RTCRest classes.  
+    ;
+    ; Use the following command-line to generate the stuff below (same as vcc64, except input/output):
+    ; kmk_sed -r -e "/^    .*(RTCRest|RTCString)/!d" -e "s/^ +[[:digit:]]+ +([^ ]+) /    \1                                                                                    ; /" -e "s/ (\?\?_7[^ ]+@@6B[^ ]*|\?[^ ]+@@[0-4][^ @]+) / \1 DATA /" -e "s/(.{78} ) *;/\1 ;/" e:\vbox\svn\trunk\out\win.amd64\debug\obj\VBoxRT-x86\VBoxRT-x86.map | sort >> VBox\VBoxRTImp-vcc32.def
+    ;
+    ??_7RTCRestAnyObject@@6B@ DATA                                              ; (const RTCRestAnyObject::`vftable')
+    ??_7RTCRestArrayBase@@6B@ DATA                                              ; (const RTCRestArrayBase::`vftable')
+    ??_7RTCRestBinary@@6B@ DATA                                                 ; (const RTCRestBinary::`vftable')
+    ??_7RTCRestBinaryParameter@@6B@ DATA                                        ; (const RTCRestBinaryParameter::`vftable')
+    ??_7RTCRestBinaryResponse@@6B@ DATA                                         ; (const RTCRestBinaryResponse::`vftable')
+    ??_7RTCRestBool@@6B@ DATA                                                   ; (const RTCRestBool::`vftable')
+    ??_7RTCRestClientApiBase@@6B@ DATA                                          ; (const RTCRestClientApiBase::`vftable')
+    ??_7RTCRestClientRequestBase@@6B@ DATA                                      ; (const RTCRestClientRequestBase::`vftable')
+    ??_7RTCRestClientResponseBase@@6B@ DATA                                     ; (const RTCRestClientResponseBase::`vftable')
+    ??_7RTCRestDate@@6B@ DATA                                                   ; (const RTCRestDate::`vftable')
+    ??_7RTCRestDouble@@6B@ DATA                                                 ; (const RTCRestDouble::`vftable')
+    ??_7RTCRestInt16@@6B@ DATA                                                  ; (const RTCRestInt16::`vftable')
+    ??_7RTCRestInt32@@6B@ DATA                                                  ; (const RTCRestInt32::`vftable')
+    ??_7RTCRestInt64@@6B@ DATA                                                  ; (const RTCRestInt64::`vftable')
+    ??_7RTCRestJsonPrimaryCursor@@6B@ DATA                                      ; (const RTCRestJsonPrimaryCursor::`vftable')
+    ??_7RTCRestObjectBase@@6B@ DATA                                             ; (const RTCRestObjectBase::`vftable')
+    ??_7RTCRestOutputBase@@6B@ DATA                                             ; (const RTCRestOutputBase::`vftable')
+    ??_7RTCRestOutputToString@@6B@ DATA                                         ; (const RTCRestOutputToString::`vftable')
+    ??_7RTCRestString@@6BRTCRestObjectBase@@@ DATA                              ; (const RTCRestString::`vftable'{for `RTCRestObjectBase'})
+    ??_7RTCRestString@@6BRTCString@@@ DATA                                      ; (const RTCRestString::`vftable'{for `RTCString'})
+    ??_7RTCRestStringEnumBase@@6B@ DATA                                         ; (const RTCRestStringEnumBase::`vftable')
+    ??_7RTCRestStringMapBase@@6B@ DATA                                          ; (const RTCRestStringMapBase::`vftable')
+    ??_7RTCString@@6B@ DATA                                                     ; (const RTCString::`vftable')
+    ??0RTCError@@QAE@ABVRTCString@@@Z                                           ; (public: __thiscall RTCError::RTCError(class RTCString const &))
+    ??0RTCRestAnyObject@@QAE@ABV0@@Z                                            ; (public: __thiscall RTCRestAnyObject::RTCRestAnyObject(class RTCRestAnyObject const &))
+    ??0RTCRestAnyObject@@QAE@XZ                                                 ; (public: __thiscall RTCRestAnyObject::RTCRestAnyObject(void))
+    ??0RTCRestArrayBase@@QAE@XZ                                                 ; (public: __thiscall RTCRestArrayBase::RTCRestArrayBase(void))
+    ??0RTCRestBinary@@QAE@XZ                                                    ; (public: __thiscall RTCRestBinary::RTCRestBinary(void))
+    ??0RTCRestBinaryParameter@@QAE@XZ                                           ; (public: __thiscall RTCRestBinaryParameter::RTCRestBinaryParameter(void))
+    ??0RTCRestBinaryResponse@@QAE@XZ                                            ; (public: __thiscall RTCRestBinaryResponse::RTCRestBinaryResponse(void))
+    ??0RTCRestBool@@QAE@_N@Z                                                    ; (public: __thiscall RTCRestBool::RTCRestBool(bool))
+    ??0RTCRestBool@@QAE@ABV0@@Z                                                 ; (public: __thiscall RTCRestBool::RTCRestBool(class RTCRestBool const &))
+    ??0RTCRestBool@@QAE@XZ                                                      ; (public: __thiscall RTCRestBool::RTCRestBool(void))
+    ??0RTCRestClientApiBase@@QAE@ABV0@@Z                                        ; (public: __thiscall RTCRestClientApiBase::RTCRestClientApiBase(class RTCRestClientApiBase const &))
+    ??0RTCRestClientApiBase@@QAE@XZ                                             ; (public: __thiscall RTCRestClientApiBase::RTCRestClientApiBase(void))
+    ??0RTCRestClientRequestBase@@QAE@ABV0@@Z                                    ; (public: __thiscall RTCRestClientRequestBase::RTCRestClientRequestBase(class RTCRestClientRequestBase const &))
+    ??0RTCRestClientRequestBase@@QAE@XZ                                         ; (public: __thiscall RTCRestClientRequestBase::RTCRestClientRequestBase(void))
+    ??0RTCRestClientResponseBase@@QAE@ABV0@@Z                                   ; (public: __thiscall RTCRestClientResponseBase::RTCRestClientResponseBase(class RTCRestClientResponseBase const &))
+    ??0RTCRestClientResponseBase@@QAE@XZ                                        ; (public: __thiscall RTCRestClientResponseBase::RTCRestClientResponseBase(void))
+    ??0RTCRestDate@@QAE@ABV0@@Z                                                 ; (public: __thiscall RTCRestDate::RTCRestDate(class RTCRestDate const &))
+    ??0RTCRestDate@@QAE@XZ                                                      ; (public: __thiscall RTCRestDate::RTCRestDate(void))
+    ??0RTCRestDouble@@QAE@ABV0@@Z                                               ; (public: __thiscall RTCRestDouble::RTCRestDouble(class RTCRestDouble const &))
+    ??0RTCRestDouble@@QAE@N@Z                                                   ; (public: __thiscall RTCRestDouble::RTCRestDouble(double))
+    ??0RTCRestDouble@@QAE@XZ                                                    ; (public: __thiscall RTCRestDouble::RTCRestDouble(void))
+    ??0RTCRestInt16@@QAE@ABV0@@Z                                                ; (public: __thiscall RTCRestInt16::RTCRestInt16(class RTCRestInt16 const &))
+    ??0RTCRestInt16@@QAE@F@Z                                                    ; (public: __thiscall RTCRestInt16::RTCRestInt16(short))
+    ??0RTCRestInt16@@QAE@XZ                                                     ; (public: __thiscall RTCRestInt16::RTCRestInt16(void))
+    ??0RTCRestInt32@@QAE@ABV0@@Z                                                ; (public: __thiscall RTCRestInt32::RTCRestInt32(class RTCRestInt32 const &))
+    ??0RTCRestInt32@@QAE@H@Z                                                    ; (public: __thiscall RTCRestInt32::RTCRestInt32(int))
+    ??0RTCRestInt32@@QAE@XZ                                                     ; (public: __thiscall RTCRestInt32::RTCRestInt32(void))
+    ??0RTCRestInt64@@QAE@_J@Z                                                   ; (public: __thiscall RTCRestInt64::RTCRestInt64(__int64))
+    ??0RTCRestInt64@@QAE@ABV0@@Z                                                ; (public: __thiscall RTCRestInt64::RTCRestInt64(class RTCRestInt64 const &))
+    ??0RTCRestInt64@@QAE@XZ                                                     ; (public: __thiscall RTCRestInt64::RTCRestInt64(void))
+    ??0RTCRestJsonCursor@@QAE@ABU0@@Z                                           ; (public: __thiscall RTCRestJsonCursor::RTCRestJsonCursor(struct RTCRestJsonCursor const &))
+    ??0RTCRestJsonCursor@@QAE@PAURTJSONVALINT@@PBD@Z                            ; (public: __thiscall RTCRestJsonCursor::RTCRestJsonCursor(struct RTJSONVALINT *,char const *))
+    ??0RTCRestJsonCursor@@QAE@PAURTJSONVALINT@@PBDPAU0@@Z                       ; (public: __thiscall RTCRestJsonCursor::RTCRestJsonCursor(struct RTJSONVALINT *,char const *,struct RTCRestJsonCursor *))
+    ??0RTCRestJsonPrimaryCursor@@QAE@ABV0@@Z                                    ; (public: __thiscall RTCRestJsonPrimaryCursor::RTCRestJsonPrimaryCursor(class RTCRestJsonPrimaryCursor const &))
+    ??0RTCRestJsonPrimaryCursor@@QAE@PAURTJSONVALINT@@PBDPAURTERRINFO@@@Z       ; (public: __thiscall RTCRestJsonPrimaryCursor::RTCRestJsonPrimaryCursor(struct RTJSONVALINT *,char const *,struct RTERRINFO *))
+    ??0RTCRestObjectBase@@QAE@ABV0@@Z                                           ; (public: __thiscall RTCRestObjectBase::RTCRestObjectBase(class RTCRestObjectBase const &))
+    ??0RTCRestObjectBase@@QAE@XZ                                                ; (public: __thiscall RTCRestObjectBase::RTCRestObjectBase(void))
+    ??0RTCRestOutputBase@@QAE@ABV0@@Z                                           ; (public: __thiscall RTCRestOutputBase::RTCRestOutputBase(class RTCRestOutputBase const &))
+    ??0RTCRestOutputBase@@QAE@XZ                                                ; (public: __thiscall RTCRestOutputBase::RTCRestOutputBase(void))
+    ??0RTCRestOutputToString@@QAE@PAVRTCString@@_N@Z                            ; (public: __thiscall RTCRestOutputToString::RTCRestOutputToString(class RTCString *,bool))
+    ??0RTCRestString@@QAE@ABV0@@Z                                               ; (public: __thiscall RTCRestString::RTCRestString(class RTCRestString const &))
+    ??0RTCRestString@@QAE@ABVRTCString@@@Z                                      ; (public: __thiscall RTCRestString::RTCRestString(class RTCString const &))
+    ??0RTCRestString@@QAE@PBD@Z                                                 ; (public: __thiscall RTCRestString::RTCRestString(char const *))
+    ??0RTCRestString@@QAE@XZ                                                    ; (public: __thiscall RTCRestString::RTCRestString(void))
+    ??0RTCRestStringEnumBase@@QAE@ABV0@@Z                                       ; (public: __thiscall RTCRestStringEnumBase::RTCRestStringEnumBase(class RTCRestStringEnumBase const &))
+    ??0RTCRestStringEnumBase@@QAE@XZ                                            ; (public: __thiscall RTCRestStringEnumBase::RTCRestStringEnumBase(void))
+    ??0RTCRestStringMapBase@@QAE@XZ                                             ; (public: __thiscall RTCRestStringMapBase::RTCRestStringMapBase(void))
+    ??0RTCString@@QAE@ABV0@@Z                                                   ; (public: __thiscall RTCString::RTCString(class RTCString const &))
+    ??0RTCString@@QAE@ABV0@II@Z                                                 ; (public: __thiscall RTCString::RTCString(class RTCString const &,unsigned int,unsigned int))
+    ??0RTCString@@QAE@ID@Z                                                      ; (public: __thiscall RTCString::RTCString(unsigned int,char))
+    ??0RTCString@@QAE@PBD@Z                                                     ; (public: __thiscall RTCString::RTCString(char const *))
+    ??0RTCString@@QAE@PBDI@Z                                                    ; (public: __thiscall RTCString::RTCString(char const *,unsigned int))
+    ??0RTCString@@QAE@PBDPAD@Z                                                  ; (public: __thiscall RTCString::RTCString(char const *,char *))
+    ??0RTCString@@QAE@XZ                                                        ; (public: __thiscall RTCString::RTCString(void))
+    ??1RTCRestAnyObject@@UAE@XZ                                                 ; (public: virtual __thiscall RTCRestAnyObject::~RTCRestAnyObject(void))
+    ??1RTCRestArrayBase@@UAE@XZ                                                 ; (public: virtual __thiscall RTCRestArrayBase::~RTCRestArrayBase(void))
+    ??1RTCRestBinary@@UAE@XZ                                                    ; (public: virtual __thiscall RTCRestBinary::~RTCRestBinary(void))
+    ??1RTCRestBinaryParameter@@UAE@XZ                                           ; (public: virtual __thiscall RTCRestBinaryParameter::~RTCRestBinaryParameter(void))
+    ??1RTCRestBinaryResponse@@UAE@XZ                                            ; (public: virtual __thiscall RTCRestBinaryResponse::~RTCRestBinaryResponse(void))
+    ??1RTCRestBool@@UAE@XZ                                                      ; (public: virtual __thiscall RTCRestBool::~RTCRestBool(void))
+    ??1RTCRestClientApiBase@@UAE@XZ                                             ; (public: virtual __thiscall RTCRestClientApiBase::~RTCRestClientApiBase(void))
+    ??1RTCRestClientRequestBase@@UAE@XZ                                         ; (public: virtual __thiscall RTCRestClientRequestBase::~RTCRestClientRequestBase(void))
+    ??1RTCRestClientResponseBase@@UAE@XZ                                        ; (public: virtual __thiscall RTCRestClientResponseBase::~RTCRestClientResponseBase(void))
+    ??1RTCRestDate@@UAE@XZ                                                      ; (public: virtual __thiscall RTCRestDate::~RTCRestDate(void))
+    ??1RTCRestDouble@@UAE@XZ                                                    ; (public: virtual __thiscall RTCRestDouble::~RTCRestDouble(void))
+    ??1RTCRestInt16@@UAE@XZ                                                     ; (public: virtual __thiscall RTCRestInt16::~RTCRestInt16(void))
+    ??1RTCRestInt32@@UAE@XZ                                                     ; (public: virtual __thiscall RTCRestInt32::~RTCRestInt32(void))
+    ??1RTCRestInt64@@UAE@XZ                                                     ; (public: virtual __thiscall RTCRestInt64::~RTCRestInt64(void))
+    ??1RTCRestJsonCursor@@QAE@XZ                                                ; (public: __thiscall RTCRestJsonCursor::~RTCRestJsonCursor(void))
+    ??1RTCRestJsonPrimaryCursor@@UAE@XZ                                         ; (public: virtual __thiscall RTCRestJsonPrimaryCursor::~RTCRestJsonPrimaryCursor(void))
+    ??1RTCRestObjectBase@@UAE@XZ                                                ; (public: virtual __thiscall RTCRestObjectBase::~RTCRestObjectBase(void))
+    ??1RTCRestOutputBase@@UAE@XZ                                                ; (public: virtual __thiscall RTCRestOutputBase::~RTCRestOutputBase(void))
+    ??1RTCRestOutputToString@@UAE@XZ                                            ; (public: virtual __thiscall RTCRestOutputToString::~RTCRestOutputToString(void))
+    ??1RTCRestString@@UAE@XZ                                                    ; (public: virtual __thiscall RTCRestString::~RTCRestString(void))
+    ??1RTCRestStringEnumBase@@UAE@XZ                                            ; (public: virtual __thiscall RTCRestStringEnumBase::~RTCRestStringEnumBase(void))
+    ??1RTCRestStringMapBase@@UAE@XZ                                             ; (public: virtual __thiscall RTCRestStringMapBase::~RTCRestStringMapBase(void))
+    ??1RTCString@@UAE@XZ                                                        ; (public: virtual __thiscall RTCString::~RTCString(void))
+    ??4RTCRestAnyObject@@QAEAAV0@ABV0@@Z                                        ; (public: class RTCRestAnyObject & __thiscall RTCRestAnyObject::operator=(class RTCRestAnyObject const &))
+    ??4RTCRestBool@@QAEAAV0@ABV0@@Z                                             ; (public: class RTCRestBool & __thiscall RTCRestBool::operator=(class RTCRestBool const &))
+    ??4RTCRestClientApiBase@@QAEAAV0@ABV0@@Z                                    ; (public: class RTCRestClientApiBase & __thiscall RTCRestClientApiBase::operator=(class RTCRestClientApiBase const &))
+    ??4RTCRestClientRequestBase@@QAEAAV0@ABV0@@Z                                ; (public: class RTCRestClientRequestBase & __thiscall RTCRestClientRequestBase::operator=(class RTCRestClientRequestBase const &))
+    ??4RTCRestClientResponseBase@@QAEAAV0@ABV0@@Z                               ; (public: class RTCRestClientResponseBase & __thiscall RTCRestClientResponseBase::operator=(class RTCRestClientResponseBase const &))
+    ??4RTCRestDate@@QAEAAV0@ABV0@@Z                                             ; (public: class RTCRestDate & __thiscall RTCRestDate::operator=(class RTCRestDate const &))
+    ??4RTCRestDouble@@QAEAAV0@ABV0@@Z                                           ; (public: class RTCRestDouble & __thiscall RTCRestDouble::operator=(class RTCRestDouble const &))
+    ??4RTCRestInt16@@QAEAAV0@ABV0@@Z                                            ; (public: class RTCRestInt16 & __thiscall RTCRestInt16::operator=(class RTCRestInt16 const &))
+    ??4RTCRestInt32@@QAEAAV0@ABV0@@Z                                            ; (public: class RTCRestInt32 & __thiscall RTCRestInt32::operator=(class RTCRestInt32 const &))
+    ??4RTCRestInt64@@QAEAAV0@ABV0@@Z                                            ; (public: class RTCRestInt64 & __thiscall RTCRestInt64::operator=(class RTCRestInt64 const &))
+    ??4RTCRestJsonCursor@@QAEAAU0@ABU0@@Z                                       ; (public: struct RTCRestJsonCursor & __thiscall RTCRestJsonCursor::operator=(struct RTCRestJsonCursor const &))
+    ??4RTCRestJsonPrimaryCursor@@QAEAAV0@ABV0@@Z                                ; (public: class RTCRestJsonPrimaryCursor & __thiscall RTCRestJsonPrimaryCursor::operator=(class RTCRestJsonPrimaryCursor const &))
+    ??4RTCRestObjectBase@@QAEAAV0@ABV0@@Z                                       ; (public: class RTCRestObjectBase & __thiscall RTCRestObjectBase::operator=(class RTCRestObjectBase const &))
+    ??4RTCRestOutputBase@@QAEAAV0@ABV0@@Z                                       ; (public: class RTCRestOutputBase & __thiscall RTCRestOutputBase::operator=(class RTCRestOutputBase const &))
+    ??4RTCRestString@@QAEAAV0@ABV0@@Z                                           ; (public: class RTCRestString & __thiscall RTCRestString::operator=(class RTCRestString const &))
+    ??4RTCRestString@@QAEAAV0@ABVRTCString@@@Z                                  ; (public: class RTCRestString & __thiscall RTCRestString::operator=(class RTCString const &))
+    ??4RTCRestString@@QAEAAV0@PBD@Z                                             ; (public: class RTCRestString & __thiscall RTCRestString::operator=(char const *))
+    ??4RTCRestStringEnumBase@@QAEAAV0@ABV0@@Z                                   ; (public: class RTCRestStringEnumBase & __thiscall RTCRestStringEnumBase::operator=(class RTCRestStringEnumBase const &))
+    ??4RTCString@@QAEAAV0@ABV0@@Z                                               ; (public: class RTCString & __thiscall RTCString::operator=(class RTCString const &))
+    ??4RTCString@@QAEAAV0@PBD@Z                                                 ; (public: class RTCString & __thiscall RTCString::operator=(char const *))
+    ??8RTCString@@QBE_NABV0@@Z                                                  ; (public: bool __thiscall RTCString::operator==(class RTCString const &)const )
+    ??8RTCString@@QBE_NPBD@Z                                                    ; (public: bool __thiscall RTCString::operator==(char const *)const )
+    ??9RTCString@@QBE_NABV0@@Z                                                  ; (public: bool __thiscall RTCString::operator!=(class RTCString const &)const )
+    ??9RTCString@@QBE_NPBD@Z                                                    ; (public: bool __thiscall RTCString::operator!=(char const *)const )
+    ??ARTCString@@QBEDI@Z                                                       ; (public: char __thiscall RTCString::operator[](unsigned int)const )
+    ??H@YA?BVRTCString@@ABV0@0@Z                                                ; (class RTCString const __cdecl operator+(class RTCString const &,class RTCString const &))
+    ??H@YA?BVRTCString@@ABV0@PBD@Z                                              ; (class RTCString const __cdecl operator+(class RTCString const &,char const *))
+    ??H@YA?BVRTCString@@PBDABV0@@Z                                              ; (class RTCString const __cdecl operator+(char const *,class RTCString const &))
+    ??MRTCString@@QBE_NABV0@@Z                                                  ; (public: bool __thiscall RTCString::operator<(class RTCString const &)const )
+    ??MRTCString@@QBE_NPBD@Z                                                    ; (public: bool __thiscall RTCString::operator<(char const *)const )
+    ??ORTCString@@QBE_NABV0@@Z                                                  ; (public: bool __thiscall RTCString::operator>(class RTCString const &)const )
+    ??ORTCString@@QBE_NPBD@Z                                                    ; (public: bool __thiscall RTCString::operator>(char const *)const )
+    ??YRTCString@@QAEAAV0@ABV0@@Z                                               ; (public: class RTCString & __thiscall RTCString::operator+=(class RTCString const &))
+    ??YRTCString@@QAEAAV0@D@Z                                                   ; (public: class RTCString & __thiscall RTCString::operator+=(char))
+    ??YRTCString@@QAEAAV0@PBD@Z                                                 ; (public: class RTCString & __thiscall RTCString::operator+=(char const *))
+    ?addContent@ElementNode@xml@@QAEPAVContentNode@2@ABVRTCString@@@Z           ; (public: class xml::ContentNode * __thiscall xml::ElementNode::addContent(class RTCString const &))
+    ?addError@RTCRestClientResponseBase@@IAAHHPBDZZ                             ; (protected: int __cdecl RTCRestClientResponseBase::addError(int,char const *,...))
+    ?addError@RTCRestJsonPrimaryCursor@@UAAHABURTCRestJsonCursor@@HPBDZZ        ; (public: virtual int __cdecl RTCRestJsonPrimaryCursor::addError(struct RTCRestJsonCursor const &,int,char const *,...))
+    ?append@RTCString@@QAEAAV1@ABV1@@Z                                          ; (public: class RTCString & __thiscall RTCString::append(class RTCString const &))
+    ?append@RTCString@@QAEAAV1@ABV1@II@Z                                        ; (public: class RTCString & __thiscall RTCString::append(class RTCString const &,unsigned int,unsigned int))
+    ?append@RTCString@@QAEAAV1@D@Z                                              ; (public: class RTCString & __thiscall RTCString::append(char))
+    ?append@RTCString@@QAEAAV1@PBD@Z                                            ; (public: class RTCString & __thiscall RTCString::append(char const *))
+    ?append@RTCString@@QAEAAV1@PBDI@Z                                           ; (public: class RTCString & __thiscall RTCString::append(char const *,unsigned int))
+    ?appendCodePoint@RTCString@@QAEAAV1@I@Z                                     ; (public: class RTCString & __thiscall RTCString::appendCodePoint(unsigned int))
+    ?appendCodePointNoThrow@RTCString@@QAEHI@Z                                  ; (public: int __thiscall RTCString::appendCodePointNoThrow(unsigned int))
+    ?appendNoThrow@RTCString@@QAEHABV1@@Z                                       ; (public: int __thiscall RTCString::appendNoThrow(class RTCString const &))
+    ?appendNoThrow@RTCString@@QAEHABV1@II@Z                                     ; (public: int __thiscall RTCString::appendNoThrow(class RTCString const &,unsigned int,unsigned int))
+    ?appendNoThrow@RTCString@@QAEHD@Z                                           ; (public: int __thiscall RTCString::appendNoThrow(char))
+    ?appendNoThrow@RTCString@@QAEHPBD@Z                                         ; (public: int __thiscall RTCString::appendNoThrow(char const *))
+    ?appendNoThrow@RTCString@@QAEHPBDI@Z                                        ; (public: int __thiscall RTCString::appendNoThrow(char const *,unsigned int))
+    ?appendPrintf@RTCString@@QAAAAV1@PBDZZ                                      ; (public: class RTCString & __cdecl RTCString::appendPrintf(char const *,...))
+    ?appendPrintfNoThrow@RTCString@@QAAHPBDZZ                                   ; (public: int __cdecl RTCString::appendPrintfNoThrow(char const *,...))
+    ?appendPrintfV@RTCString@@QAEAAV1@PBDPAD@Z                                  ; (public: class RTCString & __thiscall RTCString::appendPrintfV(char const *,char *))
+    ?appendPrintfVNoThrow@RTCString@@QAEHPBDPAD@Z                               ; (public: int __thiscall RTCString::appendPrintfVNoThrow(char const *,char *))
+    ?appendWorker@RTCString@@IAEAAV1@PBDI@Z                                     ; (protected: class RTCString & __thiscall RTCString::appendWorker(char const *,unsigned int))
+    ?appendWorkerNoThrow@RTCString@@IAEHPBDI@Z                                  ; (protected: int __thiscall RTCString::appendWorkerNoThrow(char const *,unsigned int))
+    ?assign@RTCRestString@@QAEAAV1@ABVRTCString@@@Z                             ; (public: class RTCRestString & __thiscall RTCRestString::assign(class RTCString const &))
+    ?assign@RTCRestString@@QAEAAV1@ABVRTCString@@II@Z                           ; (public: class RTCRestString & __thiscall RTCRestString::assign(class RTCString const &,unsigned int,unsigned int))
+    ?assign@RTCRestString@@QAEAAV1@ID@Z                                         ; (public: class RTCRestString & __thiscall RTCRestString::assign(unsigned int,char))
+    ?assign@RTCRestString@@QAEAAV1@PBD@Z                                        ; (public: class RTCRestString & __thiscall RTCRestString::assign(char const *))
+    ?assign@RTCRestString@@QAEAAV1@PBDI@Z                                       ; (public: class RTCRestString & __thiscall RTCRestString::assign(char const *,unsigned int))
+    ?assign@RTCString@@QAEAAV1@ABV1@@Z                                          ; (public: class RTCString & __thiscall RTCString::assign(class RTCString const &))
+    ?assign@RTCString@@QAEAAV1@ABV1@II@Z                                        ; (public: class RTCString & __thiscall RTCString::assign(class RTCString const &,unsigned int,unsigned int))
+    ?assign@RTCString@@QAEAAV1@ID@Z                                             ; (public: class RTCString & __thiscall RTCString::assign(unsigned int,char))
+    ?assign@RTCString@@QAEAAV1@PBD@Z                                            ; (public: class RTCString & __thiscall RTCString::assign(char const *))
+    ?assign@RTCString@@QAEAAV1@PBDI@Z                                           ; (public: class RTCString & __thiscall RTCString::assign(char const *,unsigned int))
+    ?assignCopy@RTCRestAnyObject@@QAEHABV?$RTCRestArray@VRTCRestAnyObject@@@@@Z  ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestArray<class RTCRestAnyObject> const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABV?$RTCRestStringMap@VRTCRestAnyObject@@@@@Z  ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestStringMap<class RTCRestAnyObject> const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABV1@@Z                                   ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestAnyObject const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABVRTCRestBool@@@Z                        ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestBool const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABVRTCRestDouble@@@Z                      ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestDouble const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABVRTCRestInt16@@@Z                       ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestInt16 const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABVRTCRestInt32@@@Z                       ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestInt32 const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABVRTCRestInt64@@@Z                       ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestInt64 const &))
+    ?assignCopy@RTCRestAnyObject@@QAEHABVRTCRestString@@@Z                      ; (public: int __thiscall RTCRestAnyObject::assignCopy(class RTCRestString const &))
+    ?assignCopy@RTCRestBinary@@UAEHABV1@@Z                                      ; (public: virtual int __thiscall RTCRestBinary::assignCopy(class RTCRestBinary const &))
+    ?assignCopy@RTCRestBinary@@UAEHPBXI@Z                                       ; (public: virtual int __thiscall RTCRestBinary::assignCopy(void const *,unsigned int))
+    ?assignCopy@RTCRestBinaryParameter@@UAEHABV1@@Z                             ; (public: virtual int __thiscall RTCRestBinaryParameter::assignCopy(class RTCRestBinaryParameter const &))
+    ?assignCopy@RTCRestBinaryParameter@@UAEHABVRTCRestBinary@@@Z                ; (public: virtual int __thiscall RTCRestBinaryParameter::assignCopy(class RTCRestBinary const &))
+    ?assignCopy@RTCRestBinaryParameter@@UAEHPBXI@Z                              ; (public: virtual int __thiscall RTCRestBinaryParameter::assignCopy(void const *,unsigned int))
+    ?assignCopy@RTCRestBinaryResponse@@UAEHABV1@@Z                              ; (public: virtual int __thiscall RTCRestBinaryResponse::assignCopy(class RTCRestBinaryResponse const &))
+    ?assignCopy@RTCRestBinaryResponse@@UAEHABVRTCRestBinary@@@Z                 ; (public: virtual int __thiscall RTCRestBinaryResponse::assignCopy(class RTCRestBinary const &))
+    ?assignCopy@RTCRestBinaryResponse@@UAEHPBXI@Z                               ; (public: virtual int __thiscall RTCRestBinaryResponse::assignCopy(void const *,unsigned int))
+    ?assignCopy@RTCRestBool@@QAEHABV1@@Z                                        ; (public: int __thiscall RTCRestBool::assignCopy(class RTCRestBool const &))
+    ?assignCopy@RTCRestDate@@QAEHABV1@@Z                                        ; (public: int __thiscall RTCRestDate::assignCopy(class RTCRestDate const &))
+    ?assignCopy@RTCRestDouble@@QAEHABV1@@Z                                      ; (public: int __thiscall RTCRestDouble::assignCopy(class RTCRestDouble const &))
+    ?assignCopy@RTCRestInt16@@QAEHABV1@@Z                                       ; (public: int __thiscall RTCRestInt16::assignCopy(class RTCRestInt16 const &))
+    ?assignCopy@RTCRestInt32@@QAEHABV1@@Z                                       ; (public: int __thiscall RTCRestInt32::assignCopy(class RTCRestInt32 const &))
+    ?assignCopy@RTCRestInt64@@QAEHABV1@@Z                                       ; (public: int __thiscall RTCRestInt64::assignCopy(class RTCRestInt64 const &))
+    ?assignCopy@RTCRestString@@QAEHABV1@@Z                                      ; (public: int __thiscall RTCRestString::assignCopy(class RTCRestString const &))
+    ?assignCopy@RTCRestString@@QAEHABVRTCString@@@Z                             ; (public: int __thiscall RTCRestString::assignCopy(class RTCString const &))
+    ?assignCopy@RTCRestString@@QAEHPBD@Z                                        ; (public: int __thiscall RTCRestString::assignCopy(char const *))
+    ?assignCopy@RTCRestStringEnumBase@@QAEHABV1@@Z                              ; (public: int __thiscall RTCRestStringEnumBase::assignCopy(class RTCRestStringEnumBase const &))
+    ?assignCopy@RTCRestStringEnumBase@@QAEHABVRTCString@@@Z                     ; (public: int __thiscall RTCRestStringEnumBase::assignCopy(class RTCString const &))
+    ?assignCopy@RTCRestStringEnumBase@@QAEHPBD@Z                                ; (public: int __thiscall RTCRestStringEnumBase::assignCopy(char const *))
+    ?assignNoThrow@RTCRestString@@QAEHABVRTCString@@@Z                          ; (public: int __thiscall RTCRestString::assignNoThrow(class RTCString const &))
+    ?assignNoThrow@RTCRestString@@QAEHABVRTCString@@II@Z                        ; (public: int __thiscall RTCRestString::assignNoThrow(class RTCString const &,unsigned int,unsigned int))
+    ?assignNoThrow@RTCRestString@@QAEHID@Z                                      ; (public: int __thiscall RTCRestString::assignNoThrow(unsigned int,char))
+    ?assignNoThrow@RTCRestString@@QAEHPBD@Z                                     ; (public: int __thiscall RTCRestString::assignNoThrow(char const *))
+    ?assignNoThrow@RTCRestString@@QAEHPBDI@Z                                    ; (public: int __thiscall RTCRestString::assignNoThrow(char const *,unsigned int))
+    ?assignNoThrow@RTCString@@QAEHABV1@@Z                                       ; (public: int __thiscall RTCString::assignNoThrow(class RTCString const &))
+    ?assignNoThrow@RTCString@@QAEHABV1@II@Z                                     ; (public: int __thiscall RTCString::assignNoThrow(class RTCString const &,unsigned int,unsigned int))
+    ?assignNoThrow@RTCString@@QAEHID@Z                                          ; (public: int __thiscall RTCString::assignNoThrow(unsigned int,char))
+    ?assignNoThrow@RTCString@@QAEHPBD@Z                                         ; (public: int __thiscall RTCString::assignNoThrow(char const *))
+    ?assignNoThrow@RTCString@@QAEHPBDI@Z                                        ; (public: int __thiscall RTCString::assignNoThrow(char const *,unsigned int))
+    ?assignNow@RTCRestDate@@QAEHW4kFormat@1@@Z                                  ; (public: int __thiscall RTCRestDate::assignNow(enum RTCRestDate::kFormat))
+    ?assignNowRfc2822@RTCRestDate@@QAEHXZ                                       ; (public: int __thiscall RTCRestDate::assignNowRfc2822(void))
+    ?assignNowRfc3339@RTCRestDate@@QAEHXZ                                       ; (public: int __thiscall RTCRestDate::assignNowRfc3339(void))
+    ?assignNowRfc7131@RTCRestDate@@QAEHXZ                                       ; (public: int __thiscall RTCRestDate::assignNowRfc7131(void))
+    ?assignReadOnly@RTCRestBinary@@UAEHPBXI@Z                                   ; (public: virtual int __thiscall RTCRestBinary::assignReadOnly(void const *,unsigned int))
+    ?assignReadOnly@RTCRestBinaryParameter@@UAEHPBXI@Z                          ; (public: virtual int __thiscall RTCRestBinaryParameter::assignReadOnly(void const *,unsigned int))
+    ?assignReadOnly@RTCRestBinaryResponse@@UAEHPBXI@Z                           ; (public: virtual int __thiscall RTCRestBinaryResponse::assignReadOnly(void const *,unsigned int))
+    ?assignValue@RTCRestAnyObject@@QAEH_J@Z                                     ; (public: int __thiscall RTCRestAnyObject::assignValue(__int64))
+    ?assignValue@RTCRestAnyObject@@QAEH_N@Z                                     ; (public: int __thiscall RTCRestAnyObject::assignValue(bool))
+    ?assignValue@RTCRestAnyObject@@QAEHABVRTCString@@@Z                         ; (public: int __thiscall RTCRestAnyObject::assignValue(class RTCString const &))
+    ?assignValue@RTCRestAnyObject@@QAEHF@Z                                      ; (public: int __thiscall RTCRestAnyObject::assignValue(short))
+    ?assignValue@RTCRestAnyObject@@QAEHH@Z                                      ; (public: int __thiscall RTCRestAnyObject::assignValue(int))
+    ?assignValue@RTCRestAnyObject@@QAEHN@Z                                      ; (public: int __thiscall RTCRestAnyObject::assignValue(double))
+    ?assignValue@RTCRestAnyObject@@QAEHPBD@Z                                    ; (public: int __thiscall RTCRestAnyObject::assignValue(char const *))
+    ?assignValue@RTCRestBool@@QAEX_N@Z                                          ; (public: void __thiscall RTCRestBool::assignValue(bool))
+    ?assignValue@RTCRestDate@@QAEHPBURTTIMESPEC@@W4kFormat@1@@Z                 ; (public: int __thiscall RTCRestDate::assignValue(struct RTTIMESPEC const *,enum RTCRestDate::kFormat))
+    ?assignValue@RTCRestDouble@@QAEXN@Z                                         ; (public: void __thiscall RTCRestDouble::assignValue(double))
+    ?assignValue@RTCRestInt16@@QAEXF@Z                                          ; (public: void __thiscall RTCRestInt16::assignValue(short))
+    ?assignValue@RTCRestInt32@@QAEXH@Z                                          ; (public: void __thiscall RTCRestInt32::assignValue(int))
+    ?assignValue@RTCRestInt64@@QAEX_J@Z                                         ; (public: void __thiscall RTCRestInt64::assignValue(__int64))
+    ?assignValueRfc2822@RTCRestDate@@QAEHPBURTTIMESPEC@@@Z                      ; (public: int __thiscall RTCRestDate::assignValueRfc2822(struct RTTIMESPEC const *))
+    ?assignValueRfc3339@RTCRestDate@@QAEHPBURTTIMESPEC@@@Z                      ; (public: int __thiscall RTCRestDate::assignValueRfc3339(struct RTTIMESPEC const *))
+    ?assignValueRfc7131@RTCRestDate@@QAEHPBURTTIMESPEC@@@Z                      ; (public: int __thiscall RTCRestDate::assignValueRfc7131(struct RTTIMESPEC const *))
+    ?assignWriteable@RTCRestBinary@@UAEHPAXI@Z                                  ; (public: virtual int __thiscall RTCRestBinary::assignWriteable(void *,unsigned int))
+    ?assignWriteable@RTCRestBinaryParameter@@UAEHPAXI@Z                         ; (public: virtual int __thiscall RTCRestBinaryParameter::assignWriteable(void *,unsigned int))
+    ?assignWriteable@RTCRestBinaryResponse@@UAEHPAXI@Z                          ; (public: virtual int __thiscall RTCRestBinaryResponse::assignWriteable(void *,unsigned int))
+    ?atBase@RTCRestArrayBase@@QAEPAVRTCRestObjectBase@@I@Z                      ; (public: class RTCRestObjectBase * __thiscall RTCRestArrayBase::atBase(unsigned int))
+    ?atBase@RTCRestArrayBase@@QBEPBVRTCRestObjectBase@@I@Z                      ; (public: class RTCRestObjectBase const * __thiscall RTCRestArrayBase::atBase(unsigned int)const )
+    ?begin@RTCRestStringMapBase@@QBE?AVConstIterator@1@XZ                       ; (public: class RTCRestStringMapBase::ConstIterator __thiscall RTCRestStringMapBase::begin(void)const )
+    ?c_str@RTCString@@QBEPBDXZ                                                  ; (public: char const * __thiscall RTCString::c_str(void)const )
+    ?capacity@RTCString@@QBEIXZ                                                 ; (public: unsigned int __thiscall RTCString::capacity(void)const )
+    ?cleanup@RTCString@@IAEXXZ                                                  ; (protected: void __thiscall RTCString::cleanup(void))
+    ?clear@RTCRestArrayBase@@QAEXXZ                                             ; (public: void __thiscall RTCRestArrayBase::clear(void))
+    ?clear@RTCRestStringMapBase@@QAEXXZ                                         ; (public: void __thiscall RTCRestStringMapBase::clear(void))
+    ?compare@RTCString@@QBEHABV1@W4CaseSensitivity@1@@Z                         ; (public: int __thiscall RTCString::compare(class RTCString const &,enum RTCString::CaseSensitivity)const )
+    ?compare@RTCString@@QBEHPBDW4CaseSensitivity@1@@Z                           ; (public: int __thiscall RTCString::compare(char const *,enum RTCString::CaseSensitivity)const )
+    ?consumeBody@RTCRestClientResponseBase@@UAEXPBDI@Z                          ; (public: virtual void __thiscall RTCRestClientResponseBase::consumeBody(char const *,unsigned int))
+    ?consumeHeader@RTCRestClientResponseBase@@MAEHIPBDI0I@Z                     ; (protected: virtual int __thiscall RTCRestClientResponseBase::consumeHeader(unsigned int,char const *,unsigned int,char const *,unsigned int))
+    ?contains@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z                       ; (public: bool __thiscall RTCString::contains(class RTCString const &,enum RTCString::CaseSensitivity)const )
+    ?contains@RTCString@@QBE_NPBDW4CaseSensitivity@1@@Z                         ; (public: bool __thiscall RTCString::contains(char const *,enum RTCString::CaseSensitivity)const )
+    ?containsKey@RTCRestStringMapBase@@QBE_NABVRTCString@@@Z                    ; (public: bool __thiscall RTCRestStringMapBase::containsKey(class RTCString const &)const )
+    ?containsKey@RTCRestStringMapBase@@QBE_NPBD@Z                               ; (public: bool __thiscall RTCRestStringMapBase::containsKey(char const *)const )
+    ?copyArrayWorker@RTCRestArrayBase@@IAEHABV1@_N@Z                            ; (protected: int __thiscall RTCRestArrayBase::copyArrayWorker(class RTCRestArrayBase const &,bool))
+    ?copyErrInfo@RTCRestClientResponseBase@@IAEXPBURTERRINFO@@@Z                ; (protected: void __thiscall RTCRestClientResponseBase::copyErrInfo(struct RTERRINFO const *))
+    ?copyFromN@RTCString@@IAEXPBDI@Z                                            ; (protected: void __thiscall RTCString::copyFromN(char const *,unsigned int))
+    ?copyMapWorker@RTCRestStringMapBase@@IAEHABV1@_N@Z                          ; (protected: int __thiscall RTCRestStringMapBase::copyMapWorker(class RTCRestStringMapBase const &,bool))
+    ?count@RTCString@@QBEID@Z                                                   ; (public: unsigned int __thiscall RTCString::count(char)const )
+    ?createInstance@RTCRestAnyObject@@SAPAVRTCRestObjectBase@@XZ                ; (public: static class RTCRestObjectBase * __cdecl RTCRestAnyObject::createInstance(void))
+    ?createInstance@RTCRestBinary@@SAPAVRTCRestObjectBase@@XZ                   ; (public: static class RTCRestObjectBase * __cdecl RTCRestBinary::createInstance(void))
+    ?createInstance@RTCRestBinaryParameter@@SAPAVRTCRestObjectBase@@XZ          ; (public: static class RTCRestObjectBase * __cdecl RTCRestBinaryParameter::createInstance(void))
+    ?createInstance@RTCRestBinaryResponse@@SAPAVRTCRestObjectBase@@XZ           ; (public: static class RTCRestObjectBase * __cdecl RTCRestBinaryResponse::createInstance(void))
+    ?createInstance@RTCRestBool@@SAPAVRTCRestObjectBase@@XZ                     ; (public: static class RTCRestObjectBase * __cdecl RTCRestBool::createInstance(void))
+    ?createInstance@RTCRestDate@@SAPAVRTCRestObjectBase@@XZ                     ; (public: static class RTCRestObjectBase * __cdecl RTCRestDate::createInstance(void))
+    ?createInstance@RTCRestDouble@@SAPAVRTCRestObjectBase@@XZ                   ; (public: static class RTCRestObjectBase * __cdecl RTCRestDouble::createInstance(void))
+    ?createInstance@RTCRestInt16@@SAPAVRTCRestObjectBase@@XZ                    ; (public: static class RTCRestObjectBase * __cdecl RTCRestInt16::createInstance(void))
+    ?createInstance@RTCRestInt32@@SAPAVRTCRestObjectBase@@XZ                    ; (public: static class RTCRestObjectBase * __cdecl RTCRestInt32::createInstance(void))
+    ?createInstance@RTCRestInt64@@SAPAVRTCRestObjectBase@@XZ                    ; (public: static class RTCRestObjectBase * __cdecl RTCRestInt64::createInstance(void))
+    ?createInstance@RTCRestString@@SAPAVRTCRestObjectBase@@XZ                   ; (public: static class RTCRestObjectBase * __cdecl RTCRestString::createInstance(void))
+    ?decodeFormattedString@RTCRestDate@@IAEHW4kFormat@1@@Z                      ; (protected: int __thiscall RTCRestDate::decodeFormattedString(enum RTCRestDate::kFormat))
+    ?deleteErrInfo@RTCRestClientResponseBase@@IAEXXZ                            ; (protected: void __thiscall RTCRestClientResponseBase::deleteErrInfo(void))
+    ?deserializeBody@RTCRestClientResponseBase@@IAEXPAVRTCRestObjectBase@@PBDI@Z  ; (protected: void __thiscall RTCRestClientResponseBase::deserializeBody(class RTCRestObjectBase *,char const *,unsigned int))
+    ?deserializeFromJson@RTCRestAnyObject@@UAEHABURTCRestJsonCursor@@@Z         ; (public: virtual int __thiscall RTCRestAnyObject::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestArrayBase@@UAEHABURTCRestJsonCursor@@@Z         ; (public: virtual int __thiscall RTCRestArrayBase::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestBinary@@UAEHABURTCRestJsonCursor@@@Z            ; (public: virtual int __thiscall RTCRestBinary::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestBool@@UAEHABURTCRestJsonCursor@@@Z              ; (public: virtual int __thiscall RTCRestBool::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestDate@@UAEHABURTCRestJsonCursor@@@Z              ; (public: virtual int __thiscall RTCRestDate::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestDouble@@UAEHABURTCRestJsonCursor@@@Z            ; (public: virtual int __thiscall RTCRestDouble::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestInt16@@UAEHABURTCRestJsonCursor@@@Z             ; (public: virtual int __thiscall RTCRestInt16::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestInt32@@UAEHABURTCRestJsonCursor@@@Z             ; (public: virtual int __thiscall RTCRestInt32::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestInt64@@UAEHABURTCRestJsonCursor@@@Z             ; (public: virtual int __thiscall RTCRestInt64::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestString@@UAEHABURTCRestJsonCursor@@@Z            ; (public: virtual int __thiscall RTCRestString::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestStringEnumBase@@UAEHABURTCRestJsonCursor@@@Z    ; (public: virtual int __thiscall RTCRestStringEnumBase::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeFromJson@RTCRestStringMapBase@@UAEHABURTCRestJsonCursor@@@Z     ; (public: virtual int __thiscall RTCRestStringMapBase::deserializeFromJson(struct RTCRestJsonCursor const &))
+    ?deserializeHeader@RTCRestClientResponseBase@@IAEHPAVRTCRestObjectBase@@PBDII1@Z  ; (protected: int __thiscall RTCRestClientResponseBase::deserializeHeader(class RTCRestObjectBase *,char const *,unsigned int,unsigned int,char const *))
+    ?deserializeHeaderIntoMap@RTCRestClientResponseBase@@IAEHPAVRTCRestStringMapBase@@PBDI1II1@Z  ; (protected: int __thiscall RTCRestClientResponseBase::deserializeHeaderIntoMap(class RTCRestStringMapBase *,char const *,unsigned int,char const *,unsigned int,unsigned int,char const *))
+    ?doCall@RTCRestClientApiBase@@MAEHABVRTCRestClientRequestBase@@W4RTHTTPMETHOD@@PAVRTCRestClientResponseBase@@PBDI@Z  ; (protected: virtual int __thiscall RTCRestClientApiBase::doCall(class RTCRestClientRequestBase const &,enum RTHTTPMETHOD,class RTCRestClientResponseBase *,char const *,unsigned int))
+    ?doHeaderParameters@RTCRestClientRequestBase@@IBEHPAURTHTTPINTERNAL@@PBUHEADERPARAMDESC@1@PAPBVRTCRestObjectBase@@I@Z  ; (protected: int __thiscall RTCRestClientRequestBase::doHeaderParameters(struct RTHTTPINTERNAL *,struct RTCRestClientRequestBase::HEADERPARAMDESC const *,class RTCRestObjectBase const * *,unsigned int)const )
+    ?doPathParameters@RTCRestClientRequestBase@@IBEHPAVRTCString@@PBDIPBUPATHPARAMDESC@1@PAUPATHPARAMSTATE@1@I@Z  ; (protected: int __thiscall RTCRestClientRequestBase::doPathParameters(class RTCString *,char const *,unsigned int,struct RTCRestClientRequestBase::PATHPARAMDESC const *,struct RTCRestClientRequestBase::PATHPARAMSTATE *,unsigned int)const )
+    ?doQueryParameters@RTCRestClientRequestBase@@IBEHPAVRTCString@@PBUQUERYPARAMDESC@1@PAPBVRTCRestObjectBase@@I@Z  ; (protected: int __thiscall RTCRestClientRequestBase::doQueryParameters(class RTCString *,struct RTCRestClientRequestBase::QUERYPARAMDESC const *,class RTCRestObjectBase const * *,unsigned int)const )
+    ?end@RTCRestStringMapBase@@QBE?AVConstIterator@1@XZ                         ; (public: class RTCRestStringMapBase::ConstIterator __thiscall RTCRestStringMapBase::end(void)const )
+    ?endsWith@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z                       ; (public: bool __thiscall RTCString::endsWith(class RTCString const &,enum RTCString::CaseSensitivity)const )
+    ?ensureCapacity@RTCRestArrayBase@@QAEHI@Z                                   ; (public: int __thiscall RTCRestArrayBase::ensureCapacity(unsigned int))
+    ?enumToString@RTCRestStringEnumBase@@QAEPBDHPAI@Z                           ; (public: char const * __thiscall RTCRestStringEnumBase::enumToString(int,unsigned int *))
+    ?equals@RTCString@@QBE_NABV1@@Z                                             ; (public: bool __thiscall RTCString::equals(class RTCString const &)const )
+    ?equals@RTCString@@QBE_NPBD@Z                                               ; (public: bool __thiscall RTCString::equals(char const *)const )
+    ?equalsIgnoreCase@RTCString@@QBE_NABV1@@Z                                   ; (public: bool __thiscall RTCString::equalsIgnoreCase(class RTCString const &)const )
+    ?equalsIgnoreCase@RTCString@@QBE_NPBD@Z                                     ; (public: bool __thiscall RTCString::equalsIgnoreCase(char const *)const )
+    ?erase@RTCString@@QAEAAV1@II@Z                                              ; (public: class RTCString & __thiscall RTCString::erase(unsigned int,unsigned int))
+    ?explodeAndFormat@RTCRestDate@@IAEHW4kFormat@1@@Z                           ; (protected: int __thiscall RTCRestDate::explodeAndFormat(enum RTCRestDate::kFormat))
+    ?finalize@RTCRestOutputToString@@UAEPAVRTCString@@XZ                        ; (public: virtual class RTCString * __thiscall RTCRestOutputToString::finalize(void))
+    ?find@RTCString@@QBEIABV1@I@Z                                               ; (public: unsigned int __thiscall RTCString::find(class RTCString const &,unsigned int)const )
+    ?find@RTCString@@QBEIDI@Z                                                   ; (public: unsigned int __thiscall RTCString::find(char,unsigned int)const )
+    ?find@RTCString@@QBEIPBDI@Z                                                 ; (public: unsigned int __thiscall RTCString::find(char const *,unsigned int)const )
+    ?find@RTCString@@QBEIPBV1@I@Z                                               ; (public: unsigned int __thiscall RTCString::find(class RTCString const *,unsigned int)const )
+    ?findReplace@RTCString@@QAEXDD@Z                                            ; (public: void __thiscall RTCString::findReplace(char,char))
+    ?format@RTCRestDate@@IAEHW4kFormat@1@@Z                                     ; (protected: int __thiscall RTCRestDate::format(enum RTCRestDate::kFormat))
+    ?freeData@RTCRestBinary@@UAEXXZ                                             ; (public: virtual void __thiscall RTCRestBinary::freeData(void))
+    ?fromString@RTCRestAnyObject@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z        ; (public: virtual int __thiscall RTCRestAnyObject::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestArrayBase@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z        ; (public: virtual int __thiscall RTCRestArrayBase::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestBinary@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z           ; (public: virtual int __thiscall RTCRestBinary::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestBool@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z             ; (public: virtual int __thiscall RTCRestBool::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestDate@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z             ; (public: virtual int __thiscall RTCRestDate::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestDouble@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z           ; (public: virtual int __thiscall RTCRestDouble::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestInt16@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z            ; (public: virtual int __thiscall RTCRestInt16::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestInt32@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z            ; (public: virtual int __thiscall RTCRestInt32::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestInt64@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z            ; (public: virtual int __thiscall RTCRestInt64::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestObjectBase@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z       ; (public: virtual int __thiscall RTCRestObjectBase::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestString@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z           ; (public: virtual int __thiscall RTCRestString::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?fromString@RTCRestStringEnumBase@@UAEHABVRTCString@@PBDPAURTERRINFO@@I@Z   ; (public: virtual int __thiscall RTCRestStringEnumBase::fromString(class RTCString const &,char const *,struct RTERRINFO *,unsigned int))
+    ?getAttributeValue@ElementNode@xml@@QBE_NPBDAAVRTCString@@0@Z               ; (public: bool __thiscall xml::ElementNode::getAttributeValue(char const *,class RTCString &,char const *)const )
+    ?getAttributeValue@ElementNode@xml@@QBE_NPBDPAVRTCString@@0@Z               ; (public: bool __thiscall xml::ElementNode::getAttributeValue(char const *,class RTCString *,char const *)const )
+    ?getAttributeValuePath@ElementNode@xml@@QBE_NPBDAAVRTCString@@0@Z           ; (public: bool __thiscall xml::ElementNode::getAttributeValuePath(char const *,class RTCString &,char const *)const )
+    ?getAttributeValuePath@ElementNode@xml@@QBE_NPBDPAVRTCString@@0@Z           ; (public: bool __thiscall xml::ElementNode::getAttributeValuePath(char const *,class RTCString *,char const *)const )
+    ?getBasePath@RTCRestClientApiBase@@QBEABVRTCString@@XZ                      ; (public: class RTCString const & __thiscall RTCRestClientApiBase::getBasePath(void)const )
+    ?getCallbackData@RTCRestBinaryParameter@@QBEPAXXZ                           ; (public: void * __thiscall RTCRestBinaryParameter::getCallbackData(void)const )
+    ?getCallbackData@RTCRestBinaryResponse@@QBEPAXXZ                            ; (public: void * __thiscall RTCRestBinaryResponse::getCallbackData(void)const )
+    ?getContentLength@RTCRestBinaryParameter@@QBE_KXZ                           ; (public: unsigned __int64 __thiscall RTCRestBinaryParameter::getContentLength(void)const )
+    ?getContentLength@RTCRestBinaryResponse@@QBE_KXZ                            ; (public: unsigned __int64 __thiscall RTCRestBinaryResponse::getContentLength(void)const )
+    ?getContentType@RTCRestBinaryParameter@@QBEABVRTCString@@XZ                 ; (public: class RTCString const & __thiscall RTCRestBinaryParameter::getContentType(void)const )
+    ?getContentType@RTCRestClientResponseBase@@QBEABVRTCString@@XZ              ; (public: class RTCString const & __thiscall RTCRestClientResponseBase::getContentType(void)const )
+    ?getEpochNano@RTCRestDate@@QBE_JXZ                                          ; (public: __int64 __thiscall RTCRestDate::getEpochNano(void)const )
+    ?getEpochSeconds@RTCRestDate@@QBE_JXZ                                       ; (public: __int64 __thiscall RTCRestDate::getEpochSeconds(void)const )
+    ?getErrInfo@RTCRestClientResponseBase@@QBEPBURTERRINFO@@XZ                  ; (public: struct RTERRINFO const * __thiscall RTCRestClientResponseBase::getErrInfo(void)const )
+    ?getErrInfoInternal@RTCRestClientResponseBase@@IAEPAURTERRINFO@@XZ          ; (protected: struct RTERRINFO * __thiscall RTCRestClientResponseBase::getErrInfoInternal(void))
+    ?getExploded@RTCRestDate@@QBEABURTTIME@@XZ                                  ; (public: struct RTTIME const & __thiscall RTCRestDate::getExploded(void)const )
+    ?getFormat@RTCRestDate@@QBE?AW4kFormat@1@XZ                                 ; (public: enum RTCRestDate::kFormat __thiscall RTCRestDate::getFormat(void)const )
+    ?getHttpStatus@RTCRestClientResponseBase@@QAEHXZ                            ; (public: int __thiscall RTCRestClientResponseBase::getHttpStatus(void))
+    ?getPath@RTCRestJsonPrimaryCursor@@UBEPADABURTCRestJsonCursor@@PADI@Z       ; (public: virtual char * __thiscall RTCRestJsonPrimaryCursor::getPath(struct RTCRestJsonCursor const &,char *,unsigned int)const )
+    ?getPtr@RTCRestBinary@@QBEPBEXZ                                             ; (public: unsigned char const * __thiscall RTCRestBinary::getPtr(void)const )
+    ?getSize@RTCRestBinary@@QBEIXZ                                              ; (public: unsigned int __thiscall RTCRestBinary::getSize(void)const )
+    ?getStatus@RTCRestClientResponseBase@@QAEHXZ                                ; (public: int __thiscall RTCRestClientResponseBase::getStatus(void))
+    ?getString@RTCRestDate@@QBEABVRTCString@@XZ                                 ; (public: class RTCString const & __thiscall RTCRestDate::getString(void)const )
+    ?getString@RTCRestStringEnumBase@@QBEPBDXZ                                  ; (public: char const * __thiscall RTCRestStringEnumBase::getString(void)const )
+    ?getTimeSpec@RTCRestDate@@QBEABURTTIMESPEC@@XZ                              ; (public: struct RTTIMESPEC const & __thiscall RTCRestDate::getTimeSpec(void)const )
+    ?getWorker@RTCRestStringMapBase@@IAEPAVRTCRestObjectBase@@PBD@Z             ; (protected: class RTCRestObjectBase * __thiscall RTCRestStringMapBase::getWorker(char const *))
+    ?getWorker@RTCRestStringMapBase@@IBEPBVRTCRestObjectBase@@PBD@Z             ; (protected: class RTCRestObjectBase const * __thiscall RTCRestStringMapBase::getWorker(char const *)const )
+    ?hasAssignmentErrors@RTCRestClientRequestBase@@QBE_NXZ                      ; (public: bool __thiscall RTCRestClientRequestBase::hasAssignmentErrors(void)const )
+    ?incrementIndent@RTCRestOutputBase@@QAEIXZ                                  ; (public: unsigned int __thiscall RTCRestOutputBase::incrementIndent(void))
+    ?insertCopyWorker@RTCRestArrayBase@@IAEHIABVRTCRestObjectBase@@_N@Z         ; (protected: int __thiscall RTCRestArrayBase::insertCopyWorker(unsigned int,class RTCRestObjectBase const &,bool))
+    ?insertWorker@RTCRestArrayBase@@IAEHIPAVRTCRestObjectBase@@_N@Z             ; (protected: int __thiscall RTCRestArrayBase::insertWorker(unsigned int,class RTCRestObjectBase *,bool))
+    ?isEmpty@RTCRestArrayBase@@QBE_NXZ                                          ; (public: bool __thiscall RTCRestArrayBase::isEmpty(void)const )
+    ?isEmpty@RTCRestStringMapBase@@QBE_NXZ                                      ; (public: bool __thiscall RTCRestStringMapBase::isEmpty(void)const )
+    ?isEmpty@RTCString@@QBE_NXZ                                                 ; (public: bool __thiscall RTCString::isEmpty(void)const )
+    ?isLocal@RTCRestDate@@QBE_NXZ                                               ; (public: bool __thiscall RTCRestDate::isLocal(void)const )
+    ?isNotEmpty@RTCString@@QBE_NXZ                                              ; (public: bool __thiscall RTCString::isNotEmpty(void)const )
+    ?isNull@RTCRestObjectBase@@QBE_NXZ                                          ; (public: bool __thiscall RTCRestObjectBase::isNull(void)const )
+    ?isOkay@RTCRestDate@@QBE_NXZ                                                ; (public: bool __thiscall RTCRestDate::isOkay(void)const )
+    ?isUtc@RTCRestDate@@QBE_NXZ                                                 ; (public: bool __thiscall RTCRestDate::isUtc(void)const )
+    ?join@RTCString@@SA?AV1@ABV?$RTCList@VRTCString@@PAV1@@@ABV1@@Z             ; (public: static class RTCString __cdecl RTCString::join(class RTCList<class RTCString,class RTCString *> const &,class RTCString const &))
+    ?joinEx@RTCString@@SA?AV1@ABV?$RTCList@VRTCString@@PAV1@@@ABV1@1@Z          ; (public: static class RTCString __cdecl RTCString::joinEx(class RTCList<class RTCString,class RTCString *> const &,class RTCString const &,class RTCString const &))
+    ?jolt@RTCString@@QAEXXZ                                                     ; (public: void __thiscall RTCString::jolt(void))
+    ?last@RTCRestStringMapBase@@QBE?AVConstIterator@1@XZ                        ; (public: class RTCRestStringMapBase::ConstIterator __thiscall RTCRestStringMapBase::last(void)const )
+    ?length@RTCString@@QBEIXZ                                                   ; (public: unsigned int __thiscall RTCString::length(void)const )
+    ?mutableRaw@RTCString@@QAEPADXZ                                             ; (public: char * __thiscall RTCString::mutableRaw(void))
+    ?npos@RTCString@@2IB DATA                                                   ; (public: static unsigned int const RTCString::npos)
+    ?ociSignRequest@RTCRestClientApiBase@@IAEHPAURTHTTPINTERNAL@@ABVRTCString@@W4RTHTTPMETHOD@@1IPAURTCRKEYINT@@1@Z  ; (protected: int __thiscall RTCRestClientApiBase::ociSignRequest(struct RTHTTPINTERNAL *,class RTCString const &,enum RTHTTPMETHOD,class RTCString const &,unsigned int,struct RTCRKEYINT *,class RTCString const &))
+    ?printf@RTCRestOutputBase@@QAAIPBDZZ                                        ; (public: unsigned int __cdecl RTCRestOutputBase::printf(char const *,...))
+    ?printf@RTCRestString@@QAAAAV1@PBDZZ                                        ; (public: class RTCRestString & __cdecl RTCRestString::printf(char const *,...))
+    ?printf@RTCString@@QAAAAV1@PBDZZ                                            ; (public: class RTCString & __cdecl RTCString::printf(char const *,...))
+    ?printfNoThrow@RTCRestString@@QAAHPBDZZ                                     ; (public: int __cdecl RTCRestString::printfNoThrow(char const *,...))
+    ?printfNoThrow@RTCString@@QAAHPBDZZ                                         ; (public: int __cdecl RTCString::printfNoThrow(char const *,...))
+    ?printfOutputCallback@RTCString@@KAIPAXPBDI@Z                               ; (protected: static unsigned int __cdecl RTCString::printfOutputCallback(void *,char const *,unsigned int))
+    ?printfOutputCallbackNoThrow@RTCString@@KAIPAXPBDI@Z                        ; (protected: static unsigned int __cdecl RTCString::printfOutputCallbackNoThrow(void *,char const *,unsigned int))
+    ?printfV@RTCRestString@@QAEAAV1@PBDPAD@Z                                    ; (public: class RTCRestString & __thiscall RTCRestString::printfV(char const *,char *))
+    ?printfV@RTCString@@QAEAAV1@PBDPAD@Z                                        ; (public: class RTCString & __thiscall RTCString::printfV(char const *,char *))
+    ?printfVNoThrow@RTCRestString@@QAEHPBDPAD@Z                                 ; (public: int __thiscall RTCRestString::printfVNoThrow(char const *,char *))
+    ?printfVNoThrow@RTCString@@QAEHPBDPAD@Z                                     ; (public: int __thiscall RTCString::printfVNoThrow(char const *,char *))
+    ?putCopyWorker@RTCRestStringMapBase@@IAEHPBDABVRTCRestObjectBase@@_NI@Z     ; (protected: int __thiscall RTCRestStringMapBase::putCopyWorker(char const *,class RTCRestObjectBase const &,bool,unsigned int))
+    ?putNewValue@RTCRestStringMapBase@@QAEHPAPAVRTCRestObjectBase@@ABVRTCString@@_N@Z  ; (public: int __thiscall RTCRestStringMapBase::putNewValue(class RTCRestObjectBase * *,class RTCString const &,bool))
+    ?putNewValue@RTCRestStringMapBase@@QAEHPAPAVRTCRestObjectBase@@PBDI_N@Z     ; (public: int __thiscall RTCRestStringMapBase::putNewValue(class RTCRestObjectBase * *,char const *,unsigned int,bool))
+    ?putWorker@RTCRestStringMapBase@@IAEHPBDPAVRTCRestObjectBase@@_NI@Z         ; (protected: int __thiscall RTCRestStringMapBase::putWorker(char const *,class RTCRestObjectBase *,bool,unsigned int))
+    ?read@XmlFileParser@xml@@QAEXABVRTCString@@AAVDocument@2@@Z                 ; (public: void __thiscall xml::XmlFileParser::read(class RTCString const &,class xml::Document &))
+    ?read@XmlMemParser@xml@@QAEXPBXIABVRTCString@@AAVDocument@2@@Z              ; (public: void __thiscall xml::XmlMemParser::read(void const *,unsigned int,class RTCString const &,class xml::Document &))
+    ?receiveComplete@RTCRestBinaryResponse@@UAEXPAURTHTTPINTERNAL@@@Z           ; (public: virtual void __thiscall RTCRestBinaryResponse::receiveComplete(struct RTHTTPINTERNAL *))
+    ?receiveComplete@RTCRestClientResponseBase@@UAEXHPAURTHTTPINTERNAL@@@Z      ; (public: virtual void __thiscall RTCRestClientResponseBase::receiveComplete(int,struct RTHTTPINTERNAL *))
+    ?receiveFinal@RTCRestClientResponseBase@@UAEXXZ                             ; (public: virtual void __thiscall RTCRestClientResponseBase::receiveFinal(void))
+    ?receiveHttpCallback@RTCRestBinaryResponse@@KAHPAURTHTTPINTERNAL@@PBXII_K2PAX@Z  ; (protected: static int __cdecl RTCRestBinaryResponse::receiveHttpCallback(struct RTHTTPINTERNAL *,void const *,unsigned int,unsigned int,unsigned __int64,unsigned __int64,void *))
+    ?receiveHttpHeaderCallback@RTCRestClientResponseBase@@CAHPAURTHTTPINTERNAL@@IPBDI1IPAX@Z  ; (private: static int __cdecl RTCRestClientResponseBase::receiveHttpHeaderCallback(struct RTHTTPINTERNAL *,unsigned int,char const *,unsigned int,char const *,unsigned int,void *))
+    ?receivePrepare@RTCRestBinaryResponse@@UAEHPAURTHTTPINTERNAL@@I@Z           ; (public: virtual int __thiscall RTCRestBinaryResponse::receivePrepare(struct RTHTTPINTERNAL *,unsigned int))
+    ?receivePrepare@RTCRestClientResponseBase@@UAEHPAURTHTTPINTERNAL@@@Z        ; (public: virtual int __thiscall RTCRestClientResponseBase::receivePrepare(struct RTHTTPINTERNAL *))
+    ?reinitHttpInstance@RTCRestClientApiBase@@MAEHXZ                            ; (protected: virtual int __thiscall RTCRestClientApiBase::reinitHttpInstance(void))
+    ?remove@RTCRestStringMapBase@@QAE_NABVRTCString@@@Z                         ; (public: bool __thiscall RTCRestStringMapBase::remove(class RTCString const &))
+    ?remove@RTCRestStringMapBase@@QAE_NPBD@Z                                    ; (public: bool __thiscall RTCRestStringMapBase::remove(char const *))
+    ?removeAt@RTCRestArrayBase@@QAE_NI@Z                                        ; (public: bool __thiscall RTCRestArrayBase::removeAt(unsigned int))
+    ?replace@RTCString@@QAEAAV1@IIABV1@@Z                                       ; (public: class RTCString & __thiscall RTCString::replace(unsigned int,unsigned int,class RTCString const &))
+    ?replace@RTCString@@QAEAAV1@IIABV1@II@Z                                     ; (public: class RTCString & __thiscall RTCString::replace(unsigned int,unsigned int,class RTCString const &,unsigned int,unsigned int))
+    ?replace@RTCString@@QAEAAV1@IIPBD@Z                                         ; (public: class RTCString & __thiscall RTCString::replace(unsigned int,unsigned int,char const *))
+    ?replace@RTCString@@QAEAAV1@IIPBDI@Z                                        ; (public: class RTCString & __thiscall RTCString::replace(unsigned int,unsigned int,char const *,unsigned int))
+    ?replaceNoThrow@RTCString@@QAEHIIABV1@@Z                                    ; (public: int __thiscall RTCString::replaceNoThrow(unsigned int,unsigned int,class RTCString const &))
+    ?replaceNoThrow@RTCString@@QAEHIIABV1@II@Z                                  ; (public: int __thiscall RTCString::replaceNoThrow(unsigned int,unsigned int,class RTCString const &,unsigned int,unsigned int))
+    ?replaceNoThrow@RTCString@@QAEHIIPBD@Z                                      ; (public: int __thiscall RTCString::replaceNoThrow(unsigned int,unsigned int,char const *))
+    ?replaceNoThrow@RTCString@@QAEHIIPBDI@Z                                     ; (public: int __thiscall RTCString::replaceNoThrow(unsigned int,unsigned int,char const *,unsigned int))
+    ?replaceWorker@RTCString@@IAEAAV1@IIPBDI@Z                                  ; (protected: class RTCString & __thiscall RTCString::replaceWorker(unsigned int,unsigned int,char const *,unsigned int))
+    ?replaceWorkerNoThrow@RTCString@@IAEHIIPBDI@Z                               ; (protected: int __thiscall RTCString::replaceWorkerNoThrow(unsigned int,unsigned int,char const *,unsigned int))
+    ?reserve@RTCString@@QAEXI@Z                                                 ; (public: void __thiscall RTCString::reserve(unsigned int))
+    ?reserveNoThrow@RTCString@@QAEHI@Z                                          ; (public: int __thiscall RTCString::reserveNoThrow(unsigned int))
+    ?reset@RTCRestClientResponseBase@@UAEXXZ                                    ; (public: virtual void __thiscall RTCRestClientResponseBase::reset(void))
+    ?resetToDefault@RTCRestAnyObject@@UAEHXZ                                    ; (public: virtual int __thiscall RTCRestAnyObject::resetToDefault(void))
+    ?resetToDefault@RTCRestArrayBase@@UAEHXZ                                    ; (public: virtual int __thiscall RTCRestArrayBase::resetToDefault(void))
+    ?resetToDefault@RTCRestBinary@@UAEHXZ                                       ; (public: virtual int __thiscall RTCRestBinary::resetToDefault(void))
+    ?resetToDefault@RTCRestBinaryParameter@@UAEHXZ                              ; (public: virtual int __thiscall RTCRestBinaryParameter::resetToDefault(void))
+    ?resetToDefault@RTCRestBinaryResponse@@UAEHXZ                               ; (public: virtual int __thiscall RTCRestBinaryResponse::resetToDefault(void))
+    ?resetToDefault@RTCRestBool@@UAEHXZ                                         ; (public: virtual int __thiscall RTCRestBool::resetToDefault(void))
+    ?resetToDefault@RTCRestDate@@UAEHXZ                                         ; (public: virtual int __thiscall RTCRestDate::resetToDefault(void))
+    ?resetToDefault@RTCRestDouble@@UAEHXZ                                       ; (public: virtual int __thiscall RTCRestDouble::resetToDefault(void))
+    ?resetToDefault@RTCRestInt16@@UAEHXZ                                        ; (public: virtual int __thiscall RTCRestInt16::resetToDefault(void))
+    ?resetToDefault@RTCRestInt32@@UAEHXZ                                        ; (public: virtual int __thiscall RTCRestInt32::resetToDefault(void))
+    ?resetToDefault@RTCRestInt64@@UAEHXZ                                        ; (public: virtual int __thiscall RTCRestInt64::resetToDefault(void))
+    ?resetToDefault@RTCRestString@@UAEHXZ                                       ; (public: virtual int __thiscall RTCRestString::resetToDefault(void))
+    ?resetToDefault@RTCRestStringEnumBase@@UAEHXZ                               ; (public: virtual int __thiscall RTCRestStringEnumBase::resetToDefault(void))
+    ?resetToDefault@RTCRestStringMapBase@@UAEHXZ                                ; (public: virtual int __thiscall RTCRestStringMapBase::resetToDefault(void))
+    ?serializeAsJson@RTCRestAnyObject@@UBEAAVRTCRestOutputBase@@AAV2@@Z         ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestAnyObject::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestArrayBase@@UBEAAVRTCRestOutputBase@@AAV2@@Z         ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestArrayBase::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestBinary@@UBEAAVRTCRestOutputBase@@AAV2@@Z            ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestBinary::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestBool@@UBEAAVRTCRestOutputBase@@AAV2@@Z              ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestBool::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestDate@@UBEAAVRTCRestOutputBase@@AAV2@@Z              ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestDate::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestDouble@@UBEAAVRTCRestOutputBase@@AAV2@@Z            ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestDouble::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestInt16@@UBEAAVRTCRestOutputBase@@AAV2@@Z             ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestInt16::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestInt32@@UBEAAVRTCRestOutputBase@@AAV2@@Z             ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestInt32::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestInt64@@UBEAAVRTCRestOutputBase@@AAV2@@Z             ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestInt64::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestString@@UBEAAVRTCRestOutputBase@@AAV2@@Z            ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestString::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestStringEnumBase@@UBEAAVRTCRestOutputBase@@AAV2@@Z    ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestStringEnumBase::serializeAsJson(class RTCRestOutputBase &)const )
+    ?serializeAsJson@RTCRestStringMapBase@@UBEAAVRTCRestOutputBase@@AAV2@@Z     ; (public: virtual class RTCRestOutputBase & __thiscall RTCRestStringMapBase::serializeAsJson(class RTCRestOutputBase &)const )
+    ?setAttribute@ElementNode@xml@@QAEPAVAttributeNode@2@PBDABVRTCString@@@Z    ; (public: class xml::AttributeNode * __thiscall xml::ElementNode::setAttribute(char const *,class RTCString const &))
+    ?setAttributePath@ElementNode@xml@@QAEPAVAttributeNode@2@PBDABVRTCString@@@Z  ; (public: class xml::AttributeNode * __thiscall xml::ElementNode::setAttributePath(char const *,class RTCString const &))
+    ?setBasePath@RTCRestClientApiBase@@QAEXABVRTCString@@@Z                     ; (public: void __thiscall RTCRestClientApiBase::setBasePath(class RTCString const &))
+    ?setBasePath@RTCRestClientApiBase@@UAEXPBD@Z                                ; (public: virtual void __thiscall RTCRestClientApiBase::setBasePath(char const *))
+    ?setByString@RTCRestStringEnumBase@@QAEHABVRTCString@@@Z                    ; (public: int __thiscall RTCRestStringEnumBase::setByString(class RTCString const &))
+    ?setByString@RTCRestStringEnumBase@@QAEHPBDI@Z                              ; (public: int __thiscall RTCRestStringEnumBase::setByString(char const *,unsigned int))
+    ?setConsumerCallback@RTCRestBinaryResponse@@QAEXP6AHPAV1@PBXII_K2@ZPAX@Z    ; (public: void __thiscall RTCRestBinaryResponse::setConsumerCallback(int (__cdecl*)(class RTCRestBinaryResponse *,void const *,unsigned int,unsigned int,unsigned __int64,unsigned __int64),void *))
+    ?setContent@ElementNode@xml@@QAEPAVContentNode@2@ABVRTCString@@@Z           ; (public: class xml::ContentNode * __thiscall xml::ElementNode::setContent(class RTCString const &))
+    ?setContentType@RTCRestBinaryParameter@@QAEHPBD@Z                           ; (public: int __thiscall RTCRestBinaryParameter::setContentType(char const *))
+    ?setFormat@RTCRestDate@@QAEHW4kFormat@1@@Z                                  ; (public: int __thiscall RTCRestDate::setFormat(enum RTCRestDate::kFormat))
+    ?setIndent@RTCRestOutputBase@@QAEII@Z                                       ; (public: unsigned int __thiscall RTCRestOutputBase::setIndent(unsigned int))
+    ?setMaxDownloadSize@RTCRestBinaryResponse@@QAEXI@Z                          ; (public: void __thiscall RTCRestBinaryResponse::setMaxDownloadSize(unsigned int))
+    ?setNotNull@RTCRestObjectBase@@UAEXXZ                                       ; (public: virtual void __thiscall RTCRestObjectBase::setNotNull(void))
+    ?setNull@RTCRestAnyObject@@UAEHXZ                                           ; (public: virtual int __thiscall RTCRestAnyObject::setNull(void))
+    ?setNull@RTCRestBinary@@UAEHXZ                                              ; (public: virtual int __thiscall RTCRestBinary::setNull(void))
+    ?setNull@RTCRestObjectBase@@UAEHXZ                                          ; (public: virtual int __thiscall RTCRestObjectBase::setNull(void))
+    ?setNull@RTCRestString@@UAEHXZ                                              ; (public: virtual int __thiscall RTCRestString::setNull(void))
+    ?setNull@RTCString@@QAEXXZ                                                  ; (public: void __thiscall RTCString::setNull(void))
+    ?setProducerCallback@RTCRestBinaryParameter@@QAEXP6AHPAV1@PAXI_KPAI@Z12@Z   ; (public: void __thiscall RTCRestBinaryParameter::setProducerCallback(int (__cdecl*)(class RTCRestBinaryParameter *,void *,unsigned int,unsigned __int64,unsigned int *),void *,unsigned __int64))
+    ?setWorker@RTCRestStringEnumBase@@IAE_NH@Z                                  ; (protected: bool __thiscall RTCRestStringEnumBase::setWorker(int))
+    ?size@RTCRestArrayBase@@QBEIXZ                                              ; (public: unsigned int __thiscall RTCRestArrayBase::size(void)const )
+    ?size@RTCRestStringMapBase@@QBEIXZ                                          ; (public: unsigned int __thiscall RTCRestStringMapBase::size(void)const )
+    ?split@RTCString@@QBE?AV?$RTCList@VRTCString@@PAV1@@@ABV1@W4SplitMode@1@@Z  ; (public: class RTCList<class RTCString,class RTCString *> __thiscall RTCString::split(class RTCString const &,enum RTCString::SplitMode)const )
+    ?startsWith@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z                     ; (public: bool __thiscall RTCString::startsWith(class RTCString const &,enum RTCString::CaseSensitivity)const )
+    ?startsWithWord@RTCString@@QBE_NABV1@W4CaseSensitivity@1@@Z                 ; (public: bool __thiscall RTCString::startsWithWord(class RTCString const &,enum RTCString::CaseSensitivity)const )
+    ?startsWithWord@RTCString@@QBE_NPBDW4CaseSensitivity@1@@Z                   ; (public: bool __thiscall RTCString::startsWithWord(char const *,enum RTCString::CaseSensitivity)const )
+    ?stringSpaceDestructorCallback@RTCRestStringMapBase@@CAHPAURTSTRSPACECORE@@PAX@Z  ; (private: static int __cdecl RTCRestStringMapBase::stringSpaceDestructorCallback(struct RTSTRSPACECORE *,void *))
+    ?stringToEnum@RTCRestStringEnumBase@@QAEHABVRTCString@@@Z                   ; (public: int __thiscall RTCRestStringEnumBase::stringToEnum(class RTCString const &))
+    ?stringToEnum@RTCRestStringEnumBase@@QAEHPBDI@Z                             ; (public: int __thiscall RTCRestStringEnumBase::stringToEnum(char const *,unsigned int))
+    ?strip@RTCString@@QAEAAV1@XZ                                                ; (public: class RTCString & __thiscall RTCString::strip(void))
+    ?stripLeft@RTCString@@QAEAAV1@XZ                                            ; (public: class RTCString & __thiscall RTCString::stripLeft(void))
+    ?stripRight@RTCString@@QAEAAV1@XZ                                           ; (public: class RTCString & __thiscall RTCString::stripRight(void))
+    ?strOutput@RTCRestOutputToString@@KAIPAXPBDI@Z                              ; (protected: static unsigned int __cdecl RTCRestOutputToString::strOutput(void *,char const *,unsigned int))
+    ?substr@RTCString@@QBE?AV1@II@Z                                             ; (public: class RTCString __thiscall RTCString::substr(unsigned int,unsigned int)const )
+    ?substrCP@RTCString@@QBE?AV1@II@Z                                           ; (public: class RTCString __thiscall RTCString::substrCP(unsigned int,unsigned int)const )
+    ?swap@RTCString@@QAEXAAV1@@Z                                                ; (public: void __thiscall RTCString::swap(class RTCString &))
+    ?toInt@RTCString@@QBEHAA_K@Z                                                ; (public: int __thiscall RTCString::toInt(unsigned __int64 &)const )
+    ?toInt@RTCString@@QBEHAAI@Z                                                 ; (public: int __thiscall RTCString::toInt(unsigned int &)const )
+    ?toInt32@RTCString@@QBEHXZ                                                  ; (public: int __thiscall RTCString::toInt32(void)const )
+    ?toInt64@RTCString@@QBE_JXZ                                                 ; (public: __int64 __thiscall RTCString::toInt64(void)const )
+    ?toLower@RTCString@@QAEAAV1@XZ                                              ; (public: class RTCString & __thiscall RTCString::toLower(void))
+    ?toString@RTCRestAnyObject@@UBEHPAVRTCString@@I@Z                           ; (public: virtual int __thiscall RTCRestAnyObject::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestArrayBase@@UBEHPAVRTCString@@I@Z                           ; (public: virtual int __thiscall RTCRestArrayBase::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestBinary@@UBEHPAVRTCString@@I@Z                              ; (public: virtual int __thiscall RTCRestBinary::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestBool@@UBEHPAVRTCString@@I@Z                                ; (public: virtual int __thiscall RTCRestBool::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestDate@@UBEHPAVRTCString@@I@Z                                ; (public: virtual int __thiscall RTCRestDate::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestDouble@@UBEHPAVRTCString@@I@Z                              ; (public: virtual int __thiscall RTCRestDouble::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestInt16@@UBEHPAVRTCString@@I@Z                               ; (public: virtual int __thiscall RTCRestInt16::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestInt32@@UBEHPAVRTCString@@I@Z                               ; (public: virtual int __thiscall RTCRestInt32::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestInt64@@UBEHPAVRTCString@@I@Z                               ; (public: virtual int __thiscall RTCRestInt64::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestObjectBase@@QBE?AVRTCString@@XZ                            ; (public: class RTCString __thiscall RTCRestObjectBase::toString(void)const )
+    ?toString@RTCRestObjectBase@@UBEHPAVRTCString@@I@Z                          ; (public: virtual int __thiscall RTCRestObjectBase::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestString@@UBEHPAVRTCString@@I@Z                              ; (public: virtual int __thiscall RTCRestString::toString(class RTCString *,unsigned int)const )
+    ?toString@RTCRestStringEnumBase@@UBEHPAVRTCString@@I@Z                      ; (public: virtual int __thiscall RTCRestStringEnumBase::toString(class RTCString *,unsigned int)const )
+    ?toUInt32@RTCString@@QBEIXZ                                                 ; (public: unsigned int __thiscall RTCString::toUInt32(void)const )
+    ?toUInt64@RTCString@@QBE_KXZ                                                ; (public: unsigned __int64 __thiscall RTCString::toUInt64(void)const )
+    ?toUpper@RTCString@@QAEAAV1@XZ                                              ; (public: class RTCString & __thiscall RTCString::toUpper(void))
+    ?typeClass@RTCRestAnyObject@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ        ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestAnyObject::typeClass(void)const )
+    ?typeClass@RTCRestArrayBase@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ        ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestArrayBase::typeClass(void)const )
+    ?typeClass@RTCRestBinary@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ           ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestBinary::typeClass(void)const )
+    ?typeClass@RTCRestBool@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ             ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestBool::typeClass(void)const )
+    ?typeClass@RTCRestDate@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ             ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestDate::typeClass(void)const )
+    ?typeClass@RTCRestDouble@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ           ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestDouble::typeClass(void)const )
+    ?typeClass@RTCRestInt16@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ            ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestInt16::typeClass(void)const )
+    ?typeClass@RTCRestInt32@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ            ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestInt32::typeClass(void)const )
+    ?typeClass@RTCRestInt64@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ            ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestInt64::typeClass(void)const )
+    ?typeClass@RTCRestObjectBase@@UBE?AW4kTypeClass@1@XZ                        ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestObjectBase::typeClass(void)const )
+    ?typeClass@RTCRestString@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ           ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestString::typeClass(void)const )
+    ?typeClass@RTCRestStringEnumBase@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ   ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestStringEnumBase::typeClass(void)const )
+    ?typeClass@RTCRestStringMapBase@@UBE?AW4kTypeClass@RTCRestObjectBase@@XZ    ; (public: virtual enum RTCRestObjectBase::kTypeClass __thiscall RTCRestStringMapBase::typeClass(void)const )
+    ?typeName@RTCRestAnyObject@@UBEPBDXZ                                        ; (public: virtual char const * __thiscall RTCRestAnyObject::typeName(void)const )
+    ?typeName@RTCRestArrayBase@@UBEPBDXZ                                        ; (public: virtual char const * __thiscall RTCRestArrayBase::typeName(void)const )
+    ?typeName@RTCRestBinary@@UBEPBDXZ                                           ; (public: virtual char const * __thiscall RTCRestBinary::typeName(void)const )
+    ?typeName@RTCRestBinaryParameter@@UBEPBDXZ                                  ; (public: virtual char const * __thiscall RTCRestBinaryParameter::typeName(void)const )
+    ?typeName@RTCRestBinaryResponse@@UBEPBDXZ                                   ; (public: virtual char const * __thiscall RTCRestBinaryResponse::typeName(void)const )
+    ?typeName@RTCRestBool@@UBEPBDXZ                                             ; (public: virtual char const * __thiscall RTCRestBool::typeName(void)const )
+    ?typeName@RTCRestDate@@UBEPBDXZ                                             ; (public: virtual char const * __thiscall RTCRestDate::typeName(void)const )
+    ?typeName@RTCRestDouble@@UBEPBDXZ                                           ; (public: virtual char const * __thiscall RTCRestDouble::typeName(void)const )
+    ?typeName@RTCRestInt16@@UBEPBDXZ                                            ; (public: virtual char const * __thiscall RTCRestInt16::typeName(void)const )
+    ?typeName@RTCRestInt32@@UBEPBDXZ                                            ; (public: virtual char const * __thiscall RTCRestInt32::typeName(void)const )
+    ?typeName@RTCRestInt64@@UBEPBDXZ                                            ; (public: virtual char const * __thiscall RTCRestInt64::typeName(void)const )
+    ?typeName@RTCRestString@@UBEPBDXZ                                           ; (public: virtual char const * __thiscall RTCRestString::typeName(void)const )
+    ?typeName@RTCRestStringMapBase@@UBEPBDXZ                                    ; (public: virtual char const * __thiscall RTCRestStringMapBase::typeName(void)const )
+    ?uniLength@RTCString@@QBEIXZ                                                ; (public: unsigned int __thiscall RTCString::uniLength(void)const )
+    ?unknownField@RTCRestJsonPrimaryCursor@@UAEHABURTCRestJsonCursor@@@Z        ; (public: virtual int __thiscall RTCRestJsonPrimaryCursor::unknownField(struct RTCRestJsonCursor const &))
+    ?vprintf@RTCRestOutputToString@@UAEIPBDPAD@Z                                ; (public: virtual unsigned int __thiscall RTCRestOutputToString::vprintf(char const *,char *))
+    ?write@XmlStringWriter@xml@@QAEHABVDocument@2@PAVRTCString@@@Z              ; (public: int __thiscall xml::XmlStringWriter::write(class xml::Document const &,class RTCString *))
+    ?xmitComplete@RTCRestBinaryParameter@@UBEXPAURTHTTPINTERNAL@@@Z             ; (public: virtual void __thiscall RTCRestBinaryParameter::xmitComplete(struct RTHTTPINTERNAL *)const )
+    ?xmitHttpCallback@RTCRestBinaryParameter@@KAHPAURTHTTPINTERNAL@@PAXI_KPAI1@Z  ; (protected: static int __cdecl RTCRestBinaryParameter::xmitHttpCallback(struct RTHTTPINTERNAL *,void *,unsigned int,unsigned __int64,unsigned int *,void *))
+    ?xmitPrepare@RTCRestBinaryParameter@@UBEHPAURTHTTPINTERNAL@@@Z              ; (public: virtual int __thiscall RTCRestBinaryParameter::xmitPrepare(struct RTHTTPINTERNAL *)const )
+    ?xmitReady@RTCRestClientApiBase@@MAEHPAURTHTTPINTERNAL@@ABVRTCString@@W4RTHTTPMETHOD@@1I@Z  ; (protected: virtual int __thiscall RTCRestClientApiBase::xmitReady(struct RTHTTPINTERNAL *,class RTCString const &,enum RTHTTPMETHOD,class RTCString const &,unsigned int))
