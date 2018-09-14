@@ -5716,6 +5716,9 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_Wno-class-memaccess) -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
+ if !defined("VBOX_GCC_Wno-delete-non-virtual-dtor") && defined("VBOX_GCC_Wno-non-virtual-dtor")
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_GCC_Wno-non-virtual-dtor)
+ endif
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
