@@ -25,12 +25,56 @@
 
 LIBRARY VBoxXPCOM.dll
 EXPORTS
+    ;
+    ; To regenerate run the following command line:
+    ; nm -U ../../../out/darwin.amd64/debug/dist/VirtualBox.app/Contents/MacOS/VBoxXPCOM.dylib | kmk_sed -r -e 's/^[0-9a-fA-F]+ //' -e '/^[A-Z]/!d' | sort | kmk_sed -r -e 's/[SDBC] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /' -e 's/^    _/    /' >> VBoxXPCOM.def
+    ;
+    _ZN12nsCharTraitsIcE12sEmptyBufferE DATA
+    _ZN12nsCharTraitsItE12sEmptyBufferE DATA
+    NSGetStaticModuleInfo DATA
+    _ZN17nsObsoleteAString16sCanonicalVTableE DATA
+    _ZN18nsObsoleteACString16sCanonicalVTableE DATA
+    _ZTV11nsHashtable DATA
+    _ZTV11nsLocalFile DATA
+    _ZTV11nsStringKey DATA
+    _ZTV11nsVoidArray DATA
+    _ZTV12nsCStringKey DATA
+    _ZTV13nsStringArray DATA
+    _ZTV14nsCStringArray DATA
+    _ZTV14nsGetInterface DATA
+    _ZTV14nsISupportsKey DATA
+    _ZTV14nsXPTCStubBase DATA
+    _ZTV15nsAutoVoidArray DATA
+    _ZTV15nsQueryReferent DATA
+    _ZTV15nsSupportsArray DATA
+    _ZTV15nsWeakReference DATA
+    _ZTV16nsQueryElementAt DATA
+    _ZTV17nsArrayEnumerator DATA
+    _ZTV17nsGetServiceByCID DATA
+    _ZTV17nsObjectHashtable DATA
+    _ZTV17nsUnionEnumerator DATA
+    _ZTV18nsGetWeakReference DATA
+    _ZTV19nsDirEnumeratorUnix DATA
+    _ZTV19nsSupportsHashtable DATA
+    _ZTV21nsCreateInstanceByCID DATA
+    _ZTV21nsQueryArrayElementAt DATA
+    _ZTV21nsSingletonEnumerator DATA
+    _ZTV23nsSupportsWeakReference DATA
+    _ZTV24nsGetServiceByContractID DATA
+    _ZTV25nsDefaultStringComparator DATA
+    _ZTV26nsDefaultCStringComparator DATA
+    _ZTV28nsCreateInstanceByContractID DATA
+    _ZTV28nsCreateInstanceFromCategory DATA
+    _ZTV34nsCaseInsensitiveCStringComparator DATA
+    _ZTV7nsIDKey DATA
+    _ZTV9nsHashKey DATA
+    _ZTV9nsVariant DATA
+    gFastLoadService_ DATA
     GetExecutionEnvironment
     LL_MaxInt
     LL_MaxUint
     LL_MinInt
     LL_Zero
-    NSGetStaticModuleInfo DATA
     NS_CStringCloneData
     NS_CStringContainerFinish
     NS_CStringContainerInit
@@ -805,8 +849,6 @@ EXPORTS
     _ZN12nsCSubstring7ReplaceEjjRK17nsCSubstringTuple
     _ZN12nsCSubstring9SetIsVoidEi
     _ZN12nsCSubstring9SetLengthEj
-    _ZN12nsCharTraitsIcE12sEmptyBufferE DATA
-    _ZN12nsCharTraitsItE12sEmptyBufferE DATA
     _ZN13nsAutoMonitor10NewMonitorEPKc
     _ZN13nsAutoMonitor14DestroyMonitorEP9PRMonitor
     _ZN13nsAutoMonitor4ExitEv
@@ -1217,7 +1259,6 @@ EXPORTS
     _ZN17nsObjectHashtableD0Ev
     _ZN17nsObjectHashtableD1Ev
     _ZN17nsObjectHashtableD2Ev
-    _ZN17nsObsoleteAString16sCanonicalVTableE DATA
     _ZN17nsSegmentedBuffer16AppendNewSegmentEv
     _ZN17nsSegmentedBuffer4InitEjjP9nsIMemory
     _ZN17nsSegmentedBuffer5EmptyEv
@@ -1254,7 +1295,6 @@ EXPORTS
     _ZN18nsComponentManager21RegisterComponentSpecERK4nsIDPKcS4_P7nsIFileii
     _ZN18nsComponentManager23AutoUnregisterComponentEiP7nsIFile
     _ZN18nsComponentManager23UnregisterComponentSpecERK4nsIDP7nsIFile
-    _ZN18nsObsoleteACString16sCanonicalVTableE DATA
     _ZN18nsVoidHashSetSuper4InitEj
     _ZN18nsVoidHashSetSuper6RemoveEPKv
     _ZN18nsVoidHashSetSuper8AddEntryEPKv
@@ -1644,39 +1684,3 @@ EXPORTS
     _ZNK9nsCString9RFindCharEtii
     _ZNK9nsCString9ToIntegerEPij
     _ZNK9nsHashKey5WriteEP21nsIObjectOutputStream
-    _ZTV11nsHashtable DATA
-    _ZTV11nsLocalFile DATA
-    _ZTV11nsStringKey DATA
-    _ZTV11nsVoidArray DATA
-    _ZTV12nsCStringKey DATA
-    _ZTV13nsStringArray DATA
-    _ZTV14nsCStringArray DATA
-    _ZTV14nsGetInterface DATA
-    _ZTV14nsISupportsKey DATA
-    _ZTV14nsXPTCStubBase DATA
-    _ZTV15nsAutoVoidArray DATA
-    _ZTV15nsQueryReferent DATA
-    _ZTV15nsSupportsArray DATA
-    _ZTV15nsWeakReference DATA
-    _ZTV16nsQueryElementAt DATA
-    _ZTV17nsArrayEnumerator DATA
-    _ZTV17nsGetServiceByCID DATA
-    _ZTV17nsObjectHashtable DATA
-    _ZTV17nsUnionEnumerator DATA
-    _ZTV18nsGetWeakReference DATA
-    _ZTV19nsDirEnumeratorUnix DATA
-    _ZTV19nsSupportsHashtable DATA
-    _ZTV21nsCreateInstanceByCID DATA
-    _ZTV21nsQueryArrayElementAt DATA
-    _ZTV21nsSingletonEnumerator DATA
-    _ZTV23nsSupportsWeakReference DATA
-    _ZTV24nsGetServiceByContractID DATA
-    _ZTV25nsDefaultStringComparator DATA
-    _ZTV26nsDefaultCStringComparator DATA
-    _ZTV28nsCreateInstanceByContractID DATA
-    _ZTV28nsCreateInstanceFromCategory DATA
-    _ZTV34nsCaseInsensitiveCStringComparator DATA
-    _ZTV7nsIDKey DATA
-    _ZTV9nsHashKey DATA
-    _ZTV9nsVariant DATA
-    gFastLoadService_ DATA
