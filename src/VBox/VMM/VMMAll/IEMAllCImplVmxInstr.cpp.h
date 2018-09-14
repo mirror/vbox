@@ -3986,6 +3986,88 @@ IEM_STATIC void iemVmxVmentryLoadGuestSegRegs(PVMCPU pVCpu)
 
 
 /**
+ * Loads the guest auto-load MSRs area as part of VM-entry.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr)
+{
+    /*
+     * Load guest MSRs.
+     * See Intel spec. 26.4 "Loading MSRs".
+     */
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VM-exit";
+
+    /*
+     * Verify the MSR auto-load count. Physical CPUs can behave unpredictably if the count is
+     * exceeded including possibly raising #MC exceptions during VMX transition. Our
+     * implementation shall fail VM-entry with an VMX_EXIT_ERR_MSR_LOAD VM-exit.
+     */
+    uint64_t const u64GuestVmxMiscMsr = CPUMGetGuestIa32VmxMisc(pVCpu);
+    uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64GuestVmxMiscMsr);
+    uint32_t const cMsrs              = pVmcs->u32EntryMsrLoadCount;
+    Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
+    if (cMsrs <= cMaxSupportedMsrs)
+    { /* likely */ }
+    else
+    {
+        pVmcs->u64ExitQual.u = VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR);
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadCount);
+    }
+
+    RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrEntryMsrLoad.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
+                                     GCPhysAutoMsrArea, VMX_V_AUTOMSR_AREA_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea); NOREF(pMsr);
+        for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
+        {
+            if (   !pMsr->u32Reserved
+                &&  pMsr->u32Msr != MSR_K8_FS_BASE
+                &&  pMsr->u32Msr != MSR_K8_GS_BASE
+                &&  pMsr->u32Msr >> 8 != MSR_IA32_X2APIC_START >> 8
+                &&  pMsr->u32Msr != MSR_IA32_SMM_MONITOR_CTL)
+            {
+                rc = CPUMSetGuestMsr(pVCpu, pMsr->u32Msr, pMsr->u64Value);
+                if (rc == VINF_SUCCESS)
+                    continue;
+
+                /*
+                 * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-entry.
+                 * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VM-entry failure
+                 * indicated further with a different diagnostic code. Later, we can try implement handling of
+                 * the MSR in ring-0 if possible, or come up with a better, generic solution.
+                 */
+                pVmcs->u64ExitQual.u = idxMsr;
+                VMXVDIAG const enmDiag = rc == VINF_CPUM_R3_MSR_WRITE
+                                       ? kVmxVDiag_Vmentry_MsrLoadRing3
+                                       : kVmxVDiag_Vmentry_MsrLoad;
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
+            }
+            else
+            {
+                pVmcs->u64ExitQual.u = idxMsr;
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadRsvd);
+            }
+        }
+    }
+    else
+    {
+        Log(("%s: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", pszInstr, GCPhysAutoMsrArea, rc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_MsrLoadPtrReadPhys;
+        return rc;
+    }
+
+    NOREF(pszInstr);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the guest-state as part of VM-entry.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -4015,8 +4097,6 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
 
     /* Clear address-range monitoring. */
     EMMonitorWaitClear(pVCpu);
-
-    /* Load MSRs. */
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
@@ -4141,9 +4221,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                         rc = iemVmxVmentryLoadGuestState(pVCpu, pszInstr);
                         if (RT_SUCCESS(rc))
                         {
-                            iemVmxVmSucceed(pVCpu);
-                            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-                            return VINF_SUCCESS;
+                            /* Load MSRs from the VM-entry auto-load MSR area. */
+                            rc = iemVmxVmentryLoadGuestAutoMsrs(pVCpu, pszInstr);
+                            if (RT_SUCCESS(rc))
+                            {
+                                Assert(rc != VINF_CPUM_R3_MSR_WRITE);
+
+                                iemVmxVmSucceed(pVCpu);
+                                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                                return VINF_SUCCESS;
+                            }
+
+                            /** @todo NSTVMX: VMExit with VMX_EXIT_ERR_MSR_LOAD and set
+                             *        VMX_BF_EXIT_REASON_ENTRY_FAILED. */
                         }
                     }
                     /** @todo NSTVMX: VMExit with VMX_EXIT_ERR_INVALID_GUEST_STATE and set

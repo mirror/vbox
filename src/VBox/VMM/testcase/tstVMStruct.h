@@ -154,6 +154,14 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pVmcsR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pShadowVmcsR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pShadowVmcsR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVirtApicPageR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVirtApicPageR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVmreadBitmapR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVmreadBitmapR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVmwriteBitmapR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVmwriteBitmapR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);
     /** @todo add rest of hwvirt fields when code is more

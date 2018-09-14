@@ -2921,6 +2921,28 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
  * @{
  */
 
+/** @name Virtual VMX MSR - Miscellaneous data.
+ * @{ */
+/** Number of CR3-target values supported. */
+#define VMX_V_CR3_TARGET_COUNT                                  4
+/** Activity states supported. */
+#define VMX_V_GUEST_ACTIVITY_STATE_MASK                         (VMX_VMCS_GUEST_ACTIVITY_HLT | VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN)
+/** VMX preemption-timer shift (Core i7-2600 taken as reference). */
+#define VMX_V_PREEMPT_TIMER_SHIFT                               5
+/** Maximum number of MSRs in the auto-load/store MSR areas, (n+1) * 512. */
+#define VMX_V_AUTOMSR_COUNT_MAX                                 0
+/** SMM MSEG revision ID. */
+#define VMX_V_MSEG_REV_ID                                       0
+/** @} */
+
+/** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS state.
+ * @{ */
+/** VMCS state clear. */
+#define VMX_V_VMCS_STATE_CLEAR          RT_BIT(1)
+/** VMCS state launched. */
+#define VMX_V_VMCS_STATE_LAUNCHED       RT_BIT(2)
+/** @} */
+
 /** CR0 bits set here must always be set when in VMX operation. */
 #define VMX_V_CR0_FIXED0                                        (X86_CR0_PE | X86_CR0_NE | X86_CR0_PG)
 /** VMX_V_CR0_FIXED0 when unrestricted-guest execution is supported for the guest. */
@@ -2949,30 +2971,15 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the VMREAD/VMWRITE-bitmap (in pages). */
 #define VMX_V_VMREAD_VMWRITE_BITMAP_PAGES                       1
 
+/** The size of the auto-load/store MSR area (in bytes). */
+#define VMX_V_AUTOMSR_AREA_SIZE                                 ((512 * (VMX_V_AUTOMSR_COUNT_MAX + 1)) * sizeof(VMXAUTOMSR))
+/* Assert that the size is page aligned or adjust the VMX_V_AUTOMSR_AREA_PAGES macro below. */
+AssertCompile(RT_ALIGN_Z(VMX_V_AUTOMSR_AREA_SIZE, X86_PAGE_4K_SIZE) == VMX_V_AUTOMSR_AREA_SIZE);
+/** The size of the auto-load/store MSR area (in pages). */
+#define VMX_V_AUTOMSR_AREA_PAGES                                ((VMX_V_AUTOMSR_AREA_SIZE) >> X86_PAGE_4K_SHIFT)
+
 /** The highest index value used for supported virtual VMCS field encoding. */
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCS_ENC_INDEX)
-
-/** @name Virtual VMX MSR - Miscellaneous data.
- * @{ */
-/** Number of CR3-target values supported. */
-#define VMX_V_CR3_TARGET_COUNT                                  4
-/** Activity states supported. */
-#define VMX_V_GUEST_ACTIVITY_STATE_MASK                         (VMX_VMCS_GUEST_ACTIVITY_HLT | VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN)
-/** VMX preemption-timer shift (Core i7-2600 taken as reference). */
-#define VMX_V_PREEMPT_TIMER_SHIFT                               5
-/** Maximum number of MSRs in the auto-load/store MSR areas, (n+1) * 512. */
-#define VMX_V_MAX_MSRS                                          0
-/** SMM MSEG revision ID. */
-#define VMX_V_MSEG_REV_ID                                       0
-/** @} */
-
-/** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS state.
- * @{ */
-/** VMCS state clear. */
-#define VMX_V_VMCS_STATE_CLEAR          RT_BIT(1)
-/** VMCS state launched. */
-#define VMX_V_VMCS_STATE_LAUNCHED       RT_BIT(2)
-/** @} */
 
 /**
  * Virtual VM-Exit information.
@@ -3760,6 +3767,11 @@ typedef enum
     kVmxVDiag_Vmentry_HostSs,
     kVmxVDiag_Vmentry_HostSysenterEspEip,
     kVmxVDiag_Vmentry_LongModeCS,
+    kVmxVDiag_Vmentry_MsrLoad,
+    kVmxVDiag_Vmentry_MsrLoadCount,
+    kVmxVDiag_Vmentry_MsrLoadPtrReadPhys,
+    kVmxVDiag_Vmentry_MsrLoadRing3,
+    kVmxVDiag_Vmentry_MsrLoadRsvd,
     kVmxVDiag_Vmentry_NmiWindowExit,
     kVmxVDiag_Vmentry_PinCtlsAllowed1,
     kVmxVDiag_Vmentry_PinCtlsDisallowed0,

@@ -930,6 +930,11 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3 = NULL;
         }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3, VMX_V_AUTOMSR_AREA_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3 = NULL;
+        }
     }
 }
 
@@ -951,13 +956,10 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Allocate the nested-guest current VMCS.
          */
-        SUPPAGE SupNstGstVmcsPage;
-        RT_ZERO(SupNstGstVmcsPage);
-        SupNstGstVmcsPage.Phys = NIL_RTHCPHYS;
         Assert(VMX_V_VMCS_PAGES == 1);
         Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3);
         rc = SUPR3PageAllocEx(VMX_V_VMCS_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3,
-                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR0, &SupNstGstVmcsPage);
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR0, NULL /* paPages */);
         if (RT_FAILURE(rc))
         {
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3);
@@ -1005,6 +1007,21 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvVmwriteBitmapR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMWRITE-bitmap\n", pVCpu->idCpu,
                     VMX_V_VMREAD_VMWRITE_BITMAP_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the MSR auto-load/store area.
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3);
+        rc = SUPR3PageAllocEx(VMX_V_AUTOMSR_AREA_PAGES, 0 /* fFlags */,
+                              (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's auto-load/store MSR area\n", pVCpu->idCpu,
+                    VMX_V_AUTOMSR_AREA_PAGES));
             break;
         }
     }

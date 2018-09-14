@@ -601,8 +601,18 @@ typedef struct CPUMCTX
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmwriteBitmapR3Padding;
 #endif
-                /** 0x348 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x348];
+                /** 0x348 - The MSR auto-load/store area - R0 ptr. */
+                R0PTRTYPE(PVMXAUTOMSR)  pAutoMsrAreaR0;
+#if HC_ARCH_BITS == 32
+                uint32_t                uAutoMsrAreaR0;
+#endif
+                /** 0x350 - The MSR auto-load/store area - R3 ptr. */
+                R3PTRTYPE(PVMXAUTOMSR)  pAutoMsrAreaR3;
+#if HC_ARCH_BITS == 32
+                uint32_t                uAutoMsrAreaR3;
+#endif
+                /** 0x358 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x358];
             } vmx;
         } CPUM_UNION_NM(s);
 

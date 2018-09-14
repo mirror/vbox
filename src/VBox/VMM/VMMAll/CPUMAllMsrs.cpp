@@ -1518,7 +1518,7 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxMisc(PVMCPU pVCpu)
         uint64_t uHostMsr;
         int rc = HMVmxGetHostMsr(pVCpu->CTX_SUFF(pVM), MSR_IA32_VMX_MISC, &uHostMsr);
         AssertMsgRC(rc, ("HMVmxGetHostMsr failed. rc=%Rrc\n", rc)); RT_NOREF_PV(rc);
-        uint8_t const cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_MAX_MSRS);
+        uint8_t const cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_AUTOMSR_COUNT_MAX);
         uint8_t const fActivityState = RT_BF_GET(uHostMsr, VMX_BF_MISC_ACTIVITY_STATES) & VMX_V_GUEST_ACTIVITY_STATE_MASK;
         uVmxMsr = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,       VMX_V_PREEMPT_TIMER_SHIFT            )
                 | RT_BF_MAKE(VMX_BF_MISC_EXIT_STORE_EFER_LMA,    pGuestFeatures->fVmxExitStoreEferLma  )
