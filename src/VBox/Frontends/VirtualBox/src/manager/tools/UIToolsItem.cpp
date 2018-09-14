@@ -193,12 +193,12 @@ UIToolsItem::UIToolsItem(QGraphicsScene *pScene,
     , m_iDefaultValue(100)
     , m_iHoveredValue(90)
     , m_iAnimatedValue(m_iDefaultValue)
-    , m_iPreviousMinimumWidthHint(0)
-    , m_iPreviousMinimumHeightHint(0)
     , m_iHoverLightnessMin(0)
     , m_iHoverLightnessMax(0)
     , m_iHighlightLightnessMin(0)
     , m_iHighlightLightnessMax(0)
+    , m_iPreviousMinimumWidthHint(0)
+    , m_iPreviousMinimumHeightHint(0)
     , m_iMaximumNameWidth(0)
 {
     /* Prepare: */

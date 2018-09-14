@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QMenuBar>
 # include <QResizeEvent>
 # include <QStandardPaths>
 # include <QStatusBar>
