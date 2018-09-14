@@ -114,20 +114,12 @@ protected:
       * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
-
-        /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
-        /** Handles first show @a pEvent. */
-        virtual void polishEvent(QShowEvent *pEvent) /* override */;
     /** @} */
 
 private slots:
 
     /** @name Common stuff.
       * @{ */
-        /** Handles polishing in the async way. */
-        void sltHandlePolishEvent();
-
         /** Handles signal about Chooser-pane index change.
           * @param  fUpdateDetails    Brings whether details should be updated.
           * @param  fUpdateSnapshots  Brings whether snapshots should be updated.
@@ -173,9 +165,6 @@ private:
         void cleanup();
     /** @} */
 
-    /** Holds whether the dialog is polished. */
-    bool  m_fPolished : 1;
-
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
 
@@ -184,11 +173,6 @@ private:
 
     /** Holds the main toolbar instance. */
     UIToolBar *m_pToolBar;
-
-    /** Holds the Machine Tools order. */
-    QList<ToolTypeMachine>  m_orderMachine;
-    /** Holds the Global Tools order. */
-    QList<ToolTypeGlobal>   m_orderGlobal;
 
     /** Holds the Chooser-pane instance. */
     UIChooser          *m_pPaneChooser;

@@ -45,8 +45,7 @@
 
 
 UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParent)
-    : m_fPolished(false)
-    , m_pActionPool(pParent->actionPool())
+    : m_pActionPool(pParent->actionPool())
     , m_pSplitter(0)
     , m_pToolBar(0)
     , m_pPaneChooser(0)
@@ -126,13 +125,9 @@ bool UIVirtualBoxManagerWidget::isToolOpened(ToolTypeGlobal enmType) const
 
 void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
 {
-    /* First, make sure corresponding tool set opened: */
-    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked()
-        && actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->property("watch_child_activation").toBool())
-        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
-
     /* Open corresponding tool: */
     m_pPaneToolsMachine->openTool(enmType);
+
     /* If that was 'Details' => pass there current items: */
     if (   enmType == ToolTypeMachine_Details
         && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
@@ -153,11 +148,6 @@ void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
 
 void UIVirtualBoxManagerWidget::switchToTool(ToolTypeGlobal enmType)
 {
-    /* First, make sure corresponding tool set opened: */
-    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked()
-        && actionPool()->action(UIActionIndexST_M_Tools_T_Global)->property("watch_child_activation").toBool())
-        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setChecked(true);
-
     /* Open corresponding tool: */
     m_pPaneToolsGlobal->openTool(enmType);
 
@@ -215,51 +205,6 @@ void UIVirtualBoxManagerWidget::retranslateUi()
     // after changing the text.
     m_pToolBar->updateLayout();
 #endif
-}
-
-void UIVirtualBoxManagerWidget::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
-
-    /* Is polishing required? */
-    if (!m_fPolished)
-    {
-        /* Pass the show-event to polish-event: */
-        polishEvent(pEvent);
-        /* Mark as polished: */
-        m_fPolished = true;
-    }
-}
-
-void UIVirtualBoxManagerWidget::polishEvent(QShowEvent *)
-{
-    /* Call for async polishing finally: */
-    QMetaObject::invokeMethod(this, "sltHandlePolishEvent", Qt::QueuedConnection);
-}
-
-void UIVirtualBoxManagerWidget::sltHandlePolishEvent()
-{
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-
-    /* Make sure there is accessible VM item chosen: */
-    if (pItem && pItem->accessible())
-    {
-        // WORKAROUND:
-        // By some reason some of X11 DEs unable to update() tab-bars on startup.
-        // Let's just _create_ them later, asynchronously after the showEvent().
-        /* Restore previously opened Machine tools at startup: */
-        QMap<ToolTypeMachine, QAction*> mapActionsMachine;
-        mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details);
-        mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots);
-        mapActionsMachine[ToolTypeMachine_LogViewer] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer);
-        for (int i = m_orderMachine.size() - 1; i >= 0; --i)
-            if (m_orderMachine.at(i) != ToolTypeMachine_Invalid)
-                mapActionsMachine.value(m_orderMachine.at(i))->trigger();
-        /* Make sure further action triggering cause tool type switch as well: */
-        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setProperty("watch_child_activation", true);
-    }
 }
 
 void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
@@ -614,25 +559,6 @@ void UIVirtualBoxManagerWidget::loadSettings()
         m_pToolBar->setToolButtonStyle(  gEDataManager->selectorWindowToolBarTextVisible()
                                        ? Qt::ToolButtonTextUnderIcon
                                        : Qt::ToolButtonIconOnly);
-    }
-
-    /* Restore toolbar Machine/Global tools orders:  */
-    {
-        m_orderMachine = gEDataManager->selectorWindowToolsOrderMachine();
-        m_orderGlobal = gEDataManager->selectorWindowToolsOrderGlobal();
-
-        /* We can restore previously opened Global tools right here: */
-        QMap<ToolTypeGlobal, QAction*> mapActionsGlobal;
-        mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
-        mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
-        for (int i = m_orderGlobal.size() - 1; i >= 0; --i)
-            if (m_orderGlobal.at(i) != ToolTypeGlobal_Invalid)
-                mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
-        /* Make sure further action triggering cause tool type switch as well: */
-        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setProperty("watch_child_activation", true);
-
-        /* But we can't restore previously opened Machine tools here,
-         * see the reason in corresponding async sltHandlePolishEvent slot. */
     }
 }
 
