@@ -1883,7 +1883,7 @@ void testStringMap(void)
             RTTESTI_CHECK(MyRestInt16::s_cInstances == 11);
 
             RTTESTI_CHECK(Map2Copy1.remove("putNewValue") == true);
-            verifyMap(Map2Copy1, __LINE__, 4, "0x0001",1, "0x0002",2, "0x0000",0);
+            verifyMap(Map2Copy1, __LINE__, 4, "0x0001",1, "0x0002",2, "0x0000",0, "towel",42);
             RTTESTI_CHECK(MyRestInt16::s_cInstances == 10);
 
             RTTESTI_CHECK(Map2Copy1.remove("towel") == true);
