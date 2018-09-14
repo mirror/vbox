@@ -589,7 +589,10 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
 
         uint32_t cbGuestPitch = guest.pitch;
         if (cbGuestPitch == 0)
-            cbGuestPitch = cBlocksX * pSurface->cbBlock; /* Have to calculate. */
+        {
+            /* Host must "assume image is tightly packed". Our surfaces are. */
+            cbGuestPitch = pMipLevel->cbSurfacePitch;
+        }
         else
         {
             /* vmsvgaGMRTransfer will verify the value, just check it is sane. */
@@ -864,14 +867,17 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
         /** @todo merge into one SurfaceDMA call */
         for (uint32_t i = 0; i < cRects; i++)
         {
-            /* The clipping rectangle is relative to the top-left corner of srcRect & destRect. Adjust here. */
-            /* Host image. See 'SVGA_3D_CMD_SURFACE_DMA:' commant in the 'if' branch. */
+            /* "The clip rectangle coordinates are measured
+             * relative to the top-left corner of destRect."
+             * Therefore they are relative to the top-left corner of srcRect as well.
+             */
+
+            /* Host image. See 'SVGA_3D_CMD_SURFACE_DMA:' comment in the 'if' branch. */
             box.x    = srcRect.left + pRect[i].left;
             box.y    = srcRect.top  + pRect[i].top;
-            box.z    = 0;
             box.w    = pRect[i].right - pRect[i].left;
             box.h    = pRect[i].bottom - pRect[i].top;
-            /* Guest image. */
+            /* Guest image. The target screen memory is currently in the guest VRAM. */
             box.srcx = destRect.left + pRect[i].left;
             box.srcy = destRect.top  + pRect[i].top;
 
