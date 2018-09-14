@@ -75,20 +75,18 @@ UIToolsModel::~UIToolsModel()
 
 void UIToolsModel::init()
 {
-    /* Update navigation: */
-    updateNavigation();
-
-    /* Update layout: */
-    updateLayout();
-
     /* Load last selected item: */
-    loadLastSelectedItem();
+    loadLastSelectedItems();
+
+    /* Update linked values: */
+    updateLayout();
+    updateNavigation();
 }
 
 void UIToolsModel::deinit()
 {
     /* Save last selected item: */
-    saveLastSelectedItem();
+    saveLastSelectedItems();
 }
 
 UITools *UIToolsModel::tools() const
@@ -417,18 +415,14 @@ void UIToolsModel::prepareConnections()
             parent(), SIGNAL(sigExpandingFinished()));
 }
 
-void UIToolsModel::loadLastSelectedItem()
+void UIToolsModel::loadLastSelectedItems()
 {
-//    /* Load last selected item (choose first if unable to load): */
-//    setCurrentItem(gEDataManager->toolsPaneLastItemChosen());
-    if (!currentItem() && !navigationList().isEmpty())
-        setCurrentItem(navigationList().first());
+    /// @todo implement
 }
 
-void UIToolsModel::saveLastSelectedItem()
+void UIToolsModel::saveLastSelectedItems()
 {
-//    /* Save last selected item: */
-//    gEDataManager->setToolsPaneLastItemChosen(currentItem() ? currentItem()->definition() : QString());
+    /// @todo implement
 }
 
 void UIToolsModel::cleanupHandlers()

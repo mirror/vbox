@@ -104,6 +104,12 @@ public:
         UIToolsType toolsType() const;
     /** @} */
 
+    /** @name Children stuff.
+      * @{ */
+        /** Holds the item list. */
+        QList<UIToolsItem*> items() const;
+    /** @} */
+
     /** @name Selection stuff.
       * @{ */
         /** Defines current @a pItem. */
@@ -128,12 +134,6 @@ public:
         void removeFromNavigationList(UIToolsItem *pItem);
         /** Updates navigation list. */
         void updateNavigation();
-    /** @} */
-
-    /** @name Children stuff.
-      * @{ */
-        /** Holds the item list. */
-        QList<UIToolsItem*> items() const;
     /** @} */
 
     /** @name Layout stuff.
@@ -189,10 +189,10 @@ private:
         /** Prepares connections. */
         void prepareConnections();
         /** Loads last selected items. */
-        void loadLastSelectedItem();
+        void loadLastSelectedItems();
 
         /** Saves last selected items. */
-        void saveLastSelectedItem();
+        void saveLastSelectedItems();
         /** Cleanups connections. */
         void cleanupHandlers();
         /** Cleanups items. */
@@ -220,6 +220,12 @@ private:
         UIToolsClass  m_enmCurrentClass;
     /** @} */
 
+    /** @name Children stuff.
+      * @{ */
+        /** Holds the root stack. */
+        QList<UIToolsItem*>  m_items;
+    /** @} */
+
     /** @name Selection stuff.
       * @{ */
         /** Holds the selected item reference. */
@@ -228,11 +234,8 @@ private:
         QPointer<UIToolsItem> m_pFocusItem;
     /** @} */
 
-    /** @name Children stuff.
+    /** @name Navigation stuff.
       * @{ */
-        /** Holds the root stack. */
-        QList<UIToolsItem*>  m_items;
-
         /** Holds the navigation list. */
         QList<UIToolsItem*>  m_navigationList;
     /** @} */
