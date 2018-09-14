@@ -1619,6 +1619,7 @@ RuntimeBldProg_SOURCES         = \
 	common/ldr/ldrkStuff.cpp \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
+	common/ldr/ldrVfsFile.cpp \
 	common/log/log.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logformat.cpp \
@@ -1783,10 +1784,19 @@ RuntimeBldProg_SOURCES         = \
 	r3/stream.cpp \
 	r3/tcp.cpp \
 	VBox/log-vbox.cpp \
-	VBox/RTAssertShouldPanic-vbox.cpp
+	VBox/RTAssertShouldPanic-vbox.cpp \
+       \
+       common/string/ministring.cpp
 ifneq ($(KBUILD_HOST),win)
  RuntimeBldProg_SOURCES        += \
  	common/err/errmsgxpcom.cpp
+endif
+ifeq ($(KBUILD_HOST),win)
+ RuntimeBldProg_SOURCES        += \
+ 	common/string/RTUtf16NLenEx.cpp \
+ 	common/string/RTUtf16CopyAscii.cpp \
+ 	common/string/RTUtf16End.cpp \
+	generic/RTPathGetCurrentDrive-generic.cpp
 endif
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
