@@ -27,7 +27,7 @@ EXPORTS
     ; RTCString & RTCRest classes.  
     ;
     ; Use the following command-line to generate the stuff below:
-    ; nm ../../../out/darwin.amd64/debug/obj/VBoxRT/VBoxRT.dylib -U | kmk_sed -re '/(RTCString|RTCRest)/!d' -e 's/^[0-9a-fA-F]+ //' -e '/[A-Z]/!d' | sort | kmk_sed -r -e 's/[SDBC] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /' -e 's/ __/ _/' >> VBox/VBoxRTImp-gcc.def
+    ; nm ../../../out/darwin.amd64/debug/obj/VBoxRT/VBoxRT.dylib -U | kmk_sed -re '/(RTCString|RTCRest)/!d' -e 's/^[0-9a-fA-F]+ //' -e '/^[A-Z]/!d' | sort | kmk_sed -r -e 's/[SDBC] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /' -e 's/ __/ _/' >> VBox/VBoxRTImp-gcc.def
     ;
     _ZTI17RTCRestOutputBase DATA
     _ZTI9RTCString DATA
