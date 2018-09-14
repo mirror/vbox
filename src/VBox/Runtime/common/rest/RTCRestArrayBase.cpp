@@ -35,6 +35,12 @@
 #include <iprt/string.h>
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Separator characters. */
+static char const g_szSep[RTCRestObjectBase::kCollectionFormat_Mask + 1] = ",, \t|,,";
+
 
 /**
  * Default destructor.
@@ -209,8 +215,7 @@ int RTCRestArrayBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollect
     {
         if (m_cElements)
         {
-            static char const s_szSep[kCollectionFormat_Mask + 1] = ",, \t|,,";
-            char const chSep = s_szSep[a_fFlags & kCollectionFormat_Mask];
+            char const chSep = g_szSep[a_fFlags & kCollectionFormat_Mask];
 
             rc = m_papElements[0]->toString(a_pDst, a_fFlags);
             for (size_t i = 1; RT_SUCCESS(rc) && i < m_cElements; i++)
@@ -239,8 +244,63 @@ int RTCRestArrayBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollect
 int RTCRestArrayBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
                                  uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
 {
-    /** @todo proper fromString implementation for arrays. */
-    return RTCRestObjectBase::fromString(a_rValue, a_pszName, a_pErrInfo, a_fFlags);
+    /*
+     * Clear the array.  If the string is empty, we have an empty array and is done.
+     */
+    if (!(a_fFlags & kToString_Append))
+        clear();
+    if (a_rValue.isEmpty())
+        return VINF_SUCCESS;
+
+    /*
+     * Look for a separator so we don't mistake a initial null element for a null array.
+     */
+    char const chSep = g_szSep[a_fFlags & kCollectionFormat_Mask];
+    size_t offSep = a_rValue.find(chSep);
+    if (   offSep != RTCString::npos
+        || !a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
+    {
+        RTCString strTmp;
+        size_t    offStart = 0;
+        int       rcRet    = VINF_SUCCESS;
+        for (;;)
+        {
+            /* Copy the element value into its own string buffer. */
+            int rc = strTmp.assignNoThrow(a_rValue, offStart, (offSep == RTCString::npos ? a_rValue.length() : offSep) - offStart);
+            AssertRCReturn(rc, rc);
+
+            /* Create a new element, insert it and pass it the value string. */
+            RTCRestObjectBase *pObj = createValue();
+            AssertPtrReturn(pObj, VERR_NO_MEMORY);
+
+            rc = insertWorker(~(size_t)0, pObj, false);
+            AssertRCReturnStmt(rc, delete pObj, rc);
+
+            char szName[128];
+            RTStrPrintf(szName, sizeof(szName), "%.*s[%zu]", 116, a_pszName ? a_pszName : "", size());
+            rc = pObj->fromString(strTmp, a_pszName, a_pErrInfo, 0);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else if (RT_SUCCESS(rcRet))
+                rcRet = rc;
+
+            /*
+             * Done? Otherwise advance.
+             */
+            if (offSep == RTCString::npos)
+                break;
+            offStart = offSep + 1;
+            offSep = a_rValue.find(chSep, offStart);
+        }
+        return rcRet;
+    }
+
+    /*
+     * Consider this a null array even if it could also be an array with a single
+     * null element.  This is just an artifact of an imperfect serialization format.
+     */
+    setNull();
+    return VINF_SUCCESS;
 }
 
 

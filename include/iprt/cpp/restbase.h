@@ -322,7 +322,7 @@ public:
         kCollectionFormat_multi,            /**< Special collection type that must be handled by caller of toString. */
         kCollectionFormat_Mask = 7,         /**< Collection type mask. */
 
-        kToString_Append = 8                /**< Append to the string (rather than assigning). */
+        kToString_Append = 8                /**< Append to the string/object (rather than assigning). */
     };
 
     /**
