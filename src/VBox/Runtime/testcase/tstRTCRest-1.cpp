@@ -594,8 +594,13 @@ void testInteger(void)
 void testDouble(void)
 {
     RTTestSub(g_hTest, "RTCRestDouble");
-#define DBL_MAX_STRING  "1.7976931348623157e+308"
-#define DBL_MIN_STRING  "2.2250738585072014e-308"
+#if defined(RT_OS_WINDOWS)
+# define DBL_MAX_STRING  "1.7976931348623157e+308"
+# define DBL_MIN_STRING  "2.2250738585072014e-308"
+#else
+# define DBL_MAX_STRING  "1.79769313486231571e+308"
+# define DBL_MIN_STRING  "2.22507385850720138e-308"
+#endif
 
     {
         RTCRestDouble obj1;
@@ -853,8 +858,13 @@ void testDouble(void)
 
         RTTESTI_CHECK_RC(fromString(&obj4, "false", NULL, RT_XSTR(__LINE__)), VERR_NO_DIGITS);
 
+#if defined(RT_OS_WINDOWS)
         RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VERR_TRAILING_CHARS);
         RTTESTI_CHECK(obj4.m_rdValue == 0.0);
+#else
+        RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == 66.0);
+#endif
         RTTESTI_CHECK(obj4.isNull() == false);
     }
 }
