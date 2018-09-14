@@ -1090,6 +1090,36 @@ public:
     size_t find(const RTCString *pStrNeedle, size_t offStart = 0) const RT_NOEXCEPT;
 
     /**
+     * Find the given substring.
+     *
+     * Looks for @a rStrNeedle in @a this starting at @a offStart and returns its
+     * position as a byte (not codepoint) offset, counting from the beginning of
+     * @a this as 0.
+     *
+     * @param   rStrNeedle      The substring to find.
+     * @param   offStart        The (byte) offset into the string buffer to start
+     *                          searching.
+     *
+     * @returns 0 based position of pStrNeedle. npos if not found or pStrNeedle is
+     *          NULL or an empty string.
+     */
+    size_t find(const RTCString &rStrNeedle, size_t offStart = 0) const RT_NOEXCEPT;
+
+    /**
+     * Find the given character (byte).
+     *
+     * @returns 0 based position of chNeedle. npos if not found or pStrNeedle is
+     *          NULL or an empty string.
+     * @param   chNeedle        The character (byte) to find.
+     * @param   offStart        The (byte) offset into the string buffer to start
+     *                          searching.  Default is start of the string.
+     *
+     * @note    This searches for a C character value, not a codepoint.  Use the
+     *          string version to locate codepoints above U+7F.
+     */
+    size_t find(char chNeedle, size_t offStart = 0) const RT_NOEXCEPT;
+
+    /**
      * Replaces all occurences of cFind with cReplace in the member string.
      * In order not to produce invalid UTF-8, the characters must be ASCII
      * values less than 128; this is not verified.

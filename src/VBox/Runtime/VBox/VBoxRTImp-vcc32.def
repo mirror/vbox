@@ -90,6 +90,8 @@ EXPORTS
     ?equalsIgnoreCase@RTCString@@QBE_NABV1@@Z
     ?equalsIgnoreCase@RTCString@@QBE_NPBD@Z
     ?erase@RTCString@@QAEAAV1@II@Z
+    ?find@RTCString@@QBEIABV1@I@Z
+    ?find@RTCString@@QBEIDI@Z
     ?find@RTCString@@QBEIPBDI@Z
     ?find@RTCString@@QBEIPBV1@I@Z
     ?findReplace@RTCString@@QAEXDD@Z

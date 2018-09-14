@@ -788,6 +788,30 @@ size_t RTCString::find(const RTCString *pStrNeedle, size_t offStart /*= 0*/) con
     return npos;
 }
 
+
+size_t RTCString::find(const RTCString &rStrNeedle, size_t offStart /*= 0*/) const RT_NOEXCEPT
+{
+    return find(&rStrNeedle, offStart);
+}
+
+
+size_t RTCString::find(const char chNeedle, size_t offStart /*= 0*/) const RT_NOEXCEPT
+{
+    Assert((unsigned int)chNeedle < 128U);
+    if (offStart < length())
+    {
+        const char *pszThis = c_str();
+        if (pszThis)
+        {
+            const char *pszHit = (const char *)memchr(&pszThis[offStart], chNeedle, length() - offStart);
+            if (pszHit)
+                return pszHit - pszThis;
+        }
+    }
+    return npos;
+}
+
+
 void RTCString::findReplace(char chFind, char chReplace) RT_NOEXCEPT
 {
     Assert((unsigned int)chFind    < 128U);
