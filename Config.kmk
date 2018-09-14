@@ -1769,6 +1769,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_VMMRC       = $(PATH_STAGE_BIN)/VMMRC.rc
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.dylib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dylib
+ LIB_XPCOM_IMP   = $(PATH_STAGE_LIB)/VBoxXPCOMImp.dylib
  VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dylib
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dylib
 endif
@@ -1781,6 +1782,7 @@ if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  LIB_VMMRC       = $(PATH_STAGE_BIN)/VMMRC.rc
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.so
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.so
+ LIB_XPCOM_IMP   = $(PATH_STAGE_LIB)/VBoxXPCOMImp.so
  VBOX_LIB_XPCOM_X86   = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.so
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.so
 endif
@@ -1793,7 +1795,8 @@ ifeq ($(KBUILD_TARGET),os2)
  LIB_VMMRC       = $(PATH_STAGE_LIB)/VMMRCImp.lib
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXCOM.dll
- VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dll
+ LIB_XPCOM_IMP   = $(PATH_STAGE_LIB)/VBoxXPCOMImp.lib
+ VBOX_LIB_XPCOM_X86  = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dll
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dll
  VBOX_OBJ_SYS0   = $(PATH_OBJ)/RuntimeR0/os2/sys0.obj
 endif
@@ -1805,8 +1808,9 @@ ifeq ($(KBUILD_TARGET),win)
  LIB_VMM         = $(PATH_STAGE_LIB)/VBoxVMM.lib
  LIB_VMMRC       = $(PATH_OBJ)/VMMRC/VMMRC.lib
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
- LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.lib
- VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.lib
+ LIB_XPCOM       =
+ LIB_XPCOM_IMP   =
+ VBOX_LIB_XPCOM_X86 =
  LIB_DDU         = $(PATH_STAGE_LIB)/VBoxDDU.lib
 endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64 linux.amd64)

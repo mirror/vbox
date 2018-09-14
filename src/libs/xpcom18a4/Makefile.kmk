@@ -68,10 +68,15 @@ BLDDIRS  += \
 	$(PATH_TARGET)/VBox-xpcom-xpt-files/
 
 #
+# Always build the VBoxXPCOM import library.
+#
+IMPORT_LIBS += VBoxXPCOMImp
+
+#
 # We build several libraries so that any linker command line
 # length restrictions limit will be avoided. (Solaris, Mac?)
 #
-if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACK)
+if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS))
 
 VBOX_XPCOM_LIBRARIES := \
 	VBox-xpcom-nspr \
@@ -132,7 +137,7 @@ PROGRAMS += \
  endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
 
-endif # !VBOX_ONLY_SDK && !VBOX_ONLY_EXTPACK
+endif # !VBOX_ONLY_SDK && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS))
 
 
 
@@ -1071,6 +1076,12 @@ VBoxXPCOM-x86_LDFLAGS.solaris += -Wl,-z,allextract \
 	$(VBox-xpcom-nspr-x86_1_TARGET) \
 	$(VBoxXPCOMGlue_s-x86_1_TARGET) \
 	-Wl,-z,defaultextract
+
+
+#
+# VBoxXPCOMImp - Import library/hack.
+#
+$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxXPCOMImp,VBoxXPCOM,VBoxXPCOM.def)
 
 
 #
