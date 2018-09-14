@@ -22,10 +22,10 @@
 ; You may elect to license modified versions of this file under the
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
-EXPORTS
+
 EXPORTS
     ;
-    ; RTCString & RTCRest classes.  
+    ; RTCString & RTCRest classes.
     ;
     ; Use the following command-line to generate the stuff below (same as vcc64, except input/output):
     ; kmk_sed -r -e "/^    .*(RTCRest|RTCString)/!d" -e "s/^ +[[:digit:]]+ +([^ ]+) /    \1                                                                                    ; /" -e "s/ (\?\?_7[^ ]+@@6B[^ ]*|\?[^ ]+@@[0-4][^ @]+) / \1 DATA /" -e "s/(.{78} ) *;/\1 ;/" e:\vbox\svn\trunk\out\win.amd64\debug\obj\VBoxRT-x86\VBoxRT-x86.map | sort >> VBox\VBoxRTImp-vcc32.def
@@ -549,3 +549,4 @@ EXPORTS
     ?xmitHttpCallback@RTCRestBinaryParameter@@KAHPAURTHTTPINTERNAL@@PAXI_KPAI1@Z  ; (protected: static int __cdecl RTCRestBinaryParameter::xmitHttpCallback(struct RTHTTPINTERNAL *,void *,unsigned int,unsigned __int64,unsigned int *,void *))
     ?xmitPrepare@RTCRestBinaryParameter@@UBEHPAURTHTTPINTERNAL@@@Z              ; (public: virtual int __thiscall RTCRestBinaryParameter::xmitPrepare(struct RTHTTPINTERNAL *)const )
     ?xmitReady@RTCRestClientApiBase@@MAEHPAURTHTTPINTERNAL@@ABVRTCString@@W4RTHTTPMETHOD@@1I@Z  ; (protected: virtual int __thiscall RTCRestClientApiBase::xmitReady(struct RTHTTPINTERNAL *,class RTCString const &,enum RTHTTPMETHOD,class RTCString const &,unsigned int))
+
