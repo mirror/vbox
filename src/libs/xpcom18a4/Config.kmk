@@ -41,6 +41,9 @@ TEMPLATE_XPCOM_CXXFLAGS            = -g -pipe -ansi -Wall -Wno-unused -Wno-non-v
 	$(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
 	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-delete-non-virtual-dtor)
+if !defined(VBOX_GCC_Wno-delete-non-virtual-dtor) && defined(VBOX_GCC_Wno-non-virtual-dtor)
+ TEMPLATE_XPCOM_CXXFLAGS          += $(VBOX_GCC_Wno-non-virtual-dtor)
+endif
 TEMPLATE_XPCOM_CXXFLAGS.x86        = -m32
 TEMPLATE_XPCOM_CXXFLAGS.amd64      = -m64
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O

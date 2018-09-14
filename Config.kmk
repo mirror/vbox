@@ -2757,6 +2757,7 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'endif'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-delete-non-virtual-dtor    ?= $(call VBOX_GCC_CHECK_CXX,-Wno-delete-non-virtual-dtor,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-non-virtual-dtor           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-non-virtual-dtor,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-in-bool-context        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-in-bool-context,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-to-pointer-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-to-pointer-cast,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-invalid-offsetof           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)'
