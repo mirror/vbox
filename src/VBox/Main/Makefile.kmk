@@ -201,7 +201,9 @@ ifndef VBOX_ONLY_SDK
  endif
  VBoxAPIWrap_SOURCES         = \
  	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
- 	$(VBOX_MAIN_APIWRAPPER_GEN_SRCS)
+ 	$(if-expr defined(VBOX_ONLY_EXTPACKS) \
+	, $(addprefix $(VBoxAPIWrap_0_OUTDIR)/,$(filter Cloud%, $(notdir $(VBOX_MAIN_APIWRAPPER_GEN_SRCS)))) \
+	, $(VBOX_MAIN_APIWRAPPER_GEN_SRCS))
  VBoxAPIWrap_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
  VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
  VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
