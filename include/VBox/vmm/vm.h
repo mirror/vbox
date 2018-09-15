@@ -443,6 +443,10 @@ typedef struct VMCPU
 #define VMCPU_FF_DBGF                       RT_BIT_32(VMCPU_FF_DBGF_BIT)
 /** The bit number for VMCPU_FF_DBGF. */
 #define VMCPU_FF_DBGF_BIT                   10
+/** Pending MTF (Monitor Trap Flag) event - Intel only.  */
+#define VMCPU_FF_MTF                        RT_BIT_32(VMCPU_FF_MTF_BIT)
+/** The bit number for VMCPU_FF_MTF. */
+#define VMCPU_FF_MTF_BIT                    11
 /** This action forces the VM to service any pending updates to CR3 (used only
  *  by HM). */
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_32(12)
