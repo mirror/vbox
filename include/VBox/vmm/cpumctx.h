@@ -549,8 +549,9 @@ typedef struct CPUMCTX
                 bool                    fInVmxRootMode;
                 /** 0x2f5 - Whether the guest is in VMX non-root mode. */
                 bool                    fInVmxNonRootMode;
-                /** 0x2f6 - Padding.  */
-                bool                    afPadding[2];
+                /** 0x2f6 - Whether the injected events are subjected to event intercepts.  */
+                bool                    fInterceptEvents;
+                bool                    afPadding[1];
                 /** 0x2f8 - Cache of the nested-guest current VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pVmcsR0;
 #if HC_ARCH_BITS == 32

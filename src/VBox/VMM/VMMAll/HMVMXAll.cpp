@@ -768,3 +768,71 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
     return false;
 }
 
+
+/**
+ * Injects an event using TRPM given a VM-entry interruption info. and related
+ * fields.
+ *
+ * @returns VBox status code.
+ * @param   uEntryIntInfo       The VM-entry interruption info.
+ * @param   uErrCode            The error code associated with the event if any.
+ * @param   cbInstr             The VM-entry instruction length (for software
+ *                              interrupts and software exceptions). Pass 0
+ *                              otherwise.
+ * @param   GCPtrFaultAddress   The guest CR2 if this is a \#PF event.
+ */
+VMM_INT_DECL(int) HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode, uint32_t cbInstr,
+                                                   RTGCUINTPTR GCPtrFaultAddress)
+{
+    Assert(VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
+
+    uint8_t const uType         = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
+    uint8_t const uVector       = VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo);
+    bool const    fErrCodeValid = VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(uEntryIntInfo);
+
+    TRPMEVENT enmTrapType;
+    switch (uType)
+    {
+        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+           enmTrapType = TRPM_HARDWARE_INT;
+           break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  /* ICEBP. */
+        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       /* #BP and #OF */
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+            enmTrapType = TRPM_TRAP;
+            break;
+
+        default:
+            /* Shouldn't really happen. */
+            AssertMsgFailedReturn(("Invalid trap type %#x\n", uType), VERR_VMX_IPE_4);
+            break;
+    }
+
+    int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
+    AssertRCReturn(rc, rc);
+
+    if (fErrCodeValid)
+        TRPMSetErrorCode(pVCpu, uErrCode);
+
+    if (   uType   == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+        && uVector == X86_XCPT_PF)
+        TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
+    else if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
+             || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
+             || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
+    {
+        AssertMsg(   uType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+                  || (uVector == X86_XCPT_BP || uVector == X86_XCPT_OF),
+                  ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uType));
+        TRPMSetInstrLength(pVCpu, cbInstr);
+    }
+
+    return VINF_SUCCESS;
+}
+

@@ -146,6 +146,8 @@ VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGM
 VMM_INT_DECL(int)               HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs);
 VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue);
 VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(int)               HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode,
+                                                                 uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -162,6 +164,9 @@ VMM_INT_DECL(bool)              HMSvmIsIOInterceptActive(void *pvIoBitmap, uint1
 /** @} */
 
 #ifndef IN_RC
+
+/** @name R0, R3 HM (VMX/SVM agnostic) handlers.
+ * @{ */
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMFlushTLBOnAllVCpus(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
@@ -170,6 +175,10 @@ VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsMsrBitmapActive(PVM pVM);
+/** @} */
+
+/** @name R0, R3 SVM handlers.
+ * @{ */
 VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
 VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -177,7 +186,12 @@ VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX p
 # endif
 VMM_INT_DECL(int)               HMSvmIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
+/** @} */
+
 #else /* Nops in RC: */
+
+/** @name RC HM (VMX/SVM agnostic) handlers.
+ * @{ */
 # define HMFlushTLB(pVCpu)                                            do { } while (0)
 # define HMFlushTLBOnAllVCpus(pVM)                                    do { } while (0)
 # define HMInvalidatePageOnAllVCpus(pVM, GCVirt)                      do { } while (0)
@@ -186,11 +200,17 @@ VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
 # define HMIsLongModeAllowed(pVM)                                     false
 # define HMIsNestedPagingActive(pVM)                                  false
 # define HMIsMsrBitmapsActive(pVM)                                    false
+/** @} */
+
+/** @name RC SVM handlers.
+ * @{ */
 # define HMSvmIsVGifActive(pVM)                                       false
 # define HMSvmNstGstApplyTscOffset(pVCpu, uTicks)                     (uTicks)
 # define HMSvmNstGstVmExitNotify(pVCpu, pCtx)                         do { } while (0)
 # define HMSvmIsSubjectToErratum170(puFamily, puModel, puStepping)    false
 # define HMHCSvmMaybeMovTprHypercall(pVCpu)                           do { } while (0)
+/** @} */
+
 #endif
 
 #ifdef IN_RING0

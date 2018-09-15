@@ -2965,7 +2965,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
                         && (   uVector == X86_XCPT_DB
                             || uVector == X86_XCPT_MC))
                     || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT
-                        && uVector == 0))
+                        && uVector  == VMX_ENTRY_INT_INFO_VECTOR_MTF))
                 { /* likely */ }
                 else
                     IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateHlt);
@@ -3479,7 +3479,7 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
         uint8_t const uType   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_TYPE);
         uint8_t const uVector = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
         uint8_t const uRsvd   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
-        if (   uRsvd == 0
+        if (   !uRsvd
             && HMVmxIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
             && HMVmxIsEntryIntInfoVectorValid(uVector, uType))
         { /* likely */ }
@@ -3708,7 +3708,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 
         /* TPR threshold and VTPR. */
         uint8_t const *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-        uint8_t const u8VTpr = *(pbVirtApic + XAPIC_OFF_TPR);
+        uint8_t const  u8VTpr     = *(pbVirtApic + XAPIC_OFF_TPR);
         if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
             && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
             && RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) > ((u8VTpr >> 4) & UINT32_C(0xf)) /* Bits 4:7 */)
@@ -3988,6 +3988,7 @@ IEM_STATIC void iemVmxVmentryLoadGuestSegRegs(PVMCPU pVCpu)
 /**
  * Loads the guest auto-load MSRs area as part of VM-entry.
  *
+ * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
@@ -4070,6 +4071,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
 /**
  * Loads the guest-state as part of VM-entry.
  *
+ * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  *
@@ -4078,6 +4080,9 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
  */
 IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
 {
+    /*
+     * Load control, debug, segment, descriptor-table registers and some MSRs.
+     */
     iemVmxVmentryLoadGuestControlRegsMsr(pVCpu);
     iemVmxVmentryLoadGuestSegRegs(pVCpu);
 
@@ -4100,6 +4105,81 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs event injection (if any) as part of VM-entry.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
+{
+    /*
+     * Inject events.
+     * See Intel spec. 26.5 "Event Injection".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    uint32_t const uEntryIntInfo = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryIntInfo;
+    if (VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
+    {
+        uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
+        if (uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
+        {
+            Assert(VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo) == VMX_ENTRY_INT_INFO_VECTOR_MTF);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_MTF);
+            return VINF_SUCCESS;
+        }
+
+        /** @todo NSTVMX: Is it safe to update IDT-vectoring information in the VMCS
+         *        here? */
+
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = false;
+        int rc = HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
+                                                  pVCpu->cpum.GstCtx.cr2);
+        AssertRCReturn(rc, rc);
+    }
+
+    NOREF(pszInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Perform a VMX transition updated PGM, IEM and CPUM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC int iemVmxWorldSwitch(PVMCPU pVCpu)
+{
+    /*
+     * Inform PGM about paging mode changes.
+     * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet,
+     * see comment in iemMemPageTranslateAndCheckAccess().
+     */
+    int rc = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0 | X86_CR0_PE, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+# ifdef IN_RING3
+    Assert(rc != VINF_PGM_CHANGE_MODE);
+# endif
+    AssertRCReturn(rc, rc);
+
+    /* Inform CPUM (recompiler), can later be removed. */
+    CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+
+    /*
+     * Flush the TLB with new CR3. This is required in case the PGM mode change
+     * above doesn't actually change anything.
+     */
+    if (rc == VINF_SUCCESS)
+    {
+        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* Re-initialize IEM cache/state after the drastic mode switch. */
+    iemReInitExec(pVCpu);
+    return rc;
 }
 
 
@@ -4162,7 +4242,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     if (uInstrId == VMXINSTRID_VMLAUNCH)
     {
         /* VMLAUNCH with non-clear VMCS. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState != VMX_V_VMCS_STATE_CLEAR)
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState == VMX_V_VMCS_STATE_CLEAR)
+        { /* likely */ }
+        else
         {
             Log(("vmlaunch: VMLAUNCH with non-clear VMCS -> VMFail\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_VmcsClear;
@@ -4174,7 +4256,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     else
     {
         /* VMRESUME with non-launched VMCS. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState != VMX_V_VMCS_STATE_LAUNCHED)
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState == VMX_V_VMCS_STATE_LAUNCHED)
+        { /* likely */ }
+        else
         {
             Log(("vmresume: VMRESUME with non-launched VMCS -> VMFail\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_VmcsLaunch;
@@ -4226,6 +4310,32 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                             if (RT_SUCCESS(rc))
                             {
                                 Assert(rc != VINF_CPUM_R3_MSR_WRITE);
+
+                                /* VMLAUNCH instruction must update the VMCS launch state. */
+                                if (uInstrId == VMXINSTRID_VMLAUNCH)
+                                    pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = VMX_V_VMCS_STATE_LAUNCHED;
+
+                                /* Perform the VMX transition (PGM updates). */
+                                VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
+                                if (rcStrict == VINF_SUCCESS)
+                                { /* likely */ }
+                                else if (RT_SUCCESS(rcStrict))
+                                {
+                                    Log3(("%s: iemVmxWorldSwitch returns %Rrc -> Setting passup status\n", pszInstr,
+                                          VBOXSTRICTRC_VAL(rcStrict)));
+                                    rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+                                }
+                                else
+                                {
+                                    Log3(("%s: iemVmxWorldSwitch failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
+                                    return rcStrict;
+                                }
+
+                                /* Event injection. */
+                                iemVmxVmentryInjectEvent(pVCpu, pszInstr);
+
+                                /** @todo NSTVMX: Setup VMX preemption timer */
+                                /** @todo NSTVMX: TPR thresholding. */
 
                                 iemVmxVmSucceed(pVCpu);
                                 iemRegAddToRipAndClearRF(pVCpu, cbInstr);

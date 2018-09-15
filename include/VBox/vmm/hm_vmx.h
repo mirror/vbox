@@ -2286,45 +2286,38 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_REASON_, UINT32_C(0), UINT32_MAX,
  * @{
  */
 #define VMX_ENTRY_INT_INFO_IS_VALID(a)                          (((a) >> 31) & 1)
+#define VMX_ENTRY_INT_INFO_VECTOR(a)                            ((a) & 0xff)
 #define VMX_ENTRY_INT_INFO_TYPE_SHIFT                           8
 #define VMX_ENTRY_INT_INFO_TYPE(a)                              (((a) >> 8) & 7)
-/** @} */
-
-
-/** @name VM-entry interruption information.
- * @{ */
-#define VMX_ENTRY_INT_INFO_VECTOR(a)                             ((a) & 0xff)
-#define VMX_ENTRY_INT_INFO_TYPE_SHIFT                            8
-#define VMX_ENTRY_INT_INFO_TYPE(a)                               (((a) >> 8) & 7)
-#define VMX_ENTRY_INT_INFO_ERROR_CODE_VALID                      RT_BIT(11)
-#define VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(a)                (((a) >> 11) & 1)
-#define VMX_ENTRY_INT_INFO_NMI_UNBLOCK_IRET                      12
-#define VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
-#define VMX_ENTRY_INT_INFO_VALID                                 RT_BIT(31)
-#define VMX_ENTRY_INT_INFO_IS_VALID(a)                           (((a) >> 31) & 1)
+#define VMX_ENTRY_INT_INFO_ERROR_CODE_VALID                     RT_BIT(11)
+#define VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(a)               (((a) >> 11) & 1)
+#define VMX_ENTRY_INT_INFO_NMI_UNBLOCK_IRET                     12
+#define VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(a)               (((a) >> 12) & 1)
+#define VMX_ENTRY_INT_INFO_VALID                                RT_BIT(31)
+#define VMX_ENTRY_INT_INFO_IS_VALID(a)                          (((a) >> 31) & 1)
 /** Construct an VM-entry interruption information field from a VM-exit interruption
  *  info value (same except that bit 12 is reserved). */
-#define VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(a)                 ((a) & ~RT_BIT(12))
+#define VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(a)                ((a) & ~RT_BIT(12))
 /** Construct a VM-entry interruption information field from an IDT-vectoring
  *  information field (same except that bit 12 is reserved). */
-#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                 ((a) & ~RT_BIT(12))
+#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                ((a) & ~RT_BIT(12))
 
 /** Bit fields for VM-entry interruption information. */
 /** The VM-entry interruption vector. */
-#define VMX_BF_ENTRY_INT_INFO_VECTOR_SHIFT                       0
-#define VMX_BF_ENTRY_INT_INFO_VECTOR_MASK                        UINT32_C(0x000000ff)
+#define VMX_BF_ENTRY_INT_INFO_VECTOR_SHIFT                      0
+#define VMX_BF_ENTRY_INT_INFO_VECTOR_MASK                       UINT32_C(0x000000ff)
 /** The VM-entry interruption type (see VMX_ENTRY_INT_INFO_TYPE_XXX). */
-#define VMX_BF_ENTRY_INT_INFO_TYPE_SHIFT                         8
-#define VMX_BF_ENTRY_INT_INFO_TYPE_MASK                          UINT32_C(0x00000700)
+#define VMX_BF_ENTRY_INT_INFO_TYPE_SHIFT                        8
+#define VMX_BF_ENTRY_INT_INFO_TYPE_MASK                         UINT32_C(0x00000700)
 /** Whether this event has an error code.   */
-#define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_SHIFT               11
-#define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_MASK                UINT32_C(0x00000800)
+#define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_SHIFT              11
+#define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_MASK               UINT32_C(0x00000800)
 /** Bits 12:30 are reserved and MBZ. */
-#define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_SHIFT                   12
-#define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_MASK                    UINT32_C(0x7ffff000)
+#define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_SHIFT                  12
+#define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_MASK                   UINT32_C(0x7ffff000)
 /** Whether this VM-entry interruption info is valid.  */
-#define VMX_BF_ENTRY_INT_INFO_VALID_SHIFT                        31
-#define VMX_BF_ENTRY_INT_INFO_VALID_MASK                         UINT32_C(0x80000000)
+#define VMX_BF_ENTRY_INT_INFO_VALID_SHIFT                       31
+#define VMX_BF_ENTRY_INT_INFO_VALID_MASK                        UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
                             (VECTOR, TYPE, ERR_CODE_VALID, RSVD_12_30, VALID));
 /** @} */
@@ -2337,19 +2330,27 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
  *        stack aligned for doubleword pushes, the upper half of the error code is
  *        reserved" which implies bits 31:16 MBZ (and not 31:15) which is what we
  *        use below. */
-#define VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK                   UINT32_C(0xffff)
+#define VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK                  UINT32_C(0xffff)
 /** @} */
 
 /** @name VM-entry interruption information types.
  * @{
  */
-#define VMX_ENTRY_INT_INFO_TYPE_EXT_INT                          0
-#define VMX_ENTRY_INT_INFO_TYPE_NMI                              2
-#define VMX_ENTRY_INT_INFO_TYPE_HW_XCPT                          3
-#define VMX_ENTRY_INT_INFO_TYPE_SW_INT                           4
-#define VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT                     5
-#define VMX_ENTRY_INT_INFO_TYPE_SW_XCPT                          6
-#define VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT                      7
+#define VMX_ENTRY_INT_INFO_TYPE_EXT_INT                         0
+#define VMX_ENTRY_INT_INFO_TYPE_RSVD                            1
+#define VMX_ENTRY_INT_INFO_TYPE_NMI                             2
+#define VMX_ENTRY_INT_INFO_TYPE_HW_XCPT                         3
+#define VMX_ENTRY_INT_INFO_TYPE_SW_INT                          4
+#define VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT                    5
+#define VMX_ENTRY_INT_INFO_TYPE_SW_XCPT                         6
+#define VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT                     7
+/** @} */
+
+
+/** @name VM-entry interruption information vector types for
+ *        VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT.
+ * @{ */
+#define VMX_ENTRY_INT_INFO_VECTOR_MTF                           0
 /** @} */
 
 
@@ -3885,7 +3886,7 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
         && uVector > X86_XCPT_LAST)
         return false;
     if (   uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT
-        && uVector != 0)
+        && uVector != VMX_ENTRY_INT_INFO_VECTOR_MTF)
         return false;
     return true;
 }
