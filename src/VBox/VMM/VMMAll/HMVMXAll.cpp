@@ -774,7 +774,7 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * fields.
  *
  * @returns VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uEntryIntInfo       The VM-entry interruption info.
  * @param   uErrCode            The error code associated with the event if any.
  * @param   cbInstr             The VM-entry instruction length (for software
