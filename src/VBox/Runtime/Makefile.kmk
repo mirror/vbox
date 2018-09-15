@@ -1790,13 +1790,6 @@ ifneq ($(KBUILD_HOST),win)
  RuntimeBldProg_SOURCES        += \
  	common/err/errmsgxpcom.cpp
 endif
-ifeq ($(KBUILD_HOST),win)
- RuntimeBldProg_SOURCES        += \
- 	common/string/RTUtf16NLenEx.cpp \
- 	common/string/RTUtf16CopyAscii.cpp \
- 	common/string/RTUtf16End.cpp \
-	generic/RTPathGetCurrentDrive-generic.cpp
-endif
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1831,23 +1824,26 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 
 RuntimeBldProg_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
+	common/string/mempcpy.asm
+	generic/mppresent-generic-online.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentDrive-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
-	generic/RTSemEventWait-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSemEventWait-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
-	generic/mppresent-generic-online.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/uuid-generic.cpp \
-	nt/RTErrConvertFromNtStatus.cpp \
 	nt/fileioutils-nt.cpp \
+	nt/RTErrConvertFromNtStatus.cpp \
+	r3/nt/direnum-r3-nt.cpp \
 	r3/nt/dirrel-r3-nt.cpp \
 	r3/nt/fs-nt.cpp \
 	r3/nt/pathint-nt.cpp \
@@ -1855,12 +1851,10 @@ RuntimeBldProg_SOURCES.win = \
 	r3/nt/RTFileSetMode-r3-nt.cpp \
 	r3/nt/RTPathQueryInfo-nt.cpp \
 	r3/nt/RTPathSetMode-r3-nt.cpp \
-	r3/win/env-win.cpp \
-	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
-	$(if-expr defined(VBOX_WITH_NT_DIRENUM),r3/nt/direnum-r3-nt.cpp,r3/win/direnum-win.cpp generic/RTDirQueryInfo-generic.cpp) \
+	r3/win/env-win.cpp \
 	r3/win/errvars-win.cpp \
 	r3/win/fileio-win.cpp \
 	r3/win/init-win.cpp \
@@ -1868,8 +1862,10 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/path-win.cpp \
 	r3/win/pipe-win.cpp \
 	r3/win/process-win.cpp \
+	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
 	r3/win/rtProcInitExePath-win.cpp \
+	r3/win/RTUuidCreate-win.cpp \
 	r3/win/sched-win.cpp \
 	r3/win/semevent-win.cpp \
 	r3/win/semeventmulti-win.cpp \
@@ -1881,10 +1877,11 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/time2-win.cpp \
 	r3/win/utf16locale-win.cpp \
 	r3/win/utf8-win.cpp \
-	r3/win/RTUuidCreate-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp \
-	common/string/mempcpy.asm
+ 	common/string/RTUtf16CopyAscii.cpp \
+ 	common/string/RTUtf16End.cpp \
+ 	common/string/RTUtf16NLenEx.cpp \
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
@@ -1892,6 +1889,9 @@ RuntimeBldProg_SOURCES.win.amd64 := \
 RuntimeBldProg_SOURCES.win.x86   := \
 	$(RuntimeWin32ASM_SOURCES) \
 	common/string/memrchr.asm
+
+RuntimeBldProg_SOURCES.os2 += \
+	generic/RTPathGetCurrentDrive-generic.cpp
 
 
 
