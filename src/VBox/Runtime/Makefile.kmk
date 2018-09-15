@@ -1824,7 +1824,10 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 
 RuntimeBldProg_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
-	common/string/mempcpy.asm
+	common/string/mempcpy.asm \
+	common/string/RTUtf16CopyAscii.cpp \
+	common/string/RTUtf16End.cpp \
+	common/string/RTUtf16NLenEx.cpp \
 	generic/mppresent-generic-online.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
@@ -1878,10 +1881,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/utf16locale-win.cpp \
 	r3/win/utf8-win.cpp \
 	win/errmsgwin.cpp \
-	win/RTErrConvertFromWin32.cpp \
- 	common/string/RTUtf16CopyAscii.cpp \
- 	common/string/RTUtf16End.cpp \
- 	common/string/RTUtf16NLenEx.cpp \
+	win/RTErrConvertFromWin32.cpp
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
