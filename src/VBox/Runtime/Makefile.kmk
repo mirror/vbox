@@ -1890,8 +1890,70 @@ RuntimeBldProg_SOURCES.win.x86   := \
 	$(RuntimeWin32ASM_SOURCES) \
 	common/string/memrchr.asm
 
+## @todo reduce this
 RuntimeBldProg_SOURCES.os2 += \
-	generic/RTPathGetCurrentDrive-generic.cpp
+	common/string/memrchr.asm \
+	generic/mppresent-generic.cpp \
+	generic/RTCrStoreCreateSnapshotById-generic.cpp \
+	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileMove-generic.cpp \
+	generic/RTFileSetAllocationSize-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentDrive-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
+	generic/RTRandAdvCreateSystemFaster-generic.cpp \
+	generic/RTRandAdvCreateSystemTruer-generic.cpp \
+	generic/RTSemEventMultiWait-generic.cpp \
+	generic/RTSemEventWait-generic.cpp \
+	generic/RTSemMutexRequest-generic.cpp \
+	generic/RTSemMutexRequestDebug-generic.cpp \
+	generic/RTThreadGetNativeState-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
+	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
+	generic/timer-generic.cpp \
+	generic/utf16locale-generic.cpp \
+	generic/uuid-generic.cpp \
+	os2/RTErrConvertFromOS2.cpp \
+	r3/generic/allocex-r3-generic.cpp \
+	r3/generic/dirrel-r3-generic.cpp \
+	r3/os2/filelock-os2.cpp \
+	r3/os2/mp-os2.cpp \
+	r3/os2/pipe-os2.cpp \
+	r3/os2/rtProcInitExePath-os2.cpp \
+	r3/os2/sched-os2.cpp \
+	r3/os2/sems-os2.cpp \
+	r3/os2/systemmem-os2.cpp \
+	r3/os2/thread-os2.cpp \
+	r3/os2/time-os2.cpp \
+	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
+	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
+	r3/posix/ldrNative-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
+	r3/posix/process-creation-posix.cpp \
+	r3/posix/process-posix.cpp \
+	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTHandleGetStandard-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/RTPathUserDocuments-posix.cpp \
+	r3/posix/RTPathUserHome-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
+	r3/posix/symlink-posix.cpp \
+	r3/posix/timelocal-posix.cpp \
+	r3/posix/utf8-posix.cpp
+
+## @todo reduce linux, solaris and freebsd sources too.
 
 
 
