@@ -356,3 +356,29 @@ RTDECL(uint32_t) RTCrKeyGetBitCount(RTCRKEY hKey)
     return pThis->cBits;
 }
 
+
+RTDECL(int) RTCrKeyQueryRsaModulus(RTCRKEY hKey, PRTBIGNUM pModulus)
+{
+    PRTCRKEYINT pThis = hKey;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTCRKEYINT_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->enmType == RTCRKEYTYPE_RSA_PRIVATE || pThis->enmType == RTCRKEYTYPE_RSA_PUBLIC, VERR_WRONG_TYPE);
+    AssertPtrReturn(pModulus, VERR_INVALID_POINTER);
+
+    if (pThis->enmType == RTCRKEYTYPE_RSA_PRIVATE)
+        return RTBigNumAssign(pModulus, &pThis->u.RsaPrivate.Modulus);
+    return RTBigNumAssign(pModulus, &pThis->u.RsaPublic.Modulus);
+}
+
+
+RTDECL(int) RTCrKeyQueryRsaPrivateExponent(RTCRKEY hKey, PRTBIGNUM pPrivateExponent)
+{
+    PRTCRKEYINT pThis = hKey;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTCRKEYINT_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->enmType == RTCRKEYTYPE_RSA_PRIVATE, VERR_WRONG_TYPE);
+    AssertPtrReturn(pPrivateExponent, VERR_INVALID_POINTER);
+
+    return RTBigNumAssign(pPrivateExponent, &pThis->u.RsaPrivate.PrivateExponent);
+}
+

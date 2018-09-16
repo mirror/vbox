@@ -372,6 +372,8 @@ RuntimeR3_SOURCES       = \
 	common/crypto/key.cpp \
 	common/crypto/key-file.cpp \
 	common/crypto/key-openssl.cpp \
+	common/crypto/key-create-rsa-openssl.cpp \
+	common/crypto/rc4-openssl.cpp \
 	common/crypto/rsa-asn1-decoder.cpp \
 	common/crypto/rsa-core.cpp \
 	common/crypto/rsa-init.cpp \
@@ -392,6 +394,7 @@ RuntimeR3_SOURCES       = \
 	common/crypto/spc-core.cpp \
 	common/crypto/spc-init.cpp \
 	common/crypto/spc-sanity.cpp \
+	common/crypto/ssl-openssl.cpp \
 	common/crypto/x509-asn1-decoder.cpp \
 	common/crypto/x509-certpaths.cpp \
 	common/crypto/x509-core.cpp \

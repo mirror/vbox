@@ -2785,6 +2785,8 @@ RT_C_DECLS_END
 #define VERR_CR_KEY_DECRYPTION_FAILED               (-23813)
 /** The key was decrypted. */
 #define VINF_CR_KEY_WAS_DECRYPTED                   (23814)
+/** Failed to generate RSA key. */
+#define VERR_CR_KEY_GEN_FAILED_RSA                  (-23815)
 /** @} */
 
 /** @name RTCrRsa status codes.

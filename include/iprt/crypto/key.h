@@ -59,16 +59,16 @@ typedef enum RTCRKEYTYPE
 } RTCRKEYTYPE;
 
 
-RTDECL(int)             RTCrKeyCreateFromSubjectPublicKeyInfo(PRTCRKEY hKey, struct RTCRX509SUBJECTPUBLICKEYINFO const *pSrc,
+RTDECL(int)             RTCrKeyCreateFromSubjectPublicKeyInfo(PRTCRKEY phKey, struct RTCRX509SUBJECTPUBLICKEYINFO const *pSrc,
                                                               PRTERRINFO pErrInfo, const char *pszErrorTag);
-RTDECL(int)             RTCrKeyCreateFromPublicAlgorithmAndBits(PRTCRKEY hKey,  PCRTASN1OBJID pAlgorithm,
+RTDECL(int)             RTCrKeyCreateFromPublicAlgorithmAndBits(PRTCRKEY phKey,  PCRTASN1OBJID pAlgorithm,
                                                                 PCRTASN1BITSTRING pPublicKey,
                                                                 PRTERRINFO pErrInfo, const char *pszErrorTag);
-RTDECL(int)             RTCrKeyCreateFromPemSection(PRTCRKEY hKey, uint32_t fFlags, struct RTCRPEMSECTION const *pSection,
+RTDECL(int)             RTCrKeyCreateFromPemSection(PRTCRKEY phKey, uint32_t fFlags, struct RTCRPEMSECTION const *pSection,
                                                     const char *pszPassword, PRTERRINFO pErrInfo, const char *pszErrorTag);
-RTDECL(int)             RTCrKeyCreateFromBuffer(PRTCRKEY hKey, uint32_t fFlags, void const *pvSrc, size_t cbSrc,
+RTDECL(int)             RTCrKeyCreateFromBuffer(PRTCRKEY phKey, uint32_t fFlags, void const *pvSrc, size_t cbSrc,
                                                 const char *pszPassword, PRTERRINFO pErrInfo, const char *pszErrorTag);
-RTDECL(int)             RTCrKeyCreateFromFile(PRTCRKEY hKey, uint32_t fFlags, const char *pszFilename,
+RTDECL(int)             RTCrKeyCreateFromFile(PRTCRKEY phKey, uint32_t fFlags, const char *pszFilename,
                                               const char *pszPassword, PRTERRINFO pErrInfo);
 /** @todo add support for decrypting private keys.  */
 /** @name RTCRKEYFROM_F_XXX
@@ -80,13 +80,17 @@ RTDECL(int)             RTCrKeyCreateFromFile(PRTCRKEY hKey, uint32_t fFlags, co
 #define RTCRKEYFROM_F_VALID_MASK                    UINT32_C(0x00000002)
 /** @} */
 
+RTDECL(int)             RTCrKeyCreateNewRsa(PRTCRKEY phKey, uint32_t cBits, uint32_t uPubExp, uint32_t fFlags);
+
+
 RTDECL(uint32_t)        RTCrKeyRetain(RTCRKEY hKey);
 RTDECL(uint32_t)        RTCrKeyRelease(RTCRKEY hKey);
 RTDECL(RTCRKEYTYPE)     RTCrKeyGetType(RTCRKEY hKey);
 RTDECL(bool)            RTCrKeyHasPrivatePart(RTCRKEY hKey);
 RTDECL(bool)            RTCrKeyHasPublicPart(RTCRKEY hKey);
 RTDECL(uint32_t)        RTCrKeyGetBitCount(RTCRKEY hKey);
-
+RTDECL(int)             RTCrKeyQueryRsaModulus(RTCRKEY hKey, PRTBIGNUM pModulus);
+RTDECL(int)             RTCrKeyQueryRsaPrivateExponent(RTCRKEY hKey, PRTBIGNUM pPrivateExponent);
 
 /** Public key markers. */
 extern RT_DECL_DATA_CONST(RTCRPEMMARKER const)  g_aRTCrKeyPublicMarkers[];

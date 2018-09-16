@@ -1021,6 +1021,8 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1TIME, RTDECL, RTAsn1GeneralizedTime, Asn1Co
  */
 RTDECL(int) RTAsn1Time_CompareWithTimeSpec(PCRTASN1TIME pLeft, PCRTTIMESPEC pTsRight);
 
+RTDECL(int) RTAsn1Time_InitEx(PRTASN1TIME pThis, uint32_t uTag, PCRTASN1ALLOCATORVTABLE pAllocator);
+
 /** @name Predicate macros for determing the exact type of RTASN1TIME.
  * @{ */
 /** True if UTC time. */
@@ -1150,6 +1152,9 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1BITSTRING, RTDECL, RTAsn1BitString, Asn1Cor
 RTDECL(int) RTAsn1BitString_DecodeAsn1Ex(PRTASN1CURSOR pCursor, uint32_t fFlags, uint32_t cMaxBits, PRTASN1BITSTRING pThis,
                                          const char *pszErrorTag);
 RTDECL(uint64_t) RTAsn1BitString_GetAsUInt64(PCRTASN1BITSTRING pThis);
+RTDECL(int) RTAsn1BitString_RefreshContent(PRTASN1BITSTRING pThis, uint32_t fFlags,
+                                           PCRTASN1ALLOCATORVTABLE pAllocator, PRTERRINFO pErrInfo);
+RTDECL(bool) RTAsn1BitString_AreContentBitsValid(PCRTASN1BITSTRING pThis, uint32_t fFlags);
 
 RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(RTASN1SEQOFBITSTRINGS, RTASN1BITSTRING, RTDECL, RTAsn1SeqOfBitStrings);
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFBITSTRINGS, RTASN1BITSTRING, RTDECL, RTAsn1SetOfBitStrings);
@@ -1181,7 +1186,9 @@ extern RTDATADECL(RTASN1COREVTABLE const) g_RTAsn1OctetString_Vtable;
 
 RTASN1TYPE_STANDARD_PROTOTYPES(RTASN1OCTETSTRING, RTDECL, RTAsn1OctetString, Asn1Core);
 
-RTDECL(int) RTAsn1OctetStringCompare(PCRTASN1OCTETSTRING pLeft, PCRTASN1OCTETSTRING pRight);
+RTDECL(bool) RTAsn1OctetString_AreContentBytesValid(PCRTASN1OCTETSTRING pThis, uint32_t fFlags);
+RTDECL(int) RTAsn1OctetString_RefreshContent(PRTASN1OCTETSTRING pThis, uint32_t fFlags,
+                                             PCRTASN1ALLOCATORVTABLE pAllocator, PRTERRINFO pErrInfo);
 
 RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(RTASN1SEQOFOCTETSTRINGS, RTASN1OCTETSTRING, RTDECL, RTAsn1SeqOfOctetStrings);
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFOCTETSTRINGS, RTASN1OCTETSTRING, RTDECL, RTAsn1SetOfOctetStrings);
@@ -1256,6 +1263,7 @@ RTDECL(int) RTAsn1String_InitEx(PRTASN1STRING pThis, uint32_t uTag, void const *
  *                              not.
  */
 RTDECL(int) RTAsn1String_CompareEx(PCRTASN1STRING pLeft, PCRTASN1STRING pRight, bool fTypeToo);
+RTDECL(int) RTAsn1String_CompareValues(PCRTASN1STRING pLeft, PCRTASN1STRING pRight);
 
 /**
  * Compares a ASN.1 string object with an UTF-8 string.
@@ -1691,6 +1699,7 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
                                               PRTERRINFO pErrInfo, PCRTASN1ALLOCATORVTABLE pAllocator, uint32_t fFlags,
                                               const char *pszErrorTag);
 
+RTDECL(int) RTAsn1CursorInitSub(PRTASN1CURSOR pParent, uint32_t cb, PRTASN1CURSOR pChild, const char *pszErrorTag);
 
 /**
  * Initialize a sub-cursor for traversing the content of an ASN.1 object.
