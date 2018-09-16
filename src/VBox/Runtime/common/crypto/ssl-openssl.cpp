@@ -93,6 +93,8 @@ RTDECL(int) RTCrSslCreate(PRTCRSSL phSsl, uint32_t fFlags)
     const SSL_METHOD *pSslMethod = TLS_method();
 # elif OPENSSL_VERSION_NUMBER >= 0x10002000
     const SSL_METHOD *pSslMethod = SSLv23_method();
+# elif OPENSSL_VERSION_NUMBER >= 0x10000000
+    const SSL_METHOD *pSslMethod = TLSv1_method();
 # else
     SSL_METHOD *pSslMethod = TLSv1_method();
 # endif
