@@ -28,19 +28,20 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include "internal/iprt.h"
-#include <iprt/crypto/ssl.h>
+# include "internal/iprt.h"
+# include <iprt/crypto/ssl.h>
 
-#include <iprt/asm.h>
-#include <iprt/assert.h>
-#include <iprt/file.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
+# include <iprt/asm.h>
+# include <iprt/assert.h>
+# include <iprt/file.h>
+# include <iprt/mem.h>
+# include <iprt/string.h>
 
-#include "internal/magics.h"
+# include "internal/magics.h"
 
-#include "internal/iprt-openssl.h"
-#include <openssl/ssl.h>
+# include "internal/iprt-openssl.h"
+# include <openssl/ssl.h>
+# include <openssl/tls1.h>
 
 
 /*********************************************************************************************************************************
@@ -85,7 +86,16 @@ RTDECL(int) RTCrSslCreate(PRTCRSSL phSsl, uint32_t fFlags)
     *phSsl = NIL_RTCRSSL;
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
 
-    const SSL_METHOD *pSslMethod = TLS_server_method();
+    /*
+     * We aim at TLSv1 or higher here by default.
+     */
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
+    const SSL_METHOD *pSslMethod = TLS_method();
+# elif OPENSSL_VERSION_NUMBER >= 0x10002000
+    const SSL_METHOD *pSslMethod = SSLv23_method();
+# else
+    SSL_METHOD *pSslMethod = TLSv1_method();
+# endif
     if (pSslMethod)
     {
         RTCRSSLINT *pThis = (RTCRSSLINT *)RTMemAllocZ(sizeof(*pThis));
@@ -94,6 +104,18 @@ RTDECL(int) RTCrSslCreate(PRTCRSSL phSsl, uint32_t fFlags)
             pThis->pCtx = SSL_CTX_new(pSslMethod);
             if (pThis->pCtx)
             {
+                /* Help with above aim. */
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
+                if (SSL_CTX_get_min_proto_version(pThis->pCtx) < TLS1_VERSION)
+                    SSL_CTX_set_min_proto_version(pThis->pCtx, TLS1_VERSION);
+# elif OPENSSL_VERSION_NUMBER >= 0x10002000
+                SSL_CTX_set_options(pThis->pCtx, SSL_OP_NO_SSLv2);
+                SSL_CTX_set_options(pThis->pCtx, SSL_OP_NO_SSLv3);
+# endif
+
+                /*
+                 * Complete the instance and return it.
+                 */
                 pThis->u32Magic = RTCRSSLINT_MAGIC;
                 pThis->cRefs    = 1;
 
@@ -240,7 +262,9 @@ RTDECL(int) RTCrSslCreateSessionForNativeSocket(RTCRSSL hSsl, RTHCINTPTR hNative
             pSession->pBio = BIO_new_socket(hNativeSocket, BIO_NOCLOSE);
             if (pSession->pBio)
             {
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
                 BIO_up_ref(pSession->pBio); /* our reference. */
+# endif
                 SSL_set_bio(pSession->pSsl, pSession->pBio, pSession->pBio);
 
                 /*
@@ -286,7 +310,9 @@ static int rtCrSslSessionDestroy(RTCRSSLSESSIONINT *pThis)
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTCRSSLSESSIONINT_MAGIC);
     SSL_free(pThis->pSsl);
     pThis->pSsl = NULL;
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
     BIO_free(pThis->pBio);
+# endif
     pThis->pBio = NULL;
     RTMemFree(pThis);
     return 0;
