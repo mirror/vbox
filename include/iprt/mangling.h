@@ -3139,6 +3139,7 @@
 # define RTCrKeyCreateFromPemSection                    RT_MANGLER(RTCrKeyCreateFromPemSection)
 # define RTCrKeyCreateFromPublicAlgorithmAndBits        RT_MANGLER(RTCrKeyCreateFromPublicAlgorithmAndBits)
 # define RTCrKeyCreateFromSubjectPublicKeyInfo          RT_MANGLER(RTCrKeyCreateFromSubjectPublicKeyInfo)
+# define RTCrKeyCreateNewRsa                            RT_MANGLER(RTCrKeyCreateNewRsa)
 # define RTCrKeyGetBitCount                             RT_MANGLER(RTCrKeyGetBitCount)
 # define RTCrKeyGetType                                 RT_MANGLER(RTCrKeyGetType)
 # define RTCrKeyHasPrivatePart                          RT_MANGLER(RTCrKeyHasPrivatePart)
