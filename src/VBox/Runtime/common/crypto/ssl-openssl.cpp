@@ -35,6 +35,7 @@
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/string.h>
 
 #include "internal/magics.h"
 
