@@ -1331,6 +1331,22 @@ ifdef VBOX_WITH_TESTSUITE
  VBOX_WITH_VALIDATIONKIT = $(VBOX_WITH_TESTSUITE)
 endif
 
+
+#
+# Derived indicators.
+#
+
+## Indicates that we need the extpack openssl libs.
+if   defined(VBOX_WITH_EXTPACK_PUEL_BUILD) \
+ && (   !defined(VRDP_WITH_IPRT_CRYPTO) \
+     || !defined(VRDP_WITH_IPRT_SSL) \
+     || !defined(VD_WITH_IPRT_CRYPTO) )
+ VBOX_NEED_EXTPACK_OPENSSL = 1
+else
+ VBOX_NEED_EXTPACK_OPENSSL =
+endif
+
+
 #
 # Mark OSE builds clearly, helps figuring out limitations more easily.
 #
@@ -5361,6 +5377,7 @@ TEMPLATE_VBOXR3AUTOTST  = VBox Ring 3 Testcase Exe
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3AUTOTST_EXTENDS = VBoxR3Static
  TEMPLATE_VBOXR3AUTOTST_LIBS    = $(NO_SUCH_VARIABLE)
+ TEMPLATE_VBOXR3AUTOTST_SDKS    = $(filter-out VBOX_OPENSSL,$(TEMPLATE_VBoxR3Static_SDKS))
 else
  TEMPLATE_VBOXR3AUTOTST_EXTENDS = VBOXR3EXE
 endif
@@ -6101,13 +6118,15 @@ ifdef VBOX_WITH_EXTPACK
 
   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl = For the ring-3 context modules in the PUEL extension pack using ExtPack OpenSSL.
   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_EXTENDS = VBoxR3ExtPackPuel
-  TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_INCS = \
-  	$(TEMPLATE_VBoxR3ExtPack_INCS) \
-  	$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-  TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_LIBS = \
-  	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
-  	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB) \
-  	$(TEMPLATE_VBoxR3ExtPack_LIBS) # Must come after the two libraries or we'll pick up SSL from VBoxRT!
+  ifdef VBOX_NEED_EXTPACK_OPENSSL
+   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_INCS = \
+   	$(TEMPLATE_VBoxR3ExtPack_INCS) \
+   	$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
+   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_LIBS = \
+   	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
+   	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB) \
+   	$(TEMPLATE_VBoxR3ExtPack_LIBS) # Must come after the two libraries or we'll pick up SSL from VBoxRT!
+  endif
 
   TEMPLATE_VBoxR0ExtPackPuel = For the ring-0 context modules in the PUEL extension pack.
   TEMPLATE_VBoxR0ExtPackPuel_EXTENDS = VBoxR0ExtPack
