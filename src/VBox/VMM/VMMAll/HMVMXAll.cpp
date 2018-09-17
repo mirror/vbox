@@ -564,19 +564,21 @@ static bool hmVmxIsStackSelectorOk(PCCPUMSELREG pSel)
                     ==                 (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P),
                     ("%#x\n", pSel->Attr.u), false);
 
-    /* DPL must equal RPL.
-       Note! This is also a hard requirement like above. */
-    AssertMsgReturn(pSel->Attr.n.u2Dpl == (pSel->Sel & X86_SEL_RPL),
-                    ("u2Dpl=%u Sel=%#x\n", pSel->Attr.n.u2Dpl, pSel->Sel), false);
-
     /*
-     * The following two requirements are VT-x specific:
-     *   - G bit must be set if any high limit bits are set.
-     *   - G bit must be clear if any low limit bits are clear.
+     * DPL must equal RPL. But in real mode or soon after enabling protected
+     * mode, it might not be.
      */
-    if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
-        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
-        return true;
+    if (pSel->Attr.n.u2Dpl == (pSel->Sel & X86_SEL_RPL))
+    {
+        /*
+         * The following two requirements are VT-x specific:
+         *   - G bit must be set if any high limit bits are set.
+         *   - G bit must be clear if any low limit bits are clear.
+         */
+        if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+            && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
+            return true;
+    }
     return false;
 }
 
