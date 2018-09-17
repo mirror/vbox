@@ -3262,6 +3262,18 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
         rc = VDWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, pvBuf, cbReqIo);
         if (RT_SUCCESS(rc))
             rc = VINF_VD_ASYNC_IO_FINISHED;
+
+#ifdef VBOX_PERIODIC_FLUSH
+        if (pThis->cbFlushInterval)
+        {
+            pThis->cbDataWritten += (uint32_t)cbReqIo;
+            if (pThis->cbDataWritten > pThis->cbFlushInterval)
+            {
+                pThis->cbDataWritten = 0;
+                VDFlush(pThis->pDisk);
+            }
+        }
+#endif /* VBOX_PERIODIC_FLUSH */
     }
 
     *pcbReqIo = cbReqIo;
@@ -3299,9 +3311,16 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     }
     else
     {
-        rc = VDFlush(pThis->pDisk);
-        if (RT_SUCCESS(rc))
+#ifdef VBOX_IGNORE_FLUSH
+        if (pThis->fIgnoreFlush)
             rc = VINF_VD_ASYNC_IO_FINISHED;
+        else
+#endif /* VBOX_IGNORE_FLUSH */
+        {
+            rc = VDFlush(pThis->pDisk);
+            if (RT_SUCCESS(rc))
+                rc = VINF_VD_ASYNC_IO_FINISHED;
+        }
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
