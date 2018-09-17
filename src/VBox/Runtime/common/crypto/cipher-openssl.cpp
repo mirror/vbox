@@ -227,19 +227,19 @@ RTDECL(int) RTCrCipherEncrypt(RTCRCIPHER hCipher, void const *pvKey, size_t cbKe
             /*
              * Do the encryption.
              */
-            int cbEncrypted = 0;
-            rcOssl = EVP_EncryptUpdate(pCipherCtx, (unsigned char *)pvEncrypted, &cbEncrypted,
+            int cbEncrypted1 = 0;
+            rcOssl = EVP_EncryptUpdate(pCipherCtx, (unsigned char *)pvEncrypted, &cbEncrypted1,
                                        (unsigned char const *)pvPlainText, (int)cbPlainText);
             if (rcOssl > 0)
             {
-                Assert(cbEncrypted <= (ssize_t)cbNeeded);
-                int cbEncryptedFinal = 0;
-                rcOssl = EVP_DecryptFinal(pCipherCtx, (unsigned char *)pvEncrypted + cbEncrypted, &cbEncryptedFinal);
+                Assert(cbEncrypted1 <= (ssize_t)cbNeeded);
+                int cbEncrypted2 = 0;
+                rcOssl = EVP_DecryptFinal(pCipherCtx, (unsigned char *)pvEncrypted + cbEncrypted1, &cbEncrypted1);
                 if (rcOssl > 0)
                 {
-                    Assert(cbEncryptedFinal + cbEncrypted == (ssize_t)cbNeeded);
+                    Assert(cbEncrypted1 + cbEncrypted2 == (ssize_t)cbNeeded);
                     if (pcbEncrypted)
-                        *pcbEncrypted = cbEncryptedFinal + cbEncrypted;
+                        *pcbEncrypted = cbEncrypted1 + cbEncrypted2;
                     rc = VINF_SUCCESS;
                 }
                 else
@@ -311,19 +311,19 @@ RTDECL(int) RTCrCipherDecrypt(RTCRCIPHER hCipher, void const *pvKey, size_t cbKe
             /*
              * Do the decryption.
              */
-            int cbDecrypted = 0;
-            rcOssl = EVP_DecryptUpdate(pCipherCtx, (unsigned char *)pvPlainText, &cbDecrypted,
+            int cbDecrypted1 = 0;
+            rcOssl = EVP_DecryptUpdate(pCipherCtx, (unsigned char *)pvPlainText, &cbDecrypted1,
                                        (unsigned char const *)pvEncrypted, (int)cbEncrypted);
             if (rcOssl > 0)
             {
-                Assert(cbDecrypted <= (ssize_t)cbNeeded);
-                int cbDecryptedFinal = 0;
-                rcOssl = EVP_DecryptFinal(pCipherCtx, (unsigned char *)pvPlainText + cbDecrypted, &cbDecryptedFinal);
+                Assert(cbDecrypted1 <= (ssize_t)cbNeeded);
+                int cbDecrypted2 = 0;
+                rcOssl = EVP_DecryptFinal(pCipherCtx, (unsigned char *)pvPlainText + cbDecrypted1, &cbDecrypted2);
                 if (rcOssl > 0)
                 {
-                    Assert(cbDecryptedFinal + cbDecrypted == (ssize_t)cbNeeded);
+                    Assert(cbDecrypted1 + cbDecrypted2 == (ssize_t)cbNeeded);
                     if (pcbPlainText)
-                        *pcbPlainText = cbDecryptedFinal + cbDecrypted;
+                        *pcbPlainText = cbDecrypted1 + cbDecrypted2;
                     rc = VINF_SUCCESS;
                 }
                 else
