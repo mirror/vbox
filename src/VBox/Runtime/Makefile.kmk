@@ -2344,7 +2344,7 @@ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/V
 endif
 
 
-if1of ($(KBUILD_TARGET),win) # remove later
+if1of ($(KBUILD_TARGET),win darwin) # remove later
 if1of (VBoxRT,$(DLLS))
  #
  # VBoxRTImpCheck - Import library check.
