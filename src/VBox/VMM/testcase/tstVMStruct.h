@@ -163,9 +163,10 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVmwriteBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.uInhibitRip);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);
-    /** @todo add rest of hwvirt fields when code is more
+    /** @todo NSTVMX: add rest of hwvirt fields when code is more
      *        finalized. */
     GEN_CHECK_OFF(CPUMCTX, pXStateR0);
     GEN_CHECK_OFF(CPUMCTX, pXStateR3);

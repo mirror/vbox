@@ -4069,6 +4069,111 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
 
 
 /**
+ * Loads the guest-state non-register state as part of VM-entry.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ *
+ * @remarks This must be called only after loading the nested-guest register state
+ *          (especially nested-guest RIP).
+ */
+IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
+{
+    /*
+     * Load guest non-register state.
+     * See Intel spec. 26.6 "Special Features of VM Entry"
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    uint32_t const uEntryIntInfo = pVmcs->u32EntryIntInfo;
+    if (VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
+    {
+        /** @todo NSTVMX: Pending debug exceptions. */
+        Assert(!(pVmcs->u64GuestPendingDbgXcpt.u));
+
+        if (pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
+        {
+            /** @todo NSTVMX: Virtual-NMIs doesn't affect NMI blocking in the normal sense.
+             *        We probably need a different force flag for virtual-NMI
+             *        pending/blocking. */
+            Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI));
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+        else if (   pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_STI
+                 || pVmcs->u32GuestIntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)
+        {
+            EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
+        }
+
+        /* SMI blocking is irrelevant. We don't support SMIs yet. */
+    }
+
+    /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
+
+    /* VPID is irrelevant. We don't support VPID yet. */
+
+    /* Clear address-range monitoring. */
+    EMMonitorWaitClear(pVCpu);
+}
+
+
+/**
+ * Saves the guest force-flags in prepartion of entering the nested-guest.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
+{
+    /* Assert that we are not called multiple times during VM-entry. */
+    Assert(pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions == 0);
+
+    /*
+     * Preserve the required force-flags.
+     *
+     * We only preserve the force-flags that would affect the execution of the
+     * nested-guest (or the guest).
+     *
+     *   - VMCPU_FF_INHIBIT_INTERRUPTS and RIP needs be preserved as there is no
+     *     implicit Global Interrupt Flag (GIF) handling as with AMD-V's VMRUN
+     *     instruction and the interrupt inhibition is in effect until the
+     *     completion of this VMLAUNCH/VMRESUME instruction.
+     *
+     *   - VMCPU_FF_BLOCK_NMIS needs to be preserved as it blocks NMI until the
+     *     execution of a subsequent IRET instruction in the guest.
+     *
+     *   - MTF needs to be preserved as it's for a single instruction boundary
+     *     which follows the return from VMLAUNCH/VMRESUME instruction.
+     *
+     * The remaining FFs (e.g. timers) can stay in place so that we will be able to
+     * generate interrupts that should cause #VMEXITs for the nested-guest.
+     */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        pVCpu->cpum.GstCtx.hwvirt.uInhibitRip = EMGetInhibitInterruptsPC(pVCpu);
+
+    uint32_t const fGuestFFMask = VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS | VMCPU_FF_MTF;
+    pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & fGuestFFMask;
+    VMCPU_FF_CLEAR(pVCpu, fGuestFFMask);
+}
+
+
+#if 0
+/**
+ * Restores the guest force-flags in prepartion of exiting the nested-guest.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmexitRestoreForceFlags(PVMCPU pVCpu)
+{
+    if (pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions)
+    {
+        VMCPU_FF_SET(pVCpu, pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions);
+        pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = 0;
+    }
+}
+#endif
+
+
+/**
  * Loads the guest-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -4095,13 +4200,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
     pVCpu->cpum.GstCtx.rip      = pVmcs->u64GuestRip.u;
     pVCpu->cpum.GstCtx.rflags.u = pVmcs->u64GuestRFlags.u;
 
-    /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
-
-    /* Nothing to do for VPID. */
-
-    /* Clear address-range monitoring. */
-    EMMonitorWaitClear(pVCpu);
+    /* Load guest non-register state. */
+    iemVmxVmentryLoadGuestNonRegState(pVCpu);
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
@@ -4124,6 +4224,14 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
     uint32_t const uEntryIntInfo = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryIntInfo;
     if (VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
     {
+        /*
+         * The event that is going to be made pending for injection is not subject to VMX intercepts,
+         * thus we flag ignoring of intercepts. However, recursive exceptions if any during delivery
+         * of the current event -are- subject to intercepts, hence this flag will be flipped during
+         * the actually delivery of this event.
+         */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = false;
+
         uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
         if (uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
         {
@@ -4132,10 +4240,6 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
             return VINF_SUCCESS;
         }
 
-        /** @todo NSTVMX: Is it safe to update IDT-vectoring information in the VMCS
-         *        here? */
-
-        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = false;
         int rc = HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
                                                   pVCpu->cpum.GstCtx.cr2);
         AssertRCReturn(rc, rc);
@@ -4297,6 +4401,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                 rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
                 if (RT_SUCCESS(rc))
                 {
+                    /* Save the (outer) guest force-flags as VM-exits can occur from this point on. */
+                    iemVmxVmentrySaveForceFlags(pVCpu);
+
                     /* Check guest-state fields. */
                     rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
                     if (RT_SUCCESS(rc))
@@ -4341,7 +4448,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 iemRegAddToRipAndClearRF(pVCpu, cbInstr);
                                 return VINF_SUCCESS;
                             }
-
                             /** @todo NSTVMX: VMExit with VMX_EXIT_ERR_MSR_LOAD and set
                              *        VMX_BF_EXIT_REASON_ENTRY_FAILED. */
                         }

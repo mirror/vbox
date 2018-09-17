@@ -2439,6 +2439,10 @@ typedef uint8_t VMXINSTRID;
 #define VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(a)           (((a) >> 11) & 1)
 #define VMX_IDT_VECTORING_INFO_IS_VALID(a)                      (((a) >> 31) & 1)
 
+/** Construct an IDT-vectoring information field from an VM-entry interruption
+ *  information field (same except that bit 12 is reserved). */
+#define VMX_EXIT_IDT_INFO_FROM_ENTRY_INT_INFO(a)                ((a) & ~RT_BIT(12))
+
 /** Bit fields for IDT-vectoring information. */
 /** The IDT-vectoring info vector. */
 #define VMX_BF_IDT_VECTORING_INFO_VECTOR_SHIFT                  0
@@ -2794,6 +2798,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 
 /** @name Format of Pending-Debug-Exceptions.
  * Bits 4-11, 13, 15 and 17-63 are reserved.
+ * Similar to DR6 except bit 12 (breakpoint enabled) and bit 16 (RTM) are both
+ * possibly valid here but not in DR6.
  * @{
  */
 /** Hardware breakpoint 0 was met. */
