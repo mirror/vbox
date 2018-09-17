@@ -300,15 +300,15 @@ void UIToolPaneMachine::retranslateUi()
         QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Details);
         m_pPaneDesktop->addToolDescription(pAction1,
                                            tr("Tool to observe virtual machine (VM) details. "
-                                              "Reflects groups of <u>properties</u> for the currently chosen VM and allows "
+                                              "Reflects groups of properties for the currently chosen VM and allows "
                                               "basic operations on certain properties (like the machine storage devices)."));
         QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots);
         m_pPaneDesktop->addToolDescription(pAction2,
                                            tr("Tool to control virtual machine (VM) snapshots. "
-                                              "Reflects <u>snapshots</u> created for the currently selected VM and allows "
-                                              "snapshot operations like <u>create</u>, <u>remove</u>, "
-                                              "<u>restore</u> (make current) and observe their properties. Allows to "
-                                              "<u>edit</u> snapshot attributes like <u>name</u> and <u>description</u>."));
+                                              "Reflects snapshots created for the currently selected VM and allows "
+                                              "snapshot operations like create, remove, "
+                                              "restore (make current) and observe their properties. Allows to "
+                                              "edit snapshot attributes like name and description."));
         QAction *pAction3 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer);
         m_pPaneDesktop->addToolDescription(pAction3,
                                            tr("Tool to display  virtual machine (VM) logs. "));

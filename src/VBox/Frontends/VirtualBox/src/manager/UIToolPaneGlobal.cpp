@@ -211,20 +211,20 @@ void UIToolPaneGlobal::retranslateUi()
     QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
     m_pPaneDesktop->addToolDescription(pAction1,
                                        tr("Tool to observe virtual storage media. "
-                                          "Reflects all the chains of <u>virtual disks</u> you have registered "
+                                          "Reflects all the chains of virtual disks you have registered "
                                           "(per each storage type) within your virtual machines and allows for media "
-                                          "operations like <u>copy</u>, <u>remove</u>, <u>release</u> "
+                                          "operations like copy, remove, release "
                                           "(detach it from VMs where it is currently attached to) and observe their properties. "
-                                          "Allows to <u>edit</u> medium attributes like <u>type</u>, "
-                                          "<u>location/name</u>, <u>description</u> and <u>size</u> (for dynamical storages "
+                                          "Allows to edit medium attributes like type, "
+                                          "location/name, description and size (for dynamical storages "
                                           "only)."));
     QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
     m_pPaneDesktop->addToolDescription(pAction2,
                                        tr("Tool to control host-only network interfaces. "
-                                          "Reflects <u>host-only networks</u>, their DHCP servers and allows "
-                                          "for operations on the networks like possibility to <u>create</u>, <u>remove</u> "
-                                          "and observe their properties. Allows to <u>edit</u> various "
-                                          "<u>attributes</u> for host-only interface and corresponding DHCP server."));
+                                          "Reflects host-only networks, their DHCP servers and allows "
+                                          "for operations on the networks like possibility to create, remove "
+                                          "and observe their properties. Allows to edit various "
+                                          "attributes for host-only interface and corresponding DHCP server."));
 }
 
 void UIToolPaneGlobal::prepare()
