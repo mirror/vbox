@@ -694,40 +694,46 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
     /* Save painter: */
     pPainter->save();
 
-    /* Prepare color: */
+    /* Prepare variables: */
     const QPalette pal = palette();
 
     /* Selection background: */
     if (model()->currentItem() == this)
     {
         /* Prepare color: */
-        const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        const QColor backgroundColor = isEnabled()
+                                     ? pal.color(QPalette::Active, QPalette::Highlight)
+                                     : pal.color(QPalette::Disabled, QPalette::Midlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightnessMax));
-        bgGrad.setColorAt(1, highlight.lighter(m_iHighlightLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHighlightLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
     }
     /* Hovering background: */
     else if (isHovered())
     {
         /* Prepare color: */
-        const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        const QColor backgroundColor = isEnabled()
+                                     ? pal.color(QPalette::Active, QPalette::Highlight)
+                                     : pal.color(QPalette::Disabled, QPalette::Midlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHoverLightnessMax));
-        bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
     }
     /* Default background: */
     else
     {
         /* Prepare color: */
-        const QColor usual = pal.color(QPalette::Active, QPalette::Mid);
+        const QColor backgroundColor = isEnabled()
+                                     ? pal.color(QPalette::Active, QPalette::Mid)
+                                     : pal.color(QPalette::Disabled, QPalette::Midlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, usual.lighter(m_iHoverLightnessMax));
-        bgGrad.setColorAt(1, usual.lighter(m_iHoverLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
     }
 
@@ -768,24 +774,40 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
     const int iFullHeight = rectangle.height();
     const int iMargin = data(ToolsItemData_Margin).toInt();
     const int iSpacing = data(ToolsItemData_Spacing).toInt();
+    const QPalette pal = palette();
 
     /* Selected item foreground: */
     if (model()->currentItem() == this)
     {
-        QPalette pal = palette();
-        pPainter->setPen(pal.color(QPalette::HighlightedText));
+        const QColor textColor = isEnabled()
+                               ? pal.color(QPalette::Active, QPalette::HighlightedText)
+                               : pal.color(QPalette::Disabled, QPalette::Text);
+        pPainter->setPen(textColor);
     }
     /* Hovered item foreground: */
     else if (isHovered())
     {
         /* Prepare color: */
-        QPalette pal = palette();
-        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
-        QColor hhl = highlight.lighter(m_iHoverLightnessMax);
-        if (hhl.value() - hhl.saturation() > 0)
-            pPainter->setPen(pal.color(QPalette::Active, QPalette::Text));
+        QColor defaultHighlighted = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor hoveredHighlighted = defaultHighlighted.lighter(m_iHoverLightnessMax);
+        QColor textColor;
+        if (hoveredHighlighted.value() - hoveredHighlighted.saturation() > 0)
+            textColor = isEnabled()
+                      ? pal.color(QPalette::Active, QPalette::Text)
+                      : pal.color(QPalette::Disabled, QPalette::Text);
         else
-            pPainter->setPen(pal.color(QPalette::Active, QPalette::HighlightedText));
+            textColor = isEnabled()
+                      ? pal.color(QPalette::Active, QPalette::HighlightedText)
+                      : pal.color(QPalette::Disabled, QPalette::Text);
+        pPainter->setPen(textColor);
+    }
+    /* Default item foreground: */
+    else
+    {
+        const QColor textColor = isEnabled()
+                               ? pal.color(QPalette::Active, QPalette::Text)
+                               : pal.color(QPalette::Disabled, QPalette::Text);
+        pPainter->setPen(textColor);
     }
 
     /* Paint left column: */
