@@ -413,6 +413,8 @@ RuntimeR3_SOURCES       = \
 	common/crypto/store.cpp \
 	common/crypto/store-inmem.cpp \
 	common/crypto/store-cert-add-basic.cpp \
+	common/crypto/RTCrPkcs5Pbkdf2Hmac-openssl.cpp \
+	common/crypto/RTCrRandBytes-openssl.cpp \
 	common/crypto/RTCrStoreCertAddFromJavaKeyStore.cpp \
 	common/crypto/RTCrStoreCertAddWantedFromFishingExpedition.cpp \
 	common/crypto/RTCrStoreCertExportAsPem.cpp \

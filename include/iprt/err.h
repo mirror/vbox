@@ -2824,10 +2824,18 @@ RT_C_DECLS_END
 #define VINF_CR_DIGEST_SEVERELY_COMPROMISED         (24204)
 /** Severely compromised digest. */
 #define VERR_CR_DIGEST_SEVERELY_COMPROMISED         (-24204)
+/** Specified digest not supported in this context. */
+#define VERR_CR_DIGEST_NOT_SUPPORTED                (-24205)
 /** @} */
 
 /** @name RTCr misc status codes.
  * @{ */
+/** Failed to derivate key from password. */
+#define VERR_CR_PASSWORD_2_KEY_DERIVIATION_FAILED   (-24396)
+/** Failed getting cryptographically strong random bytes. */
+#define VERR_CR_RANDOM_SETUP_FAILED                 (-24397)
+/** Failed getting cryptographically strong random bytes. */
+#define VERR_CR_RANDOM_FAILED                       (-24398)
 /** Malformed or failed to parse PEM formatted data. */
 #define VERR_CR_MALFORMED_PEM_HEADER                (-24399)
 /** @} */

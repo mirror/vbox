@@ -86,6 +86,8 @@ RTDECL(int) RTCrSslCreate(PRTCRSSL phSsl, uint32_t fFlags)
     *phSsl = NIL_RTCRSSL;
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
 
+    SSL_library_init();
+
     /*
      * We aim at TLSv1 or higher here by default.
      */
