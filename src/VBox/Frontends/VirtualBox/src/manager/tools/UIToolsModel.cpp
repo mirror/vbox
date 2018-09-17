@@ -137,6 +137,20 @@ UIToolsType UIToolsModel::toolsType() const
     return currentItem()->itemType();
 }
 
+void UIToolsModel::setToolsEnabled(UIToolsClass enmClass, bool fEnabled)
+{
+    /* Update linked values: */
+    m_statesToolsEnabled[enmClass] = fEnabled;
+    foreach (UIToolsItem *pItem, items())
+        if (pItem->itemClass() == enmClass)
+            pItem->setEnabled(m_statesToolsEnabled.value(enmClass));
+}
+
+bool UIToolsModel::areToolsEnabled(UIToolsClass enmClass) const
+{
+    return m_statesToolsEnabled.value(enmClass);
+}
+
 void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
 {
     /* Is there something changed? */
@@ -327,6 +341,10 @@ bool UIToolsModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     if (scene()->focusItem())
         return QObject::eventFilter(pWatched, pEvent);
 
+    /* Do not handle disabled items: */
+    if (!currentItem()->isEnabled())
+        return QObject::eventFilter(pWatched, pEvent);
+
     /* Checking event-type: */
     switch (pEvent->type())
     {
@@ -374,6 +392,10 @@ void UIToolsModel::prepareScene()
 
 void UIToolsModel::prepareItems()
 {
+    /* Enable all classes of tools initially: */
+    m_statesToolsEnabled[UIToolsClass_Global] = true;
+    m_statesToolsEnabled[UIToolsClass_Machine] = true;
+
     /* Prepare classes: */
     QList<UIToolsClass> classes;
     classes << UIToolsClass_Global;

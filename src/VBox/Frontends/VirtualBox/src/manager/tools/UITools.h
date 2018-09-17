@@ -96,6 +96,11 @@ public:
         UIToolsClass toolsClass() const;
         /** Returns current tools type. */
         UIToolsType toolsType() const;
+
+        /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
+        void setToolsEnabled(UIToolsClass enmClass, bool fEnabled);
+        /** Returns whether certain class of tools is enabled.*/
+        bool areToolsEnabled(UIToolsClass enmClass) const;
     /** @} */
 
     /** @name Current item stuff.

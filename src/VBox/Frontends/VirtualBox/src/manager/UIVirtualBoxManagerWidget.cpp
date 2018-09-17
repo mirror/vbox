@@ -243,9 +243,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
         /* Update Tools-pane: */
         m_pPaneToolsMachine->setCurrentItem(pItem);
 
-        /// @todo implement!
-        /* Update Machine tab-bar availability: */
-        //m_pToolbarTools->setTabBarEnabledMachine(pItem && pItem->accessible());
+        /* Update Machine Tools availability: */
+        m_pPaneTools->setToolsEnabled(UIToolsClass_Machine, pItem && pItem->accessible());
 
         /* If current item exists & accessible: */
         if (pItem && pItem->accessible())
@@ -320,11 +319,16 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
         case UIToolsClass_Global:
         {
             ToolTypeGlobal enmType = ToolTypeGlobal_Invalid;
-            switch (m_pPaneTools->toolsType())
+            if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Global))
+                enmType = ToolTypeGlobal_Desktop;
+            else
             {
-                case UIToolsType_Media:   enmType = ToolTypeGlobal_VirtualMedia; break;
-                case UIToolsType_Network: enmType = ToolTypeGlobal_HostNetwork; break;
-                default: break;
+                switch (m_pPaneTools->toolsType())
+                {
+                    case UIToolsType_Media:   enmType = ToolTypeGlobal_VirtualMedia; break;
+                    case UIToolsType_Network: enmType = ToolTypeGlobal_HostNetwork; break;
+                    default: break;
+                }
             }
             if (enmType != ToolTypeGlobal_Invalid)
                 switchToTool(enmType);
@@ -333,12 +337,17 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
         case UIToolsClass_Machine:
         {
             ToolTypeMachine enmType = ToolTypeMachine_Invalid;
-            switch (m_pPaneTools->toolsType())
+            if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Machine))
+                enmType = ToolTypeMachine_Desktop;
+            else
             {
-                case UIToolsType_Details:   enmType = ToolTypeMachine_Details; break;
-                case UIToolsType_Snapshots: enmType = ToolTypeMachine_Snapshots; break;
-                case UIToolsType_Logs:      enmType = ToolTypeMachine_LogViewer; break;
-                default: break;
+                switch (m_pPaneTools->toolsType())
+                {
+                    case UIToolsType_Details:   enmType = ToolTypeMachine_Details; break;
+                    case UIToolsType_Snapshots: enmType = ToolTypeMachine_Snapshots; break;
+                    case UIToolsType_Logs:      enmType = ToolTypeMachine_LogViewer; break;
+                    default: break;
+                }
             }
             if (enmType != ToolTypeMachine_Invalid)
                 switchToTool(enmType);

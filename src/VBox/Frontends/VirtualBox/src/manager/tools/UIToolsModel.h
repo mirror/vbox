@@ -102,6 +102,11 @@ public:
         UIToolsClass toolsClass() const;
         /** Returns current tools type. */
         UIToolsType toolsType() const;
+
+        /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
+        void setToolsEnabled(UIToolsClass enmClass, bool fEnabled);
+        /** Returns whether certain class of tools is enabled.*/
+        bool areToolsEnabled(UIToolsClass enmClass) const;
     /** @} */
 
     /** @name Children stuff.
@@ -231,6 +236,9 @@ private:
 
         /** Holds current tools class. */
         UIToolsClass  m_enmCurrentClass;
+
+        /** Holds whether tools of particular class are enabled. */
+        QMap<UIToolsClass, bool>  m_statesToolsEnabled;
     /** @} */
 
     /** @name Children stuff.
