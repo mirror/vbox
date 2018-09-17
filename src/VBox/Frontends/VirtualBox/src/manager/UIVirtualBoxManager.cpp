@@ -309,14 +309,9 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 
 void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>() */)
 {
-    /* If passed list is empty: */
+    /* If passed list is empty, we take the one from VBoxGlobal: */
     if (list.isEmpty())
-    {
-        /* We take the one which stored in VBoxGlobal: */
-        list = vboxGlobal().argUrlList();
-        vboxGlobal().argUrlList().clear();
-        /// @todo Rework this getter to do .clear() as well.
-    }
+        list = vboxGlobal().takeArgumentUrls();
 
     /* Check if we are can handle the dropped urls: */
     for (int i = 0; i < list.size(); ++i)

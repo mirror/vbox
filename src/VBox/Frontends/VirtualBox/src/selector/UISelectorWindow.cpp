@@ -363,11 +363,10 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
     /// @todo What? So dangerous method for so cheap purpose?
     qApp->processEvents();
 
+    /* If passed list is empty, we take the one from VBoxGlobal: */
     if (list.isEmpty())
-    {
-        list = vboxGlobal().argUrlList();
-        vboxGlobal().argUrlList().clear();
-    }
+        list = vboxGlobal().takeArgumentUrls();
+
     /* Check if we are can handle the dropped urls. */
     for (int i = 0; i < list.size(); ++i)
     {

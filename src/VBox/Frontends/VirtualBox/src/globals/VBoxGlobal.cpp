@@ -529,6 +529,13 @@ bool VBoxGlobal::processArgs()
     return fResult;
 }
 
+QList<QUrl> VBoxGlobal::takeArgumentUrls()
+{
+    const QList<QUrl> result = m_listArgUrls;
+    m_listArgUrls.clear();
+    return result;
+}
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
 
 bool VBoxGlobal::isDebuggerEnabled() const

@@ -201,8 +201,8 @@ public:
         /** Process application args. */
         bool processArgs();
 
-        /** Returns the URL arguments list. */
-        QList<QUrl> &argUrlList() { return m_listArgUrls; }
+        /** Takes and returns the URL argument list while clearing the source. */
+        QList<QUrl> takeArgumentUrls();
 
         /** Returns the --startvm option value (managed VM id). */
         QString managedVMUuid() const { return m_strManagedVMId; }
