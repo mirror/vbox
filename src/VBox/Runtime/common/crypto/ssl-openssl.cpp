@@ -22,8 +22,8 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+#ifdef IPRT_WITH_OPENSSL /* whole file */
 
-#ifdef IPRT_WITH_OPENSSL
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
