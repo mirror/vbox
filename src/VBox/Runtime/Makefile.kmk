@@ -2344,6 +2344,37 @@ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def VBox/V
 endif
 
 
+if1of ($(KBUILD_TARGET),win) # remove later
+if1of (VBoxRT,$(DLLS))
+ #
+ # VBoxRTImpCheck - Import library check.
+ #
+ PROGRAMS += VBoxRTStableCheck
+ VBoxRTStableCheck_TEMPLATE = VBOXR3TSTEXE
+ VBoxRTStableCheck_SOURCES  = \
+ 	VBox/VBoxRTStableCheck.cpp \
+ 	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
+ VBoxRTStableCheck_LIBS = \
+ 	$(LIB_RUNTIME)
+ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def $(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def $(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def | $$(dir $$@)
+ else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
+$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def $(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def $(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
+ else
+$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def $(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
+ endif
+	$(APPEND) -tn "$@" '%include "iprt/asmdefs.mac"' ''
+	$(SED) --append "$@" \
+       	-e "/not-$(KBUILD_TARGET)/d" \
+       	$(if-expr "$(KBUILD_TARGET)" == "linux" ,, -e "/only-linux/d") \
+       	$(if-expr "$(KBUILD_TARGET)" == "win"   ,, -e "/only-win/d") \
+       	$(if-expr "$(KBUILD_TARGET)" == "darwin",, -e "/only-darwin/d") \
+		-f $(PATH_ROOT)/src/VBox/Runtime/VBox/DefToAsmExterns.sed \
+		$(filter %.def, $^)
+endif
+endif # remove later
+
+
 #
 # RuntimeR3NoCRTGCC - CRT replacement lib for VBoxREM.
 # This is used together with VBoxRT.

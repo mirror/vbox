@@ -779,7 +779,7 @@ EXPORTS
     RTCrCipherEncrypt
     RTCrCipherGetBlockSize
     RTCrCipherGetInitializationVectorLength
-    RTCrCipherGetKeyVectorLength
+    RTCrCipherGetKeyLength
     RTCrCipherOpenByType
     RTCrCipherRetain
     RTCrCipherRelease
@@ -917,9 +917,10 @@ EXPORTS
     RTDbgLineDup
     RTDbgLineFree
     RTDbgModCreate
-    RTDbgModCreateDeferred
     RTDbgModCreateFromImage
     RTDbgModCreateFromMap
+    RTDbgModCreateFromPeImage
+    RTDbgModCreateFromMachOImage
     RTDbgModGetTag
     RTDbgModImageSize
     RTDbgModLineAdd
@@ -1021,7 +1022,7 @@ EXPORTS
     RTFileGetMaxSize
     RTFileGetMaxSizeEx
     RTFileGetSize
-    RTFileIoCtl
+    RTFileIoCtl             ; not-win
     RTFileIsValid
     RTFileLock
     RTFileMove
@@ -1167,23 +1168,23 @@ EXPORTS
     RTLdrOpenkLdr
     RTLdrRelocate
     RTLdrSize
-    RTLinuxFindDevicePath
-    RTLinuxFindDevicePathV
-    RTLinuxSysFsClose
-    RTLinuxSysFsExists
-    RTLinuxSysFsExistsV
-    RTLinuxSysFsGetLinkDest
-    RTLinuxSysFsGetLinkDestV
-    RTLinuxSysFsOpen
-    RTLinuxSysFsOpenV
-    RTLinuxSysFsReadDevNumFile
-    RTLinuxSysFsReadDevNumFileV
-    RTLinuxSysFsReadFile
-    RTLinuxSysFsReadIntFile
-    RTLinuxSysFsReadIntFileV
-    RTLinuxSysFsReadStr
-    RTLinuxSysFsReadStrFile
-    RTLinuxSysFsReadStrFileV
+    RTLinuxFindDevicePath               ; only-linux
+    RTLinuxFindDevicePathV              ; only-linux
+    RTLinuxSysFsClose                   ; only-linux
+    RTLinuxSysFsExists                  ; only-linux
+    RTLinuxSysFsExistsV                 ; only-linux
+    RTLinuxSysFsGetLinkDest             ; only-linux
+    RTLinuxSysFsGetLinkDestV            ; only-linux
+    RTLinuxSysFsOpen                    ; only-linux
+    RTLinuxSysFsOpenV                   ; only-linux
+    RTLinuxSysFsReadDevNumFile          ; only-linux
+    RTLinuxSysFsReadDevNumFileV         ; only-linux
+    RTLinuxSysFsReadFile                ; only-linux
+    RTLinuxSysFsReadIntFile             ; only-linux
+    RTLinuxSysFsReadIntFileV            ; only-linux
+    RTLinuxSysFsReadStr                 ; only-linux
+    RTLinuxSysFsReadStrFile             ; only-linux
+    RTLinuxSysFsReadStrFileV            ; only-linux
     RTLockValidatorClassAddPriorClass
     RTLockValidatorClassCreate
     RTLockValidatorClassCreateEx
@@ -1244,7 +1245,7 @@ EXPORTS
     RTLogCloneRC
     RTLogComPrintf
     RTLogComPrintfV
-    RTLogCopyGroupsAndFlags
+    RTLogCopyGroupsAndFlagsForR0
     RTLogCreate
     RTLogCreateEx
     RTLogCreateExV
@@ -1354,9 +1355,6 @@ EXPORTS
     RTMemExecAllocTag
     RTMemExecFree
     RTMemFree
-    RTMemLockedAllocTag
-    RTMemLockedAllocZTag
-    RTMemLockedFree
     RTMemPageAllocTag
     RTMemPageAllocZTag
     RTMemPageFree
@@ -1430,7 +1428,6 @@ EXPORTS
     RTNetIPv6PseudoChecksumEx
     RTNetTCPChecksum
     RTNetUDPChecksum
-    RTOnce
     RTOnceReset
     RTOnceSlow
     RTPathAbs
@@ -1453,8 +1450,8 @@ EXPORTS
     RTPathFilename
     RTPathGetCurrent
     RTPathGetMode
-    RTPathHavePath
-    RTPathHaveSuffix
+    RTPathHasPath
+    RTPathHasSuffix
     RTPathJoin
     RTPathJoinA
     RTPathJoinEx
@@ -1465,7 +1462,7 @@ EXPORTS
     RTPathRealDup
     RTPathRename
     RTPathSetCurrent
-    RTPathSetMode                   ; not-win
+    RTPathSetMode
     RTPathSetOwner                  ; not-win
     RTPathSetOwnerEx                ; not-win
     RTPathSetTimes
@@ -1504,7 +1501,7 @@ EXPORTS
     RTProcCreate
     RTProcCreateEx
     RTProcDaemonize
-    RTProcDaemonizeUsingFork
+    RTProcDaemonizeUsingFork        ; not-win not-os2
     RTProcGetAffinityMask
     RTProcGetExecutablePath
     RTProcGetPriority
@@ -1856,32 +1853,13 @@ EXPORTS
     RTSystemQueryOSInfo
     RTSystemQueryTotalRam
     RTTarClose
-    RTTarCreate
-    RTTarCurrentFile
-    RTTarExtractAll
-    RTTarExtractFileToBuf
-    RTTarExtractFiles
     RTTarFileClose
-    RTTarFileExists
-    RTTarFileGetMode
-    RTTarFileGetOwner
     RTTarFileGetSize
-    RTTarFileGetTime
     RTTarFileOpen
-    RTTarFileOpenCurrentFile
-    RTTarFileRead
     RTTarFileReadAt
-    RTTarFileSeek
-    RTTarFileSetMode
-    RTTarFileSetOwner
     RTTarFileSetSize
-    RTTarFileSetTime
-    RTTarFileTell
-    RTTarFileWrite
     RTTarFileWriteAt
-    RTTarList
     RTTarOpen
-    RTTarSeekNextFile
     RTTcpClientClose
     RTTcpClientCloseEx
     RTTcpClientConnect
@@ -2036,17 +2014,17 @@ EXPORTS
     RTTimeSystemMilliTS
     RTTimeSystemNanoTS
     RTTimeToString
-    RTTimerChangeInterval
+    ;RTTimerChangeInterval  - missing on windows
     RTTimerCreate
-    RTTimerCreateEx
+    ;RTTimerCreateEx        - missing on windows
     RTTimerDestroy
     RTTimerLRCreate
     RTTimerLRCreateEx
     RTTimerLRDestroy
     RTTimerLRStart
     RTTimerLRStop
-    RTTimerStart
-    RTTimerStop
+    ;RTTimerStart           - missing on windows
+    ;RTTimerStop            - missing on windows
     RTTlsAlloc
     RTTlsAllocEx
     RTTlsFree

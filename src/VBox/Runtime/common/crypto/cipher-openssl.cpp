@@ -157,7 +157,7 @@ RTDECL(uint32_t) RTCrCipherGetKeyLength(RTCRCIPHER hCipher)
 }
 
 
-RTDECL(uint32_t) RTCrCipherGetInitialVectorLength(RTCRCIPHER hCipher)
+RTDECL(uint32_t) RTCrCipherGetInitializationVectorLength(RTCRCIPHER hCipher)
 {
     RTCRCIPHERINT *pThis = hCipher;
     AssertPtrReturn(pThis, 0);
