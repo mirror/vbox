@@ -3272,6 +3272,29 @@ RT_C_DECLS_END
 #define VERR_REST_INTERNAL_ERROR_9                      (-25799)
 /** @} */
 
+
+/** @name RTCrCipher status codes
+ * @{ */
+/** Unsupported cipher. */
+#define VERR_CR_CIPHER_NOT_SUPPORTED                            (-25800)
+/** EVP_EncryptInit failed. */
+#define VERR_CR_CIPHER_OSSL_ENCRYPT_INIT_FAILED                 (-25801)
+/** EVP_EncryptUpdate failed. */
+#define VERR_CR_CIPHER_OSSL_ENCRYPT_UPDATE_FAILED               (-25802)
+/** EVP_EncryptFinal failed. */
+#define VERR_CR_CIPHER_OSSL_ENCRYPT_FINAL_FAILED                (-25803)
+/** EVP_DecryptInit failed. */
+#define VERR_CR_CIPHER_OSSL_DECRYPT_INIT_FAILED                 (-25804)
+/** EVP_DecryptUpdate failed. */
+#define VERR_CR_CIPHER_OSSL_DECRYPT_UPDATE_FAILED               (-25805)
+/** EVP_DecryptFinal failed. */
+#define VERR_CR_CIPHER_OSSL_DECRYPT_FINAL_FAILED                (-25806)
+/** Invalid key length. */
+#define VERR_CR_CIPHER_INVALID_KEY_LENGTH                       (-25807)
+/** Invalid initialization vector length. */
+#define VERR_CR_CIPHER_INVALID_INITIALIZATION_VECTOR_LENGTH     (-25808)
+/** @} */
+
 /* SED-END */
 
 /** @} */

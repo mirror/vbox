@@ -365,6 +365,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/sha512str.cpp \
 	common/checksum/sha512t224str.cpp \
 	common/checksum/sha512t256str.cpp \
+	common/crypto/cipher-openssl.cpp \
 	common/crypto/digest-core.cpp \
 	common/crypto/digest-builtin.cpp \
 	common/crypto/digest-vfs.cpp \

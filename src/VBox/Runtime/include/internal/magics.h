@@ -34,6 +34,8 @@
 #define RTAIOMGR_MAGIC                  UINT32_C(0x18990223)
 /** Magic number for RTAIOMGRINTFILE::u32Magic. (Ephraim Kishon) */
 #define RTAIOMGRFILE_MAGIC              UINT32_C(0x19240823)
+/** Magic number for RTCRCIPHERINT::u32Magic. (Michael Wolff) */
+#define RTCRCIPHERINT_MAGIC             UINT32_C(0x19530827)
 /** Magic value for RTCRKEYINT::u32Magic. (Ronald Linn Rivest) */
 #define RTCRKEYINT_MAGIC                UINT32_C(0x19470506)
 /** Magic value for RTCRSSLINT::u32Magic. (Robert Upshur Woodward) */
