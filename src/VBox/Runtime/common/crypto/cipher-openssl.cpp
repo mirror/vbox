@@ -141,7 +141,7 @@ RTDECL(uint32_t) RTCrCipherRelease(RTCRCIPHER hCipher)
 
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     Assert(cRefs < 1024);
-    if (!cRefs == 0)
+    if (cRefs == 0)
         return rtCrCipherDestroy(pThis);
     return cRefs;
 }
