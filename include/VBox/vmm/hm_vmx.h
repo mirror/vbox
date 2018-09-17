@@ -3896,6 +3896,38 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
         return false;
     return true;
 }
+
+
+/**
+ * Returns whether or not the VM-exit is trap-like or fault-like.
+ *
+ * @returns @c true if it's a trap-like VM-exit, @c false otehrwise.
+ * @param   uExitReason     The VM-exit reason.
+ *
+ * @remarks Warning! This does not validate the VM-exit reason.
+ */
+DECLINLINE(bool) HMVmxIsTrapLikeVmexit(uint32_t uExitReason)
+{
+    /*
+     * Trap-like VM-exits - The instruction causing the VM-exit completes before the
+     * VM-exit occurs.
+     *
+     * Fault-like VM-exits - The instruction causing the VM-exit is not completed before
+     * the VM-exit occurs.
+     *
+     * See Intel spec. 29.1.4 "EOI Virtualization".
+     * See Intel spec. 29.4.3.3 "APIC-Write VM Exits".
+     * See Intel spec. 29.1.2 "TPR Virtualization".
+     */
+    switch (uExitReason)
+    {
+        case VMX_EXIT_VIRTUALIZED_EOI:
+        case VMX_EXIT_APIC_WRITE:
+        case VMX_EXIT_TPR_BELOW_THRESHOLD:
+            return true;
+    }
+    return false;
+}
 /** @} */
 
 
