@@ -39,107 +39,6 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-// Helpers
-////////////////////////////////////////////////////////////////////////////////
-
-/// @todo Remove. See @c todo in #switchTo() below.
-#if 0
-
-#if defined (VBOX_WS_WIN)
-
-struct EnumWindowsProcData
-{
-    ULONG pid;
-    WId wid;
-};
-
-BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
-{
-    EnumWindowsProcData *d = (EnumWindowsProcData *) lParam;
-
-    DWORD pid = 0;
-    GetWindowThreadProcessId(hwnd, &pid);
-
-    if (d->pid == pid)
-    {
-        WINDOWINFO info;
-        if (!GetWindowInfo(hwnd, &info))
-            return TRUE;
-
-#if 0
-        LogFlowFunc(("pid=%d, wid=%08X\n", pid, hwnd));
-        LogFlowFunc(("  parent=%08X\n", GetParent(hwnd)));
-        LogFlowFunc(("  owner=%08X\n", GetWindow(hwnd, GW_OWNER)));
-        TCHAR buf [256];
-        LogFlowFunc(("  rcWindow=%d,%d;%d,%d\n",
-                      info.rcWindow.left, info.rcWindow.top,
-                      info.rcWindow.right, info.rcWindow.bottom));
-        LogFlowFunc(("  dwStyle=%08X\n", info.dwStyle));
-        LogFlowFunc(("  dwExStyle=%08X\n", info.dwExStyle));
-        GetClassName(hwnd, buf, 256);
-        LogFlowFunc(("  class=%ls\n", buf));
-        GetWindowText(hwnd, buf, 256);
-        LogFlowFunc(("  text=%ls\n", buf));
-#endif
-
-        /* we are interested in unowned top-level windows only */
-        if (!(info.dwStyle & (WS_CHILD | WS_POPUP)) &&
-            info.rcWindow.left < info.rcWindow.right &&
-            info.rcWindow.top < info.rcWindow.bottom &&
-            GetParent(hwnd) == NULL &&
-            GetWindow(hwnd, GW_OWNER) == NULL)
-        {
-            d->wid = hwnd;
-            /* if visible, stop the search immediately */
-            if (info.dwStyle & WS_VISIBLE)
-                return FALSE;
-            /* otherwise, give other top-level windows a chance
-             * (the last one wins) */
-        }
-    }
-
-    return TRUE;
-}
-
-#endif
-
-/**
- * Searches for a main window of the given process.
- *
- * @param aPid process ID to search for
- *
- * @return window ID on success or <tt>(WId) ~0</tt> otherwise.
- */
-static WId FindWindowIdFromPid(ULONG aPid)
-{
-#if defined (VBOX_WS_WIN)
-
-    EnumWindowsProcData d = { aPid, (WId) ~0 };
-    EnumWindows(EnumWindowsProc, (LPARAM) &d);
-    LogFlowFunc(("SELECTED wid=%08X\n", d.wid));
-    return d.wid;
-
-#elif defined (VBOX_WS_X11)
-
-    NOREF(aPid);
-    return (WId) ~0;
-
-#elif defined (VBOX_WS_MAC)
-
-    /** @todo Figure out how to get access to another windows of another process...
-     * Or at least check that it's not a VBoxVRDP process. */
-    NOREF (aPid);
-    return (WId) 0;
-
-#else
-
-    return (WId) ~0;
-
-#endif
-}
-
-#endif
-
 UIVirtualMachineItem::UIVirtualMachineItem(const CMachine &aMachine)
     : m_machine(aMachine)
 {
@@ -149,9 +48,6 @@ UIVirtualMachineItem::UIVirtualMachineItem(const CMachine &aMachine)
 UIVirtualMachineItem::~UIVirtualMachineItem()
 {
 }
-
-// public members
-////////////////////////////////////////////////////////////////////////////////
 
 QPixmap UIVirtualMachineItem::osPixmap(QSize *pLogicalSize /* = 0 */) const
 {
@@ -251,18 +147,10 @@ bool UIVirtualMachineItem::recache()
            )
         {
             m_pid = (ULONG) ~0;
-    /// @todo Remove. See @c todo in #switchTo() below.
-#if 0
-            mWinId = (WId) ~0;
-#endif
         }
         else
         {
             m_pid = m_machine.GetSessionPID();
-    /// @todo Remove. See @c todo in #switchTo() below.
-#if 0
-            mWinId = FindWindowIdFromPid(m_pid);
-#endif
         }
 
         /* Determine configuration access level: */
@@ -294,10 +182,6 @@ bool UIVirtualMachineItem::recache()
 
         m_groups.clear();
         m_pid = (ULONG) ~0;
-    /// @todo Remove. See @c todo in #switchTo() below.
-#if 0
-        mWinId = (WId) ~0;
-#endif
 
         /* Set configuration access level to NULL: */
         m_configurationAccessLevel = ConfigurationAccessLevel_Null;
@@ -338,11 +222,6 @@ void UIVirtualMachineItem::recachePixmap()
 bool UIVirtualMachineItem::canSwitchTo() const
 {
     return const_cast <CMachine &>(m_machine).CanShowConsoleWindow();
-
-    /// @todo Remove. See @c todo in #switchTo() below.
-#if 0
-    return mWinId != (WId) ~0;
-#endif
 }
 
 /**
@@ -387,78 +266,6 @@ bool UIVirtualMachineItem::switchTo()
 
 #else
     return false;
-#endif
-
-    /// @todo Below is the old method of switching to the console window
-    //  based on the process ID of the console process. It should go away
-    //  after the new (callback-based) method is fully tested.
-#if 0
-
-    if (!canSwitchTo())
-        return false;
-
-#if defined (VBOX_WS_WIN)
-
-    HWND hwnd = mWinId;
-
-    /* if there are blockers (modal and modeless dialogs, etc), find the
-     * topmost one */
-    HWND hwndAbove = NULL;
-    do
-    {
-        hwndAbove = GetNextWindow(hwnd, GW_HWNDPREV);
-        HWND hwndOwner;
-        if (hwndAbove != NULL &&
-            ((hwndOwner = GetWindow(hwndAbove, GW_OWNER)) == hwnd ||
-             hwndOwner  == hwndAbove))
-            hwnd = hwndAbove;
-        else
-            break;
-    }
-    while (1);
-
-    /* first, check that the primary window is visible */
-    if (IsIconic(mWinId))
-        ShowWindow(mWinId, SW_RESTORE);
-    else if (!IsWindowVisible(mWinId))
-        ShowWindow(mWinId, SW_SHOW);
-
-#if 0
-    LogFlowFunc(("mWinId=%08X hwnd=%08X\n", mWinId, hwnd));
-#endif
-
-    /* then, activate the topmost in the group */
-    AllowSetForegroundWindow(m_pid);
-    SetForegroundWindow(hwnd);
-
-    return true;
-
-#elif defined (VBOX_WS_X11)
-
-    return false;
-
-#elif defined (VBOX_WS_MAC)
-
-    ProcessSerialNumber psn;
-    OSStatus rc = ::GetProcessForPID(m_pid, &psn);
-    if (!rc)
-    {
-        rc = ::SetFrontProcess(&psn);
-
-        if (!rc)
-        {
-            ShowHideProcess(&psn, true);
-            return true;
-        }
-    }
-    return false;
-
-#else
-
-    return false;
-
-#endif
-
 #endif
 }
 
