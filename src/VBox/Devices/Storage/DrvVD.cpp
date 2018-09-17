@@ -3298,16 +3298,23 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     if (   pThis->fAsyncIOSupported
         && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
     {
-        if (pThis->pBlkCache)
-        {
-            rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pIoReq);
-            if (rc == VINF_SUCCESS)
-                rc = VINF_VD_ASYNC_IO_FINISHED;
-            else if (rc == VINF_AIO_TASK_PENDING)
-                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        }
+#ifdef VBOX_IGNORE_FLUSH
+        if (pThis->fIgnoreFlushAsync)
+            rc = VINF_VD_ASYNC_IO_FINISHED;
         else
-            rc = VDAsyncFlush(pThis->pDisk, drvvdMediaExIoReqComplete, pThis, pIoReq);
+#endif /* VBOX_IGNORE_FLUSH */
+        {
+            if (pThis->pBlkCache)
+            {
+                rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pIoReq);
+                if (rc == VINF_SUCCESS)
+                    rc = VINF_VD_ASYNC_IO_FINISHED;
+                else if (rc == VINF_AIO_TASK_PENDING)
+                    rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+            }
+            else
+                rc = VDAsyncFlush(pThis->pDisk, drvvdMediaExIoReqComplete, pThis, pIoReq);
+        }
     }
     else
     {
