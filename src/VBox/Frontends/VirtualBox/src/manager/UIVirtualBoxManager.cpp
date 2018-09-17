@@ -2143,12 +2143,6 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setChecked(pFirstStartedAction && UIVirtualMachineItem::isItemPaused(pFirstStartedAction));
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
-
-    /* Enable/disable tools actions: */
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine, items));
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_Details, items));
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_Snapshots, items));
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->setEnabled(isActionEnabled(UIActionIndexST_M_Tools_M_Machine_S_LogViewer, items));
 }
 
 bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtualMachineItem*> &items)
@@ -2275,13 +2269,6 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_M_Close_S_PowerOff:
         {
             return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
-        }
-        case UIActionIndexST_M_Tools_M_Machine:
-        case UIActionIndexST_M_Tools_M_Machine_S_Details:
-        case UIActionIndexST_M_Tools_M_Machine_S_Snapshots:
-        case UIActionIndexST_M_Tools_M_Machine_S_LogViewer:
-        {
-            return pItem->accessible();
         }
         default:
             break;

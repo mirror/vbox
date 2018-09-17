@@ -218,20 +218,24 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
     if (   isGlobalItemSelected()
         && m_pStackedWidget->currentWidget() != m_pPaneToolsGlobal)
     {
+        /* Just start animation and return, do nothing else.. */
         m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal); // rendering w/a
         m_pStackedWidget->setCurrentWidget(m_pSlidingAnimation);
         m_pSlidingAnimation->animate(SlidingDirection_Reverse);
+        return;
     }
 
     else
 
     /* If machine or group item is selected and we are on global tools pane => switch to machine tools pane: */
     if (   (isMachineItemSelected() || isGroupItemSelected())
-        && m_pStackedWidget->currentWidget() != m_pPaneToolsMachine)
+             && m_pStackedWidget->currentWidget() != m_pPaneToolsMachine)
     {
+        /* Just start animation and return, do nothing else.. */
         m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine); // rendering w/a
         m_pStackedWidget->setCurrentWidget(m_pSlidingAnimation);
         m_pSlidingAnimation->animate(SlidingDirection_Forward);
+        return;
     }
 
     /* If that was machine or group item selected: */
@@ -254,13 +258,13 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
             {
                 /* Make sure Details or Snapshot pane is chosen if opened: */
                 if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-                    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Details)->trigger();
+                    switchToTool(ToolTypeMachine_Details);
                 else
                 if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-                    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots)->trigger();
+                    switchToTool(ToolTypeMachine_Snapshots);
                 else
                 if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_LogViewer))
-                    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)->trigger();
+                    switchToTool(ToolTypeMachine_LogViewer);
             }
 
             /* Update Details-pane (if requested): */
@@ -295,6 +299,7 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
 
 void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirection enmDirection)
 {
+    /* First switch the panes: */
     switch (enmDirection)
     {
         case SlidingDirection_Forward:
@@ -310,6 +315,8 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
             break;
         }
     }
+    /* Then handle current item change (again!): */
+    sltHandleChooserPaneIndexChangeDefault();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
