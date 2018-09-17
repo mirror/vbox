@@ -35,36 +35,37 @@ if !defined(VBOX_ONLY_EXTPACKS)
  endif
 
  StorageLib_SOURCES  = \
-	VD.cpp \
-	VDPlugin.cpp \
-	VDVfs.cpp \
-	VDIfVfs.cpp \
-	VDIfVfs2.cpp \
-	VDI.cpp \
-	VMDK.cpp \
-	VHD.cpp \
-	DMG.cpp \
-	Parallels.cpp \
-	ISCSI.cpp \
-	RAW.cpp \
-	QED.cpp \
-	QCOW.cpp \
-	VHDX.cpp \
-	CUE.cpp \
-	VISO.cpp \
-	VCICache.cpp
-endif
+ 	VD.cpp \
+ 	VDPlugin.cpp \
+ 	VDVfs.cpp \
+ 	VDIfVfs.cpp \
+ 	VDIfVfs2.cpp \
+ 	VDI.cpp \
+ 	VMDK.cpp \
+ 	VHD.cpp \
+ 	DMG.cpp \
+ 	Parallels.cpp \
+ 	ISCSI.cpp \
+ 	RAW.cpp \
+ 	QED.cpp \
+ 	QCOW.cpp \
+ 	VHDX.cpp \
+ 	CUE.cpp \
+ 	VISO.cpp \
+ 	VCICache.cpp
+endif # !VBOX_ONLY_EXTPACKS
 
 if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  if defined(VBOX_WITH_PLUGIN_CRYPT)
   DLLS += VDPluginCrypt
   VDPluginCrypt_TEMPLATE      = VBoxR3ExtPackPuelWithOpenSsl
   VDPluginCrypt_LDFLAGS.linux = $(VBOX_GCC_NO_UNDEFINED)
-
+  VDPluginCrypt_DEFS          = $(if $(VD_WITH_IPRT_CRYPTO),VD_WITH_IPRT_CRYPTO,)
   VDPluginCrypt_SOURCES  = \
-	VDFilterCrypt.cpp \
-	VDKeyStore.cpp
-  VDPluginCrypt_SOURCES.win = VDPluginCrypt.rc
+  	VDFilterCrypt.cpp \
+  	VDKeyStore.cpp
+  VDPluginCrypt_SOURCES.win = \
+  	VDPluginCrypt.rc
  endif
 endif # VBOX_WITH_EXTPACK_PUEL
 
