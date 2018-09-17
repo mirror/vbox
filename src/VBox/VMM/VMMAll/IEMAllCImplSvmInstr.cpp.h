@@ -664,15 +664,14 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
          * We only preserve the force-flags that would affect the execution of the
          * nested-guest (or the guest).
          *
-         *   - VMCPU_FF_INHIBIT_INTERRUPTS need -not- be preserved as it's for a single
-         *     instruction which is this VMRUN instruction itself.
-         *
          *   - VMCPU_FF_BLOCK_NMIS needs to be preserved as it blocks NMI until the
          *     execution of a subsequent IRET instruction in the guest.
          *
-         *   - The remaining FFs (e.g. timers) can stay in place so that we will be
-         *     able to generate interrupts that should cause #VMEXITs for the
-         *     nested-guest.
+         * The remaining FFs (e.g. timers) can stay in place so that we will be able to
+         * generate interrupts that should cause #VMEXITs for the nested-guest.
+         *
+         * VMRUN has implicit GIF (Global Interrupt Flag) handling, we don't need to
+         * preserve VMCPU_FF_INHIBIT_INTERRUPTS.
          */
         pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & VMCPU_FF_BLOCK_NMIS;
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
