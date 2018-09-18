@@ -183,7 +183,7 @@ RTDECL(int) RTCrSslSetCertificateFile(RTCRSSL hSsl, const char *pszFile, uint32_
     AssertReturn(!(fFlags & ~RTCRSSL_FILE_F_ASN1), VERR_INVALID_FLAGS);
 
     int rcOssl = SSL_CTX_use_certificate_file(pThis->pCtx, pszFile,
-                                              RTCRSSL_FILE_F_ASN1 & fFlags ? SSL_FILETYPE_PEM : SSL_FILETYPE_ASN1);
+                                              RTCRSSL_FILE_F_ASN1 & fFlags ? SSL_FILETYPE_ASN1 : SSL_FILETYPE_PEM);
     if (rcOssl != 0)
         return VINF_SUCCESS;
     return !RTFileExists(pszFile) ? VERR_FILE_NOT_FOUND : VERR_OPEN_FAILED; /** @todo Better status codes */
@@ -198,7 +198,7 @@ RTDECL(int) RTCrSslSetPrivateKeyFile(RTCRSSL hSsl, const char *pszFile, uint32_t
     AssertReturn(!(fFlags & ~RTCRSSL_FILE_F_ASN1), VERR_INVALID_FLAGS);
 
     int rcOssl = SSL_CTX_use_PrivateKey_file(pThis->pCtx, pszFile,
-                                             RTCRSSL_FILE_F_ASN1 & fFlags ? SSL_FILETYPE_PEM : SSL_FILETYPE_ASN1);
+                                             RTCRSSL_FILE_F_ASN1 & fFlags ? SSL_FILETYPE_ASN1 : SSL_FILETYPE_PEM);
     if (rcOssl != 0)
         return VINF_SUCCESS;
     return !RTFileExists(pszFile) ? VERR_FILE_NOT_FOUND : VERR_OPEN_FAILED; /** @todo Better status codes */
@@ -392,8 +392,8 @@ RTDECL(int) RTCrSslSessionGetCertIssuerNameAsString(RTCRSSLSESSION hSslSession, 
     AssertReturn(pThis->u32Magic == RTCRSSLSESSIONINT_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrNull(pszBuf);
     AssertPtrNull(pcbActual);
-    if (*pcbActual)
-        pcbActual = 0;
+    if (pcbActual)
+        *pcbActual = 0;
 
     /*
      * Get and format the certificate issuer name.
@@ -412,7 +412,7 @@ RTDECL(int) RTCrSslSessionGetCertIssuerNameAsString(RTCRSSLSESSION hSslSession, 
                  * Copy out the result and free it.
                  */
                 size_t cbNeeded = strlen(pszSrc) + 1;
-                if (*pcbActual)
+                if (pcbActual)
                     *pcbActual = cbNeeded;
 
                 if (pszBuf != NULL && cbBuf > 0)
