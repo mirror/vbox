@@ -2161,7 +2161,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
         MEDIUMIOCOMMONOPT_DEFS(),
         { "--hex",      'H', RTGETOPT_REQ_NOTHING },
         { "--offset",   'o', RTGETOPT_REQ_UINT64  },
-        { "--output",   'O', RTGETOPT_REQ_UINT64  },
+        { "--output",   'O', RTGETOPT_REQ_STRING  },
         { "--size",     's', RTGETOPT_REQ_UINT64  },
     };
     bool        fHex      = false;
