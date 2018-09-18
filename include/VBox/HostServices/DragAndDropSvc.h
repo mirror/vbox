@@ -123,24 +123,24 @@ namespace DragAndDropSvc {
  */
 enum eHostFn
 {
-    /** The host just has set a new DnD mode. */
+    /** The host sets a new DnD mode. */
     HOST_DND_SET_MODE                  = 100,
 
     /*
      * Host -> Guest messages
      */
 
-    /** The host entered the VM window for starting an actual
+    /** The host enters the VM window for starting an actual
      *  DnD operation. */
     HOST_DND_HG_EVT_ENTER              = 200,
-    /** The host's DnD cursor moved within the VM window. */
+    /** The host's DnD cursor moves within the VM window. */
     HOST_DND_HG_EVT_MOVE               = 201,
-    /** The host left the guest VM window. */
+    /** The host leaves the guest VM window. */
     HOST_DND_HG_EVT_LEAVE              = 202,
-    /** The host issued a "drop" event, meaning that the host is
+    /** The host issues a "drop" event, meaning that the host is
      *  ready to transfer data over to the guest. */
     HOST_DND_HG_EVT_DROPPED            = 203,
-    /** The host requested to cancel the current DnD operation on
+    /** The host requests to cancel the current DnD operation on
      *  the guest side. This can happen on user request on the host's
      *  UI side or due to some host error which has happened.
      *
@@ -148,11 +148,11 @@ enum eHostFn
      *        not rely on an answer from the guest side in order to
      *        properly cancel the operation. */
     HOST_DND_HG_EVT_CANCEL             = 204,
-    /** Sends the data header at the beginning of a (new)
+    /** The host sends the data header at the beginning of a (new)
      *  data transfer. */
     HOST_DND_HG_SND_DATA_HDR           = 210,
     /**
-     * Sends the actual meta data, based on
+     * The host sends the actual meta data, based on
      * the format(s) specified by HOST_DND_HG_EVT_ENTER.
      *
      * Protocol v1/v2: If the guest supplied buffer too small to send
@@ -162,14 +162,15 @@ enum eHostFn
      *                 HOST_DND_HG_SND_DATA_HDR message and must be handled accordingly.
      */
     HOST_DND_HG_SND_DATA               = 205,
-    /** Sent when the actual buffer for HOST_DND_HG_SND_DATA was too small. */
+    /** The host sends more data in case the data did not entirely fit in
+     *  the HOST_DND_HG_SND_DATA message. */
     /** @todo Deprecated function; do not use anymore. */
     HOST_DND_HG_SND_MORE_DATA          = 206,
-    /** Directory entry to be sent to the guest. */
+    /** The host sends a directory entry to the guest. */
     HOST_DND_HG_SND_DIR                = 207,
-    /** File data chunk to send to the guest. */
+    /** The host sends a file data chunk to the guest. */
     HOST_DND_HG_SND_FILE_DATA          = 208,
-    /** File header to send to the guest.
+    /** The host sends a file header to the guest.
      *  Note: Only for protocol version 2 and up (>= VBox 5.0). */
     HOST_DND_HG_SND_FILE_HDR           = 209,
 
@@ -195,17 +196,18 @@ enum eHostFn
  */
 enum eGuestFn
 {
-    /* Guest sends a connection request to the HGCM service,
+    /**
+     * The guest sends a connection request to the HGCM service,
      * along with some additional information like supported
      * protocol version and flags.
      * Note: New since protocol version 2. */
     GUEST_DND_CONNECT                  = 10,
 
-    /* Sent when a guest client disconnected from the HGCM service. */
+    /** The guest client disconnects from the HGCM service. */
     GUEST_DND_DISCONNECT               = 11,
 
     /**
-     * Guest waits for a new message the host wants to process
+     * The guest waits for a new message the host wants to process
      * on the guest side. This can be a blocking call.
      */
     GUEST_DND_GET_NEXT_HOST_MSG        = 300,
@@ -214,14 +216,12 @@ enum eGuestFn
      * Host -> Guest operation messages.
      */
 
-    /** The guest acknowledges that the pending DnD data from
-     *  the host can be dropped on the currently selected source
-     *  on the guest. */
+    /** The guest acknowledges that a pending DnD operation from the host
+     *  can be dropped on the currently selected area on the guest. */
     GUEST_DND_HG_ACK_OP                = 400,
-    /** The guest requests the actual DnD data to be sent
-     *  from the host. */
+    /** The guest requests the actual DnD data to be sent from the host. */
     GUEST_DND_HG_REQ_DATA              = 401,
-    /** Reports back the guest's progress on a host -> guest operation. */
+    /** The guest reports back its progress back to the host. */
     GUEST_DND_HG_EVT_PROGRESS          = 402,
 
     /*
@@ -234,24 +234,24 @@ enum eGuestFn
      * dragged over to the host.
      */
     GUEST_DND_GH_ACK_PENDING           = 500,
-    /** Sends the data header at the beginning of a (new)
+    /** The guest sends the data header at the beginning of a (new)
      *  data transfer. */
     GUEST_DND_GH_SND_DATA_HDR          = 503,
     /**
-     * Sends data of the requested format to the host. There can
+     * The guest sends data of the requested format to the host. There can
      * be more than one message if the actual data does not fit
      * into one.
      */
     GUEST_DND_GH_SND_DATA              = 501,
-    /** Reports an error back to the host. */
+    /** The guest reports an error back to the host. */
     GUEST_DND_GH_EVT_ERROR             = 502,
-    /** Guest sends a directory entry to the host. */
+    /** The guest sends a directory entry to the host. */
     GUEST_DND_GH_SND_DIR               = 700,
-    /** Guest sends file data to the host. */
-    /*  Note: On protocol version 1 this also contains the file name
+    /** The guest sends file data to the host.
+     *  Note: On protocol version 1 this also contains the file name
      *        and other attributes. */
     GUEST_DND_GH_SND_FILE_DATA         = 701,
-    /** Guest sends a file header to the host, marking the
+    /** The guest sends a file header to the host, marking the
      *  beginning of a (new) file transfer.
      *  Note: Available since protocol version 2 (VBox 5.0). */
     GUEST_DND_GH_SND_FILE_HDR          = 702,
