@@ -31,9 +31,12 @@
 #define LOG_GROUP RTLOGGROUP_REST
 #include <iprt/cpp/restclient.h>
 
+#include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/http.h>
 #include <iprt/log.h>
+#include <iprt/uri.h>
 
 
 /**
@@ -59,38 +62,113 @@ RTCRestClientApiBase::~RTCRestClientApiBase()
 }
 
 
-const char *RTCRestClientApiBase::getHost() const
+const char *RTCRestClientApiBase::getServerUrl(void) const
 {
-    return m_strHost.isEmpty() ? getDefaultHost() : m_strHost.c_str();
-}
-
-int RTCRestClientApiBase::setHost(const char *a_pszHost)
-{
-    return m_strHost.assignNoThrow(a_pszHost);
+    if (m_strServerUrl.isEmpty())
+        return getDefaultServerUrl();
+    return m_strServerUrl.c_str();
 }
 
 
-int RTCRestClientApiBase::setHost(RTCString const &a_strPath)
+int RTCRestClientApiBase::setServerUrl(const char *a_pszUrl)
 {
-    return setHost(a_strPath.c_str());
+#ifdef RT_STRICT
+    if (a_pszUrl)
+    {
+        RTURIPARSED Parsed;
+        int rc = RTUriParse(a_pszUrl, &Parsed);
+        AssertRC(rc);
+    }
+#endif
+
+    return m_strServerUrl.assignNoThrow(a_pszUrl);
 }
 
 
-const char *RTCRestClientApiBase::getBasePath(void) const
+int RTCRestClientApiBase::setServerUrlPart(const char *a_pszServerUrl, size_t a_offDst, size_t a_cchDst,
+                                           const char *a_pszSrc, size_t a_cchSrc)
 {
-    return m_strBasePath.isEmpty() ? getDefaultBasePath() : m_strBasePath.c_str();
+    if (   a_cchDst == a_cchSrc
+        && memcmp(&a_pszServerUrl[0], a_pszSrc, a_cchSrc) == 0)
+        return VINF_SUCCESS;
+
+    if (m_strServerUrl.isEmpty())
+    {
+        int rc = m_strServerUrl.assignNoThrow(a_pszServerUrl);
+        AssertRCReturn(rc, rc);
+    }
+    return m_strServerUrl.replaceNoThrow(a_offDst, a_cchDst, a_pszSrc, a_cchSrc);
 }
 
 
-int RTCRestClientApiBase::setBasePath(const char *a_pszPath)
+int RTCRestClientApiBase::setServerScheme(const char *a_pszScheme)
 {
-    return m_strBasePath.assignNoThrow(a_pszPath);
+    /*
+     * Validate.
+     */
+    AssertReturn(a_pszScheme, VERR_INVALID_POINTER);
+    size_t const cchScheme = strlen(a_pszScheme);
+    AssertReturn(cchScheme > 0, VERR_INVALID_PARAMETER);
+    Assert(cchScheme < 16);
+#ifdef RT_STRICT
+    for (size_t i = 0; i < cchScheme; i++)
+        Assert(RT_C_IS_ALNUM(a_pszScheme[i]));
+#endif
+
+    /*
+     * Parse, compare & replace.
+     */
+    RTURIPARSED Parsed;
+    const char *pszUrl = getServerUrl();
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, rc);
+    return setServerUrlPart(pszUrl, 0, Parsed.cchScheme, a_pszScheme, cchScheme);
 }
 
 
-int RTCRestClientApiBase::setBasePath(RTCString const &a_strPath)
+int RTCRestClientApiBase::setServerAuthority(const char *a_pszAuthority)
 {
-    return setBasePath(a_strPath.c_str());
+    /*
+     * Validate.
+     */
+    AssertReturn(a_pszAuthority, VERR_INVALID_POINTER);
+    size_t const cchAuthority = strlen(a_pszAuthority);
+    AssertReturn(cchAuthority > 0, VERR_INVALID_PARAMETER);
+    Assert(memchr(a_pszAuthority, '/', cchAuthority) == NULL);
+    Assert(memchr(a_pszAuthority, '\\', cchAuthority) == NULL);
+    Assert(memchr(a_pszAuthority, '#', cchAuthority) == NULL);
+    Assert(memchr(a_pszAuthority, '?', cchAuthority) == NULL);
+
+    /*
+     * Parse, compare & replace.
+     */
+    RTURIPARSED Parsed;
+    const char *pszUrl = getServerUrl();
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, rc);
+    return setServerUrlPart(pszUrl, Parsed.offAuthority, Parsed.cchAuthority, a_pszAuthority, cchAuthority);
+}
+
+
+int RTCRestClientApiBase::setServerBasePath(const char *a_pszBasePath)
+{
+    /*
+     * Validate.
+     */
+    AssertReturn(a_pszBasePath, VERR_INVALID_POINTER);
+    size_t const cchBasePath = strlen(a_pszBasePath);
+    AssertReturn(cchBasePath > 0, VERR_INVALID_PARAMETER);
+    Assert(memchr(a_pszBasePath, '?', cchBasePath) == NULL);
+    Assert(memchr(a_pszBasePath, '#', cchBasePath) == NULL);
+
+    /*
+     * Parse, compare & replace.
+     */
+    RTURIPARSED Parsed;
+    const char *pszUrl = getServerUrl();
+    int rc = RTUriParse(pszUrl, &Parsed);
+    AssertRCReturn(rc, rc);
+    return setServerUrlPart(pszUrl, Parsed.offPath, Parsed.cchPath, a_pszBasePath, cchBasePath);
 }
 
 
@@ -98,11 +176,7 @@ int RTCRestClientApiBase::reinitHttpInstance()
 {
     if (m_hHttp != NIL_RTHTTP)
     {
-#if 0
-        /*
-         * XXX: disable for now as it causes the RTHTTP handle state
-         * and curl state to get out of sync.
-         */
+#if 0   /** @todo XXX: disable for now as it causes the RTHTTP handle state and curl state to get out of sync. */
         return RTHttpReset(m_hHttp);
 #else
         RTHttpDestroy(m_hHttp);
@@ -169,9 +243,7 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
                      * Construct the full URL.
                      */
                     RTCString strFullUrl;
-                    rc = strFullUrl.assignNoThrow(getHost());
-                    if (RT_SUCCESS(rc))
-                        rc = strFullUrl.appendNoThrow(getBasePath());
+                    rc = strFullUrl.assignNoThrow(getServerUrl());
                     if (strExtraPath.isNotEmpty())
                     {
                         if (!strExtraPath.startsWith("/") && !strFullUrl.endsWith("/") && RT_SUCCESS(rc))

@@ -637,78 +637,49 @@ public:
     /** @name Host and Base path (URL) handling.
      * @{ */
     /**
-     * Gets the default host (start of URL) as specified in the specs.
-     *
+     * Gets the server URL.
+     */
+    const char *getServerUrl(void) const;
+
+    /**
+     * Sets the whole server URL.
+     * @returns IPRT status code.
+     * @param   a_pszUrl        The new server URL.  NULL/empty to reset to default.
+     */
+    int setServerUrl(const char *a_pszUrl);
+
+    /**
+     * Sets the scheme part of the the server URL.
+     * @returns IPRT status code.
+     * @param   a_pszScheme     The new scheme.  Does not accept NULL or empty string.
+     */
+    int setServerScheme(const char *a_pszScheme);
+
+    /**
+     * Sets the authority (hostname + port) part of the the server URL.
+     * @returns IPRT status code.
+     * @param   a_pszAuthority  The new authority.  Does not accept NULL or empty string.
+     */
+    int setServerAuthority(const char *a_pszAuthority);
+
+    /**
+     * Sets the base path part of the the server URL.
+     * @returns IPRT status code.
+     * @param   a_pszBasePath   The new base path.  Does not accept NULL or empty string.
+     */
+    int setServerBasePath(const char *a_pszBasePath);
+
+    /**
+     * Gets the default server URL as specified in the specs.
+     * @returns Server URL.
+     */
+    virtual const char *getDefaultServerUrl() const = 0;
+
+    /**
+     * Gets the default server base path as specified in the specs.
      * @returns Host string (start of URL).
      */
-    virtual const char *getDefaultHost() const = 0;
-
-    /**
-     * Gets the host we're using.
-     *
-     * @returns Host URL string.
-     */
-    const char *getHost(void) const;
-
-    /**
-     * Sets the host (URL) to use when talking to the server.
-     *
-     * Setting the host is only required if there is a desire to use a
-     * different server from the one specified in the API specification, like
-     * for instance regional one.
-     *
-     * @returns IPRT status code.
-     * @param   a_pszHost   The base path to use.
-     */
-    virtual int setHost(const char *a_pszHost);
-
-    /**
-     * Sets the base path (URL) to use when talking to the server.
-     *
-     * Setting the base path is only required if there is a desire to use a
-     * different server from the one specified in the API specification, like
-     * for instance regional one.
-     *
-     * @returns IPRT status code.
-     * @param   a_strHost   The base path to use.
-     * @note    Defers to the C-string variant.
-     */
-    int setHost(RTCString const &a_strHost);
-
-
-    /**
-     * Gets the default base path (relative to getHost()) as specified in the specs.
-     *
-     * @returns Base path string.
-     */
-    virtual const char *getDefaultBasePath() const = 0;
-
-    /**
-     * Gets the base path we're using (relative to getHost).
-     *
-     * @returns Base path string.
-     */
-    const char *getBasePath(void) const;
-
-    /**
-     * Sets the base path (relative to getHost()) to use when talking to the server.
-     *
-     * It is assumed that the base path is at the minimum a lone slash, so an
-     * empty (or NULL) string is understood to mean reverting to the default
-     * (see getDefaultBasePath()).
-     *
-     * @param   a_pszPath   The base path to use.
-     */
-    virtual int setBasePath(const char *a_pszPath);
-
-    /**
-     * Sets the base path (relative to getHost()) to use when talking to the server.
-     *
-     * @param   a_strPath   The base path to use.
-     * @note    Defers to the C-string variant.
-     */
-    int setBasePath(RTCString const &a_strPath);
-
+    virtual const char *getDefaultServerBasePath() const = 0;
     /** @} */
 
     /** Flags to doCall. */
@@ -720,10 +691,8 @@ public:
 protected:
     /** Handle to the HTTP connection object. */
     RTHTTP  m_hHttp;
-    /** The host to use.  If empty use the default. */
-    RTCString m_strHost;
-    /** The base path to use.  If empty use the default. */
-    RTCString m_strBasePath;
+    /** The server URL to use.  If empty use the default. */
+    RTCString m_strServerUrl;
 
     /* Make non-copyable (RTCNonCopyable causes warnings): */
     RTCRestClientApiBase(RTCRestOutputToString const &);
@@ -781,6 +750,18 @@ protected:
      */
     int ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
                        RTCString const &a_rStrXmitBody, uint32_t a_fFlags, RTCRKEY a_hKey, RTCString const &a_rStrKeyId);
+
+    /**
+     * Worker for the server URL modifiers.
+     *
+     * @returns IPRT status code.
+     * @param   a_pszServerUrl  The current server URL (for comparing).
+     * @param   a_offDst        The offset of the component in the current server URL.
+     * @param   a_cchDst        The current component length.
+     * @param   a_pszSrc        The new URL component value.
+     * @param   a_cchSrc        The length of the new component.
+     */
+    int setServerUrlPart(const char *a_pszServerUrl, size_t a_offDst, size_t a_cchDst, const char *a_pszSrc, size_t a_cchSrc);
 };
 
 /** @} */
