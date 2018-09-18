@@ -631,6 +631,7 @@ static void pgmHandlerPhysicalDeregisterNotifyREMAndNEM(PVM pVM, PPGMPHYSHANDLER
                                          fRestoreAsRAM, fRestoreAsRAM2);
 #else
     RT_NOREF_PV(fRestoreAsRAM); /** @todo this needs more work for REM! */
+    RT_NOREF_PV(fRestoreAsRAM2);
 #endif
 }
 
