@@ -37,6 +37,15 @@
 
 
 /**
+ * Default constructor.
+ */
+RTCRestClientApiBase::RTCRestClientApiBase()
+    : m_hHttp(NIL_RTHTTP)
+{
+}
+
+
+/**
  * The destructor.
  */
 RTCRestClientApiBase::~RTCRestClientApiBase()
@@ -47,6 +56,41 @@ RTCRestClientApiBase::~RTCRestClientApiBase()
         AssertRC(rc);
         m_hHttp = NIL_RTHTTP;
     }
+}
+
+
+const char *RTCRestClientApiBase::getHost() const
+{
+    return m_strHost.isEmpty() ? getDefaultHost() : m_strHost.c_str();
+}
+
+int RTCRestClientApiBase::setHost(const char *a_pszHost)
+{
+    return m_strHost.assignNoThrow(a_pszHost);
+}
+
+
+int RTCRestClientApiBase::setHost(RTCString const &a_strPath)
+{
+    return setHost(a_strPath.c_str());
+}
+
+
+const char *RTCRestClientApiBase::getBasePath(void) const
+{
+    return m_strBasePath.isEmpty() ? getDefaultBasePath() : m_strBasePath.c_str();
+}
+
+
+int RTCRestClientApiBase::setBasePath(const char *a_pszPath)
+{
+    return m_strBasePath.assignNoThrow(a_pszPath);
+}
+
+
+int RTCRestClientApiBase::setBasePath(RTCString const &a_strPath)
+{
+    return setBasePath(a_strPath.c_str());
 }
 
 
@@ -125,7 +169,9 @@ int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTH
                      * Construct the full URL.
                      */
                     RTCString strFullUrl;
-                    rc = strFullUrl.assignNoThrow(m_strBasePath);
+                    rc = strFullUrl.assignNoThrow(getHost());
+                    if (RT_SUCCESS(rc))
+                        rc = strFullUrl.appendNoThrow(getBasePath());
                     if (strExtraPath.isNotEmpty())
                     {
                         if (!strExtraPath.startsWith("/") && !strFullUrl.endsWith("/") && RT_SUCCESS(rc))

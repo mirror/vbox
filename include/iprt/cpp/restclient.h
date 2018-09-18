@@ -631,22 +631,36 @@ private:
 class RT_DECL_CLASS RTCRestClientApiBase
 {
 public:
-    RTCRestClientApiBase()
-        : m_hHttp(NIL_RTHTTP)
-    {}
+    RTCRestClientApiBase();
     virtual ~RTCRestClientApiBase();
 
-    /** @name Base path (URL) handling.
+    /** @name Host and Base path (URL) handling.
      * @{ */
     /**
-     * Gets the base path we're using.
+     * Gets the default host (start of URL) as specified in the specs.
      *
-     * @returns Base URL string.  If empty, we'll be using the default one.
+     * @returns Host string (start of URL).
      */
-    inline RTCString const &getBasePath(void) const
-    {
-        return m_strBasePath;
-    }
+    virtual const char *getDefaultHost() const = 0;
+
+    /**
+     * Gets the host we're using.
+     *
+     * @returns Host URL string.
+     */
+    const char *getHost(void) const;
+
+    /**
+     * Sets the host (URL) to use when talking to the server.
+     *
+     * Setting the host is only required if there is a desire to use a
+     * different server from the one specified in the API specification, like
+     * for instance regional one.
+     *
+     * @returns IPRT status code.
+     * @param   a_pszHost   The base path to use.
+     */
+    virtual int setHost(const char *a_pszHost);
 
     /**
      * Sets the base path (URL) to use when talking to the server.
@@ -654,32 +668,47 @@ public:
      * Setting the base path is only required if there is a desire to use a
      * different server from the one specified in the API specification, like
      * for instance regional one.
+     *
+     * @returns IPRT status code.
+     * @param   a_strHost   The base path to use.
+     * @note    Defers to the C-string variant.
+     */
+    int setHost(RTCString const &a_strHost);
+
+
+    /**
+     * Gets the default base path (relative to getHost()) as specified in the specs.
+     *
+     * @returns Base path string.
+     */
+    virtual const char *getDefaultBasePath() const = 0;
+
+    /**
+     * Gets the base path we're using (relative to getHost).
+     *
+     * @returns Base path string.
+     */
+    const char *getBasePath(void) const;
+
+    /**
+     * Sets the base path (relative to getHost()) to use when talking to the server.
+     *
+     * It is assumed that the base path is at the minimum a lone slash, so an
+     * empty (or NULL) string is understood to mean reverting to the default
+     * (see getDefaultBasePath()).
      *
      * @param   a_pszPath   The base path to use.
      */
-    virtual void setBasePath(const char *a_pszPath)
-    {
-        m_strBasePath = a_pszPath;
-    }
+    virtual int setBasePath(const char *a_pszPath);
 
     /**
-     * Sets the base path (URL) to use when talking to the server.
-     *
-     * Setting the base path is only required if there is a desire to use a
-     * different server from the one specified in the API specification, like
-     * for instance regional one.
+     * Sets the base path (relative to getHost()) to use when talking to the server.
      *
      * @param   a_strPath   The base path to use.
      * @note    Defers to the C-string variant.
      */
-    inline void setBasePath(RTCString const &a_strPath) { setBasePath(a_strPath.c_str()); }
+    int setBasePath(RTCString const &a_strPath);
 
-    /**
-     * Gets the default base path (URL) as specified in the specs.
-     *
-     * @returns Base path (URL) string.
-     */
-    virtual const char *getDefaultBasePath() = 0;
     /** @} */
 
     /** Flags to doCall. */
@@ -691,7 +720,9 @@ public:
 protected:
     /** Handle to the HTTP connection object. */
     RTHTTP  m_hHttp;
-    /** The base path to use. */
+    /** The host to use.  If empty use the default. */
+    RTCString m_strHost;
+    /** The base path to use.  If empty use the default. */
     RTCString m_strBasePath;
 
     /* Make non-copyable (RTCNonCopyable causes warnings): */
