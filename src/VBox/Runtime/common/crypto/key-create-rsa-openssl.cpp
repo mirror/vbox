@@ -60,7 +60,7 @@ RTDECL(int) RTCrKeyCreateNewRsa(PRTCRKEY phKey, uint32_t cBits, uint32_t uPubExp
     if (pRsa)
     {
         BIGNUM *pPubExp = BN_new();
-        if (!pPubExp)
+        if (pPubExp)
         {
             if (BN_set_word(pPubExp, uPubExp) != 0)
             {
