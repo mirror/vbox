@@ -2345,7 +2345,8 @@ endif
 
 
 if1of ($(KBUILD_TARGET),win darwin) # remove later
-if1of (VBoxRT,$(DLLS))
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
+ if1of (VBoxRT,$(DLLS))
  #
  # VBoxRTImpCheck - Import library check.
  #
@@ -2371,6 +2372,7 @@ $$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/
        	$(if-expr "$(KBUILD_TARGET)" == "darwin",, -e "/only-darwin/d") \
 		-f $(PATH_ROOT)/src/VBox/Runtime/VBox/DefToAsmExterns.sed \
 		$(filter %.def, $^)
+ endif
 endif
 endif # remove later
 
