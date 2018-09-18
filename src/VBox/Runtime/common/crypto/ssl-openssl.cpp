@@ -186,7 +186,7 @@ RTDECL(int) RTCrSslSetCertificateFile(RTCRSSL hSsl, const char *pszFile, uint32_
                                               RTCRSSL_FILE_F_ASN1 & fFlags ? SSL_FILETYPE_ASN1 : SSL_FILETYPE_PEM);
     if (rcOssl != 0)
         return VINF_SUCCESS;
-    return !RTFileExists(pszFile) ? VERR_FILE_NOT_FOUND : VERR_OPEN_FAILED; /** @todo Better status codes */
+    return !pszFile || !*pszFile || !RTFileExists(pszFile) ? VERR_FILE_NOT_FOUND : VERR_OPEN_FAILED; /** @todo Better status codes */
 }
 
 
@@ -201,7 +201,7 @@ RTDECL(int) RTCrSslSetPrivateKeyFile(RTCRSSL hSsl, const char *pszFile, uint32_t
                                              RTCRSSL_FILE_F_ASN1 & fFlags ? SSL_FILETYPE_ASN1 : SSL_FILETYPE_PEM);
     if (rcOssl != 0)
         return VINF_SUCCESS;
-    return !RTFileExists(pszFile) ? VERR_FILE_NOT_FOUND : VERR_OPEN_FAILED; /** @todo Better status codes */
+    return !pszFile || !*pszFile || !RTFileExists(pszFile) ? VERR_FILE_NOT_FOUND : VERR_OPEN_FAILED; /** @todo Better status codes */
 }
 
 
@@ -215,7 +215,7 @@ RTDECL(int) RTCrSslLoadTrustedRootCerts(RTCRSSL hSsl, const char *pszFile, const
     if (rcOssl != 0)
         return VINF_SUCCESS;
 
-    if (pszFile && !RTFileExists(pszFile))
+    if (!pszFile || !*pszFile || !RTFileExists(pszFile))
         return VERR_FILE_NOT_FOUND;
     return VERR_OPEN_FAILED; /** @todo Better status codes */
 }
