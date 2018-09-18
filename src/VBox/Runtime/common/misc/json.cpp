@@ -642,23 +642,23 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
                     pszDecoded[cchStr++] = '/';
                     rtJsonTokenizerSkipCh(pTokenizer);
                     break;
-                case '\b':
+                case 'b':
                     pszDecoded[cchStr++] = '\b';
                     rtJsonTokenizerSkipCh(pTokenizer);
                     break;
-                case '\n':
+                case 'n':
                     pszDecoded[cchStr++] = '\n';
                     rtJsonTokenizerSkipCh(pTokenizer);
                     break;
-                case '\f':
+                case 'f':
                     pszDecoded[cchStr++] = '\f';
                     rtJsonTokenizerSkipCh(pTokenizer);
                     break;
-                case '\r':
+                case 'r':
                     pszDecoded[cchStr++] = '\r';
                     rtJsonTokenizerSkipCh(pTokenizer);
                     break;
-                case '\t':
+                case 't':
                     pszDecoded[cchStr++] = '\t';
                     rtJsonTokenizerSkipCh(pTokenizer);
                     break;
