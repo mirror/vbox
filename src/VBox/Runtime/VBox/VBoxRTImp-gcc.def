@@ -508,7 +508,6 @@ EXPORTS
     _ZNK16RTCRestArrayBase9typeClassEv
     _ZNK17RTCRestObjectBase8toStringEP9RTCStringj
     _ZNK17RTCRestObjectBase8toStringEv
-    _ZNK17RTCRestObjectBase9typeClassEv
     _ZNK20RTCRestStringMapBase11containsKeyEPKc
     _ZNK20RTCRestStringMapBase11containsKeyERK9RTCString
     _ZNK20RTCRestStringMapBase15serializeAsJsonER17RTCRestOutputBase

@@ -118,11 +118,6 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestObjectBase::typeClass() const
-{
-    return kTypeClass_Object;
-}
-
 
 /*********************************************************************************************************************************
 *   RTCRestBool implementation                                                                                                   *
@@ -2011,5 +2006,166 @@ bool RTCRestStringEnumBase::setWorker(int a_iEnumValue)
     m_iEnumValue = a_iEnumValue;
     m_strValue.setNull();
     return true;
+}
+
+
+
+/*********************************************************************************************************************************
+*   RTCRestDataObject                                                                                                                *
+*********************************************************************************************************************************/
+
+RTCRestDataObject::RTCRestDataObject()
+    : RTCRestObjectBase()
+    , m_fIsSet(0)
+{
+}
+
+
+RTCRestDataObject::~RTCRestDataObject()
+{
+}
+
+
+RTCRestDataObject::RTCRestDataObject(RTCRestDataObject const &a_rThat)
+    : RTCRestObjectBase(a_rThat)
+    , m_fIsSet(a_rThat.m_fIsSet)
+{
+}
+
+
+RTCRestDataObject &RTCRestDataObject::operator=(RTCRestDataObject const &a_rThat)
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    m_fIsSet = a_rThat.m_fIsSet;
+    return *this;
+}
+
+
+int RTCRestDataObject::assignCopy(RTCRestDataObject const &a_rThat)
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    m_fIsSet = a_rThat.m_fIsSet;
+    return VINF_SUCCESS;
+}
+
+
+int RTCRestDataObject::resetToDefault()
+{
+    m_fNullIndicator = false;
+    m_fIsSet = 0;
+    return VINF_SUCCESS;
+}
+
+
+const char *RTCRestDataObject::serializeMembersAsJson(RTCRestOutputBase &a_rDst, const char *a_pszSep) const
+{
+    RT_NOREF(a_rDst);
+    return a_pszSep;
+}
+
+
+RTCRestOutputBase &RTCRestDataObject::serializeAsJson(RTCRestOutputBase &a_rDst) const
+{
+    if (!m_fNullIndicator)
+    {
+        a_rDst.printf("{");
+        unsigned const uOldIndent = a_rDst.incrementIndent();
+
+        const char *pszSep = serializeMembersAsJson(a_rDst, "");
+
+        a_rDst.setIndent(uOldIndent);
+        a_rDst.printf("%s}", *pszSep != '\0' ? "\n" : "");
+    }
+    else
+        a_rDst.printf("null");
+    return a_rDst;
+}
+
+
+int RTCRestDataObject::deserializeMemberFromJson(RTCRestJsonCursor const &a_rCursor, size_t a_cchName)
+{
+    RT_NOREF(a_rCursor, a_cchName);
+    return VERR_NOT_FOUND;
+}
+
+
+int RTCRestDataObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+{
+    /*
+     * Make sure the object starts out with default values.
+     */
+    if (m_fIsSet == 0)
+        m_fNullIndicator = false;
+    else
+        resetToDefault();
+
+    /*
+     * Iterate the object values.
+     */
+    RTJSONIT hIterator;
+    int rcRet = RTJsonIteratorBeginObject(a_rCursor.m_hValue, &hIterator);
+    if (RT_SUCCESS(rcRet))
+    {
+        for (;;)
+        {
+            RTCRestJsonCursor SubCursor(a_rCursor);
+            int rc = RTJsonIteratorQueryValue(hIterator, &SubCursor.m_hValue, &SubCursor.m_pszName);
+            if (RT_SUCCESS(rc))
+            {
+                size_t const cchName = strlen(SubCursor.m_pszName);
+
+                rc = deserializeMemberFromJson(SubCursor, cchName);
+                if (rc == VINF_SUCCESS)
+                { /* likely */ }
+                else if (rc == VERR_NOT_FOUND)
+                {
+                    rc = SubCursor.m_pPrimary->unknownField(SubCursor);
+                    if (rcRet == VINF_SUCCESS)
+                        rcRet = rc;
+                }
+                else if (RT_SUCCESS(rc))
+                {
+                    if (rcRet == VINF_SUCCESS)
+                        rcRet = rc;
+                }
+                else if (RT_SUCCESS(rcRet))
+                    rcRet = rc;
+            }
+            else
+                rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonIteratorQueryValue failed: %Rrc", rc);
+
+            /*
+             * Advance.
+             */
+            rc = RTJsonIteratorNext(hIterator);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else if (rc == VERR_JSON_ITERATOR_END)
+                break;
+            else
+            {
+                rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonIteratorNext failed: %Rrc", rc);
+                break;
+            }
+        }
+
+        RTJsonIteratorFree(hIterator);
+    }
+    else if (   rcRet == VERR_JSON_VALUE_INVALID_TYPE
+             && RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL)
+    {
+        m_fNullIndicator = true;
+        rcRet = VINF_SUCCESS;
+    }
+    else
+        rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rcRet, "RTJsonIteratorBeginObject failed: %Rrc (type %s)",
+                                               rcRet, RTJsonValueTypeName(RTJsonValueGetType(a_rCursor.m_hValue)));
+    return rcRet;
+}
+
+
+RTCRestObjectBase::kTypeClass RTCRestDataObject::typeClass(void) const
+{
+    return kTypeClass_DataObject;
 }
 

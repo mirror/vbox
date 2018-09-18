@@ -111,7 +111,8 @@ int RTCRestAnyObject::assignCopy(RTCRestAnyObject const &a_rThat)
             case kTypeClass_Uuid:
             case kTypeClass_Binary:
             case kTypeClass_StringEnum:
-            case kTypeClass_Object:
+            case kTypeClass_AnyObject:
+            case kTypeClass_DataObject:
             case kTypeClass_Invalid:
                 AssertFailedReturn(VERR_REST_INTERNAL_ERROR_7);
         }
@@ -521,7 +522,7 @@ int RTCRestAnyObject::fromString(RTCString const &a_rValue, const char *a_pszNam
 
 RTCRestObjectBase::kTypeClass RTCRestAnyObject::typeClass(void) const
 {
-    return kTypeClass_Object;
+    return kTypeClass_AnyObject;
 }
 
 
@@ -546,7 +547,8 @@ const char *RTCRestAnyObject::typeName(void) const
             case kTypeClass_Uuid:
             case kTypeClass_Binary:
             case kTypeClass_StringEnum:
-            case kTypeClass_Object:
+            case kTypeClass_DataObject:
+            case kTypeClass_AnyObject:
             case kTypeClass_Invalid:
                 AssertFailed();
         }

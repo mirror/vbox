@@ -524,7 +524,6 @@ EXPORTS
     ?typeClass@RTCRestInt16@@UEBA?AW4kTypeClass@RTCRestObjectBase@@XZ           ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestInt16::typeClass(void)const )
     ?typeClass@RTCRestInt32@@UEBA?AW4kTypeClass@RTCRestObjectBase@@XZ           ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestInt32::typeClass(void)const )
     ?typeClass@RTCRestInt64@@UEBA?AW4kTypeClass@RTCRestObjectBase@@XZ           ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestInt64::typeClass(void)const )
-    ?typeClass@RTCRestObjectBase@@UEBA?AW4kTypeClass@1@XZ                       ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestObjectBase::typeClass(void)const )
     ?typeClass@RTCRestString@@UEBA?AW4kTypeClass@RTCRestObjectBase@@XZ          ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestString::typeClass(void)const )
     ?typeClass@RTCRestStringEnumBase@@UEBA?AW4kTypeClass@RTCRestObjectBase@@XZ  ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestStringEnumBase::typeClass(void)const )
     ?typeClass@RTCRestStringMapBase@@UEBA?AW4kTypeClass@RTCRestObjectBase@@XZ   ; (public: virtual enum RTCRestObjectBase::kTypeClass __cdecl RTCRestStringMapBase::typeClass(void)const )

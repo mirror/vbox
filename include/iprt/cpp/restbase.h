@@ -251,7 +251,8 @@ public:
 
 
 /**
- * Abstract base class for REST data objects.
+ * Abstract base class for REST primitive types and data objects (via
+ * RTCRestDataObject).
  *
  * The only information this keeps is the null indicator.
  */
@@ -370,7 +371,8 @@ public:
         kTypeClass_Date,                /**< Date. */
         kTypeClass_Uuid,                /**< UUID. */
         kTypeClass_Binary,              /**< Binary blob. */
-        kTypeClass_Object,              /**< Object (any kind of data model object). */
+        kTypeClass_DataObject,          /**< Data object child (RTCRestDataObject). */
+        kTypeClass_AnyObject,           /**< Any kind of object (RTCRestAnyObject). */
         kTypeClass_Array,               /**< Array (containing any kind of object). */
         kTypeClass_StringMap,           /**< String map (containing any kind of object). */
         kTypeClass_StringEnum           /**< String enum. */
@@ -379,7 +381,7 @@ public:
     /**
      * Returns the object type class.
      */
-    virtual kTypeClass typeClass(void) const;
+    virtual kTypeClass typeClass(void) const = 0;
 
     /**
      * Returns the object type name.
@@ -976,6 +978,55 @@ private:
     /* No copy constructor or copy assignment: */
     RTCRestBinary(RTCRestBinary const &a_rThat);
     RTCRestBinary &operator=(RTCRestBinary const &a_rThat);
+};
+
+
+/**
+ * Abstract base class for REST data model objects.
+ */
+class RT_DECL_CLASS RTCRestDataObject : public RTCRestObjectBase
+{
+public:
+    RTCRestDataObject();
+    RTCRestDataObject(RTCRestDataObject const &a_rThat);
+    virtual ~RTCRestDataObject();
+
+    /* Overridden methods:*/
+    virtual int resetToDefault() RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+
+    /** Safe copy assignment method. */
+    virtual int assignCopy(RTCRestDataObject const &a_rThat);
+
+    /**
+     * Serialize the members as JSON.
+     *
+     * @returns Leading separator prefix (empty string or comma string).
+     * @param   a_rDst      The destination for the serialization.
+     * @param   a_pszSep    Leading separator prefix (empty or comma).
+     */
+    virtual const char *serializeMembersAsJson(RTCRestOutputBase &a_rDst, const char *a_pszSep) const;
+
+    /**
+     * Deserialize object from the given JSON iterator.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_NOT_FOUND if field is unknown.  Top level caller will do
+     *          invoke unknownField() on it.
+     *
+     * @param   a_rCursor   The JSON cursor with the current member.
+     * @param   a_cchName   The length of a_rCursor.m_pszName.
+     */
+    virtual int deserializeMemberFromJson(RTCRestJsonCursor const &a_rCursor, size_t a_cchName);
+
+protected:
+    /** The is-set bits for all the fields. */
+    uint64_t m_fIsSet;
+
+    /** Copy assignment operator. */
+    RTCRestDataObject &operator=(RTCRestDataObject const &a_rThat);
 };
 
 
