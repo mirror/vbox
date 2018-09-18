@@ -650,6 +650,10 @@ VBOX_WITH_VRDP = 1
 VBOX_WITH_VRDP_AUTHMOD = 1
 # Build enhanced version of rdesktop.
 VBOX_WITH_VRDP_RDESKTOP = 1
+# Make VRDP use IPRT for SSL.
+VRDP_WITH_IPRT_SSL = 1
+# Make VRDP use IPRT for crypto.
+VRDP_WITH_IPRT_CRYPTO = 1
 ## The Direct Framebuffer GUI.
 #VBOX_WITH_VBOXFB = 1
 # Enables the Python<->XPCOM, Python<->COM and (WS enabled) Python<->WS bindings.
