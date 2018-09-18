@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,6 +56,15 @@ using namespace DragAndDropSvc;
 *   Private internal functions                                                                                                   *
 *********************************************************************************************************************************/
 
+/**
+ * Receives the next upcoming message for a given DnD context.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   puMsg               Where to store the message type.
+ * @param   pcParms             Where to store the number of parameters required for receiving the message.
+ * @param   fWait               Whether to wait (block) for a new message to arrive or not.
+ */
 static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, uint32_t *pcParms, bool fWait)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
@@ -79,7 +88,25 @@ static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, 
     return rc;
 }
 
-/** @todo r=andy Clean up the parameter list. */
+/**
+ * Host -> Guest
+ * Utility function to receive a so-called "action message" from the host.
+ * Certain DnD messages use the same amount / sort of parameters and grouped as "action messages".
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   uMsg                Which kind of message to receive.
+ * @param   puScreenID          Where to store the host screen ID the message is bound to.
+ * @param   puX                 Where to store the absolute X coordinates.
+ * @param   puY                 Where to store the absolute Y coordinates.
+ * @param   puDefAction         Where to store the default action to perform.
+ * @param   puAllActions        Where to store the available actions.
+ * @param   ppszFormats         Where to store List of formats.
+ * @param   pcbFormats          Size (in bytes) of where to store the list of formats.
+ *
+ * @todo r=andy Get rid of this function as soon as we resolved the protocol TODO #1.
+ *              This was part of the initial protocol and needs to go.
+ */
 static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
                                  uint32_t  uMsg,
                                  uint32_t *puScreenId,
@@ -156,6 +183,13 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive a HOST_DND_HG_EVT_LEAVE message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ */
 static int vbglR3DnDHGRecvLeave(PVBGLR3GUESTDNDCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -174,6 +208,13 @@ static int vbglR3DnDHGRecvLeave(PVBGLR3GUESTDNDCMDCTX pCtx)
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive a HOST_DND_HG_EVT_CANCEL message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ */
 static int vbglR3DnDHGRecvCancel(PVBGLR3GUESTDNDCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -192,6 +233,17 @@ static int vbglR3DnDHGRecvCancel(PVBGLR3GUESTDNDCMDCTX pCtx)
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive a HOST_DND_HG_SND_DIR message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pszDirname          Where to store the directory name of the directory being created.
+ * @param   cbDirname           Size (in bytes) of where to store the directory name of the directory being created.
+ * @param   pcbDirnameRecv      Size (in bytes) of the actual directory name received.
+ * @param   pfMode              Where to store the directory creation mode.
+ */
 static int vbglR3DnDHGRecvDir(PVBGLR3GUESTDNDCMDCTX pCtx,
                               char     *pszDirname,
                               uint32_t  cbDirname,
@@ -244,6 +296,24 @@ static int vbglR3DnDHGRecvDir(PVBGLR3GUESTDNDCMDCTX pCtx,
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive a HOST_DND_HG_SND_FILE_DATA message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pszFilename         Where to store the file name of the file being transferred.
+ *                              Only needed for protocol v1.
+ * @param   cbFilename          Size (in bytes) of where to store the file name of the file being transferred.
+ *                              Only needed for protocol v1.
+ * @param   pcbFilenameRev      Size (in bytes) of the actual file name received.
+ *                              Only needed for protocol v1.
+ * @param   pvData              Where to store the file data chunk.
+ * @param   cbData              Size (in bytes) of where to store the data chunk.
+ * @param   pcbDataRecv         Size (in bytes) of the actual data chunk size received.
+ * @param   pfMode              Where to store the file creation mode.
+ *                              Only needed for protocol v1.
+ */
 static int vbglR3DnDHGRecvFileData(PVBGLR3GUESTDNDCMDCTX pCtx,
                                    char                 *pszFilename,
                                    uint32_t              cbFilename,
@@ -324,6 +394,18 @@ static int vbglR3DnDHGRecvFileData(PVBGLR3GUESTDNDCMDCTX pCtx,
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive the HOST_DND_HG_SND_FILE_HDR message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pszFilename         Where to store the file name of the file being transferred.
+ * @param   cbFilename          Size (in bytes) of where to store the file name of the file being transferred.
+ * @param   puFlags             File transfer flags. Currently not being used.
+ * @param   pfMode              Where to store the file creation mode.
+ * @param   pcbTotal            Where to store the file size (in bytes).
+ */
 static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
                                   char                  *pszFilename,
                                   uint32_t               cbFilename,
@@ -369,6 +451,16 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Helper function for receiving URI data from the host. Do not call directly.
+ * This function also will take care of the file creation / locking on the guest.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pDataHdr            DnD data header to use. Needed for accounting.
+ * @param   pDroppedFiles       Dropped files object to use for maintaining the file creation / locking.
+ */
 static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr, DnDDroppedFiles *pDroppedFiles)
 {
     AssertPtrReturn(pCtx,          VERR_INVALID_POINTER);
@@ -686,6 +778,17 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive the HOST_DND_HG_SND_DATA message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pDataHdr            DnD data header to use. Need for accounting and stuff.
+ * @param   pvData              Where to store the received data from the host.
+ * @param   cbData              Size (in bytes) of where to store the received data.
+ * @param   pcbDataRecv         Where to store the received amount of data (in bytes).
+ */
 static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr,
                                   void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
 {
@@ -788,6 +891,14 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Utility function to receive the HOST_DND_HG_SND_DATA_HDR message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pDataHdr            Where to store the receivd DnD data header.
+ */
 static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
@@ -830,7 +941,18 @@ static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     return rc;
 }
 
-/** @todo Deprecated function; will be removed. */
+/**
+ * Host -> Guest
+ * Helper function for receiving the actual DnD data from the host. Do not call directly.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pvData              Where to store the receivd DnD data.
+ * @param   cbData              Size (in bytes) of where to store the received DnD data.
+ * @param   pcbDataRecv         Where to store how much bytes of data actually was received.
+ *
+ * @remark  Deprecated function and not being used since protocl 3 anymore; will be removed.
+ */
 static int vbglR3DnDHGRecvMoreData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
 {
     AssertPtrReturn(pCtx,        VERR_INVALID_POINTER);
@@ -854,6 +976,16 @@ static int vbglR3DnDHGRecvMoreData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, uin
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Helper function for receiving the actual DnD data from the host. Do not call directly.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pDataHdr            Where to store the data header data.
+ * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
+ * @param   pcbData             Where to store the size (in bytes) of the received meta data.
+ */
 static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr,
                                    void **ppvData, uint64_t *pcbData)
 {
@@ -1002,9 +1134,16 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
     return rc;
 }
 
-/** @todo Replace the parameters (except pCtx) with PVBOXDNDSNDDATAHDR. Later. */
-/** @todo Hand in the DnDURIList + DnDDroppedFiles objects so that this function
- *        can fill it directly instead of passing huge blobs of data around. */
+/**
+ * Host -> Guest
+ * Main function for receiving the actual DnD data from the host, extended version.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pEnmType            Where to store the meta data type.
+ * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
+ * @param   pcbData             Where to store the size (in bytes) of the received meta data.
+ */
 static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
                                    uint32_t              *puScreenId,
                                    char                 **ppszFormat,
@@ -1116,6 +1255,15 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
     return rc;
 }
 
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+/**
+ * Guest -> Host
+ * Utility function to receive the HOST_DND_GH_REQ_PENDING message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   puScreenId          For which screen on the host the request is for.
+ */
 static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreenId)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
@@ -1153,6 +1301,17 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Utility function to receive the HOST_DND_GH_EVT_DROPPED message from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pszFormat           Requested data format from the host.
+ * @param   cbFormat            Size of requested data format (in bytes).
+ * @param   pcbFormatRecv       Actual size of requested data format (in bytes).
+ * @param   puAction            Requested action from the host.
+ */
 static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
                                   char     *pszFormat,
                                   uint32_t  cbFormat,
@@ -1203,12 +1362,19 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
 
     return rc;
 }
+#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
 
 /*********************************************************************************************************************************
 *   Public functions                                                                                                             *
 *********************************************************************************************************************************/
 
+/**
+ * Connects a DnD context to the DnD host service.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to connect.
+ */
 VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1298,6 +1464,13 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     return rc;
 }
 
+/**
+ * Disconnects a given DnD context from the DnD host service.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ *                              The context is invalid afterwards on successful disconnection.
+ */
 VBGLR3DECL(int) VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1307,6 +1480,13 @@ VBGLR3DECL(int) VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     return rc;
 }
 
+/**
+ * Receives the next upcoming event for a given DnD context.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pEvent              Where to return the received DnD event on success.
+ */
 VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCMEVENT pEvent)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -1437,6 +1617,15 @@ VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCM
     return rc;
 }
 
+/**
+ * Host -> Guest
+ * Acknowledges that a pending DnD operation from the host can be dropped
+ * on the currently selected area on the guest.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   uAction             Action to acknowledge.
+ */
 VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uAction)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1460,6 +1649,14 @@ VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uActio
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Host -> Guest
+ * Requests the actual DnD data to be sent from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pcszFormat          Format to request the data from the host in.
+ */
 VBGLR3DECL(int) VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char* pcszFormat)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
@@ -1488,6 +1685,16 @@ VBGLR3DECL(int) VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char* p
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Host -> Guest
+ * Reports back its progress back to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   uStatus             DnD status to report.
+ * @param   uPercent            Overall progress (in percent) to report.
+ * @param   rcErr               Error code (IPRT-style) to report.
+ */
 VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uStatus, uint8_t uPercent, int rcErr)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1516,7 +1723,18 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-
+/**
+ * Guest -> Host
+ * Acknowledges that there currently is a drag'n drop operation in progress on the guest,
+ * which eventually could be dragged over to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   uDefAction          Default action for the operation to report.
+ * @param   uAllActions         All available actions for the operation to report.
+ * @param   pcszFormats         Available formats for the operation to report.
+ * @param   cbFormats           Size (in bytes) of formats to report.
+ */
 VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
                                           uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats, uint32_t cbFormats)
 {
@@ -1550,6 +1768,16 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Guest -> Host
+ * Utility function to send DnD data from guest to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pvData              Data block to send.
+ * @param   cbData              Size (in bytes) of data block to send.
+ * @param   pDataHdr            Data header to use -- needed for accounting.
+ */
 static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
                                        void *pvData, uint64_t cbData, PVBOXDNDSNDDATAHDR pDataHdr)
 {
@@ -1640,6 +1868,14 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Utility function to send a guest directory to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pObj                URI object containing the directory to send.
+ */
 static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
     AssertPtrReturn(pObj,                                    VERR_INVALID_POINTER);
@@ -1680,6 +1916,14 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Utility function to send a file from the guest to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pObj                URI object containing the file to send.
+ */
 static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
     AssertPtrReturn(pCtx,                               VERR_INVALID_POINTER);
@@ -1817,6 +2061,14 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Utility function to send an URI object from guest to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pObj                URI object to send from guest to the host.
+ */
 static int vbglR3DnDGHSendURIObject(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1843,6 +2095,15 @@ static int vbglR3DnDGHSendURIObject(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pO
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Utility function to send raw data from guest to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pvData              Block to raw data to send.
+ * @param   cbData              Size (in bytes) of raw data to send.
+ */
 static int vbglR3DnDGHSendRawData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, size_t cbData)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -1858,6 +2119,15 @@ static int vbglR3DnDGHSendRawData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, size
     return vbglR3DnDGHSendDataInternal(pCtx, pvData, cbData, &dataHdr);
 }
 
+/**
+ * Guest -> Host
+ * Utility function to send URI data from guest to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pvData              Block to URI data to send.
+ * @param   cbData              Size (in bytes) of URI data to send.
+ */
 static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData, size_t cbData)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -1925,6 +2195,17 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Sends data, which either can be raw or URI data, from guest to the host. This function
+ * initiates the actual data transfer from guest to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pszFormat           In which format the data will be sent.
+ * @param   pvData              Data block to send.
+ * @param   cbData              Size (in bytes) of data block to send.
+ */
 VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx,      VERR_INVALID_POINTER);
@@ -1953,6 +2234,14 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszF
     return rc;
 }
 
+/**
+ * Guest -> Host
+ * Send an error back to the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   rcErr               Error (IPRT-style) to send.
+ */
 VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1990,6 +2279,5 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
 
     return rc;
 }
-
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
