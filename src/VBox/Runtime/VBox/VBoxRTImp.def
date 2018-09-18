@@ -30,7 +30,7 @@ EXPORTS
     g_aRTUniFlagsRanges             DATA
     g_aRTUniLowerRanges             DATA
     g_aRTUniUpperRanges             DATA
-    g_fRTAlignmentChecks            DATA
+    ;g_fRTAlignmentChecks            DATA - depends on build type, is internal, so not stable.
     g_pSUPGlobalInfoPage            DATA
     g_pStdErr                       DATA
     g_pStdIn                        DATA
