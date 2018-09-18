@@ -400,7 +400,6 @@ typedef enum IEMXCPTCLASS
 #define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
 
 #else
-# define IEM_VMX_INSTR_COMMON_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix)  do { } while (0)
 # define IEM_IS_VMX_ENABLED(a_pVCpu)                         (false)
 # define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                       (false)
 # define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                   (false)
@@ -411,32 +410,32 @@ typedef enum IEMXCPTCLASS
 /**
  * Check if an SVM control/instruction intercept is set.
  */
-# define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
+# define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
 
 /**
  * Check if an SVM read CRx intercept is set.
  */
-# define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM write CRx intercept is set.
  */
-# define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM read DRx intercept is set.
  */
-# define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM write DRx intercept is set.
  */
-# define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM exception intercept is set.
  */
-# define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
+# define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
 
 /**
  * Invokes the SVM \#VMEXIT handler for the nested-guest.
@@ -463,25 +462,25 @@ typedef enum IEMXCPTCLASS
 /** Check and handles SVM nested-guest instruction intercept and updates
  *  NRIP if needed.
  */
-# define IEM_CHECK_SVM_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+# define IEM_SVM_CHECK_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
     do \
     { \
-        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
+        if (IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
         { \
-            IEM_UPDATE_SVM_NRIP(a_pVCpu); \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
             IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
         } \
     } while (0)
 
 /** Checks and handles SVM nested-guest CR0 read intercept. */
-# define IEM_CHECK_SVM_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2) \
+# define IEM_SVM_CHECK_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2) \
     do \
     { \
-        if (!IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, 0)) \
+        if (!IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, 0)) \
         { /* probably likely */ } \
         else \
         { \
-            IEM_UPDATE_SVM_NRIP(a_pVCpu); \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
             IEM_SVM_VMEXIT_RET(a_pVCpu, SVM_EXIT_READ_CR0, a_uExitInfo1, a_uExitInfo2); \
         } \
     } while (0)
@@ -489,24 +488,24 @@ typedef enum IEMXCPTCLASS
 /**
  * Updates the NextRIP (NRI) field in the nested-guest VMCB.
  */
-# define IEM_UPDATE_SVM_NRIP(a_pVCpu) \
+# define IEM_SVM_UPDATE_NRIP(a_pVCpu) \
     do { \
         if (IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmNextRipSave) \
             CPUMGuestSvmUpdateNRip(a_pVCpu, IEM_GET_CTX(a_pVCpu), IEM_GET_INSTR_LEN(a_pVCpu)); \
     } while (0)
 
 #else
-# define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                              (false)
-# define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                 (false)
-# define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                (false)
-# define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                 (false)
-# define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                (false)
-# define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                (false)
+# define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                              (false)
+# define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                 (false)
+# define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                (false)
+# define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                 (false)
+# define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                (false)
+# define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                (false)
 # define IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)             do { return VERR_SVM_IPE_1; } while (0)
 # define IEM_SVM_CRX_VMEXIT_RET(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)            do { return VERR_SVM_IPE_1; } while (0)
-# define IEM_CHECK_SVM_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)   do { } while (0)
-# define IEM_CHECK_SVM_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2)                          do { } while (0)
-# define IEM_UPDATE_SVM_NRIP(a_pVCpu)                                                     do { } while (0)
+# define IEM_SVM_CHECK_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)   do { } while (0)
+# define IEM_SVM_CHECK_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2)                          do { } while (0)
+# define IEM_SVM_UPDATE_NRIP(a_pVCpu)                                                     do { } while (0)
 
 #endif
 
@@ -3407,7 +3406,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
  */
 IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
 {
-    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SHUTDOWN))
+    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SHUTDOWN))
     {
         Log2(("shutdown: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_SHUTDOWN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
@@ -3980,7 +3979,7 @@ iemTaskSwitch(PVMCPU          pVCpu,
      * The SVM nested-guest intercept for task-switch takes priority over all exceptions
      * after validating the incoming (new) TSS, see AMD spec. 15.14.1 "Task Switch Intercept".
      */
-    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TASK_SWITCH))
+    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TASK_SWITCH))
     {
         uint32_t const uExitInfo1 = SelTSS;
         uint32_t       uExitInfo2 = uErr;
@@ -5496,7 +5495,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             u8Vector = X86_XCPT_DF;
             uErr     = 0;
             /* SVM nested-guest #DF intercepts need to be checked now. See AMD spec. 15.12 "Exception Intercepts". */
-            if (IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
+            if (IEM_SVM_IS_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
                 IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
         else if (enmRaise == IEMXCPTRAISE_TRIPLE_FAULT)
