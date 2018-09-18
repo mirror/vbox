@@ -107,6 +107,7 @@ static void tstBasic(RTTEST hTest)
         { "\"\\uD801\\udc3\"", VERR_JSON_INVALID_UTF16_ESCAPE_SEQUENCE },
         { "\"\\uD801\\uDc37\"", VINF_SUCCESS},
         { "\"\\uDbff\\uDfff\"", VINF_SUCCESS},
+        { "\"\\t\\n\\b\\f\\r\\\\\\/\"", VINF_SUCCESS},
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
