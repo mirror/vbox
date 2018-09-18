@@ -43,7 +43,11 @@
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
 #ifdef IN_RING3
+# include <iprt/env.h>
 # include <stdio.h>
+# ifdef RT_OS_WINDOWS
+#  include <iprt/win/windows.h>
+# endif
 #endif
 #include "internal/assert.h"
 
@@ -138,8 +142,19 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 
 #ifdef IPRT_WITH_ASSERT_STACK
         /* The stack dump. */
-        char szStack[sizeof(g_szRTAssertStack)];
-        size_t cchStack = RTDbgStackDumpSelf(szStack, sizeof(szStack), 0);
+        char   szStack[sizeof(g_szRTAssertStack)];
+        size_t cchStack = 0;
+# if defined(IN_RING3) && defined(RT_OS_WINDOWS) /** @todo make this stack on/off thing more modular. */
+        bool   fStack = !IsDebuggerPresent() && !RTEnvExist("IPRT_ASSERT_NO_STACK");
+# elif defined(IN_RING3)
+        bool   fStack = !RTEnvExist("IPRT_ASSERT_NO_STACK");
+# else
+        bool   fStack = true;
+# endif
+        if (fStack)
+            cchStack = RTDbgStackDumpSelf(szStack, sizeof(szStack), 0);
+        else
+            szStack[0] = '\0';
         memcpy(g_szRTAssertStack, szStack, cchStack + 1);
 #endif
 
