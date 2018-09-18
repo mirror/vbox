@@ -8082,12 +8082,12 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const
  *                                  is responsible for calling the destructor or
  *                                  MediumLockList::Clear() after destroying
  *                                  @a *ppHdd
- * @param   pCryptoSettingsRead     The crypto read settings to use for setting
- *                                  up decryption of the VDISK.  This object
+ * @param   pCryptoSettings         The crypto settings to use for setting up
+ *                                  decryption/encryption of the VDISK.  This object
  *                                  must be alive until the VDISK is destroyed!
  */
 HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
-                            MediumCryptoFilterSettings *pCryptoSettingsRead)
+                            MediumCryptoFilterSettings *pCryptoSettings)
 {
     /*
      * Create the media lock list and lock the media.
@@ -8172,9 +8172,9 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
                                    tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
                                    itKeyId->second.c_str(), vrc);
 
-            i_taskEncryptSettingsSetup(pCryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
+            i_taskEncryptSettingsSetup(pCryptoSettings, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
                                        false /* fCreateKeyStore */);
-            vrc = VDFilterAdd(pHdd, "CRYPT", VD_FILTER_FLAGS_READ, pCryptoSettingsRead->vdFilterIfaces);
+            vrc = VDFilterAdd(pHdd, "CRYPT", VD_FILTER_FLAGS_DEFAULT, pCryptoSettings->vdFilterIfaces);
             pKeyStore->releaseSecretKey(itKeyId->second);
             if (vrc == VERR_VD_PASSWORD_INCORRECT)
                 throw setErrorBoth(VBOX_E_PASSWORD_INCORRECT, vrc, tr("The password to decrypt the image is incorrect"));
