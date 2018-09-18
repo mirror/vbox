@@ -17,39 +17,28 @@
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-/** Check and handles SVM nested-guest instruction intercept and updates
- *  NRIP if needed.
+/**
+ * Check the common SVM instruction preconditions.
  */
-# define IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
-    do \
-    { \
-        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
+# define IEM_CHECK_SVM_INSTR_COMMON(a_pVCpu, a_Instr) \
+    do { \
+        if (!CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu))) \
         { \
-            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
-            IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
+            Log((RT_STR(a_Instr) ": EFER.SVME not enabled -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+        if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
+        { \
+            Log((RT_STR(a_Instr) ": Real or v8086 mode -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+        if ((a_pVCpu)->iem.s.uCpl != 0) \
+        { \
+            Log((RT_STR(a_Instr) ": CPL != 0 -> #GP(0)\n")); \
+            return iemRaiseGeneralProtectionFault0(a_pVCpu); \
         } \
     } while (0)
 
-/** Checks and handles SVM nested-guest CR0 read intercept. */
-# define IEMCIMPL_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2) \
-    do \
-    { \
-        if (!IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)) \
-        { /* probably likely */ } \
-        else \
-        { \
-            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
-            IEM_RETURN_SVM_VMEXIT(a_pVCpu, SVM_EXIT_READ_CR0 + (a_uCr), a_uExitInfo1, a_uExitInfo2); \
-        } \
-    } while (0)
-
-#else  /* !VBOX_WITH_NESTED_HWVIRT_SVM */
-# define IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { } while (0)
-# define IEMCIMPL_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                         do { } while (0)
-#endif /* !VBOX_WITH_NESTED_HWVIRT_SVM */
-
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 
 /**
  * Converts an IEM exception event type to an SVM event type.
@@ -897,7 +886,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vecto
         && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_NMI))
     {
         Log2(("iemHandleSvmNstGstEventIntercept: NMI intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     /* Check ICEBP intercept. */
@@ -905,8 +894,8 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vecto
         && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_ICEBP))
     {
         Log2(("iemHandleSvmNstGstEventIntercept: ICEBP intercept -> #VMEXIT\n"));
-        IEM_SVM_UPDATE_NRIP(pVCpu);
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_ICEBP, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_UPDATE_SVM_NRIP(pVCpu);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_ICEBP, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     /* Check CPU exception intercepts. */
@@ -936,11 +925,11 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vecto
 # endif
         }
         if (u8Vector == X86_XCPT_BR)
-            IEM_SVM_UPDATE_NRIP(pVCpu);
+            IEM_UPDATE_SVM_NRIP(pVCpu);
         Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept u32InterceptXcpt=%#RX32 u8Vector=%#x "
               "uExitInfo1=%#RX64 uExitInfo2=%#RX64 -> #VMEXIT\n", pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u32InterceptXcpt,
               u8Vector, uExitInfo1, uExitInfo2));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_XCPT_0 + u8Vector, uExitInfo1, uExitInfo2);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_XCPT_0 + u8Vector, uExitInfo1, uExitInfo2);
     }
 
     /* Check software interrupt (INTn) intercepts. */
@@ -952,8 +941,8 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vecto
     {
         uint64_t const uExitInfo1 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? u8Vector : 0;
         Log2(("iemHandleSvmNstGstEventIntercept: Software INT intercept (u8Vector=%#x) -> #VMEXIT\n", u8Vector));
-        IEM_SVM_UPDATE_NRIP(pVCpu);
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
+        IEM_UPDATE_SVM_NRIP(pVCpu);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
     }
 
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
@@ -999,7 +988,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
     if (fIntercept)
     {
         Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) -> #VMEXIT\n", u16Port, u16Port));
-        IEM_SVM_UPDATE_NRIP(pVCpu);
+        IEM_UPDATE_SVM_NRIP(pVCpu);
         return iemSvmVmexit(pVCpu, SVM_EXIT_IOIO, IoExitInfo.u, pVCpu->cpum.GstCtx.rip + cbInstr);
     }
 
@@ -1058,7 +1047,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, uint32_t idMsr, b
         pbMsrpm += offMsrpm;
         if (*pbMsrpm & RT_BIT(uMsrpmBit))
         {
-            IEM_SVM_UPDATE_NRIP(pVCpu);
+            IEM_UPDATE_SVM_NRIP(pVCpu);
             return iemSvmVmexit(pVCpu, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
         }
     }
@@ -1085,7 +1074,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_vmrun\n"));
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmrun);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, vmrun);
 
     /** @todo Check effective address size using address size prefix. */
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
@@ -1099,7 +1088,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMRUN))
     {
         Log(("vmrun: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_VMRUN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_VMRUN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     VBOXSTRICTRC rcStrict = iemSvmVmrun(pVCpu, cbInstr, GCPhysVmcb);
@@ -1112,69 +1101,6 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 # endif
 }
 
-#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
-
-/**
- * Common code for iemCImpl_vmmcall and iemCImpl_vmcall (latter in IEMAllCImplVmxInstr.cpp.h).
- */
-IEM_CIMPL_DEF_1(iemCImpl_Hypercall, uint16_t, uDisOpcode)
-{
-    if (EMAreHypercallInstructionsEnabled(pVCpu))
-    {
-        NOREF(uDisOpcode);
-        VBOXSTRICTRC rcStrict = GIMHypercallEx(pVCpu, IEM_GET_CTX(pVCpu), uDisOpcode, cbInstr);
-        if (RT_SUCCESS(rcStrict))
-        {
-            if (rcStrict == VINF_SUCCESS)
-                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            if (   rcStrict == VINF_SUCCESS
-                || rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
-                return VINF_SUCCESS;
-            AssertMsgReturn(rcStrict == VINF_GIM_R3_HYPERCALL, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
-            return rcStrict;
-        }
-        AssertMsgReturn(   rcStrict == VERR_GIM_HYPERCALL_ACCESS_DENIED
-                        || rcStrict == VERR_GIM_HYPERCALLS_NOT_AVAILABLE
-                        || rcStrict == VERR_GIM_NOT_ENABLED
-                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_READ_FAILED
-                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED,
-                        ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
-
-        /* Raise #UD on all failures. */
-    }
-    return iemRaiseUndefinedOpcode(pVCpu);
-}
-
-/**
- * Implements 'VMMCALL'.
- */
-IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
-{
-    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMMCALL))
-    {
-        Log(("vmmcall: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    }
-
-#ifndef IN_RC
-    /* This is a little bit more complicated than the VT-x version because HM/SVM may
-       patch MOV CR8 instructions to speed up APIC.TPR access for 32-bit windows guests. */
-    if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
-    {
-        int rc = HMHCSvmMaybeMovTprHypercall(pVCpu);
-        if (RT_SUCCESS(rc))
-        {
-            Log(("vmmcall: MovTrp\n"));
-            return VINF_SUCCESS;
-        }
-    }
-#endif
-
-    /* Join forces with vmcall. */
-    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMMCALL);
-}
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 
 /**
  * Implements 'VMLOAD'.
@@ -1186,7 +1112,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_vmload\n"));
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, vmload);
 
     /** @todo Check effective address size using address size prefix. */
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
@@ -1200,7 +1126,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMLOAD))
     {
         Log(("vmload: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_VMLOAD, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_VMLOAD, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     SVMVMCBSTATESAVE VmcbNstGst;
@@ -1241,7 +1167,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_vmsave\n"));
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, vmsave);
 
     /** @todo Check effective address size using address size prefix. */
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
@@ -1255,7 +1181,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMSAVE))
     {
         Log(("vmsave: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_VMSAVE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_VMSAVE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     SVMVMCBSTATESAVE VmcbNstGst;
@@ -1302,11 +1228,11 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_clgi\n"));
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, clgi);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, clgi);
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
     {
         Log(("clgi: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     pVCpu->cpum.GstCtx.hwvirt.fGif = false;
@@ -1331,11 +1257,11 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_stgi\n"));
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, stgi);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, stgi);
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
     {
         Log2(("stgi: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     pVCpu->cpum.GstCtx.hwvirt.fGif = true;
@@ -1362,11 +1288,11 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
     uint32_t const uAsid     = pVCpu->cpum.GstCtx.ecx;
 # endif
 
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, invlpga);
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
     {
         Log2(("invlpga: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     PGMInvalidatePage(pVCpu, GCPtrPage);
@@ -1380,7 +1306,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
  */
 IEM_CIMPL_DEF_0(iemCImpl_skinit)
 {
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
+    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, invlpga);
 
     uint32_t uIgnore;
     uint32_t fFeaturesECX;
@@ -1391,7 +1317,7 @@ IEM_CIMPL_DEF_0(iemCImpl_skinit)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SKINIT))
     {
         Log2(("skinit: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_SKINIT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_SKINIT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     RT_NOREF(cbInstr);
@@ -1415,7 +1341,7 @@ IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
         {
             uint64_t const uTick = TMCpuTickGet(pVCpu);
             if (uTick - pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick > pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold)
-                pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter = IEM_GET_SVM_PAUSE_FILTER_COUNT(pVCpu);
+                pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter = CPUMGetGuestSvmPauseFilterCount(pVCpu, IEM_GET_CTX(pVCpu));
             pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick = uTick;
         }
 
@@ -1428,11 +1354,72 @@ IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
     }
 
     if (fCheckIntercept)
-        IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+        IEM_CHECK_SVM_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
+
+/**
+ * Common code for iemCImpl_vmmcall and iemCImpl_vmcall (latter in IEMAllCImplVmxInstr.cpp.h).
+ */
+IEM_CIMPL_DEF_1(iemCImpl_Hypercall, uint16_t, uDisOpcode)
+{
+    if (EMAreHypercallInstructionsEnabled(pVCpu))
+    {
+        NOREF(uDisOpcode);
+        VBOXSTRICTRC rcStrict = GIMHypercallEx(pVCpu, IEM_GET_CTX(pVCpu), uDisOpcode, cbInstr);
+        if (RT_SUCCESS(rcStrict))
+        {
+            if (rcStrict == VINF_SUCCESS)
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            if (   rcStrict == VINF_SUCCESS
+                || rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
+                return VINF_SUCCESS;
+            AssertMsgReturn(rcStrict == VINF_GIM_R3_HYPERCALL, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
+            return rcStrict;
+        }
+        AssertMsgReturn(   rcStrict == VERR_GIM_HYPERCALL_ACCESS_DENIED
+                        || rcStrict == VERR_GIM_HYPERCALLS_NOT_AVAILABLE
+                        || rcStrict == VERR_GIM_NOT_ENABLED
+                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_READ_FAILED
+                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED,
+                        ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
+
+        /* Raise #UD on all failures. */
+    }
+    return iemRaiseUndefinedOpcode(pVCpu);
+}
+
+
+/**
+ * Implements 'VMMCALL'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
+{
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMMCALL))
+    {
+        Log(("vmmcall: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+#ifndef IN_RC
+    /* This is a little bit more complicated than the VT-x version because HM/SVM may
+       patch MOV CR8 instructions to speed up APIC.TPR access for 32-bit windows guests. */
+    if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
+    {
+        int rc = HMHCSvmMaybeMovTprHypercall(pVCpu);
+        if (RT_SUCCESS(rc))
+        {
+            Log(("vmmcall: MovTrp\n"));
+            return VINF_SUCCESS;
+        }
+    }
+#endif
+
+    /* Join forces with vmcall. */
+    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMMCALL);
+}
 

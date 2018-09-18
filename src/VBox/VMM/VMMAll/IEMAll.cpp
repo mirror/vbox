@@ -409,42 +409,6 @@ typedef enum IEMXCPTCLASS
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
- * Check the common SVM instruction preconditions.
- */
-# define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
-    do { \
-        if (!IEM_IS_SVM_ENABLED(a_pVCpu)) \
-        { \
-            Log((RT_STR(a_Instr) ": EFER.SVME not enabled -> #UD\n")); \
-            return iemRaiseUndefinedOpcode(a_pVCpu); \
-        } \
-        if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
-        { \
-            Log((RT_STR(a_Instr) ": Real or v8086 mode -> #UD\n")); \
-            return iemRaiseUndefinedOpcode(a_pVCpu); \
-        } \
-        if ((a_pVCpu)->iem.s.uCpl != 0) \
-        { \
-            Log((RT_STR(a_Instr) ": CPL != 0 -> #GP(0)\n")); \
-            return iemRaiseGeneralProtectionFault0(a_pVCpu); \
-        } \
-    } while (0)
-
-/**
- * Updates the NextRIP (NRI) field in the nested-guest VMCB.
- */
-# define IEM_SVM_UPDATE_NRIP(a_pVCpu) \
-    do { \
-        if (IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmNextRipSave) \
-            CPUMGuestSvmUpdateNRip(a_pVCpu, IEM_GET_CTX(a_pVCpu), IEM_GET_INSTR_LEN(a_pVCpu)); \
-    } while (0)
-
-/**
- * Check if SVM is enabled.
- */
-# define IEM_IS_SVM_ENABLED(a_pVCpu)                         (CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu)))
-
-/**
  * Check if an SVM control/instruction intercept is set.
  */
 # define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
@@ -475,21 +439,16 @@ typedef enum IEMXCPTCLASS
 # define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
 
 /**
- * Get the SVM pause-filter count.
- */
-# define IEM_GET_SVM_PAUSE_FILTER_COUNT(a_pVCpu)             (CPUMGetGuestSvmPauseFilterCount(a_pVCpu, IEM_GET_CTX(a_pVCpu)))
-
-/**
  * Invokes the SVM \#VMEXIT handler for the nested-guest.
  */
-# define IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+# define IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
     do { return iemSvmVmexit((a_pVCpu), (a_uExitCode), (a_uExitInfo1), (a_uExitInfo2)); } while (0)
 
 /**
  * Invokes the 'MOV CRx' SVM \#VMEXIT handler after constructing the
  * corresponding decode assist information.
  */
-# define IEM_RETURN_SVM_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg) \
+# define IEM_SVM_CRX_VMEXIT_RET(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg) \
     do \
     { \
         uint64_t uExitInfo1; \
@@ -498,22 +457,56 @@ typedef enum IEMXCPTCLASS
             uExitInfo1 = SVM_EXIT1_MOV_CRX_MASK | ((a_iGReg) & 7); \
         else \
             uExitInfo1 = 0; \
-        IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, uExitInfo1, 0); \
+        IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, uExitInfo1, 0); \
+    } while (0)
+
+/** Check and handles SVM nested-guest instruction intercept and updates
+ *  NRIP if needed.
+ */
+# define IEM_CHECK_SVM_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
+        { \
+            IEM_UPDATE_SVM_NRIP(a_pVCpu); \
+            IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
+        } \
+    } while (0)
+
+/** Checks and handles SVM nested-guest CR0 read intercept. */
+# define IEM_CHECK_SVM_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        if (!IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, 0)) \
+        { /* probably likely */ } \
+        else \
+        { \
+            IEM_UPDATE_SVM_NRIP(a_pVCpu); \
+            IEM_SVM_VMEXIT_RET(a_pVCpu, SVM_EXIT_READ_CR0, a_uExitInfo1, a_uExitInfo2); \
+        } \
+    } while (0)
+
+/**
+ * Updates the NextRIP (NRI) field in the nested-guest VMCB.
+ */
+# define IEM_UPDATE_SVM_NRIP(a_pVCpu) \
+    do { \
+        if (IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmNextRipSave) \
+            CPUMGuestSvmUpdateNRip(a_pVCpu, IEM_GET_CTX(a_pVCpu), IEM_GET_INSTR_LEN(a_pVCpu)); \
     } while (0)
 
 #else
-# define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr)                                    do { } while (0)
-# define IEM_SVM_UPDATE_NRIP(a_pVCpu)                                                     do { } while (0)
-# define IEM_IS_SVM_ENABLED(a_pVCpu)                                                      (false)
 # define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                              (false)
 # define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                 (false)
 # define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                (false)
 # define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                 (false)
 # define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                (false)
 # define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                (false)
-# define IEM_GET_SVM_PAUSE_FILTER_COUNT(a_pVCpu)                                          (0)
-# define IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)          do { return VERR_SVM_IPE_1; } while (0)
-# define IEM_RETURN_SVM_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)         do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)             do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_SVM_CRX_VMEXIT_RET(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)            do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_CHECK_SVM_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)   do { } while (0)
+# define IEM_CHECK_SVM_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2)                          do { } while (0)
+# define IEM_UPDATE_SVM_NRIP(a_pVCpu)                                                     do { } while (0)
 
 #endif
 
@@ -3417,7 +3410,7 @@ IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SHUTDOWN))
     {
         Log2(("shutdown: Guest intercept -> #VMEXIT\n"));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_SHUTDOWN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_SHUTDOWN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     RT_NOREF(pVCpu);
@@ -4003,7 +3996,7 @@ iemTaskSwitch(PVMCPU          pVCpu,
             uExitInfo2 |= SVM_EXIT2_TASK_SWITCH_EFLAGS_RF;
 
         Log(("iemTaskSwitch: Guest intercept -> #VMEXIT. uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitInfo1, uExitInfo2));
-        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_TASK_SWITCH, uExitInfo1, uExitInfo2);
+        IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_TASK_SWITCH, uExitInfo1, uExitInfo2);
         RT_NOREF2(uExitInfo1, uExitInfo2);
     }
     /** @todo Nested-VMX task-switch intercept. */
@@ -5504,7 +5497,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             uErr     = 0;
             /* SVM nested-guest #DF intercepts need to be checked now. See AMD spec. 15.12 "Exception Intercepts". */
             if (IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
-                IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+                IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
         else if (enmRaise == IEMXCPTRAISE_TRIPLE_FAULT)
         {
