@@ -390,32 +390,6 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = NIL_RTGCPHYS; \
     } while (0)
 
-/** Check the common VMX instruction preconditions.
- * @note Any changes here, also check if IEMOP_HLP_VMX_INSTR needs updating.
- */
-#define IEM_VMX_INSTR_CHECKS(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
-    do { \
-        if (   !IEM_IS_REAL_OR_V86_MODE(a_pVCpu) \
-            && (   !IEM_IS_LONG_MODE(a_pVCpu) \
-                ||  IEM_IS_64BIT_CODE(a_pVCpu))) \
-        { /* likely */ } \
-        else \
-        { \
-            if (IEM_IS_REAL_OR_V86_MODE(a_pVCpu)) \
-            { \
-                Log((a_szInstr ": Real or v8086 mode -> #UD\n")); \
-                (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_RealOrV86Mode; \
-                return iemRaiseUndefinedOpcode(a_pVCpu); \
-            } \
-            if (IEM_IS_LONG_MODE(a_pVCpu) && !IEM_IS_64BIT_CODE(a_pVCpu)) \
-            { \
-                Log((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
-                (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_LongModeCS; \
-                return iemRaiseUndefinedOpcode(a_pVCpu); \
-            } \
-        } \
-    } while (0)
-
 /** Check for VMX instructions requiring to be in VMX operation.
  * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs udpating. */
 #define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
