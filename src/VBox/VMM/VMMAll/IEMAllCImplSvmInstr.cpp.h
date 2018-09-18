@@ -20,7 +20,7 @@
 /**
  * Check the common SVM instruction preconditions.
  */
-# define IEM_CHECK_SVM_INSTR_COMMON(a_pVCpu, a_Instr) \
+# define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
     do { \
         if (!CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu))) \
         { \
@@ -1074,7 +1074,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_vmrun\n"));
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, vmrun);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmrun);
 
     /** @todo Check effective address size using address size prefix. */
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
@@ -1112,7 +1112,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_vmload\n"));
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, vmload);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
 
     /** @todo Check effective address size using address size prefix. */
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
@@ -1167,7 +1167,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_vmsave\n"));
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, vmsave);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
 
     /** @todo Check effective address size using address size prefix. */
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
@@ -1228,7 +1228,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_clgi\n"));
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, clgi);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, clgi);
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
     {
         Log(("clgi: Guest intercept -> #VMEXIT\n"));
@@ -1257,7 +1257,7 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     LogFlow(("iemCImpl_stgi\n"));
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, stgi);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, stgi);
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
     {
         Log2(("stgi: Guest intercept -> #VMEXIT\n"));
@@ -1288,7 +1288,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
     uint32_t const uAsid     = pVCpu->cpum.GstCtx.ecx;
 # endif
 
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, invlpga);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
     {
         Log2(("invlpga: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
@@ -1306,7 +1306,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
  */
 IEM_CIMPL_DEF_0(iemCImpl_skinit)
 {
-    IEM_CHECK_SVM_INSTR_COMMON(pVCpu, invlpga);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
 
     uint32_t uIgnore;
     uint32_t fFeaturesECX;
