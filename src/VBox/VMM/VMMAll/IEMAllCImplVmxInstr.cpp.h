@@ -360,20 +360,20 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     } while (0)
 # endif /* !IEM_WITH_CODE_TLB */
 
+/** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
+#define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)            ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs)
+
 /** Whether a shadow VMCS is present for the given VCPU. */
 #define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)            RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
-
-/** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
-#define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)            ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u64VmcsLinkPtr.u)
 
 /** Gets the VMXON region pointer. */
 #define IEM_VMX_GET_VMXON_PTR(a_pVCpu)              ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
 
-/** Whether a current VMCS is present for the given VCPU. */
-#define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
-
 /** Gets the guest-physical address of the current VMCS for the given VCPU. */
 #define IEM_VMX_GET_CURRENT_VMCS(a_pVCpu)           ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs)
+
+/** Whether a current VMCS is present for the given VCPU. */
+#define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
 
 /** Assigns the guest-physical address of the current VMCS for the given VCPU. */
 #define IEM_VMX_SET_CURRENT_VMCS(a_pVCpu, a_GCPhysVmcs) \
@@ -3080,8 +3080,9 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
      */
     if (pVmcs->u64VmcsLinkPtr.u != UINT64_C(0xffffffffffffffff))
     {
+        RTGCPHYS const GCPhysShadowVmcs = pVmcs->u64VmcsLinkPtr.u;
         /* We don't support SMM yet (so VMCS link pointer cannot be the current VMCS). */
-        if (pVmcs->u64VmcsLinkPtr.u != IEM_VMX_GET_CURRENT_VMCS(pVCpu))
+        if (GCPhysShadowVmcs != IEM_VMX_GET_CURRENT_VMCS(pVCpu))
         { /* likely */ }
         else
         {
@@ -3090,9 +3091,9 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
         }
 
         /* Validate the address. */
-        if (   (pVmcs->u64VmcsLinkPtr.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64VmcsLinkPtr.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64VmcsLinkPtr.u))
+        if (   (GCPhysShadowVmcs & X86_PAGE_4K_OFFSET_MASK)
+            || (GCPhysShadowVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysShadowVmcs))
         {
             pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmcsLinkPtr);
@@ -3101,7 +3102,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
         /* Read the VMCS-link pointer from guest memory. */
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs));
         int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs),
-                                         pVmcs->u64VmcsLinkPtr.u, VMX_V_VMCS_SIZE);
+                                         GCPhysShadowVmcs, VMX_V_VMCS_SIZE);
         if (RT_FAILURE(rc))
         {
             pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
@@ -3126,6 +3127,9 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
             pVmcs->u64ExitQual.u = VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR;
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrShadow);
         }
+
+        /* Finally update our cache of the guest physical address of the shadow VMCS. */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs = GCPhysShadowVmcs;
     }
 
     NOREF(pszInstr);
