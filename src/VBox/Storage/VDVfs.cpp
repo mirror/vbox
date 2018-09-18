@@ -31,6 +31,8 @@
 #include <iprt/poll.h>
 #include <VBox/vd.h>
 
+#include "VDInternal.h"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -42,11 +44,11 @@
 typedef struct VDVFSFILE
 {
     /** The volume the VFS file belongs to. */
-    PVDISK         pDisk;
+    PVDISK          pDisk;
     /** Current position. */
-    uint64_t       offCurPos;
+    uint64_t        offCurPos;
     /** Flags given during creation. */
-    uint32_t       fFlags;
+    uint32_t        fFlags;
 } VDVFSFILE;
 /** Pointer to a the internal data of a DVM volume file. */
 typedef VDVFSFILE *PVDVFSFILE;
@@ -132,36 +134,60 @@ static int vdReadHelper(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
  * @return  VBox status code.
  * @param   pDisk    VD disk container.
  * @param   off      Offset to start writing to.
- * @param   pvBuf    Pointer to the buffer to read from.
+ * @param   pvSrc    Pointer to the buffer to read from.
  * @param   cbWrite  Amount of bytes to write.
  */
-static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t cbWrite)
+static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvSrc, size_t cbWrite)
 {
+    uint8_t const *pbSrc = (uint8_t const *)pvSrc;
+    uint8_t        abBuf[4096];
     int rc;
 
-    /* Take direct route if the request is sector aligned. */
+    /*
+     * Take direct route if the request is sector aligned.
+     */
     uint64_t const offMisalign = off & 511;
     size_t   const cbMisalign  = (off + cbWrite) & 511;
     if (   !offMisalign
         && !cbMisalign)
-        rc = VDWrite(pDisk, off, pvBuf, cbWrite);
+    {
+        if (RTListIsEmpty(&pDisk->ListFilterChainWrite))
+            rc = VDWrite(pDisk, off, pbSrc, cbWrite);
+        else
+        {
+            /* Filtered writes must be double buffered as the filter may need to modify the input buffer directly. */
+            do
+            {
+                size_t cbThisWrite = RT_MIN(cbWrite, sizeof(abBuf));
+                rc = VDWrite(pDisk, off, memcpy(abBuf, pbSrc, cbThisWrite), cbThisWrite);
+                if (RT_SUCCESS(rc))
+                {
+                    pbSrc   += cbThisWrite;
+                    off     += cbThisWrite;
+                    cbWrite -= cbThisWrite;
+                }
+                else
+                    break;
+            } while (cbWrite > 0);
+        }
+    }
     else
     {
-        uint8_t *pbBuf = (uint8_t *)pvBuf;
-        uint8_t abBuf[512];
 
-        /* Unaligned buffered read+write of head.  Aligns the offset. */
+        /*
+         * Unaligned buffered read+write of head.  Aligns the offset.
+         */
         if (offMisalign)
         {
             rc = VDRead(pDisk, off - offMisalign, abBuf, 512);
             if (RT_SUCCESS(rc))
             {
                 size_t const cbPart = RT_MIN(512 - offMisalign, cbWrite);
-                memcpy(&abBuf[offMisalign], pbBuf, cbPart);
+                memcpy(&abBuf[offMisalign], pbSrc, cbPart);
                 rc = VDWrite(pDisk, off - offMisalign, abBuf, 512);
                 if (RT_SUCCESS(rc))
                 {
-                    pbBuf   += cbPart;
+                    pbSrc   += cbPart;
                     off     += cbPart;
                     cbWrite -= cbPart;
                 }
@@ -170,24 +196,49 @@ static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t c
         else
             rc = VINF_SUCCESS;
 
-        /* Aligned direct write. */
+        /*
+         * Aligned direct write.
+         */
         if (   RT_SUCCESS(rc)
             && cbWrite >= 512)
         {
             Assert(!(off % 512));
-
             size_t cbPart = cbWrite - cbMisalign;
             Assert(!(cbPart % 512));
-            rc = VDWrite(pDisk, off, pbBuf, cbPart);
-            if (RT_SUCCESS(rc))
+
+            if (RTListIsEmpty(&pDisk->ListFilterChainWrite))
             {
-                pbBuf   += cbPart;
-                off     += cbPart;
-                cbWrite -= cbPart;
+                rc = VDWrite(pDisk, off, pbSrc, cbPart);
+                if (RT_SUCCESS(rc))
+                {
+                    pbSrc   += cbPart;
+                    off     += cbPart;
+                    cbWrite -= cbPart;
+                }
+            }
+            else
+            {
+                /* Filtered writes must be double buffered as the filter may need to modify the input buffer directly. */
+                do
+                {
+                    size_t cbThisWrite = RT_MIN(cbPart, sizeof(abBuf));
+                    rc = VDWrite(pDisk, off, memcpy(abBuf, pbSrc, cbThisWrite), cbThisWrite);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pbSrc   += cbThisWrite;
+                        off     += cbThisWrite;
+                        cbWrite -= cbThisWrite;
+                        cbPart  -= cbThisWrite;
+                    }
+                    else
+                        break;
+                } while (cbPart > 0);
             }
         }
 
-        /* Unaligned buffered read+write of tail. */
+        /*
+         * Unaligned buffered read+write of tail.
+         */
         if (   RT_SUCCESS(rc)
             && cbWrite > 0)
         {
@@ -198,7 +249,7 @@ static int vdWriteHelper(PVDISK pDisk, uint64_t off, const void *pvBuf, size_t c
             rc = VDRead(pDisk, off, abBuf, 512);
             if (RT_SUCCESS(rc))
             {
-                memcpy(abBuf, pbBuf, cbWrite);
+                memcpy(abBuf, pbSrc, cbWrite);
                 rc = VDWrite(pDisk, off, abBuf, 512);
             }
         }
@@ -577,9 +628,9 @@ VBOXDDU_DECL(int) VDCreateVfsFileFromDisk(PVDISK pDisk, uint32_t fFlags,
                           NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->offCurPos = 0;
-        pThis->pDisk     = pDisk;
-        pThis->fFlags    = fFlags;
+        pThis->offCurPos        = 0;
+        pThis->pDisk            = pDisk;
+        pThis->fFlags           = fFlags;
 
         *phVfsFile = hVfsFile;
         return VINF_SUCCESS;
