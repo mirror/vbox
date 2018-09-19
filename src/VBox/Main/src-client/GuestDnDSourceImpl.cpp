@@ -718,7 +718,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
             AssertRC(rc2);
 
             objCtx.reset();
-            LogRel2(("DnD: Created guest directory on host: %s\n", pszDir));
+            LogRel2(("DnD: Created guest directory '%s' on host\n", pszDir));
         }
         else
             LogRel(("DnD: Error creating guest directory '%s' on host, rc=%Rrc\n", pszDir, rc));
@@ -823,7 +823,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                 break;
             }
 
-            LogFunc(("Rebased to: %s\n", pszPathAbs));
+            LogRel2(("DnD: Absolute file path on the host now is '%s'\n", pszPathAbs));
 
             /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
             rc = pObj->OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
@@ -844,7 +844,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                 rc = pObj->SetSize(cbSize);
 
             /** @todo Unescpae path before printing. */
-            LogRel2(("DnD: Transferring guest file to host: %s (%RU64 bytes, mode 0x%x)\n",
+            LogRel2(("DnD: Transferring guest file '%s' to host (%RU64 bytes, mode 0x%x)\n",
                      pObj->GetDestPath().c_str(), pObj->GetSize(), pObj->GetMode()));
 
             /** @todo Set progress object title to current file being transferred? */
