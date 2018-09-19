@@ -234,7 +234,7 @@ RTDECL(int) RTCrCipherEncrypt(RTCRCIPHER hCipher, void const *pvKey, size_t cbKe
             {
                 Assert(cbEncrypted1 <= (ssize_t)cbNeeded);
                 int cbEncrypted2 = 0;
-                rcOssl = EVP_DecryptFinal(pCipherCtx, (unsigned char *)pvEncrypted + cbEncrypted1, &cbEncrypted1);
+                rcOssl = EVP_DecryptFinal(pCipherCtx, (unsigned char *)pvEncrypted + cbEncrypted1, &cbEncrypted2);
                 if (rcOssl > 0)
                 {
                     Assert(cbEncrypted1 + cbEncrypted2 == (ssize_t)cbNeeded);
