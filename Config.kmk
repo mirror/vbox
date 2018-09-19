@@ -572,6 +572,8 @@ endif
 VBOX_WITH_USB_CARDREADER = 1
 # Disk crypt plugin
 VBOX_WITH_PLUGIN_CRYPT = 1
+# Make disk crypt plugin use IPRT for crypto.
+VD_WITH_IPRT_CRYPTO = 1
 # VirtualKD stub/loader device, only relevant on Windows host
 VBOX_WITH_VIRTUALKD = 1
 # NVMe device emulation
