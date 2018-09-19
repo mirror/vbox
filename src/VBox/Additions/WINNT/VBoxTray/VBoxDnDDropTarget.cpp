@@ -391,7 +391,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                         uint32_t cchFiles = 0;
                         UINT cFiles = DragQueryFile(hDrop, UINT32_MAX /* iFile */, NULL /* lpszFile */, 0 /* cchFile */);
 
-                        LogRel2(("DnD: CF_HDROP got %RU16 file(s), fUnicode=%RTbool\n", cFiles, fUnicode));
+                        LogRel(("DnD: Got %RU16 file(s), fUnicode=%RTbool\n", cFiles, fUnicode));
 
                         for (UINT i = 0; i < cFiles; i++)
                         {
