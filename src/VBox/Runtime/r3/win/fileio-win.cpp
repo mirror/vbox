@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,6 +46,7 @@
 #include "internal/file.h"
 #include "internal/fs.h"
 #include "internal/path.h"
+#include "internal-r3-win.h" /* For g_enmWinVer + kRTWinOSType_XXX */
 
 
 /*********************************************************************************************************************************
@@ -287,9 +288,41 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
 
     /*
      * Open/Create the file.
+     *
+     * When opening files with paths longer than 260 chars, CreateFileW() will fail, unless
+     * you explicitly specify a prefix (see [1], RTPATH_WIN_LONG_PATH_PREFIX).
+     *
+     * Note: Relative paths are not supported, so check for this.
+     *
+     * [1] https://docs.microsoft.com/en-gb/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
      */
-    PRTUTF16 pwszFilename;
-    rc = RTStrToUtf16(pszFilename, &pwszFilename);
+    PRTUTF16 pwszFilename = NULL;
+    if (g_enmWinVer >= kRTWinOSType_XP) /* Not sure since when the prefix is available, so play safe by default. */
+    {
+#define RTPATH_WIN_LONG_PATH_PREFIX "\\\\?\\"
+
+        if (   strlen(pszFilename) > 260
+            && !RTPathStartsWith(pszFilename, RTPATH_WIN_LONG_PATH_PREFIX)
+            && RTPathStartsWithRoot(pszFilename))
+        {
+            char *pszFilenameWithPrefix = RTStrAPrintf2("%s%s", RTPATH_WIN_LONG_PATH_PREFIX, pszFilename);
+            if (pszFilenameWithPrefix)
+            {
+                rc = RTStrToUtf16(pszFilenameWithPrefix, &pwszFilename);
+                RTStrFree(pszFilenameWithPrefix);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+#undef RTPATH_WIN_LONG_PATH_PREFIX
+    }
+
+    if (   RT_SUCCESS(rc)
+        && !pwszFilename)
+    {
+        rc = RTStrToUtf16(pszFilename, &pwszFilename);
+    }
+
     if (RT_FAILURE(rc))
         return rc;
 
