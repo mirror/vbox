@@ -246,7 +246,7 @@ RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects
  *
  * @remark  See RTCritSectEnterMultiple().
  */
-RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 # endif /* IN_RING3 */
 
