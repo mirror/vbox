@@ -3915,12 +3915,14 @@ DECLINLINE(bool) HMVmxIsTrapLikeVmexit(uint32_t uExitReason)
      * Fault-like VM-exits - The instruction causing the VM-exit is not completed before
      * the VM-exit occurs.
      *
+     * See Intel spec. 25.5.2 "Monitor Trap Flag".
      * See Intel spec. 29.1.4 "EOI Virtualization".
      * See Intel spec. 29.4.3.3 "APIC-Write VM Exits".
      * See Intel spec. 29.1.2 "TPR Virtualization".
      */
     switch (uExitReason)
     {
+        case VMX_EXIT_MTF:
         case VMX_EXIT_VIRTUALIZED_EOI:
         case VMX_EXIT_APIC_WRITE:
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
