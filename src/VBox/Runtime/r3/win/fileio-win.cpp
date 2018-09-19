@@ -297,6 +297,11 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
      * [1] https://docs.microsoft.com/en-gb/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
      */
     PRTUTF16 pwszFilename = NULL;
+#if 0 /** @todo r=bird: This stuff just isn't up to scratch. Sorry.  RTStrAPrintf2? WTF?!?  When using the long path prefix,
+       * the path is just passed right thru to the NT API, so we need to fix unix slashes, resolve '.' and '..' components,
+       * and probably also get rid of extra slashes.  Finally, the 260 limit (there is a \#define for it btw) actually
+       * applies to the  converted filename (UTF-16), not the UTF-8 one, so this may break stuff (think asian languages)
+       * that isn't over the 260 limit.  */
     if (g_enmWinVer >= kRTWinOSType_XP) /* Not sure since when the prefix is available, so play safe by default. */
     {
 #define RTPATH_WIN_LONG_PATH_PREFIX "\\\\?\\"
@@ -319,9 +324,8 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
 
     if (   RT_SUCCESS(rc)
         && !pwszFilename)
-    {
+#endif
         rc = RTStrToUtf16(pszFilename, &pwszFilename);
-    }
 
     if (RT_FAILURE(rc))
         return rc;
