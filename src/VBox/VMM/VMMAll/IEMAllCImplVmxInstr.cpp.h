@@ -682,6 +682,75 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
 
 
 /**
+ * Sets a guest segment register in the VMCS.
+ *
+ * @param   pVmcs       Pointer to the virtual VMCS.
+ * @param   iSegReg     The index of the segment register (X86_SREG_XXX).
+ * @param   pSelReg     Pointer to the segment register.
+ */
+IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCPUMSELREG pSelReg)
+{
+    Assert(pSelReg);
+    Assert(iSegReg < X86_SREG_COUNT);
+
+    /* Selector. */
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+        Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t        *pbField    = pbVmcs + offField;
+        *(uint16_t *)pbField = pSelReg->Sel;
+    }
+
+    /* Limit. */
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
+        Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t        *pbField    = pbVmcs + offField;
+        *(uint32_t *)pbField = pSelReg->u32Limit;
+    }
+
+    /* Base. */
+    {
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_NATURAL;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
+        Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t  const *pbField    = pbVmcs + offField;
+        *(uint64_t *)pbField = pSelReg->u64Base;
+    }
+
+    /* Attributes. */
+    {
+        uint32_t const fValidAttrMask = X86DESCATTR_TYPE | X86DESCATTR_DT  | X86DESCATTR_DPL | X86DESCATTR_P
+                                      | X86DESCATTR_AVL  | X86DESCATTR_L   | X86DESCATTR_D   | X86DESCATTR_G
+                                      | X86DESCATTR_UNUSABLE;
+        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidthType = (uWidth << 2) | uType;
+        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
+        Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+        uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+        uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
+        uint8_t        *pbField    = pbVmcs + offField;
+        *(uint32_t *)pbField       = pSelReg->Attr.u & fValidAttrMask;
+    }
+}
+
+
+/**
  * Gets a guest segment register from the VMCS given its index.
  *
  * @returns VBox status code.
@@ -1109,6 +1178,19 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
 
 
 /**
+ * Sets the VM-instruction error VMCS field.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   enmInsErr   The VM-instruction error.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetVmInstrErr(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u32RoVmInstrError = enmInsErr;
+}
+
+
+/**
  * Implements VMSucceed for VMX instruction success.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -1143,8 +1225,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
     {
         pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
         pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_ZF;
-        /** @todo NSTVMX: VMWrite enmInsErr to VM-instruction error field. */
-        RT_NOREF(enmInsErr);
+        iemVmxVmcsSetVmInstrErr(pVCpu, enmInsErr);
     }
 }
 
@@ -1158,10 +1239,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
     if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
-    {
         iemVmxVmFailValid(pVCpu, enmInsErr);
-        /** @todo Set VM-instruction error field in the current virtual-VMCS. */
-    }
     else
         iemVmxVmFailInvalid(pVCpu);
 }
@@ -3857,8 +3935,8 @@ IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsr(PVMCPU pVCpu)
     if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
         pVCpu->cpum.GstCtx.msrEFER = pVmcs->u64GuestEferMsr.u;
 
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));   /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));         /* We don't support loading IA32_BNDCFGS MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));          /* We don't support IA32_PERF_GLOBAL_CTRL MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));       /* We don't support IA32_BNDCFGS MSR yet. */
     /* Nothing to do for SMBASE register - We don't support SMM yet. */
 }
 
@@ -4219,6 +4297,8 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
             return VINF_SUCCESS;
         }
 
+
+
         int rc = HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
                                                   pVCpu->cpum.GstCtx.cr2);
         AssertRCReturn(rc, rc);
@@ -4446,6 +4526,201 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Saves the guest control registers, debug registers and some MSRs are part of
+ * VM-exit.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
+{
+    /*
+     * Saves the guest control registers, debug registers and some MSRs.
+     * See Intel spec. 27.3.1 "Saving Control Registers, Debug Registers and MSRs".
+     */
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /* Save control registers. */
+    pVmcs->u64GuestCr0.u = pVCpu->cpum.GstCtx.cr0;
+    pVmcs->u64GuestCr3.u = pVCpu->cpum.GstCtx.cr3;
+    pVmcs->u64GuestCr4.u = pVCpu->cpum.GstCtx.cr4;
+
+    /* Save SYSENTER CS, ESP, EIP. */
+    pVmcs->u32GuestSysenterCS    = pVCpu->cpum.GstCtx.SysEnter.cs;
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        pVmcs->u64GuestSysenterEsp.u = pVCpu->cpum.GstCtx.SysEnter.esp;
+        pVmcs->u64GuestSysenterEip.u = pVCpu->cpum.GstCtx.SysEnter.eip;
+    }
+    else
+    {
+        pVmcs->u64GuestSysenterEsp.s.Lo = pVCpu->cpum.GstCtx.SysEnter.esp;
+        pVmcs->u64GuestSysenterEip.s.Lo = pVCpu->cpum.GstCtx.SysEnter.eip;
+    }
+
+    /* Save debug registers (DR7 and IA32_DEBUGCTL MSR). */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_DEBUG)
+    {
+        pVmcs->u64GuestDr7.u = pVCpu->cpum.GstCtx.dr[7];
+        /** @todo NSTVMX: Support IA32_DEBUGCTL MSR */
+    }
+
+    /* Save PAT MSR. */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PAT_MSR)
+        pVmcs->u64GuestPatMsr.u = pVCpu->cpum.GstCtx.msrPAT;
+
+    /* Save EFER MSR. */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_EFER_MSR)
+        pVmcs->u64GuestEferMsr.u = pVCpu->cpum.GstCtx.msrEFER;
+
+    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR));   /* We don't support clearing IA32_BNDCFGS MSR yet. */
+    /* Nothing to do for SMBASE register - We don't support SMM yet. */
+}
+
+
+/**
+ * Saves guest segment registers as part of VM-exit.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmexitSaveGuestSegRegs(PVMCPU pVCpu)
+{
+    /*
+     * Save guest segment registers, GDTR, IDTR, LDTR, TR.
+     * See Intel spec 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
+     */
+    /* CS, SS, ES, DS, FS, GS. */
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    for (unsigned iSegReg = 0; iSegReg < X86_SREG_COUNT; iSegReg++)
+    {
+        PCCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
+        if (!pSelReg->Attr.n.u1Unusable)
+            iemVmxVmcsSetGuestSegReg(pVmcs, iSegReg, pSelReg);
+        else
+        {
+            /*
+             * For unusable segments the attributes are undefined except for CS and SS.
+             * For the rest we don't bother preserving anything but the unusable bit.
+             */
+            switch (iSegReg)
+            {
+                case X86_SREG_CS:
+                    pVmcs->GuestCs          = pSelReg->Sel;
+                    pVmcs->u64GuestCsBase.u = pSelReg->u64Base;
+                    pVmcs->u32GuestCsLimit  = pSelReg->u32Limit;
+                    pVmcs->u32GuestCsAttr   = pSelReg->Attr.u & (  X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G
+                                                                 | X86DESCATTR_UNUSABLE);
+                    break;
+
+                case X86_SREG_SS:
+                    pVmcs->GuestSs        = pSelReg->Sel;
+                    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+                        pVmcs->u64GuestSsBase.u &= UINT32_C(0xffffffff);
+                    pVmcs->u32GuestSsAttr = pSelReg->Attr.u & (X86DESCATTR_DPL | X86DESCATTR_UNUSABLE);
+                    break;
+
+                case X86_SREG_DS:
+                    pVmcs->GuestDs        = pSelReg->Sel;
+                    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+                        pVmcs->u64GuestDsBase.u &= UINT32_C(0xffffffff);
+                    pVmcs->u32GuestDsAttr = X86DESCATTR_UNUSABLE;
+                    break;
+
+                case X86_SREG_ES:
+                    pVmcs->GuestEs        = pSelReg->Sel;
+                    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+                        pVmcs->u64GuestEsBase.u &= UINT32_C(0xffffffff);
+                    pVmcs->u32GuestEsAttr = X86DESCATTR_UNUSABLE;
+                    break;
+
+                case X86_SREG_FS:
+                    pVmcs->GuestFs          = pSelReg->Sel;
+                    pVmcs->u64GuestFsBase.u = pSelReg->u64Base;
+                    pVmcs->u32GuestFsAttr   = X86DESCATTR_UNUSABLE;
+                    break;
+
+                case X86_SREG_GS:
+                    pVmcs->GuestGs          = pSelReg->Sel;
+                    pVmcs->u64GuestGsBase.u = pSelReg->u64Base;
+                    pVmcs->u32GuestGsAttr   = X86DESCATTR_UNUSABLE;
+                    break;
+            }
+        }
+    }
+
+    /* Segment attribute bits 31:7 and 11:8 MBZ. */
+    uint32_t const fValidAttrMask = X86DESCATTR_TYPE | X86DESCATTR_DT  | X86DESCATTR_DPL | X86DESCATTR_P
+                                  | X86DESCATTR_AVL  | X86DESCATTR_L   | X86DESCATTR_D   | X86DESCATTR_G | X86DESCATTR_UNUSABLE;
+    /* LDTR. */
+    {
+        PCCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.ldtr;
+        pVmcs->GuestLdtr          = pSelReg->Sel;
+        pVmcs->u64GuestLdtrBase.u = pSelReg->u64Base;
+        Assert(X86_IS_CANONICAL(pSelReg->u64Base));
+        pVmcs->u32GuestLdtrLimit  = pSelReg->u32Limit;
+        pVmcs->u32GuestLdtrAttr   = pSelReg->Attr.u & fValidAttrMask;
+    }
+
+    /* TR. */
+    {
+        PCCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.tr;
+        pVmcs->GuestTr          = pSelReg->Sel;
+        pVmcs->u64GuestTrBase.u = pSelReg->u64Base;
+        pVmcs->u32GuestTrLimit  = pSelReg->u32Limit;
+        pVmcs->u32GuestTrAttr   = pSelReg->Attr.u & fValidAttrMask;
+    }
+}
+
+
+/**
+ * Saves the guest-state as part of VM-exit.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu)
+{
+    /*
+     * Save control, debug, segment, descriptor-table registers and some MSRs.
+     */
+    iemVmxVmexitSaveGuestControlRegsMsrs(pVCpu);
+    iemVmxVmexitSaveGuestSegRegs(pVCpu);
+
+    /** @todo NSTVMX: rest of state. */
+}
+
+
+/**
+ * VMX VM-exit handler.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_t cbInstr)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    pVmcs->u32RoExitReason   = uExitReason;
+    pVmcs->u32RoExitInstrLen = cbInstr;
+
+    /** @todo NSTVMX: IEMGetCurrentXcpt will be VM-exit interruption info. */
+    /** @todo NSTVMX: The source event should be recorded in IDT-vectoring info
+     *        during injection. */
+
+    /*
+     * Save the guest state back into the VMCS.
+     * We only need to save the state when the VM-entry was successful.
+     */
+    if (   uExitReason != VMX_EXIT_ERR_INVALID_GUEST_STATE
+        && uExitReason != VMX_EXIT_ERR_MSR_LOAD
+        && uExitReason != VMX_EXIT_ERR_MACHINE_CHECK)
+        iemVmxVmexitSaveGuestState(pVCpu);
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Implements 'VMXON'.
