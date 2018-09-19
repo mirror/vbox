@@ -301,8 +301,18 @@ void UIDetailsSet::updateLayout()
     /* Prepare variables: */
     const int iMargin = data(SetData_Margin).toInt();
     const int iSpacing = data(SetData_Spacing).toInt();
-    const int iMaximumWidth = geometry().size().toSize().width();
+    const int iMaximumWidth = geometry().width();
+    const UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
+    const int iPreviewWidth = pPreviewElement ? pPreviewElement->minimumWidthHint() : 0;
+    const int iPreviewHeight = pPreviewElement ? pPreviewElement->minimumHeightHint() : 0;
     int iVerticalIndent = 0;
+
+    /* Calculate Preview group elements: */
+    QList<DetailsElementType> inGroup;
+    QList<DetailsElementType> outGroup;
+    int iAdditionalGroupHeight = 0;
+    int iAdditionalPreviewHeight = 0;
+    enumerateLayoutItems(inGroup, outGroup, iAdditionalGroupHeight, iAdditionalPreviewHeight);
 
     /* Layout all the elements: */
     foreach (UIDetailsItem *pItem, items())
@@ -313,7 +323,8 @@ void UIDetailsSet::updateLayout()
 
         /* For each particular element: */
         UIDetailsElement *pElement = pItem->toElement();
-        switch (pElement->elementType())
+        const DetailsElementType enmElementType = pElement->elementType();
+        switch (enmElementType)
         {
             case DetailsElementType_General:
             case DetailsElementType_System:
@@ -329,56 +340,52 @@ void UIDetailsSet::updateLayout()
             {
                 /* Move element: */
                 pElement->setPos(0, iVerticalIndent);
+
                 /* Calculate required width: */
                 int iWidth = iMaximumWidth;
-                if (pElement->elementType() == DetailsElementType_General ||
-                    pElement->elementType() == DetailsElementType_System)
-                    if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
-                        if (pPreviewElement->isVisible())
-                            iWidth -= (iSpacing + pPreviewElement->minimumWidthHint());
-                /* If element width is wrong: */
+                if (inGroup.contains(enmElementType))
+                    iWidth -= (iSpacing + iPreviewWidth);
+                /* Resize element to required width (separately from height): */
                 if (pElement->geometry().width() != iWidth)
-                {
-                    /* Resize element to required width: */
                     pElement->resize(iWidth, pElement->geometry().height());
-                }
-                /* Acquire required height: */
+
+                /* Calculate required height: */
                 int iHeight = pElement->minimumHeightHint();
-                if (pElement->elementType() == DetailsElementType_System && !pElement->isAnimationRunning() && !pElement->isClosed())
-                    if (UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
-                        if (pPreviewElement->isVisible())
-                        {
-                            int iSpareHeight = pPreviewElement->minimumHeightHint();
-                            if (UIDetailsElement *pGeneralElement = element(DetailsElementType_General))
-                                if (pGeneralElement->isVisible())
-                                    iSpareHeight -= (iSpacing + pGeneralElement->minimumHeightHint());
-                            iHeight = qMax(iHeight, iSpareHeight);
-                        }
-                /* If element height is wrong: */
-                if (pElement->geometry().height() != iHeight)
+                if (   !inGroup.isEmpty()
+                    && inGroup.last() == enmElementType)
                 {
-                    /* Resize element to required height: */
-                    pElement->resize(pElement->geometry().width(), iHeight);
+                    if (!pElement->isAnimationRunning() && !pElement->isClosed())
+                        iHeight += iAdditionalGroupHeight;
+                    else
+                        iVerticalIndent += iAdditionalGroupHeight;
                 }
+                /* Resize element to required height (separately from width): */
+                if (pElement->geometry().height() != iHeight)
+                    pElement->resize(pElement->geometry().width(), iHeight);
+
                 /* Layout element content: */
                 pItem->updateLayout();
                 /* Advance indent: */
                 iVerticalIndent += (iHeight + iSpacing);
+
                 break;
             }
             case DetailsElementType_Preview:
             {
-                /* Prepare variables: */
-                int iWidth = pElement->minimumWidthHint();
-                int iHeight = pElement->minimumHeightHint();
                 /* Move element: */
-                pElement->setPos(iMaximumWidth - iWidth, iMargin);
-                /* Resize element: */
+                pElement->setPos(iMaximumWidth - iPreviewWidth, iMargin);
+
+                /* Calculate required size: */
+                int iWidth = iPreviewWidth;
+                int iHeight = iPreviewHeight;
+                if (!pElement->isAnimationRunning() && !pElement->isClosed())
+                    iHeight += iAdditionalPreviewHeight;
+                /* Resize element to required size: */
                 pElement->resize(iWidth, iHeight);
+
                 /* Layout element content: */
                 pItem->updateLayout();
-                /* Advance indent: */
-                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
+
                 break;
             }
             case DetailsElementType_Invalid: AssertFailed(); break; /* Shut up, MSC! */
@@ -447,11 +454,20 @@ int UIDetailsSet::minimumHeightHint() const
         return 0;
 
     /* Prepare variables: */
-    int iMargin = data(SetData_Margin).toInt();
-    int iSpacing = data(SetData_Spacing).toInt();
-    int iMinimumHeightHint = 0;
+    const int iMargin = data(SetData_Margin).toInt();
+    const int iSpacing = data(SetData_Spacing).toInt();
+
+    /* Calculate Preview group elements: */
+    QList<DetailsElementType> inGroup;
+    QList<DetailsElementType> outGroup;
+    int iAdditionalGroupHeight = 0;
+    int iAdditionalPreviewHeight = 0;
+    enumerateLayoutItems(inGroup, outGroup, iAdditionalGroupHeight, iAdditionalPreviewHeight);
 
     /* Take into account all the elements: */
+    int iMinimumHeightHintInGroup = 0;
+    int iMinimumHeightHintOutGroup = 0;
+    int iMinimumHeightHintPreview = 0;
     foreach (UIDetailsItem *pItem, items())
     {
         /* Skip hidden: */
@@ -460,7 +476,8 @@ int UIDetailsSet::minimumHeightHint() const
 
         /* For each particular element: */
         UIDetailsElement *pElement = pItem->toElement();
-        switch (pElement->elementType())
+        const DetailsElementType enmElementType = pElement->elementType();
+        switch (enmElementType)
         {
             case DetailsElementType_General:
             case DetailsElementType_System:
@@ -474,12 +491,19 @@ int UIDetailsSet::minimumHeightHint() const
             case DetailsElementType_UI:
             case DetailsElementType_Description:
             {
-                iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
+                if (inGroup.contains(enmElementType))
+                {
+                    iMinimumHeightHintInGroup += (pItem->minimumHeightHint() + iSpacing);
+                    if (inGroup.last() == enmElementType)
+                        iMinimumHeightHintInGroup += iAdditionalGroupHeight;
+                }
+                else if (outGroup.contains(enmElementType))
+                    iMinimumHeightHintOutGroup += (pItem->minimumHeightHint() + iSpacing);
                 break;
             }
             case DetailsElementType_Preview:
             {
-                iMinimumHeightHint = qMax(iMinimumHeightHint, pItem->minimumHeightHint() + iSpacing);
+                iMinimumHeightHintPreview = pItem->minimumHeightHint() + iAdditionalPreviewHeight;
                 break;
             }
             case DetailsElementType_Invalid: AssertFailed(); break; /* Shut up, MSC! */
@@ -487,7 +511,19 @@ int UIDetailsSet::minimumHeightHint() const
     }
 
     /* Minus last spacing: */
-    iMinimumHeightHint -= iSpacing;
+    iMinimumHeightHintInGroup -= iSpacing;
+    iMinimumHeightHintOutGroup -= iSpacing;
+
+    /* Calculate minimum height hint: */
+    int iMinimumHeightHint = qMax(iMinimumHeightHintInGroup, iMinimumHeightHintPreview);
+
+    /* Spacing if necessary: */
+    if (!inGroup.isEmpty() && !outGroup.isEmpty())
+        iMinimumHeightHint += iSpacing;
+
+    /* Spacing if necessary: */
+    if (!outGroup.isEmpty())
+        iMinimumHeightHint += iMinimumHeightHintOutGroup;
 
     /* And two margins finally: */
     iMinimumHeightHint += 2 * iMargin;
@@ -598,4 +634,57 @@ UIDetailsElement *UIDetailsSet::createElement(DetailsElementType enmElementType,
         case DetailsElementType_Invalid:     AssertFailed(); break; /* Shut up, MSC! */
     }
     return 0;
+}
+
+void UIDetailsSet::enumerateLayoutItems(QList<DetailsElementType> &inGroup,
+                                        QList<DetailsElementType> &outGroup,
+                                        int &iAdditionalGroupHeight,
+                                        int &iAdditionalPreviewHeight) const
+{
+    /* Prepare variables: */
+    const int iSpacing = data(SetData_Spacing).toInt();
+    const UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
+    const bool fPreviewVisible = pPreviewElement && pPreviewElement->isVisible();
+    const int iPreviewHeight = fPreviewVisible ? pPreviewElement->minimumHeightHint() : 0;
+    int iGroupHeight = 0;
+
+    /* Enumerate all the items: */
+    foreach (UIDetailsItem *pItem, items())
+    {
+        /* Skip hidden: */
+        if (!pItem->isVisible())
+            continue;
+
+        /* Acquire element and its type: */
+        const UIDetailsElement *pElement = pItem->toElement();
+        const DetailsElementType enmElementType = pElement->elementType();
+
+        /* Skip Preview: */
+        if (enmElementType == DetailsElementType_Preview)
+            continue;
+
+        /* Acquire element height: */
+        const int iElementHeight = pElement->minimumHeightHint();
+
+        /* Advance cumulative height if necessary: */
+        if (   fPreviewVisible
+            && outGroup.isEmpty()
+            && (   iGroupHeight == 0
+                || iGroupHeight + iElementHeight < iPreviewHeight))
+        {
+            iGroupHeight += iElementHeight;
+            iGroupHeight += iSpacing;
+            inGroup << enmElementType;
+        }
+        else
+            outGroup << enmElementType;
+    }
+    /* Minus last spacing: */
+    iGroupHeight -= iSpacing;
+
+    /* Calculate additional height: */
+    if (iPreviewHeight > iGroupHeight)
+        iAdditionalGroupHeight = iPreviewHeight - iGroupHeight;
+    else
+        iAdditionalPreviewHeight = iGroupHeight - iPreviewHeight;
 }
