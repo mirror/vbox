@@ -7682,16 +7682,16 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, uint32_t fIntrState,
          *
          * See Intel spec. 26.6.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
          */
-        uint32_t const uIntType = VMX_EXIT_INT_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
+        uint32_t const uIntType = VMX_ENTRY_INT_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
 #ifdef VBOX_STRICT
-        if (uIntType == VMX_EXIT_INT_INFO_TYPE_EXT_INT)
+        if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
         {
             bool const fBlockInt = !(pCtx->eflags.u32 & X86_EFL_IF);
             Assert(!fBlockInt);
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
         }
-        else if (uIntType == VMX_EXIT_INT_INFO_TYPE_NMI)
+        else if (uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI)
         {
             bool const fBlockNmi = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI);
             Assert(!fBlockSti);
@@ -7711,7 +7711,7 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, uint32_t fIntrState,
         fBlockMovSS = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS);
         fBlockSti   = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI);
 
-        if (uIntType == VMX_EXIT_INT_INFO_TYPE_EXT_INT)
+        if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
@@ -7871,8 +7871,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
     PCPUMCTX       pCtx       = &pVCpu->cpum.GstCtx;
     uint32_t       u32IntInfo = (uint32_t)u64IntInfo;
-    uint32_t const uVector    = VMX_EXIT_INT_INFO_VECTOR(u32IntInfo);
-    uint32_t const uIntType   = VMX_EXIT_INT_INFO_TYPE(u32IntInfo);
+    uint32_t const uVector    = VMX_ENTRY_INT_INFO_VECTOR(u32IntInfo);
+    uint32_t const uIntType   = VMX_ENTRY_INT_INFO_TYPE(u32IntInfo);
 
 #ifdef VBOX_STRICT
     /*
@@ -7893,7 +7893,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                AssertMsg(VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(u32IntInfo),
+                AssertMsg(VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(u32IntInfo),
                           ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
                 RT_FALL_THRU();
             default:
@@ -7926,7 +7926,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
              *
              * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
              */
-            u32IntInfo &= ~VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
+            u32IntInfo &= ~VMX_ENTRY_INT_INFO_ERROR_CODE_VALID;
         }
         else
         {
@@ -7962,13 +7962,13 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
             /* Software exceptions (#BP and #OF exceptions thrown as a result of INT3 or INTO) */
             uint16_t uGuestIp = pCtx->ip;
-            if (uIntType == VMX_EXIT_INT_INFO_TYPE_SW_XCPT)
+            if (uIntType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT)
             {
                 Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
                 /* #BP and #OF are both benign traps, we need to resume the next instruction. */
                 uGuestIp = pCtx->ip + (uint16_t)cbInstr;
             }
-            else if (uIntType == VMX_EXIT_INT_INFO_TYPE_SW_INT)
+            else if (uIntType == VMX_ENTRY_INT_INFO_TYPE_SW_INT)
                 uGuestIp = pCtx->ip + (uint16_t)cbInstr;
 
             /* Get the code segment selector and offset from the IDT entry for the interrupt handler. */
@@ -7993,7 +7993,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
                 pCtx->cs.Sel      = IdtEntry.uSel;
                 pCtx->cs.ValidSel = IdtEntry.uSel;
                 pCtx->cs.u64Base  = IdtEntry.uSel << cbIdtEntry;
-                if (   uIntType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT
+                if (   uIntType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
                     && uVector  == X86_XCPT_PF)
                     pCtx->cr2 = GCPtrFaultAddress;
 
@@ -8006,8 +8006,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
                 /* We're clearing interrupts, which means no block-by-STI interrupt-inhibition. */
                 if (*pfIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
                 {
-                    Assert(   uIntType != VMX_EXIT_INT_INFO_TYPE_NMI
-                           && uIntType != VMX_EXIT_INT_INFO_TYPE_EXT_INT);
+                    Assert(   uIntType != VMX_ENTRY_INT_INFO_TYPE_NMI
+                           && uIntType != VMX_ENTRY_INT_INFO_TYPE_EXT_INT);
                     Log4Func(("Clearing inhibition due to STI\n"));
                     *pfIntrState &= ~VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
                 }
@@ -8034,13 +8034,13 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
     /* Inject. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);
-    if (VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(u32IntInfo))
+    if (VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(u32IntInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
     AssertRCReturn(rc, rc);
 
     /* Update CR2. */
-    if (   VMX_EXIT_INT_INFO_TYPE(u32IntInfo) == VMX_EXIT_INT_INFO_TYPE_HW_XCPT
+    if (   VMX_ENTRY_INT_INFO_TYPE(u32IntInfo) == VMX_EXIT_INT_INFO_TYPE_HW_XCPT
         && uVector == X86_XCPT_PF)
         pCtx->cr2 = GCPtrFaultAddress;
 
