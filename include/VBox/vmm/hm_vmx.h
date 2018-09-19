@@ -2206,6 +2206,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_LOAD_EFER_MSR                             RT_BIT(21)
 /** Whether the value of the VMX preemption timer is saved on every VM-exit. */
 #define VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER                        RT_BIT(22)
+/** Whether IA32_BNDCFGS MSR is cleared on VM-exit. */
+#define VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR                         RT_BIT(23)
 /** Default1 class when true-capability MSRs are not supported.  */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
 
