@@ -414,12 +414,13 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                                     AssertMsg(cchFileUtf16 == cchFile, ("cchFileUtf16 (%RU16) does not match cchFile (%RU16)\n",
                                                                         cchFileUtf8, cchFile));
+                                    RT_NOREF(cchFileUtf16);
 
                                     rc = RTUtf16ToUtf8(pwszFile, &pszFileUtf8);
                                     AssertRC(rc);
                                     Assert(RTStrIsValidEncoding(pszFileUtf8));
 
-                                    cchFileUtf8 = strlen(pszFileUtf8);
+                                    cchFileUtf8 = (UINT)strlen(pszFileUtf8);
                                     Assert(cchFileUtf8);
 
                                     RTMemFree(pwszFile);
