@@ -81,7 +81,7 @@
 #endif
 
 #ifdef RT_OS_LINUX
-//# define IPRT_USE_LIBPROXY
+# define IPRT_USE_LIBPROXY
 #endif
 #ifdef IPRT_USE_LIBPROXY
 # include <stdlib.h> /* free */
