@@ -44,6 +44,7 @@ s/[[:space:]][[:space:]]*$//g
 s/^EXPORTS$//
 /^$/b end
 
+/^?/b cpp_export
 /[[:space:]]DATA$/b data
 
 #
@@ -58,6 +59,13 @@ b end
 #
 :data
 s/^\(.*\)[[:space:]]*DATA$/EXTERN_IMP2 \1/
+b end
+
+#
+# Mangled C++ .
+#
+:cpp_export
+s/^\(.*\)$/extern __imp_\1/
 b end
 
 }

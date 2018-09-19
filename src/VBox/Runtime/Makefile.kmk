@@ -2345,8 +2345,7 @@ endif
 
 
 if1of ($(KBUILD_TARGET),win darwin) # remove later
-ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
- if1of (VBoxRT,$(DLLS))
+if1of (VBoxRT,$(DLLS))
  #
  # VBoxRTImpCheck - Import library check.
  #
@@ -2358,11 +2357,23 @@ ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
  VBoxRTStableCheck_LIBS = \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
-$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def $(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def $(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def | $$(dir $$@)
+$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+       $(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
+	$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
+	| $$(dir $$@)
  else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
-$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def $(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def $(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
+$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+       $(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
+	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
+	$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
  else
-$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def $(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
+$$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+       $(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+	$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
  endif
 	$(APPEND) -tn "$@" '%include "iprt/asmdefs.mac"' ''
 	$(SED) --append "$@" \
@@ -2370,9 +2381,7 @@ $$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: $(PATH_SUB_CURRENT)/VBox/
        	$(if-expr "$(KBUILD_TARGET)" == "linux" ,, -e "/only-linux/d") \
        	$(if-expr "$(KBUILD_TARGET)" == "win"   ,, -e "/only-win/d") \
        	$(if-expr "$(KBUILD_TARGET)" == "darwin",, -e "/only-darwin/d") \
-		-f $(PATH_ROOT)/src/VBox/Runtime/VBox/DefToAsmExterns.sed \
-		$(filter %.def, $^)
- endif
+		-f "$<" $(filter %.def, $^)
 endif
 endif # remove later
 
