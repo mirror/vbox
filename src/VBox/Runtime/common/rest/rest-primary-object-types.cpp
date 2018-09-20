@@ -184,6 +184,12 @@ void RTCRestBool::assignValue(bool a_fValue)
 }
 
 
+RTCRestObjectBase *RTCRestBool::baseClone() const
+{
+    return new (std::nothrow) RTCRestBool(*this);
+}
+
+
 int RTCRestBool::resetToDefault()
 {
     m_fValue = false;
@@ -355,6 +361,12 @@ void RTCRestInt64::assignValue(int64_t a_iValue)
 }
 
 
+RTCRestObjectBase *RTCRestInt64::baseClone() const
+{
+    return new (std::nothrow) RTCRestInt64(*this);
+}
+
+
 int RTCRestInt64::resetToDefault()
 {
     m_iValue = 0;
@@ -509,6 +521,12 @@ int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat)
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
     return VINF_SUCCESS;
+}
+
+
+RTCRestObjectBase *RTCRestInt32::baseClone() const
+{
+    return new (std::nothrow) RTCRestInt32(*this);
 }
 
 
@@ -689,6 +707,12 @@ void RTCRestInt16::assignValue(int16_t a_iValue)
 }
 
 
+RTCRestObjectBase *RTCRestInt16::baseClone() const
+{
+    return new (std::nothrow) RTCRestInt16(*this);
+}
+
+
 int RTCRestInt16::resetToDefault()
 {
     m_iValue = 0;
@@ -855,6 +879,12 @@ void RTCRestDouble::assignValue(double a_rdValue)
 {
     m_rdValue = a_rdValue;
     m_fNullIndicator = false;
+}
+
+
+RTCRestObjectBase *RTCRestDouble::baseClone() const
+{
+    return new (std::nothrow) RTCRestDouble(*this);
 }
 
 
@@ -1029,16 +1059,16 @@ const char *RTCRestDouble::typeName() const
 
 /** Default constructor. */
 RTCRestString::RTCRestString()
-    : RTCString()
-    , RTCRestObjectBase()
+    : RTCRestObjectBase()
+    , RTCString()
 {
 }
 
 
 /** Copy constructor. */
 RTCRestString::RTCRestString(RTCRestString const &a_rThat)
-    : RTCString(a_rThat)
-    , RTCRestObjectBase(a_rThat)
+    : RTCRestObjectBase(a_rThat)
+    , RTCString(a_rThat)
 {
 }
 
@@ -1052,8 +1082,8 @@ RTCRestString::RTCRestString(RTCString const &a_rThat)
 
 /** From value constructor. */
 RTCRestString::RTCRestString(const char *a_pszSrc)
-    : RTCString(a_pszSrc)
-    , RTCRestObjectBase()
+    : RTCRestObjectBase()
+    , RTCString(a_pszSrc)
 {
 }
 
@@ -1092,6 +1122,20 @@ int RTCRestString::setNull()
     RTCString::setNull();
     m_fNullIndicator = true;
     return VINF_SUCCESS;
+}
+
+
+RTCRestObjectBase *RTCRestString::baseClone() const
+{
+    RTCRestString *pClone = new (std::nothrow) RTCRestString();
+    if (pClone)
+    {
+        int rc = pClone->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
 }
 
 
@@ -1365,6 +1409,20 @@ int RTCRestDate::assignCopy(RTCRestDate const &a_rThat)
     m_fTimeSpecOkay  = a_rThat.m_fTimeSpecOkay;
     m_enmFormat      = a_rThat.m_enmFormat;
     return m_strFormatted.assignNoThrow(a_rThat.m_strFormatted);
+}
+
+
+RTCRestObjectBase *RTCRestDate::baseClone() const
+{
+    RTCRestDate *pClone = new (std::nothrow) RTCRestDate();
+    if (pClone)
+    {
+        int rc = pClone->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
 }
 
 
@@ -2009,6 +2067,19 @@ bool RTCRestStringEnumBase::setWorker(int a_iEnumValue)
 }
 
 
+RTCRestObjectBase  *RTCRestStringEnumBase::cloneWorker(RTCRestStringEnumBase *a_pDst) const
+{
+    if (a_pDst)
+    {
+        int rc = a_pDst->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return a_pDst;
+        delete a_pDst;
+    }
+    return NULL;
+}
+
+
 
 /*********************************************************************************************************************************
 *   RTCRestDataObject                                                                                                            *
@@ -2167,5 +2238,46 @@ int RTCRestDataObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 RTCRestObjectBase::kTypeClass RTCRestDataObject::typeClass(void) const
 {
     return kTypeClass_DataObject;
+}
+
+
+
+/*********************************************************************************************************************************
+*   RTCRestPolyDataObject                                                                                                        *
+*********************************************************************************************************************************/
+
+RTCRestPolyDataObject::RTCRestPolyDataObject()
+    : RTCRestDataObject()
+{
+}
+
+
+RTCRestPolyDataObject::RTCRestPolyDataObject(RTCRestPolyDataObject const &a_rThat)
+    : RTCRestDataObject(a_rThat)
+{
+}
+
+
+RTCRestPolyDataObject::~RTCRestPolyDataObject()
+{
+}
+
+
+int RTCRestPolyDataObject::resetToDefault()
+{
+    return RTCRestDataObject::resetToDefault();
+}
+
+
+bool RTCRestPolyDataObject::isChild() const
+{
+    return false;
+}
+
+
+RTCRestPolyDataObject &RTCRestPolyDataObject::operator=(RTCRestPolyDataObject const &a_rThat)
+{
+    RTCRestDataObject::operator=(a_rThat);
+    return *this;
 }
 

@@ -73,6 +73,20 @@ RTCRestStringMapBase &RTCRestStringMapBase::operator=(RTCRestStringMapBase const
 *   Overridden base object methods                                                                                               *
 *********************************************************************************************************************************/
 
+RTCRestObjectBase *RTCRestStringMapBase::baseClone() const
+{
+    RTCRestStringMapBase *pClone = createClone();
+    if (pClone)
+    {
+        int rc = pClone->copyMapWorker(*this, false /*fThrow*/);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
+}
+
+
 int RTCRestStringMapBase::resetToDefault()
 {
     /* Default is an empty map. */
@@ -393,7 +407,7 @@ int RTCRestStringMapBase::putCopyWorker(const char *a_pszKey, RTCRestObjectBase 
                                         size_t a_cchKey /*= RTSTR_MAX*/)
 {
     int rc;
-    RTCRestObjectBase *pValueCopy = createValueCopy(&a_rValue);
+    RTCRestObjectBase *pValueCopy = a_rValue.baseClone();
     if (pValueCopy)
     {
         rc = putWorker(a_pszKey, pValueCopy, a_fReplace, a_cchKey);

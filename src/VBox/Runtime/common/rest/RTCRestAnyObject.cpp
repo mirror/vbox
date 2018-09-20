@@ -381,6 +381,20 @@ int RTCRestAnyObject::assignValue(const char *a_pszValue)
 }
 
 
+RTCRestObjectBase *RTCRestAnyObject::baseClone() const
+{
+    RTCRestAnyObject *pClone = new (std::nothrow) RTCRestAnyObject();
+    if (pClone)
+    {
+        int rc = pClone->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
+}
+
+
 int RTCRestAnyObject::setNull(void)
 {
     if (m_pData)

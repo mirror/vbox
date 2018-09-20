@@ -89,6 +89,20 @@ RTCRestArrayBase &RTCRestArrayBase::operator=(RTCRestArrayBase const &a_rThat);
 *   Overridden methods                                                                                                           *
 *********************************************************************************************************************************/
 
+RTCRestObjectBase *RTCRestArrayBase::baseClone() const
+{
+    RTCRestArrayBase *pClone = createClone();
+    if (pClone)
+    {
+        int rc = pClone->copyArrayWorker(*this, false /*fThrow*/);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
+}
+
+
 int RTCRestArrayBase::resetToDefault()
 {
     /* The default state of an array is empty. At least for now. */
@@ -457,7 +471,7 @@ int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bo
 int RTCRestArrayBase::insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace)
 {
     int rc;
-    RTCRestObjectBase *pValueCopy = createValueCopy(&a_rValue);
+    RTCRestObjectBase *pValueCopy = a_rValue.baseClone();
     if (pValueCopy)
     {
         rc = insertWorker(a_idx, pValueCopy, a_fReplace);

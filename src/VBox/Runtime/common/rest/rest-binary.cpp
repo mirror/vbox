@@ -175,6 +175,21 @@ void RTCRestBinary::freeData()
 
 
 /* Overridden methods: */
+
+RTCRestObjectBase *RTCRestBinary::baseClone() const
+{
+    RTCRestBinary *pClone = new (std::nothrow) RTCRestBinary();
+    if (pClone)
+    {
+        int rc = pClone->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
+}
+
+
 int RTCRestBinary::setNull(void)
 {
     freeData();
@@ -301,6 +316,20 @@ int RTCRestBinaryParameter::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
 {
     AssertMsgFailed(("Please use assignReadOnly!\n"));
     return assignReadOnly(a_pvBuf, a_cbBuf);
+}
+
+
+RTCRestObjectBase *RTCRestBinaryParameter::baseClone() const
+{
+    RTCRestBinaryParameter *pClone = new (std::nothrow) RTCRestBinaryParameter();
+    if (pClone)
+    {
+        int rc = pClone->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
 }
 
 
@@ -486,6 +515,20 @@ int RTCRestBinaryResponse::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
     m_pvCallbackData  = NULL;
     AssertStmt(a_cbBuf <= m_cbMaxDownload, m_cbMaxDownload = a_cbBuf);
     return RTCRestBinary::assignWriteable(a_pvBuf, a_cbBuf);
+}
+
+
+RTCRestObjectBase *RTCRestBinaryResponse::baseClone() const
+{
+    RTCRestBinaryResponse *pClone = new (std::nothrow) RTCRestBinaryResponse();
+    if (pClone)
+    {
+        int rc = pClone->assignCopy(*this);
+        if (RT_SUCCESS(rc))
+            return pClone;
+        delete pClone;
+    }
+    return NULL;
 }
 
 
