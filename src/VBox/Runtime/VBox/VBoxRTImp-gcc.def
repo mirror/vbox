@@ -43,11 +43,13 @@ EXPORTS
     _ZTI13RTCRestString DATA
     _ZTI16RTCRestAnyObject DATA
     _ZTI16RTCRestArrayBase DATA
+    _ZTI17RTCRestDataObject DATA
     _ZTI17RTCRestObjectBase DATA
     _ZTI20RTCRestClientApiBase DATA
     _ZTI20RTCRestStringMapBase DATA
     _ZTI21RTCRestBinaryResponse DATA
     _ZTI21RTCRestOutputToString DATA
+    _ZTI21RTCRestPolyDataObject DATA
     _ZTI21RTCRestStringEnumBase DATA
     _ZTI22RTCRestBinaryParameter DATA
     _ZTI24RTCRestClientRequestBase DATA
@@ -64,12 +66,14 @@ EXPORTS
     _ZTS13RTCRestString DATA
     _ZTS16RTCRestAnyObject DATA
     _ZTS16RTCRestArrayBase DATA
+    _ZTS17RTCRestDataObject DATA
     _ZTS17RTCRestObjectBase DATA
     _ZTS17RTCRestOutputBase DATA
     _ZTS20RTCRestClientApiBase DATA
     _ZTS20RTCRestStringMapBase DATA
     _ZTS21RTCRestBinaryResponse DATA
     _ZTS21RTCRestOutputToString DATA
+    _ZTS21RTCRestPolyDataObject DATA
     _ZTS21RTCRestStringEnumBase DATA
     _ZTS22RTCRestBinaryParameter DATA
     _ZTS24RTCRestClientRequestBase DATA
@@ -87,11 +91,13 @@ EXPORTS
     _ZTV13RTCRestString DATA
     _ZTV16RTCRestAnyObject DATA
     _ZTV16RTCRestArrayBase DATA
+    _ZTV17RTCRestDataObject DATA
     _ZTV17RTCRestObjectBase DATA
     _ZTV20RTCRestClientApiBase DATA
     _ZTV20RTCRestStringMapBase DATA
     _ZTV21RTCRestBinaryResponse DATA
     _ZTV21RTCRestOutputToString DATA
+    _ZTV21RTCRestPolyDataObject DATA
     _ZTV21RTCRestStringEnumBase DATA
     _ZTV22RTCRestBinaryParameter DATA
     _ZTV24RTCRestClientRequestBase DATA
@@ -296,6 +302,16 @@ EXPORTS
     _ZN16RTCRestArrayBaseD0Ev
     _ZN16RTCRestArrayBaseD1Ev
     _ZN16RTCRestArrayBaseD2Ev
+    _ZN17RTCRestDataObject10assignCopyERKS_
+    _ZN17RTCRestDataObject14resetToDefaultEv
+    _ZN17RTCRestDataObject19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN17RTCRestDataObject25deserializeMemberFromJsonERK17RTCRestJsonCursorm
+    _ZN17RTCRestDataObjectC2ERKS_
+    _ZN17RTCRestDataObjectC2Ev
+    _ZN17RTCRestDataObjectD0Ev
+    _ZN17RTCRestDataObjectD1Ev
+    _ZN17RTCRestDataObjectD2Ev
+    _ZN17RTCRestDataObjectaSERKS_
     _ZN17RTCRestObjectBase10fromStringERK9RTCStringPKcP9RTERRINFOj
     _ZN17RTCRestObjectBase10setNotNullEv
     _ZN17RTCRestObjectBase7setNullEv
@@ -304,10 +320,16 @@ EXPORTS
     _ZN17RTCRestObjectBaseD0Ev
     _ZN17RTCRestObjectBaseD1Ev
     _ZN17RTCRestObjectBaseD2Ev
+    _ZN20RTCRestClientApiBase12setServerUrlEPKc
     _ZN20RTCRestClientApiBase14ociSignRequestEP14RTHTTPINTERNALRK9RTCString12RTHTTPMETHODS4_jP10RTCRKEYINTS4_
+    _ZN20RTCRestClientApiBase15setServerSchemeEPKc
+    _ZN20RTCRestClientApiBase16setServerUrlPartEPKcmmS1_m
+    _ZN20RTCRestClientApiBase17setServerBasePathEPKc
     _ZN20RTCRestClientApiBase18reinitHttpInstanceEv
+    _ZN20RTCRestClientApiBase18setServerAuthorityEPKc
     _ZN20RTCRestClientApiBase6doCallERK24RTCRestClientRequestBase12RTHTTPMETHODP25RTCRestClientResponseBasePKcj
     _ZN20RTCRestClientApiBase9xmitReadyEP14RTHTTPINTERNALRK9RTCString12RTHTTPMETHODS4_j
+    _ZN20RTCRestClientApiBaseC2Ev
     _ZN20RTCRestClientApiBaseD0Ev
     _ZN20RTCRestClientApiBaseD1Ev
     _ZN20RTCRestClientApiBaseD2Ev
@@ -349,6 +371,13 @@ EXPORTS
     _ZN21RTCRestOutputToStringD0Ev
     _ZN21RTCRestOutputToStringD1Ev
     _ZN21RTCRestOutputToStringD2Ev
+    _ZN21RTCRestPolyDataObject14resetToDefaultEv
+    _ZN21RTCRestPolyDataObjectC2ERKS_
+    _ZN21RTCRestPolyDataObjectC2Ev
+    _ZN21RTCRestPolyDataObjectD0Ev
+    _ZN21RTCRestPolyDataObjectD1Ev
+    _ZN21RTCRestPolyDataObjectD2Ev
+    _ZN21RTCRestPolyDataObjectaSERKS_
     _ZN21RTCRestStringEnumBase10assignCopyERKS_
     _ZN21RTCRestStringEnumBase10fromStringERK9RTCStringPKcP9RTERRINFOj
     _ZN21RTCRestStringEnumBase11setByStringEPKcm
@@ -469,53 +498,71 @@ EXPORTS
     _ZNK11RTCRestBool15serializeAsJsonER17RTCRestOutputBase
     _ZNK11RTCRestBool8toStringEP9RTCStringj
     _ZNK11RTCRestBool8typeNameEv
+    _ZNK11RTCRestBool9baseCloneEv
     _ZNK11RTCRestBool9typeClassEv
     _ZNK11RTCRestDate15serializeAsJsonER17RTCRestOutputBase
     _ZNK11RTCRestDate8toStringEP9RTCStringj
     _ZNK11RTCRestDate8typeNameEv
+    _ZNK11RTCRestDate9baseCloneEv
     _ZNK11RTCRestDate9typeClassEv
     _ZNK12RTCRestInt1615serializeAsJsonER17RTCRestOutputBase
     _ZNK12RTCRestInt168toStringEP9RTCStringj
     _ZNK12RTCRestInt168typeNameEv
+    _ZNK12RTCRestInt169baseCloneEv
     _ZNK12RTCRestInt169typeClassEv
     _ZNK12RTCRestInt3215serializeAsJsonER17RTCRestOutputBase
     _ZNK12RTCRestInt328toStringEP9RTCStringj
     _ZNK12RTCRestInt328typeNameEv
+    _ZNK12RTCRestInt329baseCloneEv
     _ZNK12RTCRestInt329typeClassEv
     _ZNK12RTCRestInt6415serializeAsJsonER17RTCRestOutputBase
     _ZNK12RTCRestInt648toStringEP9RTCStringj
     _ZNK12RTCRestInt648typeNameEv
+    _ZNK12RTCRestInt649baseCloneEv
     _ZNK12RTCRestInt649typeClassEv
     _ZNK13RTCRestBinary15serializeAsJsonER17RTCRestOutputBase
     _ZNK13RTCRestBinary8toStringEP9RTCStringj
     _ZNK13RTCRestBinary8typeNameEv
+    _ZNK13RTCRestBinary9baseCloneEv
     _ZNK13RTCRestBinary9typeClassEv
     _ZNK13RTCRestDouble15serializeAsJsonER17RTCRestOutputBase
     _ZNK13RTCRestDouble8toStringEP9RTCStringj
     _ZNK13RTCRestDouble8typeNameEv
+    _ZNK13RTCRestDouble9baseCloneEv
     _ZNK13RTCRestDouble9typeClassEv
     _ZNK13RTCRestString15serializeAsJsonER17RTCRestOutputBase
     _ZNK13RTCRestString8toStringEP9RTCStringj
     _ZNK13RTCRestString8typeNameEv
+    _ZNK13RTCRestString9baseCloneEv
     _ZNK13RTCRestString9typeClassEv
     _ZNK16RTCRestAnyObject15serializeAsJsonER17RTCRestOutputBase
     _ZNK16RTCRestAnyObject8toStringEP9RTCStringj
     _ZNK16RTCRestAnyObject8typeNameEv
+    _ZNK16RTCRestAnyObject9baseCloneEv
     _ZNK16RTCRestAnyObject9typeClassEv
     _ZNK16RTCRestArrayBase15serializeAsJsonER17RTCRestOutputBase
     _ZNK16RTCRestArrayBase8toStringEP9RTCStringj
     _ZNK16RTCRestArrayBase8typeNameEv
+    _ZNK16RTCRestArrayBase9baseCloneEv
     _ZNK16RTCRestArrayBase9typeClassEv
+    _ZNK17RTCRestDataObject15serializeAsJsonER17RTCRestOutputBase
+    _ZNK17RTCRestDataObject22serializeMembersAsJsonER17RTCRestOutputBasePKc
+    _ZNK17RTCRestDataObject9typeClassEv
     _ZNK17RTCRestObjectBase8toStringEP9RTCStringj
     _ZNK17RTCRestObjectBase8toStringEv
+    _ZNK20RTCRestClientApiBase12getServerUrlEv
     _ZNK20RTCRestStringMapBase11containsKeyEPKc
     _ZNK20RTCRestStringMapBase11containsKeyERK9RTCString
     _ZNK20RTCRestStringMapBase15serializeAsJsonER17RTCRestOutputBase
     _ZNK20RTCRestStringMapBase4sizeEv
     _ZNK20RTCRestStringMapBase8typeNameEv
+    _ZNK20RTCRestStringMapBase9baseCloneEv
     _ZNK20RTCRestStringMapBase9getWorkerEPKc
     _ZNK20RTCRestStringMapBase9typeClassEv
     _ZNK21RTCRestBinaryResponse8typeNameEv
+    _ZNK21RTCRestBinaryResponse9baseCloneEv
+    _ZNK21RTCRestPolyDataObject7isChildEv
+    _ZNK21RTCRestStringEnumBase11cloneWorkerEPS_
     _ZNK21RTCRestStringEnumBase15serializeAsJsonER17RTCRestOutputBase
     _ZNK21RTCRestStringEnumBase8toStringEP9RTCStringj
     _ZNK21RTCRestStringEnumBase9getStringEv
@@ -523,6 +570,7 @@ EXPORTS
     _ZNK22RTCRestBinaryParameter11xmitPrepareEP14RTHTTPINTERNAL
     _ZNK22RTCRestBinaryParameter12xmitCompleteEP14RTHTTPINTERNAL
     _ZNK22RTCRestBinaryParameter8typeNameEv
+    _ZNK22RTCRestBinaryParameter9baseCloneEv
     _ZNK24RTCRestClientRequestBase16doPathParametersEP9RTCStringPKcmPKNS_13PATHPARAMDESCEPNS_14PATHPARAMSTATEEm
     _ZNK24RTCRestClientRequestBase17doQueryParametersEP9RTCStringPKNS_14QUERYPARAMDESCEPPK17RTCRestObjectBasem
     _ZNK24RTCRestClientRequestBase18doHeaderParametersEP14RTHTTPINTERNALPKNS_15HEADERPARAMDESCEPPK17RTCRestObjectBasem
@@ -544,17 +592,8 @@ EXPORTS
     _ZNK9RTCString8containsERKS_NS_15CaseSensitivityE
     _ZNK9RTCString8endsWithERKS_NS_15CaseSensitivityE
     _ZNK9RTCString8substrCPEmm
-    _ZThn32_N13RTCRestString10fromStringERK9RTCStringPKcP9RTERRINFOj
-    _ZThn32_N13RTCRestString14resetToDefaultEv
-    _ZThn32_N13RTCRestString19deserializeFromJsonERK17RTCRestJsonCursor
-    _ZThn32_N13RTCRestString7setNullEv
-    _ZThn32_N13RTCRestStringD0Ev
-    _ZThn32_N13RTCRestStringD1Ev
-    _ZThn32_NK13RTCRestString15serializeAsJsonER17RTCRestOutputBase
-    _ZThn32_NK13RTCRestString8toStringEP9RTCStringj
-    _ZThn32_NK13RTCRestString8typeNameEv
-    _ZThn32_NK13RTCRestString9typeClassEv
+    _ZThn16_N13RTCRestStringD0Ev
+    _ZThn16_N13RTCRestStringD1Ev
     _ZplPKcRK9RTCString
     _ZplRK9RTCStringPKc
     _ZplRK9RTCStringS1_
-
