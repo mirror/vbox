@@ -406,14 +406,25 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     } while (0)
 
 /** Marks a VM-entry failure with a diagnostic reason, logs and returns. */
-#define IEM_VMX_VMENTRY_FAILED_RET(a_pVCpu, a_pszInstr, a_pszFailure, a_InsDiag) \
+#define IEM_VMX_VMENTRY_FAILED_RET(a_pVCpu, a_pszInstr, a_pszFailure, a_VmxDiag) \
     do \
     { \
-        Log(("%s: VM-entry failed! enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_InsDiag), \
-                HMVmxGetDiagDesc(a_InsDiag), (a_pszFailure))); \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_InsDiag); \
+        Log(("%s: VM-entry failed! enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_VmxDiag), \
+            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
         return VERR_VMX_VMENTRY_FAILED; \
     } while (0)
+
+/** Marks a VM-exit failure with a diagnostic reason, logs and returns. */
+#define IEM_VMX_VMEXIT_FAILED_RET(a_pVCpu, a_uExitReason, a_pszFailure, a_VmxDiag) \
+    do \
+    { \
+        Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
+            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
+        return VERR_VMX_VMEXIT_FAILED; \
+    } while (0)
+
 
 
 /**
@@ -4075,12 +4086,21 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadCount);
     }
 
+    /*
+     * The VM-entry MSR-load area address need not be a valid guest-physical address if the
+     * VM-entry MSR load count is 0. If this is the case, bail early without reading it.
+     * See Intel spec. 24.8.2 "VM-Entry Controls for MSRs".
+     */
+    if (cMsrs == 0)
+        return VINF_SUCCESS;
+
     RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrEntryMsrLoad.u;
     int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
                                      GCPhysAutoMsrArea, VMX_V_AUTOMSR_AREA_SIZE);
     if (RT_SUCCESS(rc))
     {
-        PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea); NOREF(pMsr);
+        PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+        Assert(pMsr);
         for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
         {
             if (   !pMsr->u32Reserved
@@ -4096,8 +4116,9 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
                 /*
                  * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-entry.
                  * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VM-entry failure
-                 * indicated further with a different diagnostic code. Later, we can try implement handling of
-                 * the MSR in ring-0 if possible, or come up with a better, generic solution.
+                 * recording the MSR index in the VM-exit qualification (as per the Intel spec.) and indicated
+                 * further by our own, specific diagnostic code. Later, we can try implement handling of the
+                 * MSR in ring-0 if possible, or come up with a better, generic solution.
                  */
                 pVmcs->u64ExitQual.u = idxMsr;
                 VMXVDIAG const enmDiag = rc == VINF_CPUM_R3_MSR_WRITE
@@ -4114,9 +4135,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
     }
     else
     {
-        Log(("%s: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", pszInstr, GCPhysAutoMsrArea, rc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_MsrLoadPtrReadPhys;
-        return rc;
+        AssertMsgFailed(("%s: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", pszInstr, GCPhysAutoMsrArea, rc));
+        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadPtrReadPhys);
     }
 
     NOREF(pszInstr);
@@ -4243,7 +4263,7 @@ IEM_STATIC void iemVmxVmexitRestoreForceFlags(PVMCPU pVCpu)
 IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
 {
     /*
-     * Load control, debug, segment, descriptor-table registers and some MSRs.
+     * Load guest control, debug, segment, descriptor-table registers and some MSRs.
      */
     iemVmxVmentryLoadGuestControlRegsMsr(pVCpu);
     iemVmxVmentryLoadGuestSegRegs(pVCpu);
@@ -4540,7 +4560,6 @@ IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
      * See Intel spec. 27.3.1 "Saving Control Registers, Debug Registers and MSRs".
      */
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
 
     /* Save control registers. */
     pVmcs->u64GuestCr0.u = pVCpu->cpum.GstCtx.cr0;
@@ -4675,20 +4694,207 @@ IEM_STATIC void iemVmxVmexitSaveGuestSegRegs(PVMCPU pVCpu)
 
 
 /**
+ * Saves guest non-register state as part of VM-exit.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason.
+ */
+IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitReason)
+{
+    /*
+     * Save guest non-register state.
+     * See Intel spec. 27.3.4 "Saving Non-Register State".
+     */
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /*
+     * Activity-state: VM-exits occur before changing the activity state
+     * of the processor and hence we shouldn't need to change it.
+     */
+
+    /* Interruptibility-state. */
+    pVmcs->u32GuestIntrState = 0;
+    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+    { /** @todo NSTVMX: Virtual-NMI blocking. */ }
+    else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
+
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
+    {
+        /** @todo NSTVMX: We can't distinguish between blocking-by-MovSS and blocking-by-STI
+         *        currently. */
+        pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
+    /* Nothing to do for SMI/enclave. We don't support enclaves or SMM yet. */
+
+    /* Pending debug exceptions. */
+    if (    uExitReason != VMX_EXIT_INIT_SIGNAL
+        &&  uExitReason != VMX_EXIT_SMI
+        &&  uExitReason != VMX_EXIT_ERR_MACHINE_CHECK
+        && !HMVmxIsTrapLikeVmexit(uExitReason))
+    {
+        /** @todo NSTVMX: also must exclude VM-exits caused by debug exceptions when
+         *        block-by-MovSS is in effect. */
+        pVmcs->u64GuestPendingDbgXcpt.u = 0;
+    }
+
+    /** @todo NSTVMX: Save VMX preemption timer value. */
+
+    /* PDPTEs. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));    /* We don't support EPT yet. */
+    pVmcs->u64GuestPdpte0.u = 0;
+    pVmcs->u64GuestPdpte1.u = 0;
+    pVmcs->u64GuestPdpte2.u = 0;
+    pVmcs->u64GuestPdpte3.u = 0;
+}
+
+
+/**
  * Saves the guest-state as part of VM-exit.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason.
  */
-IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu)
+IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
 {
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
     /*
-     * Save control, debug, segment, descriptor-table registers and some MSRs.
+     * Save guest control, debug, segment, descriptor-table registers and some MSRs.
      */
     iemVmxVmexitSaveGuestControlRegsMsrs(pVCpu);
     iemVmxVmexitSaveGuestSegRegs(pVCpu);
 
-    /** @todo NSTVMX: rest of state. */
+    /*
+     * Save guest RIP, RSP and RFLAGS.
+     */
+    /* We don't support enclave mode yet. */
+    pVmcs->u64GuestRip.u    = pVCpu->cpum.GstCtx.rip;
+    pVmcs->u64GuestRsp.u    = pVCpu->cpum.GstCtx.rsp;
+    pVmcs->u64GuestRFlags.u = pVCpu->cpum.GstCtx.rflags.u;  /** @todo NSTVMX: Check RFLAGS.RF handling. */
+
+    /* Save guest non-register state. */
+    iemVmxVmexitSaveGuestNonRegState(pVCpu, uExitReason);
+}
+
+
+/**
+ * Saves the guest MSRs into the VM-exit auto-store MSRs area as part of VM-exit.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason (for diagnostic purposes).
+ */
+IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
+{
+    /*
+     * Save guest MSRs.
+     * See Intel spec. 27.4 "Saving MSRs".
+     */
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VMX-abort";
+
+    /*
+     * Verify the MSR auto-store count. Physical CPUs can behave unpredictably if the count
+     * is exceeded including possibly raising #MC exceptions during VMX transition. Our
+     * implementation causes a VMX-abort followed by a triple-fault.
+     */
+    uint64_t const u64GuestVmxMiscMsr = CPUMGetGuestIa32VmxMisc(pVCpu);
+    uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64GuestVmxMiscMsr);
+    uint32_t const cMsrs              = pVmcs->u32ExitMsrStoreCount;
+    Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
+    if (cMsrs <= cMaxSupportedMsrs)
+    { /* likely */ }
+    else
+        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreCount);
+
+    /*
+     * The VM-exit MSR-store area address need not be a valid guest-physical address if the
+     * VM-exit MSR-store count is 0. If this is the case, bail early without reading it.
+     * See Intel spec. 24.7.2 "VM-Exit Controls for MSRs".
+     */
+    if (cMsrs == 0)
+        return VINF_SUCCESS;
+
+    PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+    Assert(pMsr);
+    for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
+    {
+        if (   !pMsr->u32Reserved
+            &&  pMsr->u32Msr >> 8 != MSR_IA32_X2APIC_START >> 8
+            &&  pMsr->u32Msr != MSR_IA32_SMBASE)
+        {
+            int rc = CPUMQueryGuestMsr(pVCpu, pMsr->u32Msr, &pMsr->u64Value);
+            if (rc == VINF_SUCCESS)
+                continue;
+
+            /*
+             * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-exit.
+             * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
+             * recording the MSR index in a VirtualBox specific VMCS field and indicated further by our
+             * own, specific diagnostic code. Later, we can try implement handling of the MSR in ring-0
+             * if possible, or come up with a better, generic solution.
+             */
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uAbortAux = pMsr->u32Msr;
+            VMXVDIAG const enmDiag = rc == VINF_CPUM_R3_MSR_READ
+                                   ? kVmxVDiag_Vmexit_MsrStoreRing3
+                                   : kVmxVDiag_Vmexit_MsrStore;
+            IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
+        }
+        else
+        {
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uAbortAux = pMsr->u32Msr;
+            IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreRsvd);
+        }
+    }
+
+    RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrExitMsrStore.u;
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysAutoMsrArea,
+                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea), VMX_V_AUTOMSR_AREA_SIZE);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+    {
+        AssertMsgFailed(("VM-exit: Failed to write MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysAutoMsrArea, rc));
+        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrReadPhys);
+    }
+
+    NOREF(uExitReason);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs a VMX abort (due to an fatal error during VM-exit).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   enmAbort    The VMX abort reason.
+ */
+IEM_STATIC int iemVmxAbort(PVMCPU pVCpu, VMXABORT enmAbort)
+{
+    /*
+     * Perform the VMX abort.
+     * See Intel spec. 27.7 "VMX Aborts".
+     */
+    LogFunc(("enmAbort=%u (%s) -> RESET\n", enmAbort, HMVmxGetAbortDesc(enmAbort)));
+
+    /* We don't support SMX yet. */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmAbort = enmAbort;
+    ASMWriteFence();
+    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    {
+        RTGCPHYS const GCPhysVmcs  = IEM_VMX_GET_CURRENT_VMCS(pVCpu);
+        uint32_t const offVmxAbort = RT_OFFSETOF(VMXVVMCS, u32VmxAbortId);
+        PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcs + offVmxAbort, &enmAbort, sizeof(enmAbort));
+    }
+
+    return VINF_EM_TRIPLE_FAULT;
 }
 
 
@@ -4696,6 +4902,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu)
  * VMX VM-exit handler.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason.
  * @param   cbInstr         The instruction length.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_t cbInstr)
@@ -4717,8 +4924,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_
     if (   uExitReason != VMX_EXIT_ERR_INVALID_GUEST_STATE
         && uExitReason != VMX_EXIT_ERR_MSR_LOAD
         && uExitReason != VMX_EXIT_ERR_MACHINE_CHECK)
-        iemVmxVmexitSaveGuestState(pVCpu);
+    {
+        iemVmxVmexitSaveGuestState(pVCpu, uExitReason);
+        int rc = iemVmxVmexitSaveGuestAutoMsrs(pVCpu, uExitReason);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            LogFunc(("iemVmxVmexitSaveGuestAutoMsrs failed (rc=%Rrc) -> VMX-Abort\n", rc));
+            return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
+        }
+    }
 
+    /** @todo NSTVMX: rest of VM-exit (loading host state etc). */
     return VINF_SUCCESS;
 }
 

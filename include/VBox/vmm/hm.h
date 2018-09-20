@@ -135,6 +135,7 @@ VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxSupported(PVM pVM);
 VMM_INT_DECL(const char *)      HMVmxGetDiagDesc(VMXVDIAG enmDiag);
+VMM_INT_DECL(const char *)      HMVmxGetAbortDesc(VMXABORT enmAbort);
 VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 /** @} */
 

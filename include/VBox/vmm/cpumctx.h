@@ -547,75 +547,79 @@ typedef struct CPUMCTX
                 RTGCPHYS                GCPhysShadowVmcs;
                 /** 0x2f8 - Last emulated VMX instruction/VM-exit diagnostic. */
                 VMXVDIAG                enmDiag;
-                /** 0x2fc - Whether the guest is in VMX root mode. */
+                /** 0x2fc - VMX abort reason. */
+                VMXABORT                enmAbort;
+                /** 0x300 - VMX abort auxiliary information field. */
+                uint32_t                uAbortAux;
+                /** 0x304 - Whether the guest is in VMX root mode. */
                 bool                    fInVmxRootMode;
-                /** 0x2fd - Whether the guest is in VMX non-root mode. */
+                /** 0x305 - Whether the guest is in VMX non-root mode. */
                 bool                    fInVmxNonRootMode;
-                /** 0x2fe - Whether the injected events are subjected to event intercepts.  */
+                /** 0x306 - Whether the injected events are subjected to event intercepts.  */
                 bool                    fInterceptEvents;
-                bool                    fPadding0;
-                /** 0x300 - Cache of the nested-guest current VMCS - R0 ptr. */
+                bool                    afPadding0[1];
+                /** 0x308 - Cache of the nested-guest current VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pVmcsR0;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmcsR0Padding;
 #endif
-                /** 0x308 - Cache of the nested-guest curent VMCS - R3 ptr. */
+                /** 0x310 - Cache of the nested-guest curent VMCS - R3 ptr. */
                 R3PTRTYPE(PVMXVVMCS)    pVmcsR3;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmcsR3Padding;
 #endif
-                /** 0X310 - Cache of the nested-guest shadow VMCS - R0 ptr. */
+                /** 0X318 - Cache of the nested-guest shadow VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pShadowVmcsR0;
 #if HC_ARCH_BITS == 32
                 uint32_t                uShadowVmcsR0Padding;
 #endif
-                /** 0x318 - Cache of the nested-guest shadow VMCS - R3 ptr. */
+                /** 0x320 - Cache of the nested-guest shadow VMCS - R3 ptr. */
                 R3PTRTYPE(PVMXVVMCS)    pShadowVmcsR3;
 #if HC_ARCH_BITS == 32
                 uint32_t                uShadowVmcsR3Padding;
 #endif
-                /** 0x320 - Cache of the nested-guest Virtual-APIC page - R0 ptr. */
+                /** 0x328 - Cache of the nested-guest Virtual-APIC page - R0 ptr. */
                 R0PTRTYPE(void *)       pvVirtApicPageR0;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVirtApicPageR0Padding;
 #endif
-                /** 0x328 - Cache of the nested-guest Virtual-APIC page - R3 ptr. */
+                /** 0x330 - Cache of the nested-guest Virtual-APIC page - R3 ptr. */
                 R3PTRTYPE(void *)       pvVirtApicPageR3;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVirtApicPageR3Padding;
 #endif
-                /** 0x330 - Cache of the nested-guest VMREAD-bitmap - R0 ptr. */
+                /** 0x338 - Cache of the nested-guest VMREAD-bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvVmreadBitmapR0;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmreadBitmapR0Padding;
 #endif
-                /** 0x338 - Cache of the nested-guest VMREAD-bitmap - R3 ptr. */
+                /** 0x340 - Cache of the nested-guest VMREAD-bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvVmreadBitmapR3;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmreadBitmapR3Padding;
 #endif
-                /** 0x340 - Cache of the nested-guest VMWRITE-bitmap - R0 ptr. */
+                /** 0x348 - Cache of the nested-guest VMWRITE-bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvVmwriteBitmapR0;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmwriteBitmapR0Padding;
 #endif
-                /** 0x348 - Cache of the nested-guest VMWRITE-bitmap - R3 ptr. */
+                /** 0x350 - Cache of the nested-guest VMWRITE-bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvVmwriteBitmapR3;
 #if HC_ARCH_BITS == 32
                 uint32_t                uVmwriteBitmapR3Padding;
 #endif
-                /** 0x350 - The MSR auto-load/store area - R0 ptr. */
+                /** 0x358 - The MSR auto-load/store area - R0 ptr. */
                 R0PTRTYPE(PVMXAUTOMSR)  pAutoMsrAreaR0;
 #if HC_ARCH_BITS == 32
                 uint32_t                uAutoMsrAreaR0;
 #endif
-                /** 0x358 - The MSR auto-load/store area - R3 ptr. */
+                /** 0x360 - The MSR auto-load/store area - R3 ptr. */
                 R3PTRTYPE(PVMXAUTOMSR)  pAutoMsrAreaR3;
 #if HC_ARCH_BITS == 32
                 uint32_t                uAutoMsrAreaR3;
 #endif
-                /** 0x360 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x360];
+                /** 0x368 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x368];
             } vmx;
         } CPUM_UNION_NM(s);
 
@@ -698,21 +702,23 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysVmxon,    
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysVmcs,             0x2e8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysShadowVmcs,       0x2f0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmDiag,                0x2f8);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxRootMode,         0x2fc);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxNonRootMode,      0x2fd);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInterceptEvents,       0x2fe);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,                0x300);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR3,                0x308);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,          0x310);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR3,          0x318);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR0,       0x320);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR3,       0x328);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,       0x330);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR3,       0x338);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0,      0x340);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR3,      0x348);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR0,         0x350);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR3,         0x358);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmAbort,               0x2fc);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uAbortAux,              0x300);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxRootMode,         0x304);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxNonRootMode,      0x305);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInterceptEvents,       0x306);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,                0x308);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR3,                0x310);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,          0x318);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR3,          0x320);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR0,       0x328);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR3,       0x330);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,       0x338);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR3,       0x340);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0,      0x348);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR3,      0x350);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR0,         0x358);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR3,         0x360);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,           8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,     8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR0,  8);

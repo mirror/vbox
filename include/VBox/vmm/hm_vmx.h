@@ -1352,17 +1352,29 @@ typedef enum
 
 /** @name VMX abort reasons.
  * See Intel spec. "27.7 VMX Aborts".
+ * Update HMVmxGetAbortDesc() if new reasons are added.
  * @{
  */
 typedef enum
 {
+    /** None - don't use this / uninitialized value. */
+    VMXABORT_NONE                 = 0,
+    /** VMX abort caused during saving of guest MSRs. */
     VMXABORT_SAVE_GUEST_MSRS      = 1,
+    /** VMX abort caused during host PDPTE checks. */
     VMXBOART_HOST_PDPTE           = 2,
+    /** VMX abort caused due to current VMCS being corrupted. */
     VMXABORT_CURRENT_VMCS_CORRUPT = 3,
+    /** VMX abort caused during loading of host MSRs. */
     VMXABORT_LOAD_HOST_MSR        = 4,
+    /** VMX abort caused due to a machine-check exception during VM-exit. */
     VMXABORT_MACHINE_CHECK_XCPT   = 5,
-    VMXABORT_HOST_LONG_MODE       = 6
+    /** VMX abort caused due to invalid return to long mode. */
+    VMXABORT_HOST_LONG_MODE       = 6,
+    /* Type size hack. */
+    VMXABORT_32BIT_HACK           = 0x7fffffff
 } VMXABORT;
+AssertCompileSize(VMXABORT, 4);
 /** @} */
 
 
@@ -3821,6 +3833,11 @@ typedef enum
     kVmxVDiag_Vmentry_VmwriteBitmapPtrReadPhys,
     kVmxVDiag_Vmentry_VmxRoot,
     kVmxVDiag_Vmentry_Vpid,
+    kVmxVDiag_Vmexit_MsrStore,
+    kVmxVDiag_Vmexit_MsrStoreCount,
+    kVmxVDiag_Vmexit_MsrStorePtrReadPhys,
+    kVmxVDiag_Vmexit_MsrStoreRing3,
+    kVmxVDiag_Vmexit_MsrStoreRsvd,
     /* Last member for determining array index limit. */
     kVmxVDiag_End
 } VMXVDIAG;

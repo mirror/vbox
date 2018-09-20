@@ -335,7 +335,12 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_VmreadBitmapPtrReadPhys  , "VmreadBitmapPtrReadPhys"   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_VmwriteBitmapPtrReadPhys , "VmwriteBitmapPtrReadPhys"  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_VmxRoot                  , "VmxRoot"                   ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_Vpid                     , "Vpid"                      )
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_Vpid                     , "Vpid"                      ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStore                  , "MsrStore"                  ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreCount             , "MsrStoreCount"             ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStorePtrReadPhys       , "MsrStorePtrReadPhys"       ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreRing3             , "MsrStoreRing3"             ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreRsvd              , "MsrStoreRsvd"              )
     /* kVmxVDiag_End */
 };
 AssertCompile(RT_ELEMENTS(g_apszVmxVDiagDesc) == kVmxVDiag_End);
@@ -431,6 +436,30 @@ VMM_INT_DECL(const char *) HMVmxGetDiagDesc(VMXVDIAG enmDiag)
 {
     if (RT_LIKELY((unsigned)enmDiag < RT_ELEMENTS(g_apszVmxVDiagDesc)))
         return g_apszVmxVDiagDesc[enmDiag];
+    return "Unknown/invalid";
+}
+
+
+/**
+ * Gets the description for a VMX abort reason.
+ *
+ * @returns The descriptive string.
+ * @param   enmAbort    The VMX abort reason.
+ */
+VMM_INT_DECL(const char *) HMVmxGetAbortDesc(VMXABORT enmAbort)
+{
+    switch (enmAbort)
+    {
+        case VMXABORT_NONE:                 return "VMXABORT_NONE";
+        case VMXABORT_SAVE_GUEST_MSRS:      return "VMXABORT_SAVE_GUEST_MSRS";
+        case VMXBOART_HOST_PDPTE:           return "VMXBOART_HOST_PDPTE";
+        case VMXABORT_CURRENT_VMCS_CORRUPT: return "VMXABORT_CURRENT_VMCS_CORRUPT";
+        case VMXABORT_LOAD_HOST_MSR:        return "VMXABORT_LOAD_HOST_MSR";
+        case VMXABORT_MACHINE_CHECK_XCPT:   return "VMXABORT_MACHINE_CHECK_XCPT";
+        case VMXABORT_HOST_LONG_MODE:       return "VMXABORT_HOST_LONG_MODE";
+        default:
+            break;
+    }
     return "Unknown/invalid";
 }
 

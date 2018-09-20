@@ -2101,6 +2101,8 @@
 #define VINF_VMX_VMEXIT                             4033
 /** Generic VM-entry failure. */
 #define VERR_VMX_VMENTRY_FAILED                     (-4033)
+/** Generic VM-exit failure. */
+#define VERR_VMX_VMEXIT_FAILED                      (-4034)
 /** @} */
 
 
