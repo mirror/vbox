@@ -335,7 +335,7 @@ int RTCRestClientResponseBase::deserializeHeaderIntoMap(RTCRestStringMapBase *a_
 }
 
 
-void RTCRestClientResponseBase::deserializeBody(RTCRestObjectBase *a_pDst, const char *a_pchData, size_t a_cbData)
+void RTCRestClientResponseBase::deserializeBody(const char *a_pchData, size_t a_cbData, const char *a_pszBodyName)
 {
     if (m_strContentType.startsWith("application/json"))
     {
@@ -347,27 +347,34 @@ void RTCRestClientResponseBase::deserializeBody(RTCRestObjectBase *a_pDst, const
             rc = RTJsonParseFromBuf(&hValue, (const uint8_t *)a_pchData, a_cbData, RTErrInfoInitStatic(&ErrInfo));
             if (RT_SUCCESS(rc))
             {
-                PrimaryJsonCursorForBody PrimaryCursor(hValue, a_pDst->typeName(), this); /* note: consumes hValue */
-                a_pDst->deserializeFromJson(PrimaryCursor.m_Cursor);
+                PrimaryJsonCursorForBody PrimaryCursor(hValue, a_pszBodyName, this); /* note: consumes hValue */
+                deserializeBodyFromJsonCursor(PrimaryCursor.m_Cursor);
             }
             else if (RTErrInfoIsSet(&ErrInfo.Core))
                 addError(rc, "Error %Rrc parsing server response as JSON (type %s): %s",
-                         rc, a_pDst->typeName(), ErrInfo.Core.pszMsg);
+                         rc, a_pszBodyName, ErrInfo.Core.pszMsg);
             else
-                addError(rc, "Error %Rrc parsing server response as JSON (type %s)", rc, a_pDst->typeName());
+                addError(rc, "Error %Rrc parsing server response as JSON (type %s)", rc, a_pszBodyName);
         }
         else if (rc == VERR_INVALID_UTF8_ENCODING)
             addError(VERR_REST_RESPONSE_INVALID_UTF8_ENCODING, "Invalid UTF-8 body encoding (object type %s; Content-Type: %s)",
-                     a_pDst->typeName(), m_strContentType.c_str());
+                     a_pszBodyName, m_strContentType.c_str());
         else if (rc == VERR_BUFFER_UNDERFLOW)
             addError(VERR_REST_RESPONSE_EMBEDDED_ZERO_CHAR, "Embedded zero character in response (object type %s; Content-Type: %s)",
-                     a_pDst->typeName(), m_strContentType.c_str());
+                     a_pszBodyName, m_strContentType.c_str());
         else
             addError(rc, "Unexpected body validation error (object type %s; Content-Type: %s): %Rrc",
-                     a_pDst->typeName(), m_strContentType.c_str(), rc);
+                     a_pszBodyName, m_strContentType.c_str(), rc);
     }
     else
         addError(VERR_REST_RESPONSE_CONTENT_TYPE_NOT_SUPPORTED, "Unsupported content type for '%s': %s",
-                 a_pDst->typeName(), m_strContentType.c_str());
+                 a_pszBodyName, m_strContentType.c_str());
+}
+
+
+void RTCRestClientResponseBase::deserializeBodyFromJsonCursor(RTCRestJsonCursor const &a_rCursor)
+{
+    a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_INTERNAL_ERROR_8, "deserializeBodyFromJsonCursor must be overridden!");
+    AssertFailed();
 }
 

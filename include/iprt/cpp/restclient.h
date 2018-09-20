@@ -589,13 +589,21 @@ protected:
                                  const char *a_pchValue, size_t a_cchValue, uint32_t a_fFlags, const char *a_pszErrorTag);
 
     /**
-     * Helper that does the deserializing of the response body.
+     * Helper that does the deserializing of the response body
+     * via deserializeBodyFromJsonCursor().
      *
-     * @param   a_pDst      The destination object for the body content.
-     * @param   a_pchData   The body blob.
-     * @param   a_cbData    The size of the body blob.
+     * @param   a_pchData       The body blob.
+     * @param   a_cbData        The size of the body blob.
+     * @param   a_pszBodyName   The name of the body parameter.
      */
-    void deserializeBody(RTCRestObjectBase *a_pDst, const char *a_pchData, size_t a_cbData);
+    void deserializeBody(const char *a_pchData, size_t a_cbData, const char *a_pszBodyName);
+
+    /**
+     * Called by deserializeBody to do the actual body deserialization.
+     *
+     * @param   a_rCursor       The JSON cursor.
+     */
+    virtual void deserializeBodyFromJsonCursor(RTCRestJsonCursor const &a_rCursor);
 
     /**
      * Primary json cursor for parsing bodies.
