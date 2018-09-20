@@ -250,6 +250,30 @@ RTR3DECL(int) RTHttpAbort(RTHTTP hHttp);
 RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
 
 /**
+ * Sets up the proxy according to the specified URL.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_WRONG_TYPE if the type isn't known/supported and we defaulted to 'http'.
+ *
+ * @param   hHttp           The HTTP client handle.
+ * @param   pszUrl          The proxy URL (libproxy style):
+ *
+ *                          [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
+ *
+ *                          Valid proxy types are: http (default), https, socks4, socks4a,
+ *                          socks5, socks5h and direct.  Support for the socks and https
+ *                          ones depends on the HTTP library we use.
+ *
+ *                          The port number defaults to 80 for http, 443 for https and 1080
+ *                          for the socks ones.
+ *
+ *                          If this starts with "direct://", then no proxy will be used.
+ *                          An empty or NULL string is equivalent to calling
+ *                          RTHttpUseSystemProxySettings().
+ */
+RTR3DECL(int) RTHttpSetProxyByUrl(RTHTTP hHttp, const char *pszUrl);
+
+/**
  * Specify proxy settings.
  *
  * @returns iprt status code.
@@ -262,6 +286,8 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
  *
  * @todo    This API does not allow specifying the type of proxy server... We're
  *          currently assuming it's a HTTP proxy.
+ *
+ * @deprecated Use RTHttpSetProxyByUrl.
  */
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pszProxyUrl, uint32_t uPort,
                              const char *pszProxyUser, const char *pszProxyPwd);

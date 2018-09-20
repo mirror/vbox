@@ -574,7 +574,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYTYPE, (long)enmProxyType);
         AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYTYPE=%d: %d (%#x)\n", enmProxyType, rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
-        pThis->enmProxyType = CURLPROXY_HTTP;
+        pThis->enmProxyType = enmProxyType;
     }
 
     if (uPort != pThis->uProxyPort)
@@ -828,6 +828,7 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
             char    *pszUsername = RTUriParsedAuthorityUsername(pszProxyUrl, &Parsed);
             char    *pszPassword = RTUriParsedAuthorityPassword(pszProxyUrl, &Parsed);
             uint32_t uProxyPort  = RTUriParsedAuthorityPort(pszProxyUrl, &Parsed);
+            bool     fUnknownProxyType = false;
             curl_proxytype enmProxyType;
             if (RTUriIsSchemeMatch(pszProxyUrl, "http"))
             {
@@ -835,6 +836,14 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
                 if (uProxyPort == UINT32_MAX)
                     uProxyPort = 80;
             }
+#if CURL_AT_LEAST_VERSION(7,52,0)
+            else if (RTUriIsSchemeMatch(pszProxyUrl, "https"))
+            {
+                enmProxyType  = CURLPROXY_HTTPS;
+                if (uProxyPort == UINT32_MAX)
+                    uProxyPort = 443;
+            }
+#endif
             else if (   RTUriIsSchemeMatch(pszProxyUrl, "socks4")
                      || RTUriIsSchemeMatch(pszProxyUrl, "socks"))
                 enmProxyType = CURLPROXY_SOCKS4;
@@ -846,6 +855,7 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
                 enmProxyType = CURLPROXY_SOCKS5_HOSTNAME;
             else
             {
+                fUnknownProxyType = true;
                 enmProxyType = CURLPROXY_HTTP;
                 if (uProxyPort == UINT32_MAX)
                     uProxyPort = 8080;
@@ -856,6 +866,8 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
                 uProxyPort = 1080; /* CURL_DEFAULT_PROXY_PORT */
 
             rc = rtHttpUpdateProxyConfig(pThis, enmProxyType, pszHost, uProxyPort, pszUsername, pszPassword);
+            if (RT_SUCCESS(rc) && fUnknownProxyType)
+                rc = VWRN_WRONG_TYPE;
 
             RTStrFree(pszUsername);
             RTStrFree(pszPassword);
@@ -870,6 +882,21 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
     if (pszFreeMe)
         RTMemTmpFree(pszFreeMe);
     return rc;
+}
+
+
+RTR3DECL(int) RTHttpSetProxyByUrl(RTHTTP hHttp, const char *pszUrl)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+    AssertPtrNullReturn(pszUrl, VERR_INVALID_PARAMETER);
+    AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
+
+    if (!pszUrl || !*pszUrl)
+        return RTHttpUseSystemProxySettings(pThis);
+    if (RTStrNICmpAscii(pszUrl, RT_STR_TUPLE("direct://")) == 0)
+        return rtHttpUpdateAutomaticProxyDisable(pThis);
+    return rtHttpConfigureProxyFromUrl(pThis, pszUrl);
 }
 
 
