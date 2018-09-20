@@ -90,19 +90,26 @@
 
 /**
  * Structure for storing new X11 events and HGCM messages
- * into a single vent queue.
+ * into a single event queue.
  */
 struct DnDEvent
 {
     enum DnDEventType
     {
-        HGCM_Type = 1,
-        X11_Type
+        /** Unknown event, do not use. */
+        DnDEventType_Unknown = 0,
+        /** VBGLR3DNDEVENT event. */
+        DnDEventType_HGCM,
+        /** X11 event. */
+        DnDEventType_X11,
+        /** Blow the type up to 32-bit. */
+        DnDEventType_32BIT_HACK = 0x7fffffff
     };
-    DnDEventType type;
+    /** Event type. */
+    DnDEventType enmType;
     union
     {
-        VBGLR3DNDHGCMEVENT hgcm;
+        PVBGLR3DNDEVENT hgcm;
         XEvent x11;
     };
 };
@@ -500,7 +507,7 @@ public:
     int hgLeave(void);
     int hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction);
     int hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction);
-    int hgDataReceived(const void *pvData, uint32_t cData);
+    int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /* Guest -> Host handling. */
@@ -1901,10 +1908,10 @@ int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
  * @param   pvData                  Pointer to (MIME) data from host.
  * @param   cbData                  Size (in bytes) of data from host.
  */
-int DragInstance::hgDataReceived(const void *pvData, uint32_t cbData)
+int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData)
 {
-    LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
-    LogFlowThisFunc(("pvData=%p, cbData=%RU32\n", pvData, cbData));
+    LogFlowThisFunc(("enmMode=%RU32, enmState=%RU32\n", m_enmMode, m_enmState));
+    LogFlowThisFunc(("enmMetaDataType=%RU32\n", pMetaData->enmType));
 
     if (   m_enmMode  != HG
         || m_enmState != Dropped)
@@ -1912,19 +1919,22 @@ int DragInstance::hgDataReceived(const void *pvData, uint32_t cbData)
         return VERR_INVALID_STATE;
     }
 
-    if (   pvData == NULL
-        || cbData == 0)
+    if (   pMetaData->pvMeta == NULL
+        || pMetaData->cbMeta == 0)
     {
         return VERR_INVALID_PARAMETER;
     }
 
     int rc = VINF_SUCCESS;
 
+    const void    *pvData = pMetaData->pvMeta;
+    const uint32_t cbData = pMetaData->cbMeta;
+
     /*
      * At this point all data needed (including sent files/directories) should
      * be on the guest, so proceed working on communicating with the target window.
      */
-    logInfo("Received %RU32 bytes MIME data from host\n", cbData);
+    logInfo("Received %RU32 bytes of URI list meta data from host\n", cbData);
 
     /* Destroy any old data. */
     if (m_pvSelReqData)
@@ -3083,48 +3093,62 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
             if (RT_FAILURE(rc))
                 break;
 
-            AssertMsg(m_eventQueue.size(),
-                      ("Event queue is empty when it shouldn't\n"));
+            AssertMsg(m_eventQueue.size(), ("Event queue is empty when it shouldn't\n"));
 
             e = m_eventQueue.first();
             m_eventQueue.removeFirst();
 
-            if (e.type == DnDEvent::HGCM_Type)
+            if (e.enmType == DnDEvent::DnDEventType_HGCM)
             {
-                LogFlowThisFunc(("HGCM event, type=%RU32\n", e.hgcm.uType));
-                switch (e.hgcm.uType)
+                PVBGLR3DNDEVENT pVbglR3Event = e.hgcm;
+                AssertPtrBreak(pVbglR3Event);
+
+                LogFlowThisFunc(("HGCM event, enmType=%RU32\n", pVbglR3Event->enmType));
+                switch (pVbglR3Event->enmType)
                 {
-                    case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
+                    case VBGLR3DNDEVENTTYPE_HG_ENTER:
                     {
-                        if (e.hgcm.cbFormats)
+                        if (pVbglR3Event->u.HG_Enter.cbFormats)
                         {
-                            RTCList<RTCString> lstFormats = RTCString(e.hgcm.pszFormats, e.hgcm.cbFormats - 1).split("\r\n");
-                            rc = m_pCurDnD->hgEnter(lstFormats, e.hgcm.u.a.uAllActions);
+                            RTCList<RTCString> lstFormats =
+                                RTCString(pVbglR3Event->u.HG_Enter.pszFormats, pVbglR3Event->u.HG_Enter.cbFormats - 1).split("\r\n");
+                            rc = m_pCurDnD->hgEnter(lstFormats, pVbglR3Event->u.HG_Enter.uAllActions);
+                            if (RT_FAILURE(rc))
+                                break;
                             /* Enter is always followed by a move event. */
                         }
                         else
                         {
+                            AssertMsgFailed(("cbFormats is 0\n"));
                             rc = VERR_INVALID_PARAMETER;
                             break;
                         }
-                        /* Not breaking unconditionally is intentional. See comment above. */
+
+                        /* Note: After HOST_DND_HG_EVT_ENTER there immediately is a move
+                         *       event, so fall through is intentional here. */
+                        RT_FALL_THROUGH();
                     }
-                    RT_FALL_THRU();
-                    case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
+
+                    case VBGLR3DNDEVENTTYPE_HG_MOVE:
                     {
-                        rc = m_pCurDnD->hgMove(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos, e.hgcm.u.a.uDefAction);
+                        rc = m_pCurDnD->hgMove(pVbglR3Event->u.HG_Move.uXpos, pVbglR3Event->u.HG_Move.uYpos,
+                                               pVbglR3Event->u.HG_Move.uDefAction);
                         break;
                     }
-                    case DragAndDropSvc::HOST_DND_HG_EVT_LEAVE:
+
+                    case VBGLR3DNDEVENTTYPE_HG_LEAVE:
                     {
                         rc = m_pCurDnD->hgLeave();
                         break;
                     }
-                    case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
+
+                    case VBGLR3DNDEVENTTYPE_HG_DROP:
                     {
-                        rc = m_pCurDnD->hgDrop(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos, e.hgcm.u.a.uDefAction);
+                        rc = m_pCurDnD->hgDrop(pVbglR3Event->u.HG_Drop.uXpos, pVbglR3Event->u.HG_Drop.uYpos,
+                                               pVbglR3Event->u.HG_Drop.uDefAction);
                         break;
                     }
+
                     /* Note: VbglR3DnDRecvNextMsg() will return HOST_DND_HG_SND_DATA_HDR when
                      *       the host has finished copying over all the data to the guest.
                      *
@@ -3134,75 +3158,64 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                      *
                      *       The data header now will contain all the (meta) data the guest needs in
                      *       order to complete the DnD operation. */
-                    case DragAndDropSvc::HOST_DND_HG_SND_DATA_HDR:
+                    case VBGLR3DNDEVENTTYPE_HG_RECEIVE:
                     {
-                        rc = m_pCurDnD->hgDataReceived(e.hgcm.u.b.pvData, e.hgcm.u.b.cbData);
+                        rc = m_pCurDnD->hgDataReceive(&pVbglR3Event->u.HG_Received.Meta);
                         break;
                     }
+
+                    case VBGLR3DNDEVENTTYPE_HG_CANCEL:
+                    {
+                        m_pCurDnD->reset(); /** @todo Test this! */
+                        break;
+                    }
+
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                    case DragAndDropSvc::HOST_DND_GH_REQ_PENDING:
+                    case VBGLR3DNDEVENTTYPE_GH_ERROR:
+                    {
+                        m_pCurDnD->reset();
+                        break;
+                    }
+
+                    case VBGLR3DNDEVENTTYPE_GH_REQ_PENDING:
                     {
                         rc = m_pCurDnD->ghIsDnDPending();
                         break;
                     }
-                    case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
+
+                    case VBGLR3DNDEVENTTYPE_GH_DROP:
                     {
-                        rc = m_pCurDnD->ghDropped(e.hgcm.pszFormats, e.hgcm.u.a.uDefAction);
+                        rc = m_pCurDnD->ghDropped(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.uAction);
                         break;
                     }
 #endif
                     default:
                     {
-                        m_pCurDnD->logError("Received unsupported message: %RU32\n", e.hgcm.uType);
+                        m_pCurDnD->logError("Received unsupported message '%RU32'\n", pVbglR3Event->enmType);
                         rc = VERR_NOT_SUPPORTED;
                         break;
                     }
                 }
 
-                LogFlowFunc(("Message %RU32 processed with %Rrc\n", e.hgcm.uType, rc));
+                LogFlowFunc(("Message %RU32 processed with %Rrc\n", pVbglR3Event->enmType, rc));
                 if (RT_FAILURE(rc))
                 {
                     /* Tell the user. */
-                    m_pCurDnD->logError("Error processing message %RU32, failed with %Rrc, resetting all\n", e.hgcm.uType, rc);
+                    m_pCurDnD->logError("Processing message %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc);
 
                     /* If anything went wrong, do a reset and start over. */
                     m_pCurDnD->reset();
                 }
 
-                /* Some messages require cleanup. */
-                switch (e.hgcm.uType)
-                {
-                    case DragAndDropSvc::HOST_DND_HG_EVT_ENTER:
-                    case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
-                    case DragAndDropSvc::HOST_DND_HG_EVT_DROPPED:
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                    case DragAndDropSvc::HOST_DND_GH_EVT_DROPPED:
-#endif
-                    {
-                        if (e.hgcm.pszFormats)
-                            RTMemFree(e.hgcm.pszFormats);
-                        break;
-                    }
-
-                    case DragAndDropSvc::HOST_DND_HG_SND_DATA:
-                    {
-                        if (e.hgcm.pszFormats)
-                            RTMemFree(e.hgcm.pszFormats);
-                        if (e.hgcm.u.b.pvData)
-                            RTMemFree(e.hgcm.u.b.pvData);
-                        break;
-                    }
-
-                    default:
-                        break;
-                }
+                VbglR3DnDEventFree(e.hgcm);
+                e.hgcm = NULL;
             }
-            else if (e.type == DnDEvent::X11_Type)
+            else if (e.enmType == DnDEvent::DnDEventType_X11)
             {
                 m_pCurDnD->onX11Event(e.x11);
             }
             else
-                AssertMsgFailed(("Unknown event queue type %d\n", e.type));
+                AssertMsgFailed(("Unknown event queue type %RU32\n", e.enmType));
 
             /*
              * Make sure that any X11 requests have actually been sent to the
@@ -3316,10 +3329,10 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
     do
     {
         RT_ZERO(e);
-        e.type = DnDEvent::HGCM_Type;
+        e.enmType = DnDEvent::DnDEventType_HGCM;
 
         /* Wait for new events. */
-        rc = VbglR3DnDRecvNextMsg(&dndCtx, &e.hgcm);
+        rc = VbglR3DnDEventGetNext(&dndCtx, &e.hgcm);
         if (   RT_SUCCESS(rc)
             || rc == VERR_CANCELLED)
         {
@@ -3394,7 +3407,7 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
         if (XEventsQueued(pThis->m_pDisplay, QueuedAfterFlush) > 0)
         {
             RT_ZERO(e);
-            e.type = DnDEvent::X11_Type;
+            e.enmType = DnDEvent::DnDEventType_X11;
 
             /* XNextEvent will block until a new X event becomes available. */
             XNextEvent(pThis->m_pDisplay, &e.x11);

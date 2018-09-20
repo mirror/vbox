@@ -96,37 +96,35 @@ static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, 
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
  * @param   uMsg                Which kind of message to receive.
- * @param   puScreenID          Where to store the host screen ID the message is bound to.
- * @param   puX                 Where to store the absolute X coordinates.
- * @param   puY                 Where to store the absolute Y coordinates.
- * @param   puDefAction         Where to store the default action to perform.
- * @param   puAllActions        Where to store the available actions.
- * @param   ppszFormats         Where to store List of formats.
- * @param   pcbFormats          Size (in bytes) of where to store the list of formats.
+ * @param   puScreenID          Where to store the host screen ID the message is bound to. Optional.
+ * @param   puX                 Where to store the absolute X coordinates. Optional.
+ * @param   puY                 Where to store the absolute Y coordinates. Optional.
+ * @param   puDefAction         Where to store the default action to perform. Optional.
+ * @param   puAllActions        Where to store the available actions. Optional.
+ * @param   ppszFormats         Where to store List of formats. Optional.
+ * @param   pcbFormats          Size (in bytes) of where to store the list of formats. Optional.
  *
  * @todo r=andy Get rid of this function as soon as we resolved the protocol TODO #1.
  *              This was part of the initial protocol and needs to go.
  */
 static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                 uint32_t  uMsg,
-                                 uint32_t *puScreenId,
-                                 uint32_t *puX,
-                                 uint32_t *puY,
-                                 uint32_t *puDefAction,
-                                 uint32_t *puAllActions,
-                                 char     *pszFormats,
-                                 uint32_t  cbFormats,
-                                 uint32_t *pcbFormatsRecv)
+                                 uint32_t   uMsg,
+                                 uint32_t  *puScreenID,
+                                 uint32_t  *puX,
+                                 uint32_t  *puY,
+                                 uint32_t  *puDefAction,
+                                 uint32_t  *puAllActions,
+                                 char     **ppszFormats,
+                                 uint32_t  *pcbFormats)
 {
-    AssertPtrReturn(pCtx,           VERR_INVALID_POINTER);
-    AssertPtrReturn(puScreenId,     VERR_INVALID_POINTER);
-    AssertPtrReturn(puX,            VERR_INVALID_POINTER);
-    AssertPtrReturn(puY,            VERR_INVALID_POINTER);
-    AssertPtrReturn(puDefAction,    VERR_INVALID_POINTER);
-    AssertPtrReturn(puAllActions,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pszFormats,     VERR_INVALID_POINTER);
-    AssertReturn(cbFormats,         VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbFormatsRecv, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    /* The rest is optional. */
+
+    const uint32_t cbFormatsTmp = pCtx->cbMaxChunkSize;
+
+    char *pszFormatsTmp = static_cast<char *>(RTMemAlloc(cbFormatsTmp));
+    if (!pszFormatsTmp)
+        return VERR_NO_MEMORY;
 
     VBOXDNDHGACTIONMSG Msg;
     RT_ZERO(Msg);
@@ -138,7 +136,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
         Msg.u.v1.uY.SetUInt32(0);
         Msg.u.v1.uDefAction.SetUInt32(0);
         Msg.u.v1.uAllActions.SetUInt32(0);
-        Msg.u.v1.pvFormats.SetPtr(pszFormats, cbFormats);
+        Msg.u.v1.pvFormats.SetPtr(pszFormatsTmp, cbFormatsTmp);
         Msg.u.v1.cbFormats.SetUInt32(0);
     }
     else
@@ -150,7 +148,7 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
         Msg.u.v3.uY.SetUInt32(0);
         Msg.u.v3.uDefAction.SetUInt32(0);
         Msg.u.v3.uAllActions.SetUInt32(0);
-        Msg.u.v3.pvFormats.SetPtr(pszFormats, cbFormats);
+        Msg.u.v3.pvFormats.SetPtr(pszFormatsTmp, cbFormatsTmp);
         Msg.u.v3.cbFormats.SetUInt32(0);
     }
 
@@ -159,26 +157,48 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
     {
         if (pCtx->uProtocol < 3)
         {
-            rc = Msg.u.v1.uScreenId.GetUInt32(puScreenId);     AssertRC(rc);
-            rc = Msg.u.v1.uX.GetUInt32(puX);                   AssertRC(rc);
-            rc = Msg.u.v1.uY.GetUInt32(puY);                   AssertRC(rc);
-            rc = Msg.u.v1.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
-            rc = Msg.u.v1.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
-            rc = Msg.u.v1.cbFormats.GetUInt32(pcbFormatsRecv); AssertRC(rc);
+            if (puScreenID)
+                rc = Msg.u.v1.uScreenId.GetUInt32(puScreenID);
+            if (RT_SUCCESS(rc) && puX)
+                rc = Msg.u.v1.uX.GetUInt32(puX);
+            if (RT_SUCCESS(rc) && puY)
+                rc = Msg.u.v1.uY.GetUInt32(puY);
+            if (RT_SUCCESS(rc) && puDefAction)
+                rc = Msg.u.v1.uDefAction.GetUInt32(puDefAction);
+            if (RT_SUCCESS(rc) && puAllActions)
+                rc = Msg.u.v1.uAllActions.GetUInt32(puAllActions);
+            if (RT_SUCCESS(rc) && pcbFormats)
+                rc = Msg.u.v1.cbFormats.GetUInt32(pcbFormats);
         }
         else
         {
             /** @todo Context ID not used yet. */
-            rc = Msg.u.v3.uScreenId.GetUInt32(puScreenId);     AssertRC(rc);
-            rc = Msg.u.v3.uX.GetUInt32(puX);                   AssertRC(rc);
-            rc = Msg.u.v3.uY.GetUInt32(puY);                   AssertRC(rc);
-            rc = Msg.u.v3.uDefAction.GetUInt32(puDefAction);   AssertRC(rc);
-            rc = Msg.u.v3.uAllActions.GetUInt32(puAllActions); AssertRC(rc);
-            rc = Msg.u.v3.cbFormats.GetUInt32(pcbFormatsRecv); AssertRC(rc);
+            if (RT_SUCCESS(rc) && puScreenID)
+                rc = Msg.u.v3.uScreenId.GetUInt32(puScreenID);
+            if (RT_SUCCESS(rc) && puX)
+                rc = Msg.u.v3.uX.GetUInt32(puX);
+            if (RT_SUCCESS(rc) && puY)
+                rc = Msg.u.v3.uY.GetUInt32(puY);
+            if (RT_SUCCESS(rc) && puDefAction)
+                rc = Msg.u.v3.uDefAction.GetUInt32(puDefAction);
+            if (RT_SUCCESS(rc) && puAllActions)
+                rc = Msg.u.v3.uAllActions.GetUInt32(puAllActions);
+            if (RT_SUCCESS(rc) && pcbFormats)
+                rc = Msg.u.v3.cbFormats.GetUInt32(pcbFormats);
         }
 
-        AssertReturn(cbFormats >= *pcbFormatsRecv, VERR_TOO_MUCH_DATA);
+        if (RT_SUCCESS(rc))
+        {
+            if (ppszFormats)
+            {
+                *ppszFormats = RTStrDup(pszFormatsTmp);
+                if (!*ppszFormats)
+                    rc = VERR_NO_MEMORY;
+            }
+        }
     }
+
+    RTStrFree(pszFormatsTmp);
 
     return rc;
 }
@@ -1082,7 +1102,7 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
         rc = vbglR3DnDHGRecvDataHdr(pCtx, pDataHdr);
         if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32\n", pDataHdr->cbTotal, pDataHdr->cbMeta));
+            LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU32\n", pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects));
             if (pDataHdr->cbMeta)
             {
                 uint64_t cbDataTmp = 0;
@@ -1140,28 +1160,24 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   pEnmType            Where to store the meta data type.
- * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
- * @param   pcbData             Where to store the size (in bytes) of the received meta data.
+ * @param   pEnmType            Where to store the meta data type. Optional.
+ * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.  Optional.
+ * @param   pcbData             Where to store the size (in bytes) of the received meta data. Optional.
  */
-static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
-                                   uint32_t              *puScreenId,
-                                   char                 **ppszFormat,
-                                   uint32_t              *pcbFormat,
-                                   void                 **ppvData,
-                                   uint32_t              *pcbData)
+static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
+                                     VBGLR3GUESTDNDMETADATATYPE  *pEnmType,
+                                     void                       **ppvData,
+                                     uint32_t                    *pcbData)
 {
-    AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
-    AssertPtrReturn(puScreenId, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppszFormat, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbFormat,  VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvData,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbData,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    /* The rest is optional. */
 
-    VBOXDNDDATAHDR dataHdr; /** @todo See todo above. */
+    VBOXDNDDATAHDR dataHdr;
     RT_ZERO(dataHdr);
 
-    dataHdr.cbMetaFmt = _64K;  /** @todo Make this configurable? */
+    AssertMsg(pCtx->cbMaxChunkSize, ("Maximum chunk size must not be 0\n"));
+
+    dataHdr.cbMetaFmt = pCtx->cbMaxChunkSize;
     dataHdr.pvMetaFmt = RTMemAlloc(dataHdr.cbMetaFmt);
     if (!dataHdr.pvMetaFmt)
         return VERR_NO_MEMORY;
@@ -1169,8 +1185,8 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
     DnDURIList lstURI;
     DnDDroppedFiles droppedFiles;
 
-    void *pvData;    /** @todo See todo above. */
-    uint64_t cbData; /** @todo See todo above. */
+    void    *pvData = NULL;
+    uint64_t cbData = 0;
 
     int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
@@ -1185,10 +1201,11 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
          */
         Assert(dataHdr.cbMetaFmt);
         AssertPtr(dataHdr.pvMetaFmt);
-        if (DnDMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt))
+        if (DnDMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
         {
             AssertPtr(pvData);
             Assert(cbData);
+
             rc = lstURI.RootFromURIData(pvData, cbData, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
                 rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
@@ -1212,6 +1229,9 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
                 if (pvData)
                 {
                     memcpy(pvData, strData.c_str(), cbData);
+
+                    if (pEnmType)
+                        *pEnmType = VBGLR3GUESTDNDMETADATATYPE_URI_LIST;
                 }
                 else
                     rc =  VERR_NO_MEMORY;
@@ -1219,23 +1239,30 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
         }
         else /* Raw data. */
         {
-            const uint32_t cbDataRaw = dataHdr.cbMetaFmt;
-            if (cbData >= cbDataRaw)
-            {
-                if (cbDataRaw)
-                    memcpy(pvData, dataHdr.pvMetaFmt, cbDataRaw);
-                cbData = cbDataRaw;
-            }
-            else
-                rc = VERR_BUFFER_OVERFLOW;
+            if (pEnmType)
+                *pEnmType = VBGLR3GUESTDNDMETADATATYPE_RAW;
         }
     }
 
-    if (   RT_FAILURE(rc)
-        && rc != VERR_CANCELLED)
+    if (dataHdr.pvMetaFmt)
+        RTMemFree(dataHdr.pvMetaFmt);
+
+    if (RT_SUCCESS(rc))
     {
-        if (dataHdr.pvMetaFmt)
-            RTMemFree(dataHdr.pvMetaFmt);
+        if (   pvData
+            && cbData)
+        {
+            if (pcbData)
+                *pcbData = cbData;
+            if (ppvData)
+                *ppvData = pvData;
+            else
+                RTMemFree(pvData);
+        }
+    }
+    else if (   RT_FAILURE(rc)
+             && rc != VERR_CANCELLED)
+    {
         if (pvData)
             RTMemFree(pvData);
 
@@ -1243,15 +1270,28 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
         if (RT_FAILURE(rc2))
             LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
     }
-    else if (RT_SUCCESS(rc))
-    {
-        *ppszFormat = (char *)dataHdr.pvMetaFmt;
-        *pcbFormat  =         dataHdr.cbMetaFmt;
-        *ppvData    = pvData;
-        *pcbData    = cbData;
-    }
 
     LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Host -> Guest
+ * Main function for receiving the actual DnD data from the host.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                DnD context to use.
+ * @param   pMeta               Where to store the actual meta data received from the host.
+ */
+static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
+                                   PVBGLR3GUESTDNDMETADATA pMeta)
+{
+    AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
+
+    int rc = vbglR3DnDHGRecvDataMainEx(pCtx,
+                                       &pMeta->enmType,
+                                       &pMeta->pvMeta,
+                                       &pMeta->cbMeta);
     return rc;
 }
 
@@ -1262,12 +1302,12 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX  pCtx,
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   puScreenId          For which screen on the host the request is for.
+ * @param   puScreenID          For which screen on the host the request is for. Optional.
  */
-static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreenId)
+static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreenID)
 {
-    AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
-    AssertPtrReturn(puScreenId, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+   /* pScreenID is optional. */
 
     VBOXDNDGHREQPENDINGMSG Msg;
     RT_ZERO(Msg);
@@ -1289,12 +1329,14 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
     {
         if (pCtx->uProtocol < 3)
         {
-            rc = Msg.u.v1.uScreenId.GetUInt32(puScreenId); AssertRC(rc);
+            if (puScreenID)
+                 rc = Msg.u.v1.uScreenId.GetUInt32(puScreenID);
         }
         else
         {
             /** @todo Context ID not used yet. */
-            rc = Msg.u.v3.uContext.GetUInt32(puScreenId); AssertRC(rc);
+            if (puScreenID)
+                rc = Msg.u.v3.uContext.GetUInt32(puScreenID);
         }
     }
 
@@ -1307,29 +1349,30 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   pszFormat           Requested data format from the host.
- * @param   cbFormat            Size of requested data format (in bytes).
- * @param   pcbFormatRecv       Actual size of requested data format (in bytes).
- * @param   puAction            Requested action from the host.
+ * @param   ppszFormat          Requested data format from the host. Optional.
+ * @param   pcbFormat           Size of requested data format (in bytes). Optional.
+ * @param   puAction            Requested action from the host. Optional.
  */
 static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                  char     *pszFormat,
-                                  uint32_t  cbFormat,
-                                  uint32_t *pcbFormatRecv,
-                                  uint32_t *puAction)
+                                  char     **ppszFormat,
+                                  uint32_t  *pcbFormat,
+                                  uint32_t  *puAction)
 {
-    AssertPtrReturn(pCtx,          VERR_INVALID_POINTER);
-    AssertPtrReturn(pszFormat,     VERR_INVALID_POINTER);
-    AssertReturn(cbFormat,         VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbFormatRecv, VERR_INVALID_POINTER);
-    AssertPtrReturn(puAction,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    /* The rest is optional. */
+
+    const uint32_t cbFormatTmp = pCtx->cbMaxChunkSize;
+
+    char *pszFormatTmp = static_cast<char *>(RTMemAlloc(cbFormatTmp));
+    if (!pszFormatTmp)
+        return VERR_NO_MEMORY;
 
     VBOXDNDGHDROPPEDMSG Msg;
     RT_ZERO(Msg);
     if (pCtx->uProtocol < 3)
     {
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_EVT_DROPPED, 3);
-        Msg.u.v1.pvFormat.SetPtr(pszFormat, cbFormat);
+        Msg.u.v1.pvFormat.SetPtr(pszFormatTmp, cbFormatTmp);
         Msg.u.v1.cbFormat.SetUInt32(0);
         Msg.u.v1.uAction.SetUInt32(0);
     }
@@ -1337,7 +1380,7 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
     {
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_EVT_DROPPED, 4);
         Msg.u.v3.uContext.SetUInt32(0);
-        Msg.u.v3.pvFormat.SetPtr(pszFormat, cbFormat);
+        Msg.u.v3.pvFormat.SetPtr(pszFormatTmp, cbFormatTmp);
         Msg.u.v3.cbFormat.SetUInt32(0);
         Msg.u.v3.uAction.SetUInt32(0);
     }
@@ -1347,18 +1390,29 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
     {
         if (pCtx->uProtocol < 3)
         {
-            rc = Msg.u.v1.cbFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
-            rc = Msg.u.v1.uAction.GetUInt32(puAction);       AssertRC(rc);
+            if (pcbFormat)
+                rc = Msg.u.v1.cbFormat.GetUInt32(pcbFormat);
+            if (RT_SUCCESS(rc) && puAction)
+                rc = Msg.u.v1.uAction.GetUInt32(puAction);
         }
         else
         {
             /** @todo Context ID not used yet. */
-            rc = Msg.u.v3.cbFormat.GetUInt32(pcbFormatRecv); AssertRC(rc);
-            rc = Msg.u.v3.uAction.GetUInt32(puAction);       AssertRC(rc);
+            if (pcbFormat)
+                rc = Msg.u.v3.cbFormat.GetUInt32(pcbFormat);
+            if (RT_SUCCESS(rc) && puAction)
+                rc = Msg.u.v3.uAction.GetUInt32(puAction);
         }
 
-        AssertReturn(cbFormat >= *pcbFormatRecv, VERR_TOO_MUCH_DATA);
+        if (RT_SUCCESS(rc))
+        {
+            *ppszFormat = RTStrDup(pszFormatTmp);
+            if (!*ppszFormat)
+                rc = VERR_NO_MEMORY;
+        }
     }
+
+    RTMemFree(pszFormatTmp);
 
     return rc;
 }
@@ -1468,7 +1522,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
  * Disconnects a given DnD context from the DnD host service.
  *
  * @returns IPRT status code.
- * @param   pCtx                DnD context to use.
+ * @param   pCtx                DnD context to disconnect.
  *                              The context is invalid afterwards on successful disconnection.
  */
 VBGLR3DECL(int) VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx)
@@ -1481,21 +1535,29 @@ VBGLR3DECL(int) VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx)
 }
 
 /**
- * Receives the next upcoming event for a given DnD context.
+ * Receives the next upcoming DnD event.
+ *
+ * This is the main function DnD clients call in order to implement any DnD functionality.
+ * The purpose of it is to abstract the actual DnD protocol handling as much as possible from
+ * the clients -- those only need to react to certain events, regardless of how the underlying
+ * protocol actually is working.
  *
  * @returns IPRT status code.
- * @param   pCtx                DnD context to use.
- * @param   pEvent              Where to return the received DnD event on success.
+ * @param   pCtx                DnD context to work with.
+ * @param   ppEvent             Next DnD event received on success; needs to be free'd by the client calling
+ *                              VbglR3DnDEventFree() when done.
  */
-VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCMEVENT pEvent)
+VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVENT *ppEvent)
 {
-    AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
 
-    const uint32_t cbFormatMax = pCtx->cbMaxChunkSize;
+    PVBGLR3DNDEVENT pEvent = (PVBGLR3DNDEVENT)RTMemAllocZ(sizeof(VBGLR3DNDEVENT));
+    if (!pEvent)
+        return VERR_NO_MEMORY;
 
-    uint32_t       uMsg   = 0;
-    uint32_t       cParms = 0;
+    uint32_t uMsg   = 0;
+    uint32_t cParms = 0;
     int rc = vbglR3DnDGetNextMsgType(pCtx, &uMsg, &cParms, true /* fWait */);
     if (RT_SUCCESS(rc))
     {
@@ -1519,61 +1581,82 @@ VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCM
 
     if (RT_SUCCESS(rc))
     {
-        pEvent->uType = uMsg;
+        LogFunc(("Handling uMsg=%RU32\n", uMsg));
 
         switch(uMsg)
         {
             case HOST_DND_HG_EVT_ENTER:
+            {
+                rc = vbglR3DnDHGRecvAction(pCtx,
+                                           uMsg,
+                                           &pEvent->u.HG_Enter.uScreenID,
+                                           NULL /* puXPos */,
+                                           NULL /* puYPos */,
+                                           NULL /* uDefAction */,
+                                           &pEvent->u.HG_Enter.uAllActions,
+                                           &pEvent->u.HG_Enter.pszFormats,
+                                           &pEvent->u.HG_Enter.cbFormats);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_ENTER;
+                break;
+            }
             case HOST_DND_HG_EVT_MOVE:
+            {
+                rc = vbglR3DnDHGRecvAction(pCtx,
+                                           uMsg,
+                                           NULL /* puScreenId */,
+                                           &pEvent->u.HG_Move.uXpos,
+                                           &pEvent->u.HG_Move.uYpos,
+                                           &pEvent->u.HG_Move.uDefAction,
+                                           NULL /* puAllActions */,
+                                           NULL /* pszFormats */,
+                                           NULL /* pcbFormats */);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_MOVE;
+                break;
+            }
             case HOST_DND_HG_EVT_DROPPED:
             {
-                pEvent->pszFormats = static_cast<char*>(RTMemAlloc(cbFormatMax));
-                if (!pEvent->pszFormats)
-                    rc = VERR_NO_MEMORY;
-
+                rc = vbglR3DnDHGRecvAction(pCtx,
+                                           uMsg,
+                                           NULL /* puScreenId */,
+                                           &pEvent->u.HG_Drop.uXpos,
+                                           &pEvent->u.HG_Drop.uYpos,
+                                           &pEvent->u.HG_Drop.uDefAction,
+                                           NULL /* puAllActions */,
+                                           NULL /* pszFormats */,
+                                           NULL /* pcbFormats */);
                 if (RT_SUCCESS(rc))
-                    rc = vbglR3DnDHGRecvAction(pCtx,
-                                               uMsg,
-                                               &pEvent->uScreenId,
-                                               &pEvent->u.a.uXpos,
-                                               &pEvent->u.a.uYpos,
-                                               &pEvent->u.a.uDefAction,
-                                               &pEvent->u.a.uAllActions,
-                                               pEvent->pszFormats,
-                                               cbFormatMax,
-                                               &pEvent->cbFormats);
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_DROP;
                 break;
             }
             case HOST_DND_HG_EVT_LEAVE:
             {
                 rc = vbglR3DnDHGRecvLeave(pCtx);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_LEAVE;
                 break;
             }
             case HOST_DND_HG_SND_DATA:
-                /* Protocol v1 + v2: Also contains the header data.
-                 * Note: Fall through is intentional. */
+                /* Protocol v1 + v2: Also contains the header data. */
+                RT_FALL_THROUGH();
             case HOST_DND_HG_SND_DATA_HDR:
             {
-                rc = vbglR3DnDHGRecvDataMain(pCtx,
-                                             /* Screen ID */
-                                             &pEvent->uScreenId,
-                                             /* Format */
-                                             &pEvent->pszFormats,
-                                             &pEvent->cbFormats,
-                                             /* Data */
-                                             &pEvent->u.b.pvData,
-                                             &pEvent->u.b.cbData);
+                rc = vbglR3DnDHGRecvDataMain(pCtx, &pEvent->u.HG_Received.Meta);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_RECEIVE;
                 break;
             }
-            case HOST_DND_HG_SND_MORE_DATA:
+            case HOST_DND_HG_SND_MORE_DATA: /* Deprecated; kept for backwards compatibility. */
+                RT_FALL_THROUGH();
             case HOST_DND_HG_SND_DIR:
+                RT_FALL_THROUGH();
             case HOST_DND_HG_SND_FILE_DATA:
             {
                 /*
                  * All messages in this case are handled internally
                  * by vbglR3DnDHGRecvDataMain() and must be specified
-                 * by a preceding HOST_DND_HG_SND_DATA or HOST_DND_HG_SND_DATA_HDR
-                 * calls.
+                 * by preceeding HOST_DND_HG_SND_DATA or HOST_DND_HG_SND_DATA_HDR calls.
                  */
                 rc = VERR_WRONG_ORDER;
                 break;
@@ -1581,26 +1664,26 @@ VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCM
             case HOST_DND_HG_EVT_CANCEL:
             {
                 rc = vbglR3DnDHGRecvCancel(pCtx);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_HG_CANCEL;
                 break;
             }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
             case HOST_DND_GH_REQ_PENDING:
             {
-                rc = vbglR3DnDGHRecvPending(pCtx, &pEvent->uScreenId);
+                rc = vbglR3DnDGHRecvPending(pCtx, &pEvent->u.GH_IsPending.uScreenID);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_GH_REQ_PENDING;
                 break;
             }
             case HOST_DND_GH_EVT_DROPPED:
             {
-                pEvent->pszFormats = static_cast<char*>(RTMemAlloc(cbFormatMax));
-                if (!pEvent->pszFormats)
-                    rc = VERR_NO_MEMORY;
-
+                rc = vbglR3DnDGHRecvDropped(pCtx,
+                                            &pEvent->u.GH_Drop.pszFormat,
+                                            &pEvent->u.GH_Drop.cbFormat,
+                                            &pEvent->u.GH_Drop.uAction);
                 if (RT_SUCCESS(rc))
-                    rc = vbglR3DnDGHRecvDropped(pCtx,
-                                                pEvent->pszFormats,
-                                                cbFormatMax,
-                                                &pEvent->cbFormats,
-                                                &pEvent->u.a.uDefAction);
+                    pEvent->enmType = VBGLR3DNDEVENTTYPE_GH_DROP;
                 break;
             }
 #endif
@@ -1613,19 +1696,65 @@ VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCM
     }
 
     if (RT_FAILURE(rc))
-        LogFlowFunc(("Returning error %Rrc\n", rc));
+    {
+        VbglR3DnDEventFree(pEvent);
+        LogFlowFunc(("Failed with %Rrc\n", rc));
+    }
+    else
+        *ppEvent = pEvent;
+
     return rc;
 }
 
 /**
- * Host -> Guest
- * Acknowledges that a pending DnD operation from the host can be dropped
- * on the currently selected area on the guest.
+ * Frees (destroys) a formerly allocated DnD event.
  *
  * @returns IPRT status code.
- * @param   pCtx                DnD context to use.
- * @param   uAction             Action to acknowledge.
+ * @param   pEvent              Event to free (destroy).
  */
+VBGLR3DECL(void) VbglR3DnDEventFree(PVBGLR3DNDEVENT pEvent)
+{
+    if (!pEvent)
+        return;
+
+    /* Some messages require additional cleanup. */
+    switch (pEvent->enmType)
+    {
+        case VBGLR3DNDEVENTTYPE_HG_ENTER:
+        {
+            if (pEvent->u.HG_Enter.pszFormats)
+                RTStrFree(pEvent->u.HG_Enter.pszFormats);
+            break;
+        }
+
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+        case VBGLR3DNDEVENTTYPE_GH_DROP:
+        {
+            if (pEvent->u.GH_Drop.pszFormat)
+                RTStrFree(pEvent->u.GH_Drop.pszFormat);
+            break;
+        }
+#endif
+        case VBGLR3DNDEVENTTYPE_HG_RECEIVE:
+        {
+            PVBGLR3GUESTDNDMETADATA pMeta = &pEvent->u.HG_Received.Meta;
+            if (pMeta->pvMeta)
+            {
+                Assert(pMeta->cbMeta);
+                RTMemFree(pMeta->pvMeta);
+                pMeta->cbMeta = 0;
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    RTMemFree(pEvent);
+    pEvent = NULL;
+}
+
 VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uAction)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);

@@ -847,34 +847,139 @@ typedef struct VBGLR3GUESTDNDCMDCTX
     uint32_t cbMaxChunkSize;
 } VBGLR3GUESTDNDCMDCTX, *PVBGLR3GUESTDNDCMDCTX;
 
-typedef struct VBGLR3DNDHGCMEVENT
+/**
+ * Enumeration for specifying the DnD meta data type.
+ */
+typedef enum VBGLR3GUESTDNDMETADATATYPE
 {
-    uint32_t uType;               /** The event type this struct contains. */
-    uint32_t uScreenId;           /** Screen ID this request belongs to. */
-    char    *pszFormats;          /** Format list (\r\n separated). */
-    uint32_t cbFormats;           /** Size (in bytes) of pszFormats (\0 included). */
+    /** Unknown meta data type; don't use. */
+    VBGLR3GUESTDNDMETADATATYPE_UNKNOWN = 0,
+    /** Raw meta data; can be everything. */
+    VBGLR3GUESTDNDMETADATATYPE_RAW,
+    /** Meta data is an URI list, specifying objects. */
+    VBGLR3GUESTDNDMETADATATYPE_URI_LIST,
+    /** Blow the type up to 32-bit. */
+    VBGLR3GUESTDNDMETADATATYPE_32BIT_HACK = 0x7fffffff
+} VBGLR3GUESTDNDMETADATATYPE;
+
+/**
+ * Structure for keeping + handling DnD meta data.
+ *
+ * Note: Don't treat this struct as POD object, as the union has classes in it.
+ */
+typedef struct VBGLR3GUESTDNDMETADATA
+{
+    /** The meta data type the union contains. */
+    VBGLR3GUESTDNDMETADATATYPE enmType;
+    /** Pointer to actual meta data. */
+    void    *pvMeta;
+    /** Size (in bytes) of meta data. */
+    uint32_t cbMeta;
+} VBGLR3GUESTDNDMETADATA;
+
+/** Pointer to VBGLR3GUESTDNDMETADATA. */
+typedef VBGLR3GUESTDNDMETADATA *PVBGLR3GUESTDNDMETADATA;
+
+/** Const pointer to VBGLR3GUESTDNDMETADATA. */
+typedef const PVBGLR3GUESTDNDMETADATA CPVBGLR3GUESTDNDMETADATA;
+
+/**
+ * Enumeration specifying a DnD event type.
+ */
+typedef enum VBGLR3DNDEVENTTYPE
+{
+    VBGLR3DNDEVENTTYPE_INVALID        = 0,
+    VBGLR3DNDEVENTTYPE_HG_ERROR       = 1,
+    VBGLR3DNDEVENTTYPE_HG_ENTER       = 2,
+    VBGLR3DNDEVENTTYPE_HG_MOVE        = 3,
+    VBGLR3DNDEVENTTYPE_HG_LEAVE       = 4,
+    VBGLR3DNDEVENTTYPE_HG_DROP        = 5,
+    VBGLR3DNDEVENTTYPE_HG_RECEIVE     = 6,
+    VBGLR3DNDEVENTTYPE_HG_CANCEL      = 7,
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
+    VBGLR3DNDEVENTTYPE_GH_ERROR       = 100,
+    VBGLR3DNDEVENTTYPE_GH_REQ_PENDING = 101,
+    VBGLR3DNDEVENTTYPE_GH_DROP        = 102,
+# endif
+    /** Blow the type up to 32-bit. */
+    VBGLR3DNDEVENTTYPE_32BIT_HACK = 0x7fffffff
+} VBGLR3DNDEVENTTYPE;
+
+typedef struct VBGLR3DNDEVENT
+{
+    /** The event type the union contains. */
+    VBGLR3DNDEVENTTYPE enmType;
     union
     {
         struct
         {
-            uint32_t uXpos;       /** X position of guest screen. */
-            uint32_t uYpos;       /** Y position of guest screen. */
-            uint32_t uDefAction;  /** Proposed DnD action. */
-            uint32_t uAllActions; /** Allowed DnD actions. */
-        } a; /** Values used in init, move and drop event type. */
+            /** Screen ID this request belongs to. */
+            uint32_t uScreenID;
+            /** Format list (UTF-8, \r\n separated). */
+            char    *pszFormats;
+            /** Size (in bytes) of pszFormats (\0 included). */
+            uint32_t cbFormats;
+            /** Allowed DnD actions. */
+            uint32_t uAllActions;
+        } HG_Enter;
         struct
         {
-            void    *pvData;      /** Data request. */
-            uint32_t cbData;      /** Size (in bytes) of pvData. */
-        } b; /** Values used in drop data event type. */
+            /** Absolute X position of guest screen. */
+            uint32_t uXpos;
+            /** Absolute Y position of guest screen. */
+            uint32_t uYpos;
+            /** Proposed DnD action. */
+            uint32_t uDefAction;
+        } HG_Move;
+        struct
+        {
+            /* Nothing in here. */
+        } HG_Leave;
+        struct
+        {
+            /** Absolute X position of guest screen. */
+            uint32_t uXpos;
+            /** Absolute Y position of guest screen. */
+            uint32_t uYpos;
+            /** Proposed DnD action. */
+            uint32_t uDefAction;
+        } HG_Drop;
+        struct
+        {
+            /** Meta data for the operation. */
+            VBGLR3GUESTDNDMETADATA Meta;
+        } HG_Received;
+        struct
+        {
+            /** IPRT-style error code. */
+            int rc;
+        } HG_Error;
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
+        struct
+        {
+            /** Screen ID this request belongs to. */
+            uint32_t uScreenID;
+        } GH_IsPending;
+        struct
+        {
+            /** Requested format by the host. */
+            char    *pszFormat;
+            /** Size (in bytes) of pszFormat (\0 included). */
+            uint32_t cbFormat;
+            /** Requested DnD action. */
+            uint32_t uAction;
+        } GH_Drop;
+# endif
     } u;
-} VBGLR3DNDHGCMEVENT;
-typedef VBGLR3DNDHGCMEVENT *PVBGLR3DNDHGCMEVENT;
-typedef const PVBGLR3DNDHGCMEVENT CPVBGLR3DNDHGCMEVENT;
+} VBGLR3DNDEVENT;
+typedef VBGLR3DNDEVENT *PVBGLR3DNDEVENT;
+typedef const PVBGLR3DNDEVENT CPVBGLR3DNDEVENT;
+
 VBGLR3DECL(int)     VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 
-VBGLR3DECL(int)     VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCMEVENT pEvent);
+VBGLR3DECL(int)     VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVENT *ppEvent);
+VBGLR3DECL(void)    VbglR3DnDEventFree(PVBGLR3DNDEVENT pEvent);
 
 VBGLR3DECL(int)     VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uAction);
 VBGLR3DECL(int)     VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pcszFormat);

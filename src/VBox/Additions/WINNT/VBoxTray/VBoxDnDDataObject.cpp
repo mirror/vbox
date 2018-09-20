@@ -88,7 +88,7 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
 
     if (SUCCEEDED(hr))
     {
-        int rc2 = RTSemEventCreate(&mSemEvent);
+        int rc2 = RTSemEventCreate(&mEventDropped);
         AssertRC(rc2);
 
         /*
@@ -207,13 +207,14 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
     LogFlowFunc(("mStatus=%ld\n", mStatus));
     if (mStatus == Dropping)
     {
-        LogFlowFunc(("Waiting for event ...\n"));
-        int rc2 = RTSemEventWait(mSemEvent, RT_INDEFINITE_WAIT);
-        LogFlowFunc(("rc2=%Rrc, mStatus=%ld\n", rc2, mStatus)); NOREF(rc2);
+        LogRel2(("DnD: Waiting for drop event ...\n"));
+        int rc2 = RTSemEventWait(mEventDropped, RT_INDEFINITE_WAIT);
+        LogFlowFunc(("rc2=%Rrc, mStatus=%ld\n", rc2, mStatus)); RT_NOREF(rc2);
     }
 
     if (mStatus == Dropped)
     {
+        LogRel2(("DnD: Drop event received\n"));
         LogRel3(("DnD: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
                  pThisFormat->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                  pThisFormat->tymed, pThisFormat->dwAspect));
@@ -516,7 +517,7 @@ int VBoxDnDDataObject::Abort(void)
 {
     LogFlowFunc(("Aborting ...\n"));
     mStatus = Aborted;
-    return RTSemEventSignal(mSemEvent);
+    return RTSemEventSignal(mEventDropped);
 }
 
 /* static */
@@ -673,12 +674,8 @@ void VBoxDnDDataObject::SetStatus(Status status)
 int VBoxDnDDataObject::Signal(const RTCString &strFormat,
                               const void *pvData, uint32_t cbData)
 {
-    LogFlowFunc(("Signalling ...\n"));
-
     int rc;
 
-    mStatus = Dropped;
-    mstrFormat = strFormat;
     if (cbData)
     {
         mpvData = RTMemAlloc(cbData);
@@ -694,14 +691,24 @@ int VBoxDnDDataObject::Signal(const RTCString &strFormat,
     else
         rc = VINF_SUCCESS;
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        mStatus    = Dropped;
+        mstrFormat = strFormat;
+    }
+    else
+    {
         mStatus = Aborted;
+    }
 
     /* Signal in any case. */
-    int rc2 = RTSemEventSignal(mSemEvent);
+    LogRel2(("DnD: Signalling drop event\n"));
+
+    int rc2 = RTSemEventSignal(mEventDropped);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
+    LogFunc(("mStatus=%RU32, rc=%Rrc\n", mStatus, rc));
     return rc;
 }
 

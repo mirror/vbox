@@ -81,7 +81,7 @@ protected:
     ULONG       mcFormats;
     LPFORMATETC mpFormatEtc;
     LPSTGMEDIUM mpStgMedium;
-    RTSEMEVENT  mSemEvent;
+    RTSEMEVENT  mEventDropped;
     RTCString   mstrFormat;
     void       *mpvData;
     uint32_t    mcbData;
@@ -216,8 +216,8 @@ class VBoxDnDWnd;
  */
 typedef struct VBOXDNDEVENT
 {
-    /** The actual event data. */
-    VBGLR3DNDHGCMEVENT Event;
+    /** The actual DnD HGCM event data. */
+    PVBGLR3DNDEVENT pVbglR3Event;
 
 } VBOXDNDEVENT, *PVBOXDNDEVENT;
 
@@ -336,13 +336,12 @@ public:
     int OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAllActions);
     int OnHgDrop(void);
     int OnHgLeave(void);
-    int OnHgDataReceived(const void *pvData, uint32_t cData);
+    int OnHgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta);
     int OnHgCancel(void);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-    /* G->H */
-    int OnGhIsDnDPending(uint32_t uScreenID);
-    int OnGhDropped(const char *pszFormat, uint32_t cbFormats, uint32_t uDefAction);
+    int OnGhIsDnDPending(void);
+    int OnGhDrop(const RTCString &strFormat, uint32_t uDefAction);
 #endif
 
     void PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
