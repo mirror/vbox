@@ -241,7 +241,8 @@ private:
         /* Layout hints: */
         GroupItemData_HorizonalMargin,
         GroupItemData_VerticalMargin,
-        GroupItemData_Spacing,
+        GroupItemData_HeaderSpacing,
+        GroupItemData_ChildrenSpacing,
         GroupItemData_ParentIndent,
     };
 

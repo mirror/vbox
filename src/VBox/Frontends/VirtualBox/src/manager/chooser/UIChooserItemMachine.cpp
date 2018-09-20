@@ -246,9 +246,6 @@ void UIChooserItemMachine::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 
 void UIChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
 {
-    /* Setup: */
-    pPainter->setRenderHint(QPainter::Antialiasing);
-
     /* Paint decorations: */
     paintDecorations(pPainter, pOption);
     /* Paint machine info: */
@@ -591,10 +588,10 @@ void UIChooserItemMachine::prepare()
     m_iHoverLightnessMin = 110;
     m_iHoverLightnessMax = 120;
 #else /* VBOX_WS_MAC */
-    m_iHighlightLightnessMin = 120;
+    m_iHighlightLightnessMin = 130;
     m_iHighlightLightnessMax = 160;
-    m_iHoverLightnessMin = 155;
-    m_iHoverLightnessMax = 175;
+    m_iHoverLightnessMin = 160;
+    m_iHoverLightnessMax = 190;
 #endif /* !VBOX_WS_MAC */
 
     /* Fonts: */
@@ -969,21 +966,34 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
 
 void UIChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
 {
-    /* Simple frame: */
+    /* Save painter: */
     pPainter->save();
+
+    /* Prepare color: */
     QPalette pal = palette();
     QColor strokeColor;
 
     /* Selection frame: */
     if (model()->currentItems().contains(this))
-        strokeColor = pal.color(QPalette::Active, QPalette::Mid).darker(110);
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
+    /* Hovering frame: */
+    else if (isHovered())
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
     /* Default frame: */
     else
-        strokeColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iHoverLightnessMin);
 
-    pPainter->setPen(strokeColor);
-    pPainter->drawLine(rect.topLeft(), rect.topRight() + QPoint(1, 0));
-    pPainter->drawLine(rect.bottomLeft() + QPoint(0, 1), rect.bottomRight() + QPoint(1, 1));
+    /* Create/assign pen: */
+    QPen pen(strokeColor);
+    pen.setWidth(0);
+    pPainter->setPen(pen);
+
+    /* Draw borders: */
+    pPainter->drawLine(rect.topLeft(),    rect.topRight()    + QPoint(1, 0));
+    pPainter->drawLine(rect.bottomLeft(), rect.bottomRight() + QPoint(1, 0));
+    pPainter->drawLine(rect.topLeft(),    rect.bottomLeft());
+
+    /* Restore painter: */
     pPainter->restore();
 }
 
