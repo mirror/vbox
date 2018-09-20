@@ -1209,6 +1209,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** SMM control - MSEG base physical address. */
 #define MSR_IA32_SMM_MONITOR_MSGEG_PHYSADDR(a)      (((a) >> 12) & UINT64_C(0xfffff))
 
+/** SMBASE - Base address of SMRANGE image (Read-only, SMM only). */
+#define MSR_IA32_SMBASE                     0x9E
+
 /** General performance counter no. 0. */
 #define MSR_IA32_PMC0                       0xC1
 /** General performance counter no. 1. */
