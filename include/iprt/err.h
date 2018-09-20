@@ -1061,6 +1061,8 @@ RT_C_DECLS_END
 #define VERR_MISMATCH                       (-22408)
 /** Wrong type. */
 #define VERR_WRONG_TYPE                     (-22409)
+/** Wrong type. */
+#define VWRN_WRONG_TYPE                     (22409)
 /** This indicates that the process does not have sufficient privileges to
  * perform the operation. */
 #define VERR_PRIVILEGE_NOT_HELD             (-22410)
