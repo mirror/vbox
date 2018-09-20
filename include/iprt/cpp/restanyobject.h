@@ -95,7 +95,11 @@ public:
     /** Safe value assignment method, C-string variant. */
     int assignValue(const char *a_pszValue);
 
+    /** Make a clone of this object. */
+    inline RTCRestAnyObject *clone() const { return (RTCRestAnyObject *)baseClone(); }
+
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int setNull(void) RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;

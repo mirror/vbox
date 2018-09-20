@@ -52,6 +52,7 @@ public:
     RTCRestStringMapBase &operator=(RTCRestStringMapBase const &a_rThat);
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -215,19 +216,18 @@ public:
 
 protected:
     /**
+     * Helper for creating a clone.
+     *
+     * @returns Pointer to new map object on success, NULL if out of memory.
+     */
+    virtual RTCRestStringMapBase *createClone(void) const = 0;
+
+    /**
      * Wrapper around the value constructor.
      *
      * @returns Pointer to new value object on success, NULL if out of memory.
      */
     virtual RTCRestObjectBase *createValue(void) = 0;
-
-    /**
-     * Wrapper around the value copy constructor.
-     *
-     * @returns Pointer to copy on success, NULL if out of memory.
-     * @param   a_pSrc      The value to copy.
-     */
-    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) = 0;
 
     /**
      * Worker for the copy constructor and the assignment operator.
@@ -321,6 +321,12 @@ public:
     int assignCopy(RTCRestStringMap const &a_rThat)
     {
         return copyMapWorker(a_rThat, false /*a_fThrow*/);
+    }
+
+    /** Make a clone of this object. */
+    inline RTCRestStringMap *clone() const
+    {
+        return (RTCRestStringMap *)baseClone();
     }
 
     /** Factory method. */
@@ -438,22 +444,14 @@ public:
     /** @todo enumerator*/
 
 protected:
+    virtual RTCRestStringMapBase *createClone(void) const RT_OVERRIDE
+    {
+        return new (std::nothrow) RTCRestStringMap();
+    }
+
     virtual RTCRestObjectBase *createValue(void) RT_OVERRIDE
     {
         return new (std::nothrow) ValueType();
-    }
-
-    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) RT_OVERRIDE
-    {
-        ValueType *pCopy = new (std::nothrow) ValueType();
-        if (pCopy)
-        {
-            int rc = pCopy->assignCopy(*(ValueType const *)a_pSrc);
-            if (RT_SUCCESS(rc))
-                return pCopy;
-            delete pCopy;
-        }
-        return NULL;
     }
 };
 

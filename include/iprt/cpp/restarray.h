@@ -46,6 +46,7 @@ public:
     virtual ~RTCRestArrayBase();
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -131,19 +132,18 @@ protected:
     size_t              m_cCapacity;
 
     /**
+     * Helper for creating a clone.
+     *
+     * @returns Pointer to new array on success, NULL if out of memory.
+     */
+    virtual RTCRestArrayBase *createClone(void) const = 0;
+
+    /**
      * Wrapper around the value constructor.
      *
      * @returns Pointer to new value object on success, NULL if out of memory.
      */
     virtual RTCRestObjectBase *createValue(void) = 0;
-
-    /**
-     * Wrapper around the value copy constructor.
-     *
-     * @returns Pointer to copy on success, NULL if out of memory.
-     * @param   a_pSrc      The value to copy.
-     */
-    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) = 0;
 
     /**
      * Worker for the copy constructor and the assignment operator.
@@ -213,16 +213,22 @@ public:
     }
 
     /** Copy assignment operator. */
-    RTCRestArray &operator=(RTCRestArray const &a_rThat)
+    inline RTCRestArray &operator=(RTCRestArray const &a_rThat)
     {
         copyArrayWorker(a_rThat, true /*fThrow*/);
         return *this;
     }
 
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestArray const &a_rThat)
+    inline int assignCopy(RTCRestArray const &a_rThat)
     {
         return copyArrayWorker(a_rThat, false /*fThrow*/);
+    }
+
+    /** Make a clone of this object. */
+    inline RTCRestArray *clone() const
+    {
+        return (RTCRestArray *)baseClone();
     }
 
     /** Factory method. */
@@ -402,22 +408,14 @@ public:
 
 
 protected:
+    virtual RTCRestArrayBase *createClone(void) const RT_OVERRIDE
+    {
+        return new (std::nothrow) RTCRestArray();
+    }
+
     virtual RTCRestObjectBase *createValue(void) RT_OVERRIDE
     {
         return new (std::nothrow) ElementType();
-    }
-
-    virtual RTCRestObjectBase *createValueCopy(RTCRestObjectBase const *a_pSrc) RT_OVERRIDE
-    {
-        ElementType *pCopy = new (std::nothrow) ElementType();
-        if (pCopy)
-        {
-            int rc = pCopy->assignCopy(*(ElementType const *)a_pSrc);
-            if (RT_SUCCESS(rc))
-                return pCopy;
-            delete pCopy;
-        }
-        return NULL;
     }
 };
 

@@ -65,7 +65,11 @@ public:
      * @note This will assert and work like assignReadOnly. */
     virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_OVERRIDE;
 
+    /** Make a clone of this object. */
+    inline RTCRestBinaryParameter *clone() const { return (RTCRestBinaryParameter *)baseClone(); }
+
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual const char *typeName(void) const RT_OVERRIDE;
 
@@ -199,7 +203,11 @@ public:
      */
     virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_OVERRIDE;
 
+    /** Make a clone of this object. */
+    inline RTCRestBinaryResponse *clone() const { return (RTCRestBinaryResponse *)baseClone(); }
+
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual const char *typeName(void) const RT_OVERRIDE;
 

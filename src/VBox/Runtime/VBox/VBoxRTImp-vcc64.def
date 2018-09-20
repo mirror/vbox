@@ -219,7 +219,7 @@ EXPORTS
     ?assignCopy@RTCRestBinaryResponse@@UEAAHAEBVRTCRestBinary@@@Z               ; (public: virtual int __cdecl RTCRestBinaryResponse::assignCopy(class RTCRestBinary const &))
     ?assignCopy@RTCRestBinaryResponse@@UEAAHPEBX_K@Z                            ; (public: virtual int __cdecl RTCRestBinaryResponse::assignCopy(void const *,unsigned __int64))
     ?assignCopy@RTCRestBool@@QEAAHAEBV1@@Z                                      ; (public: int __cdecl RTCRestBool::assignCopy(class RTCRestBool const &))
-    ?assignCopy@RTCRestDataObject@@UEAAHAEBV1@@Z                                ; (public: virtual int __cdecl RTCRestDataObject::assignCopy(class RTCRestDataObject const &))
+    ?assignCopy@RTCRestDataObject@@MEAAHAEBV1@@Z                                ; (protected: virtual int __cdecl RTCRestDataObject::assignCopy(class RTCRestDataObject const &))
     ?assignCopy@RTCRestDate@@QEAAHAEBV1@@Z                                      ; (public: int __cdecl RTCRestDate::assignCopy(class RTCRestDate const &))
     ?assignCopy@RTCRestDouble@@QEAAHAEBV1@@Z                                    ; (public: int __cdecl RTCRestDouble::assignCopy(class RTCRestDouble const &))
     ?assignCopy@RTCRestInt16@@QEAAHAEBV1@@Z                                     ; (public: int __cdecl RTCRestInt16::assignCopy(class RTCRestInt16 const &))

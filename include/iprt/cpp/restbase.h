@@ -264,6 +264,13 @@ public:
     virtual ~RTCRestObjectBase();
 
     /**
+     * Create a copy of this object.
+     *
+     * @returns Pointer to copy.
+     */
+    virtual RTCRestObjectBase *baseClone() const = 0;
+
+    /**
      * Tests if the object is @a null.
      * @returns true if null, false if not.
      */
@@ -420,8 +427,11 @@ public:
     int assignCopy(RTCRestBool const &a_rThat);
     /** Assign value and clear null indicator. */
     void assignValue(bool a_fValue);
+    /** Make a clone of this object. */
+    inline RTCRestBool *clone() const { return (RTCRestBool *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -460,8 +470,11 @@ public:
     int assignCopy(RTCRestInt64 const &a_rThat);
     /** Assign value and clear null indicator. */
     void assignValue(int64_t a_iValue);
+    /** Make a clone of this object. */
+    inline RTCRestInt64 *clone() const { return (RTCRestInt64 *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -500,8 +513,11 @@ public:
     int assignCopy(RTCRestInt32 const &a_rThat);
     /** Assign value and clear null indicator. */
     void assignValue(int32_t a_iValue);
+    /** Make a clone of this object. */
+    inline RTCRestInt32 *clone() const { return (RTCRestInt32 *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -540,8 +556,11 @@ public:
     int assignCopy(RTCRestInt16 const &a_rThat);
     /** Assign value and clear null indicator. */
     void assignValue(int16_t a_iValue);
+    /** Make a clone of this object. */
+    inline RTCRestInt16 *clone() const { return (RTCRestInt16 *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -580,8 +599,11 @@ public:
     int assignCopy(RTCRestDouble const &a_rThat);
     /** Assign value and clear null indicator. */
     void assignValue(double a_rdValue);
+    /** Make a clone of this object. */
+    inline RTCRestDouble *clone() const { return (RTCRestDouble *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -603,7 +625,7 @@ public:
 /**
  * Class wrapping 'RTCString'.
  */
-class RT_DECL_CLASS RTCRestString : public RTCString, public RTCRestObjectBase
+class RT_DECL_CLASS RTCRestString : public RTCRestObjectBase, public RTCString
 {
 public:
     /** Default constructor. */
@@ -623,8 +645,11 @@ public:
     int assignCopy(RTCString const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(const char *a_pszThat);
+    /** Make a clone of this object. */
+    inline RTCRestString *clone() const { return (RTCRestString *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int setNull(void) RT_OVERRIDE; /* (ambigious, so overrider it to make sure.) */
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
@@ -687,8 +712,11 @@ public:
     RTCRestDate &operator=(RTCRestDate const &a_rThat);
     /** Safe copy assignment method. */
     int assignCopy(RTCRestDate const &a_rThat);
+    /** Make a clone of this object. */
+    inline RTCRestDate *clone() const { return (RTCRestDate *)baseClone(); }
 
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int resetToDefault() RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
@@ -907,6 +935,9 @@ protected:
      */
     bool                setWorker(int a_iEnumValue);
 
+    /** Helper for implementing RTCRestObjectBase::clone(). */
+    RTCRestObjectBase  *cloneWorker(RTCRestStringEnumBase *a_pDst) const;
+
     /**
      * Gets the mapping table.
      *
@@ -948,7 +979,11 @@ public:
     /** Gets the size of the data. */
     inline size_t          getSize() const { return m_cbData; }
 
+    /** Make a clone of this object. */
+    inline RTCRestBinary  *clone() const { return (RTCRestBinary *)baseClone(); }
+
     /* Overridden methods: */
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
     virtual int setNull(void) RT_OVERRIDE;
     virtual int resetToDefault(void) RT_OVERRIDE;
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
@@ -982,7 +1017,7 @@ private:
 
 
 /**
- * Abstract base class for REST data model objects.
+ * Abstract base class for REST data model classes.
  */
 class RT_DECL_CLASS RTCRestDataObject : public RTCRestObjectBase
 {
@@ -996,9 +1031,6 @@ public:
     virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
     virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-
-    /** Safe copy assignment method. */
-    virtual int assignCopy(RTCRestDataObject const &a_rThat);
 
     /**
      * Serialize the members as JSON.
@@ -1027,6 +1059,32 @@ protected:
 
     /** Copy assignment operator. */
     RTCRestDataObject &operator=(RTCRestDataObject const &a_rThat);
+
+    /** Safe copy assignment method. */
+    virtual int assignCopy(RTCRestDataObject const &a_rThat);
+};
+
+
+/**
+ * Abstract base class for polymorphic REST data model classes.
+ */
+class RT_DECL_CLASS RTCRestPolyDataObject : public RTCRestDataObject
+{
+public:
+    RTCRestPolyDataObject();
+    RTCRestPolyDataObject(RTCRestPolyDataObject const &a_rThat);
+    virtual ~RTCRestPolyDataObject();
+
+    /* Overridden methods:*/
+    virtual int resetToDefault() RT_OVERRIDE;
+
+    /** Checks if the instance is of a child class (@c true) or of the parent (@c false). */
+    virtual bool isChild() const;
+
+protected:
+
+    /** Copy assignment operator. */
+    RTCRestPolyDataObject &operator=(RTCRestPolyDataObject const &a_rThat);
 };
 
 
