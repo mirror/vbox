@@ -1905,8 +1905,7 @@ int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
  *                data to the guest for further processing.
  *
  * @returns IPRT status code.
- * @param   pvData                  Pointer to (MIME) data from host.
- * @param   cbData                  Size (in bytes) of data from host.
+ * @param   pMetaData               Pointer to meta data from host.
  */
 int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData)
 {
