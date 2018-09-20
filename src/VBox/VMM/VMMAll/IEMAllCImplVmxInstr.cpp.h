@@ -1967,8 +1967,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         }
 
         /* CR0 fixed bits. */
-        bool const     fUnrestrictedGuest = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxUnrestrictedGuest;
-        uint64_t const uCr0Fixed0         = fUnrestrictedGuest ? VMX_V_CR0_FIXED0_UX : VMX_V_CR0_FIXED0;
+        uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
         if ((pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0) != uCr0Fixed0)
         {
             Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
@@ -1977,7 +1976,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         }
 
         /* CR4 fixed bits. */
-        if ((pVCpu->cpum.GstCtx.cr4 & VMX_V_CR4_FIXED0) != VMX_V_CR4_FIXED0)
+        uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        if ((pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0) != uCr4Fixed0)
         {
             Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed0;
@@ -3888,7 +3888,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsr(PVMCPU pVCpu)
+IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsrs(PVMCPU pVCpu)
 {
     /*
      * Load guest control registers, debug registers and MSRs.
@@ -4265,7 +4265,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
     /*
      * Load guest control, debug, segment, descriptor-table registers and some MSRs.
      */
-    iemVmxVmentryLoadGuestControlRegsMsr(pVCpu);
+    iemVmxVmentryLoadGuestControlRegsMsrs(pVCpu);
     iemVmxVmentryLoadGuestSegRegs(pVCpu);
 
     /*
@@ -4886,7 +4886,6 @@ IEM_STATIC int iemVmxAbort(PVMCPU pVCpu, VMXABORT enmAbort)
 
     /* We don't support SMX yet. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmAbort = enmAbort;
-    ASMWriteFence();
     if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         RTGCPHYS const GCPhysVmcs  = IEM_VMX_GET_CURRENT_VMCS(pVCpu);
@@ -4895,6 +4894,32 @@ IEM_STATIC int iemVmxAbort(PVMCPU pVCpu, VMXABORT enmAbort)
     }
 
     return VINF_EM_TRIPLE_FAULT;
+}
+
+
+/**
+ * Checks host control registers, debug registers and MSRs as part of VM-exit.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
+{
+    /** @todo NSTVMX: load host control regs. */
+    RT_NOREF(pVCpu);
+}
+
+
+/**
+ * Loads the host state as part of VM-exit.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
+{
+    /*
+     * Load host control, debug, segment, descriptor-table registers and some MSRs.
+     */
+    iemVmxVmexitLoadHostControlRegsMsrs(pVCpu);
 }
 
 
@@ -4936,7 +4961,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_
         }
     }
 
-    /** @todo NSTVMX: rest of VM-exit (loading host state etc). */
+    iemVmxVmexitLoadHostState(pVCpu);
+
+    /** @todo NSTVMX: rest of VM-exit. */
     return VINF_SUCCESS;
 }
 
