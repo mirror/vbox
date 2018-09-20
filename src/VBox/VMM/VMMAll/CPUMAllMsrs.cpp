@@ -1556,8 +1556,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t i
 VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxCr0Fixed0(PVMCPU pVCpu)
 {
     PCCPUMFEATURES pGuestFeatures = &pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures;
-    uint64_t const uVmxMsr = pGuestFeatures->fVmx ? VMX_V_CR0_FIXED0 : 0;
-    return uVmxMsr;
+    if (pGuestFeatures->fVmx)
+    {
+        uint64_t const uVmxMsr = pGuestFeatures->fVmxUnrestrictedGuest ? VMX_V_CR0_FIXED0_UX : VMX_V_CR0_FIXED0;
+        return uVmxMsr;
+    }
+    return 0;
 }
 
 

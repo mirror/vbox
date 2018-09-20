@@ -5337,8 +5337,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /* Check for bits that must remain set in VMX operation. */
             if (IEM_IS_VMX_ROOT_MODE(pVCpu))
             {
-                uint32_t const uCr0Fixed0 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxUnrestrictedGuest ?
-                                            VMX_V_CR0_FIXED0_UX : VMX_V_CR0_FIXED0;
+                uint32_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
                 if ((uNewCrX & uCr0Fixed0) != uCr0Fixed0)
                 {
                     Log(("Trying to clear reserved CR0 bits in VMX operation: NewCr0=%#llx MB1=%#llx\n", uNewCrX, uCr0Fixed0));
@@ -5564,7 +5563,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /* Check for bits that must remain set in VMX operation. */
             if (IEM_IS_VMX_ROOT_MODE(pVCpu))
             {
-                uint32_t const uCr4Fixed0 = VMX_V_CR4_FIXED0;
+                uint32_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
                 if ((uNewCrX & uCr4Fixed0) != uCr4Fixed0)
                 {
                     Log(("Trying to clear reserved CR4 bits in VMX operation: NewCr4=%#llx MB1=%#llx\n", uNewCrX, uCr4Fixed0));
