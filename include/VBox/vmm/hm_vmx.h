@@ -1350,6 +1350,22 @@ typedef enum
 /** @} */
 
 
+/** @name VMX abort reasons.
+ * See Intel spec. "27.7 VMX Aborts".
+ * @{
+ */
+typedef enum
+{
+    VMXABORT_SAVE_GUEST_MSRS      = 1,
+    VMXBOART_HOST_PDPTE           = 2,
+    VMXABORT_CURRENT_VMCS_CORRUPT = 3,
+    VMXABORT_LOAD_HOST_MSR        = 4,
+    VMXABORT_MACHINE_CHECK_XCPT   = 5,
+    VMXABORT_HOST_LONG_MODE       = 6
+} VMXABORT;
+/** @} */
+
+
 /** @name VMX MSR - Basic VMX information.
  * @{
  */
