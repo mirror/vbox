@@ -949,6 +949,65 @@ protected:
 
 
 /**
+ * String enum template class.
+ *
+ * Takes the enum type as argument.
+ */
+template <typename EnumType>
+class RTCRestStringEnum : public RTCRestStringEnumBase
+{
+public:
+    typedef EnumType Type;  /**< The enum type. */
+
+    /** Default constructor */
+    RTCRestStringEnum() : RTCRestStringEnumBase() { }
+    /** Constructor with initial enum value. */
+    RTCRestStringEnum(Type a_enmValue) : RTCRestStringEnumBase() { set(a_enmValue); }
+    /** Constructor with string default. */
+    RTCRestStringEnum(const char *a_pszDefault) : RTCRestStringEnumBase() { setByString(a_pszDefault); }
+    /** Copy constructor */
+    RTCRestStringEnum(RTCRestStringEnum const &a_rThat) : RTCRestStringEnumBase(a_rThat) { }
+    /** Make a clone of this object. */
+    inline RTCRestStringEnum *clone() const RT_OVERRIDE { return (RTCRestStringEnum *)baseClone(); }
+
+    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE { return cloneWorker(new (std::nothrow) RTCRestStringEnum()); }
+
+    /**
+     * Gets the enum value.
+     * @returns enum value.
+     * @retval  kXxxxInvalid means there was no mapping for the string, or that
+     *          no value has been assigned yet.
+     */
+    Type get() const { return (Type)m_iEnumValue; }
+
+    /**
+     * Sets the object value to @a a_enmType
+     *
+     * @returns true if a_enmType is valid, false if not.
+     * @param   a_enmType   The new value.
+     */
+    bool set(Type a_enmType) { return setWorker((int)a_enmType); }
+
+    virtual const char *typeName(void) const RT_OVERRIDE { return "RTCRestStringEnum<EnumType>"; }
+
+    /** Factory method. */
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) { return new (std::nothrow) RTCRestStringEnum(); }
+
+protected:
+    /** Enum mapping table. */
+    static const ENUMMAPENTRY s_aMappingTable[];
+    /** Enum mapping table size. */
+    static const size_t       s_cMappingTable;
+
+    virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const RT_OVERRIDE
+    {
+        *pcEntries = s_cMappingTable;
+        return s_aMappingTable;
+    }
+};
+
+
+/**
  * Class for handling binary blobs (strings).
  *
  * There are specializations of this class for body parameters and responses,
