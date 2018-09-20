@@ -99,8 +99,12 @@ int RTCRestClientRequestBase::doPathParameters(RTCString *a_pStrPath, const char
         AssertReturn(   (a_paPathParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask)
                      != RTCRestObjectBase::kCollectionFormat_multi,
                      VERR_INTERNAL_ERROR_3);
-        AssertMsg(m_fIsSet & RT_BIT_64(a_paPathParams[i].iBitNo),
-                  ("Path parameter '%s' is not set!\n", a_paPathParams[i].pszName));
+        AssertMsgReturn(a_paPathParamStates[i].pObj != NULL,
+                        ("Path parameter '%s' is not set!\n", a_paPathParams[i].pszName),
+                        VERR_REST_PATH_PARAMETER_NOT_SET);
+        AssertMsgReturn(m_fIsSet & RT_BIT_64(a_paPathParams[i].iBitNo),
+                        ("Path parameter '%s' is not set!\n", a_paPathParams[i].pszName),
+                        VERR_REST_PATH_PARAMETER_NOT_SET);
 
         rc = a_paPathParamStates[i].pObj->toString(&strTmpVal, a_paPathParams[i].fFlags);
         AssertRCReturn(rc, rc);
@@ -131,8 +135,12 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
         if (   a_paQueryParams[i].fRequired
             || (m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo)) )
         {
-            AssertMsg(m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo),
-                      ("Required query parameter '%s' is not set!\n", a_paQueryParams[i].pszName));
+            AssertMsgReturn(a_papQueryParamObjs[i] != NULL,
+                            ("Required query parameter '%s' is not set!\n", a_paQueryParams[i].pszName),
+                            VERR_REST_REQUIRED_QUERY_PARAMETER_NOT_SET);
+            AssertMsgReturn(m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo),
+                            ("Required query parameter '%s' is not set!\n", a_paQueryParams[i].pszName),
+                            VERR_REST_REQUIRED_QUERY_PARAMETER_NOT_SET);
 
             if (   (a_paQueryParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask)
                 != RTCRestObjectBase::kCollectionFormat_multi)
@@ -184,8 +192,12 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
         if (   a_paHeaderParams[i].fRequired
             || (m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo)) )
         {
-            AssertMsg(m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo),
-                      ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName));
+            AssertMsgReturn(m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo),
+                            ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName),
+                            VERR_REST_REQUIRED_HEADER_PARAMETER_NOT_SET);
+            AssertMsgReturn(a_papHeaderParamObjs[i] != NULL,
+                            ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName),
+                            VERR_REST_REQUIRED_HEADER_PARAMETER_NOT_SET);
 
             if (!a_paHeaderParams[i].fMapCollection)
             {

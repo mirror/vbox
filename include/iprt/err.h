@@ -3253,6 +3253,12 @@ RT_C_DECLS_END
 #define VERR_REST_WRONG_JSON_TYPE_FOR_DATE              (-25709)
 /** Unable to parse string as bool. */
 #define VERR_REST_UNABLE_TO_PARSE_STRING_AS_BOOL        (-25710)
+/** A path parameter was not set. */
+#define VERR_REST_PATH_PARAMETER_NOT_SET                (-25711)
+/** A required query parameter was not set. */
+#define VERR_REST_REQUIRED_QUERY_PARAMETER_NOT_SET      (-25712)
+/** A required header parmaeter was not set. */
+#define VERR_REST_REQUIRED_HEADER_PARAMETER_NOT_SET     (-25713)
 
 /** Internal error \#1. */
 #define VERR_REST_INTERNAL_ERROR_1                      (-25791)
