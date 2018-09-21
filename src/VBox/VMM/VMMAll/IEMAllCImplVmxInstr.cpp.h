@@ -762,7 +762,7 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
 
 
 /**
- * Gets a guest segment register from the VMCS given its index.
+ * Gets a guest segment register from the VMCS.
  *
  * @returns VBox status code.
  * @param   pVmcs       Pointer to the virtual VMCS.
@@ -4992,11 +4992,14 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
 /**
  * Loads host segment registers, GDTR, IDTR, LDTR and TR as part of VM-exit.
  *
- *
- * @param
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
 {
+    /*
+     * Load host segment registers, GDTR, IDTR, LDTR and TR.
+     * See Intel spec. 27.5.2 "Loading Host Segment and Descriptor-Table Registers".
+     */
     RT_NOREF(pVCpu);
     /** @todo Load host seg regs. */
 }
