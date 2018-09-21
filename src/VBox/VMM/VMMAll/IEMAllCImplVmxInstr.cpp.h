@@ -5066,10 +5066,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-        {
-            Log(("VM-Exit: Saving guest auto-store MSRs failed (rc=%Rrc) -> VMX-Abort\n", rc));
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
-        }
     }
 
     int rc = iemVmxVmexitLoadHostState(pVCpu);
