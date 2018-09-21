@@ -950,7 +950,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 LogFlowThisFunc(("\tReported dead area: x=%RU16, y=%RU16, cx=%RU16, cy=%RU16\n", x, y, cx, cy));
 #endif
 
-                uint32_t uAction = DND_IGNORE_ACTION; /* Default is ignoring. */
+                uint32_t uAction = VBOX_DND_ACTION_IGNORE; /* Default is ignoring. */
                 /** @todo Compare this with the allowed actions. */
                 if (fAcceptDrop)
                     uAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
@@ -1110,7 +1110,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 m.data.l[XdndStatusNoMsgWH] = RT_MAKE_U32(m_wndProxy.iHeight, m_wndProxy.iWidth);
 
                 /** @todo Handle default action! */
-                m.data.l[XdndStatusAction]  = fAcceptDrop ? toAtomAction(DND_COPY_ACTION) : None;
+                m.data.l[XdndStatusAction]  = fAcceptDrop ? toAtomAction(VBOX_DND_ACTION_COPY) : None;
 
                 int xRc = XSendEvent(m_pDisplay, e.xclient.data.l[XdndPositionWindow],
                                      False /* Propagate */, NoEventMask, reinterpret_cast<XEvent *>(&m));
@@ -1138,7 +1138,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                     logInfo("Could not drop on own proxy window\n"); /* Not fatal. */
 
                     /* Let the source know. */
-                    rc = m_wndProxy.sendFinished(m_wndCur, DND_IGNORE_ACTION);
+                    rc = m_wndProxy.sendFinished(m_wndCur, VBOX_DND_ACTION_IGNORE);
 
                     /* Start over. */
                     reset();
@@ -1153,7 +1153,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 logInfo("Unhandled event from wnd=%#x, msg=%s\n", e.xclient.window, xAtomToString(e.xclient.message_type).c_str());
 
                 /* Let the source know. */
-                rc = m_wndProxy.sendFinished(m_wndCur, DND_IGNORE_ACTION);
+                rc = m_wndProxy.sendFinished(m_wndCur, VBOX_DND_ACTION_IGNORE);
 
                 /* Start over. */
                 reset();
@@ -1842,7 +1842,7 @@ int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction
     if (newVer == -1)
     {
         /* No window to process, so send a ignore ack event to the host. */
-        rc = VbglR3DnDHGSendAckOp(&m_dndCtx, DND_IGNORE_ACTION);
+        rc = VbglR3DnDHGSendAckOp(&m_dndCtx, VBOX_DND_ACTION_IGNORE);
     }
     else
     {
@@ -1994,8 +1994,8 @@ int DragInstance::ghIsDnDPending(void)
     int rc;
 
     RTCString strFormats = "\r\n"; /** @todo If empty, IOCTL fails with VERR_ACCESS_DENIED. */
-    uint32_t uDefAction  = DND_IGNORE_ACTION;
-    uint32_t uAllActions = DND_IGNORE_ACTION;
+    uint32_t uDefAction  = VBOX_DND_ACTION_IGNORE;
+    uint32_t uAllActions = VBOX_DND_ACTION_IGNORE;
 
     /* Currently in wrong mode? Bail out. */
     if (m_enmMode == HG)
@@ -2096,8 +2096,8 @@ int DragInstance::ghIsDnDPending(void)
         if (!strFormatsCur.isEmpty())
         {
             strFormats   = strFormatsCur;
-            uDefAction   = DND_COPY_ACTION; /** @todo Handle default action! */
-            uAllActions  = DND_COPY_ACTION; /** @todo Ditto. */
+            uDefAction   = VBOX_DND_ACTION_COPY; /** @todo Handle default action! */
+            uAllActions  = VBOX_DND_ACTION_COPY; /** @todo Ditto. */
             uAllActions |= toHGCMActions(m_lstActions);
         }
 
@@ -2294,7 +2294,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 
                     /* Cancel the operation -- inform the source window by
                      * sending a XdndFinished message so that the source can toss the required data. */
-                    rc = m_wndProxy.sendFinished(wndSource, DND_IGNORE_ACTION);
+                    rc = m_wndProxy.sendFinished(wndSource, VBOX_DND_ACTION_IGNORE);
                 }
 
                 /* Cleanup. */
@@ -2862,14 +2862,14 @@ int DragInstance::toAtomActions(uint32_t uActions, VBoxDnDAtomList &lstAtoms)
 /* static */
 uint32_t DragInstance::toHGCMAction(Atom atom)
 {
-    uint32_t uAction = DND_IGNORE_ACTION;
+    uint32_t uAction = VBOX_DND_ACTION_IGNORE;
 
     if (atom == xAtom(XA_XdndActionCopy))
-        uAction = DND_COPY_ACTION;
+        uAction = VBOX_DND_ACTION_COPY;
     else if (atom == xAtom(XA_XdndActionMove))
-        uAction = DND_MOVE_ACTION;
+        uAction = VBOX_DND_ACTION_MOVE;
     else if (atom == xAtom(XA_XdndActionLink))
-        uAction = DND_LINK_ACTION;
+        uAction = VBOX_DND_ACTION_LINK;
 
     return uAction;
 }
@@ -2883,7 +2883,7 @@ uint32_t DragInstance::toHGCMAction(Atom atom)
 /* static */
 uint32_t DragInstance::toHGCMActions(const VBoxDnDAtomList &lstActions)
 {
-    uint32_t uActions = DND_IGNORE_ACTION;
+    uint32_t uActions = VBOX_DND_ACTION_IGNORE;
 
     for (size_t i = 0; i < lstActions.size(); i++)
         uActions |= toHGCMAction(lstActions.at(i));
@@ -2931,7 +2931,7 @@ void VBoxDnDProxyWnd::destroy(void)
 int VBoxDnDProxyWnd::sendFinished(Window hWndSource, uint32_t uAction)
 {
     /* Was the drop accepted by the host? That is, anything than ignoring. */
-    bool fDropAccepted = uAction > DND_IGNORE_ACTION;
+    bool fDropAccepted = uAction > VBOX_DND_ACTION_IGNORE;
 
     LogFlowFunc(("uAction=%RU32\n", uAction));
 

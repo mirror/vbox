@@ -93,7 +93,7 @@ VBoxDnDWnd::VBoxDnDWnd(void)
     : hThread(NIL_RTTHREAD),
       mEventSem(NIL_RTSEMEVENT),
       hWnd(NULL),
-      uAllActions(DND_IGNORE_ACTION),
+      uAllActions(VBOX_DND_ACTION_IGNORE),
       mfMouseButtonDown(false),
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
       pDropTarget(NULL),
@@ -877,11 +877,11 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
         startupInfo.dwOKEffects = DROPEFFECT_NONE;
         if (uAllActions)
         {
-            if (uAllActions & DND_COPY_ACTION)
+            if (uAllActions & VBOX_DND_ACTION_COPY)
                 startupInfo.dwOKEffects |= DROPEFFECT_COPY;
-            if (uAllActions & DND_MOVE_ACTION)
+            if (uAllActions & VBOX_DND_ACTION_MOVE)
                 startupInfo.dwOKEffects |= DROPEFFECT_MOVE;
-            if (uAllActions & DND_LINK_ACTION)
+            if (uAllActions & VBOX_DND_ACTION_LINK)
                 startupInfo.dwOKEffects |= DROPEFFECT_LINK;
         }
 
@@ -924,7 +924,7 @@ int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
     RT_NOREF(uAction);
     int rc;
 
-    uint32_t uActionNotify = DND_IGNORE_ACTION;
+    uint32_t uActionNotify = VBOX_DND_ACTION_IGNORE;
     if (mMode == HG)
     {
         LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=0x%x\n",
@@ -1195,13 +1195,13 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
 
     if (RT_SUCCESS(rc))
     {
-        uint32_t uDefAction = DND_IGNORE_ACTION;
+        uint32_t uDefAction = VBOX_DND_ACTION_IGNORE;
 
         AssertPtr(pDropTarget);
         RTCString strFormats = pDropTarget->Formats();
         if (!strFormats.isEmpty())
         {
-            uDefAction = DND_COPY_ACTION;
+            uDefAction = VBOX_DND_ACTION_COPY;
 
             LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormats=%s\n",
                          pDropTarget, uDefAction, uAllActions, strFormats.c_str()));
@@ -1549,7 +1549,7 @@ void VBoxDnDWnd::reset(void)
      */
 
     this->lstFmtActive.clear();
-    this->uAllActions = DND_IGNORE_ACTION;
+    this->uAllActions = VBOX_DND_ACTION_IGNORE;
 
     int rc2 = setMode(Unknown);
     AssertRC(rc2);

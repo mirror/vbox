@@ -672,14 +672,14 @@ GuestDnDMIMEList GuestDnD::toFilteredFormatList(const GuestDnDMIMEList &lstForma
 /* static */
 uint32_t GuestDnD::toHGCMAction(DnDAction_T enmAction)
 {
-    uint32_t uAction = DND_IGNORE_ACTION;
+    uint32_t uAction = VBOX_DND_ACTION_IGNORE;
     switch (enmAction)
     {
         case DnDAction_Copy:
-            uAction = DND_COPY_ACTION;
+            uAction = VBOX_DND_ACTION_COPY;
             break;
         case DnDAction_Move:
-            uAction = DND_MOVE_ACTION;
+            uAction = VBOX_DND_ACTION_MOVE;
             break;
         case DnDAction_Link:
             /* For now it doesn't seems useful to allow a link
@@ -701,7 +701,7 @@ void GuestDnD::toHGCMActions(DnDAction_T                    enmDefAction,
                              const std::vector<DnDAction_T> vecAllowedActions,
                              uint32_t                      *puAllowedActions)
 {
-    uint32_t uAllowedActions = DND_IGNORE_ACTION;
+    uint32_t uAllowedActions = VBOX_DND_ACTION_IGNORE;
     uint32_t uDefAction      = toHGCMAction(enmDefAction);
 
     if (!vecAllowedActions.empty())
@@ -717,9 +717,9 @@ void GuestDnD::toHGCMActions(DnDAction_T                    enmDefAction,
         if (isDnDIgnoreAction(uDefAction))
         {
             if (hasDnDCopyAction(uAllowedActions))
-                uDefAction = DND_COPY_ACTION;
+                uDefAction = VBOX_DND_ACTION_COPY;
             else if (hasDnDMoveAction(uAllowedActions))
-                uDefAction = DND_MOVE_ACTION;
+                uDefAction = VBOX_DND_ACTION_MOVE;
         }
     }
 

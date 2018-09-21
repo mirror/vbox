@@ -75,19 +75,24 @@
 #define VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST 2
 #define VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL 3
 
-#define DND_IGNORE_ACTION     UINT32_C(0)
-#define DND_COPY_ACTION       RT_BIT_32(0)
-#define DND_MOVE_ACTION       RT_BIT_32(1)
-#define DND_LINK_ACTION       RT_BIT_32(2)
+#define VBOX_DND_ACTION_IGNORE     UINT32_C(0)
+#define VBOX_DND_ACTION_COPY       RT_BIT_32(0)
+#define VBOX_DND_ACTION_MOVE       RT_BIT_32(1)
+#define VBOX_DND_ACTION_LINK       RT_BIT_32(2)
 
-#define hasDnDCopyAction(a)   ((a) & DND_COPY_ACTION)
-#define hasDnDMoveAction(a)   ((a) & DND_MOVE_ACTION)
-#define hasDnDLinkAction(a)   ((a) & DND_LINK_ACTION)
+/** A single DnD action. */
+typedef uint32_t VBOXDNDACTION;
+/** A list of (OR'ed) DnD actions. */
+typedef uint32_t VBOXDNDACTIONLIST;
 
-#define isDnDIgnoreAction(a)  ((a) == DND_IGNORE_ACTION)
-#define isDnDCopyAction(a)    ((a) == DND_COPY_ACTION)
-#define isDnDMoveAction(a)    ((a) == DND_MOVE_ACTION)
-#define isDnDLinkAction(a)    ((a) == DND_LINK_ACTION)
+#define hasDnDCopyAction(a)   ((a) & VBOX_DND_ACTION_COPY)
+#define hasDnDMoveAction(a)   ((a) & VBOX_DND_ACTION_MOVE)
+#define hasDnDLinkAction(a)   ((a) & VBOX_DND_ACTION_LINK)
+
+#define isDnDIgnoreAction(a)  ((a) == VBOX_DND_ACTION_IGNORE)
+#define isDnDCopyAction(a)    ((a) == VBOX_DND_ACTION_COPY)
+#define isDnDMoveAction(a)    ((a) == VBOX_DND_ACTION_MOVE)
+#define isDnDLinkAction(a)    ((a) == VBOX_DND_ACTION_LINK)
 
 /** @def VBOX_DND_FORMATS_DEFAULT
  * Default drag'n drop formats.

@@ -479,7 +479,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     DnDAction_T resAction    = DnDAction_Ignore;
 
     /* Check & convert the drag & drop actions to HGCM codes. */
-    uint32_t uDefAction      = DND_IGNORE_ACTION;
+    uint32_t uDefAction      = VBOX_DND_ACTION_IGNORE;
     uint32_t uAllowedActions = 0;
     GuestDnD::toHGCMActions(aDefaultAction,  &uDefAction,
                             aAllowedActions, &uAllowedActions);
