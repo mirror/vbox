@@ -46,7 +46,7 @@ RTCRestOutputBase::~RTCRestOutputBase()
 }
 
 
-size_t RTCRestOutputBase::vprintf(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0)
+size_t RTCRestOutputBase::vprintf(const char *pszFormat, va_list va)
 {
     return RTStrFormatV(printfOutputCallback, this, NULL, NULL, pszFormat, va);
 }
