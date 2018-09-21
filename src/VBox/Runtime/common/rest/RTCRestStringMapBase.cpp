@@ -33,6 +33,7 @@
 
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/cpp/restoutput.h>
 
 
 /**
@@ -100,27 +101,17 @@ RTCRestOutputBase &RTCRestStringMapBase::serializeAsJson(RTCRestOutputBase &a_rD
 {
     if (!m_fNullIndicator)
     {
-        a_rDst.printf("{\n");
-        unsigned const uOldIndent = a_rDst.incrementIndent();
-
-        MapEntry const * const pLast = RTListGetLastCpp(&m_ListHead, MapEntry, ListEntry);
-        MapEntry const * pCur;
+        uint32_t const uOldState = a_rDst.beginObject();
+        MapEntry const *pCur;
         RTListForEachCpp(&m_ListHead, pCur, MapEntry, ListEntry)
         {
-            a_rDst.printf("%RJs: ", pCur->strKey.c_str());
+            a_rDst.valueSeparatorAndName(pCur->strKey.c_str(), pCur->strKey.length());
             pCur->pValue->serializeAsJson(a_rDst);
-
-            if (pCur != pLast)
-                a_rDst.printf(",\n");
-            else
-                a_rDst.printf("\n");
         }
-
-        a_rDst.setIndent(uOldIndent);
-        a_rDst.printf("}");
+        a_rDst.endArray(uOldState);
     }
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 

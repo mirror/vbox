@@ -34,6 +34,7 @@
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/cpp/restoutput.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -408,7 +409,7 @@ RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst) cons
     if (!m_fNullIndicator)
         a_rDst.printf("%RI64", m_iValue);
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 
@@ -592,7 +593,7 @@ RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) cons
     if (!m_fNullIndicator)
         a_rDst.printf("%RI32", m_iValue);
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 
@@ -782,7 +783,7 @@ RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst) cons
     if (!m_fNullIndicator)
         a_rDst.printf("%RI16", m_iValue);
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 
@@ -988,7 +989,7 @@ RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) con
         a_rDst.printf("%s", szValue);
     }
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 
@@ -1237,7 +1238,7 @@ RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) con
     if (!m_fNullIndicator)
         a_rDst.printf("%RMjs", m_psz ? m_psz : "");
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 
@@ -1545,7 +1546,7 @@ int RTCRestDate::resetToDefault()
 RTCRestOutputBase &RTCRestDate::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     if (m_fNullIndicator)
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     else
         a_rDst.printf("%RMjs", m_strFormatted.c_str());
     return a_rDst;
@@ -1957,7 +1958,7 @@ RTCRestOutputBase &RTCRestStringEnumBase::serializeAsJson(RTCRestOutputBase &a_r
     if (!m_fNullIndicator)
         a_rDst.printf("%RMjs", getString());
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 
@@ -2227,10 +2228,10 @@ int RTCRestDataObject::resetToDefault()
 }
 
 
-const char *RTCRestDataObject::serializeMembersAsJson(RTCRestOutputBase &a_rDst, const char *a_pszSep) const
+RTCRestOutputBase &RTCRestDataObject::serializeMembersAsJson(RTCRestOutputBase &a_rDst) const
 {
     RT_NOREF(a_rDst);
-    return a_pszSep;
+    return a_rDst;
 }
 
 
@@ -2238,16 +2239,12 @@ RTCRestOutputBase &RTCRestDataObject::serializeAsJson(RTCRestOutputBase &a_rDst)
 {
     if (!m_fNullIndicator)
     {
-        a_rDst.printf("{");
-        unsigned const uOldIndent = a_rDst.incrementIndent();
-
-        const char *pszSep = serializeMembersAsJson(a_rDst, "");
-
-        a_rDst.setIndent(uOldIndent);
-        a_rDst.printf("%s}", *pszSep != '\0' ? "\n" : "");
+        uint32_t const uOldState = a_rDst.beginObject();
+        serializeMembersAsJson(a_rDst);
+        a_rDst.endObject(uOldState);
     }
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 

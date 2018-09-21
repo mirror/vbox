@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/cpp/restoutput.h>
 
 
 
@@ -418,7 +419,7 @@ RTCRestOutputBase &RTCRestAnyObject::serializeAsJson(RTCRestOutputBase &a_rDst) 
 {
     if (m_pData)
         return m_pData->serializeAsJson(a_rDst);
-    a_rDst.printf("null");
+    a_rDst.nullValue();
     return a_rDst;
 }
 

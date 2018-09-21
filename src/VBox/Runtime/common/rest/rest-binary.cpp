@@ -34,6 +34,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/cpp/restoutput.h>
 
 
 /*********************************************************************************************************************************
@@ -208,7 +209,7 @@ int RTCRestBinary::resetToDefault(void)
 RTCRestOutputBase &RTCRestBinary::serializeAsJson(RTCRestOutputBase &a_rDst) const
 {
     AssertMsgFailed(("We should never get here!\n"));
-    a_rDst.printf("null");
+    a_rDst.nullValue();
     return a_rDst;
 }
 

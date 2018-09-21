@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - C++ REST, RTCRestOutputToString implementation.
+ * IPRT - C++ REST, RTCRestOutputPrettyToString implementation.
  */
 
 /*
@@ -35,8 +35,8 @@
 #include <iprt/string.h>
 
 
-RTCRestOutputToString::RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend /*= false*/)
-    : RTCRestOutputBase()
+RTCRestOutputPrettyToString::RTCRestOutputPrettyToString(RTCString *a_pDst, bool a_fAppend /*= false*/)
+    : RTCRestOutputPrettyBase()
     , m_pDst(a_pDst)
     , m_fOutOfMemory(false)
 {
@@ -45,14 +45,14 @@ RTCRestOutputToString::RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend /
 }
 
 
-RTCRestOutputToString::~RTCRestOutputToString()
+RTCRestOutputPrettyToString::~RTCRestOutputPrettyToString()
 {
     /* We don't own the string, so we don't delete it! */
     m_pDst = NULL;
 }
 
 
-size_t RTCRestOutputToString::output(const char *a_pchString, size_t a_cchToWrite)
+size_t RTCRestOutputPrettyToString::output(const char *a_pchString, size_t a_cchToWrite)
 {
     if (a_cchToWrite)
     {
@@ -107,7 +107,7 @@ size_t RTCRestOutputToString::output(const char *a_pchString, size_t a_cchToWrit
 }
 
 
-RTCString *RTCRestOutputToString::finalize()
+RTCString *RTCRestOutputPrettyToString::finalize()
 {
     RTCString *pRet;
     if (!m_fOutOfMemory)

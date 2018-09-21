@@ -33,6 +33,7 @@
 
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/cpp/restoutput.h>
 
 
 /*********************************************************************************************************************************
@@ -116,23 +117,16 @@ RTCRestOutputBase &RTCRestArrayBase::serializeAsJson(RTCRestOutputBase &a_rDst) 
 {
     if (!m_fNullIndicator)
     {
-        a_rDst.printf("[\n");
-        unsigned const uOldIndent = a_rDst.incrementIndent();
-
+        uint32_t const uOldState = a_rDst.beginArray();
         for (size_t i = 0; i < m_cElements; i++)
         {
+            a_rDst.valueSeparator();
             m_papElements[i]->serializeAsJson(a_rDst);
-            if (i < m_cElements - 1)
-                a_rDst.printf(",\n");
-            else
-                a_rDst.printf("\n");
         }
-
-        a_rDst.setIndent(uOldIndent);
-        a_rDst.printf("]");
+        a_rDst.endArray(uOldState);
     }
     else
-        a_rDst.printf("null");
+        a_rDst.nullValue();
     return a_rDst;
 }
 

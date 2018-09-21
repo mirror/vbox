@@ -39,122 +39,8 @@
  * @{
  */
 
-
-
-/**
- * Abstract base class for serializing data objects.
- */
-class RT_DECL_CLASS RTCRestOutputBase
-{
-public:
-    RTCRestOutputBase()
-        : m_uIndent(0)
-    { }
-    virtual ~RTCRestOutputBase()
-    { }
-
-    /**
-     * RTStrPrintf like function (see @ref pg_rt_str_format).
-     *
-     * @returns Number of bytes outputted.
-     * @param   pszFormat   The format string.
-     * @param   ...         Argument specfied in @a pszFormat.
-     */
-    size_t         printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3)
-    {
-        va_list va;
-        va_start(va, pszFormat);
-        size_t cchWritten = this->vprintf(pszFormat, va);
-        va_end(va);
-        return cchWritten;
-    }
-
-    /**
-     * RTStrPrintfV like function (see @ref pg_rt_str_format).
-     *
-     * @returns Number of bytes outputted.
-     * @param   pszFormat   The format string.
-     * @param   va          Argument specfied in @a pszFormat.
-     */
-    virtual size_t vprintf(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0) = 0;
-
-    /**
-     * Sets the indentation level for use when pretty priting things.
-     *
-     * @returns Previous indentation level.
-     * @param   uIndent     The indentation level.
-     */
-    inline unsigned setIndent(unsigned uIndent)
-    {
-        unsigned const uRet = m_uIndent;
-        m_uIndent = uIndent;
-        return uRet;
-    }
-
-    /**
-     * Increases the indentation level.
-     *
-     * @returns Previous indentation level.
-     */
-    inline unsigned incrementIndent()
-    {
-        unsigned const uRet = m_uIndent;
-        m_uIndent = uRet + 1;
-        return uRet;
-    }
-
-protected:
-    /** The current indentation level. */
-    unsigned m_uIndent;
-};
-
-
-/**
- * Serialize to a string object.
- */
-class RT_DECL_CLASS RTCRestOutputToString : public RTCRestOutputBase
-{
-public:
-    /**
-     * Creates an instance that appends to @a a_pDst.
-     * @param   a_pDst      Pointer to the destination string object.
-     *                      NULL is not accepted and will assert.
-     * @param   a_fAppend   Whether to append to the current string value, or
-     *                      nuke the string content before starting the output.
-     */
-    RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend = false);
-    virtual ~RTCRestOutputToString();
-
-    virtual size_t vprintf(const char *pszFormat, va_list va) RT_OVERRIDE;
-
-    /**
-     * Finalizes the output and releases the string object to the caller.
-     *
-     * @returns The released string object.  NULL if we ran out of memory or if
-     *          called already.
-     *
-     * @remark  This sets m_pDst to NULL and the object cannot be use for any
-     *          more output afterwards.
-     */
-    virtual RTCString *finalize();
-
-
-protected:
-    /** Pointer to the destination string.  NULL after finalize().   */
-    RTCString  *m_pDst;
-    /** Set if we ran out of memory and should ignore subsequent calls. */
-    bool        m_fOutOfMemory;
-
-    /** @callback_method_impl{FNRTSTROUTPUT} */
-    static DECLCALLBACK(size_t) strOutput(void *pvArg, const char *pachChars, size_t cbChars);
-
-    /* Make non-copyable (RTCNonCopyable causes warnings): */
-    RTCRestOutputToString(RTCRestOutputToString const &);
-    RTCRestOutputToString *operator=(RTCRestOutputToString const &);
-};
-
-
 /* forward decl: */
+class RTCRestOutputBase;
 class RTCRestJsonPrimaryCursor;
 
 /**
@@ -1133,13 +1019,12 @@ public:
     virtual kTypeClass typeClass(void) const RT_OVERRIDE;
 
     /**
-     * Serialize the members as JSON.
+     * Serialize the object members as JSON.
      *
-     * @returns Leading separator prefix (empty string or comma string).
+     * @returns a_rDst
      * @param   a_rDst      The destination for the serialization.
-     * @param   a_pszSep    Leading separator prefix (empty or comma).
      */
-    virtual const char *serializeMembersAsJson(RTCRestOutputBase &a_rDst, const char *a_pszSep) const;
+    virtual RTCRestOutputBase &serializeMembersAsJson(RTCRestOutputBase &a_rDst) const;
 
     /**
      * Deserialize object from the given JSON iterator.

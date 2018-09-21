@@ -32,6 +32,7 @@
 #include <iprt/cpp/restarray.h>
 #include <iprt/cpp/reststringmap.h>
 #include <iprt/cpp/restclient.h>
+#include <iprt/cpp/restoutput.h>
 
 #include <iprt/ctype.h>
 #include <iprt/err.h>

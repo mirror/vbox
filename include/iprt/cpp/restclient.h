@@ -711,8 +711,8 @@ protected:
     RTCString m_strServerUrl;
 
     /* Make non-copyable (RTCNonCopyable causes warnings): */
-    RTCRestClientApiBase(RTCRestOutputToString const &);
-    RTCRestClientApiBase *operator=(RTCRestOutputToString const &);
+    RTCRestClientApiBase(RTCRestClientApiBase const &);
+    RTCRestClientApiBase *operator=(RTCRestClientApiBase const &);
 
     /**
      * Re-initializes the HTTP instance.
