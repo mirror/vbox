@@ -995,7 +995,7 @@ public:
     /** Copy constructor */
     RTCRestStringEnum(RTCRestStringEnum const &a_rThat) : RTCRestStringEnumBase(a_rThat) { }
     /** Make a clone of this object. */
-    inline RTCRestStringEnum *clone() const RT_OVERRIDE { return (RTCRestStringEnum *)baseClone(); }
+    inline RTCRestStringEnum *clone() const { return (RTCRestStringEnum *)baseClone(); }
 
     virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE { return cloneWorker(new (std::nothrow) RTCRestStringEnum()); }
 
