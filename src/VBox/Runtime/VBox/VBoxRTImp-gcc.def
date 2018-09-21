@@ -420,7 +420,7 @@ EXPORTS
     _ZN25RTCRestClientResponseBase13consumeHeaderEjPKcmS1_m
     _ZN25RTCRestClientResponseBase13deleteErrInfoEv
     _ZN25RTCRestClientResponseBase14receivePrepareEP14RTHTTPINTERNAL
-    _ZN25RTCRestClientResponseBase15deserializeBodyEP17RTCRestObjectBasePKcm
+    _ZN25RTCRestClientResponseBase15deserializeBodyEPKcmS1_
     _ZN25RTCRestClientResponseBase15receiveCompleteEiP14RTHTTPINTERNAL
     _ZN25RTCRestClientResponseBase17deserializeHeaderEP17RTCRestObjectBasePKcmjS3_
     _ZN25RTCRestClientResponseBase18getErrInfoInternalEv
@@ -430,6 +430,7 @@ EXPORTS
     _ZN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyC2EP12RTJSONVALINTPKcPS_
     _ZN25RTCRestClientResponseBase24deserializeHeaderIntoMapEP20RTCRestStringMapBasePKcmS3_mjS3_
     _ZN25RTCRestClientResponseBase25receiveHttpHeaderCallbackEP14RTHTTPINTERNALjPKcmS3_mPv
+    _ZN25RTCRestClientResponseBase29deserializeBodyFromJsonCursorERK17RTCRestJsonCursor
     _ZN25RTCRestClientResponseBase5resetEv
     _ZN25RTCRestClientResponseBase8addErrorEiPKcz
     _ZN25RTCRestClientResponseBaseC1ERKS_
