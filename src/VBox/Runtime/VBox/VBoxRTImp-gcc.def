@@ -110,6 +110,7 @@ EXPORTS
     _ZN11RTCRestBool14createInstanceEv
     _ZN11RTCRestBool14resetToDefaultEv
     _ZN11RTCRestBool19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN11RTCRestBool27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN11RTCRestBoolC1ERKS_
     _ZN11RTCRestBoolC1Eb
     _ZN11RTCRestBoolC1Ev
@@ -134,6 +135,7 @@ EXPORTS
     _ZN11RTCRestDate18assignValueRfc7131EPK10RTTIMESPEC
     _ZN11RTCRestDate19deserializeFromJsonERK17RTCRestJsonCursor
     _ZN11RTCRestDate21decodeFormattedStringENS_7kFormatE
+    _ZN11RTCRestDate27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN11RTCRestDate6formatENS_7kFormatE
     _ZN11RTCRestDate9assignNowENS_7kFormatE
     _ZN11RTCRestDate9setFormatENS_7kFormatE
@@ -151,6 +153,7 @@ EXPORTS
     _ZN12RTCRestInt1614createInstanceEv
     _ZN12RTCRestInt1614resetToDefaultEv
     _ZN12RTCRestInt1619deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN12RTCRestInt1627deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN12RTCRestInt16C1ERKS_
     _ZN12RTCRestInt16C1Es
     _ZN12RTCRestInt16C1Ev
@@ -167,6 +170,7 @@ EXPORTS
     _ZN12RTCRestInt3214createInstanceEv
     _ZN12RTCRestInt3214resetToDefaultEv
     _ZN12RTCRestInt3219deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN12RTCRestInt3227deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN12RTCRestInt32C1ERKS_
     _ZN12RTCRestInt32C1Ei
     _ZN12RTCRestInt32C1Ev
@@ -183,6 +187,7 @@ EXPORTS
     _ZN12RTCRestInt6414createInstanceEv
     _ZN12RTCRestInt6414resetToDefaultEv
     _ZN12RTCRestInt6419deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN12RTCRestInt6427deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN12RTCRestInt64C1ERKS_
     _ZN12RTCRestInt64C1Ev
     _ZN12RTCRestInt64C1Ex
@@ -201,6 +206,7 @@ EXPORTS
     _ZN13RTCRestBinary14resetToDefaultEv
     _ZN13RTCRestBinary15assignWriteableEPvm
     _ZN13RTCRestBinary19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN13RTCRestBinary27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN13RTCRestBinary7setNullEv
     _ZN13RTCRestBinary8freeDataEv
     _ZN13RTCRestBinaryC1Ev
@@ -214,6 +220,7 @@ EXPORTS
     _ZN13RTCRestDouble14createInstanceEv
     _ZN13RTCRestDouble14resetToDefaultEv
     _ZN13RTCRestDouble19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN13RTCRestDouble27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN13RTCRestDoubleC1ERKS_
     _ZN13RTCRestDoubleC1Ed
     _ZN13RTCRestDoubleC1Ev
@@ -238,6 +245,7 @@ EXPORTS
     _ZN13RTCRestString14printfVNoThrowEPKcP13__va_list_tag
     _ZN13RTCRestString14resetToDefaultEv
     _ZN13RTCRestString19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN13RTCRestString27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN13RTCRestString6assignEPKc
     _ZN13RTCRestString6assignEPKcm
     _ZN13RTCRestString6assignERK9RTCString
@@ -280,6 +288,7 @@ EXPORTS
     _ZN16RTCRestAnyObject14createInstanceEv
     _ZN16RTCRestAnyObject14resetToDefaultEv
     _ZN16RTCRestAnyObject19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN16RTCRestAnyObject27deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN16RTCRestAnyObject7setNullEv
     _ZN16RTCRestAnyObjectC1ERKS_
     _ZN16RTCRestAnyObjectC1Ev
