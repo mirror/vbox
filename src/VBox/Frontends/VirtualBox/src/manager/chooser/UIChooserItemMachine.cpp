@@ -1055,7 +1055,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
         int iTopLineHeight = qMax(m_visibleNameSize.height(), m_visibleSnapshotNameSize.height());
         int iBottomLineHeight = qMax(m_statePixmapSize.height(), m_stateTextSize.height());
         int iRightColumnHeight = iTopLineHeight + iMachineItemTextSpacing + iBottomLineHeight;
-        int iTopLineIndent = (iFullHeight - iRightColumnHeight) / 2;
+        int iTopLineIndent = (iFullHeight - iRightColumnHeight) / 2 - 1;
 
         /* Paint top line: */
         {
@@ -1103,7 +1103,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
         }
 
         /* Calculate indents: */
-        int iBottomLineIndent = iTopLineIndent + iTopLineHeight;
+        int iBottomLineIndent = iTopLineIndent + iTopLineHeight + 1;
 
         /* Paint bottom line: */
         {
@@ -1130,7 +1130,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
             {
                 /* Prepare variables: */
                 int iMachineStateTextX = iMachineStateTextIndent;
-                int iMachineStateTextY = iBottomLineIndent;
+                int iMachineStateTextY = iBottomLineIndent + 1;
                 /* Paint state text: */
                 paintText(/* Painter: */
                           pPainter,
