@@ -1358,21 +1358,21 @@ typedef enum
 typedef enum
 {
     /** None - don't use this / uninitialized value. */
-    VMXABORT_NONE                 = 0,
+    VMXABORT_NONE                  = 0,
     /** VMX abort caused during saving of guest MSRs. */
-    VMXABORT_SAVE_GUEST_MSRS      = 1,
+    VMXABORT_SAVE_GUEST_MSRS       = 1,
     /** VMX abort caused during host PDPTE checks. */
-    VMXBOART_HOST_PDPTE           = 2,
+    VMXBOART_HOST_PDPTE            = 2,
     /** VMX abort caused due to current VMCS being corrupted. */
-    VMXABORT_CURRENT_VMCS_CORRUPT = 3,
+    VMXABORT_CURRENT_VMCS_CORRUPT  = 3,
     /** VMX abort caused during loading of host MSRs. */
-    VMXABORT_LOAD_HOST_MSR        = 4,
+    VMXABORT_LOAD_HOST_MSR         = 4,
     /** VMX abort caused due to a machine-check exception during VM-exit. */
-    VMXABORT_MACHINE_CHECK_XCPT   = 5,
-    /** VMX abort caused due to invalid return to long mode. */
-    VMXABORT_HOST_LONG_MODE       = 6,
+    VMXABORT_MACHINE_CHECK_XCPT    = 5,
+    /** VMX abort caused due to invalid return from long mode. */
+    VMXABORT_HOST_NOT_IN_LONG_MODE = 6,
     /* Type size hack. */
-    VMXABORT_32BIT_HACK           = 0x7fffffff
+    VMXABORT_32BIT_HACK            = 0x7fffffff
 } VMXABORT;
 AssertCompileSize(VMXABORT, 4);
 /** @} */

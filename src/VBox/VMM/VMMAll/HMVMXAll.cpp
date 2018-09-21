@@ -450,13 +450,13 @@ VMM_INT_DECL(const char *) HMVmxGetAbortDesc(VMXABORT enmAbort)
 {
     switch (enmAbort)
     {
-        case VMXABORT_NONE:                 return "VMXABORT_NONE";
-        case VMXABORT_SAVE_GUEST_MSRS:      return "VMXABORT_SAVE_GUEST_MSRS";
-        case VMXBOART_HOST_PDPTE:           return "VMXBOART_HOST_PDPTE";
-        case VMXABORT_CURRENT_VMCS_CORRUPT: return "VMXABORT_CURRENT_VMCS_CORRUPT";
-        case VMXABORT_LOAD_HOST_MSR:        return "VMXABORT_LOAD_HOST_MSR";
-        case VMXABORT_MACHINE_CHECK_XCPT:   return "VMXABORT_MACHINE_CHECK_XCPT";
-        case VMXABORT_HOST_LONG_MODE:       return "VMXABORT_HOST_LONG_MODE";
+        case VMXABORT_NONE:                     return "VMXABORT_NONE";
+        case VMXABORT_SAVE_GUEST_MSRS:          return "VMXABORT_SAVE_GUEST_MSRS";
+        case VMXBOART_HOST_PDPTE:               return "VMXBOART_HOST_PDPTE";
+        case VMXABORT_CURRENT_VMCS_CORRUPT:     return "VMXABORT_CURRENT_VMCS_CORRUPT";
+        case VMXABORT_LOAD_HOST_MSR:            return "VMXABORT_LOAD_HOST_MSR";
+        case VMXABORT_MACHINE_CHECK_XCPT:       return "VMXABORT_MACHINE_CHECK_XCPT";
+        case VMXABORT_HOST_NOT_IN_LONG_MODE:    return "VMXABORT_HOST_NOT_IN_LONG_MODE";
         default:
             break;
     }

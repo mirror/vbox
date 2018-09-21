@@ -1966,18 +1966,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
-        /* CR0 fixed bits. */
+        /* CR0 MB1 bits. */
         uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
-        if ((pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0) != uCr0Fixed0)
+        if (~pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0)
         {
             Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr0Fixed0;
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
-        /* CR4 fixed bits. */
+        /* CR4 MB1 bits. */
         uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
-        if ((pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0) != uCr4Fixed0)
+        if (~pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0)
         {
             Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed0;
@@ -2358,7 +2358,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
     {
         /* CR0 MB1 bits. */
         uint64_t u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
-        Assert(u64Cr0Fixed0 & (X86_CR0_NW | X86_CR0_CD));
+        Assert(!(u64Cr0Fixed0 & (X86_CR0_NW | X86_CR0_CD)));
         if (fUnrestrictedGuest)
             u64Cr0Fixed0 &= ~(X86_CR0_PE | X86_CR0_PG);
         if (~pVmcs->u64GuestCr0.u & u64Cr0Fixed0)
@@ -2435,7 +2435,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestSysenterEspEip);
     }
 
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));  /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+    /* We don't support IA32_PERF_GLOBAL_CTRL MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));
 
     /* PAT MSR. */
     if (   (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR)
@@ -2457,7 +2458,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestEferMsr);
 
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));   /* We don't support loading IA32_BNDCFGS MSR yet. */
+    /* We don't support IA32_BNDCFGS MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));
 
     NOREF(pszInstr);
     NOREF(pszFailure);
@@ -3380,7 +3382,8 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostSysenterEspEip);
     }
 
-    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PERF_MSR));   /* We don't support loading IA32_PERF_GLOBAL_CTRL MSR yet. */
+    /* We don't support IA32_PERF_GLOBAL_CTRL MSR yet. */
+    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PERF_MSR));
 
     /* PAT MSR. */
     if (   !(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PAT_MSR)
@@ -3946,14 +3949,18 @@ IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsrs(PVMCPU pVCpu)
     if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
         pVCpu->cpum.GstCtx.msrEFER = pVmcs->u64GuestEferMsr.u;
 
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));          /* We don't support IA32_PERF_GLOBAL_CTRL MSR yet. */
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));       /* We don't support IA32_BNDCFGS MSR yet. */
+    /* We don't support IA32_PERF_GLOBAL_CTRL MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR));
+
+    /* We don't support IA32_BNDCFGS MSR yet. */
+    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));
+
     /* Nothing to do for SMBASE register - We don't support SMM yet. */
 }
 
 
 /**
- * Loads the guest segment registers as part of VM-entry.
+ * Loads the guest segment registers, GDTR, IDTR, LDTR and TR as part of VM-entry.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  */
@@ -4594,13 +4601,15 @@ IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
     if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_EFER_MSR)
         pVmcs->u64GuestEferMsr.u = pVCpu->cpum.GstCtx.msrEFER;
 
-    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR));   /* We don't support clearing IA32_BNDCFGS MSR yet. */
+    /* We don't support clearing IA32_BNDCFGS MSR yet. */
+    Assert(!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR));
+
     /* Nothing to do for SMBASE register - We don't support SMM yet. */
 }
 
 
 /**
- * Saves guest segment registers as part of VM-exit.
+ * Saves guest segment registers, GDTR, IDTR, LDTR, TR as part of VM-exit.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
@@ -4690,6 +4699,14 @@ IEM_STATIC void iemVmxVmexitSaveGuestSegRegs(PVMCPU pVCpu)
         pVmcs->u32GuestTrLimit  = pSelReg->u32Limit;
         pVmcs->u32GuestTrAttr   = pSelReg->Attr.u & fValidAttrMask;
     }
+
+    /* GDTR. */
+    pVmcs->u64GuestGdtrBase.u = pVCpu->cpum.GstCtx.gdtr.pGdt;
+    pVmcs->u32GuestGdtrLimit  = pVCpu->cpum.GstCtx.gdtr.cbGdt;
+
+    /* IDTR. */
+    pVmcs->u64GuestIdtrBase.u = pVCpu->cpum.GstCtx.idtr.pIdt;
+    pVmcs->u32GuestIdtrLimit  = pVCpu->cpum.GstCtx.idtr.cbIdt;
 }
 
 
@@ -4743,7 +4760,8 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
     /** @todo NSTVMX: Save VMX preemption timer value. */
 
     /* PDPTEs. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));    /* We don't support EPT yet. */
+    /* We don't support EPT yet. */
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
     pVmcs->u64GuestPdpte0.u = 0;
     pVmcs->u64GuestPdpte1.u = 0;
     pVmcs->u64GuestPdpte2.u = 0;
@@ -4898,14 +4916,89 @@ IEM_STATIC int iemVmxAbort(PVMCPU pVCpu, VMXABORT enmAbort)
 
 
 /**
- * Checks host control registers, debug registers and MSRs as part of VM-exit.
+ * Loads host control registers, debug registers and MSRs as part of VM-exit.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
 {
-    /** @todo NSTVMX: load host control regs. */
+    /*
+     * Load host control registers, debug registers and MSRs.
+     * See Intel spec. 27.5.1 "Loading Host Control Registers, Debug Registers, MSRs".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+
+    /* CR0. */
+    {
+        /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 MB1 bits are not modified. */
+        uint64_t const uCr0Fixed0  = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        uint64_t const fCr0IgnMask = UINT64_C(0xffffffff1ff8ffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Fixed0;
+        uint64_t const uHostCr0    = pVmcs->u64HostCr0.u;
+        uint64_t const uGuestCr0   = pVCpu->cpum.GstCtx.cr0;
+        pVCpu->cpum.GstCtx.cr0     = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
+    }
+
+    /* CR4. */
+    {
+        /* CR4 MB1 bits are not modified. */
+        uint64_t const fCr4IgnMask = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        uint64_t const uHostCr4    = pVmcs->u64HostCr4.u;
+        uint64_t const uGuestCr4   = pVCpu->cpum.GstCtx.cr4;
+        pVCpu->cpum.GstCtx.cr4     = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
+
+        if (fHostInLongMode)
+            pVCpu->cpum.GstCtx.cr4 |= X86_CR4_PAE;
+        else
+            pVCpu->cpum.GstCtx.cr4 &= ~X86_CR4_PCIDE;
+    }
+
+    /* CR3 (host value validated while checking host-state during VM-entry). */
+    pVCpu->cpum.GstCtx.cr3 = pVmcs->u64HostCr3.u;
+
+    /* DR7. */
+    pVCpu->cpum.GstCtx.dr[7] = X86_DR7_INIT_VAL;
+
+    /** @todo NSTVMX: Support IA32_DEBUGCTL MSR */
+
+    /* Save SYSENTER CS, ESP, EIP (host value validated while checking host-state during VM-entry). */
+    pVCpu->cpum.GstCtx.SysEnter.eip = pVmcs->u64HostSysenterEip.u;
+    pVCpu->cpum.GstCtx.SysEnter.esp = pVmcs->u64HostSysenterEsp.u;
+    pVCpu->cpum.GstCtx.SysEnter.cs  = pVmcs->u32HostSysenterCs;
+
+    /* FS, GS bases are loaded later while we load host segment registers. */
+
+    /* EFER MSR (host value validated while checking host-state during VM-entry). */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+        pVCpu->cpum.GstCtx.msrEFER = pVmcs->u64HostEferMsr.u;
+    else if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
+    {
+        if (fHostInLongMode)
+            pVCpu->cpum.GstCtx.msrEFER |=  (MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
+        else
+            pVCpu->cpum.GstCtx.msrEFER &= ~(MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
+    }
+
+    /* We don't support IA32_PERF_GLOBAL_CTRL MSR yet. */
+
+    /* PAT MSR (host value is validated while checking host-state during VM-entry). */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_LOAD_PAT_MSR)
+        pVCpu->cpum.GstCtx.msrPAT = pVmcs->u64HostPatMsr.u;
+
+    /* We don't support IA32_BNDCFGS MSR yet. */
+}
+
+
+/**
+ * Loads host segment registers, GDTR, IDTR, LDTR and TR as part of VM-exit.
+ *
+ *
+ * @param
+ */
+IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
+{
     RT_NOREF(pVCpu);
+    /** @todo Load host seg regs. */
 }
 
 
@@ -4917,9 +5010,26 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
 IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
 {
     /*
+     * Load host state.
+     * See Intel spec. 27.5 "Loading Host State".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+
+    /* We cannot return from a long-mode guest to a host that is not in long mode. */
+    if (    CPUMIsGuestInLongMode(pVCpu)
+        && !fHostInLongMode)
+    {
+        Log(("VM-exit from long-mode guest to host not in long-mode -> VMX-Abort\n"));
+        return iemVmxAbort(pVCpu, VMXABORT_HOST_NOT_IN_LONG_MODE);
+    }
+
+    /*
      * Load host control, debug, segment, descriptor-table registers and some MSRs.
      */
     iemVmxVmexitLoadHostControlRegsMsrs(pVCpu);
+    iemVmxVmexitLoadHostSegRegs(pVCpu);
+
     return VINF_SUCCESS;
 }
 
@@ -4957,12 +5067,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_
         { /* likely */ }
         else
         {
-            LogFunc(("iemVmxVmexitSaveGuestAutoMsrs failed (rc=%Rrc) -> VMX-Abort\n", rc));
+            Log(("VM-Exit: Saving guest auto-store MSRs failed (rc=%Rrc) -> VMX-Abort\n", rc));
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
         }
     }
 
-    iemVmxVmexitLoadHostState(pVCpu);
+    int rc = iemVmxVmexitLoadHostState(pVCpu);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /** @todo NSTVMX: rest of VM-exit. */
     return VINF_SUCCESS;
