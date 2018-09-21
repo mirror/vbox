@@ -155,23 +155,24 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
     {
         for (size_t idxName = 0;; idxName++)
         {
+            /* Setup sub-cursor. */
             RTCRestJsonCursor SubCursor(a_rCursor);
             int rc = RTJsonIteratorQueryValue(hIterator, &SubCursor.m_hValue, &SubCursor.m_pszName);
             if (RT_SUCCESS(rc))
             {
-                RTCRestObjectBase *pObj = createValue();
+                char szName[32];
+                RTStrPrintf(szName, sizeof(szName), "[%u]", idxName);
+                SubCursor.m_pszName = szName;
+
+                /* Call the static deserializeInstanceFromJson method of the value class.  */
+                RTCRestObjectBase *pObj = NULL;
+                rc = deserializeValueInstanceFromJson(SubCursor, &pObj);
+                if (RT_SUCCESS(rc))
+                    Assert(pObj);
+                else if (RT_SUCCESS(rcRet))
+                    rcRet = rc;
                 if (pObj)
                 {
-                    char szName[32];
-                    RTStrPrintf(szName, sizeof(szName), "[%u]", idxName);
-                    SubCursor.m_pszName = szName;
-
-                    rc = pObj->deserializeFromJson(SubCursor);
-                    if (RT_SUCCESS(rc))
-                    { /* likely */ }
-                    else if (RT_SUCCESS(rcRet))
-                        rcRet = rc;
-
                     rc = insertWorker(~(size_t)0, pObj, false /*a_fReplace*/);
                     if (RT_SUCCESS(rc))
                     { /* likely */ }
@@ -182,8 +183,6 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
                         delete pObj;
                     }
                 }
-                else
-                    rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rc, "Failed to create new value object");
             }
             else
                 rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonIteratorQueryValue failed: %Rrc", rc);

@@ -143,19 +143,21 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
     {
         for (;;)
         {
+            /* Set up the sub-cursor. */
             RTCRestJsonCursor SubCursor(a_rCursor);
             int rc = RTJsonIteratorQueryValue(hIterator, &SubCursor.m_hValue, &SubCursor.m_pszName);
             if (RT_SUCCESS(rc))
             {
-                RTCRestObjectBase *pObj = createValue();
+                /* Call the static deserializeInstanceFromJson method of the value class.  */
+                RTCRestObjectBase *pObj = NULL;
+                rc = deserializeValueInstanceFromJson(a_rCursor, &pObj);
+                if (RT_SUCCESS(rc))
+                    Assert(pObj);
+                else if (RT_SUCCESS(rcRet))
+                    rcRet = rc;
                 if (pObj)
                 {
-                    rc = pObj->deserializeFromJson(SubCursor);
-                    if (RT_SUCCESS(rc))
-                    { /* likely */ }
-                    else if (RT_SUCCESS(rcRet))
-                        rcRet = rc;
-
+                    /* Insert the value. */
                     rc = putWorker(SubCursor.m_pszName, pObj, true /*a_fReplace*/);
                     if (rc == VINF_SUCCESS)
                     { /* likely */ }
@@ -173,8 +175,6 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
                         delete pObj;
                     }
                 }
-                else
-                    rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rc, "Failed to create new value object");
             }
             else
                 rcRet = a_rCursor.m_pPrimary->addError(a_rCursor, rc, "RTJsonIteratorQueryValue failed: %Rrc", rc);

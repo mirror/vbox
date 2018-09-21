@@ -130,6 +130,20 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
 }
 
 
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestBool::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+
+
 /** Default constructor. */
 RTCRestBool::RTCRestBool()
     : RTCRestObjectBase()
@@ -306,6 +320,20 @@ const char *RTCRestBool::typeName() const
 }
 
 
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestInt64::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+
+
 /** Default constructor. */
 RTCRestInt64::RTCRestInt64()
     : RTCRestObjectBase()
@@ -473,6 +501,20 @@ const char *RTCRestInt64::typeName() const
 /*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt32::createInstance(void)
 {
     return new (std::nothrow) RTCRestInt32();
+}
+
+
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestInt32::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
 }
 
 
@@ -652,6 +694,20 @@ const char *RTCRestInt32::typeName() const
 }
 
 
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestInt16::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+
+
 /** Default constructor. */
 RTCRestInt16::RTCRestInt16()
     : RTCRestObjectBase()
@@ -826,6 +882,21 @@ const char *RTCRestInt16::typeName() const
 {
     return new (std::nothrow) RTCRestDouble();
 }
+
+
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestDouble::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+
 
 /** Default constructor. */
 RTCRestDouble::RTCRestDouble()
@@ -1054,6 +1125,20 @@ const char *RTCRestDouble::typeName() const
 /*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestString::createInstance(void)
 {
     return new (std::nothrow) RTCRestString();
+}
+
+
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestString::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
 }
 
 
@@ -1357,6 +1442,25 @@ RTCRestString &RTCRestString::printfV(const char *pszFormat, va_list va)
 /*********************************************************************************************************************************
 *   RTCRestDate implementation                                                                                                   *
 *********************************************************************************************************************************/
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDate::createInstance(void)
+{
+    return new (std::nothrow) RTCRestDate();
+}
+
+
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestDate::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+
 
 RTCRestDate::RTCRestDate()
     : RTCRestObjectBase()
@@ -1531,11 +1635,6 @@ const char *RTCRestDate::typeName(void) const
     return "RTCRestDate";
 }
 
-
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDate::createInstance(void)
-{
-    return new (std::nothrow) RTCRestDate();
-}
 
 int RTCRestDate::assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat)
 {

@@ -579,3 +579,17 @@ const char *RTCRestAnyObject::typeName(void) const
     return new (std::nothrow) RTCRestAnyObject();
 }
 
+
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestAnyObject::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj = createInstance();
+    *a_ppInstance = pObj;
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+

@@ -230,6 +230,11 @@ protected:
     virtual RTCRestObjectBase *createValue(void) = 0;
 
     /**
+     * For accessing the static deserializeInstanceFromJson() method of the value.
+     */
+    virtual int deserializeValueInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) = 0;
+
+    /**
      * Worker for the copy constructor and the assignment operator.
      *
      * This will use createEntryCopy to do the copying.
@@ -339,6 +344,15 @@ public:
     static DECLCALLBACK(RTCRestObjectBase *) createValueInstance(void)
     {
         return new (std::nothrow) ValueType();
+    }
+
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+    {
+        *a_ppInstance = new (std::nothrow) RTCRestStringMap<ValueType>();
+        if (*a_ppInstance)
+            return (*a_ppInstance)->deserializeFromJson(a_rCursor);
+        return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
     }
 
     /**
@@ -452,6 +466,11 @@ protected:
     virtual RTCRestObjectBase *createValue(void) RT_OVERRIDE
     {
         return new (std::nothrow) ValueType();
+    }
+
+    virtual int deserializeValueInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_OVERRIDE
+    {
+        return ValueType::deserializeInstanceFromJson(a_rCursor, a_ppInstance);
     }
 };
 

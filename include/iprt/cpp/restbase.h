@@ -311,6 +311,19 @@ public:
     virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
 
     /**
+     * Polymorphic JSON deserialization helper that instantiate the matching class using
+     * the discriminator field.
+     *
+     * @returns IPRT status code.
+     * @param   a_rCursor    The JSON cursor.
+     * @param   a_ppInstance Where to return the deserialized instance.
+     *                       May return an object on failure.
+     */
+    typedef DECLCALLBACK(int) FNDESERIALIZEINSTANCEFROMJSON(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance);
+    /** Pointer to a FNDESERIALIZEINSTANCEFROMJSON function. */
+    typedef FNDESERIALIZEINSTANCEFROMJSON *PFNDESERIALIZEINSTANCEFROMJSON;
+
+    /**
      * Flags for toString().
      *
      * The kCollectionFormat_xxx bunch controls multiple values in arrays
@@ -443,6 +456,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 public:
     /** The value. */
@@ -486,6 +501,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 public:
     /** The value. */
@@ -529,6 +546,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 public:
     /** The value. */
@@ -572,6 +591,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 public:
     /** The value. */
@@ -615,6 +636,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 public:
     /** The value. */
@@ -662,6 +685,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
     /** @name RTCString assignment methods we need to replace to manage the null indicator
      * @{ */
@@ -728,6 +753,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
     /** Date formats. */
     typedef enum
@@ -991,7 +1018,19 @@ public:
     virtual const char *typeName(void) const RT_OVERRIDE { return "RTCRestStringEnum<EnumType>"; }
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) { return new (std::nothrow) RTCRestStringEnum(); }
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
+    {
+        return new (std::nothrow) RTCRestStringEnum();
+    }
+
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+    {
+        *a_ppInstance = new (std::nothrow) RTCRestStringEnum();
+        if (*a_ppInstance)
+            return (*a_ppInstance)->deserializeFromJson(a_rCursor);
+        return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+    }
 
 protected:
     /** Enum mapping table. */
@@ -1055,6 +1094,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 protected:
     /** Pointer to data blob. */

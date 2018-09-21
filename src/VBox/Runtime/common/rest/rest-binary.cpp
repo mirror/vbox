@@ -253,6 +253,20 @@ const char *RTCRestBinary::typeName(void) const
 }
 
 
+/**
+ * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
+ */
+/*static*/ DECLCALLBACK(int)
+RTCRestBinary::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+{
+    RTCRestObjectBase *pObj;
+    *a_ppInstance = pObj = createInstance();
+    if (pObj)
+        return pObj->deserializeFromJson(a_rCursor);
+    return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NO_MEMORY, "Out of memory");
+}
+
+
 
 /*********************************************************************************************************************************
 *   RTCRestBinaryParameter Implementation.                                                                                       *

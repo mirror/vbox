@@ -112,6 +112,8 @@ public:
 
     /** Factory method. */
     static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    /** Deserialization w/ instantiation. */
+    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
 
 protected:
     /** The data. */
