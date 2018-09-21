@@ -4109,8 +4109,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
                 &&  pMsr->u32Msr >> 8 != MSR_IA32_X2APIC_START >> 8
                 &&  pMsr->u32Msr != MSR_IA32_SMM_MONITOR_CTL)
             {
-                rc = CPUMSetGuestMsr(pVCpu, pMsr->u32Msr, pMsr->u64Value);
-                if (rc == VINF_SUCCESS)
+                VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pMsr->u32Msr, pMsr->u64Value);
+                if (rcStrict == VINF_SUCCESS)
                     continue;
 
                 /*
@@ -4121,7 +4121,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
                  * MSR in ring-0 if possible, or come up with a better, generic solution.
                  */
                 pVmcs->u64ExitQual.u = idxMsr;
-                VMXVDIAG const enmDiag = rc == VINF_CPUM_R3_MSR_WRITE
+                VMXVDIAG const enmDiag = rcStrict == VINF_CPUM_R3_MSR_WRITE
                                        ? kVmxVDiag_Vmentry_MsrLoadRing3
                                        : kVmxVDiag_Vmentry_MsrLoad;
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
@@ -4828,8 +4828,8 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
             &&  pMsr->u32Msr >> 8 != MSR_IA32_X2APIC_START >> 8
             &&  pMsr->u32Msr != MSR_IA32_SMBASE)
         {
-            int rc = CPUMQueryGuestMsr(pVCpu, pMsr->u32Msr, &pMsr->u64Value);
-            if (rc == VINF_SUCCESS)
+            VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pMsr->u32Msr, &pMsr->u64Value);
+            if (rcStrict == VINF_SUCCESS)
                 continue;
 
             /*
@@ -4840,7 +4840,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
              * if possible, or come up with a better, generic solution.
              */
             pVCpu->cpum.GstCtx.hwvirt.vmx.uAbortAux = pMsr->u32Msr;
-            VMXVDIAG const enmDiag = rc == VINF_CPUM_R3_MSR_READ
+            VMXVDIAG const enmDiag = rcStrict == VINF_CPUM_R3_MSR_READ
                                    ? kVmxVDiag_Vmexit_MsrStoreRing3
                                    : kVmxVDiag_Vmexit_MsrStore;
             IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
@@ -4920,6 +4920,7 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
      * Load host control, debug, segment, descriptor-table registers and some MSRs.
      */
     iemVmxVmexitLoadHostControlRegsMsrs(pVCpu);
+    return VINF_SUCCESS;
 }
 
 
