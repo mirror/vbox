@@ -130,10 +130,9 @@ log()
 
 module_build_log()
 {
-    setup_log
-    echo "${1}" | egrep -v \
-        "^test -e include/generated/autoconf.h|^echo >&2|^/bin/false)$" \
-        >> "${LOG}"
+    log "Error building the module.  Build output follows."
+    echo ""
+    echo "${1}" >> "${LOG}"
 }
 
 dev=/dev/vboxguest
@@ -344,7 +343,6 @@ setup_modules()
         --module-source $MODULE_SRC/vboxguest \
         --no-print-directory install 2>&1`; then
         # If check_module_dependencies.sh fails it prints a message itself.
-        log "Error building the module:"
         module_build_log "$myerr"
         "${INSTALL_DIR}"/other/check_module_dependencies.sh 2>&1 &&
             info "Look at $LOG to find out what went wrong"
@@ -355,7 +353,6 @@ setup_modules()
         --use-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxsf \
         --no-print-directory install 2>&1`; then
-        log "Error building the module:"
         module_build_log "$myerr"
         info  "Look at $LOG to find out what went wrong"
         return 0
@@ -365,7 +362,6 @@ setup_modules()
         --use-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxvideo \
         --no-print-directory install 2>&1`; then
-        log "Error building the module:"
         module_build_log "$myerr"
         info "Look at $LOG to find out what went wrong"
     fi
