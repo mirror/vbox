@@ -483,7 +483,7 @@ public:
 
 public:
 
-    int  init(uint32_t u32ScreenId);
+    int  init(uint32_t uScreenID);
     void uninit(void);
     void reset(void);
 
@@ -505,8 +505,8 @@ public:
     /* Host -> Guest handling. */
     int hgEnter(const RTCList<RTCString> &formats, uint32_t actions);
     int hgLeave(void);
-    int hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction);
-    int hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction);
+    int hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction);
+    int hgDrop(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction);
     int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -550,7 +550,7 @@ protected:
     /** Pointer to X display operating on. */
     Display                    *m_pDisplay;
     /** X screen ID to operate on. */
-    int                         m_screenId;
+    int                         m_screenID;
     /** Pointer to X screen operating on. */
     Screen                     *m_pScreen;
     /** Root window handle. */
@@ -731,9 +731,9 @@ void DragInstance::reset(void)
  * Initializes this drag instance.
  *
  * @return  IPRT status code.
- * @param   u32ScreenID             X' screen ID to use.
+ * @param   uScreenID             X' screen ID to use.
  */
-int DragInstance::init(uint32_t u32ScreenID)
+int DragInstance::init(uint32_t uScreenID)
 {
     int rc = VbglR3DnDConnect(&m_dndCtx);
     /* Note: Can return VINF_PERMISSION_DENIED if HGCM host service is not available. */
@@ -757,24 +757,24 @@ int DragInstance::init(uint32_t u32ScreenID)
         /*
          * Enough screens configured in the x11 server?
          */
-        if ((int)u32ScreenID > ScreenCount(m_pDisplay))
+        if ((int)uScreenID > ScreenCount(m_pDisplay))
         {
             rc = VERR_INVALID_PARAMETER;
             break;
         }
 #if 0
         /* Get the screen number from the x11 server. */
-        pDrag->screen = ScreenOfDisplay(m_pDisplay, u32ScreenId);
+        pDrag->screen = ScreenOfDisplay(m_pDisplay, uScreenID);
         if (!pDrag->screen)
         {
             rc = VERR_GENERAL_FAILURE;
             break;
         }
 #endif
-        m_screenId = u32ScreenID;
+        m_screenID = uScreenID;
 
         /* Now query the corresponding root window of this screen. */
-        m_wndRoot = RootWindow(m_pDisplay, m_screenId);
+        m_wndRoot = RootWindow(m_pDisplay, m_screenID);
         if (!m_wndRoot)
         {
             rc = VERR_GENERAL_FAILURE;
@@ -793,8 +793,8 @@ int DragInstance::init(uint32_t u32ScreenID)
         attr.override_redirect     = True;
         attr.do_not_propagate_mask = NoEventMask;
 #ifdef VBOX_DND_DEBUG_WND
-        attr.background_pixel      = XWhitePixel(m_pDisplay, m_screenId);
-        attr.border_pixel          = XBlackPixel(m_pDisplay, m_screenId);
+        attr.background_pixel      = XWhitePixel(m_pDisplay, m_screenID);
+        attr.border_pixel          = XBlackPixel(m_pDisplay, m_screenID);
         m_wndProxy.hWnd = XCreateWindow(m_pDisplay, m_wndRoot                /* Parent */,
                                    100, 100,                                 /* Position */
                                    100, 100,                                 /* Width + height */
@@ -838,7 +838,7 @@ int DragInstance::init(uint32_t u32ScreenID)
         XRaiseWindow(m_pDisplay, m_wndProxy.hWnd);
         XFlush(m_pDisplay);
 #endif
-        logInfo("Proxy window=0x%x, root window=0x%x ...\n", m_wndProxy.hWnd, m_wndRoot);
+        logInfo("Proxy window=%RU32, root window=%RU32 ...\n", m_wndProxy.hWnd, m_wndRoot);
 
         /* Set the window's name for easier lookup. */
         XStoreName(m_pDisplay, m_wndProxy.hWnd, "VBoxClientWndDnD");
@@ -854,7 +854,7 @@ int DragInstance::init(uint32_t u32ScreenID)
         reset();
     }
     else
-        logError("Initializing drag instance for screen %RU32 failed with rc=%Rrc\n", u32ScreenID, rc);
+        logError("Initializing drag instance for screen %RU32 failed with rc=%Rrc\n", uScreenID, rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1008,7 +1008,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
 
                 char *pszWndName = wndX11GetNameA(wndSelection);
                 AssertPtr(pszWndName);
-                LogFlowThisFunc(("wndSelection=%#x ('%s'), wndProxy=%#x\n", wndSelection, pszWndName, m_wndProxy.hWnd));
+                LogFlowThisFunc(("wndSelection=%RU32 ('%s'), wndProxy=%RU32\n", wndSelection, pszWndName, m_wndProxy.hWnd));
                 RTStrFree(pszWndName);
 
                 mouseButtonSet(m_wndProxy.hWnd, -1, -1, 1, true /* fPress */);
@@ -1085,7 +1085,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 int32_t iPos      = e.xclient.data.l[XdndPositionXY];
                 Atom    atmAction = m_curVer >= 2 /* Actions other than "copy" or only supported since protocol version 2. */
                                   ? e.xclient.data.l[XdndPositionAction] : xAtom(XA_XdndActionCopy);
-                LogFlowThisFunc(("XA_XdndPosition: wndProxy=%#x, wndCur=%#x, x=%RI32, y=%RI32, strAction=%s\n",
+                LogFlowThisFunc(("XA_XdndPosition: wndProxy=%RU32, wndCur=%RU32, x=%RI32, y=%RI32, strAction=%s\n",
                                  m_wndProxy.hWnd, m_wndCur, RT_HIWORD(iPos), RT_LOWORD(iPos),
                                  xAtomToString(atmAction).c_str()));
 #endif
@@ -1148,7 +1148,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 m_eventQueueList.append(e);
                 rc = RTSemEventSignal(m_eventQueueEvent);
             }
-            else
+            else /* Unhandled event, abort. */
             {
                 logInfo("Unhandled event from wnd=%#x, msg=%s\n", e.xclient.window, xAtomToString(e.xclient.message_type).c_str());
 
@@ -1338,7 +1338,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
                                               s.xselection.target, 8, PropModeReplace,
                                               reinterpret_cast<const unsigned char*>(pvData), cbData);
 
-                    LogFlowFunc(("Changing property '%s' (target '%s') of window=0x%x: %s\n",
+                    LogFlowFunc(("Changing property '%s' (target '%s') of window=%RU32: %s\n",
                                  xAtomToString(pReq->property).c_str(),
                                  xAtomToString(pReq->target).c_str(),
                                  pReq->requestor,
@@ -1664,15 +1664,15 @@ int DragInstance::hgLeave(void)
  *                (guest's) display area.
  *
  * @returns IPRT status code.
- * @param   u32xPos                 Relative X position within the guest's display area.
- * @param   u32yPos                 Relative Y position within the guest's display area.
+ * @param   uPosX                   Relative X position within the guest's display area.
+ * @param   uPosY                   Relative Y position within the guest's display area.
  * @param   uDefaultAction          Default action the host wants to perform on the guest
  *                                  as soon as the operation successfully finishes.
  */
-int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction)
+int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction)
 {
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
-    LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=%RU32\n", u32xPos, u32yPos, uDefaultAction));
+    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, uAction=%RU32\n", uPosX, uPosY, uDefaultAction));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -1684,7 +1684,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
     int xRc = Success;
 
     /* Move the mouse cursor within the guest. */
-    mouseCursorMove(u32xPos, u32yPos);
+    mouseCursorMove(uPosX, uPosY);
 
     long newVer = -1; /* This means the current window is _not_ XdndAware. */
 
@@ -1814,7 +1814,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
     {
         Assert(wndCursor != None);
 
-        LogFlowThisFunc(("XA_XdndPosition: xPos=%RU32, yPos=%RU32 to window=%#x\n", u32xPos, u32yPos, wndCursor));
+        LogFlowThisFunc(("XA_XdndPosition: xPos=%RU32, yPos=%RU32 to window=%#x\n", uPosX, uPosY, wndCursor));
 
         /*
          * Send a XdndPosition event with the proposed action to the guest.
@@ -1830,7 +1830,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
         m.message_type = xAtom(XA_XdndPosition);
         m.format       = 32;
         m.data.l[XdndPositionWindow]    = m_wndProxy.hWnd;               /* X window ID of source window. */
-        m.data.l[XdndPositionXY]        = RT_MAKE_U32(u32yPos, u32xPos); /* Cursor coordinates relative to the root window. */
+        m.data.l[XdndPositionXY]        = RT_MAKE_U32(uPosY, uPosX);     /* Cursor coordinates relative to the root window. */
         m.data.l[XdndPositionTimeStamp] = CurrentTime;                   /* Timestamp for retrieving data. */
         m.data.l[XdndPositionAction]    = pa;                            /* Actions requested by the user. */
 
@@ -1860,21 +1860,16 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
  * Host -> Guest: Event signalling that the host has dropped the data over the VM (guest) window.
  *
  * @returns IPRT status code.
- * @param   u32xPos                 Relative X position within the guest's display area.
- * @param   u32yPos                 Relative Y position within the guest's display area.
+ * @param   uPosX                   Relative X position within the guest's display area.
+ * @param   uPosY                   Relative Y position within the guest's display area.
  * @param   uDefaultAction          Default action the host wants to perform on the guest
  *                                  as soon as the operation successfully finishes.
  */
-int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction)
+int DragInstance::hgDrop(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction)
 {
-
-
-    /** @todo r=bird: Please, stop using 'u32' as a prefix unless you've got a _real_ _important_ reason for needing the bit count. */
-
-
-    RT_NOREF3(u32xPos, u32yPos, uDefaultAction);
-    LogFlowThisFunc(("wndCur=%#x, wndProxy=%#x, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy.hWnd, m_enmMode, m_enmState));
-    LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=%RU32\n", u32xPos, u32yPos, uDefaultAction));
+    RT_NOREF3(uPosX, uPosY, uDefaultAction);
+    LogFlowThisFunc(("wndCur=%RU32, wndProxy=%RU32, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy.hWnd, m_enmMode, m_enmState));
+    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, uAction=%RU32\n", uPosX, uPosY, uDefaultAction));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -2004,7 +1999,9 @@ int DragInstance::ghIsDnDPending(void)
 
     /* Currently in wrong mode? Bail out. */
     if (m_enmMode == HG)
+    {
         rc = VERR_INVALID_STATE;
+    }
     /* Message already processed successfully? */
     else if (   m_enmMode  == GH
              && (   m_enmState == Dragging
@@ -2083,6 +2080,8 @@ int DragInstance::ghIsDnDPending(void)
 
             RTStrFree(pszWndName);
         }
+        else
+            logInfo("No guest source window\n");
     }
 
     /*
@@ -2153,7 +2152,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 #ifdef DEBUG
     XWindowAttributes xwa;
     XGetWindowAttributes(m_pDisplay, m_wndCur, &xwa);
-    LogFlowThisFunc(("wndProxy=%#x, wndCur=%#x, x=%d, y=%d, width=%d, height=%d\n",
+    LogFlowThisFunc(("wndProxy=%RU32, wndCur=%RU32, x=%d, y=%d, width=%d, height=%d\n",
                      m_wndProxy.hWnd, m_wndCur, xwa.x, xwa.y, xwa.width, xwa.height));
 
     Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
@@ -2315,7 +2314,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
     if (RT_FAILURE(rc))
     {
         int rc2 = VbglR3DnDGHSendError(&m_dndCtx, rc);
-        LogFlowThisFunc(("Sending error to host resulted in %Rrc\n", rc2)); NOREF(rc2);
+        LogFlowThisFunc(("Sending error %Rrc to host resulted in %Rrc\n", rc, rc2)); NOREF(rc2);
         /* This is not fatal for us, just ignore. */
     }
 
@@ -2525,7 +2524,7 @@ int DragInstance::proxyWinShow(int *piRootX /* = NULL */, int *piRootY /* = NULL
     Bool fInRootWnd = XQueryPointer(m_pDisplay, m_wndRoot, &wndRoot, &wndChild,
                                     &iRootX, &iRootY, &iChildX, &iChildY, &iMask);
 
-    LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=0x%x, wndChild=0x%x, iRootX=%d, iRootY=%d\n",
+    LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=%RU32, wndChild=%RU32, iRootX=%d, iRootY=%d\n",
                      RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY)); NOREF(fInRootWnd);
 
     if (piRootX)
