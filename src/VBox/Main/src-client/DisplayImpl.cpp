@@ -1010,7 +1010,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     }
     else
     {
-        pFBInfo->flags = 0;
+        pFBInfo->flags = VBVA_SCREEN_F_ACTIVE;
         if (fVGABlank)
             pFBInfo->flags |= VBVA_SCREEN_F_BLANK;
         pFBInfo->fDisabled = false;
