@@ -29,8 +29,7 @@ EXPORTS
     ;
     ; Use the following command-line to generate the stuff below:
     ; nm ../../../out/darwin.amd64/debug/obj/VBoxRT/VBoxRT.dylib -U | kmk_sed -re '/(RTCString|RTCRest)/!d' -e 's/^[0-9a-fA-F]+ //' -e '/^[A-Z]/!d' | sort | kmk_sed -r -e 's/[SDBC] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /' -e 's/ __/ _/' >> VBox/VBoxRTImp-gcc.def
-    ;
-    _ZTI17RTCRestOutputBase DATA
+    ; 
     _ZTI9RTCString DATA
     _ZN9RTCString4nposE DATA
     _ZTI11RTCRestBool DATA
@@ -45,6 +44,7 @@ EXPORTS
     _ZTI16RTCRestArrayBase DATA
     _ZTI17RTCRestDataObject DATA
     _ZTI17RTCRestObjectBase DATA
+    _ZTI17RTCRestOutputBase DATA
     _ZTI20RTCRestClientApiBase DATA
     _ZTI20RTCRestStringMapBase DATA
     _ZTI21RTCRestBinaryResponse DATA
@@ -52,9 +52,11 @@ EXPORTS
     _ZTI21RTCRestPolyDataObject DATA
     _ZTI21RTCRestStringEnumBase DATA
     _ZTI22RTCRestBinaryParameter DATA
+    _ZTI23RTCRestOutputPrettyBase DATA
     _ZTI24RTCRestClientRequestBase DATA
     _ZTI24RTCRestJsonPrimaryCursor DATA
     _ZTI25RTCRestClientResponseBase DATA
+    _ZTI27RTCRestOutputPrettyToString DATA
     _ZTIN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
     _ZTS11RTCRestBool DATA
     _ZTS11RTCRestDate DATA
@@ -76,9 +78,11 @@ EXPORTS
     _ZTS21RTCRestPolyDataObject DATA
     _ZTS21RTCRestStringEnumBase DATA
     _ZTS22RTCRestBinaryParameter DATA
+    _ZTS23RTCRestOutputPrettyBase DATA
     _ZTS24RTCRestClientRequestBase DATA
     _ZTS24RTCRestJsonPrimaryCursor DATA
     _ZTS25RTCRestClientResponseBase DATA
+    _ZTS27RTCRestOutputPrettyToString DATA
     _ZTS9RTCString DATA
     _ZTSN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
     _ZTV11RTCRestBool DATA
@@ -93,6 +97,7 @@ EXPORTS
     _ZTV16RTCRestArrayBase DATA
     _ZTV17RTCRestDataObject DATA
     _ZTV17RTCRestObjectBase DATA
+    _ZTV17RTCRestOutputBase DATA
     _ZTV20RTCRestClientApiBase DATA
     _ZTV20RTCRestStringMapBase DATA
     _ZTV21RTCRestBinaryResponse DATA
@@ -100,9 +105,11 @@ EXPORTS
     _ZTV21RTCRestPolyDataObject DATA
     _ZTV21RTCRestStringEnumBase DATA
     _ZTV22RTCRestBinaryParameter DATA
+    _ZTV23RTCRestOutputPrettyBase DATA
     _ZTV24RTCRestClientRequestBase DATA
     _ZTV24RTCRestJsonPrimaryCursor DATA
     _ZTV25RTCRestClientResponseBase DATA
+    _ZTV27RTCRestOutputPrettyToString DATA
     _ZTVN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
     _ZN11RTCRestBool10assignCopyERKS_
     _ZN11RTCRestBool10fromStringERK9RTCStringPKcP9RTERRINFOj
@@ -329,6 +336,19 @@ EXPORTS
     _ZN17RTCRestObjectBaseD0Ev
     _ZN17RTCRestObjectBaseD1Ev
     _ZN17RTCRestObjectBaseD2Ev
+    _ZN17RTCRestOutputBase10beginArrayEv
+    _ZN17RTCRestOutputBase11beginObjectEv
+    _ZN17RTCRestOutputBase14valueSeparatorEv
+    _ZN17RTCRestOutputBase20printfOutputCallbackEPvPKcm
+    _ZN17RTCRestOutputBase21valueSeparatorAndNameEPKcm
+    _ZN17RTCRestOutputBase7vprintfEPKcP13__va_list_tag
+    _ZN17RTCRestOutputBase8endArrayEj
+    _ZN17RTCRestOutputBase9endObjectEj
+    _ZN17RTCRestOutputBase9nullValueEv
+    _ZN17RTCRestOutputBaseC2Ev
+    _ZN17RTCRestOutputBaseD0Ev
+    _ZN17RTCRestOutputBaseD1Ev
+    _ZN17RTCRestOutputBaseD2Ev
     _ZN20RTCRestClientApiBase12setServerUrlEPKc
     _ZN20RTCRestClientApiBase14ociSignRequestEP14RTHTTPINTERNALRK9RTCString12RTHTTPMETHODS4_jP10RTCRKEYINTS4_
     _ZN20RTCRestClientApiBase15setServerSchemeEPKc
@@ -372,9 +392,8 @@ EXPORTS
     _ZN21RTCRestBinaryResponse19setConsumerCallbackEPFiPS_PKvmjyyEPv
     _ZN21RTCRestBinaryResponseC1Ev
     _ZN21RTCRestBinaryResponseC2Ev
-    _ZN21RTCRestOutputToString7vprintfEPKcP13__va_list_tag
+    _ZN21RTCRestOutputToString6outputEPKcm
     _ZN21RTCRestOutputToString8finalizeEv
-    _ZN21RTCRestOutputToString9strOutputEPvPKcm
     _ZN21RTCRestOutputToStringC1EP9RTCStringb
     _ZN21RTCRestOutputToStringC2EP9RTCStringb
     _ZN21RTCRestOutputToStringD0Ev
@@ -415,6 +434,17 @@ EXPORTS
     _ZN22RTCRestBinaryParameter19setProducerCallbackEPFiPS_PvmyPmES1_y
     _ZN22RTCRestBinaryParameterC1Ev
     _ZN22RTCRestBinaryParameterC2Ev
+    _ZN23RTCRestOutputPrettyBase10beginArrayEv
+    _ZN23RTCRestOutputPrettyBase11beginObjectEv
+    _ZN23RTCRestOutputPrettyBase14valueSeparatorEv
+    _ZN23RTCRestOutputPrettyBase17outputIndentationEv
+    _ZN23RTCRestOutputPrettyBase21valueSeparatorAndNameEPKcm
+    _ZN23RTCRestOutputPrettyBase8endArrayEj
+    _ZN23RTCRestOutputPrettyBase9endObjectEj
+    _ZN23RTCRestOutputPrettyBaseC2Ev
+    _ZN23RTCRestOutputPrettyBaseD0Ev
+    _ZN23RTCRestOutputPrettyBaseD1Ev
+    _ZN23RTCRestOutputPrettyBaseD2Ev
     _ZN24RTCRestClientRequestBaseC2ERKS_
     _ZN24RTCRestClientRequestBaseC2Ev
     _ZN24RTCRestClientRequestBaseD0Ev
@@ -450,6 +480,13 @@ EXPORTS
     _ZN25RTCRestClientResponseBaseD1Ev
     _ZN25RTCRestClientResponseBaseD2Ev
     _ZN25RTCRestClientResponseBaseaSERKS_
+    _ZN27RTCRestOutputPrettyToString6outputEPKcm
+    _ZN27RTCRestOutputPrettyToString8finalizeEv
+    _ZN27RTCRestOutputPrettyToStringC1EP9RTCStringb
+    _ZN27RTCRestOutputPrettyToStringC2EP9RTCStringb
+    _ZN27RTCRestOutputPrettyToStringD0Ev
+    _ZN27RTCRestOutputPrettyToStringD1Ev
+    _ZN27RTCRestOutputPrettyToStringD2Ev
     _ZN3xml11ElementNode16setAttributePathEPKcRK9RTCString
     _ZN3xml12XmlMemParser4readEPKvmRK9RTCStringRNS_8DocumentE
     _ZN3xml13XmlFileParser4readERK9RTCStringRNS_8DocumentE
@@ -556,7 +593,7 @@ EXPORTS
     _ZNK16RTCRestArrayBase9baseCloneEv
     _ZNK16RTCRestArrayBase9typeClassEv
     _ZNK17RTCRestDataObject15serializeAsJsonER17RTCRestOutputBase
-    _ZNK17RTCRestDataObject22serializeMembersAsJsonER17RTCRestOutputBasePKc
+    _ZNK17RTCRestDataObject22serializeMembersAsJsonER17RTCRestOutputBase
     _ZNK17RTCRestDataObject9typeClassEv
     _ZNK17RTCRestObjectBase8toStringEP9RTCStringj
     _ZNK17RTCRestObjectBase8toStringEv
