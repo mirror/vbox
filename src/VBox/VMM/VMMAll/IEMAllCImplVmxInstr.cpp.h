@@ -28,6 +28,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
 /**
  * Map of VMCS field encodings to their virtual-VMCS structure offsets.
  *
@@ -693,6 +694,29 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
 
 
 /**
+ * Gets a host selector from the VMCS.
+ *
+ * @param   pVmcs       Pointer to the virtual VMCS.
+ * @param   iSelReg     The index of the segment register (X86_SREG_XXX).
+ */
+DECLINLINE(RTSEL) iemVmxVmcsGetHostSelReg(PCVMXVVMCS pVmcs, uint8_t iSegReg)
+{
+    Assert(iSegReg < X86_SREG_COUNT);
+    RTSEL HostSel;
+    uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
+    uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+    uint8_t  const  uWidthType = (uWidth << 2) | uType;
+    uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+    Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+    uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
+    uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
+    uint8_t  const *pbField    = pbVmcs + offField;
+    HostSel = *(uint16_t *)pbField;
+    return HostSel;
+}
+
+
+/**
  * Sets a guest segment register in the VMCS.
  *
  * @param   pVmcs       Pointer to the virtual VMCS.
@@ -785,7 +809,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
         uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
-        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
         uint8_t  const *pbField    = pbVmcs + offField;
@@ -799,7 +823,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
         uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
-        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
         uint8_t  const *pbField    = pbVmcs + offField;
@@ -813,7 +837,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
         uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
-        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
         uint8_t  const *pbField    = pbVmcs + offField;
@@ -828,7 +852,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
         uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
-        AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
+        AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
         uint8_t  const *pbField    = pbVmcs + offField;
@@ -836,6 +860,8 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
     }
 
     pSelReg->Sel      = u16Sel;
+    pSelReg->ValidSel = u16Sel;
+    pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
     pSelReg->u32Limit = u32Limit;
     pSelReg->u64Base  = u64Base;
     pSelReg->Attr.u   = u32Attr;
@@ -1361,7 +1387,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     uint8_t  const uType      = FieldEnc.n.u2Type;
     uint8_t  const uWidthType = (uWidth << 2) | uType;
     uint8_t  const uIndex     = FieldEnc.n.u8Index;
-    AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
+    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
 
     /*
@@ -1613,7 +1639,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     uint8_t  const uType      = FieldEnc.n.u2Type;
     uint8_t  const uWidthType = (uWidth << 2) | uType;
     uint8_t  const uIndex     = FieldEnc.n.u8Index;
-    AssertRCReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
+    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
 
     /*
@@ -4999,9 +5025,122 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
     /*
      * Load host segment registers, GDTR, IDTR, LDTR and TR.
      * See Intel spec. 27.5.2 "Loading Host Segment and Descriptor-Table Registers".
+     *
+     * Warning! Be careful to not touch fields that are reserved by VT-x,
+     * e.g. segment limit high bits stored in segment attributes (in bits 11:8).
      */
-    RT_NOREF(pVCpu);
-    /** @todo Load host seg regs. */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+
+    /* CS, SS, ES, DS, FS, GS. */
+    for (unsigned iSegReg = 0; iSegReg < X86_SREG_COUNT; iSegReg++)
+    {
+        RTSEL const HostSel  = iemVmxVmcsGetHostSelReg(pVmcs, iSegReg);
+        bool const  fUnusable = RT_BOOL(HostSel == 0);
+
+        /* Selector. */
+        pVCpu->cpum.GstCtx.aSRegs[iSegReg].Sel      = HostSel;
+        pVCpu->cpum.GstCtx.aSRegs[iSegReg].ValidSel = HostSel;
+        pVCpu->cpum.GstCtx.aSRegs[iSegReg].fFlags   = CPUMSELREG_FLAGS_VALID;
+
+        /* Limit. */
+        pVCpu->cpum.GstCtx.aSRegs[iSegReg].u32Limit = 0xffffffff;
+
+        /* Base and Attributes. */
+        switch (iSegReg)
+        {
+            case X86_SREG_CS:
+            {
+                pVCpu->cpum.GstCtx.cs.u64Base = 0;
+                pVCpu->cpum.GstCtx.cs.Attr.n.u4Type        = X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_ACCESSED;
+                pVCpu->cpum.GstCtx.ss.Attr.n.u1DescType    = 1;
+                pVCpu->cpum.GstCtx.cs.Attr.n.u2Dpl         = 0;
+                pVCpu->cpum.GstCtx.cs.Attr.n.u1Present     = 1;
+                pVCpu->cpum.GstCtx.cs.Attr.n.u1Long        = fHostInLongMode;
+                pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig      = !fHostInLongMode;
+                pVCpu->cpum.GstCtx.cs.Attr.n.u1Granularity = 1;
+                Assert(!pVCpu->cpum.GstCtx.cs.Attr.n.u1Unusable);
+                Assert(!fUnusable);
+                break;
+            }
+
+            case X86_SREG_SS:
+            case X86_SREG_ES:
+            case X86_SREG_DS:
+            {
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base = 0;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DescType    = 1;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u2Dpl         = 0;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Present     = 1;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DefBig      = 1;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Granularity = 1;
+                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Unusable    = fUnusable;
+                break;
+            }
+
+            case X86_SREG_FS:
+            {
+                Assert(X86_IS_CANONICAL(pVmcs->u64HostFsBase.u));
+                pVCpu->cpum.GstCtx.fs.u64Base = !fUnusable ? pVmcs->u64HostFsBase.u : 0;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u1DescType    = 1;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u2Dpl         = 0;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u1Present     = 1;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u1DefBig      = 1;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u1Granularity = 1;
+                pVCpu->cpum.GstCtx.fs.Attr.n.u1Unusable    = fUnusable;
+                break;
+            }
+
+            case X86_SREG_GS:
+            {
+                Assert(X86_IS_CANONICAL(pVmcs->u64HostGsBase.u));
+                pVCpu->cpum.GstCtx.gs.u64Base = !fUnusable ? pVmcs->u64HostGsBase.u : 0;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u1DescType    = 1;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u2Dpl         = 0;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u1Present     = 1;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u1DefBig      = 1;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u1Granularity = 1;
+                pVCpu->cpum.GstCtx.gs.Attr.n.u1Unusable    = fUnusable;
+                break;
+            }
+        }
+    }
+
+    /* TR. */
+    Assert(X86_IS_CANONICAL(pVmcs->u64HostTrBase.u));
+    Assert(!pVCpu->cpum.GstCtx.tr.Attr.n.u1Unusable);
+    pVCpu->cpum.GstCtx.tr.Sel                  = pVmcs->HostTr;
+    pVCpu->cpum.GstCtx.tr.ValidSel             = pVmcs->HostTr;
+    pVCpu->cpum.GstCtx.tr.fFlags               = CPUMSELREG_FLAGS_VALID;
+    pVCpu->cpum.GstCtx.tr.u32Limit             = X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN;
+    pVCpu->cpum.GstCtx.tr.u64Base              = pVmcs->u64HostTrBase.u;
+    pVCpu->cpum.GstCtx.tr.Attr.n.u4Type        = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+    pVCpu->cpum.GstCtx.tr.Attr.n.u1DescType    = 0;
+    pVCpu->cpum.GstCtx.tr.Attr.n.u2Dpl         = 0;
+    pVCpu->cpum.GstCtx.tr.Attr.n.u1Present     = 1;
+    pVCpu->cpum.GstCtx.tr.Attr.n.u1DefBig      = 0;
+    pVCpu->cpum.GstCtx.tr.Attr.n.u1Granularity = 0;
+
+    /* LDTR. */
+    pVCpu->cpum.GstCtx.ldtr.Sel               = 0;
+    pVCpu->cpum.GstCtx.ldtr.ValidSel          = 0;
+    pVCpu->cpum.GstCtx.ldtr.fFlags            = CPUMSELREG_FLAGS_VALID;
+    pVCpu->cpum.GstCtx.ldtr.u32Limit          = 0;
+    pVCpu->cpum.GstCtx.ldtr.u64Base           = 0;
+    pVCpu->cpum.GstCtx.ldtr.Attr.n.u1Unusable = 1;
+
+    /* GDTR. */
+    Assert(X86_IS_CANONICAL(pVmcs->u64HostGdtrBase.u));
+    pVCpu->cpum.GstCtx.gdtr.pGdt  = pVmcs->u64HostGdtrBase.u;
+    pVCpu->cpum.GstCtx.gdtr.cbGdt = 0xfff;
+
+    /* IDTR.*/
+    Assert(X86_IS_CANONICAL(pVmcs->u64HostIdtrBase.u));
+    pVCpu->cpum.GstCtx.idtr.pIdt  = pVmcs->u64HostIdtrBase.u;
+    pVCpu->cpum.GstCtx.idtr.cbIdt = 0xfff;
 }
 
 
@@ -5032,6 +5171,8 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
      */
     iemVmxVmexitLoadHostControlRegsMsrs(pVCpu);
     iemVmxVmexitLoadHostSegRegs(pVCpu);
+
+    /** @todo NSTVMX: rest of host state loading.  */
 
     return VINF_SUCCESS;
 }
