@@ -252,7 +252,6 @@ struc CPUMCPU
     .Guest.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
     alignb 8
     .Guest.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
-    .Guest.hwvirt.uInhibitRip                resq         1
     .Guest.hwvirt.fLocalForcedActions        resd         1
     .Guest.hwvirt.fGif                       resb         1
     alignb 64
@@ -540,7 +539,6 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
     alignb 8
     .Hyper.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
-    .Hyper.hwvirt.uInhibitRip                resq         1
     .Hyper.hwvirt.fLocalForcedActions        resd         1
     .Hyper.hwvirt.fGif                       resb         1
     alignb 64

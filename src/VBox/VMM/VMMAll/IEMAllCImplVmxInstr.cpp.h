@@ -2345,8 +2345,8 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrTypeAcc(unsigned iSegReg)
 
 
 /**
- * Gets the instruction diagnostic for CR3 referenced PDPTE reserved bits failure
- * during VM-entry of a nested-guest.
+ * Gets the instruction diagnostic for guest CR3 referenced PDPTE reserved bits
+ * failure during VM-entry of a nested-guest.
  *
  * @param   iSegReg     The PDPTE entry index.
  */
@@ -2360,6 +2360,26 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentryPdpteRsvd(unsigned iPdpte)
         case 2: return kVmxVDiag_Vmentry_GuestPdpte2Rsvd;
         case 3: return kVmxVDiag_Vmentry_GuestPdpte3Rsvd;
         IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_11);
+    }
+}
+
+
+/**
+ * Gets the instruction diagnostic for host CR3 referenced PDPTE reserved bits
+ * failure during VM-exit of a nested-guest.
+ *
+ * @param   iSegReg     The PDPTE entry index.
+ */
+IEM_STATIC VMXVDIAG iemVmxGetDiagVmexitPdpteRsvd(unsigned iPdpte)
+{
+    Assert(iPdpte < X86_PG_PAE_PDPE_ENTRIES);
+    switch (iPdpte)
+    {
+        case 0: return kVmxVDiag_Vmexit_HostPdpte0Rsvd;
+        case 1: return kVmxVDiag_Vmexit_HostPdpte1Rsvd;
+        case 2: return kVmxVDiag_Vmexit_HostPdpte2Rsvd;
+        case 3: return kVmxVDiag_Vmexit_HostPdpte3Rsvd;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_12);
     }
 }
 
@@ -4243,30 +4263,26 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
      * We only preserve the force-flags that would affect the execution of the
      * nested-guest (or the guest).
      *
-     *   - VMCPU_FF_INHIBIT_INTERRUPTS and RIP needs be preserved as there is no
-     *     implicit Global Interrupt Flag (GIF) handling as with AMD-V's VMRUN
-     *     instruction and the interrupt inhibition is in effect until the
-     *     completion of this VMLAUNCH/VMRESUME instruction.
+     *   - VMCPU_FF_INHIBIT_INTERRUPTS need not be preserved as VM-exit explicitly
+     *     clears interrupt-inhibition and on VM-entry the guest-interruptibility
+     *     state provides the inhibition if any.
      *
-     *   - VMCPU_FF_BLOCK_NMIS needs to be preserved as it blocks NMI until the
-     *     execution of a subsequent IRET instruction in the guest.
+     *   - VMCPU_FF_BLOCK_NMIS needs not be preserved as VM-entry does not discard
+     *     any NMI blocking. VM-exits caused directly by NMIs (intercepted by the
+     *     exception bitmap) do block subsequent NMIs.
      *
-     *   - MTF needs to be preserved as it's for a single instruction boundary
-     *     which follows the return from VMLAUNCH/VMRESUME instruction.
+     *   - MTF needs to be preserved as it's for a single instruction boundary which
+     *     follows the return from VMLAUNCH/VMRESUME instruction.
      *
      * The remaining FFs (e.g. timers) can stay in place so that we will be able to
      * generate interrupts that should cause #VMEXITs for the nested-guest.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-        pVCpu->cpum.GstCtx.hwvirt.uInhibitRip = EMGetInhibitInterruptsPC(pVCpu);
-
-    uint32_t const fGuestFFMask = VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS | VMCPU_FF_MTF;
-    pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & fGuestFFMask;
-    VMCPU_FF_CLEAR(pVCpu, fGuestFFMask);
+    uint32_t const fNstGstDiscardMask = VMCPU_FF_MTF;
+    pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & fNstGstDiscardMask;
+    VMCPU_FF_CLEAR(pVCpu, fNstGstDiscardMask);
 }
 
 
-#if 0
 /**
  * Restores the guest force-flags in prepartion of exiting the nested-guest.
  *
@@ -4280,7 +4296,6 @@ IEM_STATIC void iemVmxVmexitRestoreForceFlags(PVMCPU pVCpu)
         pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = 0;
     }
 }
-#endif
 
 
 /**
@@ -4962,7 +4977,8 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
         uint64_t const fCr0IgnMask = UINT64_C(0xffffffff1ff8ffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Fixed0;
         uint64_t const uHostCr0    = pVmcs->u64HostCr0.u;
         uint64_t const uGuestCr0   = pVCpu->cpum.GstCtx.cr0;
-        pVCpu->cpum.GstCtx.cr0     = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
+        uint64_t const uValidCr0   = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
+        CPUMSetGuestCR0(pVCpu, uValidCr0);
     }
 
     /* CR4. */
@@ -4971,12 +4987,12 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
         uint64_t const fCr4IgnMask = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
         uint64_t const uHostCr4    = pVmcs->u64HostCr4.u;
         uint64_t const uGuestCr4   = pVCpu->cpum.GstCtx.cr4;
-        pVCpu->cpum.GstCtx.cr4     = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
-
+        uint64_t       uValidCr4   = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
         if (fHostInLongMode)
-            pVCpu->cpum.GstCtx.cr4 |= X86_CR4_PAE;
+            uValidCr4 |= X86_CR4_PAE;
         else
-            pVCpu->cpum.GstCtx.cr4 &= ~X86_CR4_PCIDE;
+            uValidCr4 &= ~X86_CR4_PCIDE;
+        CPUMSetGuestCR4(pVCpu, uValidCr4);
     }
 
     /* CR3 (host value validated while checking host-state during VM-entry). */
@@ -5145,11 +5161,58 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
 
 
 /**
+ * Checks host PDPTes as part of VM-exit.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmexitCheckHostPdptes(PVMCPU pVCpu, uint32_t uExitReason)
+{
+    /*
+     * Check host PDPTEs.
+     * See Intel spec. 27.5.4 "Checking and Loading Host Page-Directory-Pointer-Table Entries".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VMX-abort";
+    bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+
+    if (   (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
+        && !fHostInLongMode)
+    {
+        uint64_t const uHostCr3 = pVCpu->cpum.GstCtx.cr3 & X86_CR3_PAE_PAGE_MASK;
+        X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uHostCr3, sizeof(aPdptes));
+        if (RT_SUCCESS(rc))
+        {
+            for (unsigned iPdpte = 0; iPdpte < RT_ELEMENTS(aPdptes); iPdpte++)
+            {
+                if (   !(aPdptes[iPdpte].u & X86_PDPE_P)
+                    || !(aPdptes[iPdpte].u & X86_PDPE_PAE_MBZ_MASK))
+                { /* likely */ }
+                else
+                {
+                    VMXVDIAG const enmDiag = iemVmxGetDiagVmexitPdpteRsvd(iPdpte);
+                    IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
+                }
+            }
+        }
+        else
+            IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_HostPdpteCr3ReadPhys);
+    }
+
+    NOREF(pszFailure);
+    NOREF(uExitReason);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the host state as part of VM-exit.
  *
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason (for logging purposes).
  */
-IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
+IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitReason)
 {
     /*
      * Load host state.
@@ -5180,7 +5243,38 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
     pVCpu->cpum.GstCtx.rsp      = pVmcs->u64HostRsp.u;
     pVCpu->cpum.GstCtx.rflags.u = X86_EFL_1;
 
-    /** @todo NSTVMX: rest of host state loading.  */
+    /* Update non-register state. */
+    iemVmxVmexitRestoreForceFlags(pVCpu);
+
+    /* Clear address range monitoring. */
+    EMMonitorWaitClear(pVCpu);
+
+    /* Perform the VMX transition (PGM updates). */
+    VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /* Check host PDPTEs. */
+        /** @todo r=ramshankar: I don't know if PGM does this for us already or not... */
+        int rc = iemVmxVmexitCheckHostPdptes(pVCpu, uExitReason);
+        if (RT_FAILURE(rc))
+        {
+            Log(("VM-exit failed while restoring host PDPTEs -> VMX-Abort\n"));
+            return iemVmxAbort(pVCpu, VMXBOART_HOST_PDPTE);
+        }
+    }
+    else if (RT_SUCCESS(rcStrict))
+    {
+        Log3(("VM-exit: iemVmxWorldSwitch returns %Rrc (uExitReason=%u) -> Setting passup status\n", VBOXSTRICTRC_VAL(rcStrict),
+              uExitReason));
+        rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+    }
+    else
+    {
+        Log3(("VM-exit: iemVmxWorldSwitch failed! rc=%Rrc (uExitReason=%u)\n", VBOXSTRICTRC_VAL(rcStrict), uExitReason));
+        return rcStrict;
+    }
+
+    /** @todo NSTVMX: rest of host state loading (loading MSRs). */
 
     return VINF_SUCCESS;
 }
@@ -5221,7 +5315,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
     }
 
-    int rc = iemVmxVmexitLoadHostState(pVCpu);
+    int rc = iemVmxVmexitLoadHostState(pVCpu, uExitReason);
     if (RT_FAILURE(rc))
         return rc;
 
