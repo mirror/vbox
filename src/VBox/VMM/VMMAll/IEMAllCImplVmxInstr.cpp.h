@@ -4271,15 +4271,15 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
      *     any NMI blocking. VM-exits caused directly by NMIs (intercepted by the
      *     exception bitmap) do block subsequent NMIs.
      *
-     *   - MTF needs to be preserved as it's for a single instruction boundary which
-     *     follows the return from VMLAUNCH/VMRESUME instruction.
+     *   - MTF need not be preserved as it's used only in VMX non-root mode and
+     *     is supplied on VM-entry through the VM-execution controls.
      *
      * The remaining FFs (e.g. timers) can stay in place so that we will be able to
      * generate interrupts that should cause #VMEXITs for the nested-guest.
      */
-    uint32_t const fNstGstDiscardMask = VMCPU_FF_MTF;
-    pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & fNstGstDiscardMask;
-    VMCPU_FF_CLEAR(pVCpu, fNstGstDiscardMask);
+    uint32_t const fDiscardMask = VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_MTF | VMCPU_FF_BLOCK_NMIS;
+    pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & fDiscardMask;
+    VMCPU_FF_CLEAR(pVCpu, fDiscardMask);
 }
 
 
@@ -4564,6 +4564,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                     Log3(("%s: iemVmxWorldSwitch failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
                                     return rcStrict;
                                 }
+
+                                /* We've now entered nested-guest execution. */
+                                pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
 
                                 /* Event injection. */
                                 iemVmxVmentryInjectEvent(pVCpu, pszInstr);
@@ -5320,6 +5323,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_
         return rc;
 
     /** @todo NSTVMX: rest of VM-exit. */
+
+    /* We're no longer in nested-guest execution mode. */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
+
     return VINF_SUCCESS;
 }
 
