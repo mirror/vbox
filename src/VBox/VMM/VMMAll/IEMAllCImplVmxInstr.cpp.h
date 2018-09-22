@@ -5172,6 +5172,14 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu)
     iemVmxVmexitLoadHostControlRegsMsrs(pVCpu);
     iemVmxVmexitLoadHostSegRegs(pVCpu);
 
+    /*
+     * Load host RIP, RSP and RFLAGS.
+     * See Intel spec. 27.5.3 "Loading Host RIP, RSP and RFLAGS"
+     */
+    pVCpu->cpum.GstCtx.rip      = pVmcs->u64HostRip.u;
+    pVCpu->cpum.GstCtx.rsp      = pVmcs->u64HostRsp.u;
+    pVCpu->cpum.GstCtx.rflags.u = X86_EFL_1;
+
     /** @todo NSTVMX: rest of host state loading.  */
 
     return VINF_SUCCESS;
