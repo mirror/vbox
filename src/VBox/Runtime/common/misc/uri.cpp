@@ -444,7 +444,7 @@ static int rtUriParse(const char *pszUri, PRTURIPARSED pParsed)
     {
         off += 2;
         pParsed->offAuthority = pParsed->offAuthorityUsername = pParsed->offAuthorityPassword = pParsed->offAuthorityHost = off;
-        pParsed->fFlags |= RTURIPARSED_F_HAVE_AUTHORITY;
+        pParsed->fFlags |= RTURIPARSED_F_HAS_AUTHORITY;
 
         /*
          * RFC-3986, section 3.2:
@@ -495,19 +495,22 @@ static int rtUriParse(const char *pszUri, PRTURIPARSED pParsed)
             {
                 size_t cchTmp = &pszUri[pParsed->offAuthorityHost + pParsed->cchAuthorityHost] - &pszColon[1];
                 pParsed->cchAuthorityHost -= cchTmp + 1;
-
-                pParsed->uAuthorityPort = 0;
-                while (cchTmp-- > 0)
+                pParsed->fFlags |= RTURIPARSED_F_HAS_PORT;
+                if (cchTmp > 0)
                 {
-                    ch = *++pszColon;
-                    if (   RT_C_IS_DIGIT(ch)
-                        && pParsed->uAuthorityPort < UINT32_MAX / UINT32_C(10))
+                    pParsed->uAuthorityPort = 0;
+                    while (cchTmp-- > 0)
                     {
-                        pParsed->uAuthorityPort *= 10;
-                        pParsed->uAuthorityPort += ch - '0';
+                        ch = *++pszColon;
+                        if (   RT_C_IS_DIGIT(ch)
+                            && pParsed->uAuthorityPort < UINT32_MAX / UINT32_C(10))
+                        {
+                            pParsed->uAuthorityPort *= 10;
+                            pParsed->uAuthorityPort += ch - '0';
+                        }
+                        else
+                            return VERR_URI_INVALID_PORT_NUMBER;
                     }
-                    else
-                        return VERR_URI_INVALID_PORT_NUMBER;
                 }
             }
         }
@@ -677,7 +680,7 @@ RTDECL(char *) RTUriParsedAuthority(const char *pszUri, PCRTURIPARSED pParsed)
     AssertPtrReturn(pszUri, NULL);
     AssertPtrReturn(pParsed, NULL);
     AssertReturn(pParsed->u32Magic == RTURIPARSED_MAGIC, NULL);
-    if (pParsed->cchAuthority || (pParsed->fFlags & RTURIPARSED_F_HAVE_AUTHORITY))
+    if (pParsed->cchAuthority || (pParsed->fFlags & RTURIPARSED_F_HAS_AUTHORITY))
         return rtUriPercentDecodeN(&pszUri[pParsed->offAuthority], pParsed->cchAuthority);
     return NULL;
 }

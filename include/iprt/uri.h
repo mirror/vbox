@@ -96,7 +96,7 @@ typedef struct RTURIPARSED
     size_t      offAuthorityHost;
     /** The length of the host part of the authority. */
     size_t      cchAuthorityHost;
-    /** The authority port number, UINT32_MAX if not present. */
+    /** The authority port number, UINT32_MAX if not present or empty. */
     uint32_t    uAuthorityPort;
     /** @} */
 } RTURIPARSED;
@@ -109,9 +109,11 @@ typedef RTURIPARSED const *PCRTURIPARSED;
  * @{  */
 /** Set if the URI contains escaped characters. */
 #define RTURIPARSED_F_CONTAINS_ESCAPED_CHARS        UINT32_C(0x00000001)
-/** Set if the URI have an authority component.  Necessary since the authority
+/** Set if the URI has an authority component.  Necessary since the authority
  * component can have a zero length. */
-#define RTURIPARSED_F_HAVE_AUTHORITY                UINT32_C(0x00000002)
+#define RTURIPARSED_F_HAS_AUTHORITY                 UINT32_C(0x00000002)
+/** Set if there is a port component. */
+#define RTURIPARSED_F_HAS_PORT                      UINT32_C(0x00000004)
 /** @} */
 
 /**
