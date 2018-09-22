@@ -4365,8 +4365,6 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
             return VINF_SUCCESS;
         }
 
-
-
         int rc = HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
                                                   pVCpu->cpum.GstCtx.cr2);
         AssertRCReturn(rc, rc);
