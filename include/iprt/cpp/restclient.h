@@ -300,7 +300,7 @@ protected:
     /** Maximum data to download to memory (download only). */
     size_t      m_cbMaxDownload;
 
-    /** @copydoc FNRTHTTPDOWNLOADCALLBACK. */
+    /** @copydoc FNRTHTTPDOWNLOADCALLBACK */
     static DECLCALLBACK(int) receiveHttpCallback(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
                                                  uint64_t offContent, uint64_t cbContent, void *pvUser) RT_NOEXCEPT;
 
