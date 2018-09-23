@@ -229,9 +229,10 @@ EXPORTS
     _ZN16RTCRestArrayBase12insertWorkerEmP17RTCRestObjectBaseb
     _ZN16RTCRestArrayBase14ensureCapacityEm
     _ZN16RTCRestArrayBase14resetToDefaultEv
-    _ZN16RTCRestArrayBase15copyArrayWorkerERKS_b
     _ZN16RTCRestArrayBase16insertCopyWorkerEmRK17RTCRestObjectBaseb
     _ZN16RTCRestArrayBase19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN16RTCRestArrayBase22copyArrayWorkerNoThrowERKS_
+    _ZN16RTCRestArrayBase23copyArrayWorkerMayThrowERKS_
     _ZN16RTCRestArrayBase5clearEv
     _ZN16RTCRestArrayBase8removeAtEm
     _ZN16RTCRestArrayBaseC2Ev
@@ -284,10 +285,11 @@ EXPORTS
     _ZN20RTCRestClientApiBaseD2Ev
     _ZN20RTCRestStringMapBase11putNewValueEPP17RTCRestObjectBasePKcmb
     _ZN20RTCRestStringMapBase11putNewValueEPP17RTCRestObjectBaseRK9RTCStringb
-    _ZN20RTCRestStringMapBase13copyMapWorkerERKS_b
     _ZN20RTCRestStringMapBase13putCopyWorkerEPKcRK17RTCRestObjectBasebm
     _ZN20RTCRestStringMapBase14resetToDefaultEv
     _ZN20RTCRestStringMapBase19deserializeFromJsonERK17RTCRestJsonCursor
+    _ZN20RTCRestStringMapBase20copyMapWorkerNoThrowERKS_
+    _ZN20RTCRestStringMapBase21copyMapWorkerMayThrowERKS_
     _ZN20RTCRestStringMapBase29stringSpaceDestructorCallbackEP14RTSTRSPACECOREPv
     _ZN20RTCRestStringMapBase5clearEv
     _ZN20RTCRestStringMapBase6removeEPKc
@@ -645,4 +647,3 @@ EXPORTS
     _ZplPKcRK9RTCString
     _ZplRK9RTCStringPKc
     _ZplRK9RTCStringS1_
-
