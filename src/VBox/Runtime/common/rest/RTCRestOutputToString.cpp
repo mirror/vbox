@@ -35,7 +35,7 @@
 #include <iprt/string.h>
 
 
-RTCRestOutputToString::RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend /*= false*/)
+RTCRestOutputToString::RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend /*= false*/) RT_NOEXCEPT
     : RTCRestOutputBase()
     , m_pDst(a_pDst)
     , m_fOutOfMemory(false)
@@ -52,7 +52,7 @@ RTCRestOutputToString::~RTCRestOutputToString()
 }
 
 
-size_t RTCRestOutputToString::output(const char *a_pchString, size_t a_cchToWrite)
+size_t RTCRestOutputToString::output(const char *a_pchString, size_t a_cchToWrite) RT_NOEXCEPT
 {
     if (a_cchToWrite)
     {
@@ -107,7 +107,7 @@ size_t RTCRestOutputToString::output(const char *a_pchString, size_t a_cchToWrit
 }
 
 
-RTCString *RTCRestOutputToString::finalize()
+RTCString *RTCRestOutputToString::finalize() RT_NOEXCEPT
 {
     RTCString *pRet;
     if (!m_fOutOfMemory)

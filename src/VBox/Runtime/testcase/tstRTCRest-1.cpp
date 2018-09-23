@@ -1996,20 +1996,20 @@ public:
         va_end(va);
     }
 
-    int resetToDefault() RT_OVERRIDE
+    int resetToDefault() RT_NOEXCEPT RT_OVERRIDE
     {
         m_strValue = "";
         m_iValue = 0;
         return m_Array.resetToDefault();
     }
 
-    int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const RT_OVERRIDE
+    int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const RT_NOEXCEPT RT_OVERRIDE
     {
         RT_NOREF(a_pStrPath, a_pStrQuery, a_hHttp, a_pStrBody);
         return VINF_SUCCESS;
     }
 
-    void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const RT_OVERRIDE
+    void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const RT_NOEXCEPT RT_OVERRIDE
     {
         RT_NOREF(a_rcStatus, a_hHttp);
     }
@@ -2148,7 +2148,7 @@ public:
 
 protected:
     virtual int consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
-                              const char *a_pchValue, size_t a_cchValue) RT_OVERRIDE
+                              const char *a_pchValue, size_t a_cchValue) RT_NOEXCEPT RT_OVERRIDE
     {
         int rc = RTCRestClientResponseBase::consumeHeader(a_uMatchWord, a_pchField, a_cchField, a_pchValue, a_cchValue);
         AssertRCReturn(rc, rc);

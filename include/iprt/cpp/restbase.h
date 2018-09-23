@@ -60,15 +60,15 @@ struct RT_DECL_CLASS RTCRestJsonCursor
     /** Pointer to the primary cursor structure. */
     RTCRestJsonPrimaryCursor           *m_pPrimary;
 
-    RTCRestJsonCursor(struct RTCRestJsonCursor const &a_rParent)
+    RTCRestJsonCursor(struct RTCRestJsonCursor const &a_rParent) RT_NOEXCEPT
         : m_hValue(NIL_RTJSONVAL), m_pszName(NULL), m_pParent(&a_rParent), m_pPrimary(a_rParent.m_pPrimary)
     { }
 
-    RTCRestJsonCursor(RTJSONVAL hValue, const char *pszName, struct RTCRestJsonCursor *pParent)
+    RTCRestJsonCursor(RTJSONVAL hValue, const char *pszName, struct RTCRestJsonCursor *pParent) RT_NOEXCEPT
         : m_hValue(hValue), m_pszName(pszName), m_pParent(pParent), m_pPrimary(pParent->m_pPrimary)
     { }
 
-    RTCRestJsonCursor(RTJSONVAL hValue, const char *pszName)
+    RTCRestJsonCursor(RTJSONVAL hValue, const char *pszName) RT_NOEXCEPT
         : m_hValue(hValue), m_pszName(pszName), m_pParent(NULL), m_pPrimary(NULL)
     { }
 
@@ -95,7 +95,7 @@ public:
     PRTERRINFO          m_pErrInfo;
 
     /** Creates a primary json cursor with optiona error info. */
-    RTCRestJsonPrimaryCursor(RTJSONVAL hValue, const char *pszName, PRTERRINFO pErrInfo = NULL)
+    RTCRestJsonPrimaryCursor(RTJSONVAL hValue, const char *pszName, PRTERRINFO pErrInfo = NULL) RT_NOEXCEPT
         : m_Cursor(hValue, pszName)
         , m_pErrInfo(pErrInfo)
     {
@@ -114,7 +114,7 @@ public:
      * @param   a_pszFormat     Format string.
      * @param   ...             Format string arguments.
      */
-    virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...);
+    virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...) RT_NOEXCEPT;
 
     /**
      * Reports that the current field is not known.
@@ -122,7 +122,7 @@ public:
      * @returns Status to propagate.
      * @param   a_rCursor       The cursor for the field.
      */
-    virtual int unknownField(RTCRestJsonCursor const &a_rCursor);
+    virtual int unknownField(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT;
 
     /**
      * Copies the full path into pszDst.
@@ -132,7 +132,7 @@ public:
      * @param   a_pszDst        Where to put the path.
      * @param   a_cbDst         Size of the destination buffer.
      */
-    virtual char *getPath(RTCRestJsonCursor const &a_rCursor, char *a_pszDst, size_t a_cbDst) const;
+    virtual char *getPath(RTCRestJsonCursor const &a_rCursor, char *a_pszDst, size_t a_cbDst) const RT_NOEXCEPT;
 };
 
 
@@ -145,8 +145,8 @@ public:
 class RT_DECL_CLASS RTCRestObjectBase
 {
 public:
-    RTCRestObjectBase();
-    RTCRestObjectBase(RTCRestObjectBase const &a_rThat);
+    RTCRestObjectBase() RT_NOEXCEPT;
+    RTCRestObjectBase(RTCRestObjectBase const &a_rThat) RT_NOEXCEPT;
     virtual ~RTCRestObjectBase();
 
     /**
@@ -154,31 +154,31 @@ public:
      *
      * @returns Pointer to copy.
      */
-    virtual RTCRestObjectBase *baseClone() const = 0;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT = 0;
 
     /**
      * Tests if the object is @a null.
      * @returns true if null, false if not.
      */
-    inline bool isNull(void) const { return m_fNullIndicator; };
+    inline bool isNull(void) const RT_NOEXCEPT { return m_fNullIndicator; };
 
     /**
      * Sets the object to @a null and fills it with defaults.
      * @returns IPRT status code (from resetToDefault).
      */
-    virtual int setNull(void);
+    virtual int setNull(void) RT_NOEXCEPT;
 
     /**
      * Sets the object to not-null state (i.e. undoes setNull()).
      * @remarks Only really important for strings.
      */
-    virtual void setNotNull(void);
+    virtual void setNotNull(void) RT_NOEXCEPT;
 
     /**
      * Resets the object to all default values.
      * @returns IPRT status code.
      */
-    virtual int resetToDefault() = 0;
+    virtual int resetToDefault() RT_NOEXCEPT = 0;
 
     /**
      * Serialize the object as JSON.
@@ -186,7 +186,7 @@ public:
      * @returns a_rDst
      * @param   a_rDst      The destination for the serialization.
      */
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const = 0;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT = 0;
 
     /**
      * Deserialize object from the given JSON iterator.
@@ -194,7 +194,7 @@ public:
      * @returns IPRT status code.
      * @param   a_rCursor    The JSON cursor.
      */
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) = 0;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT = 0;
 
     /**
      * Polymorphic JSON deserialization helper that instantiate the matching class using
@@ -241,7 +241,7 @@ public:
      * @param   a_pDst      Pointer to the destionation string.
      * @param   a_fFlags    kCollectionFormat_xxx.
      */
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_NOEXCEPT;
 
     /**
      * String convertsion, naive variant.
@@ -262,7 +262,7 @@ public:
      * @param   a_fFlags    kCollectionFormat_xxx.
      */
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified);
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT;
 
     /** Type classification */
     typedef enum kTypeClass
@@ -287,12 +287,12 @@ public:
     /**
      * Returns the object type class.
      */
-    virtual kTypeClass typeClass(void) const = 0;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT = 0;
 
     /**
      * Returns the object type name.
      */
-    virtual const char *typeName(void) const = 0;
+    virtual const char *typeName(void) const RT_NOEXCEPT = 0;
 
 protected:
     /** Null indicator.
@@ -313,37 +313,37 @@ class RT_DECL_CLASS RTCRestBool : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
-    RTCRestBool();
+    RTCRestBool() RT_NOEXCEPT;
     /** Copy constructor. */
-    RTCRestBool(RTCRestBool const &a_rThat);
+    RTCRestBool(RTCRestBool const &a_rThat) RT_NOEXCEPT;
     /** From value constructor. */
-    RTCRestBool(bool fValue);
+    RTCRestBool(bool fValue) RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestBool();
     /** Copy assignment operator. */
-    RTCRestBool &operator=(RTCRestBool const &a_rThat);
+    RTCRestBool &operator=(RTCRestBool const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestBool const &a_rThat);
+    int assignCopy(RTCRestBool const &a_rThat) RT_NOEXCEPT;
     /** Assign value and clear null indicator. */
-    void assignValue(bool a_fValue);
+    void assignValue(bool a_fValue) RT_NOEXCEPT;
     /** Make a clone of this object. */
-    inline RTCRestBool *clone() const { return (RTCRestBool *)baseClone(); }
+    inline RTCRestBool *clone() const RT_NOEXCEPT { return (RTCRestBool *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
 public:
     /** The value. */
@@ -358,37 +358,37 @@ class RT_DECL_CLASS RTCRestInt64 : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
-    RTCRestInt64();
+    RTCRestInt64() RT_NOEXCEPT;
     /** Copy constructor. */
-    RTCRestInt64(RTCRestInt64 const &a_rThat);
+    RTCRestInt64(RTCRestInt64 const &a_rThat) RT_NOEXCEPT;
     /** From value constructor. */
-    RTCRestInt64(int64_t a_iValue);
+    RTCRestInt64(int64_t a_iValue) RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestInt64();
     /** Copy assignment operator. */
-    RTCRestInt64 &operator=(RTCRestInt64 const &a_rThat);
+    RTCRestInt64 &operator=(RTCRestInt64 const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestInt64 const &a_rThat);
+    int assignCopy(RTCRestInt64 const &a_rThat) RT_NOEXCEPT;
     /** Assign value and clear null indicator. */
-    void assignValue(int64_t a_iValue);
+    void assignValue(int64_t a_iValue) RT_NOEXCEPT;
     /** Make a clone of this object. */
-    inline RTCRestInt64 *clone() const { return (RTCRestInt64 *)baseClone(); }
+    inline RTCRestInt64 *clone() const RT_NOEXCEPT { return (RTCRestInt64 *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
 public:
     /** The value. */
@@ -403,37 +403,37 @@ class RT_DECL_CLASS RTCRestInt32 : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
-    RTCRestInt32();
+    RTCRestInt32() RT_NOEXCEPT;
     /** Copy constructor. */
-    RTCRestInt32(RTCRestInt32 const &a_rThat);
+    RTCRestInt32(RTCRestInt32 const &a_rThat) RT_NOEXCEPT;
     /** From value constructor. */
-    RTCRestInt32(int32_t iValue);
+    RTCRestInt32(int32_t iValue) RT_NOEXCEPT;
     /** Destructor. */
-    virtual ~RTCRestInt32();
+    virtual ~RTCRestInt32() RT_NOEXCEPT;
     /** Copy assignment operator. */
-    RTCRestInt32 &operator=(RTCRestInt32 const &a_rThat);
+    RTCRestInt32 &operator=(RTCRestInt32 const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestInt32 const &a_rThat);
+    int assignCopy(RTCRestInt32 const &a_rThat) RT_NOEXCEPT;
     /** Assign value and clear null indicator. */
-    void assignValue(int32_t a_iValue);
+    void assignValue(int32_t a_iValue) RT_NOEXCEPT;
     /** Make a clone of this object. */
     inline RTCRestInt32 *clone() const { return (RTCRestInt32 *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
 public:
     /** The value. */
@@ -448,37 +448,37 @@ class RT_DECL_CLASS RTCRestInt16 : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
-    RTCRestInt16();
+    RTCRestInt16() RT_NOEXCEPT;
     /** Copy constructor. */
-    RTCRestInt16(RTCRestInt16 const &a_rThat);
+    RTCRestInt16(RTCRestInt16 const &a_rThat) RT_NOEXCEPT;
     /** From value constructor. */
-    RTCRestInt16(int16_t iValue);
+    RTCRestInt16(int16_t iValue) RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestInt16();
     /** Copy assignment operator. */
-    RTCRestInt16 &operator=(RTCRestInt16 const &a_rThat);
+    RTCRestInt16 &operator=(RTCRestInt16 const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestInt16 const &a_rThat);
+    int assignCopy(RTCRestInt16 const &a_rThat) RT_NOEXCEPT;
     /** Assign value and clear null indicator. */
-    void assignValue(int16_t a_iValue);
+    void assignValue(int16_t a_iValue) RT_NOEXCEPT;
     /** Make a clone of this object. */
-    inline RTCRestInt16 *clone() const { return (RTCRestInt16 *)baseClone(); }
+    inline RTCRestInt16 *clone() const RT_NOEXCEPT { return (RTCRestInt16 *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
 public:
     /** The value. */
@@ -493,37 +493,37 @@ class RT_DECL_CLASS RTCRestDouble : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
-    RTCRestDouble();
+    RTCRestDouble() RT_NOEXCEPT;
     /** Copy constructor. */
-    RTCRestDouble(RTCRestDouble const &a_rThat);
+    RTCRestDouble(RTCRestDouble const &a_rThat) RT_NOEXCEPT;
     /** From value constructor. */
-    RTCRestDouble(double rdValue);
+    RTCRestDouble(double rdValue) RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestDouble();
     /** Copy assignment operator. */
-    RTCRestDouble &operator=(RTCRestDouble const &a_rThat);
+    RTCRestDouble &operator=(RTCRestDouble const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestDouble const &a_rThat);
+    int assignCopy(RTCRestDouble const &a_rThat) RT_NOEXCEPT;
     /** Assign value and clear null indicator. */
-    void assignValue(double a_rdValue);
+    void assignValue(double a_rdValue) RT_NOEXCEPT;
     /** Make a clone of this object. */
-    inline RTCRestDouble *clone() const { return (RTCRestDouble *)baseClone(); }
+    inline RTCRestDouble *clone() const RT_NOEXCEPT { return (RTCRestDouble *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
 public:
     /** The value. */
@@ -538,7 +538,7 @@ class RT_DECL_CLASS RTCRestString : public RTCRestObjectBase, public RTCString
 {
 public:
     /** Default constructor. */
-    RTCRestString();
+    RTCRestString() RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestString();
 
@@ -549,30 +549,30 @@ public:
     /** From value constructor. */
     RTCRestString(const char *a_pszSrc);
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestString const &a_rThat);
+    int assignCopy(RTCRestString const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(RTCString const &a_rThat);
+    int assignCopy(RTCString const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    int assignCopy(const char *a_pszThat);
+    int assignCopy(const char *a_pszThat) RT_NOEXCEPT;
     /** Make a clone of this object. */
-    inline RTCRestString *clone() const { return (RTCRestString *)baseClone(); }
+    inline RTCRestString *clone() const RT_NOEXCEPT { return (RTCRestString *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int setNull(void) RT_OVERRIDE; /* (ambigious, so overrider it to make sure.) */
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int setNull(void) RT_NOEXCEPT RT_OVERRIDE; /* (ambigious, so overrider it to make sure.) */
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
     /** @name RTCString assignment methods we need to replace to manage the null indicator
      * @{ */
@@ -614,7 +614,7 @@ class RT_DECL_CLASS RTCRestDate : public RTCRestObjectBase
 public:
     /** Default constructor.
      * @note The result is a null-object.   */
-    RTCRestDate();
+    RTCRestDate() RT_NOEXCEPT;
     /** Copy constructor. */
     RTCRestDate(RTCRestDate const &a_rThat);
     /** Destructor. */
@@ -622,25 +622,25 @@ public:
     /** Copy assignment operator. */
     RTCRestDate &operator=(RTCRestDate const &a_rThat);
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestDate const &a_rThat);
+    int assignCopy(RTCRestDate const &a_rThat) RT_NOEXCEPT;
     /** Make a clone of this object. */
-    inline RTCRestDate *clone() const { return (RTCRestDate *)baseClone(); }
+    inline RTCRestDate *clone() const  RT_NOEXCEPT{ return (RTCRestDate *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = 0) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
     /** Date formats. */
     typedef enum
@@ -663,10 +663,10 @@ public:
      * @param   a_pTimeSpec     The time spec to set.
      * @param   a_enmFormat     The date format to use when formatting it.
      */
-    int assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat);
-    int assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method for email/whatnot. */
-    int assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method for HTTP date. */
-    int assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec); /**< Convenience method for ISO-8601 timstamp. */
+    int assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat) RT_NOEXCEPT;
+    int assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec) RT_NOEXCEPT; /**< Convenience method for email/whatnot. */
+    int assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec) RT_NOEXCEPT; /**< Convenience method for HTTP date. */
+    int assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec) RT_NOEXCEPT; /**< Convenience method for ISO-8601 timstamp. */
 
     /**
      * Assigns the current UTC time and clears the null indicator .
@@ -675,10 +675,10 @@ public:
      * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
      * @param   a_enmFormat     The date format to use when formatting it.
      */
-    int assignNow(kFormat a_enmFormat);
-    int assignNowRfc2822(); /**< Convenience method for email/whatnot. */
-    int assignNowRfc7131(); /**< Convenience method for HTTP date. */
-    int assignNowRfc3339(); /**< Convenience method for ISO-8601 timstamp. */
+    int assignNow(kFormat a_enmFormat) RT_NOEXCEPT;
+    int assignNowRfc2822() RT_NOEXCEPT; /**< Convenience method for email/whatnot. */
+    int assignNowRfc7131() RT_NOEXCEPT; /**< Convenience method for HTTP date. */
+    int assignNowRfc3339() RT_NOEXCEPT; /**< Convenience method for ISO-8601 timstamp. */
 
     /**
      * Sets the format to help deal with decoding issues.
@@ -687,27 +687,27 @@ public:
      * @returns IPRT status code.
      * @param   a_enmFormat     The date format to try/set.
      */
-    int setFormat(kFormat a_enmFormat);
+    int setFormat(kFormat a_enmFormat) RT_NOEXCEPT;
 
     /** Check if the value is okay (m_TimeSpec & m_Exploded). */
-    inline bool              isOkay() const             { return m_fTimeSpecOkay; }
+    inline bool              isOkay() const RT_NOEXCEPT         { return m_fTimeSpecOkay; }
     /** Get the timespec value. */
-    inline RTTIMESPEC const &getTimeSpec() const        { return m_TimeSpec; }
+    inline RTTIMESPEC const &getTimeSpec() const RT_NOEXCEPT    { return m_TimeSpec; }
     /** Get the exploded time. */
-    inline RTTIME const     &getExploded() const        { return m_Exploded; }
+    inline RTTIME const     &getExploded() const RT_NOEXCEPT    { return m_Exploded; }
     /** Gets the format. */
-    inline kFormat           getFormat() const          { return m_enmFormat; }
+    inline kFormat           getFormat() const RT_NOEXCEPT      { return m_enmFormat; }
     /** Get the formatted/raw string value. */
-    inline RTCString const  &getString() const          { return m_strFormatted; }
+    inline RTCString const  &getString() const RT_NOEXCEPT      { return m_strFormatted; }
 
     /** Get nanoseconds since unix epoch. */
-    inline int64_t           getEpochNano() const       { return RTTimeSpecGetNano(&m_TimeSpec); }
+    inline int64_t           getEpochNano() const RT_NOEXCEPT   { return RTTimeSpecGetNano(&m_TimeSpec); }
     /** Get seconds since unix epoch. */
-    inline int64_t           getEpochSeconds() const    { return RTTimeSpecGetSeconds(&m_TimeSpec); }
+    inline int64_t           getEpochSeconds() const RT_NOEXCEPT { return RTTimeSpecGetSeconds(&m_TimeSpec); }
     /** Checks if UTC time. */
-    inline bool              isUtc() const              { return (m_Exploded.fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL; }
+    inline bool              isUtc() const RT_NOEXCEPT { return (m_Exploded.fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL; }
     /** Checks if local time. */
-    inline bool              isLocal() const            { return (m_Exploded.fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL; }
+    inline bool              isLocal() const RT_NOEXCEPT { return (m_Exploded.fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL; }
 
 protected:
     /** The value. */
@@ -731,7 +731,7 @@ protected:
      * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
      * @param   a_enmFormat The format to use.
      */
-    int explodeAndFormat(kFormat a_enmFormat);
+    int explodeAndFormat(kFormat a_enmFormat) RT_NOEXCEPT;
 
     /**
      * Formats the m_Exploded value.
@@ -741,7 +741,7 @@ protected:
      * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
      * @param   a_enmFormat The format to use.
      */
-    int format(kFormat a_enmFormat);
+    int format(kFormat a_enmFormat) RT_NOEXCEPT;
 
     /**
      * Internal worker that attempts to decode m_strFormatted.
@@ -751,7 +751,7 @@ protected:
      * @returns IPRT status code.
      * @param   enmFormat   Specific format to try, kFormat_Invalid (default) to try guess it.
      */
-    int decodeFormattedString(kFormat enmFormat = kFormat_Invalid);
+    int decodeFormattedString(kFormat enmFormat = kFormat_Invalid) RT_NOEXCEPT;
 };
 
 
@@ -774,7 +774,7 @@ public:
     } ENUMMAPENTRY;
 
     /** Default constructor. */
-    RTCRestStringEnumBase();
+    RTCRestStringEnumBase() RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestStringEnumBase();
 
@@ -784,20 +784,20 @@ public:
     RTCRestStringEnumBase &operator=(RTCRestStringEnumBase const &a_rThat);
 
     /** Safe copy assignment method. */
-    int assignCopy(RTCRestStringEnumBase const &a_rThat);
+    int assignCopy(RTCRestStringEnumBase const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    inline int assignCopy(RTCString const &a_rThat)    { return setByString(a_rThat); }
+    inline int assignCopy(RTCString const &a_rThat) RT_NOEXCEPT    { return setByString(a_rThat); }
     /** Safe copy assignment method. */
-    inline int assignCopy(const char *a_pszThat)       { return setByString(a_pszThat); }
+    inline int assignCopy(const char *a_pszThat) RT_NOEXCEPT       { return setByString(a_pszThat); }
 
     /* Overridden methods: */
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Sets the value given a C-string value.
@@ -808,7 +808,7 @@ public:
      * @param   a_pszValue      The string value.
      * @param   a_cchValue      The string value length.  Optional.
      */
-    int setByString(const char *a_pszValue, size_t a_cchValue = RTSTR_MAX);
+    int setByString(const char *a_pszValue, size_t a_cchValue = RTSTR_MAX) RT_NOEXCEPT;
 
     /**
      * Sets the value given a string value.
@@ -818,19 +818,19 @@ public:
      * @retval VERR_NO_STR_MEMORY if not mappable and we're out of memory.
      * @param   a_rValue        The string value.
      */
-    int setByString(RTCString const &a_rValue);
+    int setByString(RTCString const &a_rValue) RT_NOEXCEPT;
 
     /**
      * Gets the string value.
      */
-    const char *getString() const;
+    const char *getString() const RT_NOEXCEPT;
 
     /** Maps the given string value to an enum. */
-    int stringToEnum(const char *a_pszValue, size_t a_cchValue = RTSTR_MAX);
+    int stringToEnum(const char *a_pszValue, size_t a_cchValue = RTSTR_MAX) RT_NOEXCEPT;
     /** Maps the given string value to an enum. */
-    int stringToEnum(RTCString const &a_rStrValue);
+    int stringToEnum(RTCString const &a_rStrValue) RT_NOEXCEPT;
     /** Maps the given string value to an enum. */
-    const char *enumToString(int a_iEnumValue, size_t *a_pcchString);
+    const char *enumToString(int a_iEnumValue, size_t *a_pcchString) RT_NOEXCEPT;
 
 
 protected:
@@ -846,10 +846,10 @@ protected:
      * @retval  false if a_iEnumValue can't be translated.
      * @param   a_iEnumValue    The enum value to set.
      */
-    bool                setWorker(int a_iEnumValue);
+    bool                setWorker(int a_iEnumValue) RT_NOEXCEPT;
 
     /** Helper for implementing RTCRestObjectBase::clone(). */
-    RTCRestObjectBase  *cloneWorker(RTCRestStringEnumBase *a_pDst) const;
+    RTCRestObjectBase  *cloneWorker(RTCRestStringEnumBase *a_pDst) const RT_NOEXCEPT;
 
     /**
      * Gets the mapping table.
@@ -857,7 +857,7 @@ protected:
      * @returns Pointer to the translation table.
      * @param   pcEntries   Where to return the translation table size.
      */
-    virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const = 0;
+    virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const RT_NOEXCEPT = 0;
 };
 
 
@@ -873,17 +873,20 @@ public:
     typedef EnumType Type;  /**< The enum type. */
 
     /** Default constructor */
-    RTCRestStringEnum() : RTCRestStringEnumBase() { }
+    RTCRestStringEnum() RT_NOEXCEPT : RTCRestStringEnumBase() { }
     /** Constructor with initial enum value. */
-    RTCRestStringEnum(Type a_enmValue) : RTCRestStringEnumBase() { set(a_enmValue); }
+    RTCRestStringEnum(Type a_enmValue) RT_NOEXCEPT : RTCRestStringEnumBase() { set(a_enmValue); }
     /** Constructor with string default. */
     RTCRestStringEnum(const char *a_pszDefault) : RTCRestStringEnumBase() { setByString(a_pszDefault); }
     /** Copy constructor */
     RTCRestStringEnum(RTCRestStringEnum const &a_rThat) : RTCRestStringEnumBase(a_rThat) { }
     /** Make a clone of this object. */
-    inline RTCRestStringEnum *clone() const { return (RTCRestStringEnum *)baseClone(); }
+    inline RTCRestStringEnum *clone() const RT_NOEXCEPT { return (RTCRestStringEnum *)baseClone(); }
 
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE { return cloneWorker(new (std::nothrow) RTCRestStringEnum()); }
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE
+    {
+        return cloneWorker(new (std::nothrow) RTCRestStringEnum());
+    }
 
     /**
      * Gets the enum value.
@@ -891,7 +894,7 @@ public:
      * @retval  kXxxxInvalid means there was no mapping for the string, or that
      *          no value has been assigned yet.
      */
-    Type get() const { return (Type)m_iEnumValue; }
+    Type get() const RT_NOEXCEPT { return (Type)m_iEnumValue; }
 
     /**
      * Sets the object value to @a a_enmType
@@ -899,18 +902,18 @@ public:
      * @returns true if a_enmType is valid, false if not.
      * @param   a_enmType   The new value.
      */
-    bool set(Type a_enmType) { return setWorker((int)a_enmType); }
+    bool set(Type a_enmType) RT_NOEXCEPT { return setWorker((int)a_enmType); }
 
-    virtual const char *typeName(void) const RT_OVERRIDE { return "RTCRestStringEnum<EnumType>"; }
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE { return "RTCRestStringEnum<EnumType>"; }
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT
     {
         return new (std::nothrow) RTCRestStringEnum();
     }
 
     /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
-    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
     {
         *a_ppInstance = new (std::nothrow) RTCRestStringEnum();
         if (*a_ppInstance)
@@ -924,7 +927,7 @@ protected:
     /** Enum mapping table size. */
     static const size_t       s_cMappingTable;
 
-    virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const RT_OVERRIDE
+    virtual ENUMMAPENTRY const *getMappingTable(size_t *pcEntries) const RT_NOEXCEPT RT_OVERRIDE
     {
         *pcEntries = s_cMappingTable;
         return s_aMappingTable;
@@ -942,46 +945,46 @@ class RT_DECL_CLASS RTCRestBinary : public RTCRestObjectBase
 {
 public:
     /** Default constructor. */
-    RTCRestBinary();
+    RTCRestBinary() RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestBinary();
 
     /** Safe copy assignment method. */
-    virtual int assignCopy(RTCRestBinary const &a_rThat);
+    virtual int assignCopy(RTCRestBinary const &a_rThat) RT_NOEXCEPT;
     /** Safe buffer copy method. */
-    virtual int assignCopy(void const *a_pvData, size_t a_cbData);
+    virtual int assignCopy(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT;
 
     /** Use the specified data buffer directly. */
-    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData);
+    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT;
     /** Use the specified data buffer directly. */
-    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf);
+    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_NOEXCEPT;
     /** Frees the data held by the object and resets it default state. */
-    virtual void freeData();
+    virtual void freeData() RT_NOEXCEPT;
 
     /** Returns a pointer to the data blob. */
-    inline const uint8_t  *getPtr()  const { return m_pbData; }
+    inline const uint8_t  *getPtr()  const RT_NOEXCEPT { return m_pbData; }
     /** Gets the size of the data. */
-    inline size_t          getSize() const { return m_cbData; }
+    inline size_t          getSize() const RT_NOEXCEPT { return m_cbData; }
 
     /** Make a clone of this object. */
-    inline RTCRestBinary  *clone() const { return (RTCRestBinary *)baseClone(); }
+    inline RTCRestBinary  *clone() const RT_NOEXCEPT { return (RTCRestBinary *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int setNull(void) RT_OVERRIDE;
-    virtual int resetToDefault(void) RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int setNull(void) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault(void) RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
-    /** Deserialization w/ instantiation. */
-    static FNDESERIALIZEINSTANCEFROMJSON deserializeInstanceFromJson;
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
+    /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT;
 
 protected:
     /** Pointer to data blob. */
@@ -1008,15 +1011,15 @@ private:
 class RT_DECL_CLASS RTCRestDataObject : public RTCRestObjectBase
 {
 public:
-    RTCRestDataObject();
-    RTCRestDataObject(RTCRestDataObject const &a_rThat);
+    RTCRestDataObject() RT_NOEXCEPT;
+    RTCRestDataObject(RTCRestDataObject const &a_rThat) RT_NOEXCEPT;
     virtual ~RTCRestDataObject();
 
     /* Overridden methods:*/
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Serialize the object members as JSON.
@@ -1024,7 +1027,7 @@ public:
      * @returns a_rDst
      * @param   a_rDst      The destination for the serialization.
      */
-    virtual RTCRestOutputBase &serializeMembersAsJson(RTCRestOutputBase &a_rDst) const;
+    virtual RTCRestOutputBase &serializeMembersAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT;
 
     /**
      * Deserialize object from the given JSON iterator.
@@ -1036,17 +1039,17 @@ public:
      * @param   a_rCursor   The JSON cursor with the current member.
      * @param   a_cchName   The length of a_rCursor.m_pszName.
      */
-    virtual int deserializeMemberFromJson(RTCRestJsonCursor const &a_rCursor, size_t a_cchName);
+    virtual int deserializeMemberFromJson(RTCRestJsonCursor const &a_rCursor, size_t a_cchName) RT_NOEXCEPT;
 
 protected:
     /** The is-set bits for all the fields. */
     uint64_t m_fIsSet;
 
     /** Copy assignment operator. */
-    RTCRestDataObject &operator=(RTCRestDataObject const &a_rThat);
+    RTCRestDataObject &operator=(RTCRestDataObject const &a_rThat) RT_NOEXCEPT;
 
     /** Safe copy assignment method. */
-    virtual int assignCopy(RTCRestDataObject const &a_rThat);
+    virtual int assignCopy(RTCRestDataObject const &a_rThat) RT_NOEXCEPT;
 };
 
 
@@ -1056,20 +1059,20 @@ protected:
 class RT_DECL_CLASS RTCRestPolyDataObject : public RTCRestDataObject
 {
 public:
-    RTCRestPolyDataObject();
-    RTCRestPolyDataObject(RTCRestPolyDataObject const &a_rThat);
+    RTCRestPolyDataObject() RT_NOEXCEPT;
+    RTCRestPolyDataObject(RTCRestPolyDataObject const &a_rThat) RT_NOEXCEPT;
     virtual ~RTCRestPolyDataObject();
 
     /* Overridden methods:*/
-    virtual int resetToDefault() RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
 
     /** Checks if the instance is of a child class (@c true) or of the parent (@c false). */
-    virtual bool isChild() const;
+    virtual bool isChild() const RT_NOEXCEPT;
 
 protected:
 
     /** Copy assignment operator. */
-    RTCRestPolyDataObject &operator=(RTCRestPolyDataObject const &a_rThat);
+    RTCRestPolyDataObject &operator=(RTCRestPolyDataObject const &a_rThat) RT_NOEXCEPT;
 };
 
 

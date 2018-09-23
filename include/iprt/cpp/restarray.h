@@ -41,32 +41,32 @@ class RT_DECL_CLASS RTCRestArrayBase : public RTCRestObjectBase
 {
 public:
     /** Default destructor. */
-    RTCRestArrayBase();
+    RTCRestArrayBase() RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestArrayBase();
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_OVERRIDE;
-    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
-    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual RTCRestOutputBase &serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
+    virtual int toString(RTCString *a_pDst, uint32_t a_fFlags = kCollectionFormat_Unspecified) const RT_NOEXCEPT RT_OVERRIDE;
     virtual int fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo = NULL,
-                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_OVERRIDE;
-    virtual kTypeClass typeClass(void) const RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+                           uint32_t a_fFlags = kCollectionFormat_Unspecified) RT_NOEXCEPT RT_OVERRIDE;
+    virtual kTypeClass typeClass(void) const RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Clear the content of the map.
      */
-    void clear();
+    void clear() RT_NOEXCEPT;
 
     /**
      * Check if an list contains any items.
      *
      * @return   True if there is more than zero items, false otherwise.
      */
-    inline bool isEmpty() const
+    inline bool isEmpty() const RT_NOEXCEPT
     {
         return m_cElements == 0;
     }
@@ -74,7 +74,7 @@ public:
     /**
      * Gets the number of entries in the map.
      */
-    inline size_t size() const
+    inline size_t size() const RT_NOEXCEPT
     {
         return m_cElements;
     }
@@ -85,7 +85,7 @@ public:
      * @returns The base object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    inline RTCRestObjectBase *atBase(size_t a_idx)
+    inline RTCRestObjectBase *atBase(size_t a_idx) RT_NOEXCEPT
     {
         if (a_idx < m_cElements)
             return m_papElements[a_idx];
@@ -98,7 +98,7 @@ public:
      * @returns The base object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    inline RTCRestObjectBase const *atBase(size_t a_idx) const
+    inline RTCRestObjectBase const *atBase(size_t a_idx) const RT_NOEXCEPT
     {
         if (a_idx < m_cElements)
             return m_papElements[a_idx];
@@ -111,7 +111,7 @@ public:
      * @param   a_idx       The index of the element to remove.
      *                      The value ~(size_t)0 is an alias for the final element.
      */
-    bool removeAt(size_t a_idx);
+    bool removeAt(size_t a_idx) RT_NOEXCEPT;
 
     /**
      * Makes sure the array can hold at the given number of entries.
@@ -119,7 +119,7 @@ public:
      * @returns VINF_SUCCESS or VERR_NO_MEMORY.
      * @param   a_cEnsureCapacity   The number of elements to ensure capacity to hold.
      */
-    int ensureCapacity(size_t a_cEnsureCapacity);
+    int ensureCapacity(size_t a_cEnsureCapacity) RT_NOEXCEPT;
 
 
 protected:
@@ -136,31 +136,36 @@ protected:
      *
      * @returns Pointer to new array on success, NULL if out of memory.
      */
-    virtual RTCRestArrayBase *createClone(void) const = 0;
+    virtual RTCRestArrayBase *createClone(void) const RT_NOEXCEPT = 0;
 
     /**
      * Wrapper around the value constructor.
      *
      * @returns Pointer to new value object on success, NULL if out of memory.
      */
-    virtual RTCRestObjectBase *createValue(void) = 0;
+    virtual RTCRestObjectBase *createValue(void) RT_NOEXCEPT = 0;
 
     /**
      * For accessing the static deserializeInstanceFromJson() method of the value.
      */
-    virtual int deserializeValueInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) = 0;
+    virtual int deserializeValueInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT = 0;
 
     /**
-     * Worker for the copy constructor and the assignment operator.
+     * Worker for the copy assignment method and copyArrayWorkerMayThrow().
      *
      * This will use createEntryCopy to do the copying.
      *
      * @returns VINF_SUCCESS on success, VERR_NO_MEMORY or VERR_NO_STR_MEMORY on failure.
      * @param   a_rThat     The array to copy.  Caller makes 100% sure the it has
      *                      the same type as the destination.
-     * @param   a_fThrow    Whether to throw error.
      */
-    int copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fThrow);
+    int copyArrayWorkerNoThrow(RTCRestArrayBase const &a_rThat) RT_NOEXCEPT;
+
+    /**
+     * Wrapper around copyArrayWorkerNoThrow for the copy constructor and the
+     * assignment operator.
+     */
+    void copyArrayWorkerMayThrow(RTCRestArrayBase const &a_rThat);
 
     /**
      * Worker for performing inserts.
@@ -171,7 +176,7 @@ protected:
      * @param   a_pValue        The value to insert.  Ownership is transferred to the map on success.
      * @param   a_fReplace      Whether to replace existing entry rather than insert.
      */
-    int insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bool a_fReplace);
+    int insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bool a_fReplace) RT_NOEXCEPT;
 
     /**
      * Worker for performing inserts.
@@ -182,7 +187,7 @@ protected:
      * @param   a_rValue        The value to copy into the map.
      * @param   a_fReplace      Whether to replace existing key-value pair with matching key.
      */
-    int insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace);
+    int insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace) RT_NOEXCEPT;
 
 private:
     /** Copy constructor on this class should never be used. */
@@ -200,7 +205,7 @@ template<class ElementType> class RTCRestArray : public RTCRestArrayBase
 {
 public:
     /** Default constructor - empty array. */
-    RTCRestArray()
+    RTCRestArray() RT_NOEXCEPT
         : RTCRestArrayBase()
     {
     }
@@ -214,42 +219,42 @@ public:
     RTCRestArray(RTCRestArray const &a_rThat)
         : RTCRestArrayBase()
     {
-        copyArrayWorker(a_rThat, true /*fThrow*/);
+        copyArrayWorkerMayThrow(a_rThat);
     }
 
     /** Copy assignment operator. */
     inline RTCRestArray &operator=(RTCRestArray const &a_rThat)
     {
-        copyArrayWorker(a_rThat, true /*fThrow*/);
+        copyArrayWorkerMayThrow(a_rThat);
         return *this;
     }
 
     /** Safe copy assignment method. */
-    inline int assignCopy(RTCRestArray const &a_rThat)
+    inline int assignCopy(RTCRestArray const &a_rThat) RT_NOEXCEPT
     {
-        return copyArrayWorker(a_rThat, false /*fThrow*/);
+        return copyArrayWorkerNoThrow(a_rThat);
     }
 
     /** Make a clone of this object. */
-    inline RTCRestArray *clone() const
+    inline RTCRestArray *clone() const RT_NOEXCEPT
     {
         return (RTCRestArray *)baseClone();
     }
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void)
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT
     {
         return new (std::nothrow) RTCRestArray<ElementType>();
     }
 
     /** Factory method for elements. */
-    static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void)
+    static DECLCALLBACK(RTCRestObjectBase *) createElementInstance(void) RT_NOEXCEPT
     {
         return new (std::nothrow) ElementType();
     }
 
     /** @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON */
-    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+    static DECLCALLBACK(int) deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
     {
         *a_ppInstance = new (std::nothrow) RTCRestArray<ElementType>();
         if (*a_ppInstance)
@@ -266,7 +271,7 @@ public:
      * @param   a_idx           The insertion index.  ~(size_t)0 is an alias for the end.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    inline int insert(size_t a_idx, ElementType *a_pThat)
+    inline int insert(size_t a_idx, ElementType *a_pThat) RT_NOEXCEPT
     {
         return insertWorker(a_idx, a_pThat, false /*a_fReplace*/);
     }
@@ -279,7 +284,7 @@ public:
      * @param   a_idx           The insertion index.  ~(size_t)0 is an alias for the end.
      * @param   a_rThat         The object to insert a copy of.
      */
-    inline int insertCopy(size_t a_idx, ElementType const &a_rThat)
+    inline int insertCopy(size_t a_idx, ElementType const &a_rThat) RT_NOEXCEPT
     {
         return insertCopyWorker(a_idx, a_rThat, false /*a_fReplace*/);
     }
@@ -291,7 +296,7 @@ public:
      *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    inline int append(ElementType *a_pThat)
+    inline int append(ElementType *a_pThat) RT_NOEXCEPT
     {
         return insertWorker(~(size_t)0, a_pThat, false /*a_fReplace*/);
     }
@@ -303,7 +308,7 @@ public:
      *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_rThat         The object to insert a copy of.
      */
-    inline int appendCopy(ElementType const &a_rThat)
+    inline int appendCopy(ElementType const &a_rThat) RT_NOEXCEPT
     {
         return insertCopyWorker(~(size_t)0, a_rThat, false /*a_fReplace*/);
     }
@@ -315,7 +320,7 @@ public:
      *          VERR_INVALID_POINTER, VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_pThat         The object to insert.  The array takes ownership of the object on success.
      */
-    inline int prepend(ElementType *a_pThat)
+    inline int prepend(ElementType *a_pThat) RT_NOEXCEPT
     {
         return insertWorker(0, a_pThat, false /*a_fReplace*/);
     }
@@ -327,7 +332,7 @@ public:
      *          VERR_NO_MEMORY, VERR_NO_STR_MEMORY or VERR_OUT_OF_RANGE on failure.
      * @param   a_rThat         The object to insert a copy of.
      */
-    inline int prependCopy(ElementType const &a_rThat)
+    inline int prependCopy(ElementType const &a_rThat) RT_NOEXCEPT
     {
         return insertCopyWorker(0, a_rThat, false /*a_fReplace*/);
     }
@@ -340,7 +345,7 @@ public:
      * @param   a_idx           The index of the existing object to replace.
      * @param   a_pThat         The replacement object.  The array takes ownership of the object on success.
      */
-    inline int replace(size_t a_idx, ElementType *a_pThat)
+    inline int replace(size_t a_idx, ElementType *a_pThat) RT_NOEXCEPT
     {
         return insertWorker(a_idx, a_pThat, true /*a_fReplace*/);
     }
@@ -353,7 +358,7 @@ public:
      * @param   a_idx           The index of the existing object to replace.
      * @param   a_rThat         The object to insert a copy of.
      */
-    inline int replaceCopy(size_t a_idx, ElementType const &a_rThat)
+    inline int replaceCopy(size_t a_idx, ElementType const &a_rThat) RT_NOEXCEPT
     {
         return insertCopyWorker(a_idx, a_rThat, true /*a_fReplace*/);
     }
@@ -364,7 +369,7 @@ public:
      * @returns The object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    inline ElementType *at(size_t a_idx)
+    inline ElementType *at(size_t a_idx) RT_NOEXCEPT
     {
         if (a_idx < m_cElements)
             return (ElementType *)m_papElements[a_idx];
@@ -377,7 +382,7 @@ public:
      * @returns The object at @a a_idx, NULL if out of range.
      * @param   a_idx           The array index.
      */
-    inline ElementType const *at(size_t a_idx) const
+    inline ElementType const *at(size_t a_idx) const RT_NOEXCEPT
     {
         if (a_idx < m_cElements)
             return (ElementType const *)m_papElements[a_idx];
@@ -388,7 +393,7 @@ public:
      * Returns the first object in the array.
      * @returns The first object, NULL if empty.
      */
-    inline ElementType *first()
+    inline ElementType *first() RT_NOEXCEPT
     {
         return at(0);
     }
@@ -397,7 +402,7 @@ public:
      * Returns the first object in the array, const variant.
      * @returns The first object, NULL if empty.
      */
-    inline ElementType const *first() const
+    inline ElementType const *first() const RT_NOEXCEPT
     {
         return at(0);
     }
@@ -406,7 +411,7 @@ public:
      * Returns the last object in the array.
      * @returns The last object, NULL if empty.
      */
-    inline ElementType *last()
+    inline ElementType *last() RT_NOEXCEPT
     {
         return at(m_cElements - 1);
     }
@@ -415,24 +420,24 @@ public:
      * Returns the last object in the array, const variant.
      * @returns The last object, NULL if empty.
      */
-    inline ElementType const *last() const
+    inline ElementType const *last() const RT_NOEXCEPT
     {
         return at(m_cElements - 1);
     }
 
 
 protected:
-    virtual RTCRestArrayBase *createClone(void) const RT_OVERRIDE
+    virtual RTCRestArrayBase *createClone(void) const RT_NOEXCEPT RT_OVERRIDE
     {
         return new (std::nothrow) RTCRestArray();
     }
 
-    virtual RTCRestObjectBase *createValue(void) RT_OVERRIDE
+    virtual RTCRestObjectBase *createValue(void) RT_NOEXCEPT RT_OVERRIDE
     {
         return new (std::nothrow) ElementType();
     }
 
-    virtual int deserializeValueInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_OVERRIDE
+    virtual int deserializeValueInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT RT_OVERRIDE
     {
         return ElementType::deserializeInstanceFromJson(a_rCursor, a_ppInstance);
     }

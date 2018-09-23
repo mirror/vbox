@@ -35,7 +35,7 @@
 #include <iprt/string.h>
 
 
-char *RTCRestJsonPrimaryCursor::getPath(RTCRestJsonCursor const &a_rCursor, char *pszDst, size_t cbDst) const
+char *RTCRestJsonPrimaryCursor::getPath(RTCRestJsonCursor const &a_rCursor, char *pszDst, size_t cbDst) const RT_NOEXCEPT
 {
     AssertReturn(cbDst > 0, NULL);
 
@@ -89,7 +89,7 @@ char *RTCRestJsonPrimaryCursor::getPath(RTCRestJsonCursor const &a_rCursor, char
 }
 
 
-int RTCRestJsonPrimaryCursor::addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...)
+int RTCRestJsonPrimaryCursor::addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...) RT_NOEXCEPT
 {
     va_list va;
     va_start(va, a_pszFormat);
@@ -100,7 +100,7 @@ int RTCRestJsonPrimaryCursor::addError(RTCRestJsonCursor const &a_rCursor, int a
 }
 
 
-int RTCRestJsonPrimaryCursor::unknownField(RTCRestJsonCursor const &a_rCursor)
+int RTCRestJsonPrimaryCursor::unknownField(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     char szPath[128];
     return RTErrInfoAddF(m_pErrInfo, VWRN_NOT_FOUND, "%s: unknown field (type %s)\n",

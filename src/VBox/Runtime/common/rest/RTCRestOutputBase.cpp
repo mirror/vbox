@@ -35,7 +35,7 @@
 #include <iprt/string.h>
 
 
-RTCRestOutputBase::RTCRestOutputBase()
+RTCRestOutputBase::RTCRestOutputBase() RT_NOEXCEPT
     : m_uState(0)
 {
 }
@@ -46,19 +46,19 @@ RTCRestOutputBase::~RTCRestOutputBase()
 }
 
 
-size_t RTCRestOutputBase::vprintf(const char *pszFormat, va_list va)
+size_t RTCRestOutputBase::vprintf(const char *pszFormat, va_list va) RT_NOEXCEPT
 {
     return RTStrFormatV(printfOutputCallback, this, NULL, NULL, pszFormat, va);
 }
 
 
-/*static*/ DECLCALLBACK(size_t) RTCRestOutputBase::printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars)
+/*static*/ DECLCALLBACK(size_t) RTCRestOutputBase::printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT
 {
     return ((RTCRestOutputBase *)pvArg)->output(pachChars, cbChars);
 }
 
 
-uint32_t RTCRestOutputBase::beginArray()
+uint32_t RTCRestOutputBase::beginArray() RT_NOEXCEPT
 {
     output(RT_STR_TUPLE("["));
     uint32_t const uOldState = m_uState;
@@ -67,14 +67,14 @@ uint32_t RTCRestOutputBase::beginArray()
 }
 
 
-void RTCRestOutputBase::endArray(uint32_t a_uOldState)
+void RTCRestOutputBase::endArray(uint32_t a_uOldState) RT_NOEXCEPT
 {
     m_uState = a_uOldState;
     output(RT_STR_TUPLE("]"));
 }
 
 
-uint32_t RTCRestOutputBase::beginObject()
+uint32_t RTCRestOutputBase::beginObject() RT_NOEXCEPT
 {
     output(RT_STR_TUPLE("{"));
     uint32_t const uOldState = m_uState;
@@ -83,14 +83,14 @@ uint32_t RTCRestOutputBase::beginObject()
 }
 
 
-void RTCRestOutputBase::endObject(uint32_t a_uOldState)
+void RTCRestOutputBase::endObject(uint32_t a_uOldState) RT_NOEXCEPT
 {
     m_uState = a_uOldState;
     output(RT_STR_TUPLE("}"));
 }
 
 
-void RTCRestOutputBase::valueSeparator()
+void RTCRestOutputBase::valueSeparator() RT_NOEXCEPT
 {
     if (m_uState & RT_BIT_32(31))
         output(RT_STR_TUPLE(","));
@@ -99,7 +99,7 @@ void RTCRestOutputBase::valueSeparator()
 }
 
 
-void RTCRestOutputBase::valueSeparatorAndName(const char *a_pszName, size_t a_cchName)
+void RTCRestOutputBase::valueSeparatorAndName(const char *a_pszName, size_t a_cchName) RT_NOEXCEPT
 {
     RT_NOREF(a_cchName);
     if (m_uState & RT_BIT_32(31))
@@ -112,7 +112,7 @@ void RTCRestOutputBase::valueSeparatorAndName(const char *a_pszName, size_t a_cc
 }
 
 
-void RTCRestOutputBase::nullValue()
+void RTCRestOutputBase::nullValue() RT_NOEXCEPT
 {
     output(RT_STR_TUPLE("null"));
 }

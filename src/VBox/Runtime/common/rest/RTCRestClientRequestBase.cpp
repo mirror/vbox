@@ -40,7 +40,7 @@
 /**
  * Default constructor.
  */
-RTCRestClientRequestBase::RTCRestClientRequestBase()
+RTCRestClientRequestBase::RTCRestClientRequestBase() RT_NOEXCEPT
     : m_fIsSet(0)
     , m_fErrorSet(0)
 {
@@ -50,7 +50,7 @@ RTCRestClientRequestBase::RTCRestClientRequestBase()
 /**
  * Copy constructor.
  */
-RTCRestClientRequestBase::RTCRestClientRequestBase(RTCRestClientRequestBase const &a_rThat)
+RTCRestClientRequestBase::RTCRestClientRequestBase(RTCRestClientRequestBase const &a_rThat) RT_NOEXCEPT
     : m_fIsSet(a_rThat.m_fIsSet)
     , m_fErrorSet(a_rThat.m_fErrorSet)
 {
@@ -69,7 +69,7 @@ RTCRestClientRequestBase::~RTCRestClientRequestBase()
 /**
  * Copy assignment operator.
  */
-RTCRestClientRequestBase &RTCRestClientRequestBase::operator=(RTCRestClientRequestBase const &a_rThat)
+RTCRestClientRequestBase &RTCRestClientRequestBase::operator=(RTCRestClientRequestBase const &a_rThat) RT_NOEXCEPT
 {
     m_fIsSet    = a_rThat.m_fIsSet;
     m_fErrorSet = a_rThat.m_fErrorSet;
@@ -79,7 +79,7 @@ RTCRestClientRequestBase &RTCRestClientRequestBase::operator=(RTCRestClientReque
 
 int RTCRestClientRequestBase::doPathParameters(RTCString *a_pStrPath, const char *a_pszPathTemplate, size_t a_cchPathTemplate,
                                                PATHPARAMDESC const *a_paPathParams, PATHPARAMSTATE *a_paPathParamStates,
-                                               size_t a_cPathParams) const
+                                               size_t a_cPathParams) const RT_NOEXCEPT
 {
     int rc = a_pStrPath->assignNoThrow(a_pszPathTemplate, a_cchPathTemplate);
     AssertRCReturn(rc, rc);
@@ -126,7 +126,7 @@ int RTCRestClientRequestBase::doPathParameters(RTCString *a_pStrPath, const char
 
 
 int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPARAMDESC const *a_paQueryParams,
-                                                RTCRestObjectBase const **a_papQueryParamObjs, size_t a_cQueryParams) const
+                                                RTCRestObjectBase const **a_papQueryParamObjs, size_t a_cQueryParams) const RT_NOEXCEPT
 {
     RTCString strTmpVal;
     char chSep = a_pStrQuery->isEmpty() ? '?' : '&';
@@ -180,7 +180,7 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
 
 
 int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC const *a_paHeaderParams,
-                                                 RTCRestObjectBase const **a_papHeaderParamObjs, size_t a_cHeaderParams) const
+                                                 RTCRestObjectBase const **a_papHeaderParamObjs, size_t a_cHeaderParams) const RT_NOEXCEPT
 {
     RTCString strTmpVal;
     for (size_t i = 0; i < a_cHeaderParams; i++)

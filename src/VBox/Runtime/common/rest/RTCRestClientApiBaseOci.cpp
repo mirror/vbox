@@ -49,7 +49,7 @@
  * @param   hHttp       The HTTP client handle.
  * @param   pvContent
  */
-static int ociSignRequestEnsureDateOrXDate(RTHTTP hHttp)
+static int ociSignRequestEnsureDateOrXDate(RTHTTP hHttp) RT_NOEXCEPT
 {
     if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("x-date")))
         return VINF_SUCCESS;
@@ -73,7 +73,7 @@ static int ociSignRequestEnsureDateOrXDate(RTHTTP hHttp)
  * @param   hHttp       The HTTP client handle.
  * @param   pvContent
  */
-static int ociSignRequestEnsureXContentSha256(RTHTTP hHttp, void const *pvContent, size_t cbContent)
+static int ociSignRequestEnsureXContentSha256(RTHTTP hHttp, void const *pvContent, size_t cbContent) RT_NOEXCEPT
 {
     if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("x-content-sha256")))
         return VINF_SUCCESS;
@@ -102,7 +102,7 @@ static int ociSignRequestEnsureXContentSha256(RTHTTP hHttp, void const *pvConten
  * @param   hHttp       The HTTP client handle.
  * @param   cbContent   The content length.
  */
-static int ociSignRequestEnsureContentLength(RTHTTP hHttp, uint64_t cbContent)
+static int ociSignRequestEnsureContentLength(RTHTTP hHttp, uint64_t cbContent) RT_NOEXCEPT
 {
     if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("Content-Length")))
         return VINF_SUCCESS;
@@ -120,7 +120,7 @@ static int ociSignRequestEnsureContentLength(RTHTTP hHttp, uint64_t cbContent)
  * @param   hHttp       The HTTP client handle.
  * @param   pszUrl      The URL.
  */
-static int ociSignRequestEnsureHost(RTHTTP hHttp, const char *pszUrl)
+static int ociSignRequestEnsureHost(RTHTTP hHttp, const char *pszUrl) RT_NOEXCEPT
 {
     if (RTHttpGetHeader(hHttp, RT_STR_TUPLE("host")))
         return VINF_SUCCESS;
@@ -135,7 +135,7 @@ static int ociSignRequestEnsureHost(RTHTTP hHttp, const char *pszUrl)
 
 int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
                                          RTCString const &a_rStrXmitBody, uint32_t a_fFlags,
-                                         RTCRKEY a_hKey, RTCString const &a_rStrKeyId)
+                                         RTCRKEY a_hKey, RTCString const &a_rStrKeyId) RT_NOEXCEPT
 {
     /*
      * First make sure required headers are present, adding them as needed.

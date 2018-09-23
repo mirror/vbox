@@ -27,90 +27,10 @@ EXPORTS
     ;
     ; RTCString & RTCRest classes.
     ;
-    ; Use the following command-line to generate the stuff below:
-    ; nm ../../../out/darwin.amd64/debug/obj/VBoxRT/VBoxRT.dylib -U | kmk_sed -re '/(RTCString|RTCRest)/!d' -e 's/^[0-9a-fA-F]+ //' -e '/^[A-Z]/!d' | sort | kmk_sed -r -e 's/[SDBC] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /' -e 's/ __/ _/' >> VBox/VBoxRTImp-gcc.def
+    ; Use one of the following command-line to generate the stuff below:
+    ;   nm ../../../out/darwin.amd64/debug/obj/VBoxRT/VBoxRT.dylib -U | LC_COLLATE=C kmk_sed -re '/(RTCString|RTCRest)/!d' -e 's/^[0-9a-fA-F]+ //' -e '/^[A-Z]/!d'      -e 's/[SDBC] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /' -e 's/ __/ _/' | LC_COLLATE=C sort >> VBox/VBoxRTImp-gcc.def
+    ;   nm ../../../out/linux.amd64/debug/obj/VBoxRT/VBoxRT.so        | LC_COLLATE=C kmk_sed -re '/(RTCString|RTCRest)/!d' -e 's/^[0-9a-fA-F]+ //' -e '/^[A-TV-Z]/!d' -e 's/[SDBCRV] (.+)$/    \1 DATA/' -e 's/^[A-Z] /    /'                | LC_COLLATE=C sort  >> VBox/VBoxRTImp-gcc.def
     ;
-    _ZTI9RTCString DATA
-    _ZN9RTCString4nposE DATA
-    _ZTI11RTCRestBool DATA
-    _ZTI11RTCRestDate DATA
-    _ZTI12RTCRestInt16 DATA
-    _ZTI12RTCRestInt32 DATA
-    _ZTI12RTCRestInt64 DATA
-    _ZTI13RTCRestBinary DATA
-    _ZTI13RTCRestDouble DATA
-    _ZTI13RTCRestString DATA
-    _ZTI16RTCRestAnyObject DATA
-    _ZTI16RTCRestArrayBase DATA
-    _ZTI17RTCRestDataObject DATA
-    _ZTI17RTCRestObjectBase DATA
-    _ZTI17RTCRestOutputBase DATA
-    _ZTI20RTCRestClientApiBase DATA
-    _ZTI20RTCRestStringMapBase DATA
-    _ZTI21RTCRestBinaryResponse DATA
-    _ZTI21RTCRestOutputToString DATA
-    _ZTI21RTCRestPolyDataObject DATA
-    _ZTI21RTCRestStringEnumBase DATA
-    _ZTI22RTCRestBinaryParameter DATA
-    _ZTI23RTCRestOutputPrettyBase DATA
-    _ZTI24RTCRestClientRequestBase DATA
-    _ZTI24RTCRestJsonPrimaryCursor DATA
-    _ZTI25RTCRestClientResponseBase DATA
-    _ZTI27RTCRestOutputPrettyToString DATA
-    _ZTIN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
-    _ZTS11RTCRestBool DATA
-    _ZTS11RTCRestDate DATA
-    _ZTS12RTCRestInt16 DATA
-    _ZTS12RTCRestInt32 DATA
-    _ZTS12RTCRestInt64 DATA
-    _ZTS13RTCRestBinary DATA
-    _ZTS13RTCRestDouble DATA
-    _ZTS13RTCRestString DATA
-    _ZTS16RTCRestAnyObject DATA
-    _ZTS16RTCRestArrayBase DATA
-    _ZTS17RTCRestDataObject DATA
-    _ZTS17RTCRestObjectBase DATA
-    _ZTS17RTCRestOutputBase DATA
-    _ZTS20RTCRestClientApiBase DATA
-    _ZTS20RTCRestStringMapBase DATA
-    _ZTS21RTCRestBinaryResponse DATA
-    _ZTS21RTCRestOutputToString DATA
-    _ZTS21RTCRestPolyDataObject DATA
-    _ZTS21RTCRestStringEnumBase DATA
-    _ZTS22RTCRestBinaryParameter DATA
-    _ZTS23RTCRestOutputPrettyBase DATA
-    _ZTS24RTCRestClientRequestBase DATA
-    _ZTS24RTCRestJsonPrimaryCursor DATA
-    _ZTS25RTCRestClientResponseBase DATA
-    _ZTS27RTCRestOutputPrettyToString DATA
-    _ZTS9RTCString DATA
-    _ZTSN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
-    _ZTV11RTCRestBool DATA
-    _ZTV11RTCRestDate DATA
-    _ZTV12RTCRestInt16 DATA
-    _ZTV12RTCRestInt32 DATA
-    _ZTV12RTCRestInt64 DATA
-    _ZTV13RTCRestBinary DATA
-    _ZTV13RTCRestDouble DATA
-    _ZTV13RTCRestString DATA
-    _ZTV16RTCRestAnyObject DATA
-    _ZTV16RTCRestArrayBase DATA
-    _ZTV17RTCRestDataObject DATA
-    _ZTV17RTCRestObjectBase DATA
-    _ZTV17RTCRestOutputBase DATA
-    _ZTV20RTCRestClientApiBase DATA
-    _ZTV20RTCRestStringMapBase DATA
-    _ZTV21RTCRestBinaryResponse DATA
-    _ZTV21RTCRestOutputToString DATA
-    _ZTV21RTCRestPolyDataObject DATA
-    _ZTV21RTCRestStringEnumBase DATA
-    _ZTV22RTCRestBinaryParameter DATA
-    _ZTV23RTCRestOutputPrettyBase DATA
-    _ZTV24RTCRestClientRequestBase DATA
-    _ZTV24RTCRestJsonPrimaryCursor DATA
-    _ZTV25RTCRestClientResponseBase DATA
-    _ZTV27RTCRestOutputPrettyToString DATA
-    _ZTVN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
     _ZN11RTCRestBool10assignCopyERKS_
     _ZN11RTCRestBool10fromStringERK9RTCStringPKcP9RTERRINFOj
     _ZN11RTCRestBool11assignValueEb
@@ -522,6 +442,7 @@ EXPORTS
     _ZN9RTCString22appendCodePointNoThrowEj
     _ZN9RTCString27printfOutputCallbackNoThrowEPvPKcm
     _ZN9RTCString4joinERK7RTCListIS_PS_ERKS_
+    _ZN9RTCString4nposE DATA
     _ZN9RTCString5eraseEmm
     _ZN9RTCString5stripEv
     _ZN9RTCString6appendEPKc
@@ -639,8 +560,89 @@ EXPORTS
     _ZNK9RTCString8containsERKS_NS_15CaseSensitivityE
     _ZNK9RTCString8endsWithERKS_NS_15CaseSensitivityE
     _ZNK9RTCString8substrCPEmm
+    _ZTI11RTCRestBool DATA
+    _ZTI11RTCRestDate DATA
+    _ZTI12RTCRestInt16 DATA
+    _ZTI12RTCRestInt32 DATA
+    _ZTI12RTCRestInt64 DATA
+    _ZTI13RTCRestBinary DATA
+    _ZTI13RTCRestDouble DATA
+    _ZTI13RTCRestString DATA
+    _ZTI16RTCRestAnyObject DATA
+    _ZTI16RTCRestArrayBase DATA
+    _ZTI17RTCRestDataObject DATA
+    _ZTI17RTCRestObjectBase DATA
+    _ZTI17RTCRestOutputBase DATA
+    _ZTI20RTCRestClientApiBase DATA
+    _ZTI20RTCRestStringMapBase DATA
+    _ZTI21RTCRestBinaryResponse DATA
+    _ZTI21RTCRestOutputToString DATA
+    _ZTI21RTCRestPolyDataObject DATA
+    _ZTI21RTCRestStringEnumBase DATA
+    _ZTI22RTCRestBinaryParameter DATA
+    _ZTI23RTCRestOutputPrettyBase DATA
+    _ZTI24RTCRestClientRequestBase DATA
+    _ZTI24RTCRestJsonPrimaryCursor DATA
+    _ZTI25RTCRestClientResponseBase DATA
+    _ZTI27RTCRestOutputPrettyToString DATA
+    _ZTI9RTCString DATA
+    _ZTIN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
+    _ZTS11RTCRestBool DATA
+    _ZTS11RTCRestDate DATA
+    _ZTS12RTCRestInt16 DATA
+    _ZTS12RTCRestInt32 DATA
+    _ZTS12RTCRestInt64 DATA
+    _ZTS13RTCRestBinary DATA
+    _ZTS13RTCRestDouble DATA
+    _ZTS13RTCRestString DATA
+    _ZTS16RTCRestAnyObject DATA
+    _ZTS16RTCRestArrayBase DATA
+    _ZTS17RTCRestDataObject DATA
+    _ZTS17RTCRestObjectBase DATA
+    _ZTS17RTCRestOutputBase DATA
+    _ZTS20RTCRestClientApiBase DATA
+    _ZTS20RTCRestStringMapBase DATA
+    _ZTS21RTCRestBinaryResponse DATA
+    _ZTS21RTCRestOutputToString DATA
+    _ZTS21RTCRestPolyDataObject DATA
+    _ZTS21RTCRestStringEnumBase DATA
+    _ZTS22RTCRestBinaryParameter DATA
+    _ZTS23RTCRestOutputPrettyBase DATA
+    _ZTS24RTCRestClientRequestBase DATA
+    _ZTS24RTCRestJsonPrimaryCursor DATA
+    _ZTS25RTCRestClientResponseBase DATA
+    _ZTS27RTCRestOutputPrettyToString DATA
+    _ZTS9RTCString DATA
+    _ZTSN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
+    _ZTV11RTCRestBool DATA
+    _ZTV11RTCRestDate DATA
+    _ZTV12RTCRestInt16 DATA
+    _ZTV12RTCRestInt32 DATA
+    _ZTV12RTCRestInt64 DATA
+    _ZTV13RTCRestBinary DATA
+    _ZTV13RTCRestDouble DATA
+    _ZTV13RTCRestString DATA
+    _ZTV16RTCRestAnyObject DATA
+    _ZTV16RTCRestArrayBase DATA
+    _ZTV17RTCRestDataObject DATA
+    _ZTV17RTCRestObjectBase DATA
+    _ZTV17RTCRestOutputBase DATA
+    _ZTV20RTCRestClientApiBase DATA
+    _ZTV20RTCRestStringMapBase DATA
+    _ZTV21RTCRestBinaryResponse DATA
+    _ZTV21RTCRestOutputToString DATA
+    _ZTV21RTCRestPolyDataObject DATA
+    _ZTV21RTCRestStringEnumBase DATA
+    _ZTV22RTCRestBinaryParameter DATA
+    _ZTV23RTCRestOutputPrettyBase DATA
+    _ZTV24RTCRestClientRequestBase DATA
+    _ZTV24RTCRestJsonPrimaryCursor DATA
+    _ZTV25RTCRestClientResponseBase DATA
+    _ZTV27RTCRestOutputPrettyToString DATA
+    _ZTVN25RTCRestClientResponseBase24PrimaryJsonCursorForBodyE DATA
     _ZThn16_N13RTCRestStringD0Ev
     _ZThn16_N13RTCRestStringD1Ev
     _ZplPKcRK9RTCString
     _ZplRK9RTCStringPKc
     _ZplRK9RTCStringS1_
+

@@ -47,14 +47,14 @@
 *********************************************************************************************************************************/
 
 /** Default constructor. */
-RTCRestObjectBase::RTCRestObjectBase()
+RTCRestObjectBase::RTCRestObjectBase() RT_NOEXCEPT
     : m_fNullIndicator(false)
 {
 }
 
 
 /** Copy constructor. */
-RTCRestObjectBase::RTCRestObjectBase(RTCRestObjectBase const &a_rThat)
+RTCRestObjectBase::RTCRestObjectBase(RTCRestObjectBase const &a_rThat) RT_NOEXCEPT
     : m_fNullIndicator(a_rThat.m_fNullIndicator)
 {
 }
@@ -67,7 +67,7 @@ RTCRestObjectBase::~RTCRestObjectBase()
 }
 
 
-int RTCRestObjectBase::setNull()
+int RTCRestObjectBase::setNull() RT_NOEXCEPT
 {
     int rc = resetToDefault();
     m_fNullIndicator = true;
@@ -75,13 +75,13 @@ int RTCRestObjectBase::setNull()
 }
 
 
-void RTCRestObjectBase::setNotNull()
+void RTCRestObjectBase::setNotNull() RT_NOEXCEPT
 {
     m_fNullIndicator = false;
 }
 
 
-int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestObjectBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     /*
      * Just wrap the JSON serialization method.
@@ -101,7 +101,7 @@ RTCString RTCRestObjectBase::toString() const
 
 
 int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                                  uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                                  uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags);
 
@@ -125,7 +125,7 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
 *********************************************************************************************************************************/
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBool::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBool::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestBool();
 }
@@ -135,7 +135,7 @@ int RTCRestObjectBase::fromString(RTCString const &a_rValue, const char *a_pszNa
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestBool::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestBool::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -146,7 +146,7 @@ RTCRestBool::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTC
 
 
 /** Default constructor. */
-RTCRestBool::RTCRestBool()
+RTCRestBool::RTCRestBool() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_fValue(false)
 {
@@ -154,7 +154,7 @@ RTCRestBool::RTCRestBool()
 
 
 /** Copy constructor. */
-RTCRestBool::RTCRestBool(RTCRestBool const &a_rThat)
+RTCRestBool::RTCRestBool(RTCRestBool const &a_rThat) RT_NOEXCEPT
     : RTCRestObjectBase(a_rThat)
     , m_fValue(a_rThat.m_fValue)
 {
@@ -162,7 +162,7 @@ RTCRestBool::RTCRestBool(RTCRestBool const &a_rThat)
 
 
 /** From value constructor. */
-RTCRestBool::RTCRestBool(bool fValue)
+RTCRestBool::RTCRestBool(bool fValue) RT_NOEXCEPT
     : m_fValue(fValue)
 {
 }
@@ -176,7 +176,7 @@ RTCRestBool::~RTCRestBool()
 
 
 /** Copy assignment operator. */
-RTCRestBool &RTCRestBool::operator=(RTCRestBool const &a_rThat)
+RTCRestBool &RTCRestBool::operator=(RTCRestBool const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_fValue = a_rThat.m_fValue;
@@ -184,7 +184,7 @@ RTCRestBool &RTCRestBool::operator=(RTCRestBool const &a_rThat)
 }
 
 
-int RTCRestBool::assignCopy(RTCRestBool const &a_rThat)
+int RTCRestBool::assignCopy(RTCRestBool const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_fValue = a_rThat.m_fValue;
@@ -192,20 +192,20 @@ int RTCRestBool::assignCopy(RTCRestBool const &a_rThat)
 }
 
 
-void RTCRestBool::assignValue(bool a_fValue)
+void RTCRestBool::assignValue(bool a_fValue) RT_NOEXCEPT
 {
     m_fValue = a_fValue;
     m_fNullIndicator = false;
 }
 
 
-RTCRestObjectBase *RTCRestBool::baseClone() const
+RTCRestObjectBase *RTCRestBool::baseClone() const RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestBool(*this);
 }
 
 
-int RTCRestBool::resetToDefault()
+int RTCRestBool::resetToDefault() RT_NOEXCEPT
 {
     m_fValue = false;
     m_fNullIndicator = false;
@@ -213,14 +213,14 @@ int RTCRestBool::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestBool::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestBool::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     a_rDst.printf(!m_fNullIndicator ? m_fValue ? "true" : "false" : "null");
     return a_rDst;
 }
 
 
-int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_fValue = false;
     m_fNullIndicator = false;
@@ -247,7 +247,7 @@ int RTCRestBool::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestBool::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestBool::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (!(a_fFlags & kToString_Append))
     {
@@ -271,7 +271,7 @@ int RTCRestBool::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFo
 
 
 int RTCRestBool::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                            uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                            uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags);
 
@@ -297,13 +297,13 @@ int RTCRestBool::fromString(RTCString const &a_rValue, const char *a_pszName, PR
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestBool::typeClass() const
+RTCRestObjectBase::kTypeClass RTCRestBool::typeClass() const RT_NOEXCEPT
 {
     return kTypeClass_Bool;
 }
 
 
-const char *RTCRestBool::typeName() const
+const char *RTCRestBool::typeName() const RT_NOEXCEPT
 {
     return "bool";
 }
@@ -315,7 +315,7 @@ const char *RTCRestBool::typeName() const
 *********************************************************************************************************************************/
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt64::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt64::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestInt64();
 }
@@ -325,7 +325,7 @@ const char *RTCRestBool::typeName() const
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestInt64::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestInt64::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -336,7 +336,7 @@ RTCRestInt64::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RT
 
 
 /** Default constructor. */
-RTCRestInt64::RTCRestInt64()
+RTCRestInt64::RTCRestInt64() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iValue(0)
 {
@@ -344,7 +344,7 @@ RTCRestInt64::RTCRestInt64()
 
 
 /** Copy constructor. */
-RTCRestInt64::RTCRestInt64(RTCRestInt64 const &a_rThat)
+RTCRestInt64::RTCRestInt64(RTCRestInt64 const &a_rThat) RT_NOEXCEPT
     : RTCRestObjectBase(a_rThat)
     , m_iValue(a_rThat.m_iValue)
 {
@@ -352,7 +352,7 @@ RTCRestInt64::RTCRestInt64(RTCRestInt64 const &a_rThat)
 
 
 /** From value constructor. */
-RTCRestInt64::RTCRestInt64(int64_t iValue)
+RTCRestInt64::RTCRestInt64(int64_t iValue) RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iValue(iValue)
 {
@@ -367,7 +367,7 @@ RTCRestInt64::~RTCRestInt64()
 
 
 /** Copy assignment operator. */
-RTCRestInt64 &RTCRestInt64::operator=(RTCRestInt64 const &a_rThat)
+RTCRestInt64 &RTCRestInt64::operator=(RTCRestInt64 const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
@@ -375,7 +375,7 @@ RTCRestInt64 &RTCRestInt64::operator=(RTCRestInt64 const &a_rThat)
 }
 
 
-int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat)
+int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
@@ -383,20 +383,20 @@ int RTCRestInt64::assignCopy(RTCRestInt64 const &a_rThat)
 }
 
 
-void RTCRestInt64::assignValue(int64_t a_iValue)
+void RTCRestInt64::assignValue(int64_t a_iValue) RT_NOEXCEPT
 {
     m_iValue = a_iValue;
     m_fNullIndicator = false;
 }
 
 
-RTCRestObjectBase *RTCRestInt64::baseClone() const
+RTCRestObjectBase *RTCRestInt64::baseClone() const RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestInt64(*this);
 }
 
 
-int RTCRestInt64::resetToDefault()
+int RTCRestInt64::resetToDefault() RT_NOEXCEPT
 {
     m_iValue = 0;
     m_fNullIndicator = false;
@@ -404,7 +404,7 @@ int RTCRestInt64::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
         a_rDst.printf("%RI64", m_iValue);
@@ -414,7 +414,7 @@ RTCRestOutputBase &RTCRestInt64::serializeAsJson(RTCRestOutputBase &a_rDst) cons
 }
 
 
-int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_iValue = 0;
     m_fNullIndicator = false;
@@ -443,7 +443,7 @@ int RTCRestInt64::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestInt64::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestInt64::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (!(a_fFlags & kToString_Append))
     {
@@ -458,7 +458,7 @@ int RTCRestInt64::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionF
 
 
 int RTCRestInt64::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags);
 
@@ -481,13 +481,13 @@ int RTCRestInt64::fromString(RTCString const &a_rValue, const char *a_pszName, P
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestInt64::typeClass() const
+RTCRestObjectBase::kTypeClass RTCRestInt64::typeClass() const RT_NOEXCEPT
 {
     return kTypeClass_Int64;
 }
 
 
-const char *RTCRestInt64::typeName() const
+const char *RTCRestInt64::typeName() const RT_NOEXCEPT
 {
     return "int64_t";
 }
@@ -499,7 +499,7 @@ const char *RTCRestInt64::typeName() const
 *********************************************************************************************************************************/
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt32::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt32::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestInt32();
 }
@@ -509,7 +509,7 @@ const char *RTCRestInt64::typeName() const
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestInt32::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestInt32::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -520,7 +520,7 @@ RTCRestInt32::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RT
 
 
 /** Default constructor. */
-RTCRestInt32::RTCRestInt32()
+RTCRestInt32::RTCRestInt32() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iValue(0)
 {
@@ -528,7 +528,7 @@ RTCRestInt32::RTCRestInt32()
 
 
 /** Copy constructor. */
-RTCRestInt32::RTCRestInt32(RTCRestInt32 const &a_rThat)
+RTCRestInt32::RTCRestInt32(RTCRestInt32 const &a_rThat) RT_NOEXCEPT
     : RTCRestObjectBase(a_rThat)
     , m_iValue(a_rThat.m_iValue)
 {
@@ -536,7 +536,7 @@ RTCRestInt32::RTCRestInt32(RTCRestInt32 const &a_rThat)
 
 
 /** From value constructor. */
-RTCRestInt32::RTCRestInt32(int32_t iValue)
+RTCRestInt32::RTCRestInt32(int32_t iValue) RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iValue(iValue)
 {
@@ -551,7 +551,7 @@ RTCRestInt32::~RTCRestInt32()
 
 
 /** Copy assignment operator. */
-RTCRestInt32 &RTCRestInt32::operator=(RTCRestInt32 const &a_rThat)
+RTCRestInt32 &RTCRestInt32::operator=(RTCRestInt32 const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
@@ -559,7 +559,7 @@ RTCRestInt32 &RTCRestInt32::operator=(RTCRestInt32 const &a_rThat)
 }
 
 
-int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat)
+int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
@@ -567,13 +567,13 @@ int RTCRestInt32::assignCopy(RTCRestInt32 const &a_rThat)
 }
 
 
-RTCRestObjectBase *RTCRestInt32::baseClone() const
+RTCRestObjectBase *RTCRestInt32::baseClone() const RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestInt32(*this);
 }
 
 
-int RTCRestInt32::resetToDefault()
+int RTCRestInt32::resetToDefault() RT_NOEXCEPT
 {
     m_iValue = 0;
     m_fNullIndicator = false;
@@ -581,14 +581,14 @@ int RTCRestInt32::resetToDefault()
 }
 
 
-void RTCRestInt32::assignValue(int32_t a_iValue)
+void RTCRestInt32::assignValue(int32_t a_iValue) RT_NOEXCEPT
 {
     m_iValue = a_iValue;
     m_fNullIndicator = false;
 }
 
 
-RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
         a_rDst.printf("%RI32", m_iValue);
@@ -598,7 +598,7 @@ RTCRestOutputBase &RTCRestInt32::serializeAsJson(RTCRestOutputBase &a_rDst) cons
 }
 
 
-int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_iValue = 0;
     m_fNullIndicator = false;
@@ -633,7 +633,7 @@ int RTCRestInt32::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestInt32::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestInt32::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (!(a_fFlags & kToString_Append))
     {
@@ -648,7 +648,7 @@ int RTCRestInt32::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionF
 
 
 int RTCRestInt32::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags);
 
@@ -671,13 +671,13 @@ int RTCRestInt32::fromString(RTCString const &a_rValue, const char *a_pszName, P
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestInt32::typeClass() const
+RTCRestObjectBase::kTypeClass RTCRestInt32::typeClass() const RT_NOEXCEPT
 {
     return kTypeClass_Int32;
 }
 
 
-const char *RTCRestInt32::typeName() const
+const char *RTCRestInt32::typeName() const RT_NOEXCEPT
 {
     return "int32_t";
 }
@@ -689,7 +689,7 @@ const char *RTCRestInt32::typeName() const
 *********************************************************************************************************************************/
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt16::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestInt16::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestInt16();
 }
@@ -699,7 +699,7 @@ const char *RTCRestInt32::typeName() const
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestInt16::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestInt16::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -710,7 +710,7 @@ RTCRestInt16::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RT
 
 
 /** Default constructor. */
-RTCRestInt16::RTCRestInt16()
+RTCRestInt16::RTCRestInt16() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iValue(0)
 {
@@ -718,7 +718,7 @@ RTCRestInt16::RTCRestInt16()
 
 
 /** Copy constructor. */
-RTCRestInt16::RTCRestInt16(RTCRestInt16 const &a_rThat)
+RTCRestInt16::RTCRestInt16(RTCRestInt16 const &a_rThat) RT_NOEXCEPT
     : RTCRestObjectBase(a_rThat)
     , m_iValue(a_rThat.m_iValue)
 {
@@ -726,7 +726,7 @@ RTCRestInt16::RTCRestInt16(RTCRestInt16 const &a_rThat)
 
 
 /** From value constructor. */
-RTCRestInt16::RTCRestInt16(int16_t iValue)
+RTCRestInt16::RTCRestInt16(int16_t iValue) RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iValue(iValue)
 {
@@ -741,7 +741,7 @@ RTCRestInt16::~RTCRestInt16()
 
 
 /** Copy assignment operator. */
-RTCRestInt16 &RTCRestInt16::operator=(RTCRestInt16 const &a_rThat)
+RTCRestInt16 &RTCRestInt16::operator=(RTCRestInt16 const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
@@ -749,7 +749,7 @@ RTCRestInt16 &RTCRestInt16::operator=(RTCRestInt16 const &a_rThat)
 }
 
 
-int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat)
+int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iValue = a_rThat.m_iValue;
@@ -757,20 +757,20 @@ int RTCRestInt16::assignCopy(RTCRestInt16 const &a_rThat)
 }
 
 
-void RTCRestInt16::assignValue(int16_t a_iValue)
+void RTCRestInt16::assignValue(int16_t a_iValue) RT_NOEXCEPT
 {
     m_iValue = a_iValue;
     m_fNullIndicator = false;
 }
 
 
-RTCRestObjectBase *RTCRestInt16::baseClone() const
+RTCRestObjectBase *RTCRestInt16::baseClone() const RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestInt16(*this);
 }
 
 
-int RTCRestInt16::resetToDefault()
+int RTCRestInt16::resetToDefault() RT_NOEXCEPT
 {
     m_iValue = 0;
     m_fNullIndicator = false;
@@ -778,7 +778,7 @@ int RTCRestInt16::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
         a_rDst.printf("%RI16", m_iValue);
@@ -788,7 +788,7 @@ RTCRestOutputBase &RTCRestInt16::serializeAsJson(RTCRestOutputBase &a_rDst) cons
 }
 
 
-int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_iValue = 0;
     m_fNullIndicator = false;
@@ -823,7 +823,7 @@ int RTCRestInt16::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestInt16::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestInt16::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (!(a_fFlags & kToString_Append))
     {
@@ -838,7 +838,7 @@ int RTCRestInt16::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionF
 
 
 int RTCRestInt16::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                             uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags);
 
@@ -861,13 +861,13 @@ int RTCRestInt16::fromString(RTCString const &a_rValue, const char *a_pszName, P
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestInt16::typeClass() const
+RTCRestObjectBase::kTypeClass RTCRestInt16::typeClass() const RT_NOEXCEPT
 {
     return kTypeClass_Int16;
 }
 
 
-const char *RTCRestInt16::typeName() const
+const char *RTCRestInt16::typeName() const RT_NOEXCEPT
 {
     return "int16_t";
 }
@@ -879,7 +879,7 @@ const char *RTCRestInt16::typeName() const
 *********************************************************************************************************************************/
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDouble::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDouble::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestDouble();
 }
@@ -889,7 +889,7 @@ const char *RTCRestInt16::typeName() const
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestDouble::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestDouble::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -900,7 +900,7 @@ RTCRestDouble::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, R
 
 
 /** Default constructor. */
-RTCRestDouble::RTCRestDouble()
+RTCRestDouble::RTCRestDouble() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_rdValue(0.0)
 {
@@ -908,7 +908,7 @@ RTCRestDouble::RTCRestDouble()
 
 
 /** Copy constructor. */
-RTCRestDouble::RTCRestDouble(RTCRestDouble const &a_rThat)
+RTCRestDouble::RTCRestDouble(RTCRestDouble const &a_rThat) RT_NOEXCEPT
     : RTCRestObjectBase(a_rThat)
     , m_rdValue(a_rThat.m_rdValue)
 {
@@ -916,7 +916,7 @@ RTCRestDouble::RTCRestDouble(RTCRestDouble const &a_rThat)
 
 
 /** From value constructor. */
-RTCRestDouble::RTCRestDouble(double rdValue)
+RTCRestDouble::RTCRestDouble(double rdValue) RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_rdValue(rdValue)
 {
@@ -931,7 +931,7 @@ RTCRestDouble::~RTCRestDouble()
 
 
 /** Copy assignment operator. */
-RTCRestDouble &RTCRestDouble::operator=(RTCRestDouble const &a_rThat)
+RTCRestDouble &RTCRestDouble::operator=(RTCRestDouble const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_rdValue = a_rThat.m_rdValue;
@@ -939,7 +939,7 @@ RTCRestDouble &RTCRestDouble::operator=(RTCRestDouble const &a_rThat)
 }
 
 
-int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat)
+int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_rdValue = a_rThat.m_rdValue;
@@ -947,20 +947,20 @@ int RTCRestDouble::assignCopy(RTCRestDouble const &a_rThat)
 }
 
 
-void RTCRestDouble::assignValue(double a_rdValue)
+void RTCRestDouble::assignValue(double a_rdValue) RT_NOEXCEPT
 {
     m_rdValue = a_rdValue;
     m_fNullIndicator = false;
 }
 
 
-RTCRestObjectBase *RTCRestDouble::baseClone() const
+RTCRestObjectBase *RTCRestDouble::baseClone() const RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestDouble(*this);
 }
 
 
-int RTCRestDouble::resetToDefault()
+int RTCRestDouble::resetToDefault() RT_NOEXCEPT
 {
     m_rdValue = 0.0;
     m_fNullIndicator = false;
@@ -968,7 +968,7 @@ int RTCRestDouble::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
     {
@@ -994,7 +994,7 @@ RTCRestOutputBase &RTCRestDouble::serializeAsJson(RTCRestOutputBase &a_rDst) con
 }
 
 
-int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_rdValue = 0.0;
     m_fNullIndicator = false;
@@ -1037,7 +1037,7 @@ int RTCRestDouble::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
     {
@@ -1066,7 +1066,7 @@ int RTCRestDouble::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollection
 
 
 int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags);
 
@@ -1105,13 +1105,13 @@ int RTCRestDouble::fromString(RTCString const &a_rValue, const char *a_pszName, 
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestDouble::typeClass() const
+RTCRestObjectBase::kTypeClass RTCRestDouble::typeClass() const RT_NOEXCEPT
 {
     return kTypeClass_Double;
 }
 
 
-const char *RTCRestDouble::typeName() const
+const char *RTCRestDouble::typeName() const RT_NOEXCEPT
 {
     return "double";
 }
@@ -1123,7 +1123,7 @@ const char *RTCRestDouble::typeName() const
 *********************************************************************************************************************************/
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestString::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestString::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestString();
 }
@@ -1133,7 +1133,7 @@ const char *RTCRestDouble::typeName() const
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestString::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestString::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -1144,7 +1144,7 @@ RTCRestString::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, R
 
 
 /** Default constructor. */
-RTCRestString::RTCRestString()
+RTCRestString::RTCRestString() RT_NOEXCEPT
     : RTCRestObjectBase()
     , RTCString()
 {
@@ -1181,7 +1181,7 @@ RTCRestString::~RTCRestString()
 }
 
 
-int RTCRestString::assignCopy(RTCRestString const &a_rThat)
+int RTCRestString::assignCopy(RTCRestString const &a_rThat) RT_NOEXCEPT
 {
     int rc = assignNoThrow(a_rThat);
     m_fNullIndicator = a_rThat.m_fNullIndicator;
@@ -1189,21 +1189,21 @@ int RTCRestString::assignCopy(RTCRestString const &a_rThat)
 }
 
 
-int RTCRestString::assignCopy(RTCString const &a_rThat)
+int RTCRestString::assignCopy(RTCString const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = false;
     return assignNoThrow(a_rThat);
 }
 
 
-int RTCRestString::assignCopy(const char *a_pszThat)
+int RTCRestString::assignCopy(const char *a_pszThat) RT_NOEXCEPT
 {
     m_fNullIndicator = false;
     return assignNoThrow(a_pszThat);
 }
 
 
-int RTCRestString::setNull()
+int RTCRestString::setNull() RT_NOEXCEPT
 {
     RTCString::setNull();
     m_fNullIndicator = true;
@@ -1211,7 +1211,7 @@ int RTCRestString::setNull()
 }
 
 
-RTCRestObjectBase *RTCRestString::baseClone() const
+RTCRestObjectBase *RTCRestString::baseClone() const RT_NOEXCEPT
 {
     RTCRestString *pClone = new (std::nothrow) RTCRestString();
     if (pClone)
@@ -1225,7 +1225,7 @@ RTCRestObjectBase *RTCRestString::baseClone() const
 }
 
 
-int RTCRestString::resetToDefault()
+int RTCRestString::resetToDefault() RT_NOEXCEPT
 {
     RTCString::setNull();
     m_fNullIndicator = false;
@@ -1233,7 +1233,7 @@ int RTCRestString::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
         a_rDst.printf("%RMjs", m_psz ? m_psz : "");
@@ -1243,7 +1243,7 @@ RTCRestOutputBase &RTCRestString::serializeAsJson(RTCRestOutputBase &a_rDst) con
 }
 
 
-int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_fNullIndicator = false;
 
@@ -1271,7 +1271,7 @@ int RTCRestString::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestString::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestString::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     /* Note! m_fNullIndicator == true: empty string. */
     if (!(a_fFlags & kToString_Append))
@@ -1281,7 +1281,7 @@ int RTCRestString::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollection
 
 
 int RTCRestString::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_fFlags); RT_NOREF(a_pszName); RT_NOREF(a_pErrInfo);
 
@@ -1291,13 +1291,13 @@ int RTCRestString::fromString(RTCString const &a_rValue, const char *a_pszName, 
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestString::typeClass() const
+RTCRestObjectBase::kTypeClass RTCRestString::typeClass() const RT_NOEXCEPT
 {
     return kTypeClass_String;
 }
 
 
-const char *RTCRestString::typeName() const
+const char *RTCRestString::typeName() const RT_NOEXCEPT
 {
     return "RTCString";
 }
@@ -1443,7 +1443,7 @@ RTCRestString &RTCRestString::printfV(const char *pszFormat, va_list va)
 /*********************************************************************************************************************************
 *   RTCRestDate implementation                                                                                                   *
 *********************************************************************************************************************************/
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDate::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestDate::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestDate();
 }
@@ -1453,7 +1453,7 @@ RTCRestString &RTCRestString::printfV(const char *pszFormat, va_list va)
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestDate::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestDate::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj = createInstance();
     *a_ppInstance = pObj;
@@ -1463,7 +1463,7 @@ RTCRestDate::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTC
 }
 
 
-RTCRestDate::RTCRestDate()
+RTCRestDate::RTCRestDate() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_fTimeSpecOkay(false)
     , m_enmFormat(kFormat_Invalid)
@@ -1506,7 +1506,7 @@ RTCRestDate &RTCRestDate::operator=(RTCRestDate const &a_rThat)
 }
 
 
-int RTCRestDate::assignCopy(RTCRestDate const &a_rThat)
+int RTCRestDate::assignCopy(RTCRestDate const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_TimeSpec       = a_rThat.m_TimeSpec;
@@ -1517,7 +1517,7 @@ int RTCRestDate::assignCopy(RTCRestDate const &a_rThat)
 }
 
 
-RTCRestObjectBase *RTCRestDate::baseClone() const
+RTCRestObjectBase *RTCRestDate::baseClone() const RT_NOEXCEPT
 {
     RTCRestDate *pClone = new (std::nothrow) RTCRestDate();
     if (pClone)
@@ -1531,7 +1531,7 @@ RTCRestObjectBase *RTCRestDate::baseClone() const
 }
 
 
-int RTCRestDate::resetToDefault()
+int RTCRestDate::resetToDefault() RT_NOEXCEPT
 {
     m_fNullIndicator = true;
     RTTimeSpecSetNano(&m_TimeSpec, 0);
@@ -1543,7 +1543,7 @@ int RTCRestDate::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestDate::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestDate::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (m_fNullIndicator)
         a_rDst.nullValue();
@@ -1553,7 +1553,7 @@ RTCRestOutputBase &RTCRestDate::serializeAsJson(RTCRestOutputBase &a_rDst) const
 }
 
 
-int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     setNull();
 
@@ -1585,7 +1585,7 @@ int RTCRestDate::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestDate::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
+int RTCRestDate::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const RT_NOEXCEPT
 {
     if (m_fNullIndicator)
     {
@@ -1600,7 +1600,7 @@ int RTCRestDate::toString(RTCString *a_pDst, uint32_t a_fFlags /*= 0*/) const
 
 
 int RTCRestDate::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                            uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                            uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     setNull();
     if (a_rValue.startsWithWord("null", RTCString::CaseInsensitive))
@@ -1625,19 +1625,19 @@ int RTCRestDate::fromString(RTCString const &a_rValue, const char *a_pszName, PR
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestDate::typeClass(void) const
+RTCRestObjectBase::kTypeClass RTCRestDate::typeClass(void) const RT_NOEXCEPT
 {
     return kTypeClass_Date;
 }
 
 
-const char *RTCRestDate::typeName(void) const
+const char *RTCRestDate::typeName(void) const RT_NOEXCEPT
 {
     return "RTCRestDate";
 }
 
 
-int RTCRestDate::assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat)
+int RTCRestDate::assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat) RT_NOEXCEPT
 {
     AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
     AssertReturn(a_enmFormat > kFormat_Invalid && a_enmFormat < kFormat_End, VERR_INVALID_PARAMETER);
@@ -1647,7 +1647,7 @@ int RTCRestDate::assignValue(PCRTTIMESPEC a_pTimeSpec, kFormat a_enmFormat)
 }
 
 
-int RTCRestDate::assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec)
+int RTCRestDate::assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec) RT_NOEXCEPT
 {
     AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
     m_TimeSpec = *a_pTimeSpec;
@@ -1655,7 +1655,7 @@ int RTCRestDate::assignValueRfc2822(PCRTTIMESPEC a_pTimeSpec)
 }
 
 
-int RTCRestDate::assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec)
+int RTCRestDate::assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec) RT_NOEXCEPT
 {
     AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
     m_TimeSpec = *a_pTimeSpec;
@@ -1663,7 +1663,7 @@ int RTCRestDate::assignValueRfc7131(PCRTTIMESPEC a_pTimeSpec)
 }
 
 
-int RTCRestDate::assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec)
+int RTCRestDate::assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec) RT_NOEXCEPT
 {
     AssertPtrReturn(a_pTimeSpec, VERR_INVALID_PARAMETER);
     m_TimeSpec = *a_pTimeSpec;
@@ -1671,35 +1671,35 @@ int RTCRestDate::assignValueRfc3339(PCRTTIMESPEC a_pTimeSpec)
 }
 
 
-int RTCRestDate::assignNow(kFormat a_enmFormat)
+int RTCRestDate::assignNow(kFormat a_enmFormat) RT_NOEXCEPT
 {
     RTTIMESPEC Now;
     return assignValue(RTTimeNow(&Now), a_enmFormat);
 }
 
 
-int RTCRestDate::assignNowRfc2822()
+int RTCRestDate::assignNowRfc2822() RT_NOEXCEPT
 {
     RTTIMESPEC Now;
     return assignValueRfc2822(RTTimeNow(&Now));
 }
 
 
-int RTCRestDate::assignNowRfc7131()
+int RTCRestDate::assignNowRfc7131() RT_NOEXCEPT
 {
     RTTIMESPEC Now;
     return assignValueRfc7131(RTTimeNow(&Now));
 }
 
 
-int RTCRestDate::assignNowRfc3339()
+int RTCRestDate::assignNowRfc3339() RT_NOEXCEPT
 {
     RTTIMESPEC Now;
     return assignValueRfc3339(RTTimeNow(&Now));
 }
 
 
-int RTCRestDate::setFormat(kFormat a_enmFormat)
+int RTCRestDate::setFormat(kFormat a_enmFormat) RT_NOEXCEPT
 {
     /*
      * If this is a null object, just set the format as a hint for upcoming deserialization.
@@ -1730,7 +1730,7 @@ int RTCRestDate::setFormat(kFormat a_enmFormat)
 }
 
 
-int RTCRestDate::explodeAndFormat(kFormat a_enmFormat)
+int RTCRestDate::explodeAndFormat(kFormat a_enmFormat) RT_NOEXCEPT
 {
     RTTimeExplode(&m_Exploded, &m_TimeSpec);
     return format(a_enmFormat);
@@ -1745,7 +1745,7 @@ int RTCRestDate::explodeAndFormat(kFormat a_enmFormat)
  * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
  * @param   a_enmFormat The format to use.
  */
-int RTCRestDate::format(kFormat a_enmFormat)
+int RTCRestDate::format(kFormat a_enmFormat) RT_NOEXCEPT
 {
     m_fNullIndicator = false;
     m_fTimeSpecOkay  = true;
@@ -1794,7 +1794,7 @@ int RTCRestDate::format(kFormat a_enmFormat)
  * @returns IPRT status code.
  * @param   enmFormat   Specific format to try, kFormat_Invalid (default) to try guess it.
  */
-int RTCRestDate::decodeFormattedString(kFormat enmFormat /*= kFormat_Invalid*/)
+int RTCRestDate::decodeFormattedString(kFormat enmFormat /*= kFormat_Invalid*/) RT_NOEXCEPT
 {
     /*
      * Take empty string to mean null.
@@ -1903,7 +1903,7 @@ int RTCRestDate::decodeFormattedString(kFormat enmFormat /*= kFormat_Invalid*/)
 *********************************************************************************************************************************/
 
 /** Default constructor. */
-RTCRestStringEnumBase::RTCRestStringEnumBase()
+RTCRestStringEnumBase::RTCRestStringEnumBase() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_iEnumValue(0 /*invalid*/)
     , m_strValue()
@@ -1937,7 +1937,7 @@ RTCRestStringEnumBase &RTCRestStringEnumBase::operator=(RTCRestStringEnumBase co
 }
 
 
-int RTCRestStringEnumBase::assignCopy(RTCRestStringEnumBase const &a_rThat)
+int RTCRestStringEnumBase::assignCopy(RTCRestStringEnumBase const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_iEnumValue = a_rThat.m_iEnumValue;
@@ -1945,7 +1945,7 @@ int RTCRestStringEnumBase::assignCopy(RTCRestStringEnumBase const &a_rThat)
 }
 
 
-int RTCRestStringEnumBase::resetToDefault()
+int RTCRestStringEnumBase::resetToDefault() RT_NOEXCEPT
 {
     m_iEnumValue = 0; /*invalid*/
     m_strValue.setNull();
@@ -1953,7 +1953,7 @@ int RTCRestStringEnumBase::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestStringEnumBase::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestStringEnumBase::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
         a_rDst.printf("%RMjs", getString());
@@ -1963,7 +1963,7 @@ RTCRestOutputBase &RTCRestStringEnumBase::serializeAsJson(RTCRestOutputBase &a_r
 }
 
 
-int RTCRestStringEnumBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestStringEnumBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     m_fNullIndicator = false;
     m_iEnumValue     = 0;
@@ -1991,7 +1991,7 @@ int RTCRestStringEnumBase::deserializeFromJson(RTCRestJsonCursor const &a_rCurso
 }
 
 
-int RTCRestStringEnumBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestStringEnumBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
     {
@@ -2017,7 +2017,7 @@ int RTCRestStringEnumBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCo
 
 
 int RTCRestStringEnumBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                                      uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                                      uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     int iEnumValue = stringToEnum(a_rValue);
     if (iEnumValue > 0)
@@ -2046,13 +2046,13 @@ int RTCRestStringEnumBase::fromString(RTCString const &a_rValue, const char *a_p
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestStringEnumBase::typeClass(void) const
+RTCRestObjectBase::kTypeClass RTCRestStringEnumBase::typeClass(void) const RT_NOEXCEPT
 {
     return kTypeClass_StringEnum;
 }
 
 
-int RTCRestStringEnumBase::setByString(const char *a_pszValue, size_t a_cchValue /*= RTSTR_MAX*/)
+int RTCRestStringEnumBase::setByString(const char *a_pszValue, size_t a_cchValue /*= RTSTR_MAX*/) RT_NOEXCEPT
 {
     if (a_cchValue == RTSTR_MAX)
         a_cchValue = strlen(a_pszValue);
@@ -2073,13 +2073,13 @@ int RTCRestStringEnumBase::setByString(const char *a_pszValue, size_t a_cchValue
 }
 
 
-int RTCRestStringEnumBase::setByString(RTCString const &a_rValue)
+int RTCRestStringEnumBase::setByString(RTCString const &a_rValue) RT_NOEXCEPT
 {
     return setByString(a_rValue.c_str(), a_rValue.length());
 }
 
 
-const char *RTCRestStringEnumBase::getString() const
+const char *RTCRestStringEnumBase::getString() const RT_NOEXCEPT
 {
     /* We ASSUME a certain mapping table layout here.  */
     if (m_iEnumValue > 0)
@@ -2099,7 +2099,7 @@ const char *RTCRestStringEnumBase::getString() const
 }
 
 
-int RTCRestStringEnumBase::stringToEnum(const char *a_pszValue, size_t a_cchValue)
+int RTCRestStringEnumBase::stringToEnum(const char *a_pszValue, size_t a_cchValue) RT_NOEXCEPT
 {
     if (a_cchValue == RTSTR_MAX)
         a_cchValue = strlen(a_pszValue);
@@ -2114,13 +2114,13 @@ int RTCRestStringEnumBase::stringToEnum(const char *a_pszValue, size_t a_cchValu
 }
 
 
-int RTCRestStringEnumBase::stringToEnum(RTCString const &a_rStrValue)
+int RTCRestStringEnumBase::stringToEnum(RTCString const &a_rStrValue) RT_NOEXCEPT
 {
     return stringToEnum(a_rStrValue.c_str(), a_rStrValue.length());
 }
 
 
-const char *RTCRestStringEnumBase::enumToString(int a_iEnumValue, size_t *a_pcchString)
+const char *RTCRestStringEnumBase::enumToString(int a_iEnumValue, size_t *a_pcchString) RT_NOEXCEPT
 {
     /* We ASSUME a certain mapping table layout here.  */
     if (a_iEnumValue > 0)
@@ -2146,7 +2146,7 @@ const char *RTCRestStringEnumBase::enumToString(int a_iEnumValue, size_t *a_pcch
 }
 
 
-bool RTCRestStringEnumBase::setWorker(int a_iEnumValue)
+bool RTCRestStringEnumBase::setWorker(int a_iEnumValue) RT_NOEXCEPT
 {
     /* We ASSUME a certain mapping table layout here.  */
     if (a_iEnumValue > 0)
@@ -2167,7 +2167,7 @@ bool RTCRestStringEnumBase::setWorker(int a_iEnumValue)
 }
 
 
-RTCRestObjectBase  *RTCRestStringEnumBase::cloneWorker(RTCRestStringEnumBase *a_pDst) const
+RTCRestObjectBase  *RTCRestStringEnumBase::cloneWorker(RTCRestStringEnumBase *a_pDst) const RT_NOEXCEPT
 {
     if (a_pDst)
     {
@@ -2185,7 +2185,7 @@ RTCRestObjectBase  *RTCRestStringEnumBase::cloneWorker(RTCRestStringEnumBase *a_
 *   RTCRestDataObject                                                                                                            *
 *********************************************************************************************************************************/
 
-RTCRestDataObject::RTCRestDataObject()
+RTCRestDataObject::RTCRestDataObject() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_fIsSet(0)
 {
@@ -2197,14 +2197,14 @@ RTCRestDataObject::~RTCRestDataObject()
 }
 
 
-RTCRestDataObject::RTCRestDataObject(RTCRestDataObject const &a_rThat)
+RTCRestDataObject::RTCRestDataObject(RTCRestDataObject const &a_rThat) RT_NOEXCEPT
     : RTCRestObjectBase(a_rThat)
     , m_fIsSet(a_rThat.m_fIsSet)
 {
 }
 
 
-RTCRestDataObject &RTCRestDataObject::operator=(RTCRestDataObject const &a_rThat)
+RTCRestDataObject &RTCRestDataObject::operator=(RTCRestDataObject const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_fIsSet = a_rThat.m_fIsSet;
@@ -2212,7 +2212,7 @@ RTCRestDataObject &RTCRestDataObject::operator=(RTCRestDataObject const &a_rThat
 }
 
 
-int RTCRestDataObject::assignCopy(RTCRestDataObject const &a_rThat)
+int RTCRestDataObject::assignCopy(RTCRestDataObject const &a_rThat) RT_NOEXCEPT
 {
     m_fNullIndicator = a_rThat.m_fNullIndicator;
     m_fIsSet = a_rThat.m_fIsSet;
@@ -2220,7 +2220,7 @@ int RTCRestDataObject::assignCopy(RTCRestDataObject const &a_rThat)
 }
 
 
-int RTCRestDataObject::resetToDefault()
+int RTCRestDataObject::resetToDefault() RT_NOEXCEPT
 {
     m_fNullIndicator = false;
     m_fIsSet = 0;
@@ -2228,14 +2228,14 @@ int RTCRestDataObject::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestDataObject::serializeMembersAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestDataObject::serializeMembersAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     RT_NOREF(a_rDst);
     return a_rDst;
 }
 
 
-RTCRestOutputBase &RTCRestDataObject::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestDataObject::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
     {
@@ -2249,14 +2249,14 @@ RTCRestOutputBase &RTCRestDataObject::serializeAsJson(RTCRestOutputBase &a_rDst)
 }
 
 
-int RTCRestDataObject::deserializeMemberFromJson(RTCRestJsonCursor const &a_rCursor, size_t a_cchName)
+int RTCRestDataObject::deserializeMemberFromJson(RTCRestJsonCursor const &a_rCursor, size_t a_cchName) RT_NOEXCEPT
 {
     RT_NOREF(a_rCursor, a_cchName);
     return VERR_NOT_FOUND;
 }
 
 
-int RTCRestDataObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestDataObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     /*
      * Make sure the object starts out with default values.
@@ -2331,7 +2331,7 @@ int RTCRestDataObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestDataObject::typeClass(void) const
+RTCRestObjectBase::kTypeClass RTCRestDataObject::typeClass(void) const RT_NOEXCEPT
 {
     return kTypeClass_DataObject;
 }
@@ -2342,13 +2342,13 @@ RTCRestObjectBase::kTypeClass RTCRestDataObject::typeClass(void) const
 *   RTCRestPolyDataObject                                                                                                        *
 *********************************************************************************************************************************/
 
-RTCRestPolyDataObject::RTCRestPolyDataObject()
+RTCRestPolyDataObject::RTCRestPolyDataObject() RT_NOEXCEPT
     : RTCRestDataObject()
 {
 }
 
 
-RTCRestPolyDataObject::RTCRestPolyDataObject(RTCRestPolyDataObject const &a_rThat)
+RTCRestPolyDataObject::RTCRestPolyDataObject(RTCRestPolyDataObject const &a_rThat) RT_NOEXCEPT
     : RTCRestDataObject(a_rThat)
 {
 }
@@ -2359,19 +2359,19 @@ RTCRestPolyDataObject::~RTCRestPolyDataObject()
 }
 
 
-int RTCRestPolyDataObject::resetToDefault()
+int RTCRestPolyDataObject::resetToDefault() RT_NOEXCEPT
 {
     return RTCRestDataObject::resetToDefault();
 }
 
 
-bool RTCRestPolyDataObject::isChild() const
+bool RTCRestPolyDataObject::isChild() const RT_NOEXCEPT
 {
     return false;
 }
 
 
-RTCRestPolyDataObject &RTCRestPolyDataObject::operator=(RTCRestPolyDataObject const &a_rThat)
+RTCRestPolyDataObject &RTCRestPolyDataObject::operator=(RTCRestPolyDataObject const &a_rThat) RT_NOEXCEPT
 {
     RTCRestDataObject::operator=(a_rThat);
     return *this;

@@ -39,7 +39,7 @@
 /**
  * Default constructor.
  */
-RTCRestClientResponseBase::RTCRestClientResponseBase()
+RTCRestClientResponseBase::RTCRestClientResponseBase() RT_NOEXCEPT
     : m_rcStatus(VERR_WRONG_ORDER)
     , m_rcHttp(VERR_NOT_AVAILABLE)
     , m_pErrInfo(NULL)
@@ -87,7 +87,7 @@ RTCRestClientResponseBase &RTCRestClientResponseBase::operator=(RTCRestClientRes
 }
 
 
-void RTCRestClientResponseBase::reset()
+void RTCRestClientResponseBase::reset() RT_NOEXCEPT
 {
     /* Return to default constructor state. */
     m_rcStatus = VERR_WRONG_ORDER;
@@ -98,7 +98,7 @@ void RTCRestClientResponseBase::reset()
 }
 
 
-int RTCRestClientResponseBase::receivePrepare(RTHTTP a_hHttp)
+int RTCRestClientResponseBase::receivePrepare(RTHTTP a_hHttp) RT_NOEXCEPT
 {
     int rc = RTHttpSetHeaderCallback(a_hHttp, receiveHttpHeaderCallback, this);
     AssertRCReturn(rc, rc);
@@ -107,7 +107,7 @@ int RTCRestClientResponseBase::receivePrepare(RTHTTP a_hHttp)
 }
 
 
-void RTCRestClientResponseBase::receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
+void RTCRestClientResponseBase::receiveComplete(int a_rcStatus, RTHTTP a_hHttp) RT_NOEXCEPT
 {
     RT_NOREF_PV(a_hHttp);
     m_rcStatus = a_rcStatus;
@@ -120,7 +120,7 @@ void RTCRestClientResponseBase::receiveComplete(int a_rcStatus, RTHTTP a_hHttp)
 
 
 int RTCRestClientResponseBase::consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
-                                             const char *a_pchValue, size_t a_cchValue)
+                                             const char *a_pchValue, size_t a_cchValue) RT_NOEXCEPT
 {
     if (   a_uMatchWord == RTHTTP_MAKE_HDR_MATCH_WORD(sizeof("Content-Type") - 1, 'c', 'o', 'n')
         && RTStrNICmpAscii(a_pchField, RT_STR_TUPLE("Content-Type")) == 0)
@@ -137,7 +137,7 @@ int RTCRestClientResponseBase::consumeHeader(uint32_t a_uMatchWord, const char *
 
 /*static*/ DECLCALLBACK(int)
 RTCRestClientResponseBase::receiveHttpHeaderCallback(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
-                                                     const char *pchValue, size_t cchValue, void *pvUser)
+                                                     const char *pchValue, size_t cchValue, void *pvUser) RT_NOEXCEPT
 {
     RTCRestClientResponseBase *pThis = (RTCRestClientResponseBase *)pvUser;
     RT_NOREF(hHttp);
@@ -145,18 +145,18 @@ RTCRestClientResponseBase::receiveHttpHeaderCallback(RTHTTP hHttp, uint32_t uMat
 }
 
 
-void RTCRestClientResponseBase::consumeBody(const char *a_pchData, size_t a_cbData)
+void RTCRestClientResponseBase::consumeBody(const char *a_pchData, size_t a_cbData) RT_NOEXCEPT
 {
     RT_NOREF(a_pchData, a_cbData);
 }
 
 
-void RTCRestClientResponseBase::receiveFinal()
+void RTCRestClientResponseBase::receiveFinal() RT_NOEXCEPT
 {
 }
 
 
-PRTERRINFO RTCRestClientResponseBase::getErrInfoInternal(void)
+PRTERRINFO RTCRestClientResponseBase::getErrInfoInternal(void) RT_NOEXCEPT
 {
     if (m_pErrInfo)
         return m_pErrInfo;
@@ -168,7 +168,7 @@ PRTERRINFO RTCRestClientResponseBase::getErrInfoInternal(void)
 }
 
 
-void RTCRestClientResponseBase::deleteErrInfo(void)
+void RTCRestClientResponseBase::deleteErrInfo(void) RT_NOEXCEPT
 {
     if (m_pErrInfo)
     {
@@ -178,7 +178,7 @@ void RTCRestClientResponseBase::deleteErrInfo(void)
 }
 
 
-void RTCRestClientResponseBase::copyErrInfo(PCRTERRINFO pErrInfo)
+void RTCRestClientResponseBase::copyErrInfo(PCRTERRINFO pErrInfo) RT_NOEXCEPT
 {
     deleteErrInfo();
     m_pErrInfo = (PRTERRINFO)RTMemDup(pErrInfo, pErrInfo->cbMsg + sizeof(*pErrInfo));
@@ -191,7 +191,7 @@ void RTCRestClientResponseBase::copyErrInfo(PCRTERRINFO pErrInfo)
 }
 
 
-int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
+int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...) RT_NOEXCEPT
 {
     PRTERRINFO pErrInfo = getErrInfoInternal();
     if (pErrInfo)
@@ -213,7 +213,7 @@ int RTCRestClientResponseBase::addError(int rc, const char *pszFormat, ...)
 
 
 RTCRestClientResponseBase::PrimaryJsonCursorForBody::PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName,
-                                                                              RTCRestClientResponseBase *a_pThat)
+                                                                              RTCRestClientResponseBase *a_pThat) RT_NOEXCEPT
     : RTCRestJsonPrimaryCursor(hValue, pszName, a_pThat->getErrInfoInternal())
     , m_pThat(a_pThat)
 {
@@ -221,7 +221,7 @@ RTCRestClientResponseBase::PrimaryJsonCursorForBody::PrimaryJsonCursorForBody(RT
 
 
 int RTCRestClientResponseBase::PrimaryJsonCursorForBody::addError(RTCRestJsonCursor const &a_rCursor, int a_rc,
-                                                                  const char *a_pszFormat, ...)
+                                                                  const char *a_pszFormat, ...) RT_NOEXCEPT
 {
     va_list va;
     va_start(va, a_pszFormat);
@@ -232,7 +232,7 @@ int RTCRestClientResponseBase::PrimaryJsonCursorForBody::addError(RTCRestJsonCur
 }
 
 
-int RTCRestClientResponseBase::PrimaryJsonCursorForBody::unknownField(RTCRestJsonCursor const &a_rCursor)
+int RTCRestClientResponseBase::PrimaryJsonCursorForBody::unknownField(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     char szPath[256];
     m_pThat->addError(VWRN_NOT_FOUND, "response body/%s: unknown field (type %s)",
@@ -242,7 +242,7 @@ int RTCRestClientResponseBase::PrimaryJsonCursorForBody::unknownField(RTCRestJso
 
 
 int RTCRestClientResponseBase::deserializeHeader(RTCRestObjectBase *a_pObj, const char *a_pchValue, size_t a_cchValue,
-                                                 uint32_t a_fFlags, const char *a_pszErrorTag)
+                                                 uint32_t a_fFlags, const char *a_pszErrorTag) RT_NOEXCEPT
 {
     /*
      * Start by checking the encoding and transfering the value to a RTCString object.
@@ -279,7 +279,7 @@ int RTCRestClientResponseBase::deserializeHeader(RTCRestObjectBase *a_pObj, cons
 
 int RTCRestClientResponseBase::deserializeHeaderIntoMap(RTCRestStringMapBase *a_pMap, const char *a_pchField, size_t a_cchField,
                                                         const char *a_pchValue, size_t a_cchValue, uint32_t a_fFlags,
-                                                        const char *a_pszErrorTag)
+                                                        const char *a_pszErrorTag) RT_NOEXCEPT
 {
     /*
      * Start by checking the encoding of both the field and value,
@@ -335,7 +335,7 @@ int RTCRestClientResponseBase::deserializeHeaderIntoMap(RTCRestStringMapBase *a_
 }
 
 
-void RTCRestClientResponseBase::deserializeBody(const char *a_pchData, size_t a_cbData, const char *a_pszBodyName)
+void RTCRestClientResponseBase::deserializeBody(const char *a_pchData, size_t a_cbData, const char *a_pszBodyName) RT_NOEXCEPT
 {
     if (m_strContentType.startsWith("application/json"))
     {
@@ -372,7 +372,7 @@ void RTCRestClientResponseBase::deserializeBody(const char *a_pchData, size_t a_
 }
 
 
-void RTCRestClientResponseBase::deserializeBodyFromJsonCursor(RTCRestJsonCursor const &a_rCursor)
+void RTCRestClientResponseBase::deserializeBodyFromJsonCursor(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     a_rCursor.m_pPrimary->addError(a_rCursor, VERR_REST_INTERNAL_ERROR_8, "deserializeBodyFromJsonCursor must be overridden!");
     AssertFailed();

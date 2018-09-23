@@ -44,7 +44,7 @@
 class RT_DECL_CLASS RTCRestOutputBase
 {
 public:
-    RTCRestOutputBase();
+    RTCRestOutputBase() RT_NOEXCEPT;
     virtual ~RTCRestOutputBase();
 
     /**
@@ -54,7 +54,7 @@ public:
      * @param   a_pchString     The string to output (not necessarily terminated).
      * @param   a_cchToWrite    The length of the string
      */
-    virtual size_t output(const char *a_pchString, size_t a_cchToWrite) = 0;
+    virtual size_t output(const char *a_pchString, size_t a_cchToWrite) RT_NOEXCEPT = 0;
 
     /**
      * RTStrPrintf like function (see @ref pg_rt_str_format).
@@ -63,7 +63,7 @@ public:
      * @param   pszFormat   The format string.
      * @param   ...         Argument specfied in @a pszFormat.
      */
-    inline size_t printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3)
+    inline size_t printf(const char *pszFormat, ...) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(2, 3)
     {
         va_list va;
         va_start(va, pszFormat);
@@ -79,52 +79,52 @@ public:
      * @param   pszFormat   The format string.
      * @param   va          Argument specfied in @a pszFormat.
      */
-    size_t vprintf(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+    size_t vprintf(const char *pszFormat, va_list va) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(2, 0);
 
     /**
      * Begins an array.
      * @returns Previous output state.  Pass to endArray() when done.
      */
-    virtual uint32_t beginArray();
+    virtual uint32_t beginArray() RT_NOEXCEPT;
 
     /**
      * Ends an array.
      * @param   a_uOldState     Previous output state (returned by beginArray()).
      */
-    virtual void endArray(uint32_t a_uOldState);
+    virtual void endArray(uint32_t a_uOldState) RT_NOEXCEPT;
 
     /**
      * Begins an object.
      * @returns Previous output state.  Pass to endObject() when done.
      */
-    virtual uint32_t beginObject();
+    virtual uint32_t beginObject() RT_NOEXCEPT;
 
     /**
      * Ends an array.
      * @param   a_uOldState     Previous output state (returned by beginObject()).
      */
-    virtual void endObject(uint32_t a_uOldState);
+    virtual void endObject(uint32_t a_uOldState) RT_NOEXCEPT;
 
     /**
      * Outputs a value separator.
      * This is called before a value, not after.
      */
-    virtual void valueSeparator();
+    virtual void valueSeparator() RT_NOEXCEPT;
 
     /**
      * Outputs a value separator, name and name separator.
      */
-    virtual void valueSeparatorAndName(const char *a_pszName, size_t a_cchName);
+    virtual void valueSeparatorAndName(const char *a_pszName, size_t a_cchName) RT_NOEXCEPT;
 
     /** Outputs a null-value. */
-    void nullValue();
+    void nullValue() RT_NOEXCEPT;
 
 protected:
     /** The current indentation level (bits 15:0) and separator state (bit 31). */
     uint32_t m_uState;
 
     /** @callback_method_impl{FNRTSTROUTPUT} */
-    static DECLCALLBACK(size_t) printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars);
+    static DECLCALLBACK(size_t) printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT;
 };
 
 
@@ -134,47 +134,47 @@ protected:
 class RT_DECL_CLASS RTCRestOutputPrettyBase : public RTCRestOutputBase
 {
 public:
-    RTCRestOutputPrettyBase();
+    RTCRestOutputPrettyBase() RT_NOEXCEPT;
     virtual ~RTCRestOutputPrettyBase();
 
     /**
      * Begins an array.
      * @returns Previous output state.  Pass to endArray() when done.
      */
-    virtual uint32_t beginArray() RT_OVERRIDE;
+    virtual uint32_t beginArray() RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Ends an array.
      * @param   a_uOldState     Previous output state (returned by beginArray()).
      */
-    virtual void endArray(uint32_t a_uOldState) RT_OVERRIDE;
+    virtual void endArray(uint32_t a_uOldState) RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Begins an object.
      * @returns Previous output state.  Pass to endObject() when done.
      */
-    virtual uint32_t beginObject() RT_OVERRIDE;
+    virtual uint32_t beginObject() RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Ends an array.
      * @param   a_uOldState     Previous output state (returned by beginObject()).
      */
-    virtual void endObject(uint32_t a_uOldState) RT_OVERRIDE;
+    virtual void endObject(uint32_t a_uOldState) RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Outputs a value separator.
      * This is called before a value, not after.
      */
-    virtual void valueSeparator() RT_OVERRIDE;
+    virtual void valueSeparator() RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Outputs a value separator, name and name separator.
      */
-    virtual void valueSeparatorAndName(const char *a_pszName, size_t a_cchName) RT_OVERRIDE;
+    virtual void valueSeparatorAndName(const char *a_pszName, size_t a_cchName) RT_NOEXCEPT RT_OVERRIDE;
 
 protected:
     /** Helper for outputting the correct amount of indentation. */
-    void outputIndentation();
+    void outputIndentation() RT_NOEXCEPT;
 };
 
 
@@ -191,10 +191,10 @@ public:
      * @param   a_fAppend   Whether to append to the current string value, or
      *                      nuke the string content before starting the output.
      */
-    RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend = false);
+    RTCRestOutputToString(RTCString *a_pDst, bool a_fAppend = false) RT_NOEXCEPT;
     virtual ~RTCRestOutputToString();
 
-    virtual size_t output(const char *a_pchString, size_t a_cchToWrite) RT_OVERRIDE;
+    virtual size_t output(const char *a_pchString, size_t a_cchToWrite) RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Finalizes the output and releases the string object to the caller.
@@ -205,7 +205,7 @@ public:
      * @remark  This sets m_pDst to NULL and the object cannot be use for any
      *          more output afterwards.
      */
-    virtual RTCString *finalize();
+    virtual RTCString *finalize() RT_NOEXCEPT;
 
 protected:
     /** Pointer to the destination string.  NULL after finalize().   */
@@ -232,10 +232,10 @@ public:
      * @param   a_fAppend   Whether to append to the current string value, or
      *                      nuke the string content before starting the output.
      */
-    RTCRestOutputPrettyToString(RTCString *a_pDst, bool a_fAppend = false);
+    RTCRestOutputPrettyToString(RTCString *a_pDst, bool a_fAppend = false) RT_NOEXCEPT;
     virtual ~RTCRestOutputPrettyToString();
 
-    virtual size_t output(const char *a_pchString, size_t a_cchToWrite) RT_OVERRIDE;
+    virtual size_t output(const char *a_pchString, size_t a_cchToWrite) RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Finalizes the output and releases the string object to the caller.
@@ -246,7 +246,7 @@ public:
      * @remark  This sets m_pDst to NULL and the object cannot be use for any
      *          more output afterwards.
      */
-    virtual RTCString *finalize();
+    virtual RTCString *finalize() RT_NOEXCEPT;
 
 protected:
     /** Pointer to the destination string.  NULL after finalize().   */

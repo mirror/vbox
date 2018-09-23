@@ -45,41 +45,41 @@ class RT_DECL_CLASS RTCRestBinaryParameter : public RTCRestBinary
 {
 public:
     /** Default constructor. */
-    RTCRestBinaryParameter();
+    RTCRestBinaryParameter() RT_NOEXCEPT;
 
     /** Safe copy assignment method. */
-    virtual int assignCopy(RTCRestBinaryParameter const &a_rThat);
+    virtual int assignCopy(RTCRestBinaryParameter const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method.
       * @note Resets callbacks and ASSUMES that @a a_cbData is the content length. */
-    virtual int assignCopy(RTCRestBinary const &a_rThat) RT_OVERRIDE;
+    virtual int assignCopy(RTCRestBinary const &a_rThat) RT_NOEXCEPT RT_OVERRIDE;
     /** Safe copy assignment method.
      * @note Resets callbacks and ASSUMES that @a a_cbData is the content length. */
-    virtual int assignCopy(void const *a_pvData, size_t a_cbData) RT_OVERRIDE;
+    virtual int assignCopy(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Use the specified data buffer directly.
      * @note Resets callbacks and ASSUMES that @a a_cbData is the content length. */
-    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData) RT_OVERRIDE;
+    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT RT_OVERRIDE;
     /**
      * Use the specified data buffer directly.
      * @note This will assert and work like assignReadOnly. */
-    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_OVERRIDE;
+    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_NOEXCEPT RT_OVERRIDE;
 
     /** Make a clone of this object. */
-    inline RTCRestBinaryParameter *clone() const { return (RTCRestBinaryParameter *)baseClone(); }
+    inline RTCRestBinaryParameter *clone() const RT_NOEXCEPT { return (RTCRestBinaryParameter *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
 
     /**
      * Retrieves the callback data.
      */
-    inline void *getCallbackData() const  { return m_pvCallbackData; }
+    inline void *getCallbackData() const RT_NOEXCEPT  { return m_pvCallbackData; }
 
     /**
      * Sets the content-type for an upload.
@@ -88,17 +88,17 @@ public:
      * @param   a_pszContentType    The content type to set.
      *                              If NULL, no content type is set.
      */
-    int setContentType(const char *a_pszContentType);
+    int setContentType(const char *a_pszContentType) RT_NOEXCEPT;
 
     /**
      * Gets the content type that was set.
      */
-    inline RTCString const &getContentType() const { return m_strContentType; }
+    inline RTCString const &getContentType() const RT_NOEXCEPT { return m_strContentType; }
 
     /**
      * Gets the content-length value (UINT64_MAX if not available).
      */
-    inline uint64_t getContentLength() const { return m_cbContentLength; }
+    inline uint64_t getContentLength() const RT_NOEXCEPT { return m_cbContentLength; }
 
     /**
      * Callback for producing bytes to upload.
@@ -117,7 +117,7 @@ public:
      *          is the sum of the previously returned @a *pcbActual values.
      */
     typedef DECLCALLBACK(int) FNPRODUCER(RTCRestBinaryParameter *a_pThis, void *a_pvDst, size_t a_cbDst,
-                                         uint64_t a_offContent, size_t *a_pcbActual);
+                                         uint64_t a_offContent, size_t *a_pcbActual) /*RT_NOEXCEPT*/;
     /** Pointer to a byte producer callback. */
     typedef FNPRODUCER *PFNPRODUCER;
 
@@ -133,7 +133,7 @@ public:
      *
      * @note    This will drop any buffer previously registered using setUploadData().
      */
-    void setProducerCallback(PFNPRODUCER a_pfnProducer, void *a_pvCallbackData = NULL, uint64_t a_cbContentLength = UINT64_MAX);
+    void setProducerCallback(PFNPRODUCER a_pfnProducer, void *a_pvCallbackData = NULL, uint64_t a_cbContentLength = UINT64_MAX) RT_NOEXCEPT;
 
     /**
      * Preprares transmission via the @a a_hHttp client instance.
@@ -142,7 +142,7 @@ public:
      * @param   a_hHttp             The HTTP client instance.
      * @internal
      */
-    virtual int xmitPrepare(RTHTTP a_hHttp) const;
+    virtual int xmitPrepare(RTHTTP a_hHttp) const RT_NOEXCEPT;
 
     /**
      * For completing and/or undoing setup from xmitPrepare.
@@ -150,7 +150,7 @@ public:
      * @param   a_hHttp             The HTTP client instance.
      * @internal
      */
-    virtual void xmitComplete(RTHTTP a_hHttp) const;
+    virtual void xmitComplete(RTHTTP a_hHttp) const RT_NOEXCEPT;
 
 protected:
     /** Number of bytes corresponding to content-length.
@@ -163,8 +163,9 @@ protected:
     /** User argument for both callbacks (both). */
     void       *m_pvCallbackData;
 
-    /** Callback for use with RTHttpSetUploadCallback. */
-    static FNRTHTTPUPLOADCALLBACK   xmitHttpCallback;
+    /** @copydoc FNRTHTTPUPLOADCALLBACK */
+    static DECLCALLBACK(int) xmitHttpCallback(RTHTTP hHttp, void *pvBuf, size_t cbBuf, uint64_t offContent,
+                                              size_t *pcbActual, void *pvUser) RT_NOEXCEPT;
 
 private:
     /* No copy constructor or copy assignment: */
@@ -182,42 +183,42 @@ class RT_DECL_CLASS RTCRestBinaryResponse : public RTCRestBinary
 {
 public:
     /** Default constructor. */
-    RTCRestBinaryResponse();
+    RTCRestBinaryResponse() RT_NOEXCEPT;
 
     /** Safe copy assignment method. */
-    virtual int assignCopy(RTCRestBinaryResponse const &a_rThat);
+    virtual int assignCopy(RTCRestBinaryResponse const &a_rThat) RT_NOEXCEPT;
     /** Safe copy assignment method. */
-    virtual int assignCopy(RTCRestBinary const &a_rThat) RT_OVERRIDE;
+    virtual int assignCopy(RTCRestBinary const &a_rThat) RT_NOEXCEPT RT_OVERRIDE;
     /** Safe copy assignment method.
      * @note This will assert and fail as it makes no sense for a download.  */
-    virtual int assignCopy(void const *a_pvData, size_t a_cbData) RT_OVERRIDE;
+    virtual int assignCopy(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT RT_OVERRIDE;
 
     /**
      * Use the specified data buffer directly.
      * @note This will assert and fail as it makes no sense for a download.
      */
-    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData) RT_OVERRIDE;
+    virtual int assignReadOnly(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT RT_OVERRIDE;
     /**
      * Use the specified data buffer directly.
      * @note This will drop any previously registered producer callback and user data.
      */
-    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_OVERRIDE;
+    virtual int assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_NOEXCEPT RT_OVERRIDE;
 
     /** Make a clone of this object. */
-    inline RTCRestBinaryResponse *clone() const { return (RTCRestBinaryResponse *)baseClone(); }
+    inline RTCRestBinaryResponse *clone() const RT_NOEXCEPT { return (RTCRestBinaryResponse *)baseClone(); }
 
     /* Overridden methods: */
-    virtual RTCRestObjectBase *baseClone() const RT_OVERRIDE;
-    virtual int resetToDefault() RT_OVERRIDE;
-    virtual const char *typeName(void) const RT_OVERRIDE;
+    virtual RTCRestObjectBase *baseClone() const RT_NOEXCEPT RT_OVERRIDE;
+    virtual int resetToDefault() RT_NOEXCEPT RT_OVERRIDE;
+    virtual const char *typeName(void) const RT_NOEXCEPT RT_OVERRIDE;
 
     /** Factory method. */
-    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void);
+    static DECLCALLBACK(RTCRestObjectBase *) createInstance(void) RT_NOEXCEPT;
 
     /**
      * Retrieves the callback data.
      */
-    inline void *getCallbackData() const  { return m_pvCallbackData; }
+    inline void *getCallbackData() const RT_NOEXCEPT { return m_pvCallbackData; }
 
     /**
      * Sets the max size to download to memory.
@@ -229,12 +230,12 @@ public:
      *                          If 0, a default is selected (currently 32MiB for
      *                          32-bit hosts and 128MiB for 64-bit).
      */
-    void setMaxDownloadSize(size_t a_cbMaxDownload);
+    void setMaxDownloadSize(size_t a_cbMaxDownload) RT_NOEXCEPT;
 
     /**
      * Gets the content-length value (UINT64_MAX if not available).
      */
-    inline uint64_t getContentLength() const { return m_cbContentLength; }
+    inline uint64_t getContentLength() const RT_NOEXCEPT { return m_cbContentLength; }
 
     /**
      * Callback for consuming downloaded bytes.
@@ -254,7 +255,7 @@ public:
      *          is the sum of the previous @a a_cbSrc values.
      */
     typedef DECLCALLBACK(int) FNCONSUMER(RTCRestBinaryResponse *a_pThis, const void *a_pvSrc, size_t a_cbSrc,
-                                         uint32_t a_uHttpStatus, uint64_t a_offContent, uint64_t a_cbContent);
+                                         uint32_t a_uHttpStatus, uint64_t a_offContent, uint64_t a_cbContent) /*RT_NOEXCEPT*/;
     /** Pointer to a byte consumer callback. */
     typedef FNCONSUMER *PFNCONSUMER;
 
@@ -266,7 +267,7 @@ public:
      * @param   a_pvCallbackData    Data the can be retrieved from the callback
      *                              using getCallbackData().
      */
-    void setConsumerCallback(PFNCONSUMER a_pfnConsumer, void *a_pvCallbackData = NULL);
+    void setConsumerCallback(PFNCONSUMER a_pfnConsumer, void *a_pvCallbackData = NULL) RT_NOEXCEPT;
 
     /**
      * Preprares for receiving via the @a a_hHttp client instance.
@@ -276,7 +277,7 @@ public:
      * @param   a_fCallbackFlags    The HTTP callback flags (status code spec).
      * @internal
      */
-    virtual int receivePrepare(RTHTTP a_hHttp, uint32_t a_fCallbackFlags);
+    virtual int receivePrepare(RTHTTP a_hHttp, uint32_t a_fCallbackFlags) RT_NOEXCEPT;
 
     /**
      * For completing and/or undoing setup from receivePrepare.
@@ -284,7 +285,7 @@ public:
      * @param   a_hHttp             The HTTP client instance.
      * @internal
      */
-    virtual void receiveComplete(RTHTTP a_hHttp);
+    virtual void receiveComplete(RTHTTP a_hHttp) RT_NOEXCEPT;
 
 protected:
     /** Number of bytes corresponding to content-length.
@@ -299,8 +300,9 @@ protected:
     /** Maximum data to download to memory (download only). */
     size_t      m_cbMaxDownload;
 
-    /** Callback for use with RTHttpSetDownloadCallback. */
-    static FNRTHTTPDOWNLOADCALLBACK receiveHttpCallback;
+    /** @copydoc FNRTHTTPDOWNLOADCALLBACK. */
+    static DECLCALLBACK(int) receiveHttpCallback(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
+                                                 uint64_t offContent, uint64_t cbContent, void *pvUser) RT_NOEXCEPT;
 
 private:
     /* No copy constructor or copy assignment: */
@@ -330,16 +332,16 @@ private:
 class RT_DECL_CLASS RTCRestClientRequestBase
 {
 public:
-    RTCRestClientRequestBase();
+    RTCRestClientRequestBase() RT_NOEXCEPT;
     virtual ~RTCRestClientRequestBase();
-    RTCRestClientRequestBase(RTCRestClientRequestBase const &a_rThat);
-    RTCRestClientRequestBase &operator=(RTCRestClientRequestBase const &a_rThat);
+    RTCRestClientRequestBase(RTCRestClientRequestBase const &a_rThat) RT_NOEXCEPT;
+    RTCRestClientRequestBase &operator=(RTCRestClientRequestBase const &a_rThat) RT_NOEXCEPT;
 
     /**
      * Reset all members to default values.
      * @returns IPRT status code.
      */
-    virtual int resetToDefault() = 0;
+    virtual int resetToDefault() RT_NOEXCEPT = 0;
 
     /**
      * Prepares the HTTP handle for transmitting this request.
@@ -350,7 +352,7 @@ public:
      * @param   a_hHttp     Where to set header parameters and such.
      * @param   a_pStrBody  Where to set body parameters.
      */
-    virtual int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const = 0;
+    virtual int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const RT_NOEXCEPT = 0;
 
     /**
      * Always called after the request has been transmitted.
@@ -358,12 +360,12 @@ public:
      * @param   a_rcStatus  Negative numbers are IPRT errors, positive are HTTP status codes.
      * @param   a_hHttp     The HTTP handle the request was performed on.
      */
-    virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const = 0;
+    virtual void xmitComplete(int a_rcStatus, RTHTTP a_hHttp) const RT_NOEXCEPT = 0;
 
     /**
      * Checks if there are were any assignment errors.
      */
-    inline bool hasAssignmentErrors() const { return m_fErrorSet != 0; }
+    inline bool hasAssignmentErrors() const RT_NOEXCEPT { return m_fErrorSet != 0; }
 
 protected:
     /** Set of fields that have been explicitly assigned a value. */
@@ -399,7 +401,7 @@ protected:
      * @param   a_cPathParams       Number of path parameters.
      */
     int doPathParameters(RTCString *a_pStrPath, const char *a_pszPathTemplate, size_t a_cchPathTemplate,
-                         PATHPARAMDESC const *a_paPathParams, PATHPARAMSTATE *a_paPathParamStates, size_t a_cPathParams) const;
+                         PATHPARAMDESC const *a_paPathParams, PATHPARAMSTATE *a_paPathParamStates, size_t a_cPathParams) const RT_NOEXCEPT;
 
     /** Query parameter descriptor. */
     typedef struct
@@ -420,7 +422,7 @@ protected:
      * @param   a_cQueryParams      Number of query parameters.
      */
     int doQueryParameters(RTCString *a_pStrQuery, QUERYPARAMDESC const *a_paQueryParams,
-                          RTCRestObjectBase const **a_papQueryParamObjs, size_t a_cQueryParams) const;
+                          RTCRestObjectBase const **a_papQueryParamObjs, size_t a_cQueryParams) const RT_NOEXCEPT;
 
     /** Header parameter descriptor. */
     typedef struct
@@ -442,7 +444,7 @@ protected:
      * @param   a_cHeaderParams         Number of header parameters.
      */
     int doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC const *a_paHeaderParams,
-                           RTCRestObjectBase const **a_papHeaderParamObjs, size_t a_cHeaderParams) const;
+                           RTCRestObjectBase const **a_papHeaderParamObjs, size_t a_cHeaderParams) const RT_NOEXCEPT;
 };
 
 
@@ -453,7 +455,7 @@ class RT_DECL_CLASS RTCRestClientResponseBase
 {
 public:
     /** Default constructor. */
-    RTCRestClientResponseBase();
+    RTCRestClientResponseBase() RT_NOEXCEPT;
     /** Destructor. */
     virtual ~RTCRestClientResponseBase();
     /** Copy constructor. */
@@ -464,7 +466,7 @@ public:
     /**
      * Resets the object state.
      */
-    virtual void reset(void);
+    virtual void reset(void) RT_NOEXCEPT;
 
     /**
      * Prepares the HTTP handle for receiving the response.
@@ -476,7 +478,7 @@ public:
      * @returns IPRT status code.
      * @param   a_hHttp     The HTTP handle to prepare for receiving.
      */
-    virtual int receivePrepare(RTHTTP a_hHttp);
+    virtual int receivePrepare(RTHTTP a_hHttp) RT_NOEXCEPT;
 
     /**
      * Called when the HTTP request has been completely received.
@@ -488,7 +490,7 @@ public:
      *
      * @note    Called before consumeBody() but after consumeHeader().
      */
-    virtual void receiveComplete(int a_rcStatus, RTHTTP a_hHttp);
+    virtual void receiveComplete(int a_rcStatus, RTHTTP a_hHttp) RT_NOEXCEPT;
 
     /**
      * Callback that consumes HTTP body data from the server.
@@ -498,36 +500,36 @@ public:
      *
      * @note    Called after consumeHeader().
      */
-    virtual void consumeBody(const char *a_pchData, size_t a_cbData);
+    virtual void consumeBody(const char *a_pchData, size_t a_cbData) RT_NOEXCEPT;
 
     /**
      * Called after status, headers and body all have been presented.
      *
      * @returns IPRT status code.
      */
-    virtual void receiveFinal();
+    virtual void receiveFinal() RT_NOEXCEPT;
 
     /**
      * Getter for m_rcStatus.
      * @returns Negative numbers are IPRT errors, positive are HTTP status codes.
      */
-    inline int getStatus() { return m_rcStatus; }
+    inline int getStatus() const RT_NOEXCEPT { return m_rcStatus; }
 
     /**
      * Getter for m_rcHttp.
      * @returns HTTP status code or VERR_NOT_AVAILABLE.
      */
-    inline int getHttpStatus() { return m_rcHttp; }
+    inline int getHttpStatus() const RT_NOEXCEPT { return m_rcHttp; }
 
     /**
      * Getter for m_pErrInfo.
      */
-    inline PCRTERRINFO getErrInfo(void) const { return m_pErrInfo; }
+    inline PCRTERRINFO getErrInfo(void) const RT_NOEXCEPT { return m_pErrInfo; }
 
     /**
      * Getter for m_strContentType.
      */
-    inline RTCString const &getContentType(void) const { return m_strContentType; }
+    inline RTCString const &getContentType(void) const RT_NOEXCEPT { return m_strContentType; }
 
 
 protected:
@@ -540,9 +542,9 @@ protected:
     /** The value of the Content-Type header field. */
     RTCString   m_strContentType;
 
-    PRTERRINFO  getErrInfoInternal(void);
-    void        deleteErrInfo(void);
-    void        copyErrInfo(PCRTERRINFO pErrInfo);
+    PRTERRINFO  getErrInfoInternal(void) RT_NOEXCEPT;
+    void        deleteErrInfo(void) RT_NOEXCEPT;
+    void        copyErrInfo(PCRTERRINFO pErrInfo) RT_NOEXCEPT;
 
     /**
      * Reports an error (or warning if a_rc non-negative).
@@ -555,7 +557,7 @@ protected:
      * @param   a_pszFormat The message format string.
      * @param   ...         Message arguments.
      */
-    int addError(int a_rc, const char *a_pszFormat, ...);
+    int addError(int a_rc, const char *a_pszFormat, ...) RT_NOEXCEPT;
 
     /**
      * Deserializes a header field value.
@@ -569,7 +571,7 @@ protected:
      * @param   a_pszErrorTag       The error tag (field name).
      */
     int deserializeHeader(RTCRestObjectBase *a_pObj, const char *a_pchValue, size_t a_cchValue,
-                          uint32_t a_fFlags, const char *a_pszErrorTag);
+                          uint32_t a_fFlags, const char *a_pszErrorTag) RT_NOEXCEPT;
 
     /**
      * Deserializes a header field value.
@@ -586,7 +588,7 @@ protected:
      * @param   a_pszErrorTag       The error tag (field name).
      */
     int deserializeHeaderIntoMap(RTCRestStringMapBase *a_pMap, const char *a_pchField, size_t a_cchField,
-                                 const char *a_pchValue, size_t a_cchValue, uint32_t a_fFlags, const char *a_pszErrorTag);
+                                 const char *a_pchValue, size_t a_cchValue, uint32_t a_fFlags, const char *a_pszErrorTag) RT_NOEXCEPT;
 
     /**
      * Helper that does the deserializing of the response body
@@ -596,14 +598,14 @@ protected:
      * @param   a_cbData        The size of the body blob.
      * @param   a_pszBodyName   The name of the body parameter.
      */
-    void deserializeBody(const char *a_pchData, size_t a_cbData, const char *a_pszBodyName);
+    void deserializeBody(const char *a_pchData, size_t a_cbData, const char *a_pszBodyName) RT_NOEXCEPT;
 
     /**
      * Called by deserializeBody to do the actual body deserialization.
      *
      * @param   a_rCursor       The JSON cursor.
      */
-    virtual void deserializeBodyFromJsonCursor(RTCRestJsonCursor const &a_rCursor);
+    virtual void deserializeBodyFromJsonCursor(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT;
 
     /**
      * Primary json cursor for parsing bodies.
@@ -612,9 +614,9 @@ protected:
     {
     public:
         RTCRestClientResponseBase *m_pThat; /**< Pointer to response object. */
-        PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName, RTCRestClientResponseBase *a_pThat);
-        virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...) RT_OVERRIDE;
-        virtual int unknownField(RTCRestJsonCursor const &a_rCursor) RT_OVERRIDE;
+        PrimaryJsonCursorForBody(RTJSONVAL hValue, const char *pszName, RTCRestClientResponseBase *a_pThat) RT_NOEXCEPT;
+        virtual int addError(RTCRestJsonCursor const &a_rCursor, int a_rc, const char *a_pszFormat, ...) RT_NOEXCEPT RT_OVERRIDE;
+        virtual int unknownField(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT RT_OVERRIDE;
     };
 
 
@@ -633,11 +635,12 @@ protected:
      * @param   a_cchValue      The length of the value.
      */
     virtual int consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
-                              const char *a_pchValue, size_t a_cchValue);
+                              const char *a_pchValue, size_t a_cchValue) RT_NOEXCEPT;
 
 private:
     /** Callback for use with RTHttpSetHeaderCallback. */
-    static FNRTHTTPHEADERCALLBACK receiveHttpHeaderCallback;
+    static DECLCALLBACK(int) receiveHttpHeaderCallback(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
+                                                       const char *pchValue, size_t cchValue, void *pvUser) RT_NOEXCEPT;
 };
 
 
@@ -647,7 +650,7 @@ private:
 class RT_DECL_CLASS RTCRestClientApiBase
 {
 public:
-    RTCRestClientApiBase();
+    RTCRestClientApiBase() RT_NOEXCEPT;
     virtual ~RTCRestClientApiBase();
 
     /** @name Host and Base path (URL) handling.
@@ -655,47 +658,47 @@ public:
     /**
      * Gets the server URL.
      */
-    const char *getServerUrl(void) const;
+    const char *getServerUrl(void) const RT_NOEXCEPT;
 
     /**
      * Sets the whole server URL.
      * @returns IPRT status code.
      * @param   a_pszUrl        The new server URL.  NULL/empty to reset to default.
      */
-    int setServerUrl(const char *a_pszUrl);
+    int setServerUrl(const char *a_pszUrl) RT_NOEXCEPT;
 
     /**
      * Sets the scheme part of the the server URL.
      * @returns IPRT status code.
      * @param   a_pszScheme     The new scheme.  Does not accept NULL or empty string.
      */
-    int setServerScheme(const char *a_pszScheme);
+    int setServerScheme(const char *a_pszScheme) RT_NOEXCEPT;
 
     /**
      * Sets the authority (hostname + port) part of the the server URL.
      * @returns IPRT status code.
      * @param   a_pszAuthority  The new authority.  Does not accept NULL or empty string.
      */
-    int setServerAuthority(const char *a_pszAuthority);
+    int setServerAuthority(const char *a_pszAuthority) RT_NOEXCEPT;
 
     /**
      * Sets the base path part of the the server URL.
      * @returns IPRT status code.
      * @param   a_pszBasePath   The new base path.  Does not accept NULL or empty string.
      */
-    int setServerBasePath(const char *a_pszBasePath);
+    int setServerBasePath(const char *a_pszBasePath) RT_NOEXCEPT;
 
     /**
      * Gets the default server URL as specified in the specs.
      * @returns Server URL.
      */
-    virtual const char *getDefaultServerUrl() const = 0;
+    virtual const char *getDefaultServerUrl() const RT_NOEXCEPT = 0;
 
     /**
      * Gets the default server base path as specified in the specs.
      * @returns Host string (start of URL).
      */
-    virtual const char *getDefaultServerBasePath() const = 0;
+    virtual const char *getDefaultServerBasePath() const RT_NOEXCEPT = 0;
     /** @} */
 
     /** Flags to doCall. */
@@ -719,7 +722,7 @@ protected:
      *
      * @returns IPRT status code.
      */
-    virtual int reinitHttpInstance();
+    virtual int reinitHttpInstance() RT_NOEXCEPT;
 
     /**
      * Hook that's called when doCall has fully assembled the request.
@@ -734,7 +737,7 @@ protected:
      * @param   a_fFlags        kDoCall_XXX.
      */
     virtual int xmitReady(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
-                          RTCString const &a_rStrXmitBody, uint32_t a_fFlags);
+                          RTCString const &a_rStrXmitBody, uint32_t a_fFlags) RT_NOEXCEPT;
 
     /**
      * Implements stuff for making an API call.
@@ -747,7 +750,7 @@ protected:
      * @param   a_fFlags        kDoCall_XXX.
      */
     virtual int doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                       RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod, uint32_t a_fFlags);
+                       RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod, uint32_t a_fFlags) RT_NOEXCEPT;
 
     /**
      * Implements OCI style request signing.
@@ -765,7 +768,7 @@ protected:
      *                  https://tools.ietf.org/html/draft-cavage-http-signatures-10
      */
     int ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
-                       RTCString const &a_rStrXmitBody, uint32_t a_fFlags, RTCRKEY a_hKey, RTCString const &a_rStrKeyId);
+                       RTCString const &a_rStrXmitBody, uint32_t a_fFlags, RTCRKEY a_hKey, RTCString const &a_rStrKeyId) RT_NOEXCEPT;
 
     /**
      * Worker for the server URL modifiers.
@@ -777,7 +780,7 @@ protected:
      * @param   a_pszSrc        The new URL component value.
      * @param   a_cchSrc        The length of the new component.
      */
-    int setServerUrlPart(const char *a_pszServerUrl, size_t a_offDst, size_t a_cchDst, const char *a_pszSrc, size_t a_cchSrc);
+    int setServerUrlPart(const char *a_pszServerUrl, size_t a_offDst, size_t a_cchDst, const char *a_pszSrc, size_t a_cchSrc) RT_NOEXCEPT;
 };
 
 /** @} */

@@ -42,7 +42,7 @@
 /**
  * Default constructor.
  */
-RTCRestClientApiBase::RTCRestClientApiBase()
+RTCRestClientApiBase::RTCRestClientApiBase() RT_NOEXCEPT
     : m_hHttp(NIL_RTHTTP)
 {
 }
@@ -62,7 +62,7 @@ RTCRestClientApiBase::~RTCRestClientApiBase()
 }
 
 
-const char *RTCRestClientApiBase::getServerUrl(void) const
+const char *RTCRestClientApiBase::getServerUrl(void) const RT_NOEXCEPT
 {
     if (m_strServerUrl.isEmpty())
         return getDefaultServerUrl();
@@ -70,7 +70,7 @@ const char *RTCRestClientApiBase::getServerUrl(void) const
 }
 
 
-int RTCRestClientApiBase::setServerUrl(const char *a_pszUrl)
+int RTCRestClientApiBase::setServerUrl(const char *a_pszUrl) RT_NOEXCEPT
 {
 #ifdef RT_STRICT
     if (a_pszUrl)
@@ -86,7 +86,7 @@ int RTCRestClientApiBase::setServerUrl(const char *a_pszUrl)
 
 
 int RTCRestClientApiBase::setServerUrlPart(const char *a_pszServerUrl, size_t a_offDst, size_t a_cchDst,
-                                           const char *a_pszSrc, size_t a_cchSrc)
+                                           const char *a_pszSrc, size_t a_cchSrc) RT_NOEXCEPT
 {
     if (   a_cchDst == a_cchSrc
         && memcmp(&a_pszServerUrl[0], a_pszSrc, a_cchSrc) == 0)
@@ -101,7 +101,7 @@ int RTCRestClientApiBase::setServerUrlPart(const char *a_pszServerUrl, size_t a_
 }
 
 
-int RTCRestClientApiBase::setServerScheme(const char *a_pszScheme)
+int RTCRestClientApiBase::setServerScheme(const char *a_pszScheme) RT_NOEXCEPT
 {
     /*
      * Validate.
@@ -126,7 +126,7 @@ int RTCRestClientApiBase::setServerScheme(const char *a_pszScheme)
 }
 
 
-int RTCRestClientApiBase::setServerAuthority(const char *a_pszAuthority)
+int RTCRestClientApiBase::setServerAuthority(const char *a_pszAuthority) RT_NOEXCEPT
 {
     /*
      * Validate.
@@ -150,7 +150,7 @@ int RTCRestClientApiBase::setServerAuthority(const char *a_pszAuthority)
 }
 
 
-int RTCRestClientApiBase::setServerBasePath(const char *a_pszBasePath)
+int RTCRestClientApiBase::setServerBasePath(const char *a_pszBasePath) RT_NOEXCEPT
 {
     /*
      * Validate.
@@ -172,7 +172,7 @@ int RTCRestClientApiBase::setServerBasePath(const char *a_pszBasePath)
 }
 
 
-int RTCRestClientApiBase::reinitHttpInstance()
+int RTCRestClientApiBase::reinitHttpInstance() RT_NOEXCEPT
 {
     if (m_hHttp != NIL_RTHTTP)
     {
@@ -192,7 +192,7 @@ int RTCRestClientApiBase::reinitHttpInstance()
 
 
 int RTCRestClientApiBase::xmitReady(RTHTTP a_hHttp, RTCString const &a_rStrFullUrl, RTHTTPMETHOD a_enmHttpMethod,
-                                    RTCString const &a_rStrXmitBody, uint32_t a_fFlags)
+                                    RTCString const &a_rStrXmitBody, uint32_t a_fFlags) RT_NOEXCEPT
 {
     RT_NOREF(a_hHttp, a_rStrFullUrl, a_enmHttpMethod, a_rStrXmitBody, a_fFlags);
     return VINF_SUCCESS;
@@ -200,7 +200,7 @@ int RTCRestClientApiBase::xmitReady(RTHTTP a_hHttp, RTCString const &a_rStrFullU
 
 
 int RTCRestClientApiBase::doCall(RTCRestClientRequestBase const &a_rRequest, RTHTTPMETHOD a_enmHttpMethod,
-                                 RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod, uint32_t a_fFlags)
+                                 RTCRestClientResponseBase *a_pResponse, const char *a_pszMethod, uint32_t a_fFlags) RT_NOEXCEPT
 {
     LogFlow(("doCall: %s %s\n", a_pszMethod, RTHttpMethodName(a_enmHttpMethod)));
 

@@ -35,7 +35,7 @@
 #include <iprt/string.h>
 
 
-RTCRestOutputPrettyBase::RTCRestOutputPrettyBase()
+RTCRestOutputPrettyBase::RTCRestOutputPrettyBase() RT_NOEXCEPT
     : RTCRestOutputBase()
 {
 }
@@ -46,7 +46,7 @@ RTCRestOutputPrettyBase::~RTCRestOutputPrettyBase()
 }
 
 
-uint32_t RTCRestOutputPrettyBase::beginArray()
+uint32_t RTCRestOutputPrettyBase::beginArray() RT_NOEXCEPT
 {
     output(RT_STR_TUPLE("["));
     uint32_t const uOldState = m_uState;
@@ -55,7 +55,7 @@ uint32_t RTCRestOutputPrettyBase::beginArray()
 }
 
 
-void RTCRestOutputPrettyBase::endArray(uint32_t a_uOldState)
+void RTCRestOutputPrettyBase::endArray(uint32_t a_uOldState) RT_NOEXCEPT
 {
     m_uState = a_uOldState;
     output(RT_STR_TUPLE("\n"));
@@ -64,7 +64,7 @@ void RTCRestOutputPrettyBase::endArray(uint32_t a_uOldState)
 }
 
 
-uint32_t RTCRestOutputPrettyBase::beginObject()
+uint32_t RTCRestOutputPrettyBase::beginObject() RT_NOEXCEPT
 {
     output(RT_STR_TUPLE("{"));
     uint32_t const uOldState = m_uState;
@@ -73,7 +73,7 @@ uint32_t RTCRestOutputPrettyBase::beginObject()
 }
 
 
-void RTCRestOutputPrettyBase::endObject(uint32_t a_uOldState)
+void RTCRestOutputPrettyBase::endObject(uint32_t a_uOldState) RT_NOEXCEPT
 {
     m_uState = a_uOldState;
     output(RT_STR_TUPLE("\n"));
@@ -82,7 +82,7 @@ void RTCRestOutputPrettyBase::endObject(uint32_t a_uOldState)
 }
 
 
-void RTCRestOutputPrettyBase::valueSeparator()
+void RTCRestOutputPrettyBase::valueSeparator() RT_NOEXCEPT
 {
     if (m_uState & RT_BIT_32(31))
         output(RT_STR_TUPLE(",\n"));
@@ -95,7 +95,7 @@ void RTCRestOutputPrettyBase::valueSeparator()
 }
 
 
-void RTCRestOutputPrettyBase::valueSeparatorAndName(const char *a_pszName, size_t a_cchName)
+void RTCRestOutputPrettyBase::valueSeparatorAndName(const char *a_pszName, size_t a_cchName) RT_NOEXCEPT
 {
     RT_NOREF(a_cchName);
     if (m_uState & RT_BIT_32(31))
@@ -110,7 +110,7 @@ void RTCRestOutputPrettyBase::valueSeparatorAndName(const char *a_pszName, size_
 }
 
 
-void RTCRestOutputPrettyBase::outputIndentation()
+void RTCRestOutputPrettyBase::outputIndentation() RT_NOEXCEPT
 {
     static char const s_szSpaces[] = "                                                                                         ";
     size_t cchIndent = (m_uState & 0xffff) << 1;

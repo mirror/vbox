@@ -55,7 +55,7 @@
 /**
  * Default constructor.
  */
-RTCRestBinary::RTCRestBinary()
+RTCRestBinary::RTCRestBinary() RT_NOEXCEPT
     : m_pbData(NULL)
     , m_cbData(0)
     , m_cbAllocated(0)
@@ -76,7 +76,7 @@ RTCRestBinary::~RTCRestBinary()
 /**
  * Safe copy assignment method.
  */
-int RTCRestBinary::assignCopy(RTCRestBinary const &a_rThat)
+int RTCRestBinary::assignCopy(RTCRestBinary const &a_rThat) RT_NOEXCEPT
 {
     freeData();
     if (a_rThat.m_pbData)
@@ -98,7 +98,7 @@ int RTCRestBinary::assignCopy(RTCRestBinary const &a_rThat)
 /**
  * Safe buffer copy method.
  */
-int RTCRestBinary::assignCopy(void const *a_pvData, size_t a_cbData)
+int RTCRestBinary::assignCopy(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT
 {
     if (   m_pbData == NULL
         || m_fReadOnly
@@ -125,7 +125,7 @@ int RTCRestBinary::assignCopy(void const *a_pvData, size_t a_cbData)
 /**
  * Use the specified data buffer directly.
  */
-int RTCRestBinary::assignReadOnly(void const *a_pvData, size_t a_cbData)
+int RTCRestBinary::assignReadOnly(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT
 {
     freeData();
     if (a_pvData)
@@ -144,7 +144,7 @@ int RTCRestBinary::assignReadOnly(void const *a_pvData, size_t a_cbData)
 /**
  * Use the specified data buffer directly.
  */
-int RTCRestBinary::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
+int RTCRestBinary::assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_NOEXCEPT
 {
     freeData();
     if (a_pvBuf)
@@ -163,7 +163,7 @@ int RTCRestBinary::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
 /**
  * Frees the data held by the object and resets it default state.
  */
-void RTCRestBinary::freeData()
+void RTCRestBinary::freeData() RT_NOEXCEPT
 {
     if (m_fFreeable)
         RTMemFree(m_pbData);
@@ -177,7 +177,7 @@ void RTCRestBinary::freeData()
 
 /* Overridden methods: */
 
-RTCRestObjectBase *RTCRestBinary::baseClone() const
+RTCRestObjectBase *RTCRestBinary::baseClone() const RT_NOEXCEPT
 {
     RTCRestBinary *pClone = new (std::nothrow) RTCRestBinary();
     if (pClone)
@@ -191,7 +191,7 @@ RTCRestObjectBase *RTCRestBinary::baseClone() const
 }
 
 
-int RTCRestBinary::setNull(void)
+int RTCRestBinary::setNull(void) RT_NOEXCEPT
 {
     freeData();
     m_fNullIndicator = true;
@@ -199,14 +199,14 @@ int RTCRestBinary::setNull(void)
 }
 
 
-int RTCRestBinary::resetToDefault(void)
+int RTCRestBinary::resetToDefault(void) RT_NOEXCEPT
 {
     freeData();
     return VINF_SUCCESS;
 }
 
 
-RTCRestOutputBase &RTCRestBinary::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestBinary::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     AssertMsgFailed(("We should never get here!\n"));
     a_rDst.nullValue();
@@ -214,13 +214,13 @@ RTCRestOutputBase &RTCRestBinary::serializeAsJson(RTCRestOutputBase &a_rDst) con
 }
 
 
-int RTCRestBinary::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestBinary::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     return a_rCursor.m_pPrimary->addError(a_rCursor, VERR_NOT_SUPPORTED, "RTCRestBinary does not support deserialization!");
 }
 
 
-int RTCRestBinary::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestBinary::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     RT_NOREF(a_pDst, a_fFlags);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
@@ -228,27 +228,27 @@ int RTCRestBinary::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollection
 
 
 int RTCRestBinary::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo/*= NULL*/,
-                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                              uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     RT_NOREF(a_rValue, a_pszName, a_fFlags);
     AssertFailedReturn(RTErrInfoSet(a_pErrInfo, VERR_NOT_SUPPORTED, "RTCRestBinary does not support fromString()!"));
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestBinary::typeClass(void) const
+RTCRestObjectBase::kTypeClass RTCRestBinary::typeClass(void) const RT_NOEXCEPT
 {
     return kTypeClass_Binary;
 }
 
 
-const char *RTCRestBinary::typeName(void) const
+const char *RTCRestBinary::typeName(void) const RT_NOEXCEPT
 {
     return "RTCRestBinary";
 }
 
 
 /** Factory method. */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinary::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinary::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestBinary();
 }
@@ -258,7 +258,7 @@ const char *RTCRestBinary::typeName(void) const
  * @copydoc RTCRestObjectBase::FNDESERIALIZEINSTANCEFROMJSON
  */
 /*static*/ DECLCALLBACK(int)
-RTCRestBinary::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance)
+RTCRestBinary::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance) RT_NOEXCEPT
 {
     RTCRestObjectBase *pObj;
     *a_ppInstance = pObj = createInstance();
@@ -276,7 +276,7 @@ RTCRestBinary::deserializeInstanceFromJson(RTCRestJsonCursor const &a_rCursor, R
 /**
  * Default constructor.
  */
-RTCRestBinaryParameter::RTCRestBinaryParameter()
+RTCRestBinaryParameter::RTCRestBinaryParameter() RT_NOEXCEPT
     : RTCRestBinary()
     , m_cbContentLength(UINT64_MAX)
     , m_strContentType()
@@ -286,7 +286,7 @@ RTCRestBinaryParameter::RTCRestBinaryParameter()
 }
 
 
-int RTCRestBinaryParameter::assignCopy(RTCRestBinaryParameter const &a_rThat)
+int RTCRestBinaryParameter::assignCopy(RTCRestBinaryParameter const &a_rThat) RT_NOEXCEPT
 {
     AssertReturn(a_rThat.m_pfnProducer, VERR_INVALID_STATE);
     int rc = assignCopy(*(RTCRestBinary const *)&a_rThat);
@@ -299,7 +299,7 @@ int RTCRestBinaryParameter::assignCopy(RTCRestBinaryParameter const &a_rThat)
 }
 
 
-int RTCRestBinaryParameter::assignCopy(RTCRestBinary const &a_rThat)
+int RTCRestBinaryParameter::assignCopy(RTCRestBinary const &a_rThat) RT_NOEXCEPT
 {
     m_cbContentLength = a_rThat.getSize();
     m_strContentType.setNull();
@@ -309,7 +309,7 @@ int RTCRestBinaryParameter::assignCopy(RTCRestBinary const &a_rThat)
 }
 
 
-int RTCRestBinaryParameter::assignCopy(void const *a_pvData, size_t a_cbData)
+int RTCRestBinaryParameter::assignCopy(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT
 {
     m_cbContentLength = a_cbData;
     m_pfnProducer     = NULL;
@@ -318,7 +318,7 @@ int RTCRestBinaryParameter::assignCopy(void const *a_pvData, size_t a_cbData)
 }
 
 
-int RTCRestBinaryParameter::assignReadOnly(void const *a_pvData, size_t a_cbData)
+int RTCRestBinaryParameter::assignReadOnly(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT
 {
     m_cbContentLength = a_cbData;
     m_pfnProducer     = NULL;
@@ -327,14 +327,14 @@ int RTCRestBinaryParameter::assignReadOnly(void const *a_pvData, size_t a_cbData
 }
 
 
-int RTCRestBinaryParameter::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
+int RTCRestBinaryParameter::assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_NOEXCEPT
 {
     AssertMsgFailed(("Please use assignReadOnly!\n"));
     return assignReadOnly(a_pvBuf, a_cbBuf);
 }
 
 
-RTCRestObjectBase *RTCRestBinaryParameter::baseClone() const
+RTCRestObjectBase *RTCRestBinaryParameter::baseClone() const RT_NOEXCEPT
 {
     RTCRestBinaryParameter *pClone = new (std::nothrow) RTCRestBinaryParameter();
     if (pClone)
@@ -348,7 +348,7 @@ RTCRestObjectBase *RTCRestBinaryParameter::baseClone() const
 }
 
 
-int RTCRestBinaryParameter::resetToDefault()
+int RTCRestBinaryParameter::resetToDefault() RT_NOEXCEPT
 {
     m_cbContentLength = UINT64_MAX;
     m_pfnProducer     = NULL;
@@ -357,26 +357,26 @@ int RTCRestBinaryParameter::resetToDefault()
 }
 
 
-const char *RTCRestBinaryParameter::typeName(void) const
+const char *RTCRestBinaryParameter::typeName(void) const RT_NOEXCEPT
 {
     return "RTCRestBinaryParameter";
 }
 
 
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinaryParameter::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinaryParameter::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestBinaryParameter();
 }
 
 
-int RTCRestBinaryParameter::setContentType(const char *a_pszContentType)
+int RTCRestBinaryParameter::setContentType(const char *a_pszContentType) RT_NOEXCEPT
 {
     return m_strContentType.assignNoThrow(a_pszContentType);
 }
 
 
 void RTCRestBinaryParameter::setProducerCallback(PFNPRODUCER a_pfnProducer,  void *a_pvCallbackData /*= NULL*/,
-                                                 uint64_t a_cbContentLength /*= UINT64_MAX*/)
+                                                 uint64_t a_cbContentLength /*= UINT64_MAX*/) RT_NOEXCEPT
 {
     freeData();
 
@@ -386,7 +386,7 @@ void RTCRestBinaryParameter::setProducerCallback(PFNPRODUCER a_pfnProducer,  voi
 }
 
 
-int RTCRestBinaryParameter::xmitPrepare(RTHTTP a_hHttp) const
+int RTCRestBinaryParameter::xmitPrepare(RTHTTP a_hHttp) const RT_NOEXCEPT
 {
     AssertReturn(m_pbData != NULL || m_pfnProducer != NULL || m_cbContentLength == 0, VERR_INVALID_STATE);
 
@@ -433,7 +433,7 @@ int RTCRestBinaryParameter::xmitPrepare(RTHTTP a_hHttp) const
 
 /*static*/ DECLCALLBACK(int)
 RTCRestBinaryParameter::xmitHttpCallback(RTHTTP hHttp, void *pvBuf, size_t cbBuf,
-                                         uint64_t offContent, size_t *pcbActual, void *pvUser)
+                                         uint64_t offContent, size_t *pcbActual, void *pvUser) RT_NOEXCEPT
 {
     RTCRestBinaryParameter *pThis = (RTCRestBinaryParameter *)pvUser;
 
@@ -461,7 +461,7 @@ RTCRestBinaryParameter::xmitHttpCallback(RTHTTP hHttp, void *pvBuf, size_t cbBuf
 }
 
 
-void RTCRestBinaryParameter::xmitComplete(RTHTTP a_hHttp) const
+void RTCRestBinaryParameter::xmitComplete(RTHTTP a_hHttp) const RT_NOEXCEPT
 {
     /* Unset the callback. */
     int rc = RTHttpSetUploadCallback(a_hHttp, UINT64_MAX, NULL, NULL);
@@ -476,7 +476,7 @@ void RTCRestBinaryParameter::xmitComplete(RTHTTP a_hHttp) const
 /**
  * Default constructor.
  */
-RTCRestBinaryResponse::RTCRestBinaryResponse()
+RTCRestBinaryResponse::RTCRestBinaryResponse() RT_NOEXCEPT
     : RTCRestBinary()
     , m_cbContentLength(UINT64_MAX)
     , m_cbDownloaded(0)
@@ -487,7 +487,7 @@ RTCRestBinaryResponse::RTCRestBinaryResponse()
 }
 
 
-int RTCRestBinaryResponse::assignCopy(RTCRestBinaryResponse const &a_rThat)
+int RTCRestBinaryResponse::assignCopy(RTCRestBinaryResponse const &a_rThat) RT_NOEXCEPT
 {
     AssertReturn(a_rThat.m_pfnConsumer, VERR_INVALID_STATE);
     int rc = assignCopy(*(RTCRestBinary const *)&a_rThat);
@@ -498,7 +498,7 @@ int RTCRestBinaryResponse::assignCopy(RTCRestBinaryResponse const &a_rThat)
 }
 
 
-int RTCRestBinaryResponse::assignCopy(RTCRestBinary const &a_rThat)
+int RTCRestBinaryResponse::assignCopy(RTCRestBinary const &a_rThat) RT_NOEXCEPT
 {
     m_cbContentLength = UINT64_MAX;
     m_cbDownloaded    = 0;
@@ -508,21 +508,21 @@ int RTCRestBinaryResponse::assignCopy(RTCRestBinary const &a_rThat)
 }
 
 
-int RTCRestBinaryResponse::assignCopy(void const *a_pvData, size_t a_cbData)
+int RTCRestBinaryResponse::assignCopy(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT
 {
     RT_NOREF(a_pvData, a_cbData);
     AssertMsgFailedReturn(("Makes no sense for downloads.\n"), VERR_INVALID_STATE);
 }
 
 
-int RTCRestBinaryResponse::assignReadOnly(void const *a_pvData, size_t a_cbData)
+int RTCRestBinaryResponse::assignReadOnly(void const *a_pvData, size_t a_cbData) RT_NOEXCEPT
 {
     RT_NOREF(a_pvData, a_cbData);
     AssertMsgFailedReturn(("Makes no sense for downloads.\n"), VERR_INVALID_STATE);
 }
 
 
-int RTCRestBinaryResponse::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
+int RTCRestBinaryResponse::assignWriteable(void *a_pvBuf, size_t a_cbBuf) RT_NOEXCEPT
 {
     m_cbContentLength = UINT64_MAX;
     m_cbDownloaded    = 0;
@@ -533,7 +533,7 @@ int RTCRestBinaryResponse::assignWriteable(void *a_pvBuf, size_t a_cbBuf)
 }
 
 
-RTCRestObjectBase *RTCRestBinaryResponse::baseClone() const
+RTCRestObjectBase *RTCRestBinaryResponse::baseClone() const RT_NOEXCEPT
 {
     RTCRestBinaryResponse *pClone = new (std::nothrow) RTCRestBinaryResponse();
     if (pClone)
@@ -547,7 +547,7 @@ RTCRestObjectBase *RTCRestBinaryResponse::baseClone() const
 }
 
 
-int RTCRestBinaryResponse::resetToDefault()
+int RTCRestBinaryResponse::resetToDefault() RT_NOEXCEPT
 {
     m_cbContentLength = UINT64_MAX;
     m_cbDownloaded    = 0;
@@ -558,19 +558,19 @@ int RTCRestBinaryResponse::resetToDefault()
 }
 
 
-const char *RTCRestBinaryResponse::typeName(void) const
+const char *RTCRestBinaryResponse::typeName(void) const RT_NOEXCEPT
 {
     return "RTCRestBinaryResponse";
 }
 
 
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinaryResponse::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestBinaryResponse::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestBinaryResponse();
 }
 
 
-void RTCRestBinaryResponse::setMaxDownloadSize(size_t a_cbMaxDownload)
+void RTCRestBinaryResponse::setMaxDownloadSize(size_t a_cbMaxDownload) RT_NOEXCEPT
 {
     if (a_cbMaxDownload == 0)
         m_cbMaxDownload = RTCREST_MAX_DOWNLOAD_SIZE_DEFAULT;
@@ -579,7 +579,7 @@ void RTCRestBinaryResponse::setMaxDownloadSize(size_t a_cbMaxDownload)
 }
 
 
-void RTCRestBinaryResponse::setConsumerCallback(PFNCONSUMER a_pfnConsumer, void *a_pvCallbackData /*= NULL*/)
+void RTCRestBinaryResponse::setConsumerCallback(PFNCONSUMER a_pfnConsumer, void *a_pvCallbackData /*= NULL*/) RT_NOEXCEPT
 {
     freeData();
 
@@ -590,7 +590,7 @@ void RTCRestBinaryResponse::setConsumerCallback(PFNCONSUMER a_pfnConsumer, void 
 }
 
 
-int RTCRestBinaryResponse::receivePrepare(RTHTTP a_hHttp, uint32_t a_fCallbackFlags)
+int RTCRestBinaryResponse::receivePrepare(RTHTTP a_hHttp, uint32_t a_fCallbackFlags) RT_NOEXCEPT
 {
     AssertReturn(!m_fReadOnly, VERR_INVALID_STATE);
 
@@ -605,7 +605,7 @@ int RTCRestBinaryResponse::receivePrepare(RTHTTP a_hHttp, uint32_t a_fCallbackFl
 
 /*static*/ DECLCALLBACK(int)
 RTCRestBinaryResponse::receiveHttpCallback(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
-                                           uint64_t offContent, uint64_t cbContent, void *pvUser)
+                                           uint64_t offContent, uint64_t cbContent, void *pvUser) RT_NOEXCEPT
 {
     RTCRestBinaryResponse *pThis = (RTCRestBinaryResponse *)pvUser;
     Assert(offContent == pThis->m_cbDownloaded);
@@ -686,7 +686,7 @@ RTCRestBinaryResponse::receiveHttpCallback(RTHTTP hHttp, void const *pvBuf, size
 }
 
 
-void RTCRestBinaryResponse::receiveComplete(RTHTTP a_hHttp)
+void RTCRestBinaryResponse::receiveComplete(RTHTTP a_hHttp) RT_NOEXCEPT
 {
     /* Unset the callback. */
     int rc = RTHttpSetDownloadCallback(a_hHttp, RTHTTPDOWNLOAD_F_ANY_STATUS, NULL, NULL);

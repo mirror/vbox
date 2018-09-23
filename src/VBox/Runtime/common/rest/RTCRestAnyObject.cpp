@@ -40,7 +40,7 @@
 /**
  * Default constructor.
  */
-RTCRestAnyObject::RTCRestAnyObject()
+RTCRestAnyObject::RTCRestAnyObject() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_pData(NULL)
 {
@@ -89,7 +89,7 @@ RTCRestAnyObject &RTCRestAnyObject::operator=(RTCRestAnyObject const &a_rThat)
 /**
  * Safe copy assignment method.
  */
-int RTCRestAnyObject::assignCopy(RTCRestAnyObject const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestAnyObject const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     if (   !a_rThat.m_fNullIndicator
@@ -125,7 +125,7 @@ int RTCRestAnyObject::assignCopy(RTCRestAnyObject const &a_rThat)
 /**
  * Safe copy assignment method, boolean variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestBool const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestBool const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestBool *pData = new (std::nothrow) RTCRestBool();
@@ -142,7 +142,7 @@ int RTCRestAnyObject::assignCopy(RTCRestBool const &a_rThat)
 /**
  * Safe copy assignment method, int64_t variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestInt64 const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestInt64 const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestInt64 *pData = new (std::nothrow) RTCRestInt64();
@@ -159,7 +159,7 @@ int RTCRestAnyObject::assignCopy(RTCRestInt64 const &a_rThat)
 /**
  * Safe copy assignment method, int32_t variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestInt32 const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestInt32 const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestInt32 *pData = new (std::nothrow) RTCRestInt32();
@@ -176,7 +176,7 @@ int RTCRestAnyObject::assignCopy(RTCRestInt32 const &a_rThat)
 /**
  * Safe copy assignment method, int16_t variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestInt16 const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestInt16 const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestInt16 *pData = new (std::nothrow) RTCRestInt16();
@@ -193,7 +193,7 @@ int RTCRestAnyObject::assignCopy(RTCRestInt16 const &a_rThat)
 /**
  * Safe copy assignment method, double variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestDouble const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestDouble const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestDouble *pData = new (std::nothrow) RTCRestDouble();
@@ -210,7 +210,7 @@ int RTCRestAnyObject::assignCopy(RTCRestDouble const &a_rThat)
 /**
  * Safe copy assignment method, string variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestString const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestString const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestString *pData = new (std::nothrow) RTCRestString();
@@ -227,7 +227,7 @@ int RTCRestAnyObject::assignCopy(RTCRestString const &a_rThat)
 /**
  * Safe copy assignment method, array variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestArray<RTCRestAnyObject> const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestArray<RTCRestAnyObject> const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestArray<RTCRestAnyObject> *pData = new (std::nothrow) RTCRestArray<RTCRestAnyObject>();
@@ -244,7 +244,7 @@ int RTCRestAnyObject::assignCopy(RTCRestArray<RTCRestAnyObject> const &a_rThat)
 /**
  * Safe copy assignment method, string map variant.
  */
-int RTCRestAnyObject::assignCopy(RTCRestStringMap<RTCRestAnyObject> const &a_rThat)
+int RTCRestAnyObject::assignCopy(RTCRestStringMap<RTCRestAnyObject> const &a_rThat) RT_NOEXCEPT
 {
     setNull();
     RTCRestStringMap<RTCRestAnyObject> *pData = new (std::nothrow) RTCRestStringMap<RTCRestAnyObject>();
@@ -261,7 +261,7 @@ int RTCRestAnyObject::assignCopy(RTCRestStringMap<RTCRestAnyObject> const &a_rTh
 /**
  * Safe value assignment method, boolean variant.
  */
-int RTCRestAnyObject::assignValue(bool a_fValue)
+int RTCRestAnyObject::assignValue(bool a_fValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestBool *pData = new (std::nothrow) RTCRestBool();
@@ -279,7 +279,7 @@ int RTCRestAnyObject::assignValue(bool a_fValue)
 /**
  * Safe value assignment method, int64_t variant.
  */
-int RTCRestAnyObject::assignValue(int64_t a_iValue)
+int RTCRestAnyObject::assignValue(int64_t a_iValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestInt64 *pData = new (std::nothrow) RTCRestInt64();
@@ -297,7 +297,7 @@ int RTCRestAnyObject::assignValue(int64_t a_iValue)
 /**
  * Safe value assignment method, int32_t variant.
  */
-int RTCRestAnyObject::assignValue(int32_t a_iValue)
+int RTCRestAnyObject::assignValue(int32_t a_iValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestInt32 *pData = new (std::nothrow) RTCRestInt32();
@@ -315,7 +315,7 @@ int RTCRestAnyObject::assignValue(int32_t a_iValue)
 /**
  * Safe value assignment method, int16_t variant.
  */
-int RTCRestAnyObject::assignValue(int16_t a_iValue)
+int RTCRestAnyObject::assignValue(int16_t a_iValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestInt16 *pData = new (std::nothrow) RTCRestInt16();
@@ -333,7 +333,7 @@ int RTCRestAnyObject::assignValue(int16_t a_iValue)
 /**
  * Safe value assignment method, double variant.
  */
-int RTCRestAnyObject::assignValue(double a_iValue)
+int RTCRestAnyObject::assignValue(double a_iValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestDouble *pData = new (std::nothrow) RTCRestDouble();
@@ -351,7 +351,7 @@ int RTCRestAnyObject::assignValue(double a_iValue)
 /**
  * Safe value assignment method, string variant.
  */
-int RTCRestAnyObject::assignValue(RTCString const &a_rValue)
+int RTCRestAnyObject::assignValue(RTCString const &a_rValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestString *pData = new (std::nothrow) RTCRestString();
@@ -368,7 +368,7 @@ int RTCRestAnyObject::assignValue(RTCString const &a_rValue)
 /**
  * Safe value assignment method, C-string variant.
  */
-int RTCRestAnyObject::assignValue(const char *a_pszValue)
+int RTCRestAnyObject::assignValue(const char *a_pszValue) RT_NOEXCEPT
 {
     setNull();
     RTCRestString *pData = new (std::nothrow) RTCRestString();
@@ -382,7 +382,7 @@ int RTCRestAnyObject::assignValue(const char *a_pszValue)
 }
 
 
-RTCRestObjectBase *RTCRestAnyObject::baseClone() const
+RTCRestObjectBase *RTCRestAnyObject::baseClone() const RT_NOEXCEPT
 {
     RTCRestAnyObject *pClone = new (std::nothrow) RTCRestAnyObject();
     if (pClone)
@@ -396,7 +396,7 @@ RTCRestObjectBase *RTCRestAnyObject::baseClone() const
 }
 
 
-int RTCRestAnyObject::setNull(void)
+int RTCRestAnyObject::setNull(void) RT_NOEXCEPT
 {
     if (m_pData)
     {
@@ -407,7 +407,7 @@ int RTCRestAnyObject::setNull(void)
 }
 
 
-int RTCRestAnyObject::resetToDefault()
+int RTCRestAnyObject::resetToDefault() RT_NOEXCEPT
 {
     if (m_pData)
         return m_pData->resetToDefault();
@@ -415,7 +415,7 @@ int RTCRestAnyObject::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestAnyObject::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestAnyObject::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (m_pData)
         return m_pData->serializeAsJson(a_rDst);
@@ -424,7 +424,7 @@ RTCRestOutputBase &RTCRestAnyObject::serializeAsJson(RTCRestOutputBase &a_rDst) 
 }
 
 
-int RTCRestAnyObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestAnyObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     setNull();
 
@@ -518,7 +518,7 @@ int RTCRestAnyObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestAnyObject::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestAnyObject::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     if (m_pData)
         return m_pData->toString(a_pDst, a_fFlags);
@@ -529,19 +529,19 @@ int RTCRestAnyObject::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollect
 
 
 int RTCRestAnyObject::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                                 uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                                 uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     return RTCRestObjectBase::fromString(a_rValue, a_pszName, a_pErrInfo, a_fFlags);
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestAnyObject::typeClass(void) const
+RTCRestObjectBase::kTypeClass RTCRestAnyObject::typeClass(void) const RT_NOEXCEPT
 {
     return kTypeClass_AnyObject;
 }
 
 
-const char *RTCRestAnyObject::typeName(void) const
+const char *RTCRestAnyObject::typeName(void) const RT_NOEXCEPT
 {
     if (m_pData)
     {
@@ -575,7 +575,7 @@ const char *RTCRestAnyObject::typeName(void) const
 /**
  * Factory method.
  */
-/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestAnyObject::createInstance(void)
+/*static*/ DECLCALLBACK(RTCRestObjectBase *) RTCRestAnyObject::createInstance(void) RT_NOEXCEPT
 {
     return new (std::nothrow) RTCRestAnyObject();
 }

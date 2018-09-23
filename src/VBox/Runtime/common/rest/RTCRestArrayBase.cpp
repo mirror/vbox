@@ -46,7 +46,7 @@ static char const g_szSep[RTCRestObjectBase::kCollectionFormat_Mask + 1] = ",, \
 /**
  * Default destructor.
  */
-RTCRestArrayBase::RTCRestArrayBase()
+RTCRestArrayBase::RTCRestArrayBase() RT_NOEXCEPT
     : RTCRestObjectBase()
     , m_papElements(NULL)
     , m_cElements(0)
@@ -90,12 +90,12 @@ RTCRestArrayBase &RTCRestArrayBase::operator=(RTCRestArrayBase const &a_rThat);
 *   Overridden methods                                                                                                           *
 *********************************************************************************************************************************/
 
-RTCRestObjectBase *RTCRestArrayBase::baseClone() const
+RTCRestObjectBase *RTCRestArrayBase::baseClone() const RT_NOEXCEPT
 {
     RTCRestArrayBase *pClone = createClone();
     if (pClone)
     {
-        int rc = pClone->copyArrayWorker(*this, false /*fThrow*/);
+        int rc = pClone->copyArrayWorkerNoThrow(*this);
         if (RT_SUCCESS(rc))
             return pClone;
         delete pClone;
@@ -104,7 +104,7 @@ RTCRestObjectBase *RTCRestArrayBase::baseClone() const
 }
 
 
-int RTCRestArrayBase::resetToDefault()
+int RTCRestArrayBase::resetToDefault() RT_NOEXCEPT
 {
     /* The default state of an array is empty. At least for now. */
     clear();
@@ -113,7 +113,7 @@ int RTCRestArrayBase::resetToDefault()
 }
 
 
-RTCRestOutputBase &RTCRestArrayBase::serializeAsJson(RTCRestOutputBase &a_rDst) const
+RTCRestOutputBase &RTCRestArrayBase::serializeAsJson(RTCRestOutputBase &a_rDst) const RT_NOEXCEPT
 {
     if (!m_fNullIndicator)
     {
@@ -131,7 +131,7 @@ RTCRestOutputBase &RTCRestArrayBase::serializeAsJson(RTCRestOutputBase &a_rDst) 
 }
 
 
-int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
+int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
     /*
      * Make sure the object starts out with an empty map.
@@ -215,7 +215,7 @@ int RTCRestArrayBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor)
 }
 
 
-int RTCRestArrayBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const
+int RTCRestArrayBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) const RT_NOEXCEPT
 {
     int rc;
     if (!m_fNullIndicator)
@@ -249,7 +249,7 @@ int RTCRestArrayBase::toString(RTCString *a_pDst, uint32_t a_fFlags /*= kCollect
 
 
 int RTCRestArrayBase::fromString(RTCString const &a_rValue, const char *a_pszName, PRTERRINFO a_pErrInfo /*= NULL*/,
-                                 uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/)
+                                 uint32_t a_fFlags /*= kCollectionFormat_Unspecified*/) RT_NOEXCEPT
 {
     /*
      * Clear the array.  If the string is empty, we have an empty array and is done.
@@ -311,13 +311,13 @@ int RTCRestArrayBase::fromString(RTCString const &a_rValue, const char *a_pszNam
 }
 
 
-RTCRestObjectBase::kTypeClass RTCRestArrayBase::typeClass(void) const
+RTCRestObjectBase::kTypeClass RTCRestArrayBase::typeClass(void) const RT_NOEXCEPT
 {
     return kTypeClass_Array;
 }
 
 
-const char *RTCRestArrayBase::typeName(void) const
+const char *RTCRestArrayBase::typeName(void) const RT_NOEXCEPT
 {
     return "RTCRestArray<ElementType>";
 }
@@ -328,7 +328,7 @@ const char *RTCRestArrayBase::typeName(void) const
 *   Array methods                                                                                                                *
 *********************************************************************************************************************************/
 
-void RTCRestArrayBase::clear()
+void RTCRestArrayBase::clear() RT_NOEXCEPT
 {
     size_t i = m_cElements;
     while (i-- > 0)
@@ -341,7 +341,7 @@ void RTCRestArrayBase::clear()
 }
 
 
-bool RTCRestArrayBase::removeAt(size_t a_idx)
+bool RTCRestArrayBase::removeAt(size_t a_idx) RT_NOEXCEPT
 {
     if (a_idx == ~(size_t)0)
         a_idx = m_cElements - 1;
@@ -358,7 +358,7 @@ bool RTCRestArrayBase::removeAt(size_t a_idx)
 }
 
 
-int RTCRestArrayBase::ensureCapacity(size_t a_cEnsureCapacity)
+int RTCRestArrayBase::ensureCapacity(size_t a_cEnsureCapacity) RT_NOEXCEPT
 {
     if (m_cCapacity < a_cEnsureCapacity)
     {
@@ -383,7 +383,7 @@ int RTCRestArrayBase::ensureCapacity(size_t a_cEnsureCapacity)
 }
 
 
-int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fThrow)
+int RTCRestArrayBase::copyArrayWorkerNoThrow(RTCRestArrayBase const &a_rThat) RT_NOEXCEPT
 {
     int rc;
     clear();
@@ -404,8 +404,6 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fT
                 rc = insertCopyWorker(i, *a_rThat.m_papElements[i], false);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
-                else if (a_fThrow)
-                    throw std::bad_alloc();
                 else
                     return rc;
             }
@@ -414,8 +412,16 @@ int RTCRestArrayBase::copyArrayWorker(RTCRestArrayBase const &a_rThat, bool a_fT
     return rc;
 }
 
+void RTCRestArrayBase::copyArrayWorkerMayThrow(RTCRestArrayBase const &a_rThat)
+{
+    int rc = copyArrayWorkerNoThrow(a_rThat);
+    if (RT_SUCCESS(rc))
+        return;
+    throw std::bad_alloc();
+}
 
-int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bool a_fReplace)
+
+int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bool a_fReplace) RT_NOEXCEPT
 {
     AssertPtrReturn(a_pValue, VERR_INVALID_POINTER);
 
@@ -461,7 +467,7 @@ int RTCRestArrayBase::insertWorker(size_t a_idx, RTCRestObjectBase *a_pValue, bo
 }
 
 
-int RTCRestArrayBase::insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace)
+int RTCRestArrayBase::insertCopyWorker(size_t a_idx, RTCRestObjectBase const &a_rValue, bool a_fReplace) RT_NOEXCEPT
 {
     int rc;
     RTCRestObjectBase *pValueCopy = a_rValue.baseClone();
