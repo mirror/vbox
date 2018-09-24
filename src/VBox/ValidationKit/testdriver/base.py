@@ -1544,7 +1544,7 @@ class TestDriverBase(object): # pylint: disable=R0902
                 if i > 0:
                     time.sleep(1);
 
-                for iPid in dPids.keys():
+                for iPid in dPids:
                     if not processExists(iPid):
                         reporter.log('%s (%s) terminated' % (dPids[iPid][0], iPid,));
                         self.pidFileRemove(iPid, fQuiet = True);

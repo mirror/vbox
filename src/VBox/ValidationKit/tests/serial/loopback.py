@@ -76,9 +76,9 @@ class SerialLoopbackTcpServ(object):
                 oConn, _ = self.oSock.accept();
                 self.oConn = oConn;
             else:
-                abData = self.oConn.recv(1024);
+                abData = self.oConn.recv(1024); # pylint: disable=no-member
                 if abData is not None:
-                    self.oConn.send(abData);
+                    self.oConn.send(abData);    # pylint: disable=no-member
         except:
             pass;
 
@@ -148,9 +148,9 @@ class SerialLoopbackNamedPipeServ(object):
                 oConn, _ = self.oSock.accept();
                 self.oConn = oConn;
             else:
-                abData = self.oConn.recv(1024);
+                abData = self.oConn.recv(1024); # pylint: disable=no-member
                 if abData is not None:
-                    self.oConn.send(abData);
+                    self.oConn.send(abData);    # pylint: disable=no-member
         except:
             pass;
 

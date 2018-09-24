@@ -1097,7 +1097,7 @@ class TestDriver(base.TestDriver):                                              
                 if sResponse is None  or  sResponse.strip() != 'READY':
                     reporter.error('VBoxSVC failed starting up... (sResponse=%s)' % (sResponse,));
                     if not self.oVBoxSvcProcess.wait(5000):
-                        self.oVBoxSvcProcess.terminate(2500);
+                        self.oVBoxSvcProcess.terminate();
                     self.oVBoxSvcProcess.wait(5000);
                     self.oVBoxSvcProcess = None;
 
