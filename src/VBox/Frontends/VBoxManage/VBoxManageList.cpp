@@ -765,6 +765,9 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
         case ProxyMode_System:              psz = "System"; break;
         case ProxyMode_NoProxy:             psz = "NoProxy"; break;
         case ProxyMode_Manual:              psz = "Manual"; break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case ProxyMode_32BitHack:           break; /* Shut up compiler warnings. */
+#endif
     }
     RTPrintf("Proxy Mode:                      %s\n", psz);
     systemProperties->COMGETTER(ProxyURL)(str.asOutParam());
