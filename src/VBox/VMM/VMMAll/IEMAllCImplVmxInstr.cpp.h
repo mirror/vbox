@@ -5407,16 +5407,15 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitReason)
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
- * @param   cbInstr         The instruction length.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint32_t cbInstr)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 {
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
     pVmcs->u32RoExitReason   = uExitReason;
-    pVmcs->u32RoExitInstrLen = cbInstr;
 
+    /** @todo NSTVMX: Update VM-exit instruction length for instruction VM-exits. */
     /** @todo NSTVMX: IEMGetCurrentXcpt will be VM-exit interruption info. */
     /** @todo NSTVMX: The source event should be recorded in IDT-vectoring info
      *        during injection. */
