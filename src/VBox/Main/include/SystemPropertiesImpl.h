@@ -105,6 +105,10 @@ private:
     HRESULT getDefaultFrontend(com::Utf8Str &aDefaultFrontend);
     HRESULT setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
     HRESULT getScreenShotFormats(std::vector<BitmapFormat_T> &aScreenShotFormats);
+    HRESULT getProxyMode(ProxyMode_T *pProxyMode);
+    HRESULT setProxyMode(ProxyMode_T aProxyMode);
+    HRESULT getProxyURL(com::Utf8Str &aProxyURL);
+    HRESULT setProxyURL(const com::Utf8Str &aProxyURL);
 
     // wrapped ISystemProperties methods
     HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,

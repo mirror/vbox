@@ -78,6 +78,7 @@
 #include <iprt/process.h>
 #include <iprt/ldr.h>
 #include <iprt/base64.h>
+#include <iprt/uri.h>
 #include <iprt/cpp/lock.h>
 
 // generated header
@@ -1578,9 +1579,10 @@ bool NATHostLoopbackOffset::operator==(const NATHostLoopbackOffset &o) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-SystemProperties::SystemProperties() :
-    ulLogHistoryCount(3),
-    fExclusiveHwVirt(true)
+SystemProperties::SystemProperties()
+    : uLogHistoryCount(3)
+    , uProxyMode(ProxyMode_System)
+    , fExclusiveHwVirt(true)
 {
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
     fExclusiveHwVirt = false;
@@ -1866,6 +1868,91 @@ void MainConfigFile::readUSBDeviceSources(const xml::ElementNode &elmDeviceSourc
 }
 
 /**
+ * Converts old style Proxy settings from ExtraData/UI section.
+ *
+ * Saves proxy settings directly to systemProperties structure.
+ *
+ * @returns true if conversion was successfull, false if not.
+ * @param strUIProxySettings The GUI settings string to convert.
+ */
+bool MainConfigFile::convertGuiProxySettings(const com::Utf8Str &strUIProxySettings)
+{
+    /*
+     * Possible variants:
+     *    - "ProxyAuto,proxyserver.url,1080,authDisabled,,"
+     *    - "ProxyDisabled,proxyserver.url,1080,authDisabled,,"
+     *    - "ProxyEnabled,proxyserver.url,1080,authDisabled,,"
+     *
+     * Note! We only need to bother with the first three fields as the last
+     *       three was never really used or ever actually passed to the HTTP
+     *       client code.
+     */
+    /* First field: The proxy mode. */
+    const char *psz = RTStrStripL(strUIProxySettings.c_str());
+    static const struct { const char *psz; size_t cch; ProxyMode_T enmMode; } s_aModes[] =
+    {
+        { RT_STR_TUPLE("ProxyAuto"),     ProxyMode_System },
+        { RT_STR_TUPLE("ProxyDisabled"), ProxyMode_NoProxy },
+        { RT_STR_TUPLE("ProxyEnabled"),  ProxyMode_Manual },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aModes); i++)
+        if (RTStrNICmpAscii(psz, s_aModes[i].psz, s_aModes[i].cch) == 0)
+        {
+            systemProperties.uProxyMode = s_aModes[i].enmMode;
+            psz = RTStrStripL(psz + s_aModes[i].cch);
+            if (*psz == ',')
+            {
+                /* Second field: The proxy host, possibly fully fledged proxy URL. */
+                psz = RTStrStripL(psz + 1);
+                if (*psz != '\0' && *psz != ',')
+                {
+                    const char *pszEnd  = strchr(psz, ',');
+                    size_t      cchHost = pszEnd ? pszEnd - psz : strlen(psz);
+                    while (cchHost > 0 && RT_C_IS_SPACE(psz[cchHost - 1]))
+                        cchHost--;
+                    systemProperties.strProxyUrl.assign(psz, cchHost);
+                    if (systemProperties.strProxyUrl.find("://") == RTCString::npos)
+                        systemProperties.strProxyUrl.replace(0, 0, "http://");
+
+                    /* Third field: The proxy port. Defaulted to 1080 for all proxies.
+                                    The new settings has type specific default ports.  */
+                    uint16_t uPort = 1080;
+                    if (pszEnd)
+                    {
+                        int rc = RTStrToUInt16Ex(RTStrStripL(pszEnd + 1), NULL, 10, &uPort);
+                        if (RT_FAILURE(rc))
+                            uPort = 1080;
+                    }
+                    RTURIPARSED Parsed;
+                    int rc = RTUriParse(systemProperties.strProxyUrl.c_str(), &Parsed);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (Parsed.uAuthorityPort == UINT32_MAX)
+                            systemProperties.strProxyUrl.appendPrintf(systemProperties.strProxyUrl.endsWith(":")
+                                                                      ? "%u" : ":%u", uPort);
+                    }
+                    else
+                    {
+                        LogRelFunc(("Dropping invalid proxy URL for %u: %s\n",
+                                    systemProperties.uProxyMode, systemProperties.strProxyUrl.c_str()));
+                        systemProperties.strProxyUrl.setNull();
+                    }
+                }
+                /* else: don't bother with the rest if we haven't got a host. */
+            }
+            if (   systemProperties.strProxyUrl.isEmpty()
+                && systemProperties.uProxyMode == ProxyMode_Manual)
+            {
+                systemProperties.uProxyMode = ProxyMode_System;
+                return false;
+            }
+            return true;
+        }
+    LogRelFunc(("Unknown proxy type: %s\n", psz));
+    return false;
+}
+
+/**
  * Constructor.
  *
  * If pstrFilename is != NULL, this reads the given settings file into the member
@@ -1887,6 +1974,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
         // we need only analyze what is in there
         xml::NodesLoop nlRootChildren(*m->pelmRoot);
         const xml::ElementNode *pelmRootChild;
+        bool fCopyProxySettingsFromExtraData = false;
         while ((pelmRootChild = nlRootChildren.forAllNodes()))
         {
             if (pelmRootChild->nameEquals("Global"))
@@ -1905,10 +1993,13 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                             pelmGlobalChild->getAttributeValue("remoteDisplayAuthLibrary", systemProperties.strVRDEAuthLibrary);
                         pelmGlobalChild->getAttributeValue("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
                         pelmGlobalChild->getAttributeValue("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
-                        pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.ulLogHistoryCount);
+                        pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.uLogHistoryCount);
                         pelmGlobalChild->getAttributeValue("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
                         pelmGlobalChild->getAttributeValue("defaultFrontend", systemProperties.strDefaultFrontend);
                         pelmGlobalChild->getAttributeValue("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
+                        if (!pelmGlobalChild->getAttributeValue("proxyMode", systemProperties.uProxyMode))
+                            fCopyProxySettingsFromExtraData = true;
+                        pelmGlobalChild->getAttributeValue("proxyUrl", systemProperties.strProxyUrl);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
@@ -1939,6 +2030,14 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                 }
             } // end if (pelmRootChild->nameEquals("Global"))
         }
+
+        if (fCopyProxySettingsFromExtraData)
+            for (StringsMap::const_iterator it = mapExtraDataItems.begin(); it != mapExtraDataItems.end(); ++it)
+                if (it->first.equals("GUI/ProxySettings"))
+                {
+                    convertGuiProxySettings(it->second);
+                    break;
+                }
 
         clearDocument();
     }
@@ -2140,11 +2239,14 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
     if (systemProperties.strDefaultVRDEExtPack.length())
         pelmSysProps->setAttribute("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
-    pelmSysProps->setAttribute("LogHistoryCount", systemProperties.ulLogHistoryCount);
+    pelmSysProps->setAttribute("LogHistoryCount", systemProperties.uLogHistoryCount);
     if (systemProperties.strAutostartDatabasePath.length())
         pelmSysProps->setAttribute("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
     if (systemProperties.strDefaultFrontend.length())
         pelmSysProps->setAttribute("defaultFrontend", systemProperties.strDefaultFrontend);
+    if (systemProperties.strProxyUrl.length())
+        pelmSysProps->setAttribute("proxyUrl", systemProperties.strProxyUrl);
+    pelmSysProps->setAttribute("proxyMode", systemProperties.uProxyMode);
     pelmSysProps->setAttribute("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),

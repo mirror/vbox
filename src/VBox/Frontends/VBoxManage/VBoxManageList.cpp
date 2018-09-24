@@ -622,7 +622,7 @@ static HRESULT listUsbFilters(const ComPtr<IVirtualBox> &pVirtualBox)
 static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 {
     ComPtr<ISystemProperties> systemProperties;
-    pVirtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
 
     Bstr str;
     ULONG ulValue;
@@ -757,6 +757,18 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Default Guest Additions ISO:     %ls\n", str.raw());
     systemProperties->COMGETTER(LoggingLevel)(str.asOutParam());
     RTPrintf("Logging Level:                   %ls\n", str.raw());
+    ProxyMode_T enmProxyMode = (ProxyMode_T)42;
+    systemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
+    psz = "Unknown";
+    switch (enmProxyMode)
+    {
+        case ProxyMode_System:              psz = "System"; break;
+        case ProxyMode_NoProxy:             psz = "NoProxy"; break;
+        case ProxyMode_Manual:              psz = "Manual"; break;
+    }
+    RTPrintf("Proxy Mode:                      %s\n", psz);
+    systemProperties->COMGETTER(ProxyURL)(str.asOutParam());
+    RTPrintf("Proxy URL:                       %ls\n", str.raw());
     return S_OK;
 }
 

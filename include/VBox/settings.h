@@ -317,7 +317,9 @@ struct SystemProperties
     com::Utf8Str            strDefaultAdditionsISO;
     com::Utf8Str            strDefaultFrontend;
     com::Utf8Str            strLoggingLevel;
-    uint32_t                ulLogHistoryCount;
+    com::Utf8Str            strProxyUrl;
+    uint32_t                uProxyMode; /**< ProxyMode_T */
+    uint32_t                uLogHistoryCount;
     bool                    fExclusiveHwVirt;
 };
 
@@ -421,6 +423,7 @@ private:
     void bumpSettingsVersionIfNeeded();
     void buildUSBDeviceSources(xml::ElementNode &elmParent, const USBDeviceSourcesList &ll);
     void readUSBDeviceSources(const xml::ElementNode &elmDeviceSources, USBDeviceSourcesList &ll);
+    bool convertGuiProxySettings(const com::Utf8Str &strUIProxySettings);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

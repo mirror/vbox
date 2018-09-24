@@ -33,6 +33,7 @@
 #include <iprt/ldr.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/uri.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
@@ -96,7 +97,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     i_setVRDEAuthLibrary(Utf8Str::Empty);
     i_setDefaultVRDEExtPack(Utf8Str::Empty);
 
-    m->ulLogHistoryCount = 3;
+    m->uLogHistoryCount = 3;
 
 
     /* On Windows, OS X and Solaris, HW virtualization use isn't exclusive
@@ -872,7 +873,7 @@ HRESULT SystemProperties::getLogHistoryCount(ULONG *count)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *count = m->ulLogHistoryCount;
+    *count = m->uLogHistoryCount;
 
     return S_OK;
 }
@@ -881,7 +882,7 @@ HRESULT SystemProperties::getLogHistoryCount(ULONG *count)
 HRESULT SystemProperties::setLogHistoryCount(ULONG count)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->ulLogHistoryCount = count;
+    m->uLogHistoryCount = count;
     alock.release();
 
     // VirtualBox::i_saveSettings() needs vbox write lock
@@ -985,6 +986,91 @@ HRESULT SystemProperties::getScreenShotFormats(std::vector<BitmapFormat_T> &aBit
     return S_OK;
 }
 
+HRESULT SystemProperties::getProxyMode(ProxyMode_T *pProxyMode)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    ProxyMode_T enmMode = *pProxyMode = (ProxyMode_T)m->uProxyMode;
+    AssertMsgReturn(enmMode == ProxyMode_System || enmMode == ProxyMode_NoProxy || enmMode == ProxyMode_Manual,
+                    ("enmMode=%d\n", enmMode), E_UNEXPECTED);
+    return S_OK;
+}
+
+HRESULT SystemProperties::setProxyMode(ProxyMode_T aProxyMode)
+{
+    /* Validate input. */
+    switch (aProxyMode)
+    {
+        case ProxyMode_System:
+        case ProxyMode_NoProxy:
+        case ProxyMode_Manual:
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("Invalid ProxyMode value: %d"), (int)aProxyMode);
+    }
+
+    /* Set and write out settings. */
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        m->uProxyMode = aProxyMode;
+    }
+    AutoWriteLock alock(mParent COMMA_LOCKVAL_SRC_POS); /* required for saving. */
+    return mParent->i_saveSettings();
+}
+
+HRESULT SystemProperties::getProxyURL(com::Utf8Str &aProxyURL)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aProxyURL = m->strProxyUrl;
+    return S_OK;
+}
+
+HRESULT SystemProperties::setProxyURL(const com::Utf8Str &aProxyURL)
+{
+    /*
+     * Validate input.
+     */
+    Utf8Str const *pStrProxyUrl = &aProxyURL;
+    Utf8Str strTmp;
+    if (pStrProxyUrl->isNotEmpty())
+    {
+        /* RTUriParse requires a scheme, so append 'http://' if none seems present: */
+        if (pStrProxyUrl->find("://") == RTCString::npos)
+        {
+            strTmp.printf("http://%s", aProxyURL.c_str());
+            pStrProxyUrl = &strTmp;
+        }
+
+        /* Use RTUriParse to check the format.  There must be a hostname, but nothing
+           can follow it and the port. */
+        RTURIPARSED Parsed;
+        int vrc = RTUriParse(pStrProxyUrl->c_str(), &Parsed);
+        if (RT_FAILURE(vrc))
+            return setErrorBoth(E_INVALIDARG, vrc, tr("Failed to parse proxy URL: %Rrc"), vrc);
+        if (   Parsed.cchAuthorityHost == 0
+            && !RTUriIsSchemeMatch(pStrProxyUrl->c_str(), "direct"))
+            return setError(E_INVALIDARG, tr("Proxy URL must include a hostname"));
+        if (Parsed.cchPath > 0)
+            return setError(E_INVALIDARG, tr("Proxy URL must not include a path component (%.*s)"),
+                            Parsed.cchPath, pStrProxyUrl->c_str() + Parsed.offPath);
+        if (Parsed.cchQuery > 0)
+            return setError(E_INVALIDARG, tr("Proxy URL must not include a query component (?%.*s)"),
+                            Parsed.cchQuery, pStrProxyUrl->c_str() + Parsed.offQuery);
+        if (Parsed.cchFragment > 0)
+            return setError(E_INVALIDARG, tr("Proxy URL must not include a fragment component (#%.*s)"),
+                            Parsed.cchFragment, pStrProxyUrl->c_str() + Parsed.offFragment);
+    }
+
+    /*
+     * Set and write out settings.
+     */
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        m->strProxyUrl = *pStrProxyUrl;
+    }
+    AutoWriteLock alock(mParent COMMA_LOCKVAL_SRC_POS); /* required for saving. */
+    return mParent->i_saveSettings();
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1013,8 +1099,10 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     rc = i_setDefaultVRDEExtPack(data.strDefaultVRDEExtPack);
     if (FAILED(rc)) return rc;
 
-    m->ulLogHistoryCount = data.ulLogHistoryCount;
+    m->uLogHistoryCount  = data.uLogHistoryCount;
     m->fExclusiveHwVirt  = data.fExclusiveHwVirt;
+    m->uProxyMode        = data.uProxyMode;
+    m->strProxyUrl       = data.strProxyUrl;
 
     rc = i_setAutostartDatabasePath(data.strAutostartDatabasePath);
     if (FAILED(rc)) return rc;
@@ -1355,3 +1443,4 @@ HRESULT SystemProperties::i_setDefaultFrontend(const com::Utf8Str &aDefaultFront
 
     return S_OK;
 }
+

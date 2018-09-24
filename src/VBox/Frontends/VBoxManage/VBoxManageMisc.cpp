@@ -1046,6 +1046,24 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
             bstrLoggingLevel.setNull();
         CHECK_ERROR(systemProperties, COMSETTER(LoggingLevel)(bstrLoggingLevel.raw()));
     }
+    else if (!strcmp(a->argv[0], "proxymode"))
+    {
+        ProxyMode_T enmProxyMode;
+        if (!RTStrICmpAscii(a->argv[1], "system"))
+            enmProxyMode = ProxyMode_System;
+        else if (!RTStrICmpAscii(a->argv[1], "noproxy"))
+            enmProxyMode = ProxyMode_NoProxy;
+        else if (!RTStrICmpAscii(a->argv[1], "manual"))
+            enmProxyMode = ProxyMode_Manual;
+        else
+            return errorArgument("Unknown proxy mode: '%s'", a->argv[1]);
+        CHECK_ERROR(systemProperties, COMSETTER(ProxyMode)(enmProxyMode));
+    }
+    else if (!strcmp(a->argv[0], "proxyurl"))
+    {
+        Bstr bstrProxyUrl(a->argv[1]);
+        CHECK_ERROR(systemProperties, COMSETTER(ProxyURL)(bstrProxyUrl.raw()));
+    }
     else
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);
 

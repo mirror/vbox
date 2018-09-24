@@ -9911,10 +9911,23 @@ and "VAR" for unsetting. -->
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum name="ProxyMode" uuid="885264b3-b517-40fc-ce46-36e3bae895a4">
+    <desc> Proxy setting: System (default), NoProxy and Manual. <link to="ISystemProperties::proxyMode"/></desc>
+    <const name="System" value="0">
+      <desc>Use the system proxy settings as far as possible.</desc>
+    </const>
+    <const name="NoProxy" value="1">
+      <desc>Direct connection to the Internet.</desc>
+    </const>
+    <const name="Manual" value="2">
+      <desc>Use the manual proxy from <link to="ISystemProperties::proxyURL"/>.</desc>
+    </const>
+  </enum>
+
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="0eb668d2-495e-5a36-8890-29999b5f030c"
+    uuid="d55176e5-6730-4e9e-fc1f-a59b1f44f78f"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -10225,6 +10238,31 @@ and "VAR" for unsetting. -->
       <desc>
         Supported bitmap formats which can be used with takeScreenShot
         and takeScreenShotToArray methods.
+      </desc>
+    </attribute>
+
+    <attribute name="proxyMode" type="ProxyMode" readonly="no">
+      <desc> The proxy mode setting: System, NoProxy or Manual.</desc>
+    </attribute>
+    <attribute name="proxyURL" type="wstring" readonly="no">
+      <desc>
+       Proxy server URL for the <link to="ProxyMode::Manual" /> proxy mode.
+
+       The format is: [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
+
+       Valid types are: http (default), https, socks4, socks4a, socks5, socks5h and direct.
+       Please note that these are proxy types defining how the proxy operates rather than
+       how to proxy any similarly named protocol (i.e. don't confuse a http-proxy with
+       proxying the http protocol, as a http-proxy usually can proxy https and other protocols too).
+
+       The port number defaults to 80 for http, 443 for https and 1080 for the socks ones.
+
+       <note>The password is currently stored as plain text!  Use the <link to="ProxyMode::System" />
+       mode if you consider the proxy password to be sensitive.</note>
+
+       An empty string will cause the behavior to be identical to <link to="ProxyMode::System" />.
+       For compatibility with libproxy, an URL starting with "direct://" will cause
+       <link to="ProxyMode::NoProxy" /> behavior.
       </desc>
     </attribute>
 
