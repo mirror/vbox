@@ -36,7 +36,7 @@ VBoxDnDDropSource::VBoxDnDDropSource(VBoxDnDWnd *pParent)
     : mRefCount(1),
       mpWndParent(pParent),
       mdwCurEffect(0),
-      muCurAction(VBOX_DND_ACTION_IGNORE)
+      mDnDActionCurrent(VBOX_DND_ACTION_IGNORE)
 {
     LogFlowFuncEnter();
 }
@@ -96,15 +96,15 @@ STDMETHODIMP VBoxDnDDropSource::QueryInterface(REFIID iid, void **ppvObject)
 STDMETHODIMP VBoxDnDDropSource::QueryContinueDrag(BOOL fEscapePressed, DWORD dwKeyState)
 {
 #if 1
-    LogFlowFunc(("fEscapePressed=%RTbool, dwKeyState=0x%x, mdwCurEffect=%RI32, muCurAction=%RU32\n",
-                 fEscapePressed, dwKeyState, mdwCurEffect, muCurAction));
+    LogFlowFunc(("fEscapePressed=%RTbool, dwKeyState=0x%x, mdwCurEffect=%RI32, mDnDActionCurrent=%RU32\n",
+                 fEscapePressed, dwKeyState, mdwCurEffect, mDnDActionCurrent));
 #endif
 
     /* ESC pressed? Bail out. */
     if (fEscapePressed)
     {
         mdwCurEffect = 0;
-        muCurAction = VBOX_DND_ACTION_IGNORE;
+        mDnDActionCurrent = VBOX_DND_ACTION_IGNORE;
 
         LogFlowFunc(("Canceled\n"));
         return DRAGDROP_S_CANCEL;
@@ -145,7 +145,7 @@ STDMETHODIMP VBoxDnDDropSource::GiveFeedback(DWORD dwEffect)
     }
 
     mdwCurEffect = dwEffect;
-    muCurAction = uAction;
+    mDnDActionCurrent = uAction;
 
     return DRAGDROP_S_USEDEFAULTCURSORS;
 }

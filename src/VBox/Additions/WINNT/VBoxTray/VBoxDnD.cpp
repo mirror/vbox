@@ -916,19 +916,19 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIS
  *                                  inside the guest.
  * @param   u32yPos                 Absolute Y position (in pixels) of the host cursor
  *                                  inside the guest.
- * @param   uAction                 Action the host wants to perform while moving.
+ * @param   dndAction               Action the host wants to perform while moving.
  *                                  Currently ignored.
  */
-int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
+int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, VBOXDNDACTION dndAction)
 {
-    RT_NOREF(uAction);
+    RT_NOREF(dndAction);
     int rc;
 
     uint32_t uActionNotify = VBOX_DND_ACTION_IGNORE;
     if (mMode == HG)
     {
-        LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=0x%x\n",
-                         u32xPos, u32yPos, uAction));
+        LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, dndAction=0x%x\n",
+                         u32xPos, u32yPos, dndAction));
 
         rc = mouseMove(u32xPos, u32yPos, MOUSEEVENTF_LEFTDOWN);
 
@@ -1263,14 +1263,14 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
  * @return  IPRT status code.
  * @param   pszFormat               Format the host requests the data in.
  * @param   cbFormat                Size (in bytes) of format string.
- * @param   uDefAction              Default action on the host.
+ * @param   dndActionDefault        Default action on the host.
  */
-int VBoxDnDWnd::OnGhDrop(const RTCString &strFormat, uint32_t uDefAction)
+int VBoxDnDWnd::OnGhDrop(const RTCString &strFormat, uint32_t dndActionDefault)
 {
-    RT_NOREF(uDefAction);
+    RT_NOREF(dndActionDefault);
 
-    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, strFormat=%s, uDefAction=0x%x\n",
-                     mMode, mState, pDropTarget, strFormat.c_str(), uDefAction));
+    LogFlowThisFunc(("mMode=%ld, mState=%ld, pDropTarget=0x%p, strFormat=%s, dndActionDefault=0x%x\n",
+                     mMode, mState, pDropTarget, strFormat.c_str(), dndActionDefault));
     int rc;
     if (mMode == GH)
     {

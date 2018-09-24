@@ -67,6 +67,8 @@
 #include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 
+#include <VBox/GuestHost/DragAndDropDefs.h>
+
 namespace DragAndDropSvc {
 
 /******************************************************************************
