@@ -26,6 +26,8 @@
 #ifndef ___VBox_DnDDefs_h
 #define ___VBox_DnDDefs_h
 
+#include <iprt/types.h>
+
 /*
  * The mode of operations.
  */
