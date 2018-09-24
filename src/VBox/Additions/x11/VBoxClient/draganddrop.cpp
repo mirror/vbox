@@ -439,7 +439,7 @@ public:
     int init(Display *pDisplay);
     void destroy();
 
-    int sendFinished(Window hWndSource, uint32_t uAction);
+    int sendFinished(Window hWndSource, VBOXDNDACTION dndAction);
 
 public:
 
@@ -503,10 +503,10 @@ public:
     bool waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType, RTMSINTERVAL uTimeoutMS = 100);
 
     /* Host -> Guest handling. */
-    int hgEnter(const RTCList<RTCString> &formats, uint32_t actions);
+    int hgEnter(const RTCList<RTCString> &formats, VBOXDNDACTIONLIST dndListActionsAllowed);
     int hgLeave(void);
-    int hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction);
-    int hgDrop(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction);
+    int hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
+    int hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
     int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -536,8 +536,8 @@ public:
     /* Atom / HGCM formatting helpers. */
     int             toAtomList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomList &lstAtoms) const;
     int             toAtomList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const;
-    static Atom     toAtomAction(uint32_t uAction);
-    static int      toAtomActions(uint32_t uActions, VBoxDnDAtomList &lstAtoms);
+    static Atom     toAtomAction(VBOXDNDACTION dndAction);
+    static int      toAtomActions(VBOXDNDACTIONLIST dndActionList, VBoxDnDAtomList &lstAtoms);
     static uint32_t toHGCMAction(Atom atom);
     static uint32_t toHGCMActions(const VBoxDnDAtomList &actionsList);
 
@@ -949,13 +949,12 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 uint16_t cy = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
                 LogFlowThisFunc(("\tReported dead area: x=%RU16, y=%RU16, cx=%RU16, cy=%RU16\n", x, y, cx, cy));
 #endif
-
-                uint32_t uAction = VBOX_DND_ACTION_IGNORE; /* Default is ignoring. */
+                VBOXDNDACTION dndAction = VBOX_DND_ACTION_IGNORE; /* Default is ignoring. */
                 /** @todo Compare this with the allowed actions. */
                 if (fAcceptDrop)
-                    uAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
+                    dndAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
 
-                rc = VbglR3DnDHGSendAckOp(&m_dndCtx, uAction);
+                rc = VbglR3DnDHGSendAckOp(&m_dndCtx, dndAction);
             }
             else if (e.xclient.message_type == xAtom(XA_XdndFinished))
             {
@@ -1593,9 +1592,9 @@ bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
  *
  * @returns IPRT status code.
  * @param   lstFormats              List of supported formats from the host.
- * @param   uActions                (ORed) List of supported actions from the host.
+ * @param   dndListActionsAllowed   (ORed) List of supported actions from the host.
  */
-int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t uActions)
+int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t dndListActionsAllowed)
 {
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
 
@@ -1605,7 +1604,7 @@ int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAction
     reset();
 
 #ifdef DEBUG
-    LogFlowThisFunc(("uActions=0x%x, lstFormats=%zu: ", uActions, lstFormats.size()));
+    LogFlowThisFunc(("dndListActionsAllowed=0x%x, lstFormats=%zu: ", dndListActionsAllowed, lstFormats.size()));
     for (size_t i = 0; i < lstFormats.size(); ++i)
         LogFlow(("'%s' ", lstFormats.at(i).c_str()));
     LogFlow(("\n"));
@@ -1629,7 +1628,7 @@ int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAction
 
         /* Announce the possible actions. */
         VBoxDnDAtomList lstActions;
-        rc = toAtomActions(uActions, lstActions);
+        rc = toAtomActions(dndListActionsAllowed, lstActions);
         if (RT_FAILURE(rc))
             break;
         rc = wndXDnDSetActionList(m_wndProxy.hWnd, lstActions);
@@ -1666,13 +1665,13 @@ int DragInstance::hgLeave(void)
  * @returns IPRT status code.
  * @param   uPosX                   Relative X position within the guest's display area.
  * @param   uPosY                   Relative Y position within the guest's display area.
- * @param   uDefaultAction          Default action the host wants to perform on the guest
+ * @param   dndActionDefault        Default action the host wants to perform on the guest
  *                                  as soon as the operation successfully finishes.
  */
-int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction)
+int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault)
 {
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
-    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, uAction=%RU32\n", uPosX, uPosY, uDefaultAction));
+    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, dndActionDefault=%RU32\n", uPosX, uPosY, dndActionDefault));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -1819,7 +1818,7 @@ int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction
         /*
          * Send a XdndPosition event with the proposed action to the guest.
          */
-        Atom pa = toAtomAction(uDefaultAction);
+        Atom pa = toAtomAction(dndActionDefault);
         LogFlowThisFunc(("strAction=%s\n", xAtomToString(pa).c_str()));
 
         XClientMessageEvent m;
@@ -1862,14 +1861,14 @@ int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction
  * @returns IPRT status code.
  * @param   uPosX                   Relative X position within the guest's display area.
  * @param   uPosY                   Relative Y position within the guest's display area.
- * @param   uDefaultAction          Default action the host wants to perform on the guest
+ * @param   dndActionDefault        Default action the host wants to perform on the guest
  *                                  as soon as the operation successfully finishes.
  */
-int DragInstance::hgDrop(uint32_t uPosX, uint32_t uPosY, uint32_t uDefaultAction)
+int DragInstance::hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault)
 {
-    RT_NOREF3(uPosX, uPosY, uDefaultAction);
+    RT_NOREF3(uPosX, uPosY, dndActionDefault);
     LogFlowThisFunc(("wndCur=%RU32, wndProxy=%RU32, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy.hWnd, m_enmMode, m_enmState));
-    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, uAction=%RU32\n", uPosX, uPosY, uDefaultAction));
+    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, dndActionDefault=%RU32\n", uPosX, uPosY, dndActionDefault));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -1994,8 +1993,8 @@ int DragInstance::ghIsDnDPending(void)
     int rc;
 
     RTCString strFormats = "\r\n"; /** @todo If empty, IOCTL fails with VERR_ACCESS_DENIED. */
-    uint32_t uDefAction  = VBOX_DND_ACTION_IGNORE;
-    uint32_t uAllActions = VBOX_DND_ACTION_IGNORE;
+    VBOXDNDACTION     dndActionDefault = VBOX_DND_ACTION_IGNORE;
+    VBOXDNDACTIONLIST dndActionList    = VBOX_DND_ACTION_IGNORE;
 
     /* Currently in wrong mode? Bail out. */
     if (m_enmMode == HG)
@@ -2096,18 +2095,18 @@ int DragInstance::ghIsDnDPending(void)
         if (!strFormatsCur.isEmpty())
         {
             strFormats   = strFormatsCur;
-            uDefAction   = VBOX_DND_ACTION_COPY; /** @todo Handle default action! */
-            uAllActions  = VBOX_DND_ACTION_COPY; /** @todo Ditto. */
-            uAllActions |= toHGCMActions(m_lstActions);
+            dndActionDefault = VBOX_DND_ACTION_COPY; /** @todo Handle default action! */
+            dndActionList    = VBOX_DND_ACTION_COPY; /** @todo Ditto. */
+            dndActionList   |= toHGCMActions(m_lstActions);
         }
 
         RTCritSectLeave(&m_dataCS);
     }
 
-    rc2 = VbglR3DnDGHSendAckPending(&m_dndCtx, uDefAction, uAllActions,
+    rc2 = VbglR3DnDGHSendAckPending(&m_dndCtx, dndActionDefault, dndActionList,
                                     strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
-    LogFlowThisFunc(("uClientID=%RU32, uDefAction=0x%x, allActions=0x%x, strFormats=%s, rc=%Rrc\n",
-                     m_dndCtx.uClientID, uDefAction, uAllActions, strFormats.c_str(), rc2));
+    LogFlowThisFunc(("uClientID=%RU32, uDefAction=0x%x, uLstActions=0x%x, strFormats=%s, rc=%Rrc\n",
+                     m_dndCtx.uClientID, dndActionDefault, dndActionList, strFormats.c_str(), rc2));
     if (RT_FAILURE(rc2))
     {
         logError("Error reporting pending drag and drop operation status to host: %Rrc\n", rc2);
@@ -2821,15 +2820,15 @@ int DragInstance::toAtomList(const void *pvData, uint32_t cbData, VBoxDnDAtomLis
  * Converts a HGCM-based drag'n drop action to a Atom-based drag'n drop action.
  *
  * @returns Converted Atom-based drag'n drop action.
- * @param   uAction                 HGCM drag'n drop actions to convert.
+ * @param   dndAction               HGCM drag'n drop actions to convert.
  */
 /* static */
-Atom DragInstance::toAtomAction(uint32_t uAction)
+Atom DragInstance::toAtomAction(VBOXDNDACTION dndAction)
 {
     /* Ignore is None. */
-    return (isDnDCopyAction(uAction) ? xAtom(XA_XdndActionCopy) :
-            isDnDMoveAction(uAction) ? xAtom(XA_XdndActionMove) :
-            isDnDLinkAction(uAction) ? xAtom(XA_XdndActionLink) :
+    return (isDnDCopyAction(dndAction) ? xAtom(XA_XdndActionCopy) :
+            isDnDMoveAction(dndAction) ? xAtom(XA_XdndActionMove) :
+            isDnDLinkAction(dndAction) ? xAtom(XA_XdndActionLink) :
             None);
 }
 
@@ -2837,17 +2836,17 @@ Atom DragInstance::toAtomAction(uint32_t uAction)
  * Converts HGCM-based drag'n drop actions to a VBoxDnDAtomList list.
  *
  * @returns IPRT status code.
- * @param   uActions                HGCM drag'n drop actions to convert.
+ * @param   dndActionList           HGCM drag'n drop actions to convert.
  * @param   lstAtoms                Reference to VBoxDnDAtomList to store actions in.
  */
 /* static */
-int DragInstance::toAtomActions(uint32_t uActions, VBoxDnDAtomList &lstAtoms)
+int DragInstance::toAtomActions(VBOXDNDACTIONLIST dndActionList, VBoxDnDAtomList &lstAtoms)
 {
-    if (hasDnDCopyAction(uActions))
+    if (hasDnDCopyAction(dndActionList))
         lstAtoms.append(xAtom(XA_XdndActionCopy));
-    if (hasDnDMoveAction(uActions))
+    if (hasDnDMoveAction(dndActionList))
         lstAtoms.append(xAtom(XA_XdndActionMove));
-    if (hasDnDLinkAction(uActions))
+    if (hasDnDLinkAction(dndActionList))
         lstAtoms.append(xAtom(XA_XdndActionLink));
 
     return VINF_SUCCESS;
@@ -2928,12 +2927,12 @@ void VBoxDnDProxyWnd::destroy(void)
 
 }
 
-int VBoxDnDProxyWnd::sendFinished(Window hWndSource, uint32_t uAction)
+int VBoxDnDProxyWnd::sendFinished(Window hWndSource, VBOXDNDACTION dndAction)
 {
     /* Was the drop accepted by the host? That is, anything than ignoring. */
-    bool fDropAccepted = uAction > VBOX_DND_ACTION_IGNORE;
+    bool fDropAccepted = dndAction > VBOX_DND_ACTION_IGNORE;
 
-    LogFlowFunc(("uAction=%RU32\n", uAction));
+    LogFlowFunc(("dndAction=%RU32\n", dndAction));
 
     /* Confirm the result of the transfer to the target window. */
     XClientMessageEvent m;
@@ -2943,9 +2942,9 @@ int VBoxDnDProxyWnd::sendFinished(Window hWndSource, uint32_t uAction)
     m.window       = hWnd;
     m.message_type = xAtom(XA_XdndFinished);
     m.format       = 32;
-    m.data.l[XdndFinishedWindow] = hWnd;                                                       /* Target window. */
-    m.data.l[XdndFinishedFlags]  = fDropAccepted ? RT_BIT(0) : 0;                              /* Was the drop accepted? */
-    m.data.l[XdndFinishedAction] = fDropAccepted ? DragInstance::toAtomAction(uAction) : None; /* Action used on accept. */
+    m.data.l[XdndFinishedWindow] = hWnd;                                                         /* Target window. */
+    m.data.l[XdndFinishedFlags]  = fDropAccepted ? RT_BIT(0) : 0;                                /* Was the drop accepted? */
+    m.data.l[XdndFinishedAction] = fDropAccepted ? DragInstance::toAtomAction(dndAction) : None; /* Action used on accept. */
 
     int xRc = XSendEvent(pDisp, hWndSource, True, NoEventMask, reinterpret_cast<XEvent*>(&m));
     if (xRc == 0)
@@ -3110,7 +3109,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                         {
                             RTCList<RTCString> lstFormats =
                                 RTCString(pVbglR3Event->u.HG_Enter.pszFormats, pVbglR3Event->u.HG_Enter.cbFormats - 1).split("\r\n");
-                            rc = m_pCurDnD->hgEnter(lstFormats, pVbglR3Event->u.HG_Enter.uAllActions);
+                            rc = m_pCurDnD->hgEnter(lstFormats, pVbglR3Event->u.HG_Enter.dndLstActionsAllowed);
                             if (RT_FAILURE(rc))
                                 break;
                             /* Enter is always followed by a move event. */
@@ -3130,7 +3129,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     case VBGLR3DNDEVENTTYPE_HG_MOVE:
                     {
                         rc = m_pCurDnD->hgMove(pVbglR3Event->u.HG_Move.uXpos, pVbglR3Event->u.HG_Move.uYpos,
-                                               pVbglR3Event->u.HG_Move.uDefAction);
+                                               pVbglR3Event->u.HG_Move.dndActionDefault);
                         break;
                     }
 
@@ -3143,7 +3142,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     case VBGLR3DNDEVENTTYPE_HG_DROP:
                     {
                         rc = m_pCurDnD->hgDrop(pVbglR3Event->u.HG_Drop.uXpos, pVbglR3Event->u.HG_Drop.uYpos,
-                                               pVbglR3Event->u.HG_Drop.uDefAction);
+                                               pVbglR3Event->u.HG_Drop.dndActionDefault);
                         break;
                     }
 
@@ -3183,7 +3182,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
 
                     case VBGLR3DNDEVENTTYPE_GH_DROP:
                     {
-                        rc = m_pCurDnD->ghDropped(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.uAction);
+                        rc = m_pCurDnD->ghDropped(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.dndActionRequested);
                         break;
                     }
 #endif

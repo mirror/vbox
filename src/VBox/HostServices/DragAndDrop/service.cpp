@@ -34,6 +34,7 @@
 #include <map>
 
 #include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/GuestHost/DragAndDropDefs.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
 

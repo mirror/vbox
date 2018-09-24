@@ -278,7 +278,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
             fFetchResult = false;
 
         if (   fFetchResult
-            && isDnDIgnoreAction(pResp->defAction()))
+            && isDnDIgnoreAction(pResp->getActionDefault()))
             fFetchResult = false;
 
         /* Fetch the default action to use. */
@@ -298,9 +298,9 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
                     LogRel3(("DnD:\tFormat #%zu: %s\n", i, lstFiltered.at(i).c_str()));
 
                 aFormats            = lstFiltered;
-                aAllowedActions     = GuestDnD::toMainActions(pResp->allActions());
+                aAllowedActions     = GuestDnD::toMainActions(pResp->getActionsAllowed());
                 if (aDefaultAction)
-                    *aDefaultAction = GuestDnD::toMainAction(pResp->defAction());
+                    *aDefaultAction = GuestDnD::toMainAction(pResp->getActionDefault());
 
                 /* Apply the (filtered) formats list. */
                 m_lstFmtOffered     = lstFiltered;
@@ -309,7 +309,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
                 LogRel2(("DnD: Negotiation of formats between guest and host failed, drag and drop to host not possible\n"));
         }
 
-        LogFlowFunc(("fFetchResult=%RTbool, allActions=0x%x\n", fFetchResult, pResp->allActions()));
+        LogFlowFunc(("fFetchResult=%RTbool, lstActionsAllowed=0x%x\n", fFetchResult, pResp->getActionsAllowed()));
     }
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
@@ -336,8 +336,8 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     if (!GuestDnD::isFormatInFormatList(aFormat, m_lstFmtOffered))
         return setError(E_INVALIDARG, tr("Specified format '%s' is not supported"), aFormat.c_str());
 
-    uint32_t uAction = GuestDnD::toHGCMAction(aAction);
-    if (isDnDIgnoreAction(uAction)) /* If there is no usable action, ignore this request. */
+    VBOXDNDACTION dndAction = GuestDnD::toHGCMAction(aAction);
+    if (isDnDIgnoreAction(dndAction)) /* If there is no usable action, ignore this request. */
         return S_OK;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

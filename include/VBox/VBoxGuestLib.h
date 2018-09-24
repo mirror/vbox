@@ -33,6 +33,9 @@
 #include <VBox/types.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestCoreTypes.h>
+# ifdef VBOX_WITH_DRAG_AND_DROP
+#  include <VBox/GuestHost/DragAndDropDefs.h>
+# endif
 
 /** @defgroup grp_vboxguest_lib     VirtualBox Guest Additions Library
  * @ingroup grp_vboxguest
@@ -919,8 +922,8 @@ typedef struct VBGLR3DNDEVENT
             char    *pszFormats;
             /** Size (in bytes) of pszFormats (\0 included). */
             uint32_t cbFormats;
-            /** Allowed DnD actions. */
-            uint32_t uAllActions;
+            /** List of allowed DnD actions. */
+            VBOXDNDACTIONLIST dndLstActionsAllowed;
         } HG_Enter;
         struct
         {
@@ -928,8 +931,8 @@ typedef struct VBGLR3DNDEVENT
             uint32_t uXpos;
             /** Absolute Y position of guest screen. */
             uint32_t uYpos;
-            /** Proposed DnD action. */
-            uint32_t uDefAction;
+            /** Default DnD action. */
+            VBOXDNDACTION dndActionDefault;
         } HG_Move;
         struct
         {
@@ -941,8 +944,8 @@ typedef struct VBGLR3DNDEVENT
             uint32_t uXpos;
             /** Absolute Y position of guest screen. */
             uint32_t uYpos;
-            /** Proposed DnD action. */
-            uint32_t uDefAction;
+            /** Default DnD action. */
+            VBOXDNDACTION dndActionDefault;
         } HG_Drop;
         struct
         {
@@ -967,7 +970,7 @@ typedef struct VBGLR3DNDEVENT
             /** Size (in bytes) of pszFormat (\0 included). */
             uint32_t cbFormat;
             /** Requested DnD action. */
-            uint32_t uAction;
+            VBOXDNDACTION dndActionRequested;
         } GH_Drop;
 # endif
     } u;
@@ -981,11 +984,11 @@ VBGLR3DECL(int)     VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3DnDEventFree(PVBGLR3DNDEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uAction);
+VBGLR3DECL(int)     VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, VBOXDNDACTION dndAction);
 VBGLR3DECL(int)     VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pcszFormat);
 VBGLR3DECL(int)     VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uStatus, uint8_t uPercent, int rcErr);
 #  ifdef VBOX_WITH_DRAG_AND_DROP_GH
-VBGLR3DECL(int)     VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats, uint32_t cbFormats);
+VBGLR3DECL(int)     VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx, VBOXDNDACTION dndActionDefault, VBOXDNDACTIONLIST dndLstActionsAllowed, const char* pcszFormats, uint32_t cbFormats);
 VBGLR3DECL(int)     VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszFormat, void *pvData, uint32_t cbData);
 VBGLR3DECL(int)     VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcOp);
 #  endif /* VBOX_WITH_DRAG_AND_DROP_GH */

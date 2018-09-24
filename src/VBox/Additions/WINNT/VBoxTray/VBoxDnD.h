@@ -379,9 +379,8 @@ public: /** @todo Make protected! */
     /** List of formats for the current
      *  drag'n drop operation. */
     RTCList<RTCString>         lstFmtActive;
-    /** Flags of all current drag'n drop
-     *  actions allowed. */
-    uint32_t                   uAllActions;
+    /** List of all current drag'n drop actions allowed. */
+    VBOXDNDACTIONLIST          dndLstActionsAllowed;
     /** The startup information required
      *  for the actual DoDragDrop() call. */
     VBOXDNDSTARTUPINFO         startupInfo;

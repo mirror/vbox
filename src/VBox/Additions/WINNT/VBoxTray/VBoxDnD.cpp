@@ -93,7 +93,7 @@ VBoxDnDWnd::VBoxDnDWnd(void)
     : hThread(NIL_RTTHREAD),
       mEventSem(NIL_RTSEMEVENT),
       hWnd(NULL),
-      uAllActions(VBOX_DND_ACTION_IGNORE),
+      dndLstActionsAllowed(VBOX_DND_ACTION_IGNORE),
       mfMouseButtonDown(false),
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
       pDropTarget(NULL),
@@ -476,8 +476,8 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 #endif
                     hide();
 
-                    LogFlowThisFunc(("Starting drag and drop: uAllActions=0x%x, dwOKEffects=0x%x ...\n",
-                                     uAllActions, startupInfo.dwOKEffects));
+                    LogFlowThisFunc(("Starting drag and drop: dndLstActionsAllowed=0x%x, dwOKEffects=0x%x ...\n",
+                                     dndLstActionsAllowed, startupInfo.dwOKEffects));
 
                     AssertPtr(startupInfo.pDataObject);
                     AssertPtr(startupInfo.pDropSource);
@@ -560,7 +560,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                     {
                         RTCList<RTCString> lstFormats =
                             RTCString(pVbglR3Event->u.HG_Enter.pszFormats, pVbglR3Event->u.HG_Enter.cbFormats - 1).split("\r\n");
-                        rc = OnHgEnter(lstFormats, pVbglR3Event->u.HG_Enter.uAllActions);
+                        rc = OnHgEnter(lstFormats, pVbglR3Event->u.HG_Enter.dndLstActionsAllowed);
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -579,7 +579,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                 case VBGLR3DNDEVENTTYPE_HG_MOVE:
                 {
                     rc = OnHgMove(pVbglR3Event->u.HG_Move.uXpos, pVbglR3Event->u.HG_Move.uYpos,
-                                  pVbglR3Event->u.HG_Move.uDefAction);
+                                  pVbglR3Event->u.HG_Move.dndActionDefault);
                     break;
                 }
 
@@ -627,7 +627,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
                 case VBGLR3DNDEVENTTYPE_GH_DROP:
                 {
-                    rc = OnGhDrop(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.uAction);
+                    rc = OnGhDrop(pVbglR3Event->u.GH_Drop.pszFormat, pVbglR3Event->u.GH_Drop.dndActionRequested);
                     break;
                 }
 #endif
@@ -768,15 +768,15 @@ void VBoxDnDWnd::OnDestroy(void)
  *
  * @return  IPRT status code.
  * @param   lstFormats              Supported formats offered by the host.
- * @param   uAllActions             Supported actions offered by the host.
+ * @param   dndLstActionsAllowed    Supported actions offered by the host.
  */
-int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllActions)
+int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIST dndLstActionsAllowed)
 {
     if (mMode == GH) /* Wrong mode? Bail out. */
         return VERR_WRONG_ORDER;
 
 #ifdef DEBUG
-    LogFlowThisFunc(("uActions=0x%x, lstFormats=%zu: ", uAllActions, lstFormats.size()));
+    LogFlowThisFunc(("dndActionList=0x%x, lstFormats=%zu: ", dndLstActionsAllowed, lstFormats.size()));
     for (size_t i = 0; i < lstFormats.size(); i++)
         LogFlow(("'%s' ", lstFormats.at(i).c_str()));
     LogFlow(("\n"));
@@ -790,7 +790,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
     try
     {
         /* Save all allowed actions. */
-        this->uAllActions = uAllActions;
+        this->dndLstActionsAllowed = dndLstActionsAllowed;
 
         /*
          * Check if reported formats from host are compatible with this client.
@@ -875,13 +875,13 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
 
         /* Translate our drop actions into allowed Windows drop effects. */
         startupInfo.dwOKEffects = DROPEFFECT_NONE;
-        if (uAllActions)
+        if (dndLstActionsAllowed)
         {
-            if (uAllActions & VBOX_DND_ACTION_COPY)
+            if (dndLstActionsAllowed & VBOX_DND_ACTION_COPY)
                 startupInfo.dwOKEffects |= DROPEFFECT_COPY;
-            if (uAllActions & VBOX_DND_ACTION_MOVE)
+            if (dndLstActionsAllowed & VBOX_DND_ACTION_MOVE)
                 startupInfo.dwOKEffects |= DROPEFFECT_MOVE;
-            if (uAllActions & VBOX_DND_ACTION_LINK)
+            if (dndLstActionsAllowed & VBOX_DND_ACTION_LINK)
                 startupInfo.dwOKEffects |= DROPEFFECT_LINK;
         }
 
@@ -1195,16 +1195,16 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
 
     if (RT_SUCCESS(rc))
     {
-        uint32_t uDefAction = VBOX_DND_ACTION_IGNORE;
+        uint32_t dndActionDefault = VBOX_DND_ACTION_IGNORE;
 
         AssertPtr(pDropTarget);
         RTCString strFormats = pDropTarget->Formats();
         if (!strFormats.isEmpty())
         {
-            uDefAction = VBOX_DND_ACTION_COPY;
+            dndActionDefault = VBOX_DND_ACTION_COPY;
 
-            LogFlowFunc(("Acknowledging pDropTarget=0x%p, uDefAction=0x%x, uAllActions=0x%x, strFormats=%s\n",
-                         pDropTarget, uDefAction, uAllActions, strFormats.c_str()));
+            LogFlowFunc(("Acknowledging pDropTarget=0x%p, dndActionDefault=0x%x, dndLstActionsAllowed=0x%x, strFormats=%s\n",
+                         pDropTarget, dndActionDefault, dndLstActionsAllowed, strFormats.c_str()));
         }
         else
         {
@@ -1213,10 +1213,10 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
         }
 
         /** @todo Support more than one action at a time. */
-        uAllActions = uDefAction;
+        dndLstActionsAllowed = dndActionDefault;
 
         int rc2 = VbglR3DnDGHSendAckPending(&mDnDCtx,
-                                            uDefAction, uAllActions,
+                                            dndActionDefault, dndLstActionsAllowed,
                                             strFormats.c_str(), (uint32_t)strFormats.length() + 1 /* Include termination */);
         if (RT_FAILURE(rc2))
         {
@@ -1549,7 +1549,7 @@ void VBoxDnDWnd::reset(void)
      */
 
     this->lstFmtActive.clear();
-    this->uAllActions = VBOX_DND_ACTION_IGNORE;
+    this->dndLstActionsAllowed = VBOX_DND_ACTION_IGNORE;
 
     int rc2 = setMode(Unknown);
     AssertRC(rc2);

@@ -25,6 +25,7 @@
 
 #include <VBox/hgcmsvc.h> /* For PVBOXHGCMSVCPARM. */
 #include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/GuestHost/DragAndDropDefs.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
 
 /**
@@ -796,7 +797,7 @@ typedef struct RECVDATACTX
     /** Desired drop action to perform on the host.
      *  Needed to tell the guest if data has to be
      *  deleted e.g. when moving instead of copying. */
-    uint32_t                            mAction;
+    VBOXDNDACTION                       mAction;
     /** Drag'n drop received from the guest.
      *  This can be arbitrary data or an URI list. */
     GuestDnDData                        mData;
@@ -985,11 +986,11 @@ public:
     int notifyAboutGuestResponse(void) const;
     int waitForGuestResponse(RTMSINTERVAL msTimeout = 500) const;
 
-    void setAllActions(uint32_t a) { m_allActions = a; }
-    uint32_t allActions(void) const { return m_allActions; }
+    void setActionsAllowed(VBOXDNDACTIONLIST a) { m_dndLstActionsAllowed = a; }
+    VBOXDNDACTIONLIST getActionsAllowed(void) const { return m_dndLstActionsAllowed; }
 
-    void setDefAction(uint32_t a) { m_defAction = a; }
-    uint32_t defAction(void) const { return m_defAction; }
+    void setActionDefault(VBOXDNDACTION a) { m_dndActionDefault = a; }
+    VBOXDNDACTION getActionDefault(void) const { return m_dndActionDefault; }
 
     void setFormats(const GuestDnDMIMEList &lstFormats) { m_lstFormats = lstFormats; }
     GuestDnDMIMEList formats(void) const { return m_lstFormats; }
@@ -1017,10 +1018,9 @@ protected:
     RTSEMEVENT            m_EventSem;
     /** Default action to perform in case of a
      *  successful drop. */
-    uint32_t              m_defAction;
-    /** Actions supported by the guest in case of
-     *  a successful drop. */
-    uint32_t              m_allActions;
+    VBOXDNDACTION         m_dndActionDefault;
+    /** Actions supported by the guest in case of a successful drop. */
+    VBOXDNDACTIONLIST     m_dndLstActionsAllowed;
     /** Format(s) requested/supported from the guest. */
     GuestDnDMIMEList      m_lstFormats;
     /** Pointer to IGuest parent object. */
@@ -1093,10 +1093,10 @@ public:
     static com::Utf8Str             toFormatString(const GuestDnDMIMEList &lstFormats);
     static GuestDnDMIMEList         toFilteredFormatList(const GuestDnDMIMEList &lstFormatsSupported, const GuestDnDMIMEList &lstFormatsWanted);
     static GuestDnDMIMEList         toFilteredFormatList(const GuestDnDMIMEList &lstFormatsSupported, const com::Utf8Str &strFormatsWanted);
-    static DnDAction_T              toMainAction(uint32_t uAction);
-    static std::vector<DnDAction_T> toMainActions(uint32_t uActions);
-    static uint32_t                 toHGCMAction(DnDAction_T enmAction);
-    static void                     toHGCMActions(DnDAction_T enmDefAction, uint32_t *puDefAction, const std::vector<DnDAction_T> vecAllowedActions, uint32_t *puAllowedActions);
+    static DnDAction_T              toMainAction(VBOXDNDACTION dndAction);
+    static std::vector<DnDAction_T> toMainActions(VBOXDNDACTIONLIST dndActionList);
+    static VBOXDNDACTION            toHGCMAction(DnDAction_T enmAction);
+    static void                     toHGCMActions(DnDAction_T enmDefAction, VBOXDNDACTION *pDefAction, const std::vector<DnDAction_T> vecAllowedActions, VBOXDNDACTIONLIST *pLstAllowedActions);
     /** @}  */
 
 protected:

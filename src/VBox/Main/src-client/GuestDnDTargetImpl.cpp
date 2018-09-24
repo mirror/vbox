@@ -273,13 +273,14 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     /* Default action is ignoring. */
     DnDAction_T resAction = DnDAction_Ignore;
 
-    /* Check & convert the drag & drop actions */
-    uint32_t uDefAction      = 0;
-    uint32_t uAllowedActions = 0;
-    GuestDnD::toHGCMActions(aDefaultAction, &uDefAction,
-                            aAllowedActions, &uAllowedActions);
+    /* Check & convert the drag & drop actions. */
+    VBOXDNDACTION     dndActionDefault     = 0;
+    VBOXDNDACTIONLIST dndActionListAllowed = 0;
+    GuestDnD::toHGCMActions(aDefaultAction, &dndActionDefault,
+                            aAllowedActions, &dndActionListAllowed);
+
     /* If there is no usable action, ignore this request. */
-    if (isDnDIgnoreAction(uDefAction))
+    if (isDnDIgnoreAction(dndActionDefault))
         return S_OK;
 
     /*
@@ -315,8 +316,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextUInt32(aScreenId);
         Msg.setNextUInt32(aX);
         Msg.setNextUInt32(aY);
-        Msg.setNextUInt32(uDefAction);
-        Msg.setNextUInt32(uAllowedActions);
+        Msg.setNextUInt32(dndActionDefault);
+        Msg.setNextUInt32(dndActionListAllowed);
         Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
@@ -325,7 +326,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
             if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
-                resAction = GuestDnD::toMainAction(pResp->defAction());
+                resAction = GuestDnD::toMainAction(pResp->getActionDefault());
         }
     }
 
@@ -362,12 +363,13 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     DnDAction_T resAction = DnDAction_Ignore;
 
     /* Check & convert the drag & drop actions. */
-    uint32_t uDefAction      = 0;
-    uint32_t uAllowedActions = 0;
-    GuestDnD::toHGCMActions(aDefaultAction, &uDefAction,
-                            aAllowedActions, &uAllowedActions);
+    VBOXDNDACTION     dndActionDefault     = 0;
+    VBOXDNDACTIONLIST dndActionListAllowed = 0;
+    GuestDnD::toHGCMActions(aDefaultAction, &dndActionDefault,
+                            aAllowedActions, &dndActionListAllowed);
+
     /* If there is no usable action, ignore this request. */
-    if (isDnDIgnoreAction(uDefAction))
+    if (isDnDIgnoreAction(dndActionDefault))
         return S_OK;
 
     /*
@@ -392,8 +394,8 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextUInt32(aScreenId);
         Msg.setNextUInt32(aX);
         Msg.setNextUInt32(aY);
-        Msg.setNextUInt32(uDefAction);
-        Msg.setNextUInt32(uAllowedActions);
+        Msg.setNextUInt32(dndActionDefault);
+        Msg.setNextUInt32(dndActionListAllowed);
         Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
@@ -402,7 +404,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
             if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
-                resAction = GuestDnD::toMainAction(pResp->defAction());
+                resAction = GuestDnD::toMainAction(pResp->getActionDefault());
         }
     }
 
@@ -479,12 +481,13 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     DnDAction_T resAction    = DnDAction_Ignore;
 
     /* Check & convert the drag & drop actions to HGCM codes. */
-    uint32_t uDefAction      = VBOX_DND_ACTION_IGNORE;
-    uint32_t uAllowedActions = 0;
-    GuestDnD::toHGCMActions(aDefaultAction,  &uDefAction,
-                            aAllowedActions, &uAllowedActions);
+    VBOXDNDACTION     dndActionDefault     = VBOX_DND_ACTION_IGNORE;
+    VBOXDNDACTIONLIST dndActionListAllowed = 0;
+    GuestDnD::toHGCMActions(aDefaultAction,  &dndActionDefault,
+                            aAllowedActions, &dndActionListAllowed);
+
     /* If there is no usable action, ignore this request. */
-    if (isDnDIgnoreAction(uDefAction))
+    if (isDnDIgnoreAction(dndActionDefault))
     {
         aFormat = "";
         if (aResultAction)
@@ -513,8 +516,8 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextUInt32(aScreenId);
         Msg.setNextUInt32(aX);
         Msg.setNextUInt32(aY);
-        Msg.setNextUInt32(uDefAction);
-        Msg.setNextUInt32(uAllowedActions);
+        Msg.setNextUInt32(dndActionDefault);
+        Msg.setNextUInt32(dndActionListAllowed);
         Msg.setNextPointer((void*)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
@@ -527,13 +530,13 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
             vrc = pResp->waitForGuestResponse();
             if (RT_SUCCESS(vrc))
             {
-                resAction = GuestDnD::toMainAction(pResp->defAction());
+                resAction = GuestDnD::toMainAction(pResp->getActionDefault());
 
                 GuestDnDMIMEList lstFormats = pResp->formats();
                 if (lstFormats.size() == 1) /* Exactly one format to use specified? */
                 {
                     aFormat = lstFormats.at(0);
-                    LogFlowFunc(("resFormat=%s, resAction=%RU32\n", aFormat.c_str(), pResp->defAction()));
+                    LogFlowFunc(("resFormat=%s, resAction=%RU32\n", aFormat.c_str(), pResp->getActionDefault()));
                 }
                 else
                     /** @todo r=bird: This isn't an IPRT error, is it?   */

@@ -1211,7 +1211,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
                                            NULL /* puXPos */,
                                            NULL /* puYPos */,
                                            NULL /* uDefAction */,
-                                           &pEvent->u.HG_Enter.uAllActions,
+                                           &pEvent->u.HG_Enter.dndLstActionsAllowed,
                                            &pEvent->u.HG_Enter.pszFormats,
                                            &pEvent->u.HG_Enter.cbFormats);
                 if (RT_SUCCESS(rc))
@@ -1225,7 +1225,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
                                            NULL /* puScreenId */,
                                            &pEvent->u.HG_Move.uXpos,
                                            &pEvent->u.HG_Move.uYpos,
-                                           &pEvent->u.HG_Move.uDefAction,
+                                           &pEvent->u.HG_Move.dndActionDefault,
                                            NULL /* puAllActions */,
                                            NULL /* pszFormats */,
                                            NULL /* pcbFormats */);
@@ -1240,7 +1240,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
                                            NULL /* puScreenId */,
                                            &pEvent->u.HG_Drop.uXpos,
                                            &pEvent->u.HG_Drop.uYpos,
-                                           &pEvent->u.HG_Drop.uDefAction,
+                                           &pEvent->u.HG_Drop.dndActionDefault,
                                            NULL /* puAllActions */,
                                            NULL /* pszFormats */,
                                            NULL /* pcbFormats */);
@@ -1294,7 +1294,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
                 rc = vbglR3DnDGHRecvDropped(pCtx,
                                             &pEvent->u.GH_Drop.pszFormat,
                                             &pEvent->u.GH_Drop.cbFormat,
-                                            &pEvent->u.GH_Drop.uAction);
+                                            &pEvent->u.GH_Drop.dndActionRequested);
                 if (RT_SUCCESS(rc))
                     pEvent->enmType = VBGLR3DNDEVENTTYPE_GH_DROP;
                 break;
@@ -1368,7 +1368,7 @@ VBGLR3DECL(void) VbglR3DnDEventFree(PVBGLR3DNDEVENT pEvent)
     pEvent = NULL;
 }
 
-VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uAction)
+VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, VBOXDNDACTION dndAction)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1378,7 +1378,7 @@ VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uActio
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_ACK_OP, 2);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
-    Msg.u.v3.uAction.SetUInt32(uAction);
+    Msg.u.v3.uAction.SetUInt32(dndAction);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
@@ -1447,14 +1447,15 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
  * which eventually could be dragged over to the host.
  *
  * @returns IPRT status code.
- * @param   pCtx                DnD context to use.
- * @param   uDefAction          Default action for the operation to report.
- * @param   uAllActions         All available actions for the operation to report.
- * @param   pcszFormats         Available formats for the operation to report.
- * @param   cbFormats           Size (in bytes) of formats to report.
+ * @param   pCtx                 DnD context to use.
+ * @param   dndActionDefault     Default action for the operation to report.
+ * @param   dndLstActionsAllowed All available actions for the operation to report.
+ * @param   pcszFormats          Available formats for the operation to report.
+ * @param   cbFormats            Size (in bytes) of formats to report.
  */
 VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                          uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats, uint32_t cbFormats)
+                                          VBOXDNDACTION dndActionDefault, VBOXDNDACTIONLIST dndLstActionsAllowed,
+                                          const char* pcszFormats, uint32_t cbFormats)
 {
     AssertPtrReturn(pCtx,        VERR_INVALID_POINTER);
     AssertPtrReturn(pcszFormats, VERR_INVALID_POINTER);
@@ -1469,8 +1470,8 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_ACK_PENDING, 5);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
-    Msg.u.v3.uDefAction.SetUInt32(uDefAction);
-    Msg.u.v3.uAllActions.SetUInt32(uAllActions);
+    Msg.u.v3.uDefAction.SetUInt32(dndActionDefault);
+    Msg.u.v3.uAllActions.SetUInt32(dndLstActionsAllowed);
     Msg.u.v3.pvFormats.SetPtr((void*)pcszFormats, cbFormats);
     Msg.u.v3.cbFormats.SetUInt32(cbFormats);
 

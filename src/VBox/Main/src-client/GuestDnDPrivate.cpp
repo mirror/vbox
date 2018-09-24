@@ -187,8 +187,8 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
 
 GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
     : m_EventSem(NIL_RTSEMEVENT)
-    , m_defAction(0)
-    , m_allActions(0)
+    , m_dndActionDefault(0)
+    , m_dndLstActionsAllowed(0)
     , m_pParent(pGuest)
 {
     int rc = RTSemEventCreate(&m_EventSem);
@@ -213,8 +213,8 @@ void GuestDnDResponse::reset(void)
 {
     LogFlowThisFuncEnter();
 
-    m_defAction  = 0;
-    m_allActions = 0;
+    m_dndActionDefault     = 0;
+    m_dndLstActionsAllowed = 0;
 
     m_lstFormats.clear();
 }
@@ -383,7 +383,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGACKOPDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_ACK_OP == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
-            setDefAction(pCBData->uAction);
+            setActionDefault(pCBData->uAction);
             rc = notifyAboutGuestResponse();
             break;
         }
@@ -452,8 +452,8 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             else
             {
                 setFormats   (GuestDnD::toFormatList(pCBData->pszFormat));
-                setDefAction (pCBData->uDefAction);
-                setAllActions(pCBData->uAllActions);
+                setActionDefault (pCBData->uDefAction);
+                setActionsAllowed(pCBData->uAllActions);
 
                 rc = VINF_SUCCESS;
             }
@@ -670,16 +670,16 @@ GuestDnDMIMEList GuestDnD::toFilteredFormatList(const GuestDnDMIMEList &lstForma
 }
 
 /* static */
-uint32_t GuestDnD::toHGCMAction(DnDAction_T enmAction)
+VBOXDNDACTION GuestDnD::toHGCMAction(DnDAction_T enmAction)
 {
-    uint32_t uAction = VBOX_DND_ACTION_IGNORE;
+    VBOXDNDACTION dndAction = VBOX_DND_ACTION_IGNORE;
     switch (enmAction)
     {
         case DnDAction_Copy:
-            uAction = VBOX_DND_ACTION_COPY;
+            dndAction = VBOX_DND_ACTION_COPY;
             break;
         case DnDAction_Move:
-            uAction = VBOX_DND_ACTION_MOVE;
+            dndAction = VBOX_DND_ACTION_MOVE;
             break;
         case DnDAction_Link:
             /* For now it doesn't seems useful to allow a link
@@ -692,64 +692,64 @@ uint32_t GuestDnD::toHGCMAction(DnDAction_T enmAction)
             break;
     }
 
-    return uAction;
+    return dndAction;
 }
 
 /* static */
-void GuestDnD::toHGCMActions(DnDAction_T                    enmDefAction,
-                             uint32_t                      *puDefAction,
-                             const std::vector<DnDAction_T> vecAllowedActions,
-                             uint32_t                      *puAllowedActions)
+void GuestDnD::toHGCMActions(DnDAction_T                    enmDnDActionDefault,
+                             VBOXDNDACTION                 *pDnDActionDefault,
+                             const std::vector<DnDAction_T> vecDnDActionsAllowed,
+                             VBOXDNDACTIONLIST             *pDnDLstActionsAllowed)
 {
-    uint32_t uAllowedActions = VBOX_DND_ACTION_IGNORE;
-    uint32_t uDefAction      = toHGCMAction(enmDefAction);
+    VBOXDNDACTIONLIST dndLstActionsAllowed = VBOX_DND_ACTION_IGNORE;
+    VBOXDNDACTION     dndActionDefault     = toHGCMAction(enmDnDActionDefault);
 
-    if (!vecAllowedActions.empty())
+    if (!vecDnDActionsAllowed.empty())
     {
         /* First convert the allowed actions to a bit array. */
-        for (size_t i = 0; i < vecAllowedActions.size(); i++)
-            uAllowedActions |= toHGCMAction(vecAllowedActions[i]);
+        for (size_t i = 0; i < vecDnDActionsAllowed.size(); i++)
+            dndLstActionsAllowed |= toHGCMAction(vecDnDActionsAllowed[i]);
 
         /*
          * If no default action is set (ignoring), try one of the
          * set allowed actions, preferring copy, move (in that order).
          */
-        if (isDnDIgnoreAction(uDefAction))
+        if (isDnDIgnoreAction(dndActionDefault))
         {
-            if (hasDnDCopyAction(uAllowedActions))
-                uDefAction = VBOX_DND_ACTION_COPY;
-            else if (hasDnDMoveAction(uAllowedActions))
-                uDefAction = VBOX_DND_ACTION_MOVE;
+            if (hasDnDCopyAction(dndLstActionsAllowed))
+                dndActionDefault = VBOX_DND_ACTION_COPY;
+            else if (hasDnDMoveAction(dndLstActionsAllowed))
+                dndActionDefault = VBOX_DND_ACTION_MOVE;
         }
     }
 
-    if (puDefAction)
-        *puDefAction      = uDefAction;
-    if (puAllowedActions)
-        *puAllowedActions = uAllowedActions;
+    if (pDnDActionDefault)
+        *pDnDActionDefault     = dndActionDefault;
+    if (pDnDLstActionsAllowed)
+        *pDnDLstActionsAllowed = dndLstActionsAllowed;
 }
 
 /* static */
-DnDAction_T GuestDnD::toMainAction(uint32_t uAction)
+DnDAction_T GuestDnD::toMainAction(VBOXDNDACTION dndAction)
 {
     /* For now it doesn't seems useful to allow a
      * link action between host & guest. Maybe later! */
-    return isDnDCopyAction(uAction) ? DnDAction_Copy
-         : isDnDMoveAction(uAction) ? DnDAction_Move
-         :                            DnDAction_Ignore;
+    return isDnDCopyAction(dndAction) ? DnDAction_Copy
+         : isDnDMoveAction(dndAction) ? DnDAction_Move
+         :                              DnDAction_Ignore;
 }
 
 /* static */
-std::vector<DnDAction_T> GuestDnD::toMainActions(uint32_t uActions)
+std::vector<DnDAction_T> GuestDnD::toMainActions(VBOXDNDACTIONLIST dndActionList)
 {
     std::vector<DnDAction_T> vecActions;
 
     /* For now it doesn't seems useful to allow a
      * link action between host & guest. Maybe later! */
     RTCList<DnDAction_T> lstActions;
-    if (hasDnDCopyAction(uActions))
+    if (hasDnDCopyAction(dndActionList))
         lstActions.append(DnDAction_Copy);
-    if (hasDnDMoveAction(uActions))
+    if (hasDnDMoveAction(dndActionList))
         lstActions.append(DnDAction_Move);
 
     for (size_t i = 0; i < lstActions.size(); ++i)
