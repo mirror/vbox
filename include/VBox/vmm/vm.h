@@ -350,7 +350,7 @@ typedef struct VMCPU
  *
  *
  * Available VMCPU bits:
- *      11, 14, 15, 31
+ *      14, 15
  *
  * @todo If we run low on VMCPU, we may consider merging the SELM bits
  *
