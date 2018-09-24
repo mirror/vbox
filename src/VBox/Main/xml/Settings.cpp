@@ -1580,8 +1580,8 @@ bool NATHostLoopbackOffset::operator==(const NATHostLoopbackOffset &o) const
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
 SystemProperties::SystemProperties()
-    : uLogHistoryCount(3)
-    , uProxyMode(ProxyMode_System)
+    : uProxyMode(ProxyMode_System)
+    , uLogHistoryCount(3)
     , fExclusiveHwVirt(true)
 {
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
