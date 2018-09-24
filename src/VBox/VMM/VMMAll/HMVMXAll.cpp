@@ -341,9 +341,14 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_HostPdpte1Rsvd            , "HostPdpte1Rsvd"            ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_HostPdpte2Rsvd            , "HostPdpte2Rsvd"            ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_HostPdpte3Rsvd            , "HostPdpte3Rsvd"            ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrLoad                   , "MsrLoad"                   ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrLoadCount              , "MsrLoadCount"              ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrLoadPtrReadPhys        , "MsrLoadPtrReadPhys"        ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrLoadRing3              , "MsrLoadRing3"              ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrLoadRsvd               , "MsrLoadRsvd"               ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStore                  , "MsrStore"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreCount             , "MsrStoreCount"             ),
-    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStorePtrReadPhys       , "MsrStorePtrReadPhys"       ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStorePtrWritePhys      , "MsrStorePtrWritePhys"      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreRing3             , "MsrStoreRing3"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreRsvd              , "MsrStoreRsvd"              )
     /* kVmxVDiag_End */

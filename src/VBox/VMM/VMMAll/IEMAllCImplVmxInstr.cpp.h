@@ -1283,6 +1283,25 @@ DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 
 
 /**
+ * Checks if the given auto-load/store MSR area count is valid for the
+ * implementation.
+ *
+ * @returns @c true if it's within the valid limit, @c false otherwise.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uMsrCount       The MSR area count to check.
+ */
+DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PVMCPU pVCpu, uint32_t uMsrCount)
+{
+    uint64_t const u64VmxMiscMsr      = CPUMGetGuestIa32VmxMisc(pVCpu);
+    uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64VmxMiscMsr);
+    Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
+    if (uMsrCount <= cMaxSupportedMsrs)
+        return true;
+    return false;
+}
+
+
+/**
  * Flushes the current VMCS contents back to guest memory.
  *
  * @returns VBox status code.
@@ -1313,6 +1332,7 @@ DECL_FORCE_INLINE(void) iemVmxVmreadSuccess(PVMCPU pVCpu, uint8_t cbInstr)
 /**
  * VMREAD common (memory/register) instruction execution worker
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   pu64Dst         Where to write the VMCS value (only updated when
@@ -1416,6 +1436,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
 /**
  * VMREAD (64-bit register) instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   pu64Dst         Where to store the VMCS field's value.
@@ -1441,6 +1462,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_
 /**
  * VMREAD (32-bit register) instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   pu32Dst         Where to store the VMCS field's value.
@@ -1468,6 +1490,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_
 /**
  * VMREAD (memory) instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
@@ -1520,6 +1543,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
 /**
  * VMWRITE instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
@@ -1667,6 +1691,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 /**
  * VMCLEAR instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
@@ -1777,6 +1802,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 /**
  * VMPTRST instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
@@ -1825,6 +1851,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 /**
  * VMPTRLD instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   GCPtrVmcs       The linear address of the current VMCS pointer.
@@ -1956,6 +1983,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 /**
  * VMXON instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   iEffSeg         The effective segment register to use with @a
@@ -4107,7 +4135,7 @@ IEM_STATIC void iemVmxVmentryLoadGuestSegRegs(PVMCPU pVCpu)
 
 
 /**
- * Loads the guest auto-load MSRs area as part of VM-entry.
+ * Loads the guest MSRs from the VM-entry auto-load MSRs as part of VM-entry.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -4123,29 +4151,27 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
     const char *const pszFailure = "VM-exit";
 
     /*
+     * The VM-entry MSR-load area address need not be a valid guest-physical address if the
+     * VM-entry MSR load count is 0. If this is the case, bail early without reading it.
+     * See Intel spec. 24.8.2 "VM-Entry Controls for MSRs".
+     */
+    uint32_t const cMsrs = pVmcs->u32EntryMsrLoadCount;
+    if (!cMsrs)
+        return VINF_SUCCESS;
+
+    /*
      * Verify the MSR auto-load count. Physical CPUs can behave unpredictably if the count is
      * exceeded including possibly raising #MC exceptions during VMX transition. Our
      * implementation shall fail VM-entry with an VMX_EXIT_ERR_MSR_LOAD VM-exit.
      */
-    uint64_t const u64GuestVmxMiscMsr = CPUMGetGuestIa32VmxMisc(pVCpu);
-    uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64GuestVmxMiscMsr);
-    uint32_t const cMsrs              = pVmcs->u32EntryMsrLoadCount;
-    Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
-    if (cMsrs <= cMaxSupportedMsrs)
+    bool const fIsMsrCountValid = iemVmxIsAutoMsrCountValid(pVCpu, cMsrs);
+    if (fIsMsrCountValid)
     { /* likely */ }
     else
     {
         pVmcs->u64ExitQual.u = VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR);
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadCount);
     }
-
-    /*
-     * The VM-entry MSR-load area address need not be a valid guest-physical address if the
-     * VM-entry MSR load count is 0. If this is the case, bail early without reading it.
-     * See Intel spec. 24.8.2 "VM-Entry Controls for MSRs".
-     */
-    if (cMsrs == 0)
-        return VINF_SUCCESS;
 
     RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrEntryMsrLoad.u;
     int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
@@ -4159,6 +4185,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
             if (   !pMsr->u32Reserved
                 &&  pMsr->u32Msr != MSR_K8_FS_BASE
                 &&  pMsr->u32Msr != MSR_K8_GS_BASE
+                &&  pMsr->u32Msr != MSR_K6_EFER
                 &&  pMsr->u32Msr >> 8 != MSR_IA32_X2APIC_START >> 8
                 &&  pMsr->u32Msr != MSR_IA32_SMM_MONITOR_CTL)
             {
@@ -4415,6 +4442,7 @@ IEM_STATIC int iemVmxWorldSwitch(PVMCPU pVCpu)
 /**
  * VMLAUNCH/VMRESUME instruction execution worker.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
  * @param   uInstrId        The instruction identity (either VMXINSTRID_VMLAUNCH or
@@ -4859,26 +4887,24 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     const char *const pszFailure = "VMX-abort";
 
     /*
-     * Verify the MSR auto-store count. Physical CPUs can behave unpredictably if the count
-     * is exceeded including possibly raising #MC exceptions during VMX transition. Our
-     * implementation causes a VMX-abort followed by a triple-fault.
-     */
-    uint64_t const u64GuestVmxMiscMsr = CPUMGetGuestIa32VmxMisc(pVCpu);
-    uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64GuestVmxMiscMsr);
-    uint32_t const cMsrs              = pVmcs->u32ExitMsrStoreCount;
-    Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
-    if (cMsrs <= cMaxSupportedMsrs)
-    { /* likely */ }
-    else
-        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreCount);
-
-    /*
      * The VM-exit MSR-store area address need not be a valid guest-physical address if the
      * VM-exit MSR-store count is 0. If this is the case, bail early without reading it.
      * See Intel spec. 24.7.2 "VM-Exit Controls for MSRs".
      */
-    if (cMsrs == 0)
+    uint32_t const cMsrs = pVmcs->u32ExitMsrStoreCount;
+    if (!cMsrs)
         return VINF_SUCCESS;
+
+    /*
+     * Verify the MSR auto-store count. Physical CPUs can behave unpredictably if the count
+     * is exceeded including possibly raising #MC exceptions during VMX transition. Our
+     * implementation causes a VMX-abort followed by a triple-fault.
+     */
+    bool const fIsMsrCountValid = iemVmxIsAutoMsrCountValid(pVCpu, cMsrs);
+    if (fIsMsrCountValid)
+    { /* likely */ }
+    else
+        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreCount);
 
     PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
     Assert(pMsr);
@@ -4895,7 +4921,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
             /*
              * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-exit.
              * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
-             * recording the MSR index in a VirtualBox specific VMCS field and indicated further by our
+             * recording the MSR index in the auxiliary info. field and indicated further by our
              * own, specific diagnostic code. Later, we can try implement handling of the MSR in ring-0
              * if possible, or come up with a better, generic solution.
              */
@@ -4920,7 +4946,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     else
     {
         AssertMsgFailed(("VM-exit: Failed to write MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysAutoMsrArea, rc));
-        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrReadPhys);
+        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrWritePhys);
     }
 
     NOREF(uExitReason);
@@ -5208,8 +5234,94 @@ IEM_STATIC int iemVmxVmexitCheckHostPdptes(PVMCPU pVCpu, uint32_t uExitReason)
 
 
 /**
+ * Loads the host MSRs from the VM-exit auto-load MSRs area as part of VM-exit.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
+{
+    /*
+     * Load host MSRs.
+     * See Intel spec. 27.6 "Loading MSRs".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    const char *const pszFailure = "VMX-abort";
+
+    /*
+     * The VM-exit MSR-load area address need not be a valid guest-physical address if the
+     * VM-exit MSR load count is 0. If this is the case, bail early without reading it.
+     * See Intel spec. 24.7.2 "VM-Exit Controls for MSRs".
+     */
+    uint32_t const cMsrs = pVmcs->u32ExitMsrLoadCount;
+    if (!cMsrs)
+        return VINF_SUCCESS;
+
+    /*
+     * Verify the MSR auto-load count. Physical CPUs can behave unpredictably if the count
+     * is exceeded including possibly raising #MC exceptions during VMX transition. Our
+     * implementation causes a VMX-abort followed by a triple-fault.
+     */
+    bool const fIsMsrCountValid = iemVmxIsAutoMsrCountValid(pVCpu, cMsrs);
+    if (fIsMsrCountValid)
+    { /* likely */ }
+    else
+        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadCount);
+
+    RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrExitMsrLoad.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
+                                     GCPhysAutoMsrArea, VMX_V_AUTOMSR_AREA_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+        Assert(pMsr);
+        for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
+        {
+            if (   !pMsr->u32Reserved
+                &&  pMsr->u32Msr != MSR_K8_FS_BASE
+                &&  pMsr->u32Msr != MSR_K8_GS_BASE
+                &&  pMsr->u32Msr != MSR_K6_EFER
+                &&  pMsr->u32Msr >> 8 != MSR_IA32_X2APIC_START >> 8
+                &&  pMsr->u32Msr != MSR_IA32_SMM_MONITOR_CTL)
+            {
+                VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pMsr->u32Msr, pMsr->u64Value);
+                if (rcStrict == VINF_SUCCESS)
+                    continue;
+
+                /*
+                 * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-exit.
+                 * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
+                 * recording the MSR index in the auxiliary info. field and indicated further by our
+                 * own, specific diagnostic code. Later, we can try implement handling of the MSR in ring-0
+                 * if possible, or come up with a better, generic solution.
+                 */
+                pVCpu->cpum.GstCtx.hwvirt.vmx.uAbortAux = pMsr->u32Msr;
+                VMXVDIAG const enmDiag = rcStrict == VINF_CPUM_R3_MSR_WRITE
+                                       ? kVmxVDiag_Vmexit_MsrLoadRing3
+                                       : kVmxVDiag_Vmexit_MsrLoad;
+                IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
+            }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadRsvd);
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("VM-exit: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", GCPhysAutoMsrArea, rc));
+        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadPtrReadPhys);
+    }
+
+    NOREF(uExitReason);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the host state as part of VM-exit.
  *
+ * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason (for logging purposes).
  */
@@ -5275,7 +5387,15 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitReason)
         return rcStrict;
     }
 
-    /** @todo NSTVMX: rest of host state loading (loading MSRs). */
+    Assert(rcStrict == VINF_SUCCESS);
+
+    /* Load MSRs from the VM-exit auto-load MSR area. */
+    int rc = iemVmxVmexitLoadHostAutoMsrs(pVCpu, uExitReason);
+    if (RT_FAILURE(rc))
+    {
+        Log(("VM-exit failed while loading host MSRs -> VMX-Abort\n"));
+        return iemVmxAbort(pVCpu, VMXABORT_LOAD_HOST_MSR);
+    }
 
     return VINF_SUCCESS;
 }
@@ -5284,6 +5404,7 @@ IEM_STATIC int iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitReason)
 /**
  * VMX VM-exit handler.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
  * @param   cbInstr         The instruction length.
