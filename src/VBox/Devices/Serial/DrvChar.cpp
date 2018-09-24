@@ -77,6 +77,10 @@ typedef struct DRVCHAR
     /** Current position into the read buffer. */
     uint8_t                     *pbBuf;
 
+#if HC_ARCH_BITS == 32
+    uint32_t                    uAlignment0;
+#endif
+
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
     STAMCOUNTER                 StatBytesWritten;
