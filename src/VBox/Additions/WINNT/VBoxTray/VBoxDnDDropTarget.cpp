@@ -409,19 +409,19 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                                 WCHAR *pwszFile = (WCHAR *)RTMemAlloc((cchFile + 1) * sizeof(WCHAR));
                                 if (pwszFile)
                                 {
-                                    const UINT cchFileUtf16 = DragQueryFileW(hDrop, i /* File index */,
+                                    const UINT cwcFileUtf16 = DragQueryFileW(hDrop, i /* File index */,
                                                                              pwszFile, cchFile + 1 /* Include terminator */);
 
-                                    AssertMsg(cchFileUtf16 == cchFile, ("cchFileUtf16 (%RU16) does not match cchFile (%RU16)\n",
-                                                                        cchFileUtf8, cchFile));
-                                    RT_NOREF(cchFileUtf16);
+                                    AssertMsg(cwcFileUtf16 == cchFile, ("cchFileUtf16 (%RU16) does not match cchFile (%RU16)\n",
+                                                                        cwcFileUtf16, cchFile));
+                                    RT_NOREF(cwcFileUtf16);
 
                                     rc = RTUtf16ToUtf8(pwszFile, &pszFileUtf8);
-                                    AssertRC(rc);
-                                    Assert(RTStrIsValidEncoding(pszFileUtf8));
-
-                                    cchFileUtf8 = (UINT)strlen(pszFileUtf8);
-                                    Assert(cchFileUtf8);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        cchFileUtf8 = (UINT)strlen(pszFileUtf8);
+                                        Assert(cchFileUtf8);
+                                    }
 
                                     RTMemFree(pwszFile);
                                 }
@@ -454,6 +454,8 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                                 if (RT_SUCCESS(rc))
                                     cchFiles += cchFileUtf8;
                             }
+                            else
+                                LogRel(("DnD: Error handling file entry #%u, rc=%Rrc\n", i, rc));
 
                             if (pszFileUtf8)
                                 RTStrFree(pszFileUtf8);
