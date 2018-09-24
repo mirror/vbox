@@ -2127,6 +2127,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
         pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
 
+        /* Clear address-range monitoring. */
         EMMonitorWaitClear(pVCpu);
         /** @todo NSTVMX: Intel PT. */
 
