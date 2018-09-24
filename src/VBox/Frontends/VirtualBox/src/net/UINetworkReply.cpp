@@ -386,16 +386,13 @@ int UINetworkReplyPrivateThread::applyProxyRules()
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     /* If the specific proxy settings are enabled, we'll use them
      * unless user disabled that functionality manually. */
-    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    KProxyMode enmProxyMode = properties.GetProxyMode();
-    AssertReturn(properties.isOk(), VERR_INTERNAL_ERROR_3);
+    const CSystemProperties comProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    const KProxyMode enmProxyMode = comProperties.GetProxyMode();
+    AssertReturn(comProperties.isOk(), VERR_INTERNAL_ERROR_3);
     switch (enmProxyMode)
     {
         case KProxyMode_Manual:
-        {
-            QString strProxyURL = properties.GetProxyURL();
-            return RTHttpSetProxyByUrl(m_hHttp, strProxyURL.toUtf8().constData());
-        }
+            return RTHttpSetProxyByUrl(m_hHttp, comProperties.GetProxyURL().toUtf8().constData());
         case KProxyMode_NoProxy:
             return VINF_SUCCESS;
         default:

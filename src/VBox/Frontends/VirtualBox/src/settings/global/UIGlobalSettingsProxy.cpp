@@ -28,8 +28,10 @@
 # include "UIGlobalSettingsProxy.h"
 # include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
-# include "VBoxUtils.h"
 # include "VBoxGlobal.h"
+# include "VBoxUtils.h"
+
+/* COM includes: */
 # include "CSystemProperties.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -61,11 +63,11 @@ struct UIDataSettingsGlobalProxy
     bool operator!=(const UIDataSettingsGlobalProxy &other) const { return !equal(other); }
 
     /** Holds the proxy mode. */
-    KProxyMode m_enmProxyMode;
+    KProxyMode  m_enmProxyMode;
     /** Holds the proxy host. */
-    QString m_strProxyHost;
+    QString     m_strProxyHost;
     /** Holds the proxy port. */
-    QString m_strProxyPort;
+    QString     m_strProxyPort;
 };
 
 
@@ -94,21 +96,17 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalProxy oldProxyData;
 
     /* Gather old proxy data: */
-    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    if (properties.isNotNull())
+    oldProxyData.m_enmProxyMode = m_properties.GetProxyMode();
+    oldProxyData.m_strProxyHost = m_properties.GetProxyURL();
+    oldProxyData.m_strProxyPort = "";
+    if (!oldProxyData.m_strProxyHost.isEmpty())
     {
-        oldProxyData.m_enmProxyMode = properties.GetProxyMode();
-        oldProxyData.m_strProxyHost = properties.GetProxyURL();
-        oldProxyData.m_strProxyPort = "";
-        if (!oldProxyData.m_strProxyHost.isEmpty())
+        QUrl url(oldProxyData.m_strProxyHost);
+        if (url.port() != -1)
         {
-            QUrl url(oldProxyData.m_strProxyHost);
-            if (url.port() != -1)
-            {
-                oldProxyData.m_strProxyPort = QString::number(url.port());
-                url.setPort(-1);
-                oldProxyData.m_strProxyHost = url.url();
-            }
+            oldProxyData.m_strProxyPort = QString::number(url.port());
+            url.setPort(-1);
+            oldProxyData.m_strProxyHost = url.url();
         }
     }
 
@@ -130,7 +128,7 @@ void UIGlobalSettingsProxy::getFromCache()
         case KProxyMode_System:  m_pRadioProxyAuto->setChecked(true); break;
         case KProxyMode_NoProxy: m_pRadioProxyDisabled->setChecked(true); break;
         case KProxyMode_Manual:  m_pRadioProxyEnabled->setChecked(true); break;
-        case KProxyMode_Max: break; /* (compiler warnings) */
+        case KProxyMode_Max:     break; /* (compiler warnings) */
     }
     m_pHostEditor->setText(oldProxyData.m_strProxyHost);
     m_pPortEditor->setText(oldProxyData.m_strProxyPort);
@@ -187,7 +185,8 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     }
 
     /* Check for port value: */
-    if (m_pPortEditor->text().trimmed().isEmpty())
+    if (   m_pPortEditor->text().trimmed().isEmpty()
+        && QUrl(m_pHostEditor->text()).port() == -1)
     {
         message.second << tr("No proxy port is currently specified.");
         fPass = false;
@@ -280,29 +279,22 @@ bool UIGlobalSettingsProxy::saveProxyData()
         const UIDataSettingsGlobalProxy &newProxyData = m_pCache->data();
 
         /* Save new proxy data from the cache: */
-        CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-        if (properties.isNull())
-            fSuccess = false;
+        m_properties.SetProxyMode(newProxyData.m_enmProxyMode);
+        fSuccess &= m_properties.isOk();
+        if (newProxyData.m_strProxyPort.isEmpty())
+            m_properties.SetProxyURL(newProxyData.m_strProxyHost);
         else
         {
-            properties.SetProxyMode(newProxyData.m_enmProxyMode);
-            fSuccess &= properties.isOk();
-
-            if (newProxyData.m_strProxyPort.isEmpty())
-                properties.SetProxyURL(newProxyData.m_strProxyHost);
-            else
-            {
-                QUrl url(newProxyData.m_strProxyHost);
-                if (url.port() == -1)
-                    url.setPort(newProxyData.m_strProxyPort.toUInt());
-                properties.SetProxyURL(url.url());
-            }
-            fSuccess &= properties.isOk();
-
-            /* Drop the old extra data setting if still around: */
-            if (fSuccess && !gEDataManager->proxySettings().isEmpty())
-                gEDataManager->setProxySettings(QString());
+            QUrl url(newProxyData.m_strProxyHost);
+            if (url.port() == -1)
+                url.setPort(newProxyData.m_strProxyPort.toUInt());
+            m_properties.SetProxyURL(url.url());
         }
+        fSuccess &= m_properties.isOk();
+
+        /* Drop the old extra data setting if still around: */
+        if (fSuccess && !gEDataManager->proxySettings().isEmpty())
+            gEDataManager->setProxySettings(QString());
     }
     /* Return result: */
     return fSuccess;
