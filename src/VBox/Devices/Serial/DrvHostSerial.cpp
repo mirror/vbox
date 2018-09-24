@@ -357,6 +357,29 @@ static DECLCALLBACK(int) drvHostSerialQueryStsLines(PPDMISERIALCONNECTOR pInterf
 }
 
 
+/**
+ * @callback_method_impl{PDMISERIALCONNECTOR,pfnQueuesFlush}
+ */
+static DECLCALLBACK(int) drvHostSerialQueuesFlush(PPDMISERIALCONNECTOR pInterface, bool fQueueRecv, bool fQueueXmit)
+{
+    RT_NOREF(fQueueXmit);
+    LogFlowFunc(("pInterface=%#p fQueueRecv=%RTbool fQueueXmit=%RTbool\n", pInterface, fQueueRecv, fQueueXmit));
+    int rc = VINF_SUCCESS;
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
+
+    if (fQueueRecv)
+    {        
+        size_t cbOld = 0;
+        ASMAtomicXchgSizeCorrect(&pThis->cbReadBuf, 0, &cbOld);
+        if (cbOld) /* Kick the I/O thread to fetch new data. */
+            rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
+    }
+
+    LogFlowFunc(("-> %Rrc\n", rc));
+    return VINF_SUCCESS;
+}
+
+
 /* -=-=-=-=- I/O thread -=-=-=-=- */
 
 /**
@@ -581,6 +604,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->ISerialConnector.pfnChgModemLines     = drvHostSerialChgModemLines;
     pThis->ISerialConnector.pfnChgBrk            = drvHostSerialChgBrk;
     pThis->ISerialConnector.pfnQueryStsLines     = drvHostSerialQueryStsLines;
+    pThis->ISerialConnector.pfnQueuesFlush       = drvHostSerialQueuesFlush;
 
     /*
      * Query configuration.

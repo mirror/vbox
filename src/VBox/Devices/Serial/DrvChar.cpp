@@ -194,6 +194,29 @@ static DECLCALLBACK(int) drvCharQueryStsLines(PPDMISERIALCONNECTOR pInterface, u
 }
 
 
+/**
+ * @callback_method_impl{PDMISERIALCONNECTOR,pfnQueuesFlush}
+ */
+static DECLCALLBACK(int) drvCharQueuesFlush(PPDMISERIALCONNECTOR pInterface, bool fQueueRecv, bool fQueueXmit)
+{
+    RT_NOREF(fQueueXmit);
+    LogFlowFunc(("pInterface=%#p fQueueRecv=%RTbool fQueueXmit=%RTbool\n", pInterface, fQueueRecv, fQueueXmit));
+    int rc = VINF_SUCCESS;
+    PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
+
+    if (fQueueRecv)
+    {        
+        size_t cbOld = 0;
+        ASMAtomicXchgSizeCorrect(&pThis->cbRemaining, 0, &cbOld);
+        if (cbOld) /* Kick the I/O thread to fetch new data. */
+            rc = pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
+    }
+
+    LogFlowFunc(("-> %Rrc\n", rc));
+    return VINF_SUCCESS;
+}
+
+
 /* -=-=-=-=- I/O thread -=-=-=-=- */
 
 /**
@@ -363,6 +386,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->ISerialConnector.pfnChgModemLines     = drvCharChgModemLines;
     pThis->ISerialConnector.pfnChgBrk            = drvCharChgBrk;
     pThis->ISerialConnector.pfnQueryStsLines     = drvCharQueryStsLines;
+    pThis->ISerialConnector.pfnQueuesFlush       = drvCharQueuesFlush;
 
     /*
      * Get the ISerialPort interface of the above driver/device.

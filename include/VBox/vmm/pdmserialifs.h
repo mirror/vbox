@@ -215,9 +215,19 @@ typedef struct PDMISERIALCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryStsLines, (PPDMISERIALCONNECTOR pInterface, uint32_t *pfStsLines));
 
+    /**
+     * Flushes the indicated queues.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   fQueueRecv          Flag whether to flush the receive queue.
+     * @param   fQueueXmit          Flag whether to flush the transmit queue.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueuesFlush, (PPDMISERIALCONNECTOR pInterface, bool fQueueRecv, bool fQueueXmit));
+
 } PDMISERIALCONNECTOR;
 /** PDMIMEDIA interface ID. */
-#define PDMISERIALCONNECTOR_IID                  "2f16fda0-4980-4ec8-969c-18c1d10b7b95"
+#define PDMISERIALCONNECTOR_IID                  "d024f170-c00d-11e8-b568-0800200c9a66"
 
 /** @} */
 
