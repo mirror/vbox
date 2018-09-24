@@ -44,7 +44,6 @@ struct UIDataSettingsGlobalProxy
     UIDataSettingsGlobalProxy()
         : m_enmProxyMode(KProxyMode_System)
         , m_strProxyHost(QString())
-        , m_strProxyPort(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -53,7 +52,6 @@ struct UIDataSettingsGlobalProxy
         return true
                && (m_enmProxyMode == other.m_enmProxyMode)
                && (m_strProxyHost == other.m_strProxyHost)
-               && (m_strProxyPort == other.m_strProxyPort)
                ;
     }
 
@@ -66,8 +64,6 @@ struct UIDataSettingsGlobalProxy
     KProxyMode  m_enmProxyMode;
     /** Holds the proxy host. */
     QString     m_strProxyHost;
-    /** Holds the proxy port. */
-    QString     m_strProxyPort;
 };
 
 
@@ -98,17 +94,6 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     /* Gather old proxy data: */
     oldProxyData.m_enmProxyMode = m_properties.GetProxyMode();
     oldProxyData.m_strProxyHost = m_properties.GetProxyURL();
-    oldProxyData.m_strProxyPort = "";
-    if (!oldProxyData.m_strProxyHost.isEmpty())
-    {
-        QUrl url(oldProxyData.m_strProxyHost);
-        if (url.port() != -1)
-        {
-            oldProxyData.m_strProxyPort = QString::number(url.port());
-            url.setPort(-1);
-            oldProxyData.m_strProxyHost = url.url();
-        }
-    }
 
     /* Cache old proxy data: */
     m_pCache->cacheInitialData(oldProxyData);
@@ -131,7 +116,6 @@ void UIGlobalSettingsProxy::getFromCache()
         case KProxyMode_Max:     break; /* (compiler warnings) */
     }
     m_pHostEditor->setText(oldProxyData.m_strProxyHost);
-    m_pPortEditor->setText(oldProxyData.m_strProxyPort);
     sltHandleProxyToggle();
 
     /* Revalidate: */
@@ -147,7 +131,6 @@ void UIGlobalSettingsProxy::putToCache()
     newProxyData.m_enmProxyMode = m_pRadioProxyEnabled->isChecked()  ? KProxyMode_Manual
                                 : m_pRadioProxyDisabled->isChecked() ? KProxyMode_NoProxy : KProxyMode_System;
     newProxyData.m_strProxyHost = m_pHostEditor->text();
-    newProxyData.m_strProxyPort = m_pPortEditor->text();
 
     /* Cache new proxy data: */
     m_pCache->cacheCurrentData(newProxyData);
@@ -181,14 +164,6 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     if (m_pHostEditor->text().trimmed().isEmpty())
     {
         message.second << tr("No proxy host is currently specified.");
-        fPass = false;
-    }
-
-    /* Check for port value: */
-    if (   m_pPortEditor->text().trimmed().isEmpty()
-        && QUrl(m_pHostEditor->text()).port() == -1)
-    {
-        message.second << tr("No proxy port is currently specified.");
         fPass = false;
     }
 
@@ -244,15 +219,6 @@ void UIGlobalSettingsProxy::prepare()
             m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
             connect(m_pHostEditor, SIGNAL(textEdited(const QString &)), this, SLOT(revalidate()));
         }
-
-        /* Port editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pPortEditor);
-        {
-            /* Configure editor: */
-            m_pPortEditor->setFixedWidthByText(QString().fill('0', 6));
-            m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
-            connect(m_pPortEditor, SIGNAL(textEdited(const QString &)), this, SLOT(revalidate()));
-        }
     }
 
     /* Apply language settings: */
@@ -281,15 +247,7 @@ bool UIGlobalSettingsProxy::saveProxyData()
         /* Save new proxy data from the cache: */
         m_properties.SetProxyMode(newProxyData.m_enmProxyMode);
         fSuccess &= m_properties.isOk();
-        if (newProxyData.m_strProxyPort.isEmpty())
-            m_properties.SetProxyURL(newProxyData.m_strProxyHost);
-        else
-        {
-            QUrl url(newProxyData.m_strProxyHost);
-            if (url.port() == -1)
-                url.setPort(newProxyData.m_strProxyPort.toUInt());
-            m_properties.SetProxyURL(url.url());
-        }
+        m_properties.SetProxyURL(newProxyData.m_strProxyHost);
         fSuccess &= m_properties.isOk();
 
         /* Drop the old extra data setting if still around: */
