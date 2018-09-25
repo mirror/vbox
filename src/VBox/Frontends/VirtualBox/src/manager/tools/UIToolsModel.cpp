@@ -126,6 +126,7 @@ void UIToolsModel::setToolsClass(UIToolsClass enmClass)
         m_enmCurrentClass = enmClass;
         updateLayout();
         updateNavigation();
+        sltItemMinimumHeightHintChanged();
     }
 }
 
@@ -334,7 +335,8 @@ void UIToolsModel::sltItemMinimumHeightHintChanged()
     /* Calculate summary vertical height: */
     int iMinimumHeightHint = 0;
     foreach (UIToolsItem *pItem, items())
-        iMinimumHeightHint += pItem->minimumHeightHint();
+        if (pItem->isVisible())
+            iMinimumHeightHint += pItem->minimumHeightHint();
     emit sigItemMinimumHeightHintChanged(iMinimumHeightHint);
 }
 
