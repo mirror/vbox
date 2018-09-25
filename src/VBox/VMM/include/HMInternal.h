@@ -1042,8 +1042,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatVmxCheckRmOk;
     STAMCOUNTER             StatVmxCheckBadSel;
     STAMCOUNTER             StatVmxCheckBadRpl;
-    STAMCOUNTER             StatVmxCheckBadLdt;
-    STAMCOUNTER             StatVmxCheckBadTr;
     STAMCOUNTER             StatVmxCheckPmOk;
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
