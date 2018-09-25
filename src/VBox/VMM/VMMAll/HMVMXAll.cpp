@@ -657,7 +657,8 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
             {
                 /*
                  * In V86 mode (VT-x or not), the CPU enforces real-mode compatible selector
-                 * bases and limits, i.e. limit must be 64K and base must be selector * 16.
+                 * bases, limits, and attributes, i.e. limit must be 64K, base must be selector * 16,
+                 * and attrributes must be 0x9b for code and 0x93 for code segments.
                  * If this is not true, we cannot execute real mode as V86 and have to fall
                  * back to emulation.
                  */
@@ -679,6 +680,16 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
                     || (pCtx->gs.u32Limit != 0xffff))
                 {
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit);
+                    return false;
+                }
+                if (   (pCtx->cs.Attr.u != 0x9b)
+                    || (pCtx->ds.Attr.u != 0x93)
+                    || (pCtx->es.Attr.u != 0x93)
+                    || (pCtx->ss.Attr.u != 0x93)
+                    || (pCtx->fs.Attr.u != 0x93)
+                    || (pCtx->gs.Attr.u != 0x93))
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRmSelAttr);
                     return false;
                 }
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckRmOk);
