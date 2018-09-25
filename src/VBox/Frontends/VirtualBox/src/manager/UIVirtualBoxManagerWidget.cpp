@@ -350,6 +350,8 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
                 switchToTool(enmType);
             break;
         }
+        default:
+            break;
     }
 }
 

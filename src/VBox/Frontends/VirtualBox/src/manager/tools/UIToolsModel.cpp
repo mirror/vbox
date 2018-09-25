@@ -173,6 +173,7 @@ void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
             {
                 case UIToolsClass_Global:  m_pLastItemGlobal  = m_pCurrentItem; break;
                 case UIToolsClass_Machine: m_pLastItemMachine = m_pCurrentItem; break;
+                default: break;
             }
         }
         /* Otherwise it's error: */
@@ -585,6 +586,8 @@ bool UIToolsModel::isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass)
             }
             break;
         }
+        default:
+            break;
     }
     return false;
 }

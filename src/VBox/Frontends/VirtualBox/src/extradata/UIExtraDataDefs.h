@@ -830,4 +830,29 @@ enum MaxGuestResolutionPolicy
 };
 
 
+#ifdef VBOX_GUI_WITH_NEW_MANAGER
+/** Tool item classes. */
+enum UIToolsClass
+{
+    UIToolsClass_Invalid,
+    UIToolsClass_Global,
+    UIToolsClass_Machine
+};
+
+
+/** Tool item types. */
+enum UIToolsType
+{
+    UIToolsType_Invalid,
+    /* Global types: */
+    UIToolsType_Media,
+    UIToolsType_Network,
+    /* Machine types: */
+    UIToolsType_Details,
+    UIToolsType_Snapshots,
+    UIToolsType_Logs,
+};
+#endif /* VBOX_GUI_WITH_NEW_MANAGER */
+
+
 #endif /* !___UIExtraDataDefs_h___ */
