@@ -512,7 +512,7 @@ public:
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /* Guest -> Host handling. */
     int ghIsDnDPending(void);
-    int ghDropped(const RTCString &strFormat, uint32_t action);
+    int ghDropped(const RTCString &strFormat, VBOXDNDACTION dndActionRequested);
 #endif
 
     /* X11 helpers. */
@@ -1671,7 +1671,7 @@ int DragInstance::hgLeave(void)
 int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault)
 {
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
-    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, dndActionDefault=%RU32\n", uPosX, uPosY, dndActionDefault));
+    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, dndActionDefault=0x%x\n", uPosX, uPosY, dndActionDefault));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -1868,7 +1868,7 @@ int DragInstance::hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndAction
 {
     RT_NOREF3(uPosX, uPosY, dndActionDefault);
     LogFlowThisFunc(("wndCur=%RU32, wndProxy=%RU32, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy.hWnd, m_enmMode, m_enmState));
-    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, dndActionDefault=%RU32\n", uPosX, uPosY, dndActionDefault));
+    LogFlowThisFunc(("uPosX=%RU32, uPosY=%RU32, dndActionDefault=0x%x\n", uPosX, uPosY, dndActionDefault));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -2105,7 +2105,7 @@ int DragInstance::ghIsDnDPending(void)
 
     rc2 = VbglR3DnDGHSendAckPending(&m_dndCtx, dndActionDefault, dndActionList,
                                     strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
-    LogFlowThisFunc(("uClientID=%RU32, uDefAction=0x%x, uLstActions=0x%x, strFormats=%s, rc=%Rrc\n",
+    LogFlowThisFunc(("uClientID=%RU32, dndActionDefault=0x%x, dndActionList=0x%x, strFormats=%s, rc=%Rrc\n",
                      m_dndCtx.uClientID, dndActionDefault, dndActionList, strFormats.c_str(), rc2));
     if (RT_FAILURE(rc2))
     {
@@ -2124,12 +2124,12 @@ int DragInstance::ghIsDnDPending(void)
  *
  * @returns IPRT status code.
  * @param   strFormat               Requested format to send to the host.
- * @param   uAction                 Requested action to perform on the guest.
+ * @param   dndActionRequested      Requested action to perform on the guest.
  */
-int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
+int DragInstance::ghDropped(const RTCString &strFormat, VBOXDNDACTION dndActionRequested)
 {
-    LogFlowThisFunc(("mode=%RU32, state=%RU32, strFormat=%s, uAction=%RU32\n",
-                     m_enmMode, m_enmState, strFormat.c_str(), uAction));
+    LogFlowThisFunc(("mode=%RU32, state=%RU32, strFormat=%s, dndActionRequested=0x%x\n",
+                     m_enmMode, m_enmState, strFormat.c_str(), dndActionRequested));
 
     /* Currently in wrong mode? Bail out. */
     if (   m_enmMode == Unknown
@@ -2263,7 +2263,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
 
                     if (RT_SUCCESS(rc))
                     {
-                        rc = m_wndProxy.sendFinished(wndSource, uAction);
+                        rc = m_wndProxy.sendFinished(wndSource, dndActionRequested);
                     }
                     else
                         fCancel = true;
@@ -2932,7 +2932,7 @@ int VBoxDnDProxyWnd::sendFinished(Window hWndSource, VBOXDNDACTION dndAction)
     /* Was the drop accepted by the host? That is, anything than ignoring. */
     bool fDropAccepted = dndAction > VBOX_DND_ACTION_IGNORE;
 
-    LogFlowFunc(("dndAction=%RU32\n", dndAction));
+    LogFlowFunc(("dndAction=0x%x\n", dndAction));
 
     /* Confirm the result of the transfer to the target window. */
     XClientMessageEvent m;
