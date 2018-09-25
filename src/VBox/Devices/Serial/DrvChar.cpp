@@ -211,13 +211,13 @@ static DECLCALLBACK(int) drvCharQueuesFlush(PPDMISERIALCONNECTOR pInterface, boo
     if (fQueueRecv)
     {        
         size_t cbOld = 0;
-        ASMAtomicXchgSizeCorrect(&pThis->cbRemaining, 0, &cbOld);
+        cbOld = ASMAtomicXchgZ(&pThis->cbRemaining, 0);
         if (cbOld) /* Kick the I/O thread to fetch new data. */
             rc = pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
     }
 
     LogFlowFunc(("-> %Rrc\n", rc));
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /** @todo r=bird: return rc? */
 }
 
 
