@@ -209,7 +209,7 @@ static DECLCALLBACK(int) drvCharQueuesFlush(PPDMISERIALCONNECTOR pInterface, boo
     PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
 
     if (fQueueRecv)
-    {        
+    {
         size_t cbOld = 0;
         cbOld = ASMAtomicXchgZ(&pThis->cbRemaining, 0);
         if (cbOld) /* Kick the I/O thread to fetch new data. */

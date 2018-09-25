@@ -368,9 +368,8 @@ static DECLCALLBACK(int) drvHostSerialQueuesFlush(PPDMISERIALCONNECTOR pInterfac
     PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
 
     if (fQueueRecv)
-    {        
-        size_t cbOld = 0;
-        ASMAtomicXchgSizeCorrect(&pThis->cbReadBuf, 0, &cbOld);
+    {
+        size_t cbOld = ASMAtomicXchgZ(&pThis->cbReadBuf, 0);
         if (cbOld) /* Kick the I/O thread to fetch new data. */
             rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
     }
