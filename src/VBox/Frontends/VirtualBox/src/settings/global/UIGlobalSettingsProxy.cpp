@@ -167,6 +167,16 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
         fPass = false;
     }
 
+    /* Check for password presence: */
+    if (!QUrl(m_pHostEditor->text().trimmed()).password().isEmpty())
+    {
+        message.second << tr("You have provided a proxy password. "
+                             "Please be aware that the password will be saved in plain text. "
+                             "You may wish to configure a system-wide proxy instead and not "
+                             "store application-specific settings.");
+        fPass = true;
+    }
+
     /* Serialize message: */
     if (!message.second.isEmpty())
         messages << message;
