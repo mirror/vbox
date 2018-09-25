@@ -411,6 +411,7 @@ void UIToolsModel::prepareItems()
     classes << UIToolsClass_Global;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
+    classes << UIToolsClass_Machine;
 
     /* Prepare types: */
     QList<UIToolsType> types;
@@ -418,6 +419,7 @@ void UIToolsModel::prepareItems()
     types << UIToolsType_Network;
     types << UIToolsType_Details;
     types << UIToolsType_Snapshots;
+    types << UIToolsType_Logs;
 
     /* Prepare icons: */
     QList<QIcon> icons;
@@ -425,6 +427,7 @@ void UIToolsModel::prepareItems()
     icons << UIIconPool::iconSet(":/host_iface_manager_22px.png");
     icons << UIIconPool::iconSet(":/machine_details_manager_22px.png");
     icons << UIIconPool::iconSet(":/snapshot_manager_22px.png");
+    icons << UIIconPool::iconSet(":/log_viewer_find_22px.png");
 
     /* Prepare names: */
     QList<QString> names;
@@ -432,6 +435,7 @@ void UIToolsModel::prepareItems()
     names << tr("Network");
     names << tr("Details");
     names << tr("Snapshots");
+    names << tr("Logs");
 
     /* Populate the items: */
     for (int i = 0; i < names.size(); ++i)
