@@ -874,6 +874,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/localipc-win.cpp \
 	r3/win/mp-win.cpp \
 	r3/win/path-win.cpp \
+	r3/win/pathint-win.cpp \
 	r3/win/pipe-win.cpp \
 	r3/win/process-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
@@ -1869,6 +1870,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/init-win.cpp \
 	r3/win/ldrNative-win.cpp \
 	r3/win/path-win.cpp \
+	r3/win/pathint-win.cpp \
 	r3/win/pipe-win.cpp \
 	r3/win/process-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \

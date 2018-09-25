@@ -2118,9 +2118,9 @@ static int rtProcWinFindExe(uint32_t fFlags, RTENV hEnv, const char *pszExec, PR
         /*
          * Replace the executable string.
          */
-        RTUtf16Free(*ppwszExec);
+        RTPathWinFree(*ppwszExec);
         *ppwszExec = NULL;
-        rc = RTStrToUtf16(szRealExec, ppwszExec);
+        rc = RTPathWinFromUtf8(ppwszExec, szRealExec, 0 /*fFlags*/);
     }
     else if (rc == VERR_END_OF_STRING)
         rc = VERR_FILE_NOT_FOUND;
@@ -2364,7 +2364,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     if (RT_SUCCESS(rc))
     {
         PRTUTF16 pwszExec;
-        rc = RTStrToUtf16(pszExec, &pwszExec);
+        rc = RTPathWinFromUtf8(&pwszExec, pszExec, 0 /*fFlags*/);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -2448,7 +2448,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     CloseHandle(ProcInfo.hProcess);
                 rc = VINF_SUCCESS;
             }
-            RTUtf16Free(pwszExec);
+            RTPathWinFree(pwszExec);
         }
         RTUtf16Free(pwszCmdLine);
     }

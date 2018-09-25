@@ -288,93 +288,57 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
 
     /*
      * Open/Create the file.
-     *
-     * When opening files with paths longer than 260 chars, CreateFileW() will fail, unless
-     * you explicitly specify a prefix (see [1], RTPATH_WIN_LONG_PATH_PREFIX).
-     *
-     * Note: Relative paths are not supported, so check for this.
-     *
-     * [1] https://docs.microsoft.com/en-gb/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
      */
-    PRTUTF16 pwszFilename = NULL;
-#if 0 /** @todo r=bird: This stuff just isn't up to scratch. Sorry.  RTStrAPrintf2? WTF?!?  When using the long path prefix,
-       * the path is just passed right thru to the NT API, so we need to fix unix slashes, resolve '.' and '..' components,
-       * and probably also get rid of extra slashes.  Finally, the 260 limit (there is a \#define for it btw) actually
-       * applies to the  converted filename (UTF-16), not the UTF-8 one, so this may break stuff (think asian languages)
-       * that isn't over the 260 limit.  */
-    if (g_enmWinVer >= kRTWinOSType_XP) /* Not sure since when the prefix is available, so play safe by default. */
+    PRTUTF16 pwszFilename;
+    rc = RTPathWinFromUtf8(&pwszFilename, pszFilename, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
     {
-#define RTPATH_WIN_LONG_PATH_PREFIX "\\\\?\\"
-
-        if (   strlen(pszFilename) > 260
-            && !RTPathStartsWith(pszFilename, RTPATH_WIN_LONG_PATH_PREFIX)
-            && RTPathStartsWithRoot(pszFilename))
+        HANDLE hFile = CreateFileW(pwszFilename,
+                                   dwDesiredAccess,
+                                   dwShareMode,
+                                   pSecurityAttributes,
+                                   dwCreationDisposition,
+                                   dwFlagsAndAttributes,
+                                   NULL);
+        if (hFile != INVALID_HANDLE_VALUE)
         {
-            char *pszFilenameWithPrefix = RTStrAPrintf2("%s%s", RTPATH_WIN_LONG_PATH_PREFIX, pszFilename);
-            if (pszFilenameWithPrefix)
+            bool fCreated = dwCreationDisposition == CREATE_ALWAYS
+                         || dwCreationDisposition == CREATE_NEW
+                         || (dwCreationDisposition == OPEN_ALWAYS && GetLastError() == 0);
+
+            /*
+             * Turn off indexing of directory through Windows Indexing Service.
+             */
+            if (    fCreated
+                &&  (fOpen & RTFILE_O_NOT_CONTENT_INDEXED))
             {
-                rc = RTStrToUtf16(pszFilenameWithPrefix, &pwszFilename);
-                RTStrFree(pszFilenameWithPrefix);
+                if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+                    rc = RTErrConvertFromWin32(GetLastError());
             }
-            else
-                rc = VERR_NO_MEMORY;
+            /*
+             * Do we need to truncate the file?
+             */
+            else if (    !fCreated
+                     &&     (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_ACTION_MASK))
+                         == (RTFILE_O_TRUNCATE | RTFILE_O_OPEN_CREATE))
+            {
+                if (!SetEndOfFile(hFile))
+                    rc = RTErrConvertFromWin32(GetLastError());
+            }
+            if (RT_SUCCESS(rc))
+            {
+                *pFile = (RTFILE)hFile;
+                Assert((HANDLE)*pFile == hFile);
+                RTPathWinFree(pwszFilename);
+                return VINF_SUCCESS;
+            }
+
+            CloseHandle(hFile);
         }
-#undef RTPATH_WIN_LONG_PATH_PREFIX
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+        RTPathWinFree(pwszFilename);
     }
-
-    if (   RT_SUCCESS(rc)
-        && !pwszFilename)
-#endif
-        rc = RTStrToUtf16(pszFilename, &pwszFilename);
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    HANDLE hFile = CreateFileW(pwszFilename,
-                               dwDesiredAccess,
-                               dwShareMode,
-                               pSecurityAttributes,
-                               dwCreationDisposition,
-                               dwFlagsAndAttributes,
-                               NULL);
-    if (hFile != INVALID_HANDLE_VALUE)
-    {
-        bool fCreated = dwCreationDisposition == CREATE_ALWAYS
-                     || dwCreationDisposition == CREATE_NEW
-                     || (dwCreationDisposition == OPEN_ALWAYS && GetLastError() == 0);
-
-        /*
-         * Turn off indexing of directory through Windows Indexing Service.
-         */
-        if (    fCreated
-            &&  (fOpen & RTFILE_O_NOT_CONTENT_INDEXED))
-        {
-            if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
-                rc = RTErrConvertFromWin32(GetLastError());
-        }
-        /*
-         * Do we need to truncate the file?
-         */
-        else if (    !fCreated
-                 &&     (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_ACTION_MASK))
-                     == (RTFILE_O_TRUNCATE | RTFILE_O_OPEN_CREATE))
-        {
-            if (!SetEndOfFile(hFile))
-                rc = RTErrConvertFromWin32(GetLastError());
-        }
-        if (RT_SUCCESS(rc))
-        {
-            *pFile = (RTFILE)hFile;
-            Assert((HANDLE)*pFile == hFile);
-            RTUtf16Free(pwszFilename);
-            return VINF_SUCCESS;
-        }
-
-        CloseHandle(hFile);
-    }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
-    RTUtf16Free(pwszFilename);
     return rc;
 }
 
@@ -1048,12 +1012,12 @@ RTR3DECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
 RTR3DECL(int)  RTFileDelete(const char *pszFilename)
 {
     PRTUTF16 pwszFilename;
-    int rc = RTStrToUtf16(pszFilename, &pwszFilename);
+    int rc = RTPathWinFromUtf8(&pwszFilename, pszFilename, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         if (!DeleteFileW(pwszFilename))
             rc = RTErrConvertFromWin32(GetLastError());
-        RTUtf16Free(pwszFilename);
+        RTPathWinFree(pwszFilename);
     }
 
     return rc;
