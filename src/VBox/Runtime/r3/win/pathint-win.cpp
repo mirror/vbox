@@ -71,6 +71,7 @@ DECL_NO_INLINE(static, bool) rtPathWinTryConvertToAbs(PRTUTF16 *ppwszPath)
 RTDECL(int)  RTPathWinFromUtf8(PRTUTF16 *ppwszPath, const char *pszPath, uint32_t fFlags)
 {
     Assert(fFlags == 0);
+    RT_NOREF(fFlags);
 
     /*
      * Do a straight conversion first.
