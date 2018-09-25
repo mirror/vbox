@@ -246,14 +246,12 @@ private:
 
     /** @name Painting stuff.
       * @{ */
-        /** Paints decorations using specified @a pPainter and certain @a pOptions. */
-        void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-        /** Paints background using specified @a pPainter and certain @a rect. */
-        void paintBackground(QPainter *pPainter, const QRect &rect);
-        /** Paints frame rectangle using specified @a pPainter and certain @a rect. */
-        void paintFrameRectangle(QPainter *pPainter, const QRect &rect);
-        /** Paints machine info using specified @a pPainter and certain @a pOptions. */
-        void paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
+        /** Paints background using specified @a pPainter and certain @a rectangle. */
+        void paintBackground(QPainter *pPainter, const QRect &rectangle) const;
+        /** Paints frame using specified @a pPainter and certain @a rectangle. */
+        void paintFrame(QPainter *pPainter, const QRect &rectangle) const;
+        /** Paints machine info using specified @a pPainter and certain @a rectangle. */
+        void paintMachineInfo(QPainter *pPainter, const QRect &rectangle) const;
     /** @} */
 
     /** @name Navigation stuff.

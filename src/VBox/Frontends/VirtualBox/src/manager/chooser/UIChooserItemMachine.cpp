@@ -38,6 +38,9 @@
 # include "COMEnums.h"
 # include "CMachine.h"
 
+/* Other VBox includes: */
+#include "iprt/cpp/utils.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -244,12 +247,17 @@ void UIChooserItemMachine::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
         pEvent->ignore();
 }
 
-void UIChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
+void UIChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget* /* pWidget = 0 */)
 {
-    /* Paint decorations: */
-    paintDecorations(pPainter, pOption);
+    /* Acquire rectangle: */
+    const QRect rectangle = pOptions->rect;
+
+    /* Paint background: */
+    paintBackground(pPainter, rectangle);
+    /* Paint frame: */
+    paintFrame(pPainter, rectangle);
     /* Paint machine info: */
-    paintMachineInfo(pPainter, pOption);
+    paintMachineInfo(pPainter, rectangle);
 }
 
 void UIChooserItemMachine::startEditing()
@@ -882,67 +890,56 @@ void UIChooserItemMachine::updateStateText()
     }
 }
 
-void UIChooserItemMachine::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
-{
-    /* Prepare variables: */
-    const QRect fullRect = pOption->rect;
-
-    /* Paint background: */
-    paintBackground(pPainter, fullRect);
-    /* Paint frame: */
-    paintFrameRectangle(pPainter, fullRect);
-}
-
-void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect)
+void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Save painter: */
     pPainter->save();
 
     /* Prepare color: */
-    QPalette pal = palette();
+    const QPalette pal = palette();
 
     /* Selection background: */
-    if (model()->currentItems().contains(this))
+    if (model()->currentItems().contains(unconst(this)))
     {
         /* Prepare color: */
-        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
-        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightnessMax));
-        bgGrad.setColorAt(1, highlight.lighter(m_iHighlightLightnessMin));
-        pPainter->fillRect(rect, bgGrad);
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHighlightLightnessMin));
+        pPainter->fillRect(rectangle, bgGrad);
     }
     /* Hovering background: */
     else if (isHovered())
     {
         /* Prepare color: */
-        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
-        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHoverLightnessMax));
-        bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightnessMin));
-        pPainter->fillRect(rect, bgGrad);
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
+        pPainter->fillRect(rectangle, bgGrad);
     }
     /* Default background: */
     else
     {
         /* Prepare color: */
-        QColor usual = pal.color(QPalette::Active, QPalette::Mid);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
         /* Draw gradient: */
-        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
-        bgGrad.setColorAt(0, usual.lighter(m_iHoverLightnessMax));
-        bgGrad.setColorAt(1, usual.lighter(m_iHoverLightnessMin));
-        pPainter->fillRect(rect, bgGrad);
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
+        pPainter->fillRect(rectangle, bgGrad);
     }
 
     /* Paint drag token UP? */
     if (dragTokenPlace() != DragToken_Off)
     {
         /* Window color: */
-        QColor base = pal.color(QPalette::Active, model()->currentItems().contains(this) ?
+        QColor base = pal.color(QPalette::Active, model()->currentItems().contains(unconst(this)) ?
                                 QPalette::Highlight : QPalette::Window);
         QLinearGradient dragTokenGradient;
-        QRect dragTokenRect = rect;
+        QRect dragTokenRect = rectangle;
         if (dragTokenPlace() == DragToken_Up)
         {
             dragTokenRect.setHeight(5);
@@ -964,17 +961,17 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     pPainter->restore();
 }
 
-void UIChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
+void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Save painter: */
     pPainter->save();
 
     /* Prepare color: */
-    QPalette pal = palette();
+    const QPalette pal = palette();
     QColor strokeColor;
 
     /* Selection frame: */
-    if (model()->currentItems().contains(this))
+    if (model()->currentItems().contains(unconst(this)))
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
     /* Hovering frame: */
     else if (isHovered())
@@ -989,19 +986,18 @@ void UIChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &
     pPainter->setPen(pen);
 
     /* Draw borders: */
-    pPainter->drawLine(rect.topLeft(),    rect.topRight()    + QPoint(1, 0));
-    pPainter->drawLine(rect.bottomLeft(), rect.bottomRight() + QPoint(1, 0));
-    pPainter->drawLine(rect.topLeft(),    rect.bottomLeft());
+    pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight()    + QPoint(1, 0));
+    pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight() + QPoint(1, 0));
+    pPainter->drawLine(rectangle.topLeft(),    rectangle.bottomLeft());
 
     /* Restore painter: */
     pPainter->restore();
 }
 
-void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
+void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Prepare variables: */
-    QRect fullRect = pOption->rect;
-    const int iFullHeight = fullRect.height();
+    const int iFullHeight = rectangle.height();
     const int iMargin = data(MachineItemData_Margin).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
@@ -1009,7 +1005,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpti
     const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
 
     /* Selected item foreground: */
-    if (model()->currentItems().contains(this))
+    if (model()->currentItems().contains(unconst(this)))
     {
         QPalette pal = palette();
         pPainter->setPen(pal.color(QPalette::HighlightedText));

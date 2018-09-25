@@ -402,9 +402,6 @@ void UIToolsItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
 
 void UIToolsItem::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget * /* pWidget = 0 */)
 {
-    /* Setup: */
-    pPainter->setRenderHint(QPainter::Antialiasing);
-
     /* Acquire rectangle: */
     const QRect rectangle = pOptions->rect;
 
@@ -438,10 +435,10 @@ void UIToolsItem::prepare()
     m_iHoverLightnessMin = 110;
     m_iHoverLightnessMax = 120;
 #else /* VBOX_WS_MAC */
-    m_iHighlightLightnessMin = 120;
+    m_iHighlightLightnessMin = 130;
     m_iHighlightLightnessMax = 160;
-    m_iHoverLightnessMin = 155;
-    m_iHoverLightnessMax = 175;
+    m_iHoverLightnessMin = 160;
+    m_iHoverLightnessMax = 190;
 #endif /* !VBOX_WS_MAC */
 
     /* Prepare fonts: */
@@ -752,13 +749,18 @@ void UIToolsItem::paintFrame(QPainter *pPainter, const QRect &rectangle) const
 
     /* Selection frame: */
     if (model()->currentItem() == this)
-        strokeColor = pal.color(QPalette::Active, QPalette::Mid).darker(110);
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
+    /* Hovering frame: */
+    else if (isHovered())
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
     /* Default frame: */
     else
-        strokeColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iHoverLightnessMin);
 
-    /* Assign pen: */
-    pPainter->setPen(strokeColor);
+    /* Create/assign pen: */
+    QPen pen(strokeColor);
+    pen.setWidth(0);
+    pPainter->setPen(pen);
 
     /* Draw frame: */
     pPainter->drawLine(rectangle.topLeft(), rectangle.topRight() + QPoint(1, 0));
