@@ -70,7 +70,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
      */
     int rc;
     RTUTF16 *pwszNative = NULL;
-    if (RTPathHasSuffix(pszFilename))
+    if (RTPathHasSuffix(pszFilename) || (fFlags & RTLDRLOAD_FLAGS_NO_SUFFIX))
         rc = RTStrToUtf16(pszFilename, &pwszNative);
     else
     {
