@@ -529,18 +529,18 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t RT_FAR *pi64, int64_t i64)
  * Atomically Exchange a size_t value, ordered.
  *
  * @returns Current *ppv value
- * @param   ppv    Pointer to the pointer variable to update.
- * @param   pv     The pointer value to assign to *ppv.
+ * @param   puDst   Pointer to the size_t variable to update.
+ * @param   uNew    The new value to assign to *puDst.
  */
-DECLINLINE(size_t) ASMAtomicXchgZ(size_t volatile RT_FAR *puValue, const size_t uValue)
+DECLINLINE(size_t) ASMAtomicXchgZ(size_t volatile RT_FAR *puDst, const size_t uNew)
 {
 #if ARCH_BITS == 16
     AssertCompile(sizeof(size_t) == 2);
-    return ASMAtomicXchgU16((volatile uint16_t RT_FAR *)puValue, uValue);
+    return ASMAtomicXchgU16((volatile uint16_t RT_FAR *)puDst, uNew);
 #elif ARCH_BITS == 32
-    return ASMAtomicXchgU32((volatile uint32_t RT_FAR *)puValue, uValue);
+    return ASMAtomicXchgU32((volatile uint32_t RT_FAR *)puDst, uNew);
 #elif ARCH_BITS == 64
-    return ASMAtomicXchgU64((volatile uint64_t RT_FAR *)puValue, uValue);
+    return ASMAtomicXchgU64((volatile uint64_t RT_FAR *)puDst, uNew);
 #else
 # error "ARCH_BITS is bogus"
 #endif
