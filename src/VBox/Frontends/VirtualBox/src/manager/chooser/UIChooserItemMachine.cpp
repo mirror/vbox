@@ -20,6 +20,8 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QGraphicsScene>
+# include <QGraphicsView>
 # include <QPainter>
 # include <QStyleOptionGraphicsItem>
 # include <QGraphicsSceneMouseEvent>
@@ -154,6 +156,22 @@ bool UIChooserItemMachine::isLockedMachine() const
            state != KMachineState_Saved &&
            state != KMachineState_Teleported &&
            state != KMachineState_Aborted;
+}
+
+bool UIChooserItemMachine::isToolsButtonArea(const QPoint &position) const
+{
+    const int iFullWidth = geometry().width();
+    const int iFullHeight = geometry().height();
+    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
+    const int iToolsPixmapX = iFullWidth - iMargin - 1 - m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio();
+    const int iToolsPixmapY = (iFullHeight - m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio()) / 2;
+    QRect rect = QRect(iToolsPixmapX,
+                       iToolsPixmapY,
+                       m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio(),
+                       m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio());
+    rect.adjust(- iButtonMargin, -iButtonMargin, iButtonMargin, iButtonMargin);
+    return rect.contains(position);
 }
 
 /* static */
@@ -420,10 +438,12 @@ int UIChooserItemMachine::minimumWidthHint() const
     int iBottomLineWidth = m_statePixmapSize.width() +
                            iMinorSpacing +
                            m_stateTextSize.width();
-    int iRightColumnWidth = qMax(iTopLineWidth, iBottomLineWidth);
+    int iMiddleColumnWidth = qMax(iTopLineWidth, iBottomLineWidth);
     int iMachineItemWidth = m_pixmapSize.width() +
                             iMajorSpacing +
-                            iRightColumnWidth;
+                            iMiddleColumnWidth +
+                            iMajorSpacing +
+                            m_toolsPixmapSize.width();
     iProposedWidth += iMachineItemWidth;
 
     /* Return result: */
@@ -444,11 +464,11 @@ int UIChooserItemMachine::minimumHeightHint() const
     /* And machine-item content to take into account: */
     int iTopLineHeight = qMax(m_visibleNameSize.height(), m_visibleSnapshotNameSize.height());
     int iBottomLineHeight = qMax(m_statePixmapSize.height(), m_stateTextSize.height());
-    int iRightColumnHeight = iTopLineHeight +
-                             iMachineItemTextSpacing +
-                             iBottomLineHeight;
+    int iMiddleColumnHeight = iTopLineHeight +
+                              iMachineItemTextSpacing +
+                              iBottomLineHeight;
     QList<int> heights;
-    heights << m_pixmapSize.height() << iRightColumnHeight;
+    heights << m_pixmapSize.height() << iMiddleColumnHeight << m_toolsPixmapSize.height();
     int iMaxHeight = 0;
     foreach (int iHeight, heights)
         iMaxHeight = qMax(iMaxHeight, iHeight);
@@ -627,6 +647,7 @@ QVariant UIChooserItemMachine::data(int iKey) const
         case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case MachineItemData_TextSpacing:  return 0;
         case MachineItemData_ParentIndent: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3;
+        case MachineItemData_ButtonMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
 
         /* Pixmaps: */
         case MachineItemData_SettingsButtonPixmap: return UIIconPool::iconSet(":/vm_settings_16px.png");
@@ -644,9 +665,10 @@ void UIChooserItemMachine::updatePixmaps()
 {
     /* Update pixmap: */
     updatePixmap();
-
     /* Update state-pixmap: */
     updateStatePixmap();
+    /* Update tools-pixmap: */
+    updateToolsPixmap();
 }
 
 void UIChooserItemMachine::updatePixmap()
@@ -686,6 +708,28 @@ void UIChooserItemMachine::updateStatePixmap()
     if (m_statePixmap.toImage() != statePixmap.toImage())
     {
         m_statePixmap = statePixmap;
+        update();
+    }
+}
+
+void UIChooserItemMachine::updateToolsPixmap()
+{
+    /* Determine icon metric: */
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) * .75;
+    /* Create new tools-pixmap and tools-pixmap size: */
+    const QIcon toolsIcon = UIIconPool::iconSet(":/tools_menu_24px.png");
+    AssertReturnVoid(!toolsIcon.isNull());
+    const QSize toolsPixmapSize = QSize(iIconMetric, iIconMetric);
+    const QPixmap toolsPixmap = toolsIcon.pixmap(gpManager->windowHandle(), toolsPixmapSize);
+    /* Update linked values: */
+    if (m_toolsPixmapSize != toolsPixmapSize)
+    {
+        m_toolsPixmapSize = toolsPixmapSize;
+        updateGeometry();
+    }
+    if (m_toolsPixmap.toImage() != toolsPixmap.toImage())
+    {
+        m_toolsPixmap = toolsPixmap;
         update();
     }
 }
@@ -997,12 +1041,14 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
 void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Prepare variables: */
+    const int iFullWidth = rectangle.width();
     const int iFullHeight = rectangle.height();
     const int iMargin = data(MachineItemData_Margin).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     const int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
     const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
+    const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Selected item foreground: */
     if (model()->currentItems().contains(unconst(this)))
@@ -1041,11 +1087,11 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     }
 
     /* Calculate indents: */
-    int iRightColumnIndent = iLeftColumnIndent +
-                             m_pixmapSize.width() +
-                             iMajorSpacing;
+    int iMiddleColumnIndent = iLeftColumnIndent +
+                              m_pixmapSize.width() +
+                              iMajorSpacing;
 
-    /* Paint right column: */
+    /* Paint middle column: */
     {
         /* Calculate indents: */
         int iTopLineHeight = qMax(m_visibleNameSize.height(), m_visibleSnapshotNameSize.height());
@@ -1058,7 +1104,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
             /* Paint left element: */
             {
                 /* Prepare variables: */
-                int iNameX = iRightColumnIndent;
+                int iNameX = iMiddleColumnIndent;
                 int iNameY = iTopLineIndent;
                 /* Paint name: */
                 paintText(/* Painter: */
@@ -1074,11 +1120,11 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
             }
 
             /* Calculate indents: */
-            int iSnapshotNameIndent = iRightColumnIndent +
+            int iSnapshotNameIndent = iMiddleColumnIndent +
                                       m_visibleNameSize.width() +
                                       iMinorSpacing;
 
-            /* Paint right element: */
+            /* Paint middle element: */
             if (!snapshotName().isEmpty())
             {
                 /* Prepare variables: */
@@ -1106,7 +1152,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
             /* Paint left element: */
             {
                 /* Prepare variables: */
-                int iMachineStatePixmapX = iRightColumnIndent;
+                int iMachineStatePixmapX = iMiddleColumnIndent;
                 int iMachineStatePixmapY = iBottomLineIndent;
                 /* Paint state pixmap: */
                 paintPixmap(/* Painter: */
@@ -1118,7 +1164,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
             }
 
             /* Calculate indents: */
-            int iMachineStateTextIndent = iRightColumnIndent +
+            int iMachineStateTextIndent = iMiddleColumnIndent +
                                           m_statePixmapSize.width() +
                                           iMinorSpacing;
 
@@ -1140,6 +1186,40 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                           m_strStateText);
             }
         }
+    }
+
+    /* Calculate indents: */
+    int iRightColumnIndent = iFullWidth - iMargin - 1 - m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio();
+
+    /* Paint right column: */
+    if (model()->currentItem() == this)
+    {
+        /* Prepare variables: */
+        int iToolsPixmapX = iRightColumnIndent;
+        int iToolsPixmapY = (iFullHeight - m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio()) / 2;
+        QRect buttonRectangle = QRect(iToolsPixmapX,
+                                      iToolsPixmapY,
+                                      m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio(),
+                                      m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio());
+        buttonRectangle.adjust(- iButtonMargin, -iButtonMargin, iButtonMargin, iButtonMargin);
+        const QPoint sceneCursorPosition = model()->scene()->views().first()->mapFromGlobal(QCursor::pos());
+        const QPoint itemCursorPosition = mapFromScene(sceneCursorPosition).toPoint();
+
+        /* Paint flat button: */
+        paintFlatButton(/* Painter: */
+                        pPainter,
+                        /* Button rectangle: */
+                        buttonRectangle,
+                        /* Cursor position: */
+                        itemCursorPosition);
+
+        /* Paint pixmap: */
+        paintPixmap(/* Painter: */
+                    pPainter,
+                    /* Point to paint in: */
+                    QPoint(iToolsPixmapX, iToolsPixmapY),
+                    /* Pixmap to paint: */
+                    m_toolsPixmap);
     }
 }
 

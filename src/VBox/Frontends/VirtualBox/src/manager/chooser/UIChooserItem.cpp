@@ -444,8 +444,8 @@ void UIChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent *)
     {
         m_fHovered = true;
         emit sigHoverEnter();
-        update();
     }
+    update();
 }
 
 void UIChooserItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
@@ -625,6 +625,41 @@ void UIChooserItem::paintText(QPainter *pPainter, QPoint point,
     pPainter->save();
     pPainter->setFont(font);
     pPainter->drawText(point, strText);
+    pPainter->restore();
+}
+
+/* static */
+void UIChooserItem::paintFlatButton(QPainter *pPainter, const QRect &rectangle, const QPoint &cursorPosition)
+{
+    /* Save painter: */
+    pPainter->save();
+
+    /* Prepare colors: */
+    const QPalette pal = QApplication::palette();
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid);
+
+    /* Prepare pen: */
+    QPen pen;
+    pen.setColor(color.darker(110));
+    pen.setWidth(0);
+    pPainter->setPen(pen);
+
+    /* Apply clipping path: */
+    QPainterPath path;
+    path.addRect(rectangle);
+    pPainter->setClipPath(path);
+
+    /* Paint active background: */
+    QRadialGradient grad(rectangle.center(), rectangle.width(), cursorPosition);
+    grad.setColorAt(0, color.lighter(150));
+    grad.setColorAt(1, color.lighter(110));
+    pPainter->fillRect(rectangle, grad);
+
+    /* Paint frame: */
+    const QRect frameRectangle = rectangle.adjusted(0, 0, -1, -1);
+    pPainter->drawRect(frameRectangle);
+
+    /* Restore painter: */
     pPainter->restore();
 }
 

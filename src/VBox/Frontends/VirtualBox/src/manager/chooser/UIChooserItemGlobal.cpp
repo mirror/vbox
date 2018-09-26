@@ -20,7 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QGraphicsScene>
 # include <QGraphicsSceneMouseEvent>
+# include <QGraphicsView>
 # include <QPainter>
 # include <QStyleOptionGraphicsItem>
 
@@ -60,7 +62,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
             this, &UIChooserItemGlobal::sltHandleWindowRemapped);
 
     /* Init: */
-    updatePixmap();
+    updatePixmaps();
 
     /* Apply language settings: */
     retranslateUi();
@@ -89,7 +91,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
             this, &UIChooserItemGlobal::sltHandleWindowRemapped);
 
     /* Init: */
-    updatePixmap();
+    updatePixmaps();
 
     /* Apply language settings: */
     retranslateUi();
@@ -119,6 +121,22 @@ UIChooserItemGlobal::~UIChooserItemGlobal()
     /* Remove item from the parent: */
     AssertMsg(parentItem(), ("No parent set for global-item!"));
     parentItem()->removeItem(this);
+}
+
+bool UIChooserItemGlobal::isToolsButtonArea(const QPoint &position) const
+{
+    const int iFullWidth = geometry().width();
+    const int iFullHeight = geometry().height();
+    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
+    const int iToolsPixmapX = iFullWidth - iMargin - 1 - m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio();
+    const int iToolsPixmapY = (iFullHeight - m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio()) / 2;
+    QRect rect = QRect(iToolsPixmapX,
+                       iToolsPixmapY,
+                       m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio(),
+                       m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio());
+    rect.adjust(- iButtonMargin, -iButtonMargin, iButtonMargin, iButtonMargin);
+    return rect.contains(position);
 }
 
 void UIChooserItemGlobal::setHeightHint(int iHint)
@@ -151,7 +169,7 @@ void UIChooserItemGlobal::showEvent(QShowEvent *pEvent)
     UIChooserItem::showEvent(pEvent);
 
     /* Update pixmaps: */
-    updatePixmap();
+    updatePixmaps();
 }
 
 void UIChooserItemGlobal::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
@@ -254,7 +272,7 @@ void UIChooserItemGlobal::clearItems(UIChooserItemType)
 void UIChooserItemGlobal::updateAllItems(const QString &)
 {
     /* Update this global-item: */
-    updatePixmap();
+    updatePixmaps();
     updateToolTip();
 
     /* Update parent group-item: */
@@ -315,7 +333,9 @@ int UIChooserItemGlobal::minimumWidthHint() const
     /* And global-item content width: */
     iProposedWidth += (m_pixmapSize.width() +
                        iSpacing +
-                       m_iMinimumNameWidth);
+                       m_iMinimumNameWidth +
+                       iSpacing +
+                       m_toolsPixmapSize.width());
 
     /* Return result: */
     return iProposedWidth;
@@ -330,7 +350,8 @@ int UIChooserItemGlobal::minimumHeightHint() const
     int iProposedHeight = 0;
 
     /* Global-item content height: */
-    const int iContentHeight = qMax(m_pixmapSize.height(), m_visibleNameSize.height());
+    int iContentHeight = qMax(m_pixmapSize.height(), m_visibleNameSize.height());
+    iContentHeight = qMax(iContentHeight, m_toolsPixmapSize.height());
 
     /* If we have height hint: */
     if (m_iHeightHint)
@@ -387,7 +408,7 @@ QMimeData *UIChooserItemGlobal::createMimeData()
 
 void UIChooserItemGlobal::sltHandleWindowRemapped()
 {
-    updatePixmap();
+    updatePixmaps();
 }
 
 void UIChooserItemGlobal::prepare()
@@ -418,13 +439,22 @@ QVariant UIChooserItemGlobal::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GlobalItemData_Margin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3 * 2;
-        case GlobalItemData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GlobalItemData_Margin:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3 * 2;
+        case GlobalItemData_Spacing:      return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GlobalItemData_ButtonMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
 
         /* Default: */
         default: break;
     }
     return QVariant();
+}
+
+void UIChooserItemGlobal::updatePixmaps()
+{
+    /* Update pixmap: */
+    updatePixmap();
+    /* Update tools-pixmap: */
+    updateToolsPixmap();
 }
 
 void UIChooserItemGlobal::updatePixmap()
@@ -447,6 +477,28 @@ void UIChooserItemGlobal::updatePixmap()
     if (m_pixmap.toImage() != pixmap.toImage())
     {
         m_pixmap = pixmap;
+        update();
+    }
+}
+
+void UIChooserItemGlobal::updateToolsPixmap()
+{
+    /* Determine icon metric: */
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) * .75;
+    /* Create new tools-pixmap and tools-pixmap size: */
+    const QIcon toolsIcon = UIIconPool::iconSet(":/tools_menu_24px.png");
+    AssertReturnVoid(!toolsIcon.isNull());
+    const QSize toolsPixmapSize = QSize(iIconMetric, iIconMetric);
+    const QPixmap toolsPixmap = toolsIcon.pixmap(gpManager->windowHandle(), toolsPixmapSize);
+    /* Update linked values: */
+    if (m_toolsPixmapSize != toolsPixmapSize)
+    {
+        m_toolsPixmapSize = toolsPixmapSize;
+        updateGeometry();
+    }
+    if (m_toolsPixmap.toImage() != toolsPixmap.toImage())
+    {
+        m_toolsPixmap = toolsPixmap;
         update();
     }
 }
@@ -576,9 +628,11 @@ void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle)
 void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Prepare variables: */
+    const int iFullWidth = rectangle.width();
     const int iFullHeight = rectangle.height();
     const int iMargin = data(GlobalItemData_Margin).toInt();
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
+    const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
 
     /* Selected item foreground: */
     if (model()->currentItems().contains(unconst(this)))
@@ -618,14 +672,14 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     }
 
     /* Calculate indents: */
-    const int iRightColumnIndent = iLeftColumnIndent +
-                                   m_pixmapSize.width() +
-                                   iSpacing;
+    const int iMiddleColumnIndent = iLeftColumnIndent +
+                                    m_pixmapSize.width() +
+                                    iSpacing;
 
-    /* Paint right column: */
+    /* Paint middle column: */
     {
         /* Prepare variables: */
-        const int iNameX = iRightColumnIndent;
+        const int iNameX = iMiddleColumnIndent;
         const int iNameY = (iFullHeight - m_visibleNameSize.height()) / 2;
 
         /* Paint name: */
@@ -639,5 +693,39 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
                   model()->paintDevice(),
                   /* Text to paint: */
                   m_strVisibleName);
+    }
+
+    /* Calculate indents: */
+    int iRightColumnIndent = iFullWidth - iMargin - 1 - m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio();
+
+    /* Paint right column: */
+    if (model()->currentItem() == this)
+    {
+        /* Prepare variables: */
+        int iToolsPixmapX = iRightColumnIndent;
+        int iToolsPixmapY = (iFullHeight - m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio()) / 2;
+        QRect buttonRectangle = QRect(iToolsPixmapX,
+                                      iToolsPixmapY,
+                                      m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio(),
+                                      m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio());
+        buttonRectangle.adjust(- iButtonMargin, -iButtonMargin, iButtonMargin, iButtonMargin);
+        const QPoint sceneCursorPosition = model()->scene()->views().first()->mapFromGlobal(QCursor::pos());
+        const QPoint itemCursorPosition = mapFromScene(sceneCursorPosition).toPoint();
+
+        /* Paint flat button: */
+        paintFlatButton(/* Painter: */
+                        pPainter,
+                        /* Button rectangle: */
+                        buttonRectangle,
+                        /* Cursor position: */
+                        itemCursorPosition);
+
+        /* Paint pixmap: */
+        paintPixmap(/* Painter: */
+                    pPainter,
+                    /* Point to paint in: */
+                    QPoint(iToolsPixmapX, iToolsPixmapY),
+                    /* Pixmap to paint: */
+                    m_toolsPixmap);
     }
 }

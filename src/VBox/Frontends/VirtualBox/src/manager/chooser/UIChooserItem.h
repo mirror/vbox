@@ -310,6 +310,8 @@ protected:
         static void paintText(QPainter *pPainter, QPoint point,
                               const QFont &font, QPaintDevice *pPaintDevice,
                               const QString &strText);
+        /** Paints flat button @a rectangle using passed @a pPainter moving light focus according to passed @a cursorPosition. */
+        static void paintFlatButton(QPainter *pPainter, const QRect &rectangle, const QPoint &cursorPosition);
     /** @} */
 
 private:

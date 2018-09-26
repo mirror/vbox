@@ -56,6 +56,9 @@ public:
 
         /** Returns whether VM is locked. */
         bool isLockedMachine() const;
+
+        /** Returns whether passed @a position belongs to tools button area. */
+        bool isToolsButtonArea(const QPoint &position) const;
     /** @} */
 
     /** @name Navigation stuff.
@@ -195,6 +198,7 @@ private:
         MachineItemData_MinorSpacing,
         MachineItemData_TextSpacing,
         MachineItemData_ParentIndent,
+        MachineItemData_ButtonMargin,
         /* Pixmaps: */
         MachineItemData_SettingsButtonPixmap,
         MachineItemData_StartButtonPixmap,
@@ -222,6 +226,8 @@ private:
         void updatePixmap();
         /** Updates state pixmap. */
         void updateStatePixmap();
+        /** Updates tools pixmap. */
+        void updateToolsPixmap();
         /** Updates name. */
         void updateName();
         /** Updates snapshot name. */
@@ -276,6 +282,8 @@ private:
         QPixmap  m_pixmap;
         /** Holds item state pixmap. */
         QPixmap  m_statePixmap;
+        /** Holds item tools pixmap. */
+        QPixmap  m_toolsPixmap;
 
         /** Holds item name. */
         QString  m_strName;
@@ -304,6 +312,8 @@ private:
         QSize  m_pixmapSize;
         /** Holds state pixmap size. */
         QSize  m_statePixmapSize;
+        /** Holds tools pixmap size. */
+        QSize  m_toolsPixmapSize;
         /** Holds visible name size. */
         QSize  m_visibleNameSize;
         /** Holds visible snapshot name size. */
