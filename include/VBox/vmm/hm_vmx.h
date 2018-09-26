@@ -2295,9 +2295,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 /** Whether the VM-exit was incident to enclave mode. */
 #define VMX_BF_EXIT_REASON_ENCLAVE_MODE_SHIFT                   27
 #define VMX_BF_EXIT_REASON_ENCLAVE_MODE_MASK                    UINT32_C(0x08000000)
-/** Pending MTF (Monitor Trap Flag) VM-exit. */
-#define VMX_BF_EXIT_REASON_PENDING_MTF_SHIFT                    28
-#define VMX_BF_EXIT_REASON_PENDING_MTF_MASK                     UINT32_C(0x10000000)
+/** Pending MTF (Monitor Trap Flag) during VM-exit (only applicable in SMM mode). */
+#define VMX_BF_EXIT_REASON_SMM_PENDING_MTF_SHIFT                28
+#define VMX_BF_EXIT_REASON_SMM_PENDING_MTF_MASK                 UINT32_C(0x10000000)
 /** VM-exit from VMX root operation (only possible with SMM). */
 #define VMX_BF_EXIT_REASON_VMX_ROOT_MODE_SHIFT                  29
 #define VMX_BF_EXIT_REASON_VMX_ROOT_MODE_MASK                   UINT32_C(0x20000000)
@@ -2309,7 +2309,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_EXIT_REASON_ENTRY_FAILED_SHIFT                   31
 #define VMX_BF_EXIT_REASON_ENTRY_FAILED_MASK                    UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_REASON_, UINT32_C(0), UINT32_MAX,
-                            (BASIC, RSVD_16_26, ENCLAVE_MODE, PENDING_MTF, VMX_ROOT_MODE, RSVD_30, ENTRY_FAILED));
+                            (BASIC, RSVD_16_26, ENCLAVE_MODE, SMM_PENDING_MTF, VMX_ROOT_MODE, RSVD_30, ENTRY_FAILED));
 /** @} */
 
 
@@ -3329,7 +3329,7 @@ typedef struct
     /** @name 64-bit Read-only Data fields.
      * @{ */
     /** 0x320 - Guest-physical address. */
-    RTUINT64U       u64GuestPhysAddr;
+    RTUINT64U       u64RoGuestPhysAddr;
     /** 0x328 - Reserved for future. */
     RTUINT64U       au64Reserved1[8];
     /** @} */
@@ -3396,17 +3396,17 @@ typedef struct
 
     /** @name Natural-width Read-only Data fields. */
     /** 0x610 - Exit qualification. */
-    RTUINT64U       u64ExitQual;
+    RTUINT64U       u64RoExitQual;
     /** 0x618 - I/O RCX. */
-    RTUINT64U       u64IoRcx;
+    RTUINT64U       u64RoIoRcx;
     /** 0x620 - I/O RSI. */
-    RTUINT64U       u64IoRsi;
+    RTUINT64U       u64RoIoRsi;
     /** 0x628 - I/O RDI. */
-    RTUINT64U       u64IoRdi;
+    RTUINT64U       u64RoIoRdi;
     /** 0x630 - I/O RIP. */
-    RTUINT64U       u64IoRip;
+    RTUINT64U       u64RoIoRip;
     /** 0x638 - Guest-linear address. */
-    RTUINT64U       u64GuestLinearAddr;
+    RTUINT64U       u64RoGuestLinearAddr;
     /** 0x640 - Reserved for future. */
     RTUINT64U       au64Reserved5[16];
     /** @} */
@@ -3508,11 +3508,11 @@ AssertCompileMemberOffset(VMXVVMCS, u32RoVmInstrError,  0x0ec);
 AssertCompileMemberOffset(VMXVVMCS, u32GuestEsLimit,    0x12c);
 AssertCompileMemberOffset(VMXVVMCS, u32HostSysenterCs,  0x1a8);
 AssertCompileMemberOffset(VMXVVMCS, u64AddrIoBitmapA,   0x1d8);
-AssertCompileMemberOffset(VMXVVMCS, u64GuestPhysAddr,   0x320);
+AssertCompileMemberOffset(VMXVVMCS, u64RoGuestPhysAddr, 0x320);
 AssertCompileMemberOffset(VMXVVMCS, u64VmcsLinkPtr,     0x368);
 AssertCompileMemberOffset(VMXVVMCS, u64HostPatMsr,      0x438);
 AssertCompileMemberOffset(VMXVVMCS, u64Cr0Mask,         0x4d0);
-AssertCompileMemberOffset(VMXVVMCS, u64ExitQual,        0x610);
+AssertCompileMemberOffset(VMXVVMCS, u64RoExitQual,      0x610);
 AssertCompileMemberOffset(VMXVVMCS, u64GuestCr0,        0x6c0);
 AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
 /** @} */
@@ -3966,6 +3966,9 @@ DECLINLINE(bool) HMVmxIsTrapLikeVmexit(uint32_t uExitReason)
      * See Intel spec. 29.4.3.3 "APIC-Write VM Exits".
      * See Intel spec. 29.1.2 "TPR Virtualization".
      */
+    /** @todo NSTVMX: r=ramshankar: What about VM-exits due to debug traps (single-step,
+     *        I/O breakpoints, data breakpoints), debug exceptions (data breakpoint)
+     *        delayed by MovSS blocking, machine-check exceptions. */
     switch (uExitReason)
     {
         case VMX_EXIT_MTF:
