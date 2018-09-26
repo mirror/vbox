@@ -649,8 +649,13 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                 Reset();
             }
 
-            VbglR3DnDEventFree(pEvent->pVbglR3Event);
-            pEvent->pVbglR3Event = NULL;
+            if (pEvent)
+            {
+                VbglR3DnDEventFree(pEvent->pVbglR3Event);
+                pEvent->pVbglR3Event = NULL;
+
+                RTMemFree(pEvent);
+            }
 
             return 0;
         }
@@ -1814,17 +1819,20 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 
         if (RT_FAILURE(rc))
         {
-            VbglR3DnDEventFree(pVbglR3Event);
-            pVbglR3Event = NULL;
+            if (pEvent)
+            {
+                VbglR3DnDEventFree(pEvent->pVbglR3Event);
+
+                RTMemFree(pEvent);
+                pEvent = NULL;
+            }
 
             LogFlowFunc(("Processing next message failed with rc=%Rrc\n", rc));
 
             /* Old(er) hosts either are broken regarding DnD support or otherwise
              * don't support the stuff we do on the guest side, so make sure we
              * don't process invalid messages forever. */
-            if (rc == VERR_INVALID_PARAMETER)
-                cMsgSkippedInvalid++;
-            if (cMsgSkippedInvalid > 32)
+            if (cMsgSkippedInvalid++ > 32)
             {
                 LogRel(("DnD: Too many invalid/skipped messages from host, exiting ...\n"));
                 break;
@@ -1833,17 +1841,6 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
             /* Make sure our proxy window is hidden when an error occured to
              * not block the guest's UI. */
             pWnd->Reset();
-
-            int rc2 = VbglR3DnDGHSendError(&pCtx->cmdCtx, rc);
-            if (RT_FAILURE(rc2))
-            {
-                /* Ignore the following errors reported back from the host. */
-                if (   rc2 != VERR_NOT_SUPPORTED
-                    && rc2 != VERR_NOT_IMPLEMENTED)
-                {
-                    LogRel(("DnD: Could not report error %Rrc back to host: %Rrc\n", rc, rc2));
-                }
-            }
         }
 
         if (*pfShutdown)
@@ -1858,6 +1855,8 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 
     if (pEvent)
     {
+        VbglR3DnDEventFree(pEvent->pVbglR3Event);
+
         RTMemFree(pEvent);
         pEvent = NULL;
     }
