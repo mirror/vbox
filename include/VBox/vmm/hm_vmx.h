@@ -2468,8 +2468,8 @@ typedef uint32_t VMXINSTRID;
 /** The following IDs are used internally (some for logging, others for conveying
  *  the ModR/M primary operand write bit): */
 #define VMXINSTRID_VMLAUNCH                                     (0x10 | VMXINSTRID_VALID)
-#define VMXINSTRID_VMRESUME                                     (0x12 | VMXINSTRID_VALID)
-#define VMXINSTRID_VMWRITE                                      (0x13 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_VMRESUME                                     (0x11 | VMXINSTRID_VALID)
+#define VMXINSTRID_VMWRITE                                      (0x12 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
 /** @} */
 
 
