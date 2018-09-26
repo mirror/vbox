@@ -348,12 +348,12 @@ public:
     void PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     int ProcessEvent(PVBOXDNDEVENT pEvent);
 
+    int Hide(void);
     void Reset(void);
 
 protected:
 
     int checkForSessionChange(void);
-    int hide(void);
     int makeFullscreen(void);
     int mouseMove(int x, int y, DWORD dwMouseInputFlags);
     int mouseRelease(void);

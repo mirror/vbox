@@ -474,7 +474,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                      * whether the desired range is covered correctly. */
                     RTThreadSleep(5000);
 #endif
-                    hide();
+                    Hide();
 
                     LogFlowThisFunc(("Starting drag and drop: dndLstActionsAllowed=0x%x, dwOKEffects=0x%x ...\n",
                                      dndLstActionsAllowed, startupInfo.dwOKEffects));
@@ -1409,7 +1409,7 @@ int VBoxDnDWnd::checkForSessionChange(void)
  *
  * @return  IPRT status code.
  */
-int VBoxDnDWnd::hide(void)
+int VBoxDnDWnd::Hide(void)
 {
 #ifdef DEBUG_andy
     LogFlowFunc(("\n"));
@@ -1593,7 +1593,7 @@ void VBoxDnDWnd::Reset(void)
     int rc2 = setMode(Unknown);
     AssertRC(rc2);
 
-    hide();
+    Hide();
 }
 
 /**
