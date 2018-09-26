@@ -151,6 +151,22 @@ QGraphicsItem *UIChooserModel::itemAt(const QPointF &position, const QTransform 
     return scene()->itemAt(position, deviceTransform);
 }
 
+void UIChooserModel::handleToolButtonClick(UIChooserItem *pItem)
+{
+    switch (pItem->type())
+    {
+        case UIChooserItemType_Global:
+            emit sigToolMenuRequested(UIToolsClass_Global, pItem->geometry().topRight().toPoint());
+            break;
+        case UIChooserItemType_Group:
+        case UIChooserItemType_Machine:
+            emit sigToolMenuRequested(UIToolsClass_Machine, pItem->geometry().topRight().toPoint());
+            break;
+        default:
+            break;
+    }
+}
+
 void UIChooserModel::setCurrentItems(const QList<UIChooserItem*> &items)
 {
     /* Is there something changed? */

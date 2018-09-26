@@ -33,7 +33,7 @@
 
 
 UITools::UITools(UIVirtualBoxManagerWidget *pParent)
-    : QWidget(pParent)
+    : QWidget(pParent, Qt::Popup)
     , m_pManagerWidget(pParent)
     , m_pMainLayout(0)
     , m_pToolsModel(0)
@@ -121,7 +121,7 @@ void UITools::prepareLayout()
     if (m_pMainLayout)
     {
         /* Configure main-layout: */
-        m_pMainLayout->setContentsMargins(1, 0, 0, 0);
+        m_pMainLayout->setContentsMargins(1, 1, 1, 1);
         m_pMainLayout->setSpacing(0);
     }
 }

@@ -75,10 +75,22 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                     pClickedItem = pGroupItem;
                 /* Or a global one? */
                 else if (UIChooserItemGlobal *pGlobalItem = qgraphicsitem_cast<UIChooserItemGlobal*>(pItemUnderMouse))
-                    pClickedItem = pGlobalItem;
+                {
+                    const QPoint itemCursorPos = pGlobalItem->mapFromScene(scenePos).toPoint();
+                    if (model()->currentItem() == pGlobalItem && pGlobalItem->isToolsButtonArea(itemCursorPos))
+                        model()->handleToolButtonClick(pGlobalItem);
+                    else
+                        pClickedItem = pGlobalItem;
+                }
                 /* Or a machine one? */
                 else if (UIChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIChooserItemMachine*>(pItemUnderMouse))
-                    pClickedItem = pMachineItem;
+                {
+                    const QPoint itemCursorPos = pMachineItem->mapFromScene(scenePos).toPoint();
+                    if (model()->currentItem() == pMachineItem && pMachineItem->isToolsButtonArea(itemCursorPos))
+                        model()->handleToolButtonClick(pMachineItem);
+                    else
+                        pClickedItem = pMachineItem;
+                }
                 /* If we had clicked one of required item types: */
                 if (pClickedItem && !pClickedItem->isRoot())
                 {

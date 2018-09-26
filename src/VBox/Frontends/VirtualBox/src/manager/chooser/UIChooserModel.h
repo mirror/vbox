@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UIChooserItem.h"
+#include "UIExtraDataDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -61,6 +62,12 @@ class UIChooserModel : public QObject
     Q_OBJECT;
 
 signals:
+
+    /** @name General stuff.
+      * @{ */
+        /** Notify listeners about tool menu popup request for certain @a enmClass and @a position. */
+        void sigToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+    /** @} */
 
     /** @name Selection stuff.
       * @{ */
@@ -119,6 +126,9 @@ public:
 
         /** Returns item at @a position, taking into account possible @a deviceTransform. */
         QGraphicsItem *itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
+
+        /** Handles tool button click for certain @a pItem. */
+        void handleToolButtonClick(UIChooserItem *pItem);
     /** @} */
 
     /** @name Selection stuff.

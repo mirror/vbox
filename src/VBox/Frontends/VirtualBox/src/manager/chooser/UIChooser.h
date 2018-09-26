@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* GUI includes: */
+#include "UIExtraDataDefs.h"
+
 /* Forward declarations: */
 class QVBoxLayout;
 class UIActionPool;
@@ -48,6 +51,9 @@ signals:
         void sigToggleStarted();
         /** Notifies listeners about toggling finished. */
         void sigToggleFinished();
+
+        /** Notifies listeners about tool popup-menu request for certain tool @a enmClass and in specified @a position. */
+        void sigToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
     /** @} */
 
     /** @name Group saving stuff.

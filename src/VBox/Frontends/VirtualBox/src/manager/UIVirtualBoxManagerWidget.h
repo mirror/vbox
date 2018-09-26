@@ -137,6 +137,9 @@ private slots:
 
     /** @name Tools stuff.
       * @{ */
+        /** Handles tool menu request. */
+        void sltHandleToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+
         /** Handles signal abour Tools-pane index change. */
         void sltHandleToolsPaneIndexChange();
     /** @} */

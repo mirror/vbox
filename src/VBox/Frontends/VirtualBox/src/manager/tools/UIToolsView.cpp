@@ -146,6 +146,9 @@ void UIToolsView::sltMinimumHeightHintChanged(int iHint)
     /* Remember new value: */
     m_iMinimumHeightHint = iHint;
 
+    /* Set minimum view height according passed height-hint: */
+    setMinimumHeight(2 * frameWidth() + m_iMinimumHeightHint);
+
     /* Update scene-rect: */
     updateSceneRect();
 }
