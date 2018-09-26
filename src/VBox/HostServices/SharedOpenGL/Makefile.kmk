@@ -447,6 +447,10 @@ if (   defined(VBOX_WITH_QTGUI) \
     VBoxTestOGL_LIBS += GL
    endif
   endif
+  # Don't let ld strip out explicitly linked libraries even when they are not needed.
+  # This was causing some dynamic library loading problems in case of indirect dependencies 
+  # in systems where RUNPATH instead of RPATH is utilized.
+  VBoxTestOGL_LDFLAGS.linux = -Wl,--no-as-needed
   VBoxTestOGL_LDFLAGS.win = /SUBSYSTEM:windows
  endif
 endif
