@@ -2440,25 +2440,36 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_INT_INFO_, UINT32_C(0), UINT32_MAX,
  * These are found in VM-exit instruction information fields for certain
  * instructions.
  * @{ */
-typedef uint8_t VMXINSTRID;
-#define VMXINSTRID_VALID                                        RT_BIT(7)
-#define VMXINSTRID_IS_VALID(a)                                  (((a) >> 7) & 1)
-#define VMXINSTRID_GET_ID(a)                                    ((a) & ~VMXINSTRID_VALID)
+typedef uint32_t VMXINSTRID;
+/** Whether the instruction ID field is valid. */
+#define VMXINSTRID_VALID                                        RT_BIT_32(31)
+/** Whether the instruction's primary operand in the Mod R/M byte (bits 0:3) is a
+ *  read or write. */
+#define VMXINSTRID_MODRM_PRIMARY_OP_W                           RT_BIT_32(30)
+/** Gets whether the instruction ID is valid or not.  */
+#define VMXINSTRID_IS_VALID(a)                                  (((a) >> 31) & 1)
+#define VMXINSTRID_IS_MODRM_PRIMARY_OP_W(a)                     (((a) >> 30) & 1)
+/** Gets the instruction ID.  */
+#define VMXINSTRID_GET_ID(a)                                    ((a) & ~(VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W))
+/** No instruction ID info. */
 #define VMXINSTRID_NONE                                         0
+
 /** The OR'd rvalues are from the VT-x spec (valid bit is VBox specific): */
-#define VMXINSTRID_SGDT                                         ((VMXINSTRID_VALID) | 0)
-#define VMXINSTRID_SIDT                                         ((VMXINSTRID_VALID) | 1)
-#define VMXINSTRID_LGDT                                         ((VMXINSTRID_VALID) | 2)
-#define VMXINSTRID_LIDT                                         ((VMXINSTRID_VALID) | 3)
+#define VMXINSTRID_SGDT                                         (0x0 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_SIDT                                         (0x1 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_LGDT                                         (0x2 | VMXINSTRID_VALID)
+#define VMXINSTRID_LIDT                                         (0x3 | VMXINSTRID_VALID)
 
-#define VMXINSTRID_SLDT                                         ((VMXINSTRID_VALID) | 0)
-#define VMXINSTRID_STR                                          ((VMXINSTRID_VALID) | 1)
-#define VMXINSTRID_LLDT                                         ((VMXINSTRID_VALID) | 2)
-#define VMXINSTRID_LTR                                          ((VMXINSTRID_VALID) | 3)
+#define VMXINSTRID_SLDT                                         (0x0 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_STR                                          (0x1 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_LLDT                                         (0x2 | VMXINSTRID_VALID)
+#define VMXINSTRID_LTR                                          (0x3 | VMXINSTRID_VALID)
 
-/** The following are used internally and are not based on the VT-x spec:   */
-#define VMXINSTRID_VMLAUNCH                                     ((VMXINSTRID_VALID) | 50)
-#define VMXINSTRID_VMRESUME                                     ((VMXINSTRID_VALID) | 51)
+/** The following IDs are used internally (some for logging, others for conveying
+ *  the ModR/M primary operand write bit): */
+#define VMXINSTRID_VMLAUNCH                                     (0x10 | VMXINSTRID_VALID)
+#define VMXINSTRID_VMRESUME                                     (0x12 | VMXINSTRID_VALID)
+#define VMXINSTRID_VMWRITE                                      (0x13 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
 /** @} */
 
 
@@ -3033,8 +3044,8 @@ typedef struct
     uint32_t                cbInstr;
     /** The VM-exit instruction information. */
     VMXEXITINSTRINFO        InstrInfo;
-    /** Padding. */
-    uint32_t                u32Padding0;
+    /** The VM-exit instruction ID. */
+    VMXINSTRID              uInstrId;
 
     /** The VM-exit qualification field. */
     uint64_t                u64Qual;
@@ -3043,14 +3054,12 @@ typedef struct
     /** The effective guest-linear address if @a InstrInfo indicates a memory-based
      *  instruction VM-exit. */
     RTGCPTR                 GCPtrEffAddr;
-
-    /** The VM-exit instruction ID. */
-    VMXINSTRID              uInstrId;
 } VMXVEXITINFO;
 /** Pointer to the VMXVEXITINFO struct. */
 typedef VMXVEXITINFO *PVMXVEXITINFO;
 /** Pointer to a const VMXVEXITINFO struct. */
 typedef const VMXVEXITINFO *PCVMXVEXITINFO;
+AssertCompileMemberAlignment(VMXVEXITINFO, u64Qual, 8);
 
 /**
  * Virtual VMCS.
@@ -3062,15 +3071,15 @@ typedef const VMXVEXITINFO *PCVMXVEXITINFO;
  * The offset and size of the VMCS state field (fVmcsState) is also fixed (not by
  * Intel but for our own requirements) as we use it to offset into guest memory.
  *
- * We always treat natural-width fields as 64-bit in our implementation since
- * it's easier, allows for teleporation in the future and does not affect guest
- * software.
- *
  * Although the guest is supposed to access the VMCS only through the execution of
  * VMX instructions (VMREAD, VMWRITE etc.), since the VMCS may reside in guest
  * memory (e.g, active but not current VMCS), for saved-states compatibility, and
- * for teleportation (when implemented) any newly added fields should be added to
- * the appropriate reserved sections or at the end of the structure.
+ * for teleportation purposes, any newly added fields should be added to the
+ * appropriate reserved sections or at the end of the structure.
+ *
+ * We always treat natural-width fields as 64-bit in our implementation since
+ * it's easier, allows for teleporation in the future and does not affect guest
+ * software.
  */
 #pragma pack(1)
 typedef struct

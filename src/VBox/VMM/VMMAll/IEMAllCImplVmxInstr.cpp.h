@@ -876,15 +876,11 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
  * @returns The VM-exit instruction information.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
- * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_XXX) if
- *                          any. Pass VMXINSTRID_NONE otherwise.
- * @param   fPrimaryOpRead  If the primary operand of the ModR/M byte (bits 0:3) is
- *                          a read or write.
+ * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_XXX).
  * @param   pGCPtrDisp      Where to store the displacement field. Optional, can be
  *                          NULL.
  */
-IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, bool fPrimaryOpRead,
-                                           PRTGCPTR pGCPtrDisp)
+IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, PRTGCPTR pGCPtrDisp)
 {
     RTGCPTR          GCPtrDisp;
     VMXEXITINSTRINFO ExitInstrInfo;
@@ -906,7 +902,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
          */
         uint8_t idxReg1;
         uint8_t idxReg2;
-        if (fPrimaryOpRead)
+        if (!VMXINSTRID_IS_MODRM_PRIMARY_OP_W(uInstrId))
         {
             idxReg1 = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg;
             idxReg2 = (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB;
@@ -1152,7 +1148,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
          * on whether the primary operand is in read/write form.
          */
         uint8_t idxReg2;
-        if (fPrimaryOpRead)
+        if (!VMXINSTRID_IS_MODRM_PRIMARY_OP_W(uInstrId))
         {
             idxReg2 = bRm & X86_MODRM_RM_MASK;
             if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)
@@ -1186,6 +1182,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         {
             Assert(VMXINSTRID_IS_VALID(uInstrId));
+            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
             ExitInstrInfo.GdtIdt.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
             ExitInstrInfo.GdtIdt.u2Undef0  = 0;
             break;
@@ -1194,6 +1191,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
         case VMX_EXIT_LDTR_TR_ACCESS:
         {
             Assert(VMXINSTRID_IS_VALID(uInstrId));
+            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
             ExitInstrInfo.LdtTr.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
             ExitInstrInfo.LdtTr.u2Undef0 = 0;
             break;
@@ -1210,6 +1208,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
     /* Update displacement and return the constructed VM-exit instruction information field. */
     if (pGCPtrDisp)
         *pGCPtrDisp = GCPtrDisp;
+
     return ExitInstrInfo.u;
 }
 
@@ -3368,10 +3367,63 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 
 
 /**
- * Checks guest control registers, debug registers and MSRs as part of VM-entry.
+ * VMX VM-exit handler for VM-exits due to instruction execution.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   uExitReason     The VM-exit reason.
+ * @param   uInstrid        The instruction identity (VMXINSTRID_XXX).
+ * @param   cbInstr         The instruction length (in bytes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, uint8_t cbInstr)
+{
+    /* Construct the VM-exit instruction information. */
+    RTGCPTR GCPtrDisp;
+    uint32_t const uExitInstrInfo = iemVmxGetExitInstrInfo(pVCpu, uExitReason, uInstrId, &GCPtrDisp);
+
+    /* Update the VM-exit instruction information. */
+    iemVmxVmcsSetExitInstrInfo(pVCpu, uExitInstrInfo);
+
+    /*
+     * Update the VM-exit qualification field with displacement bytes.
+     * See Intel spec. 27.2.1 "Basic VM-Exit Information".
+     */
+    switch (uExitReason)
+    {
+        case VMX_EXIT_INVEPT:
+        case VMX_EXIT_INVPCID:
+        case VMX_EXIT_LDTR_TR_ACCESS:
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
+        case VMX_EXIT_VMCLEAR:
+        case VMX_EXIT_VMPTRLD:
+        case VMX_EXIT_VMPTRST:
+        case VMX_EXIT_VMREAD:
+        case VMX_EXIT_VMWRITE:
+        case VMX_EXIT_VMXON:
+        case VMX_EXIT_XRSTORS:
+        case VMX_EXIT_XSAVES:
+        case VMX_EXIT_RDRAND:
+        case VMX_EXIT_RDSEED:
+            iemVmxVmcsSetExitQual(pVCpu, GCPtrDisp);
+            break;
+
+        default:
+            AssertMsgFailedReturn(("Use instruction-specific handler\n"), VERR_IEM_IPE_5);
+    }
+
+    /* Update the VM-exit instruction length field. */
+    Assert(cbInstr <= 15);
+    iemVmxVmcsSetExitInstrLen(pVCpu, cbInstr);
+
+    /* Perform the VM-exit. */
+    return iemVmxVmexit(pVCpu, uExitReason);
+}
+
+
+/**
+ * Checks guest control registers, debug registers and MSRs as part of VM-entry.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -3478,8 +3530,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
         && (pVmcs->u64GuestEferMsr.u & ~uValidEferMask))
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestEferMsrRsvd);
 
-    bool const fGstLma        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LMA);
-    bool const fGstLme        = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LME);
+    bool const fGstLma = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LMA);
+    bool const fGstLme = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LME);
     if (   fGstInLongMode == fGstLma
         && (   !(pVmcs->u64GuestCr0.u & X86_CR0_PG)
             || fGstLma == fGstLme))
