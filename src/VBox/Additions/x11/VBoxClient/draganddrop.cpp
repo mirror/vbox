@@ -502,18 +502,21 @@ public:
     bool waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS = 100);
     bool waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType, RTMSINTERVAL uTimeoutMS = 100);
 
-    /* Host -> Guest handling. */
-    int hgEnter(const RTCList<RTCString> &formats, VBOXDNDACTIONLIST dndListActionsAllowed);
-    int hgLeave(void);
-    int hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
-    int hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
-    int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData);
+    /* Session handling. */
+    int checkForSessionChange(void);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /* Guest -> Host handling. */
     int ghIsDnDPending(void);
     int ghDropped(const RTCString &strFormat, VBOXDNDACTION dndActionRequested);
 #endif
+
+    /* Host -> Guest handling. */
+    int hgEnter(const RTCList<RTCString> &formats, VBOXDNDACTIONLIST dndListActionsAllowed);
+    int hgLeave(void);
+    int hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
+    int hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
+    int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData);
 
     /* X11 helpers. */
     int  mouseCursorFakeMove(void) const;
@@ -1614,6 +1617,11 @@ int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t dndList
 
     do
     {
+        /* Check if the VM session has changed and reconnect to the HGCM service if necessary. */
+        rc = checkForSessionChange();
+        if (RT_FAILURE(rc))
+            break;
+
         rc = toAtomList(lstFormats, m_lstFormats);
         if (RT_FAILURE(rc))
             break;
@@ -1979,6 +1987,32 @@ int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData)
     return rc;
 }
 
+/**
+ * Checks if the VM session has changed (can happen when restoring the VM from a saved state)
+ * and do a reconnect to the DnD HGCM service.
+ *
+ * @returns IPRT status code.
+ */
+int DragInstance::checkForSessionChange(void)
+{
+    uint64_t uSessionID;
+    int rc = VbglR3GetSessionId(&uSessionID);
+    if (   RT_SUCCESS(rc)
+        && uSessionID != m_dndCtx.uSessionID)
+    {
+        LogFlowThisFunc(("VM session has changed to %RU64\n", uSessionID));
+
+        rc = VbglR3DnDDisconnect(&m_dndCtx);
+        AssertRC(rc);
+
+        rc = VbglR3DnDConnect(&m_dndCtx);
+        AssertRC(rc);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
 /**
  * Guest -> Host: Event signalling that the host is asking whether there is a pending
@@ -2012,14 +2046,16 @@ int DragInstance::ghIsDnDPending(void)
     }
     else
     {
-        rc = VINF_SUCCESS;
+        /* Check if the VM session has changed and reconnect to the HGCM service if necessary. */
+        rc = checkForSessionChange();
 
         /* Determine the current window which currently has the XdndSelection set. */
         Window wndSelection = XGetSelectionOwner(m_pDisplay, xAtom(XA_XdndSelection));
         LogFlowThisFunc(("wndSelection=%#x, wndProxy=%#x, wndCur=%#x\n", wndSelection, m_wndProxy.hWnd, m_wndCur));
 
         /* Is this another window which has a Xdnd selection and not our proxy window? */
-        if (   wndSelection
+        if (   RT_SUCCESS(rc)
+            && wndSelection
             && wndSelection != m_wndCur)
         {
             char *pszWndName = wndX11GetNameA(wndSelection);
@@ -3330,8 +3366,7 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
 
         /* Wait for new events. */
         rc = VbglR3DnDEventGetNext(&dndCtx, &e.hgcm);
-        if (   RT_SUCCESS(rc)
-            || rc == VERR_CANCELLED)
+        if (RT_SUCCESS(rc))
         {
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
             pThis->m_eventQueue.append(e);
@@ -3347,9 +3382,7 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
             /* Old(er) hosts either are broken regarding DnD support or otherwise
              * don't support the stuff we do on the guest side, so make sure we
              * don't process invalid messages forever. */
-            if (rc == VERR_INVALID_PARAMETER)
-                cMsgSkippedInvalid++;
-            if (cMsgSkippedInvalid > 32)
+            if (cMsgSkippedInvalid++ > 32)
             {
                 LogRel(("DnD: Too many invalid/skipped messages from host, exiting ...\n"));
                 break;
