@@ -1666,6 +1666,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             case GraphicsControllerType_VBoxVGA:
 #ifdef VBOX_WITH_VMSVGA
             case GraphicsControllerType_VMSVGA:
+            case GraphicsControllerType_VBoxSVGA:
 #endif
                 rc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, biosSettings,
                                                 RT_BOOL(fHMEnabled));
@@ -3823,9 +3824,12 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         i_attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);
 
 #ifdef VBOX_WITH_VMSVGA
-        if (enmGraphicsController == GraphicsControllerType_VMSVGA)
+        if (   enmGraphicsController == GraphicsControllerType_VMSVGA
+            || enmGraphicsController == GraphicsControllerType_VBoxSVGA)
         {
             InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
+            if (enmGraphicsController == GraphicsControllerType_VMSVGA)
+                InsertConfigInteger(pCfg, "VMSVGAPciId", true);
 #ifdef VBOX_WITH_VMSVGA3D
             IFramebuffer *pFramebuffer = NULL;
             hrc = i_getDisplay()->QueryFramebuffer(0, &pFramebuffer);

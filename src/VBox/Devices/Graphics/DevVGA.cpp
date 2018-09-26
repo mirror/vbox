@@ -6183,6 +6183,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "MaxBiosYRes\0"
 #ifdef VBOX_WITH_VMSVGA
                                           "VMSVGAEnabled\0"
+                                          "VMSVGAPciId\0"
                                           "VMSVGAFifoSize\0"
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
@@ -6222,11 +6223,16 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     rc = CFGMR3QueryBoolDef(pCfg, "3DEnabled", &pThis->f3DEnabled, false);
     AssertLogRelRCReturn(rc, rc);
+    Log(("VGA: f3DEnabled=%RTbool\n", pThis->f3DEnabled));
 
 #ifdef VBOX_WITH_VMSVGA
     rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAEnabled", &pThis->fVMSVGAEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAEnabled   = %d\n", pThis->fVMSVGAEnabled));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAPciId", &pThis->fVMSVGAPciId, false);
+    AssertLogRelRCReturn(rc, rc);
+    Log(("VMSVGA: VMSVGAPciId   = %d\n", pThis->fVMSVGAPciId));
 
     rc = CFGMR3QueryU32Def(pCfg, "VMSVGAFifoSize", &pThis->svga.cbFIFO, VMSVGA_FIFO_SIZE);
     AssertLogRelRCReturn(rc, rc);
@@ -6256,8 +6262,16 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->fVMSVGAEnabled)
     {
         /* Extend our VGA device with VMWare SVGA functionality. */
-        PCIDevSetVendorId(&pThis->Dev, PCI_VENDOR_ID_VMWARE);
-        PCIDevSetDeviceId(&pThis->Dev, PCI_DEVICE_ID_VMWARE_SVGA2);
+        if (pThis->fVMSVGAPciId)
+        {
+            PCIDevSetVendorId(&pThis->Dev, PCI_VENDOR_ID_VMWARE);
+            PCIDevSetDeviceId(&pThis->Dev, PCI_DEVICE_ID_VMWARE_SVGA2);
+        }
+        else
+        {
+            PCIDevSetVendorId(&pThis->Dev, 0x80ee);   /* PCI vendor, just a free bogus value */
+            PCIDevSetDeviceId(&pThis->Dev, 0xbeef);
+        }
         PCIDevSetSubSystemVendorId(&pThis->Dev, PCI_VENDOR_ID_VMWARE);
         PCIDevSetSubSystemId(&pThis->Dev, PCI_DEVICE_ID_VMWARE_SVGA2);
     }

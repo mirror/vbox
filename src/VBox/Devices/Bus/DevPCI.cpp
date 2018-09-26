@@ -490,10 +490,12 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, PDEVPCIBUS pBus, PPDMPCID
                 }
                 break;
             case 0x0300:
+            {
                 if (vendor_id != 0x80ee)
                     goto default_map;
                 /* VGA: map frame buffer to default Bochs VBE address */
-                devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 0, 0xe0000000);
+                int iRegion = devpciR3GetWord(pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID) == 0x15ad ? 1 : 0;
+                devpciR3BiosInitSetRegionAddress(pBus, pPciDev, iRegion, 0xe0000000);
                 /*
                  * Legacy VGA I/O ports are implicitly decoded by a VGA class device. But
                  * only the framebuffer (i.e., a memory region) is explicitly registered via
@@ -503,6 +505,7 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, PDEVPCIBUS pBus, PPDMPCID
                                   devpciR3GetWord(pPciDev, PCI_COMMAND)
                                 | PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
                 break;
+            }
             case 0x0800:
                 /* PIC */
                 vendor_id = devpciR3GetWord(pPciDev, PCI_VENDOR_ID);

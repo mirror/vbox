@@ -342,7 +342,8 @@ typedef struct VGAState {
 # ifdef VBOX_WITH_VMSVGA
     /* Whether the SVGA emulation is enabled or not. */
     bool                        fVMSVGAEnabled;
-    bool                        Padding4[0+4];
+    bool                        fVMSVGAPciId;
+    bool                        Padding4[0+3];
 # else
     bool                        Padding4[1+4];
 # endif

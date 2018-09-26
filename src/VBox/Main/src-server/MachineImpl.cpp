@@ -2020,6 +2020,7 @@ HRESULT Machine::setGraphicsControllerType(GraphicsControllerType_T aGraphicsCon
         case GraphicsControllerType_VBoxVGA:
 #ifdef VBOX_WITH_VMSVGA
         case GraphicsControllerType_VMSVGA:
+        case GraphicsControllerType_VBoxSVGA:
 #endif
             break;
         default:

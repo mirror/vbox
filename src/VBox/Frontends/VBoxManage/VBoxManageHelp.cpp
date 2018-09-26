@@ -530,7 +530,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--cpuexecutioncap <1-100>]\n"
                      "                            [--rtcuseutc on|off]\n"
 #ifdef VBOX_WITH_VMSVGA
-                     "                            [--graphicscontroller none|vboxvga|vmsvga]\n"
+                     "                            [--graphicscontroller none|vboxvga|vmsvga|vboxsvga]\n"
 #else
                      "                            [--graphicscontroller none|vboxvga]\n"
 #endif

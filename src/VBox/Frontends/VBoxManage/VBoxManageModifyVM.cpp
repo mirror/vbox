@@ -864,6 +864,9 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (   !RTStrICmp(ValueUnion.psz, "vmsvga")
                          || !RTStrICmp(ValueUnion.psz, "vmware"))
                     CHECK_ERROR(sessionMachine, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VMSVGA));
+                else if (   !RTStrICmp(ValueUnion.psz, "vboxsvga")
+                         || !RTStrICmp(ValueUnion.psz, "svga"))
+                    CHECK_ERROR(sessionMachine, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VBoxSVGA));
 #endif
                 else
                 {
