@@ -31,6 +31,9 @@
 # include "UIIconPool.h"
 # include "UIVirtualBoxManager.h"
 
+/* Other VBox includes: */
+#include "iprt/cpp/utils.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -175,16 +178,17 @@ void UIChooserItemGlobal::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
     pEvent->ignore();
 }
 
-void UIChooserItemGlobal::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget * /* pWidget = 0 */)
+void UIChooserItemGlobal::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget * /* pWidget = 0 */)
 {
-    /* Setup: */
-    pPainter->setRenderHint(QPainter::Antialiasing);
+    /* Acquire rectangle: */
+    const QRect rectangle = pOptions->rect;
 
-    /* Paint decorations: */
-    paintDecorations(pPainter, pOption);
-
+    /* Paint background: */
+    paintBackground(pPainter, rectangle);
+    /* Paint frame: */
+    paintFrame(pPainter, rectangle);
     /* Paint global info: */
-    paintGlobalInfo(pPainter, pOption);
+    paintGlobalInfo(pPainter, rectangle);
 }
 
 void UIChooserItemGlobal::startEditing()
@@ -507,19 +511,7 @@ void UIChooserItemGlobal::updateVisibleName()
     }
 }
 
-void UIChooserItemGlobal::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
-{
-    /* Prepare variables: */
-    QRect fullRect = pOption->rect;
-
-    /* Paint background: */
-    paintBackground(pPainter, fullRect);
-
-    /* Paint frame: */
-    paintFrameRectangle(pPainter, fullRect);
-}
-
-void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &rect)
+void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Save painter: */
     pPainter->save();
@@ -528,15 +520,15 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &rect)
     const QPalette pal = palette();
 
     /* Selection background: */
-    if (model()->currentItems().contains(this))
+    if (model()->currentItems().contains(unconst(this)))
     {
         /* Prepare color: */
         QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
-        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightness));
         bgGrad.setColorAt(1, highlight);
-        pPainter->fillRect(rect, bgGrad);
+        pPainter->fillRect(rectangle, bgGrad);
     }
     /* Hovering background: */
     else if (isHovered())
@@ -544,43 +536,52 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &rect)
         /* Prepare color: */
         QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
-        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, highlight.lighter(m_iHoverHighlightLightness));
         bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightness));
-        pPainter->fillRect(rect, bgGrad);
+        pPainter->fillRect(rectangle, bgGrad);
     }
 
     /* Restore painter: */
     pPainter->restore();
 }
 
-void UIChooserItemGlobal::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
+void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Only chosen and/or hovered item should have a frame: */
-    if (!model()->currentItems().contains(this) && !isHovered())
+    if (!model()->currentItems().contains(unconst(this)) && !isHovered())
         return;
 
-    /* Simple frame: */
+    /* Save painter: */
     pPainter->save();
+
+    /* Prepare color: */
     const QPalette pal = palette();
     QColor strokeColor = pal.color(QPalette::Active,
-                                   model()->currentItems().contains(this) ?
+                                   model()->currentItems().contains(unconst(this)) ?
                                    QPalette::Mid : QPalette::Highlight);
-    pPainter->setPen(strokeColor);
-    pPainter->drawRect(rect);
+
+    /* Create/assign pen: */
+    QPen pen(strokeColor);
+    pen.setWidth(0);
+    pPainter->setPen(pen);
+
+    /* Draw rectangle: */
+    pPainter->drawRect(rectangle);
+
+    /* Restore painter: */
     pPainter->restore();
 }
 
-void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
+void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &rectangle) const
 {
     /* Prepare variables: */
-    const QRect fullRect = pOption->rect;
-    const int iFullHeight = fullRect.height();
+    const int iFullHeight = rectangle.height();
     const int iMargin = data(GlobalItemData_Margin).toInt();
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
 
     /* Selected item foreground: */
-    if (model()->currentItems().contains(this))
+    if (model()->currentItems().contains(unconst(this)))
     {
         const QPalette pal = palette();
         pPainter->setPen(pal.color(QPalette::HighlightedText));
