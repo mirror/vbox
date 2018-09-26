@@ -330,8 +330,8 @@ static HRESULT vboxUhgsmiKmtQueryCaps(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t *
         return E_FAIL;
     }
 
-    if (Query.enmHwType == VBOXVIDEO_HWTYPE_CROGL)
-        *pu32Caps = Query.u.crogl.u32VBox3DCaps;
+    if (Query.enmHwType == VBOXVIDEO_HWTYPE_VBOX)
+        *pu32Caps = Query.u.vbox.u32VBox3DCaps;
     else
         *pu32Caps = 0;
 

@@ -815,15 +815,17 @@ static void vboxWddmDevExtZeroinit(PVBOXMP_DEVEXT pDevExt, CONST PDEVICE_OBJECT 
         VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA, &u32, 0);
     }
 
-    pDevExt->enmHwType = u32 ? VBOXVIDEO_HWTYPE_VMSVGA : VBOXVIDEO_HWTYPE_CROGL;
+    pDevExt->enmHwType = u32 ? VBOXVIDEO_HWTYPE_VMSVGA : VBOXVIDEO_HWTYPE_VBOX;
 
-    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
     {
         pDevExt->f3DEnabled = VBoxMpCrCtlConIs3DSupported();
     }
     else
     {
-        pDevExt->f3DEnabled = f3DSupported;
+        /* No supported 3D hardware, Fallback to VBox 2D only. */
+        pDevExt->enmHwType = VBOXVIDEO_HWTYPE_VBOX;
+        pDevExt->f3DEnabled = FALSE;
     }
 }
 
@@ -1148,7 +1150,7 @@ NTSTATUS DxgkDdiStartDevice(
             if (Status == STATUS_SUCCESS)
             {
 #ifdef VBOX_WITH_CROGL
-                if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+                if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                 {
                     if (pDevExt->f3DEnabled)
                     {
@@ -1376,7 +1378,7 @@ NTSTATUS DxgkDdiStopDevice(
     NTSTATUS Status = STATUS_SUCCESS;
 
 #ifdef VBOX_WITH_CROGL
-    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL && pDevExt->u32CrConDefaultClientID)
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX && pDevExt->u32CrConDefaultClientID)
         VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pDevExt->u32CrConDefaultClientID);
 
     VBoxMpCrShgsmiTransportTerm(&pDevExt->CrHgsmiTransport);
@@ -2336,10 +2338,10 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 
                     pQAI->u32Version = VBOXVIDEOIF_VERSION;
                     pQAI->enmHwType = pDevExt->enmHwType;
-                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                     {
 #ifdef VBOX_WITH_CROGL
-                        pQAI->u.crogl.u32VBox3DCaps = VBoxMpCrGetHostCaps();
+                        pQAI->u.vbox.u32VBox3DCaps = VBoxMpCrGetHostCaps();
 #endif
                     }
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -2854,7 +2856,7 @@ DxgkDdiDestroyAllocation(
         vboxWddmAllocationCleanupAssignment(pDevExt, pAlloc);
         /* wait for all current allocation-related ops are completed */
         vboxWddmAllocationCleanup(pDevExt, pAlloc);
-        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL && pAlloc->hSharedHandle && pAlloc->AllocData.hostID)
+        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX && pAlloc->hSharedHandle && pAlloc->AllocData.hostID)
             VBoxVdmaChromiumParameteriCRSubmit(pDevExt, GL_PIN_TEXTURE_CLEAR_CR, pAlloc->AllocData.hostID);
         vboxWddmAllocationDestroy(pAlloc);
     }
@@ -4560,7 +4562,7 @@ DxgkDdiEscape(
             {
                 if (pEscape->PrivateDriverDataSize == sizeof (*pEscapeHdr))
                 {
-                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                         pEscapeHdr->u32CmdSpecific = VBoxMpCrGetHostCaps();
                     else
                         pEscapeHdr->u32CmdSpecific = 0;
@@ -6899,7 +6901,7 @@ DxgkDdiCreateContext(
                 vboxWddmDisplaySettingsCheckPos(pDevExt, i);
             }
 
-            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
             {
 #ifdef VBOX_WITH_CROGL
                 if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
@@ -6950,7 +6952,7 @@ DxgkDdiCreateContext(
                                     {
                                         if (pDevExt->f3DEnabled)
                                         {
-                                            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+                                            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                                             {
                                                 int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
                                                     pInfo->crVersionMajor, pInfo->crVersionMinor,
@@ -7005,7 +7007,7 @@ DxgkDdiCreateContext(
                             {
                                 if (pDevExt->f3DEnabled)
                                 {
-                                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+                                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                                     {
                                         int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
                                             pInfo->crVersionMajor, pInfo->crVersionMinor,
@@ -7145,7 +7147,7 @@ DxgkDdiDestroyContext(
     }
 
 #ifdef VBOX_WITH_CROGL
-    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL && pContext->u32CrConClientID)
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX && pContext->u32CrConClientID)
     {
         VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pContext->u32CrConClientID);
     }
@@ -7317,8 +7319,7 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
 
     if (bUpdateRectInited && pSource->bVisible)
     {
-        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
-            VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
+        VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
     }
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
@@ -7658,7 +7659,7 @@ DriverEntry(
         LOG(("3D is %srequired!", f3DRequired? "": "NOT "));
 
         /* Check whether 3D is provided by the host. */
-        VBOXVIDEO_HWTYPE enmHwType = VBOXVIDEO_HWTYPE_CROGL;
+        VBOXVIDEO_HWTYPE enmHwType = VBOXVIDEO_HWTYPE_VBOX;
         BOOL f3DSupported = FALSE;
 
         if (VBoxVGACfgAvailable())
@@ -7667,7 +7668,7 @@ DriverEntry(
             uint32_t u32;
             if (VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VERSION, &u32, 0))
             {
-                LOGREL(("VGA configuration version %d", u32));
+                LOGREL(("WDDM: VGA configuration version %d", u32));
             }
 
             VBoxVGACfgQuery(VBE_DISPI_CFG_ID_3D, &u32, 0);
@@ -7678,10 +7679,11 @@ DriverEntry(
             {
                 enmHwType = VBOXVIDEO_HWTYPE_VMSVGA;
             }
+            LOGREL(("WDDM: VGA configuration: 3D %d, hardware type %d", f3DSupported, enmHwType));
         }
 
         BOOL fCmdVbva = FALSE;
-        if (enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+        if (enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         {
             /* Try to establish connection to the host 3D service. */
 #ifdef VBOX_WITH_CROGL
@@ -7694,13 +7696,11 @@ DriverEntry(
             fCmdVbva = RT_BOOL(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
 #endif
         }
-        else if (enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-        {
-            fCmdVbva = TRUE;
-        }
         else
         {
-            Status = STATUS_UNSUCCESSFUL;
+            /* No supported hardware, fallback to VBox 2D only. */
+            enmHwType = VBOXVIDEO_HWTYPE_VBOX;
+            f3DSupported = FALSE;
         }
 
         LOGREL(("WDDM: 3D is %ssupported, hardware type %d", f3DSupported? "": "not ", enmHwType));

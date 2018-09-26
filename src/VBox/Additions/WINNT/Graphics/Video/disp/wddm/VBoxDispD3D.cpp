@@ -5801,7 +5801,7 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
          * Release may not work in case of some leaking, which will leave the crOgl context refering the destroyed VBOXUHGSMI */
         if (pDevice->pDevice9If)
         {
-            if (pDevice->pAdapter->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+            if (pDevice->pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                 pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice->pDevice9If);
         }
     }
@@ -6571,8 +6571,8 @@ static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXW
     pAdapter->uRtVersion  = pOpenData->Version;
     pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
     pAdapter->enmHwType   = pAdapterInfo->enmHwType;
-    if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
-        pAdapter->u32VBox3DCaps = pAdapterInfo->u.crogl.u32VBox3DCaps;
+    if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
+        pAdapter->u32VBox3DCaps = pAdapterInfo->u.vbox.u32VBox3DCaps;
     pAdapter->AdapterInfo = *pAdapterInfo;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     pAdapter->cHeads      = pAdapterInfo->cInfos;

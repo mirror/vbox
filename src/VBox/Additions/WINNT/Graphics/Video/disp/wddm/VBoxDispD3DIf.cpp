@@ -1261,7 +1261,7 @@ static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI cons
     memset(pD3D, 0, sizeof (*pD3D));
 
     HRESULT hr;
-    if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+    if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         hr = vboxDispD3DGlobalDoOpenWine(pD3D);
     else
         hr = E_FAIL;

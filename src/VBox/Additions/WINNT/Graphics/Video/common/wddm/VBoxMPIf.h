@@ -37,7 +37,7 @@
 /** @todo VBOXVIDEO_HWTYPE probably needs to be in VBoxVideo.h */
 typedef enum VBOXVIDEO_HWTYPE
 {
-    VBOXVIDEO_HWTYPE_CROGL  = 0,
+    VBOXVIDEO_HWTYPE_VBOX   = 0,
     VBOXVIDEO_HWTYPE_VMSVGA = 1,
     VBOXVIDEO_HWTYPE_32BIT  = 0x7fffffff
 } VBOXVIDEO_HWTYPE;
@@ -513,9 +513,9 @@ typedef struct VBOXWDDM_QAI
     {
         struct
         {
-            /* VBOXVIDEO_HWTYPE_CROGL */
+            /* VBOXVIDEO_HWTYPE_VBOX */
             uint32_t    u32VBox3DCaps;   /* CR_VBOX_CAP_* */
-        } crogl;
+        } vbox;
     } u;
 } VBOXWDDM_QAI;
 
