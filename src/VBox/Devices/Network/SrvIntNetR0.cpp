@@ -357,6 +357,13 @@ typedef struct INTNETNETWORK
     struct INTNET          *pIntNet;
     /** The SUPR0 object id. */
     void                   *pvObj;
+    /** The trunk reconnection system thread. The thread gets started at trunk
+     * disconnection. It tries to reconnect the trunk to the bridged filter instance.
+     * The thread erases this handle right before it terminates.
+     */
+    RTTHREAD                hTrunkReconnectThread;
+    /** Trunk reconnection thread termination flag. */
+    bool volatile           fTerminateReconnectThread;
     /** Pointer to the temporary buffer that is used when snooping fragmented packets.
      * This is allocated after this structure if we're sharing the MAC address with
      * the host. The buffer is INTNETNETWORK_TMP_SIZE big and aligned on a 64-byte boundary. */
@@ -5052,6 +5059,9 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
 }
 
 
+/* Forward declaration of trunk reconnection thread function. */
+static DECLCALLBACK(int) intnetR0TrunkReconnectThread(RTTHREAD hThread, void *pvUser);
+
 /**
  * Creates a new network interface.
  *
@@ -5375,6 +5385,15 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwit
             RTSpinlockAcquire(pNetwork->hAddrSpinlock);
             pNetwork->MacTab.pTrunk = NULL;
             RTSpinlockRelease(pNetwork->hAddrSpinlock);
+
+            /*
+             * Create a system thread that will attempt to re-connect this trunk periodically
+             * hoping that the corresponding filter module reappears in the system. The thread
+             * will go away if it succeeds in re-connecting the trunk or if it is signalled.
+             */
+            int rc = RTThreadCreate(&pNetwork->hTrunkReconnectThread, intnetR0TrunkReconnectThread, pNetwork,
+                                    0, RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "TRNKRECON");
+            AssertRC(rc);
 
             intnetR0TrunkIfDestroy(pThis, pNetwork);
         }
@@ -5893,6 +5912,88 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 }
 
 
+/**
+ * Trunk reconnection thread function. It runs until signalled by another thread or by itself (upon
+ * successful trunk re-connection).
+ * 
+ * Note that this function erases pNetwork->hTrunkReconnectThread right before it terminates!
+ */
+static DECLCALLBACK(int) intnetR0TrunkReconnectThread(RTTHREAD hThread, void *pvUser)
+{
+    RT_NOREF1(hThread);
+    PINTNETNETWORK pNetwork = (PINTNETNETWORK)pvUser;
+    PINTNET pIntNet = pNetwork->pIntNet;
+    Assert(pNetwork->pIntNet);
+
+    /*
+     * We attempt to reconnect the trunk every 5 seconds until somebody signals us.
+     */
+    while (!pNetwork->fTerminateReconnectThread && RTThreadUserWait(hThread, 5 * RT_MS_1SEC) == VERR_TIMEOUT)
+    {
+        /*
+         * Make sure nobody else is modifying networks.
+         * It is essential we give up on waiting for the big mutex much earlier than intnetR0NetworkDestruct
+         * gives up on waiting for us to terminate! This is why we wait for 1 second while network destruction
+         * code waits for 5 seconds. Otherwise the network may be already gone by the time we get the mutex.
+         */
+        if (RT_FAILURE(RTSemMutexRequestNoResume(pIntNet->hMtxCreateOpenDestroy, RT_MS_1SEC)))
+            continue;
+#if 0
+        /*
+         * This thread should be long gone by the time the network has been destroyed, but if we are
+         * really paranoid we should include the following code.
+         */
+        /*
+         * The network could have been destroyed while we were waiting on the big mutex, let us verify
+         * it is still valid by going over the list of existing networks.
+         */
+        PINTNETNETWORK pExistingNetwork = pIntNet->pNetworks;
+        for (; pExistingNetwork; pExistingNetwork = pExistingNetwork->pNext)
+            if (pExistingNetwork == pNetwork)
+                break;
+        /* We need the network to exist and to have at least one interface. */
+        if (pExistingNetwork && pNetwork->MacTab.cEntries)
+#else
+        /* We need the network to have at least one interface. */
+        if (pNetwork->MacTab.cEntries)
+#endif
+        {
+            PINTNETIF pAnyIf = pNetwork->MacTab.paEntries[0].pIf;
+            PSUPDRVSESSION pAnySession = pAnyIf ? pAnyIf->pSession : NULL;
+            if (pAnySession)
+            {
+                /* Attempt to re-connect trunk and if successful, terminate thread. */
+                if (RT_SUCCESS(intnetR0NetworkCreateTrunkIf(pNetwork, pAnySession)))
+                {
+                    /* The network has active interfaces, we need to activate the trunk. */
+                    if (pNetwork->cActiveIFs)
+                    {
+                        PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+                        /* The intnetR0NetworkCreateTrunkIf call resets fHostActive and fWireActive. */
+                        RTSpinlockAcquire(pNetwork->hAddrSpinlock);
+                        pNetwork->MacTab.fHostActive = RT_BOOL(pNetwork->fFlags & INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED);
+                        pNetwork->MacTab.fWireActive = RT_BOOL(pNetwork->fFlags & INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED);
+                        RTSpinlockRelease(pNetwork->hAddrSpinlock);
+                        pTrunk->pIfPort->pfnSetState(pTrunk->pIfPort, INTNETTRUNKIFSTATE_ACTIVE);
+                    }
+                    pNetwork->fTerminateReconnectThread = true;
+                    RTThreadUserSignal(hThread); /* Signal ourselves, so we break the loop after releasing the mutex */
+                }
+            }
+        }
+        RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
+    }
+
+    /*
+     * Destroy our handle in INTNETNETWORK so everyone knows we are gone.
+     * Note that this is the only place where this handle gets wiped out.
+     */
+    pNetwork->hTrunkReconnectThread = NIL_RTTHREAD;
+
+    return VINF_SUCCESS;
+}
+
+
 
 /**
  * Object destructor callback.
@@ -5947,6 +6048,26 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
        removed / added since we're holding the big lock.) */
     if (pTrunk)
         intnetR0BusyWait(pNetwork, &pTrunk->cBusy);
+    else if (pNetwork->hTrunkReconnectThread != NIL_RTTHREAD)
+    {
+        /*
+         * There is no trunk and we have the trunk reconnection thread running.
+         * Signal the thread and wait for it to terminate.
+         */
+        pNetwork->fTerminateReconnectThread = true;
+        RTThreadUserSignal(pNetwork->hTrunkReconnectThread);
+        /*
+         * The tread cannot be re-connecting the trunk at the moment since we hold the big
+         * mutex, thus 5 second wait is definitely enough. Note that the wait time must
+         * exceed the time the reconnection thread waits on acquiring the big mutex, otherwise
+         * we will give up waiting for thread termination prematurely. Unfortunately it seems
+         * we have no way to terminate the thread if it failed to stop gracefully.
+         * 
+         * Note that it is ok if the thread has already wiped out hTrunkReconnectThread by now,
+         * this means we no longer need to wait for it.
+         */
+        RTThreadWait(pNetwork->hTrunkReconnectThread, 5 * RT_MS_1SEC, NULL);
+    }
 
     iIf = pNetwork->MacTab.cEntries;
     while (iIf-- > 0)
@@ -6349,6 +6470,8 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
         return VERR_NO_MEMORY;
     //pNetwork->pNext                       = NULL;
     //pNetwork->pIfs                        = NULL;
+    //pNetwork->fTerminateReconnectThread   = false;
+    pNetwork->hTrunkReconnectThread         = NIL_RTTHREAD;
     pNetwork->hAddrSpinlock                 = NIL_RTSPINLOCK;
     pNetwork->MacTab.cEntries               = 0;
     pNetwork->MacTab.cEntriesAllocated      = INTNET_GROW_DSTTAB_SIZE;
@@ -6643,6 +6766,10 @@ INTNETR0DECL(void) IntNetR0Term(void)
      */
     AssertReturnVoid(ASMAtomicCmpXchgU32(&pIntNet->u32Magic, ~INTNET_MAGIC, INTNET_MAGIC));
     Assert(pIntNet->pNetworks == NULL);
+    /*
+     * @todo Do we really need to be paranoid enough to go over the list of networks here,
+     * trying to terminate trunk re-connection threads here?
+     */ 
     if (pIntNet->hMtxCreateOpenDestroy != NIL_RTSEMMUTEX)
     {
         RTSemMutexDestroy(pIntNet->hMtxCreateOpenDestroy);
