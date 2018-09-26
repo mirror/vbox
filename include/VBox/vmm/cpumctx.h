@@ -323,6 +323,21 @@ AssertCompileSize(SVMHOSTSTATE, 184);
 
 
 /**
+ * CPU hardware virtualization types.
+ */
+typedef enum
+{
+    CPUMHWVIRT_NONE = 0,
+    CPUMHWVIRT_VMX,
+    CPUMHWVIRT_SVM,
+    CPUMHWVIRT_32BIT_HACK = 0x7fffffff
+} CPUMHWVIRT;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(CPUMHWVIRT, 4);
+#endif
+
+
+/**
  * CPU context.
  */
 #pragma pack(1) /* for VBOXIDTR / VBOXGDTR. */
@@ -623,13 +638,15 @@ typedef struct CPUMCTX
             } vmx;
         } CPUM_UNION_NM(s);
 
-        /** 0x3f0 - A subset of guest force flags that are saved while running the
+        /** 0x3f0 - Hardware virtualization type currently in use. */
+        CPUMHWVIRT              enmHwvirt;
+        /** 0x3f4 - A subset of guest force flags that are saved while running the
          *  nested-guest. */
         uint32_t                fLocalForcedActions;
-        /** 0x3f4 - Global interrupt flag - AMD only (always true on Intel). */
+        /** 0x3f8 - Global interrupt flag - AMD only (always true on Intel). */
         bool                    fGif;
-        /** 0x3f8 - Padding. */
-        uint8_t                 abPadding1[11];
+        /** 0x3fc - Padding. */
+        uint8_t                 abPadding1[7];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -723,8 +740,9 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPag
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,  8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0, 8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR0,    8);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x3f0);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                0x3f4);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.enmHwvirt,           0x3f0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x3f4);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                0x3f8);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);
