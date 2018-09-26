@@ -172,7 +172,7 @@ void VBoxDnDWnd::Destroy(void)
         NOREF(rc);
     }
 
-    reset();
+    Reset();
 
     RTCritSectDelete(&mCritSect);
     if (mEventSem != NIL_RTSEMEVENT)
@@ -440,7 +440,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
              * - the user bumped a guest window to the screen's edges
              * - there was no drop data from the guest available and the user
              *   enters the guest screen again after this unsuccessful operation */
-            reset();
+            Reset();
             return 0;
         }
 
@@ -614,7 +614,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
                 case VBGLR3DNDEVENTTYPE_GH_ERROR:
                 {
-                    reset();
+                    Reset();
                     rc = VINF_SUCCESS;
                     break;
                 }
@@ -646,7 +646,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                 LogRel(("DnD: Processing message %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc));
 
                 /* If anything went wrong, do a reset and start over. */
-                reset();
+                Reset();
             }
 
             VbglR3DnDEventFree(pEvent->pVbglR3Event);
@@ -782,7 +782,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIS
     LogFlow(("\n"));
 #endif
 
-    reset();
+    Reset();
     setMode(HG);
 
     int rc = VINF_SUCCESS;
@@ -971,7 +971,7 @@ int VBoxDnDWnd::OnHgLeave(void)
     LogFlowThisFunc(("mMode=%ld, mState=%RU32\n", mMode, mState));
     LogRel(("DnD: Drag and drop operation aborted\n"));
 
-    reset();
+    Reset();
 
     int rc = VINF_SUCCESS;
 
@@ -1090,7 +1090,7 @@ int VBoxDnDWnd::OnHgCancel(void)
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    reset();
+    Reset();
 
     return rc;
 }
@@ -1244,12 +1244,12 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
             }
 
             LogRel2(("DnD: Host refuses drag and drop operation from guest: %Rrc\n", rc2));
-            reset();
+            Reset();
         }
     }
 
     if (RT_FAILURE(rc))
-        reset(); /* Reset state on failure. */
+        Reset(); /* Reset state on failure. */
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1279,7 +1279,7 @@ int VBoxDnDWnd::OnGhDrop(const RTCString &strFormat, uint32_t dndActionDefault)
             AssertPtr(pDropTarget);
             rc = pDropTarget->WaitForDrop(5 * 1000 /* 5s timeout */);
 
-            reset();
+            Reset();
         }
         else if (mState == Dropped)
         {
@@ -1537,7 +1537,7 @@ int VBoxDnDWnd::mouseRelease(void)
 /**
  * Resets the proxy window.
  */
-void VBoxDnDWnd::reset(void)
+void VBoxDnDWnd::Reset(void)
 {
     LogFlowThisFunc(("Resetting, old mMode=%ld, mState=%ld\n",
                      mMode, mState));
@@ -1832,7 +1832,7 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 
             /* Make sure our proxy window is hidden when an error occured to
              * not block the guest's UI. */
-            pWnd->hide();
+            pWnd->Reset();
 
             int rc2 = VbglR3DnDGHSendError(&pCtx->cmdCtx, rc);
             if (RT_FAILURE(rc2))

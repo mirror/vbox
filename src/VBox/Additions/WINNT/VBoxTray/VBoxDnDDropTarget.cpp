@@ -261,7 +261,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragLeave(void)
 #endif
 
     if (mpWndParent)
-        mpWndParent->hide();
+        mpWndParent->Reset();
 
     return S_OK;
 }
@@ -548,7 +548,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
         *pdwEffect = DROPEFFECT_NONE;
 
     if (mpWndParent)
-        mpWndParent->hide();
+        mpWndParent->Reset();
 
     LogFlowFunc(("Returning with hr=%Rhrc (%Rrc), mFormatEtc.cfFormat=%RI16 (%s), *pdwEffect=%RI32\n",
                  hr, rc, mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
