@@ -762,8 +762,11 @@ void UIToolsItem::paintFrame(QPainter *pPainter, const QRect &rectangle) const
     pen.setWidth(0);
     pPainter->setPen(pen);
 
-    /* Draw frame: */
-    pPainter->drawRect(rectangle);
+    /* Draw borders: */
+    pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight());
+    pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight());
+    pPainter->drawLine(rectangle.topLeft(),    rectangle.bottomLeft());
+    pPainter->drawLine(rectangle.topRight(),   rectangle.bottomRight());
 
     /* Restore painter: */
     pPainter->restore();
