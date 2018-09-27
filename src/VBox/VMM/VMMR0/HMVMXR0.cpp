@@ -8066,13 +8066,13 @@ static void hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu)
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT)
     {
         hmR0VmxClearIntWindowExitVmcs(pVCpu);
-        Log4Func(("Cleared interrupt widow\n"));
+        Log4Func(("Cleared interrupt window\n"));
     }
 
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
     {
         hmR0VmxClearNmiWindowExitVmcs(pVCpu);
-        Log4Func(("Cleared interrupt widow\n"));
+        Log4Func(("Cleared NMI window\n"));
     }
 }
 
