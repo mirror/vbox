@@ -90,11 +90,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QILineEdit" name="m_pHostEditor">
-        <property name="whatsThis">
-         <string>Holds the proxy host.</string>
-        </property>
-       </widget>
+       <widget class="QILineEdit" name="m_pHostEditor"/>
       </item>
      </layout>
     </widget>
