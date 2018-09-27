@@ -951,11 +951,11 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
     int rc = VINF_SUCCESS;
     LogRel(("CPUM: Allocating %u pages for the nested-guest VMCS and related structures\n",
             pVM->cCpus * (  VMX_V_VMCS_PAGES + VMX_V_VIRT_APIC_PAGES + VMX_V_VMREAD_VMWRITE_BITMAP_PAGES * 2
-                          + VMX_V_AUTOMSR_AREA_PAGES));
+                          + VMX_V_AUTOMSR_AREA_PAGES)));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->cpum.s.Guest.hwvirt.vmx.enmHwvirt = CPUMHWVIRT_VMX;
+        pVCpu->cpum.s.Guest.hwvirt.enmHwvirt = CPUMHWVIRT_VMX;
 
         /*
          * Allocate the nested-guest current VMCS.
