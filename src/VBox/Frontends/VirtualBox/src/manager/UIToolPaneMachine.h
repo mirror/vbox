@@ -96,6 +96,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Handles translation for Desktop pane. */
+    void retranslateDesktopPane();
+
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 

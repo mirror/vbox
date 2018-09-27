@@ -795,7 +795,8 @@ void UIWelcomePanePrivate::updatePixmap()
     const QList<QSize> aSizes = m_icon.availableSizes();
     const QSize firstOne = aSizes.isEmpty() ? QSize(200, 200) : aSizes.first();
     const double dRatio = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) / 32;
-    m_pLabelToolsPaneIcon->setPixmap(m_icon.pixmap(window()->windowHandle(), QSize(firstOne.width() * dRatio, firstOne.height() * dRatio)));
+    if (!m_icon.isNull())
+        m_pLabelToolsPaneIcon->setPixmap(m_icon.pixmap(window()->windowHandle(), QSize(firstOne.width() * dRatio, firstOne.height() * dRatio)));
 }
 
 

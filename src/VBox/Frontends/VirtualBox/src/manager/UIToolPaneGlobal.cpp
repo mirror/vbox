@@ -104,6 +104,9 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneDesktop);
                     m_pLayout->setCurrentWidget(m_pPaneDesktop);
+
+                    /* Retranslate Desktop pane: */
+                    retranslateDesktopPane();
                 }
                 break;
             }
@@ -188,46 +191,7 @@ void UIToolPaneGlobal::setDetailsError(const QString &strError)
 
 void UIToolPaneGlobal::retranslateUi()
 {
-    if (m_pPaneDesktop)
-    {
-        /* Translate Global Tools welcome screen: */
-        m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_banner_global_200px.png"));
-        m_pPaneDesktop->setToolsPaneText(
-            tr("<h3>Welcome to VirtualBox!</h3>"
-               "<p>This window represents a set of global tools "
-               "which are currently opened (or can be opened). "
-               "They are not related to any particular machine but "
-               "to the complete VM collection. For a list of currently "
-               "available tools check the corresponding menu at the right "
-               "side of the main tool bar located at the top of the window. "
-               "This list will be extended with new tools in future releases.</p>"
-               "<p>You can press the <b>%1</b> key to get instant help, or visit "
-               "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-               "for more information and latest news.</p>")
-               .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
-
-        /* Wipe out the tool descriptions: */
-        m_pPaneDesktop->removeToolDescriptions();
-
-        /* Add tool descriptions: */
-        QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
-        m_pPaneDesktop->addToolDescription(pAction1,
-                                           tr("Tool to observe virtual storage media. "
-                                              "Reflects all the chains of virtual disks you have registered "
-                                              "(per each storage type) within your virtual machines and allows for media "
-                                              "operations like copy, remove, release "
-                                              "(detach it from VMs where it is currently attached to) and observe their properties. "
-                                              "Allows to edit medium attributes like type, "
-                                              "location/name, description and size (for dynamical storages "
-                                              "only)."));
-        QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
-        m_pPaneDesktop->addToolDescription(pAction2,
-                                           tr("Tool to control host-only network interfaces. "
-                                              "Reflects host-only networks, their DHCP servers and allows "
-                                              "for operations on the networks like possibility to create, remove "
-                                              "and observe their properties. Allows to edit various "
-                                              "attributes for host-only interface and corresponding DHCP server."));
-    }
+    retranslateDesktopPane();
 }
 
 void UIToolPaneGlobal::prepare()
@@ -253,3 +217,46 @@ void UIToolPaneGlobal::cleanup()
     }
 }
 
+void UIToolPaneGlobal::retranslateDesktopPane()
+{
+    if (!m_pPaneDesktop)
+        return;
+
+    /* Translate Global Tools welcome screen: */
+    m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_banner_global_200px.png"));
+    m_pPaneDesktop->setToolsPaneText(
+        tr("<h3>Welcome to VirtualBox!</h3>"
+           "<p>This window represents a set of global tools "
+           "which are currently opened (or can be opened). "
+           "They are not related to any particular machine but "
+           "to the complete VM collection. For a list of currently "
+           "available tools check the corresponding menu at the right "
+           "side of the main tool bar located at the top of the window. "
+           "This list will be extended with new tools in future releases.</p>"
+           "<p>You can press the <b>%1</b> key to get instant help, or visit "
+           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+           "for more information and latest news.</p>")
+           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+
+    /* Wipe out the tool descriptions: */
+    m_pPaneDesktop->removeToolDescriptions();
+
+    /* Add tool descriptions: */
+    QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
+    m_pPaneDesktop->addToolDescription(pAction1,
+                                       tr("Tool to observe virtual storage media. "
+                                          "Reflects all the chains of virtual disks you have registered "
+                                          "(per each storage type) within your virtual machines and allows for media "
+                                          "operations like copy, remove, release "
+                                          "(detach it from VMs where it is currently attached to) and observe their properties. "
+                                          "Allows to edit medium attributes like type, "
+                                          "location/name, description and size (for dynamical storages "
+                                          "only)."));
+    QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
+    m_pPaneDesktop->addToolDescription(pAction2,
+                                       tr("Tool to control host-only network interfaces. "
+                                          "Reflects host-only networks, their DHCP servers and allows "
+                                          "for operations on the networks like possibility to create, remove "
+                                          "and observe their properties. Allows to edit various "
+                                          "attributes for host-only interface and corresponding DHCP server."));
+}
