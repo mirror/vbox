@@ -631,6 +631,7 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterInterceptSuspend,
     HvRegisterUnknown02,                                /**< Reads as 0 initially on exo part. */
     HvRegisterUnknown03,                                /**< Reads as 0 initially on exo part. */
+    HvRegisterInternalActivityState,                    /**< @since about build 17758 */
 
     HvRegisterHypervisorVersion = 0x00000100,           /**< @since v5 @note Not readable on exo part. */
 
@@ -810,8 +811,14 @@ typedef enum _HV_REGISTER_NAME
 
     HvX64RegisterUnknown8007d = 0x0008007d,         /**< Readable on exo partition (17134), initial value is zero. */
 
+    HvX64RegisterSpecCtrl = 0x00080084,             /**< @since build about 17758 */
+    HvX64RegisterPredCmd,                           /**< @since build about 17758 */
+
     HvX64RegisterIa32MiscEnable = 0x000800a0,       /**< @since v5 @note Appears not to be readable on exo partition (Threadripper). */
     HvX64RegisterIa32FeatureControl,                /**< @since v5 @note Appears not to be readable on exo partition (Threadripper). */
+
+    HvX64RegisterApicId = 0x00084802,               /**< @since build 17758 */
+    HvX64RegisterApicVersion,                       /**< @since build 17758 */
 
     /** Uptime counter or some such thing.  Unit is different than HvRegisterTimeRefCount or the accounting is different. */
     HvX64RegisterVpRuntime = 0x00090000,
