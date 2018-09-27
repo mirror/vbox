@@ -1621,7 +1621,67 @@ DECLINLINE(bool) CPUMIsGuestVmxEnabled(PCCPUMCTX pCtx)
     return RT_BOOL(pCtx->cr4 & X86_CR4_VMXE);
 }
 
+/**
+ * Checks if we are executing inside an SVM nested hardware-virtualized guest.
+ *
+ * @returns @c true if in SVM nested-guest mode, @c false otherwise.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
+{
+    /*
+     * With AMD-V, the VMRUN intercept is a pre-requisite to entering SVM guest-mode.
+     * See AMD spec. 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
+     */
 #ifndef IN_RC
+    if (   pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM
+        || !(pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN))
+        return false;
+    return true;
+#else
+    NOREF(pCtx);
+    return false;
+#endif
+}
+
+/**
+ * Checks if the guest is in VMX non-root operation.
+ *
+ * @returns @c true if in VMX non-root operation, @c false otherwise.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestInVmxNonRootMode(PCCPUMCTX pCtx)
+{
+#ifndef IN_RC
+    if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
+        return false;
+    Assert(!pCtx->hwvirt.vmx.fInVmxNonRootMode || pCtx->hwvirt.vmx.fInVmxRootMode);
+    return pCtx->hwvirt.vmx.fInVmxNonRootMode;
+#else
+    NOREF(pCtx);
+    return false;
+#endif
+}
+
+/**
+ * Checks if the guest is in VMX root operation.
+ *
+ * @returns @c true if in VMX root operation, @c false otherwise.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestInVmxRootMode(PCCPUMCTX pCtx)
+{
+#ifndef IN_RC
+    if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
+        return false;
+    return pCtx->hwvirt.vmx.fInVmxRootMode;
+#else
+    NOREF(pCtx);
+    return false;
+#endif
+}
+
+# ifndef IN_RC
 
 /**
  * Checks if the nested-guest VMCB has the specified ctrl/instruction intercept
@@ -1813,67 +1873,62 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
     pVmcb->ctrl.u64NextRIP = pCtx->rip + cbInstr;
 }
 
-#endif /* !IN_RC */
-
 /**
- * Checks if we are executing inside an SVM nested hardware-virtualized guest.
+ * Checks whether the given Pin-based VM-execution controls are set.
  *
- * @returns @c true if in SVM nested-guest mode, @c false otherwise.
+ * @returns @c true if set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
+ * @param   uPinCtl     The Pin-based VM-execution controls to check.
  */
-DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtl)
 {
-    /*
-     * With AMD-V, the VMRUN intercept is a pre-requisite to entering SVM guest-mode.
-     * See AMD spec. 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
-     */
-#ifndef IN_RC
-    if (   pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM
-        || !(pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN))
+    RT_NOREF(pVCpu);
+    if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
         return false;
-    return true;
-#else
-    NOREF(pCtx);
-    return false;
-#endif
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32PinCtls & uPinCtl);
 }
 
 /**
- * Checks if the guest is in VMX non-root operation.
+ * Checks whether the given Processor-based VM-execution controls are set.
  *
- * @returns @c true if in VMX non-root operation, @c false otherwise.
- * @param   pCtx    Current CPU context.
+ * @returns @c true if set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   uPinCtl     The Processor-based VM-execution controls to check.
  */
-DECLINLINE(bool) CPUMIsGuestInVmxNonRootMode(PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls)
 {
-#ifndef IN_RC
+    RT_NOREF(pVCpu);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
         return false;
-    Assert(!pCtx->hwvirt.vmx.fInVmxNonRootMode || pCtx->hwvirt.vmx.fInVmxRootMode);
-    return pCtx->hwvirt.vmx.fInVmxNonRootMode;
-#else
-    NOREF(pCtx);
-    return false;
-#endif
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls & uProcCtls);
 }
 
 /**
- * Checks if the guest is in VMX root operation.
+ * Checks whether the given Secondary Processor-based VM-execution controls are set.
  *
- * @returns @c true if in VMX root operation, @c false otherwise.
- * @param   pCtx    Current CPU context.
+ * @returns @c true if set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   uPinCtl     The Secondary Processor-based VM-execution controls to
+ *                      check.
  */
-DECLINLINE(bool) CPUMIsGuestInVmxRootMode(PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls2)
 {
-#ifndef IN_RC
+    RT_NOREF(pVCpu);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
         return false;
-    return pCtx->hwvirt.vmx.fInVmxRootMode;
-#else
-    NOREF(pCtx);
-    return false;
-#endif
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls2 & uProcCtls2);
 }
+
+# endif /* !IN_RC */
 
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
 
