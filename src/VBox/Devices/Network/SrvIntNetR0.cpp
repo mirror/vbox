@@ -5915,7 +5915,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 /**
  * Trunk reconnection thread function. It runs until signalled by another thread or by itself (upon
  * successful trunk re-connection).
- * 
+ *
  * Note that this function erases pNetwork->hTrunkReconnectThread right before it terminates!
  */
 static DECLCALLBACK(int) intnetR0TrunkReconnectThread(RTTHREAD hThread, void *pvUser)
