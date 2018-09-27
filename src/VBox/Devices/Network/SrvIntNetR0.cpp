@@ -6062,7 +6062,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
          * exceed the time the reconnection thread waits on acquiring the big mutex, otherwise
          * we will give up waiting for thread termination prematurely. Unfortunately it seems
          * we have no way to terminate the thread if it failed to stop gracefully.
-         * 
+         *
          * Note that it is ok if the thread has already wiped out hTrunkReconnectThread by now,
          * this means we no longer need to wait for it.
          */
@@ -6769,7 +6769,7 @@ INTNETR0DECL(void) IntNetR0Term(void)
     /*
      * @todo Do we really need to be paranoid enough to go over the list of networks here,
      * trying to terminate trunk re-connection threads here?
-     */ 
+     */
     if (pIntNet->hMtxCreateOpenDestroy != NIL_RTSEMMUTEX)
     {
         RTSemMutexDestroy(pIntNet->hMtxCreateOpenDestroy);
