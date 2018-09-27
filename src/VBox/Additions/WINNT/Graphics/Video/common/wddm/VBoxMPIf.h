@@ -270,13 +270,19 @@ typedef struct VBOXWDDM_CREATECONTEXT_INFO
     uint32_t u32IfVersion;
     /* true if d3d false if ddraw */
     VBOXWDDM_CONTEXT_TYPE enmType;
-    uint32_t crVersionMajor;
-    uint32_t crVersionMinor;
-    /* we use uint64_t instead of HANDLE to ensure structure def is the same for both 32-bit and 64-bit
-     * since x64 kernel driver can be called by 32-bit UMD */
-    uint64_t hUmEvent;
-    /* info to be passed to UMD notification to identify the context */
-    uint64_t u64UmInfo;
+    union
+    {
+        struct
+        {
+            uint32_t crVersionMajor;
+            uint32_t crVersionMinor;
+            /* we use uint64_t instead of HANDLE to ensure structure def is the same for both 32-bit and 64-bit
+             * since x64 kernel driver can be called by 32-bit UMD */
+            uint64_t hUmEvent;
+            /* info to be passed to UMD notification to identify the context */
+            uint64_t u64UmInfo;
+        } vbox;
+    } u;
 } VBOXWDDM_CREATECONTEXT_INFO, *PVBOXWDDM_CREATECONTEXT_INFO;
 
 typedef uint64_t VBOXDISP_UMHANDLE;

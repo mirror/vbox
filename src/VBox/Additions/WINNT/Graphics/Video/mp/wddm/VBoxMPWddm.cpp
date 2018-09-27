@@ -6944,18 +6944,18 @@ DxgkDdiCreateContext(
                             if (Status == STATUS_SUCCESS)
                             {
                                 pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
-                                Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                                Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->u.vbox.hUmEvent, pInfo->u.vbox.u64UmInfo);
                                 AssertNtStatusSuccess(Status);
                                 if (Status == STATUS_SUCCESS)
                                 {
-                                    if (pInfo->crVersionMajor || pInfo->crVersionMinor)
+                                    if (pInfo->u.vbox.crVersionMajor || pInfo->u.vbox.crVersionMinor)
                                     {
                                         if (pDevExt->f3DEnabled)
                                         {
                                             if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                                             {
                                                 int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
-                                                    pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                                    pInfo->u.vbox.crVersionMajor, pInfo->u.vbox.crVersionMinor,
                                                     &pContext->u32CrConClientID);
                                                 if (RT_SUCCESS(rc))
                                                 {
@@ -7003,14 +7003,14 @@ DxgkDdiCreateContext(
 
                         if (Status == STATUS_SUCCESS)
                         {
-                            if (pInfo->crVersionMajor || pInfo->crVersionMinor)
+                            if (pInfo->u.vbox.crVersionMajor || pInfo->u.vbox.crVersionMinor)
                             {
                                 if (pDevExt->f3DEnabled)
                                 {
                                     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                                     {
                                         int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
-                                            pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                            pInfo->u.vbox.crVersionMajor, pInfo->u.vbox.crVersionMinor,
                                             &pContext->u32CrConClientID);
                                         if (!RT_SUCCESS(rc))
                                         {
@@ -7051,7 +7051,7 @@ DxgkDdiCreateContext(
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS:
                     {
                         pContext->enmType = pInfo->enmType;
-                        Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->SeamlessCtxMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                        Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->SeamlessCtxMgr, &pContext->CmContext, (HANDLE)pInfo->u.vbox.hUmEvent, pInfo->u.vbox.u64UmInfo);
                         if (!NT_SUCCESS(Status))
                         {
                             WARN(("vboxVideoCmCtxAdd failed, Status 0x%x", Status));

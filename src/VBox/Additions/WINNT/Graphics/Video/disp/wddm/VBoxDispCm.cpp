@@ -123,12 +123,12 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
     {
         Info.enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
 #ifdef VBOX_WITH_CROGL
-        Info.crVersionMajor = CR_PROTOCOL_VERSION_MAJOR;
-        Info.crVersionMinor = CR_PROTOCOL_VERSION_MINOR;
+        Info.u.vbox.crVersionMajor = CR_PROTOCOL_VERSION_MAJOR;
+        Info.u.vbox.crVersionMinor = CR_PROTOCOL_VERSION_MINOR;
 #else
         WARN(("not expected"));
-        Info.crVersionMajor = 0;
-        Info.crVersionMinor = 0;
+        Info.u.vbox.crVersionMajor = 0;
+        Info.u.vbox.crVersionMinor = 0;
 #endif
         fIsCrContext = TRUE;
     }
@@ -137,8 +137,8 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
         Info.enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
         fIsCrContext = FALSE;
     }
-    Info.hUmEvent = (uintptr_t)g_pVBoxCmMgr.Session.hEvent;
-    Info.u64UmInfo = (uintptr_t)pContext;
+    Info.u.vbox.hUmEvent = (uintptr_t)g_pVBoxCmMgr.Session.hEvent;
+    Info.u.vbox.u64UmInfo = (uintptr_t)pContext;
 
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
