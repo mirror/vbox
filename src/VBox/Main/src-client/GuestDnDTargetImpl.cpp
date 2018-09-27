@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -566,7 +566,6 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
 void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
 {
     LogFlowFunc(("pTask=%p\n", pTask));
-
     AssertPtrReturnVoid(pTask);
 
     const ComObjPtr<GuestDnDTarget> pThis(pTask->getTarget());
@@ -577,12 +576,11 @@ void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
         return;
 
     int vrc = pThis->i_sendData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
-    NOREF(vrc);
-/** @todo
- *
- *  r=bird: What happens with @a vrc?
- *
- */
+    if (RT_FAILURE(vrc)) /* In case we missed some error handling within i_sendData(). */
+    {
+        AssertFailed();
+        LogRel(("DnD: Sending data to guest failed with %Rrc\n", vrc));
+    }
 
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
@@ -590,7 +588,7 @@ void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
     if (pThis->mDataBase.m_cTransfersPending)
         pThis->mDataBase.m_cTransfersPending--;
 
-    LogFlowFunc(("pTarget=%p vrc=%Rrc (ignored)\n", (GuestDnDTarget *)pThis, vrc));
+    LogFlowFunc(("pTarget=%p, vrc=%Rrc (ignored)\n", (GuestDnDTarget *)pThis, vrc));
 }
 
 /**
@@ -1418,22 +1416,27 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     if (RT_FAILURE(rc))
     {
-        if (rc == VERR_CANCELLED)
-            pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
-        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
-            pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR, rc,
-                                      GuestDnDTarget::i_hostErrorToString(rc));
-    }
+        if (rc == VERR_CANCELLED) /* Transfer was cancelled by the host. */
+        {
+            /*
+             * Now that we've cleaned up tell the guest side to cancel.
+             * This does not imply we're waiting for the guest to react, as the
+             * host side never must depend on anything from the guest.
+             */
+            int rc2 = sendCancel();
+            AssertRC(rc2);
 
-    /*
-     * Now that we've cleaned up tell the guest side to cancel.
-     * This does not imply we're waiting for the guest to react, as the
-     * host side never must depend on anything from the guest.
-     */
-    if (rc == VERR_CANCELLED)
-    {
-        int rc2 = sendCancel();
-        AssertRC(rc2);
+            rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+            AssertRC(rc2);
+        }
+        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+        {
+            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR, rc,
+                                                GuestDnDTarget::i_hostErrorToString(rc));
+            AssertRC(rc2);
+        }
+
+        rc = VINF_SUCCESS; /* The error was handled by the setProgress() calls above. */
     }
 
     LogFlowFuncLeaveRC(rc);

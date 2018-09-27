@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1065,12 +1065,11 @@ void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
         return;
 
     int vrc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
-    AssertRC(vrc);
-/** @todo
- *
- *  r=bird: What happens with @a vrc?
- *
- */
+    if (RT_FAILURE(vrc)) /* In case we missed some error handling within i_receiveData(). */
+    {
+        AssertFailed();
+        LogRel(("DnD: Receiving data from guest failed with %Rrc\n", vrc));
+    }
 
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
@@ -1078,7 +1077,7 @@ void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
     if (pThis->mDataBase.m_cTransfersPending)
         pThis->mDataBase.m_cTransfersPending--;
 
-    LogFlowFunc(("pSource=%p vrc=%Rrc (ignored)\n", (GuestDnDSource *)pThis, vrc));
+    LogFlowFunc(("pSource=%p, vrc=%Rrc (ignored)\n", (GuestDnDSource *)pThis, vrc));
 }
 
 int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
@@ -1159,12 +1158,17 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     if (RT_FAILURE(rc))
     {
-        if (rc == VERR_CANCELLED)
+        if (rc == VERR_CANCELLED) /* Transfer was cancelled by the host. */
         {
-            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED);
+            /*
+             * Now that we've cleaned up tell the guest side to cancel.
+             * This does not imply we're waiting for the guest to react, as the
+             * host side never must depend on anything from the guest.
+             */
+            int rc2 = sendCancel();
             AssertRC(rc2);
 
-            rc2 = sendCancel();
+            rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED);
             AssertRC(rc2);
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
@@ -1173,6 +1177,8 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
                                                 rc, GuestDnDSource::i_hostErrorToString(rc));
             AssertRC(rc2);
         }
+
+        rc = VINF_SUCCESS; /* The error was handled by the setProgress() calls above. */
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1277,12 +1283,22 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     if (RT_FAILURE(rc))
     {
+        int rc2 = droppedFiles.Rollback();
+        if (RT_FAILURE(rc2))
+            LogRel(("DnD: Deleting left over temporary files failed (%Rrc), please remove directory '%s' manually\n",
+                    rc2, droppedFiles.GetDirAbs()));
+
         if (rc == VERR_CANCELLED)
         {
-            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED);
+            /*
+             * Now that we've cleaned up tell the guest side to cancel.
+             * This does not imply we're waiting for the guest to react, as the
+             * host side never must depend on anything from the guest.
+             */
+            rc2 = sendCancel();
             AssertRC(rc2);
 
-            rc2 = sendCancel();
+            rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_CANCELLED);
             AssertRC(rc2);
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
@@ -1291,14 +1307,8 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
                                                 rc, GuestDnDSource::i_hostErrorToString(rc));
             AssertRC(rc2);
         }
-    }
 
-    if (RT_FAILURE(rc))
-    {
-        int rc2 = droppedFiles.Rollback();
-        if (RT_FAILURE(rc2))
-            LogRel(("DnD: Deleting left over temporary files failed (%Rrc). Please remove directory manually: %s\n",
-                    rc2, droppedFiles.GetDirAbs()));
+        rc = VINF_SUCCESS; /* The error was handled by the setProgress() calls above. */
     }
 
     droppedFiles.Close();
