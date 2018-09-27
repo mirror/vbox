@@ -901,6 +901,23 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
 
 
 /**
+ * Initializes (or re-initializes) per-VCPU SVM hardware virtualization state.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+DECLINLINE(void) cpumR3InitSvmHwVirtState(PVMCPU pVCpu)
+{
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
+    Assert(pCtx->hwvirt.svm.CTX_SUFF(pVmcb));
+
+    memset(pCtx->hwvirt.svm.CTX_SUFF(pVmcb), 0, SVM_VMCB_PAGES << PAGE_SHIFT);
+    pCtx->hwvirt.svm.uMsrHSavePa    = 0;
+    pCtx->hwvirt.svm.uPrevPauseTick = 0;
+}
+
+
+/**
  * Frees memory allocated for the VMX hardware virtualization state.
  *
  * @param   pVM     The cross context VM structure.
@@ -1035,6 +1052,29 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         cpumR3FreeVmxHwVirtState(pVM);
 
     return rc;
+}
+
+
+/**
+ * Initializes (or re-initializes) per-VCPU VMX hardware virtualization state.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+DECLINLINE(void) cpumR3InitVmxHwVirtState(PVMCPU pVCpu)
+{
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs));
+
+    memset(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs),       0, VMX_V_VMCS_SIZE);
+    memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs), 0, VMX_V_VMCS_SIZE);
+    pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
+    pCtx->hwvirt.vmx.GCPhysShadowVmcs  = NIL_RTGCPHYS;
+    pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
+    pCtx->hwvirt.vmx.fInVmxRootMode    = false;
+    pCtx->hwvirt.vmx.fInVmxNonRootMode = false;
+    /* Don't reset diagnostics here. */
 }
 
 
@@ -1577,8 +1617,25 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         rc = cpumR3AllocVmxHwVirtState(pVM);
     else if (pVM->cpum.ro.GuestFeatures.fSvm)
         rc = cpumR3AllocSvmHwVirtState(pVM);
+    else
+        Assert(pVM->aCpus[0].cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Initialize guest hardware virtualization state.
+     */
+    CPUMHWVIRT const enmHwvirt = pVM->aCpus[0].cpum.s.Guest.hwvirt.enmHwvirt;
+    if (enmHwvirt == CPUMHWVIRT_VMX)
+    {
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            cpumR3InitVmxHwVirtState(&pVM->aCpus[i]);
+    }
+    else if (enmHwvirt == CPUMHWVIRT_SVM)
+    {
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            cpumR3InitSvmHwVirtState(&pVM->aCpus[i]);
+    }
 
     /*
      * Workaround for missing cpuid(0) patches when leaf 4 returns GuestInfo.DefCpuId:
@@ -1815,14 +1872,11 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Hardware virtualization state.
      */
     pCtx->hwvirt.fGif = true;
-
-    /* SVM. */
-    if (pCtx->hwvirt.svm.CTX_SUFF(pVmcb))
-    {
-        memset(pCtx->hwvirt.svm.CTX_SUFF(pVmcb), 0, SVM_VMCB_PAGES << PAGE_SHIFT);
-        pCtx->hwvirt.svm.uMsrHSavePa    = 0;
-        pCtx->hwvirt.svm.uPrevPauseTick = 0;
-    }
+    Assert(!pVM->cpum.ro.GuestFeatures.fVmx || !pVM->cpum.ro.GuestFeatures.fSvm);   /* Paranoia. */
+    if (pVM->cpum.ro.GuestFeatures.fVmx)
+        cpumR3InitVmxHwVirtState(pVCpu);
+    else if (pVM->cpum.ro.GuestFeatures.fSvm)
+        cpumR3InitSvmHwVirtState(pVCpu);
 }
 
 
