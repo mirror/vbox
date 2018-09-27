@@ -350,7 +350,7 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     }
 
     /* Warn the user about inaccessible medium: */
-    if (fIsThereAnyInaccessibleMedium && !msgCenter().warnAboutInaccessibleMedia())
+    if (fIsThereAnyInaccessibleMedium && msgCenter().warnAboutInaccessibleMedia())
     {
         /* Open the MM window: */
         sltOpenVirtualMediumManagerWindow();
