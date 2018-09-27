@@ -1207,6 +1207,25 @@ RT_C_DECLS_END
     } else \
         break
 
+/** @def AssertLogRelStmt
+ * Assert that an expression is true, return \a rc if it isn't.
+ * Strict builds will hit a breakpoint, non-strict will only do LogRel.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute in case of a failed assertion.
+ */
+#define AssertLogRelStmt(expr, stmt) \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+        { \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
+            stmt; \
+        } \
+    } while (0)
+
 /** @def AssertLogRelMsg
  * Assert that an expression is true.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
