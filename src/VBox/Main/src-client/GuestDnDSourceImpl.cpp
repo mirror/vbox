@@ -1303,8 +1303,8 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
-            int rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR,
-                                                rc, GuestDnDSource::i_hostErrorToString(rc));
+            rc2 = pCtx->mpResp->setProgress(100, DND_PROGRESS_ERROR,
+                                            rc, GuestDnDSource::i_hostErrorToString(rc));
             AssertRC(rc2);
         }
 
