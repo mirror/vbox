@@ -2435,6 +2435,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         AssertPtr(pDrvAudioInst);
         AssertPtr(pDrvAudioInst->pReg);
 
+#if 0 /** @todo r=bird: Don't use strlen to check for empty strings.  Don't use RTStrPrintf to do RTStrCopy work. */
         char szDriver[64];
         RTStrPrintf(szDriver, RT_ELEMENTS(szDriver), "%s", pDrvAudioInst->pReg->szName);
         if (!strlen(szDriver))
@@ -2445,6 +2446,12 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
         RTStrPrintf(pStream->szName, RT_ELEMENTS(pStream->szName), "[%s] %s",
                     szDriver, strlen(pCfgHost->szName) ? pCfgHost->szName : "<Untitled>");
+#else
+        Assert(pDrvAudioInst->pReg->szName[0] != '\0');
+        RTStrPrintf(pStream->szName, RT_ELEMENTS(pStream->szName), "[%s] %s",
+                    pDrvAudioInst->pReg->szName[0] != '\0' ? pDrvAudioInst->pReg->szName : "Untitled",
+                    pCfgHost->szName[0] != '\0' ? pCfgHost->szName : "<Untitled>");
+#endif
         pStream->enmDir = pCfgHost->enmDir;
 
         /*
@@ -3024,6 +3031,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
 
         return rc;
     }
+    pStream->fValidBackendData = true;
 
     /* Validate acquired configuration. */
     if (!DrvAudioHlpStreamCfgIsValid(pCfgAcq))
@@ -3081,9 +3089,14 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     {
         /* Check if the pointer to  the host audio driver is still valid.
          * It can be NULL if we were called in drvAudioDestruct, for example. */
-        if (pThis->pHostDrvAudio)
+        if (pThis->pHostDrvAudio && pStream->fValidBackendData)
+        {
             rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pStream->pvBackend);
+            pStream->fValidBackendData = false;
+        }
 
+        /** @todo r=bird: Who frees pvBackend? drvAudioStreamFree, right?
+         *        So, you cannot set to NULL here, can you? */
         pStream->pvBackend = NULL;
         pStream->cbBackend = 0;
     }
