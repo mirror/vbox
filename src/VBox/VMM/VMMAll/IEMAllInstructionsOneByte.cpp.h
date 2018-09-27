@@ -4676,6 +4676,7 @@ FNIEMOP_DEF(iemOp_wait)
  */
 FNIEMOP_DEF(iemOp_pushf_Fv)
 {
+    IEMOP_MNEMONIC(pushf_Fv, "pushf Fv");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_pushf, pVCpu->iem.s.enmEffOpSize);
@@ -4687,6 +4688,7 @@ FNIEMOP_DEF(iemOp_pushf_Fv)
  */
 FNIEMOP_DEF(iemOp_popf_Fv)
 {
+    IEMOP_MNEMONIC(popf_Fv, "popf Fv");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_popf, pVCpu->iem.s.enmEffOpSize);
@@ -4741,7 +4743,7 @@ FNIEMOP_DEF(iemOp_lahf)
 
 /**
  * Macro used by iemOp_mov_AL_Ob, iemOp_mov_rAX_Ov, iemOp_mov_Ob_AL and
- * iemOp_mov_Ov_rAX to fetch the moffsXX bit of the opcode and fend of lock
+ * iemOp_mov_Ov_rAX to fetch the moffsXX bit of the opcode and fend off lock
  * prefixes.  Will return on failures.
  * @param   a_GCPtrMemOff   The variable to store the offset in.
  */
@@ -4770,8 +4772,9 @@ FNIEMOP_DEF(iemOp_lahf)
 FNIEMOP_DEF(iemOp_mov_AL_Ob)
 {
     /*
-     * Get the offset and fend of lock prefixes.
+     * Get the offset and fend off lock prefixes.
      */
+    IEMOP_MNEMONIC(mov_AL_Ob, "mov AL,Ob");
     RTGCPTR GCPtrMemOff;
     IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
 
@@ -4794,7 +4797,7 @@ FNIEMOP_DEF(iemOp_mov_AL_Ob)
 FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 {
     /*
-     * Get the offset and fend of lock prefixes.
+     * Get the offset and fend off lock prefixes.
      */
     IEMOP_MNEMONIC(mov_rAX_Ov, "mov rAX,Ov");
     RTGCPTR GCPtrMemOff;
@@ -4843,8 +4846,9 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 FNIEMOP_DEF(iemOp_mov_Ob_AL)
 {
     /*
-     * Get the offset and fend of lock prefixes.
+     * Get the offset and fend off lock prefixes.
      */
+    IEMOP_MNEMONIC(mov_Ob_AL, "mov Ob,AL");
     RTGCPTR GCPtrMemOff;
     IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
 
@@ -4867,8 +4871,9 @@ FNIEMOP_DEF(iemOp_mov_Ob_AL)
 FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 {
     /*
-     * Get the offset and fend of lock prefixes.
+     * Get the offset and fend off lock prefixes.
      */
+    IEMOP_MNEMONIC(mov_Ov_rAX, "mov Ov,rAX");
     RTGCPTR GCPtrMemOff;
     IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
 
@@ -6502,6 +6507,7 @@ FNIEMOP_DEF(iemOp_retf)
  */
 FNIEMOP_DEF(iemOp_int3)
 {
+    IEMOP_MNEMONIC(int3, "int3");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_BP, IEMINT_INT3);
 }
@@ -6512,6 +6518,7 @@ FNIEMOP_DEF(iemOp_int3)
  */
 FNIEMOP_DEF(iemOp_int_Ib)
 {
+    IEMOP_MNEMONIC(int_Ib, "int Ib");
     uint8_t u8Int; IEM_OPCODE_GET_NEXT_U8(&u8Int);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, u8Int, IEMINT_INTN);
@@ -10631,6 +10638,7 @@ FNIEMOP_DEF(iemOp_repe)
  */
 FNIEMOP_DEF(iemOp_hlt)
 {
+    IEMOP_MNEMONIC(hlt, "hlt");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_hlt);
 }
