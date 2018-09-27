@@ -1060,9 +1060,6 @@ typedef struct PDMAUDIOSTREAM
      *  For input streams this  indicates whether the stream has enough input
      *  data to actually start reading audio. */
     bool                   fThresholdReached;
-    /** HACK ALERT! Set if pfnStreamCreate returned success and it's safe to use
-     * pfnStreamDestroy on pvBackend. */
-    bool                    fValidBackendData;
     /** Data to backend-specific stream data.
      *  This data block will be casted by the backend to access its backend-dependent data.
      *

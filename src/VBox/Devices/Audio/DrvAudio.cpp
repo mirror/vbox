@@ -735,6 +735,8 @@ static void drvAudioStreamFree(PPDMAUDIOSTREAM pStream)
     if (!pStream)
         return;
 
+    LogFunc(("[%s]\n", pStream->szName));
+
     if (pStream->pvBackend)
     {
         Assert(pStream->cbBackend);
@@ -3031,7 +3033,6 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
 
         return rc;
     }
-    pStream->fValidBackendData = true;
 
     /* Validate acquired configuration. */
     if (!DrvAudioHlpStreamCfgIsValid(pCfgAcq))
@@ -3085,20 +3086,16 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     LogFunc(("[%s] fStatus=%s\n", pStream->szName, pszStreamSts));
 #endif
 
-    if (pStream->pvBackend)
+    if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED)
     {
+        AssertPtr(pStream->pvBackend);
+
         /* Check if the pointer to  the host audio driver is still valid.
          * It can be NULL if we were called in drvAudioDestruct, for example. */
-        if (pThis->pHostDrvAudio && pStream->fValidBackendData)
-        {
+        if (pThis->pHostDrvAudio)
             rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pStream->pvBackend);
-            pStream->fValidBackendData = false;
-        }
 
-        /** @todo r=bird: Who frees pvBackend? drvAudioStreamFree, right?
-         *        So, you cannot set to NULL here, can you? */
-        pStream->pvBackend = NULL;
-        pStream->cbBackend = 0;
+        pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
     }
 
 #ifdef LOG_ENABLED
@@ -3136,9 +3133,6 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 
     if (RT_SUCCESS(rc))
     {
-        /* Reset status. */
-        pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
-
 #ifdef LOG_ENABLED
         if (pStream->fStatus != PDMAUDIOSTREAMSTS_FLAG_NONE)
         {
