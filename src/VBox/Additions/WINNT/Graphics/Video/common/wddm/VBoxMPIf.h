@@ -268,7 +268,7 @@ typedef struct VBOXWDDM_CREATECONTEXT_INFO
 {
     /* interface version, i.e. 9 for d3d9, 8 for d3d8, etc. */
     uint32_t u32IfVersion;
-    /* true if d3d false if ddraw */
+    /* What kind of context to create. */
     VBOXWDDM_CONTEXT_TYPE enmType;
     union
     {
