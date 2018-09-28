@@ -2746,7 +2746,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
         Assert(!(u64Cr0Fixed0 & (X86_CR0_NW | X86_CR0_CD)));
         if (fUnrestrictedGuest)
             u64Cr0Fixed0 &= ~(X86_CR0_PE | X86_CR0_PG);
-        if (~pVmcs->u64GuestCr0.u & u64Cr0Fixed0)
+        if ((pVmcs->u64GuestCr0.u & u64Cr0Fixed0) != u64Cr0Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestCr0Fixed0);
 
         /* CR0 MBZ bits. */
@@ -2765,7 +2765,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
     {
         /* CR4 MB1 bits. */
         uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
-        if (~pVmcs->u64GuestCr4.u & u64Cr4Fixed0)
+        if ((pVmcs->u64GuestCr4.u & u64Cr4Fixed0) != u64Cr4Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestCr4Fixed0);
 
         /* CR4 MBZ bits. */
@@ -3732,7 +3732,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     {
         /* CR0 MB1 bits. */
         uint64_t const u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
-        if (~pVmcs->u64HostCr0.u & u64Cr0Fixed0)
+        if ((pVmcs->u64HostCr0.u & u64Cr0Fixed0) != u64Cr0Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostCr0Fixed0);
 
         /* CR0 MBZ bits. */
@@ -3745,7 +3745,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     {
         /* CR4 MB1 bits. */
         uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
-        if (~pVmcs->u64HostCr4.u & u64Cr4Fixed0)
+        if ((pVmcs->u64HostCr4.u & u64Cr4Fixed0) != u64Cr4Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostCr4Fixed0);
 
         /* CR4 MBZ bits. */
@@ -5591,22 +5591,46 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
-        /* CR0 MB1 bits. */
-        uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
-        if (~pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0)
+        /* CR0. */
         {
-            Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr0Fixed0;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
+            /* CR0 MB1 bits. */
+            uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+            if ((pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0) != uCr0Fixed0)
+            {
+                Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr0Fixed0;
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
+
+            /* CR0 MBZ bits. */
+            uint64_t const uCr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+            if (pVCpu->cpum.GstCtx.cr0 & ~uCr0Fixed1)
+            {
+                Log(("vmxon: CR0 fixed1 bits set -> #GP(0)\n"));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr0Fixed1;
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
         }
 
-        /* CR4 MB1 bits. */
-        uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
-        if (~pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0)
+        /* CR4. */
         {
-            Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed0;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
+            /* CR4 MB1 bits. */
+            uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+            if ((pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0) != uCr4Fixed0)
+            {
+                Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed0;
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
+
+            /* CR4 MBZ bits. */
+            uint64_t const uCr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+            if (pVCpu->cpum.GstCtx.cr4 & ~uCr4Fixed1)
+            {
+                Log(("vmxon: CR4 fixed1 bits set -> #GP(0)\n"));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed1;
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
         }
 
         /* Feature control MSR's LOCK and VMXON bits. */
