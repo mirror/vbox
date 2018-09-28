@@ -2469,7 +2469,8 @@ typedef uint32_t VMXINSTRID;
  *  the ModR/M primary operand write bit): */
 #define VMXINSTRID_VMLAUNCH                                     (0x10 | VMXINSTRID_VALID)
 #define VMXINSTRID_VMRESUME                                     (0x11 | VMXINSTRID_VALID)
-#define VMXINSTRID_VMWRITE                                      (0x12 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_VMREAD                                       (0x12 | VMXINSTRID_VALID)
+#define VMXINSTRID_VMWRITE                                      (0x13 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
 /** @} */
 
 
@@ -2947,6 +2948,10 @@ typedef const VMXVMCSFIELDENC *PCVMXVMCSFIELDENC;
 #define VMX_VMCS_ENC_WIDTH_32BIT                                2
 /** VMCS field encoding width: Natural width. */
 #define VMX_VMCS_ENC_WIDTH_NATURAL                              3
+
+/** VMCS field encoding: Mask of reserved bits (bits 63:15 MBZ), bit 12 is
+ *  not included! */
+#define VMX_VMCS_ENC_RSVD_MASK                                  UINT64_C(0xffffffffffff8000)
 
 /** Bits fields for VMCS field encoding. */
 #define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0

@@ -4628,7 +4628,7 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length.
- * @param   uInstrId        The instruction identity (either VMXINSTRID_VMLAUNCH or
+ * @param   uInstrId        The instruction identity (VMXINSTRID_VMLAUNCH or
  *                          VMXINSTRID_VMRESUME).
  * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
  *                          Optional, can  be NULL.
@@ -4640,8 +4640,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 {
     Assert(   uInstrId == VMXINSTRID_VMLAUNCH
            || uInstrId == VMXINSTRID_VMRESUME);
-
     const char *pszInstr = uInstrId == VMXINSTRID_VMRESUME ? "vmresume" : "vmlaunch";
+
+    /* Nested-guest intercept. */
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
@@ -4801,6 +4802,51 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
 
 /**
+ * Checks whether a VMREAD or VMWRITE instruction for the given VMCS field is
+ * intercepted (causes a VM-exit) or not.
+ *
+ * @returns @c true if the intercepted is set, @c false otherwise.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_VMREAD or
+ *                          VMXINSTRID_VMWRITE).
+ */
+IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint64_t u64FieldEnc, VMXINSTRID uInstrId)
+{
+    Assert(   uInstrId == VMXINSTRID_VMREAD
+           || uInstrId == VMXINSTRID_VMWRITE);
+
+    /*
+     * Without VMCS shadowing, all VMREAD and VMWRITE instructions are intercepted.
+     */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmcsShadowing)
+        return true;
+
+    /*
+     * If any reserved bit in the 64-bit VMCS field encoding is set, the VMREAD/VMWRITE is intercepted.
+     * This excludes any reserved bits in the valid parts of the field encoding (i.e. bit 12).
+     */
+    if (u64FieldEnc & VMX_VMCS_ENC_RSVD_MASK)
+        return true;
+
+    /*
+     * Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not.
+     */
+    uint32_t u32FieldEnc = RT_LO_U32(u64FieldEnc);
+    Assert(u32FieldEnc >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
+    uint8_t const *pbBitmap = uInstrId == VMXINSTRID_VMREAD
+                            ? (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap)
+                            : (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap);
+    pbBitmap += (u32FieldEnc >> 3);
+    if (*pbBitmap & RT_BIT(u32FieldEnc & 7))
+        return true;
+
+    return false;
+}
+
+
+/**
  * VMREAD common (memory/register) instruction execution worker
  *
  * @returns Strict VBox status code.
@@ -4815,11 +4861,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
                                            PCVMXVEXITINFO pExitInfo)
 {
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    /* Nested-guest intercept. */
+    if (   IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+        && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, u64FieldEnc, VMXINSTRID_VMREAD))
     {
-        RT_NOREF(pExitInfo); RT_NOREF(cbInstr);
-        /** @todo NSTVMX: intercept. */
-        /** @todo NSTVMX: VMCS shadowing intercept (VMREAD bitmap). */
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMREAD, VMXINSTRID_VMREAD, cbInstr);
     }
 
     /* CPL. */
@@ -5031,11 +5079,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
 IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode, uint64_t u64Val,
                                       uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
 {
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    /* Nested-guest intercept. */
+    if (   IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+        && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, u64FieldEnc, VMXINSTRID_VMWRITE))
     {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
-        /** @todo NSTVMX: VMCS shadowing intercept (VMWRITE bitmap). */
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMWRITE, VMXINSTRID_VMWRITE, cbInstr);
     }
 
     /* CPL. */
@@ -5107,8 +5157,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* Read-only VMCS field. */
-    bool const fReadOnlyField = HMVmxIsVmcsFieldReadOnly(u64FieldEnc);
-    if (   fReadOnlyField
+    bool const fIsFieldReadOnly = HMVmxIsVmcsFieldReadOnly(u64FieldEnc);
+    if (   fIsFieldReadOnly
         && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmwriteAll)
     {
         Log(("vmwrite: Write to read-only VMCS component %#RX64 -> VMFail\n", u64FieldEnc));
@@ -5176,6 +5226,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
                                       PCVMXVEXITINFO pExitInfo)
 {
+    /* Nested-guest intercept. */
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
@@ -5290,6 +5341,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
                                       PCVMXVEXITINFO pExitInfo)
 {
+    /* Nested-guest intercept. */
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
@@ -5339,6 +5391,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
                                       PCVMXVEXITINFO pExitInfo)
 {
+    /* Nested-guest intercept. */
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
@@ -5618,6 +5671,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
     }
     else if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
+        /* Nested-guest intercept. */
         RT_NOREF(pExitInfo);
         /** @todo NSTVMX: intercept. */
     }
@@ -5653,6 +5707,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
+    /* Nested-guest intercept. */
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
         return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMXOFF, cbInstr);
 
