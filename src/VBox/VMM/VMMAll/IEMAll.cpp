@@ -384,25 +384,20 @@ typedef enum IEMXCPTCLASS
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-/**
- * Check if VMX is enabled.
- */
-# define IEM_IS_VMX_ENABLED(a_pVCpu)                         (CPUMIsGuestVmxEnabled(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Check if the guest has entered VMX root operation.
  */
-#define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                        (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
+#define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                        (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Check if the guest has entered VMX non-root operation.
  */
-#define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
+#define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
 
 #else
-# define IEM_IS_VMX_ENABLED(a_pVCpu)                         (false)
-# define IEM_IS_VMX_ROOT_MODE(a_pVCpu)                       (false)
-# define IEM_IS_VMX_NON_ROOT_MODE(a_pVCpu)                   (false)
+# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                       (false)
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                   (false)
 
 #endif
 
@@ -12571,7 +12566,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 # define IEMOP_HLP_IN_VMX_OPERATION(a_szInstr, a_InsDiagPrefix) \
     do \
     { \
-        if (IEM_IS_VMX_ROOT_MODE(pVCpu)) { /* likely */ } \
+        if (IEM_VMX_IS_ROOT_MODE(pVCpu)) { /* likely */ } \
         else \
         { \
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_VmxRoot; \

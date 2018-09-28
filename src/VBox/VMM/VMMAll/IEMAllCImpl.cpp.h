@@ -5335,7 +5335,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             }
 
             /* Check for bits that must remain set in VMX operation. */
-            if (IEM_IS_VMX_ROOT_MODE(pVCpu))
+            if (IEM_VMX_IS_ROOT_MODE(pVCpu))
             {
                 uint32_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
                 if ((uNewCrX & uCr0Fixed0) != uCr0Fixed0)
@@ -5561,7 +5561,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             }
 
             /* Check for bits that must remain set in VMX operation. */
-            if (IEM_IS_VMX_ROOT_MODE(pVCpu))
+            if (IEM_VMX_IS_ROOT_MODE(pVCpu))
             {
                 uint32_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
                 if ((uNewCrX & uCr4Fixed0) != uCr4Fixed0)

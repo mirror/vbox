@@ -437,7 +437,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
 #define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
     do \
     { \
-        if (IEM_IS_VMX_ROOT_MODE(a_pVCpu)) \
+        if (IEM_VMX_IS_ROOT_MODE(a_pVCpu)) \
         { /* likely */ } \
         else \
         { \
@@ -4684,7 +4684,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     const char *pszInstr = uInstrId == VMXINSTRID_VMRESUME ? "vmresume" : "vmlaunch";
 
     /* Nested-guest intercept. */
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
@@ -4692,7 +4692,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         return iemVmxVmexitInstrNeedsInfo(pVCpu, uExitReason, uInstrId, cbInstr);
     }
 
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+    Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
@@ -4903,7 +4903,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
                                            PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
-    if (   IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, u64FieldEnc, VMXINSTRID_VMREAD))
     {
         if (pExitInfo)
@@ -4920,7 +4920,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* VMCS pointer in root mode. */
-    if (    IEM_IS_VMX_ROOT_MODE(pVCpu)
+    if (    IEM_VMX_IS_ROOT_MODE(pVCpu)
         && !IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         Log(("vmread: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
@@ -4931,7 +4931,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* VMCS-link pointer in non-root mode. */
-    if (    IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && !IEM_VMX_HAS_SHADOW_VMCS(pVCpu))
     {
         Log(("vmread: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
@@ -4955,7 +4955,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
      * Setup reading from the current or shadow VMCS.
      */
     uint8_t *pbVmcs;
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
     else
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
@@ -5121,7 +5121,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                                       uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
-    if (   IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, u64FieldEnc, VMXINSTRID_VMWRITE))
     {
         if (pExitInfo)
@@ -5138,7 +5138,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* VMCS pointer in root mode. */
-    if (    IEM_IS_VMX_ROOT_MODE(pVCpu)
+    if (    IEM_VMX_IS_ROOT_MODE(pVCpu)
         && !IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
         Log(("vmwrite: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
@@ -5149,7 +5149,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* VMCS-link pointer in non-root mode. */
-    if (    IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && !IEM_VMX_HAS_SHADOW_VMCS(pVCpu))
     {
         Log(("vmwrite: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
@@ -5213,7 +5213,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * Setup writing to the current or shadow VMCS.
      */
     uint8_t *pbVmcs;
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
     else
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
@@ -5268,14 +5268,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                                       PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
         return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMCLEAR, VMXINSTRID_NONE, cbInstr);
     }
 
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+    Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
@@ -5383,14 +5383,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                                       PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
         return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMPTRST, VMXINSTRID_NONE, cbInstr);
     }
 
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+    Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
@@ -5433,14 +5433,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                                       PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
         return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMPTRLD, VMXINSTRID_NONE, cbInstr);
     }
 
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+    Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
@@ -5573,7 +5573,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
     RT_NOREF5(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, pExitInfo);
     return VINF_EM_RAW_EMULATE_INSTR;
 #else
-    if (!IEM_IS_VMX_ROOT_MODE(pVCpu))
+    if (!IEM_VMX_IS_ROOT_MODE(pVCpu))
     {
         /* CPL. */
         if (pVCpu->iem.s.uCpl > 0)
@@ -5710,7 +5710,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         return VINF_SUCCESS;
 # endif
     }
-    else if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         /* Nested-guest intercept. */
         if (pExitInfo)
@@ -5718,7 +5718,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMXON, VMXINSTRID_NONE, cbInstr);
     }
 
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+    Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
@@ -5750,7 +5750,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     /* Nested-guest intercept. */
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMXOFF, cbInstr);
 
     /* CPL. */
@@ -5900,7 +5900,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Nested-guest intercept. */
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMCALL, cbInstr);
 #endif
 
