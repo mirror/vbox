@@ -452,8 +452,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu)
         Assert(aValues[iReg - 1].DeliverabilityNotifications.InterruptPriority == (fDesiredIntWin & NEM_WIN_INTW_F_PRIO_MASK) >> NEM_WIN_INTW_F_PRIO_SHIFT);
     }
 
-    /// @todo WHvRegisterPendingEvent0
-    /// @todo WHvRegisterPendingEvent1
+    /// @todo WHvRegisterPendingEvent
 
     /*
      * Set the registers.
@@ -703,8 +702,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
 
     /* event injection */
     aenmNames[iReg++] = WHvRegisterPendingInterruption;
-    aenmNames[iReg++] = WHvRegisterPendingEvent0;
-    aenmNames[iReg++] = WHvRegisterPendingEvent1;
+    aenmNames[iReg++] = WHvRegisterPendingEvent0; /** @todo renamed to WHvRegisterPendingEvent */
 
     size_t const cRegs = iReg;
     Assert(cRegs < RT_ELEMENTS(aenmNames));
@@ -1086,8 +1084,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t 
                   ("%#RX64\n", aValues[iReg].PendingInterruption.AsUINT64));
     }
 
-    /// @todo WHvRegisterPendingEvent0
-    /// @todo WHvRegisterPendingEvent1
+    /// @todo WHvRegisterPendingEvent0 (renamed to WHvRegisterPendingEvent).
 
     /* Almost done, just update extrn flags and maybe change PGM mode. */
     pVCpu->cpum.GstCtx.fExtrn &= ~fWhat;
@@ -3748,7 +3745,7 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
     NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                             &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                            sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                            pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                             NULL, 0);
     if (rcNt == STATUS_SUCCESS)
     { /* likely */ }
@@ -3772,7 +3769,7 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
         rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                        &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                       sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                       pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                        NULL, 0);
         DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/2 %#x", rcNt);
     }
@@ -4239,7 +4236,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMsWait;
                 NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                                         &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                                        sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                                        pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                                         NULL, 0);
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (rcNt == STATUS_SUCCESS)

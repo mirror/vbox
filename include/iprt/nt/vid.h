@@ -100,7 +100,7 @@ typedef struct VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT
 {
     HV_VP_INDEX         iCpu;
     uint32_t            fFlags;         /**< VID_MSHAGN_F_GET_XXX*/
-    uint32_t            cMillies;
+    uint32_t            cMillies;       /**< Not present in build 17758 as the API changed to always to infinite waits. */
 } VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT;
 /** Pointer to input for VidMessageSlotHandleAndGetNext. */
 typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT *PVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT;
@@ -116,6 +116,9 @@ typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT const *PCVID_IOCTL_INPU
  * This is executed before VID_MSHAGN_F_GET_NEXT_MESSAGE and should not be
  * subject to NtAlertThread side effects. */
 #define VID_MSHAGN_F_HANDLE_MESSAGE     RT_BIT_32(1)
+/** Cancel VP execution (no other bit set).
+ * @since about build 17758. */
+#define VID_MSHAGN_F_CANCEL             RT_BIT_32(2)
 /** @} */
 
 
@@ -185,14 +188,20 @@ DECLIMPORT(BOOL) VIDAPI VidMessageSlotMap(VID_PARTITION_HANDLE hPartition, PVID_
  *
  * @param   hPartition  The partition handle.
  * @param   iCpu        The CPU to wait-and-get messages for.
- * @param   fFlags      Flags. At least one of the two flags must be set:
- *                          - VID_MSHAGN_F_GET_NEXT_MESSAGE (bit 0)
- *                          - VID_MSHAGN_F_HANDLE_MESSAGE (bit 1)
- * @param   cMillies    The timeout, presumably in milliseconds.
+ * @param   fFlags      Flags, VID_MSHAGN_F_XXX.
+ *
+ *                      When starting or resuming execution, at least one of
+ *                      VID_MSHAGN_F_GET_NEXT_MESSAGE (bit 0) and
+ *                      VID_MSHAGN_F_HANDLE_MESSAGE (bit 1) must be set.
+ *
+ *                      When cancelling execution only VID_MSHAGN_F_CANCEL (big 2)
+ *                      must be set.
+ *
+ * @param   cMillies    The timeout, presumably in milliseconds.  This parameter
+ *                      was dropped about build 17758.
  *
  * @todo    Would be awfully nice if someone at Microsoft could hit at the
  *          flags here.
- * @note
  */
 DECLIMPORT(BOOL) VIDAPI VidMessageSlotHandleAndGetNext(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
                                                        uint32_t fFlags, uint32_t cMillies);

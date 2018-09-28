@@ -854,17 +854,34 @@ nemR3WinIoctlDetector_MessageSlotHandleAndGetNext(HANDLE hFile, HANDLE hEvt, PIO
     RT_NOREF(hEvt); RT_NOREF(pfnApcCallback); RT_NOREF(pvApcCtx);
     AssertLogRelMsgReturn(RT_VALID_PTR(pIos), ("pIos=%p\n", pIos), STATUS_INVALID_PARAMETER_5);
 
-    AssertLogRelMsgReturn(cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT), ("cbInput=%#x\n", cbInput),
-                          STATUS_INVALID_PARAMETER_8);
-    AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
-    PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT pVidIn = (PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT)pvInput;
-    AssertLogRelMsgReturn(   pVidIn->iCpu == NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX
-                          && pVidIn->fFlags == VID_MSHAGN_F_HANDLE_MESSAGE
-                          && pVidIn->cMillies == NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT,
-                          ("iCpu=%u fFlags=%#x cMillies=%#x\n", pVidIn->iCpu, pVidIn->fFlags, pVidIn->cMillies),
-                          STATUS_INVALID_PARAMETER_9);
-    AssertLogRelMsgReturn(cbOutput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
-    RT_NOREF(pvOutput);
+    if (g_uBuildNo >= 17758)
+    {
+        /* No timeout since about build 17758, it's now always an infinite wait.  So, a somewhat compatible change.  */
+        AssertLogRelMsgReturn(cbInput == RT_UOFFSETOF(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT, cMillies),
+                              ("cbInput=%#x\n", cbInput),
+                              STATUS_INVALID_PARAMETER_8);
+        AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
+        PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT pVidIn = (PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT)pvInput;
+        AssertLogRelMsgReturn(   pVidIn->iCpu == NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX
+                              && pVidIn->fFlags == VID_MSHAGN_F_HANDLE_MESSAGE,
+                              ("iCpu=%u fFlags=%#x cMillies=%#x\n", pVidIn->iCpu, pVidIn->fFlags, pVidIn->cMillies),
+                              STATUS_INVALID_PARAMETER_9);
+        AssertLogRelMsgReturn(cbOutput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+    }
+    else
+    {
+        AssertLogRelMsgReturn(cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT), ("cbInput=%#x\n", cbInput),
+                              STATUS_INVALID_PARAMETER_8);
+        AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
+        PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT pVidIn = (PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT)pvInput;
+        AssertLogRelMsgReturn(   pVidIn->iCpu == NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX
+                              && pVidIn->fFlags == VID_MSHAGN_F_HANDLE_MESSAGE
+                              && pVidIn->cMillies == NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT,
+                              ("iCpu=%u fFlags=%#x cMillies=%#x\n", pVidIn->iCpu, pVidIn->fFlags, pVidIn->cMillies),
+                              STATUS_INVALID_PARAMETER_9);
+        AssertLogRelMsgReturn(cbOutput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+        RT_NOREF(pvOutput);
+    }
 
     g_IoCtlMessageSlotHandleAndGetNext.cbInput   = cbInput;
     g_IoCtlMessageSlotHandleAndGetNext.cbOutput  = cbOutput;
@@ -917,7 +934,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
      */
     decltype(NtDeviceIoControlFile) * const pfnOrg = *g_ppfnVidNtDeviceIoControlFile;
 
-    /* VidGetHvPartitionId */
+    /* VidGetHvPartitionId - must work due to memory. */
     *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_GetHvPartitionId;
     HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
     BOOL fRet = g_pfnVidGetHvPartitionId(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, &idHvPartition);
@@ -929,14 +946,15 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     LogRel(("NEM: VidGetHvPartitionId            -> fun:%#x in:%#x out:%#x\n",
             g_IoCtlGetHvPartitionId.uFunction, g_IoCtlGetHvPartitionId.cbInput, g_IoCtlGetHvPartitionId.cbOutput));
 
+    int rcRet = VINF_SUCCESS;
     /* VidStartVirtualProcessor */
     *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_StartVirtualProcessor;
     fRet = g_pfnVidStartVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
-    AssertReturn(fRet && g_IoCtlStartVirtualProcessor.uFunction != 0,
-                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
-                               "Problem figuring out VidStartVirtualProcessor: fRet=%u dwErr=%u",
-                               fRet, GetLastError()) );
+    AssertStmt(fRet && g_IoCtlStartVirtualProcessor.uFunction != 0,
+               rcRet = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
+                                               "Problem figuring out VidStartVirtualProcessor: fRet=%u dwErr=%u",
+                                               fRet, GetLastError()) );
     LogRel(("NEM: VidStartVirtualProcessor       -> fun:%#x in:%#x out:%#x\n", g_IoCtlStartVirtualProcessor.uFunction,
             g_IoCtlStartVirtualProcessor.cbInput, g_IoCtlStartVirtualProcessor.cbOutput));
 
@@ -944,10 +962,10 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_StopVirtualProcessor;
     fRet = g_pfnVidStopVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
-    AssertReturn(fRet && g_IoCtlStopVirtualProcessor.uFunction != 0,
-                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
-                               "Problem figuring out VidStopVirtualProcessor: fRet=%u dwErr=%u",
-                               fRet, GetLastError()) );
+    AssertStmt(fRet && g_IoCtlStopVirtualProcessor.uFunction != 0,
+               rcRet = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
+                                               "Problem figuring out VidStopVirtualProcessor: fRet=%u dwErr=%u",
+                                               fRet, GetLastError()) );
     LogRel(("NEM: VidStopVirtualProcessor        -> fun:%#x in:%#x out:%#x\n", g_IoCtlStopVirtualProcessor.uFunction,
             g_IoCtlStopVirtualProcessor.cbInput, g_IoCtlStopVirtualProcessor.cbOutput));
 
@@ -957,10 +975,10 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
                                                NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX, VID_MSHAGN_F_HANDLE_MESSAGE,
                                                NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
-    AssertReturn(fRet && g_IoCtlMessageSlotHandleAndGetNext.uFunction != 0,
-                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
-                               "Problem figuring out VidMessageSlotHandleAndGetNext: fRet=%u dwErr=%u",
-                               fRet, GetLastError()) );
+    AssertStmt(fRet && g_IoCtlMessageSlotHandleAndGetNext.uFunction != 0,
+               rcRet = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
+                                               "Problem figuring out VidMessageSlotHandleAndGetNext: fRet=%u dwErr=%u",
+                                               fRet, GetLastError()) );
     LogRel(("NEM: VidMessageSlotHandleAndGetNext -> fun:%#x in:%#x out:%#x\n",
             g_IoCtlMessageSlotHandleAndGetNext.uFunction, g_IoCtlMessageSlotHandleAndGetNext.cbInput,
             g_IoCtlMessageSlotHandleAndGetNext.cbOutput));
@@ -1013,7 +1031,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     pVM->nem.s.IoCtlStartVirtualProcessor       = g_IoCtlStartVirtualProcessor;
     pVM->nem.s.IoCtlStopVirtualProcessor        = g_IoCtlStopVirtualProcessor;
     pVM->nem.s.IoCtlMessageSlotHandleAndGetNext = g_IoCtlMessageSlotHandleAndGetNext;
-    return VINF_SUCCESS;
+    return rcRet;
 }
 
 
@@ -1197,6 +1215,15 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
              * Discover the VID I/O control function numbers we need.
              */
             rc = nemR3WinInitDiscoverIoControlProperties(pVM, pErrInfo);
+            if (rc == VERR_NEM_RING3_ONLY)
+            {
+                if (pVM->nem.s.fUseRing0Runloop)
+                {
+                    LogRel(("NEM: Disabling UseRing0Runloop.\n"));
+                    pVM->nem.s.fUseRing0Runloop = false;
+                }
+                rc = VINF_SUCCESS;
+            }
             if (RT_SUCCESS(rc))
             {
                 /*

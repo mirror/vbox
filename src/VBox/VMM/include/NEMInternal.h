@@ -382,6 +382,8 @@ typedef struct NEMR0PERVM
     NEMWINIOCTL                 IoCtlStopVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
+    /** Whether we may use the ring-0 runloop or not. */
+    bool                        fMayUseRing0Runloop;
 
     /** Hypercall input/ouput page for non-EMT. */
     NEMR0HYPERCALLDATA          HypercallData;

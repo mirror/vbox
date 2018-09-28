@@ -291,6 +291,7 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVM pVM)
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0);
     AssertRCReturn(rc, rc);
     SUPR0Printf("NEMR0InitVMPart2\n"); LogRel(("2: NEMR0InitVMPart2\n"));
+    Assert(pGVM->nem.s.fMayUseRing0Runloop == false);
 
     /*
      * Copy and validate the I/O control information from ring-3.
@@ -301,48 +302,59 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVM pVM)
     AssertLogRelReturn(Copy.cbOutput == sizeof(HV_PARTITION_ID), VERR_NEM_INIT_FAILED);
     pGVM->nem.s.IoCtlGetHvPartitionId = Copy;
 
+    pGVM->nem.s.fMayUseRing0Runloop = pVM->nem.s.fUseRing0Runloop;
+
     Copy = pVM->nem.s.IoCtlStartVirtualProcessor;
-    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.cbInput == sizeof(HV_VP_INDEX), VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, VERR_NEM_INIT_FAILED);
-    pGVM->nem.s.IoCtlStartVirtualProcessor = Copy;
+    AssertLogRelStmt(Copy.uFunction != 0, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.cbInput == sizeof(HV_VP_INDEX), rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.cbOutput == 0, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, rc = VERR_NEM_INIT_FAILED);
+    if (RT_SUCCESS(rc))
+        pGVM->nem.s.IoCtlStartVirtualProcessor = Copy;
 
     Copy = pVM->nem.s.IoCtlStopVirtualProcessor;
-    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.cbInput == sizeof(HV_VP_INDEX), VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction, VERR_NEM_INIT_FAILED);
-    pGVM->nem.s.IoCtlStopVirtualProcessor = Copy;
+    AssertLogRelStmt(Copy.uFunction != 0, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.cbInput == sizeof(HV_VP_INDEX), rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.cbOutput == 0, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.uFunction != pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction, rc = VERR_NEM_INIT_FAILED);
+    if (RT_SUCCESS(rc))
+        pGVM->nem.s.IoCtlStopVirtualProcessor = Copy;
 
     Copy = pVM->nem.s.IoCtlMessageSlotHandleAndGetNext;
-    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT), VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction, VERR_NEM_INIT_FAILED);
-    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlStopVirtualProcessor.uFunction, VERR_NEM_INIT_FAILED);
-    pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext = Copy;
+    AssertLogRelStmt(Copy.uFunction != 0, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(   Copy.cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT)
+                     || Copy.cbInput == RT_OFFSETOF(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT, cMillies),
+                     rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.uFunction != pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction, rc = VERR_NEM_INIT_FAILED);
+    AssertLogRelStmt(Copy.uFunction != pGVM->nem.s.IoCtlStopVirtualProcessor.uFunction, rc = VERR_NEM_INIT_FAILED);
+    if (RT_SUCCESS(rc))
+        pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext = Copy;
 
-    /*
-     * Setup of an I/O control context for the partition handle for later use.
-     */
-    rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pVM->nem.s.hPartitionDevice, 0, &pGVM->nem.s.pIoCtlCtx);
-    AssertLogRelRCReturn(rc, rc);
-    pGVM->nem.s.offRing3ConversionDelta = (uintptr_t)pVM->pVMR3 - (uintptr_t)pGVM->pVM;
+    if (   RT_SUCCESS(rc)
+        || !pVM->nem.s.fUseRing0Runloop)
+    {
+        /*
+         * Setup of an I/O control context for the partition handle for later use.
+         */
+        rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pVM->nem.s.hPartitionDevice, 0, &pGVM->nem.s.pIoCtlCtx);
+        AssertLogRelRCReturn(rc, rc);
+        pGVM->nem.s.offRing3ConversionDelta = (uintptr_t)pVM->pVMR3 - (uintptr_t)pGVM->pVM;
 
-    /*
-     * Get the partition ID.
-     */
-    PVMCPU pVCpu = &pGVM->pVM->aCpus[0];
-    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
-                                            &pVCpu->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu->nem.s.uIoCtlBuf.idPartition));
-    AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
-    pGVM->nem.s.idHvPartition = pVCpu->nem.s.uIoCtlBuf.idPartition;
-    AssertLogRelMsgReturn(pGVM->nem.s.idHvPartition == pVM->nem.s.idHvPartition,
-                          ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nem.s.idHvPartition, pVM->nem.s.idHvPartition),
-                          VERR_NEM_INIT_FAILED);
+        /*
+         * Get the partition ID.
+         */
+        PVMCPU pVCpu = &pGVM->pVM->aCpus[0];
+        NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
+                                                &pVCpu->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu->nem.s.uIoCtlBuf.idPartition));
+        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
+        pGVM->nem.s.idHvPartition = pVCpu->nem.s.uIoCtlBuf.idPartition;
+        AssertLogRelMsgReturn(pGVM->nem.s.idHvPartition == pVM->nem.s.idHvPartition,
+                              ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nem.s.idHvPartition, pVM->nem.s.idHvPartition),
+                              VERR_NEM_INIT_FAILED);
+    }
 
     return rc;
 }
@@ -2427,8 +2439,12 @@ VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVM pVM, VMCPUID idCpu, u
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
 #ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    PVM pVM = pGVM->pVM;
-    return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
+    if (pGVM->nem.s.fMayUseRing0Runloop)
+    {
+        PVM pVM = pGVM->pVM;
+        return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
+    }
+    return VERR_NEM_RING3_ONLY;
 #else
     RT_NOREF(pGVM, idCpu);
     return VERR_NOT_IMPLEMENTED;

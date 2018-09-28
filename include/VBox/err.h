@@ -2829,24 +2829,24 @@
 #define VERR_NEM_INIT_FAILED                        (-6802)
 /** NEM init failed because of missing kernel API. */
 #define VERR_NEM_MISSING_KERNEL_API                 (-6803)
+/** NEM can only operate from ring-3. */
+#define VERR_NEM_RING3_ONLY                         (-6804)
 /** NEM failed to create a native VM instance. */
-#define VERR_NEM_VM_CREATE_FAILED                   (-6804)
+#define VERR_NEM_VM_CREATE_FAILED                   (-6805)
 /** NEM failed to map page(s) into the VM. */
-#define VERR_NEM_MAP_PAGES_FAILED                   (-6805)
+#define VERR_NEM_MAP_PAGES_FAILED                   (-6806)
 /** NEM failed to unmap page(s) into the VM. */
-#define VERR_NEM_UNMAP_PAGES_FAILED                 (-6806)
+#define VERR_NEM_UNMAP_PAGES_FAILED                 (-6807)
 /** NEM failed to get registers. */
-#define VERR_NEM_GET_REGISTERS_FAILED               (-6807)
+#define VERR_NEM_GET_REGISTERS_FAILED               (-6808)
 /** NEM failed to set registers. */
-#define VERR_NEM_SET_REGISTERS_FAILED               (-6808)
+#define VERR_NEM_SET_REGISTERS_FAILED               (-6809)
 /** Get register caller must flush the TLB (not an error). */
-#define VERR_NEM_FLUSH_TLB                          (-6809)
+#define VERR_NEM_FLUSH_TLB                          (-6810)
 /** Get register caller must flush the TLB. */
-#define VINF_NEM_FLUSH_TLB                          (6809)
-
-
+#define VINF_NEM_FLUSH_TLB                          (6810)
 /** NEM failed to set TSC. */
-#define VERR_NEM_SET_TSC                            (-6812)
+#define VERR_NEM_SET_TSC                            (-6811)
 
 /** NEM internal processing error \#0. */
 #define VERR_NEM_IPE_0                              (-6890)
