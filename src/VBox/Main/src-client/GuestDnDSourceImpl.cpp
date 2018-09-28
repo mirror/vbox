@@ -692,7 +692,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
 
     GuestDnDURIObjCtx &objCtx = pCtx->mURI.getObj(0); /** @todo Fill in context ID. */
 
-    rc = objCtx.createIntermediate(DnDURIObject::Directory);
+    rc = objCtx.createIntermediate(DnDURIObject::Type_Directory);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -826,7 +826,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
             LogRel2(("DnD: Absolute file path on the host now is '%s'\n", pszPathAbs));
 
             /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-            rc = pObj->OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
+            rc = pObj->OpenEx(pszPathAbs, DnDURIObject::Type_File, DnDURIObject::View_Target,
                               RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
                               (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
             if (RT_SUCCESS(rc))

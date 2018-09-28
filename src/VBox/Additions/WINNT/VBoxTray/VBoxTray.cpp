@@ -561,13 +561,13 @@ static int vboxTrayLogCreate(const char *pszLogFile)
     RTERRINFOSTATIC ErrInfo;
     int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags,
 #ifdef DEBUG
-                           "all.e.l.f",
+                           "all.e.l.l2.l3.f",
                            "VBOXTRAY_LOG",
 #else
                            "all",
                            "VBOXTRAY_RELEASE_LOG",
 #endif
-                           RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT,
+                           RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            RTErrInfoInitStatic(&ErrInfo), pszLogFile);
     if (RT_SUCCESS(rc))

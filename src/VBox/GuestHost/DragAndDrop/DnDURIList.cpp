@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@ DnDURIList::~DnDURIList(void)
     Clear();
 }
 
-int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_t fFlags)
+int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pcszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszTarget, VERR_INVALID_POINTER);
@@ -63,13 +63,13 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
             LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
                          pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget);
+            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::Type_File, pcszSource, pcszTarget);
             if (pObjFile)
             {
                 if (fFlags & DNDURILIST_FLAGS_KEEP_OPEN) /* Shall we keep the file open while being added to this list? */
                 {
                     /** @todo Add a standard fOpen mode for this list. */
-                    rc = pObjFile->Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, objInfo.Attr.fMode);
+                    rc = pObjFile->Open(DnDURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, objInfo.Attr.fMode);
                 }
 
                 if (RT_SUCCESS(rc))
@@ -89,7 +89,7 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
         {
             LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget,
+            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Type_Directory, pcszSource, pcszTarget,
                                                      objInfo.Attr.fMode, 0 /* Size */);
             if (pObjDir)
             {
@@ -111,14 +111,15 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_
 }
 
 int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
-                                    const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, uint32_t fFlags)
+                                    const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase,
+                                    DNDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszDstPath, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s, cchDstBase=%zu\n",
-                 pcszSrcPath, pcszDstPath, pcszDstBase, cchDstBase));
+    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s, cchDstBase=%zu, fFlags=0x%x\n",
+                 pcszSrcPath, pcszDstPath, pcszDstBase, cchDstBase, fFlags));
 
     RTFSOBJINFO objInfo;
     int rc = RTPathQueryInfo(pcszSrcPath, &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -277,7 +278,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
     return rc;
 }
 
-int DnDURIList::AppendNativePath(const char *pszPath, uint32_t fFlags)
+int DnDURIList::AppendNativePath(const char *pszPath, DNDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
@@ -306,7 +307,7 @@ int DnDURIList::AppendNativePath(const char *pszPath, uint32_t fFlags)
 }
 
 int DnDURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths,
-                                          uint32_t fFlags)
+                                          DNDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszNativePaths, VERR_INVALID_POINTER);
     AssertReturn(cbNativePaths, VERR_INVALID_PARAMETER);
@@ -317,7 +318,7 @@ int DnDURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbN
 }
 
 int DnDURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths,
-                                          uint32_t fFlags)
+                                          DNDURILISTFLAGS fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -333,7 +334,7 @@ int DnDURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePat
     return rc;
 }
 
-int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
+int DnDURIList::AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszURI, VERR_INVALID_POINTER);
 
@@ -384,7 +385,7 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
 }
 
 int DnDURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths,
-                                       uint32_t fFlags)
+                                       DNDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszURIPaths, VERR_INVALID_POINTER);
     AssertReturn(cbURIPaths, VERR_INVALID_PARAMETER);
@@ -395,7 +396,7 @@ int DnDURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPath
 }
 
 int DnDURIList::AppendURIPathsFromList(const RTCList<RTCString> &lstURI,
-                                       uint32_t fFlags)
+                                       DNDURILISTFLAGS fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -446,7 +447,7 @@ void DnDURIList::RemoveFirst(void)
     m_lstTree.removeFirst();
 }
 
-int DnDURIList::RootFromURIData(const void *pvData, size_t cbData, uint32_t fFlags)
+int DnDURIList::SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAGS fFlags)
 {
     Assert(fFlags == 0); RT_NOREF1(fFlags);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -492,7 +493,7 @@ int DnDURIList::RootFromURIData(const void *pvData, size_t cbData, uint32_t fFla
     return rc;
 }
 
-RTCString DnDURIList::RootToString(const RTCString &strPathBase /* = "" */,
+RTCString DnDURIList::GetRootEntries(const RTCString &strPathBase /* = "" */,
                                    const RTCString &strSeparator /* = "\r\n" */) const
 {
     RTCString strRet;

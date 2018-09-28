@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,7 +36,7 @@
 #include <VBox/GuestHost/DragAndDrop.h>
 
 DnDURIObject::DnDURIObject(void)
-    : m_Type(Unknown)
+    : m_Type(Type_Unknown)
     , m_fOpen(false)
     , m_fMode(0)
     , m_cbSize(0)
@@ -45,11 +45,11 @@ DnDURIObject::DnDURIObject(void)
     RT_ZERO(u);
 }
 
-DnDURIObject::DnDURIObject(Type type,
+DnDURIObject::DnDURIObject(Type enmType,
                            const RTCString &strSrcPath /* = 0 */,
                            const RTCString &strDstPath /* = 0 */,
                            uint32_t fMode  /* = 0 */, uint64_t cbSize  /* = 0 */)
-    : m_Type(type)
+    : m_Type(enmType)
     , m_strSrcPath(strSrcPath)
     , m_strTgtPath(strDstPath)
     , m_fOpen(false)
@@ -73,14 +73,14 @@ void DnDURIObject::closeInternal(void)
 
     switch (m_Type)
     {
-        case File:
+        case Type_File:
         {
             RTFileClose(u.m_hFile);
             u.m_hFile = NIL_RTFILE;
             break;
         }
 
-        case Directory:
+        case Type_Directory:
             break;
 
         default:
@@ -101,12 +101,12 @@ bool DnDURIObject::IsComplete(void) const
 
     switch (m_Type)
     {
-        case File:
+        case Type_File:
             Assert(m_cbProcessed <= m_cbSize);
             fComplete = m_cbProcessed == m_cbSize;
             break;
 
-        case Directory:
+        case Type_Directory:
             fComplete = true;
             break;
 
@@ -123,26 +123,26 @@ bool DnDURIObject::IsOpen(void) const
     return m_fOpen;
 }
 
-int DnDURIObject::Open(Dest enmDest, uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */)
+int DnDURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */)
 {
-    return OpenEx(  enmDest == Source
+    return OpenEx(  enmView == View_Source
                   ? m_strSrcPath : m_strTgtPath
-                  , m_Type, enmDest, fOpen, fMode, 0 /* fFlags */);
+                  , m_Type, enmView, fOpen, fMode, 0 /* fFlags */);
 }
 
-int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
-                         uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */, uint32_t fFlags /* = 0 */)
+int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, View enmView,
+                         uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */, DNDURIOBJECTFLAGS fFlags /* = DNDURIOBJECT_FLAGS_NONE */)
 {
     Assert(fFlags == 0); RT_NOREF1(fFlags);
     int rc = VINF_SUCCESS;
 
-    switch (enmDest)
+    switch (enmView)
     {
-        case Source:
+        case View_Source:
             m_strSrcPath = strPath;
             break;
 
-        case Target:
+        case View_Target:
             m_strTgtPath = strPath;
             break;
 
@@ -154,11 +154,11 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
     if (   RT_SUCCESS(rc)
         && fOpen) /* Opening mode specified? */
     {
-        LogFlowThisFunc(("enmType=%RU32, strPath=%s, fOpen=0x%x, enmType=%RU32, enmDest=%RU32\n",
-                         enmType, strPath.c_str(), fOpen, enmType, enmDest));
+        LogFlowThisFunc(("strPath=%s, enmType=%RU32, enmView=%RU32, fOpen=0x%x, fMode=0x%x, fFlags=0x%x\n",
+                         strPath.c_str(), enmType, enmView, fOpen, fFlags));
         switch (enmType)
         {
-            case File:
+            case Type_File:
             {
                 if (!m_fOpen)
                 {
@@ -206,7 +206,7 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
                 break;
             }
 
-            case Directory:
+            case Type_Directory:
                 rc = VINF_SUCCESS;
                 break;
 
@@ -293,9 +293,9 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
     int rc;
     switch (m_Type)
     {
-        case File:
+        case Type_File:
         {
-            rc = OpenEx(m_strSrcPath, File, Source,
+            rc = OpenEx(m_strSrcPath, Type_File, View_Source,
                         /* Use some sensible defaults. */
                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
@@ -318,7 +318,7 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
             break;
         }
 
-        case Directory:
+        case Type_Directory:
         {
             rc = VINF_SUCCESS;
             break;
@@ -345,7 +345,7 @@ void DnDURIObject::Reset(void)
 
     Close();
 
-    m_Type        = Unknown;
+    m_Type        = Type_Unknown;
     m_strSrcPath  = "";
     m_strTgtPath  = "";
     m_fMode       = 0;
@@ -364,9 +364,9 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
     int rc;
     switch (m_Type)
     {
-        case File:
+        case Type_File:
         {
-            rc = OpenEx(m_strTgtPath, File, Target,
+            rc = OpenEx(m_strTgtPath, Type_File, View_Target,
                         /* Use some sensible defaults. */
                         RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_WRITE, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
@@ -378,7 +378,7 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
             break;
         }
 
-        case Directory:
+        case Type_Directory:
         {
             rc = VINF_SUCCESS;
             break;

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -165,7 +165,7 @@ public:
 
     int fromURIList(const DnDURIList &lstURI)
     {
-        return fromString(lstURI.RootToString());
+        return fromString(lstURI.GetRootEntries());
     }
 
 protected:
@@ -389,7 +389,7 @@ public:
 
 public:
 
-    int createIntermediate(DnDURIObject::Type enmType = DnDURIObject::Unknown)
+    int createIntermediate(DnDURIObject::Type enmType = DnDURIObject::Type_Unknown)
     {
         reset();
 
@@ -563,8 +563,8 @@ public:
         /** @todo Find objct in lstURI first! */
         switch (Obj.GetType())
         {
-            case DnDURIObject::Directory:
-            case DnDURIObject::File:
+            case DnDURIObject::Type_Directory:
+            case DnDURIObject::Type_File:
                 rc = VINF_SUCCESS;
                 break;
 
@@ -646,7 +646,7 @@ public:
                  *       operation, also to keep the accounting right. */
                 rc = lstURI.AppendURIPathsFromList(lstURIOrg, DNDURILIST_FLAGS_KEEP_OPEN);
                 if (RT_SUCCESS(rc))
-                    cObjToProcess = lstURI.TotalCount();
+                    cObjToProcess = lstURI.GetTotalCount();
             }
         }
 
@@ -658,10 +658,10 @@ public:
     {
         LogFlowFuncEnter();
 
-        int rc = lstURI.RootFromURIData(Data.getData(), Data.getSize(), 0 /* uFlags */);
+        int rc = lstURI.SetFromURIData(Data.getData(), Data.getSize(), 0 /* uFlags */);
         if (RT_SUCCESS(rc))
         {
-            const size_t cRootCount = lstURI.RootCount();
+            const size_t cRootCount = lstURI.GetRootCount();
             LogFlowFunc(("cRootCount=%zu, cObjToProcess=%RU64\n", cRootCount, cObjToProcess));
             if (cRootCount > cObjToProcess)
                 rc = VERR_INVALID_PARAMETER;
@@ -674,10 +674,10 @@ public:
     {
         const char *pszDroppedFilesDir = droppedFiles.GetDirAbs();
 
-        Utf8Str strURIs = lstURI.RootToString(RTCString(pszDroppedFilesDir));
+        Utf8Str strURIs = lstURI.GetRootEntries(RTCString(pszDroppedFilesDir));
         size_t cbData = strURIs.length();
 
-        LogFlowFunc(("%zu root URIs (%zu bytes)\n", lstURI.RootCount(), cbData));
+        LogFlowFunc(("%zu root URIs (%zu bytes)\n", lstURI.GetRootCount(), cbData));
 
         int rc;
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,6 +37,12 @@
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
 
+/** DnDURIDroppedFiles flags. */
+typedef uint32_t DNDURIDROPPEDFILEFLAGS;
+
+/** No flags specified. */
+#define DNDURIDROPPEDFILE_FLAGS_NONE                   0
+
 /**
  * Class for maintaining a "dropped files" directory
  * on the host or guest. This will contain all received files & directories
@@ -51,7 +57,7 @@ class DnDDroppedFiles
 public:
 
     DnDDroppedFiles(void);
-    DnDDroppedFiles(const char *pszPath, uint32_t fFlags);
+    DnDDroppedFiles(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
     virtual ~DnDDroppedFiles(void);
 
 public:
@@ -60,8 +66,8 @@ public:
     int AddDir(const char *pszDir);
     int Close(void);
     bool IsOpen(void) const;
-    int OpenEx(const char *pszPath, uint32_t fFlags);
-    int OpenTemp(uint32_t fFlags);
+    int OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
+    int OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
     const char *GetDirAbs(void) const;
     int Reopen(void);
     int Reset(bool fDeleteContent);
@@ -91,36 +97,45 @@ bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);
 int DnDPathSanitizeFilename(char *pszPath, size_t cbPath);
 int DnDPathSanitize(char *pszPath, size_t cbPath);
 
+/** DnDURIObject flags. */
+typedef uint32_t DNDURIOBJECTFLAGS;
+
 /** No flags specified. */
-#define DNDURILIST_FLAGS_NONE                   0
-/** Keep the original paths, don't convert paths to relative ones. */
-#define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
-/** Resolve all symlinks. */
-#define DNDURILIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
-/** Keep the files + directory entries open while
- *  being in this list. */
-#define DNDURILIST_FLAGS_KEEP_OPEN              RT_BIT(2)
-/** Lazy loading: Only enumerate sub directories when needed.
- ** @todo Implement lazy loading.  */
-#define DNDURILIST_FLAGS_LAZY                   RT_BIT(3)
+#define DNDURIOBJECT_FLAGS_NONE                   0
 
 class DnDURIObject
 {
 public:
 
+    /**
+     * Enumeration for specifying an URI object type.
+     */
     enum Type
     {
-        Unknown = 0,
-        File,
-        Directory,
+        /** Unknown type, do not use. */
+        Type_Unknown = 0,
+        /** Object is a file. */
+        Type_File,
+        /** Object is a directory. */
+        Type_Directory,
+        /** The usual 32-bit hack. */
         Type_32Bit_Hack = 0x7fffffff
     };
 
-    enum Dest
+    /**
+     * Enumeration for specifying an URI object view
+     * represent its data accordingly.
+     */
+    enum View
     {
-        Source = 0,
-        Target,
-        Dest_32Bit_Hack = 0x7fffffff
+        /** Unknown view, do not use. */
+        View_Unknown = 0,
+        /** Handle data from the source point of view. */
+        View_Source,
+        /** Handle data from the destination point of view. */
+        View_Target,
+        /** The usual 32-bit hack. */
+        View_Dest_32Bit_Hack = 0x7fffffff
     };
 
     DnDURIObject(void);
@@ -148,8 +163,8 @@ public:
     void Close(void);
     bool IsComplete(void) const;
     bool IsOpen(void) const;
-    int Open(Dest enmDest, uint64_t fOpen, uint32_t fMode = 0);
-    int OpenEx(const RTCString &strPath, Type enmType, Dest enmDest, uint64_t fOpen = 0, uint32_t fMode = 0, uint32_t fFlags = 0);
+    int Open(View enmView, uint64_t fOpen, uint32_t fMode = 0);
+    int OpenEx(const RTCString &strPath, Type enmType, View enmView, uint64_t fOpen = 0, uint32_t fMode = 0, DNDURIOBJECTFLAGS = DNDURIOBJECT_FLAGS_NONE);
     int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
     void Reset(void);
     int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
@@ -182,6 +197,22 @@ protected:
     } u;
 };
 
+/** DnDURIList flags. */
+typedef uint32_t DNDURILISTFLAGS;
+
+/** No flags specified. */
+#define DNDURILIST_FLAGS_NONE                   0
+/** Keep the original paths, don't convert paths to relative ones. */
+#define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
+/** Resolve all symlinks. */
+#define DNDURILIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
+/** Keep the files + directory entries open while
+ *  being in this list. */
+#define DNDURILIST_FLAGS_KEEP_OPEN              RT_BIT(2)
+/** Lazy loading: Only enumerate sub directories when needed.
+ ** @todo Implement lazy loading.  */
+#define DNDURILIST_FLAGS_LAZY                   RT_BIT(3)
+
 class DnDURIList
 {
 public:
@@ -191,27 +222,28 @@ public:
 
 public:
 
-    int AppendNativePath(const char *pszPath, uint32_t fFlags);
-    int AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths, uint32_t fFlags);
-    int AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths, uint32_t fFlags);
-    int AppendURIPath(const char *pszURI, uint32_t fFlags);
-    int AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths, uint32_t fFlags);
-    int AppendURIPathsFromList(const RTCList<RTCString> &lstURI, uint32_t fFlags);
+    int AppendNativePath(const char *pszPath, DNDURILISTFLAGS fFlags);
+    int AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths, DNDURILISTFLAGS fFlags);
+    int AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths, DNDURILISTFLAGS fFlags);
+    int AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags);
+    int AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths, DNDURILISTFLAGS fFlags);
+    int AppendURIPathsFromList(const RTCList<RTCString> &lstURI, DNDURILISTFLAGS fFlags);
 
     void Clear(void);
     DnDURIObject *First(void) { return m_lstTree.first(); }
     bool IsEmpty(void) const { return m_lstTree.isEmpty(); }
     void RemoveFirst(void);
-    int RootFromURIData(const void *pvData, size_t cbData, uint32_t fFlags);
-    RTCString RootToString(const RTCString &strPathBase = "", const RTCString &strSeparator = "\r\n") const;
-    uint64_t RootCount(void) const { return m_lstRoot.size(); }
-    uint64_t TotalCount(void) const { return m_cTotal; }
-    uint64_t TotalBytes(void) const { return m_cbTotal; }
+    int SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAGS fFlags);
+
+    RTCString GetRootEntries(const RTCString &strPathBase = "", const RTCString &strSeparator = "\r\n") const;
+    uint64_t GetRootCount(void) const { return m_lstRoot.size(); }
+    uint64_t GetTotalCount(void) const { return m_cTotal; }
+    uint64_t GetTotalBytes(void) const { return m_cbTotal; }
 
 protected:
 
-    int addEntry(const char *pcszSource, const char *pcszTarget, uint32_t fFlags);
-    int appendPathRecursive(const char *pcszSrcPath, const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, uint32_t fFlags);
+    int addEntry(const char *pcszSource, const char *pcszTarget, DNDURILISTFLAGS fFlags);
+    int appendPathRecursive(const char *pcszSrcPath, const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, DNDURILISTFLAGS fFlags);
 
 protected:
 

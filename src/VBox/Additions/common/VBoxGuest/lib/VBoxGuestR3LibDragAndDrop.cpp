@@ -409,7 +409,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     /*
      * Enter the main loop of retieving files + directories.
      */
-    DnDURIObject objFile(DnDURIObject::File);
+    DnDURIObject objFile(DnDURIObject::Type_File);
 
     char szPathName[RTPATH_MAX] = { 0 };
     uint32_t cbPathName = 0;
@@ -509,7 +509,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 #else
                                 uint32_t fCreationMode = (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR;
 #endif
-                                rc = objFile.OpenEx(strPathAbs, DnDURIObject::File, DnDURIObject::Target, fOpen, fCreationMode);
+                                rc = objFile.OpenEx(strPathAbs, DnDURIObject::Type_File, DnDURIObject::View_Target, fOpen, fCreationMode);
                                 if (RT_SUCCESS(rc))
                                 {
                                     rc = pDroppedFiles->AddFile(strPathAbs.c_str());
@@ -865,7 +865,7 @@ static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
             AssertPtr(pvData);
             Assert(cbData);
 
-            rc = lstURI.RootFromURIData(pvData, cbData, 0 /* fFlags */);
+            rc = lstURI.SetFromURIData(pvData, cbData, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
                 rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
 
@@ -878,7 +878,7 @@ static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
                     pvData = NULL;
                 }
 
-                RTCString strData = lstURI.RootToString(droppedFiles.GetDirAbs());
+                RTCString strData = lstURI.GetRootEntries(droppedFiles.GetDirAbs());
                 Assert(!strData.isEmpty());
 
                 cbData = strData.length() + 1;
@@ -1561,9 +1561,9 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
  */
 static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
-    AssertPtrReturn(pObj,                                    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCtx,                                    VERR_INVALID_POINTER);
-    AssertReturn(pObj->GetType() == DnDURIObject::Directory, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObj,                                   	  VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,                              		      VERR_INVALID_POINTER);
+    AssertReturn(pObj->GetType() == DnDURIObject::Type_Directory, VERR_INVALID_PARAMETER);
 
     RTCString strPath = pObj->GetDestPath();
     LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
@@ -1597,10 +1597,10 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
  */
 static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
-    AssertPtrReturn(pCtx,                               VERR_INVALID_POINTER);
-    AssertPtrReturn(pObj,                               VERR_INVALID_POINTER);
-    AssertReturn(pObj->GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
-    AssertReturn(pObj->IsOpen(),                        VERR_INVALID_STATE);
+    AssertPtrReturn(pCtx,                                    VERR_INVALID_POINTER);
+    AssertPtrReturn(pObj,                                    VERR_INVALID_POINTER);
+    AssertReturn(pObj->GetType() == DnDURIObject::Type_File, VERR_INVALID_PARAMETER);
+    AssertReturn(pObj->IsOpen(),                             VERR_INVALID_STATE);
 
     uint32_t cbBuf = _64K;           /** @todo Make this configurable? */
     void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
@@ -1699,11 +1699,11 @@ static int vbglR3DnDGHSendURIObject(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pO
 
     switch (pObj->GetType())
     {
-        case DnDURIObject::Directory:
+        case DnDURIObject::Type_Directory:
             rc = vbglR3DnDGHSendDir(pCtx, pObj);
             break;
 
-        case DnDURIObject::File:
+        case DnDURIObject::Type_File:
             rc = vbglR3DnDGHSendFile(pCtx, pObj);
             break;
 
@@ -1770,7 +1770,7 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData
          * Send the (meta) data; in case of URIs it's the (non-recursive) file/directory
          * URI list the host needs to know upfront to set up the drag'n drop operation.
          */
-        RTCString strRootDest = lstURI.RootToString();
+        RTCString strRootDest = lstURI.GetRootEntries();
         if (strRootDest.isNotEmpty())
         {
             void *pvURIList  = (void *)strRootDest.c_str(); /* URI root list. */
@@ -1778,7 +1778,7 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData
 
             /* The total size also contains the size of the meta data. */
             uint64_t cbTotal  = cbURLIist;
-                     cbTotal += lstURI.TotalBytes();
+                     cbTotal += lstURI.GetTotalBytes();
 
             /* We're going to send an URI list in text format. */
             const char     szMetaFmt[] = "text/uri-list";
@@ -1790,7 +1790,7 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData
             dataHdr.cbMeta    = cbURLIist;
             dataHdr.pvMetaFmt = (void *)szMetaFmt;
             dataHdr.cbMetaFmt = cbMetaFmt;
-            dataHdr.cObjects  = lstURI.TotalCount();
+            dataHdr.cObjects  = lstURI.GetTotalCount();
 
             rc = vbglR3DnDGHSendDataInternal(pCtx,
                                              pvURIList, cbURLIist, &dataHdr);

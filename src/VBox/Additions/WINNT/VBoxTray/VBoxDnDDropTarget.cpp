@@ -484,7 +484,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                                                                   DNDURILIST_FLAGS_ABSOLUTE_PATHS);
                             if (RT_SUCCESS(rc))
                             {
-                                RTCString strRoot = lstURI.RootToString();
+                                RTCString strRoot = lstURI.GetRootEntries();
                                 size_t cbRoot = strRoot.length() + 1; /* Include termination */
 
                                 mpvData = RTMemAlloc(cbRoot);

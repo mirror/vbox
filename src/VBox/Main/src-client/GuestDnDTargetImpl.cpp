@@ -943,7 +943,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     if (!pObj->IsOpen())
     {
         LogRel2(("DnD: Opening host file for transferring to guest: %s\n", strPathSrc.c_str()));
-        rc = pObj->OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
+        rc = pObj->OpenEx(strPathSrc, DnDURIObject::Type_File, DnDURIObject::View_Source,
                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
         if (RT_FAILURE(rc))
             LogRel(("DnD: Error opening host file '%s', rc=%Rrc\n", strPathSrc.c_str(), rc));
@@ -1340,7 +1340,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
             break;
 
         LogFlowFunc(("URI root objects: %zu, total bytes (raw data to transfer): %zu\n",
-                     pURI->getURIList().RootCount(), pURI->getURIList().TotalBytes()));
+                     pURI->getURIList().GetRootCount(), pURI->getURIList().GetTotalBytes()));
 
         /*
          * Set the new meta data with the URI list in it.
@@ -1354,8 +1354,8 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
          * The total size also contains the meta data size.
          */
         const uint32_t cbMeta = pData->getMeta().getSize();
-        pData->setEstimatedSize(pURI->getURIList().TotalBytes() + cbMeta /* cbTotal */,
-                                                                  cbMeta /* cbMeta  */);
+        pData->setEstimatedSize(pURI->getURIList().GetTotalBytes() + cbMeta /* cbTotal */,
+                                                                     cbMeta /* cbMeta  */);
 
         /*
          * Set the meta format.
