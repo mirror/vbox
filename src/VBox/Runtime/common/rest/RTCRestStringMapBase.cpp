@@ -141,7 +141,7 @@ int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor
             {
                 /* Call the static deserializeInstanceFromJson method of the value class.  */
                 RTCRestObjectBase *pObj = NULL;
-                rc = deserializeValueInstanceFromJson(a_rCursor, &pObj);
+                rc = deserializeValueInstanceFromJson(SubCursor, &pObj);
                 if (RT_SUCCESS(rc))
                     Assert(pObj);
                 else if (RT_SUCCESS(rcRet))
