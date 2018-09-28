@@ -799,5 +799,9 @@ int main(int argc, char **argv)
  *     545108 OUT instructions per second
  *     373159 MMIO/r1 instructions per second
  *
+ * - Windows 1803 updated as per 2018-09-28; AMD Threadripper:
+ *      45433 OUT instructions per second
+ *      39767 CPUID instructions per second
+ *      39088 MMIO/r1 instructions per second
  *
  */
