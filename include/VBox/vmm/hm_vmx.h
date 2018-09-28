@@ -3051,6 +3051,8 @@ typedef struct
     uint64_t                u64Qual;
     /** The guest-linear address field. */
     uint64_t                u64GuestLinearAddr;
+    /** The guest-physical address field. */
+    uint64_t                u64GuestPhysAddr;
     /** The effective guest-linear address if @a InstrInfo indicates a memory-based
      *  instruction VM-exit. */
     RTGCPTR                 GCPtrEffAddr;
