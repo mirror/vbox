@@ -1240,6 +1240,32 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitQual(PVMCPU pVCpu, uint64_t uExitQual)
 
 
 /**
+ * Sets the VM-exit guest-linear address VMCS field.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   uGuestLinearAddr    The VM-exit guest-linear address field.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestLinearAddr(PVMCPU pVCpu, uint64_t uGuestLinearAddr)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u64RoGuestLinearAddr.u = uGuestLinearAddr;
+}
+
+
+/**
+ * Sets the VM-exit guest-physical address VMCS field.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uGuestPhysAddr  The VM-exit guest-physical address field.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestPhysAddr(PVMCPU pVCpu, uint64_t uGuestPhysAddr)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u64RoGuestPhysAddr.u = uGuestPhysAddr;
+}
+
+
+/**
  * Sets the VM-exit instruction length VMCS field.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -1364,841 +1390,6 @@ DECL_FORCE_INLINE(void) iemVmxVmreadSuccess(PVMCPU pVCpu, uint8_t cbInstr)
 {
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-}
-
-
-/**
- * VMREAD common (memory/register) instruction execution worker
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   pu64Dst         Where to write the VMCS value (only updated when
- *                          VINF_SUCCESS is returned).
- * @param   u64FieldEnc     The VMCS field encoding.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
-                                           PCVMXVEXITINFO pExitInfo)
-{
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        RT_NOREF(pExitInfo); RT_NOREF(cbInstr);
-        /** @todo NSTVMX: intercept. */
-        /** @todo NSTVMX: VMCS shadowing intercept (VMREAD bitmap). */
-    }
-
-    /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
-    {
-        Log(("vmread: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_Cpl;
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
-
-    /* VMCS pointer in root mode. */
-    if (    IEM_IS_VMX_ROOT_MODE(pVCpu)
-        && !IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
-    {
-        Log(("vmread: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_PtrInvalid;
-        iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* VMCS-link pointer in non-root mode. */
-    if (    IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
-        && !IEM_VMX_HAS_SHADOW_VMCS(pVCpu))
-    {
-        Log(("vmread: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_LinkPtrInvalid;
-        iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* Supported VMCS field. */
-    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
-    {
-        Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_FieldInvalid;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMREAD_INVALID_COMPONENT);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Setup reading from the current or shadow VMCS.
-     */
-    uint8_t *pbVmcs;
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    else
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pbVmcs);
-
-    VMXVMCSFIELDENC FieldEnc;
-    FieldEnc.u = RT_LO_U32(u64FieldEnc);
-    uint8_t  const uWidth     = FieldEnc.n.u2Width;
-    uint8_t  const uType      = FieldEnc.n.u2Type;
-    uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = FieldEnc.n.u8Index;
-    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
-    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
-
-    /*
-     * Read the VMCS component based on the field's effective width.
-     *
-     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
-     * indicates high bits (little endian).
-     *
-     * Note! The caller is responsible to trim the result and update registers
-     * or memory locations are required. Here we just zero-extend to the largest
-     * type (i.e. 64-bits).
-     */
-    uint8_t      *pbField = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
-    switch (uEffWidth)
-    {
-        case VMX_VMCS_ENC_WIDTH_64BIT:
-        case VMX_VMCS_ENC_WIDTH_NATURAL: *pu64Dst = *(uint64_t *)pbField; break;
-        case VMX_VMCS_ENC_WIDTH_32BIT:   *pu64Dst = *(uint32_t *)pbField; break;
-        case VMX_VMCS_ENC_WIDTH_16BIT:   *pu64Dst = *(uint16_t *)pbField; break;
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * VMREAD (64-bit register) instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   pu64Dst         Where to store the VMCS field's value.
- * @param   u64FieldEnc     The VMCS field encoding.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
-                                          PCVMXVEXITINFO pExitInfo)
-{
-    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, pu64Dst, u64FieldEnc, pExitInfo);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        iemVmxVmreadSuccess(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    Log(("vmread/reg: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    return rcStrict;
-}
-
-
-/**
- * VMREAD (32-bit register) instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   pu32Dst         Where to store the VMCS field's value.
- * @param   u32FieldEnc     The VMCS field encoding.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_t *pu32Dst, uint64_t u32FieldEnc,
-                                          PCVMXVEXITINFO pExitInfo)
-{
-    uint64_t u64Dst;
-    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u32FieldEnc, pExitInfo);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        *pu32Dst = u64Dst;
-        iemVmxVmreadSuccess(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    Log(("vmread/reg: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    return rcStrict;
-}
-
-
-/**
- * VMREAD (memory) instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   iEffSeg         The effective segment register to use with @a u64Val.
- *                          Pass UINT8_MAX if it is a register access.
- * @param   enmEffAddrMode  The effective addressing mode (only used with memory
- *                          operand).
- * @param   GCPtrDst        The guest linear address to store the VMCS field's
- *                          value.
- * @param   u64FieldEnc     The VMCS field encoding.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode,
-                                        RTGCPTR GCPtrDst, uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
-{
-    uint64_t u64Dst;
-    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u64FieldEnc, pExitInfo);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        /*
-         * Write the VMCS field's value to the location specified in guest-memory.
-         *
-         * The pointer size depends on the address size (address-size prefix allowed).
-         * The operand size depends on IA-32e mode (operand-size prefix not allowed).
-         */
-        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
-        Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
-        GCPtrDst &= s_auAddrSizeMasks[enmEffAddrMode];
-
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
-            rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrDst, u64Dst);
-        else
-            rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrDst, u64Dst);
-        if (rcStrict == VINF_SUCCESS)
-        {
-            iemVmxVmreadSuccess(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
-
-        Log(("vmread/mem: Failed to write to memory operand at %#RGv, rc=%Rrc\n", GCPtrDst, VBOXSTRICTRC_VAL(rcStrict)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_PtrMap;
-        return rcStrict;
-    }
-
-    Log(("vmread/mem: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    return rcStrict;
-}
-
-
-/**
- * VMWRITE instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   iEffSeg         The effective segment register to use with @a u64Val.
- *                          Pass UINT8_MAX if it is a register access.
- * @param   enmEffAddrMode  The effective addressing mode (only used with memory
- *                          operand).
- * @param   u64Val          The value to write (or guest linear address to the
- *                          value), @a iEffSeg will indicate if it's a memory
- *                          operand.
- * @param   u64FieldEnc     The VMCS field encoding.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode, uint64_t u64Val,
-                                      uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
-{
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
-        /** @todo NSTVMX: VMCS shadowing intercept (VMWRITE bitmap). */
-    }
-
-    /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
-    {
-        Log(("vmwrite: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_Cpl;
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
-
-    /* VMCS pointer in root mode. */
-    if (    IEM_IS_VMX_ROOT_MODE(pVCpu)
-        && !IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
-    {
-        Log(("vmwrite: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_PtrInvalid;
-        iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* VMCS-link pointer in non-root mode. */
-    if (    IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
-        && !IEM_VMX_HAS_SHADOW_VMCS(pVCpu))
-    {
-        Log(("vmwrite: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_LinkPtrInvalid;
-        iemVmxVmFailInvalid(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* If the VMWRITE instruction references memory, access the specified memory operand. */
-    bool const fIsRegOperand = iEffSeg == UINT8_MAX;
-    if (!fIsRegOperand)
-    {
-        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
-        Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
-        RTGCPTR const GCPtrVal = u64Val & s_auAddrSizeMasks[enmEffAddrMode];
-
-        /* Read the value from the specified guest memory location. */
-        VBOXSTRICTRC rcStrict;
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
-            rcStrict = iemMemFetchDataU64(pVCpu, &u64Val, iEffSeg, GCPtrVal);
-        else
-        {
-            uint32_t u32Val;
-            rcStrict = iemMemFetchDataU32(pVCpu, &u32Val, iEffSeg, GCPtrVal);
-            u64Val = u32Val;
-        }
-        if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-        {
-            Log(("vmwrite: Failed to read value from memory operand at %#RGv, rc=%Rrc\n", GCPtrVal, VBOXSTRICTRC_VAL(rcStrict)));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_PtrMap;
-            return rcStrict;
-        }
-    }
-    else
-        Assert(!pExitInfo || pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand);
-
-    /* Supported VMCS field. */
-    if (!iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
-    {
-        Log(("vmwrite: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldInvalid;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_INVALID_COMPONENT);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* Read-only VMCS field. */
-    bool const fReadOnlyField = HMVmxIsVmcsFieldReadOnly(u64FieldEnc);
-    if (   fReadOnlyField
-        && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmwriteAll)
-    {
-        Log(("vmwrite: Write to read-only VMCS component %#RX64 -> VMFail\n", u64FieldEnc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldRo;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_RO_COMPONENT);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Setup writing to the current or shadow VMCS.
-     */
-    uint8_t *pbVmcs;
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    else
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pbVmcs);
-
-    VMXVMCSFIELDENC FieldEnc;
-    FieldEnc.u = RT_LO_U32(u64FieldEnc);
-    uint8_t  const uWidth     = FieldEnc.n.u2Width;
-    uint8_t  const uType      = FieldEnc.n.u2Type;
-    uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = FieldEnc.n.u8Index;
-    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
-    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
-
-    /*
-     * Write the VMCS component based on the field's effective width.
-     *
-     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
-     * indicates high bits (little endian).
-     */
-    uint8_t      *pbField = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
-    switch (uEffWidth)
-    {
-        case VMX_VMCS_ENC_WIDTH_64BIT:
-        case VMX_VMCS_ENC_WIDTH_NATURAL: *(uint64_t *)pbField = u64Val; break;
-        case VMX_VMCS_ENC_WIDTH_32BIT:   *(uint32_t *)pbField = u64Val; break;
-        case VMX_VMCS_ENC_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
-    }
-
-    iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * VMCLEAR instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of the VMCS pointer.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- *
- * @remarks Common VMX instruction checks are already expected to by the caller,
- *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                      PCVMXVEXITINFO pExitInfo)
-{
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
-    }
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
-
-    /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
-    {
-        Log(("vmclear: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_Cpl;
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
-
-    /* Get the VMCS pointer from the location specified by the source memory operand. */
-    RTGCPHYS GCPhysVmcs;
-    VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmcs, iEffSeg, GCPtrVmcs);
-    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-    {
-        Log(("vmclear: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrMap;
-        return rcStrict;
-    }
-
-    /* VMCS pointer alignment. */
-    if (GCPhysVmcs & X86_PAGE_4K_OFFSET_MASK)
-    {
-        Log(("vmclear: VMCS pointer not page-aligned -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrAlign;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* VMCS physical-address width limits. */
-    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-    {
-        Log(("vmclear: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrWidth;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* VMCS is not the VMXON region. */
-    if (GCPhysVmcs == pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
-    {
-        Log(("vmclear: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrVmxon;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_VMXON_PTR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
-       restriction imposed by our implementation. */
-    if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcs))
-    {
-        Log(("vmclear: VMCS not normal memory -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrAbnormal;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * VMCLEAR allows committing and clearing any valid VMCS pointer.
-     *
-     * If the current VMCS is the one being cleared, set its state to 'clear' and commit
-     * to guest memory. Otherwise, set the state of the VMCS referenced in guest memory
-     * to 'clear'.
-     */
-    uint8_t const fVmcsStateClear = VMX_V_VMCS_STATE_CLEAR;
-    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
-    {
-        Assert(GCPhysVmcs != NIL_RTGCPHYS);                     /* Paranoia. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsStateClear;
-        iemVmxCommitCurrentVmcsToMemory(pVCpu);
-        Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
-    }
-    else
-    {
-        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPtrVmcs + RT_OFFSETOF(VMXVVMCS, fVmcsState),
-                                            (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
-    }
-
-    iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return rcStrict;
-}
-
-
-/**
- * VMPTRST instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of where to store the current VMCS
- *                          pointer.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- *
- * @remarks Common VMX instruction checks are already expected to by the caller,
- *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                      PCVMXVEXITINFO pExitInfo)
-{
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
-    }
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
-
-    /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
-    {
-        Log(("vmptrst: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_Cpl;
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
-
-    /* Set the VMCS pointer to the location specified by the destination memory operand. */
-    AssertCompile(NIL_RTGCPHYS == ~(RTGCPHYS)0U);
-    VBOXSTRICTRC rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrVmcs, IEM_VMX_GET_CURRENT_VMCS(pVCpu));
-    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-    {
-        iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return rcStrict;
-    }
-
-    Log(("vmptrst: Failed to store VMCS pointer to memory at destination operand %#Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_PtrMap;
-    return rcStrict;
-}
-
-
-/**
- * VMPTRLD instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   GCPtrVmcs       The linear address of the current VMCS pointer.
- * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
- *                          be NULL.
- *
- * @remarks Common VMX instruction checks are already expected to by the caller,
- *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
-                                      PCVMXVEXITINFO pExitInfo)
-{
-    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
-    }
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
-
-    /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
-    {
-        Log(("vmptrld: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_Cpl;
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
-
-    /* Get the VMCS pointer from the location specified by the source memory operand. */
-    RTGCPHYS GCPhysVmcs;
-    VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmcs, iEffSeg, GCPtrVmcs);
-    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-    {
-        Log(("vmptrld: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrMap;
-        return rcStrict;
-    }
-
-    /* VMCS pointer alignment. */
-    if (GCPhysVmcs & X86_PAGE_4K_OFFSET_MASK)
-    {
-        Log(("vmptrld: VMCS pointer not page-aligned -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrAlign;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* VMCS physical-address width limits. */
-    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-    {
-        Log(("vmptrld: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrWidth;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* VMCS is not the VMXON region. */
-    if (GCPhysVmcs == pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
-    {
-        Log(("vmptrld: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrVmxon;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_VMXON_PTR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
-       restriction imposed by our implementation. */
-    if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcs))
-    {
-        Log(("vmptrld: VMCS not normal memory -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrAbnormal;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /* Read the VMCS revision ID from the VMCS. */
-    VMXVMCSREVID VmcsRevId;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcsRevId, GCPhysVmcs, sizeof(VmcsRevId));
-    if (RT_FAILURE(rc))
-    {
-        Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
-        return rc;
-    }
-
-    /* Verify the VMCS revision specified by the guest matches what we reported to the guest,
-       also check VMCS shadowing feature. */
-    if (   VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID
-        || (   VmcsRevId.n.fIsShadowVmcs
-            && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmcsShadowing))
-    {
-        if (VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID)
-        {
-            Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32 -> VMFail()\n", VMX_V_VMCS_REVISION_ID,
-                 VmcsRevId.n.u31RevisionId));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_VmcsRevId;
-            iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
-
-        Log(("vmptrld: Shadow VMCS -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_ShadowVmcs;
-        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * We only maintain only the current VMCS in our virtual CPU context (CPUMCTX). Therefore,
-     * VMPTRLD shall always flush any existing current VMCS back to guest memory before loading
-     * a new VMCS as current.
-     */
-    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
-    {
-        iemVmxCommitCurrentVmcsToMemory(pVCpu);
-        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
-    }
-
-    iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * VMXON instruction execution worker.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
- * @param   iEffSeg         The effective segment register to use with @a
- *                          GCPtrVmxon.
- * @param   GCPtrVmxon      The linear address of the VMXON pointer.
- * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
- *                          Optional, can  be NULL.
- *
- * @remarks Common VMX instruction checks are already expected to by the caller,
- *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmxon,
-                                    PCVMXVEXITINFO pExitInfo)
-{
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
-    RT_NOREF5(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, pExitInfo);
-    return VINF_EM_RAW_EMULATE_INSTR;
-#else
-    if (!IEM_IS_VMX_ROOT_MODE(pVCpu))
-    {
-        /* CPL. */
-        if (pVCpu->iem.s.uCpl > 0)
-        {
-            Log(("vmxon: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cpl;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
-        }
-
-        /* A20M (A20 Masked) mode. */
-        if (!PGMPhysIsA20Enabled(pVCpu))
-        {
-            Log(("vmxon: A20M mode -> #GP(0)\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_A20M;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
-        }
-
-        /* CR0 MB1 bits. */
-        uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
-        if (~pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0)
-        {
-            Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr0Fixed0;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
-        }
-
-        /* CR4 MB1 bits. */
-        uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
-        if (~pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0)
-        {
-            Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed0;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
-        }
-
-        /* Feature control MSR's LOCK and VMXON bits. */
-        uint64_t const uMsrFeatCtl = CPUMGetGuestIa32FeatureControl(pVCpu);
-        if (!(uMsrFeatCtl & (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON)))
-        {
-            Log(("vmxon: Feature control lock bit or VMXON bit cleared -> #GP(0)\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_MsrFeatCtl;
-            return iemRaiseGeneralProtectionFault0(pVCpu);
-        }
-
-        /* Get the VMXON pointer from the location specified by the source memory operand. */
-        RTGCPHYS GCPhysVmxon;
-        VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmxon, iEffSeg, GCPtrVmxon);
-        if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-        {
-            Log(("vmxon: Failed to read VMXON region physaddr from %#RGv, rc=%Rrc\n", GCPtrVmxon, VBOXSTRICTRC_VAL(rcStrict)));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrMap;
-            return rcStrict;
-        }
-
-        /* VMXON region pointer alignment. */
-        if (GCPhysVmxon & X86_PAGE_4K_OFFSET_MASK)
-        {
-            Log(("vmxon: VMXON region pointer not page-aligned -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrAlign;
-            iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
-
-        /* VMXON physical-address width limits. */
-        if (GCPhysVmxon >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-        {
-            Log(("vmxon: VMXON region pointer extends beyond physical-address width -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrWidth;
-            iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
-
-        /* Ensure VMXON region is not MMIO, ROM etc. This is not an Intel requirement but a
-           restriction imposed by our implementation. */
-        if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmxon))
-        {
-            Log(("vmxon: VMXON region not normal memory -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrAbnormal;
-            iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
-
-        /* Read the VMCS revision ID from the VMXON region. */
-        VMXVMCSREVID VmcsRevId;
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcsRevId, GCPhysVmxon, sizeof(VmcsRevId));
-        if (RT_FAILURE(rc))
-        {
-            Log(("vmxon: Failed to read VMXON region at %#RGp, rc=%Rrc\n", GCPhysVmxon, rc));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrReadPhys;
-            return rc;
-        }
-
-        /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
-        if (RT_UNLIKELY(VmcsRevId.u != VMX_V_VMCS_REVISION_ID))
-        {
-            /* Revision ID mismatch. */
-            if (!VmcsRevId.n.fIsShadowVmcs)
-            {
-                Log(("vmxon: VMCS revision mismatch, expected %#RX32 got %#RX32 -> VMFailInvalid\n", VMX_V_VMCS_REVISION_ID,
-                     VmcsRevId.n.u31RevisionId));
-                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmcsRevId;
-                iemVmxVmFailInvalid(pVCpu);
-                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-                return VINF_SUCCESS;
-            }
-
-            /* Shadow VMCS disallowed. */
-            Log(("vmxon: Shadow VMCS -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_ShadowVmcs;
-            iemVmxVmFailInvalid(pVCpu);
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Record that we're in VMX operation, block INIT, block and disable A20M.
-         */
-        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon    = GCPhysVmxon;
-        IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
-        pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
-
-        /* Clear address-range monitoring. */
-        EMMonitorWaitClear(pVCpu);
-        /** @todo NSTVMX: Intel PT. */
-
-        iemVmxVmSucceed(pVCpu);
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-        return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
-# else
-        return VINF_SUCCESS;
-# endif
-    }
-    else if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
-    }
-
-    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
-
-    /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
-    {
-        Log(("vmxon: In VMX root mode: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmxRootCpl;
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
-
-    /* VMXON when already in VMX root mode. */
-    iemVmxVmFail(pVCpu, VMXINSTRERR_VMXON_IN_VMXROOTMODE);
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmxAlreadyRoot;
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
-#endif
 }
 
 
@@ -3328,7 +2519,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 
     pVmcs->u32RoExitReason = uExitReason;
 
-    /** @todo NSTVMX: Update VM-exit instruction length for instruction VM-exits. */
     /** @todo NSTVMX: IEMGetCurrentXcpt will be VM-exit interruption info. */
     /** @todo NSTVMX: The source event should be recorded in IDT-vectoring info
      *        during injection. */
@@ -3369,22 +2559,80 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 /**
  * VMX VM-exit handler for VM-exits due to instruction execution.
  *
- * The instructions covered here have a ModR/M byte and update the VM-exit
- * instruction info. field.
+ * This is intended for instructions where the caller provides all the relevant
+ * VM-exit information.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
+ */
+DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
+{
+    /*
+     * Update all the VMCS fields from the VM-exit instruction information struct.
+     * For instructions where the following fields are not applicable:
+     *
+     *   - VM-exit instruction info. is undefined for instructions where it does not apply.
+     *   - VM-exit qualification must be cleared for instruction where it does not apply.
+     *   - VM-exit guest-linear address is undefined for instructions where it does not apply.
+     *   - VM-exit guest-physical address is undefined for instructions where it does not apply.
+     *   - VM-exit instruction length is mandatory, we assert for basic sanity.
+     *
+     * See Intel spec. 27.2.1 "Basic VM-Exit Information".
+     */
+    Assert(pExitInfo);
+    AssertMsg(pExitInfo->uReason <= VMX_EXIT_MAX, ("uReason=%u\n", pExitInfo->uReason));
+    AssertMsg(pExitInfo->cbInstr >= 1 && pExitInfo->cbInstr <= 15,
+              ("uReason=%u cbInstr=%u\n", pExitInfo->uReason, pExitInfo->cbInstr));
+
+    iemVmxVmcsSetExitInstrInfo(pVCpu, pExitInfo->InstrInfo.u);
+    iemVmxVmcsSetExitQual(pVCpu, pExitInfo->u64Qual);
+    iemVmxVmcsSetExitGuestLinearAddr(pVCpu, pExitInfo->u64GuestLinearAddr);
+    iemVmxVmcsSetExitGuestPhysAddr(pVCpu, pExitInfo->u64GuestPhysAddr);
+    iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
+
+    return iemVmxVmexit(pVCpu, pExitInfo->uReason);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to instruction execution.
+ *
+ * This is intended for instructions that only provide the VM-exit instruction
+ * length.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason.
+ * @param   cbInstr         The instruction length (in bytes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, uint8_t cbInstr)
+{
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason = uExitReason;
+    ExitInfo.cbInstr = cbInstr;
+    return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to instruction execution.
+ *
+ * This is intended for instructions that have a ModR/M byte and update the VM-exit
+ * instruction information and VM-exit qualification fields.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
  * @param   uInstrid        The instruction identity (VMXINSTRID_XXX).
  * @param   cbInstr         The instruction length (in bytes).
+ *
+ * @remarks Do not use this for INS/OUTS instruction.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, uint8_t cbInstr)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, uint8_t cbInstr)
 {
-    /* Construct the VM-exit instruction information. */
-    RTGCPTR GCPtrDisp;
-    uint32_t const uExitInstrInfo = iemVmxGetExitInstrInfo(pVCpu, uExitReason, uInstrId, &GCPtrDisp);
-
-    /* Update the VM-exit instruction information. */
-    iemVmxVmcsSetExitInstrInfo(pVCpu, uExitInstrInfo);
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason = uExitReason;
+    ExitInfo.cbInstr = cbInstr;
 
     /*
      * Update the VM-exit qualification field with displacement bytes.
@@ -3406,19 +2654,25 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, VM
         case VMX_EXIT_XSAVES:
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RDSEED:
-            iemVmxVmcsSetExitQual(pVCpu, GCPtrDisp);
+        {
+            /* Construct the VM-exit instruction information. */
+            RTGCPTR GCPtrDisp;
+            uint32_t const uInstrInfo = iemVmxGetExitInstrInfo(pVCpu, uExitReason, uInstrId, &GCPtrDisp);
+
+            /* Update the VM-exit instruction information. */
+            ExitInfo.InstrInfo.u = uInstrInfo;
+
+            /* Update the VM-exit qualification. */
+            ExitInfo.u64Qual = GCPtrDisp;
             break;
+        }
 
         default:
             AssertMsgFailedReturn(("Use instruction-specific handler\n"), VERR_IEM_IPE_5);
+            break;
     }
 
-    /* Update the VM-exit instruction length field. */
-    Assert(cbInstr <= 15);
-    iemVmxVmcsSetExitInstrLen(pVCpu, cbInstr);
-
-    /* Perform the VM-exit. */
-    return iemVmxVmexit(pVCpu, uExitReason);
+    return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
 
@@ -5381,12 +4635,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     Assert(   uInstrId == VMXINSTRID_VMLAUNCH
            || uInstrId == VMXINSTRID_VMRESUME);
 
-    const char *pszInstr = uInstrId == VMXINSTRID_VMLAUNCH ? "vmlaunch" : "vmresume";
+    const char *pszInstr = uInstrId == VMXINSTRID_VMRESUME ? "vmresume" : "vmlaunch";
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        uint32_t const uExitReason = uInstrId == VMXINSTRID_VMRESUME ? VMX_EXIT_VMRESUME : VMX_EXIT_VMLAUNCH;
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, uExitReason, uInstrId, cbInstr);
     }
+
     Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
 
     /* CPL. */
@@ -5538,11 +4795,843 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
 
 /**
- * Implements 'VMXON'.
+ * VMREAD common (memory/register) instruction execution worker
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   pu64Dst         Where to write the VMCS value (only updated when
+ *                          VINF_SUCCESS is returned).
+ * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmxon, uint8_t, iEffSeg, RTGCPTR, GCPtrVmxon)
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
+                                           PCVMXVEXITINFO pExitInfo)
 {
-    return iemVmxVmxon(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, NULL /* pExitInfo */);
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        RT_NOREF(pExitInfo); RT_NOREF(cbInstr);
+        /** @todo NSTVMX: intercept. */
+        /** @todo NSTVMX: VMCS shadowing intercept (VMREAD bitmap). */
+    }
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl > 0)
+    {
+        Log(("vmread: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* VMCS pointer in root mode. */
+    if (    IEM_IS_VMX_ROOT_MODE(pVCpu)
+        && !IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    {
+        Log(("vmread: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_PtrInvalid;
+        iemVmxVmFailInvalid(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS-link pointer in non-root mode. */
+    if (    IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+        && !IEM_VMX_HAS_SHADOW_VMCS(pVCpu))
+    {
+        Log(("vmread: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_LinkPtrInvalid;
+        iemVmxVmFailInvalid(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Supported VMCS field. */
+    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    {
+        Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_FieldInvalid;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMREAD_INVALID_COMPONENT);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Setup reading from the current or shadow VMCS.
+     */
+    uint8_t *pbVmcs;
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
+    else
+        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pbVmcs);
+
+    VMXVMCSFIELDENC FieldEnc;
+    FieldEnc.u = RT_LO_U32(u64FieldEnc);
+    uint8_t  const uWidth     = FieldEnc.n.u2Width;
+    uint8_t  const uType      = FieldEnc.n.u2Type;
+    uint8_t  const uWidthType = (uWidth << 2) | uType;
+    uint8_t  const uIndex     = FieldEnc.n.u8Index;
+    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
+    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
+
+    /*
+     * Read the VMCS component based on the field's effective width.
+     *
+     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
+     * indicates high bits (little endian).
+     *
+     * Note! The caller is responsible to trim the result and update registers
+     * or memory locations are required. Here we just zero-extend to the largest
+     * type (i.e. 64-bits).
+     */
+    uint8_t      *pbField = pbVmcs + offField;
+    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
+    switch (uEffWidth)
+    {
+        case VMX_VMCS_ENC_WIDTH_64BIT:
+        case VMX_VMCS_ENC_WIDTH_NATURAL: *pu64Dst = *(uint64_t *)pbField; break;
+        case VMX_VMCS_ENC_WIDTH_32BIT:   *pu64Dst = *(uint32_t *)pbField; break;
+        case VMX_VMCS_ENC_WIDTH_16BIT:   *pu64Dst = *(uint16_t *)pbField; break;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMREAD (64-bit register) instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   pu64Dst         Where to store the VMCS field's value.
+ * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
+                                          PCVMXVEXITINFO pExitInfo)
+{
+    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, pu64Dst, u64FieldEnc, pExitInfo);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        iemVmxVmreadSuccess(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    Log(("vmread/reg: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
+ * VMREAD (32-bit register) instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   pu32Dst         Where to store the VMCS field's value.
+ * @param   u32FieldEnc     The VMCS field encoding.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_t *pu32Dst, uint64_t u32FieldEnc,
+                                          PCVMXVEXITINFO pExitInfo)
+{
+    uint64_t u64Dst;
+    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u32FieldEnc, pExitInfo);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        *pu32Dst = u64Dst;
+        iemVmxVmreadSuccess(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    Log(("vmread/reg: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
+ * VMREAD (memory) instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   iEffSeg         The effective segment register to use with @a u64Val.
+ *                          Pass UINT8_MAX if it is a register access.
+ * @param   enmEffAddrMode  The effective addressing mode (only used with memory
+ *                          operand).
+ * @param   GCPtrDst        The guest linear address to store the VMCS field's
+ *                          value.
+ * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode,
+                                        RTGCPTR GCPtrDst, uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
+{
+    uint64_t u64Dst;
+    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u64FieldEnc, pExitInfo);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /*
+         * Write the VMCS field's value to the location specified in guest-memory.
+         *
+         * The pointer size depends on the address size (address-size prefix allowed).
+         * The operand size depends on IA-32e mode (operand-size prefix not allowed).
+         */
+        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
+        Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
+        GCPtrDst &= s_auAddrSizeMasks[enmEffAddrMode];
+
+        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+            rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrDst, u64Dst);
+        else
+            rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrDst, u64Dst);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            iemVmxVmreadSuccess(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        Log(("vmread/mem: Failed to write to memory operand at %#RGv, rc=%Rrc\n", GCPtrDst, VBOXSTRICTRC_VAL(rcStrict)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_PtrMap;
+        return rcStrict;
+    }
+
+    Log(("vmread/mem: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
+ * VMWRITE instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   iEffSeg         The effective segment register to use with @a u64Val.
+ *                          Pass UINT8_MAX if it is a register access.
+ * @param   enmEffAddrMode  The effective addressing mode (only used with memory
+ *                          operand).
+ * @param   u64Val          The value to write (or guest linear address to the
+ *                          value), @a iEffSeg will indicate if it's a memory
+ *                          operand.
+ * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode, uint64_t u64Val,
+                                      uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
+{
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        RT_NOREF(pExitInfo);
+        /** @todo NSTVMX: intercept. */
+        /** @todo NSTVMX: VMCS shadowing intercept (VMWRITE bitmap). */
+    }
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl > 0)
+    {
+        Log(("vmwrite: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* VMCS pointer in root mode. */
+    if (    IEM_IS_VMX_ROOT_MODE(pVCpu)
+        && !IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    {
+        Log(("vmwrite: VMCS pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_PtrInvalid;
+        iemVmxVmFailInvalid(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS-link pointer in non-root mode. */
+    if (    IEM_IS_VMX_NON_ROOT_MODE(pVCpu)
+        && !IEM_VMX_HAS_SHADOW_VMCS(pVCpu))
+    {
+        Log(("vmwrite: VMCS-link pointer %#RGp invalid -> VMFailInvalid\n", IEM_VMX_GET_SHADOW_VMCS(pVCpu)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_LinkPtrInvalid;
+        iemVmxVmFailInvalid(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* If the VMWRITE instruction references memory, access the specified memory operand. */
+    bool const fIsRegOperand = iEffSeg == UINT8_MAX;
+    if (!fIsRegOperand)
+    {
+        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
+        Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
+        RTGCPTR const GCPtrVal = u64Val & s_auAddrSizeMasks[enmEffAddrMode];
+
+        /* Read the value from the specified guest memory location. */
+        VBOXSTRICTRC rcStrict;
+        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+            rcStrict = iemMemFetchDataU64(pVCpu, &u64Val, iEffSeg, GCPtrVal);
+        else
+        {
+            uint32_t u32Val;
+            rcStrict = iemMemFetchDataU32(pVCpu, &u32Val, iEffSeg, GCPtrVal);
+            u64Val = u32Val;
+        }
+        if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+        {
+            Log(("vmwrite: Failed to read value from memory operand at %#RGv, rc=%Rrc\n", GCPtrVal, VBOXSTRICTRC_VAL(rcStrict)));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_PtrMap;
+            return rcStrict;
+        }
+    }
+    else
+        Assert(!pExitInfo || pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand);
+
+    /* Supported VMCS field. */
+    if (!iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    {
+        Log(("vmwrite: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldInvalid;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_INVALID_COMPONENT);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Read-only VMCS field. */
+    bool const fReadOnlyField = HMVmxIsVmcsFieldReadOnly(u64FieldEnc);
+    if (   fReadOnlyField
+        && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmwriteAll)
+    {
+        Log(("vmwrite: Write to read-only VMCS component %#RX64 -> VMFail\n", u64FieldEnc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldRo;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_RO_COMPONENT);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Setup writing to the current or shadow VMCS.
+     */
+    uint8_t *pbVmcs;
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
+    else
+        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pbVmcs);
+
+    VMXVMCSFIELDENC FieldEnc;
+    FieldEnc.u = RT_LO_U32(u64FieldEnc);
+    uint8_t  const uWidth     = FieldEnc.n.u2Width;
+    uint8_t  const uType      = FieldEnc.n.u2Type;
+    uint8_t  const uWidthType = (uWidth << 2) | uType;
+    uint8_t  const uIndex     = FieldEnc.n.u8Index;
+    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
+    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
+
+    /*
+     * Write the VMCS component based on the field's effective width.
+     *
+     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
+     * indicates high bits (little endian).
+     */
+    uint8_t      *pbField = pbVmcs + offField;
+    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
+    switch (uEffWidth)
+    {
+        case VMX_VMCS_ENC_WIDTH_64BIT:
+        case VMX_VMCS_ENC_WIDTH_NATURAL: *(uint64_t *)pbField = u64Val; break;
+        case VMX_VMCS_ENC_WIDTH_32BIT:   *(uint32_t *)pbField = u64Val; break;
+        case VMX_VMCS_ENC_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
+    }
+
+    iemVmxVmSucceed(pVCpu);
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMCLEAR instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
+ * @param   GCPtrVmcs       The linear address of the VMCS pointer.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
+                                      PCVMXVEXITINFO pExitInfo)
+{
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMCLEAR, VMXINSTRID_NONE, cbInstr);
+    }
+
+    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl > 0)
+    {
+        Log(("vmclear: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* Get the VMCS pointer from the location specified by the source memory operand. */
+    RTGCPHYS GCPhysVmcs;
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmcs, iEffSeg, GCPtrVmcs);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log(("vmclear: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrMap;
+        return rcStrict;
+    }
+
+    /* VMCS pointer alignment. */
+    if (GCPhysVmcs & X86_PAGE_4K_OFFSET_MASK)
+    {
+        Log(("vmclear: VMCS pointer not page-aligned -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrAlign;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS physical-address width limits. */
+    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+    {
+        Log(("vmclear: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrWidth;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS is not the VMXON region. */
+    if (GCPhysVmcs == pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
+    {
+        Log(("vmclear: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrVmxon;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_VMXON_PTR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
+       restriction imposed by our implementation. */
+    if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcs))
+    {
+        Log(("vmclear: VMCS not normal memory -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrAbnormal;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * VMCLEAR allows committing and clearing any valid VMCS pointer.
+     *
+     * If the current VMCS is the one being cleared, set its state to 'clear' and commit
+     * to guest memory. Otherwise, set the state of the VMCS referenced in guest memory
+     * to 'clear'.
+     */
+    uint8_t const fVmcsStateClear = VMX_V_VMCS_STATE_CLEAR;
+    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
+    {
+        Assert(GCPhysVmcs != NIL_RTGCPHYS);                     /* Paranoia. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsStateClear;
+        iemVmxCommitCurrentVmcsToMemory(pVCpu);
+        Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    }
+    else
+    {
+        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPtrVmcs + RT_OFFSETOF(VMXVVMCS, fVmcsState),
+                                            (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
+    }
+
+    iemVmxVmSucceed(pVCpu);
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return rcStrict;
+}
+
+
+/**
+ * VMPTRST instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
+ * @param   GCPtrVmcs       The linear address of where to store the current VMCS
+ *                          pointer.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
+                                      PCVMXVEXITINFO pExitInfo)
+{
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMPTRST, VMXINSTRID_NONE, cbInstr);
+    }
+
+    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl > 0)
+    {
+        Log(("vmptrst: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* Set the VMCS pointer to the location specified by the destination memory operand. */
+    AssertCompile(NIL_RTGCPHYS == ~(RTGCPHYS)0U);
+    VBOXSTRICTRC rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrVmcs, IEM_VMX_GET_CURRENT_VMCS(pVCpu));
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    {
+        iemVmxVmSucceed(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return rcStrict;
+    }
+
+    Log(("vmptrst: Failed to store VMCS pointer to memory at destination operand %#Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_PtrMap;
+    return rcStrict;
+}
+
+
+/**
+ * VMPTRLD instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   GCPtrVmcs       The linear address of the current VMCS pointer.
+ * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
+ *                          be NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmcs,
+                                      PCVMXVEXITINFO pExitInfo)
+{
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMPTRLD, VMXINSTRID_NONE, cbInstr);
+    }
+
+    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl > 0)
+    {
+        Log(("vmptrld: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_Cpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* Get the VMCS pointer from the location specified by the source memory operand. */
+    RTGCPHYS GCPhysVmcs;
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmcs, iEffSeg, GCPtrVmcs);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log(("vmptrld: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrMap;
+        return rcStrict;
+    }
+
+    /* VMCS pointer alignment. */
+    if (GCPhysVmcs & X86_PAGE_4K_OFFSET_MASK)
+    {
+        Log(("vmptrld: VMCS pointer not page-aligned -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrAlign;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS physical-address width limits. */
+    if (GCPhysVmcs >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+    {
+        Log(("vmptrld: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrWidth;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* VMCS is not the VMXON region. */
+    if (GCPhysVmcs == pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
+    {
+        Log(("vmptrld: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrVmxon;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_VMXON_PTR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Ensure VMCS is not MMIO, ROM etc. This is not an Intel requirement but a
+       restriction imposed by our implementation. */
+    if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcs))
+    {
+        Log(("vmptrld: VMCS not normal memory -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrAbnormal;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Read the VMCS revision ID from the VMCS. */
+    VMXVMCSREVID VmcsRevId;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcsRevId, GCPhysVmcs, sizeof(VmcsRevId));
+    if (RT_FAILURE(rc))
+    {
+        Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
+        return rc;
+    }
+
+    /* Verify the VMCS revision specified by the guest matches what we reported to the guest,
+       also check VMCS shadowing feature. */
+    if (   VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID
+        || (   VmcsRevId.n.fIsShadowVmcs
+            && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmcsShadowing))
+    {
+        if (VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID)
+        {
+            Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32 -> VMFail()\n", VMX_V_VMCS_REVISION_ID,
+                 VmcsRevId.n.u31RevisionId));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_VmcsRevId;
+            iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        Log(("vmptrld: Shadow VMCS -> VMFail()\n"));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_ShadowVmcs;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * We only maintain only the current VMCS in our virtual CPU context (CPUMCTX). Therefore,
+     * VMPTRLD shall always flush any existing current VMCS back to guest memory before loading
+     * a new VMCS as current.
+     */
+    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
+    {
+        iemVmxCommitCurrentVmcsToMemory(pVCpu);
+        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
+    }
+
+    iemVmxVmSucceed(pVCpu);
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMXON instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length.
+ * @param   iEffSeg         The effective segment register to use with @a
+ *                          GCPtrVmxon.
+ * @param   GCPtrVmxon      The linear address of the VMXON pointer.
+ * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
+ *                          Optional, can  be NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmxon,
+                                    PCVMXVEXITINFO pExitInfo)
+{
+#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+    RT_NOREF5(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, pExitInfo);
+    return VINF_EM_RAW_EMULATE_INSTR;
+#else
+    if (!IEM_IS_VMX_ROOT_MODE(pVCpu))
+    {
+        /* CPL. */
+        if (pVCpu->iem.s.uCpl > 0)
+        {
+            Log(("vmxon: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cpl;
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+
+        /* A20M (A20 Masked) mode. */
+        if (!PGMPhysIsA20Enabled(pVCpu))
+        {
+            Log(("vmxon: A20M mode -> #GP(0)\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_A20M;
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+
+        /* CR0 MB1 bits. */
+        uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        if (~pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0)
+        {
+            Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr0Fixed0;
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+
+        /* CR4 MB1 bits. */
+        uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        if (~pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0)
+        {
+            Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cr4Fixed0;
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+
+        /* Feature control MSR's LOCK and VMXON bits. */
+        uint64_t const uMsrFeatCtl = CPUMGetGuestIa32FeatureControl(pVCpu);
+        if (!(uMsrFeatCtl & (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON)))
+        {
+            Log(("vmxon: Feature control lock bit or VMXON bit cleared -> #GP(0)\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_MsrFeatCtl;
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
+
+        /* Get the VMXON pointer from the location specified by the source memory operand. */
+        RTGCPHYS GCPhysVmxon;
+        VBOXSTRICTRC rcStrict = iemMemFetchDataU64(pVCpu, &GCPhysVmxon, iEffSeg, GCPtrVmxon);
+        if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+        {
+            Log(("vmxon: Failed to read VMXON region physaddr from %#RGv, rc=%Rrc\n", GCPtrVmxon, VBOXSTRICTRC_VAL(rcStrict)));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrMap;
+            return rcStrict;
+        }
+
+        /* VMXON region pointer alignment. */
+        if (GCPhysVmxon & X86_PAGE_4K_OFFSET_MASK)
+        {
+            Log(("vmxon: VMXON region pointer not page-aligned -> VMFailInvalid\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrAlign;
+            iemVmxVmFailInvalid(pVCpu);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        /* VMXON physical-address width limits. */
+        if (GCPhysVmxon >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+        {
+            Log(("vmxon: VMXON region pointer extends beyond physical-address width -> VMFailInvalid\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrWidth;
+            iemVmxVmFailInvalid(pVCpu);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        /* Ensure VMXON region is not MMIO, ROM etc. This is not an Intel requirement but a
+           restriction imposed by our implementation. */
+        if (!PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmxon))
+        {
+            Log(("vmxon: VMXON region not normal memory -> VMFailInvalid\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrAbnormal;
+            iemVmxVmFailInvalid(pVCpu);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        /* Read the VMCS revision ID from the VMXON region. */
+        VMXVMCSREVID VmcsRevId;
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcsRevId, GCPhysVmxon, sizeof(VmcsRevId));
+        if (RT_FAILURE(rc))
+        {
+            Log(("vmxon: Failed to read VMXON region at %#RGp, rc=%Rrc\n", GCPhysVmxon, rc));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrReadPhys;
+            return rc;
+        }
+
+        /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
+        if (RT_UNLIKELY(VmcsRevId.u != VMX_V_VMCS_REVISION_ID))
+        {
+            /* Revision ID mismatch. */
+            if (!VmcsRevId.n.fIsShadowVmcs)
+            {
+                Log(("vmxon: VMCS revision mismatch, expected %#RX32 got %#RX32 -> VMFailInvalid\n", VMX_V_VMCS_REVISION_ID,
+                     VmcsRevId.n.u31RevisionId));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmcsRevId;
+                iemVmxVmFailInvalid(pVCpu);
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                return VINF_SUCCESS;
+            }
+
+            /* Shadow VMCS disallowed. */
+            Log(("vmxon: Shadow VMCS -> VMFailInvalid\n"));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_ShadowVmcs;
+            iemVmxVmFailInvalid(pVCpu);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Record that we're in VMX operation, block INIT, block and disable A20M.
+         */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon    = GCPhysVmxon;
+        IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxRootMode = true;
+
+        /* Clear address-range monitoring. */
+        EMMonitorWaitClear(pVCpu);
+        /** @todo NSTVMX: Intel PT. */
+
+        iemVmxVmSucceed(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+        return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
+# else
+        return VINF_SUCCESS;
+# endif
+    }
+    else if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+    {
+        RT_NOREF(pExitInfo);
+        /** @todo NSTVMX: intercept. */
+    }
+
+    Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl > 0)
+    {
+        Log(("vmxon: In VMX root mode: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmxRootCpl;
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* VMXON when already in VMX root mode. */
+    iemVmxVmFail(pVCpu, VMXINSTRERR_VMXON_IN_VMXROOTMODE);
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmxAlreadyRoot;
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -5559,9 +5648,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
-    {
-        /** @todo NSTVMX: intercept. */
-    }
+        return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMXOFF, cbInstr);
 
     /* CPL. */
     if (pVCpu->iem.s.uCpl > 0)
@@ -5598,6 +5685,15 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
     return VINF_SUCCESS;
 #  endif
 # endif
+}
+
+
+/**
+ * Implements 'VMXON'.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_vmxon, uint8_t, iEffSeg, RTGCPTR, GCPtrVmxon)
+{
+    return iemVmxVmxon(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, NULL /* pExitInfo */);
 }
 
 
