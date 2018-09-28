@@ -16,17 +16,6 @@
  */
 
 
-/**
- * Implements 'VMCALL'.
- */
-IEM_CIMPL_DEF_0(iemCImpl_vmcall)
-{
-    /** @todo NSTVMX: intercept. */
-
-    /* Join forces with vmmcall. */
-    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMCALL);
-}
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
@@ -5672,8 +5661,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
     else if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
     {
         /* Nested-guest intercept. */
-        RT_NOREF(pExitInfo);
-        /** @todo NSTVMX: intercept. */
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_VMXON, VMXINSTRID_NONE, cbInstr);
     }
 
     Assert(IEM_IS_VMX_ROOT_MODE(pVCpu));
@@ -5848,5 +5838,21 @@ IEM_CIMPL_DEF_4(iemCImpl_vmread_mem, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, 
     return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u64FieldEnc, NULL /* pExitInfo */);
 }
 
+#endif  /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
+
+/**
+ * Implements 'VMCALL'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmcall)
+{
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* Nested-guest intercept. */
+    if (IEM_IS_VMX_NON_ROOT_MODE(pVCpu))
+        return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMCALL, cbInstr);
 #endif
+
+    /* Join forces with vmmcall. */
+    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMCALL);
+}
 
