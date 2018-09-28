@@ -1424,7 +1424,9 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
             }
 
             MEDIUMTASKCHAINMOVE mtc;
-            mtc.devType = deviceType;
+            mtc.devType       = deviceType;
+            mtc.fAttachLinked = false;
+            mtc.fCreateDiffs  = false;
 
             while (!pMedium.isNull())
             {
