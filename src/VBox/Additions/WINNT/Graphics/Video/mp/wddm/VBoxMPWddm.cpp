@@ -1149,33 +1149,27 @@ NTSTATUS DxgkDdiStartDevice(
             Status = vboxWddmPickResources(pDevExt, &DeviceInfo, &pDevExt->HwResources);
             if (Status == STATUS_SUCCESS)
             {
-#ifdef VBOX_WITH_CROGL
+                /* Figure out the host capabilities. Start with nothing. */
+                pDevExt->fTexPresentEnabled = FALSE;
+                pDevExt->fCmdVbvaEnabled = FALSE;
+                pDevExt->fComplexTopologiesEnabled = FALSE;
+
                 if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                 {
+#ifdef VBOX_WITH_CROGL
                     if (pDevExt->f3DEnabled)
                     {
                         pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
                         pDevExt->fCmdVbvaEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
-# if 0
-                        pDevExt->fComplexTopologiesEnabled = pDevExt->fCmdVbvaEnabled;
-# else
-                        pDevExt->fComplexTopologiesEnabled = FALSE;
-# endif
+                        // Disabled, see xTracker #8244 pDevExt->fComplexTopologiesEnabled = pDevExt->fCmdVbvaEnabled;
                     }
-                    else
-                    {
-                        pDevExt->fTexPresentEnabled = FALSE;
-                        pDevExt->fCmdVbvaEnabled = FALSE;
-                        pDevExt->fComplexTopologiesEnabled = FALSE;
-                    }
+#else
+                    pDevExt->f3DEnabled = FALSE;
 #endif
                 }
                 else
                 {
                     pDevExt->f3DEnabled = FALSE;
-                    pDevExt->fTexPresentEnabled = FALSE;
-                    pDevExt->fCmdVbvaEnabled = FALSE;
-                    pDevExt->fComplexTopologiesEnabled = FALSE;
                 }
 
                 /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported.
