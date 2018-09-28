@@ -120,6 +120,7 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
             }
         }
         m_pReinitMACsCheckBox = new QCheckBox(this);
+        m_pReinitMACsCheckBox->setChecked(true);
         pMainLayout->addWidget(m_pNameCnt, 0, 0, 1, 2);
         pMainLayout->addWidget(m_pCloneTypeCnt, 1, 0, Qt::AlignTop);
         pMainLayout->addWidget(m_pCloneModeCnt, 1, 1, Qt::AlignTop);

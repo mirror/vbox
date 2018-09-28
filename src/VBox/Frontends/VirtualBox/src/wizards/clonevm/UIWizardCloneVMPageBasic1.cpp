@@ -165,6 +165,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
          if (m_pReinitMACsCheckBox)
          {
              pContainerLayout->addWidget(m_pReinitMACsCheckBox, 2, 0, 1, 2);
+             m_pReinitMACsCheckBox->setChecked(true);
          }
     }
     pMainLayout->addStretch();
