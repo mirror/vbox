@@ -1427,6 +1427,31 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     pGuestFeat->fVmxExitStoreEferLma      = (pBaseFeat->fVmxExitStoreEferLma      & EmuFeat.fVmxExitStoreEferLma     );
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
+
+    /* Paranoia. */
+    if (!pGuestFeat->fVmxSecondaryExecCtls)
+    {
+        Assert(!pGuestFeat->fVmxVirtApicAccess);
+        Assert(!pGuestFeat->fVmxEpt);
+        Assert(!pGuestFeat->fVmxDescTableExit);
+        Assert(!pGuestFeat->fVmxRdtscp);
+        Assert(!pGuestFeat->fVmxVirtX2ApicMode);
+        Assert(!pGuestFeat->fVmxVpid);
+        Assert(!pGuestFeat->fVmxWbinvdExit);
+        Assert(!pGuestFeat->fVmxUnrestrictedGuest);
+        Assert(!pGuestFeat->fVmxApicRegVirt);
+        Assert(!pGuestFeat->fVmxVirtIntDelivery);
+        Assert(!pGuestFeat->fVmxPauseLoopExit);
+        Assert(!pGuestFeat->fVmxRdrandExit);
+        Assert(!pGuestFeat->fVmxInvpcid);
+        Assert(!pGuestFeat->fVmxVmFunc);
+        Assert(!pGuestFeat->fVmxVmcsShadowing);
+        Assert(!pGuestFeat->fVmxRdseedExit);
+        Assert(!pGuestFeat->fVmxPml);
+        Assert(!pGuestFeat->fVmxEptXcptVe);
+        Assert(!pGuestFeat->fVmxXsavesXrstors);
+        Assert(!pGuestFeat->fVmxUseTscScaling);
+    }
 }
 
 
