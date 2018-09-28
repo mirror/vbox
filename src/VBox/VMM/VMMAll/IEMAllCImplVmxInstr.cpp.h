@@ -2568,28 +2568,34 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
     /*
-     * Update all the VMCS fields from the VM-exit instruction information struct.
-     * For instructions where the following fields are not applicable:
+     * For instructions where any of the following fields are not applicable:
+     *   - VM-exit instruction info. is undefined.
+     *   - VM-exit qualification must be cleared.
+     *   - VM-exit guest-linear address is undefined.
+     *   - VM-exit guest-physical address is undefined.
      *
-     *   - VM-exit instruction info. is undefined for instructions where it does not apply.
-     *   - VM-exit qualification must be cleared for instruction where it does not apply.
-     *   - VM-exit guest-linear address is undefined for instructions where it does not apply.
-     *   - VM-exit guest-physical address is undefined for instructions where it does not apply.
-     *   - VM-exit instruction length is mandatory, we assert for basic sanity.
+     * The VM-exit instruction length is mandatory for all VM-exits that are caused by
+     * instruction execution.
+     *
+     * In our implementation, all undefined fields are generally cleared (caller's
+     * responsibility).
      *
      * See Intel spec. 27.2.1 "Basic VM-Exit Information".
+     * See Intel spec. 27.2.4 "Information for VM Exits Due to Instruction Execution".
      */
     Assert(pExitInfo);
     AssertMsg(pExitInfo->uReason <= VMX_EXIT_MAX, ("uReason=%u\n", pExitInfo->uReason));
     AssertMsg(pExitInfo->cbInstr >= 1 && pExitInfo->cbInstr <= 15,
               ("uReason=%u cbInstr=%u\n", pExitInfo->uReason, pExitInfo->cbInstr));
 
+    /* Update all the relevant fields from the VM-exit instruction information struct. */
     iemVmxVmcsSetExitInstrInfo(pVCpu, pExitInfo->InstrInfo.u);
     iemVmxVmcsSetExitQual(pVCpu, pExitInfo->u64Qual);
     iemVmxVmcsSetExitGuestLinearAddr(pVCpu, pExitInfo->u64GuestLinearAddr);
     iemVmxVmcsSetExitGuestPhysAddr(pVCpu, pExitInfo->u64GuestPhysAddr);
     iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
 
+    /* Perform the VM-exit. */
     return iemVmxVmexit(pVCpu, pExitInfo->uReason);
 }
 
