@@ -5334,13 +5334,21 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 
-            /* Check for bits that must remain set in VMX operation. */
+            /* Check for bits that must remain set or cleared in VMX operation,
+               see Intel spec. 23.8 "Restrictions on VMX operation". */
             if (IEM_VMX_IS_ROOT_MODE(pVCpu))
             {
                 uint32_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
                 if ((uNewCrX & uCr0Fixed0) != uCr0Fixed0)
                 {
                     Log(("Trying to clear reserved CR0 bits in VMX operation: NewCr0=%#llx MB1=%#llx\n", uNewCrX, uCr0Fixed0));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+
+                uint32_t const uCr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+                if (uNewCrX & ~uCr0Fixed1)
+                {
+                    Log(("Trying to set reserved CR0 bits in VMX operation: NewCr0=%#llx MB0=%#llx\n", uNewCrX, uCr0Fixed1));
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
             }
@@ -5560,13 +5568,21 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 IEM_SVM_CRX_VMEXIT_RET(pVCpu, SVM_EXIT_WRITE_CR4, enmAccessCrX, iGReg);
             }
 
-            /* Check for bits that must remain set in VMX operation. */
+            /* Check for bits that must remain set or cleared in VMX operation,
+               see Intel spec. 23.8 "Restrictions on VMX operation". */
             if (IEM_VMX_IS_ROOT_MODE(pVCpu))
             {
                 uint32_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
                 if ((uNewCrX & uCr4Fixed0) != uCr4Fixed0)
                 {
                     Log(("Trying to clear reserved CR4 bits in VMX operation: NewCr4=%#llx MB1=%#llx\n", uNewCrX, uCr4Fixed0));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+
+                uint32_t const uCr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+                if (uNewCrX & ~uCr4Fixed1)
+                {
+                    Log(("Trying to set reserved CR4 bits in VMX operation: NewCr4=%#llx MB0=%#llx\n", uNewCrX, uCr4Fixed1));
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
             }
