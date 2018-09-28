@@ -6,11 +6,25 @@
 # include <iprt/win/windows.h>
 # include <WinHvPlatform.h>
 typedef unsigned long long uint64_t;
+
+#elif defined(RT_OS_LINUX)
+# include <linux/kvm.h>
+# include <errno.h>
+# include <stdint.h>
+# include <sys/fcntl.h>
+# include <sys/ioctl.h>
+# include <sys/mman.h>
+# include <unistd.h>
+# include <time.h>
+
 #else
 # error "port me"
 #endif
-#include <stdio.h>
+
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 /*********************************************************************************************************************************
@@ -53,6 +67,16 @@ static decltype(WHvGetVirtualProcessorRegisters)   *g_pfnWHvGetVirtualProcessorR
 static decltype(WHvSetVirtualProcessorRegisters)   *g_pfnWHvSetVirtualProcessorRegisters;
 /** @} */
 static uint64_t (WINAPI                            *g_pfnRtlGetSystemTimePrecise)(void);
+
+#elif defined(RT_OS_LINUX)
+/** The VM handle.   */
+static int                      g_fdVm;
+/** The VCPU handle.   */
+static int                      g_fdVCpu;
+/** The kvm_run structure for the VCpu. */
+static struct kvm_run          *g_pVCpuRun;
+/** The size of the g_pVCpuRun mapping. */
+static ssize_t                  g_cbVCpuRun;
 #endif
 
 
@@ -71,6 +95,10 @@ static uint64_t getNanoTS(void)
 {
 #ifdef RT_OS_WINDOWS
     return g_pfnRtlGetSystemTimePrecise() * 100;
+#elif defined(RT_OS_LINUX)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
 #else
 # error "port me"
 #endif
@@ -78,6 +106,10 @@ static uint64_t getNanoTS(void)
 
 
 #ifdef RT_OS_WINDOWS
+
+/*
+ * Windows - Hyper-V Platform API.
+ */
 
 static int createVM(void)
 {
@@ -228,7 +260,6 @@ static int runtimeError(const char *pszFormat, ...)
 }
 
 
-
 static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
                            unsigned uEax, unsigned uEcx, unsigned uEdx, unsigned uEbx,
                            unsigned uEsp, unsigned uEbp, unsigned uEsi, unsigned uEdi)
@@ -373,8 +404,214 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
     return 0;
 }
 
+
+
 #elif defined(RT_OS_LINUX)
-# error "port me"
+
+/*
+ * GNU/linux - KVM
+ */
+
+static int createVM(void)
+{
+    int fd = open("/dev/kvm", O_RDWR);
+    if (fd < 0)
+        return error("Error opening /dev/kvm: %d\n", errno);
+
+    g_fdVm = ioctl(fd, KVM_CREATE_VM, (uintptr_t)0);
+    if (g_fdVm < 0)
+        return error("KVM_CREATE_VM failed: %d\n", errno);
+
+    /* Create the VCpu. */
+    g_cbVCpuRun = ioctl(fd, KVM_GET_VCPU_MMAP_SIZE, (uintptr_t)0);
+    if (g_cbVCpuRun <= 0x1000 || (g_cbVCpuRun & 0xfff))
+        return error("Failed to get KVM_GET_VCPU_MMAP_SIZE: %#xz errno=%d\n", g_cbVCpuRun, errno);
+
+    g_fdVCpu = ioctl(g_fdVm, KVM_CREATE_VCPU, (uintptr_t)0);
+    if (g_fdVCpu < 0)
+        return error("KVM_CREATE_VCPU failed: %d\n", errno);
+
+    g_pVCpuRun = (struct kvm_run *)mmap(NULL, g_cbVCpuRun, PROT_READ | PROT_WRITE, MAP_PRIVATE, g_fdVCpu, 0);
+    if ((void *)g_pVCpuRun == MAP_FAILED)
+        return error("mmap kvm_run failed: %d\n", errno);
+
+    /* Memory. */
+    g_pbMem = (unsigned char *)mmap(NULL, g_cbMem, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if ((void *)g_pbMem == MAP_FAILED)
+        return error("mmap RAM failed: %d\n", errno);
+
+    struct kvm_userspace_memory_region MemReg;
+    MemReg.slot            = 0;
+    MemReg.flags           = 0;
+    MemReg.guest_phys_addr = MY_MEM_BASE;
+    MemReg.memory_size     = g_cbMem;
+    MemReg.userspace_addr  = (uintptr_t)g_pbMem;
+    int rc = ioctl(g_fdVm, KVM_SET_USER_MEMORY_REGION, &MemReg);
+    if (rc != 0)
+        return error("KVM_SET_USER_MEMORY_REGION failed: %d (%d)\n", errno, rc);
+
+    close(fd);
+    return 0;
+}
+
+
+static void printSReg(const char *pszName, struct kvm_segment const *pSReg)
+{
+    fprintf(stderr, "     %5s=%04x  base=%016llx  limit=%08x type=%#x p=%d dpl=%d db=%d s=%d l=%d g=%d avl=%d un=%d\n",
+            pszName, pSReg->selector, pSReg->base, pSReg->limit, pSReg->type, pSReg->present, pSReg->dpl,
+            pSReg->db, pSReg->s, pSReg->l, pSReg->g, pSReg->avl, pSReg->unusable);
+}
+
+
+static int runtimeError(const char *pszFormat, ...)
+{
+    fprintf(stderr, "runtime error: ");
+    va_list va;
+    va_start(va, pszFormat);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+
+    fprintf(stderr, "                  exit_reason=%#010x\n", g_pVCpuRun->exit_reason);
+    fprintf(stderr, "ready_for_interrupt_injection=%#x\n", g_pVCpuRun->ready_for_interrupt_injection);
+    fprintf(stderr, "                      if_flag=%#x\n", g_pVCpuRun->if_flag);
+    fprintf(stderr, "                        flags=%#x\n", g_pVCpuRun->flags);
+    fprintf(stderr, "               kvm_valid_regs=%#018llx\n", g_pVCpuRun->kvm_valid_regs);
+    fprintf(stderr, "               kvm_dirty_regs=%#018llx\n", g_pVCpuRun->kvm_dirty_regs);
+
+    struct kvm_regs Regs;
+    memset(&Regs, 0, sizeof(Regs));
+    struct kvm_sregs SRegs;
+    memset(&SRegs, 0, sizeof(SRegs));
+    if (   ioctl(g_fdVCpu, KVM_GET_REGS, &Regs) != -1
+        && ioctl(g_fdVCpu, KVM_GET_SREGS, &SRegs) != -1)
+    {
+        fprintf(stderr, "       rip=%016llx\n", Regs.rip);
+        printSReg("cs", &SRegs.cs);
+        fprintf(stderr, "    rflags=%08llx\n", Regs.rflags);
+        fprintf(stderr, "       rax=%016llx\n", Regs.rax);
+        fprintf(stderr, "       rbx=%016llx\n", Regs.rcx);
+        fprintf(stderr, "       rdx=%016llx\n", Regs.rdx);
+        fprintf(stderr, "       rcx=%016llx\n", Regs.rbx);
+        fprintf(stderr, "       rsp=%016llx\n", Regs.rsp);
+        fprintf(stderr, "       rbp=%016llx\n", Regs.rbp);
+        fprintf(stderr, "       rsi=%016llx\n", Regs.rsi);
+        fprintf(stderr, "       rdi=%016llx\n", Regs.rdi);
+        printSReg("ss", &SRegs.ss);
+        printSReg("ds", &SRegs.ds);
+        printSReg("es", &SRegs.es);
+        printSReg("fs", &SRegs.fs);
+        printSReg("gs", &SRegs.gs);
+        printSReg("tr", &SRegs.tr);
+        printSReg("ldtr", &SRegs.ldt);
+
+        uint64_t const offMem = Regs.rip + SRegs.cs.base - MY_MEM_BASE;
+        if (offMem < g_cbMem - 10)
+            fprintf(stderr, "  bytes at PC (%#zx): %02x %02x %02x %02x %02x %02x %02x %02x\n", (size_t)(offMem + MY_MEM_BASE),
+                    g_pbMem[offMem    ], g_pbMem[offMem + 1], g_pbMem[offMem + 2], g_pbMem[offMem + 3],
+                    g_pbMem[offMem + 4], g_pbMem[offMem + 5], g_pbMem[offMem + 6], g_pbMem[offMem + 7]);
+    }
+
+    return 1;
+}
+
+static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
+                           unsigned uEax, unsigned uEcx, unsigned uEdx, unsigned uEbx,
+                           unsigned uEsp, unsigned uEbp, unsigned uEsi, unsigned uEdi)
+{
+    /*
+     * Setup real mode context.
+     */
+#define SET_SEG(a_SReg, a_Base, a_Limit, a_Sel, a_fCode) \
+        do { \
+            a_SReg.base     = (a_Base); \
+            a_SReg.limit    = (a_Limit); \
+            a_SReg.selector = (a_Sel); \
+            a_SReg.type     = (a_fCode) ? 10 : 3; \
+            a_SReg.present  = 1; \
+            a_SReg.dpl      = 0; \
+            a_SReg.db       = 0; \
+            a_SReg.s        = 1; \
+            a_SReg.l        = 0; \
+            a_SReg.g        = 0; \
+            a_SReg.avl      = 0; \
+            a_SReg.unusable = 0; \
+            a_SReg.padding  = 0; \
+        } while (0)
+    struct kvm_regs Regs;
+    memset(&Regs, 0, sizeof(Regs));
+    Regs.rax = uEax;
+    Regs.rcx = uEcx;
+    Regs.rdx = uEdx;
+    Regs.rbx = uEbx;
+    Regs.rsp = uEsp;
+    Regs.rbp = uEbp;
+    Regs.rsi = uEsi;
+    Regs.rdi = uEdi;
+    Regs.rip = MY_TEST_RIP;
+    Regs.rflags = 1;
+    int rc = ioctl(g_fdVCpu, KVM_SET_REGS, &Regs);
+    if (rc != 0)
+        return error("KVM_SET_REGS failed: %d (rc=%d)\n", errno, rc);
+
+    struct kvm_sregs SRegs;
+    memset(&SRegs, 0, sizeof(SRegs));
+    rc = ioctl(g_fdVCpu, KVM_GET_SREGS, &SRegs);
+    if (rc != 0)
+        return error("KVM_GET_SREGS failed: %d (rc=%d)\n", errno, rc);
+    SET_SEG(SRegs.es, 0x00000, 0xffff, 0x0000, 0);
+    SET_SEG(SRegs.cs, 0x00000, 0xffff, 0x0000, 1);
+    SET_SEG(SRegs.ss, 0x00000, 0xffff, 0x0000, 0);
+    SET_SEG(SRegs.ds, 0x00000, 0xffff, 0x0000, 0);
+    SET_SEG(SRegs.fs, 0x00000, 0xffff, 0x0000, 0);
+    SET_SEG(SRegs.gs, 0x00000, 0xffff, 0x0000, 0);
+    //SRegs.cr0 = 0x10010 /*WP+ET*/;
+    SRegs.cr2 = 0;
+    //SRegs.cr3 = 0;
+    //SRegs.cr4 = 0;
+    rc = ioctl(g_fdVCpu, KVM_SET_SREGS, &SRegs);
+    if (rc != 0)
+        return error("KVM_SET_SREGS failed: %d (rc=%d)\n", errno, rc);
+
+    /*
+     * Run the test.
+     */
+    uint64_t const nsStart = getNanoTS();
+    for (;;)
+    {
+        rc = ioctl(g_fdVCpu, KVM_RUN, (uintptr_t)0);
+        if (rc == 0)
+        {
+            if (g_pVCpuRun->exit_reason == KVM_EXIT_IO)
+            {
+                if (g_pVCpuRun->io.port == MY_NOP_PORT)
+                { /* likely: nop instruction */ }
+                else if (g_pVCpuRun->io.port == MY_TERM_PORT)
+                    break;
+                else
+                    return runtimeError("Unexpected I/O port access (for %s): %#x\n", pszInstruction, g_pVCpuRun->io.port);
+            }
+            else if (g_pVCpuRun->exit_reason == KVM_EXIT_MMIO)
+            {
+                if (g_pVCpuRun->mmio.phys_addr == MY_NOP_MMIO)
+                { /* likely: nop address */ }
+                else
+                    return runtimeError("Unexpected memory access (for %s): %#llx\n", pszInstruction, g_pVCpuRun->mmio.phys_addr);
+            }
+            else
+                return runtimeError("Unexpected exit (for %s): %d\n", pszInstruction, g_pVCpuRun->exit_reason);
+        }
+        else
+            return runtimeError("KVM_RUN failed (for %s): %#x (ret %d)\n", pszInstruction, errno, rc);
+    }
+    uint64_t const nsElapsed = getNanoTS() - nsStart;
+
+    /* Report the results. */
+    uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
+    printf("%10u %s instructions per second\n", (unsigned)cInstrPerSec, pszInstruction);
+    return 0;
+}
+
+
 #elif defined(RT_OS_DARWIN)
 # error "port me"
 #else
@@ -382,7 +619,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
 #endif
 
 
-static int ioportTest(unsigned cFactor)
+int ioportTest(unsigned cFactor)
 {
     /*
      * Produce realmode code
@@ -397,7 +634,8 @@ static int ioportTest(unsigned cFactor)
     *pb++ = 0x48 + 1;
     /* JNZ MY_TEST_RIP */
     *pb++ = 0x75;
-    *pb++ = (signed char)(pbStart - pb + 1);
+    *pb   = (signed char)(pbStart - pb + 1);
+    pb++;
     /* OUT 1, AL -  Temination port call. */
     *pb++ = 0xe6;
     *pb++ = MY_TERM_PORT;
@@ -410,7 +648,7 @@ static int ioportTest(unsigned cFactor)
 }
 
 
-static int cpuidTest(unsigned cFactor)
+int cpuidTest(unsigned cFactor)
 {
     /*
      * Produce realmode code
@@ -420,7 +658,9 @@ static int cpuidTest(unsigned cFactor)
     for (unsigned i = 0; i < 10; i++)
     {
         /* XOR EAX,EAX */
+#ifndef RT_OS_LINUX /* Broken on 4.18.0, probably wrong rip advance (2 instead of 3 bytes). */
         *pb++ = 0x66;
+#endif
         *pb++ = 0x33;
         *pb++ = 0xc0;
 
@@ -433,7 +673,8 @@ static int cpuidTest(unsigned cFactor)
     *pb++ = 0x48 + 6;
     /* JNZ MY_TEST_RIP */
     *pb++ = 0x75;
-    *pb++ = (signed char)(pbStart - pb + 1);
+    *pb   = (signed char)(pbStart - pb + 1);
+    pb++;
     /* OUT 1, AL -  Temination port call. */
     *pb++ = 0xe6;
     *pb++ = MY_TERM_PORT;
@@ -446,7 +687,7 @@ static int cpuidTest(unsigned cFactor)
 }
 
 
-static int mmioTest(unsigned cFactor)
+int mmioTest(unsigned cFactor)
 {
     /*
      * Produce realmode code accessing MY_MMIO_NOP address assuming it's low.
@@ -464,7 +705,8 @@ static int mmioTest(unsigned cFactor)
     *pb++ = 0x48 + 6;
     /* JNZ MY_TEST_RIP */
     *pb++ = 0x75;
-    *pb++ = (signed char)(pbStart - pb + 1);
+    *pb   = (signed char)(pbStart - pb + 1);
+    pb++;
     /* OUT 1, AL -  Temination port call. */
     *pb++ = 0xe6;
     *pb++ = MY_TERM_PORT;
@@ -540,10 +782,22 @@ int main(int argc, char **argv)
          * Do the benchmarking.
          */
         ioportTest(cFactor);
+#ifndef RT_OS_LINUX
         cpuidTest(cFactor);
+#endif
         mmioTest(cFactor);
 
         printf("tstNemMini-1: done\n");
     }
     return rcExit;
 }
+
+/*
+ * Results:
+ *
+ * - Linux 4.18.0-1-amd64 (debian); AMD Threadripper:
+ *     545108 OUT instructions per second
+ *     373159 MMIO/r1 instructions per second
+ *
+ *
+ */
