@@ -388,17 +388,23 @@ typedef enum IEMXCPTCLASS
 /**
  * Check if the guest has entered VMX root operation.
  */
-#define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                        (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
+# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                              (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Check if the guest has entered VMX non-root operation.
  */
-#define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                    (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                          (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
+
+/**
+ * Invokes the VMX VM-exit handler for an instruction intercept.
+ */
+# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr) \
+    do { return iemVmxVmexitInstr((a_pVCpu), (a_uExitReason), (a_cbInstr)); } while (0)
 
 #else
-# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                       (false)
-# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                   (false)
-
+# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                              (false)
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                          (false)
+# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_Reason, a_cbInstr)     do { return VERR_VMX_IPE_1; } while (0)
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
