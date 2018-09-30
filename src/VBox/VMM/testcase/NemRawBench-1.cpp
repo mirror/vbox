@@ -22,7 +22,9 @@
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
 # include <WinHvPlatform.h>
-typedef unsigned long long uint64_t;
+# if !defined(_INTPTR) && defined(_M_AMD64) /* void pedantic stdint.h warnings  */
+#  define _INTPTR 2
+# endif
 
 #elif defined(RT_OS_LINUX)
 # include <linux/kvm.h>
@@ -172,15 +174,16 @@ char *formatNum(uint64_t uNum, int cchWidth, char *pszDst, size_t cbDst)
 {
     char szTmp[64 + 22];
 #ifdef _MSC_VER
-    size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%I64u", uNum);
+    size_t cchTmp = _snprintf(szTmp, sizeof(szTmp) - 22, "%I64u", uNum);
 #else
     size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%llu", uNum);
 #endif
     size_t cSeps  = (cchTmp - 1) / 3;
+    size_t const cchTotal = cchTmp + cSeps;
     if (cSeps)
     {
-        szTmp[cchTmp + cSeps] = '\0';
-        for (size_t iSrc = cchTmp, iDst = cchTmp + cSeps; cSeps > 0; cSeps--)
+        szTmp[cchTotal] = '\0';
+        for (size_t iSrc = cchTmp, iDst = cchTotal; cSeps > 0; cSeps--)
         {
             szTmp[--iDst] = szTmp[--iSrc];
             szTmp[--iDst] = szTmp[--iSrc];
@@ -188,9 +191,29 @@ char *formatNum(uint64_t uNum, int cchWidth, char *pszDst, size_t cbDst)
             szTmp[--iDst] = ' ';
         }
     }
-    snprintf(pszDst, cbDst, "%*s", cchWidth, szTmp);
+
+    size_t offDst = 0;
+    while (cchWidth-- > cchTotal && offDst < cbDst)
+        pszDst[offDst++] = ' ';
+    size_t offSrc = 0;
+    while (offSrc < cchTotal && offDst < cbDst)
+        pszDst[offDst++] = szTmp[offSrc++];
+    pszDst[offDst] = '\0';
     return pszDst;
 }
+
+
+int reportResult(const char *pszInstruction, uint32_t cInstructions, uint64_t nsElapsed, uint32_t cExits)
+{
+    uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
+    char szTmp1[64], szTmp2[64], szTmp3[64];
+    printf("%s %7s instructions per second (%s exits in %s ns)\n",
+           formatNum(cInstrPerSec, 10, szTmp1, sizeof(szTmp1)), pszInstruction,
+           formatNum(cExits, 0, szTmp2, sizeof(szTmp2)),
+           formatNum(nsElapsed, 0, szTmp3, sizeof(szTmp3)));
+    return 0;
+}
+
 
 
 #ifdef RT_OS_WINDOWS
@@ -404,6 +427,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
     /*
      * Run the test.
      */
+    uint32_t cExits = 0;
     uint64_t const nsStart = getNanoTS();
     for (;;)
     {
@@ -412,6 +436,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
         hrc = WHvRunVirtualProcessor(g_hPartition, 0 /*idCpu*/, &ExitInfo, sizeof(ExitInfo));
         if (SUCCEEDED(hrc))
         {
+            cExits++;
             if (ExitInfo.ExitReason == WHvRunVpExitReasonX64IoPortAccess)
             {
                 if (ExitInfo.IoPortAccess.PortNumber == MY_NOP_PORT)
@@ -487,11 +512,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
             return runtimeError("WHvRunVirtualProcessor failed (for %s): %#x\n", pszInstruction, hrc);
     }
     uint64_t const nsElapsed = getNanoTS() - nsStart;
-
-    /* Report the results. */
-    uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
-    printf("%10u %s instructions per second\n", (unsigned)cInstrPerSec, pszInstruction);
-    return 0;
+    return reportResult(pszInstruction, cInstructions, nsElapsed, cExits);
 }
 
 
@@ -667,12 +688,14 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
     /*
      * Run the test.
      */
+    uint32_t cExits = 0;
     uint64_t const nsStart = getNanoTS();
     for (;;)
     {
         rc = ioctl(g_fdVCpu, KVM_RUN, (uintptr_t)0);
         if (rc == 0)
         {
+            cExits++;
             if (g_pVCpuRun->exit_reason == KVM_EXIT_IO)
             {
                 if (g_pVCpuRun->io.port == MY_NOP_PORT)
@@ -696,11 +719,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
             return runtimeError("KVM_RUN failed (for %s): %#x (ret %d)\n", pszInstruction, errno, rc);
     }
     uint64_t const nsElapsed = getNanoTS() - nsStart;
-
-    /* Report the results. */
-    uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
-    printf("%10u %s instructions per second\n", (unsigned)cInstrPerSec, pszInstruction);
-    return 0;
+    return reportResult(pszInstruction, cInstructions, nsElapsed, cExits);
 }
 
 
@@ -977,11 +996,12 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
      */
     uint32_t cExits = 0;
     uint64_t const nsStart = getNanoTS();
-    for (;; cExits++)
+    for (;;)
     {
         hv_return_t rcHv = hv_vcpu_run(g_idVCpu);
         if (rcHv == HV_SUCCESS)
         {
+            cExits++;
             uint64_t uExitReason = UINT64_MAX;
             READ_VMCS_RET(VMCS_RO_EXIT_REASON, &uExitReason);
             if (!(uExitReason & UINT64_C(0x80000000)))
@@ -1058,15 +1078,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, u
             return runtimeError("hv_vcpu_run failed (for %s): %#x\n", pszInstruction, rcHv);
     }
     uint64_t const nsElapsed = getNanoTS() - nsStart;
-
-    /* Report the results. */
-    char szTmp1[64], szTmp2[64], szTmp3[64];
-    uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
-    printf("%s %7s instructions per second (%s exits in %s ns)\n",
-           formatNum(cInstrPerSec, 10, szTmp1, sizeof(szTmp1)), pszInstruction,
-           formatNum(cExits, 0, szTmp2, sizeof(szTmp2)),
-           formatNum(nsElapsed, 0, szTmp3, sizeof(szTmp3)));
-    return 0;
+    return reportResult(pszInstruction, cInstructions, nsElapsed, cExits);
 }
 
 #else
@@ -1265,17 +1277,17 @@ int main(int argc, char **argv)
 /*
  * Results:
  *
- * - Linux 4.18.0-1-amd64 (debian); AMD Threadripper:
- *     545108 OUT instructions per second
- *     373159 MMIO/r1 instructions per second
- *
- * - Windows 1803 updated as per 2018-09-28; AMD Threadripper:
- *      45433 OUT instructions per second
- *      39767 CPUID instructions per second
- *      39088 MMIO/r1 instructions per second
- *
- * - Darwin/xnu 10.12.6/16.7.0; 3.1GHz Core i7-7920HQ (Kaby Lake):
+ * - Darwin/xnu 10.12.6/16.7.0; 3.1GHz Intel Core i7-7920HQ (Kaby Lake):
  *    925 845     OUT instructions per second (3 200 307 exits in 3 456 301 621 ns)
  *    949 278   CPUID instructions per second (3 200 222 exits in 3 370 980 173 ns)
  *    871 499 MMIO/r1 instructions per second (3 200 223 exits in 3 671 834 221 ns)
+ *
+ * - Linux 4.18.0-1-amd64 (debian); 3.4GHz AMD Threadripper 1950X:
+ *     545108[incorrect] OUT instructions per second
+ *     373159[incorrect] MMIO/r1 instructions per second
+ *
+ * - Windows 1803 updated as per 2018-09-28; 3.4GHz AMD Threadripper 1950X:
+ *     34 485     OUT instructions per second (400 001 exits in 11 598 918 200 ns)
+ *     34 043   CPUID instructions per second (400 001 exits in 11 749 753 200 ns)
+ *     33 124 MMIO/r1 instructions per second (400 001 exits in 12 075 617 000 ns)
  */
