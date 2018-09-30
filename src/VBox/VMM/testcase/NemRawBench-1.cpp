@@ -1,3 +1,20 @@
+/* $Id$ */
+/** @file
+ * NEM Benchmark.
+ */
+
+/*
+ * Copyright (C) 2018 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -10,18 +27,35 @@ typedef unsigned long long uint64_t;
 #elif defined(RT_OS_LINUX)
 # include <linux/kvm.h>
 # include <errno.h>
-# include <stdint.h>
 # include <sys/fcntl.h>
 # include <sys/ioctl.h>
 # include <sys/mman.h>
 # include <unistd.h>
 # include <time.h>
 
+#elif defined(RT_OS_DARWIN)
+# include <Availability.h>
+# if 1 /* header mix hack */
+#  undef __OSX_AVAILABLE_STARTING
+#  define __OSX_AVAILABLE_STARTING(_osx, _ios)
+# endif
+# include <Hypervisor/hv.h>
+# include <Hypervisor/hv_arch_x86.h>
+# include <Hypervisor/hv_arch_vmx.h>
+# include <Hypervisor/hv_vmx.h>
+# include <mach/mach_time.h>
+# include <mach/kern_return.h>
+# include <sys/time.h>
+# include <time.h>
+# include <sys/mman.h>
+# include <errno.h>
+
 #else
 # error "port me"
 #endif
 
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +75,10 @@ typedef unsigned long long uint64_t;
 #define MY_TERM_PORT            0x01
 /** The no-op test port number. */
 #define MY_NOP_PORT             0x7f
+
+#define MY_TEST_F_NOP_IO        (1U<<0)
+#define MY_TEST_F_CPUID         (1U<<1)
+#define MY_TEST_F_NOP_MMIO      (1U<<2)
 
 
 
@@ -77,6 +115,10 @@ static int                      g_fdVCpu;
 static struct kvm_run          *g_pVCpuRun;
 /** The size of the g_pVCpuRun mapping. */
 static ssize_t                  g_cbVCpuRun;
+
+#elif defined(RT_OS_DARWIN)
+/** The VCpu ID. */
+static hv_vcpuid_t              g_idVCpu;
 #endif
 
 
@@ -95,13 +137,59 @@ static uint64_t getNanoTS(void)
 {
 #ifdef RT_OS_WINDOWS
     return g_pfnRtlGetSystemTimePrecise() * 100;
+
 #elif defined(RT_OS_LINUX)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec;
+
+#elif defined(RT_OS_DARWIN)
+    static struct mach_timebase_info    s_Info = { 0, 0 };
+    static double                       s_rdFactor = 0.0;
+    /* Lazy init. */
+    if (s_Info.denom != 0)
+    { /* likely */ }
+    else if (mach_timebase_info(&s_Info) == KERN_SUCCESS)
+        s_rdFactor = (double)s_Info.numer / (double)s_Info.denom;
+    else
+    {
+        error("mach_timebase_info(&Info) failed\n");
+        exit(1);
+    }
+    if (s_Info.denom == 1 && s_Info.numer == 1) /* special case: absolute time is in nanoseconds */
+        return mach_absolute_time();
+    return mach_absolute_time() * s_rdFactor;
 #else
-# error "port me"
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * UINT64_C(1000000000)
+         + (tv.tv_usec * UINT32_C(1000));
 #endif
+}
+
+
+char *formatNum(uint64_t uNum, int cchWidth, char *pszDst, size_t cbDst)
+{
+    char szTmp[64 + 22];
+#ifdef _MSC_VER
+    size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%I64u", uNum);
+#else
+    size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%llu", uNum);
+#endif
+    size_t cSeps  = (cchTmp - 1) / 3;
+    if (cSeps)
+    {
+        szTmp[cchTmp + cSeps] = '\0';
+        for (size_t iSrc = cchTmp, iDst = cchTmp + cSeps; cSeps > 0; cSeps--)
+        {
+            szTmp[--iDst] = szTmp[--iSrc];
+            szTmp[--iDst] = szTmp[--iSrc];
+            szTmp[--iDst] = szTmp[--iSrc];
+            szTmp[--iDst] = ' ';
+        }
+    }
+    snprintf(pszDst, cbDst, "%*s", cchWidth, szTmp);
+    return pszDst;
 }
 
 
@@ -235,7 +323,7 @@ static int runtimeError(const char *pszFormat, ...)
         { "cr2",    WHvX64RegisterCr2, 64 },
         { "cr3",    WHvX64RegisterCr3, 64 },
         { "cr4",    WHvX64RegisterCr4, 64 },
-   };
+    };
     for (unsigned i = 0; i < sizeof(s_aRegs) / sizeof(s_aRegs[0]); i++)
     {
         WHV_REGISTER_VALUE Value;
@@ -260,10 +348,12 @@ static int runtimeError(const char *pszFormat, ...)
 }
 
 
-static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
+static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, unsigned fTest,
                            unsigned uEax, unsigned uEcx, unsigned uEdx, unsigned uEbx,
                            unsigned uEsp, unsigned uEbp, unsigned uEsi, unsigned uEdi)
 {
+    (void)fTest;
+
     /*
      * Initialize the real mode context.
      */
@@ -294,7 +384,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
     ADD_REG64(WHvX64RegisterRsi, uEsi);
     ADD_REG64(WHvX64RegisterRdi, uEdi);
     ADD_REG64(WHvX64RegisterRip, MY_TEST_RIP);
-    ADD_REG64(WHvX64RegisterRflags, 1);
+    ADD_REG64(WHvX64RegisterRflags, 2);
     ADD_SEG(WHvX64RegisterEs, 0x00000, 0xffff, 0x0000, 0);
     ADD_SEG(WHvX64RegisterCs, 0x00000, 0xffff, 0x0000, 1);
     ADD_SEG(WHvX64RegisterSs, 0x00000, 0xffff, 0x0000, 0);
@@ -514,10 +604,12 @@ static int runtimeError(const char *pszFormat, ...)
     return 1;
 }
 
-static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
+static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, unsigned fTest,
                            unsigned uEax, unsigned uEcx, unsigned uEdx, unsigned uEbx,
                            unsigned uEsp, unsigned uEbp, unsigned uEsi, unsigned uEdi)
 {
+    (void)fTest;
+
     /*
      * Setup real mode context.
      */
@@ -548,7 +640,7 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
     Regs.rsi = uEsi;
     Regs.rdi = uEdi;
     Regs.rip = MY_TEST_RIP;
-    Regs.rflags = 1;
+    Regs.rflags = 2;
     int rc = ioctl(g_fdVCpu, KVM_SET_REGS, &Regs);
     if (rc != 0)
         return error("KVM_SET_REGS failed: %d (rc=%d)\n", errno, rc);
@@ -613,10 +705,381 @@ static int runRealModeTest(unsigned cInstructions, const char *pszInstruction,
 
 
 #elif defined(RT_OS_DARWIN)
-# error "port me"
+
+/*
+ * Mac OS X - Hypervisor API.
+ */
+
+static int createVM(void)
+{
+    /* VM and VCpu */
+    hv_return_t rcHv = hv_vm_create(HV_VM_DEFAULT);
+    if (rcHv != HV_SUCCESS)
+        return error("hv_vm_create failed: %#x\n", rcHv);
+
+    g_idVCpu = -1;
+    rcHv = hv_vcpu_create(&g_idVCpu, HV_VCPU_DEFAULT);
+    if (rcHv != HV_SUCCESS)
+        return error("hv_vcpu_create failed: %#x\n", rcHv);
+
+    /* Memory. */
+    g_pbMem = (unsigned char *)mmap(NULL, g_cbMem, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
+    if ((void *)g_pbMem == MAP_FAILED)
+        return error("mmap RAM failed: %d\n", errno);
+    memset(g_pbMem, 0xf4, g_cbMem);
+
+    rcHv = hv_vm_map(g_pbMem, MY_MEM_BASE, g_cbMem, HV_MEMORY_READ | HV_MEMORY_WRITE | HV_MEMORY_EXEC);
+    if (rcHv != HV_SUCCESS)
+        return error("hv_vm_map failed: %#x\n", rcHv);
+
+    rcHv = hv_vm_protect(0x2000, 0x1000, HV_MEMORY_READ | HV_MEMORY_WRITE | HV_MEMORY_EXEC);
+    if (rcHv != HV_SUCCESS)
+        return error("hv_vm_protect failed: %#x\n", rcHv);
+    return 0;
+}
+
+
+static int runtimeError(const char *pszFormat, ...)
+{
+    fprintf(stderr, "runtime error: ");
+    va_list va;
+    va_start(va, pszFormat);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+
+    static struct { const char *pszName; uint32_t uField; uint32_t uFmt : 31; uint32_t fIsReg : 1; } const s_aFields[] =
+    {
+        { "VMCS_RO_EXIT_REASON",        VMCS_RO_EXIT_REASON,        64, 0 },
+        { "VMCS_RO_EXIT_QUALIFIC",      VMCS_RO_EXIT_QUALIFIC,      64, 0 },
+        { "VMCS_RO_INSTR_ERROR",        VMCS_RO_INSTR_ERROR,        64, 0 },
+        { "VMCS_RO_VMEXIT_IRQ_INFO",    VMCS_RO_VMEXIT_IRQ_INFO,    64, 0 },
+        { "VMCS_RO_VMEXIT_IRQ_ERROR",   VMCS_RO_VMEXIT_IRQ_ERROR,   64, 0 },
+        { "VMCS_RO_VMEXIT_INSTR_LEN",   VMCS_RO_VMEXIT_INSTR_LEN,   64, 0 },
+        { "VMCS_RO_VMX_INSTR_INFO",     VMCS_RO_VMX_INSTR_INFO,     64, 0 },
+        { "VMCS_RO_GUEST_LIN_ADDR",     VMCS_RO_GUEST_LIN_ADDR,     64, 0 },
+        { "VMCS_GUEST_PHYSICAL_ADDRESS",VMCS_GUEST_PHYSICAL_ADDRESS,64, 0 },
+        { "VMCS_RO_IO_RCX",             VMCS_RO_IO_RCX,             64, 0 },
+        { "VMCS_RO_IO_RSI",             VMCS_RO_IO_RSI,             64, 0 },
+        { "VMCS_RO_IO_RDI",             VMCS_RO_IO_RDI,             64, 0 },
+        { "VMCS_RO_IO_RIP",             VMCS_RO_IO_RIP,             64, 0 },
+        { "rip",                        HV_X86_RIP,                 64, 1 },
+        { "rip (vmcs)",                 VMCS_GUEST_RIP,             64, 0 },
+        { "cs",                         HV_X86_CS,                  16, 1 },
+        { "cs (vmcs)",                  VMCS_GUEST_CS,              16, 0 },
+        { "cs.base",                    VMCS_GUEST_CS_BASE,         64, 0 },
+        { "cs.limit",                   VMCS_GUEST_CS_LIMIT,        32, 0 },
+        { "cs.attr",                    VMCS_GUEST_CS_AR,           32, 0 },
+        { "rflags",                     HV_X86_RFLAGS,              32, 1 },
+        { "rax",                        HV_X86_RAX,                 64, 1 },
+        { "rcx",                        HV_X86_RCX,                 64, 1 },
+        { "rdx",                        HV_X86_RDX,                 64, 1 },
+        { "rbx",                        HV_X86_RBX,                 64, 1 },
+        { "rsp",                        HV_X86_RSP,                 64, 1 },
+        { "rsp (vmcs)",                 VMCS_GUEST_RSP,             64, 0 },
+        { "ss",                         HV_X86_SS,                  16, 1 },
+        { "ss (vmcs)",                  VMCS_GUEST_SS,              16, 0 },
+        { "ss.base",                    VMCS_GUEST_SS_BASE,         64, 0 },
+        { "ss.limit",                   VMCS_GUEST_SS_LIMIT,        32, 0 },
+        { "ss.attr",                    VMCS_GUEST_SS_AR,           32, 0 },
+        { "rbp",                        HV_X86_RBP,                 64, 1 },
+        { "rsi",                        HV_X86_RSI,                 64, 1 },
+        { "rdi",                        HV_X86_RDI,                 64, 1 },
+        { "ds",                         HV_X86_DS,                  16, 1 },
+        { "ds (vmcs)",                  VMCS_GUEST_DS,              16, 0 },
+        { "ds.base",                    VMCS_GUEST_DS_BASE,         64, 0 },
+        { "ds.limit",                   VMCS_GUEST_DS_LIMIT,        32, 0 },
+        { "ds.attr",                    VMCS_GUEST_DS_AR,           32, 0 },
+        { "es",                         HV_X86_ES,                  16, 1 },
+        { "es (vmcs)",                  VMCS_GUEST_ES,              16, 0 },
+        { "es.base",                    VMCS_GUEST_ES_BASE,         64, 0 },
+        { "es.limit",                   VMCS_GUEST_ES_LIMIT,        32, 0 },
+        { "es.attr",                    VMCS_GUEST_ES_AR,           32, 0 },
+        { "fs",                         HV_X86_FS,                  16, 1 },
+        { "fs (vmcs)",                  VMCS_GUEST_FS,              16, 0 },
+        { "fs.base",                    VMCS_GUEST_FS_BASE,         64, 0 },
+        { "fs.limit",                   VMCS_GUEST_FS_LIMIT,        32, 0 },
+        { "fs.attr",                    VMCS_GUEST_FS_AR,           32, 0 },
+        { "gs",                         HV_X86_GS,                  16, 1 },
+        { "gs (vmcs)",                  VMCS_GUEST_GS,              16, 0 },
+        { "gs.base",                    VMCS_GUEST_GS_BASE,         64, 0 },
+        { "gs.limit",                   VMCS_GUEST_GS_LIMIT,        32, 0 },
+        { "gs.attr",                    VMCS_GUEST_GS_AR,           32, 0 },
+        { "cr0",                        HV_X86_CR0,                 64, 1 },
+        { "cr0 (vmcs)",                 VMCS_GUEST_CR0,             64, 0 },
+        { "cr2",                        HV_X86_CR2,                 64, 1 },
+        { "cr3",                        HV_X86_CR3,                 64, 1 },
+        { "cr3 (vmcs)",                 VMCS_GUEST_CR3,             64, 0 },
+        { "cr4",                        HV_X86_CR4,                 64, 1 },
+        { "cr4 (vmcs)",                 VMCS_GUEST_CR4,             64, 0 },
+        { "idtr.base",                  VMCS_GUEST_IDTR_BASE,       64, 0 },
+        { "idtr.limit",                 VMCS_GUEST_IDTR_LIMIT,      32, 0 },
+        { "gdtr.base",                  VMCS_GUEST_GDTR_BASE,       64, 0 },
+        { "gdtr.limit",                 VMCS_GUEST_GDTR_LIMIT,      32, 0 },
+
+        { "VMCS_CTRL_PIN_BASED",        VMCS_CTRL_PIN_BASED,        64, 0 },
+        { "VMCS_CTRL_CPU_BASED",        VMCS_CTRL_CPU_BASED,        64, 0 },
+        { "VMCS_CTRL_CPU_BASED2",       VMCS_CTRL_CPU_BASED2,       64, 0 },
+        { "VMCS_CTRL_VMENTRY_CONTROLS", VMCS_CTRL_VMENTRY_CONTROLS, 64, 0 },
+        { "VMCS_CTRL_VMEXIT_CONTROLS",  VMCS_CTRL_VMEXIT_CONTROLS,  64, 0 },
+        { "VMCS_CTRL_EXC_BITMAP",       VMCS_CTRL_EXC_BITMAP,       64, 0 },
+        { "VMCS_CTRL_CR0_MASK",         VMCS_CTRL_CR0_MASK,         64, 0 },
+        { "VMCS_CTRL_CR0_SHADOW",       VMCS_CTRL_CR0_SHADOW,       64, 0 },
+        { "VMCS_CTRL_CR4_MASK",         VMCS_CTRL_CR4_MASK,         64, 0 },
+        { "VMCS_CTRL_CR4_SHADOW",       VMCS_CTRL_CR4_SHADOW,       64, 0 },
+    };
+    for (unsigned i = 0; i < sizeof(s_aFields) / sizeof(s_aFields[0]); i++)
+    {
+        uint64_t uValue = UINT64_MAX;
+        hv_return_t rcHv;
+        if (s_aFields[i].fIsReg)
+            rcHv = hv_vcpu_read_register(g_idVCpu, (hv_x86_reg_t)s_aFields[i].uField, &uValue);
+        else
+            rcHv = hv_vmx_vcpu_read_vmcs(g_idVCpu, s_aFields[i].uField, &uValue);
+        if (rcHv == HV_SUCCESS)
+        {
+            if (s_aFields[i].uFmt == 16)
+                fprintf(stderr, "%28s=%04llx\n", s_aFields[i].pszName, uValue);
+            else if (s_aFields[i].uFmt == 32)
+                fprintf(stderr, "%28s=%08llx\n", s_aFields[i].pszName, uValue);
+            else
+                fprintf(stderr, "%28s=%08x'%08x\n", s_aFields[i].pszName, (uint32_t)(uValue >> 32), (uint32_t)uValue);
+        }
+        else
+            fprintf(stderr, "%28s=<%s failed %#x>\n", s_aFields[i].pszName,
+                    s_aFields[i].fIsReg ? "hv_vcpu_read_register" : "hv_vmx_vcpu_read_vmcs", rcHv);
+    }
+    return 1;
+}
+
+
+static int runRealModeTest(unsigned cInstructions, const char *pszInstruction, unsigned fTest,
+                           unsigned uEax, unsigned uEcx, unsigned uEdx, unsigned uEbx,
+                           unsigned uEsp, unsigned uEbp, unsigned uEsi, unsigned uEdi)
+{
+    /*
+     * Setup real mode context.
+     */
+#define WRITE_REG_RET(a_enmReg, a_uValue) \
+        do { \
+            hv_return_t rcHvX = hv_vcpu_write_register(g_idVCpu, a_enmReg, a_uValue); \
+            if (rcHvX == HV_SUCCESS) { /* likely */ } \
+            else return error("hv_vcpu_write_register(%#x, %s, %#llx) -> %#x\n", g_idVCpu, #a_enmReg, (uint64_t)(a_uValue), rcHvX); \
+        } while (0)
+#define READ_REG_RET(a_enmReg, a_puValue) \
+        do { \
+            hv_return_t rcHvX = hv_vcpu_read_register(g_idVCpu, a_enmReg, a_puValue); \
+            if (rcHvX == HV_SUCCESS) { /* likely */ } \
+            else return error("hv_vcpu_read_register(%#x, %s,) -> %#x\n", g_idVCpu, #a_enmReg, rcHvX); \
+        } while (0)
+#define WRITE_VMCS_RET(a_enmField, a_uValue) \
+        do { \
+            hv_return_t rcHvX = hv_vmx_vcpu_write_vmcs(g_idVCpu, a_enmField, a_uValue); \
+            if (rcHvX == HV_SUCCESS) { /* likely */ } \
+            else return error("hv_vmx_vcpu_write_vmcs(%#x, %s, %#llx) -> %#x\n", g_idVCpu, #a_enmField, (uint64_t)(a_uValue), rcHvX); \
+        } while (0)
+#define READ_VMCS_RET(a_enmField, a_puValue) \
+        do { \
+            hv_return_t rcHvX = hv_vmx_vcpu_read_vmcs(g_idVCpu, a_enmField, a_puValue); \
+            if (rcHvX == HV_SUCCESS) { /* likely */ } \
+            else return error("hv_vmx_vcpu_read_vmcs(%#x, %s,) -> %#x\n", g_idVCpu, #a_enmField, rcHvX); \
+        } while (0)
+#define READ_CAP_RET(a_enmCap, a_puValue) \
+        do { \
+            hv_return_t rcHvX = hv_vmx_read_capability(a_enmCap, a_puValue); \
+            if (rcHvX == HV_SUCCESS) { /* likely */ } \
+            else return error("hv_vmx_read_capability(%s) -> %#x\n", #a_enmCap); \
+        } while (0)
+#define CAP_2_CTRL(a_uCap, a_fWanted) ( ((a_fWanted) | (uint32_t)(a_uCap)) & (uint32_t)((a_uCap) >> 32) )
+#if 1
+    uint64_t uCap;
+    READ_CAP_RET(HV_VMX_CAP_PINBASED, &uCap);
+    WRITE_VMCS_RET(VMCS_CTRL_PIN_BASED, CAP_2_CTRL(uCap, PIN_BASED_INTR | PIN_BASED_NMI | PIN_BASED_VIRTUAL_NMI));
+    READ_CAP_RET(HV_VMX_CAP_PROCBASED, &uCap);
+    WRITE_VMCS_RET(VMCS_CTRL_CPU_BASED, CAP_2_CTRL(uCap, CPU_BASED_HLT
+                                                       | CPU_BASED_INVLPG
+                                                       | CPU_BASED_MWAIT
+                                                       | CPU_BASED_RDPMC
+                                                       | CPU_BASED_RDTSC
+                                                       | CPU_BASED_CR3_LOAD
+                                                       | CPU_BASED_CR3_STORE
+                                                       | CPU_BASED_CR8_LOAD
+                                                       | CPU_BASED_CR8_STORE
+                                                       | CPU_BASED_MOV_DR
+                                                       | CPU_BASED_UNCOND_IO
+                                                       | CPU_BASED_MONITOR
+                                                       | CPU_BASED_PAUSE
+                                                       ));
+    READ_CAP_RET(HV_VMX_CAP_PROCBASED2, &uCap);
+    WRITE_VMCS_RET(VMCS_CTRL_CPU_BASED2, CAP_2_CTRL(uCap, 0));
+    READ_CAP_RET(HV_VMX_CAP_ENTRY, &uCap);
+    WRITE_VMCS_RET(VMCS_CTRL_VMENTRY_CONTROLS, CAP_2_CTRL(uCap, 0));
+#endif
+    WRITE_VMCS_RET(VMCS_CTRL_EXC_BITMAP, UINT32_MAX);
+    WRITE_VMCS_RET(VMCS_CTRL_CR0_MASK,   0x60000000);
+    WRITE_VMCS_RET(VMCS_CTRL_CR0_SHADOW, 0x00000000);
+    WRITE_VMCS_RET(VMCS_CTRL_CR4_MASK,   0x00000000);
+    WRITE_VMCS_RET(VMCS_CTRL_CR4_SHADOW, 0x00000000);
+
+    WRITE_REG_RET(HV_X86_RAX, uEax);
+    WRITE_REG_RET(HV_X86_RCX, uEcx);
+    WRITE_REG_RET(HV_X86_RDX, uEdx);
+    WRITE_REG_RET(HV_X86_RBX, uEbx);
+    WRITE_REG_RET(HV_X86_RSP, uEsp);
+    WRITE_REG_RET(HV_X86_RBP, uEbp);
+    WRITE_REG_RET(HV_X86_RSI, uEsi);
+    WRITE_REG_RET(HV_X86_RDI, uEdi);
+    WRITE_REG_RET(HV_X86_RIP, MY_TEST_RIP);
+    WRITE_REG_RET(HV_X86_RFLAGS, 2);
+    WRITE_REG_RET(HV_X86_ES, 0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_ES_BASE, 0x0000000);
+    WRITE_VMCS_RET(VMCS_GUEST_ES_LIMIT,   0xffff);
+    WRITE_VMCS_RET(VMCS_GUEST_ES_AR,        0x93);
+    WRITE_REG_RET(HV_X86_CS, 0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_CS_BASE, 0x0000000);
+    WRITE_VMCS_RET(VMCS_GUEST_CS_LIMIT,   0xffff);
+    WRITE_VMCS_RET(VMCS_GUEST_CS_AR,        0x9b);
+    WRITE_REG_RET(HV_X86_SS, 0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_SS_BASE, 0x0000000);
+    WRITE_VMCS_RET(VMCS_GUEST_SS_LIMIT,   0xffff);
+    WRITE_VMCS_RET(VMCS_GUEST_SS_AR,        0x93);
+    WRITE_REG_RET(HV_X86_DS, 0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_DS_BASE, 0x0000000);
+    WRITE_VMCS_RET(VMCS_GUEST_DS_LIMIT,  0xffff);
+    WRITE_VMCS_RET(VMCS_GUEST_DS_AR,        0x93);
+    WRITE_REG_RET(HV_X86_FS, 0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_FS_BASE, 0x0000000);
+    WRITE_VMCS_RET(VMCS_GUEST_FS_LIMIT,   0xffff);
+    WRITE_VMCS_RET(VMCS_GUEST_FS_AR,        0x93);
+    WRITE_REG_RET(HV_X86_GS, 0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_GS_BASE, 0x0000000);
+    WRITE_VMCS_RET(VMCS_GUEST_GS_LIMIT,   0xffff);
+    WRITE_VMCS_RET(VMCS_GUEST_GS_AR,        0x93);
+    //WRITE_REG_RET(HV_X86_CR0, 0x10030 /*WP+NE+ET*/);
+    WRITE_VMCS_RET(VMCS_GUEST_CR0,        0x10030 /*WP+NE+ET*/);
+    //WRITE_REG_RET(HV_X86_CR2, 0);
+    //WRITE_REG_RET(HV_X86_CR3, 0);
+    WRITE_VMCS_RET(VMCS_GUEST_CR3,             0);
+    //WRITE_REG_RET(HV_X86_CR4, 0x2000);
+    WRITE_VMCS_RET(VMCS_GUEST_CR4,        0x2000);
+    WRITE_VMCS_RET(VMCS_GUEST_LDTR,          0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_LDTR_BASE, 0x00000000);
+    WRITE_VMCS_RET(VMCS_GUEST_LDTR_LIMIT,    0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_LDTR_AR,      0x10000);
+    WRITE_VMCS_RET(VMCS_GUEST_TR,            0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_TR_BASE,   0x00000000);
+    WRITE_VMCS_RET(VMCS_GUEST_TR_LIMIT,      0x0000);
+    WRITE_VMCS_RET(VMCS_GUEST_TR_AR,        0x00083);
+    hv_vcpu_flush(g_idVCpu);
+    hv_vcpu_invalidate_tlb(g_idVCpu);
+
+    /*
+     * Run the test.
+     */
+    uint32_t cExits = 0;
+    uint64_t const nsStart = getNanoTS();
+    for (;; cExits++)
+    {
+        hv_return_t rcHv = hv_vcpu_run(g_idVCpu);
+        if (rcHv == HV_SUCCESS)
+        {
+            uint64_t uExitReason = UINT64_MAX;
+            READ_VMCS_RET(VMCS_RO_EXIT_REASON, &uExitReason);
+            if (!(uExitReason & UINT64_C(0x80000000)))
+            {
+                if (uExitReason == VMX_REASON_IO)
+                {
+                    uint64_t uIoQual = UINT64_MAX;
+                    READ_VMCS_RET(VMCS_RO_EXIT_QUALIFIC, &uIoQual);
+                    if ((uint16_t)(uIoQual >> 16) == MY_NOP_PORT && (fTest & MY_TEST_F_NOP_IO))
+                    { /* likely: nop instruction */ }
+                    else if ((uint16_t)(uIoQual >> 16) == MY_TERM_PORT)
+                        break;
+                    else
+                        return runtimeError("Unexpected I/O port access (for %s): %#x\n", pszInstruction, (uint16_t)(uIoQual >> 16));
+
+                    /* Advance RIP. */
+                    uint64_t cbInstr = UINT64_MAX;
+                    READ_VMCS_RET(VMCS_RO_VMEXIT_INSTR_LEN, &cbInstr);
+                    if (cbInstr < 1 || cbInstr > 15)
+                        return runtimeError("Bad instr len: %#llx\n", cbInstr);
+                    uint64_t uRip = UINT64_MAX;
+                    READ_REG_RET(HV_X86_RIP, &uRip);
+                    WRITE_REG_RET(HV_X86_RIP, uRip + cbInstr);
+                }
+                else if (uExitReason == VMX_REASON_CPUID && (fTest & MY_TEST_F_CPUID))
+                {
+                    /* Set registers and advance RIP. */
+                    WRITE_REG_RET(HV_X86_RAX, 0x42424242);
+                    WRITE_REG_RET(HV_X86_RCX, 0x04242424);
+                    WRITE_REG_RET(HV_X86_RDX, 0x00424242);
+                    WRITE_REG_RET(HV_X86_RBX, 0x00024242);
+
+                    uint64_t cbInstr = UINT64_MAX;
+                    READ_VMCS_RET(VMCS_RO_VMEXIT_INSTR_LEN, &cbInstr);
+                    if (cbInstr < 1 || cbInstr > 15)
+                        return runtimeError("Bad instr len: %#llx\n", cbInstr);
+                    uint64_t uRip = UINT64_MAX;
+                    READ_REG_RET(HV_X86_RIP, &uRip);
+                    WRITE_REG_RET(HV_X86_RIP, uRip + cbInstr);
+                }
+                else if (uExitReason == VMX_REASON_EPT_VIOLATION)
+                {
+                    uint64_t uEptQual = UINT64_MAX;
+                    READ_VMCS_RET(VMCS_RO_EXIT_QUALIFIC, &uEptQual);
+                    uint64_t GCPhys = UINT64_MAX;
+                    READ_VMCS_RET(VMCS_GUEST_PHYSICAL_ADDRESS, &GCPhys);
+                    if (GCPhys == MY_NOP_MMIO && (fTest & MY_TEST_F_NOP_MMIO))
+                    { /* likely */ }
+                    else if (GCPhys == MY_TEST_RIP)
+                        continue; /* dunno why we get this, but restarting it works */
+                    else
+                        return runtimeError("Unexpected EPT viotaion at %#llx\n", GCPhys);
+
+                    /* Set RAX and advance RIP. */
+                    WRITE_REG_RET(HV_X86_RAX, 42);
+
+                    uint64_t cbInstr = UINT64_MAX;
+                    READ_VMCS_RET(VMCS_RO_VMEXIT_INSTR_LEN, &cbInstr);
+                    if (cbInstr < 1 || cbInstr > 15)
+                        return runtimeError("Bad instr len: %#llx\n", cbInstr);
+                    uint64_t uRip = UINT64_MAX;
+                    READ_REG_RET(HV_X86_RIP, &uRip);
+                    WRITE_REG_RET(HV_X86_RIP, uRip + cbInstr);
+                }
+                else if (uExitReason == VMX_REASON_IRQ)
+                { /* ignore */ }
+                else
+                    return runtimeError("Unexpected exit reason: %#x\n", uExitReason);
+            }
+            else
+                return runtimeError("VM entry failure: %#x\n", uExitReason);
+        }
+        else
+            return runtimeError("hv_vcpu_run failed (for %s): %#x\n", pszInstruction, rcHv);
+    }
+    uint64_t const nsElapsed = getNanoTS() - nsStart;
+
+    /* Report the results. */
+    char szTmp1[64], szTmp2[64], szTmp3[64];
+    uint64_t const cInstrPerSec = nsElapsed ? (uint64_t)cInstructions * 1000000000 / nsElapsed : 0;
+    printf("%s %7s instructions per second (%s exits in %s ns)\n",
+           formatNum(cInstrPerSec, 10, szTmp1, sizeof(szTmp1)), pszInstruction,
+           formatNum(cExits, 0, szTmp2, sizeof(szTmp2)),
+           formatNum(nsElapsed, 0, szTmp3, sizeof(szTmp3)));
+    return 0;
+}
+
 #else
 # error "port me"
 #endif
+
+void dumpCode(uint8_t const *pb, uint8_t *pbEnd)
+{
+    printf("testing:");
+    for (; pb != pbEnd; pb++)
+        printf(" %02x", *pb);
+    printf("\n");
+}
 
 
 int ioportTest(unsigned cFactor)
@@ -634,7 +1097,7 @@ int ioportTest(unsigned cFactor)
     *pb++ = 0x48 + 1;
     /* JNZ MY_TEST_RIP */
     *pb++ = 0x75;
-    *pb   = (signed char)(pbStart - pb + 1);
+    *pb   = (signed char)(pbStart - pb - 1);
     pb++;
     /* OUT 1, AL -  Temination port call. */
     *pb++ = 0xe6;
@@ -642,8 +1105,10 @@ int ioportTest(unsigned cFactor)
     /* JMP to previous instruction */
     *pb++ = 0xeb;
     *pb++ = 0xfc;
+    dumpCode(pbStart, pb);
 
-    return runRealModeTest(100000 * cFactor, "OUT", 42 /*eax*/, 10000 * cFactor /*ecx*/, MY_NOP_PORT /*edx*/, 0 /*ebx*/,
+    return runRealModeTest(100000 * cFactor, "OUT", MY_TEST_F_NOP_IO,
+                           42 /*eax*/, 10000 * cFactor /*ecx*/, MY_NOP_PORT /*edx*/, 0 /*ebx*/,
                            0 /*esp*/, 0 /*ebp*/, 0 /*esi*/, 0 /*uEdi*/);
 }
 
@@ -658,9 +1123,7 @@ int cpuidTest(unsigned cFactor)
     for (unsigned i = 0; i < 10; i++)
     {
         /* XOR EAX,EAX */
-#ifndef RT_OS_LINUX /* Broken on 4.18.0, probably wrong rip advance (2 instead of 3 bytes). */
         *pb++ = 0x66;
-#endif
         *pb++ = 0x33;
         *pb++ = 0xc0;
 
@@ -673,7 +1136,7 @@ int cpuidTest(unsigned cFactor)
     *pb++ = 0x48 + 6;
     /* JNZ MY_TEST_RIP */
     *pb++ = 0x75;
-    *pb   = (signed char)(pbStart - pb + 1);
+    *pb   = (signed char)(pbStart - pb - 1);
     pb++;
     /* OUT 1, AL -  Temination port call. */
     *pb++ = 0xe6;
@@ -681,8 +1144,10 @@ int cpuidTest(unsigned cFactor)
     /* JMP to previous instruction */
     *pb++ = 0xeb;
     *pb++ = 0xfc;
+    dumpCode(pbStart, pb);
 
-    return runRealModeTest(100000 * cFactor, "CPUID", 0 /*eax*/, 0 /*ecx*/, 0 /*edx*/, 0 /*ebx*/,
+    return runRealModeTest(100000 * cFactor, "CPUID", MY_TEST_F_CPUID,
+                           0 /*eax*/, 0 /*ecx*/, 0 /*edx*/, 0 /*ebx*/,
                            0 /*esp*/, 0 /*ebp*/, 10000 * cFactor /*esi*/, 0 /*uEdi*/);
 }
 
@@ -705,7 +1170,7 @@ int mmioTest(unsigned cFactor)
     *pb++ = 0x48 + 6;
     /* JNZ MY_TEST_RIP */
     *pb++ = 0x75;
-    *pb   = (signed char)(pbStart - pb + 1);
+    *pb   = (signed char)(pbStart - pb - 1);
     pb++;
     /* OUT 1, AL -  Temination port call. */
     *pb++ = 0xe6;
@@ -713,8 +1178,10 @@ int mmioTest(unsigned cFactor)
     /* JMP to previous instruction */
     *pb++ = 0xeb;
     *pb++ = 0xfc;
+    dumpCode(pbStart, pb);
 
-    return runRealModeTest(100000 * cFactor, "MMIO/r1" , 0 /*eax*/, 0 /*ecx*/, 0 /*edx*/, MY_NOP_MMIO /*ebx*/,
+    return runRealModeTest(100000 * cFactor, "MMIO/r1", MY_TEST_F_NOP_MMIO,
+                           0 /*eax*/, 0 /*ecx*/, 0 /*edx*/, MY_NOP_MMIO /*ebx*/,
                            0 /*esp*/, 0 /*ebp*/, 10000 * cFactor /*esi*/, 0 /*uEdi*/);
 }
 
@@ -727,8 +1194,10 @@ int main(int argc, char **argv)
      */
 #ifdef RT_OS_WINDOWS
     unsigned const  cFactorDefault = 4;
+#elif RT_OS_DARWIN
+    unsigned const  cFactorDefault = 32;
 #else
-    unsigned const  cFactorDefault = 10;
+    unsigned const  cFactorDefault = 24;
 #endif
     unsigned        cFactor = cFactorDefault;
     for (int i = 1; i < argc; i++)
@@ -787,6 +1256,7 @@ int main(int argc, char **argv)
 #endif
         mmioTest(cFactor);
 
+
         printf("tstNemMini-1: done\n");
     }
     return rcExit;
@@ -804,4 +1274,8 @@ int main(int argc, char **argv)
  *      39767 CPUID instructions per second
  *      39088 MMIO/r1 instructions per second
  *
+ * - Darwin/xnu 10.12.6/16.7.0; 3.1GHz Core i7-7920HQ (Kaby Lake):
+ *    925 845     OUT instructions per second (3 200 307 exits in 3 456 301 621 ns)
+ *    949 278   CPUID instructions per second (3 200 222 exits in 3 370 980 173 ns)
+ *    871 499 MMIO/r1 instructions per second (3 200 223 exits in 3 671 834 221 ns)
  */
