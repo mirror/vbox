@@ -936,10 +936,6 @@ typedef struct VBGLR3DNDEVENT
         } HG_Move;
         struct
         {
-            /* Nothing in here. */
-        } HG_Leave;
-        struct
-        {
             /** Absolute X position of guest screen. */
             uint32_t uXpos;
             /** Absolute Y position of guest screen. */
