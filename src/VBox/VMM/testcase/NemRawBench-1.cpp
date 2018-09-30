@@ -1306,4 +1306,11 @@ int main(int argc, char **argv)
  *      real mode, 32-bit write          :          870 671 ins/sec
  *      real mode, 32-bit write-to-ring-3:          391 014 ins/sec
  *
+ * - Darwin/xnu 10.12.6/16.7.0; 3.1GHz Intel Core i7-7920HQ (Kaby Lake); trunk/r125404:
+ *      real mode, 32-bit OUT            :          790 117 ins/sec
+ *      real mode, 32-bit OUT-to-ring-3  :          157 205 ins/sec
+ *      real mode, CPUID                 :        1 001 087 ins/sec
+ *      real mode, 32-bit write          :          651 257 ins/sec
+ *      real mode, 32-bit write-to-ring-3:          157 773 ins/sec
+ *
  */
