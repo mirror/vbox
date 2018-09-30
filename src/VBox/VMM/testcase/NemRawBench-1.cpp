@@ -170,13 +170,13 @@ static uint64_t getNanoTS(void)
 }
 
 
-char *formatNum(uint64_t uNum, int cchWidth, char *pszDst, size_t cbDst)
+char *formatNum(uint64_t uNum, unsigned cchWidth, char *pszDst, size_t cbDst)
 {
     char szTmp[64 + 22];
 #ifdef _MSC_VER
     size_t cchTmp = _snprintf(szTmp, sizeof(szTmp) - 22, "%I64u", uNum);
 #else
-    size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%llu", uNum);
+    size_t cchTmp = snprintf(szTmp, sizeof(szTmp) - 22, "%llu", (unsigned long long)uNum);
 #endif
     size_t cSeps  = (cchTmp - 1) / 3;
     size_t const cchTotal = cchTmp + cSeps;
@@ -1263,11 +1263,8 @@ int main(int argc, char **argv)
          * Do the benchmarking.
          */
         ioportTest(cFactor);
-#ifndef RT_OS_LINUX
         cpuidTest(cFactor);
-#endif
         mmioTest(cFactor);
-
 
         printf("tstNemMini-1: done\n");
     }
@@ -1283,8 +1280,9 @@ int main(int argc, char **argv)
  *    871 499 MMIO/r1 instructions per second (3 200 223 exits in 3 671 834 221 ns)
  *
  * - Linux 4.18.0-1-amd64 (debian); 3.4GHz AMD Threadripper 1950X:
- *     545108[incorrect] OUT instructions per second
- *     373159[incorrect] MMIO/r1 instructions per second
+ *    455 727     OUT instructions per second (2 400 001 exits in 5 266 300 471 ns)
+ *  1 745 014   CPUID instructions per second (1 exits in 1 375 346 658 ns)             [1]
+ *    351 767 MMIO/r1 instructions per second (2 400 001 exits in 6 822 684 544 ns)
  *
  * - Windows 1803 updated as per 2018-09-28; 3.4GHz AMD Threadripper 1950X:
  *     34 485     OUT instructions per second (400 001 exits in 11 598 918 200 ns)
@@ -1295,4 +1293,17 @@ int main(int argc, char **argv)
  *     65 633     OUT instructions per second (400 001 exits in 6 094 409 100 ns)
  *     65 245   CPUID instructions per second (400 001 exits in 6 130 720 600 ns)
  *     61 642 MMIO/r1 instructions per second (400 001 exits in 6 489 013 700 ns)
+ *
+ * [1] CPUID causes no return to ring-3 with KVM.
+ *
+ *
+ * For reference we can compare with similar testsin bs2-test1 running VirtualBox:
+ *
+ * - Linux 4.18.0-1-amd64 (debian); 3.4GHz AMD Threadripper 1950X; trunk/r125404:
+ *      real mode, 32-bit OUT            :        1 338 471 ins/sec
+ *      real mode, 32-bit OUT-to-ring-3  :          500 337 ins/sec
+ *      real mode, CPUID                 :        1 566 343 ins/sec
+ *      real mode, 32-bit write          :          870 671 ins/sec
+ *      real mode, 32-bit write-to-ring-3:          391 014 ins/sec
+ *
  */
