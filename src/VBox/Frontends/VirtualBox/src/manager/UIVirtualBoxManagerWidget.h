@@ -150,8 +150,6 @@ private:
       * @{ */
         /** Prepares window. */
         void prepare();
-        /** Prepares toolbar. */
-        void prepareToolbar();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Prepares connections. */

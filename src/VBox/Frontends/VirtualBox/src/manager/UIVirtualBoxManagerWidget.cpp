@@ -379,7 +379,6 @@ void UIVirtualBoxManagerWidget::prepare()
     setPalette(pal);
 
     /* Prepare: */
-    prepareToolbar();
     prepareWidgets();
     prepareConnections();
 
@@ -391,24 +390,6 @@ void UIVirtualBoxManagerWidget::prepare()
 
     /* Make sure current Chooser-pane index fetched: */
     sltHandleChooserPaneIndexChange();
-}
-
-void UIVirtualBoxManagerWidget::prepareToolbar()
-{
-    /* Create Main toolbar: */
-    m_pToolBar = new UIToolBar;
-    if (m_pToolBar)
-    {
-        /* Configure toolbar: */
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
-        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-        /* Update finally: */
-        updateToolbar();
-    }
 }
 
 void UIVirtualBoxManagerWidget::prepareWidgets()
@@ -448,8 +429,20 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                     pLayoutRight->setSpacing(0);
                     pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
-                    /* Add tool-bar into layout: */
-                    pLayoutRight->addWidget(m_pToolBar);
+                    /* Create Main toolbar: */
+                    m_pToolBar = new UIToolBar;
+                    if (m_pToolBar)
+                    {
+                        /* Configure toolbar: */
+                        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+                        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+                        m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                        m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
+                        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+                        /* Add tool-bar into layout: */
+                        pLayoutRight->addWidget(m_pToolBar);
+                    }
 
                     /* Create stacked-widget: */
                     m_pStackedWidget = new QStackedWidget;
@@ -523,6 +516,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
         }
     }
 
+    /* Update toolbar finally: */
+    updateToolbar();
+
     /* Bring the VM list to the focus: */
     m_pPaneChooser->setFocus();
 }
@@ -594,59 +590,87 @@ void UIVirtualBoxManagerWidget::updateToolbar()
     /* Clear initially: */
     m_pToolBar->clear();
 
-    /* Add main actions block: */
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-
-    /* Separator: */
-    if (   isToolOpened(ToolTypeMachine_Snapshots)
-        || isToolOpened(ToolTypeMachine_Logs)
-        || isToolOpened(ToolTypeGlobal_Media)
-        || isToolOpened(ToolTypeGlobal_Network))
-        m_pToolBar->addSeparator();
-
-    /* Add 'Snapshots' actions block: */
-    if (isToolOpened(ToolTypeMachine_Snapshots))
+    /* Basic action set: */
+    switch (m_pPaneTools->toolsClass())
     {
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
-    }
-
-    /* Add 'Logs' actions block: */
-    if (isToolOpened(ToolTypeMachine_Logs))
-    {
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Save));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Find));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Filter));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Bookmark));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Settings));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Refresh));
-    }
-
-    /* Add 'Media' actions block: */
-    if (isToolOpened(ToolTypeGlobal_Media))
-    {
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Copy));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Move));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Remove));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Release));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_T_Details));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Refresh));
-    }
-
-    /* Add 'Network' actions block: */
-    if (isToolOpened(ToolTypeGlobal_Network))
-    {
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Remove));
-        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_T_Details));
-//        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Refresh));
+        /* Global toolbar: */
+        case UIToolsClass_Global:
+        {
+            switch (currentGlobalTool())
+            {
+                case ToolTypeGlobal_Media:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Copy));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Move));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Remove));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Release));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_T_Details));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Refresh));
+                    break;
+                }
+                case ToolTypeGlobal_Network:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Remove));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_T_Details));
+                    //m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Refresh));
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        /* Machine toolbar: */
+        case UIToolsClass_Machine:
+        {
+            switch (currentMachineTool())
+            {
+                case ToolTypeMachine_Details:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+                    break;
+                }
+                case ToolTypeMachine_Snapshots:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
+                    break;
+                }
+                case ToolTypeMachine_Logs:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Save));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Find));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Filter));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Bookmark));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Refresh));
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
     }
 
 #ifdef VBOX_WS_MAC
