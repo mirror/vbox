@@ -1050,6 +1050,31 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 #define VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR                       (4)
 /** @} */
 
+/**
+ * VMX MSR-bitmap read permissions.
+ */
+typedef enum VMXMSREXITREAD
+{
+    /** Reading this MSR causes a VM-exit. */
+    VMXMSREXIT_INTERCEPT_READ = 1,
+    /** Reading this MSR doesn't cause a VM-exit. */
+    VMXMSREXIT_PASSTHRU_READ
+} VMXMSREXITREAD;
+/** Pointer to MSR-bitmap read permissions. */
+typedef VMXMSREXITREAD* PVMXMSREXITREAD;
+
+/**
+ * VMX MSR-bitmap write permissions.
+ */
+typedef enum VMXMSREXITWRITE
+{
+    /** Writing to this MSR causes a VM-exit. */
+    VMXMSREXIT_INTERCEPT_WRITE = 3,
+    /** Writing to this MSR does not cause a VM-exit. */
+    VMXMSREXIT_PASSTHRU_WRITE
+} VMXMSREXITWRITE;
+/** Pointer to MSR-bitmap write permissions. */
+typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
 
 /**
  * VMX MSR autoload/store element.

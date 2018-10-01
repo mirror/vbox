@@ -149,6 +149,8 @@ VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_
 VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode,
                                                                  uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress);
+VMM_INT_DECL(int)               HMVmxGetMsrPermission(void *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+                                                      PVMXMSREXITWRITE penmWrite);
 /** @} */
 
 /** @name All-context SVM helpers.

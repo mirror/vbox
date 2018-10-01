@@ -311,32 +311,6 @@ AssertCompileMemberSize(VMXTRANSIENT, ExitInstrInfo, sizeof(uint32_t));
 typedef VMXTRANSIENT *PVMXTRANSIENT;
 
 /**
- * MSR-bitmap read permissions.
- */
-typedef enum VMXMSREXITREAD
-{
-    /** Reading this MSR causes a VM-exit. */
-    VMXMSREXIT_INTERCEPT_READ = 0xb,
-    /** Reading this MSR does not cause a VM-exit. */
-    VMXMSREXIT_PASSTHRU_READ
-} VMXMSREXITREAD;
-/** Pointer to MSR-bitmap read permissions. */
-typedef VMXMSREXITREAD* PVMXMSREXITREAD;
-
-/**
- * MSR-bitmap write permissions.
- */
-typedef enum VMXMSREXITWRITE
-{
-    /** Writing to this MSR causes a VM-exit. */
-    VMXMSREXIT_INTERCEPT_WRITE = 0xd,
-    /** Writing to this MSR does not cause a VM-exit. */
-    VMXMSREXIT_PASSTHRU_WRITE
-} VMXMSREXITWRITE;
-/** Pointer to MSR-bitmap write permissions. */
-typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
-
-/**
  * Memory operand read or write access.
  */
 typedef enum VMXMEMACCESS
@@ -1201,11 +1175,19 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
     uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMsrBitmap;
 
     /*
-     * Layout:
-     * 0x000 - 0x3ff - Low MSR read bits
-     * 0x400 - 0x7ff - High MSR read bits
-     * 0x800 - 0xbff - Low MSR write bits
-     * 0xc00 - 0xfff - High MSR write bits
+     * MSR Layout:
+     *   Byte index            MSR range            Interpreted as
+     * 0x000 - 0x3ff    0x00000000 - 0x00001fff    Low MSR read bits.
+     * 0x400 - 0x7ff    0xc0000000 - 0xc0001fff    High MSR read bits.
+     * 0x800 - 0xbff    0x00000000 - 0x00001fff    Low MSR write bits.
+     * 0xc00 - 0xfff    0xc0000000 - 0xc0001fff    High MSR write bits.
+     *
+     * A bit corresponding to an MSR within the above range causes a VM-exit
+     * if the bit is 1 on executions of RDMSR/WRMSR.
+     *
+     * If an MSR falls out of the MSR range, it always cause a VM-exit.
+     *
+     * See Intel spec. 24.6.9 "MSR-Bitmap Address".
      */
     if (uMsr <= 0x00001fff)
         iBit = uMsr;
@@ -1228,54 +1210,6 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
     else
         ASMBitClear(pbMsrBitmap + 0x800, iBit);
 }
-
-
-#ifdef VBOX_STRICT
-/**
- * Gets the permission bits for the specified MSR in the MSR bitmap.
- *
- * @returns VBox status code.
- * @retval VINF_SUCCESS        if the specified MSR is found.
- * @retval VERR_NOT_FOUND      if the specified MSR is not found.
- * @retval VERR_NOT_SUPPORTED  if VT-x doesn't allow the MSR.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uMsr            The MSR.
- * @param   penmRead        Where to store the read permissions.
- * @param   penmWrite       Where to store the write permissions.
- */
-static int hmR0VmxGetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, PVMXMSREXITREAD penmRead, PVMXMSREXITWRITE penmWrite)
-{
-    AssertPtrReturn(penmRead,  VERR_INVALID_PARAMETER);
-    AssertPtrReturn(penmWrite, VERR_INVALID_PARAMETER);
-    int32_t iBit;
-    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMsrBitmap;
-
-    /* See hmR0VmxSetMsrPermission() for the layout. */
-    if (uMsr <= 0x00001fff)
-        iBit = uMsr;
-    else if (   uMsr >= 0xc0000000
-             && uMsr <= 0xc0001fff)
-    {
-        iBit = (uMsr - 0xc0000000);
-        pbMsrBitmap += 0x400;
-    }
-    else
-        AssertMsgFailedReturn(("hmR0VmxGetMsrPermission: Invalid MSR %#RX32\n", uMsr), VERR_NOT_SUPPORTED);
-
-    Assert(iBit <= 0x1fff);
-    if (ASMBitTest(pbMsrBitmap, iBit))
-        *penmRead = VMXMSREXIT_INTERCEPT_READ;
-    else
-        *penmRead = VMXMSREXIT_PASSTHRU_READ;
-
-    if (ASMBitTest(pbMsrBitmap + 0x800, iBit))
-        *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
-    else
-        *penmWrite = VMXMSREXIT_PASSTHRU_WRITE;
-    return VINF_SUCCESS;
-}
-#endif /* VBOX_STRICT */
 
 
 /**
@@ -1781,8 +1715,8 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            rc = hmR0VmxGetMsrPermission(pVCpu, pGuestMsr->u32Msr, &enmRead, &enmWrite);
-            AssertMsgReturnVoid(rc == VINF_SUCCESS, ("hmR0VmxGetMsrPermission! failed. rc=%Rrc\n", rc));
+            rc = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, pGuestMsr->u32Msr, &enmRead, &enmWrite);
+            AssertMsgReturnVoid(rc == VINF_SUCCESS, ("HMVmxGetMsrPermission! failed. rc=%Rrc\n", rc));
             if (pGuestMsr->u32Msr == MSR_K6_EFER)
             {
                 AssertMsgReturnVoid(enmRead  == VMXMSREXIT_INTERCEPT_READ,  ("Passthru read for EFER!?\n"));
@@ -12001,7 +11935,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            int rc2 = hmR0VmxGetMsrPermission(pVCpu, idMsr, &enmRead, &enmWrite);
+            int rc2 = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
             AssertRCReturn(rc2, rc2);
             if (enmRead == VMXMSREXIT_PASSTHRU_READ)
             {
@@ -12133,7 +12067,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     {
                         VMXMSREXITREAD  enmRead;
                         VMXMSREXITWRITE enmWrite;
-                        int rc2 = hmR0VmxGetMsrPermission(pVCpu, idMsr, &enmRead, &enmWrite);
+                        int rc2 = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
                         AssertRCReturn(rc2, rc2);
                         if (enmWrite == VMXMSREXIT_PASSTHRU_WRITE)
                         {

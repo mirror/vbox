@@ -877,3 +877,80 @@ VMM_INT_DECL(int) HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntry
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Gets the permission bits for the specified MSR in the specified MSR bitmap.
+ *
+ * @returns VBox status code.
+ * @param   pvMsrBitmap     Pointer to the MSR bitmap.
+ * @param   idMsr           The MSR.
+ * @param   penmRead        Where to store the read permissions. Optional, can be
+ *                          NULL.
+ * @param   penmWrite       Where to store the write permissions. Optional, can be
+ *                          NULL.
+ */
+VMM_INT_DECL(int) HMVmxGetMsrPermission(void *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+                                        PVMXMSREXITWRITE penmWrite)
+{
+    AssertPtrReturn(pvMsrBitmap, VERR_INVALID_PARAMETER);
+
+    int32_t iBit;
+    uint8_t *pbMsrBitmap = (uint8_t *)pvMsrBitmap;
+
+    /*
+     * MSR Layout:
+     *   Byte index            MSR range            Interpreted as
+     * 0x000 - 0x3ff    0x00000000 - 0x00001fff    Low MSR read bits.
+     * 0x400 - 0x7ff    0xc0000000 - 0xc0001fff    High MSR read bits.
+     * 0x800 - 0xbff    0x00000000 - 0x00001fff    Low MSR write bits.
+     * 0xc00 - 0xfff    0xc0000000 - 0xc0001fff    High MSR write bits.
+     *
+     * A bit corresponding to an MSR within the above range causes a VM-exit
+     * if the bit is 1 on executions of RDMSR/WRMSR.
+     *
+     * If an MSR falls out of the MSR range, it always cause a VM-exit.
+     *
+     * See Intel spec. 24.6.9 "MSR-Bitmap Address".
+     */
+    if (idMsr <= 0x00001fff)
+        iBit = idMsr;
+    else if (   idMsr >= 0xc0000000
+             && idMsr <= 0xc0001fff)
+    {
+        iBit = (idMsr - 0xc0000000);
+        pbMsrBitmap += 0x400;
+    }
+    else
+    {
+        if (penmRead)
+            *penmRead = VMXMSREXIT_INTERCEPT_READ;
+        if (penmWrite)
+            *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
+        Log(("HMVmxGetMsrPermission: Warning! Out of range MSR %#RX32\n", idMsr));
+        return VINF_SUCCESS;
+    }
+
+    /* Validate the MSR bit position. */
+    Assert(iBit <= 0x1fff);
+
+    /* Get the MSR read permissions. */
+    if (penmRead)
+    {
+        if (ASMBitTest(pbMsrBitmap, iBit))
+            *penmRead = VMXMSREXIT_INTERCEPT_READ;
+        else
+            *penmRead = VMXMSREXIT_PASSTHRU_READ;
+    }
+
+    /* Get the MSR write permissions. */
+    if (penmWrite)
+    {
+        if (ASMBitTest(pbMsrBitmap + 0x800, iBit))
+            *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
+        else
+            *penmWrite = VMXMSREXIT_PASSTHRU_WRITE;
+    }
+
+    return VINF_SUCCESS;
+}
+
