@@ -119,12 +119,34 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
                 pCloneModeCntLayout->addWidget(m_pAllRadio);
             }
         }
-        m_pReinitMACsCheckBox = new QCheckBox(this);
-        m_pReinitMACsCheckBox->setChecked(true);
+        m_pCloneOptionsCnt = new QGroupBox(this);
+        if (m_pCloneOptionsCnt)
+        {
+            m_pCloneOptionsLayout = new QGridLayout(m_pCloneOptionsCnt);
+            //m_pCloneOptionsLayout->setContentsMargins(0, 0, 0, 0);
+            /* Create MAC policy combo-box: */
+            m_pMACComboBox = new QComboBox;
+            if (m_pMACComboBox)
+            {
+                /* Add into layout: */
+                m_pCloneOptionsLayout->addWidget(m_pMACComboBox, 0, 1, 1, 1);
+            }
+
+            /* Create format combo-box label: */
+            m_pMACComboBoxLabel = new QLabel;
+            if (m_pMACComboBoxLabel)
+            {
+                m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
+                /* Add into layout: */
+                m_pCloneOptionsLayout->addWidget(m_pMACComboBoxLabel, 0, 0, 1, 1);
+            }
+        }
+
         pMainLayout->addWidget(m_pNameCnt, 0, 0, 1, 2);
         pMainLayout->addWidget(m_pCloneTypeCnt, 1, 0, Qt::AlignTop);
         pMainLayout->addWidget(m_pCloneModeCnt, 1, 1, Qt::AlignTop);
-        pMainLayout->addWidget(m_pReinitMACsCheckBox, 2, 0, 1, 2);
+        pMainLayout->addWidget(m_pCloneOptionsCnt, 2, 0, 1, 2, Qt::AlignTop);
         pMainLayout->setRowStretch(3, 1);
     }
 
@@ -142,12 +164,16 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
 
     /* Register classes: */
     qRegisterMetaType<KCloneMode>();
+
+    /* Populate MAC address policies: */
+    populateMACAddressClonePolicies();
+
     /* Register fields: */
     registerField("cloneName", this, "cloneName");
     registerField("cloneFilePath", this, "cloneFilePath");
-    registerField("reinitMACs", this, "reinitMACs");
     registerField("linkedClone", this, "linkedClone");
     registerField("cloneMode", this, "cloneMode");
+    registerField("macAddressClonePolicy", this, "macAddressClonePolicy");
     composeCloneFilePath();
 }
 
@@ -175,10 +201,37 @@ void UIWizardCloneVMPageExpert::retranslateUi()
     m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
     m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
     m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
-    m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
-    m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));
     m_pNameLabel->setText(UIWizardCloneVM::tr("Name:"));
     m_pPathLabel->setText(UIWizardCloneVM::tr("Path:"));
+
+    m_pCloneOptionsCnt->setTitle(UIWizardCloneVM::tr("Additional &options"));
+
+    /* Translate MAC address policy combo-box: */
+    m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address &Policy:"));
+    m_pMACComboBox->setItemText(MACAddressClonePolicy_KeepAllMACs,
+                                UIWizardCloneVM::tr("Include all network adapter MAC addresses"));
+    m_pMACComboBox->setItemText(MACAddressClonePolicy_KeepNATMACs,
+                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses"));
+    m_pMACComboBox->setItemText(MACAddressClonePolicy_StripAllMACs,
+                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
+    m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepAllMACs,
+                                UIWizardCloneVM::tr("Include all network adapter MAC addresses in exported "
+                                                      "during cloning."), Qt::ToolTipRole);
+    m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepNATMACs,
+                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses "
+                                                      "during cloning."), Qt::ToolTipRole);
+    m_pMACComboBox->setItemData(MACAddressClonePolicy_StripAllMACs,
+                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters "
+                                                      "during cloning."), Qt::ToolTipRole);
+
+    /* Adjust label widths: */
+    QList<QWidget*> labels;
+    labels << m_pMACComboBoxLabel;
+
+    int iMaxWidth = 0;
+    foreach (QWidget *pLabel, labels)
+        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
+    m_pCloneOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
 }
 
 void UIWizardCloneVMPageExpert::initializePage()

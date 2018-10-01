@@ -21,6 +21,8 @@
 
 /* Qt includes: */
 # include <QCheckBox>
+# include <QComboBox>
+# include <QGridLayout>
 # include <QLabel>
 # include <QVBoxLayout>
 
@@ -42,11 +44,12 @@ UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName, const
     : m_strOriginalName(strOriginalName)
     , m_strDefaultPath(strDefaultPath)
     , m_strGroup(strGroup)
-    , m_pReinitMACsCheckBox(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
     , m_pNameLabel(0)
     , m_pPathLabel(0)
+    , m_pMACComboBoxLabel(0)
+    , m_pMACComboBox(0)
 {
 }
 
@@ -89,14 +92,6 @@ void UIWizardCloneVMPage1::setCloneFilePath(const QString &path)
     m_strCloneFilePath = path;
 }
 
-
-bool UIWizardCloneVMPage1::isReinitMACsChecked() const
-{
-    if (!m_pReinitMACsCheckBox)
-        return false;
-    return m_pReinitMACsCheckBox->isChecked();
-}
-
 void UIWizardCloneVMPage1::composeCloneFilePath()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -108,9 +103,46 @@ void UIWizardCloneVMPage1::composeCloneFilePath()
     m_strCloneFolder = fileInfo.absolutePath();
 }
 
+void UIWizardCloneVMPage1::updateMACAddressClonePolicyComboToolTip()
+{
+    const int iCurrentIndex = m_pMACComboBox->currentIndex();
+    const QString strCurrentToolTip = m_pMACComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    m_pMACComboBox->setToolTip(strCurrentToolTip);
+}
+
+MACAddressClonePolicy UIWizardCloneVMPage1::macAddressClonePolicy() const
+{
+    const int iIndex = m_pMACComboBox->currentIndex();
+    return (MACAddressClonePolicy)m_pMACComboBox->itemData(iIndex).toInt();
+}
+
+void UIWizardCloneVMPage1::setMACAddressClonePolicy(MACAddressClonePolicy enmMACAddressClonePolicy)
+{
+    const int iIndex = m_pMACComboBox->findData((int)enmMACAddressClonePolicy);
+    AssertMsg(iIndex != -1, ("Data not found!"));
+    m_pMACComboBox->setCurrentIndex(iIndex);
+}
+
+void UIWizardCloneVMPage1::populateMACAddressClonePolicies()
+{
+    AssertReturnVoid(m_pMACComboBox->count() == 0);
+
+    /* Apply hardcoded policies list: */
+    for (int i = 0; i < (int)MACAddressClonePolicy_MAX; ++i)
+    {
+        m_pMACComboBox->addItem(QString::number(i));
+        m_pMACComboBox->setItemData(i, i);
+    }
+
+    /* Set default: */
+    setMACAddressClonePolicy(MACAddressClonePolicy_KeepNATMACs);
+}
+
 UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup)
     : UIWizardCloneVMPage1(strOriginalName, strDefaultPath, strGroup)
     , m_pMainLabel(0)
+    , m_pContainerLayout(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -127,21 +159,21 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
     if (pContainerWidget)
     {
         pMainLayout->addWidget(pContainerWidget);
-        QGridLayout *pContainerLayout = new QGridLayout(pContainerWidget);
-        pContainerLayout->setContentsMargins(0, 0, 0, 0);
+        m_pContainerLayout = new QGridLayout(pContainerWidget);
+        m_pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
         m_pNameLabel = new QLabel;
         if (m_pNameLabel)
         {
             m_pNameLabel->setAlignment(Qt::AlignRight);
             m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            pContainerLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
+            m_pContainerLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
         }
 
         m_pNameLineEdit = new QILineEdit();
         if (m_pNameLineEdit)
         {
-            pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
+            m_pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
             m_pNameLineEdit->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
         }
 
@@ -150,25 +182,45 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
         {
             m_pPathLabel->setAlignment(Qt::AlignRight);
             m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            pContainerLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
+            m_pContainerLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
         }
 
         m_pPathSelector = new UIFilePathSelector(this);
         if (m_pPathSelector)
         {
-            pContainerLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
+            m_pContainerLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
             m_pPathSelector->setPath(m_strDefaultPath);
-
         }
 
-         m_pReinitMACsCheckBox = new QCheckBox(this);
-         if (m_pReinitMACsCheckBox)
-         {
-             pContainerLayout->addWidget(m_pReinitMACsCheckBox, 2, 0, 1, 2);
-             m_pReinitMACsCheckBox->setChecked(true);
-         }
+        /* Create MAC policy combo-box: */
+        m_pMACComboBox = new QComboBox;
+        if (m_pMACComboBox)
+        {
+            /* Add into layout: */
+            m_pContainerLayout->addWidget(m_pMACComboBox, 2, 1, 1, 1);
+        }
+
+        /* Create format combo-box label: */
+        m_pMACComboBoxLabel = new QLabel;
+        if (m_pMACComboBoxLabel)
+        {
+            m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+            m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
+            /* Add into layout: */
+            m_pContainerLayout->addWidget(m_pMACComboBoxLabel, 2, 0, 1, 1);
+        }
     }
     pMainLayout->addStretch();
+
+    /* Populate MAC address policies: */
+    populateMACAddressClonePolicies();
+
+    /* Register fields: */
+    registerField("cloneName", this, "cloneName");
+    registerField("cloneFilePath", this, "cloneFilePath");
+    registerField("macAddressClonePolicy", this, "macAddressClonePolicy");
+
+    composeCloneFilePath();
 
     /* Setup connections: */
     connect(m_pNameLineEdit, &QILineEdit::textChanged, this, &UIWizardCloneVMPageBasic1::completeChanged);
@@ -176,12 +228,8 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 
     connect(m_pNameLineEdit, &QILineEdit::textChanged, this, &UIWizardCloneVMPageBasic1::sltNameChanged);
     connect(m_pPathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardCloneVMPageBasic1::sltPathChanged);
-
-    /* Register fields: */
-    registerField("cloneName", this, "cloneName");
-    registerField("cloneFilePath", this, "cloneFilePath");
-    registerField("reinitMACs", this, "reinitMACs");
-    composeCloneFilePath();
+    connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardCloneVMPageBasic1::sltHandleMACAddressClonePolicyComboChange);
 }
 
 void UIWizardCloneVMPageBasic1::retranslateUi()
@@ -200,11 +248,35 @@ void UIWizardCloneVMPageBasic1::retranslateUi()
 
     if (m_pPathLabel)
         m_pPathLabel->setText(UIWizardCloneVM::tr("Path:"));
-    if (m_pReinitMACsCheckBox)
-    {
-        m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
-        m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));
-    }
+
+    /* Translate MAC address policy combo-box: */
+    m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address &Policy:"));
+    m_pMACComboBox->setItemText(MACAddressClonePolicy_KeepAllMACs,
+                                UIWizardCloneVM::tr("Include all network adapter MAC addresses"));
+    m_pMACComboBox->setItemText(MACAddressClonePolicy_KeepNATMACs,
+                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses"));
+    m_pMACComboBox->setItemText(MACAddressClonePolicy_StripAllMACs,
+                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
+    m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepAllMACs,
+                                UIWizardCloneVM::tr("Include all network adapter MAC addresses in exported "
+                                                      "during cloning."), Qt::ToolTipRole);
+    m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepNATMACs,
+                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses "
+                                                      "during cloning."), Qt::ToolTipRole);
+    m_pMACComboBox->setItemData(MACAddressClonePolicy_StripAllMACs,
+                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters "
+                                                      "during cloning."), Qt::ToolTipRole);
+
+    /* Adjust label widths: */
+    QList<QWidget*> labels;
+    labels << m_pMACComboBoxLabel;
+    labels <<m_pNameLabel;
+    labels << m_pPathLabel;
+
+    int iMaxWidth = 0;
+    foreach (QWidget *pLabel, labels)
+        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
+    m_pContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
 }
 
 void UIWizardCloneVMPageBasic1::initializePage()
@@ -236,4 +308,10 @@ void UIWizardCloneVMPageBasic1::sltNameChanged()
 void UIWizardCloneVMPageBasic1::sltPathChanged()
 {
     composeCloneFilePath();
+}
+
+void UIWizardCloneVMPageBasic1::sltHandleMACAddressClonePolicyComboChange()
+{
+    /* Update tool-tip: */
+    updateMACAddressClonePolicyComboToolTip();
 }

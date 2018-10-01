@@ -58,8 +58,6 @@ bool UIWizardCloneVM::cloneVM()
     /* Get the clone setting file path: */
     QString strSettingsFile = field("cloneFilePath").toString();
 
-    /* Should we reinit mac status? */
-    bool fReinitMACs = field("reinitMACs").toBool();
     /* Should we create linked clone? */
     bool fLinked = field("linkedClone").toBool();
     /* Get clone mode: */
@@ -130,10 +128,20 @@ bool UIWizardCloneVM::cloneVM()
         return false;
     }
 
-    /* Add the keep all MACs option to the import settings when requested. */
+    /* Set the selected MAC address policy: */
     QVector<KCloneOptions> options;
-    if (!fReinitMACs)
-        options.append(KCloneOptions_KeepAllMACs);
+    switch (field("macAddressClonePolicy").value<MACAddressClonePolicy>())
+    {
+        case MACAddressClonePolicy_KeepAllMACs:
+            options.append(KCloneOptions_KeepAllMACs);
+            break;
+        case MACAddressClonePolicy_KeepNATMACs:
+            options.append(KCloneOptions_KeepNATMACs);
+            break;
+        default:
+            break;
+    }
+
     /* Linked clones requested? */
     if (fLinked)
         options.append(KCloneOptions_Link);
