@@ -953,6 +953,11 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3, VMX_V_AUTOMSR_AREA_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3 = NULL;
         }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3, VMX_V_MSR_BITMAP_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3 = NULL;
+        }
     }
 }
 
@@ -1035,14 +1040,27 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocate the MSR auto-load/store area.
          */
         Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3);
-        rc = SUPR3PageAllocEx(VMX_V_AUTOMSR_AREA_PAGES, 0 /* fFlags */,
-                              (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3,
+        rc = SUPR3PageAllocEx(VMX_V_AUTOMSR_AREA_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3,
                               &pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR0, NULL /* paPages */);
         if (RT_FAILURE(rc))
         {
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pAutoMsrAreaR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's auto-load/store MSR area\n", pVCpu->idCpu,
                     VMX_V_AUTOMSR_AREA_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the MSR bitmap.
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3);
+        rc = SUPR3PageAllocEx(VMX_V_MSR_BITMAP_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's MSR bitmap\n", pVCpu->idCpu,
+                    VMX_V_MSR_BITMAP_PAGES));
             break;
         }
     }

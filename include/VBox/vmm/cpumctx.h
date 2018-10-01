@@ -633,8 +633,18 @@ typedef struct CPUMCTX
 #if HC_ARCH_BITS == 32
                 uint32_t                uAutoMsrAreaR3;
 #endif
-                /** 0x368 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x368];
+                /** 0x368 - The MSR bitmap - R0 ptr. */
+                R0PTRTYPE(void *)       pvMsrBitmapR0;
+#if HC_ARCH_BITS == 32
+                uint32_t                uMsrBitmapR0;
+#endif
+                /** 0x370 - The MSR bitmap - R3 ptr. */
+                R3PTRTYPE(void *)       pvMsrBitmapR3;
+#if HC_ARCH_BITS == 32
+                uint32_t                uMsrBitmapR3;
+#endif
+                /** 0x378 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x378];
             } vmx;
         } CPUM_UNION_NM(s);
 
@@ -740,6 +750,7 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPag
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,  8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0, 8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR0,    8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvMsrBitmapR0,     8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.enmHwvirt,           0x3f0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x3f4);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                0x3f8);

@@ -165,6 +165,8 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVmwriteBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvMsrBitmapR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvMsrBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.enmHwvirt);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);

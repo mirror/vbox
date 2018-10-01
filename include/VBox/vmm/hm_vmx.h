@@ -3025,6 +3025,11 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the VMREAD/VMWRITE-bitmap (in pages). */
 #define VMX_V_VMREAD_VMWRITE_BITMAP_PAGES                       1
 
+/** The size of the MSR bitmap (in bytes). */
+#define VMX_V_MSR_BITMAP_SIZE                                   X86_PAGE_4K_SIZE
+/** The size of the MSR bitmap (in pages). */
+#define VMX_V_MSR_BITMAP_PAGES                                  1
+
 /** The size of the auto-load/store MSR area (in bytes). */
 #define VMX_V_AUTOMSR_AREA_SIZE                                 ((512 * (VMX_V_AUTOMSR_COUNT_MAX + 1)) * sizeof(VMXAUTOMSR))
 /* Assert that the size is page aligned or adjust the VMX_V_AUTOMSR_AREA_PAGES macro below. */
@@ -3823,6 +3828,7 @@ typedef enum
     kVmxVDiag_Vmentry_HostSs,
     kVmxVDiag_Vmentry_HostSysenterEspEip,
     kVmxVDiag_Vmentry_LongModeCS,
+    kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys,
     kVmxVDiag_Vmentry_MsrLoad,
     kVmxVDiag_Vmentry_MsrLoadCount,
     kVmxVDiag_Vmentry_MsrLoadPtrReadPhys,

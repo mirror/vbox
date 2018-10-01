@@ -4132,10 +4132,18 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     /* MSR bitmap physical address. */
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
-        if (   (pVmcs->u64AddrMsrBitmap.u & X86_PAGE_4K_OFFSET_MASK)
-            || (pVmcs->u64AddrMsrBitmap.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrMsrBitmap.u))
+        RTGCPHYS const GCPhysMsrBitmap = pVmcs->u64AddrMsrBitmap.u;
+        if (   (GCPhysMsrBitmap & X86_PAGE_4K_OFFSET_MASK)
+            || (GCPhysMsrBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+            || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysMsrBitmap))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrMsrBitmap);
+
+        /* Read the MSR bitmap. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap),
+                                         GCPhysMsrBitmap, VMX_V_MSR_BITMAP_SIZE);
+        if (RT_FAILURE(rc))
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys);
     }
 
     /* TPR shadow related controls. */

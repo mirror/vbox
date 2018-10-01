@@ -309,6 +309,7 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_HostSs                   , "HostSs"                    ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_HostSysenterEspEip       , "HostSysenterEspEip"        ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_LongModeCS               , "LongModeCS"                ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys     , "MsrBitmapPtrReadPhys"      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_MsrLoad                  , "MsrLoad"                   ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_MsrLoadCount             , "MsrLoadCount"              ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_MsrLoadPtrReadPhys       , "MsrLoadPtrReadPhys"        ),
