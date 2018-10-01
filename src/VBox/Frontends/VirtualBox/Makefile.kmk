@@ -357,9 +357,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime/seamless \
 	./src/runtime/information \
 	./src/runtime/guestctrl \
-	./src/selector \
-	./src/selector/graphics/chooser \
-	./src/selector/graphics/details \
 	./src/settings \
 	./src/settings/global \
 	./src/settings/machine \
@@ -375,8 +372,13 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/importappliance \
 	./src/wizards/firstrun
 
-ifdef VBOX_GUI_WITH_NEW_MANAGER
-VBOX_GUI_INC_DIRS += \
+ifndef VBOX_GUI_WITH_NEW_MANAGER
+ VBOX_GUI_INC_DIRS += \
+	./src/selector \
+	./src/selector/graphics/chooser \
+	./src/selector/graphics/details
+else
+ VBOX_GUI_INC_DIRS += \
 	./src/manager \
 	./src/manager/chooser \
 	./src/manager/details \
@@ -681,29 +683,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/hostnetwork/UIHostNetworkManager.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
-	src/selector/UIDesktopPane.h \
-	src/selector/UIVMItem.h \
-	src/selector/UISelectorWindow.h \
-	src/selector/UIToolsPaneGlobal.h \
-	src/selector/UIToolsPaneMachine.h \
-	src/selector/UIToolsToolbar.h \
-	src/selector/graphics/chooser/UIGChooser.h \
-	src/selector/graphics/chooser/UIGChooserModel.h \
-	src/selector/graphics/chooser/UIGChooserView.h \
-	src/selector/graphics/chooser/UIGChooserHandlerMouse.h \
-	src/selector/graphics/chooser/UIGChooserHandlerKeyboard.h \
-	src/selector/graphics/chooser/UIGChooserItem.h \
-	src/selector/graphics/chooser/UIGChooserItemGroup.h \
-	src/selector/graphics/chooser/UIGChooserItemMachine.h \
-	src/selector/graphics/details/UIGDetails.h \
-	src/selector/graphics/details/UIGDetailsModel.h \
-	src/selector/graphics/details/UIGDetailsView.h \
-	src/selector/graphics/details/UIGDetailsItem.h \
-	src/selector/graphics/details/UIGDetailsGroup.h \
-	src/selector/graphics/details/UIGDetailsSet.h \
-	src/selector/graphics/details/UIGDetailsElement.h \
-	src/selector/graphics/details/UIGDetailsElements.h \
-	src/selector/graphics/details/UIGMachinePreview.h \
 	src/snapshots/UISnapshotDetailsWidget.h \
 	src/snapshots/UISnapshotPane.h \
 	src/widgets/UIApplianceEditorWidget.h \
@@ -747,7 +726,32 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h
 
-ifdef VBOX_GUI_WITH_NEW_MANAGER
+ifndef VBOX_GUI_WITH_NEW_MANAGER
+ VirtualBox_QT_MOCHDRS += \
+	src/selector/UIDesktopPane.h \
+	src/selector/UIVMItem.h \
+	src/selector/UISelectorWindow.h \
+	src/selector/UIToolsPaneGlobal.h \
+	src/selector/UIToolsPaneMachine.h \
+	src/selector/UIToolsToolbar.h \
+	src/selector/graphics/chooser/UIGChooser.h \
+	src/selector/graphics/chooser/UIGChooserModel.h \
+	src/selector/graphics/chooser/UIGChooserView.h \
+	src/selector/graphics/chooser/UIGChooserHandlerMouse.h \
+	src/selector/graphics/chooser/UIGChooserHandlerKeyboard.h \
+	src/selector/graphics/chooser/UIGChooserItem.h \
+	src/selector/graphics/chooser/UIGChooserItemGroup.h \
+	src/selector/graphics/chooser/UIGChooserItemMachine.h \
+	src/selector/graphics/details/UIGDetails.h \
+	src/selector/graphics/details/UIGDetailsModel.h \
+	src/selector/graphics/details/UIGDetailsView.h \
+	src/selector/graphics/details/UIGDetailsItem.h \
+	src/selector/graphics/details/UIGDetailsGroup.h \
+	src/selector/graphics/details/UIGDetailsSet.h \
+	src/selector/graphics/details/UIGDetailsElement.h \
+	src/selector/graphics/details/UIGDetailsElements.h \
+	src/selector/graphics/details/UIGMachinePreview.h
+else
  VirtualBox_QT_MOCHDRS += \
 	src/manager/UIToolbarTools.h \
 	src/manager/UIToolPaneGlobal.h \
@@ -1209,14 +1213,16 @@ endif
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBox_QT_MOCSRCS = \
-	src/selector/UIDesktopPane.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
-ifdef VBOX_GUI_WITH_NEW_MANAGER
+ifndef VBOX_GUI_WITH_NEW_MANAGER
+ VirtualBox_QT_MOCSRCS += \
+	src/selector/UIDesktopPane.cpp
+else
  VirtualBox_QT_MOCSRCS += \
 	src/manager/UIWelcomePane.cpp
 endif
@@ -1366,29 +1372,6 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/selector/UIDesktopPane.cpp \
-	src/selector/UIVMItem.cpp \
-	src/selector/UISelectorWindow.cpp \
-	src/selector/UIToolsPaneGlobal.cpp \
-	src/selector/UIToolsPaneMachine.cpp \
-	src/selector/UIToolsToolbar.cpp \
-	src/selector/graphics/chooser/UIGChooser.cpp \
-	src/selector/graphics/chooser/UIGChooserModel.cpp \
-	src/selector/graphics/chooser/UIGChooserView.cpp \
-	src/selector/graphics/chooser/UIGChooserHandlerMouse.cpp \
-	src/selector/graphics/chooser/UIGChooserHandlerKeyboard.cpp \
-	src/selector/graphics/chooser/UIGChooserItem.cpp \
-	src/selector/graphics/chooser/UIGChooserItemGroup.cpp \
-	src/selector/graphics/chooser/UIGChooserItemMachine.cpp \
-	src/selector/graphics/details/UIGDetails.cpp \
-	src/selector/graphics/details/UIGDetailsModel.cpp \
-	src/selector/graphics/details/UIGDetailsView.cpp \
-	src/selector/graphics/details/UIGDetailsItem.cpp \
-	src/selector/graphics/details/UIGDetailsGroup.cpp \
-	src/selector/graphics/details/UIGDetailsSet.cpp \
-	src/selector/graphics/details/UIGDetailsElement.cpp \
-	src/selector/graphics/details/UIGDetailsElements.cpp \
-	src/selector/graphics/details/UIGMachinePreview.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \
@@ -1432,7 +1415,32 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp
 
-ifdef VBOX_GUI_WITH_NEW_MANAGER
+ifndef VBOX_GUI_WITH_NEW_MANAGER
+ VirtualBox_SOURCES += \
+	src/selector/UIDesktopPane.cpp \
+	src/selector/UIVMItem.cpp \
+	src/selector/UISelectorWindow.cpp \
+	src/selector/UIToolsPaneGlobal.cpp \
+	src/selector/UIToolsPaneMachine.cpp \
+	src/selector/UIToolsToolbar.cpp \
+	src/selector/graphics/chooser/UIGChooser.cpp \
+	src/selector/graphics/chooser/UIGChooserModel.cpp \
+	src/selector/graphics/chooser/UIGChooserView.cpp \
+	src/selector/graphics/chooser/UIGChooserHandlerMouse.cpp \
+	src/selector/graphics/chooser/UIGChooserHandlerKeyboard.cpp \
+	src/selector/graphics/chooser/UIGChooserItem.cpp \
+	src/selector/graphics/chooser/UIGChooserItemGroup.cpp \
+	src/selector/graphics/chooser/UIGChooserItemMachine.cpp \
+	src/selector/graphics/details/UIGDetails.cpp \
+	src/selector/graphics/details/UIGDetailsModel.cpp \
+	src/selector/graphics/details/UIGDetailsView.cpp \
+	src/selector/graphics/details/UIGDetailsItem.cpp \
+	src/selector/graphics/details/UIGDetailsGroup.cpp \
+	src/selector/graphics/details/UIGDetailsSet.cpp \
+	src/selector/graphics/details/UIGDetailsElement.cpp \
+	src/selector/graphics/details/UIGDetailsElements.cpp \
+	src/selector/graphics/details/UIGMachinePreview.cpp
+else
  VirtualBox_SOURCES += \
 	src/manager/UIToolbarTools.cpp \
 	src/manager/UIToolPaneGlobal.cpp \
@@ -2502,6 +2510,12 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 		extensions/graphics \
 		extradata \
 		globals \
+		manager \
+		manager/chooser \
+		manager/details \
+		manager/tools \
+		manager \
+		manager \
 		medium \
 		net \
 		objects \
