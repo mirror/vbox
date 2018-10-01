@@ -6142,6 +6142,12 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
         }
     }
 
+    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
+    {
+        Log(("rdtsc: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSC, cbInstr);
+    }
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSC))
     {
         Log(("rdtsc: Guest intercept -> #VMEXIT\n"));
@@ -6183,6 +6189,12 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
             Log(("rdtscp: CR4.TSD and CPL=%u -> #GP(0)\n", pVCpu->iem.s.uCpl));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
+    }
+
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP))
+    {
+        Log(("rdtscp: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSCP, cbInstr);
     }
 
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP))
@@ -6842,17 +6854,17 @@ IEM_CIMPL_DEF_0(iemCImpl_swapgs)
  */
 IEM_CIMPL_DEF_0(iemCImpl_cpuid)
 {
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        Log2(("cpuid: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_CPUID, cbInstr);
+    }
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CPUID))
     {
         Log2(("cpuid: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_CPUID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    }
-
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-    {
-        Log2(("cpuid: Guest intercept -> VM-exit\n"));
-        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_CPUID, cbInstr);
     }
 
     CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx,

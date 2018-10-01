@@ -388,12 +388,12 @@ typedef enum IEMXCPTCLASS
 /**
  * Check if the guest has entered VMX root operation.
  */
-# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                              (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
+# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)      (CPUMIsGuestInVmxRootMode(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Check if the guest has entered VMX non-root operation.
  */
-# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                          (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)  (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Invokes the VMX VM-exit handler for an instruction intercept.
@@ -401,42 +401,71 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr) \
     do { return iemVmxVmexitInstr((a_pVCpu), (a_uExitReason), (a_cbInstr)); } while (0)
 
+/**
+ * Check if the nested-guest has the given Pin-based VM-execution control set.
+ */
+# define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_PinCtl) \
+    (CPUMIsGuestVmxPinCtlsSet((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_PinCtl)))
+
+/**
+ * Check if the nested-guest has the given Processor-based VM-execution control set.
+ */
+#define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_ProcCtl) \
+    (CPUMIsGuestVmxProcCtlsSet((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_ProcCtl)))
+
+/**
+ * Check if the nested-guest has the given Secondary Processor-based VM-execution
+ * control set.
+ */
+#define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_ProcCtl2) \
+    (CPUMIsGuestVmxProcCtls2Set((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_ProcCtl2)))
+
 #else
-# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                              (false)
-# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                          (false)
-# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_Reason, a_cbInstr)     do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                  (false)
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                              (false)
+# define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_cbInstr)                     (false)
+# define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_cbInstr)                    (false)
+# define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_cbInstr)                   (false)
+# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_Reason, a_cbInstr)         do { return VERR_VMX_IPE_1; } while (0)
+
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Check if an SVM control/instruction intercept is set.
  */
-# define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
+# define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) \
+    (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
 
 /**
  * Check if an SVM read CRx intercept is set.
  */
-# define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr) \
+    (CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM write CRx intercept is set.
  */
-# define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr) \
+    (CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM read DRx intercept is set.
  */
-# define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr) \
+    (CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM write DRx intercept is set.
  */
-# define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr) \
+    (CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM exception intercept is set.
  */
-# define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
+# define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector) \
+    (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
 
 /**
  * Invokes the SVM \#VMEXIT handler for the nested-guest.

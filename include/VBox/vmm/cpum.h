@@ -1874,58 +1874,74 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
 }
 
 /**
- * Checks whether the given Pin-based VM-execution controls are set.
+ * Checks whether the given Pin-based VM-execution controls are set when executing a
+ * nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uPinCtl     The Pin-based VM-execution controls to check.
+ *
+ * @remarks This does not check if all given controls are set if more than one
+ *          control is passed in @a uPinCtl.
  */
 DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtl)
 {
     RT_NOREF(pVCpu);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
         return false;
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    if (!pCtx->hwvirt.vmx.fInVmxNonRootMode)
+        return false;
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
     return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32PinCtls & uPinCtl);
 }
 
 /**
- * Checks whether the given Processor-based VM-execution controls are set.
+ * Checks whether the given Processor-based VM-execution controls are set when
+ * executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
- * @param   uPinCtl     The Processor-based VM-execution controls to check.
+ * @param   uProcCtl    The Processor-based VM-execution controls to check.
+ *
+ * @remarks This does not check if all given controls are set if more than one
+ *          control is passed in @a uProcCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtl)
 {
     RT_NOREF(pVCpu);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
         return false;
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    if (!pCtx->hwvirt.vmx.fInVmxNonRootMode)
+        return false;
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls & uProcCtls);
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls & uProcCtl);
 }
 
 /**
- * Checks whether the given Secondary Processor-based VM-execution controls are set.
+ * Checks whether the given Secondary Processor-based VM-execution controls are set
+ * when executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
- * @param   uPinCtl     The Secondary Processor-based VM-execution controls to
+ * @param   uProcCtl2   The Secondary Processor-based VM-execution controls to
  *                      check.
+ *
+ * @remarks This does not check if all given controls are set if more than one
+ *          control is passed in @a uProcCtl2.
+ *
  */
-DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls2)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtl2)
 {
     RT_NOREF(pVCpu);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
         return false;
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    if (!pCtx->hwvirt.vmx.fInVmxNonRootMode)
+        return false;
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls2 & uProcCtls2);
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls2 & uProcCtl2);
 }
 
 # endif /* !IN_RC */
