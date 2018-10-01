@@ -336,6 +336,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
             {
                 switch (m_pPaneTools->toolsType())
                 {
+                    case UIToolsType_Welcome: enmType = ToolTypeGlobal_Welcome; break;
                     case UIToolsType_Media:   enmType = ToolTypeGlobal_Media; break;
                     case UIToolsType_Network: enmType = ToolTypeGlobal_Network; break;
                     default: break;
@@ -598,6 +599,17 @@ void UIVirtualBoxManagerWidget::updateToolbar()
         {
             switch (currentGlobalTool())
             {
+                case ToolTypeGlobal_Welcome:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+                    break;
+                }
                 case ToolTypeGlobal_Media:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));

@@ -19,16 +19,17 @@
 #define ___UIWelcomePane_h___
 
 /* Qt includes: */
+#include <QIcon>
 #include <QWidget>
 
-/* Forward declarations: */
-class QIcon;
-class QString;
-class UIWelcomePanePrivate;
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
 
+/* Forward declarations: */
+class QLabel;
 
 /** QWidget subclass holding Welcome information about VirtualBox. */
-class UIWelcomePane : public QWidget
+class UIWelcomePane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -37,21 +38,29 @@ public:
     /** Constructs Welcome pane passing @a pParent to the base-class. */
     UIWelcomePane(QWidget *pParent = 0);
 
-    /** Defines a tools pane welcome @a strText. */
-    void setToolsPaneText(const QString &strText);
-    /** Defines a tools pane welcome @a icon. */
-    void setToolsPaneIcon(const QIcon &icon);
-    /** Add a tool element.
-      * @param  pAction         Brings tool action reference.
-      * @param  strDescription  Brings the tool description. */
-    void addToolDescription(QAction *pAction, const QString &strDescription);
-    /** Removes all tool elements. */
-    void removeToolDescriptions();
+protected:
+
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
 private:
 
-    /** Holds the private Welcome pane instance. */
-    UIWelcomePanePrivate *m_pDesktopPrivate;
+    /** Prepares all. */
+    void prepare();
+
+    /** Updates pixmap. */
+    void updatePixmap();
+
+    /** Holds the icon instance. */
+    QIcon  m_icon;
+
+    /** Holds the text label instance. */
+    QLabel *m_pLabelText;
+    /** Holds the icon label instance. */
+    QLabel *m_pLabelIcon;
 };
 
 #endif /* !___UIWelcomePane_h___ */

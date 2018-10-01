@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
@@ -38,7 +37,7 @@ class CMachine;
 
 
 /** QWidget subclass representing container for tool panes. */
-class UIToolPaneGlobal : public QIWithRetranslateUI<QWidget>
+class UIToolPaneGlobal : public QWidget
 {
     Q_OBJECT;
 
@@ -58,11 +57,6 @@ public:
     /** Closes tool of passed @a enmType, deletes one if exists. */
     void closeTool(ToolTypeGlobal enmType);
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
 private:
 
     /** Prepares all. */
@@ -72,16 +66,13 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Handles translation for Desktop pane. */
-    void retranslateDesktopPane();
-
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 
     /** Holds the stacked-layout instance. */
     QStackedLayout             *m_pLayout;
-    /** Holds the Desktop pane instance. */
-    UIWelcomePane              *m_pPaneDesktop;
+    /** Holds the Welcome pane instance. */
+    UIWelcomePane              *m_pPaneWelcome;
     /** Holds the Virtual Media Manager instance. */
     UIMediumManagerWidget      *m_pPaneMedia;
     /** Holds the Host Network Manager instance. */

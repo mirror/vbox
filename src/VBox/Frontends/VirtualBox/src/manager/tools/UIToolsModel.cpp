@@ -409,12 +409,14 @@ void UIToolsModel::prepareItems()
     QList<UIToolsClass> classes;
     classes << UIToolsClass_Global;
     classes << UIToolsClass_Global;
+    classes << UIToolsClass_Global;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
 
     /* Prepare types: */
     QList<UIToolsType> types;
+    types << UIToolsType_Welcome;
     types << UIToolsType_Media;
     types << UIToolsType_Network;
     types << UIToolsType_Details;
@@ -423,6 +425,7 @@ void UIToolsModel::prepareItems()
 
     /* Prepare icons: */
     QList<QIcon> icons;
+    icons << UIIconPool::iconSet(":/log_viewer_save_22px.png"); /// @toso use proper one
     icons << UIIconPool::iconSet(":/media_manager_22px.png");
     icons << UIIconPool::iconSet(":/host_iface_manager_22px.png");
     icons << UIIconPool::iconSet(":/machine_details_manager_22px.png");
@@ -431,6 +434,7 @@ void UIToolsModel::prepareItems()
 
     /* Prepare names: */
     QList<QString> names;
+    names << tr("Welcome");
     names << tr("Media");
     names << tr("Network");
     names << tr("Details");
@@ -474,7 +478,7 @@ void UIToolsModel::loadLastSelectedItems()
     /* First of them is current global class item definition: */
     UIToolsType enmTypeGlobal = typeFromString(values.value(0));
     if (!isTypeOfClass(enmTypeGlobal, UIToolsClass_Global))
-        enmTypeGlobal = UIToolsType_Media;
+        enmTypeGlobal = UIToolsType_Welcome;
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeGlobal)
             m_pLastItemGlobal = pItem;
@@ -537,6 +541,7 @@ QString UIToolsModel::typeToString(UIToolsType enmType)
 {
     QMap<UIToolsType, QString> values;
     /* Global classes: */
+    values[UIToolsType_Welcome]   = "Welcome";
     values[UIToolsType_Media]     = "Media";
     values[UIToolsType_Network]   = "Network";
     /* Machine classes: */
@@ -552,6 +557,7 @@ UIToolsType UIToolsModel::typeFromString(const QString &strType)
 {
     QMap<QString, UIToolsType> values;
     /* Global classes: */
+    values["Welcome"]   = UIToolsType_Welcome;
     values["Media"]     = UIToolsType_Media;
     values["Network"]   = UIToolsType_Network;
     /* Machine classes: */
@@ -571,6 +577,7 @@ bool UIToolsModel::isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass)
         {
             switch (enmType)
             {
+                case UIToolsType_Welcome:
                 case UIToolsType_Media:
                 case UIToolsType_Network:
                     return true;
