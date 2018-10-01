@@ -382,7 +382,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Translate group-boxes: */
     m_pSelectorCnt->setTitle(UIWizardExportApp::tr("Virtual &machines to export"));
     m_pApplianceCnt->setTitle(UIWizardExportApp::tr("Virtual &system settings"));
-    m_pSettingsCnt->setTitle(UIWizardExportApp::tr("&Appliance settings"));
+    m_pSettingsCnt->setTitle(UIWizardExportApp::tr("Appliance settings"));
 
     /* Translate File selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
