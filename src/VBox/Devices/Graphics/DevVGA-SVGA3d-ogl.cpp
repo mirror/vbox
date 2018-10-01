@@ -94,10 +94,6 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 #define D3D_TO_OGL_Y_COORD(ptrSurface, y_coordinate)                (ptrSurface->pMipmapLevels[0].mipmapSize.height - (y_coordinate))
 #define D3D_TO_OGL_Y_COORD_MIPLEVEL(ptrMipLevel, y_coordinate)      (ptrMipLevel->size.height - (y_coordinate))
 
-/* Enable to render the result of DrawPrimitive in a seperate window. */
-//#define DEBUG_GFX_WINDOW
-
-
 /**
  * Macro for doing something and then checking for errors during initialization.
  * Uses AssertLogRelMsg.
@@ -1074,9 +1070,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         return VERR_NOT_IMPLEMENTED;
     }
 
-#ifdef DEBUG_DEBUG_GFX_WINDOW_TEST_CONTEXT
-    pState->idTestContext = SVGA_ID_INVALID;
-#endif
     return VINF_SUCCESS;
 }
 
@@ -2857,14 +2850,6 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
 #endif
 
     Log(("vmsvga3dContextDefine id %x\n", cid));
-#ifdef DEBUG_DEBUG_GFX_WINDOW_TEST_CONTEXT
-    if (pState->idTestContext == SVGA_ID_INVALID)
-    {
-        pState->idTestContext = 207;
-        rc = vmsvga3dContextDefine(pThis, pState->idTestContext);
-        AssertRCReturn(rc, rc);
-    }
-#endif
 
     if (cid == VMSVGA3D_SHARED_CTX_ID)
         pContext = &pState->SharedCtx;
@@ -2934,30 +2919,7 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
      * the VMSVGA SCREEN object, which can be either an offscreen render target or
      * system memory in the guest VRAM.
      */
-    CREATESTRUCT cs;
-    cs.lpCreateParams   = NULL;
-    cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
-# ifdef DEBUG_GFX_WINDOW
-    cs.lpszName         = (char *)RTMemAllocZ(256);
-    RTStrPrintf((char *)cs.lpszName, 256, "Context %d OpenGL Window", cid);
-# else
-    cs.lpszName         = NULL;
-# endif
-    cs.lpszClass        = 0;
-# ifdef DEBUG_GFX_WINDOW
-    cs.style            = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE | WS_CAPTION;
-# else
-    cs.style            = WS_DISABLED | WS_CHILD;
-# endif
-    cs.x                = 0;
-    cs.y                = 0;
-    cs.cx               = 4;
-    cs.cy               = 4;
-    cs.hwndParent       = (HWND)pThis->svga.u64HostWindowId;
-    cs.hMenu            = NULL;
-    cs.hInstance        = pState->hInstance;
-
-    rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)&pContext->hwnd, (LPARAM)&cs);
+    rc = vmsvga3dContextWindowCreate(pState->hInstance, pState->pWindowThread, pState->WndRequestSem, &pContext->hwnd);
     AssertRCReturn(rc, rc);
 
     pContext->hdc   = GetDC(pContext->hwnd);
@@ -3240,13 +3202,8 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
 static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
 #ifdef RT_OS_WINDOWS
-    /* Resize the window. */
-    CREATESTRUCT          cs;
-    RT_ZERO(cs);
-    cs.cx = pThis->svga.uWidth;
-    cs.cy = pThis->svga.uHeight;
-    int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_RESIZEWINDOW, (WPARAM)pContext->hwnd, (LPARAM)&cs);
-    AssertRC(rc);
+    RT_NOREF3(pThis, pState, pContext);
+    /* Do nothing. The window is not used for presenting. */
 
 #elif defined(RT_OS_DARWIN)
     RT_NOREF(pState);
@@ -6205,18 +6162,6 @@ internal_error:
                       ("%x vs %x unit %d (active unit %d) sid=%x\n", pTexture->oglId.texture, activeTexture, i,
                        activeTextureUnit - GL_TEXTURE0, pContext->aSidActiveTextures[i]));
         }
-    }
-#endif
-
-#ifdef DEBUG_GFX_WINDOW
-    if (pContext->state.aRenderTargets[SVGA3D_RT_COLOR0])
-    {
-        SVGA3dCopyRect rect;
-
-        rect.srcx = rect.srcy = rect.x = rect.y = 0;
-        rect.w = pContext->state.RectViewPort.w;
-        rect.h = pContext->state.RectViewPort.h;
-        vmsvga3dCommandPresent(pThis, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], 0, NULL);
     }
 #endif
 

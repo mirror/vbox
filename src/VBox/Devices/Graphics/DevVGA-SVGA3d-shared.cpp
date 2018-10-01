@@ -110,7 +110,6 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
     while (true)
     {
         MSG msg;
-
         if (GetMessage(&msg, 0, 0, 0))
         {
             if (msg.message == WM_VMSVGA3D_EXIT)
@@ -124,40 +123,21 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
             {
                 continue;
             }
+
             if (msg.message == WM_VMSVGA3D_CREATEWINDOW)
             {
                 HWND          *pHwnd = (HWND *)msg.wParam;
                 LPCREATESTRUCT pCS = (LPCREATESTRUCT) msg.lParam;
 
-#ifdef DEBUG_GFX_WINDOW
-                RECT rectClient;
-
-                rectClient.left     = 0;
-                rectClient.top      = 0;
-                rectClient.right    = pCS->cx;
-                rectClient.bottom   = pCS->cy;
-                AdjustWindowRectEx(&rectClient, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE | WS_CAPTION, FALSE, WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY | WS_EX_TRANSPARENT);
-                pCS->cx = rectClient.right - rectClient.left;
-                pCS->cy = rectClient.bottom - rectClient.top;
-#endif
                 *pHwnd = CreateWindowEx(pCS->dwExStyle,
                                         VMSVGA3D_WNDCLASSNAME,
                                         pCS->lpszName,
                                         pCS->style,
-#ifdef DEBUG_GFX_WINDOW
-                                        0,
-                                        0,
-#else
                                         pCS->x,
                                         pCS->y,
-#endif
                                         pCS->cx,
                                         pCS->cy,
-#ifdef DEBUG_GFX_WINDOW
-                                        0,
-#else
                                         pCS->hwndParent,
-#endif
                                         pCS->hMenu,
                                         pCS->hInstance,
                                         NULL);
@@ -168,31 +148,10 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
                 RTSemEventSignal(WndRequestSem);
                 continue;
             }
+
             if (msg.message == WM_VMSVGA3D_DESTROYWINDOW)
             {
                 BOOL fRc = DestroyWindow((HWND)msg.wParam);
-                Assert(fRc); NOREF(fRc);
-                /* Signal to the caller that we're done. */
-                RTSemEventSignal(WndRequestSem);
-                continue;
-            }
-            if (msg.message == WM_VMSVGA3D_RESIZEWINDOW)
-            {
-                HWND hwnd = (HWND)msg.wParam;
-                LPCREATESTRUCT pCS = (LPCREATESTRUCT) msg.lParam;
-
-#ifdef DEBUG_GFX_WINDOW
-                RECT rectClient;
-
-                rectClient.left     = 0;
-                rectClient.top      = 0;
-                rectClient.right    = pCS->cx;
-                rectClient.bottom   = pCS->cy;
-                AdjustWindowRectEx(&rectClient, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE | WS_CAPTION, FALSE, WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY | WS_EX_TRANSPARENT);
-                pCS->cx = rectClient.right - rectClient.left;
-                pCS->cy = rectClient.bottom - rectClient.top;
-#endif
-                BOOL fRc = SetWindowPos(hwnd, 0, pCS->x, pCS->y, pCS->cx, pCS->cy, SWP_NOZORDER | SWP_NOMOVE);
                 Assert(fRc); NOREF(fRc);
 
                 /* Signal to the caller that we're done. */
@@ -268,6 +227,31 @@ static LONG WINAPI vmsvga3dWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 # endif
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+int vmsvga3dContextWindowCreate(HINSTANCE hInstance, RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, HWND *pHwnd)
+{
+    /* Create a context window with minimal 4x4 size. We will never use the swapchain
+     * to present the rendered image. Rendered images from the guest will be copied to
+     * the VMSVGA SCREEN object, which can be either an offscreen render target or
+     * system memory in the guest VRAM.
+     */
+    CREATESTRUCT cs;
+    cs.lpCreateParams   = NULL;
+    cs.hInstance        = hInstance;
+    cs.hMenu            = NULL;
+    cs.hwndParent       = HWND_DESKTOP;
+    cs.cx               = 4;
+    cs.cy               = 4;
+    cs.x                = 0;
+    cs.y                = 0;
+    cs.style            = WS_DISABLED;
+    cs.lpszName         = NULL;
+    cs.lpszClass        = 0;
+    cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
+
+    int rc = vmsvga3dSendThreadMessage(pWindowThread, WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)pHwnd, (LPARAM)&cs);
+    return rc;
 }
 
 #endif /* RT_OS_WINDOWS */

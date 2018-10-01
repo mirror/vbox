@@ -112,11 +112,11 @@ int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAG
 # define WM_VMSVGA3D_WAKEUP                     (WM_APP+1)
 # define WM_VMSVGA3D_CREATEWINDOW               (WM_APP+2)
 # define WM_VMSVGA3D_DESTROYWINDOW              (WM_APP+3)
-# define WM_VMSVGA3D_RESIZEWINDOW               (WM_APP+4)
 # define WM_VMSVGA3D_EXIT                       (WM_APP+5)
 
 DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser);
 int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, UINT msg, WPARAM wParam, LPARAM lParam);
+int vmsvga3dContextWindowCreate(HINSTANCE hInstance, RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, HWND *pHwnd);
 
 #endif
 

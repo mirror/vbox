@@ -54,8 +54,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/* Enable to render the result of DrawPrimitive in a seperate window. */
-//#define DEBUG_GFX_WINDOW
 
 #define FOURCC_INTZ     (D3DFORMAT)MAKEFOURCC('I', 'N', 'T', 'Z')
 #define FOURCC_NULL     (D3DFORMAT)MAKEFOURCC('N', 'U', 'L', 'L')
@@ -2515,33 +2513,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
      * the VMSVGA SCREEN object, which can be either an offscreen render target or
      * system memory in the guest VRAM.
      */
-    CREATESTRUCT cs;
-
-    AssertReturn(pThis->svga.u64HostWindowId, VERR_INTERNAL_ERROR);
-
-    cs.lpCreateParams   = NULL;
-    cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
-#ifdef DEBUG_GFX_WINDOW
-    cs.lpszName         = (char *)RTMemAllocZ(256);
-    RTStrPrintf((char *)cs.lpszName, 256, "Context %d OpenGL Window", cid);
-#else
-    cs.lpszName         = NULL;
-#endif
-    cs.lpszClass        = NULL;
-#ifdef DEBUG_GFX_WINDOW
-    cs.style            = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE | WS_CAPTION;
-#else
-    cs.style            = WS_DISABLED | WS_CHILD;
-#endif
-    cs.x                = 0;
-    cs.y                = 0;
-    cs.cx               = 4;
-    cs.cy               = 4;
-    cs.hwndParent       = (HWND)pThis->svga.u64HostWindowId;
-    cs.hMenu            = NULL;
-    cs.hInstance        = pState->hInstance;
-
-    rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)&pContext->hwnd, (LPARAM)&cs);
+    rc = vmsvga3dContextWindowCreate(pState->hInstance, pState->pWindowThread, pState->WndRequestSem, &pContext->hwnd);
     AssertRCReturn(rc, rc);
 
     /* Changed when the function returns. */
@@ -2554,7 +2526,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
     PresParam.MultiSampleQuality            = 0;
     PresParam.SwapEffect                    = D3DSWAPEFFECT_DISCARD;
     PresParam.hDeviceWindow                 = pContext->hwnd;
-    PresParam.Windowed                      = TRUE;     /** @todo */
+    PresParam.Windowed                      = TRUE;
     PresParam.EnableAutoDepthStencil        = FALSE;
     PresParam.AutoDepthStencilFormat        = D3DFMT_UNKNOWN;   /* not relevant */
     PresParam.Flags                         = 0;
@@ -2763,7 +2735,6 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
 
         if (cid != SVGA3D_INVALID_ID)
         {
-            CREATESTRUCT          cs;
             D3DPRESENT_PARAMETERS PresParam;
             D3DVIEWPORT9          viewportOrg;
             HRESULT               hr;
@@ -2886,21 +2857,11 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
             /* Cleanup the device runtime state. */
             D3D_RELEASE(pContext->d3dState.pVertexDecl);
 
-            memset(&cs, 0, sizeof(cs));
-            cs.cx = pThis->svga.uWidth;
-            cs.cy = pThis->svga.uHeight;
-
-            Log(("vmsvga3dChangeMode: Resize window %x of context %d to (%d,%d)\n", pContext->hwnd, pContext->id, cs.cx, cs.cy));
-
             AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
             hr = pContext->pDevice->GetViewport(&viewportOrg);
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dChangeMode: GetViewport failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
             Log(("vmsvga3dChangeMode: old viewport settings (%d,%d)(%d,%d) z=%d/%d\n", viewportOrg.X, viewportOrg.Y, viewportOrg.Width, viewportOrg.Height, (uint32_t)(viewportOrg.MinZ * 100.0), (uint32_t)(viewportOrg.MaxZ * 100.0)));
-
-            /* Resize the window. */
-            int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_RESIZEWINDOW, (WPARAM)pContext->hwnd, (LPARAM)&cs);
-            AssertRC(rc);
 
             /* Changed when the function returns. */
             PresParam.BackBufferWidth               = 0;
@@ -2910,9 +2871,9 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
 
             PresParam.MultiSampleType               = D3DMULTISAMPLE_NONE;
             PresParam.MultiSampleQuality            = 0;
-            PresParam.SwapEffect                    = D3DSWAPEFFECT_FLIP;
+            PresParam.SwapEffect                    = D3DSWAPEFFECT_DISCARD;
             PresParam.hDeviceWindow                 = pContext->hwnd;
-            PresParam.Windowed                      = TRUE;     /** @todo */
+            PresParam.Windowed                      = TRUE;
             PresParam.EnableAutoDepthStencil        = FALSE;
             PresParam.AutoDepthStencilFormat        = D3DFMT_UNKNOWN;   /* not relevant */
             PresParam.Flags                         = 0;
@@ -2955,7 +2916,7 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
                     target.sid      = pContext->state.aRenderTargets[j];
                     target.face     = 0;
                     target.mipmap   = 0;
-                    rc = vmsvga3dSetRenderTarget(pThis, cid, (SVGA3dRenderTargetType)j, target);
+                    int rc = vmsvga3dSetRenderTarget(pThis, cid, (SVGA3dRenderTargetType)j, target);
                     AssertRCReturn(rc, rc);
                 }
             }
@@ -5243,18 +5204,6 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
     /* Make sure we can track drawing usage of active render targets and textures. */
     vmsvga3dContextTrackUsage(pThis, pContext);
 
-#ifdef DEBUG_GFX_WINDOW
-    if (pContext->aSidActiveTexture[0] == 0x62)
-////    if (pContext->sidActiveTexture == 0x3d)
-    {
-        SVGA3dCopyRect rect;
-
-        rect.srcx = rect.srcy = rect.x = rect.y = 0;
-        rect.w = 800;
-        rect.h = 600;
-        vmsvga3dCommandPresent(pThis, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0] /*pContext->aSidActiveTexture[0] */, 0, &rect);
-    }
-#endif
     return rc;
 
 internal_error:
