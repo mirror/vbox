@@ -152,7 +152,7 @@ void UIChooserItemGlobal::setHeightHint(int iHint)
 void UIChooserItemGlobal::retranslateUi()
 {
     /* Update description: */
-    m_strName = tr("Global Tools");
+    m_strName = tr("Tools");
     m_strDescription = m_strName;
 
     /* Update linked values: */
