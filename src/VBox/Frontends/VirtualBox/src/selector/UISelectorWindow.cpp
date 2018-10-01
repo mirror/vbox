@@ -2050,16 +2050,13 @@ void UISelectorWindow::prepareWidgets()
             AssertPtrReturnVoid(m_pSlidingWidget);
             {
                 /* Create splitter: */
-                m_pSplitter = new QISplitter;
+#ifdef VBOX_WS_X11
+                m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Native);
+#else
+                m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Shade);
+#endif
                 AssertPtrReturnVoid(m_pSplitter);
                 {
-                    /* Configure splitter: */
-#ifdef VBOX_WS_X11
-                    m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Native);
-#else
-                    m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Flat);
-#endif
-
                     /* Create Chooser-pane: */
                     m_pPaneChooser = new UIGChooser(this);
                     AssertPtrReturnVoid(m_pPaneChooser);
