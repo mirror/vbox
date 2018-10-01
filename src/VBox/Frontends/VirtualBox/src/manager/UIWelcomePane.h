@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,28 +22,20 @@
 #include <QWidget>
 
 /* Forward declarations: */
-class QAction;
 class QIcon;
 class QString;
 class UIWelcomePanePrivate;
 
 
-/** QWidget subclass representing container which have two panes:
-  * 1. Text details pane reflecting base information about VirtualBox,
-  * 2. Error details pane reflecting information about currently chosen
-  *    inaccessible VM and allowing to operate over it. */
+/** QWidget subclass holding Welcome information about VirtualBox. */
 class UIWelcomePane : public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs desktop pane passing @a pParent to the base-class.
-      * @param  pRefreshAction  Brings the refresh action reference. */
-    UIWelcomePane(QAction *pRefreshAction = 0, QWidget *pParent = 0);
-
-    /** Updates @a strError details and switches to error details pane. */
-    void updateDetailsError(const QString &strError);
+    /** Constructs Welcome pane passing @a pParent to the base-class. */
+    UIWelcomePane(QWidget *pParent = 0);
 
     /** Defines a tools pane welcome @a strText. */
     void setToolsPaneText(const QString &strText);
@@ -58,9 +50,8 @@ public:
 
 private:
 
-    /** Holds the private desktop pane instance. */
+    /** Holds the private Welcome pane instance. */
     UIWelcomePanePrivate *m_pDesktopPrivate;
 };
 
 #endif /* !___UIWelcomePane_h___ */
-

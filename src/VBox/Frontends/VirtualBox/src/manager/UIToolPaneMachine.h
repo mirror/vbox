@@ -22,7 +22,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
@@ -30,16 +29,16 @@ class QHBoxLayout;
 class QStackedLayout;
 class QVBoxLayout;
 class UIActionPool;
-class UIWelcomePane;
 class UIDetails;
-class UIVMLogViewerWidget;
+class UIErrorPane;
 class UISnapshotPane;
 class UIVirtualMachineItem;
+class UIVMLogViewerWidget;
 class CMachine;
 
 
 /** QWidget subclass representing container for tool panes. */
-class UIToolPaneMachine : public QIWithRetranslateUI<QWidget>
+class UIToolPaneMachine : public QWidget
 {
     Q_OBJECT;
 
@@ -70,8 +69,8 @@ public:
     /** Closes tool of passed @a enmType, deletes one if exists. */
     void closeTool(ToolTypeMachine enmType);
 
-    /** Defines @a strError and switches to error details pane. */
-    void setDetailsError(const QString &strError);
+    /** Defines error @a strDetails and switches to Error pane. */
+    void setErrorDetails(const QString &strDetails);
 
     /** Defines current machine @a pItem. */
     void setCurrentItem(UIVirtualMachineItem *pItem);
@@ -82,11 +81,6 @@ public:
     /** Defines the @a comMachine object. */
     void setMachine(const CMachine &comMachine);
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
 private:
 
     /** Prepares all. */
@@ -96,9 +90,6 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Handles translation for Desktop pane. */
-    void retranslateDesktopPane();
-
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 
@@ -107,10 +98,10 @@ private:
 
     /** Holds the stacked-layout instance. */
     QStackedLayout      *m_pLayout;
-    /** Holds the Desktop pane instance. */
-    UIWelcomePane       *m_pPaneDesktop;
+    /** Holds the Error pane instance. */
+    UIErrorPane         *m_pPaneError;
     /** Holds the Details pane instance. */
-    UIDetails          *m_pPaneDetails;
+    UIDetails           *m_pPaneDetails;
     /** Holds the Snapshots pane instance. */
     UISnapshotPane      *m_pPaneSnapshots;
     /** Holds the Logviewer pane instance. */

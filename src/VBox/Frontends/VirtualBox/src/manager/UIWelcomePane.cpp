@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,8 @@
 
 /* Qt includes: */
 # include <QAction>
+# include <QApplication>
+# include <QEvent>
 # include <QGridLayout>
 # include <QHBoxLayout>
 # include <QLabel>
@@ -29,31 +31,14 @@
 # include <QScrollBar>
 # include <QStackedWidget>
 # include <QStyle>
-# include <QToolButton>
-# include <QUuid>
 # include <QVBoxLayout>
 
 /* GUI includes */
-# include "QIWithRetranslateUI.h"
 # include "UIWelcomePane.h"
 # include "VBoxUtils.h"
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
-
-/* Forward declarations: */
-class QEvent;
-class QGridLayout;
-class QHBoxLayout;
-class QIcon;
-class QLabel;
-class QPaintEvent;
-class QResizeEvent;
-class QScrollArea;
-class QString;
-class QUuid;
-class QVBoxLayout;
-class QWidget;
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -156,18 +141,14 @@ private:
   * 1. Text pane reflecting base information about VirtualBox,
   * 2. Error pane reflecting information about currently chosen
   *    inaccessible VM and allowing to operate over it. */
-class UIWelcomePanePrivate : public QIWithRetranslateUI<QStackedWidget>
+class UIWelcomePanePrivate : public QStackedWidget
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs private desktop pane passing @a pParent to the base-class.
-      * @param  pRefreshAction  Brings the refresh action reference. */
-    UIWelcomePanePrivate(QWidget *pParent, QAction *pRefreshAction);
-
-    /** Assigns @a strError and switches to error pane. */
-    void setError(const QString &strError);
+    /** Constructs private desktop pane passing @a pParent to the base-class. */
+    UIWelcomePanePrivate(QWidget *pParent);
 
     /** Defines a tools pane welcome @a strText. */
     void setToolsPaneText(const QString &strText);
@@ -188,9 +169,6 @@ protected:
     /** Handles translation event. */
     void retranslateUi();
 
-    /** Prepares error pane. */
-    void prepareErrorPane();
-
     /** Prepares tools pane. */
     void prepareToolsPane();
 
@@ -198,17 +176,6 @@ protected:
     void updatePixmap();
 
 private:
-
-    /** Holds the error pane container. */
-    QWidget *m_pErrBox;
-    /** Holds the error label instance. */
-    QLabel *m_pErrLabel;
-    /** Holds the error text-browser instance. */
-    QTextBrowser *m_pErrText;
-    /** Holds the VM refresh button instance. */
-    QToolButton *m_pRefreshButton;
-    /** Holds the VM refresh action reference. */
-    QAction *m_pRefreshAction;
 
     /** Holds the tools pane scroll-area instance. */
     UIScrollAreaTools *m_pScrollArea;
@@ -534,26 +501,10 @@ void UIWidgetTool::updatePixmap()
 *   Class UIWelcomePanePrivate implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIWelcomePanePrivate::UIWelcomePanePrivate(QWidget *pParent, QAction *pRefreshAction)
-    : QIWithRetranslateUI<QStackedWidget>(pParent)
-    , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
-    , m_pRefreshButton(0), m_pRefreshAction(pRefreshAction)
+UIWelcomePanePrivate::UIWelcomePanePrivate(QWidget *pParent)
+    : QStackedWidget(pParent)
     , m_pScrollArea(0), m_pToolsPane(0), m_pLayoutWidget(0), m_pLabelToolsPaneText(0), m_pLabelToolsPaneIcon(0)
 {
-    /* Translate finally: */
-    retranslateUi();
-}
-
-void UIWelcomePanePrivate::setError(const QString &strError)
-{
-    /* Prepare error pane if necessary: */
-    prepareErrorPane();
-
-    /* Assign corresponding text: */
-    m_pErrText->setText(strError);
-
-    /* Raise corresponding widget: */
-    setCurrentIndex(indexOf(m_pErrBox));
 }
 
 void UIWelcomePanePrivate::setToolsPaneText(const QString &strText)
@@ -630,82 +581,7 @@ bool UIWelcomePanePrivate::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QStackedWidget>::event(pEvent);
-}
-
-void UIWelcomePanePrivate::retranslateUi()
-{
-    /* Translate error-label text: */
-    if (m_pErrLabel)
-        m_pErrLabel->setText(QApplication::translate("UIDetailsPagePrivate",
-                                 "The selected virtual machine is <i>inaccessible</i>. "
-                                 "Please inspect the error message shown below and press the "
-                                 "<b>Refresh</b> button if you want to repeat the accessibility check:"));
-
-    /* Translate refresh button & action text: */
-    if (m_pRefreshAction && m_pRefreshButton)
-    {
-        m_pRefreshButton->setText(m_pRefreshAction->text());
-        m_pRefreshButton->setIcon(m_pRefreshAction->icon());
-        m_pRefreshButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    }
-}
-
-void UIWelcomePanePrivate::prepareErrorPane()
-{
-    if (m_pErrBox)
-        return;
-
-    /* Create error pane: */
-    m_pErrBox = new QWidget;
-
-    /* Create main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(m_pErrBox);
-#ifdef VBOX_WS_MAC
-    pMainLayout->setContentsMargins(4, 5, 5, 5);
-#else /* !VBOX_WS_MAC */
-    const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 3;
-    const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) / 3;
-    const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 3;
-    pMainLayout->setContentsMargins(iL, iT, iR, 0);
-#endif /* !VBOX_WS_MAC */
-
-    /* Create error label: */
-    m_pErrLabel = new QLabel(m_pErrBox);
-    m_pErrLabel->setWordWrap(true);
-    m_pErrLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    pMainLayout->addWidget(m_pErrLabel);
-
-    /* Create error text-browser: */
-    m_pErrText = new QTextBrowser(m_pErrBox);
-    m_pErrText->setFocusPolicy(Qt::StrongFocus);
-    m_pErrText->document()->setDefaultStyleSheet("a { text-decoration: none; }");
-    pMainLayout->addWidget(m_pErrText);
-
-    /* If refresh action was set: */
-    if (m_pRefreshAction)
-    {
-        /* Create refresh button: */
-        m_pRefreshButton = new QToolButton(m_pErrBox);
-        m_pRefreshButton->setFocusPolicy(Qt::StrongFocus);
-
-        /* Create refresh button layout: */
-        QHBoxLayout *pButtonLayout = new QHBoxLayout;
-        pMainLayout->addLayout(pButtonLayout);
-        pButtonLayout->addStretch();
-        pButtonLayout->addWidget(m_pRefreshButton);
-
-        /* Connect refresh button: */
-        connect(m_pRefreshButton, SIGNAL(clicked()), m_pRefreshAction, SIGNAL(triggered()));
-    }
-
-    pMainLayout->addStretch();
-
-    /* Add into the stack: */
-    addWidget(m_pErrBox);
-
-    /* Retranslate finally: */
-    retranslateUi();
+    return QStackedWidget::event(pEvent);
 }
 
 void UIWelcomePanePrivate::prepareToolsPane()
@@ -804,7 +680,7 @@ void UIWelcomePanePrivate::updatePixmap()
 *   Class UIWelcomePane implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIWelcomePane::UIWelcomePane(QAction *pRefreshAction /* = 0 */, QWidget *pParent /* = 0 */)
+UIWelcomePane::UIWelcomePane(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
 {
     /* Prepare main layout: */
@@ -812,15 +688,10 @@ UIWelcomePane::UIWelcomePane(QAction *pRefreshAction /* = 0 */, QWidget *pParent
     pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     /* Create desktop pane: */
-    m_pDesktopPrivate = new UIWelcomePanePrivate(this, pRefreshAction);
+    m_pDesktopPrivate = new UIWelcomePanePrivate(this);
 
     /* Add it to the layout: */
     pMainLayout->addWidget(m_pDesktopPrivate);
-}
-
-void UIWelcomePane::updateDetailsError(const QString &strError)
-{
-    m_pDesktopPrivate->setError(strError);
 }
 
 void UIWelcomePane::setToolsPaneText(const QString &strText)
@@ -843,5 +714,5 @@ void UIWelcomePane::removeToolDescriptions()
     m_pDesktopPrivate->removeToolDescriptions();
 }
 
-#include "UIWelcomePane.moc"
 
+#include "UIWelcomePane.moc"

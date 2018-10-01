@@ -275,7 +275,7 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
             if (pItem)
             {
                 /* The VM is inaccessible: */
-                m_pPaneToolsMachine->setDetailsError(UIErrorString::formatErrorInfo(pItem->accessError()));
+                m_pPaneToolsMachine->setErrorDetails(UIErrorString::formatErrorInfo(pItem->accessError()));
             }
 
             /* Update Details-pane (in any case): */

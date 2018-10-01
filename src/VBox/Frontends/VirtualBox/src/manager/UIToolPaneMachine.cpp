@@ -28,7 +28,7 @@
 
 /* GUI includes */
 # include "UIActionPoolSelector.h"
-# include "UIWelcomePane.h"
+# include "UIErrorPane.h"
 # include "UIDetails.h"
 # include "UIIconPool.h"
 # include "UISnapshotPane.h"
@@ -43,11 +43,11 @@
 
 
 UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pActionPool(pActionPool)
     , m_pItem(0)
     , m_pLayout(0)
-    , m_pPaneDesktop(0)
+    , m_pPaneError(0)
     , m_pPaneDetails(0)
     , m_pPaneSnapshots(0)
     , m_pPaneLogViewer(0)
@@ -99,18 +99,15 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
             case ToolTypeMachine_Error:
             {
                 /* Create Desktop pane: */
-                m_pPaneDesktop = new UIWelcomePane(m_pActionPool->action(UIActionIndexST_M_Group_S_Refresh));
-                if (m_pPaneDesktop)
+                m_pPaneError = new UIErrorPane(m_pActionPool->action(UIActionIndexST_M_Group_S_Refresh));
+                if (m_pPaneError)
                 {
                     /* Configure pane: */
-                    m_pPaneDesktop->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Error));
+                    m_pPaneError->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Error));
 
                     /* Add into layout: */
-                    m_pLayout->addWidget(m_pPaneDesktop);
-                    m_pLayout->setCurrentWidget(m_pPaneDesktop);
-
-                    /* Retranslate Desktop pane: */
-                    retranslateDesktopPane();
+                    m_pLayout->addWidget(m_pPaneError);
+                    m_pLayout->setCurrentWidget(m_pPaneError);
                 }
                 break;
             }
@@ -193,7 +190,7 @@ void UIToolPaneMachine::closeTool(ToolTypeMachine enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case ToolTypeMachine_Error:     m_pPaneDesktop = 0; break;
+            case ToolTypeMachine_Error:     m_pPaneError = 0; break;
             case ToolTypeMachine_Details:   m_pPaneDetails = 0; break;
             case ToolTypeMachine_Snapshots: m_pPaneSnapshots = 0; break;
             case ToolTypeMachine_Logs:      m_pPaneLogViewer = 0; break;
@@ -206,11 +203,11 @@ void UIToolPaneMachine::closeTool(ToolTypeMachine enmType)
     }
 }
 
-void UIToolPaneMachine::setDetailsError(const QString &strError)
+void UIToolPaneMachine::setErrorDetails(const QString &strDetails)
 {
-    /* Update desktop pane: */
-    if (m_pPaneDesktop)
-        m_pPaneDesktop->updateDetailsError(strError);
+    /* Update Error pane: */
+    if (m_pPaneError)
+        m_pPaneError->setErrorDetails(strDetails);
 }
 
 void UIToolPaneMachine::setCurrentItem(UIVirtualMachineItem *pItem)
@@ -218,18 +215,8 @@ void UIToolPaneMachine::setCurrentItem(UIVirtualMachineItem *pItem)
     if (m_pItem == pItem)
         return;
 
-    /* Do we need translation after that? */
-    const bool fTranslationRequired =  (!pItem &&  m_pItem)
-                                    || ( pItem && !m_pItem)
-                                    || (!pItem->accessible() &&  m_pItem->accessible())
-                                    || ( pItem->accessible() && !m_pItem->accessible());
-
     /* Remember new item: */
     m_pItem = pItem;
-
-    /* Retranslate if necessary: */
-    if (fTranslationRequired)
-        retranslateUi();
 }
 
 void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
@@ -255,21 +242,13 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
     }
 }
 
-void UIToolPaneMachine::retranslateUi()
-{
-    retranslateDesktopPane();
-}
-
 void UIToolPaneMachine::prepare()
 {
     /* Create stacked-layout: */
     m_pLayout = new QStackedLayout(this);
 
-    /* Create desktop pane: */
+    /* Create Details pane: */
     openTool(ToolTypeMachine_Details);
-
-    /* Apply language settings: */
-    retranslateUi();
 }
 
 void UIToolPaneMachine::cleanup()
@@ -280,72 +259,5 @@ void UIToolPaneMachine::cleanup()
         QWidget *pWidget = m_pLayout->widget(0);
         m_pLayout->removeWidget(pWidget);
         delete pWidget;
-    }
-}
-
-void UIToolPaneMachine::retranslateDesktopPane()
-{
-    /* Make sure pane exists: */
-    if (!m_pPaneDesktop)
-        return;
-
-    /* Translate Machine Tools welcome screen: */
-    if (!m_pItem || !m_pItem->accessible())
-    {
-        m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/welcome_200px.png"));
-        m_pPaneDesktop->setToolsPaneText(
-            tr("<h3>Welcome to VirtualBox!</h3>"
-               "<p>The left part of this window lists all virtual "
-               "machines and virtual machine groups on your computer. "
-               "The list is empty now because you haven't created any "
-               "virtual machines yet.</p>"
-               "<p>In order to create a new virtual machine, press the "
-               "<b>New</b> button in the main tool bar located at the "
-               "top of the window.</p>"
-               "<p>You can press the <b>%1</b> key to get instant help, or visit "
-               "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-               "for more information and latest news.</p>")
-               .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
-    }
-    else
-    {
-        m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_banner_machine_200px.png"));
-        m_pPaneDesktop->setToolsPaneText(
-            tr("<h3>Welcome to VirtualBox!</h3>"
-               "<p>The left part of this window lists all virtual "
-               "machines and virtual machine groups on your computer.</p>"
-               "<p>The right part of this window represents a set of "
-               "tools which are currently opened (or can be opened) for "
-               "the currently chosen machine. For a list of currently "
-               "available tools check the corresponding menu at the right "
-               "side of the main tool bar located at the top of the window. "
-               "This list will be extended with new tools in future releases.</p>"
-               "<p>You can press the <b>%1</b> key to get instant help, or visit "
-               "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-               "for more information and latest news.</p>")
-               .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
-    }
-
-    /* Wipe out the tool descriptions: */
-    m_pPaneDesktop->removeToolDescriptions();
-
-    /* Add tool descriptions: */
-    if (m_pItem && m_pItem->accessible())
-    {
-        QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Details);
-        m_pPaneDesktop->addToolDescription(pAction1,
-                                           tr("Tool to observe virtual machine (VM) details. "
-                                              "Reflects groups of properties for the currently chosen VM and allows "
-                                              "basic operations on certain properties (like the machine storage devices)."));
-        QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_Snapshots);
-        m_pPaneDesktop->addToolDescription(pAction2,
-                                           tr("Tool to control virtual machine (VM) snapshots. "
-                                              "Reflects snapshots created for the currently selected VM and allows "
-                                              "snapshot operations like create, remove, "
-                                              "restore (make current) and observe their properties. Allows to "
-                                              "edit snapshot attributes like name and description."));
-        QAction *pAction3 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer);
-        m_pPaneDesktop->addToolDescription(pAction3,
-                                           tr("Tool to display  virtual machine (VM) logs. "));
     }
 }

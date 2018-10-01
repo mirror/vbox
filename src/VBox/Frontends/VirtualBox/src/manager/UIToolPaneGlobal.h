@@ -58,9 +58,6 @@ public:
     /** Closes tool of passed @a enmType, deletes one if exists. */
     void closeTool(ToolTypeGlobal enmType);
 
-    /** Defines @a strError and switches to error details pane. */
-    void setDetailsError(const QString &strError);
-
 protected:
 
     /** Handles translation event. */

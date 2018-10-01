@@ -182,13 +182,6 @@ void UIToolPaneGlobal::closeTool(ToolTypeGlobal enmType)
     }
 }
 
-void UIToolPaneGlobal::setDetailsError(const QString &strError)
-{
-    /* Update desktop pane: */
-    if (m_pPaneDesktop)
-        m_pPaneDesktop->updateDetailsError(strError);
-}
-
 void UIToolPaneGlobal::retranslateUi()
 {
     retranslateDesktopPane();
