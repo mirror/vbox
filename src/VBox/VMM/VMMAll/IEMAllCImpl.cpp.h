@@ -6676,6 +6676,12 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
+    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_HLT_EXIT))
+    {
+        Log2(("hlt: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_HLT, cbInstr);
+    }
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_HLT))
     {
         Log2(("hlt: Guest intercept -> #VMEXIT\n"));
