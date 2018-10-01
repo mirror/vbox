@@ -133,7 +133,7 @@ void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
         && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
         m_pPaneToolsMachine->setItems(currentItems());
     /* If that was 'Snapshot' or 'LogViewer' => pass there current or null machine: */
-    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_LogViewer)
+    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_Logs)
     {
         UIVirtualMachineItem *pItem = currentItem();
         m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
@@ -253,8 +253,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
         /* If current item exists & accessible: */
         if (pItem && pItem->accessible())
         {
-            /* If Desktop pane is chosen currently => open tool currently chosen in Tools-pane: */
-            if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Desktop)
+            /* If Error pane is chosen currently => open tool currently chosen in Tools-pane: */
+            if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Error)
                 sltHandleToolsPaneIndexChange();
 
             /* Update Details-pane (if requested): */
@@ -267,8 +267,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
         }
         else
         {
-            /* Make sure Desktop-pane raised: */
-            m_pPaneToolsMachine->openTool(ToolTypeMachine_Desktop);
+            /* Make sure Error pane raised: */
+            m_pPaneToolsMachine->openTool(ToolTypeMachine_Error);
 
             /* Note that the machine becomes inaccessible (or if the last VM gets
              * deleted), we have to update all fields, ignoring input arguments. */
@@ -331,13 +331,13 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
         {
             ToolTypeGlobal enmType = ToolTypeGlobal_Invalid;
             if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Global))
-                enmType = ToolTypeGlobal_Desktop;
+                enmType = ToolTypeGlobal_Media;
             else
             {
                 switch (m_pPaneTools->toolsType())
                 {
-                    case UIToolsType_Media:   enmType = ToolTypeGlobal_VirtualMedia; break;
-                    case UIToolsType_Network: enmType = ToolTypeGlobal_HostNetwork; break;
+                    case UIToolsType_Media:   enmType = ToolTypeGlobal_Media; break;
+                    case UIToolsType_Network: enmType = ToolTypeGlobal_Network; break;
                     default: break;
                 }
             }
@@ -349,14 +349,14 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
         {
             ToolTypeMachine enmType = ToolTypeMachine_Invalid;
             if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Machine))
-                enmType = ToolTypeMachine_Desktop;
+                enmType = ToolTypeMachine_Details;
             else
             {
                 switch (m_pPaneTools->toolsType())
                 {
                     case UIToolsType_Details:   enmType = ToolTypeMachine_Details; break;
                     case UIToolsType_Snapshots: enmType = ToolTypeMachine_Snapshots; break;
-                    case UIToolsType_Logs:      enmType = ToolTypeMachine_LogViewer; break;
+                    case UIToolsType_Logs:      enmType = ToolTypeMachine_Logs; break;
                     default: break;
                 }
             }
@@ -602,12 +602,12 @@ void UIVirtualBoxManagerWidget::updateToolbar()
 
     /* Separator: */
     if (   isToolOpened(ToolTypeMachine_Snapshots)
-        || isToolOpened(ToolTypeMachine_LogViewer)
-        || isToolOpened(ToolTypeGlobal_VirtualMedia)
-        || isToolOpened(ToolTypeGlobal_HostNetwork))
+        || isToolOpened(ToolTypeMachine_Logs)
+        || isToolOpened(ToolTypeGlobal_Media)
+        || isToolOpened(ToolTypeGlobal_Network))
         m_pToolBar->addSeparator();
 
-    /* Add 'Snapshot' actions block: */
+    /* Add 'Snapshots' actions block: */
     if (isToolOpened(ToolTypeMachine_Snapshots))
     {
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
@@ -617,8 +617,8 @@ void UIVirtualBoxManagerWidget::updateToolbar()
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
     }
 
-    /* Add 'Log Viewer' actions block: */
-    if (isToolOpened(ToolTypeMachine_LogViewer))
+    /* Add 'Logs' actions block: */
+    if (isToolOpened(ToolTypeMachine_Logs))
     {
         m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Save));
         m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Find));
@@ -628,8 +628,8 @@ void UIVirtualBoxManagerWidget::updateToolbar()
         m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Refresh));
     }
 
-    /* Add 'Medium' actions block: */
-    if (isToolOpened(ToolTypeGlobal_VirtualMedia))
+    /* Add 'Media' actions block: */
+    if (isToolOpened(ToolTypeGlobal_Media))
     {
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Copy));
@@ -641,7 +641,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
     }
 
     /* Add 'Network' actions block: */
-    if (isToolOpened(ToolTypeGlobal_HostNetwork))
+    if (isToolOpened(ToolTypeGlobal_Network))
     {
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Remove));

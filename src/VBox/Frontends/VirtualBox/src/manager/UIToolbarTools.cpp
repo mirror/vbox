@@ -209,6 +209,28 @@ void UIToolbarTools::prepare()
 
 void UIToolbarTools::prepareMenu()
 {
+    /* Configure 'Global' menu: */
+    UIMenu *pMenuGlobal = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global)->menu();
+    if (pMenuGlobal)
+    {
+        /* Add 'Virtual Media Manager' action: */
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager), &UIAction::triggered,
+                this, &UIToolbarTools::sltHandleOpenToolGlobal);
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager)
+            ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_Media));
+
+        /* Add 'Host Network Manager' action: */
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager), &UIAction::triggered,
+                this, &UIToolbarTools::sltHandleOpenToolGlobal);
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager)
+            ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_Network));
+    }
+
+    /* Configure 'Global' toggle action: */
+    m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->setMenu(pMenuGlobal);
+
     /* Configure 'Machine' menu: */
     UIMenu *pMenuMachine = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine)->menu();
     if (pMenuMachine)
@@ -232,33 +254,11 @@ void UIToolbarTools::prepareMenu()
         connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer), &UIAction::triggered,
                 this, &UIToolbarTools::sltHandleOpenToolMachine);
         m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_S_LogViewer)
-            ->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_LogViewer));
+            ->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_Logs));
     }
 
     /* Configure 'Machine' toggle action: */
     m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->setMenu(pMenuMachine);
-
-    /* Configure 'Global' menu: */
-    UIMenu *pMenuGlobal = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global)->menu();
-    if (pMenuGlobal)
-    {
-        /* Add 'Virtual Media Manager' action: */
-        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager));
-        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager), &UIAction::triggered,
-                this, &UIToolbarTools::sltHandleOpenToolGlobal);
-        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager)
-            ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_VirtualMedia));
-
-        /* Add 'Host Network Manager' action: */
-        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager));
-        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager), &UIAction::triggered,
-                this, &UIToolbarTools::sltHandleOpenToolGlobal);
-        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager)
-            ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_HostNetwork));
-    }
-
-    /* Configure 'Global' toggle action: */
-    m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->setMenu(pMenuGlobal);
 }
 
 void UIToolbarTools::prepareWidgets()

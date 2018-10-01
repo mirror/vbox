@@ -652,6 +652,8 @@ enum WizardMode
 };
 
 
+#ifndef VBOX_GUI_WITH_NEW_MANAGER
+
 /** Selector UI: Machine tool types. */
 enum ToolTypeMachine
 {
@@ -673,6 +675,56 @@ enum ToolTypeGlobal
     ToolTypeGlobal_HostNetwork,
 };
 Q_DECLARE_METATYPE(ToolTypeGlobal);
+
+#else /* VBOX_GUI_WITH_NEW_MANAGER */
+
+/** Tool item classes. */
+enum UIToolsClass
+{
+    UIToolsClass_Invalid,
+    UIToolsClass_Global,
+    UIToolsClass_Machine
+};
+
+
+/** Tool item types. */
+enum UIToolsType
+{
+    UIToolsType_Invalid,
+    /* Global types: */
+    UIToolsType_Welcome,
+    UIToolsType_Media,
+    UIToolsType_Network,
+    /* Machine types: */
+    UIToolsType_Details,
+    UIToolsType_Snapshots,
+    UIToolsType_Logs,
+};
+
+
+/** Selector UI: Global tool types. */
+enum ToolTypeGlobal
+{
+    ToolTypeGlobal_Invalid,
+    ToolTypeGlobal_Welcome,
+    ToolTypeGlobal_Media,
+    ToolTypeGlobal_Network,
+};
+Q_DECLARE_METATYPE(ToolTypeGlobal);
+
+
+/** Selector UI: Machine tool types. */
+enum ToolTypeMachine
+{
+    ToolTypeMachine_Invalid,
+    ToolTypeMachine_Error,
+    ToolTypeMachine_Details,
+    ToolTypeMachine_Snapshots,
+    ToolTypeMachine_Logs
+};
+Q_DECLARE_METATYPE(ToolTypeMachine);
+
+#endif /* VBOX_GUI_WITH_NEW_MANAGER */
 
 
 /** Selector UI: Details-element types. */
@@ -828,31 +880,6 @@ enum MaxGuestResolutionPolicy
     /** Anything up to host-screen available space. */
     MaxGuestResolutionPolicy_Automatic
 };
-
-
-#ifdef VBOX_GUI_WITH_NEW_MANAGER
-/** Tool item classes. */
-enum UIToolsClass
-{
-    UIToolsClass_Invalid,
-    UIToolsClass_Global,
-    UIToolsClass_Machine
-};
-
-
-/** Tool item types. */
-enum UIToolsType
-{
-    UIToolsType_Invalid,
-    /* Global types: */
-    UIToolsType_Media,
-    UIToolsType_Network,
-    /* Machine types: */
-    UIToolsType_Details,
-    UIToolsType_Snapshots,
-    UIToolsType_Logs,
-};
-#endif /* VBOX_GUI_WITH_NEW_MANAGER */
 
 
 #endif /* !___UIExtraDataDefs_h___ */

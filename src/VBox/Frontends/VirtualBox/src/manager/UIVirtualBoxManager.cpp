@@ -285,7 +285,7 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
     /* Make sure MM window/tool is not opened,
      * otherwise user sees everything himself: */
     if (   m_pManagerVirtualMedia
-        || m_pWidget->isToolOpened(ToolTypeGlobal_VirtualMedia))
+        || m_pWidget->isToolOpened(ToolTypeGlobal_Media))
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -385,9 +385,9 @@ void UIVirtualBoxManager::sltHandleStateChange(const QString &)
 void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isToolOpened(ToolTypeGlobal_VirtualMedia))
+    if (m_pWidget->isToolOpened(ToolTypeGlobal_Media))
     {
-        m_pWidget->switchToTool(ToolTypeGlobal_VirtualMedia);
+        m_pWidget->switchToTool(ToolTypeGlobal_Media);
         return;
     }
 
@@ -415,9 +415,9 @@ void UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow()
 void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isToolOpened(ToolTypeGlobal_HostNetwork))
+    if (m_pWidget->isToolOpened(ToolTypeGlobal_Network))
     {
-        m_pWidget->switchToTool(ToolTypeGlobal_HostNetwork);
+        m_pWidget->switchToTool(ToolTypeGlobal_Network);
         return;
     }
 
@@ -1016,9 +1016,9 @@ void UIVirtualBoxManager::sltOpenMachineLogDialog()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* First check if a logviewer is already opened in embedded mode: */
-    if (m_pWidget->isToolOpened(ToolTypeMachine_LogViewer))
+    if (m_pWidget->isToolOpened(ToolTypeMachine_Logs))
     {
-        m_pWidget->switchToTool(ToolTypeMachine_LogViewer);
+        m_pWidget->switchToTool(ToolTypeMachine_Logs);
         return;
     }
 
@@ -1992,24 +1992,24 @@ void UIVirtualBoxManager::updateActionsVisibility()
     m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
     m_pGroupMenuAction->setVisible(fMachineOrGroupMenuShown && !fMachineMenuShown);
 
-    /* Determine whether Snapshot actions should be visible: */
+    /* Determine whether Media actions should be visible: */
+    const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Media;
+    const bool fMediumActionsShown = fMediumMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_Media);
+    m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
+
+    /* Determine whether Network actions should be visible: */
+    const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Network;
+    const bool fNetworkActionsShown = fNetworkMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_Network);
+    m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
+
+    /* Determine whether Snapshots actions should be visible: */
     const bool fSnapshotMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
     m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
 
-    /* Determine whether LogViewer actions should be visible: */
-    const bool fLogViewerMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_LogViewer;
-    const bool fLogViewerActionsShown = fLogViewerMenuShown || !m_pWidget->isToolOpened(ToolTypeMachine_LogViewer);
+    /* Determine whether Logs actions should be visible: */
+    const bool fLogViewerMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_Logs;
+    const bool fLogViewerActionsShown = fLogViewerMenuShown || !m_pWidget->isToolOpened(ToolTypeMachine_Logs);
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
-
-    /* Determine whether VirtualMediaManager actions should be visible: */
-    const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_VirtualMedia;
-    const bool fMediumActionsShown = fMediumMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_VirtualMedia);
-    m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
-
-    /* Determine whether HostNetworkManager actions should be visible: */
-    const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_HostNetwork;
-    const bool fNetworkActionsShown = fNetworkMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_HostNetwork);
-    m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
 
     /* Hide action shortcuts: */
     if (!fMachineMenuShown)

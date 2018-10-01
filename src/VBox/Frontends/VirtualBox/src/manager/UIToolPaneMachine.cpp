@@ -96,14 +96,14 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
         /* Create, remember, append corresponding stacked widget: */
         switch (enmType)
         {
-            case ToolTypeMachine_Desktop:
+            case ToolTypeMachine_Error:
             {
                 /* Create Desktop pane: */
                 m_pPaneDesktop = new UIWelcomePane(m_pActionPool->action(UIActionIndexST_M_Group_S_Refresh));
                 if (m_pPaneDesktop)
                 {
                     /* Configure pane: */
-                    m_pPaneDesktop->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Desktop));
+                    m_pPaneDesktop->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Error));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneDesktop);
@@ -153,7 +153,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
                 }
                 break;
             }
-            case ToolTypeMachine_LogViewer:
+            case ToolTypeMachine_Logs:
             {
                 /* Create the Logviewer pane: */
                 m_pPaneLogViewer = new UIVMLogViewerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -165,7 +165,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_LogViewer));
+                    m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Logs));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneLogViewer);
@@ -193,10 +193,10 @@ void UIToolPaneMachine::closeTool(ToolTypeMachine enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case ToolTypeMachine_Desktop:   m_pPaneDesktop = 0; break;
+            case ToolTypeMachine_Error:     m_pPaneDesktop = 0; break;
             case ToolTypeMachine_Details:   m_pPaneDetails = 0; break;
             case ToolTypeMachine_Snapshots: m_pPaneSnapshots = 0; break;
-            case ToolTypeMachine_LogViewer: m_pPaneLogViewer = 0; break;
+            case ToolTypeMachine_Logs:      m_pPaneLogViewer = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -248,7 +248,7 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
         m_pPaneSnapshots->setMachine(comMachine);
     }
     /* Update logviewer pane is it is open: */
-    if (isToolOpened(ToolTypeMachine_LogViewer))
+    if (isToolOpened(ToolTypeMachine_Logs))
     {
         AssertPtrReturnVoid(m_pPaneLogViewer);
         m_pPaneLogViewer->setMachine(comMachine);

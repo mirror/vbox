@@ -92,14 +92,14 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
         /* Create, remember, append corresponding stacked widget: */
         switch (enmType)
         {
-            case ToolTypeGlobal_Desktop:
+            case ToolTypeGlobal_Welcome:
             {
                 /* Create Desktop pane: */
                 m_pPaneDesktop = new UIWelcomePane;
                 if (m_pPaneDesktop)
                 {
                     /* Configure pane: */
-                    m_pPaneDesktop->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Desktop));
+                    m_pPaneDesktop->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Welcome));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneDesktop);
@@ -110,7 +110,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 }
                 break;
             }
-            case ToolTypeGlobal_VirtualMedia:
+            case ToolTypeGlobal_Media:
             {
                 /* Create Virtual Media Manager: */
                 m_pPaneMedia = new UIMediumManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -122,7 +122,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneMedia->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_VirtualMedia));
+                    m_pPaneMedia->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Media));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneMedia);
@@ -130,7 +130,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 }
                 break;
             }
-            case ToolTypeGlobal_HostNetwork:
+            case ToolTypeGlobal_Network:
             {
                 /* Create Host Network Manager: */
                 m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -142,7 +142,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneNetwork->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_HostNetwork));
+                    m_pPaneNetwork->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Network));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneNetwork);
@@ -170,9 +170,9 @@ void UIToolPaneGlobal::closeTool(ToolTypeGlobal enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case ToolTypeGlobal_Desktop:      m_pPaneDesktop = 0; break;
-            case ToolTypeGlobal_VirtualMedia: m_pPaneMedia = 0; break;
-            case ToolTypeGlobal_HostNetwork:  m_pPaneNetwork = 0; break;
+            case ToolTypeGlobal_Welcome: m_pPaneDesktop = 0; break;
+            case ToolTypeGlobal_Media:   m_pPaneMedia = 0; break;
+            case ToolTypeGlobal_Network: m_pPaneNetwork = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -200,7 +200,7 @@ void UIToolPaneGlobal::prepare()
     m_pLayout = new QStackedLayout(this);
 
     /* Create desktop pane: */
-    openTool(ToolTypeGlobal_VirtualMedia);
+    openTool(ToolTypeGlobal_Media);
 
     /* Apply language settings: */
     retranslateUi();
