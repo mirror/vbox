@@ -535,31 +535,31 @@ void UIToolsModel::cleanup()
 /* static */
 QString UIToolsModel::typeToString(UIToolsType enmType)
 {
-    switch (enmType)
-    {
-        /* Global classes: */
-        case UIToolsType_Media:     return "Media";
-        case UIToolsType_Network:   return "Network";
-        /* Machine classes: */
-        case UIToolsType_Details:   return "Details";
-        case UIToolsType_Snapshots: return "Snapshots";
-        case UIToolsType_Logs:      return "Logs";
-        default: break;
-    }
-    return QString();
+    QMap<UIToolsType, QString> values;
+    /* Global classes: */
+    values[UIToolsType_Media]     = "Media";
+    values[UIToolsType_Network]   = "Network";
+    /* Machine classes: */
+    values[UIToolsType_Details]   = "Details";
+    values[UIToolsType_Snapshots] = "Snapshots";
+    values[UIToolsType_Logs]      = "Logs";
+    /* Return value, null-string by default: */
+    return values.value(enmType, QString());
 }
 
 /* static */
 UIToolsType UIToolsModel::typeFromString(const QString &strType)
 {
+    QMap<QString, UIToolsType> values;
     /* Global classes: */
-    if      (strType == "Media")     return UIToolsType_Media;
-    else if (strType == "Network")   return UIToolsType_Network;
+    values["Media"]     = UIToolsType_Media;
+    values["Network"]   = UIToolsType_Network;
     /* Machine classes: */
-    else if (strType == "Details")   return UIToolsType_Details;
-    else if (strType == "Snapshots") return UIToolsType_Snapshots;
-    else if (strType == "Logs")      return UIToolsType_Logs;
-    return UIToolsType_Invalid;
+    values["Details"]   = UIToolsType_Details;
+    values["Snapshots"] = UIToolsType_Snapshots;
+    values["Logs"]      = UIToolsType_Logs;
+    /* Return value, UIToolsType_Invalid by default: */
+    return values.value(strType, UIToolsType_Invalid);
 }
 
 /* static */
