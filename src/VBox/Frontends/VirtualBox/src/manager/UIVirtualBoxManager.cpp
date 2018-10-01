@@ -472,7 +472,6 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
 {
     /* Get selected items: */
     QList<UIVirtualMachineItem*> items = currentItems();
-    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* Populate the list of VM names: */
     QStringList names;
@@ -1987,10 +1986,9 @@ void UIVirtualBoxManager::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
     const bool fGlobalMenuShown = m_pWidget->isGlobalItemSelected();
-    const bool fMachineOrGroupMenuShown = m_pWidget->isMachineItemSelected() || m_pWidget->isGroupItemSelected();
     const bool fMachineMenuShown = !isSingleGroupSelected();
-    m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
-    m_pGroupMenuAction->setVisible(fMachineOrGroupMenuShown && !fMachineMenuShown);
+    m_pMachineMenuAction->setVisible(fMachineMenuShown);
+    m_pGroupMenuAction->setVisible(!fMachineMenuShown);
 
     /* Determine whether Media actions should be visible: */
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Media;
@@ -2003,11 +2001,11 @@ void UIVirtualBoxManager::updateActionsVisibility()
     m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
 
     /* Determine whether Snapshots actions should be visible: */
-    const bool fSnapshotMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
+    const bool fSnapshotMenuShown = m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
     m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
 
     /* Determine whether Logs actions should be visible: */
-    const bool fLogViewerMenuShown = fMachineOrGroupMenuShown && m_pWidget->currentMachineTool() == ToolTypeMachine_Logs;
+    const bool fLogViewerMenuShown = m_pWidget->currentMachineTool() == ToolTypeMachine_Logs;
     const bool fLogViewerActionsShown = fLogViewerMenuShown || !m_pWidget->isToolOpened(ToolTypeMachine_Logs);
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
 
@@ -2020,18 +2018,14 @@ void UIVirtualBoxManager::updateActionsVisibility()
             pAction->hideShortcut();
 
     /* Update actions visibility: */
-    foreach (UIAction *pAction, m_machineActions)
-        pAction->setVisible(fMachineOrGroupMenuShown);
-    foreach (UIAction *pAction, m_groupActions)
-        pAction->setVisible(fMachineOrGroupMenuShown);
-    foreach (UIAction *pAction, m_snapshotActions)
-        pAction->setVisible(fSnapshotMenuShown);
-    foreach (UIAction *pAction, m_logViewerActions)
-        pAction->setVisible(fLogViewerActionsShown);
     foreach (UIAction *pAction, m_virtualMediaManagerActions)
         pAction->setVisible(fMediumActionsShown);
     foreach (UIAction *pAction, m_hostNetworkManagerActions)
         pAction->setVisible(fNetworkActionsShown);
+    foreach (UIAction *pAction, m_snapshotActions)
+        pAction->setVisible(fSnapshotMenuShown);
+    foreach (UIAction *pAction, m_logViewerActions)
+        pAction->setVisible(fLogViewerActionsShown);
 
     /* Show action shortcuts: */
     if (fMachineMenuShown)
