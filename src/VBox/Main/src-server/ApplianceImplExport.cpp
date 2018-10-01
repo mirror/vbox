@@ -2496,7 +2496,8 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
 
             cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
         } else {
-            /// @todo Fail here with user notification. We do export 1 VM only        }
+            /// @todo Fail here with user notification. We do export 1 VM only
+        }
     }
 #endif
 
