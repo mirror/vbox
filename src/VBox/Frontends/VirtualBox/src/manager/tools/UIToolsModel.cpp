@@ -427,7 +427,7 @@ void UIToolsModel::prepareItems()
     icons << UIIconPool::iconSet(":/host_iface_manager_22px.png");
     icons << UIIconPool::iconSet(":/machine_details_manager_22px.png");
     icons << UIIconPool::iconSet(":/snapshot_manager_22px.png");
-    icons << UIIconPool::iconSet(":/log_viewer_find_22px.png");
+    icons << UIIconPool::iconSet(":/vm_show_logs_22px.png");
 
     /* Prepare names: */
     QList<QString> names;
