@@ -24,7 +24,6 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
-#include "UIGDetailsItem.h"
 
 /* Forward declarations: */
 class QStyleOptionViewItem;

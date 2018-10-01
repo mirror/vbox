@@ -34,7 +34,6 @@
 # include "VBoxGlobal.h"
 # include "UIConverter.h"
 # include "UIMessageCenter.h"
-# include "UISelectorWindow.h"
 # include "UIProgressDialog.h"
 # include "UIErrorString.h"
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER

@@ -42,7 +42,6 @@
 # include "UIGuestControlWidget.h"
 # include "UIInformationRuntime.h"
 # include "UIMachine.h"
-# include "UIVMItem.h"
 
 /* COM includes: */
 # include "COMEnums.h"
