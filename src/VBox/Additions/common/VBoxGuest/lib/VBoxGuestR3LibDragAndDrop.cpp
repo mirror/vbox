@@ -1561,8 +1561,8 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
  */
 static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
 {
-    AssertPtrReturn(pObj,                                   	  VERR_INVALID_POINTER);
-    AssertPtrReturn(pCtx,                              		      VERR_INVALID_POINTER);
+    AssertPtrReturn(pObj,                                         VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,                                         VERR_INVALID_POINTER);
     AssertReturn(pObj->GetType() == DnDURIObject::Type_Directory, VERR_INVALID_PARAMETER);
 
     RTCString strPath = pObj->GetDestPath();
