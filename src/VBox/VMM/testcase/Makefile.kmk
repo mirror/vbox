@@ -407,24 +407,26 @@ ifdef VBOX_WITH_RAW_MODE
 endif # VBOX_WITH_RAW_MODE
 
 
-#
-# Special NEM host testcase.
-#
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), $(if-expr "$(USERNAME)" == "bird",darwin.amd64 linux.amd64,) win.amd64)
- PROGRAMS += NemRawBench-1
- NemRawBench-1_TEMPLATE = VBoxR3Static
- NemRawBench-1_SOURCES = NemRawBench-1.cpp
- NemRawBench-1_BLD_TYPE = release
- NemRawBench-1_INCS.win = \
- 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
- 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
- NemRawBench-1_CXXFLAGS.darwin = \
- 	-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform//Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks
- #NemRawBench-1_LDFLAGS.darwin =  \
- #	-F/System/Library/Frameworks \
- #	-framework Hypervisor
- NemRawBench-1_LDFLAGS.darwin = \
- 	/System/Library/Frameworks/Hypervisor.framework/Hypervisor
+if defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
+ #
+ # Special NEM host testcase.
+ #
+ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), $(if-expr "$(USERNAME)" == "bird",darwin.amd64 linux.amd64,) win.amd64)
+  PROGRAMS += NemRawBench-1
+  NemRawBench-1_TEMPLATE = VBoxR3Static
+  NemRawBench-1_SOURCES = NemRawBench-1.cpp
+  NemRawBench-1_BLD_TYPE = release
+  NemRawBench-1_INCS.win = \
+  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
+  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
+  NemRawBench-1_CXXFLAGS.darwin = \
+  	-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform//Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks
+  #NemRawBench-1_LDFLAGS.darwin =  \
+  #	-F/System/Library/Frameworks \
+  #	-framework Hypervisor
+  NemRawBench-1_LDFLAGS.darwin = \
+  	/System/Library/Frameworks/Hypervisor.framework/Hypervisor
+ endif
 endif
 
 
