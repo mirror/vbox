@@ -407,7 +407,7 @@ ifdef VBOX_WITH_RAW_MODE
 endif # VBOX_WITH_RAW_MODE
 
 
-if defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
+if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  #
  # Special NEM host testcase.
  #
