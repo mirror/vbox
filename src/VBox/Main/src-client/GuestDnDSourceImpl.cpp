@@ -780,14 +780,14 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
             if (    pObj->IsOpen()
                 && !pObj->IsComplete())
             {
-                AssertMsgFailed(("Object '%s' not complete yet\n", pObj->GetDestPath().c_str()));
+                AssertMsgFailed(("Object '%s' not complete yet\n", pObj->GetDestPathAbs().c_str()));
                 rc = VERR_WRONG_ORDER;
                 break;
             }
 
             if (pObj->IsOpen()) /* File already opened? */
             {
-                AssertMsgFailed(("Current opened object is '%s', close this first\n", pObj->GetDestPath().c_str()));
+                AssertMsgFailed(("Current opened object is '%s', close this first\n", pObj->GetDestPathAbs().c_str()));
                 rc = VERR_WRONG_ORDER;
                 break;
             }
@@ -845,7 +845,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
 
             /** @todo Unescpae path before printing. */
             LogRel2(("DnD: Transferring guest file '%s' to host (%RU64 bytes, mode 0x%x)\n",
-                     pObj->GetDestPath().c_str(), pObj->GetSize(), pObj->GetMode()));
+                     pObj->GetDestPathAbs().c_str(), pObj->GetSize(), pObj->GetMode()));
 
             /** @todo Set progress object title to current file being transferred? */
 
@@ -856,7 +856,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
         if (RT_FAILURE(rc))
         {
             LogRel2(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n",
-                     pObj->GetDestPath().c_str(), rc));
+                     pObj->GetDestPathAbs().c_str(), rc));
             break;
         }
 
@@ -896,14 +896,14 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
 
         if (pObj->IsComplete())
         {
-            LogFlowFunc(("Warning: Object '%s' already completed\n", pObj->GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Object '%s' already completed\n", pObj->GetDestPathAbs().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
 
         if (!pObj->IsOpen()) /* File opened on host? */
         {
-            LogFlowFunc(("Warning: Object '%s' not opened\n", pObj->GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Object '%s' not opened\n", pObj->GetDestPathAbs().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
@@ -930,7 +930,7 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
             if (pObj->IsComplete())
             {
                 /** @todo Sanitize path. */
-                LogRel2(("DnD: File transfer to host complete: %s\n", pObj->GetDestPath().c_str()));
+                LogRel2(("DnD: File transfer to host complete: %s\n", pObj->GetDestPathAbs().c_str()));
                 pCtx->mURI.processObject(*pObj);
                 objCtx.reset();
             }
@@ -938,7 +938,7 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
         else
         {
             /** @todo What to do when the host's disk is full? */
-            LogRel(("DnD: Error writing guest file to host to '%s': %Rrc\n", pObj->GetDestPath().c_str(), rc));
+            LogRel(("DnD: Error writing guest file to host to '%s': %Rrc\n", pObj->GetDestPathAbs().c_str(), rc));
         }
 
     } while (0);

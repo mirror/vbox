@@ -1565,7 +1565,7 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     AssertPtrReturn(pCtx,                                         VERR_INVALID_POINTER);
     AssertReturn(pObj->GetType() == DnDURIObject::Type_Directory, VERR_INVALID_PARAMETER);
 
-    RTCString strPath = pObj->GetDestPath();
+    RTCString strPath = pObj->GetDestPathAbs();
     LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
                  strPath.c_str(), strPath.length(), pObj->GetMode()));
 
@@ -1607,7 +1607,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     if (!pvBuf)
         return VERR_NO_MEMORY;
 
-    RTCString strPath = pObj->GetDestPath();
+    RTCString strPath = pObj->GetDestPathAbs();
 
     LogFlowFunc(("strFile=%s (%zu), cbSize=%RU64, fMode=0x%x\n", strPath.c_str(), strPath.length(),
                  pObj->GetSize(), pObj->GetMode()));

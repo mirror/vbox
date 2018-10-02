@@ -903,7 +903,7 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCt
     DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
-    RTCString strPath = pObj->GetDestPath();
+    RTCString strPath = pObj->GetDestPathAbs();
     if (strPath.isEmpty())
         return VERR_INVALID_PARAMETER;
     if (strPath.length() >= RTPATH_MAX) /* Note: Maximum is RTPATH_MAX on guest side. */
@@ -930,7 +930,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
-    RTCString strPathSrc = pObj->GetSourcePath();
+    RTCString strPathSrc = pObj->GetSourcePathAbs();
     if (strPathSrc.isEmpty())
         return VERR_INVALID_PARAMETER;
 
@@ -964,8 +964,8 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
                  */
                 pMsg->setType(HOST_DND_HG_SND_FILE_HDR);
                 pMsg->setNextUInt32(0); /** @todo ContextID not used yet. */
-                pMsg->setNextString(pObj->GetDestPath().c_str());                  /* pvName */
-                pMsg->setNextUInt32((uint32_t)(pObj->GetDestPath().length() + 1)); /* cbName */
+                pMsg->setNextString(pObj->GetDestPathAbs().c_str());                  /* pvName */
+                pMsg->setNextUInt32((uint32_t)(pObj->GetDestPathAbs().length() + 1)); /* cbName */
                 pMsg->setNextUInt32(0);                                            /* uFlags */
                 pMsg->setNextUInt32(pObj->GetMode());                              /* fMode */
                 pMsg->setNextUInt64(pObj->GetSize());                              /* uSize */
@@ -1025,8 +1025,8 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
     if (mDataBase.m_uProtocolVersion <= 1)
     {
-        pMsg->setNextString(pObj->GetDestPath().c_str());                  /* pvName */
-        pMsg->setNextUInt32((uint32_t)(pObj->GetDestPath().length() + 1)); /* cbName */
+        pMsg->setNextString(pObj->GetDestPathAbs().c_str());                  /* pvName */
+        pMsg->setNextUInt32((uint32_t)(pObj->GetDestPathAbs().length() + 1)); /* cbName */
     }
     else if (mDataBase.m_uProtocolVersion >= 2)
     {
@@ -1062,8 +1062,8 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
 
         if (pObj->IsComplete()) /* Done reading? */
         {
-            LogRel2(("DnD: File transfer to guest complete: %s\n", pObj->GetSourcePath().c_str()));
-            LogFlowFunc(("File '%s' complete\n", pObj->GetSourcePath().c_str()));
+            LogRel2(("DnD: File transfer to guest complete: %s\n", pObj->GetSourcePathAbs().c_str()));
+            LogFlowFunc(("File '%s' complete\n", pObj->GetSourcePathAbs().c_str()));
 
             /* DnDURIObject::Read() returns VINF_EOF when finished reading the entire fire,
              * but we don't want this here -- so just override this with VINF_SUCCESS. */
@@ -1466,7 +1466,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
 
     uint32_t fMode = pCurObj->GetMode();
     LogRel3(("DnD: Processing: srcPath=%s, dstPath=%s, fMode=0x%x, cbSize=%RU32, fIsDir=%RTbool, fIsFile=%RTbool\n",
-             pCurObj->GetSourcePath().c_str(), pCurObj->GetDestPath().c_str(),
+             pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str(),
              fMode, pCurObj->GetSize(),
              RTFS_IS_DIRECTORY(fMode), RTFS_IS_FILE(fMode)));
 
@@ -1481,7 +1481,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     else
     {
         AssertMsgFailed(("fMode=0x%x is not supported for srcPath=%s, dstPath=%s\n",
-                         fMode, pCurObj->GetSourcePath().c_str(), pCurObj->GetDestPath().c_str()));
+                         fMode, pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str()));
         rc = VERR_NOT_SUPPORTED;
     }
 
@@ -1494,7 +1494,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
 
     if (fRemove)
     {
-        LogFlowFunc(("Removing \"%s\" from list, rc=%Rrc\n", pCurObj->GetSourcePath().c_str(), rc));
+        LogFlowFunc(("Removing \"%s\" from list, rc=%Rrc\n", pCurObj->GetSourcePathAbs().c_str(), rc));
         pCtx->mURI.removeObjCurrent();
     }
 
