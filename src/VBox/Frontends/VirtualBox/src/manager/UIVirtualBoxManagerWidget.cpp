@@ -331,7 +331,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
         {
             ToolTypeGlobal enmType = ToolTypeGlobal_Invalid;
             if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Global))
-                enmType = ToolTypeGlobal_Media;
+                enmType = ToolTypeGlobal_Welcome;
             else
             {
                 switch (m_pPaneTools->toolsType())

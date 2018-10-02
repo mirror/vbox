@@ -184,7 +184,7 @@ void UIToolPaneGlobal::prepare()
     m_pLayout = new QStackedLayout(this);
 
     /* Create desktop pane: */
-    openTool(ToolTypeGlobal_Media);
+    openTool(ToolTypeGlobal_Welcome);
 }
 
 void UIToolPaneGlobal::cleanup()
