@@ -6272,14 +6272,18 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
     /*
-     * Do the job.
+     * Check nested-guest intercepts.
      */
-    RTUINT64U uValue;
-    VBOXSTRICTRC rcStrict;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_RDMSR, pVCpu->cpum.GstCtx.ecx))
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDMSR, cbInstr);
+#endif
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
-        rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, false /* fWrite */);
+        VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, false /* fWrite */);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
@@ -6290,10 +6294,14 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     }
 #endif
 
+    /*
+     * Do the job.
+     */
+    RTUINT64U uValue;
     /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
 
-    rcStrict = CPUMQueryGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, &uValue.u);
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, &uValue.u);
     if (rcStrict == VINF_SUCCESS)
     {
         pVCpu->cpum.GstCtx.rax = uValue.s.Lo;
@@ -6340,17 +6348,18 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
     /*
-     * Do the job.
+     * Check nested-guest intercepts.
      */
-    RTUINT64U uValue;
-    uValue.s.Lo = pVCpu->cpum.GstCtx.eax;
-    uValue.s.Hi = pVCpu->cpum.GstCtx.edx;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_WRMSR, pVCpu->cpum.GstCtx.ecx))
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WRMSR, cbInstr);
+#endif
 
-    VBOXSTRICTRC rcStrict;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
-        rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, true /* fWrite */);
+        VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, true /* fWrite */);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
@@ -6361,10 +6370,17 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     }
 #endif
 
+    /*
+     * Do the job.
+     */
+    RTUINT64U uValue;
+    uValue.s.Lo = pVCpu->cpum.GstCtx.eax;
+    uValue.s.Hi = pVCpu->cpum.GstCtx.edx;
+
     /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
 
-    rcStrict = CPUMSetGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, uValue.u);
+    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, uValue.u);
     if (rcStrict == VINF_SUCCESS)
     {
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
