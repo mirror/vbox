@@ -1269,7 +1269,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Check for Updates' action goes to Application menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+    if (gEDataManager->applicationUpdateEnabled())
+        pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
     /* 'Network Access Manager' action goes to Application menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -1343,6 +1344,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     if (gEDataManager->applicationUpdateEnabled())
         pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    /* Separator after tool actions of the 'File' menu: */
+    pMenu->addSeparator();
     /* 'Reset Warnings' action goes 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
     /* Separator after 'Reset Warnings' action of the 'File' menu: */
