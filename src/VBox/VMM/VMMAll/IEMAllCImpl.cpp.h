@@ -6772,6 +6772,17 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
     }
 
     /*
+     * Check VMX guest-intercept.
+     * This should be considered a fault-like VM-exit.
+     * See Intel spec. 25.1.1 "Relative Priority of Faults and VM Exits".
+     */
+    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MONITOR_EXIT))
+    {
+        Log2(("monitor: Guest intercept -> #VMEXIT\n"));
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_MONITOR, cbInstr);
+    }
+
+    /*
      * Gather the operands and validate them.
      */
     RTGCPTR  GCPtrMem   = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
