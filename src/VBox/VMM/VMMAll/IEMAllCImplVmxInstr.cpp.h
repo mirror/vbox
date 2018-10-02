@@ -4857,23 +4857,68 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
 
 /**
+ * Checks whether an RDMSR or WRMSR instruction for the given MSR is intercepted
+ * (causes a VM-exit)  or not.
+ *
+ * @returns @c true if the instruction is intercepted, @c false otherwise.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit exit reason (VMX_EXIT_RDMSR or
+ *                          VMX_EXIT_WRMSR).
+ * @param   idMsr           The MSR.
+ */
+IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReason, uint32_t idMsr)
+{
+    Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
+    Assert(   uExitReason == VMX_EXIT_RDMSR
+           || uExitReason == VMX_EXIT_WRMSR);
+
+    /* Consult the MSR bitmap if the feature is supported. */
+    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+    {
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
+        if (uExitReason == VMX_EXIT_RDMSR)
+        {
+            VMXMSREXITREAD enmRead;
+            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
+                                           NULL /* penmWrite */);
+            AssertRC(rc);
+            if (enmRead == VMXMSREXIT_INTERCEPT_READ)
+                return true;
+        }
+        else
+        {
+            VMXMSREXITWRITE enmWrite;
+            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
+                                           &enmWrite);
+            AssertRC(rc);
+            if (enmWrite == VMXMSREXIT_INTERCEPT_WRITE)
+                return true;
+        }
+        return false;
+    }
+
+    /* Without MSR bitmaps, all MSR accesses are intercepted. */
+    return true;
+}
+
+
+/**
  * Checks whether a VMREAD or VMWRITE instruction for the given VMCS field is
  * intercepted (causes a VM-exit) or not.
  *
- * @returns @c true if the intercepted is set, @c false otherwise.
+ * @returns @c true if the instruction is intercepted, @c false otherwise.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   u64FieldEnc     The VMCS field encoding.
- * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_VMREAD or
- *                          VMXINSTRID_VMWRITE).
+ * @param   uExitReason     The VM-exit exit reason (VMX_EXIT_VMREAD or
+ *                          VMX_EXIT_VMREAD).
  */
-IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint64_t u64FieldEnc, VMXINSTRID uInstrId)
+IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc)
 {
-    Assert(   uInstrId == VMXINSTRID_VMREAD
-           || uInstrId == VMXINSTRID_VMWRITE);
+    Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
+    Assert(   uExitReason == VMX_EXIT_VMREAD
+           || uExitReason == VMX_EXIT_VMWRITE);
 
-    /*
-     * Without VMCS shadowing, all VMREAD and VMWRITE instructions are intercepted.
-     */
+    /* Without VMCS shadowing, all VMREAD and VMWRITE instructions are intercepted. */
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmcsShadowing)
         return true;
 
@@ -4884,13 +4929,11 @@ IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint64_t u64Fiel
     if (u64FieldEnc & VMX_VMCS_ENC_RSVD_MASK)
         return true;
 
-    /*
-     * Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not.
-     */
+    /* Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not. */
     uint32_t u32FieldEnc = RT_LO_U32(u64FieldEnc);
     Assert(u32FieldEnc >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
-    uint8_t const *pbBitmap = uInstrId == VMXINSTRID_VMREAD
+    uint8_t const *pbBitmap = uExitReason == VMX_EXIT_VMREAD
                             ? (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap)
                             : (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap);
     pbBitmap += (u32FieldEnc >> 3);
@@ -4918,7 +4961,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
 {
     /* Nested-guest intercept. */
     if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, u64FieldEnc, VMXINSTRID_VMREAD))
+        && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, VMX_EXIT_VMREAD, u64FieldEnc))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
@@ -5136,7 +5179,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 {
     /* Nested-guest intercept. */
     if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, u64FieldEnc, VMXINSTRID_VMWRITE))
+        && iemVmxIsVmreadVmwriteInterceptSet(pVCpu, VMX_EXIT_VMWRITE, u64FieldEnc))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
