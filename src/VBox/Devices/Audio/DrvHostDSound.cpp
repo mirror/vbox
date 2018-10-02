@@ -1062,8 +1062,6 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
         pStreamDS->Out.offPlayCursorLastPending = 0;
         pStreamDS->Out.offPlayCursorLastPlayed = 0;
     }
-    else
-        AssertFailed();
 
 #ifdef LOG_ENABLED
     pStreamDS->Dbg.tsLastTransferredMs = 0;
