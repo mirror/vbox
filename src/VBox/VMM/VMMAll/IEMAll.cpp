@@ -402,6 +402,13 @@ typedef enum IEMXCPTCLASS
     do { return iemVmxVmexitInstr((a_pVCpu), (a_uExitReason), (a_cbInstr)); } while (0)
 
 /**
+ * Invokes the VMX VM-exit handler for an instruction intercept where the
+ * instruction provides additional VM-exit information.
+ */
+# define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr) \
+    do { return iemVmxVmexitInstrNeedsInfo((a_pVCpu), (a_uExitReason), (a_uInstrId), (a_cbInstr)); } while (0)
+
+/**
  * Check if the nested-guest has the given Pin-based VM-execution control set.
  */
 # define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_PinCtl) \
@@ -426,7 +433,8 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_cbInstr)                     (false)
 # define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_cbInstr)                    (false)
 # define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_cbInstr)                   (false)
-# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_Reason, a_cbInstr)         do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)     do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
 
