@@ -51,6 +51,7 @@ class CMachine;
 /** Context-menu types. */
 enum UIGraphicsSelectorContextMenuType
 {
+    UIGraphicsSelectorContextMenuType_Global,
     UIGraphicsSelectorContextMenuType_Group,
     UIGraphicsSelectorContextMenuType_Machine
 };
@@ -468,6 +469,8 @@ private:
         /** Holds the keyboard handler instance. */
         UIChooserHandlerKeyboard *m_pKeyboardHandler;
 
+        /** Holds the global item context menu instance. */
+        QMenu *m_pContextMenuGlobal;
         /** Holds the group item context menu instance. */
         QMenu *m_pContextMenuGroup;
         /** Holds the machine item context menu instance. */

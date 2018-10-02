@@ -73,6 +73,7 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_pScene(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
+    , m_pContextMenuGlobal(0)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
     , m_fSliding(false)
@@ -1322,6 +1323,48 @@ void UIChooserModel::prepareLookup()
 
 void UIChooserModel::prepareContextMenu()
 {
+    /* Context menu for global(s): */
+    m_pContextMenuGlobal = new QMenu;
+    if (m_pContextMenuGlobal)
+    {
+#ifdef VBOX_WS_MAC
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        if (gEDataManager->applicationUpdateEnabled())
+            m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+# endif
+        m_pContextMenuGlobal->addSeparator();
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+        m_pContextMenuGlobal->addSeparator();
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+# endif
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+
+#else /* !VBOX_WS_MAC */
+
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+        m_pContextMenuGlobal->addSeparator();
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+        m_pContextMenuGlobal->addSeparator();
+# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+# endif
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+        if (gEDataManager->applicationUpdateEnabled())
+            m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+# endif
+#endif /* !VBOX_WS_MAC */
+    }
+
     /* Context menu for group(s): */
     m_pContextMenuGroup = new QMenu;
     if (m_pContextMenuGroup)
@@ -1461,6 +1504,8 @@ void UIChooserModel::cleanupHandlers()
 
 void UIChooserModel::cleanupContextMenu()
 {
+    delete m_pContextMenuGlobal;
+    m_pContextMenuGlobal = 0;
     delete m_pContextMenuGroup;
     m_pContextMenuGroup = 0;
     delete m_pContextMenuMachine;
@@ -1526,6 +1571,12 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                 /* If this item of known type? */
                 switch (pItem->type())
                 {
+                    case UIChooserItemType_Global:
+                    {
+                        /* Global context menu for global item cases: */
+                        popupContextMenu(UIGraphicsSelectorContextMenuType_Global, pEvent->screenPos());
+                        return true;
+                    }
                     case UIChooserItemType_Group:
                     {
                         /* Get group-item: */
@@ -1562,6 +1613,12 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                 /* If this item of known type? */
                 switch (pItem->type())
                 {
+                    case UIChooserItemType_Global:
+                    {
+                        /* Global context menu for global item cases: */
+                        popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
+                        return true;
+                    }
                     case UIChooserItemType_Group:
                     {
                         /* Is this group-item only the one selected? */
@@ -1597,6 +1654,12 @@ void UIChooserModel::popupContextMenu(UIGraphicsSelectorContextMenuType enmType,
     /* Which type of context-menu requested? */
     switch (enmType)
     {
+        /* For global item? */
+        case UIGraphicsSelectorContextMenuType_Global:
+        {
+            m_pContextMenuGlobal->exec(point);
+            break;
+        }
         /* For group? */
         case UIGraphicsSelectorContextMenuType_Group:
         {
