@@ -226,18 +226,10 @@ static int vbox_master_set(struct drm_device *dev,
 	vbox->initial_mode_queried = false;
 
 	mutex_lock(&vbox->hw_mutex);
-	/*
-	 * Disable VBVA when someone releases master in case the next person
-	 * tries tries to do VESA.
-	 */
-	/** @todo work out if anyone is likely to and whether it will work. */
-	/*
-	 * Update: we also disable it because if the new master does not do
-	 * dirty rectangle reporting (e.g. old versions of Plymouth) then at
-	 * least the first screen will still be updated. We enable it as soon
-	 * as we receive a dirty rectangle report.
-	 */
-	vbox_disable_accel(vbox);
+	/* Start the refresh timer in case the user does not provide dirty
+	 * rectangles. */
+	vbox->need_refresh_timer = true;
+	schedule_delayed_work(&vbox->refresh_work, VBOX_REFRESH_PERIOD);
 	mutex_unlock(&vbox->hw_mutex);
 
 	return 0;
@@ -256,7 +248,7 @@ static void vbox_master_drop(struct drm_device *dev, struct drm_file *file_priv)
 	vbox->initial_mode_queried = false;
 
 	mutex_lock(&vbox->hw_mutex);
-	vbox_disable_accel(vbox);
+	vbox->need_refresh_timer = false;
 	mutex_unlock(&vbox->hw_mutex);
 }
 

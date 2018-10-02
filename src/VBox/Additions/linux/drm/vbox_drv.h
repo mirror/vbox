@@ -123,6 +123,9 @@
 				sizeof(HGSMIHOSTFLAGS))
 #define HOST_FLAGS_OFFSET GUEST_HEAP_USABLE_SIZE
 
+/** How frequently we refresh if the guest is not providing dirty rectangles. */
+#define VBOX_REFRESH_PERIOD (HZ / 2)
+
 struct vbox_fbdev;
 
 struct vbox_private {
@@ -160,6 +163,16 @@ struct vbox_private {
 	 * mode query.
 	 */
 	bool initial_mode_queried;
+	/**
+	 * Do we know that the current user can send us dirty rectangle information?
+	 * If not, do periodic refreshes until we do know.
+	 */
+	bool need_refresh_timer;
+	/**
+	 * As long as the user is not sending us dirty rectangle information,
+	 * refresh the whole screen at regular intervals.
+	 */
+	struct delayed_work refresh_work;
 	struct work_struct hotplug_work;
 	u32 input_mapping_width;
 	u32 input_mapping_height;

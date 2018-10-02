@@ -108,10 +108,11 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 	struct drm_crtc *crtc;
 	unsigned int i;
 
+	/* The user can send rectangles, we do not need the timer. */
+	vbox->need_refresh_timer = false;
 	mutex_lock(&vbox->hw_mutex);
 	list_for_each_entry(crtc, &fb->dev->mode_config.crtc_list, head) {
 		if (CRTC_FB(crtc) == fb) {
-			vbox_enable_accel(vbox);
 			for (i = 0; i < num_rects; ++i) {
 				VBVACMDHDR cmd_hdr;
 				unsigned int crtc_id =
@@ -296,6 +297,32 @@ static bool have_hgsmi_mode_hints(struct vbox_private *vbox)
 }
 
 /**
+ * Our refresh timer call-back.  Only used for guests without dirty rectangle
+ * support.
+ */
+static void vbox_refresh_timer(struct work_struct *work)
+{
+	struct vbox_private *vbox = container_of(work, struct vbox_private,
+												 refresh_work.work);
+	bool have_unblanked = false;
+	struct drm_crtc *crtci;
+
+	if (!vbox->need_refresh_timer)
+		return;
+	list_for_each_entry(crtci, &vbox->dev->mode_config.crtc_list, head) {
+		struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtci);
+		if (crtci->enabled && !vbox_crtc->blanked)
+			have_unblanked = true;
+	}
+	if (!have_unblanked)
+		return;
+	/* This forces a full refresh. */
+	vbox_enable_accel(vbox);
+	/* Schedule the next timer iteration. */
+	schedule_delayed_work(&vbox->refresh_work, VBOX_REFRESH_PERIOD);
+}
+
+/**
  * Set up our heaps and data exchange buffers in VRAM before handing the rest
  * to the memory manager.
  */
@@ -341,11 +368,18 @@ static int vbox_hw_init(struct vbox_private *vbox)
 	if (!vbox->last_mode_hints)
 		return -ENOMEM;
 
-	return vbox_accel_init(vbox);
+	ret = vbox_accel_init(vbox);
+	if (ret)
+		return ret;
+	/* Set up the refresh timer for users which do not send dirty rectangles. */
+	INIT_DELAYED_WORK(&vbox->refresh_work, vbox_refresh_timer);
+	return 0;
 }
 
 static void vbox_hw_fini(struct vbox_private *vbox)
 {
+	vbox->need_refresh_timer = false;
+	cancel_delayed_work(&vbox->refresh_work);
 	vbox_accel_fini(vbox);
 	kfree(vbox->last_mode_hints);
 	vbox->last_mode_hints = NULL;

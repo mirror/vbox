@@ -159,6 +159,8 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
 	switch (mode) {
 	case DRM_MODE_DPMS_ON:
 		vbox_crtc->blanked = false;
+		/* Restart the refresh timer if necessary. */
+		schedule_delayed_work(&vbox->refresh_work, VBOX_REFRESH_PERIOD);
 		break;
 	case DRM_MODE_DPMS_STANDBY:
 	case DRM_MODE_DPMS_SUSPEND:
@@ -567,6 +569,10 @@ static int vbox_get_modes(struct drm_connector *connector)
 		}
 		return drm_add_modes_noedid(connector, 800, 600);
 	}
+	/* Also assume that a client which supports hot-plugging also knows
+	 * how to update the screen in a way we can use, the only known
+	 * relevent client which cannot is Plymouth in Ubuntu 14.04. */
+	vbox->need_refresh_timer = false;
 	num_modes = drm_add_modes_noedid(connector, 2560, 1600);
 	preferred_width = vbox_connector->mode_hint.width ?
 			  vbox_connector->mode_hint.width : 1024;
