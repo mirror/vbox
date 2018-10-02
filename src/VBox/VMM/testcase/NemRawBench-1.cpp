@@ -1279,10 +1279,25 @@ int main(int argc, char **argv)
  *    949 278   CPUID instructions per second (3 200 222 exits in 3 370 980 173 ns)
  *    871 499 MMIO/r1 instructions per second (3 200 223 exits in 3 671 834 221 ns)
  *
+ * - Linux 4.15.0 / ubuntu 18.04.1 Desktop LiveCD; 3.1GHz Intel Core i7-7920HQ (Kaby Lake):
+ *    829 775     OUT instructions per second (3 200 001 exits in 3 856 466 567 ns)
+ *  2 212 038   CPUID instructions per second (1 exits in 1 446 629 591 ns)             [1]
+ *    477 962 MMIO/r1 instructions per second (3 200 001 exits in 6 695 090 600 ns)
+ *
+ * - Linux 4.15.0 / ubuntu 18.04.1 Desktop LiveCD; 3.4GHz Core i5-3570 (Ivy Bridge):
+ *    717 216     OUT instructions per second (2 400 001 exits in 3 346 271 640 ns)
+ *  1 675 983   CPUID instructions per second (1 exits in 1 431 995 135 ns)             [1]
+ *    402 621 MMIO/r1 instructions per second (2 400 001 exits in 5 960 930 854 ns)
+ *
  * - Linux 4.18.0-1-amd64 (debian); 3.4GHz AMD Threadripper 1950X:
  *    455 727     OUT instructions per second (2 400 001 exits in 5 266 300 471 ns)
  *  1 745 014   CPUID instructions per second (1 exits in 1 375 346 658 ns)             [1]
  *    351 767 MMIO/r1 instructions per second (2 400 001 exits in 6 822 684 544 ns)
+ *
+ * - Windows 1803 updated as per 2018-10-01; 3.4GHz Core i5-3570 (Ivy Bridge):
+ *     67 778     OUT instructions per second (400 001 exits in 5 901 560 700 ns)
+ *     66 113   CPUID instructions per second (400 001 exits in 6 050 208 000 ns)
+ *     62 939 MMIO/r1 instructions per second (400 001 exits in 6 355 302 900 ns)
  *
  * - Windows 1803 updated as per 2018-09-28; 3.4GHz AMD Threadripper 1950X:
  *     34 485     OUT instructions per second (400 001 exits in 11 598 918 200 ns)
@@ -1294,10 +1309,11 @@ int main(int argc, char **argv)
  *     65 245   CPUID instructions per second (400 001 exits in 6 130 720 600 ns)
  *     61 642 MMIO/r1 instructions per second (400 001 exits in 6 489 013 700 ns)
  *
+ *
  * [1] CPUID causes no return to ring-3 with KVM.
  *
  *
- * For reference we can compare with similar testsin bs2-test1 running VirtualBox:
+ * For reference we can compare with similar tests in bs2-test1 running VirtualBox:
  *
  * - Linux 4.18.0-1-amd64 (debian); 3.4GHz AMD Threadripper 1950X; trunk/r125404:
  *      real mode, 32-bit OUT            :        1 338 471 ins/sec
@@ -1312,5 +1328,19 @@ int main(int argc, char **argv)
  *      real mode, CPUID                 :        1 001 087 ins/sec
  *      real mode, 32-bit write          :          651 257 ins/sec
  *      real mode, 32-bit write-to-ring-3:          157 773 ins/sec
+ *
+ * - Linux 4.15.0 / ubuntu 18.04.1 Desktop LiveCD; 3.1GHz Intel Core i7-7920HQ (Kaby Lake); trunk/r125450:
+ *      real mode, 32-bit OUT            :        1 229 245 ins/sec
+ *      real mode, 32-bit OUT-to-ring-3  :          284 848 ins/sec
+ *      real mode, CPUID                 :        1 429 760 ins/sec
+ *      real mode, 32-bit write          :          820 679 ins/sec
+ *      real mode, 32-bit write-to-ring-3:          245 159 ins/sec
+ *
+ * - Windows 1803 updated as per 2018-10-01; 3.4GHz Core i5-3570 (Ivy Bridge); trunk/r15442:
+ *      real mode, 32-bit OUT            :          961 939 ins/sec
+ *      real mode, 32-bit OUT-to-ring-3  :          189 458 ins/sec
+ *      real mode, CPUID                 :        1 060 582 ins/sec
+ *      real mode, 32-bit write          :          637 967 ins/sec
+ *      real mode, 32-bit write-to-ring-3:          148 573 ins/sec
  *
  */
