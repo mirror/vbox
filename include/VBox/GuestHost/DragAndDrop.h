@@ -103,6 +103,13 @@ typedef uint32_t DNDURIOBJECTFLAGS;
 /** No flags specified. */
 #define DNDURIOBJECT_FLAGS_NONE                   0
 
+/** Mask of all valid DnD URI object flags. */
+#define DNDURIOBJECT_FLAGS_VALID_MASK             UINT32_C(0x0)
+
+/**
+ * Class for handling DnD URI objects.
+ * This class abstracts the access and handling objects when performing DnD actions.
+ */
 class DnDURIObject
 {
 public:
@@ -124,7 +131,7 @@ public:
 
     /**
      * Enumeration for specifying an URI object view
-     * represent its data accordingly.
+     * for representing its data accordingly.
      */
     enum View
     {
@@ -140,23 +147,72 @@ public:
 
     DnDURIObject(void);
     DnDURIObject(Type type,
-                 const RTCString &strSrcPath = "",
-                 const RTCString &strDstPath = "",
+                 const RTCString &strSrcPathAbs = "",
+                 const RTCString &strDstPathAbs = "",
                  uint32_t fMode = 0, uint64_t cbSize = 0);
     virtual ~DnDURIObject(void);
 
 public:
 
-    const RTCString &GetSourcePath(void) const { return m_strSrcPath; }
-    const RTCString &GetDestPath(void) const { return m_strTgtPath; }
-    uint32_t GetMode(void) const { return m_fMode; }
-    uint64_t GetProcessed(void) const { return m_cbProcessed; }
-    uint64_t GetSize(void) const { return m_cbSize; }
+    /**
+     * Returns the given absolute source path of the object.
+     *
+     * @return  Absolute source path of the object.
+     */
+    const RTCString &GetSourcePathAbs(void) const { return m_strSrcPathAbs; }
+
+    /**
+     * Returns the given, absolute destination path of the object.
+     *
+     * @return  Absolute destination path of the object.
+     */
+    const RTCString &GetDestPathAbs(void) const { return m_strTgtPathAbs; }
+
+    /**
+     * Returns the file mode of the object.
+     *
+     * Note: Only applies if the object is of type DnDURIObject::Type_File.
+     *
+     * @return  File mode.
+     */
+    uint32_t GetMode(void) const { AssertReturn(m_Type == Type_File, 0); return u.File.fMode; }
+
+    /**
+     * Returns the bytes already processed (read / written).
+     *
+     * Note: Only applies if the object is of type DnDURIObject::Type_File.
+     *
+     * @return  Bytes already processed (read / written).
+     */
+    uint64_t GetProcessed(void) const { AssertReturn(m_Type == Type_File, 0); return u.File.cbProcessed; }
+
+    /**
+     * Returns the file's size (in bytes).
+     *
+     * Note: Only applies if the object is of type DnDURIObject::Type_File.
+     *
+     * @return  The file's size (in bytes).
+     */
+    uint64_t GetSize(void) const { AssertReturn(m_Type == Type_File, 0); return u.File.cbSize; }
+
+    /**
+     * Returns the object's type.
+     *
+     * @return  The object's type.
+     */
     Type GetType(void) const { return m_Type; }
 
 public:
 
-    int SetSize(uint64_t uSize) { m_cbSize = uSize; return VINF_SUCCESS; }
+    /**
+     * Sets the bytes to process by the object.
+     *
+     * Note: Only applies if the object is of type DnDURIObject::Type_File.
+     *
+     * @return  IPRT return code.
+     * @param   uSize           Size (in bytes) to process.
+     */
+    int SetSize(uint64_t cbSize) { AssertReturn(m_Type == Type_File, 0); u.File.cbSize = cbSize; return VINF_SUCCESS; }
 
 public:
 
@@ -179,21 +235,31 @@ protected:
 
 protected:
 
+    /** The object's type. */
     Type      m_Type;
-    RTCString m_strSrcPath;
-    RTCString m_strTgtPath;
+    /** Absolute path (base) for the source. */
+    RTCString m_strSrcPathAbs;
+    /** Absolute path (base) for the target. */
+    RTCString m_strTgtPathAbs;
     /** Whether the object is in "opened" state. */
-    bool      m_fOpen;
-    /** Object (file/directory) mode. */
-    uint32_t  m_fMode;
-    /** Size (in bytes) to read/write. */
-    uint64_t  m_cbSize;
-    /** Bytes processed reading/writing. */
-    uint64_t  m_cbProcessed;
+    bool      m_fIsOpen;
 
+    /** Union containing data depending on the object's type. */
     union
     {
-        RTFILE m_hFile;
+        /** Structure containing members for objects that
+         *  are files. */
+        struct
+        {
+            /** File handle. */
+            RTFILE   hFile;
+            /** Used file mode. */
+            uint32_t fMode;
+            /** Size (in bytes) to read/write. */
+            uint64_t cbSize;
+            /** Bytes processed reading/writing. */
+            uint64_t cbProcessed;
+        } File;
     } u;
 };
 
