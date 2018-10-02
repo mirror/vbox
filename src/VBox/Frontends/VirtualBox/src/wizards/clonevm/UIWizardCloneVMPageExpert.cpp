@@ -49,8 +49,7 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
         {
             QGridLayout *pNameCntLayout = new QGridLayout(m_pNameCnt);
             {
-                pNameCntLayout->setContentsMargins(0, 0, 0, 0);
-
+                //pNameCntLayout->setContentsMargins(0, 0, 0, 0);
                 m_pNameLabel = new QLabel;
                 if (m_pNameLabel)
                 {
@@ -123,7 +122,6 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
         if (m_pCloneOptionsCnt)
         {
             m_pCloneOptionsLayout = new QGridLayout(m_pCloneOptionsCnt);
-            //m_pCloneOptionsLayout->setContentsMargins(0, 0, 0, 0);
             /* Create MAC policy combo-box: */
             m_pMACComboBox = new QComboBox;
             if (m_pMACComboBox)
@@ -141,6 +139,19 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
                 /* Add into layout: */
                 m_pCloneOptionsLayout->addWidget(m_pMACComboBoxLabel, 0, 0, 1, 1);
             }
+            m_pAdditionalOptionsLabel = new QLabel;
+            if (m_pAdditionalOptionsLabel)
+            {
+                m_pAdditionalOptionsLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pCloneOptionsLayout->addWidget(m_pAdditionalOptionsLabel, 3, 0, 1, 1);
+            }
+            m_pKeepDiskNamesCheckBox = new QCheckBox;
+            if (m_pKeepDiskNamesCheckBox)
+                m_pCloneOptionsLayout->addWidget(m_pKeepDiskNamesCheckBox, 3, 1, 1, 1);
+            m_pKeepHWUUIDsCheckBox = new QCheckBox;
+            if (m_pKeepHWUUIDsCheckBox)
+                m_pCloneOptionsLayout->addWidget(m_pKeepHWUUIDsCheckBox, 4, 1, 1, 1);
+
         }
 
         pMainLayout->addWidget(m_pNameCnt, 0, 0, 1, 2);
@@ -174,6 +185,9 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     registerField("linkedClone", this, "linkedClone");
     registerField("cloneMode", this, "cloneMode");
     registerField("macAddressClonePolicy", this, "macAddressClonePolicy");
+    registerField("keepDiskNames", this, "keepDiskNames");
+    registerField("keepHWUUIDs", this, "keepHWUUIDs");
+
     composeCloneFilePath();
 }
 
@@ -204,7 +218,7 @@ void UIWizardCloneVMPageExpert::retranslateUi()
     m_pNameLabel->setText(UIWizardCloneVM::tr("Name:"));
     m_pPathLabel->setText(UIWizardCloneVM::tr("Path:"));
 
-    m_pCloneOptionsCnt->setTitle(UIWizardCloneVM::tr("Additional &options"));
+    m_pCloneOptionsCnt->setTitle(UIWizardCloneVM::tr("Clone options"));
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address &Policy:"));
@@ -224,9 +238,16 @@ void UIWizardCloneVMPageExpert::retranslateUi()
                                 UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters "
                                                       "during cloning."), Qt::ToolTipRole);
 
+    m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
+    m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change the disk names during cloning."));
+    m_pKeepDiskNamesCheckBox->setText(UIWizardCloneVM::tr("Keep &Disk Names"));
+    m_pKeepHWUUIDsCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change hardware UUIDs during cloning."));
+    m_pKeepHWUUIDsCheckBox->setText(UIWizardCloneVM::tr("Keep &Hardware UUIDs"));
+
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pMACComboBoxLabel;
+    labels << m_pAdditionalOptionsLabel;
 
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)

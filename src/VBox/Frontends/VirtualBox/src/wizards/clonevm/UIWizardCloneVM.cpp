@@ -128,8 +128,9 @@ bool UIWizardCloneVM::cloneVM()
         return false;
     }
 
-    /* Set the selected MAC address policy: */
+    /* Clone options vector to pass to cloning: */
     QVector<KCloneOptions> options;
+    /* Set the selected MAC address policy: */
     switch (field("macAddressClonePolicy").value<MACAddressClonePolicy>())
     {
         case MACAddressClonePolicy_KeepAllMACs:
@@ -141,6 +142,11 @@ bool UIWizardCloneVM::cloneVM()
         default:
             break;
     }
+
+    if (field("keepDiskNames").value<bool>())
+        options.append(KCloneOptions_KeepDiskNames);
+    if (field("keepHWUUIDs").value<bool>())
+        options.append(KCloneOptions_KeepHwUUIDs);
 
     /* Linked clones requested? */
     if (fLinked)
