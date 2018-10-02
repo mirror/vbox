@@ -30,7 +30,6 @@
  *  VMX_EXIT_TASK_SWITCH
  *  VMX_EXIT_GETSEC
  *  VMX_EXIT_INVD
- *  VMX_EXIT_INVLPG
  *  VMX_EXIT_RDPMC
  *  VMX_EXIT_RSM
  *  VMX_EXIT_MOV_CRX
@@ -2736,6 +2735,26 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
             AssertMsgFailedReturn(("Use instruction-specific handler\n"), VERR_IEM_IPE_5);
             break;
     }
+
+    return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to INVLPG.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   GCPtrPage       The guest-linear address of the page being invalidated.
+ * @param   cbInstr         The instruction length (in bytes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPU pVCpu, RTGCPTR GCPtrPage, uint8_t cbInstr)
+{
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason = VMX_EXIT_INVLPG;
+    ExitInfo.cbInstr = cbInstr;
+    ExitInfo.u64Qual = GCPtrPage;
+    Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode || !RT_HI_U32(ExitInfo.u64Qual));
 
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
