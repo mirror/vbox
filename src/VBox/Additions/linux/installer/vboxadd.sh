@@ -50,6 +50,7 @@
 #   and stop.
 # * Uninstalling the Additions and re-installing them does not trigger warnings.
 
+export LC_ALL=C
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
 MODPROBE=/sbin/modprobe
@@ -58,6 +59,7 @@ SERVICE="VirtualBox Guest Additions"
 QUICKSETUP=
 ## systemd logs information about service status, otherwise do that ourselves.
 QUIET=
+test -z "${KERN_VER}" && KERN_VER=`uname -r`
 
 setup_log()
 {
@@ -311,19 +313,59 @@ restart()
     return 0
 }
 
+## Update the initramfs.  Debian and Ubuntu put the graphics driver in, and
+# need the touch(1) command below.  Everyone else that I checked just need
+# the right module alias file from depmod(1) and only use the initramfs to
+# load the root filesystem, not the boot splash.  update-initramfs works
+# for the first two and dracut for every one else I checked.  We are only
+# interested in distributions recent enough to use the KMS vboxvideo driver.
+update_initramfs()
+{
+    ## kernel version to update for.
+    version="${1}"
+    depmod "${version}"
+    rm -f "/lib/modules/${version}/initrd/vboxvideo"
+    test -d "/lib/modules/${version}/initrd" &&
+        test -f "/lib/modules/${version}/misc/vboxvideo.ko" &&
+        touch "/lib/modules/${version}/initrd/vboxvideo"
+    if type dracut >/dev/null 2>&1; then
+        dracut -f --kver "${version}"
+    elif type update-initramfs >/dev/null 2>&1; then
+        update-initramfs -u -k "${version}"
+    fi
+}
+
 # Remove any existing VirtualBox guest kernel modules from the disk, but not
 # from the kernel as they may still be in use
 cleanup_modules()
 {
+    test "x${1}" = x--skip && skip_ver="${2}"
+    # Needed for Ubuntu and Debian, see update_initramfs
+    rm -f /lib/modules/*/initrd/vboxvideo
+    for i in /lib/modules/*/misc; do
+        kern_ver="${i%/misc}"
+        kern_ver="${kern_ver#/lib/modules/}"
+        unset do_update
+        for j in ${OLDMODULES}; do
+            test -f "${i}/${j}.ko" && do_update=1 && rm -f "${i}/${j}.ko"
+        done
+        test -n "${do_update}" && test "x${kern_ver}" != "x${skip_ver}" &&
+            update_initramfs "${kern_ver}"
+        # Remove empty /lib/modules folders which may have been kept around
+        rmdir -p "${i}" 2>/dev/null || true
+        unset keep
+        for j in /lib/modules/"${kern_ver}"/*; do
+            name="${j##*/}"
+            test -d "${name}" || test "${name%%.*}" != modules && keep=1
+        done
+        if test -z "${keep}"; then
+            rm -rf /lib/modules/"${kern_ver}"
+            rm -f /boot/initrd.img-"${kern_ver}"
+        fi
+    done
     for i in ${OLDMODULES}; do
         # We no longer support DKMS, remove any leftovers.
         rm -rf "/var/lib/dkms/${i}"*
-        # And remove old modules.
-        rm -f /lib/modules/*/misc/"${i}"*
-    done
-    # Remove leftover module folders.
-    for i in /lib/modules/*/misc; do
-        test -d "${i}" && rmdir -p "${i}" 2>/dev/null
     done
     rm -f /etc/depmod.d/vboxvideo-upstream.conf
 }
@@ -332,7 +374,7 @@ cleanup_modules()
 setup_modules()
 {
     # don't stop the old modules here -- they might be in use
-    test -z "${QUICKSETUP}" && cleanup_modules
+    test -z "${QUICKSETUP}" && cleanup_modules --skip "${KERN_VER}"
     # This does not work for 2.4 series kernels.  How sad.
     test -n "${QUICKSETUP}" && test -f "${MODULE_DIR}/vboxguest.ko" && return 0
     info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
@@ -346,6 +388,7 @@ setup_modules()
         module_build_log "$myerr"
         "${INSTALL_DIR}"/other/check_module_dependencies.sh 2>&1 &&
             info "Look at $LOG to find out what went wrong"
+        update_initramfs "${KERN_VER}"
         return 0
     fi
     log "Building the shared folder support module."
@@ -355,6 +398,7 @@ setup_modules()
         --no-print-directory install 2>&1`; then
         module_build_log "$myerr"
         info  "Look at $LOG to find out what went wrong"
+        update_initramfs "${KERN_VER}"
         return 0
     fi
     log "Building the graphics driver module."
@@ -369,6 +413,7 @@ setup_modules()
     echo "override vboxguest * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     echo "override vboxsf * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
     echo "override vboxvideo * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
+    update_initramfs "${KERN_VER}"
     depmod
     return 0
 }
@@ -377,9 +422,9 @@ create_vbox_user()
 {
     # This is the LSB version of useradd and should work on recent
     # distributions
-    useradd -d /var/run/vboxadd -g 1 -r -s /bin/false vboxadd >/dev/null 2>&1
+    useradd -d /var/run/vboxadd -g 1 -r -s /bin/false vboxadd >/dev/null 2>&1 || true
     # And for the others, we choose a UID ourselves
-    useradd -d /var/run/vboxadd -g 1 -u 501 -o -s /bin/false vboxadd >/dev/null 2>&1
+    useradd -d /var/run/vboxadd -g 1 -u 501 -o -s /bin/false vboxadd >/dev/null 2>&1 || true
 
 }
 
@@ -461,7 +506,8 @@ setup()
 
     MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
-    chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
+    test -e /etc/selinux/config &&
+        chcon -t bin_t "$BUILDINTMP"
 
     test -z "${INSTALL_NO_MODULE_BUILDS}" && setup_modules
     create_vbox_user
