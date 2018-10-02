@@ -1257,7 +1257,7 @@ int main(int argc, char **argv)
     int rcExit = createVM();
     if (rcExit == 0)
     {
-        printf("tstNemMini-1: Successfully created test VM...\n");
+        printf("tstNemBench-1: Successfully created test VM...\n");
 
         /*
          * Do the benchmarking.
@@ -1266,7 +1266,7 @@ int main(int argc, char **argv)
         cpuidTest(cFactor);
         mmioTest(cFactor);
 
-        printf("tstNemMini-1: done\n");
+        printf("tstNemBench-1: done\n");
     }
     return rcExit;
 }

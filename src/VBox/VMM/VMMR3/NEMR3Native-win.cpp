@@ -2069,6 +2069,12 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   there will only be real gains if the exitting instructions are tightly
  *   packed.
  *
+ *   Update: Somewhere along the security fixes or/and microcode updates this
+ *   summer (2018), performance dropped even more.
+ *
+ *   Update [build 17757]: Some performance improvements here, but they don't
+ *   yet make up for what was lost this summer.
+ *
  *
  * - We need a way to directly modify the TSC offset (or bias if you like).
  *
@@ -2100,47 +2106,10 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *        there is no way to support X2APIC.
  *
  *
- * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback
- *   in order to cancel any current or future alertable wait in VID.SYS during
- *   the VidMessageSlotHandleAndGetNext call.
- *
- *   IIRC this will make the kernel schedule the specified callback thru
- *   NTDLL!KiUserApcDispatcher by modifying the thread context and quite
- *   possibly the userland thread stack.  When the APC callback returns to
- *   KiUserApcDispatcher, it will call NtContinue to restore the old thread
- *   context and resume execution from there.  This naturally adds up to some
- *   CPU cycles, ring transitions aren't for free, especially after Spectre &
- *   Meltdown mitigations.
- *
- *   Using NtAltertThread call could do the same without the thread context
- *   modifications and the extra kernel call.
- *
- *
  * - Not sure if this is a thing, but WHvCancelVirtualProcessor seems to cause
  *   cause a lot more spurious WHvRunVirtualProcessor returns that what we get
  *   with the replacement code.  By spurious returns we mean that the
  *   subsequent call to WHvRunVirtualProcessor would return immediately.
- *
- *
- * - When WHvRunVirtualProcessor returns without a message, or on a terse
- *   VID message like HLT, it will make a kernel call to get some registers.
- *   This is potentially inefficient if the caller decides he needs more
- *   register state.
- *
- *   It would be better to just return what's available and let the caller fetch
- *   what is missing from his point of view in a single kernel call.
- *
- *
- * - The WHvRunVirtualProcessor implementation does lazy GPA range mappings when
- *   a unmapped GPA message is received from hyper-V.
- *
- *   Since MMIO is currently realized as unmapped GPA, this will slow down all
- *   MMIO accesses a tiny little bit as WHvRunVirtualProcessor looks up the
- *   guest physical address to check if it is a pending lazy mapping.
- *
- *   The lazy mapping feature makes no sense to us.  We as API user have all the
- *   information and can do lazy mapping ourselves if we want/have to (see next
- *   point).
  *
  *
  * - There is no API for modifying protection of a page within a GPA range.
@@ -2166,6 +2135,10 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   hypercalls (HvCallMapGpaPages, HvCallUnmapGpaPages) to do it ourselves.
  *   (This also maps a whole lot better into our own guest page management
  *   infrastructure.)
+ *
+ *   Update [build 17757]: Introduces a KVM like dirty logging API which could
+ *   help tracking dirty VGA pages, while being useless for shadow ROM and
+ *   devices trying catch the guest updating descriptors and such.
  *
  *
  * - Observed problems doing WHvUnmapGpaRange immediately followed by
@@ -2221,11 +2194,30 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   inputs.
  *
  *   To avoid the heap + conversion overhead, we're currently using the
- *   HvCallGetVpRegisters and HvCallSetVpRegisters calls directly.
+ *   HvCallGetVpRegisters and HvCallSetVpRegisters calls directly, at least for
+ *   the ring-0 code.
+ *
+ *   Update [build 17757]: Register translation has been very cleverly
+ *   optimized and made table driven (2 top level tables, 4 + 1 leaf tables).
+ *   Register information consists of the 32-bit HV register name, register page
+ *   offset, and flags (giving valid offset, size and more).  Register
+ *   getting/settings seems to be done by hoping that the register page provides
+ *   it all, and falling back on the VidSetVirtualProcessorState if one or more
+ *   registers are not available there.
+ *
+ *   Note! We have currently not updated our ring-0 code to take the register
+ *   page into account, so it's suffering a little compared to the ring-3 code
+ *   that now uses the offical APIs for registers.
  *
  *
  * - The YMM and XCR0 registers are not yet named (17083).  This probably
  *   wouldn't be a problem if HV_REGISTER_NAME was used, see previous point.
+ *
+ *   Update [build 17757]: XCR0 is added. YMM register values seems to be put
+ *   into a yet undocumented XsaveState interface.  Approach is a little bulky,
+ *   but saves number of enums and dispenses with register transation.  Also,
+ *   the underlying Vid setter API duplicates the input buffer on the heap,
+ *   adding a 16 byte header.
  *
  *
  * - Why does VID.SYS only query/set 32 registers at the time thru the
@@ -2265,6 +2257,59 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  * - Querying HvPartitionPropertyDebugChannelId via HvCallGetPartitionProperty
  *   (hypercall) hangs the host (17134).
+ *
+ *
+ *
+ * Old concerns that have been addressed:
+ *
+ * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback
+ *   in order to cancel any current or future alertable wait in VID.SYS during
+ *   the VidMessageSlotHandleAndGetNext call.
+ *
+ *   IIRC this will make the kernel schedule the specified callback thru
+ *   NTDLL!KiUserApcDispatcher by modifying the thread context and quite
+ *   possibly the userland thread stack.  When the APC callback returns to
+ *   KiUserApcDispatcher, it will call NtContinue to restore the old thread
+ *   context and resume execution from there.  This naturally adds up to some
+ *   CPU cycles, ring transitions aren't for free, especially after Spectre &
+ *   Meltdown mitigations.
+ *
+ *   Using NtAltertThread call could do the same without the thread context
+ *   modifications and the extra kernel call.
+ *
+ *   Update: All concerns have addressed in or about build 17757.
+ *
+ *   The WHvCancelVirtualProcessor API is now implemented using a new
+ *   VidMessageSlotHandleAndGetNext() flag (4).  Codepath is slightly longer
+ *   than NtAlertThread, but has the added benefit that spurious wakeups can be
+ *   more easily reduced.
+ *
+ *
+ * - When WHvRunVirtualProcessor returns without a message, or on a terse
+ *   VID message like HLT, it will make a kernel call to get some registers.
+ *   This is potentially inefficient if the caller decides he needs more
+ *   register state.
+ *
+ *   It would be better to just return what's available and let the caller fetch
+ *   what is missing from his point of view in a single kernel call.
+ *
+ *   Update: All concerns have been addressed in or about build 17757.  Selected
+ *   registers are now available via shared memory and thus HLT should (not
+ *   verified) no longer require a system call to compose the exit context data.
+ *
+ *
+ * - The WHvRunVirtualProcessor implementation does lazy GPA range mappings when
+ *   a unmapped GPA message is received from hyper-V.
+ *
+ *   Since MMIO is currently realized as unmapped GPA, this will slow down all
+ *   MMIO accesses a tiny little bit as WHvRunVirtualProcessor looks up the
+ *   guest physical address to check if it is a pending lazy mapping.
+ *
+ *   The lazy mapping feature makes no sense to us.  We as API user have all the
+ *   information and can do lazy mapping ourselves if we want/have to (see next
+ *   point).
+ *
+ *   Update: All concerns have been addressed in or about build 17757.
  *
  *
  * - The WHvGetCapability function has a weird design:
@@ -2357,7 +2402,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  * @subsection sec_nem_win_benchmarks           Benchmarks.
  *
- * @subsubsection subsect_nem_win_benchmarks_bs2t1 Bootsector2-test1
+ * @subsubsection subsect_nem_win_benchmarks_bs2t1      17134/2018-06-22: Bootsector2-test1
  *
  * This is ValidationKit/bootsectors/bootsector2-test1.asm as of 2018-06-22
  * (internal r123172) running a the release build of VirtualBox from the same
@@ -2466,7 +2511,51 @@ SUCCESS
  * OSes like Linux cache the CR4 value specifically to avoid these kinds of exits.
  *
  *
- * @subsubsection subsect_nem_win_benchmarks_w2k    Windows 2000 Boot & Shutdown
+ * @subsubsection subsect_nem_win_benchmarks_bs2t1u1   17134/2018-10-02: Bootsector2-test1
+ *
+ * Update on 17134.  While expectantly testing a couple of newer builds (17758,
+ * 17763) hoping for some increases in performance, the numbers turn out
+ * to be generally worse than the initial test June test run.  So, I went back
+ * to the 1803 (17134) installation and re-tested, finding that the numbers had
+ * somehow turned worse over the last 3-4 months.
+ *
+ *
+ *
+ * Suspects are security updates and/or microcode updates installed since then,
+ * either hitting thread switching and/or hyper-V badly.  I'm a bit puzzled why
+ * AMD is affected this badly too.
+ *
+ *
+ * @subsubsection subsect_nem_win_benchmarks_bs2t1u2   17763: Bootsector2-test1
+ *
+ * Some preliminary numbers for build 17763 on the 3.4 GHz AMD 1950X, the second
+ * column will improve we get time to have a look the register page.
+ *
+ * There is a  50%  performance loss here compared to the June numbers with
+ * build 17134.  The RDTSC numbers hits that it isn't in the Hyper-V core
+ * (hvax64.exe), but something on the NT side.
+ *
+ * @verbatim
+TESTING...                                                           WinHv API           Hypercalls + VID    VirtualBox AMD-V
+  32-bit paged protected mode, CPUID                        :           54 145 ins/sec        51 436
+  real mode, CPUID                                          :           54 178 ins/sec        51 713
+  [snip]
+  32-bit paged protected mode, RDTSC                        :       98 927 639 ins/sec   100 254 552
+  real mode, RDTSC                                          :       99 601 206 ins/sec   100 886 699
+  [snip]
+  32-bit paged protected mode, 32-bit IN                    :           54 621 ins/sec        51 524
+  32-bit paged protected mode, 32-bit OUT                   :           54 870 ins/sec        51 671
+  32-bit paged protected mode, 32-bit IN-to-ring-3          :           54 624 ins/sec        43 964
+  32-bit paged protected mode, 32-bit OUT-to-ring-3         :           54 803 ins/sec        44 087
+  [snip]
+  32-bit paged protected mode, 32-bit read                  :           28 230 ins/sec        34 042
+  32-bit paged protected mode, 32-bit write                 :           27 962 ins/sec        34 050
+  32-bit paged protected mode, 32-bit read-to-ring-3        :           27 841 ins/sec        28 397
+  32-bit paged protected mode, 32-bit write-to-ring-3       :           27 896 ins/sec        29 455
+ * @endverbatim
+ *
+ *
+ * @subsubsection subsect_nem_win_benchmarks_w2k    17134/2018-06-22: Windows 2000 Boot & Shutdown
  *
  * Timing the startup and automatic shutdown of a Windows 2000 SP4 guest serves
  * as a real world benchmark and example of why exit performance is import.  When
