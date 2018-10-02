@@ -5951,7 +5951,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         Log(("invlpg: Guest intercept (%RGp) -> VM-exit\n", GCPtrPage));
-        iemVmxVmexitInstrInvlpg(pVCpu, GCPtrPage, cbInstr);
+        return iemVmxVmexitInstrInvlpg(pVCpu, GCPtrPage, cbInstr);
     }
 #endif
 
@@ -6233,8 +6233,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
         Log(("rdtscp: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSCP, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP))
     {
         Log(("rdtscp: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu);
@@ -6275,6 +6274,12 @@ IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
     if (   pVCpu->iem.s.uCpl != 0
         && !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PCE))
         return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDPMC_EXIT))
+    {
+        Log(("rdpmc: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDPMC, cbInstr);
+    }
 
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDPMC))
     {
