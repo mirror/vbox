@@ -2651,6 +2651,31 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, ui
     RT_ZERO(ExitInfo);
     ExitInfo.uReason = uExitReason;
     ExitInfo.cbInstr = cbInstr;
+
+#ifdef VBOX_STRICT
+    /* To prevent us from shooting ourselves in the foot. Maybe remove later. */
+    switch (uExitReason)
+    {
+        case VMX_EXIT_INVEPT:
+        case VMX_EXIT_INVPCID:
+        case VMX_EXIT_LDTR_TR_ACCESS:
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
+        case VMX_EXIT_VMCLEAR:
+        case VMX_EXIT_VMPTRLD:
+        case VMX_EXIT_VMPTRST:
+        case VMX_EXIT_VMREAD:
+        case VMX_EXIT_VMWRITE:
+        case VMX_EXIT_VMXON:
+        case VMX_EXIT_XRSTORS:
+        case VMX_EXIT_XSAVES:
+        case VMX_EXIT_RDRAND:
+        case VMX_EXIT_RDSEED:
+        case VMX_EXIT_IO_INSTR:
+            AssertMsgFailedReturn(("Use iemVmxVmexitInstrNeedsInfo for uExitReason=%u\n", uExitReason), VERR_IEM_IPE_5);
+            break;
+    }
+#endif
+
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
