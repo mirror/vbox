@@ -158,6 +158,8 @@ apm_pm16_entry_from_32:
 _TEXT		ends
 
 
+if VBOX_BIOS_CPU ge 80386
+
 .386
 
 BIOS32		segment	public 'CODE' use32
@@ -201,5 +203,7 @@ apm_pm32_back:				; return here from 16-bit code
 		retf
 
 BIOS32		ends
+
+endif		; 32-bit code
 
 		end

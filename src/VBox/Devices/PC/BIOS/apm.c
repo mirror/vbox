@@ -30,8 +30,11 @@
 /* Implemented in assembly. */
 extern void apm_pm16_entry(void);
 #pragma aux apm_pm16_entry "*"
+
+#if VBOX_BIOS_CPU >= 80386
 extern void apm_pm32_entry(void);
 #pragma aux apm_pm32_entry "*"
+#endif
 
 /* APM function codes. */
 enum apm_func {
@@ -172,6 +175,7 @@ void BIOSCALL apm_function(sys_regs_t r)
         SI = APM_BIOS_SEG_LEN;          /* 16-bit PM code segment length. */
         DI = APM_BIOS_SEG_LEN;          /* Data segment length. */
         break;
+#if VBOX_BIOS_CPU >= 80386
     case APM_32_CONN:
         /// @todo validate device ID
         /// @todo validate current connection state
@@ -185,6 +189,7 @@ void BIOSCALL apm_function(sys_regs_t r)
         set_ebx_hi(0);
         set_esi_hi(APM_BIOS_SEG_LEN);   /* 16-bit code segment length. */
         break;
+#endif
     case APM_IDLE:
         int_enable();   /* Simply halt the CPU with interrupts enabled. */
         halt();
