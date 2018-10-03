@@ -2494,7 +2494,7 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
                          Bstr("Do something").raw(), // aFirstOperationDescription
                          25); // ULONG ulFirstOperationWeight,
 
-            cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
+            hrc = cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
         } else {
             /// @todo Fail here with user notification. We do export 1 VM only
         }
