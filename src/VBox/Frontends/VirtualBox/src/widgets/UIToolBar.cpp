@@ -23,6 +23,9 @@
 # include <QLayout>
 # include <QMainWindow>
 # include <QResizeEvent>
+# ifdef VBOX_WS_MAC
+#  include <QPainter>
+# endif
 
 /* GUI includes: */
 # include "UIToolBar.h"
@@ -36,6 +39,9 @@
 UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)
     : QToolBar(pParent)
     , m_pMainWindow(qobject_cast<QMainWindow*>(pParent))
+#ifdef VBOX_WS_MAC
+    , m_fEmulateUnifiedToolbar(false)
+#endif
 {
     /* Prepare: */
     prepare();
@@ -61,6 +67,12 @@ void UIToolBar::enableMacToolbar()
         m_pMainWindow->setUnifiedTitleAndToolBarOnMac(true);
 }
 
+void UIToolBar::emulateMacToolbar()
+{
+    /* Remember request, to be used in paintEvent: */
+    m_fEmulateUnifiedToolbar = true;
+}
+
 void UIToolBar::setShowToolBarButton(bool fShow)
 {
     ::darwinSetShowsToolbarButton(this, fShow);
@@ -70,7 +82,7 @@ void UIToolBar::updateLayout()
 {
     // WORKAROUND:
     // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
+    // the necessary size of the tool-bar is increased. Also for some languages
     // the with doesn't match if the text increase. So manually adjust the size
     // after changing the text.
     QSizePolicy sp = sizePolicy();
@@ -91,6 +103,32 @@ void UIToolBar::resizeEvent(QResizeEvent *pEvent)
     emit sigResized(pEvent->size());
 }
 
+#ifdef VBOX_WS_MAC
+void UIToolBar::paintEvent(QPaintEvent *pEvent)
+{
+    /* Call to base-class: */
+    QToolBar::paintEvent(pEvent);
+
+    /* If we have request to emulate unified tool-bar: */
+    if (m_fEmulateUnifiedToolbar)
+    {
+        /* Acquire rectangle: */
+        const QRect rectangle = pEvent->rect();
+
+        /* Prepare gradient: */
+        const QColor backgroundColor = palette().color(QPalette::Active, QPalette::Mid);
+        QLinearGradient gradient(rectangle.topLeft(), rectangle.bottomLeft());
+        gradient.setColorAt(0,   backgroundColor.lighter(125));
+        gradient.setColorAt(.65, backgroundColor.lighter(130));
+        gradient.setColorAt(1,   backgroundColor.lighter(135));
+
+        /* Fill background: */
+        QPainter painter(this);
+        painter.fillRect(rectangle, gradient);
+    }
+}
+#endif /* VBOX_WS_MAC */
+
 void UIToolBar::prepare()
 {
     /* Configure tool-bar: */
@@ -108,4 +146,3 @@ void UIToolBar::prepare()
     /* Configure tool-bar' context-menu policy: */
     setContextMenuPolicy(Qt::NoContextMenu);
 }
-

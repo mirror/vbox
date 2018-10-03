@@ -26,9 +26,13 @@
 
 /* Forward declarations: */
 class QMainWindow;
+class QResizeEvent;
+class QWidget;
+#ifdef VBOX_WS_MAC
+class QPaintEvent;
+#endif
 
-/** QToolBar extension
-  * with few settings presets. */
+/** QToolBar extension with few settings presets. */
 class SHARED_LIBRARY_STUFF UIToolBar : public QToolBar
 {
     Q_OBJECT;
@@ -47,18 +51,26 @@ public:
     void setUseTextLabels(bool fEnable);
 
 #ifdef VBOX_WS_MAC
-    /** Mac OS X: Defines whether native tool-bar should be used. */
+    /** Mac OS X: Defines whether native tool-bar should be enabled. */
     void enableMacToolbar();
+    /** Mac OS X: Defines whether native tool-bar should be emulated. */
+    void emulateMacToolbar();
+
     /** Mac OS X: Defines whether native tool-bar button should be shown. */
     void setShowToolBarButton(bool fShow);
     /** Mac OS X: Updates native tool-bar layout. */
     void updateLayout();
-#endif /* VBOX_WS_MAC */
+#endif
 
 protected:
 
     /** Handles resize @a pEvent. */
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+#ifdef VBOX_WS_MAC
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+#endif
 
 private:
 
@@ -67,7 +79,11 @@ private:
 
     /** Holds the parent main-window isntance. */
     QMainWindow *m_pMainWindow;
+
+#ifdef VBOX_WS_MAC
+    /** Holds whether unified tool-bar should be emulated. */
+    bool  m_fEmulateUnifiedToolbar;
+#endif
 };
 
 #endif /* !___UIToolBar_h___ */
-
