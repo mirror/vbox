@@ -278,6 +278,10 @@ private:
         /** Holds the animated value. */
         int                 m_iAnimatedValue;
 
+        /** Holds minimum default lightness tone. */
+        int  m_iDefaultLightnessMin;
+        /** Holds maximum default lightness tone. */
+        int  m_iDefaultLightnessMax;
         /** Holds minimum hover lightness tone. */
         int  m_iHoverLightnessMin;
         /** Holds maximum hover lightness tone. */

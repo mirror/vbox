@@ -181,6 +181,14 @@ private slots:
 
 private:
 
+    /** Data field types. */
+    enum ToolsModelData
+    {
+        /* Layout hints: */
+        ToolsModelData_Margin,
+        ToolsModelData_Spacing,
+    };
+
     /** @name Prepare/Cleanup cascade.
       * @{ */
         /** Prepares all. */
@@ -210,6 +218,9 @@ private:
 
     /** @name General stuff.
       * @{ */
+        /** Returns abstractly stored data value for certain @a iKey. */
+        QVariant data(int iKey) const;
+
         /** Returns @a enmType string representation.
           * @todo move to UIConverter one day .. */
         static QString typeToString(UIToolsType enmType);

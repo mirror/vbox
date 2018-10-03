@@ -193,6 +193,8 @@ UIToolsItem::UIToolsItem(QGraphicsScene *pScene,
     , m_iDefaultValue(100)
     , m_iHoveredValue(90)
     , m_iAnimatedValue(m_iDefaultValue)
+    , m_iDefaultLightnessMin(0)
+    , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
     , m_iHoverLightnessMax(0)
     , m_iHighlightLightnessMin(0)
@@ -432,13 +434,17 @@ void UIToolsItem::prepare()
 #ifdef VBOX_WS_MAC
     m_iHighlightLightnessMin = 105;
     m_iHighlightLightnessMax = 115;
-    m_iHoverLightnessMin = 110;
-    m_iHoverLightnessMax = 120;
+    m_iHoverLightnessMin = 115;
+    m_iHoverLightnessMax = 125;
+    m_iDefaultLightnessMin = 145;
+    m_iDefaultLightnessMax = 155;
 #else /* VBOX_WS_MAC */
     m_iHighlightLightnessMin = 130;
     m_iHighlightLightnessMax = 160;
     m_iHoverLightnessMin = 160;
     m_iHoverLightnessMax = 190;
+    m_iDefaultLightnessMin = 160;
+    m_iDefaultLightnessMax = 190;
 #endif /* !VBOX_WS_MAC */
 
     /* Prepare fonts: */
@@ -729,8 +735,8 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
                                      : pal.color(QPalette::Disabled, QPalette::Midlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
     }
 
@@ -755,7 +761,7 @@ void UIToolsItem::paintFrame(QPainter *pPainter, const QRect &rectangle) const
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
     /* Default frame: */
     else
-        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iHoverLightnessMin);
+        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iDefaultLightnessMin);
 
     /* Create/assign pen: */
     QPen pen(strokeColor);

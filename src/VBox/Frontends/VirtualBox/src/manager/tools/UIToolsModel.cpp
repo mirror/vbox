@@ -289,10 +289,12 @@ QList<UIToolsItem*> UIToolsModel::items() const
 
 void UIToolsModel::updateLayout()
 {
-    /* Initialize variables: */
+    /* Prepare variables: */
+    const int iMargin = data(ToolsModelData_Margin).toInt();
+    const int iSpacing = data(ToolsModelData_Spacing).toInt();
     const QSize viewportSize = scene()->views()[0]->viewport()->size();
     const int iViewportWidth = viewportSize.width();
-    int iVerticalIndent = 0;
+    int iVerticalIndent = iMargin;
 
     /* Layout the children: */
     foreach (UIToolsItem *pItem, items())
@@ -305,13 +307,13 @@ void UIToolsModel::updateLayout()
         }
 
         /* Set item position: */
-        pItem->setPos(0, iVerticalIndent);
+        pItem->setPos(iMargin, iVerticalIndent);
         /* Set root-item size: */
         pItem->resize(iViewportWidth, pItem->minimumHeightHint());
         /* Make sure item is shown: */
         pItem->show();
         /* Advance vertical indent: */
-        iVerticalIndent += pItem->minimumHeightHint();
+        iVerticalIndent += (pItem->minimumHeightHint() + iSpacing);
     }
 }
 
@@ -323,20 +325,34 @@ void UIToolsModel::sltHandleViewResized()
 
 void UIToolsModel::sltItemMinimumWidthHintChanged()
 {
+    /* Prepare variables: */
+    const int iMargin = data(ToolsModelData_Margin).toInt();
+
     /* Calculate maximum horizontal width: */
     int iMinimumWidthHint = 0;
+    iMinimumWidthHint += 2 * iMargin;
     foreach (UIToolsItem *pItem, items())
         iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
+
+    /* Notify listeners: */
     emit sigItemMinimumWidthHintChanged(iMinimumWidthHint);
 }
 
 void UIToolsModel::sltItemMinimumHeightHintChanged()
 {
+    /* Prepare variables: */
+    const int iMargin = data(ToolsModelData_Margin).toInt();
+    const int iSpacing = data(ToolsModelData_Spacing).toInt();
+
     /* Calculate summary vertical height: */
     int iMinimumHeightHint = 0;
+    iMinimumHeightHint += 2 * iMargin;
     foreach (UIToolsItem *pItem, items())
         if (pItem->isVisible())
-            iMinimumHeightHint += pItem->minimumHeightHint();
+            iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
+    iMinimumHeightHint -= iSpacing;
+
+    /* Notify listeners: */
     emit sigItemMinimumHeightHintChanged(iMinimumHeightHint);
 }
 
@@ -534,6 +550,21 @@ void UIToolsModel::cleanup()
     cleanupItems();
     /* Cleanup scene: */
     cleanupScene();
+}
+
+QVariant UIToolsModel::data(int iKey) const
+{
+    /* Provide other members with required data: */
+    switch (iKey)
+    {
+        /* Layout hints: */
+        case ToolsModelData_Margin:  return 0;
+        case ToolsModelData_Spacing: return 1;
+
+        /* Default: */
+        default: break;
+    }
+    return QVariant();
 }
 
 /* static */
