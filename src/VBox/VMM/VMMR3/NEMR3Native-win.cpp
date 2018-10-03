@@ -2545,7 +2545,6 @@ TESTING...                                                           WinHv API  
 
  * @endverbatim
  *
- *
  * Suspects are security updates and/or microcode updates installed since then.
  * Given that the RDTSC and CR4 numbers are reasonably unchanges, it seems that
  * the Hyper-V core loop (in hvax64.exe) aren't affected.  Our ring-0 runloop
@@ -2567,23 +2566,26 @@ TESTING...                                                           WinHv API  
  * build 17134.  The RDTSC numbers hits that it isn't in the Hyper-V core
  * (hvax64.exe), but something on the NT side.
  *
+ * Clearing bit 20 in nt!KiSpeculationFeatures speeds things up (i.e. changing
+ * the dword from 0x00300065 to 0x00200065 in windbg).
+ *
  * @verbatim
-TESTING...                                                           WinHv API           Hypercalls + VID    VirtualBox AMD-V
-  32-bit paged protected mode, CPUID                        :           54 145 ins/sec        51 436
-  real mode, CPUID                                          :           54 178 ins/sec        51 713
+TESTING...                                                           WinHv API           Hypercalls + VID  clr(bit-20) + WinHv API
+  32-bit paged protected mode, CPUID                        :           54 145 ins/sec        51 436               130 076
+  real mode, CPUID                                          :           54 178 ins/sec        51 713               130 449
   [snip]
-  32-bit paged protected mode, RDTSC                        :       98 927 639 ins/sec   100 254 552
-  real mode, RDTSC                                          :       99 601 206 ins/sec   100 886 699
+  32-bit paged protected mode, RDTSC                        :       98 927 639 ins/sec   100 254 552           100 549 882
+  real mode, RDTSC                                          :       99 601 206 ins/sec   100 886 699           100 470 957
   [snip]
-  32-bit paged protected mode, 32-bit IN                    :           54 621 ins/sec        51 524
-  32-bit paged protected mode, 32-bit OUT                   :           54 870 ins/sec        51 671
-  32-bit paged protected mode, 32-bit IN-to-ring-3          :           54 624 ins/sec        43 964
-  32-bit paged protected mode, 32-bit OUT-to-ring-3         :           54 803 ins/sec        44 087
+  32-bit paged protected mode, 32-bit IN                    :           54 621 ins/sec        51 524               128 294
+  32-bit paged protected mode, 32-bit OUT                   :           54 870 ins/sec        51 671               129 397
+  32-bit paged protected mode, 32-bit IN-to-ring-3          :           54 624 ins/sec        43 964               127 874
+  32-bit paged protected mode, 32-bit OUT-to-ring-3         :           54 803 ins/sec        44 087               129 443
   [snip]
-  32-bit paged protected mode, 32-bit read                  :           28 230 ins/sec        34 042
-  32-bit paged protected mode, 32-bit write                 :           27 962 ins/sec        34 050
-  32-bit paged protected mode, 32-bit read-to-ring-3        :           27 841 ins/sec        28 397
-  32-bit paged protected mode, 32-bit write-to-ring-3       :           27 896 ins/sec        29 455
+  32-bit paged protected mode, 32-bit read                  :           28 230 ins/sec        34 042                48 113
+  32-bit paged protected mode, 32-bit write                 :           27 962 ins/sec        34 050                48 069
+  32-bit paged protected mode, 32-bit read-to-ring-3        :           27 841 ins/sec        28 397                48 146
+  32-bit paged protected mode, 32-bit write-to-ring-3       :           27 896 ins/sec        29 455                47 970
  * @endverbatim
  *
  *
