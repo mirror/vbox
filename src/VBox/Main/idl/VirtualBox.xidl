@@ -25387,6 +25387,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="remove">
+      <desc>
+        Deletes a profile.
+      </desc>
+    </method>
+
     <method name="createCloudClient">
       <desc>
         Creates a cloud client for this cloud profile.
@@ -25453,6 +25459,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="values" type="wstring" safearray="yes" dir="in">
         <desc>Values of set properties.</desc>
       </param>
+    </method>
+
+    <method name="importProfiles">
+      <desc>
+        Import the profiles from the original source
+      </desc>
+    </method>
+
+    <method name="restoreProfiles">
+      <desc>
+        Restores the old local profiles if they exist
+      </desc>
+    </method>
+
+    <method name="saveProfiles">
+      <desc>
+        Saves the local profiles
+      </desc>
     </method>
 
     <method name="getProfileByName">
