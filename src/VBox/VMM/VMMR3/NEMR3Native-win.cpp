@@ -2514,16 +2514,48 @@ SUCCESS
  * @subsubsection subsect_nem_win_benchmarks_bs2t1u1   17134/2018-10-02: Bootsector2-test1
  *
  * Update on 17134.  While expectantly testing a couple of newer builds (17758,
- * 17763) hoping for some increases in performance, the numbers turn out
- * to be generally worse than the initial test June test run.  So, I went back
- * to the 1803 (17134) installation and re-tested, finding that the numbers had
- * somehow turned worse over the last 3-4 months.
+ * 17763) hoping for some increases in performance, the numbers turned out
+ * to altogether worse than the June test run.  So, we went back to the 1803
+ * (17134) installation, made sure it was fully up to date (as per 2018-10-02)
+ * and re-tested.
+ *
+ * The numbers had somehow turned significantly worse over the last 3-4 months,
+ * dropping around  70%  for the WinHv API test, more for Hypercalls + VID.
+ *
+ * @verbatim
+TESTING...                                                           WinHv API           Hypercalls + VID    VirtualBox AMD-V *
+  32-bit paged protected mode, CPUID                        :           33 270 ins/sec        33 154
+  real mode, CPUID                                          :           33 534 ins/sec        32 711
+  [snip]
+  32-bit paged protected mode, RDTSC                        :      102 216 011 ins/sec    98 225 419
+  real mode, RDTSC                                          :      102 492 243 ins/sec    98 225 419
+  [snip]
+  32-bit paged protected mode, Read CR4                     :        2 096 165 ins/sec     2 123 815
+  real mode, Read CR4                                       :        2 081 047 ins/sec     2 075 151
+  [snip]
+  32-bit paged protected mode, 32-bit IN                    :           32 739 ins/sec        33 655
+  32-bit paged protected mode, 32-bit OUT                   :           32 702 ins/sec        33 777
+  32-bit paged protected mode, 32-bit IN-to-ring-3          :           32 579 ins/sec        29 985
+  32-bit paged protected mode, 32-bit OUT-to-ring-3         :           32 750 ins/sec        29 757
+  [snip]
+  32-bit paged protected mode, 32-bit read                  :           20 042 ins/sec        21 489
+  32-bit paged protected mode, 32-bit write                 :           20 036 ins/sec        21 493
+  32-bit paged protected mode, 32-bit read-to-ring-3        :           19 985 ins/sec        19 143
+  32-bit paged protected mode, 32-bit write-to-ring-3       :           19 972 ins/sec        19 595
+
+ * @endverbatim
  *
  *
+ * Suspects are security updates and/or microcode updates installed since then.
+ * Given that the RDTSC and CR4 numbers are reasonably unchanges, it seems that
+ * the Hyper-V core loop (in hvax64.exe) aren't affected.  Our ring-0 runloop
+ * is equally affected as the ring-3 based runloop, so it cannot be ring
+ * switching as such (unless the ring-0 loop is borked and we didn't notice yet).
  *
- * Suspects are security updates and/or microcode updates installed since then,
- * either hitting thread switching and/or hyper-V badly.  I'm a bit puzzled why
- * AMD is affected this badly too.
+ * The issue is probably in the thread / process switching area, could be
+ * something special for hyper-V interrupt delivery or worker thread switching.
+ *
+ * Really wish this thread ping-pong going on in VID.SYS could be eliminated!
  *
  *
  * @subsubsection subsect_nem_win_benchmarks_bs2t1u2   17763: Bootsector2-test1
@@ -2611,8 +2643,8 @@ TESTING...                                                           WinHv API  
  * and throughput.
  *
  * The setups, builds and configurations are as in the previous benchmarks
- * (release r123172 on 1950X running 64-bit W10/17134).  Please note that the
- * exit optimizations hasn't yet been in tuned with NetPerf in mind.
+ * (release r123172 on 1950X running 64-bit W10/17134 (2016-06-xx).  Please note
+ * that the exit optimizations hasn't yet been in tuned with NetPerf in mind.
  *
  * The NAT network setup was selected here since it's the default one and the
  * slowest one.  There is quite a bit of IPC with worker threads and packet
