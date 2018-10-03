@@ -4631,6 +4631,12 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("lgdt: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_GDTR_IDTR_ACCESS, VMXINSTRID_LGDT, cbInstr);
+    }
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_WRITES))
     {
         Log(("lgdt: Guest intercept -> #VMEXIT\n"));
@@ -4676,6 +4682,12 @@ IEM_CIMPL_DEF_2(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
      * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("sgdt: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_GDTR_IDTR_ACCESS, VMXINSTRID_SGDT, cbInstr);
+    }
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_READS))
     {
         Log(("sgdt: Guest intercept -> #VMEXIT\n"));
