@@ -269,6 +269,10 @@ private:
 
     /** @name Item stuff.
       * @{ */
+        /** Holds item minimum default lightness. */
+        int  m_iDefaultLightnessMin;
+        /** Holds item maximum default lightness. */
+        int  m_iDefaultLightnessMax;
         /** Holds item minimum hover lightness. */
         int  m_iHoverLightnessMin;
         /** Holds item maximum hover lightness. */
