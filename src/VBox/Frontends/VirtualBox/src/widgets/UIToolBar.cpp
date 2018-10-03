@@ -118,9 +118,8 @@ void UIToolBar::paintEvent(QPaintEvent *pEvent)
         /* Prepare gradient: */
         const QColor backgroundColor = palette().color(QPalette::Active, QPalette::Mid);
         QLinearGradient gradient(rectangle.topLeft(), rectangle.bottomLeft());
-        gradient.setColorAt(0,   backgroundColor.lighter(125));
-        gradient.setColorAt(.65, backgroundColor.lighter(130));
-        gradient.setColorAt(1,   backgroundColor.lighter(135));
+        gradient.setColorAt(0,   backgroundColor.lighter(130));
+        gradient.setColorAt(1,   backgroundColor.lighter(125));
 
         /* Fill background: */
         QPainter painter(this);
