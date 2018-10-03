@@ -2792,7 +2792,7 @@ RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBas
 RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBase, uint32_t *pu32);
 
 /**
- * Converts a string representation of a number to a 64-bit unsigned number.
+ * Converts a string representation of a number to a 32-bit unsigned number.
  * The base is guessed.
  *
  * @returns 32-bit unsigned number on success.
