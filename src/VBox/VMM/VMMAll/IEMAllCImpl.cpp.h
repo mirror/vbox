@@ -4795,6 +4795,12 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         Log(("lldt %04x - CPL is %d -> #GP(0)\n", uNewLdt, pVCpu->iem.s.uCpl));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
+    /* Nested-guest VMX intercept. */
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("lldt: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_LLDT, cbInstr);
+    }
     if (uNewLdt & X86_SEL_LDT)
     {
         Log(("lldt %04x - LDT selector -> #GP\n", uNewLdt));
@@ -4914,6 +4920,12 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
  */
 IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("sldt: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_SLDT, cbInstr);
+    }
+
     IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_LDTR);
@@ -4967,6 +4979,11 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     {
         Log(("ltr %04x - CPL is %d -> #GP(0)\n", uNewTr, pVCpu->iem.s.uCpl));
         return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("ltr: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_LTR, cbInstr);
     }
     if (uNewTr & X86_SEL_LDT)
     {
@@ -5079,6 +5096,12 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("str_reg: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_STR, cbInstr);
+    }
+
     IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
@@ -5103,6 +5126,12 @@ IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
+    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        Log(("str_mem: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_STR, cbInstr);
+    }
+
     IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
