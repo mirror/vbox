@@ -42,9 +42,12 @@
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary())
-    , m_iHoverLightness(0)
-    , m_iHighlightLightness(0)
-    , m_iHoverHighlightLightness(0)
+    , m_iDefaultLightnessMin(0)
+    , m_iDefaultLightnessMax(0)
+    , m_iHoverLightnessMin(0)
+    , m_iHoverLightnessMax(0)
+    , m_iHighlightLightnessMin(0)
+    , m_iHighlightLightnessMax(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
     , m_iHeightHint(0)
@@ -72,9 +75,12 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          UIChooserItemGlobal * ,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary())
-    , m_iHoverLightness(0)
-    , m_iHighlightLightness(0)
-    , m_iHoverHighlightLightness(0)
+    , m_iDefaultLightnessMin(0)
+    , m_iDefaultLightnessMax(0)
+    , m_iHoverLightnessMin(0)
+    , m_iHoverLightnessMax(0)
+    , m_iHighlightLightnessMin(0)
+    , m_iHighlightLightnessMax(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
 {
@@ -415,13 +421,19 @@ void UIChooserItemGlobal::prepare()
 {
     /* Colors: */
 #ifdef VBOX_WS_MAC
-    m_iHighlightLightness = 115;
-    m_iHoverLightness = 110;
-    m_iHoverHighlightLightness = 120;
+    m_iHighlightLightnessMin = 105;
+    m_iHighlightLightnessMax = 115;
+    m_iHoverLightnessMin = 115;
+    m_iHoverLightnessMax = 125;
+    m_iDefaultLightnessMin = 125;
+    m_iDefaultLightnessMax = 130;
 #else /* VBOX_WS_MAC */
-    m_iHighlightLightness = 130;
-    m_iHoverLightness = 155;
-    m_iHoverHighlightLightness = 175;
+    m_iHighlightLightnessMin = 130;
+    m_iHighlightLightnessMax = 160;
+    m_iHoverLightnessMin = 160;
+    m_iHoverLightnessMax = 190;
+    m_iDefaultLightnessMin = 160;
+    m_iDefaultLightnessMax = 190;
 #endif /* !VBOX_WS_MAC */
 
     /* Fonts: */
@@ -575,23 +587,44 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     if (model()->currentItems().contains(unconst(this)))
     {
         /* Prepare color: */
-        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightness));
-        bgGrad.setColorAt(1, highlight);
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHighlightLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
     }
     /* Hovering background: */
     else if (isHovered())
     {
         /* Prepare color: */
-        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, highlight.lighter(m_iHoverHighlightLightness));
-        bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightness));
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
+    }
+    /* Default background: */
+    else
+    {
+#ifdef VBOX_WS_MAC
+        /* Prepare color: */
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+        /* Draw gradient: */
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessMin));
+        pPainter->fillRect(rectangle, bgGrad);
+#else
+        /* Prepare color: */
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+        /* Draw gradient: */
+        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
+        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessMax));
+        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessMin));
+        pPainter->fillRect(rectangle, bgGrad);
+#endif
     }
 
     /* Restore painter: */
@@ -618,8 +651,10 @@ void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle)
     pen.setWidth(0);
     pPainter->setPen(pen);
 
-    /* Draw rectangle: */
-    pPainter->drawRect(rectangle);
+    /* Draw borders: */
+    pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight()    + QPoint(1, 0));
+    pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight() + QPoint(1, 0));
+    pPainter->drawLine(rectangle.topLeft(),    rectangle.bottomLeft());
 
     /* Restore painter: */
     pPainter->restore();
@@ -646,7 +681,7 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
         /* Prepare color: */
         const QPalette pal = palette();
         const QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
-        const QColor hhl = highlight.lighter(m_iHoverHighlightLightness);
+        const QColor hhl = highlight.lighter(m_iHoverLightnessMax);
         if (hhl.value() - hhl.saturation() > 0)
             pPainter->setPen(pal.color(QPalette::Active, QPalette::Text));
         else
