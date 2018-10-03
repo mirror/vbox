@@ -2515,7 +2515,7 @@ SUCCESS
  *
  * Update on 17134.  While expectantly testing a couple of newer builds (17758,
  * 17763) hoping for some increases in performance, the numbers turned out
- * to altogether worse than the June test run.  So, we went back to the 1803
+ * altogether worse than the June test run.  So, we went back to the 1803
  * (17134) installation, made sure it was fully up to date (as per 2018-10-02)
  * and re-tested.
  *
