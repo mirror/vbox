@@ -857,8 +857,10 @@ void UIChooserItemGroup::updateLayout()
             pItem->resize(iWidth, iMinimumHeight);
             /* Relayout group: */
             pItem->updateLayout();
-            /* Update indent for next items: */
-            iPreviousVerticalIndent += (iMinimumHeight + iChildrenSpacing);
+            /* Advance indent for next items: */
+            iPreviousVerticalIndent += iMinimumHeight;
+            if (pItem->type() != UIChooserItemType_Global)
+                iPreviousVerticalIndent += iChildrenSpacing;
         }
     }
 }
@@ -1460,7 +1462,11 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         {
             /* And every existing child height: */
             foreach (UIChooserItem *pItem, items())
-                iProposedHeight += (pItem->minimumHeightHint() + iChildrenSpacing);
+            {
+                iProposedHeight += pItem->minimumHeightHint();
+                if (pItem->type() != UIChooserItemType_Global)
+                    iProposedHeight += iChildrenSpacing;
+            }
         }
         /* Minus last spacing: */
         iProposedHeight -= iChildrenSpacing;
