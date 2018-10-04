@@ -135,4 +135,3 @@ bool UIWizardImportAppPageExpert::validatePage()
     /* Return result: */
     return fResult;
 }
-
