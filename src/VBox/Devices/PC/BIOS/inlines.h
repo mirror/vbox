@@ -26,12 +26,38 @@ extern unsigned outpw(unsigned port, unsigned value);
 #define inw(p)      inpw(p)
 #define outw(p, v)  outpw(p, v)
 
-extern  uint8_t     read_byte(uint16_t seg, uint16_t offset);
-extern  uint16_t    read_word(uint16_t seg, uint16_t offset);
-extern  uint32_t    read_dword(uint16_t seg, uint16_t offset);
-extern  void        write_byte(uint16_t seg, uint16_t offset, uint8_t data);
-extern  void        write_word(uint16_t seg, uint16_t offset, uint16_t data);
-extern  void        write_dword(uint16_t seg, uint16_t offset, uint32_t data);
+/* Far byte/word/dword access routines. */
+
+inline uint8_t read_byte(uint16_t seg, uint16_t offset)
+{
+    return( *(seg:>(uint8_t *)offset) );
+}
+
+inline void write_byte(uint16_t seg, uint16_t offset, uint8_t data)
+{
+    *(seg:>(uint8_t *)offset) = data;
+}
+
+inline uint16_t read_word(uint16_t seg, uint16_t offset)
+{
+    return( *(seg:>(uint16_t *)offset) );
+}
+
+inline void write_word(uint16_t seg, uint16_t offset, uint16_t data)
+{
+    *(seg:>(uint16_t *)offset) = data;
+}
+
+inline uint32_t read_dword(uint16_t seg, uint16_t offset)
+{
+    return( *(seg:>(uint32_t *)offset) );
+}
+
+inline void write_dword(uint16_t seg, uint16_t offset, uint32_t data)
+{
+    *(seg:>(uint32_t *)offset) = data;
+}
+
 
 void int_enable(void);
 #pragma aux int_enable = "sti" modify exact [] nomemory;

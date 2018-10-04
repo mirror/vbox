@@ -59,18 +59,6 @@
 
 extern uint16_t get_floppy_dpt(uint8_t drive_type);
 
-// Local copies to slihgtly reduce stack usage.
-inline uint8_t read_byte(uint16_t seg, uint16_t offset)
-{
-    return( *(seg:>(uint8_t *)offset) );
-}
-
-inline void write_byte(uint16_t seg, uint16_t offset, uint8_t data)
-{
-    *(seg:>(uint8_t *)offset) = data;
-}
-
-
 //////////////////////
 // FLOPPY functions //
 //////////////////////

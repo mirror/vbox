@@ -62,36 +62,6 @@
 
 static  const char  bios_cvs_version_string[] = "VirtualBox " VBOX_VERSION_STRING;
 
-uint8_t read_byte(uint16_t seg, uint16_t offset)
-{
-    return( *(seg:>(uint8_t *)offset) );
-}
-
-void write_byte(uint16_t seg, uint16_t offset, uint8_t data)
-{
-    *(seg:>(uint8_t *)offset) = data;
-}
-
-uint16_t read_word(uint16_t seg, uint16_t offset)
-{
-    return( *(seg:>(uint16_t *)offset) );
-}
-
-void write_word(uint16_t seg, uint16_t offset, uint16_t data)
-{
-    *(seg:>(uint16_t *)offset) = data;
-}
-
-uint32_t read_dword(uint16_t seg, uint16_t offset)
-{
-    return( *(seg:>(uint32_t *)offset) );
-}
-
-void write_dword(uint16_t seg, uint16_t offset, uint32_t data)
-{
-    *(seg:>(uint32_t *)offset) = data;
-}
-
 uint8_t inb_cmos(uint8_t cmos_reg)
 {
     uint8_t     cmos_port = 0x70;
