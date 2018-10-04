@@ -2539,6 +2539,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
  * VMX VM-exit handler.
  *
  * @returns Strict VBox status code.
+ * @retval VINF_VMX_VMEXIT when the VM-exit is successful.
+ * @retval VINF_EM_TRIPLE_FAULT when VM-exit is unsuccessful and leads to a
+ *         triple-fault.
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
  */
@@ -2592,6 +2596,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
  * This is intended for instructions where the caller provides all the relevant
  * VM-exit information.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
  */
@@ -2843,6 +2848,62 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, 
     fGstHostLmswMask = fGstHostMask & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
     *pu16NewMsw = (uGuestCr0 & fGstHostLmswMask) | (*pu16NewMsw & ~fGstHostLmswMask);
 
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to CLTS.
+ *
+ * @returns Strict VBox status code.
+ * @retval VINF_PERMISSION_DENIED if the CLTS instruction did not cause a VM-exit
+ *         but must not modify the guest CR0.TS bit.
+ * @retval VINF_VMX_INTERCEPT_NOT_ACTIVE if the CLTS instruction did not cause a
+ *         VM-exit but modification to the guest CR0.TS bit is allowed (subject to
+ *         CR0 fixed bits in VMX operation).
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length (in bytes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
+    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+
+    /*
+     * If CR0.TS is owned by the host:
+     *   - If CR0.TS is set in the read-shadow, we must cause a VM-exit.
+     *   - If CR0.TS is cleared in the read-shadow, no VM-exit is triggered, however
+     *     the CLTS instruction is not allowed to modify CR0.TS.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (fGstHostMask & X86_CR0_TS)
+    {
+        if (fReadShadow & X86_CR0_TS)
+        {
+            Log2(("clts: Guest intercept -> VM-exit\n"));
+
+            VMXVEXITINFO ExitInfo;
+            RT_ZERO(ExitInfo);
+            ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+            ExitInfo.cbInstr = cbInstr;
+
+            ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 0) /* CR0 */
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_CLTS);
+            return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+        }
+
+        return VINF_PERMISSION_DENIED;
+    }
+
+    /*
+     * If CR0.TS is not owned by the host, the CLTS instructions operates normally
+     * and may modify CR0.TS (subject to CR0 fixed bits in VMX operation).
+     */
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 

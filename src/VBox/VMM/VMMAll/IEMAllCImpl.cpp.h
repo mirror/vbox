@@ -5783,6 +5783,22 @@ IEM_CIMPL_DEF_0(iemCImpl_clts)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* Check nested-guest VMX intercept. */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict = iemVmxVmexitInstrClts(pVCpu, cbInstr);
+        if (rcStrict == VINF_PERMISSION_DENIED)
+        {
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+        else if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
     uint64_t uNewCr0 = pVCpu->cpum.GstCtx.cr0;
     uNewCr0 &= ~X86_CR0_TS;
     return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0, IEMACCESSCRX_CLTS, UINT8_MAX /* iGReg */);
