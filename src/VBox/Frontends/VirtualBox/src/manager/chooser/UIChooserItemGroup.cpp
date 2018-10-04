@@ -1467,9 +1467,9 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
                 if (pItem->type() != UIChooserItemType_Global)
                     iProposedHeight += iChildrenSpacing;
             }
+            /* Minus last spacing: */
+            iProposedHeight -= iChildrenSpacing;
         }
-        /* Minus last spacing: */
-        iProposedHeight -= iChildrenSpacing;
 
         /* Finally, additional height during animation: */
         if (!fGroupOpened && m_pToggleButton && m_pToggleButton->isAnimationRunning())
@@ -1667,11 +1667,14 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
-        tRect.setBottom(tRect.top() + iFullHeaderHeight);
+        if (!m_fClosed)
+            tRect.setBottom(tRect.top() + iFullHeaderHeight - 1);
+
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
         tGradient.setColorAt(1, headerColor.darker(animatedValue()));
         tGradient.setColorAt(0, headerColor.darker(headerDarkness()));
+
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
 
@@ -1711,21 +1714,30 @@ void UIChooserItemGroup::paintFrameRectangle(QPainter *pPainter, const QRect &re
     /* Save painter: */
     pPainter->save();
 
-    /* Prepare color: */
-    QPalette pal = palette();
-    QColor strokeColor;
+    /* Prepare variables: */
+    const int iMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
 
-    strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
+    /* Prepare color: */
+    const QPalette pal = palette();
+    const QColor strokeColor = pal.color(QPalette::Active,
+                                         model()->currentItems().contains(this) ?
+                                         QPalette::Highlight : QPalette::Midlight).darker(headerDarkness() + 10);
 
     /* Create/assign pen: */
     QPen pen(strokeColor);
     pen.setWidth(0);
     pPainter->setPen(pen);
 
+    /* Calculate top rectangle: */
+    QRect tRect = rect;
+    if (!m_fClosed)
+        tRect.setBottom(tRect.top() + iFullHeaderHeight - 1);
+
     /* Draw borders: */
-    pPainter->drawLine(rect.topLeft(),    rect.topRight() + QPoint(1, 0));
-    pPainter->drawLine(rect.bottomLeft(), rect.bottomRight() + QPoint(1, 0));
-    pPainter->drawLine(rect.topLeft(),    rect.bottomLeft());
+    pPainter->drawLine(tRect.topLeft(),    tRect.topRight()    + QPoint(1, 0));
+    pPainter->drawLine(tRect.bottomLeft(), tRect.bottomRight() + QPoint(1, 0));
+    pPainter->drawLine(tRect.topLeft(),    tRect.bottomLeft());
 
     /* Restore painter: */
     pPainter->restore();
