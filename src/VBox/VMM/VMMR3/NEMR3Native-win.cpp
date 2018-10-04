@@ -2567,7 +2567,10 @@ TESTING...                                                           WinHv API  
  * (hvax64.exe), but something on the NT side.
  *
  * Clearing bit 20 in nt!KiSpeculationFeatures speeds things up (i.e. changing
- * the dword from 0x00300065 to 0x00200065 in windbg).
+ * the dword from 0x00300065 to 0x00200065 in windbg).  This is checked by
+ * nt!KePrepareToDispatchVirtualProcessor, making it a no-op if the flag is
+ * clear.  winhvr!WinHvpVpDispatchLoop call that function before making
+ * hypercall 0xc2, which presumably does the heavy VCpu lifting in hvcax64.exe.
  *
  * @verbatim
 TESTING...                                                           WinHv API           Hypercalls + VID  clr(bit-20) + WinHv API
