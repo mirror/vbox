@@ -5718,7 +5718,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
  * Implements mov CRx,GReg.
  *
  * @param   iCrReg          The CRx register to write (valid).
- * @param   iGReg           The general register to load the DRx value from.
+ * @param   iGReg           The general register to load the CRx value from.
  */
 IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
 {
@@ -5734,6 +5734,20 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
         uNewCrX = iemGRegFetchU64(pVCpu, iGReg);
     else
         uNewCrX = iemGRegFetchU32(pVCpu, iGReg);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        if (iCrReg == 0)
+        {
+            IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
+            VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovCr0Write(pVCpu, pVCpu->cpum.GstCtx.cr0, &uNewCrX, iGReg, cbInstr);
+            if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                return rcStrict;
+        }
+    }
+#endif
+
     return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, iCrReg, uNewCrX, IEMACCESSCRX_MOV_CRX, iGReg);
 }
 

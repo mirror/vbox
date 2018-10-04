@@ -1299,7 +1299,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestPhysAddr(PVMCPU pVCpu, uint64_t uG
  * Sets the VM-exit instruction length VMCS field.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   cbInstr     The VM-exit instruction length (in bytes).
+ * @param   cbInstr     The VM-exit instruction length in bytes.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrLen(PVMCPU pVCpu, uint32_t cbInstr)
 {
@@ -2644,7 +2644,7 @@ DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO 
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
- * @param   cbInstr         The instruction length (in bytes).
+ * @param   cbInstr         The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, uint8_t cbInstr)
 {
@@ -2690,7 +2690,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, ui
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
  * @param   uInstrid        The instruction identity (VMXINSTRID_XXX).
- * @param   cbInstr         The instruction length (in bytes).
+ * @param   cbInstr         The instruction length in bytes.
  *
  * @remarks Do not use this for INS/OUTS instruction.
  */
@@ -2748,7 +2748,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPtrPage       The guest-linear address of the page being invalidated.
- * @param   cbInstr         The instruction length (in bytes).
+ * @param   cbInstr         The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPU pVCpu, RTGCPTR GCPtrPage, uint8_t cbInstr)
 {
@@ -2775,7 +2775,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPU pVCpu, RTGCPTR GCPtrPage,
  * @param   GCPtrEffDst     The guest-linear address of the source operand in case
  *                          of a memory operand. For register operand, pass
  *                          NIL_RTGCPTR.
- * @param   cbInstr         The instruction length (in bytes).
+ * @param   cbInstr         The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, uint16_t *pu16NewMsw, RTGCPTR GCPtrEffDst,
                                               uint8_t cbInstr)
@@ -2863,7 +2863,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, 
  *         CR0 fixed bits in VMX operation).
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length (in bytes).
+ * @param   cbInstr         The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
 {
@@ -2904,6 +2904,60 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
      * If CR0.TS is not owned by the host, the CLTS instructions operates normally
      * and may modify CR0.TS (subject to CR0 fixed bits in VMX operation).
      */
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to 'Mov CR0, GReg' (CR0 write).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   puNewCr0        Pointer to the new CR0 value. Will be updated if no
+ *                          VM-exit is triggered.
+ * @param   iGReg           The general register to load the CR0 value from.
+ * @param   cbInstr         The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovCr0Write(PVMCPU pVCpu, uint64_t uGuestCr0, uint64_t *puNewCr0, uint8_t iGReg,
+                                                     uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(puNewCr0);
+
+    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
+    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+
+    /*
+     * For any CR0 bit owned by the host (in the CR0 guest/host mask), if the
+     * corresponding bits differ between the source operand and the read-shadow,
+     * we must cause a VM-exit.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if ((fReadShadow & fGstHostMask) != (*puNewCr0 & fGstHostMask))
+    {
+        Log2(("mov_Cr_Rd: Guest intercept -> VM-exit\n"));
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 0) /* CR0 */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    /*
+     * If Mov-to-CR0 did not cause a VM-exit, any bits owned by the host must not
+     * be modified the instruction.
+     *
+     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+     */
+    *puNewCr0 = (uGuestCr0 & fGstHostMask) | (*puNewCr0 & ~fGstHostMask);
+
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 
@@ -4861,7 +4915,7 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   uInstrId        The instruction identity (VMXINSTRID_VMLAUNCH or
  *                          VMXINSTRID_VMRESUME).
  * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
@@ -5138,7 +5192,7 @@ IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint32_t uExitRe
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   pu64Dst         Where to write the VMCS value (only updated when
  *                          VINF_SUCCESS is returned).
  * @param   u64FieldEnc     The VMCS field encoding.
@@ -5244,7 +5298,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   pu64Dst         Where to store the VMCS field's value.
  * @param   u64FieldEnc     The VMCS field encoding.
  * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
@@ -5270,7 +5324,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   pu32Dst         Where to store the VMCS field's value.
  * @param   u32FieldEnc     The VMCS field encoding.
  * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
@@ -5298,7 +5352,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
  *                          Pass UINT8_MAX if it is a register access.
  * @param   enmEffAddrMode  The effective addressing mode (only used with memory
@@ -5351,7 +5405,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
  *                          Pass UINT8_MAX if it is a register access.
  * @param   enmEffAddrMode  The effective addressing mode (only used with memory
@@ -5501,7 +5555,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
  * @param   GCPtrVmcs       The linear address of the VMCS pointer.
  * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
@@ -5615,7 +5669,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
  * @param   GCPtrVmcs       The linear address of where to store the current VMCS
  *                          pointer.
@@ -5667,7 +5721,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   GCPtrVmcs       The linear address of the current VMCS pointer.
  * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
  *                          be NULL.
@@ -5802,7 +5856,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length.
+ * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a
  *                          GCPtrVmxon.
  * @param   GCPtrVmxon      The linear address of the VMXON pointer.
