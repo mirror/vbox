@@ -204,7 +204,7 @@ static const struct file_operations vbox_fops = {
 #endif
 	.mmap = vbox_mmap,
 	.poll = drm_poll,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_73)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_70)
 	.fasync = drm_fasync,
 #endif
 #ifdef CONFIG_COMPAT

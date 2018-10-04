@@ -58,8 +58,14 @@
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 3
 #  define RHEL_73
 # endif
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 2
+#  define RHEL_72
+# endif
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 1
 #  define RHEL_71
+# endif
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 0
+#  define RHEL_70
 # endif
 #endif
 
@@ -79,7 +85,7 @@
 #endif
 
 #include <drm/drmP.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
 #include <drm/drm_gem.h>
 #endif
 #include <drm/drm_fb_helper.h>
@@ -261,7 +267,7 @@ void vbox_mode_fini(struct drm_device *dev);
 #define DRM_MODE_FB_CMD drm_mode_fb_cmd2
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0) && !defined(RHEL_73)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0) && !defined(RHEL_71)
 #define CRTC_FB(crtc) ((crtc)->fb)
 #else
 #define CRTC_FB(crtc) ((crtc)->primary->fb)
@@ -292,7 +298,7 @@ struct vbox_bo {
 	struct ttm_placement placement;
 	struct ttm_bo_kmap_obj kmap;
 	struct drm_gem_object gem;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_73)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_72)
 	u32 placements[3];
 #else
 	struct ttm_place placements[3];
@@ -367,7 +373,7 @@ int vbox_gem_prime_pin(struct drm_gem_object *obj);
 void vbox_gem_prime_unpin(struct drm_gem_object *obj);
 struct sg_table *vbox_gem_prime_get_sg_table(struct drm_gem_object *obj);
 struct drm_gem_object *vbox_gem_prime_import_sg_table(struct drm_device *dev,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_73)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_72)
 						      size_t size,
 #else
 						      struct dma_buf_attachment
