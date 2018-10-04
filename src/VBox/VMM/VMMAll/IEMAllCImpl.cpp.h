@@ -5161,7 +5161,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         IEM_SVM_CRX_VMEXIT_RET(pVCpu, SVM_EXIT_READ_CR0 + iCrReg, IEMACCESSCRX_MOV_CRX, iGReg);
     }
 
-    /* read it */
+    /* Read it. */
     uint64_t crX;
     switch (iCrReg)
     {
@@ -5209,6 +5209,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* CRx bits are subject to masking when in VMX non-root mode. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (iCrReg == 0)
@@ -5216,7 +5217,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     }
 #endif
 
-    /* store it */
+    /* Store it. */
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         *(uint64_t *)iemGRegRef(pVCpu, iGReg) = crX;
     else
