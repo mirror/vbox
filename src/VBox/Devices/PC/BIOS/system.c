@@ -84,42 +84,47 @@ uint16_t read_ss(void);
  * Quite straightforward.
  */
 
-void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si, uint16_t frame);
+void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si);
 #pragma aux pm_stack_save =     \
     ".386"                      \
     "push   ds"                 \
     "push   eax"                \
-    "xor    eax, eax"           \
+    "xor    ax, ax"             \
     "mov    ds, ax"             \
     "mov    ds:[467h], sp"      \
     "mov    ds:[469h], ss"      \
-    parm [cx] [es] [si] [ax] modify nomemory;
+    parm [cx] [es] [si] modify nomemory;
 
-/* Uses position independent code... because it was too hard to figure
- * out how to code the far call in inline assembler.
+/* Uses position independent code to build a far return... because it was
+ * too hard to figure out how to code the far call in inline assembler.
+ *
+ * NB: It would be lovely to do 'add [sp],N' instead of 'pop ax; add ax,M;
+ * push ax'. Unfortunately the former cannot be encoded, though 'add [esp],N'
+ * can be on 386 and later -- but it may be unwise to assume that the high
+ * bits of ESP are all zero.
  */
 void pm_enter(void);
 #pragma aux pm_enter =              \
     ".386p"                         \
+    "lgdt   fword ptr es:[si+8]"    \
+    "lidt   fword ptr cs:pmode_IDT" \
+    "push   20h"                    \
     "call   pentry"                 \
     "pentry:"                       \
     "pop    ax"                     \
-    "add    ax, 1Bh"                \
-    "push   20h"                    \
+    "add    ax, 0Eh"                \
     "push   ax"                     \
-    "lgdt   fword ptr es:[si+8]"    \
-    "lidt   fword ptr cs:pmode_IDT" \
     "mov    eax, cr0"               \
     "or     al, 1"                  \
     "mov    cr0, eax"               \
     "retf"                          \
     "pm_pm:"                        \
-    "mov    ax, 28h"                \
-    "mov    ss, ax"                 \
     "mov    ax, 10h"                \
     "mov    ds, ax"                 \
-    "mov    ax, 18h"                \
+    "add    al, 08h"                \
     "mov    es, ax"                 \
+    "add    al, 10h"                \
+    "mov    ss, ax"                 \
     modify nomemory;
 
 /* Restore segment limits to real mode compatible values and
@@ -128,15 +133,15 @@ void pm_enter(void);
 void pm_exit(void);
 #pragma aux pm_exit =               \
     ".386p"                         \
-    "call   pexit"                  \
-    "pexit:"                        \
-    "pop    ax"                     \
-    "push   0F000h"                 \
-    "add    ax, 18h"                \
-    "push   ax"                     \
     "mov    ax, 28h"                \
     "mov    ds, ax"                 \
     "mov    es, ax"                 \
+    "push   0F000h"                 \
+    "call   pexit"                  \
+    "pexit:"                        \
+    "pop    ax"                     \
+    "add    ax, 0Eh"                \
+    "push   ax"                     \
     "mov    eax, cr0"               \
     "and    al, 0FEh"               \
     "mov    cr0, eax"               \
@@ -175,29 +180,29 @@ void pm_stack_save(uint16_t cx, uint16_t es, uint16_t si, uint16_t frame);
 
 /* Uses position independent code... because it was too hard to figure
  * out how to code the far call in inline assembler.
- * NB: Trashes MSW bits but the CPU will be reset anyway.
  */
 void pm_enter(void);
 #pragma aux pm_enter =              \
     ".286p"                         \
-    "call   pentry"                 \
-    "pentry:"                       \
-    "pop    di"                     \
-    "add    di, 18h"                \
-    "push   20h"                    \
-    "push   di"                     \
     "lgdt   fword ptr es:[si+8]"    \
     "lidt   fword ptr cs:pmode_IDT" \
+    "push   20h"                    \
+    "call   pentry"                 \
+    "pentry:"                       \
+    "pop    ax"                     \
+    "add    ax, 0Eh"                \
+    "push   ax"                     \
+    "smsw   ax"                     \
     "or     al, 1"                  \
     "lmsw   ax"                     \
     "retf"                          \
     "pm_pm:"                        \
-    "mov    ax, 28h"                \
-    "mov    ss, ax"                 \
     "mov    ax, 10h"                \
     "mov    ds, ax"                 \
-    "mov    ax, 18h"                \
+    "add    al, 08h"                \
     "mov    es, ax"                 \
+    "add    al, 10h"                \
+    "mov    ss, ax"                 \
     modify nomemory;
 
 /* Set up shutdown status and reset the CPU. The POST code
@@ -226,13 +231,14 @@ void pm_stack_restore(void);
 
 #endif
 
+/* NB: CX is set earlier in pm_stack_save */
 void pm_copy(void);
 #pragma aux pm_copy =               \
     "xor    si, si"                 \
     "xor    di, di"                 \
     "cld"                           \
     "rep    movsw"                  \
-    modify [di] nomemory;
+    modify [si di cx] nomemory;
 
 /* The pm_switch has a few crucial differences from pm_enter, hence
  * it is replicated here. Uses LMSW to avoid trashing high word of eax.
@@ -240,24 +246,25 @@ void pm_copy(void);
 void pm_switch(uint16_t reg_si);
 #pragma aux pm_switch =             \
     ".286p"                         \
-    "call   pentry"                 \
-    "pentry:"                       \
-    "pop    di"                     \
-    "add    di, 18h"                \
-    "push   38h"                    \
-    "push   di"                     \
     "lgdt   fword ptr es:[si+08h]"  \
     "lidt   fword ptr es:[si+10h]"  \
-    "mov    ax, 1"                  \
+    "push   38h"                    \
+    "call   pentry"                 \
+    "pentry:"                       \
+    "pop    ax"                     \
+    "add    ax, 0Eh"                \
+    "push   ax"                     \
+    "smsw   ax"                     \
+    "or     al, 1"                  \
     "lmsw   ax"                     \
     "retf"                          \
     "pm_pm:"                        \
-    "mov    ax, 28h"                \
-    "mov    ss, ax"                 \
     "mov    ax, 18h"                \
     "mov    ds, ax"                 \
-    "mov    ax, 20h"                \
+    "add    al, 08h"                \
     "mov    es, ax"                 \
+    "add    al, 08h"                \
+    "mov    ss, ax"                 \
     parm [si] modify nomemory;
 
 /* Return to caller - we do not use IRET because we should not enable
@@ -860,7 +867,7 @@ void BIOSCALL int15_blkmove(disk_regs_t r)
     // offset   use     initially  comments
     // ==============================================
     // 00..07   Unused  zeros      Null descriptor
-    // 08..0f   GDT     zeros      filled in by BIOS
+    // 08..0f   scratch zeros      work area used by BIOS
     // 10..17   source  ssssssss   source of data
     // 18..1f   dest    dddddddd   destination of data
     // 20..27   CS      zeros      filled in by BIOS
@@ -901,7 +908,14 @@ void BIOSCALL int15_blkmove(disk_regs_t r)
     write_byte(ES, SI+0x28+5, 0x93);     // access
     write_word(ES, SI+0x28+6, 0x0000);   // base 31:24/reserved/limit 19:16
 
+#if VBOX_BIOS_CPU >= 80386
+    /* Not taking the address of the parameter allows the code generator
+     * produce slightly better code for some unknown reason.
+     */
+    pm_stack_save(CX, ES, SI);
+#else
     pm_stack_save(CX, ES, SI, FP_OFF(&r));
+#endif
     pm_enter();
     pm_copy();
     pm_exit();
