@@ -5208,6 +5208,14 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        if (iCrReg == 0)
+            crX = iemVmxGetMaskedCr0(pVCpu, crX);
+    }
+#endif
+
     /* store it */
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
         *(uint64_t *)iemGRegRef(pVCpu, iGReg) = crX;
