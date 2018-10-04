@@ -1965,8 +1965,8 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
 /** @page pg_nem_win NEM/win - Native Execution Manager, Windows.
  *
  * On Windows the Hyper-V root partition (dom0 in zen terminology) does not have
- * nested VT-x or AMD-V capabilities.  For a while raw-mode worked inside it,
- * but for a while now we've been getting \#GP when trying to modify CR4 in the
+ * nested VT-x or AMD-V capabilities.  Early on raw-mode worked inside it, but
+ * for a while now we've been getting \#GPs when trying to modify CR4 in the
  * world switcher.  So, when Hyper-V is active on Windows we have little choice
  * but to use Hyper-V to run our VMs.
  *
@@ -1974,7 +1974,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * @section sub_nem_win_whv   The WinHvPlatform API
  *
  * Since Windows 10 build 17083 there is a documented API for managing Hyper-V
- * VMs, header file WinHvPlatform.h and implementation in WinHvPlatform.dll.
+ * VMs: header file WinHvPlatform.h and implementation in WinHvPlatform.dll.
  * This interface is a wrapper around the undocumented Virtualization
  * Infrastructure Driver (VID) API - VID.DLL and VID.SYS.  The wrapper is
  * written in C++, namespaced, early versions (at least) was using standard C++
@@ -1986,7 +1986,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * WHvSetupPartition after first setting a lot of properties using
  * WHvSetPartitionProperty.  Since the VID API is just a very thin wrapper
  * around CreateFile and NtDeviceIoControlFile, it returns an actual HANDLE for
- * the partition WinHvPlatform.  We fish this HANDLE out of the WinHvPlatform
+ * the partition to WinHvPlatform.  We fish this HANDLE out of the WinHvPlatform
  * partition structures because we need to talk directly to VID for reasons
  * we'll get to in a bit.  (Btw. we could also intercept the CreateFileW or
  * NtDeviceIoControlFile calls from VID.DLL to get the HANDLE should fishing in
@@ -1999,9 +1999,11 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * and/or the VID.SYS thread actually running the CPU thru
  * WinHvRunVpDispatchLoop().  When for instance a VMEXIT is encountered, hyper-V
  * sends a message that the WHvRunVirtualProcessor API retrieves (and later
- * acknowledges) via VidMessageSlotHandleAndGetNext.  It should be noteded that
- * WHvDeleteVirtualProcessor doesn't do much as there seems to be no partner
- * function VidMessagesSlotMap that reverses what it did.
+ * acknowledges) via VidMessageSlotHandleAndGetNext.   Since or about build
+ * 17757 a register page is also mapped into user space when creating the
+ * virtual CPU.  It should be noteded that WHvDeleteVirtualProcessor doesn't do
+ * much as there seems to be no partner function VidMessagesSlotMap that
+ * reverses what it did.
  *
  * Memory is managed thru calls to WHvMapGpaRange and WHvUnmapGpaRange (GPA does
  * not mean grade point average here, but rather guest physical addressspace),
@@ -2010,23 +2012,22 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * memory.  The mappings are also subject to quota restrictions, so the number
  * of ranges are limited and probably their total size as well.  Obviously
  * VID.SYS keeps track of the ranges, but so does WinHvPlatform, which means
- * there is a bit of overhead involved and quota restrctions makes sense.  For
- * some reason though, regions are lazily mapped on VMEXIT/memory by
- * WHvRunVirtualProcessor.
+ * there is a bit of overhead involved and quota restrctions makes sense.
  *
- * Running guest code is done thru the WHvRunVirtualProcessor function.  It
+ * Running guest code is done through the WHvRunVirtualProcessor function.  It
  * asynchronously starts or resumes hyper-V CPU execution and then waits for an
  * VMEXIT message.  Hyper-V / VID.SYS will return information about the message
  * in the message buffer mapping, and WHvRunVirtualProcessor will convert that
  * finto it's own WHV_RUN_VP_EXIT_CONTEXT format.
  *
  * Other threads can interrupt the execution by using WHvCancelVirtualProcessor,
- * which which case the thread in WHvRunVirtualProcessor is woken up via a dummy
- * QueueUserAPC and will call VidStopVirtualProcessor to asynchronously end
- * execution.  The stop CPU call not immediately succeed if the CPU encountered
- * a VMEXIT before the stop was processed, in which case the VMEXIT needs to be
- * processed first, and the pending stop will be processed in a subsequent call
- * to WHvRunVirtualProcessor.
+ * which since or about build 17757 uses VidMessageSlotHandleAndGetNext to do
+ * the work (earlier builds would open the waiting thread, do a dummy
+ * QueueUserAPC on it, and let it upon return use VidStopVirtualProcessor to
+ * do the actual stopping).  While there is certainly a race between cancelation
+ * and the CPU causing a natural VMEXIT, it is not known whether this still
+ * causes extra work on subsequent WHvRunVirtualProcessor calls (it did in and
+ * earlier 17134).
  *
  * Registers are retrieved and set via WHvGetVirtualProcessorRegisters and
  * WHvSetVirtualProcessorRegisters.  In addition, several VMEXITs include
@@ -2069,8 +2070,8 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   there will only be real gains if the exitting instructions are tightly
  *   packed.
  *
- *   Update: Somewhere along the security fixes or/and microcode updates this
- *   summer (2018), performance dropped even more.
+ *   Update: Security fixes during the summer of 2018 caused the performance to
+ *   dropped even more.
  *
  *   Update [build 17757]: Some performance improvements here, but they don't
  *   yet make up for what was lost this summer.
@@ -2110,6 +2111,9 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   cause a lot more spurious WHvRunVirtualProcessor returns that what we get
  *   with the replacement code.  By spurious returns we mean that the
  *   subsequent call to WHvRunVirtualProcessor would return immediately.
+ *
+ *   Update [build 17757]: New cancelation code might have addressed this, but
+ *   haven't had time to test it yet.
  *
  *
  * - There is no API for modifying protection of a page within a GPA range.
