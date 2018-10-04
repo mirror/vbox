@@ -92,7 +92,7 @@ void UIApplianceImportEditorWidget::prepareWidgets()
     m_pMACComboBox = new QComboBox;
     if (m_pMACComboBox)
     {
-        m_pMACComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::QSizePolicy::Preferred);
+        m_pMACComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         /* Add into layout: */
         m_pOptionsLayout->addWidget(m_pMACComboBox, 0, 1);
     }
