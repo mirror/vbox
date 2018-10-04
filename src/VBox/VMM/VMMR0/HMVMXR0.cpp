@@ -77,6 +77,7 @@
 #define HMVMX_READ_EXIT_INTERRUPTION_INFO        RT_BIT_32(4)
 #define HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE  RT_BIT_32(5)
 #define HMVMX_READ_EXIT_INSTR_INFO               RT_BIT_32(6)
+#define HMVMX_READ_GUEST_LINEAR_ADDR             RT_BIT_32(7)
 /** @} */
 
 /**
@@ -262,6 +263,8 @@ typedef struct VMXTRANSIENT
     uint32_t            uExitIntErrorCode;
     /** The VM-exit exit code qualification. */
     uint64_t            uExitQual;
+    /** The Guest-linear address. */
+    uint64_t            uGuestLinearAddr;
 
     /** The VM-exit interruption-information field. */
     uint32_t            uExitIntInfo;
@@ -723,8 +726,7 @@ DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * Reads the exit code qualification from the VMCS into the VMX transient
- * structure.
+ * Reads the VM-exit Qualification from the VMCS into the VMX transient structure.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the
@@ -738,6 +740,26 @@ DECLINLINE(int) hmR0VmxReadExitQualVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         int rc = VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION, &pVmxTransient->uExitQual); NOREF(pVCpu);
         AssertRCReturn(rc, rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_EXIT_QUALIFICATION;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads the Guest-linear address from the VMCS into the VMX transient structure.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT. (Required for the VMCS cache case.)
+ * @param   pVmxTransient   Pointer to the VMX transient structure.
+ */
+DECLINLINE(int) hmR0VmxReadGuestLinearAddrVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_READ_GUEST_LINEAR_ADDR))
+    {
+        int rc = VMXReadVmcsGstN(VMX_VMCS_RO_GUEST_LINEAR_ADDR, &pVmxTransient->uGuestLinearAddr); NOREF(pVCpu);
+        AssertRCReturn(rc, rc);
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_LINEAR_ADDR;
     }
     return VINF_SUCCESS;
 }
@@ -12281,7 +12303,10 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
             /* Note! LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here. */
-            rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr, VMX_EXIT_QUAL_CRX_LMSW_DATA(uExitQual));
+            rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+            AssertRCReturn(rc, rc);
+            rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr, VMX_EXIT_QUAL_CRX_LMSW_DATA(uExitQual),
+                                          pVmxTransient->uGuestLinearAddr);
             AssertMsg(   rcStrict == VINF_SUCCESS
                       || rcStrict == VINF_IEM_RAISED_XCPT
                       , ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));

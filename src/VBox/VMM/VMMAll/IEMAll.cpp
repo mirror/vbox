@@ -5491,7 +5491,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
              * Check and handle if the event being raised is intercepted.
              */
             VBOXSTRICTRC rcStrict0 = iemHandleSvmEventIntercept(pVCpu, u8Vector, fFlags, uErr, uCr2);
-            if (rcStrict0 != VINF_HM_INTERCEPT_NOT_ACTIVE)
+            if (rcStrict0 != VINF_SVM_INTERCEPT_NOT_ACTIVE)
                 return rcStrict0;
         }
     }
@@ -15078,18 +15078,20 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
  * Interface for HM and EM to emulate the LMSW instruction (loads CR0).
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   cbInstr     The instruction length in bytes.
- * @param   uValue      The value to load into CR0.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cbInstr         The instruction length in bytes.
+ * @param   uValue          The value to load into CR0.
+ * @param   GCPtrEffDst     The guest-linear address if the LMSW instruction has a
+ *                          memory operand. Otherwise pass NIL_RTGCPTR.
  *
  * @remarks In ring-0 not all of the state needs to be synced in.
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uValue)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uValue, RTGCPTR GCPtrEffDst)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
-    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_1(iemCImpl_lmsw, uValue);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_lmsw, uValue, GCPtrEffDst);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }

@@ -1213,7 +1213,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
                                            true /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("iemCImpl_ins_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pVCpu->cpum.GstCtx.dx, OP_SIZE / 8,
                  VBOXSTRICTRC_VAL(rcStrict)));
@@ -1284,7 +1284,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                                            true /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("iemCImpl_rep_ins_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, OP_SIZE / 8,
                  VBOXSTRICTRC_VAL(rcStrict)));
@@ -1485,7 +1485,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
                                            true /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("iemCImpl_outs_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pVCpu->cpum.GstCtx.dx, OP_SIZE / 8,
                  VBOXSTRICTRC_VAL(rcStrict)));
@@ -1544,7 +1544,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                                            true /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("iemCImpl_rep_outs_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, OP_SIZE / 8,
                  VBOXSTRICTRC_VAL(rcStrict)));

@@ -2103,6 +2103,9 @@
 #define VERR_VMX_VMENTRY_FAILED                     (-4033)
 /** Generic VM-exit failure. */
 #define VERR_VMX_VMEXIT_FAILED                      (-4034)
+/** The requested nested-guest VMX intercept is not active or not in
+ *  nested-guest execution mode. */
+#define VINF_VMX_INTERCEPT_NOT_ACTIVE               4035
 /** @} */
 
 
@@ -2144,9 +2147,12 @@
 /** The nested-guest \#VMEXIT processing failed, initiate shutdown. */
 #define VERR_SVM_VMEXIT_FAILED                      (-4066)
 /** An operation caused a nested-guest SVM \#VMEXIT. */
-#define VINF_SVM_VMEXIT                              4067
+#define VINF_SVM_VMEXIT                             4067
 /** VMRUN emulation succeeded, ready to immediately enter the nested-guest. */
-#define VINF_SVM_VMRUN                               4068
+#define VINF_SVM_VMRUN                              4068
+/** The requested nested-guest SVM intercept is not active or not in
+ *  nested-guest execution mode. */
+#define VINF_SVM_INTERCEPT_NOT_ACTIVE               4069
 /** @} */
 
 
@@ -2189,11 +2195,8 @@
 #define VERR_HM_INVALID_HM64ON32OP                  (-4116)
 /** Resume guest execution after injecting a double-fault. */
 #define VINF_HM_DOUBLE_FAULT                        4117
-/** The requested nested-guest VM-exit intercept is not active or not in
- *  nested-guest execution mode. */
-#define VINF_HM_INTERCEPT_NOT_ACTIVE                4118
 /** Pending exception; continue guest execution. */
-#define VINF_HM_PENDING_XCPT                        4119
+#define VINF_HM_PENDING_XCPT                        4118
 /** @} */
 
 

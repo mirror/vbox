@@ -946,7 +946,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vecto
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
     }
 
-    return VINF_HM_INTERCEPT_NOT_ACTIVE;
+    return VINF_SVM_INTERCEPT_NOT_ACTIVE;
 }
 
 
@@ -996,7 +996,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
     /** @todo remove later (for debugging as VirtualBox always traps all IO
      *        intercepts). */
     AssertMsgFailed(("iemSvmHandleIOIntercept: We expect an IO intercept here!\n"));
-    return VINF_HM_INTERCEPT_NOT_ACTIVE;
+    return VINF_SVM_INTERCEPT_NOT_ACTIVE;
 }
 
 
@@ -1060,7 +1060,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, uint32_t idMsr, b
         Log(("iemSvmHandleMsrIntercept: Invalid/out-of-range MSR %#RX32 fWrite=%RTbool -> #VMEXIT\n", idMsr, fWrite));
         return iemSvmVmexit(pVCpu, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
     }
-    return VINF_HM_INTERCEPT_NOT_ACTIVE;
+    return VINF_SVM_INTERCEPT_NOT_ACTIVE;
 }
 
 

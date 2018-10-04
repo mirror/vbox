@@ -1814,7 +1814,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_RO_IO_RSX                                      0x6404
 #define VMX_VMCS_RO_IO_RDI                                      0x6406
 #define VMX_VMCS_RO_IO_RIP                                      0x6408
-#define VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR                      0x640a
+#define VMX_VMCS_RO_GUEST_LINEAR_ADDR                           0x640a
 /** @} */
 
 
@@ -2633,7 +2633,26 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_TPR_THRESHOLD_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_QUAL_CRX_RES2(a)                               (((a) >> 12) & 0xf)
 /** 16-31: LMSW source data (else 0). */
 #define VMX_EXIT_QUAL_CRX_LMSW_DATA(a)                          (((a) >> 16) & 0xffff)
-/* Rest: reserved. */
+
+/** Bit fields for Exit qualification for control-register accesses. */
+#define VMX_BF_EXIT_QUAL_CRX_REGISTER_SHIFT                     0
+#define VMX_BF_EXIT_QUAL_CRX_REGISTER_MASK                      UINT64_C(0x000000000000000f)
+#define VMX_BF_EXIT_QUAL_CRX_ACCESS_SHIFT                       4
+#define VMX_BF_EXIT_QUAL_CRX_ACCESS_MASK                        UINT64_C(0x0000000000000030)
+#define VMX_BF_EXIT_QUAL_CRX_LMSW_OP_SHIFT                      6
+#define VMX_BF_EXIT_QUAL_CRX_LMSW_OP_MASK                       UINT64_C(0x0000000000000040)
+#define VMX_BF_EXIT_QUAL_CRX_RSVD_7_SHIFT                       7
+#define VMX_BF_EXIT_QUAL_CRX_RSVD_7_MASK                        UINT64_C(0x0000000000000080)
+#define VMX_BF_EXIT_QUAL_CRX_GENREG_SHIFT                       8
+#define VMX_BF_EXIT_QUAL_CRX_GENREG_MASK                        UINT64_C(0x0000000000000f00)
+#define VMX_BF_EXIT_QUAL_CRX_RSVD_12_15_SHIFT                   12
+#define VMX_BF_EXIT_QUAL_CRX_RSVD_12_15_MASK                    UINT64_C(0x000000000000f000)
+#define VMX_BF_EXIT_QUAL_CRX_LMSW_DATA_SHIFT                    16
+#define VMX_BF_EXIT_QUAL_CRX_LMSW_DATA_MASK                     UINT64_C(0x00000000ffff0000)
+#define VMX_BF_EXIT_QUAL_CRX_RSVD_32_63_SHIFT                   32
+#define VMX_BF_EXIT_QUAL_CRX_RSVD_32_63_MASK                    UINT64_C(0xffffffff00000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_CRX_, UINT64_C(0), UINT64_MAX,
+                            (REGISTER, ACCESS, LMSW_OP, RSVD_7, GENREG, RSVD_12_15, LMSW_DATA, RSVD_32_63));
 /** @} */
 
 

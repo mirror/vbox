@@ -5742,18 +5742,33 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
  * Implements 'LMSW r/m16'
  *
  * @param   u16NewMsw       The new value.
+ * @param   GCPtrEffDst     The guest-linear address of the source operand in case
+ *                          of a memory operand. For register operand, pass
+ *                          NIL_RTGCPTR.
  */
-IEM_CIMPL_DEF_1(iemCImpl_lmsw, uint16_t, u16NewMsw)
+IEM_CIMPL_DEF_2(iemCImpl_lmsw, uint16_t, u16NewMsw, RTGCPTR, GCPtrEffDst)
 {
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* Check nested-guest VMX intercept and get updated MSW if there's no VM-exit. */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict = iemVmxVmexitInstrLmsw(pVCpu, pVCpu->cpum.GstCtx.cr0, &u16NewMsw, GCPtrEffDst, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#else
+    RT_NOREF_PV(GCPtrEffDst);
+#endif
 
     /*
      * Compose the new CR0 value and call common worker.
      */
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
-    uint64_t uNewCr0 = pVCpu->cpum.GstCtx.cr0     & ~(X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    uint64_t uNewCr0 = pVCpu->cpum.GstCtx.cr0  & ~(X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
     uNewCr0 |= u16NewMsw & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
     return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0, IEMACCESSCRX_LMSW, UINT8_MAX /* iGReg */);
 }
@@ -6369,7 +6384,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
         VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, false /* fWrite */);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("IEM: SVM intercepted rdmsr(%#x) failed. rc=%Rrc\n", pVCpu->cpum.GstCtx.ecx, VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
@@ -6445,7 +6460,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, true /* fWrite */);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("IEM: SVM intercepted rdmsr(%#x) failed. rc=%Rrc\n", pVCpu->cpum.GstCtx.ecx, VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
@@ -6525,7 +6540,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
                                            false /* fRep */, false /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("iemCImpl_in: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, cbReg,
                  VBOXSTRICTRC_VAL(rcStrict)));
@@ -6618,7 +6633,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
                                            false /* fRep */, false /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
-        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
             Log(("iemCImpl_out: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, cbReg,
                  VBOXSTRICTRC_VAL(rcStrict)));

@@ -680,7 +680,7 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
         case VMX_VMCS_RO_IO_RSX:
         case VMX_VMCS_RO_IO_RDI:
         case VMX_VMCS_RO_IO_RIP:
-        case VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR:          return true;
+        case VMX_VMCS_RO_GUEST_LINEAR_ADDR:               return true;
 
         /* Guest-state fields. */
         case VMX_VMCS_GUEST_CR0:
@@ -2607,8 +2607,9 @@ DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO 
      * The VM-exit instruction length is mandatory for all VM-exits that are caused by
      * instruction execution.
      *
-     * In our implementation, all undefined fields are generally cleared (caller's
-     * responsibility).
+     * In our implementation in IEM, all undefined fields are generally cleared. However,
+     * if the caller supplies information (from say the physical CPU directly) it is
+     * then possible that the undefined fields not cleared.
      *
      * See Intel spec. 27.2.1 "Basic VM-Exit Information".
      * See Intel spec. 27.2.4 "Information for VM Exits Due to Instruction Execution".
@@ -2754,6 +2755,95 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPU pVCpu, RTGCPTR GCPtrPage,
     Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode || !RT_HI_U32(ExitInfo.u64Qual));
 
     return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to LMSW.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uGuestCr0       The current guest CR0.
+ * @param   pu16NewMsw      The machine-status word specified in LMSW's source
+ *                          operand. This will be updated depending on the VMX
+ *                          guest/host CR0 mask if LMSW is not intercepted.
+ * @param   GCPtrEffDst     The guest-linear address of the source operand in case
+ *                          of a memory operand. For register operand, pass
+ *                          NIL_RTGCPTR.
+ * @param   cbInstr         The instruction length (in bytes).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, uint16_t *pu16NewMsw, RTGCPTR GCPtrEffDst,
+                                              uint8_t cbInstr)
+{
+    /*
+     * LMSW VM-exits are subject to the CR0 guest/host mask and the CR0 read shadow.
+     *
+     * See Intel spec. 24.6.6 "Guest/Host Masks and Read Shadows for CR0 and CR4".
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pu16NewMsw);
+
+    bool fIntercept = false;
+    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
+    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+
+    /*
+     * LMSW can never clear CR0.PE but it may set it. Hence, we handle the
+     * CR0.PE case first, before the rest of the bits in the MSW.
+     *
+     * If CR0.PE is owned by the host and CR0.PE differs between the
+     * MSW (source operand) and the read-shadow, we must cause a VM-exit.
+     */
+    if (    (fGstHostMask & X86_CR0_PE)
+        &&  (*pu16NewMsw  & X86_CR0_PE)
+        && !(fReadShadow  & X86_CR0_PE))
+        fIntercept = true;
+
+    /*
+     * If CR0.MP, CR0.EM or CR0.TS is owned by the host, and the corresponding
+     * bits differ between the MSW (source operand) and the read-shadow, we must
+     * cause a VM-exit.
+     */
+    uint32_t fGstHostLmswMask = fGstHostMask & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    if ((fReadShadow & fGstHostLmswMask) != (*pu16NewMsw & fGstHostLmswMask))
+        fIntercept = true;
+
+    if (fIntercept)
+    {
+        Log2(("lmsw: Guest intercept -> VM-exit\n"));
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+
+        bool const fMemOperand = RT_BOOL(GCPtrEffDst != NIL_RTGCPTR);
+        if (fMemOperand)
+        {
+            Assert(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode || !RT_HI_U32(GCPtrEffDst));
+            ExitInfo.u64GuestLinearAddr = GCPtrEffDst;
+        }
+
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER,  0) /* CR0 */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,    VMX_EXIT_QUAL_CRX_ACCESS_LMSW)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_LMSW_OP,   fMemOperand)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_LMSW_DATA, *pu16NewMsw);
+
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    /*
+     * If LMSW did not cause a VM-exit, any CR0 bits in the range 0:3 that is set in the
+     * CR0 guest/host mask must be left unmodified.
+     *
+     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+     */
+    fGstHostLmswMask = fGstHostMask & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    *pu16NewMsw = (uGuestCr0 & fGstHostLmswMask) | (*pu16NewMsw & ~fGstHostLmswMask);
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 
 
