@@ -926,6 +926,24 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 
 
 /**
+ * Reads a 32-bit register from the virtual-APIC page at the given offset.
+ *
+ * @returns The register from the virtual-APIC page.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the register being read.
+ */
+DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint8_t offReg)
+{
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+
+    uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
+    uint32_t const uValue      = *(const uint32_t *)(pbVirtApic + offReg);
+    return uValue;
+}
+
+
+/**
  * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
  * mask and the read-shadow (CR0/CR4 read).
  *
@@ -2924,14 +2942,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, 
  * VMX VM-exit handler for VM-exits due to CLTS.
  *
  * @returns Strict VBox status code.
- * @retval VINF_PERMISSION_DENIED if the CLTS instruction did not cause a VM-exit
- *         but must not modify the guest CR0.TS bit.
+ * @retval VINF_VMX_MODIFIES_BEHAVIOR if the CLTS instruction did not cause a
+ *         VM-exit but must not modify the guest CR0.TS bit.
  * @retval VINF_VMX_INTERCEPT_NOT_ACTIVE if the CLTS instruction did not cause a
- *         VM-exit but modification to the guest CR0.TS bit is allowed (subject to
+ *         VM-exit and modification to the guest CR0.TS bit is allowed (subject to
  *         CR0 fixed bits in VMX operation).
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length in bytes.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
 {
@@ -2944,8 +2961,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
     /*
      * If CR0.TS is owned by the host:
      *   - If CR0.TS is set in the read-shadow, we must cause a VM-exit.
-     *   - If CR0.TS is cleared in the read-shadow, no VM-exit is caused, however
-     *     the CLTS instruction is not allowed to modify CR0.TS.
+     *   - If CR0.TS is cleared in the read-shadow, no VM-exit is caused and the
+     *     CLTS instruction completes without clearing CR0.TS.
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
@@ -2965,7 +2982,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
             return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
         }
 
-        return VINF_PERMISSION_DENIED;
+        return VINF_VMX_MODIFIES_BEHAVIOR;
     }
 
     /*
@@ -3132,6 +3149,42 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3
                 return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
             }
         }
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to 'Mov GReg,CR8' (CR8 read).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   iGReg       The general register to which the CR8 value is being stored.
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr8(PVMCPU pVCpu, uint8_t iGReg, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * If the CR8-store exiting control is set, we must cause a VM-exit.
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_CR8_STORE_EXIT)
+    {
+        Log2(("mov_Rd_Cr: (CR8) Guest intercept -> VM-exit\n"));
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_READ)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;

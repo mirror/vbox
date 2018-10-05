@@ -5186,6 +5186,27 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 8:
         {
             IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_APIC_TPR);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+            {
+                VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovFromCr8(pVCpu, iGReg, cbInstr);
+                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    return rcStrict;
+
+                /*
+                 * If the Mov-from-CR8 doesn't cause a VM-exit, bits 7:4 of the VTPR is copied
+                 * to bits 0:3 of the destination operand and bits 63:4 are cleared.
+                 *
+                 * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+                 */
+                if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
+                {
+                    uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+                    crX = (uVTpr << 4) & 0xf;
+                    break;
+                }
+            }
+#endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
             {
@@ -5830,24 +5851,20 @@ IEM_CIMPL_DEF_0(iemCImpl_clts)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
+    uint64_t uNewCr0 = pVCpu->cpum.GstCtx.cr0;
+    uNewCr0 &= ~X86_CR0_TS;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* Check nested-guest VMX intercept. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         VBOXSTRICTRC rcStrict = iemVmxVmexitInstrClts(pVCpu, cbInstr);
-        if (rcStrict == VINF_PERMISSION_DENIED)
-        {
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
+        if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
+            uNewCr0 |= (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS);
         else if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
     }
 #endif
 
-    uint64_t uNewCr0 = pVCpu->cpum.GstCtx.cr0;
-    uNewCr0 &= ~X86_CR0_TS;
     return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0, IEMACCESSCRX_CLTS, UINT8_MAX /* iGReg */);
 }
 

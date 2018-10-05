@@ -2106,6 +2106,9 @@
 /** The requested nested-guest VMX intercept is not active or not in
  *  nested-guest execution mode. */
 #define VINF_VMX_INTERCEPT_NOT_ACTIVE               4035
+/** The behavior of the instruction/operation is modified/needs modification
+ *  in VMX non-root mode. */
+#define VINF_VMX_MODIFIES_BEHAVIOR                  4036
 /** @} */
 
 
