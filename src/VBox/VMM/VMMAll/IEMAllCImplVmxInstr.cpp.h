@@ -900,15 +900,15 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
 
 
 /**
- * Gets the nested-guest CR0/CR4 mask subjected to the corresponding guest/host mask
- * and the read-shadow.
+ * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
+ * mask and the read-shadow.
  *
  * @returns The masked CR0/CR4.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   iCrReg      The control register (either CR0 or CR4).
  * @param   uGuestCrX   The current guest CR0 or guest CR4.
  */
-IEM_STATIC uint64_t iemVmxGetMaskedCrX(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uGuestCrX)
+IEM_STATIC uint64_t iemVmxMaskCr0CR4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uGuestCrX)
 {
     Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
     Assert(iCrReg == 0 || iCrReg == 4);
@@ -2951,54 +2951,74 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
 
 
 /**
- * VMX VM-exit handler for VM-exits due to 'Mov CR0, GReg' (CR0 write).
+ * VMX VM-exit handler for VM-exits due to 'Mov CR0, GReg' and 'Mov CR4, GReg'
+ * (CR0/CR4 write).
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   puNewCr0        Pointer to the new CR0 value. Will be updated if no
- *                          VM-exit is triggered.
- * @param   iGReg           The general register to load the CR0 value from.
+ * @param   iCrReg          The control register (either CR0 or CR4).
+ * @param   uGuestCrX       The current guest CR0/CR4.
+ * @param   puNewCrX        Pointer to the new CR0/CR4 value. Will be updated
+ *                          if no VM-exit is triggered.
+ * @param   iGReg           The general register to load the CR0/CR4 value from.
  * @param   cbInstr         The instruction length in bytes.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovCr0Write(PVMCPU pVCpu, uint64_t uGuestCr0, uint64_t *puNewCr0, uint8_t iGReg,
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t *puNewCrX, uint8_t iGReg,
                                                      uint8_t cbInstr)
 {
+    Assert(puNewCrX);
+    Assert(iCrReg == 0 || iCrReg == 4);
+
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(puNewCr0);
 
-    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
-    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+    uint64_t uGuestCrX;
+    uint64_t fGstHostMask;
+    uint64_t fReadShadow;
+    if (iCrReg == 0)
+    {
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
+        uGuestCrX    = pVCpu->cpum.GstCtx.cr0;
+        fGstHostMask = pVmcs->u64Cr0Mask.u;
+        fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+    }
+    else
+    {
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
+        uGuestCrX    = pVCpu->cpum.GstCtx.cr4;
+        fGstHostMask = pVmcs->u64Cr4Mask.u;
+        fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
+    }
 
     /*
-     * For any CR0 bit owned by the host (in the CR0 guest/host mask), if the
+     * For any CR0/CR4 bit owned by the host (in the CR0/CR4 guest/host mask), if the
      * corresponding bits differ between the source operand and the read-shadow,
      * we must cause a VM-exit.
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    if ((fReadShadow & fGstHostMask) != (*puNewCr0 & fGstHostMask))
+    if ((fReadShadow & fGstHostMask) != (*puNewCrX & fGstHostMask))
     {
-        Log2(("mov_Cr_Rd: Guest intercept -> VM-exit\n"));
+        Log2(("mov_Cr_Rd: (CR%u) Guest intercept -> VM-exit\n", iCrReg));
 
         VMXVEXITINFO ExitInfo;
         RT_ZERO(ExitInfo);
         ExitInfo.uReason = VMX_EXIT_MOV_CRX;
         ExitInfo.cbInstr = cbInstr;
 
-        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 0) /* CR0 */
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, iCrReg)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
     /*
-     * If Mov-to-CR0 did not cause a VM-exit, any bits owned by the host must not
-     * be modified the instruction.
+     * If the Mov-to-CR0/CR4 did not cause a VM-exit, any bits owned by the host
+     * must not be modified the instruction.
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
-    *puNewCr0 = (uGuestCr0 & fGstHostMask) | (*puNewCr0 & ~fGstHostMask);
+    *puNewCrX = (uGuestCrX & fGstHostMask) | (*puNewCrX & ~fGstHostMask);
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }

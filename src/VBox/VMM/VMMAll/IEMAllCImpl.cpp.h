@@ -5214,7 +5214,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     {
         if (   iCrReg == 0
             || iCrReg == 4)
-            crX = iemVmxGetMaskedCrX(pVCpu, iCrReg, crX);
+            crX = iemVmxMaskCr0CR4(pVCpu, iCrReg, crX);
     }
 #endif
 
@@ -5748,10 +5748,10 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        if (iCrReg == 0)
+        if (   iCrReg == 0
+            || iCrReg == 4)
         {
-            IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
-            VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovCr0Write(pVCpu, pVCpu->cpum.GstCtx.cr0, &uNewCrX, iGReg, cbInstr);
+            VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovToCr0Cr4(pVCpu, iCrReg, &uNewCrX, iGReg, cbInstr);
             if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
                 return rcStrict;
         }
