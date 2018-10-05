@@ -347,6 +347,7 @@ void UIApplianceImportEditorWidget::retranslateUi()
 
     m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
 
+#if 0 /* this may be needed if contents became dinamical to avoid label jumping */
     QList<QWidget*> labels;
     labels << m_pMACComboBoxLabel;
     labels << m_pAdditionalOptionsLabel;
@@ -355,6 +356,7 @@ void UIApplianceImportEditorWidget::retranslateUi()
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
+#endif /* this may be needed if contents became dinamical to avoid label jumping */
 }
 
 void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &newPath)
