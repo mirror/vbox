@@ -5202,7 +5202,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
                 if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
                 {
                     uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
-                    crX = (uVTpr << 4) & 0xf;
+                    crX = (uVTpr >> 4) & 0xf;
                     break;
                 }
             }
