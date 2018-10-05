@@ -900,8 +900,34 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
 
 
 /**
+ * Gets a CR3 target value from the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVmcs           Pointer to the virtual VMCS.
+ * @param   idxCr3Target    The index of the CR3-target value to retreive.
+ * @param   puValue         Where to store the CR3-target value.
+ */
+DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
+{
+    Assert(idxCr3Target < VMX_V_CR3_TARGET_COUNT);
+
+    uint8_t  const  uWidth         = VMX_VMCS_ENC_WIDTH_NATURAL;
+    uint8_t  const  uType          = VMX_VMCS_ENC_TYPE_CONTROL;
+    uint8_t  const  uWidthType     = (uWidth << 2) | uType;
+    uint8_t  const  uIndex         = (idxCr3Target << 1) + RT_BF_GET(VMX_VMCS_CTRL_CR3_TARGET_VAL0, VMX_BF_VMCS_ENC_INDEX);
+    Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+    uint16_t const  offField       = g_aoffVmcsMap[uWidthType][uIndex];
+    uint8_t  const *pbVmcs         = (uint8_t *)pVmcs;
+    uint8_t  const *pbField        = pbVmcs + offField;
+    uint64_t const uCr3TargetValue = *(uint64_t *)pbField;
+
+    return uCr3TargetValue;
+}
+
+
+/**
  * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
- * mask and the read-shadow.
+ * mask and the read-shadow (CR0/CR4 read).
  *
  * @returns The masked CR0/CR4.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -2918,7 +2944,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
     /*
      * If CR0.TS is owned by the host:
      *   - If CR0.TS is set in the read-shadow, we must cause a VM-exit.
-     *   - If CR0.TS is cleared in the read-shadow, no VM-exit is triggered, however
+     *   - If CR0.TS is cleared in the read-shadow, no VM-exit is caused, however
      *     the CLTS instruction is not allowed to modify CR0.TS.
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
@@ -2951,7 +2977,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
 
 
 /**
- * VMX VM-exit handler for VM-exits due to 'Mov CR0, GReg' and 'Mov CR4, GReg'
+ * VMX VM-exit handler for VM-exits due to 'Mov CR0,GReg' and 'Mov CR4,GReg'
  * (CR0/CR4 write).
  *
  * @returns Strict VBox status code.
@@ -2959,8 +2985,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
  * @param   iCrReg          The control register (either CR0 or CR4).
  * @param   uGuestCrX       The current guest CR0/CR4.
  * @param   puNewCrX        Pointer to the new CR0/CR4 value. Will be updated
- *                          if no VM-exit is triggered.
- * @param   iGReg           The general register to load the CR0/CR4 value from.
+ *                          if no VM-exit is caused.
+ * @param   iGReg           The general register from which the CR0/CR4 value is
+ *                          being loaded.
  * @param   cbInstr         The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t *puNewCrX, uint8_t iGReg,
@@ -3019,6 +3046,93 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrRe
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
     *puNewCrX = (uGuestCrX & fGstHostMask) | (*puNewCrX & ~fGstHostMask);
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to 'Mov GReg,CR3' (CR3 read).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   iGReg       The general register to which the CR3 value is being stored.
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr3(PVMCPU pVCpu, uint8_t iGReg, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
+
+    /*
+     * If the CR3-store exiting control is set, we must cause a VM-exit.
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_CR3_STORE_EXIT)
+    {
+        Log2(("mov_Rd_Cr: (CR3) Guest intercept -> VM-exit\n"));
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_READ)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to 'Mov CR3,GReg' (CR3 write).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uNewCr3     The new CR3 value.
+ * @param   iGReg       The general register from which the CR3 value is being
+ *                      loaded.
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3, uint8_t iGReg, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * If the CR3-load exiting control is set and the new CR3 value does not
+     * match any of the CR3-target values in the VMCS, we must cause a VM-exit.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_CR3_LOAD_EXIT)
+    {
+        uint32_t uCr3TargetCount = pVmcs->u32Cr3TargetCount;
+        Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
+
+        for (uint32_t idxCr3Target = 0; idxCr3Target < uCr3TargetCount; idxCr3Target++)
+        {
+            uint64_t const uCr3TargetValue = iemVmxVmcsGetCr3TargetValue(pVmcs, idxCr3Target);
+            if (uNewCr3 != uCr3TargetValue)
+            {
+                Log2(("mov_Cr_Rd: (CR3) Guest intercept -> VM-exit\n"));
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+                ExitInfo.cbInstr = cbInstr;
+
+                ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
+                                 | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
+                                 | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+                return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+        }
+    }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
@@ -5178,7 +5292,9 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
            || uExitReason == VMX_EXIT_WRMSR);
 
     /* Consult the MSR bitmap if the feature is supported. */
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
         if (uExitReason == VMX_EXIT_RDMSR)

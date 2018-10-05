@@ -5209,12 +5209,26 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        if (   iCrReg == 0
-            || iCrReg == 4)
-            crX = iemVmxMaskCr0CR4(pVCpu, iCrReg, crX);
+        switch (iCrReg)
+        {
+            case 0:
+            case 4:
+            {
+                /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
+                crX = iemVmxMaskCr0CR4(pVCpu, iCrReg, crX);
+                break;
+            }
+
+            case 3:
+            {
+                VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovFromCr3(pVCpu, iGReg, cbInstr);
+                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    return rcStrict;
+                break;
+            }
+        }
     }
 #endif
 
@@ -5748,13 +5762,22 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        if (   iCrReg == 0
-            || iCrReg == 4)
+        VBOXSTRICTRC rcStrict = VINF_VMX_INTERCEPT_NOT_ACTIVE;
+        switch (iCrReg)
         {
-            VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovToCr0Cr4(pVCpu, iCrReg, &uNewCrX, iGReg, cbInstr);
-            if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                return rcStrict;
+            case 0:
+            case 4:
+                rcStrict = iemVmxVmexitInstrMovToCr0Cr4(pVCpu, iCrReg, &uNewCrX, iGReg, cbInstr);
+                break;
+            case 3:
+                rcStrict = iemVmxVmexitInstrMovToCr3(pVCpu, uNewCrX, iGReg, cbInstr);
+                break;
+            default:
+                break;
         }
+
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                return rcStrict;
     }
 #endif
 
