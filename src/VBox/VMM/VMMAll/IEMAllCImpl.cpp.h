@@ -5209,11 +5209,12 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* CRx bits are subject to masking when in VMX non-root mode. */
+    /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        if (iCrReg == 0)
-            crX = iemVmxGetMaskedCr0(pVCpu, crX);
+        if (   iCrReg == 0
+            || iCrReg == 4)
+            crX = iemVmxGetMaskedCrX(pVCpu, iCrReg, crX);
     }
 #endif
 
@@ -5501,7 +5502,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
         {
             IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
 
-            /* clear bit 63 from the source operand and indicate no invalidations are required. */
+            /* Bit 63 being clear in the source operand with PCIDE indicates no invalidations are required. */
             if (   (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PCIDE)
                 && (uNewCrX & RT_BIT_64(63)))
             {
@@ -5512,7 +5513,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 uNewCrX &= ~RT_BIT_64(63);
             }
 
-            /* check / mask the value. */
+            /* Check / mask the value. */
             if (uNewCrX & UINT64_C(0xfff0000000000000))
             {
                 Log(("Trying to load CR3 with invalid high bits set: %#llx\n", uNewCrX));
