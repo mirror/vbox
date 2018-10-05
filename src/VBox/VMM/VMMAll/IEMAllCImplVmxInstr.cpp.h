@@ -941,36 +941,6 @@ IEM_STATIC uint64_t iemVmxGetMaskedCrX(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uG
 }
 
 
-
-/**
- * Gets the nested-guest CR4 mask subjected to the CR0 guest/host mask and the CR4
- * read-shadow.
- *
- * @returns The masked CR0.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uGuestCr0   The guest CR0.
- */
-IEM_STATIC uint64_t iemVmxGetMaskedCr0(PVMCPU pVCpu, uint64_t uGuestCr0)
-{
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-    Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
-
-    /*
-     * For each CR0 bit owned by the host, the corresponding bit is loaded from the
-     * CR0-read shadow. For each CR0 bit that is not owned by the host, the corresponding
-     * bit from the guest CR0 is loaded.
-     *
-     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
-     */
-    uint64_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
-    uint64_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
-    uint64_t const fMaskedCr0   = (fReadShadow & fGstHostMask) | (uGuestCr0 & ~fGstHostMask);
-
-    return fMaskedCr0;
-}
-
-
 /**
  * Gets VM-exit instruction information along with any displacement for an
  * instruction VM-exit.
