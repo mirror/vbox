@@ -909,6 +909,8 @@ typedef struct VBVABUFFER
 #define VBVA_INFO_HEAP    4
 #define VBVA_FLUSH        5
 #define VBVA_INFO_SCREEN  6
+/** Enables or disables VBVA.  Enabling VBVA without disabling it before
+ * causes a complete screen update. */
 #define VBVA_ENABLE       7
 #define VBVA_MOUSE_POINTER_SHAPE 8
 #ifdef VBOX_WITH_VIDEOHWACCEL
