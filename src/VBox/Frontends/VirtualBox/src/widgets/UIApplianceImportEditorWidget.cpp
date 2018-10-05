@@ -66,6 +66,7 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     , m_pMACComboBoxLabel(0)
     , m_pMACComboBox(0)
     , m_pOptionsLayout(0)
+    , m_pAdditionalOptionsLabel(0)
 {
     prepareWidgets();
 }
@@ -108,6 +109,13 @@ void UIApplianceImportEditorWidget::prepareWidgets()
 
     if (m_pMACComboBoxLabel)
         m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
+
+    m_pAdditionalOptionsLabel = new QLabel;
+    if (m_pAdditionalOptionsLabel)
+    {
+        m_pAdditionalOptionsLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+        m_pOptionsLayout->addWidget(m_pAdditionalOptionsLabel, 2, 0, 1, 1);
+    }
 
     m_pImportHDsAsVDI = new QCheckBox;
     {
@@ -312,6 +320,17 @@ void UIApplianceImportEditorWidget::retranslateUi()
     m_pMACComboBox->setItemData(MACAddressImportPolicy_StripAllMACs,
                                 tr("Generate new MAC addresses for all network adapters "
                                                     "during cloning."), Qt::ToolTipRole);
+
+    m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
+
+    QList<QWidget*> labels;
+    labels << m_pMACComboBoxLabel;
+    labels << m_pAdditionalOptionsLabel;
+
+    int iMaxWidth = 0;
+    foreach (QWidget *pLabel, labels)
+        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
+    m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
 }
 
 void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &newPath)

@@ -73,6 +73,7 @@ private:
     QLabel             *m_pMACComboBoxLabel;
     QComboBox          *m_pMACComboBox;
     QGridLayout        *m_pOptionsLayout;
+    QLabel             *m_pAdditionalOptionsLabel;
 };
 
 #endif /* __UIApplianceImportEditorWidget_h__ */
