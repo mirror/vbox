@@ -380,7 +380,7 @@ static void vbox_encoder_destroy(struct drm_encoder *encoder)
 	kfree(encoder);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0) && !defined(RHEL_72)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0) && !defined(RHEL_71)
 static struct drm_encoder *drm_encoder_find(struct drm_device *dev, u32 id)
 {
 	struct drm_mode_object *mo;
