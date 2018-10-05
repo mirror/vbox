@@ -422,7 +422,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     } while (0)
 
 /** Check for VMX instructions requiring to be in VMX operation.
- * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs udpating. */
+ * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs updating. */
 #define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
     do \
     { \
@@ -824,7 +824,7 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
  * @param   pSelReg     Where to store the segment register (only updated when
  *                      VINF_SUCCESS is returned).
  *
- * @remarks Warning! This does not validate the contents of the retreived segment
+ * @remarks Warning! This does not validate the contents of the retrieved segment
  *          register.
  */
 IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUMSELREG pSelReg)
@@ -904,7 +904,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
  *
  * @returns VBox status code.
  * @param   pVmcs           Pointer to the virtual VMCS.
- * @param   idxCr3Target    The index of the CR3-target value to retreive.
+ * @param   idxCr3Target    The index of the CR3-target value to retrieve.
  * @param   puValue         Where to store the CR3-target value.
  */
 DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
@@ -1167,7 +1167,7 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
                 /*
                  * RIP-relative addressing mode.
                  *
-                 * The displacment is 32-bit signed implying an offset range of +/-2G.
+                 * The displacement is 32-bit signed implying an offset range of +/-2G.
                  * See Intel instruction spec. 2.2.1.6 "RIP-Relative Addressing".
                  */
                 uint8_t const offDisp = offModRm + sizeof(bRm);
@@ -1795,7 +1795,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
 
 
 /**
- * Saves the guest force-flags in prepartion of entering the nested-guest.
+ * Saves the guest force-flags in preparation of entering the nested-guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
@@ -1838,7 +1838,7 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
 
 
 /**
- * Restores the guest force-flags in prepartion of exiting the nested-guest.
+ * Restores the guest force-flags in preparation of exiting the nested-guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
@@ -5193,9 +5193,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
      * We are allowed to cache VMCS related data structures (such as I/O bitmaps, MSR bitmaps)
      * while entering VMX non-root mode. We do some of this while checking VM-execution
      * controls. The guest hypervisor should not make assumptions and cannot expect
-     * predictable behavior if changes to these structures are made in guest memory after
-     * executing VMX non-root mode. As far as VirtualBox is concerned, the guest cannot modify
-     * them anyway as we cache them in host memory. We are trade memory for speed here.
+     * predictable behavior if changes to these structures are made in guest memory while
+     * executing in VMX non-root mode. As far as VirtualBox is concerned, the guest cannot
+     * modify them anyway as we cache them in host memory. We are trade memory for speed here.
      *
      * See Intel spec. 24.11.4 "Software Access to Related Structures".
      */
