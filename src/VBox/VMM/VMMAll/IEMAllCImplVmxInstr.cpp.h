@@ -909,7 +909,6 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
 DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
 {
     Assert(idxCr3Target < VMX_V_CR3_TARGET_COUNT);
-
     uint8_t  const  uWidth         = VMX_VMCS_ENC_WIDTH_NATURAL;
     uint8_t  const  uType          = VMX_VMCS_ENC_TYPE_CONTROL;
     uint8_t  const  uWidthType     = (uWidth << 2) | uType;
@@ -934,11 +933,26 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint8_t offReg)
 {
     Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-
     uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    uint32_t const uValue      = *(const uint32_t *)(pbVirtApic + offReg);
-    return uValue;
+    uint32_t const uReg = *(const uint32_t *)(pbVirtApic + offReg);
+    return uReg;
+}
+
+
+/**
+ * Writes a 32-bit register to the virtual-APIC page at the given offset.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uReg        The register value to write.
+ * @param   offReg      The offset of the register being written.
+ */
+DECLINLINE(void) iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint32_t uReg, uint8_t offReg)
+{
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
+    *(uint32_t *)(pbVirtApic + offReg) = uReg;
 }
 
 
@@ -1385,6 +1399,9 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestPhysAddr(PVMCPU pVCpu, uint64_t uG
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The VM-exit instruction length in bytes.
+ *
+ * @remarks Callers may clear this field to 0. Hence, this function does not check
+ *          the validity of the instruction length.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrLen(PVMCPU pVCpu, uint32_t cbInstr)
 {
@@ -2082,7 +2099,22 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
     /*
      * Save guest RIP, RSP and RFLAGS.
      * See Intel spec. 27.3.3 "Saving RIP, RSP and RFLAGS".
+     *
+     * For trap-like VM-exits we must advance the RIP by the length of the instruction.
+     * Callers must pass the instruction length in the VM-exit instruction length
+     * field though it is undefined for such VM-exits. After updating RIP here, we clear
+     * the VM-exit instruction length field.
+     *
+     * See Intel spec. 27.1 "Architectural State Before A VM Exit"
      */
+    if (HMVmxIsTrapLikeVmexit(uExitReason))
+    {
+        uint8_t const cbInstr = pVmcs->u32RoExitInstrLen;
+        AssertMsg(cbInstr >= 1 && cbInstr <= 15, ("uReason=%u cbInstr=%u\n", uExitReason, cbInstr));
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        iemVmxVmcsSetExitInstrLen(pVCpu, 0 /* cbInstr */);
+    }
+
     /* We don't support enclave mode yet. */
     pVmcs->u64GuestRip.u    = pVCpu->cpum.GstCtx.rip;
     pVmcs->u64GuestRsp.u    = pVCpu->cpum.GstCtx.rsp;
@@ -3158,6 +3190,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3
  * VMX VM-exit handler for VM-exits due to 'Mov GReg,CR8' (CR8 read).
  *
  * @returns VBox strict status code.
+ * @retval VINF_VMX_INTERCEPT_NOT_ACTIVE if the Mov instruction did not cause a
+ *         VM-exit.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   iGReg       The general register to which the CR8 value is being stored.
  * @param   cbInstr     The instruction length in bytes.
@@ -3184,6 +3218,82 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr8(PVMCPU pVCpu, uint8_t iGReg,
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_READ)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to 'Mov CR8,GReg' (CR8 write).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   iGReg       The general register from which the CR8 value is being
+ *                      loaded.
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr8(PVMCPU pVCpu, uint8_t iGReg, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * If the CR8-load exiting control is set, we must cause a VM-exit.
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_CR8_LOAD_EXIT)
+    {
+        Log2(("mov_Cr_Rd: (CR8) Guest intercept -> VM-exit\n"));
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for TPR virtualization.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitTprVirtualization(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
+    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY));    /* We don't support virtual-interrupt delivery yet. */
+
+    uint32_t const uTprThreshold = pVmcs->u32TprThreshold;
+    uint32_t const uVTpr         = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+
+    /*
+     * If the VTPR falls below the TPR threshold, we must cause a VM-exit.
+     * See Intel spec. 29.1.2 "TPR Virtualization".
+     */
+    if (((uVTpr >> 4) & 0xf) < uTprThreshold)
+    {
+        Log2(("tpr_virt: uVTpr=%u uTprThreshold=%u -> VM-exit\n", uVTpr, uTprThreshold));
+
+        /*
+         * This is a trap-like VM-exit. We pass the instruction length along in the VM-exit
+         * instruction length field and let the VM-exit handler update the RIP when appropriate.
+         * It will then clear the VM-exit instruction length field before completing the VM-exit.
+         */
+        iemVmxVmcsSetExitInstrLen(pVCpu, cbInstr);
+        return iemVmxVmexit(pVCpu, VMX_EXIT_TPR_BELOW_THRESHOLD);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;

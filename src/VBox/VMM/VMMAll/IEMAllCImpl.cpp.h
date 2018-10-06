@@ -5202,9 +5202,10 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 
                 /*
                  * If the Mov-from-CR8 doesn't cause a VM-exit, bits 7:4 of the VTPR is copied
-                 * to bits 0:3 of the destination operand and bits 63:4 are cleared.
+                 * to bits 0:3 of the destination operand. Bits 63:4 of the destination operand
+                 * are cleared.
                  *
-                 * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+                 * See Intel Spec. 29.3 "Virtualizing CR8-based TPR Accesses"
                  */
                 if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
                 {
@@ -5724,6 +5725,27 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
+            {
+                /*
+                 * If the Mov-to-CR8 doesn't cause a VM-exit, bits 0:3 of the source operand
+                 * is copied to bits 7:4 of the VTPR. Bits 0:3 and bits 31:8 of the VTPR are
+                 * cleared. Following this the processor performs TPR virtualization.
+                 *
+                 * See Intel Spec. 29.3 "Virtualizing CR8-based TPR Accesses"
+                 */
+                uint32_t const uVTpr = (uNewCrX & 0xf) << 4;
+                iemVmxVirtApicWriteRaw32(pVCpu, uVTpr, XAPIC_OFF_TPR);
+                rcStrict = iemVmxVmexitTprVirtualization(pVCpu, cbInstr);
+                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    return rcStrict;
+                rcStrict = VINF_SUCCESS;
+                break;
+            }
+#endif
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
             {
@@ -5794,16 +5816,10 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
         switch (iCrReg)
         {
             case 0:
-            case 4:
-                rcStrict = iemVmxVmexitInstrMovToCr0Cr4(pVCpu, iCrReg, &uNewCrX, iGReg, cbInstr);
-                break;
-            case 3:
-                rcStrict = iemVmxVmexitInstrMovToCr3(pVCpu, uNewCrX, iGReg, cbInstr);
-                break;
-            default:
-                break;
+            case 4: rcStrict = iemVmxVmexitInstrMovToCr0Cr4(pVCpu, iCrReg, &uNewCrX, iGReg, cbInstr);   break;
+            case 3: rcStrict = iemVmxVmexitInstrMovToCr3(pVCpu, uNewCrX, iGReg, cbInstr);               break;
+            case 8: rcStrict = iemVmxVmexitInstrMovToCr8(pVCpu, iGReg, cbInstr);                        break;
         }
-
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
                 return rcStrict;
     }
