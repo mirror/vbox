@@ -2184,6 +2184,13 @@ static DECLCALLBACK(int) rtldrLX_GetBits(PRTLDRMODINTERNAL pMod, void *pvBits, R
 }
 
 
+/* GCC goes boinkers if we put this inside the function. */
+union RELOC_VISIBILITY_STUPIDITY
+{
+    const uint8_t          *pb;
+    const struct r32_rlc   *prlc;
+};
+
 /**
  * @interface_method_impl{RTLDROPS,pfnRelocate}
  */
@@ -2248,11 +2255,7 @@ static DECLCALLBACK(int) rtldrLX_RelocateBits(PRTLDRMODINTERNAL pMod, void *pvBi
              */
             while (pb < pbFixupRecEnd)
             {
-                union
-                {
-                    const uint8_t          *pb;
-                    const struct r32_rlc   *prlc;
-                } u;
+                union RELOC_VISIBILITY_STUPIDITY u;
                 char szImpModule[256];
                 u.pb = pb;
                 pb += 3 + (u.prlc->nr_stype & NRCHAIN ? 0 : 1); /* place pch at the 4th member. */
