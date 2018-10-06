@@ -457,7 +457,6 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
     } while (0)
 
 
-
 /**
  * Returns whether the given VMCS field is valid and supported by our emulation.
  *

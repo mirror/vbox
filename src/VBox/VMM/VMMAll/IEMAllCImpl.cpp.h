@@ -4631,7 +4631,8 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("lgdt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_GDTR_IDTR_ACCESS, VMXINSTRID_LGDT, cbInstr);
@@ -4682,7 +4683,8 @@ IEM_CIMPL_DEF_2(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
      * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("sgdt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_GDTR_IDTR_ACCESS, VMXINSTRID_SGDT, cbInstr);
@@ -4796,7 +4798,8 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
     /* Nested-guest VMX intercept. */
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("lldt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_LLDT, cbInstr);
@@ -4920,7 +4923,8 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
  */
 IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("sldt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_SLDT, cbInstr);
@@ -4980,7 +4984,8 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
         Log(("ltr %04x - CPL is %d -> #GP(0)\n", uNewTr, pVCpu->iem.s.uCpl));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("ltr: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_LTR, cbInstr);
@@ -5096,7 +5101,8 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("str_reg: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_STR, cbInstr);
@@ -5126,7 +5132,8 @@ IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("str_mem: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_STR, cbInstr);
@@ -6084,7 +6091,8 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         Log(("invlpg: Guest intercept (%RGp) -> VM-exit\n", GCPtrPage));
         return iemVmxVmexitInstrInvlpg(pVCpu, GCPtrPage, cbInstr);
@@ -6161,7 +6169,8 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
     /** @todo r=ramshankar: NSTVMX: I'm not entirely certain if V86 mode check has
      *        higher or lower priority than a VM-exit, we assume higher for the time
      *        being. */
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         Log(("invpcid: Guest intercept -> #VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_INVPCID, VMXINSTRID_NONE, cbInstr);
@@ -6315,7 +6324,8 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
         }
     }
 
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         Log(("rdtsc: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSC, cbInstr);
@@ -6364,7 +6374,8 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
         }
     }
 
-    if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP))
     {
         Log(("rdtscp: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSCP, cbInstr);
@@ -6411,7 +6422,8 @@ IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
         && !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PCE))
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDPMC_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDPMC_EXIT))
     {
         Log(("rdpmc: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDPMC, cbInstr);
@@ -6870,7 +6882,8 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_HLT_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_HLT_EXIT))
     {
         Log2(("hlt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_HLT, cbInstr);
@@ -6912,7 +6925,8 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
      * This should be considered a fault-like VM-exit.
      * See Intel spec. 25.1.1 "Relative Priority of Faults and VM Exits".
      */
-    if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MONITOR_EXIT))
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MONITOR_EXIT))
     {
         Log2(("monitor: Guest intercept -> #VMEXIT\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_MONITOR, cbInstr);

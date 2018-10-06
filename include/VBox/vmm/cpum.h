@@ -1888,10 +1888,8 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
 DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtl)
 {
     RT_NOREF(pVCpu);
-    if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
-        return false;
-    if (!pCtx->hwvirt.vmx.fInVmxNonRootMode)
-        return false;
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
     return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32PinCtls & uPinCtl);
 }
@@ -1911,10 +1909,8 @@ DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t
 DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtl)
 {
     RT_NOREF(pVCpu);
-    if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
-        return false;
-    if (!pCtx->hwvirt.vmx.fInVmxNonRootMode)
-        return false;
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
     return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls & uProcCtl);
 }
@@ -1936,10 +1932,8 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_
 DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtl2)
 {
     RT_NOREF(pVCpu);
-    if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_VMX)
-        return false;
-    if (!pCtx->hwvirt.vmx.fInVmxNonRootMode)
-        return false;
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
     return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls2 & uProcCtl2);
 }
