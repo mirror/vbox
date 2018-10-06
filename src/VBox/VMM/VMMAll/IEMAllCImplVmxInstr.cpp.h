@@ -3190,8 +3190,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3
  * VMX VM-exit handler for VM-exits due to 'Mov GReg,CR8' (CR8 read).
  *
  * @returns VBox strict status code.
- * @retval VINF_VMX_INTERCEPT_NOT_ACTIVE if the Mov instruction did not cause a
- *         VM-exit.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   iGReg       The general register to which the CR8 value is being stored.
  * @param   cbInstr     The instruction length in bytes.
