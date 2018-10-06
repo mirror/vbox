@@ -198,7 +198,7 @@ typedef struct KLDRMODMACHO
     char                   *pchStrings;
 
     /** The image UUID, all zeros if not found. */
-    uint32_t                abImageUuid[16];
+    uint8_t                 abImageUuid[16];
 
     /** The RVA of the Global Offset Table. */
     RTLDRADDR               GotRVA;
@@ -229,7 +229,7 @@ static DECLCALLBACK(int) rtldrMachO_RelocateBits(PRTLDRMODINTERNAL pMod, void *p
 
 static int  kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr, RTFOFF   offImage,
                                              uint32_t fOpenFlags, uint32_t *pcSegments, uint32_t *pcSections, uint32_t *pcbStringPool,
-                                             bool *pfCanLoad, PRTLDRADDR pLinkAddress, uint8_t *puEffFileType);
+                                             bool *pfCanLoad, PRTLDRADDR pLinkAddress, uint8_t *puEffFileType, PRTERRINFO pErrInfo);
 static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPool, uint32_t cbStringPool);
 
 static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis);
@@ -343,7 +343,8 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
     uint8_t     uEffFileType = 0;
     if (RT_SUCCESS(rc))
         rc = kldrModMachOPreParseLoadCommands(pbLoadCommands, &s.Hdr32, pRdr, offImage, fOpenFlags,
-                                              &cSegments, &cSections, &cbStringPool, &fCanLoad, &LinkAddress, &uEffFileType);
+                                              &cSegments, &cSections, &cbStringPool, &fCanLoad, &LinkAddress, &uEffFileType,
+                                              pErrInfo);
     if (RT_FAILURE(rc))
     {
         RTMemFree(pbLoadCommands);
@@ -509,17 +510,18 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
  * @param   offImage        The image header (FAT fun).
  * @param   fOpenFlags      RTLDR_O_XXX.
  * @param   pcSegments      Where to store the segment count.
- * @param   pcSegments      Where to store the section count.
+ * @param   pcSections      Where to store the section count.
  * @param   pcbStringPool   Where to store the string pool size.
  * @param   pfCanLoad       Where to store the can-load-image indicator.
  * @param   pLinkAddress    Where to store the image link address (i.e. the
  *                          lowest segment address).
  * @param   puEffFileType   Where to store the effective file type.
+ * @param   pErrInfo        Where to return additional error info. Optional.
  */
 static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr,
                                             RTFOFF offImage, uint32_t fOpenFlags, uint32_t *pcSegments, uint32_t *pcSections,
                                             uint32_t *pcbStringPool, bool *pfCanLoad, PRTLDRADDR pLinkAddress,
-                                            uint8_t *puEffFileType)
+                                            uint8_t *puEffFileType, PRTERRINFO pErrInfo)
 {
     union
     {
@@ -597,7 +599,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                 }
 
                 /* Validation code shared with the 64-bit variant. */
-                #define VALIDATE_AND_ADD_SEGMENT(a_cBits) \
+#define VALIDATE_AND_ADD_SEGMENT(a_cBits) \
                 do { \
                     bool fSkipSeg = !strcmp(pSrcSeg->segname, "__DWARF")   /* Note: Not for non-object files. */ \
                                   || (   !strcmp(pSrcSeg->segname, "__CTF") /* Their CTF tool did/does weird things, */ \
@@ -1004,7 +1006,8 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
             case LC_MAIN: /** @todo parse this and find and entry point or smth. */
                 /** @todo valid command size. */
                 if (!(fOpenFlags & RTLDR_O_FOR_DEBUG))
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND);
+                    KLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
+                                                             "cmd=%#x", u.pLoadCmd->cmd));
                 *pfCanLoad = false;
                 break;
 
@@ -1022,10 +1025,12 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
             case LC_SUB_LIBRARY:
             case LC_PREBIND_CKSUM:
             case LC_SYMSEG:
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND);
+                KLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
+                                                         "cmd=%#x", u.pLoadCmd->cmd));
 
             default:
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNKNOWN_LOAD_COMMAND);
+                KLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNKNOWN_LOAD_COMMAND,
+                                                         "cmd=%#x", u.pLoadCmd->cmd));
         }
     }
 
@@ -1417,7 +1422,6 @@ static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPoo
 static DECLCALLBACK(int) rtldrMachO_Close(PRTLDRMODINTERNAL pMod)
 {
     PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
-    int rc = VINF_SUCCESS;
     KLDRMODMACHO_ASSERT(!pThis->pvMapping);
 
     uint32_t i = pThis->cSegments;
@@ -1431,21 +1435,14 @@ static DECLCALLBACK(int) rtldrMachO_Close(PRTLDRMODINTERNAL pMod)
         }
     }
 
-    if (pThis->Core.pReader)
-    {
-        rc = pThis->Core.pReader->pfnDestroy(pThis->Core.pReader);
-        pThis->Core.pReader = NULL;
-    }
-    pThis->Core.u32Magic = 0;
-    pThis->Core.pOps = NULL;
     RTMemFree(pThis->pbLoadCommands);
     pThis->pbLoadCommands = NULL;
     RTMemFree(pThis->pchStrings);
     pThis->pchStrings = NULL;
     RTMemFree(pThis->pvaSymbols);
     pThis->pvaSymbols = NULL;
-    RTMemFree(pThis);
-    return rc;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2294,18 +2291,6 @@ static int kldrModMachOQueryMainEntrypoint(PRTLDRMODINTERNAL pMod, const void *p
 
 #endif
 
-static int kldrModMachOQueryImageUuid(PKLDRMODMACHO pThis, const void *pvBits, void *pvUuid, size_t cbUuid)
-{
-    RT_NOREF(pvBits);
-
-    memset(pvUuid, 0, cbUuid);
-    if (memcmp(pvUuid, pThis->abImageUuid, sizeof(pThis->abImageUuid)) == 0)
-        return VERR_NOT_FOUND;
-
-    memcpy(pvUuid, pThis->abImageUuid, sizeof(pThis->abImageUuid));
-    return VINF_SUCCESS;
-}
-
 
 /**
  * @interface_method_impl{RTLDROPS,pfnEnumDbgInfo}
@@ -2747,6 +2732,8 @@ static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRA
  * @param   pThis           The Mach-O module interpreter instance.
  * @param   pbSectBits      Pointer to the section bits.
  * @param   pFixupSect      The section being fixed up.
+ * @param   paSyms          Pointer to the symbol table.
+ * @param   cSyms           Number of symbols.
  * @param   NewBaseAddress  The new base image address.
  */
 static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *pbSectBits, PKLDRMODMACHOSECT pFixupSect,
@@ -2948,6 +2935,8 @@ static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *p
  * @param   pThis           The Mach-O module interpreter instance.
  * @param   pbSectBits      Pointer to the section bits.
  * @param   pFixupSect      The section being fixed up.
+ * @param   paSyms          Pointer to the symbol table.
+ * @param   cSyms           Number of symbols.
  * @param   NewBaseAddress  The new base image address.
  */
 static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBits, PKLDRMODMACHOSECT pFixupSect,
@@ -3775,10 +3764,15 @@ static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP 
     switch (enmProp)
     {
         case RTLDRPROP_UUID:
-            rc = kldrModMachOQueryImageUuid(pThis, pvBits, (uint8_t *)pvBuf, cbBuf);
-            if (RT_FAILURE(rc))
-                return rc;
-            cbBuf = RT_MIN(cbBuf, sizeof(RTUUID));
+            Assert(cbBuf >= sizeof(pThis->abImageUuid));
+            if (!ASMMemIsZero(pThis->abImageUuid, sizeof(pThis->abImageUuid)))
+            {
+                *pcbRet = sizeof(pThis->abImageUuid);
+                memcpy(pvBuf, pThis->abImageUuid, sizeof(pThis->abImageUuid));
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_NOT_FOUND;
             break;
 
 #if 0 /** @todo return LC_ID_DYLIB */
@@ -3786,12 +3780,11 @@ static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP 
 #endif
 
         default:
-            return VERR_NOT_FOUND;
+            rc = VERR_NOT_FOUND;
+            break;
     }
-    if (pcbRet)
-        *pcbRet = cbBuf;
     RT_NOREF_PV(pvBits);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

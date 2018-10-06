@@ -212,19 +212,23 @@ static int kldrModLXDoCreate(PRTLDRREADER pRdr, RTFOFF offNewHdr, uint32_t fFlag
 
     /* Verify the loader section. */
     offEnd = Hdr.e32_objtab + Hdr.e32_ldrsize;
-    if (Hdr.e32_objtab < sizeof(Hdr))
-        return VERR_LDRLX_BAD_LOADER_SECTION;
+    if (Hdr.e32_objtab < sizeof(Hdr) && Hdr.e32_objcnt)
+        return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION,
+                             "Object table is inside the header: %#x", Hdr.e32_objtab);
     off = Hdr.e32_objtab + sizeof(struct o32_obj) * Hdr.e32_objcnt;
     if (off > offEnd)
-        return VERR_LDRLX_BAD_LOADER_SECTION;
+        return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION,
+                             "Object table spans beyond the executable: e32_objcnt=%u", Hdr.e32_objcnt);
     if (    Hdr.e32_objmap
         &&  (Hdr.e32_objmap < off || Hdr.e32_objmap > offEnd))
-        return VERR_LDRLX_BAD_LOADER_SECTION;
+        return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION,
+                             "Bad object page map table offset: %#x", Hdr.e32_objmap);
     if (    Hdr.e32_rsrccnt
         && (   Hdr.e32_rsrctab < off
             || Hdr.e32_rsrctab > offEnd
             || Hdr.e32_rsrctab + sizeof(struct rsrc32) * Hdr.e32_rsrccnt > offEnd))
-        return VERR_LDRLX_BAD_LOADER_SECTION;
+        return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION,
+                             "Resource table is out of bounds: %#x entries at %#x", Hdr.e32_rsrccnt, Hdr.e32_rsrctab);
     if (    Hdr.e32_restab
         &&  (Hdr.e32_restab < off || Hdr.e32_restab > offEnd - 2))
         return VERR_LDRLX_BAD_LOADER_SECTION;
@@ -509,12 +513,6 @@ static DECLCALLBACK(int) rtldrLX_Close(PRTLDRMODINTERNAL pMod)
     PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     KLDRMODLX_ASSERT(!pModLX->pvMapping);
 
-    int rc = VINF_SUCCESS;
-    if (pModLX->Core.pReader)
-    {
-        rc = pModLX->Core.pReader->pfnDestroy(pModLX->Core.pReader);
-        pModLX->Core.pReader = NULL;
-    }
     if (pModLX->pbNonResNameTab)
     {
         RTMemFree(pModLX->pbNonResNameTab);
@@ -525,10 +523,7 @@ static DECLCALLBACK(int) rtldrLX_Close(PRTLDRMODINTERNAL pMod)
         RTMemFree(pModLX->pbFixupSection);
         pModLX->pbFixupSection = NULL;
     }
-    pModLX->Core.u32Magic = 0;
-    pModLX->Core.pOps = NULL;
-    RTMemFree(pModLX);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 

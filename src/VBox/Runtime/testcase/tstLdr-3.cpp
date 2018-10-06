@@ -225,6 +225,16 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
     return VINF_SUCCESS;
 }
 
+static uint32_t g_iSegNo = 0;
+static DECLCALLBACK(int) testEnumSegment1(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
+{
+    if (hLdrMod != g_hLdrMod || pvUser != NULL)
+        return VERR_INTERNAL_ERROR_3;
+    RTPrintf("Seg#%02u: %RTptr LB %RTptr %s\n", g_iSegNo++, pSeg->RVA, pSeg->cbMapped, pSeg->pszName);
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Enumeration callback function used by RTLdrEnumSymbols().
@@ -238,7 +248,8 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
  */
 static DECLCALLBACK(int) testEnumSymbol1(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser)
 {
-    RT_NOREF2(hLdrMod, pvUser);
+    if (hLdrMod != g_hLdrMod || pvUser != NULL)
+        return VERR_INTERNAL_ERROR_3;
     RTPrintf("  %RTptr %s (%d)\n", Value, pszSymbol, uSymbol);
     return VINF_SUCCESS;
 }
@@ -348,6 +359,68 @@ int main(int argc, char **argv)
              * Enumerate symbols.
              */
             rc = RTLdrEnumSymbols(g_hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, g_pvBits, g_uLoadAddr, testEnumSymbol1, NULL);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("tstLdr-3: Failed to enumerate symbols: %Rra\n", rc);
+                rcRet++;
+            }
+
+            /*
+             * Query various properties.
+             */
+            union
+            {
+                char        szName[256];
+                uint32_t    iImpModule;
+                RTUUID      Uuid;
+            } uBuf;
+            rc = RTLdrQueryProp(g_hLdrMod, RTLDRPROP_INTERNAL_NAME, &uBuf, sizeof(uBuf));
+            if (RT_SUCCESS(rc))
+                RTPrintf("tstLdr-3: Internal name: %s\n", uBuf.szName);
+            else if (rc != VERR_NOT_FOUND && rc != VERR_NOT_SUPPORTED)
+            {
+                RTPrintf("tstLdr-3: Internal name: failed - %Rrc\n", rc);
+                rcRet++;
+            }
+
+            uint32_t cImports = 0;
+            rc = RTLdrQueryProp(g_hLdrMod, RTLDRPROP_IMPORT_COUNT, &cImports, sizeof(cImports));
+            if (RT_SUCCESS(rc))
+            {
+                RTPrintf("tstLdr-3: Import count: %u\n", cImports);
+                for (uint32_t i = 0; i < cImports; i++)
+                {
+                    uBuf.iImpModule = i;
+                    rc = RTLdrQueryProp(g_hLdrMod, RTLDRPROP_IMPORT_MODULE, &uBuf, sizeof(uBuf));
+                    if (RT_SUCCESS(rc))
+                        RTPrintf("tstLdr-3: Import module #%u: %s\n", i, uBuf.szName);
+                    else
+                    {
+                        RTPrintf("tstLdr-3: Import module #%u: failed - %Rrc\n", i, rc);
+                        rcRet++;
+                    }
+                }
+            }
+            else if (rc != VERR_NOT_FOUND && rc != VERR_NOT_SUPPORTED)
+            {
+                RTPrintf("tstLdr-3: Import count: failed - %Rrc\n", rc);
+                rcRet++;
+            }
+
+            rc = RTLdrQueryProp(g_hLdrMod, RTLDRPROP_UUID, &uBuf.Uuid, sizeof(uBuf.Uuid));
+            if (RT_SUCCESS(rc))
+                RTPrintf("tstLdr-3: UUID: %RTuuid\n", uBuf.Uuid);
+            else if (rc != VERR_NOT_FOUND && rc != VERR_NOT_SUPPORTED)
+            {
+                RTPrintf("tstLdr-3: UUID: failed - %Rrc\n", rc);
+                rcRet++;
+            }
+
+            /*
+             * Enumerate segments.
+             */
+            RTPrintf("tstLdr-3: Segments:\n");
+            rc = RTLdrEnumSegments(g_hLdrMod, testEnumSegment1, NULL);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstLdr-3: Failed to enumerate symbols: %Rra\n", rc);
