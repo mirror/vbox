@@ -271,7 +271,9 @@ RuntimeR3_DEFS          = \
 	RT_WITHOUT_NOCRT_WRAPPERS \
 	IPRT_WITH_OPENSSL \
 	NOFILEID
-#	+= LDR_WITH_MACHO
+ifeq ($(USERNAME),bird)
+ RuntimeR3_DEFS += LDR_WITH_MACHO
+endif
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3_DEFS         += \
  	IN_SUP_R3

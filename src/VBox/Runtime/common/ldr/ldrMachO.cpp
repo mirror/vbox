@@ -507,16 +507,19 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
  * @param   pHdr            The header.
  * @param   pRdr            The file reader.
  * @param   offImage        The image header (FAT fun).
+ * @param   fOpenFlags      RTLDR_O_XXX.
  * @param   pcSegments      Where to store the segment count.
  * @param   pcSegments      Where to store the section count.
  * @param   pcbStringPool   Where to store the string pool size.
  * @param   pfCanLoad       Where to store the can-load-image indicator.
  * @param   pLinkAddress    Where to store the image link address (i.e. the
  *                          lowest segment address).
+ * @param   puEffFileType   Where to store the effective file type.
  */
-static int  kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr, RTFOFF   offImage,
-                                             uint32_t fOpenFlags, uint32_t *pcSegments, uint32_t *pcSections, uint32_t *pcbStringPool,
-                                             bool *pfCanLoad, PRTLDRADDR pLinkAddress, uint8_t *puEffFileType)
+static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr,
+                                            RTFOFF offImage, uint32_t fOpenFlags, uint32_t *pcSegments, uint32_t *pcSections,
+                                            uint32_t *pcbStringPool, bool *pfCanLoad, PRTLDRADDR pLinkAddress,
+                                            uint8_t *puEffFileType)
 {
     union
     {
@@ -2529,6 +2532,7 @@ static int kldrModMachOFixupMapping(PRTLDRMODINTERNAL pMod, PFNRTLDRIMPORT pfnGe
  *
  * @returns IPRT status code.
  * @param   pThis           The Mach-O module interpreter instance.
+ * @param   BaseAddress     The module base address.
  * @param   pfnGetImport    The callback for resolving an imported symbol.
  * @param   pvUser          User argument to the callback.
  */
@@ -2678,7 +2682,6 @@ static int  kldrModMachOObjDoImports(PKLDRMODMACHO pThis, RTLDRADDR BaseAddress,
  * @param   pThis           The Mach-O module interpreter instance.
  * @param   pvMapping       The mapping to fixup.
  * @param   NewBaseAddress  The address to fixup the mapping to.
- * @param   OldBaseAddress  The address the mapping is currently fixed up to.
  */
 static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress)
 {
