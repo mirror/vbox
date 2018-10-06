@@ -50,37 +50,37 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def KLDRMODMACHO_STRICT
- * Define KLDRMODMACHO_STRICT to enabled strict checks in KLDRMODMACHO. */
-#define KLDRMODMACHO_STRICT 1
+/** @def RTLDRMODMACHO_STRICT
+ * Define RTLDRMODMACHO_STRICT to enabled strict checks in RTLDRMODMACHO. */
+#define RTLDRMODMACHO_STRICT 1
 
-/** @def KLDRMODMACHO_ASSERT
+/** @def RTLDRMODMACHO_ASSERT
  * Assert that an expression is true when KLDR_STRICT is defined.
  */
-#ifdef KLDRMODMACHO_STRICT
-# define KLDRMODMACHO_ASSERT(expr)  Assert(expr)
+#ifdef RTLDRMODMACHO_STRICT
+# define RTLDRMODMACHO_ASSERT(expr)  Assert(expr)
 #else
-# define KLDRMODMACHO_ASSERT(expr)  do {} while (0)
+# define RTLDRMODMACHO_ASSERT(expr)  do {} while (0)
 #endif
 
-/** @def KLDRMODMACHO_CHECK_RETURN
+/** @def RTLDRMODMACHO_CHECK_RETURN
  * Checks that an expression is true and return if it isn't.
  * This is a debug aid.
  */
-#ifdef KLDRMODMACHO_STRICT2
-# define KLDRMODMACHO_CHECK_RETURN(expr, rc)  AssertReturn(expr, rc)
+#ifdef RTLDRMODMACHO_STRICT2
+# define RTLDRMODMACHO_CHECK_RETURN(expr, rc)  AssertReturn(expr, rc)
 #else
-# define KLDRMODMACHO_CHECK_RETURN(expr, rc)  do { if (!(expr)) { return (rc); } } while (0)
+# define RTLDRMODMACHO_CHECK_RETURN(expr, rc)  do { if (!(expr)) { return (rc); } } while (0)
 #endif
 
-/** @def KLDRMODMACHO_CHECK_RETURN
+/** @def RTLDRMODMACHO_CHECK_RETURN
  * Checks that an expression is true and return if it isn't.
  * This is a debug aid.
  */
-#ifdef KLDRMODMACHO_STRICT2
-# define KLDRMODMACHO_FAILED_RETURN(rc)  AssertFailedReturn(rc)
+#ifdef RTLDRMODMACHO_STRICT2
+# define RTLDRMODMACHO_FAILED_RETURN(rc)  AssertFailedReturn(rc)
 #else
-# define KLDRMODMACHO_FAILED_RETURN(rc)  return (rc)
+# define RTLDRMODMACHO_FAILED_RETURN(rc)  return (rc)
 #endif
 
 
@@ -90,7 +90,7 @@
 /**
  * Mach-O section details.
  */
-typedef struct KLDRMODMACHOSECT
+typedef struct RTLDRMODMACHOSECT
 {
     /** The size of the section (in bytes). */
     RTLDRADDR               cb;
@@ -114,14 +114,14 @@ typedef struct KLDRMODMACHOSECT
     uint32_t                iSegment;
     /** Pointer to the Mach-O section structure. */
     void                   *pvMachoSection;
-} KLDRMODMACHOSECT, *PKLDRMODMACHOSECT;
+} RTLDRMODMACHOSECT, *PRTLDRMODMACHOSECT;
 
 /**
  * Extra per-segment info.
  *
  * This is corresponds to a kLdr segment, not a Mach-O segment!
  */
-typedef struct KLDRMODMACHOSEG
+typedef struct RTLDRMODMACHOSEG
 {
     /** Common segment info. */
     RTLDRSEG                SegInfo;
@@ -133,15 +133,15 @@ typedef struct KLDRMODMACHOSEG
     /** Pointer to the sections belonging to this segment.
      * The array resides in the big memory chunk allocated for
      * the module handle, so it doesn't need freeing. */
-    PKLDRMODMACHOSECT       paSections;
+    PRTLDRMODMACHOSECT      paSections;
 
-} KLDRMODMACHOSEG, *PKLDRMODMACHOSEG;
+} RTLDRMODMACHOSEG, *PRTLDRMODMACHOSEG;
 
 /**
  * Instance data for the Mach-O MH_OBJECT module interpreter.
  * @todo interpret the other MH_* formats.
  */
-typedef struct KLDRMODMACHO
+typedef struct RTLDRMODMACHO
 {
     /** Core module structure. */
     RTLDRMODINTERNAL        Core;
@@ -208,11 +208,11 @@ typedef struct KLDRMODMACHO
     /** The number of sections. */
     uint32_t                cSections;
     /** Pointer to the section array running in parallel to the Mach-O one. */
-    PKLDRMODMACHOSECT       paSections;
+    PRTLDRMODMACHOSECT      paSections;
 
     /** Array of segments parallel to the one in KLDRMOD. */
-    KLDRMODMACHOSEG         aSegments[1];
-} KLDRMODMACHO, *PKLDRMODMACHO;
+    RTLDRMODMACHOSEG        aSegments[1];
+} RTLDRMODMACHO, *PRTLDRMODMACHO;
 
 
 
@@ -230,35 +230,35 @@ static DECLCALLBACK(int) rtldrMachO_RelocateBits(PRTLDRMODINTERNAL pMod, void *p
 static int  kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr, RTFOFF   offImage,
                                              uint32_t fOpenFlags, uint32_t *pcSegments, uint32_t *pcSections, uint32_t *pcbStringPool,
                                              bool *pfCanLoad, PRTLDRADDR pLinkAddress, uint8_t *puEffFileType, PRTERRINFO pErrInfo);
-static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPool, uint32_t cbStringPool);
+static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPool, uint32_t cbStringPool);
 
-static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis);
-static int  kldrModMachOLoadFixups(PKLDRMODMACHO pThis, RTFOFF offFixups, uint32_t cFixups, macho_relocation_info_t **ppaFixups);
-static int  kldrModMachOMapVirginBits(PKLDRMODMACHO pThis);
+static int  kldrModMachOLoadObjSymTab(PRTLDRMODMACHO pThis);
+static int  kldrModMachOLoadFixups(PRTLDRMODMACHO pThis, RTFOFF offFixups, uint32_t cFixups, macho_relocation_info_t **ppaFixups);
+static int  kldrModMachOMapVirginBits(PRTLDRMODMACHO pThis);
 
-static int  kldrModMachODoQuerySymbol32Bit(PKLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms, const char *pchStrings,
+static int  kldrModMachODoQuerySymbol32Bit(PRTLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms, const char *pchStrings,
                                            uint32_t cchStrings, RTLDRADDR BaseAddress, uint32_t iSymbol, const char *pchSymbol,
                                            uint32_t cchSymbol, PRTLDRADDR puValue, uint32_t *pfKind);
-static int  kldrModMachODoQuerySymbol64Bit(PKLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms, const char *pchStrings,
+static int  kldrModMachODoQuerySymbol64Bit(PRTLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms, const char *pchStrings,
                                            uint32_t cchStrings, RTLDRADDR BaseAddress, uint32_t iSymbol, const char *pchSymbol,
                                            uint32_t cchSymbol, PRTLDRADDR puValue, uint32_t *pfKind);
-static int  kldrModMachODoEnumSymbols32Bit(PKLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms,
+static int  kldrModMachODoEnumSymbols32Bit(PRTLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms,
                                            const char *pchStrings, uint32_t cchStrings, RTLDRADDR BaseAddress,
                                            uint32_t fFlags, PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
-static int  kldrModMachODoEnumSymbols64Bit(PKLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms,
+static int  kldrModMachODoEnumSymbols64Bit(PRTLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms,
                                            const char *pchStrings, uint32_t cchStrings, RTLDRADDR BaseAddress,
                                            uint32_t fFlags, PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
-static int  kldrModMachOObjDoImports(PKLDRMODMACHO pThis, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
-static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress);
-static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *pbSectBits, PKLDRMODMACHOSECT pFixupSect,
+static int  kldrModMachOObjDoImports(PRTLDRMODMACHO pThis, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
+static int  kldrModMachOObjDoFixups(PRTLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress);
+static int  kldrModMachOFixupSectionGeneric32Bit(PRTLDRMODMACHO pThis, uint8_t *pbSectBits, PRTLDRMODMACHOSECT pFixupSect,
                                                  macho_nlist_32_t *paSyms, uint32_t cSyms, RTLDRADDR NewBaseAddress);
-static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBits, PKLDRMODMACHOSECT pFixupSect,
+static int  kldrModMachOFixupSectionAMD64(PRTLDRMODMACHO pThis, uint8_t *pbSectBits, PRTLDRMODMACHOSECT pFixupSect,
                                           macho_nlist_64_t *paSyms, uint32_t cSyms, RTLDRADDR NewBaseAddress);
 
-static int  kldrModMachOMakeGOT(PKLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewBaseAddress);
+static int  kldrModMachOMakeGOT(PRTLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewBaseAddress);
 
-/*static int  kldrModMachODoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress, RTLDRADDR OldBaseAddress);
-static int  kldrModMachODoImports(PKLDRMODMACHO pThis, void *pvMapping, PFNRTLDRIMPORT pfnGetImport, void *pvUser);*/
+/*static int  kldrModMachODoFixups(PRTLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress, RTLDRADDR OldBaseAddress);
+static int  kldrModMachODoImports(PRTLDRMODMACHO pThis, void *pvMapping, PFNRTLDRIMPORT pfnGetImport, void *pvUser);*/
 
 
 
@@ -267,7 +267,7 @@ static int  kldrModMachODoImports(PKLDRMODMACHO pThis, void *pvMapping, PFNRTLDR
  * simplify cleanup on failure.
  */
 static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOpenFlags,
-                                PKLDRMODMACHO *ppModMachO, PRTERRINFO pErrInfo)
+                                PRTLDRMODMACHO *ppModMachO, PRTERRINFO pErrInfo)
 {
     *ppModMachO = NULL;
 
@@ -356,9 +356,9 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
     /*
      * Calc the instance size, allocate and initialize it.
      */
-    size_t const cbModAndSegs = RT_ALIGN_Z(RT_UOFFSETOF_DYN(KLDRMODMACHO, aSegments[cSegments])
-                                           + sizeof(KLDRMODMACHOSECT) * cSections, 16);
-    PKLDRMODMACHO pThis = (PKLDRMODMACHO)RTMemAlloc(cbModAndSegs + cbStringPool);
+    size_t const cbModAndSegs = RT_ALIGN_Z(RT_UOFFSETOF_DYN(RTLDRMODMACHO, aSegments[cSegments])
+                                           + sizeof(RTLDRMODMACHOSECT) * cSections, 16);
+    PRTLDRMODMACHO pThis = (PRTLDRMODMACHO)RTMemAlloc(cbModAndSegs + cbStringPool);
     if (!pThis)
         return VERR_NO_MEMORY;
     *ppModMachO = pThis;
@@ -444,7 +444,7 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
             return VERR_LDRMACHO_UNSUPPORTED_FILE_TYPE;
     }
 
-    /* KLDRMODMACHO */
+    /* RTLDRMODMACHO */
     pThis->cSegments = cSegments;
     pThis->pvBits = NULL;
     pThis->pvMapping = NULL;
@@ -469,7 +469,7 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
     pThis->GotRVA = NIL_RTLDRADDR;
     pThis->JmpStubsRVA = NIL_RTLDRADDR;
     pThis->cSections = cSections;
-    pThis->paSections = (PKLDRMODMACHOSECT)&pThis->aSegments[pThis->cSegments];
+    pThis->paSections = (PRTLDRMODMACHOSECT)&pThis->aSegments[pThis->cSegments];
 
     /*
      * Setup the KLDRMOD segment array.
@@ -559,13 +559,13 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
         /*
          * Convert and validate command header.
          */
-        KLDRMODMACHO_CHECK_RETURN(cbLeft >= sizeof(load_command_t), VERR_LDRMACHO_BAD_LOAD_COMMAND);
+        RTLDRMODMACHO_CHECK_RETURN(cbLeft >= sizeof(load_command_t), VERR_LDRMACHO_BAD_LOAD_COMMAND);
         if (fConvertEndian)
         {
             u.pLoadCmd->cmd = RT_BSWAP_U32(u.pLoadCmd->cmd);
             u.pLoadCmd->cmdsize = RT_BSWAP_U32(u.pLoadCmd->cmdsize);
         }
-        KLDRMODMACHO_CHECK_RETURN(u.pLoadCmd->cmdsize <= cbLeft, VERR_LDRMACHO_BAD_LOAD_COMMAND);
+        RTLDRMODMACHO_CHECK_RETURN(u.pLoadCmd->cmdsize <= cbLeft, VERR_LDRMACHO_BAD_LOAD_COMMAND);
         cbLeft -= u.pLoadCmd->cmdsize;
         pb += u.pLoadCmd->cmdsize;
 
@@ -583,8 +583,8 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                 uint64_t        offSect       = 0;
 
                 /* Convert and verify the segment. */
-                KLDRMODMACHO_CHECK_RETURN(u.pLoadCmd->cmdsize >= sizeof(segment_command_32_t), VERR_LDRMACHO_BAD_LOAD_COMMAND);
-                KLDRMODMACHO_CHECK_RETURN(   pHdr->magic == IMAGE_MACHO32_SIGNATURE_OE
+                RTLDRMODMACHO_CHECK_RETURN(u.pLoadCmd->cmdsize >= sizeof(segment_command_32_t), VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                RTLDRMODMACHO_CHECK_RETURN(   pHdr->magic == IMAGE_MACHO32_SIGNATURE_OE
                                           || pHdr->magic == IMAGE_MACHO32_SIGNATURE, VERR_LDRMACHO_BIT_MIX);
                 if (fConvertEndian)
                 {
@@ -612,21 +612,21 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                         && pSrcSeg->segname[0] == '\0') \
                         *puEffFileType = uEffFileType = MH_OBJECT; \
                     \
-                    KLDRMODMACHO_CHECK_RETURN(   pSrcSeg->filesize == 0 \
+                    RTLDRMODMACHO_CHECK_RETURN(   pSrcSeg->filesize == 0 \
                                               || (   pSrcSeg->fileoff <= cbFile \
                                                   && (uint64_t)pSrcSeg->fileoff + pSrcSeg->filesize <= cbFile), \
                                               VERR_LDRMACHO_BAD_LOAD_COMMAND); \
-                    KLDRMODMACHO_CHECK_RETURN(   pSrcSeg->filesize <= pSrcSeg->vmsize \
+                    RTLDRMODMACHO_CHECK_RETURN(   pSrcSeg->filesize <= pSrcSeg->vmsize \
                                               || (fSkipSeg && !strcmp(pSrcSeg->segname, "__CTF") /* see above */), \
                                               VERR_LDRMACHO_BAD_LOAD_COMMAND); \
-                    KLDRMODMACHO_CHECK_RETURN(!(~pSrcSeg->maxprot & pSrcSeg->initprot), \
+                    RTLDRMODMACHO_CHECK_RETURN(!(~pSrcSeg->maxprot & pSrcSeg->initprot), \
                                               VERR_LDRMACHO_BAD_LOAD_COMMAND); \
-                    KLDRMODMACHO_CHECK_RETURN(!(pSrcSeg->flags & ~(SG_HIGHVM | SG_FVMLIB | SG_NORELOC | SG_PROTECTED_VERSION_1)), \
+                    RTLDRMODMACHO_CHECK_RETURN(!(pSrcSeg->flags & ~(SG_HIGHVM | SG_FVMLIB | SG_NORELOC | SG_PROTECTED_VERSION_1)), \
                                               VERR_LDRMACHO_BAD_LOAD_COMMAND); \
-                    KLDRMODMACHO_CHECK_RETURN(   pSrcSeg->nsects * sizeof(section_##a_cBits##_t) \
+                    RTLDRMODMACHO_CHECK_RETURN(   pSrcSeg->nsects * sizeof(section_##a_cBits##_t) \
                                               <= u.pLoadCmd->cmdsize - sizeof(segment_command_##a_cBits##_t), \
                                               VERR_LDRMACHO_BAD_LOAD_COMMAND); \
-                    KLDRMODMACHO_CHECK_RETURN(   uEffFileType != MH_OBJECT \
+                    RTLDRMODMACHO_CHECK_RETURN(   uEffFileType != MH_OBJECT \
                                               || cSegmentCommands == 0 \
                                               || (   cSegmentCommands == 1 \
                                                   && uEffFileType == MH_OBJECT \
@@ -674,14 +674,14 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                         \
                         /* validate */ \
                         if (uEffFileType != MH_OBJECT) \
-                            KLDRMODMACHO_CHECK_RETURN(!strcmp(pSect->segname, pSrcSeg->segname),\
+                            RTLDRMODMACHO_CHECK_RETURN(!strcmp(pSect->segname, pSrcSeg->segname),\
                                                       VERR_LDRMACHO_BAD_SECTION); \
                         \
                         switch (pSect->flags & SECTION_TYPE) \
                         { \
                             case S_ZEROFILL: \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
                                 fFileBits = 0; \
                                 break; \
                             case S_REGULAR: \
@@ -690,15 +690,15 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                             case S_4BYTE_LITERALS: \
                             case S_8BYTE_LITERALS: \
                             case S_16BYTE_LITERALS: \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
                                 fFileBits = 1; \
                                 break; \
                             \
                             case S_SYMBOL_STUBS: \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
                                 /* reserved2 == stub size. 0 has been seen (corecrypto.kext) */ \
-                                KLDRMODMACHO_CHECK_RETURN(pSect->reserved2 < 64, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(pSect->reserved2 < 64, VERR_LDRMACHO_BAD_SECTION); \
                                 fFileBits = 1; \
                                 break; \
                             \
@@ -706,53 +706,53 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                             case S_LAZY_SYMBOL_POINTERS: \
                             case S_LAZY_DYLIB_SYMBOL_POINTERS: \
                                 /* (reserved 1 = is indirect symbol table index) */ \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
                                 *pfCanLoad = false; \
                                 fFileBits = -1; /* __DATA.__got in the 64-bit mach_kernel has bits, any things without bits? */ \
                                 break; \
                             \
                             case S_MOD_INIT_FUNC_POINTERS: \
                                 /** @todo this requires a query API or flag... (e.g. C++ constructors) */ \
-                                KLDRMODMACHO_CHECK_RETURN(fOpenFlags & RTLDR_O_FOR_DEBUG, \
+                                RTLDRMODMACHO_CHECK_RETURN(fOpenFlags & RTLDR_O_FOR_DEBUG, \
                                                           VERR_LDRMACHO_UNSUPPORTED_INIT_SECTION); \
                                 /* Falls through. */ \
                             case S_MOD_TERM_FUNC_POINTERS: \
                                 /** @todo this requires a query API or flag... (e.g. C++ destructors) */ \
-                                KLDRMODMACHO_CHECK_RETURN(fOpenFlags & RTLDR_O_FOR_DEBUG, \
+                                RTLDRMODMACHO_CHECK_RETURN(fOpenFlags & RTLDR_O_FOR_DEBUG, \
                                                           VERR_LDRMACHO_UNSUPPORTED_TERM_SECTION); \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
                                 fFileBits = 1; \
                                 break; /* ignored */ \
                             \
                             case S_LITERAL_POINTERS: \
                             case S_DTRACE_DOF: \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
-                                KLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
+                                RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
                                 fFileBits = 1; \
                                 break; \
                             \
                             case S_INTERPOSING: \
                             case S_GB_ZEROFILL: \
-                                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNSUPPORTED_SECTION); \
+                                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNSUPPORTED_SECTION); \
                             \
                             default: \
-                                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNKNOWN_SECTION); \
+                                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_UNKNOWN_SECTION); \
                         } \
-                        KLDRMODMACHO_CHECK_RETURN(!(pSect->flags & ~(  S_ATTR_PURE_INSTRUCTIONS | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS \
+                        RTLDRMODMACHO_CHECK_RETURN(!(pSect->flags & ~(  S_ATTR_PURE_INSTRUCTIONS | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS \
                                                                      | S_ATTR_NO_DEAD_STRIP | S_ATTR_LIVE_SUPPORT | S_ATTR_SELF_MODIFYING_CODE \
                                                                      | S_ATTR_DEBUG | S_ATTR_SOME_INSTRUCTIONS | S_ATTR_EXT_RELOC \
                                                                      | S_ATTR_LOC_RELOC | SECTION_TYPE)), \
                                                   VERR_LDRMACHO_BAD_SECTION); \
-                        KLDRMODMACHO_CHECK_RETURN((pSect->flags & S_ATTR_DEBUG) == (pFirstSect->flags & S_ATTR_DEBUG), \
+                        RTLDRMODMACHO_CHECK_RETURN((pSect->flags & S_ATTR_DEBUG) == (pFirstSect->flags & S_ATTR_DEBUG), \
                                                   VERR_LDRMACHO_MIXED_DEBUG_SECTION_FLAGS); \
                         \
-                        KLDRMODMACHO_CHECK_RETURN(pSect->addr - pSrcSeg->vmaddr <= pSrcSeg->vmsize, \
+                        RTLDRMODMACHO_CHECK_RETURN(pSect->addr - pSrcSeg->vmaddr <= pSrcSeg->vmsize, \
                                                   VERR_LDRMACHO_BAD_SECTION); \
-                        KLDRMODMACHO_CHECK_RETURN(   pSect->addr - pSrcSeg->vmaddr + pSect->size <= pSrcSeg->vmsize \
+                        RTLDRMODMACHO_CHECK_RETURN(   pSect->addr - pSrcSeg->vmaddr + pSect->size <= pSrcSeg->vmsize \
                                                   || !strcmp(pSrcSeg->segname, "__CTF") /* see above */, \
                                                   VERR_LDRMACHO_BAD_SECTION); \
-                        KLDRMODMACHO_CHECK_RETURN(pSect->align < 31, \
+                        RTLDRMODMACHO_CHECK_RETURN(pSect->align < 31, \
                                                   VERR_LDRMACHO_BAD_SECTION); \
                         /* Workaround for buggy ld64 (or as, llvm, ++) that produces a misaligned __TEXT.__unwind_info. */ \
                         /* Seen: pSect->align = 4, pSect->addr = 0x5ebe14.  Just adjust the alignment down. */ \
@@ -760,16 +760,16 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                             && pSect->align == 4 \
                             && strcmp(pSect->sectname, "__unwind_info") == 0) \
                             pSect->align = 2; \
-                        KLDRMODMACHO_CHECK_RETURN(!((RT_BIT_32(pSect->align) - UINT32_C(1)) & pSect->addr), \
+                        RTLDRMODMACHO_CHECK_RETURN(!((RT_BIT_32(pSect->align) - UINT32_C(1)) & pSect->addr), \
                                                   VERR_LDRMACHO_BAD_SECTION); \
-                        KLDRMODMACHO_CHECK_RETURN(!((RT_BIT_32(pSect->align) - UINT32_C(1)) & pSrcSeg->vmaddr), \
+                        RTLDRMODMACHO_CHECK_RETURN(!((RT_BIT_32(pSect->align) - UINT32_C(1)) & pSrcSeg->vmaddr), \
                                                   VERR_LDRMACHO_BAD_SECTION); \
                         \
                         /* Adjust the section offset before we check file offset. */ \
                         offSect = (offSect + RT_BIT_64(pSect->align) - UINT64_C(1)) & ~(RT_BIT_64(pSect->align) - UINT64_C(1)); \
                         if (pSect->addr) \
                         { \
-                            KLDRMODMACHO_CHECK_RETURN(offSect <= pSect->addr - pSrcSeg->vmaddr, VERR_LDRMACHO_BAD_SECTION); \
+                            RTLDRMODMACHO_CHECK_RETURN(offSect <= pSect->addr - pSrcSeg->vmaddr, VERR_LDRMACHO_BAD_SECTION); \
                             if (offSect < pSect->addr - pSrcSeg->vmaddr) \
                                 offSect = pSect->addr - pSrcSeg->vmaddr; \
                         } \
@@ -780,27 +780,27 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                         { \
                             if (uEffFileType != MH_OBJECT) \
                             { \
-                                KLDRMODMACHO_CHECK_RETURN(pSect->offset == pSrcSeg->fileoff + offSect, \
+                                RTLDRMODMACHO_CHECK_RETURN(pSect->offset == pSrcSeg->fileoff + offSect, \
                                                           VERR_LDRMACHO_NON_CONT_SEG_BITS); \
-                                KLDRMODMACHO_CHECK_RETURN(pSect->offset - pSrcSeg->fileoff <= pSrcSeg->filesize, \
+                                RTLDRMODMACHO_CHECK_RETURN(pSect->offset - pSrcSeg->fileoff <= pSrcSeg->filesize, \
                                                           VERR_LDRMACHO_BAD_SECTION); \
                             } \
-                            KLDRMODMACHO_CHECK_RETURN(pSect->offset <= cbFile, \
+                            RTLDRMODMACHO_CHECK_RETURN(pSect->offset <= cbFile, \
                                                       VERR_LDRMACHO_BAD_SECTION); \
-                            KLDRMODMACHO_CHECK_RETURN((uint64_t)pSect->offset + pSect->size <= cbFile, \
+                            RTLDRMODMACHO_CHECK_RETURN((uint64_t)pSect->offset + pSect->size <= cbFile, \
                                                       VERR_LDRMACHO_BAD_SECTION); \
                         } \
                         else \
-                            KLDRMODMACHO_CHECK_RETURN(pSect->offset == 0, VERR_LDRMACHO_BAD_SECTION); \
+                            RTLDRMODMACHO_CHECK_RETURN(pSect->offset == 0, VERR_LDRMACHO_BAD_SECTION); \
                         \
                         if (!pSect->nreloc) \
-                            KLDRMODMACHO_CHECK_RETURN(!pSect->reloff, \
+                            RTLDRMODMACHO_CHECK_RETURN(!pSect->reloff, \
                                                       VERR_LDRMACHO_BAD_SECTION); \
                         else \
                         { \
-                            KLDRMODMACHO_CHECK_RETURN(pSect->reloff <= cbFile, \
+                            RTLDRMODMACHO_CHECK_RETURN(pSect->reloff <= cbFile, \
                                                       VERR_LDRMACHO_BAD_SECTION); \
-                            KLDRMODMACHO_CHECK_RETURN(     (uint64_t)pSect->reloff \
+                            RTLDRMODMACHO_CHECK_RETURN(     (uint64_t)pSect->reloff \
                                                          + (RTFOFF)pSect->nreloc * sizeof(macho_relocation_info_t) \
                                                       <= cbFile, \
                                                       VERR_LDRMACHO_BAD_SECTION); \
@@ -828,7 +828,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                                 cSections++; \
                                 break; \
                             default: \
-                                KLDRMODMACHO_FAILED_RETURN(VERR_INVALID_PARAMETER); \
+                                RTLDRMODMACHO_FAILED_RETURN(VERR_INVALID_PARAMETER); \
                         } \
                         \
                         /* Advance the section offset, since we're also aligning it. */ \
@@ -852,8 +852,8 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                 uint64_t            offSect       = 0;
 
                 /* Convert and verify the segment. */
-                KLDRMODMACHO_CHECK_RETURN(u.pLoadCmd->cmdsize >= sizeof(segment_command_64_t), VERR_LDRMACHO_BAD_LOAD_COMMAND);
-                KLDRMODMACHO_CHECK_RETURN(   pHdr->magic == IMAGE_MACHO64_SIGNATURE_OE
+                RTLDRMODMACHO_CHECK_RETURN(u.pLoadCmd->cmdsize >= sizeof(segment_command_64_t), VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                RTLDRMODMACHO_CHECK_RETURN(   pHdr->magic == IMAGE_MACHO64_SIGNATURE_OE
                                           || pHdr->magic == IMAGE_MACHO64_SIGNATURE, VERR_LDRMACHO_BIT_MIX);
                 if (fConvertEndian)
                 {
@@ -914,16 +914,16 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                       : sizeof(macho_nlist_64_t);
                 if (    u.pSymTab->symoff >= cbFile
                     ||  (uint64_t)u.pSymTab->symoff + u.pSymTab->nsyms * cbSym > cbFile)
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
                 if (    u.pSymTab->stroff >= cbFile
                     ||  (uint64_t)u.pSymTab->stroff + u.pSymTab->strsize > cbFile)
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
 
                 /* only one string in objects, please. */
                 cSymbolTabs++;
                 if (    uEffFileType == MH_OBJECT
                     &&  cSymbolTabs != 1)
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_OBJECT_FILE);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_OBJECT_FILE);
                 break;
             }
 
@@ -940,14 +940,14 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                 {
                     /* convert & verify header items ([0] == flavor, [1] == uint32_t count). */
                     if (cItemsLeft < 2)
-                        KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                        RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
                     if (fConvertEndian)
                     {
                         pu32[0] = RT_BSWAP_U32(pu32[0]);
                         pu32[1] = RT_BSWAP_U32(pu32[1]);
                     }
                     if (pu32[1] + 2 > cItemsLeft)
-                        KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                        RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
 
                     /* convert & verify according to flavor. */
                     switch (pu32[0])
@@ -966,19 +966,19 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
 
             case LC_UUID:
                 if (u.pUuid->cmdsize != sizeof(uuid_command_t))
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
                 /** @todo Check anything here need converting? */
                 break;
 
             case LC_CODE_SIGNATURE:
                 if (u.pUuid->cmdsize != sizeof(linkedit_data_command_t))
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
                 break;
 
             case LC_VERSION_MIN_MACOSX:
             case LC_VERSION_MIN_IPHONEOS:
                 if (u.pUuid->cmdsize != sizeof(version_min_command_t))
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
                 break;
 
             case LC_SOURCE_VERSION:     /* Harmless. It just gives a clue regarding the source code revision/version. */
@@ -1006,7 +1006,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
             case LC_MAIN: /** @todo parse this and find and entry point or smth. */
                 /** @todo valid command size. */
                 if (!(fOpenFlags & RTLDR_O_FOR_DEBUG))
-                    KLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
+                    RTLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
                                                              "cmd=%#x", u.pLoadCmd->cmd));
                 *pfCanLoad = false;
                 break;
@@ -1025,18 +1025,18 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
             case LC_SUB_LIBRARY:
             case LC_PREBIND_CKSUM:
             case LC_SYMSEG:
-                KLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
+                RTLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
                                                          "cmd=%#x", u.pLoadCmd->cmd));
 
             default:
-                KLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNKNOWN_LOAD_COMMAND,
+                RTLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNKNOWN_LOAD_COMMAND,
                                                          "cmd=%#x", u.pLoadCmd->cmd));
         }
     }
 
     /* be strict. */
     if (cbLeft)
-        KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
+        RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_LOAD_COMMAND);
 
     switch (uEffFileType)
     {
@@ -1047,7 +1047,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
         case MH_DSYM:
         case MH_KEXT_BUNDLE:
             if (!cSegments)
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_OBJECT_FILE);
+                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_OBJECT_FILE);
             break;
     }
 
@@ -1069,7 +1069,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
  * @param   pbStringPool    The string pool
  * @param   cbStringPool    The size of the string pool.
  */
-static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPool, uint32_t cbStringPool)
+static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPool, uint32_t cbStringPool)
 {
     union
     {
@@ -1083,10 +1083,10 @@ static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPoo
     uint32_t cLeft = pThis->Hdr.ncmds;
     uint32_t cbLeft = pThis->Hdr.sizeofcmds;
     const uint8_t *pb = pThis->pbLoadCommands;
-    PKLDRMODMACHOSEG pDstSeg = &pThis->aSegments[0];
-    PKLDRMODMACHOSECT pSectExtra = pThis->paSections;
+    PRTLDRMODMACHOSEG pDstSeg = &pThis->aSegments[0];
+    PRTLDRMODMACHOSECT pSectExtra = pThis->paSections;
     const uint32_t cSegments = pThis->cSegments;
-    PKLDRMODMACHOSEG pSegItr;
+    PRTLDRMODMACHOSEG pSegItr;
     RT_NOREF(cbStringPool);
 
     while (cLeft-- > 0)
@@ -1168,7 +1168,7 @@ static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPoo
                     if (pThis->uEffFileType != MH_OBJECT) \
                         for (pSegItr = &pThis->aSegments[0]; pSegItr != pDstSeg; pSegItr++) \
                             if (!strncmp(pSegItr->SegInfo.pszName, pSrcSeg->segname, sizeof(pSrcSeg->segname))) \
-                                KLDRMODMACHO_FAILED_RETURN(VERR_LDR_DUPLICATE_SEGMENT_NAME); \
+                                RTLDRMODMACHO_FAILED_RETURN(VERR_LDR_DUPLICATE_SEGMENT_NAME); \
                     \
                     /* \
                      * Create a new segment, unless we're supposed to skip this one. \
@@ -1286,7 +1286,7 @@ static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPoo
      */
     {
         bool                fLoadLinkEdit = false;
-        PKLDRMODMACHOSECT   pSectExtraItr;
+        PRTLDRMODMACHOSECT  pSectExtraItr;
         RTLDRADDR           uNextRVA = 0;
         RTLDRADDR           cb;
         uint32_t            cSegmentsToAdjust = cSegments - pThis->fMakeGot;
@@ -1324,13 +1324,14 @@ static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPoo
         c = cSegmentsToAdjust;
         for (pDstSeg = &pThis->aSegments[0]; c-- > 0; pDstSeg++)
         {
+            uNextRVA = RTLDR_ALIGN_ADDR(uNextRVA, pDstSeg->SegInfo.Alignment);
             cb = pDstSeg->SegInfo.RVA - uNextRVA;
             if (cb >= 0x00100000) /* 1MB */
             {
                 pDstSeg->SegInfo.RVA = uNextRVA;
                 //pThis->pMod->fFlags |= KLDRMOD_FLAGS_NON_CONTIGUOUS_LINK_ADDRS;
             }
-            uNextRVA = pDstSeg->SegInfo.RVA + RTLDR_ALIGN_ADDR(pDstSeg->SegInfo.cb, pDstSeg->SegInfo.Alignment);
+            uNextRVA = pDstSeg->SegInfo.RVA + pDstSeg->SegInfo.cb;
         }
 
         /* Calculate the cbMapping members. */
@@ -1421,8 +1422,8 @@ static int  kldrModMachOParseLoadCommands(PKLDRMODMACHO pThis, char *pbStringPoo
  */
 static DECLCALLBACK(int) rtldrMachO_Close(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
-    KLDRMODMACHO_ASSERT(!pThis->pvMapping);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
+    RTLDRMODMACHO_ASSERT(!pThis->pvMapping);
 
     uint32_t i = pThis->cSegments;
     while (i-- > 0)
@@ -1452,7 +1453,7 @@ static DECLCALLBACK(int) rtldrMachO_Close(PRTLDRMODINTERNAL pMod)
  * @param   pThis       The interpreter module instance
  * @param   pBaseAddress    The base address, IN & OUT. Optional.
  */
-static void kldrModMachOAdjustBaseAddress(PKLDRMODMACHO pThis, PRTLDRADDR pBaseAddress)
+static void kldrModMachOAdjustBaseAddress(PRTLDRMODMACHO pThis, PRTLDRADDR pBaseAddress)
 {
     /*
      * Adjust the base address.
@@ -1476,7 +1477,7 @@ static void kldrModMachOAdjustBaseAddress(PKLDRMODMACHO pThis, PRTLDRADDR pBaseA
  *                              value.
  * @param   puValue             Where to return the symbol value.
  */
-static int kldrModMachOQueryLinkerSymbol(PKLDRMODMACHO pThis, const char *pchSymbol, size_t cchSymbol,
+static int kldrModMachOQueryLinkerSymbol(PRTLDRMODMACHO pThis, const char *pchSymbol, size_t cchSymbol,
                                          RTLDRADDR BaseAddress, PRTLDRADDR puValue)
 {
     /*
@@ -1613,7 +1614,7 @@ static int kldrModMachOQueryLinkerSymbol(PKLDRMODMACHO pThis, const char *pchSym
 static DECLCALLBACK(int) rtldrMachO_GetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
                                                 uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     RT_NOREF(pvBits);
     //RT_NOREF(pszVersion);
     //RT_NOREF(pfnGetForwarder);
@@ -1630,7 +1631,7 @@ static DECLCALLBACK(int) rtldrMachO_GetSymbolEx(PRTLDRMODINTERNAL pMod, const vo
     /*
      * Refuse segmented requests for now.
      */
-    KLDRMODMACHO_CHECK_RETURN(   !pfKind
+    RTLDRMODMACHO_CHECK_RETURN(   !pfKind
                               || (*pfKind & RTLDRSYMKIND_REQ_TYPE_MASK) == RTLDRSYMKIND_REQ_FLAT,
                               VERR_LDRMACHO_TODO);
 
@@ -1700,7 +1701,7 @@ static DECLCALLBACK(int) rtldrMachO_GetSymbolEx(PRTLDRMODINTERNAL pMod, const vo
  * @param   puValue     See kLdrModQuerySymbol.
  * @param   pfKind      See kLdrModQuerySymbol.
  */
-static int kldrModMachODoQuerySymbol32Bit(PKLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms,
+static int kldrModMachODoQuerySymbol32Bit(PRTLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms,
                                           const char *pchStrings, uint32_t cchStrings, RTLDRADDR BaseAddress, uint32_t iSymbol,
                                           const char *pchSymbol, uint32_t cchSymbol, PRTLDRADDR puValue, uint32_t *pfKind)
 {
@@ -1774,13 +1775,13 @@ static int kldrModMachODoQuerySymbol32Bit(PKLDRMODMACHO pThis, const macho_nlist
     {
         case MACHO_N_SECT:
         {
-            PKLDRMODMACHOSECT pSect;
+            PRTLDRMODMACHOSECT pSect;
             RTLDRADDR offSect;
-            KLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSymbol].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+            RTLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSymbol].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
             pSect = &pThis->paSections[paSyms[iSymbol].n_sect - 1];
 
             offSect = paSyms[iSymbol].n_value - pSect->LinkAddress;
-            KLDRMODMACHO_CHECK_RETURN(   offSect <= pSect->cb
+            RTLDRMODMACHO_CHECK_RETURN(   offSect <= pSect->cb
                                       || (   paSyms[iSymbol].n_sect == 1 /* special hack for __mh_execute_header */
                                           && offSect == 0U - pSect->RVA
                                           && pThis->uEffFileType != MH_OBJECT),
@@ -1805,7 +1806,7 @@ static int kldrModMachODoQuerySymbol32Bit(PKLDRMODMACHO pThis, const macho_nlist
         case MACHO_N_INDR:
             /** @todo implement indirect and prebound symbols. */
         default:
-            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
     }
 
     return VINF_SUCCESS;
@@ -1828,7 +1829,7 @@ static int kldrModMachODoQuerySymbol32Bit(PKLDRMODMACHO pThis, const macho_nlist
  * @param   puValue     See kLdrModQuerySymbol.
  * @param   pfKind      See kLdrModQuerySymbol.
  */
-static int kldrModMachODoQuerySymbol64Bit(PKLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms,
+static int kldrModMachODoQuerySymbol64Bit(PRTLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms,
                                           const char *pchStrings, uint32_t cchStrings, RTLDRADDR BaseAddress, uint32_t iSymbol,
                                           const char *pchSymbol, uint32_t cchSymbol, PRTLDRADDR puValue, uint32_t *pfKind)
 {
@@ -1902,13 +1903,13 @@ static int kldrModMachODoQuerySymbol64Bit(PKLDRMODMACHO pThis, const macho_nlist
     {
         case MACHO_N_SECT:
         {
-            PKLDRMODMACHOSECT pSect;
+            PRTLDRMODMACHOSECT pSect;
             RTLDRADDR offSect;
-            KLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSymbol].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+            RTLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSymbol].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
             pSect = &pThis->paSections[paSyms[iSymbol].n_sect - 1];
 
             offSect = paSyms[iSymbol].n_value - pSect->LinkAddress;
-            KLDRMODMACHO_CHECK_RETURN(   offSect <= pSect->cb
+            RTLDRMODMACHO_CHECK_RETURN(   offSect <= pSect->cb
                                       || (   paSyms[iSymbol].n_sect == 1 /* special hack for __mh_execute_header */
                                           && offSect == 0U - pSect->RVA
                                           && pThis->uEffFileType != MH_OBJECT),
@@ -1933,7 +1934,7 @@ static int kldrModMachODoQuerySymbol64Bit(PKLDRMODMACHO pThis, const macho_nlist
         case MACHO_N_INDR:
             /** @todo implement indirect and prebound symbols. */
         default:
-            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
     }
 
     return VINF_SUCCESS;
@@ -1946,7 +1947,7 @@ static int kldrModMachODoQuerySymbol64Bit(PKLDRMODMACHO pThis, const macho_nlist
 static DECLCALLBACK(int) rtldrMachO_EnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits,
                                                 RTUINTPTR BaseAddress, PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     RT_NOREF(pvBits);
 
     /*
@@ -1980,7 +1981,7 @@ static DECLCALLBACK(int) rtldrMachO_EnumSymbols(PRTLDRMODINTERNAL pMod, unsigned
         }
     }
     else
-        KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+        RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
 
     return rc;
 }
@@ -2000,7 +2001,7 @@ static DECLCALLBACK(int) rtldrMachO_EnumSymbols(PRTLDRMODINTERNAL pMod, unsigned
  * @param   pfnCallback See kLdrModEnumSymbols.
  * @param   pvUser      See kLdrModEnumSymbols.
  */
-static int kldrModMachODoEnumSymbols32Bit(PKLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms,
+static int kldrModMachODoEnumSymbols32Bit(PRTLDRMODMACHO pThis, const macho_nlist_32_t *paSyms, uint32_t cSyms,
                                           const char *pchStrings, uint32_t cchStrings, RTLDRADDR BaseAddress,
                                           uint32_t fFlags, PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
@@ -2042,7 +2043,7 @@ static int kldrModMachODoEnumSymbols32Bit(PKLDRMODMACHO pThis, const macho_nlist
          */
 
         /* name */
-        KLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_un.n_strx < cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
+        RTLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_un.n_strx < cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
         psz = &pchStrings[paSyms[iSym].n_un.n_strx];
         cch = strlen(psz);
         if (!cch)
@@ -2056,12 +2057,12 @@ static int kldrModMachODoEnumSymbols32Bit(PKLDRMODMACHO pThis, const macho_nlist
         {
             case MACHO_N_SECT:
             {
-                PKLDRMODMACHOSECT pSect;
-                KLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSym].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                PRTLDRMODMACHOSECT pSect;
+                RTLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSym].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                 pSect = &pThis->paSections[paSyms[iSym].n_sect - 1];
 
                 uValue = paSyms[iSym].n_value - pSect->LinkAddress;
-                KLDRMODMACHO_CHECK_RETURN(   uValue <= pSect->cb
+                RTLDRMODMACHO_CHECK_RETURN(   uValue <= pSect->cb
                                           || (   paSyms[iSym].n_sect == 1 /* special hack for __mh_execute_header */
                                               && uValue == 0U - pSect->RVA
                                               && pThis->uEffFileType != MH_OBJECT),
@@ -2084,7 +2085,7 @@ static int kldrModMachODoEnumSymbols32Bit(PKLDRMODMACHO pThis, const macho_nlist
             case MACHO_N_INDR:
                 /** @todo implement indirect and prebound symbols. */
             default:
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
         }
 
         /*
@@ -2112,7 +2113,7 @@ static int kldrModMachODoEnumSymbols32Bit(PKLDRMODMACHO pThis, const macho_nlist
  * @param   pfnCallback See kLdrModEnumSymbols.
  * @param   pvUser      See kLdrModEnumSymbols.
  */
-static int kldrModMachODoEnumSymbols64Bit(PKLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms,
+static int kldrModMachODoEnumSymbols64Bit(PRTLDRMODMACHO pThis, const macho_nlist_64_t *paSyms, uint32_t cSyms,
                                           const char *pchStrings, uint32_t cchStrings, RTLDRADDR BaseAddress,
                                           uint32_t fFlags, PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
@@ -2154,7 +2155,7 @@ static int kldrModMachODoEnumSymbols64Bit(PKLDRMODMACHO pThis, const macho_nlist
          */
 
         /* name */
-        KLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_un.n_strx < cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
+        RTLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_un.n_strx < cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
         psz = &pchStrings[paSyms[iSym].n_un.n_strx];
         cch = strlen(psz);
         if (!cch)
@@ -2168,12 +2169,12 @@ static int kldrModMachODoEnumSymbols64Bit(PKLDRMODMACHO pThis, const macho_nlist
         {
             case MACHO_N_SECT:
             {
-                PKLDRMODMACHOSECT pSect;
-                KLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSym].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                PRTLDRMODMACHOSECT pSect;
+                RTLDRMODMACHO_CHECK_RETURN((uint32_t)(paSyms[iSym].n_sect - 1) < pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                 pSect = &pThis->paSections[paSyms[iSym].n_sect - 1];
 
                 uValue = paSyms[iSym].n_value - pSect->LinkAddress;
-                KLDRMODMACHO_CHECK_RETURN(   uValue <= pSect->cb
+                RTLDRMODMACHO_CHECK_RETURN(   uValue <= pSect->cb
                                           || (   paSyms[iSym].n_sect == 1 /* special hack for __mh_execute_header */
                                               && uValue == 0U - pSect->RVA
                                               && pThis->uEffFileType != MH_OBJECT),
@@ -2196,7 +2197,7 @@ static int kldrModMachODoEnumSymbols64Bit(PKLDRMODMACHO pThis, const macho_nlist
             case MACHO_N_INDR:
                 /** @todo implement indirect and prebound symbols. */
             default:
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
         }
 
         /*
@@ -2214,7 +2215,7 @@ static int kldrModMachODoEnumSymbols64Bit(PKLDRMODMACHO pThis, const macho_nlist
 /** @copydoc kLdrModGetImport */
 static int kldrModMachOGetImport(PRTLDRMODINTERNAL pMod, const void *pvBits, uint32_t iImport, char *pszName, size_t cchName)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     RT_NOREF(pvBits);
     RT_NOREF(iImport);
     RT_NOREF(pszName);
@@ -2232,7 +2233,7 @@ static int kldrModMachOGetImport(PRTLDRMODINTERNAL pMod, const void *pvBits, uin
 /** @copydoc kLdrModNumberOfImports */
 static int32_t kldrModMachONumberOfImports(PRTLDRMODINTERNAL pMod, const void *pvBits)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     RT_NOREF(pvBits);
 
     if (pThis->Hdr.filetype == MH_OBJECT)
@@ -2246,7 +2247,7 @@ static int32_t kldrModMachONumberOfImports(PRTLDRMODINTERNAL pMod, const void *p
 /** @copydoc kLdrModGetStackInfo */
 static int kldrModMachOGetStackInfo(PRTLDRMODINTERNAL pMod, const void *pvBits, RTLDRADDR BaseAddress, PKLDRSTACKINFO pStackInfo)
 {
-    /*PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);*/
+    /*PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);*/
     RT_NOREF(pMod);
     RT_NOREF(pvBits);
     RT_NOREF(BaseAddress);
@@ -2264,7 +2265,7 @@ static int kldrModMachOGetStackInfo(PRTLDRMODINTERNAL pMod, const void *pvBits, 
 static int kldrModMachOQueryMainEntrypoint(PRTLDRMODINTERNAL pMod, const void *pvBits, RTLDRADDR BaseAddress, PRTLDRADDR pMainEPAddress)
 {
 #if 0
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     int rc;
 
     /*
@@ -2297,7 +2298,7 @@ static int kldrModMachOQueryMainEntrypoint(PRTLDRMODINTERNAL pMod, const void *p
  */
 static DECLCALLBACK(int) rtldrMachO_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits, PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     int rc = VINF_SUCCESS;
     uint32_t iSect;
     RT_NOREF(pvBits);
@@ -2334,7 +2335,7 @@ static DECLCALLBACK(int) rtldrMachO_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const vo
 /** @copydoc kLdrModHasDbgInfo */
 static int kldrModMachOHasDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits)
 {
-    /*PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);*/
+    /*PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);*/
 
 #if 0
     /*
@@ -2356,7 +2357,7 @@ static int kldrModMachOHasDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits)
 /** @copydoc kLdrModMap */
 static int kldrModMachOMap(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     unsigned fFixed;
     uint32_t i;
     void *pvBase;
@@ -2408,7 +2409,7 @@ static int kldrModMachOMap(PRTLDRMODINTERNAL pMod)
 /** @copydoc kLdrModUnmap */
 static int kldrModMachOUnmap(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     uint32_t i;
     int rc;
 
@@ -2439,7 +2440,7 @@ static int kldrModMachOUnmap(PRTLDRMODINTERNAL pMod)
 /** @copydoc kLdrModAllocTLS */
 static int kldrModMachOAllocTLS(PRTLDRMODINTERNAL pMod, void *pvMapping)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
 
     /*
      * Mapped?
@@ -2463,7 +2464,7 @@ static void kldrModMachOFreeTLS(PRTLDRMODINTERNAL pMod, void *pvMapping)
 /** @copydoc kLdrModReload */
 static int kldrModMachOReload(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
 
     /*
      * Mapped?
@@ -2479,7 +2480,7 @@ static int kldrModMachOReload(PRTLDRMODINTERNAL pMod)
 /** @copydoc kLdrModFixupMapping */
 static int kldrModMachOFixupMapping(PRTLDRMODINTERNAL pMod, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     int rc, rc2;
 
     /*
@@ -2521,7 +2522,7 @@ static int kldrModMachOFixupMapping(PRTLDRMODINTERNAL pMod, PFNRTLDRIMPORT pfnGe
  * @param   pfnGetImport    The callback for resolving an imported symbol.
  * @param   pvUser          User argument to the callback.
  */
-static int  kldrModMachOObjDoImports(PKLDRMODMACHO pThis, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
+static int  kldrModMachOObjDoImports(PRTLDRMODMACHO pThis, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     const uint32_t cSyms = pThis->cSymbols;
     uint32_t iSym;
@@ -2555,10 +2556,10 @@ static int  kldrModMachOObjDoImports(PKLDRMODMACHO pThis, RTLDRADDR BaseAddress,
                 RTLDRADDR Value = NIL_RTLDRADDR;
 
                 /** @todo Implement N_REF_TO_WEAK. */
-                KLDRMODMACHO_CHECK_RETURN(!(paSyms[iSym].n_desc & N_REF_TO_WEAK), VERR_LDRMACHO_TODO);
+                RTLDRMODMACHO_CHECK_RETURN(!(paSyms[iSym].n_desc & N_REF_TO_WEAK), VERR_LDRMACHO_TODO);
 
                 /* Get the symbol name. */
-                KLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_un.n_strx < pThis->cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
+                RTLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_un.n_strx < pThis->cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
                 pszSymbol = &pThis->pchStrings[paSyms[iSym].n_un.n_strx];
                 cchSymbol = strlen(pszSymbol);
 
@@ -2614,10 +2615,10 @@ static int  kldrModMachOObjDoImports(PKLDRMODMACHO pThis, RTLDRADDR BaseAddress,
                 RTLDRADDR Value = NIL_RTLDRADDR;
 
                 /** @todo Implement N_REF_TO_WEAK. */
-                KLDRMODMACHO_CHECK_RETURN(!(paSyms[iSym].n_desc & N_REF_TO_WEAK), VERR_LDRMACHO_TODO);
+                RTLDRMODMACHO_CHECK_RETURN(!(paSyms[iSym].n_desc & N_REF_TO_WEAK), VERR_LDRMACHO_TODO);
 
                  /* Get the symbol name. */
-                KLDRMODMACHO_CHECK_RETURN(paSyms[iSym].n_un.n_strx < pThis->cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
+                RTLDRMODMACHO_CHECK_RETURN(paSyms[iSym].n_un.n_strx < pThis->cchStrings, VERR_LDRMACHO_BAD_SYMBOL);
                 pszSymbol = &pThis->pchStrings[paSyms[iSym].n_un.n_strx];
                 cchSymbol = strlen(pszSymbol);
 
@@ -2668,7 +2669,7 @@ static int  kldrModMachOObjDoImports(PKLDRMODMACHO pThis, RTLDRADDR BaseAddress,
  * @param   pvMapping       The mapping to fixup.
  * @param   NewBaseAddress  The address to fixup the mapping to.
  */
-static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress)
+static int  kldrModMachOObjDoFixups(PRTLDRMODMACHO pThis, void *pvMapping, RTLDRADDR NewBaseAddress)
 {
     /*
      * Ensure that we've got the symbol table and section fixups handy.
@@ -2683,10 +2684,10 @@ static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRA
     rc = VINF_SUCCESS;
     for (uint32_t iSeg = 0; RT_SUCCESS(rc) && iSeg < pThis->cSegments; iSeg++)
     {
-        PKLDRMODMACHOSEG pSeg = &pThis->aSegments[iSeg];
+        PRTLDRMODMACHOSEG pSeg = &pThis->aSegments[iSeg];
         for (uint32_t iSect = 0; iSect < pSeg->cSections; iSect++)
         {
-            PKLDRMODMACHOSECT pSect = &pSeg->paSections[iSect];
+            PRTLDRMODMACHOSECT pSect = &pSeg->paSections[iSect];
 
             /* skip sections without fixups. */
             if (!pSect->cFixups)
@@ -2714,7 +2715,7 @@ static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRA
                                                    (macho_nlist_64_t *)pThis->pvaSymbols,
                                                    pThis->cSymbols, NewBaseAddress);
             else
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -2736,7 +2737,7 @@ static int  kldrModMachOObjDoFixups(PKLDRMODMACHO pThis, void *pvMapping, RTLDRA
  * @param   cSyms           Number of symbols.
  * @param   NewBaseAddress  The new base image address.
  */
-static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *pbSectBits, PKLDRMODMACHOSECT pFixupSect,
+static int  kldrModMachOFixupSectionGeneric32Bit(PRTLDRMODMACHO pThis, uint8_t *pbSectBits, PRTLDRMODMACHOSECT pFixupSect,
                                                  macho_nlist_32_t *paSyms, uint32_t cSyms, RTLDRADDR NewBaseAddress)
 {
     const macho_relocation_info_t *paFixups = pFixupSect->paFixups;
@@ -2814,8 +2815,8 @@ static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *p
                 {
                     case MACHO_N_SECT:
                     {
-                        PKLDRMODMACHOSECT pSymSect;
-                        KLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                        PRTLDRMODMACHOSECT pSymSect;
+                        RTLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                         pSymSect = &pThis->paSections[pSym->n_sect - 1];
 
                         SymAddr += pSym->n_value - pSymSect->LinkAddress + pSymSect->RVA + NewBaseAddress;
@@ -2829,14 +2830,14 @@ static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *p
 
                     case MACHO_N_INDR:
                     case MACHO_N_PBUD:
-                        KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                        RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
                     default:
-                        KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
+                        RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
                 }
             }
             else if (Fixup.r.r_symbolnum != R_ABS)
             {
-                PKLDRMODMACHOSECT pSymSect;
+                PRTLDRMODMACHOSECT pSymSect;
                 if (Fixup.r.r_symbolnum > pThis->cSections)
                     return VERR_LDR_BAD_FIXUP;
                 pSymSect = &pThis->paSections[Fixup.r.r_symbolnum - 1];
@@ -2851,12 +2852,12 @@ static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *p
         }
         else
         {
-            PKLDRMODMACHOSECT pSymSect;
+            PRTLDRMODMACHOSECT pSymSect;
             uint32_t iSymSect;
             RTLDRADDR Value;
 
             /* sanity */
-            KLDRMODMACHO_ASSERT(Fixup.s.r_scattered);
+            RTLDRMODMACHO_ASSERT(Fixup.s.r_scattered);
             if ((uint32_t)Fixup.s.r_address >= cbSectBits)
                 return VERR_LDR_BAD_FIXUP;
 
@@ -2939,7 +2940,7 @@ static int  kldrModMachOFixupSectionGeneric32Bit(PKLDRMODMACHO pThis, uint8_t *p
  * @param   cSyms           Number of symbols.
  * @param   NewBaseAddress  The new base image address.
  */
-static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBits, PKLDRMODMACHOSECT pFixupSect,
+static int  kldrModMachOFixupSectionAMD64(PRTLDRMODMACHO pThis, uint8_t *pbSectBits, PRTLDRMODMACHOSECT pFixupSect,
                                           macho_nlist_64_t *paSyms, uint32_t cSyms, RTLDRADDR NewBaseAddress)
 {
     const macho_relocation_info_t *paFixups = pFixupSect->paFixups;
@@ -2976,10 +2977,10 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
         Fixup.r = paFixups[iFixup];
 
         /* AMD64 doesn't use scattered fixups. */
-        KLDRMODMACHO_CHECK_RETURN(!(Fixup.r.r_address & R_SCATTERED), VERR_LDR_BAD_FIXUP);
+        RTLDRMODMACHO_CHECK_RETURN(!(Fixup.r.r_address & R_SCATTERED), VERR_LDR_BAD_FIXUP);
 
         /* sanity */
-        KLDRMODMACHO_CHECK_RETURN((uint32_t)Fixup.r.r_address < cbSectBits, VERR_LDR_BAD_FIXUP);
+        RTLDRMODMACHO_CHECK_RETURN((uint32_t)Fixup.r.r_address < cbSectBits, VERR_LDR_BAD_FIXUP);
 
         /* calc fixup addresses. */
         RTPTRUNION uFix;
@@ -2997,7 +2998,7 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
             case 2: SymAddr = *uFixVirgin.pi32; break;
             case 3: SymAddr = *uFixVirgin.pi64; break;
             default:
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
+                RTLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
         }
 
         /* Add symbol / section address. */
@@ -3005,9 +3006,9 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
         {
             const macho_nlist_64_t *pSym;
 
-            KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_symbolnum < cSyms, VERR_LDR_BAD_FIXUP);
+            RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_symbolnum < cSyms, VERR_LDR_BAD_FIXUP);
             pSym = &paSyms[Fixup.r.r_symbolnum];
-            KLDRMODMACHO_CHECK_RETURN(!(pSym->n_type & MACHO_N_STAB), VERR_LDR_BAD_FIXUP);
+            RTLDRMODMACHO_CHECK_RETURN(!(pSym->n_type & MACHO_N_STAB), VERR_LDR_BAD_FIXUP);
 
             switch (Fixup.r.r_type)
             {
@@ -3023,12 +3024,12 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
                             break;
                         case MACHO_N_INDR:
                         case MACHO_N_PBUD:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
                         default:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
                     }
                     SymAddr = sizeof(uint64_t) * Fixup.r.r_symbolnum + pThis->GotRVA + NewBaseAddress;
-                    KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_length == 2, VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_length == 2, VERR_LDR_BAD_FIXUP);
                     SymAddr -= 4;
                     break;
 
@@ -3038,7 +3039,7 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
                 case X86_64_RELOC_SIGNED_1:
                 case X86_64_RELOC_SIGNED_2:
                 case X86_64_RELOC_SIGNED_4:
-                    KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
                     /* Falls through. */
                 default:
                 {
@@ -3046,10 +3047,10 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
                     switch (Fixup.r.r_type)
                     {
                         case X86_64_RELOC_UNSIGNED:
-                            KLDRMODMACHO_CHECK_RETURN(!Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
+                            RTLDRMODMACHO_CHECK_RETURN(!Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
                             break;
                         case X86_64_RELOC_BRANCH:
-                            KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_length == 2, VERR_LDR_BAD_FIXUP);
+                            RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_length == 2, VERR_LDR_BAD_FIXUP);
                             SymAddr -= 4;
                             break;
                         case X86_64_RELOC_SIGNED:
@@ -3059,15 +3060,15 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
                             SymAddr -= 4;
                             break;
                         default:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
                     }
 
                     switch (pSym->n_type & MACHO_N_TYPE)
                     {
                         case MACHO_N_SECT:
                         {
-                            PKLDRMODMACHOSECT pSymSect;
-                            KLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                            PRTLDRMODMACHOSECT pSymSect;
+                            RTLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                             pSymSect = &pThis->paSections[pSym->n_sect - 1];
                             SymAddr += pSym->n_value - pSymSect->LinkAddress + pSymSect->RVA + NewBaseAddress;
                             break;
@@ -3091,9 +3092,9 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
 
                         case MACHO_N_INDR:
                         case MACHO_N_PBUD:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
                         default:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
                     }
                     break;
                 }
@@ -3110,8 +3111,8 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
                     {
                         case MACHO_N_SECT:
                         {
-                            PKLDRMODMACHOSECT pSymSect;
-                            KLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                            PRTLDRMODMACHOSECT pSymSect;
+                            RTLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                             pSymSect = &pThis->paSections[pSym->n_sect - 1];
                             SymAddr -= pSym->n_value - pSymSect->LinkAddress + pSymSect->RVA + NewBaseAddress;
                             break;
@@ -3124,16 +3125,16 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
 
                         case MACHO_N_INDR:
                         case MACHO_N_PBUD:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
                         default:
-                            KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
+                            RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
                     }
 
                     /* Load the 2nd fixup, check sanity. */
                     iFixup++;
-                    KLDRMODMACHO_CHECK_RETURN(!Fixup.r.r_pcrel && iFixup < cFixups, VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_CHECK_RETURN(!Fixup.r.r_pcrel && iFixup < cFixups, VERR_LDR_BAD_FIXUP);
                     Fixup2 = paFixups[iFixup];
-                    KLDRMODMACHO_CHECK_RETURN(   Fixup2.r_address == Fixup.r.r_address
+                    RTLDRMODMACHO_CHECK_RETURN(   Fixup2.r_address == Fixup.r.r_address
                                               && Fixup2.r_length == Fixup.r.r_length
                                               && Fixup2.r_type == X86_64_RELOC_UNSIGNED
                                               && !Fixup2.r_pcrel
@@ -3142,17 +3143,17 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
 
                     if (Fixup2.r_extern)
                     {
-                        KLDRMODMACHO_CHECK_RETURN(Fixup2.r_symbolnum < cSyms, VERR_LDR_BAD_FIXUP);
+                        RTLDRMODMACHO_CHECK_RETURN(Fixup2.r_symbolnum < cSyms, VERR_LDR_BAD_FIXUP);
                         pSym = &paSyms[Fixup2.r_symbolnum];
-                        KLDRMODMACHO_CHECK_RETURN(!(pSym->n_type & MACHO_N_STAB), VERR_LDR_BAD_FIXUP);
+                        RTLDRMODMACHO_CHECK_RETURN(!(pSym->n_type & MACHO_N_STAB), VERR_LDR_BAD_FIXUP);
 
                         /* Add it's value to SymAddr. */
                         switch (pSym->n_type & MACHO_N_TYPE)
                         {
                             case MACHO_N_SECT:
                             {
-                                PKLDRMODMACHOSECT pSymSect;
-                                KLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                                PRTLDRMODMACHOSECT pSymSect;
+                                RTLDRMODMACHO_CHECK_RETURN((uint32_t)pSym->n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                                 pSymSect = &pThis->paSections[pSym->n_sect - 1];
                                 SymAddr += pSym->n_value - pSymSect->LinkAddress + pSymSect->RVA + NewBaseAddress;
                                 break;
@@ -3165,20 +3166,20 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
 
                             case MACHO_N_INDR:
                             case MACHO_N_PBUD:
-                                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
                             default:
-                                KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
+                                RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_BAD_SYMBOL);
                         }
                     }
                     else if (Fixup2.r_symbolnum != R_ABS)
                     {
-                        PKLDRMODMACHOSECT pSymSect;
-                        KLDRMODMACHO_CHECK_RETURN(Fixup2.r_symbolnum <= pThis->cSections, VERR_LDR_BAD_FIXUP);
+                        PRTLDRMODMACHOSECT pSymSect;
+                        RTLDRMODMACHO_CHECK_RETURN(Fixup2.r_symbolnum <= pThis->cSections, VERR_LDR_BAD_FIXUP);
                         pSymSect = &pThis->paSections[Fixup2.r_symbolnum - 1];
                         SymAddr += pSymSect->RVA + NewBaseAddress;
                     }
                     else
-                        KLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
+                        RTLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
                 }
                 break;
             }
@@ -3189,28 +3190,28 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
             switch (Fixup.r.r_type)
             {
                 case X86_64_RELOC_UNSIGNED:
-                    KLDRMODMACHO_CHECK_RETURN(!Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_CHECK_RETURN(!Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
                     break;
                 case X86_64_RELOC_BRANCH:
-                    KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
                     SymAddr += 4; /* dunno what the assmbler/linker really is doing here... */
                     break;
                 case X86_64_RELOC_SIGNED:
                 case X86_64_RELOC_SIGNED_1:
                 case X86_64_RELOC_SIGNED_2:
                 case X86_64_RELOC_SIGNED_4:
-                    KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel, VERR_LDR_BAD_FIXUP);
                     break;
                 /*case X86_64_RELOC_GOT_LOAD:*/
                 /*case X86_64_RELOC_GOT: */
                 /*case X86_64_RELOC_SUBTRACTOR: - must be r_extern=1 says as. */
                 default:
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
             }
             if (Fixup.r.r_symbolnum != R_ABS)
             {
-                PKLDRMODMACHOSECT pSymSect;
-                KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_symbolnum <= pThis->cSections, VERR_LDR_BAD_FIXUP);
+                PRTLDRMODMACHOSECT pSymSect;
+                RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_symbolnum <= pThis->cSections, VERR_LDR_BAD_FIXUP);
                 pSymSect = &pThis->paSections[Fixup.r.r_symbolnum - 1];
 
                 SymAddr -= pSymSect->LinkAddress;
@@ -3233,12 +3234,12 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
                 *uFix.pu64 = (uint64_t)SymAddr;
                 break;
             case 2:
-                KLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel || Fixup.r.r_type == X86_64_RELOC_SUBTRACTOR, VERR_LDR_BAD_FIXUP);
-                KLDRMODMACHO_CHECK_RETURN((int32_t)SymAddr == (int64_t)SymAddr, VERR_LDR_ADDRESS_OVERFLOW);
+                RTLDRMODMACHO_CHECK_RETURN(Fixup.r.r_pcrel || Fixup.r.r_type == X86_64_RELOC_SUBTRACTOR, VERR_LDR_BAD_FIXUP);
+                RTLDRMODMACHO_CHECK_RETURN((int32_t)SymAddr == (int64_t)SymAddr, VERR_LDR_ADDRESS_OVERFLOW);
                 *uFix.pu32 = (uint32_t)SymAddr;
                 break;
             default:
-                KLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
+                RTLDRMODMACHO_FAILED_RETURN(VERR_LDR_BAD_FIXUP);
         }
     }
 
@@ -3249,12 +3250,12 @@ static int  kldrModMachOFixupSectionAMD64(PKLDRMODMACHO pThis, uint8_t *pbSectBi
 /**
  * Loads the symbol table for a MH_OBJECT file.
  *
- * The symbol table is pointed to by KLDRMODMACHO::pvaSymbols.
+ * The symbol table is pointed to by RTLDRMODMACHO::pvaSymbols.
  *
  * @returns IPRT status code.
  * @param   pThis       The Mach-O module interpreter instance.
  */
-static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis)
+static int  kldrModMachOLoadObjSymTab(PRTLDRMODMACHO pThis)
 {
     int rc = VINF_SUCCESS;
 
@@ -3267,7 +3268,7 @@ static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis)
         void *pvStrings;
 
         /* sanity */
-        KLDRMODMACHO_CHECK_RETURN(   pThis->offSymbols
+        RTLDRMODMACHO_CHECK_RETURN(   pThis->offSymbols
                                   && (!pThis->cchStrings || pThis->offStrings),
                                   VERR_LDRMACHO_BAD_OBJECT_FILE);
 
@@ -3277,7 +3278,7 @@ static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis)
              ? sizeof(macho_nlist_32_t)
              : sizeof(macho_nlist_64_t);
         cbSyms = pThis->cSymbols * cbSym;
-        KLDRMODMACHO_CHECK_RETURN(cbSyms / cbSym == pThis->cSymbols, VERR_LDRMACHO_BAD_SYMTAB_SIZE);
+        RTLDRMODMACHO_CHECK_RETURN(cbSyms / cbSym == pThis->cSymbols, VERR_LDRMACHO_BAD_SYMTAB_SIZE);
         rc = VERR_NO_MEMORY;
         pvSyms = RTMemAlloc(cbSyms);
         if (pvSyms)
@@ -3332,7 +3333,7 @@ static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis)
         }
     }
     else
-        KLDRMODMACHO_ASSERT(pThis->pchStrings || pThis->Hdr.filetype == MH_DSYM);
+        RTLDRMODMACHO_ASSERT(pThis->pchStrings || pThis->Hdr.filetype == MH_DSYM);
 
     return rc;
 }
@@ -3348,14 +3349,14 @@ static int  kldrModMachOLoadObjSymTab(PKLDRMODMACHO pThis)
  * @param   cFixups         The number of fixups to load.
  * @param   ppaFixups       Where to put the pointer to the allocated fixup array.
  */
-static int  kldrModMachOLoadFixups(PKLDRMODMACHO pThis, RTFOFF offFixups, uint32_t cFixups, macho_relocation_info_t **ppaFixups)
+static int  kldrModMachOLoadFixups(PRTLDRMODMACHO pThis, RTFOFF offFixups, uint32_t cFixups, macho_relocation_info_t **ppaFixups)
 {
     macho_relocation_info_t *paFixups;
     size_t cbFixups;
 
     /* allocate the memory. */
     cbFixups = cFixups * sizeof(*paFixups);
-    KLDRMODMACHO_CHECK_RETURN(cbFixups / sizeof(*paFixups) == cFixups, VERR_LDRMACHO_BAD_SYMTAB_SIZE);
+    RTLDRMODMACHO_CHECK_RETURN(cbFixups / sizeof(*paFixups) == cFixups, VERR_LDRMACHO_BAD_SYMTAB_SIZE);
     paFixups = (macho_relocation_info_t *)RTMemAlloc(cbFixups);
     if (!paFixups)
         return VERR_NO_MEMORY;
@@ -3391,7 +3392,7 @@ static int  kldrModMachOLoadFixups(PKLDRMODMACHO pThis, RTFOFF offFixups, uint32
  * @returns IPRT status code.
  * @param   pThis       The Mach-O module interpreter instance.
  */
-static int kldrModMachOMapVirginBits(PKLDRMODMACHO pThis)
+static int kldrModMachOMapVirginBits(PRTLDRMODMACHO pThis)
 {
     int rc = VINF_SUCCESS;
     if (!pThis->pvBits)
@@ -3442,7 +3443,7 @@ static int kldrModMachOCallThread(PRTLDRMODINTERNAL pMod, void *pvMapping, uintp
  */
 static DECLCALLBACK(size_t) rtldrMachO_GetImageSize(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     return pThis->cbImage;
 }
 
@@ -3453,7 +3454,7 @@ static DECLCALLBACK(size_t) rtldrMachO_GetImageSize(PRTLDRMODINTERNAL pMod)
 static DECLCALLBACK(int) rtldrMachO_GetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress,
                                             PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
 
     if (!pThis->fCanLoad)
         return VERR_LDRMACHO_TODO;
@@ -3495,7 +3496,7 @@ static DECLCALLBACK(int) rtldrMachO_GetBits(PRTLDRMODINTERNAL pMod, void *pvBits
 static DECLCALLBACK(int) rtldrMachO_RelocateBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
                                                  RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     int rc;
     RT_NOREF(OldBaseAddress);
 
@@ -3534,7 +3535,7 @@ static DECLCALLBACK(int) rtldrMachO_RelocateBits(PRTLDRMODINTERNAL pMod, void *p
  * Assumes the symbol table has all external symbols resolved correctly and that
  * the bits has been cleared up front.
  */
-static int kldrModMachOMakeGOT(PKLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewBaseAddress)
+static int kldrModMachOMakeGOT(PRTLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewBaseAddress)
 {
     uint32_t  iSym = pThis->cSymbols;
     if (    pThis->Hdr.magic == IMAGE_MACHO32_SIGNATURE
@@ -3547,8 +3548,8 @@ static int kldrModMachOMakeGOT(PKLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewB
             {
                 case MACHO_N_SECT:
                 {
-                    PKLDRMODMACHOSECT pSymSect;
-                    KLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                    PRTLDRMODMACHOSECT pSymSect;
+                    RTLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                     pSymSect = &pThis->paSections[paSyms[iSym].n_sect - 1];
                     paGOT[iSym] = (uint32_t)(paSyms[iSym].n_value - pSymSect->LinkAddress + pSymSect->RVA + NewBaseAddress);
                     break;
@@ -3570,8 +3571,8 @@ static int kldrModMachOMakeGOT(PKLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewB
             {
                 case MACHO_N_SECT:
                 {
-                    PKLDRMODMACHOSECT pSymSect;
-                    KLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
+                    PRTLDRMODMACHOSECT pSymSect;
+                    RTLDRMODMACHO_CHECK_RETURN((uint32_t)paSyms[iSym].n_sect - 1 <= pThis->cSections, VERR_LDRMACHO_BAD_SYMBOL);
                     pSymSect = &pThis->paSections[paSyms[iSym].n_sect - 1];
                     paGOT[iSym] = paSyms[iSym].n_value - pSymSect->LinkAddress + pSymSect->RVA + NewBaseAddress;
                     break;
@@ -3624,7 +3625,7 @@ static int kldrModMachOMakeGOT(PKLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewB
                 }
 
                 default:
-                    KLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
+                    RTLDRMODMACHO_FAILED_RETURN(VERR_LDRMACHO_TODO);
             }
         }
     }
@@ -3637,7 +3638,7 @@ static int kldrModMachOMakeGOT(PKLDRMODMACHO pThis, void *pvBits, RTLDRADDR NewB
  */
 static DECLCALLBACK(int) rtldrMachO_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
-    PKLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     uint32_t const cSegments  = pThis->cSegments;
     for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
     {
@@ -3656,7 +3657,7 @@ static DECLCALLBACK(int) rtldrMachO_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLD
 static DECLCALLBACK(int) rtldrMachO_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
                                                            uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
-    PKLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     uint32_t const cSegments  = pThis->cSegments;
     for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
     {
@@ -3679,7 +3680,7 @@ static DECLCALLBACK(int) rtldrMachO_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMo
  */
 static DECLCALLBACK(int) rtldrMachO_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
 {
-    PKLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     uint32_t const cSegments  = pThis->cSegments;
     for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
     {
@@ -3701,11 +3702,11 @@ static DECLCALLBACK(int) rtldrMachO_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTL
  */
 static DECLCALLBACK(int) rtldrMachO_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva)
 {
-    PKLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
 
     if (iSeg >= pThis->cSegments)
         return VERR_LDR_INVALID_SEG_OFFSET;
-    KLDRMODMACHOSEG const *pSegment = &pThis->aSegments[iSeg];
+    RTLDRMODMACHOSEG const *pSegment = &pThis->aSegments[iSeg];
 
     if (   offSeg > pSegment->SegInfo.cbMapped
         && offSeg > pSegment->SegInfo.cb
@@ -3723,7 +3724,7 @@ static DECLCALLBACK(int) rtldrMachO_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint3
  */
 static DECLCALLBACK(int) rtldrMachO_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
-    PKLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     uint32_t const cSegments  = pThis->cSegments;
     for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
     {
@@ -3746,7 +3747,7 @@ static DECLCALLBACK(int) rtldrMachO_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDR
  */
 static DECLCALLBACK(int) rtldrMachO_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf)
 {
-    PKLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
 
     /** @todo May have to apply fixups here. */
     if (iDbgInfo < pThis->cSections)
@@ -3759,7 +3760,7 @@ static DECLCALLBACK(int) rtldrMachO_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t
 static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
                                           void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
-    PKLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, KLDRMODMACHO, Core);
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
     int           rc;
     switch (enmProp)
     {
@@ -3829,7 +3830,7 @@ DECLHIDDEN(int) rtldrMachOOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     /*
      * Create the instance data and do a minimal header validation.
      */
-    PKLDRMODMACHO pThis = NULL;
+    PRTLDRMODMACHO pThis = NULL;
     int rc = kldrModMachODoCreate(pReader, offImage, fFlags, &pThis, pErrInfo);
     if (RT_SUCCESS(rc))
     {

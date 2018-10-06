@@ -230,7 +230,10 @@ static DECLCALLBACK(int) testEnumSegment1(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, voi
 {
     if (hLdrMod != g_hLdrMod || pvUser != NULL)
         return VERR_INTERNAL_ERROR_3;
-    RTPrintf("Seg#%02u: %RTptr LB %RTptr %s\n", g_iSegNo++, pSeg->RVA, pSeg->cbMapped, pSeg->pszName);
+    RTPrintf("Seg#%02u: %RTptr LB %RTptr %s\n"
+             "   link=%RTptr LB %RTptr align=%RTptr fProt=%#x offFile=%RTfoff\n"
+             , g_iSegNo++, pSeg->RVA, pSeg->cbMapped, pSeg->pszName,
+             pSeg->LinkAddress, pSeg->cb, pSeg->Alignment, pSeg->fProt, pSeg->offFile);
 
     return VINF_SUCCESS;
 }
