@@ -2683,7 +2683,7 @@ static DECLCALLBACK(int) rtldrLX_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, 
 
 
 /**
- * @interface_method_impl{RTLDROPS,pfnLinkAddressToRva}.
+ * @interface_method_impl{RTLDROPS,pfnLinkAddressToRva}
  */
 static DECLCALLBACK(int) rtldrLX_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
 {
