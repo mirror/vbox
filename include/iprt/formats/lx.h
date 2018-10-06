@@ -34,19 +34,19 @@
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
 
+RT_C_DECLS_BEGIN
 
 #ifndef IMAGE_OS2_SIGNATURE_LX
 /** LX signature ("LX") */
 # define IMAGE_LX_SIGNATURE  K_LE2H_U16('L' | ('X' << 8))
 #endif
 
-#pragma pack(1) /** @todo mostly unnecessary. */
 
 /**
  * Linear eXecutable header.
  * This structure is exactly 196 bytes long.
  */
-struct e32_exe
+typedef struct e32_exe
 {
     uint8_t             e32_magic[2];
     uint8_t             e32_border;
@@ -124,7 +124,7 @@ struct e32_exe
     uint32_t            e32_heapsize;
     uint32_t            e32_stacksize;
     uint8_t             e32_res3[20];
-};
+} e32_exe;
 AssertCompileSize(struct e32_exe, 196);
 
 /** e32_magic[0] */
@@ -197,18 +197,21 @@ AssertCompileSize(struct e32_exe, 196);
 #define E32NOTMPSAFE     UINT32_C(0x00080000)
 /** @} */
 
+
 /** @name Relocations (aka Fixups).
  * @{ */
-typedef union _offset
+typedef union r32_offset
 {
     uint16_t            offset16;
     uint32_t            offset32;
-} offset;
+} r32_offset;
+AssertCompileSize(r32_offset, 4);
 
 /** A relocation.
  * @remark this structure isn't very usable since LX relocations comes in too many size variations.
  */
-struct r32_rlc
+#pragma pack(1)
+typedef struct r32_rlc
 {
     uint8_t             nr_stype;
     uint8_t             nr_flags;
@@ -217,21 +220,23 @@ struct r32_rlc
 
     union targetid
     {
-        offset          intref;
+        r32_offset      intref;
         union extfixup
         {
-            offset      proc;
+            r32_offset  proc;
             uint32_t    ord;
         } extref;
         struct addfixup
         {
             uint16_t    entry;
-            offset      addval;
+            r32_offset  addval;
         } addfix;
     } r32_target;
     uint16_t            r32_srccount;
     uint16_t            r32_chain;
-};
+} r32_rlc;
+#pragma pack()
+AssertCompileSize(r32_rlc, 16);
 
 /** @name Some attempt at size constanstants.
  * @{
@@ -282,7 +287,7 @@ struct r32_rlc
  * @{ */
 
 /** The Object Table Entry. */
-struct o32_obj
+typedef struct o32_obj
 {
     /** The size of the object. */
     uint32_t            o32_size;
@@ -296,7 +301,8 @@ struct o32_obj
     uint32_t            o32_mapsize;
     /** Reserved */
     uint32_t            o32_reserved;
-};
+} o32_obj;
+AssertCompileSize(o32_obj, 24);
 
 /** @name o32_flags
  * @{ */
@@ -342,7 +348,7 @@ struct o32_obj
 /** @} */
 
 /** A Object Page Map Entry. */
-struct o32_map
+typedef struct o32_map
 {
     /** The file offset of the page. */
     uint32_t            o32_pagedataoffset;
@@ -350,7 +356,8 @@ struct o32_map
     uint16_t            o32_pagesize;
     /** Per page flags describing how the page is encoded in the file. */
     uint16_t            o32_pageflags;
-};
+} o32_map;
+AssertCompileSize(o32_map, 8);
 
 /** @name o32 o32_pageflags
  * @{
@@ -371,7 +378,8 @@ struct o32_map
 
 
 /** Iteration Record format (RLE compressed page). */
-struct LX_Iter
+#pragma pack(1)
+typedef struct LX_Iter
 {
     /** Number of iterations. */
     uint16_t            LX_nIter;
@@ -379,13 +387,16 @@ struct LX_Iter
     uint16_t            LX_nBytes;
     /** The bytes. */
     uint8_t             LX_Iterdata;
-};
+} LX_Iter;
+#pragma pack()
+AssertCompileSize(LX_Iter, 5);
 
 /** @} */
 
 
 /** A Resource Table Entry */
-struct rsrc32
+#pragma pack(1)
+typedef struct rsrc32
 {
     /** Resource Type. */
     uint16_t            type;
@@ -397,7 +408,9 @@ struct rsrc32
     uint16_t            obj;
     /** Offset of the resource that within the object. */
     uint32_t            offset;
-};
+} rsrc32;
+#pragma pack()
+AssertCompileSize(rsrc32, 14);
 
 
 /** @name The Entry Table (aka Export Table)
@@ -405,7 +418,7 @@ struct rsrc32
 
 /** Entry bundle.
  * Header descripting up to 255 entries that follows immediatly after this structure. */
-struct b32_bundle
+typedef struct b32_bundle
 {
     /** The number of entries. */
     uint8_t             b32_cnt;
@@ -413,7 +426,8 @@ struct b32_bundle
     uint8_t             b32_type;
     /** The index of the object containing these entry points. */
     uint16_t            b32_obj;
-};
+} b32_bundle;
+AssertCompileSize(b32_bundle, 4);
 
 /** @name b32_type
  * @{ */
@@ -433,14 +447,15 @@ struct b32_bundle
 
 
 /** Entry point. */
-struct e32_entry
+#pragma pack(1)
+typedef struct e32_entry
 {
     /** Entry point flags */
     uint8_t             e32_flags;      /* Entry point flags */
     union entrykind
     {
         /** ENTRY16 or ENTRY32. */
-        offset          e32_offset;
+        r32_offset      e32_offset;
         /** GATE16 */
         struct scallgate
         {
@@ -458,7 +473,8 @@ struct e32_entry
             uint32_t    value;
         } e32_fwd;
     } e32_variant;
-};
+} e32_entry;
+#pragma pack()
 
 /** @name e32_flags
  * @{ */
@@ -480,7 +496,8 @@ struct e32_entry
 #define FWDENT          7
 /** @} */
 
-#pragma pack()
+
+RT_C_DECLS_END
 
 #endif
 
