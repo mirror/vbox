@@ -28,17 +28,28 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
-#include <k/kLdr.h>
-#include "kLdrInternal.h"
-#include <k/kLdrFmts/lx.h>
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_LDR
+#include <iprt/ldr.h>
+#include "internal/iprt.h"
+
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+
+#include <iprt/formats/lx.h>
+#include "internal/ldr.h"
 
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** @def KLDRMODLX_STRICT
  * Define KLDRMODLX_STRICT to enabled strict checks in KLDRMODLX. */
 #define KLDRMODLX_STRICT 1
@@ -47,39 +58,40 @@
  * Assert that an expression is true when KLDR_STRICT is defined.
  */
 #ifdef KLDRMODLX_STRICT
-# define KLDRMODLX_ASSERT(expr)  kHlpAssert(expr)
+# define KLDRMODLX_ASSERT(expr)  Assert(expr)
 #else
 # define KLDRMODLX_ASSERT(expr)  do {} while (0)
 #endif
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * Instance data for the LX module interpreter.
  */
 typedef struct KLDRMODLX
 {
-    /** Pointer to the module. (Follows the section table.) */
-    PKLDRMOD                pMod;
+    /** Core module structure. */
+    RTLDRMODINTERNAL        Core;
+
     /** Pointer to the user mapping. */
     const void             *pvMapping;
     /** The size of the mapped LX image. */
-    KSIZE                   cbMapped;
+    size_t                  cbMapped;
     /** Reserved flags. */
-    KU32                    f32Reserved;
+    uint32_t                f32Reserved;
 
     /** The offset of the LX header. */
-    KLDRFOFF                offHdr;
+    RTFOFF                  offHdr;
     /** Copy of the LX header. */
     struct e32_exe          Hdr;
 
     /** Pointer to the loader section.
      * Allocated together with this strcture. */
-    const KU8              *pbLoaderSection;
+    const uint8_t          *pbLoaderSection;
     /** Pointer to the last byte in the loader section. */
-    const KU8              *pbLoaderSectionLast;
+    const uint8_t          *pbLoaderSectionLast;
     /** Pointer to the object table in the loader section. */
     const struct o32_obj   *paObjs;
     /** Pointer to the object page map table in the loader section. */
@@ -87,128 +99,93 @@ typedef struct KLDRMODLX
     /** Pointer to the resource table in the loader section. */
     const struct rsrc32    *paRsrcs;
     /** Pointer to the resident name table in the loader section. */
-    const KU8              *pbResNameTab;
+    const uint8_t          *pbResNameTab;
     /** Pointer to the entry table in the loader section. */
-    const KU8              *pbEntryTab;
+    const uint8_t          *pbEntryTab;
 
     /** Pointer to the non-resident name table. */
-    KU8                    *pbNonResNameTab;
+    uint8_t                *pbNonResNameTab;
     /** Pointer to the last byte in the non-resident name table. */
-    const KU8              *pbNonResNameTabLast;
+    const uint8_t          *pbNonResNameTabLast;
 
     /** Pointer to the fixup section. */
-    KU8                    *pbFixupSection;
+    uint8_t                *pbFixupSection;
     /** Pointer to the last byte in the fixup section. */
-    const KU8              *pbFixupSectionLast;
+    const uint8_t          *pbFixupSectionLast;
     /** Pointer to the fixup page table within pvFixupSection. */
-    const KU32             *paoffPageFixups;
+    const uint32_t         *paoffPageFixups;
     /** Pointer to the fixup record table within pvFixupSection. */
-    const KU8              *pbFixupRecs;
+    const uint8_t          *pbFixupRecs;
     /** Pointer to the import module name table within pvFixupSection. */
-    const KU8              *pbImportMods;
+    const uint8_t          *pbImportMods;
     /** Pointer to the import module name table within pvFixupSection. */
-    const KU8              *pbImportProcs;
+    const uint8_t          *pbImportProcs;
+
+    /** Pointer to the module name (in the resident name table). */
+    const char             *pszName;
+    /** The name length. */
+    size_t                  cchName;
+
+    /** The target CPU. */
+    RTLDRCPU                enmCpu;
+    /** Number of segments in aSegments. */
+    uint32_t                cSegments;
+    /** Segment info. */
+    RTLDRSEG                aSegments[RT_FLEXIBLE_ARRAY];
 } KLDRMODLX, *PKLDRMODLX;
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static int kldrModLXHasDbgInfo(PKLDRMOD pMod, const void *pvBits);
-static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAddress, KLDRADDR OldBaseAddress,
-                                 PFNKLDRMODGETIMPORT pfnGetImport, void *pvUser);
-static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX);
-static const KU8 *kldrModLXDoNameTableLookupByOrdinal(const KU8 *pbNameTable, KSSIZE cbNameTable, KU32 iOrdinal);
-static int kldrModLXDoNameLookup(PKLDRMODLX pModLX, const char *pchSymbol, KSIZE cchSymbol, KU32 *piSymbol);
-static const KU8 *kldrModLXDoNameTableLookupByName(const KU8 *pbNameTable, KSSIZE cbNameTable,
-                                                       const char *pchSymbol, KSIZE cchSymbol);
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int kldrModLXHasDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits);
+static DECLCALLBACK(int) rtldrLX_RelocateBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
+                                              RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
+static const uint8_t *kldrModLXDoNameTableLookupByOrdinal(const uint8_t *pbNameTable, ssize_t cbNameTable, uint32_t iOrdinal);
+static int kldrModLXDoNameLookup(PKLDRMODLX pModLX, const char *pchSymbol, size_t cchSymbol, uint32_t *piSymbol);
+static const uint8_t *kldrModLXDoNameTableLookupByName(const uint8_t *pbNameTable, ssize_t cbNameTable,
+                                                       const char *pchSymbol, size_t cchSymbol);
+static int kldrModLXGetImport(PKLDRMODLX pThis, const void *pvBits, uint32_t iImport,
+                              char *pszName, size_t cchName, size_t *pcbNeeded);
 static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits);
-static int kldrModLXDoIterDataUnpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc);
-static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc);
-static void kLdrModLXMemCopyW(KU8 *pbDst, const KU8 *pbSrc, int cb);
+static int kldrModLXDoIterDataUnpacking(uint8_t *pbDst, const uint8_t *pbSrc, int cbSrc);
+static int kldrModLXDoIterData2Unpacking(uint8_t *pbDst, const uint8_t *pbSrc, int cbSrc);
+static void kLdrModLXMemCopyW(uint8_t *pbDst, const uint8_t *pbSrc, int cb);
 static int kldrModLXDoProtect(PKLDRMODLX pModLX, void *pvBits, unsigned fUnprotectOrProtect);
-static int kldrModLXDoCallDLL(PKLDRMODLX pModLX, void *pvMapping, unsigned uOp, KUPTR uHandle);
+static int kldrModLXDoCallDLL(PKLDRMODLX pModLX, void *pvMapping, unsigned uOp, uintptr_t uHandle);
 static int kldrModLXDoForwarderQuery(PKLDRMODLX pModLX, const struct e32_entry *pEntry,
-                                     PFNKLDRMODGETIMPORT pfnGetForwarder, void *pvUser, PKLDRADDR puValue, KU32 *pfKind);
+                                     PFNRTLDRIMPORT pfnGetForwarder, void *pvUser, PRTLDRADDR puValue, uint32_t *pfKind);
 static int kldrModLXDoLoadFixupSection(PKLDRMODLX pModLX);
-static KI32 kldrModLXDoCall(KUPTR uEntrypoint, KUPTR uHandle, KU32 uOp, void *pvReserved);
-static int kldrModLXDoReloc(KU8 *pbPage, int off, KLDRADDR PageAddress, const struct r32_rlc *prlc,
-                            int iSelector, KLDRADDR uValue, KU32 fKind);
-
-
-/**
- * Create a loader module instance interpreting the executable image found
- * in the specified file provider instance.
- *
- * @returns 0 on success and *ppMod pointing to a module instance.
- *          On failure, a non-zero OS specific error code is returned.
- * @param   pOps            Pointer to the registered method table.
- * @param   pRdr            The file provider instance to use.
- * @param   fFlags          Flags, MBZ.
- * @param   enmCpuArch      The desired CPU architecture. KCPUARCH_UNKNOWN means
- *                          anything goes, but with a preference for the current
- *                          host architecture.
- * @param   offNewHdr       The offset of the new header in MZ files. -1 if not found.
- * @param   ppMod           Where to store the module instance pointer.
- */
-static int kldrModLXCreate(PCKLDRMODOPS pOps, PKRDR pRdr, KU32 fFlags, KCPUARCH enmCpuArch, KLDRFOFF offNewHdr, PPKLDRMOD ppMod)
-{
-    PKLDRMODLX pModLX;
-    int rc;
-    K_NOREF(fFlags);
-
-    /*
-     * Create the instance data and do a minimal header validation.
-     */
-    rc = kldrModLXDoCreate(pRdr, offNewHdr, &pModLX);
-    if (!rc)
-    {
-        /*
-         * Match up against the requested CPU architecture.
-         */
-        if (    enmCpuArch == KCPUARCH_UNKNOWN
-            ||  pModLX->pMod->enmArch == enmCpuArch)
-        {
-            pModLX->pMod->pOps = pOps;
-            pModLX->pMod->u32Magic = KLDRMOD_MAGIC;
-            *ppMod = pModLX->pMod;
-            return 0;
-        }
-        rc = KLDR_ERR_CPU_ARCH_MISMATCH;
-    }
-    kHlpFree(pModLX);
-    return rc;
-}
+static int32_t kldrModLXDoCall(uintptr_t uEntrypoint, uintptr_t uHandle, uint32_t uOp, void *pvReserved);
+static int kldrModLXDoReloc(uint8_t *pbPage, int off, RTLDRADDR PageAddress, const struct r32_rlc *prlc,
+                            int iSelector, RTLDRADDR uValue, uint32_t fKind);
 
 
 /**
  * Separate function for reading creating the LX module instance to
  * simplify cleanup on failure.
  */
-static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX)
+static int kldrModLXDoCreate(PRTLDRREADER pRdr, RTFOFF offNewHdr, uint32_t fFlags, PKLDRMODLX *ppModLX, PRTERRINFO pErrInfo)
 {
     struct e32_exe Hdr;
     PKLDRMODLX pModLX;
-    PKLDRMOD pMod;
-    KSIZE cb;
-    KSIZE cchFilename;
-    KSIZE offLdrStuff;
-    KU32 off, offEnd;
-    KU32 i;
-    int rc;
+    uint32_t off, offEnd;
+    uint32_t i;
     int fCanOptimizeMapping;
-    KU32 NextRVA;
+    uint32_t NextRVA;
+
+    RT_NOREF(fFlags);
     *ppModLX = NULL;
 
     /*
      * Read the signature and file header.
      */
-    rc = kRdrRead(pRdr, &Hdr, sizeof(Hdr), offNewHdr > 0 ? offNewHdr : 0);
-    if (rc)
-        return rc;
+    int rc = pRdr->pfnRead(pRdr, &Hdr, sizeof(Hdr), offNewHdr > 0 ? offNewHdr : 0);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Error reading LX header at %RTfoff: %Rrc", offNewHdr, rc);
     if (    Hdr.e32_magic[0] != E32MAGIC1
         ||  Hdr.e32_magic[1] != E32MAGIC2)
-        return KLDR_ERR_UNKNOWN_FORMAT;
+        return RTErrInfoSetF(pErrInfo, VERR_INVALID_EXE_SIGNATURE, "Not LX magic: %02x %02x", Hdr.e32_magic[0], Hdr.e32_magic[1]);
 
     /* We're not interested in anything but x86 images. */
     if (    Hdr.e32_level != E32LEVEL
@@ -218,10 +195,10 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
         ||  Hdr.e32_cpu > E32CPU486
         ||  Hdr.e32_pagesize != OBJPAGELEN
         )
-        return KLDR_ERR_LX_BAD_HEADER;
+        return VERR_LDRLX_BAD_HEADER;
 
     /* Some rough sanity checks. */
-    offEnd = kRdrSize(pRdr) >= (KLDRFOFF)~(KU32)16 ? ~(KU32)16 : (KU32)kRdrSize(pRdr);
+    offEnd = pRdr->pfnSize(pRdr) >= (RTFOFF)~(uint32_t)16 ? ~(uint32_t)16 : (uint32_t)pRdr->pfnSize(pRdr);
     if (    Hdr.e32_itermap > offEnd
         ||  Hdr.e32_datapage > offEnd
         ||  Hdr.e32_nrestab > offEnd
@@ -229,32 +206,32 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
         ||  Hdr.e32_ldrsize > offEnd - offNewHdr - sizeof(Hdr)
         ||  Hdr.e32_fixupsize > offEnd - offNewHdr - sizeof(Hdr)
         ||  Hdr.e32_fixupsize + Hdr.e32_ldrsize > offEnd - offNewHdr - sizeof(Hdr))
-        return KLDR_ERR_LX_BAD_HEADER;
+        return VERR_LDRLX_BAD_HEADER;
 
     /* Verify the loader section. */
     offEnd = Hdr.e32_objtab + Hdr.e32_ldrsize;
     if (Hdr.e32_objtab < sizeof(Hdr))
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
     off = Hdr.e32_objtab + sizeof(struct o32_obj) * Hdr.e32_objcnt;
     if (off > offEnd)
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
     if (    Hdr.e32_objmap
         &&  (Hdr.e32_objmap < off || Hdr.e32_objmap > offEnd))
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
     if (    Hdr.e32_rsrccnt
         && (   Hdr.e32_rsrctab < off
             || Hdr.e32_rsrctab > offEnd
             || Hdr.e32_rsrctab + sizeof(struct rsrc32) * Hdr.e32_rsrccnt > offEnd))
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
     if (    Hdr.e32_restab
         &&  (Hdr.e32_restab < off || Hdr.e32_restab > offEnd - 2))
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
     if (    Hdr.e32_enttab
         &&  (Hdr.e32_enttab < off || Hdr.e32_enttab >= offEnd))
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
     if (    Hdr.e32_dircnt
         && (Hdr.e32_dirtab < off || Hdr.e32_dirtab > offEnd - 2))
-        return KLDR_ERR_LX_BAD_LOADER_SECTION;
+        return VERR_LDRLX_BAD_LOADER_SECTION;
 
     /* Verify the fixup section. */
     off = offEnd;
@@ -271,90 +248,79 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
     }
     if (    Hdr.e32_frectab
         &&  (Hdr.e32_frectab < off || Hdr.e32_frectab > offEnd))
-        return KLDR_ERR_LX_BAD_FIXUP_SECTION;
+        return VERR_LDRLX_BAD_FIXUP_SECTION;
     if (    Hdr.e32_impmod
         &&  (Hdr.e32_impmod < off || Hdr.e32_impmod > offEnd || Hdr.e32_impmod + Hdr.e32_impmodcnt > offEnd))
-        return KLDR_ERR_LX_BAD_FIXUP_SECTION;
+        return VERR_LDRLX_BAD_FIXUP_SECTION;
     if (    Hdr.e32_impproc
         &&  (Hdr.e32_impproc < off || Hdr.e32_impproc > offEnd))
-        return KLDR_ERR_LX_BAD_FIXUP_SECTION;
+        return VERR_LDRLX_BAD_FIXUP_SECTION;
 
     /*
      * Calc the instance size, allocate and initialize it.
      */
-    cchFilename = kHlpStrLen(kRdrName(pRdr));
-    cb = K_ALIGN_Z(sizeof(KLDRMODLX), 8)
-       + K_ALIGN_Z(K_OFFSETOF(KLDRMOD, aSegments[Hdr.e32_objcnt + 1]), 8)
-       + K_ALIGN_Z(cchFilename + 1, 8);
-    offLdrStuff = cb;
-    cb += Hdr.e32_ldrsize + 2; /* +2 for two extra zeros. */
-    pModLX = (PKLDRMODLX)kHlpAlloc(cb);
+    size_t cbModLXAndSegments = RT_ALIGN_Z(RT_UOFFSETOF_DYN(KLDRMODLX, aSegments[Hdr.e32_objcnt + 1]), 8);
+    pModLX = (PKLDRMODLX)RTMemAlloc(cbModLXAndSegments + Hdr.e32_ldrsize + 2 /*for two extra zeros*/);
     if (!pModLX)
-        return KERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
     *ppModLX = pModLX;
 
-    /* KLDRMOD */
-    pMod = (PKLDRMOD)((KU8 *)pModLX + K_ALIGN_Z(sizeof(KLDRMODLX), 8));
-    pMod->pvData = pModLX;
-    pMod->pRdr = pRdr;
-    pMod->pOps = NULL;      /* set upon success. */
-    pMod->cSegments = Hdr.e32_objcnt;
-    pMod->cchFilename = (KU32)cchFilename;
-    pMod->pszFilename = (char *)K_ALIGN_P(&pMod->aSegments[pMod->cSegments], 8);
-    kHlpMemCopy((char *)pMod->pszFilename, kRdrName(pRdr), cchFilename + 1);
-    pMod->pszName = NULL; /* finalized further down */
-    pMod->cchName = 0;
-    pMod->fFlags = 0;
+    /* Core & CPU. */
+    pModLX->Core.u32Magic   = 0;      /* set by caller. */
+    pModLX->Core.eState     = LDR_STATE_OPENED;
+    pModLX->Core.pOps       = NULL;   /* set by caller. */
+    pModLX->Core.pReader    = pRdr;
     switch (Hdr.e32_cpu)
     {
         case E32CPU286:
-            pMod->enmCpu = KCPU_I80286;
-            pMod->enmArch = KCPUARCH_X86_16;
+            pModLX->enmCpu = RTLDRCPU_I80286;
+            pModLX->Core.enmArch = RTLDRARCH_X86_16;
             break;
         case E32CPU386:
-            pMod->enmCpu = KCPU_I386;
-            pMod->enmArch = KCPUARCH_X86_32;
+            pModLX->enmCpu = RTLDRCPU_I386;
+            pModLX->Core.enmArch = RTLDRARCH_X86_32;
             break;
         case E32CPU486:
-            pMod->enmCpu = KCPU_I486;
-            pMod->enmArch = KCPUARCH_X86_32;
+            pModLX->enmCpu = RTLDRCPU_I486;
+            pModLX->Core.enmArch = RTLDRARCH_X86_32;
             break;
     }
-    pMod->enmEndian = KLDRENDIAN_LITTLE;
-    pMod->enmFmt = KLDRFMT_LX;
+    pModLX->Core.enmEndian = RTLDRENDIAN_LITTLE;
+    pModLX->Core.enmFormat = RTLDRFMT_LX;
     switch (Hdr.e32_mflags & E32MODMASK)
     {
         case E32MODEXE:
-            pMod->enmType = !(Hdr.e32_mflags & E32NOINTFIX)
-                ? KLDRTYPE_EXECUTABLE_RELOCATABLE
-                : KLDRTYPE_EXECUTABLE_FIXED;
+            pModLX->Core.enmType = !(Hdr.e32_mflags & E32NOINTFIX)
+                                 ? RTLDRTYPE_EXECUTABLE_RELOCATABLE
+                                 : RTLDRTYPE_EXECUTABLE_FIXED;
             break;
 
         case E32MODDLL:
         case E32PROTDLL:
         case E32MODPROTDLL:
-            pMod->enmType = !(Hdr.e32_mflags & E32SYSDLL)
-                ? KLDRTYPE_SHARED_LIBRARY_RELOCATABLE
-                : KLDRTYPE_SHARED_LIBRARY_FIXED;
+            pModLX->Core.enmType = !(Hdr.e32_mflags & E32SYSDLL)
+                                 ? RTLDRTYPE_SHARED_LIBRARY_RELOCATABLE
+                                 : RTLDRTYPE_SHARED_LIBRARY_FIXED;
             break;
 
         case E32MODPDEV:
         case E32MODVDEV:
-            pMod->enmType = KLDRTYPE_SHARED_LIBRARY_RELOCATABLE;
+            pModLX->Core.enmType = RTLDRTYPE_SHARED_LIBRARY_RELOCATABLE;
             break;
     }
-    pMod->u32Magic = 0;     /* set upon success. */
 
     /* KLDRMODLX */
-    pModLX->pMod = pMod;
+    pModLX->cSegments = Hdr.e32_objcnt;
+    pModLX->pszName = NULL; /* finalized further down */
+    pModLX->cchName = 0;
     pModLX->pvMapping = 0;
     pModLX->cbMapped = 0;
     pModLX->f32Reserved = 0;
 
     pModLX->offHdr = offNewHdr >= 0 ? offNewHdr : 0;
-    kHlpMemCopy(&pModLX->Hdr, &Hdr, sizeof(Hdr));
+    memcpy(&pModLX->Hdr, &Hdr, sizeof(Hdr));
 
-    pModLX->pbLoaderSection = (uint8_t *)pModLX + offLdrStuff;
+    pModLX->pbLoaderSection = (uint8_t *)pModLX + cbModLXAndSegments;
     pModLX->pbLoaderSectionLast = pModLX->pbLoaderSection + pModLX->Hdr.e32_ldrsize - 1;
     pModLX->paObjs = NULL;
     pModLX->paPageMappings = NULL;
@@ -375,11 +341,11 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
     /*
      * Read the loader data.
      */
-    rc = kRdrRead(pRdr, (void *)pModLX->pbLoaderSection, pModLX->Hdr.e32_ldrsize, pModLX->Hdr.e32_objtab + pModLX->offHdr);
+    rc = pRdr->pfnRead(pRdr, (void *)pModLX->pbLoaderSection, pModLX->Hdr.e32_ldrsize, pModLX->Hdr.e32_objtab + pModLX->offHdr);
     if (rc)
         return rc;
-    ((KU8 *)pModLX->pbLoaderSectionLast)[1] = 0;
-    ((KU8 *)pModLX->pbLoaderSectionLast)[2] = 0;
+    ((uint8_t *)pModLX->pbLoaderSectionLast)[1] = 0;
+    ((uint8_t *)pModLX->pbLoaderSectionLast)[2] = 0;
     if (pModLX->Hdr.e32_objcnt)
         pModLX->paObjs = (const struct o32_obj *)pModLX->pbLoaderSection;
     if (pModLX->Hdr.e32_objmap)
@@ -398,38 +364,38 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
      * (The table entry consists of a pascal string followed by a 16-bit ordinal.)
      */
     if (pModLX->pbResNameTab)
-        pMod->pszName = (const char *)kldrModLXDoNameTableLookupByOrdinal(pModLX->pbResNameTab,
-                                                                          pModLX->pbLoaderSectionLast - pModLX->pbResNameTab + 1,
-                                                                          0);
-    if (!pMod->pszName)
-        return KLDR_ERR_LX_NO_SONAME;
-    pMod->cchName = *(const KU8 *)pMod->pszName++;
-    if (pMod->cchName != kHlpStrLen(pMod->pszName))
-        return KLDR_ERR_LX_BAD_SONAME;
+        pModLX->pszName = (const char *)kldrModLXDoNameTableLookupByOrdinal(pModLX->pbResNameTab,
+                                                                            pModLX->pbLoaderSectionLast - pModLX->pbResNameTab + 1,
+                                                                            0);
+    if (!pModLX->pszName)
+        return VERR_LDRLX_NO_SONAME;
+    pModLX->cchName = *(const uint8_t *)pModLX->pszName++;
+    if (   pModLX->pszName[pModLX->cchName] != '\0'
+        || pModLX->cchName != strlen(pModLX->pszName))
+        return VERR_LDRLX_BAD_SONAME;
 
     /*
      * Quick validation of the object table.
      */
-    cb = 0;
-    for (i = 0; i < pMod->cSegments; i++)
+    for (i = 0; i < pModLX->cSegments; i++)
     {
         if (pModLX->paObjs[i].o32_base & (OBJPAGELEN - 1))
-            return KLDR_ERR_LX_BAD_OBJECT_TABLE;
+            return VERR_LDRLX_BAD_OBJECT_TABLE;
         if (pModLX->paObjs[i].o32_base + pModLX->paObjs[i].o32_size <= pModLX->paObjs[i].o32_base)
-            return KLDR_ERR_LX_BAD_OBJECT_TABLE;
+            return VERR_LDRLX_BAD_OBJECT_TABLE;
         if (pModLX->paObjs[i].o32_mapsize > (pModLX->paObjs[i].o32_size + (OBJPAGELEN - 1)))
-            return KLDR_ERR_LX_BAD_OBJECT_TABLE;
+            return VERR_LDRLX_BAD_OBJECT_TABLE;
         if (    pModLX->paObjs[i].o32_mapsize
-            &&  (   (KU8 *)&pModLX->paPageMappings[pModLX->paObjs[i].o32_pagemap] > pModLX->pbLoaderSectionLast
-                 || (KU8 *)&pModLX->paPageMappings[pModLX->paObjs[i].o32_pagemap + pModLX->paObjs[i].o32_mapsize]
+            &&  (   (uint8_t *)&pModLX->paPageMappings[pModLX->paObjs[i].o32_pagemap] > pModLX->pbLoaderSectionLast
+                 || (uint8_t *)&pModLX->paPageMappings[pModLX->paObjs[i].o32_pagemap + pModLX->paObjs[i].o32_mapsize]
                      > pModLX->pbLoaderSectionLast))
-            return KLDR_ERR_LX_BAD_OBJECT_TABLE;
+            return VERR_LDRLX_BAD_OBJECT_TABLE;
         if (i > 0 && !(pModLX->paObjs[i].o32_flags & OBJRSRC))
         {
             if (pModLX->paObjs[i].o32_base <= pModLX->paObjs[i - 1].o32_base)
-                return KLDR_ERR_LX_BAD_OBJECT_TABLE;
+                return VERR_LDRLX_BAD_OBJECT_TABLE;
             if (pModLX->paObjs[i].o32_base < pModLX->paObjs[i - 1].o32_base + pModLX->paObjs[i - 1].o32_mapsize)
-                return KLDR_ERR_LX_BAD_OBJECT_TABLE;
+                return VERR_LDRLX_BAD_OBJECT_TABLE;
         }
     }
 
@@ -444,42 +410,39 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
     /*
      * Setup the KLDRMOD segment array.
      */
-    for (i = 0; i < pMod->cSegments; i++)
+    for (i = 0; i < pModLX->cSegments; i++)
     {
         /* unused */
-        pMod->aSegments[i].pvUser = NULL;
-        pMod->aSegments[i].MapAddress = 0;
-        pMod->aSegments[i].pchName = NULL;
-        pMod->aSegments[i].cchName = 0;
-        pMod->aSegments[i].offFile = -1;
-        pMod->aSegments[i].cbFile = -1;
-        pMod->aSegments[i].SelFlat = 0;
-        pMod->aSegments[i].Sel16bit = 0;
+        pModLX->aSegments[i].pszName    = NULL;
+        pModLX->aSegments[i].offFile    = -1;
+        pModLX->aSegments[i].cbFile     = -1;
+        pModLX->aSegments[i].SelFlat    = 0;
+        pModLX->aSegments[i].Sel16bit   = 0;
 
         /* flags */
-        pMod->aSegments[i].fFlags = 0;
+        pModLX->aSegments[i].fFlags = 0;
         if (pModLX->paObjs[i].o32_flags & OBJBIGDEF)
-            pMod->aSegments[i].fFlags = KLDRSEG_FLAG_16BIT;
+            pModLX->aSegments[i].fFlags = RTLDRSEG_FLAG_16BIT;
         if (pModLX->paObjs[i].o32_flags & OBJALIAS16)
-            pMod->aSegments[i].fFlags = KLDRSEG_FLAG_OS2_ALIAS16;
+            pModLX->aSegments[i].fFlags = RTLDRSEG_FLAG_OS2_ALIAS16;
         if (pModLX->paObjs[i].o32_flags & OBJCONFORM)
-            pMod->aSegments[i].fFlags = KLDRSEG_FLAG_OS2_CONFORM;
+            pModLX->aSegments[i].fFlags = RTLDRSEG_FLAG_OS2_CONFORM;
         if (pModLX->paObjs[i].o32_flags & OBJIOPL)
-            pMod->aSegments[i].fFlags = KLDRSEG_FLAG_OS2_IOPL;
+            pModLX->aSegments[i].fFlags = RTLDRSEG_FLAG_OS2_IOPL;
 
         /* size and addresses */
-        pMod->aSegments[i].Alignment   = OBJPAGELEN;
-        pMod->aSegments[i].cb          = pModLX->paObjs[i].o32_size;
-        pMod->aSegments[i].LinkAddress = pModLX->paObjs[i].o32_base;
-        pMod->aSegments[i].RVA         = NextRVA;
+        pModLX->aSegments[i].Alignment   = OBJPAGELEN;
+        pModLX->aSegments[i].cb          = pModLX->paObjs[i].o32_size;
+        pModLX->aSegments[i].LinkAddress = pModLX->paObjs[i].o32_base;
+        pModLX->aSegments[i].RVA         = NextRVA;
         if (    fCanOptimizeMapping
-            ||  i + 1 >= pMod->cSegments
+            ||  i + 1 >= pModLX->cSegments
             ||  (pModLX->paObjs[i].o32_flags & OBJRSRC)
             ||  (pModLX->paObjs[i + 1].o32_flags & OBJRSRC))
-            pMod->aSegments[i].cbMapped = K_ALIGN_Z(pModLX->paObjs[i].o32_size, OBJPAGELEN);
+            pModLX->aSegments[i].cbMapped = RT_ALIGN_Z(pModLX->paObjs[i].o32_size, OBJPAGELEN);
         else
-            pMod->aSegments[i].cbMapped = pModLX->paObjs[i + 1].o32_base - pModLX->paObjs[i].o32_base;
-        NextRVA += (KU32)pMod->aSegments[i].cbMapped;
+            pModLX->aSegments[i].cbMapped = pModLX->paObjs[i + 1].o32_base - pModLX->paObjs[i].o32_base;
+        NextRVA += (uint32_t)pModLX->aSegments[i].cbMapped;
 
         /* protection */
         switch (  pModLX->paObjs[i].o32_flags
@@ -487,42 +450,42 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
         {
             case 0:
             case OBJSHARED:
-                pMod->aSegments[i].enmProt = KPROT_NOACCESS;
+                pModLX->aSegments[i].fProt = 0;
                 break;
             case OBJREAD:
             case OBJREAD | OBJSHARED:
-                pMod->aSegments[i].enmProt = KPROT_READONLY;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_READ;
                 break;
             case OBJWRITE:
             case OBJWRITE | OBJREAD:
-                pMod->aSegments[i].enmProt = KPROT_WRITECOPY;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_READ | RTMEM_PROT_WRITECOPY;
                 break;
             case OBJWRITE | OBJSHARED:
             case OBJWRITE | OBJSHARED | OBJREAD:
-                pMod->aSegments[i].enmProt = KPROT_READWRITE;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_READ | RTMEM_PROT_WRITE;
                 break;
             case OBJEXEC:
             case OBJEXEC | OBJSHARED:
-                pMod->aSegments[i].enmProt = KPROT_EXECUTE;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_EXEC;
                 break;
             case OBJEXEC | OBJREAD:
             case OBJEXEC | OBJREAD | OBJSHARED:
-                pMod->aSegments[i].enmProt = KPROT_EXECUTE_READ;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_EXEC | RTMEM_PROT_READ;
                 break;
             case OBJEXEC | OBJWRITE:
             case OBJEXEC | OBJWRITE | OBJREAD:
-                pMod->aSegments[i].enmProt = KPROT_EXECUTE_WRITECOPY;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_EXEC | RTMEM_PROT_READ | RTMEM_PROT_WRITECOPY;
                 break;
             case OBJEXEC | OBJWRITE | OBJSHARED:
             case OBJEXEC | OBJWRITE | OBJSHARED | OBJREAD:
-                pMod->aSegments[i].enmProt = KPROT_EXECUTE_READWRITE;
+                pModLX->aSegments[i].fProt = RTMEM_PROT_EXEC | RTMEM_PROT_READ | RTMEM_PROT_WRITE;
                 break;
         }
         if ((pModLX->paObjs[i].o32_flags & (OBJREAD | OBJWRITE | OBJEXEC | OBJRSRC)) == OBJRSRC)
-            pMod->aSegments[i].enmProt = KPROT_READONLY;
-        /*pMod->aSegments[i].f16bit = !(pModLX->paObjs[i].o32_flags & OBJBIGDEF)
-        pMod->aSegments[i].fIOPL = !(pModLX->paObjs[i].o32_flags & OBJIOPL)
-        pMod->aSegments[i].fConforming = !(pModLX->paObjs[i].o32_flags & OBJCONFORM) */
+            pModLX->aSegments[i].fProt = RTMEM_PROT_READ;
+        /*pModLX->aSegments[i].f16bit = !(pModLX->paObjs[i].o32_flags & OBJBIGDEF)
+        pModLX->aSegments[i].fIOPL = !(pModLX->paObjs[i].o32_flags & OBJIOPL)
+        pModLX->aSegments[i].fConforming = !(pModLX->paObjs[i].o32_flags & OBJCONFORM) */
     }
 
     /* set the mapping size */
@@ -532,35 +495,37 @@ static int kldrModLXDoCreate(PKRDR pRdr, KLDRFOFF offNewHdr, PKLDRMODLX *ppModLX
      * We're done.
      */
     *ppModLX = pModLX;
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
-/** @copydoc KLDRMODOPS::pfnDestroy */
-static int kldrModLXDestroy(PKLDRMOD pMod)
+/**
+ * @interface_method_impl{RTLDROPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtldrLX_Close(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    int rc = 0;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     KLDRMODLX_ASSERT(!pModLX->pvMapping);
 
-    if (pMod->pRdr)
+    int rc = VINF_SUCCESS;
+    if (pModLX->Core.pReader)
     {
-        rc = kRdrClose(pMod->pRdr);
-        pMod->pRdr = NULL;
+        rc = pModLX->Core.pReader->pfnDestroy(pModLX->Core.pReader);
+        pModLX->Core.pReader = NULL;
     }
     if (pModLX->pbNonResNameTab)
     {
-        kHlpFree(pModLX->pbNonResNameTab);
+        RTMemFree(pModLX->pbNonResNameTab);
         pModLX->pbNonResNameTab = NULL;
     }
     if (pModLX->pbFixupSection)
     {
-        kHlpFree(pModLX->pbFixupSection);
+        RTMemFree(pModLX->pbFixupSection);
         pModLX->pbFixupSection = NULL;
     }
-    pMod->u32Magic = 0;
-    pMod->pOps = NULL;
-    kHlpFree(pModLX);
+    pModLX->Core.u32Magic = 0;
+    pModLX->Core.pOps = NULL;
+    RTMemFree(pModLX);
     return rc;
 }
 
@@ -571,32 +536,30 @@ static int kldrModLXDestroy(PKLDRMOD pMod)
  * @param   pModLX          The interpreter module instance
  * @param   pBaseAddress    The base address, IN & OUT.
  */
-static void kldrModLXResolveBaseAddress(PKLDRMODLX pModLX, PKLDRADDR pBaseAddress)
+static void kldrModLXResolveBaseAddress(PKLDRMODLX pModLX, PRTLDRADDR pBaseAddress)
 {
-    if (*pBaseAddress == KLDRMOD_BASEADDRESS_MAP)
-        *pBaseAddress = pModLX->pMod->aSegments[0].MapAddress;
-    else if (*pBaseAddress == KLDRMOD_BASEADDRESS_LINK)
-        *pBaseAddress = pModLX->pMod->aSegments[0].LinkAddress;
+    if (*pBaseAddress == RTLDR_BASEADDRESS_LINK)
+        *pBaseAddress = pModLX->aSegments[0].LinkAddress;
 }
 
 
 /** @copydoc kLdrModQuerySymbol */
-static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR BaseAddress, KU32 iSymbol,
-                                const char *pchSymbol, KSIZE cchSymbol, const char *pszVersion,
-                                PFNKLDRMODGETIMPORT pfnGetForwarder, void *pvUser, PKLDRADDR puValue, KU32 *pfKind)
+static int kldrModLXQuerySymbol(PRTLDRMODINTERNAL pMod, const void *pvBits, RTLDRADDR BaseAddress, uint32_t iSymbol,
+                                const char *pchSymbol, size_t cchSymbol, const char *pszVersion,
+                                PFNRTLDRIMPORT pfnGetForwarder, void *pvUser, PRTLDRADDR puValue, uint32_t *pfKind)
 {
-    PKLDRMODLX                  pModLX = (PKLDRMODLX)pMod->pvData;
-    KU32                        iOrdinal;
+    PKLDRMODLX                  pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t                    iOrdinal;
     int                         rc;
-    const struct b32_bundle     *pBundle;
-    K_NOREF(pvBits);
-    K_NOREF(pszVersion);
+    const struct b32_bundle    *pBundle;
+    RT_NOREF(pvBits);
+    RT_NOREF(pszVersion);
 
     /*
      * Give up at once if there is no entry table.
      */
     if (!pModLX->Hdr.e32_enttab)
-        return KLDR_ERR_SYMBOL_NOT_FOUND;
+        return VERR_SYMBOL_NOT_FOUND;
 
     /*
      * Translate the symbol name into an ordinal.
@@ -616,7 +579,7 @@ static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
     pBundle = (const struct b32_bundle *)pModLX->pbEntryTab;
     while (pBundle->b32_cnt && iOrdinal <= iSymbol)
     {
-        static const KSIZE s_cbEntry[] = { 0, 3, 5, 5, 7 };
+        static const size_t s_cbEntry[] = { 0, 3, 5, 5, 7 };
 
         /*
          * Check for a hit first.
@@ -624,8 +587,8 @@ static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
         iOrdinal += pBundle->b32_cnt;
         if (iSymbol < iOrdinal)
         {
-            KU32 offObject;
-            const struct e32_entry *pEntry = (const struct e32_entry *)((KUPTR)(pBundle + 1)
+            uint32_t offObject;
+            const struct e32_entry *pEntry = (const struct e32_entry *)((uintptr_t)(pBundle + 1)
                                                                         +   (iSymbol - (iOrdinal - pBundle->b32_cnt))
                                                                           * s_cbEntry[pBundle->b32_type]);
 
@@ -637,27 +600,27 @@ static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
             {
                 /* empty bundles are place holders unused ordinal ranges. */
                 case EMPTY:
-                    return KLDR_ERR_SYMBOL_NOT_FOUND;
+                    return VERR_SYMBOL_NOT_FOUND;
 
                 /* e32_flags + a 16-bit offset. */
                 case ENTRY16:
                     offObject = pEntry->e32_variant.e32_offset.offset16;
                     if (pfKind)
-                        *pfKind = KLDRSYMKIND_16BIT | KLDRSYMKIND_NO_TYPE;
+                        *pfKind = RTLDRSYMKIND_16BIT | RTLDRSYMKIND_NO_TYPE;
                     break;
 
                 /* e32_flags + a 16-bit offset + a 16-bit callgate selector. */
                 case GATE16:
                     offObject = pEntry->e32_variant.e32_callgate.offset;
                     if (pfKind)
-                        *pfKind = KLDRSYMKIND_16BIT | KLDRSYMKIND_CODE;
+                        *pfKind = RTLDRSYMKIND_16BIT | RTLDRSYMKIND_CODE;
                     break;
 
                 /* e32_flags + a 32-bit offset. */
                 case ENTRY32:
                     offObject = pEntry->e32_variant.e32_offset.offset32;
                     if (pfKind)
-                        *pfKind = KLDRSYMKIND_32BIT;
+                        *pfKind = RTLDRSYMKIND_32BIT;
                     break;
 
                 /* e32_flags + 16-bit import module ordinal + a 32-bit procname or ordinal. */
@@ -667,19 +630,19 @@ static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                 default:
                     /* anyone actually using TYPEINFO will end up here. */
                     KLDRMODLX_ASSERT(!"Bad bundle type");
-                    return KLDR_ERR_LX_BAD_BUNDLE;
+                    return VERR_LDRLX_BAD_BUNDLE;
             }
 
             /*
              * Validate the object number and calc the return address.
              */
             if (    pBundle->b32_obj <= 0
-                ||  pBundle->b32_obj > pMod->cSegments)
-                return KLDR_ERR_LX_BAD_BUNDLE;
+                ||  pBundle->b32_obj > pModLX->cSegments)
+                return VERR_LDRLX_BAD_BUNDLE;
             if (puValue)
                 *puValue = BaseAddress
                          + offObject
-                         + pMod->aSegments[pBundle->b32_obj - 1].RVA;
+                         + pModLX->aSegments[pBundle->b32_obj - 1].RVA;
             return 0;
         }
 
@@ -689,15 +652,27 @@ static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
         if (pBundle->b32_type > ENTRYFWD)
         {
             KLDRMODLX_ASSERT(!"Bad type"); /** @todo figure out TYPEINFO. */
-            return KLDR_ERR_LX_BAD_BUNDLE;
+            return VERR_LDRLX_BAD_BUNDLE;
         }
         if (pBundle->b32_type == 0)
-            pBundle = (const struct b32_bundle *)((const KU8 *)pBundle + 2);
+            pBundle = (const struct b32_bundle *)((const uint8_t *)pBundle + 2);
         else
-            pBundle = (const struct b32_bundle *)((const KU8 *)(pBundle + 1) + s_cbEntry[pBundle->b32_type] * pBundle->b32_cnt);
+            pBundle = (const struct b32_bundle *)((const uint8_t *)(pBundle + 1) + s_cbEntry[pBundle->b32_type] * pBundle->b32_cnt);
     }
 
-    return KLDR_ERR_SYMBOL_NOT_FOUND;
+    return VERR_SYMBOL_NOT_FOUND;
+}
+
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnGetSymbolEx}
+ */
+static DECLCALLBACK(int) rtldrLX_GetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
+                                             uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue)
+{
+    uint32_t fKind = RTLDRSYMKIND_REQ_FLAT;
+    return kldrModLXQuerySymbol(pMod, pvBits, BaseAddress, iOrdinal, pszSymbol, pszSymbol ? strlen(pszSymbol) : 0,
+                                NULL, NULL, NULL, pValue, &fKind);
 }
 
 
@@ -710,7 +685,7 @@ static int kldrModLXQuerySymbol(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
  * @param   cchSymbol   The symbol name length.
  * @param   piSymbol    Where to store the symbol ordinal.
  */
-static int kldrModLXDoNameLookup(PKLDRMODLX pModLX, const char *pchSymbol, KSIZE cchSymbol, KU32 *piSymbol)
+static int kldrModLXDoNameLookup(PKLDRMODLX pModLX, const char *pchSymbol, size_t cchSymbol, uint32_t *piSymbol)
 {
 
     /*
@@ -721,7 +696,7 @@ static int kldrModLXDoNameLookup(PKLDRMODLX pModLX, const char *pchSymbol, KSIZE
     /*
      * Search the name tables.
      */
-    const KU8 *pbName = kldrModLXDoNameTableLookupByName(pModLX->pbResNameTab,
+    const uint8_t *pbName = kldrModLXDoNameTableLookupByName(pModLX->pbResNameTab,
                                                          pModLX->pbLoaderSectionLast - pModLX->pbResNameTab + 1,
                                                          pchSymbol, cchSymbol);
     if (!pbName)
@@ -737,42 +712,11 @@ static int kldrModLXDoNameLookup(PKLDRMODLX pModLX, const char *pchSymbol, KSIZE
                                                       pchSymbol, cchSymbol);
     }
     if (!pbName)
-        return KLDR_ERR_SYMBOL_NOT_FOUND;
+        return VERR_SYMBOL_NOT_FOUND;
 
-    *piSymbol = *(const KU16 *)(pbName + 1 + *pbName);
+    *piSymbol = *(const uint16_t *)(pbName + 1 + *pbName);
     return 0;
 }
-
-
-#if 0
-/**
- * Hash a symbol using the algorithm from sdbm.
- *
- * The following was is the documenation of the orignal sdbm functions:
- *
- * This algorithm was created for sdbm (a public-domain reimplementation of
- * ndbm) database library. it was found to do well in scrambling bits,
- * causing better distribution of the keys and fewer splits. it also happens
- * to be a good general hashing function with good distribution. the actual
- * function is hash(i) = hash(i - 1) * 65599 + str[i]; what is included below
- * is the faster version used in gawk. [there is even a faster, duff-device
- * version] the magic constant 65599 was picked out of thin air while
- * experimenting with different constants, and turns out to be a prime.
- * this is one of the algorithms used in berkeley db (see sleepycat) and
- * elsewhere.
- */
-static KU32 kldrModLXDoHash(const char *pchSymbol, KU8 cchSymbol)
-{
-    KU32 hash = 0;
-    int ch;
-
-    while (     cchSymbol-- > 0
-           &&   (ch = *(unsigned const char *)pchSymbol++))
-        hash = ch + (hash << 6) + (hash << 16) - hash;
-
-    return hash;
-}
-#endif
 
 
 /**
@@ -785,13 +729,13 @@ static KU32 kldrModLXDoHash(const char *pchSymbol, KU8 cchSymbol)
  * @param   pchSymbol       The name of the symbol we're looking for.
  * @param   cchSymbol       The length of the symbol name.
  */
-static const KU8 *kldrModLXDoNameTableLookupByName(const KU8 *pbNameTable, KSSIZE cbNameTable,
-                                                   const char *pchSymbol, KSIZE cchSymbol)
+static const uint8_t *kldrModLXDoNameTableLookupByName(const uint8_t *pbNameTable, ssize_t cbNameTable,
+                                                       const char *pchSymbol, size_t cchSymbol)
 {
     /*
      * Determin the namelength up front so we can skip anything which doesn't matches the length.
      */
-    KU8 cbSymbol8Bit = (KU8)cchSymbol;
+    uint8_t cbSymbol8Bit = (uint8_t)cchSymbol;
     if (cbSymbol8Bit != cchSymbol)
         return NULL; /* too long. */
 
@@ -800,14 +744,14 @@ static const KU8 *kldrModLXDoNameTableLookupByName(const KU8 *pbNameTable, KSSIZ
      */
     while (*pbNameTable != 0 && cbNameTable > 0)
     {
-        const KU8 cbName = *pbNameTable;
+        const uint8_t cbName = *pbNameTable;
 
         cbNameTable -= cbName + 1 + 2;
         if (cbNameTable < 0)
             break;
 
         if (    cbName == cbSymbol8Bit
-            &&  !kHlpMemComp(pbNameTable + 1, pchSymbol, cbName))
+            &&  !memcmp(pbNameTable + 1, pchSymbol, cbName))
             return pbNameTable;
 
         /* next entry */
@@ -830,35 +774,37 @@ static const KU8 *kldrModLXDoNameTableLookupByName(const KU8 *pbNameTable, KSSIZ
  * @param   pfKind          Where to put the symbol kind. (optional)
  */
 static int kldrModLXDoForwarderQuery(PKLDRMODLX pModLX, const struct e32_entry *pEntry,
-                                     PFNKLDRMODGETIMPORT pfnGetForwarder, void *pvUser, PKLDRADDR puValue, KU32 *pfKind)
+                                     PFNRTLDRIMPORT pfnGetForwarder, void *pvUser, PRTLDRADDR puValue, uint32_t *pfKind)
 {
-    int rc;
-    KU32 iSymbol;
-    const char *pchSymbol;
-    KU8 cchSymbol;
-
     if (!pfnGetForwarder)
-        return KLDR_ERR_FORWARDER_SYMBOL;
+        return VERR_LDR_FORWARDER;
 
     /*
      * Validate the entry import module ordinal.
      */
     if (    !pEntry->e32_variant.e32_fwd.modord
         ||  pEntry->e32_variant.e32_fwd.modord > pModLX->Hdr.e32_impmodcnt)
-        return KLDR_ERR_LX_BAD_FORWARDER;
+        return VERR_LDRLX_BAD_FORWARDER;
+
+    char szImpModule[256];
+    int rc = kldrModLXGetImport(pModLX, NULL, pEntry->e32_variant.e32_fwd.modord - 1, szImpModule, sizeof(szImpModule), NULL);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Figure out the parameters.
      */
+    uint32_t    iSymbol;
+    const char *pszSymbol;
+    char        szSymbol[256];
     if (pEntry->e32_flags & FWD_ORDINAL)
     {
         iSymbol = pEntry->e32_variant.e32_fwd.value;
-        pchSymbol = NULL;                   /* no symbol name. */
-        cchSymbol = 0;
+        pszSymbol = NULL;                   /* no symbol name. */
     }
     else
     {
-        const KU8 *pbName;
+        const uint8_t *pbName;
 
         /* load the fixup section if necessary. */
         if (!pModLX->pbImportProcs)
@@ -873,14 +819,14 @@ static int kldrModLXDoForwarderQuery(PKLDRMODLX pModLX, const struct e32_entry *
         if (    pbName >= pModLX->pbFixupSectionLast
             ||  pbName < pModLX->pbFixupSection
             || !*pbName)
-            return KLDR_ERR_LX_BAD_FORWARDER;
+            return VERR_LDRLX_BAD_FORWARDER;
 
 
         /* check for '#' name. */
         if (pbName[1] == '#')
         {
-            KU8         cbLeft = *pbName;
-            const KU8  *pb = pbName + 1;
+            uint8_t         cbLeft = *pbName;
+            const uint8_t  *pb = pbName + 1;
             unsigned    uBase;
 
             /* base detection */
@@ -909,34 +855,34 @@ static int kldrModLXDoForwarderQuery(PKLDRMODLX pModLX, const struct e32_entry *
                 else if (!uDigit)
                     break;
                 else
-                    return KLDR_ERR_LX_BAD_FORWARDER;
+                    return VERR_LDRLX_BAD_FORWARDER;
                 if (uDigit >= uBase)
-                    return KLDR_ERR_LX_BAD_FORWARDER;
+                    return VERR_LDRLX_BAD_FORWARDER;
 
                 /* insert the digit */
                 iSymbol *= uBase;
                 iSymbol += uDigit;
             }
             if (!iSymbol)
-                return KLDR_ERR_LX_BAD_FORWARDER;
+                return VERR_LDRLX_BAD_FORWARDER;
 
-            pchSymbol = NULL;               /* no symbol name. */
-            cchSymbol = 0;
+            pszSymbol = NULL;               /* no symbol name. */
         }
         else
         {
-            pchSymbol = (char *)pbName + 1;
-            cchSymbol = *pbName;
-            iSymbol = NIL_KLDRMOD_SYM_ORDINAL;
+            memcpy(szSymbol, pbName + 1, *pbName);
+            szSymbol[*pbName] = '\0';
+            pszSymbol = szSymbol;
+            iSymbol = UINT32_MAX;
         }
     }
 
     /*
      * Resolve the forwarder.
      */
-    rc = pfnGetForwarder(pModLX->pMod, pEntry->e32_variant.e32_fwd.modord - 1, iSymbol, pchSymbol, cchSymbol, NULL, puValue, pfKind, pvUser);
-    if (!rc && pfKind)
-        *pfKind |= KLDRSYMKIND_FORWARDER;
+    rc = pfnGetForwarder(&pModLX->Core, szImpModule, pszSymbol, iSymbol, puValue, /*pfKind, */pvUser);
+    if (RT_SUCCESS(rc) && pfKind)
+        *pfKind |= RTLDRSYMKIND_FORWARDER;
     return rc;
 }
 
@@ -951,24 +897,20 @@ static int kldrModLXDoForwarderQuery(PKLDRMODLX pModLX, const struct e32_entry *
  */
 static int kldrModLXDoLoadFixupSection(PKLDRMODLX pModLX)
 {
-    int rc;
-    KU32 off;
-    void *pv;
-
-    pv = kHlpAlloc(pModLX->Hdr.e32_fixupsize);
+    void *pv = RTMemAlloc(pModLX->Hdr.e32_fixupsize);
     if (!pv)
-        return KERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
-    off = pModLX->Hdr.e32_objtab + pModLX->Hdr.e32_ldrsize;
-    rc = kRdrRead(pModLX->pMod->pRdr, pv, pModLX->Hdr.e32_fixupsize,
-                     off + pModLX->offHdr);
-    if (!rc)
+    uint32_t off = pModLX->Hdr.e32_objtab + pModLX->Hdr.e32_ldrsize;
+    int rc = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, pv, pModLX->Hdr.e32_fixupsize,
+                                           off + pModLX->offHdr);
+    if (RT_SUCCESS(rc))
     {
-        pModLX->pbFixupSection = pv;
+        pModLX->pbFixupSection = (uint8_t *)pv;
         pModLX->pbFixupSectionLast = pModLX->pbFixupSection + pModLX->Hdr.e32_fixupsize;
         KLDRMODLX_ASSERT(!pModLX->paoffPageFixups);
         if (pModLX->Hdr.e32_fpagetab)
-            pModLX->paoffPageFixups = (const KU32 *)(pModLX->pbFixupSection + pModLX->Hdr.e32_fpagetab - off);
+            pModLX->paoffPageFixups = (const uint32_t *)(pModLX->pbFixupSection + pModLX->Hdr.e32_fpagetab - off);
         KLDRMODLX_ASSERT(!pModLX->pbFixupRecs);
         if (pModLX->Hdr.e32_frectab)
             pModLX->pbFixupRecs = pModLX->pbFixupSection + pModLX->Hdr.e32_frectab - off;
@@ -980,21 +922,20 @@ static int kldrModLXDoLoadFixupSection(PKLDRMODLX pModLX)
             pModLX->pbImportProcs = pModLX->pbFixupSection + pModLX->Hdr.e32_impproc - off;
     }
     else
-        kHlpFree(pv);
+        RTMemFree(pv);
     return rc;
 }
 
 
-/** @copydoc kLdrModEnumSymbols */
-static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR BaseAddress,
-                                KU32 fFlags, PFNKLDRMODENUMSYMS pfnCallback, void *pvUser)
+/**
+ * @interface_method_impl{RTLDROPS,pfnEnumSymbols}
+ */
+static DECLCALLBACK(int) rtldrLX_EnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits,
+                                             RTUINTPTR BaseAddress, PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    const struct b32_bundle *pBundle;
-    KU32 iOrdinal;
-    int rc = 0;
-    K_NOREF(pvBits);
-    K_NOREF(fFlags);
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    RT_NOREF(pvBits);
+    RT_NOREF(fFlags);
 
     kldrModLXResolveBaseAddress(pModLX, &BaseAddress);
 
@@ -1002,11 +943,12 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
      * Enumerate the entry table.
      * (The entry table is made up of bundles of similar exports.)
      */
-    iOrdinal = 1;
-    pBundle = (const struct b32_bundle *)pModLX->pbEntryTab;
+    int                      rc       = VINF_SUCCESS;
+    uint32_t                 iOrdinal = 1;
+    const struct b32_bundle *pBundle  = (const struct b32_bundle *)pModLX->pbEntryTab;
     while (pBundle->b32_cnt && iOrdinal)
     {
-        static const KSIZE s_cbEntry[] = { 0, 3, 5, 5, 7 };
+        static const size_t s_cbEntry[] = { 0, 3, 5, 5, 7 };
 
         /*
          * Enum the entries in the bundle.
@@ -1014,8 +956,8 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
         if (pBundle->b32_type != EMPTY)
         {
             const struct e32_entry *pEntry;
-            KSIZE cbEntry;
-            KLDRADDR BundleRVA;
+            size_t cbEntry;
+            RTLDRADDR BundleRVA;
             unsigned cLeft;
 
 
@@ -1026,9 +968,9 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                 case GATE16:
                 case ENTRY32:
                     if (    pBundle->b32_obj <= 0
-                        ||  pBundle->b32_obj > pMod->cSegments)
-                        return KLDR_ERR_LX_BAD_BUNDLE;
-                    BundleRVA = pMod->aSegments[pBundle->b32_obj - 1].RVA;
+                        ||  pBundle->b32_obj > pModLX->cSegments)
+                        return VERR_LDRLX_BAD_BUNDLE;
+                    BundleRVA = pModLX->aSegments[pBundle->b32_obj - 1].RVA;
                     break;
 
                 case ENTRYFWD:
@@ -1038,7 +980,7 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                 default:
                     /* anyone actually using TYPEINFO will end up here. */
                     KLDRMODLX_ASSERT(!"Bad bundle type");
-                    return KLDR_ERR_LX_BAD_BUNDLE;
+                    return VERR_LDRLX_BAD_BUNDLE;
             }
 
             /* iterate the bundle entries. */
@@ -1047,10 +989,10 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
             cLeft = pBundle->b32_cnt;
             while (cLeft-- > 0)
             {
-                KLDRADDR uValue;
-                KU32 fKind;
+                RTLDRADDR uValue;
+                uint32_t fKind;
                 int fFoundName;
-                const KU8 *pbName;
+                const uint8_t *pbName;
 
                 /*
                  * Calc the symbol value and kind.
@@ -1060,30 +1002,30 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                     /* e32_flags + a 16-bit offset. */
                     case ENTRY16:
                         uValue = BaseAddress + BundleRVA + pEntry->e32_variant.e32_offset.offset16;
-                        fKind = KLDRSYMKIND_16BIT | KLDRSYMKIND_NO_TYPE;
+                        fKind = RTLDRSYMKIND_16BIT | RTLDRSYMKIND_NO_TYPE;
                         break;
 
                     /* e32_flags + a 16-bit offset + a 16-bit callgate selector. */
                     case GATE16:
                         uValue = BaseAddress + BundleRVA + pEntry->e32_variant.e32_callgate.offset;
-                        fKind = KLDRSYMKIND_16BIT | KLDRSYMKIND_CODE;
+                        fKind = RTLDRSYMKIND_16BIT | RTLDRSYMKIND_CODE;
                         break;
 
                     /* e32_flags + a 32-bit offset. */
                     case ENTRY32:
                         uValue = BaseAddress + BundleRVA + pEntry->e32_variant.e32_offset.offset32;
-                        fKind = KLDRSYMKIND_32BIT;
+                        fKind = RTLDRSYMKIND_32BIT;
                         break;
 
                     /* e32_flags + 16-bit import module ordinal + a 32-bit procname or ordinal. */
                     case ENTRYFWD:
                         uValue = 0; /** @todo implement enumeration of forwarders properly. */
-                        fKind = KLDRSYMKIND_FORWARDER;
+                        fKind = RTLDRSYMKIND_FORWARDER;
                         break;
 
                     default: /* shut up gcc. */
                         uValue = 0;
-                        fKind = KLDRSYMKIND_NO_BIT | KLDRSYMKIND_NO_TYPE;
+                        fKind = RTLDRSYMKIND_NO_BIT | RTLDRSYMKIND_NO_TYPE;
                         break;
                 }
 
@@ -1091,6 +1033,7 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                  * Any symbol names?
                  */
                 fFoundName = 0;
+                char szName[256];
 
                 /* resident name table. */
                 pbName = pModLX->pbResNameTab;
@@ -1102,7 +1045,9 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                         if (!pbName)
                             break;
                         fFoundName = 1;
-                        rc = pfnCallback(pMod, iOrdinal, (const char *)pbName + 1, *pbName, NULL, uValue, fKind, pvUser);
+                        memcpy(szName, (const char *)pbName + 1, *pbName);
+                        szName[*pbName] = '\0';
+                        rc = pfnCallback(pMod, szName, iOrdinal, uValue, /*fKind,*/ pvUser);
                         if (rc)
                             return rc;
 
@@ -1122,7 +1067,9 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                         if (!pbName)
                             break;
                         fFoundName = 1;
-                        rc = pfnCallback(pMod, iOrdinal, (const char *)pbName + 1, *pbName, NULL, uValue, fKind, pvUser);
+                        memcpy(szName, (const char *)pbName + 1, *pbName);
+                        szName[*pbName] = '\0';
+                        rc = pfnCallback(pMod, szName, iOrdinal, uValue, /*fKind,*/ pvUser);
                         if (rc)
                             return rc;
 
@@ -1136,14 +1083,15 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
                  */
                 if (!fFoundName)
                 {
-                    rc = pfnCallback(pMod, iOrdinal, NULL, 0, NULL, uValue, fKind, pvUser);
+                    RT_NOREF(fKind);
+                    rc = pfnCallback(pMod, NULL /*pszName*/, iOrdinal, uValue, /*fKind,*/ pvUser);
                     if (rc)
                         return rc;
                 }
 
                 /* next */
                 iOrdinal++;
-                pEntry = (const struct e32_entry *)((KUPTR)pEntry + cbEntry);
+                pEntry = (const struct e32_entry *)((uintptr_t)pEntry + cbEntry);
             }
         }
 
@@ -1153,12 +1101,12 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
         if (pBundle->b32_type > ENTRYFWD)
         {
             KLDRMODLX_ASSERT(!"Bad type"); /** @todo figure out TYPEINFO. */
-            return KLDR_ERR_LX_BAD_BUNDLE;
+            return VERR_LDRLX_BAD_BUNDLE;
         }
         if (pBundle->b32_type == 0)
-            pBundle = (const struct b32_bundle *)((const KU8 *)pBundle + 2);
+            pBundle = (const struct b32_bundle *)((const uint8_t *)pBundle + 2);
         else
-            pBundle = (const struct b32_bundle *)((const KU8 *)(pBundle + 1) + s_cbEntry[pBundle->b32_type] * pBundle->b32_cnt);
+            pBundle = (const struct b32_bundle *)((const uint8_t *)(pBundle + 1) + s_cbEntry[pBundle->b32_type] * pBundle->b32_cnt);
     }
 
     return 0;
@@ -1174,12 +1122,12 @@ static int kldrModLXEnumSymbols(PKLDRMOD pMod, const void *pvBits, KLDRADDR Base
  * @param   cbNameTable The size of the name table.
  * @param   iOrdinal    The ordinal to search for.
  */
-static const KU8 *kldrModLXDoNameTableLookupByOrdinal(const KU8 *pbNameTable, KSSIZE cbNameTable, KU32 iOrdinal)
+static const uint8_t *kldrModLXDoNameTableLookupByOrdinal(const uint8_t *pbNameTable, ssize_t cbNameTable, uint32_t iOrdinal)
 {
     while (*pbNameTable != 0 && cbNameTable > 0)
     {
-        const KU8   cbName = *pbNameTable;
-        KU32        iName;
+        const uint8_t   cbName = *pbNameTable;
+        uint32_t        iName;
 
         cbNameTable -= cbName + 1 + 2;
         if (cbNameTable < 0)
@@ -1199,18 +1147,18 @@ static const KU8 *kldrModLXDoNameTableLookupByOrdinal(const KU8 *pbNameTable, KS
 
 
 /** @copydoc kLdrModGetImport */
-static int kldrModLXGetImport(PKLDRMOD pMod, const void *pvBits, KU32 iImport, char *pszName, KSIZE cchName)
+static int kldrModLXGetImport(PKLDRMODLX pModLX, const void *pvBits, uint32_t iImport, char *pszName, size_t cchName,
+                              size_t *pcbNeeded)
 {
-    PKLDRMODLX  pModLX = (PKLDRMODLX)pMod->pvData;
-    const KU8  *pb;
-    int         rc;
-    K_NOREF(pvBits);
+    const uint8_t *pb;
+    int            rc;
+    RT_NOREF(pvBits);
 
     /*
      * Validate
      */
     if (iImport >= pModLX->Hdr.e32_impmodcnt)
-        return KLDR_ERR_IMPORT_ORDINAL_OUT_OF_BOUNDS;
+        return VERR_LDRLX_IMPORT_ORDINAL_OUT_OF_BOUNDS;
 
     /*
      * Lazy loading the fixup section.
@@ -1232,57 +1180,60 @@ static int kldrModLXGetImport(PKLDRMOD pMod, const void *pvBits, KU32 iImport, c
     /*
      * Copy out the result.
      */
+    if (pcbNeeded)
+        *pcbNeeded = *pb + 1;
     if (*pb < cchName)
     {
-        kHlpMemCopy(pszName, pb + 1, *pb);
+        memcpy(pszName, pb + 1, *pb);
         pszName[*pb] = '\0';
         rc = 0;
     }
     else
     {
-        kHlpMemCopy(pszName, pb + 1, cchName);
+        memcpy(pszName, pb + 1, cchName);
         if (cchName)
             pszName[cchName - 1] = '\0';
-        rc = KERR_BUFFER_OVERFLOW;
+        rc = VERR_BUFFER_OVERFLOW;
     }
 
     return rc;
 }
 
+#if 0
 
 /** @copydoc kLdrModNumberOfImports */
-static KI32 kldrModLXNumberOfImports(PKLDRMOD pMod, const void *pvBits)
+static int32_t kldrModLXNumberOfImports(PRTLDRMODINTERNAL pMod, const void *pvBits)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    K_NOREF(pvBits);
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    RT_NOREF(pvBits);
     return pModLX->Hdr.e32_impmodcnt;
 }
 
 
 /** @copydoc kLdrModGetStackInfo */
-static int kldrModLXGetStackInfo(PKLDRMOD pMod, const void *pvBits, KLDRADDR BaseAddress, PKLDRSTACKINFO pStackInfo)
+static int kldrModLXGetStackInfo(PRTLDRMODINTERNAL pMod, const void *pvBits, RTLDRADDR BaseAddress, PKLDRSTACKINFO pStackInfo)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    const KU32 i = pModLX->Hdr.e32_stackobj;
-    K_NOREF(pvBits);
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    const uint32_t i = pModLX->Hdr.e32_stackobj;
+    RT_NOREF(pvBits);
 
     if (    i
-        &&  i <= pMod->cSegments
-        &&  pModLX->Hdr.e32_esp <= pMod->aSegments[i - 1].LinkAddress + pMod->aSegments[i - 1].cb
+        &&  i <= pModLX->cSegments
+        &&  pModLX->Hdr.e32_esp <= pModLX->aSegments[i - 1].LinkAddress + pModLX->aSegments[i - 1].cb
         &&  pModLX->Hdr.e32_stacksize
-        &&  pModLX->Hdr.e32_esp - pModLX->Hdr.e32_stacksize >= pMod->aSegments[i - 1].LinkAddress)
+        &&  pModLX->Hdr.e32_esp - pModLX->Hdr.e32_stacksize >= pModLX->aSegments[i - 1].LinkAddress)
     {
 
         kldrModLXResolveBaseAddress(pModLX, &BaseAddress);
         pStackInfo->LinkAddress = pModLX->Hdr.e32_esp - pModLX->Hdr.e32_stacksize;
         pStackInfo->Address = BaseAddress
-                            + pMod->aSegments[i - 1].RVA
-                            + pModLX->Hdr.e32_esp - pModLX->Hdr.e32_stacksize - pMod->aSegments[i - 1].LinkAddress;
+                            + pModLX->aSegments[i - 1].RVA
+                            + pModLX->Hdr.e32_esp - pModLX->Hdr.e32_stacksize - pModLX->aSegments[i - 1].LinkAddress;
     }
     else
     {
-        pStackInfo->Address = NIL_KLDRADDR;
-        pStackInfo->LinkAddress = NIL_KLDRADDR;
+        pStackInfo->Address = NIL_RTLDRADDR;
+        pStackInfo->LinkAddress = NIL_RTLDRADDR;
     }
     pStackInfo->cbStack = pModLX->Hdr.e32_stacksize;
     pStackInfo->cbStackThread = 0;
@@ -1292,30 +1243,35 @@ static int kldrModLXGetStackInfo(PKLDRMOD pMod, const void *pvBits, KLDRADDR Bas
 
 
 /** @copydoc kLdrModQueryMainEntrypoint */
-static int kldrModLXQueryMainEntrypoint(PKLDRMOD pMod, const void *pvBits, KLDRADDR BaseAddress, PKLDRADDR pMainEPAddress)
+static int kldrModLXQueryMainEntrypoint(PRTLDRMODINTERNAL pMod, const void *pvBits, RTLDRADDR BaseAddress, PRTLDRADDR pMainEPAddress)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    K_NOREF(pvBits);
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    RT_NOREF(pvBits);
 
     /*
      * Convert the address from the header.
      */
     kldrModLXResolveBaseAddress(pModLX, &BaseAddress);
     *pMainEPAddress = pModLX->Hdr.e32_startobj
-                   && pModLX->Hdr.e32_startobj <= pMod->cSegments
-                   && pModLX->Hdr.e32_eip < pMod->aSegments[pModLX->Hdr.e32_startobj - 1].cb
-        ? BaseAddress + pMod->aSegments[pModLX->Hdr.e32_startobj - 1].RVA + pModLX->Hdr.e32_eip
-        : NIL_KLDRADDR;
+                   && pModLX->Hdr.e32_startobj <= pModLX->cSegments
+                   && pModLX->Hdr.e32_eip < pModLX->aSegments[pModLX->Hdr.e32_startobj - 1].cb
+        ? BaseAddress + pModLX->aSegments[pModLX->Hdr.e32_startobj - 1].RVA + pModLX->Hdr.e32_eip
+        : NIL_RTLDRADDR;
     return 0;
 }
 
+#endif
 
-/** @copydoc kLdrModEnumDbgInfo */
-static int kldrModLXEnumDbgInfo(PKLDRMOD pMod, const void *pvBits, PFNKLDRENUMDBG pfnCallback, void *pvUser)
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnEnumDbgInfo}
+ */
+static DECLCALLBACK(int) rtldrLX_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits,
+                                             PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
-    /*PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;*/
-    K_NOREF(pfnCallback);
-    K_NOREF(pvUser);
+    /*PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);*/
+    RT_NOREF(pfnCallback);
+    RT_NOREF(pvUser);
 
     /*
      * Quit immediately if no debug info.
@@ -1334,25 +1290,26 @@ static int kldrModLXEnumDbgInfo(PKLDRMOD pMod, const void *pvBits, PFNKLDRENUMDB
 
 
 /** @copydoc kLdrModHasDbgInfo */
-static int kldrModLXHasDbgInfo(PKLDRMOD pMod, const void *pvBits)
+static int kldrModLXHasDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    K_NOREF(pvBits);
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    RT_NOREF(pvBits);
 
     /*
      * Don't curretnly bother with linkers which doesn't advertise it in the header.
      */
     if (    !pModLX->Hdr.e32_debuginfo
         ||  !pModLX->Hdr.e32_debuglen)
-        return KLDR_ERR_NO_DEBUG_INFO;
+        return VERR_NOT_FOUND;
     return 0;
 }
 
+#if 0
 
 /** @copydoc kLdrModMap */
-static int kldrModLXMap(PKLDRMOD pMod)
+static int kldrModLXMap(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODLX  pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX  pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     unsigned    fFixed;
     void       *pvBase;
     int         rc;
@@ -1367,14 +1324,14 @@ static int kldrModLXMap(PKLDRMOD pMod)
      * Allocate memory for it.
      */
     /* fixed image? */
-    fFixed = pMod->enmType == KLDRTYPE_EXECUTABLE_FIXED
-          || pMod->enmType == KLDRTYPE_SHARED_LIBRARY_FIXED;
+    fFixed = pModLX->Core.enmType == RTLDRTYPE_EXECUTABLE_FIXED
+          || pModLX->Core.enmType == RTLDRTYPE_SHARED_LIBRARY_FIXED;
     if (!fFixed)
         pvBase = NULL;
     else
     {
-        pvBase = (void *)(KUPTR)pMod->aSegments[0].LinkAddress;
-        if ((KUPTR)pvBase != pMod->aSegments[0].LinkAddress)
+        pvBase = (void *)(uintptr_t)pModLX->aSegments[0].LinkAddress;
+        if ((uintptr_t)pvBase != pModLX->aSegments[0].LinkAddress)
             return KLDR_ERR_ADDRESS_OVERFLOW;
     }
     rc = kHlpPageAlloc(&pvBase, pModLX->cbMapped, KPROT_EXECUTE_READWRITE, fFixed);
@@ -1389,11 +1346,11 @@ static int kldrModLXMap(PKLDRMOD pMod)
         rc = kldrModLXDoProtect(pModLX, pvBase, 0 /* protect */);
     if (!rc)
     {
-        KU32 i;
-        for (i = 0; i < pMod->cSegments; i++)
+        uint32_t i;
+        for (i = 0; i < pModLX->cSegments; i++)
         {
-            if (pMod->aSegments[i].RVA != NIL_KLDRADDR)
-                pMod->aSegments[i].MapAddress = (KUPTR)pvBase + (KUPTR)pMod->aSegments[i].RVA;
+            if (pModLX->aSegments[i].RVA != NIL_RTLDRADDR)
+                pModLX->aSegments[i].MapAddress = (uintptr_t)pvBase + (uintptr_t)pModLX->aSegments[i].RVA;
         }
         pModLX->pvMapping = pvBase;
     }
@@ -1402,6 +1359,7 @@ static int kldrModLXMap(PKLDRMOD pMod)
     return rc;
 }
 
+#endif
 
 /**
  * Loads the LX pages into the specified memory mapping.
@@ -1414,10 +1372,10 @@ static int kldrModLXMap(PKLDRMOD pMod)
  */
 static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
 {
-    const PKRDR pRdr = pModLX->pMod->pRdr;
-    KU8 *pbTmpPage = NULL;
+    const PRTLDRREADER pRdr = pModLX->Core.pReader;
+    uint8_t *pbTmpPage = NULL;
     int rc = 0;
-    KU32 i;
+    uint32_t i;
 
     /*
      * Iterate the segments.
@@ -1425,9 +1383,9 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
     for (i = 0; i < pModLX->Hdr.e32_objcnt; i++)
     {
         const struct o32_obj * const pObj = &pModLX->paObjs[i];
-        const KU32      cPages = (KU32)(pModLX->pMod->aSegments[i].cbMapped / OBJPAGELEN);
-        KU32            iPage;
-        KU8            *pbPage = (KU8 *)pvBits + (KUPTR)pModLX->pMod->aSegments[i].RVA;
+        const uint32_t      cPages = (uint32_t)(pModLX->aSegments[i].cbMapped / OBJPAGELEN);
+        uint32_t            iPage;
+        uint8_t            *pbPage = (uint8_t *)pvBits + (uintptr_t)pModLX->aSegments[i].RVA;
 
         /*
          * Iterate the page map pages.
@@ -1439,16 +1397,16 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
             {
                 case VALID:
                     if (pMap->o32_pagesize == OBJPAGELEN)
-                        rc = kRdrRead(pRdr, pbPage, OBJPAGELEN,
-                                         pModLX->Hdr.e32_datapage + (pMap->o32_pagedataoffset << pModLX->Hdr.e32_pageshift));
+                        rc = pRdr->pfnRead(pRdr, pbPage, OBJPAGELEN,
+                                           pModLX->Hdr.e32_datapage + (pMap->o32_pagedataoffset << pModLX->Hdr.e32_pageshift));
                     else if (pMap->o32_pagesize < OBJPAGELEN)
                     {
-                        rc = kRdrRead(pRdr, pbPage, pMap->o32_pagesize,
-                                         pModLX->Hdr.e32_datapage + (pMap->o32_pagedataoffset << pModLX->Hdr.e32_pageshift));
-                        kHlpMemSet(pbPage + pMap->o32_pagesize, 0, OBJPAGELEN - pMap->o32_pagesize);
+                        rc = pRdr->pfnRead(pRdr, pbPage, pMap->o32_pagesize,
+                                           pModLX->Hdr.e32_datapage + (pMap->o32_pagedataoffset << pModLX->Hdr.e32_pageshift));
+                        memset(pbPage + pMap->o32_pagesize, 0, OBJPAGELEN - pMap->o32_pagesize);
                     }
                     else
-                        rc = KLDR_ERR_LX_BAD_PAGE_MAP;
+                        rc = VERR_LDRLX_BAD_PAGE_MAP;
                     break;
 
                 case ITERDATA:
@@ -1456,23 +1414,23 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
                     /* make sure we've got a temp page .*/
                     if (!pbTmpPage)
                     {
-                        pbTmpPage = kHlpAlloc(OBJPAGELEN + 256);
+                        pbTmpPage = (uint8_t *)RTMemAlloc(OBJPAGELEN + 256);
                         if (!pbTmpPage)
                             break;
                     }
                     /* validate the size. */
                     if (pMap->o32_pagesize > OBJPAGELEN + 252)
                     {
-                        rc = KLDR_ERR_LX_BAD_PAGE_MAP;
+                        rc = VERR_LDRLX_BAD_PAGE_MAP;
                         break;
                     }
 
                     /* read it and ensure 4 extra zero bytes. */
-                    rc = kRdrRead(pRdr, pbTmpPage, pMap->o32_pagesize,
-                                     pModLX->Hdr.e32_datapage + (pMap->o32_pagedataoffset << pModLX->Hdr.e32_pageshift));
+                    rc = pRdr->pfnRead(pRdr, pbTmpPage, pMap->o32_pagesize,
+                                       pModLX->Hdr.e32_datapage + (pMap->o32_pagedataoffset << pModLX->Hdr.e32_pageshift));
                     if (rc)
                         break;
-                    kHlpMemSet(pbTmpPage + pMap->o32_pagesize, 0, 4);
+                    memset(pbTmpPage + pMap->o32_pagesize, 0, 4);
 
                     /* unpack it into the image page. */
                     if (pMap->o32_pageflags == ITERDATA2)
@@ -1483,14 +1441,14 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
 
                 case INVALID: /* we're probably not dealing correctly with INVALID pages... */
                 case ZEROED:
-                    kHlpMemSet(pbPage, 0, OBJPAGELEN);
+                    memset(pbPage, 0, OBJPAGELEN);
                     break;
 
                 case RANGE:
                     KLDRMODLX_ASSERT(!"RANGE");
                     /* Falls through. */
                 default:
-                    rc = KLDR_ERR_LX_BAD_PAGE_MAP;
+                    rc = VERR_LDRLX_BAD_PAGE_MAP;
                     break;
             }
         }
@@ -1501,11 +1459,11 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
          * Zero the remaining pages.
          */
         if (iPage < cPages)
-            kHlpMemSet(pbPage, 0, (cPages - iPage) * OBJPAGELEN);
+            memset(pbPage, 0, (cPages - iPage) * OBJPAGELEN);
     }
 
     if (pbTmpPage)
-        kHlpFree(pbTmpPage);
+        RTMemFree(pbTmpPage);
     return rc;
 }
 
@@ -1519,14 +1477,14 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
  * @param   cbSrc       The file size of the compressed data. The source buffer
  *                      contains 4 additional zero bytes.
  */
-static int kldrModLXDoIterDataUnpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc)
+static int kldrModLXDoIterDataUnpacking(uint8_t *pbDst, const uint8_t *pbSrc, int cbSrc)
 {
     const struct LX_Iter   *pIter = (const struct LX_Iter *)pbSrc;
     int                     cbDst = OBJPAGELEN;
 
     /* Validate size of data. */
     if (cbSrc >= (int)OBJPAGELEN - 2)
-        return KLDR_ERR_LX_BAD_ITERDATA;
+        return VERR_LDRLX_BAD_ITERDATA;
 
     /*
      * Expand the page.
@@ -1540,13 +1498,13 @@ static int kldrModLXDoIterDataUnpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc)
              */
             cbDst -= pIter->LX_nIter;
             if (cbDst < 0)
-                return KLDR_ERR_LX_BAD_ITERDATA;
+                return VERR_LDRLX_BAD_ITERDATA;
 
             cbSrc -= 4 + 1;
             if (cbSrc < -4)
-                return KLDR_ERR_LX_BAD_ITERDATA;
+                return VERR_LDRLX_BAD_ITERDATA;
 
-            kHlpMemSet(pbDst, pIter->LX_Iterdata, pIter->LX_nIter);
+            memset(pbDst, pIter->LX_Iterdata, pIter->LX_nIter);
             pbDst += pIter->LX_nIter;
             pIter++;
         }
@@ -1559,14 +1517,14 @@ static int kldrModLXDoIterDataUnpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc)
 
             cbDst -= pIter->LX_nIter * pIter->LX_nBytes;
             if (cbDst < 0)
-                return KLDR_ERR_LX_BAD_ITERDATA;
+                return VERR_LDRLX_BAD_ITERDATA;
 
             cbSrc -= 4 + pIter->LX_nBytes;
             if (cbSrc < -4)
-                return KLDR_ERR_LX_BAD_ITERDATA;
+                return VERR_LDRLX_BAD_ITERDATA;
 
             for (i = pIter->LX_nIter; i > 0; i--, pbDst += pIter->LX_nBytes)
-                kHlpMemCopy(pbDst, &pIter->LX_Iterdata, pIter->LX_nBytes);
+                memcpy(pbDst, &pIter->LX_Iterdata, pIter->LX_nBytes);
             pIter   = (struct LX_Iter *)((char*)pIter + 4 + pIter->LX_nBytes);
         }
     }
@@ -1575,7 +1533,7 @@ static int kldrModLXDoIterDataUnpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc)
      * Zero remainder of the page.
      */
     if (cbDst > 0)
-        kHlpMemSet(pbDst, 0, cbDst);
+        memset(pbDst, 0, cbDst);
 
     return 0;
 }
@@ -1590,7 +1548,7 @@ static int kldrModLXDoIterDataUnpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc)
  * @param   cbSrc       The file size of the compressed data. The source buffer
  *                      contains 4 additional zero bytes.
  */
-static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc)
+static int kldrModLXDoIterData2Unpacking(uint8_t *pbDst, const uint8_t *pbSrc, int cbSrc)
 {
     int cbDst = OBJPAGELEN;
 
@@ -1628,16 +1586,16 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
                     const int cb = *pbSrc >> 2;
                     cbDst -= cb;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbSrc -= cb + 1;
                     if (cbSrc < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
-                    kHlpMemCopy(pbDst, ++pbSrc, cb);
+                        return VERR_LDRLX_BAD_ITERDATA2;
+                    memcpy(pbDst, ++pbSrc, cb);
                     pbDst += cb;
                     pbSrc += cb;
                 }
                 else if (cbSrc < 2)
-                    return KLDR_ERR_LX_BAD_ITERDATA2;
+                    return VERR_LDRLX_BAD_ITERDATA2;
                 else
                 {
                     const int cb = pbSrc[1];
@@ -1645,11 +1603,11 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
                         goto l_endloop;
                     cbDst -= cb;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbSrc -= 3;
                     if (cbSrc < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
-                    kHlpMemSet(pbDst, pbSrc[2], cb);
+                        return VERR_LDRLX_BAD_ITERDATA2;
+                    memset(pbDst, pbSrc[2], cb);
                     pbDst += cb;
                     pbSrc += 3;
                 }
@@ -1671,7 +1629,7 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
             {
                 cbSrc -= 2;
                 if (cbSrc < 0)
-                    return KLDR_ERR_LX_BAD_ITERDATA2;
+                    return VERR_LDRLX_BAD_ITERDATA2;
                 else
                 {
                     const unsigned  off = ((unsigned)pbSrc[1] << 1) | (*pbSrc >> 7);
@@ -1681,20 +1639,20 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
                     pbSrc += 2;
                     cbSrc -= cb1;
                     if (cbSrc < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbDst -= cb1;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
-                    kHlpMemCopy(pbDst, pbSrc, cb1);
+                        return VERR_LDRLX_BAD_ITERDATA2;
+                    memcpy(pbDst, pbSrc, cb1);
                     pbDst += cb1;
                     pbSrc += cb1;
 
                     if (off > OBJPAGELEN - (unsigned)cbDst)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbDst -= cb2;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
-                    kHlpMemMove(pbDst, pbDst - off, cb2);
+                        return VERR_LDRLX_BAD_ITERDATA2;
+                    memmove(pbDst, pbDst - off, cb2);
                     pbDst += cb2;
                 }
                 break;
@@ -1717,7 +1675,7 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
             {
                 cbSrc -= 2;
                 if (cbSrc < 0)
-                    return KLDR_ERR_LX_BAD_ITERDATA2;
+                    return VERR_LDRLX_BAD_ITERDATA2;
                 else
                 {
                     const unsigned  off = ((unsigned)pbSrc[1] << 4) | (*pbSrc >> 4);
@@ -1725,10 +1683,10 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
 
                     pbSrc += 2;
                     if (off > OBJPAGELEN - (unsigned)cbDst)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbDst -= cb;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     kLdrModLXMemCopyW(pbDst, pbDst - off, cb);
                     pbDst += cb;
                 }
@@ -1752,7 +1710,7 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
             {
                 cbSrc -= 3;
                 if (cbSrc < 0)
-                    return KLDR_ERR_LX_BAD_ITERDATA2;
+                    return VERR_LDRLX_BAD_ITERDATA2;
                 else
                 {
                     const int       cb1 = (*pbSrc >> 2) & 0xf;
@@ -1762,19 +1720,19 @@ static int kldrModLXDoIterData2Unpacking(KU8 *pbDst, const KU8 *pbSrc, int cbSrc
                     pbSrc += 3;
                     cbSrc -= cb1;
                     if (cbSrc < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbDst -= cb1;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
-                    kHlpMemCopy(pbDst, pbSrc, cb1);
+                        return VERR_LDRLX_BAD_ITERDATA2;
+                    memcpy(pbDst, pbSrc, cb1);
                     pbDst += cb1;
                     pbSrc += cb1;
 
                     if (off > OBJPAGELEN - (unsigned)cbDst)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     cbDst -= cb2;
                     if (cbDst < 0)
-                        return KLDR_ERR_LX_BAD_ITERDATA2;
+                        return VERR_LDRLX_BAD_ITERDATA2;
                     kLdrModLXMemCopyW(pbDst, pbDst - off, cb2);
                     pbDst += cb2;
                 }
@@ -1790,7 +1748,7 @@ l_endloop:
      * Zero remainder of the page.
      */
     if (cbDst > 0)
-        kHlpMemSet(pbDst, 0, cbDst);
+        memset(pbDst, 0, cbDst);
 
     return 0;
 }
@@ -1807,7 +1765,7 @@ l_endloop:
  * @param   cb      Amount of data to be copied.
  * @remark  This assumes that unaligned word and dword access is fine.
  */
-static void kLdrModLXMemCopyW(KU8 *pbDst, const KU8 *pbSrc, int cb)
+static void kLdrModLXMemCopyW(uint8_t *pbDst, const uint8_t *pbSrc, int cb)
 {
     switch (pbDst - pbSrc)
     {
@@ -1819,7 +1777,7 @@ static void kLdrModLXMemCopyW(KU8 *pbDst, const KU8 *pbSrc, int cb)
             if (cb & 1)
                 *pbDst++ = *pbSrc++;
             for (cb >>= 1; cb > 0; cb--, pbDst += 2, pbSrc += 2)
-                *(KU16 *)pbDst = *(const KU16 *)pbSrc;
+                *(uint16_t *)pbDst = *(const uint16_t *)pbSrc;
             break;
 
         default:
@@ -1828,16 +1786,17 @@ static void kLdrModLXMemCopyW(KU8 *pbDst, const KU8 *pbSrc, int cb)
                 *pbDst++ = *pbSrc++;
             if (cb & 2)
             {
-                *(KU16 *)pbDst = *(const KU16 *)pbSrc;
+                *(uint16_t *)pbDst = *(const uint16_t *)pbSrc;
                 pbDst += 2;
                 pbSrc += 2;
             }
             for (cb >>= 2; cb > 0; cb--, pbDst += 4, pbSrc += 4)
-                *(KU32 *)pbDst = *(const KU32 *)pbSrc;
+                *(uint32_t *)pbDst = *(const uint32_t *)pbSrc;
             break;
     }
 }
 
+#if 0
 
 /**
  * Unprotects or protects the specified image mapping.
@@ -1852,20 +1811,19 @@ static void kLdrModLXMemCopyW(KU8 *pbDst, const KU8 *pbSrc, int cb)
  */
 static int kldrModLXDoProtect(PKLDRMODLX pModLX, void *pvBits, unsigned fUnprotectOrProtect)
 {
-    KU32 i;
-    PKLDRMOD pMod = pModLX->pMod;
+    uint32_t i;
 
     /*
      * Change object protection.
      */
-    for (i = 0; i < pMod->cSegments; i++)
+    for (i = 0; i < pModLX->cSegments; i++)
     {
         int rc;
         void *pv;
         KPROT enmProt;
 
         /* calc new protection. */
-        enmProt = pMod->aSegments[i].enmProt;
+        enmProt = pModLX->aSegments[i].enmProt;
         if (fUnprotectOrProtect)
         {
             switch (enmProt)
@@ -1898,9 +1856,9 @@ static int kldrModLXDoProtect(PKLDRMODLX pModLX, void *pvBits, unsigned fUnprote
 
 
         /* calc the address and set page protection. */
-        pv = (KU8 *)pvBits + pMod->aSegments[i].RVA;
+        pv = (uint8_t *)pvBits + pModLX->aSegments[i].RVA;
 
-        rc = kHlpPageProtect(pv, pMod->aSegments[i].cbMapped, enmProt);
+        rc = kHlpPageProtect(pv, pModLX->aSegments[i].cbMapped, enmProt);
         if (rc)
             break;
 
@@ -1912,10 +1870,10 @@ static int kldrModLXDoProtect(PKLDRMODLX pModLX, void *pvBits, unsigned fUnprote
 
 
 /** @copydoc kLdrModUnmap */
-static int kldrModLXUnmap(PKLDRMOD pMod)
+static int kldrModLXUnmap(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODLX  pModLX = (PKLDRMODLX)pMod->pvData;
-    KU32        i;
+    PKLDRMODLX  pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t    i;
     int         rc;
 
     /*
@@ -1931,17 +1889,17 @@ static int kldrModLXUnmap(PKLDRMOD pMod)
     KLDRMODLX_ASSERT(!rc);
     pModLX->pvMapping = NULL;
 
-    for (i = 0; i < pMod->cSegments; i++)
-        pMod->aSegments[i].MapAddress = 0;
+    for (i = 0; i < pModLX->cSegments; i++)
+        pModLX->aSegments[i].MapAddress = 0;
 
     return rc;
 }
 
 
 /** @copydoc kLdrModAllocTLS */
-static int kldrModLXAllocTLS(PKLDRMOD pMod, void *pvMapping)
+static int kldrModLXAllocTLS(PRTLDRMODINTERNAL pMod, void *pvMapping)
 {
-    PKLDRMODLX  pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX  pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
 
     /* no tls, just do the error checking. */
     if (   pvMapping == KLDRMOD_INT_MAP
@@ -1952,19 +1910,19 @@ static int kldrModLXAllocTLS(PKLDRMOD pMod, void *pvMapping)
 
 
 /** @copydoc kLdrModFreeTLS */
-static void kldrModLXFreeTLS(PKLDRMOD pMod, void *pvMapping)
+static void kldrModLXFreeTLS(PRTLDRMODINTERNAL pMod, void *pvMapping)
 {
     /* no tls. */
-    K_NOREF(pMod);
-    K_NOREF(pvMapping);
+    RT_NOREF(pMod);
+    RT_NOREF(pvMapping);
 
 }
 
 
 /** @copydoc kLdrModReload */
-static int kldrModLXReload(PKLDRMOD pMod)
+static int kldrModLXReload(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     int rc, rc2;
 
     /*
@@ -1996,9 +1954,9 @@ static int kldrModLXReload(PKLDRMOD pMod)
 
 
 /** @copydoc kLdrModFixupMapping */
-static int kldrModLXFixupMapping(PKLDRMOD pMod, PFNKLDRMODGETIMPORT pfnGetImport, void *pvUser)
+static int kldrModLXFixupMapping(PRTLDRMODINTERNAL pMod, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     int rc, rc2;
 
     /*
@@ -2017,8 +1975,8 @@ static int kldrModLXFixupMapping(PKLDRMOD pMod, PFNKLDRMODGETIMPORT pfnGetImport
     /*
      * Apply fixups and resolve imports.
      */
-    rc = kldrModLXRelocateBits(pMod, (void *)pModLX->pvMapping, (KUPTR)pModLX->pvMapping,
-                               pMod->aSegments[0].LinkAddress, pfnGetImport, pvUser);
+    rc = rtldrLX_RelocateBits(pMod, (void *)pModLX->pvMapping, (uintptr_t)pModLX->pvMapping,
+                              pModLX->aSegments[0].LinkAddress, pfnGetImport, pvUser);
 
     /*
      * Restore protection.
@@ -2031,9 +1989,9 @@ static int kldrModLXFixupMapping(PKLDRMOD pMod, PFNKLDRMODGETIMPORT pfnGetImport
 
 
 /** @copydoc kLdrModCallInit */
-static int kldrModLXCallInit(PKLDRMOD pMod, void *pvMapping, KUPTR uHandle)
+static int kldrModLXCallInit(PRTLDRMODINTERNAL pMod, void *pvMapping, uintptr_t uHandle)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     int rc;
 
     /*
@@ -2067,7 +2025,7 @@ static int kldrModLXCallInit(PKLDRMOD pMod, void *pvMapping, KUPTR uHandle)
  * @param   uOp             The operation (DLL_*).
  * @param   uHandle         The module handle to present.
  */
-static int kldrModLXDoCallDLL(PKLDRMODLX pModLX, void *pvMapping, unsigned uOp, KUPTR uHandle)
+static int kldrModLXDoCallDLL(PKLDRMODLX pModLX, void *pvMapping, unsigned uOp, uintptr_t uHandle)
 {
     int rc;
 
@@ -2081,8 +2039,8 @@ static int kldrModLXDoCallDLL(PKLDRMODLX pModLX, void *pvMapping, unsigned uOp, 
     /*
      * Invoke the entrypoint and convert the boolean result to a kLdr status code.
      */
-    rc = kldrModLXDoCall((KUPTR)pvMapping
-                         + (KUPTR)pModLX->pMod->aSegments[pModLX->Hdr.e32_startobj - 1].RVA
+    rc = kldrModLXDoCall((uintptr_t)pvMapping
+                         + (uintptr_t)pModLX->aSegments[pModLX->Hdr.e32_startobj - 1].RVA
                          + pModLX->Hdr.e32_eip,
                          uHandle, uOp, NULL);
     if (rc)
@@ -2104,10 +2062,10 @@ static int kldrModLXDoCallDLL(PKLDRMODLX pModLX, void *pvMapping, unsigned uOp, 
  * @param   uOp             The second argumnet, the reason we're calling.
  * @param   pvReserved      The third argument, reserved argument. (figure this one out)
  */
-static KI32 kldrModLXDoCall(KUPTR uEntrypoint, KUPTR uHandle, KU32 uOp, void *pvReserved)
+static int32_t kldrModLXDoCall(uintptr_t uEntrypoint, uintptr_t uHandle, uint32_t uOp, void *pvReserved)
 {
 #if defined(__X86__) || defined(__i386__) || defined(_M_IX86)
-    KI32 rc;
+    int32_t rc;
 /** @todo try/except */
 
     /*
@@ -2145,23 +2103,23 @@ static KI32 kldrModLXDoCall(KUPTR uEntrypoint, KUPTR uHandle, KU32 uOp, void *pv
 # else
 #  error "port me!"
 # endif
-    K_NOREF(pvReserved);
+    RT_NOREF(pvReserved);
     return rc;
 
 #else
-    K_NOREF(uEntrypoint);
-    K_NOREF(uHandle);
-    K_NOREF(uOp);
-    K_NOREF(pvReserved);
+    RT_NOREF(uEntrypoint);
+    RT_NOREF(uHandle);
+    RT_NOREF(uOp);
+    RT_NOREF(pvReserved);
     return KCPU_ERR_ARCH_CPU_NOT_COMPATIBLE;
 #endif
 }
 
 
 /** @copydoc kLdrModCallTerm */
-static int kldrModLXCallTerm(PKLDRMOD pMod, void *pvMapping, KUPTR uHandle)
+static int kldrModLXCallTerm(PRTLDRMODINTERNAL pMod, void *pvMapping, uintptr_t uHandle)
 {
-    PKLDRMODLX  pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX  pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
 
     /*
      * Mapped?
@@ -2184,52 +2142,59 @@ static int kldrModLXCallTerm(PKLDRMOD pMod, void *pvMapping, KUPTR uHandle)
 
 
 /** @copydoc kLdrModCallThread */
-static int kldrModLXCallThread(PKLDRMOD pMod, void *pvMapping, KUPTR uHandle, unsigned fAttachingOrDetaching)
+static int kldrModLXCallThread(PRTLDRMODINTERNAL pMod, void *pvMapping, uintptr_t uHandle, unsigned fAttachingOrDetaching)
 {
     /* no thread attach/detach callout. */
-    K_NOREF(pMod);
-    K_NOREF(pvMapping);
-    K_NOREF(uHandle);
-    K_NOREF(fAttachingOrDetaching);
+    RT_NOREF(pMod);
+    RT_NOREF(pvMapping);
+    RT_NOREF(uHandle);
+    RT_NOREF(fAttachingOrDetaching);
     return 0;
 }
 
+#endif
 
-/** @copydoc kLdrModSize */
-static KLDRADDR kldrModLXSize(PKLDRMOD pMod)
+/**
+ * @interface_method_impl{RTLDROPS,pfnGetImageSize}
+ */
+static DECLCALLBACK(size_t) rtldrLX_GetImageSize(PRTLDRMODINTERNAL pMod)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
     return pModLX->cbMapped;
 }
 
 
-/** @copydoc kLdrModGetBits */
-static int kldrModLXGetBits(PKLDRMOD pMod, void *pvBits, KLDRADDR BaseAddress, PFNKLDRMODGETIMPORT pfnGetImport, void *pvUser)
+/**
+ * @interface_method_impl{RTLDROPS,pfnGetBits}
+ */
+static DECLCALLBACK(int) rtldrLX_GetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress,
+                                         PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PKLDRMODLX  pModLX = (PKLDRMODLX)pMod->pvData;
-    int         rc;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
 
     /*
      * Load the image bits.
      */
-    rc = kldrModLXDoLoadBits(pModLX, pvBits);
-    if (rc)
-        return rc;
-
-    /*
-     * Perform relocations.
-     */
-    return kldrModLXRelocateBits(pMod, pvBits, BaseAddress, pMod->aSegments[0].LinkAddress, pfnGetImport, pvUser);
-
+    int rc = kldrModLXDoLoadBits(pModLX, pvBits);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Perform relocations.
+         */
+        rc = rtldrLX_RelocateBits(pMod, pvBits, BaseAddress, pModLX->aSegments[0].LinkAddress, pfnGetImport, pvUser);
+    }
+    return rc;
 }
 
 
-/** @copydoc kLdrModRelocateBits */
-static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAddress, KLDRADDR OldBaseAddress,
-                                 PFNKLDRMODGETIMPORT pfnGetImport, void *pvUser)
+/**
+ * @interface_method_impl{RTLDROPS,pfnRelocate}
+ */
+static DECLCALLBACK(int) rtldrLX_RelocateBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
+                                              RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
-    PKLDRMODLX pModLX = (PKLDRMODLX)pMod->pvData;
-    KU32 iSeg;
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t iSeg;
     int rc;
 
     /*
@@ -2256,28 +2221,28 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
     for (iSeg = 0; iSeg < pModLX->Hdr.e32_objcnt; iSeg++)
     {
         const struct o32_obj * const pObj = &pModLX->paObjs[iSeg];
-        KLDRADDR        PageAddress = NewBaseAddress + pModLX->pMod->aSegments[iSeg].RVA;
-        KU32            iPage;
-        KU8            *pbPage = (KU8 *)pvBits + (KUPTR)pModLX->pMod->aSegments[iSeg].RVA;
+        RTLDRADDR           PageAddress = NewBaseAddress + pModLX->aSegments[iSeg].RVA;
+        uint32_t            iPage;
+        uint8_t            *pbPage = (uint8_t *)pvBits + (uintptr_t)pModLX->aSegments[iSeg].RVA;
 
         /*
          * Iterate the page map pages.
          */
         for (iPage = 0, rc = 0; !rc && iPage < pObj->o32_mapsize; iPage++, pbPage += OBJPAGELEN, PageAddress += OBJPAGELEN)
         {
-            const KU8 * const   pbFixupRecEnd = pModLX->pbFixupRecs + pModLX->paoffPageFixups[iPage + pObj->o32_pagemap];
-            const KU8          *pb            = pModLX->pbFixupRecs + pModLX->paoffPageFixups[iPage + pObj->o32_pagemap - 1];
-            KLDRADDR            uValue        = NIL_KLDRADDR;
-            KU32                fKind         = 0;
-            int                 iSelector;
+            const uint8_t * const   pbFixupRecEnd = pModLX->pbFixupRecs + pModLX->paoffPageFixups[iPage + pObj->o32_pagemap];
+            const uint8_t          *pb            = pModLX->pbFixupRecs + pModLX->paoffPageFixups[iPage + pObj->o32_pagemap - 1];
+            RTLDRADDR               uValue        = NIL_RTLDRADDR;
+            uint32_t                fKind         = 0;
+            int                     iSelector;
 
             /* sanity */
             if (pbFixupRecEnd < pb)
-                return KLDR_ERR_BAD_FIXUP;
+                return VERR_LDR_BAD_FIXUP;
             if (pbFixupRecEnd - 1 > pModLX->pbFixupSectionLast)
-                return KLDR_ERR_BAD_FIXUP;
+                return VERR_LDR_BAD_FIXUP;
             if (pb < pModLX->pbFixupSection)
-                return KLDR_ERR_BAD_FIXUP;
+                return VERR_LDR_BAD_FIXUP;
 
             /*
              * Iterate the fixup record.
@@ -2286,10 +2251,10 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
             {
                 union _rel
                 {
-                    const KU8 *             pb;
+                    const uint8_t *             pb;
                     const struct r32_rlc   *prlc;
                 } u;
-
+                char szImpModule[256];
                 u.pb = pb;
                 pb += 3 + (u.prlc->nr_stype & NRCHAIN ? 0 : 1); /* place pch at the 4th member. */
 
@@ -2303,45 +2268,45 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                      */
                     case NRRINT:
                     {
-                        KU16 iTrgObject;
-                        KU32 offTrgObject;
+                        uint16_t iTrgObject;
+                        uint32_t offTrgObject;
 
                         /* the object */
                         if (u.prlc->nr_flags & NR16OBJMOD)
                         {
-                            iTrgObject = *(const KU16 *)pb;
+                            iTrgObject = *(const uint16_t *)pb;
                             pb += 2;
                         }
                         else
                             iTrgObject = *pb++;
                         iTrgObject--;
                         if (iTrgObject >= pModLX->Hdr.e32_objcnt)
-                            return KLDR_ERR_BAD_FIXUP;
+                            return VERR_LDR_BAD_FIXUP;
 
                         /* the target */
                         if ((u.prlc->nr_stype & NRSRCMASK) != NRSSEG)
                         {
                             if (u.prlc->nr_flags & NR32BITOFF)
                             {
-                                offTrgObject = *(const KU32 *)pb;
+                                offTrgObject = *(const uint32_t *)pb;
                                 pb += 4;
                             }
                             else
                             {
-                                offTrgObject = *(const KU16 *)pb;
+                                offTrgObject = *(const uint16_t *)pb;
                                 pb += 2;
                             }
 
                             /* calculate the symbol info. */
-                            uValue = offTrgObject + NewBaseAddress + pMod->aSegments[iTrgObject].RVA;
+                            uValue = offTrgObject + NewBaseAddress + pModLX->aSegments[iTrgObject].RVA;
                         }
                         else
-                            uValue = NewBaseAddress + pMod->aSegments[iTrgObject].RVA;
+                            uValue = NewBaseAddress + pModLX->aSegments[iTrgObject].RVA;
                         if (    (u.prlc->nr_stype & NRALIAS)
-                            ||  (pMod->aSegments[iTrgObject].fFlags & KLDRSEG_FLAG_16BIT))
-                            iSelector = pMod->aSegments[iTrgObject].Sel16bit;
+                            ||  (pModLX->aSegments[iTrgObject].fFlags & RTLDRSEG_FLAG_16BIT))
+                            iSelector = pModLX->aSegments[iTrgObject].Sel16bit;
                         else
-                            iSelector = pMod->aSegments[iTrgObject].SelFlat;
+                            iSelector = pModLX->aSegments[iTrgObject].SelFlat;
                         fKind = 0;
                         break;
                     }
@@ -2351,41 +2316,45 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                      */
                     case NRRORD:
                     {
-                        KU16 iModule;
-                        KU32 iSymbol;
+                        uint16_t iModule;
+                        uint32_t iSymbol;
 
                         /* the module ordinal */
                         if (u.prlc->nr_flags & NR16OBJMOD)
                         {
-                            iModule = *(const KU16 *)pb;
+                            iModule = *(const uint16_t *)pb;
                             pb += 2;
                         }
                         else
                             iModule = *pb++;
                         iModule--;
                         if (iModule >= pModLX->Hdr.e32_impmodcnt)
-                            return KLDR_ERR_BAD_FIXUP;
+                            return VERR_LDR_BAD_FIXUP;
+                        rc = kldrModLXGetImport(pModLX, NULL, iModule, szImpModule, sizeof(szImpModule), NULL);
+                        if (RT_FAILURE(rc))
+                            return rc;
+
 #if 1
                         if (u.prlc->nr_flags & NRICHAIN)
-                            return KLDR_ERR_BAD_FIXUP;
+                            return VERR_LDR_BAD_FIXUP;
 #endif
 
                         /* . */
                         if (u.prlc->nr_flags & NR32BITOFF)
                         {
-                            iSymbol = *(const KU32 *)pb;
+                            iSymbol = *(const uint32_t *)pb;
                             pb += 4;
                         }
                         else if (!(u.prlc->nr_flags & NR8BITORD))
                         {
-                            iSymbol = *(const KU16 *)pb;
+                            iSymbol = *(const uint16_t *)pb;
                             pb += 2;
                         }
                         else
                             iSymbol = *pb++;
 
                         /* resolve it. */
-                        rc = pfnGetImport(pMod, iModule, iSymbol, NULL, 0, NULL, &uValue, &fKind, pvUser);
+                        rc = pfnGetImport(pMod, szImpModule, NULL, iSymbol, &uValue, /*&fKind,*/ pvUser);
                         if (rc)
                             return rc;
                         iSelector = -1;
@@ -2397,35 +2366,38 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                      */
                     case NRRNAM:
                     {
-                        KU32 iModule;
-                        KU16 offSymbol;
-                        const KU8 *pbSymbol;
+                        uint32_t iModule;
+                        uint16_t offSymbol;
+                        const uint8_t *pbSymbol;
 
                         /* the module ordinal */
                         if (u.prlc->nr_flags & NR16OBJMOD)
                         {
-                            iModule = *(const KU16 *)pb;
+                            iModule = *(const uint16_t *)pb;
                             pb += 2;
                         }
                         else
                             iModule = *pb++;
                         iModule--;
                         if (iModule >= pModLX->Hdr.e32_impmodcnt)
-                            return KLDR_ERR_BAD_FIXUP;
+                            return VERR_LDR_BAD_FIXUP;
+                        rc = kldrModLXGetImport(pModLX, NULL, iModule, szImpModule, sizeof(szImpModule), NULL);
+                        if (RT_FAILURE(rc))
+                            return rc;
 #if 1
                         if (u.prlc->nr_flags & NRICHAIN)
-                            return KLDR_ERR_BAD_FIXUP;
+                            return VERR_LDR_BAD_FIXUP;
 #endif
 
                         /* . */
                         if (u.prlc->nr_flags & NR32BITOFF)
                         {
-                            offSymbol = *(const KU32 *)pb;
+                            offSymbol = *(const uint32_t *)pb;
                             pb += 4;
                         }
                         else if (!(u.prlc->nr_flags & NR8BITORD))
                         {
-                            offSymbol = *(const KU16 *)pb;
+                            offSymbol = *(const uint16_t *)pb;
                             pb += 2;
                         }
                         else
@@ -2433,11 +2405,13 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                         pbSymbol = pModLX->pbImportProcs + offSymbol;
                         if (    pbSymbol < pModLX->pbImportProcs
                             ||  pbSymbol > pModLX->pbFixupSectionLast)
-                            return KLDR_ERR_BAD_FIXUP;
+                            return VERR_LDR_BAD_FIXUP;
+                        char szSymbol[256];
+                        memcpy(szSymbol, pbSymbol + 1, *pbSymbol);
+                        szSymbol[*pbSymbol] = '\0';
 
                         /* resolve it. */
-                        rc = pfnGetImport(pMod, iModule, NIL_KLDRMOD_SYM_ORDINAL, (const char *)pbSymbol + 1, *pbSymbol, NULL,
-                                          &uValue, &fKind, pvUser);
+                        rc = pfnGetImport(pMod, szImpModule, szSymbol, UINT32_MAX, &uValue, /*&fKind,*/ pvUser);
                         if (rc)
                             return rc;
                         iSelector = -1;
@@ -2457,12 +2431,12 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                 {
                     if (u.prlc->nr_flags & NR32BITADD)
                     {
-                        uValue += *(const KU32 *)pb;
+                        uValue += *(const uint32_t *)pb;
                         pb += 4;
                     }
                     else
                     {
-                        uValue += *(const KU16 *)pb;
+                        uValue += *(const uint16_t *)pb;
                         pb += 2;
                     }
                 }
@@ -2479,11 +2453,11 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                     if (    (u.prlc->nr_stype & NRSRCMASK) == NROFF32
                         &&  off >= 0
                         &&  off <= (int)OBJPAGELEN - 4)
-                        *(KU32 *)&pbPage[off] = (KU32)uValue;
+                        *(uint32_t *)&pbPage[off] = (uint32_t)uValue;
                     else if (    (u.prlc->nr_stype & NRSRCMASK) == NRSOFF32
                             &&  off >= 0
                             &&  off <= (int)OBJPAGELEN - 4)
-                        *(KU32 *)&pbPage[off] = (KU32)(uValue - (PageAddress + off + 4));
+                        *(uint32_t *)&pbPage[off] = (uint32_t)(uValue - (PageAddress + off + 4));
                     else
                     {
                         /* generic */
@@ -2494,8 +2468,8 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                 }
                 else if (!(u.prlc->nr_flags & NRICHAIN))
                 {
-                    const KI16 *poffSrc = (const KI16 *)pb;
-                    KU8 c = u.pb[2];
+                    const int16_t *poffSrc = (const int16_t *)pb;
+                    uint8_t c = u.pb[2];
 
                     /* common / simple */
                     if ((u.prlc->nr_stype & NRSRCMASK) == NROFF32)
@@ -2504,7 +2478,7 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                         {
                             int off = *poffSrc++;
                             if (off >= 0 && off <= (int)OBJPAGELEN - 4)
-                                *(KU32 *)&pbPage[off] = (KU32)uValue;
+                                *(uint32_t *)&pbPage[off] = (uint32_t)uValue;
                             else
                             {
                                 rc = kldrModLXDoReloc(pbPage, off, PageAddress, u.prlc, iSelector, uValue, fKind);
@@ -2519,7 +2493,7 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                         {
                             int off = *poffSrc++;
                             if (off >= 0 && off <= (int)OBJPAGELEN - 4)
-                                *(KU32 *)&pbPage[off] = (KU32)(uValue - (PageAddress + off + 4));
+                                *(uint32_t *)&pbPage[off] = (uint32_t)(uValue - (PageAddress + off + 4));
                             else
                             {
                                 rc = kldrModLXDoReloc(pbPage, off, PageAddress, u.prlc, iSelector, uValue, fKind);
@@ -2537,13 +2511,13 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
                                 return rc;
                         }
                     }
-                    pb = (const KU8 *)poffSrc;
+                    pb = (const uint8_t *)poffSrc;
                 }
                 else
                 {
                     /* This is a pain because it will require virgin pages on a relocation. */
                     KLDRMODLX_ASSERT(!"NRICHAIN");
-                    return KLDR_ERR_LX_NRICHAIN_NOT_SUPPORTED;
+                    return VERR_LDRLX_NRICHAIN_NOT_SUPPORTED;
                 }
             }
         }
@@ -2565,33 +2539,33 @@ static int kldrModLXRelocateBits(PKLDRMOD pMod, void *pvBits, KLDRADDR NewBaseAd
  * @param   uValue      The target value.
  * @param   fKind       The target kind.
  */
-static int kldrModLXDoReloc(KU8 *pbPage, int off, KLDRADDR PageAddress, const struct r32_rlc *prlc,
-                            int iSelector, KLDRADDR uValue, KU32 fKind)
+static int kldrModLXDoReloc(uint8_t *pbPage, int off, RTLDRADDR PageAddress, const struct r32_rlc *prlc,
+                            int iSelector, RTLDRADDR uValue, uint32_t fKind)
 {
 #pragma pack(1) /* just to be sure */
     union
     {
-        KU8         ab[6];
-        KU32        off32;
-        KU16        off16;
-        KU8         off8;
+        uint8_t         ab[6];
+        uint32_t        off32;
+        uint16_t        off16;
+        uint8_t         off8;
         struct
         {
-            KU16    off;
-            KU16    Sel;
+            uint16_t    off;
+            uint16_t    Sel;
         }           Far16;
         struct
         {
-            KU32    off;
-            KU16    Sel;
+            uint32_t    off;
+            uint16_t    Sel;
         }           Far32;
     }               uData;
 #pragma pack()
-    const KU8      *pbSrc;
-    KU8            *pbDst;
-    KU8             cb;
+    const uint8_t      *pbSrc;
+    uint8_t            *pbDst;
+    uint8_t             cb;
 
-    K_NOREF(fKind);
+    RT_NOREF(fKind);
 
     /*
      * Compose the fixup data.
@@ -2599,7 +2573,7 @@ static int kldrModLXDoReloc(KU8 *pbPage, int off, KLDRADDR PageAddress, const st
     switch (prlc->nr_stype & NRSRCMASK)
     {
         case NRSBYT:
-            uData.off8 = (KU8)uValue;
+            uData.off8 = (uint8_t)uValue;
             cb = 1;
             break;
         case NRSSEG:
@@ -2615,12 +2589,12 @@ static int kldrModLXDoReloc(KU8 *pbPage, int off, KLDRADDR PageAddress, const st
             {
                 /* fixme */
             }
-            uData.Far16.off = (KU16)uValue;
+            uData.Far16.off = (uint16_t)uValue;
             uData.Far16.Sel = iSelector;
             cb = 4;
             break;
         case NRSOFF:
-            uData.off16 = (KU16)uValue;
+            uData.off16 = (uint16_t)uValue;
             cb = 2;
             break;
         case NRPTR48:
@@ -2628,20 +2602,20 @@ static int kldrModLXDoReloc(KU8 *pbPage, int off, KLDRADDR PageAddress, const st
             {
                 /* fixme */
             }
-            uData.Far32.off = (KU32)uValue;
+            uData.Far32.off = (uint32_t)uValue;
             uData.Far32.Sel = iSelector;
             cb = 6;
             break;
         case NROFF32:
-            uData.off32 = (KU32)uValue;
+            uData.off32 = (uint32_t)uValue;
             cb = 4;
             break;
         case NRSOFF32:
-            uData.off32 = (KU32)(uValue - (PageAddress + off + 4));
+            uData.off32 = (uint32_t)(uValue - (PageAddress + off + 4));
             cb = 4;
             break;
         default:
-            return KLDR_ERR_LX_BAD_FIXUP_SECTION; /** @todo fix error, add more checks! */
+            return VERR_LDRLX_BAD_FIXUP_SECTION; /** @todo fix error, add more checks! */
     }
 
     /*
@@ -2664,39 +2638,227 @@ static int kldrModLXDoReloc(KU8 *pbPage, int off, KLDRADDR PageAddress, const st
 
 
 /**
- * The LX module interpreter method table.
+ * @interface_method_impl{RTLDROPS,pfnEnumSegments}
  */
-KLDRMODOPS g_kLdrModLXOps =
+static DECLCALLBACK(int) rtldrLX_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
+{
+    PKLDRMODLX      pThis     = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t const  cSegments = pThis->cSegments;
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        RTLDRSEG Seg = pThis->aSegments[iSeg];
+        int rc = pfnCallback(pMod, &Seg, pvUser);
+        if (rc != VINF_SUCCESS)
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnLinkAddressToSegOffset}
+ */
+static DECLCALLBACK(int) rtldrLX_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
+                                                           uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    PKLDRMODLX     pThis     = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t const cSegments = pThis->cSegments;
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        RTLDRADDR offSeg = LinkAddress - pThis->aSegments[iSeg].LinkAddress;
+        if (   offSeg < pThis->aSegments[iSeg].cbMapped
+            || offSeg < pThis->aSegments[iSeg].cb)
+        {
+            *piSeg = iSeg;
+            *poffSeg = offSeg;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_LDR_INVALID_LINK_ADDRESS;
+}
+
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnLinkAddressToRva}.
+ */
+static DECLCALLBACK(int) rtldrLX_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
+{
+    PKLDRMODLX     pThis     = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t const cSegments = pThis->cSegments;
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        RTLDRADDR offSeg = LinkAddress - pThis->aSegments[iSeg].LinkAddress;
+        if (   offSeg < pThis->aSegments[iSeg].cbMapped
+            || offSeg < pThis->aSegments[iSeg].cb)
+        {
+            *pRva = pThis->aSegments[iSeg].RVA + offSeg;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_LDR_INVALID_RVA;
+}
+
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnSegOffsetToRva}
+ */
+static DECLCALLBACK(int) rtldrLX_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva)
+{
+    PKLDRMODLX  pThis = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+
+    if (iSeg >= pThis->cSegments)
+        return VERR_LDR_INVALID_SEG_OFFSET;
+    PCRTLDRSEG pSegment = &pThis->aSegments[iSeg];
+
+    if (   offSeg > pSegment->cbMapped
+        && offSeg > pSegment->cb
+        && (    pSegment->cbFile < 0
+            ||  offSeg > (uint64_t)pSegment->cbFile))
+        return VERR_LDR_INVALID_SEG_OFFSET;
+
+    *pRva = pSegment->RVA + offSeg;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnRvaToSegOffset}
+ */
+static DECLCALLBACK(int) rtldrLX_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    PKLDRMODLX     pThis     = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    uint32_t const cSegments = pThis->cSegments;
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        RTLDRADDR offSeg = Rva - pThis->aSegments[iSeg].RVA;
+        if (   offSeg < pThis->aSegments[iSeg].cbMapped
+            || offSeg < pThis->aSegments[iSeg].cb)
+        {
+            *piSeg = iSeg;
+            *poffSeg = offSeg;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_LDR_INVALID_RVA;
+}
+
+
+/**
+ * @interface_method_impl{RTLDROPS,pfnReadDbgInfo}
+ */
+static DECLCALLBACK(int) rtldrLX_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf)
+{
+    //PKLDRMODLX pThis = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    RT_NOREF(pMod, iDbgInfo, off, cb, pvBuf);
+    return VERR_OUT_OF_RANGE;
+}
+
+
+/** @interface_method_impl{RTLDROPS,pfnQueryProp} */
+static DECLCALLBACK(int) rtldrLX_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                          void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    PKLDRMODLX pThis = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+    int           rc;
+    switch (enmProp)
+    {
+        case RTLDRPROP_IMPORT_COUNT:
+            Assert(cbBuf == sizeof(uint32_t));
+            Assert(*pcbRet == cbBuf);
+            *(uint32_t *)pvBuf = pThis->Hdr.e32_impmodcnt;
+            rc = VINF_SUCCESS;
+            break;
+
+        case RTLDRPROP_IMPORT_MODULE:
+            rc = kldrModLXGetImport(pThis, pvBits, *(uint32_t const *)pvBuf, (char *)pvBuf, cbBuf, pcbRet);
+            break;
+
+        case RTLDRPROP_INTERNAL_NAME:
+            *pcbRet = pThis->cchName + 1;
+            if (cbBuf >= pThis->cchName + 1)
+            {
+                memcpy(pvBuf, pThis->pszName, pThis->cchName + 1);
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+            break;
+
+
+        default:
+            rc = VERR_NOT_FOUND;
+            break;
+    }
+    RT_NOREF_PV(pvBits);
+    return rc;
+}
+
+
+/**
+ * Operations for a Mach-O module interpreter.
+ */
+static const RTLDROPS s_rtldrLXOps=
 {
     "LX",
+    rtldrLX_Close,
     NULL,
-    kldrModLXCreate,
-    kldrModLXDestroy,
-    kldrModLXQuerySymbol,
-    kldrModLXEnumSymbols,
-    kldrModLXGetImport,
-    kldrModLXNumberOfImports,
-    NULL /* can execute one is optional */,
-    kldrModLXGetStackInfo,
-    kldrModLXQueryMainEntrypoint,
-    NULL /* pfnQueryImageUuid */,
-    NULL /* fixme */,
-    NULL /* fixme */,
-    kldrModLXEnumDbgInfo,
-    kldrModLXHasDbgInfo,
-    kldrModLXMap,
-    kldrModLXUnmap,
-    kldrModLXAllocTLS,
-    kldrModLXFreeTLS,
-    kldrModLXReload,
-    kldrModLXFixupMapping,
-    kldrModLXCallInit,
-    kldrModLXCallTerm,
-    kldrModLXCallThread,
-    kldrModLXSize,
-    kldrModLXGetBits,
-    kldrModLXRelocateBits,
-    NULL /* fixme: pfnMostlyDone */,
-    42 /* the end */
+    NULL /*pfnDone*/,
+    rtldrLX_EnumSymbols,
+    /* ext */
+    rtldrLX_GetImageSize,
+    rtldrLX_GetBits,
+    rtldrLX_RelocateBits,
+    rtldrLX_GetSymbolEx,
+    NULL /*pfnQueryForwarderInfo*/,
+    rtldrLX_EnumDbgInfo,
+    rtldrLX_EnumSegments,
+    rtldrLX_LinkAddressToSegOffset,
+    rtldrLX_LinkAddressToRva,
+    rtldrLX_SegOffsetToRva,
+    rtldrLX_RvaToSegOffset,
+    NULL,
+    rtldrLX_QueryProp,
+    NULL /*pfnVerifySignature*/,
+    NULL /*pfnHashImage*/,
+    NULL /*pfnUnwindFrame*/,
+    42
 };
+
+
+/**
+ * Handles opening LX images.
+ */
+DECLHIDDEN(int) rtldrLXOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offLxHdr,
+                            PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
+{
+
+    /*
+     * Create the instance data and do a minimal header validation.
+     */
+    PKLDRMODLX pThis = NULL;
+    int rc = kldrModLXDoCreate(pReader, offLxHdr, fFlags, &pThis, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Match up against the requested CPU architecture.
+         */
+        if (   enmArch == RTLDRARCH_WHATEVER
+            || pThis->Core.enmArch == enmArch)
+        {
+            pThis->Core.pOps     = &s_rtldrLXOps;
+            pThis->Core.u32Magic = RTLDRMOD_MAGIC;
+            *phLdrMod = &pThis->Core;
+            return 0;
+        }
+        rc = VERR_LDR_ARCH_MISMATCH;
+    }
+    if (pThis)
+        RTMemFree(pThis);
+    return rc;
+
+}
 

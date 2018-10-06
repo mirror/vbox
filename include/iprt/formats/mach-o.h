@@ -479,6 +479,22 @@ typedef struct uuid_command
     uint8_t             uuid[16];
 } uuid_command_t;
 
+typedef struct linkedit_data_command
+{
+    uint32_t            cmd;        /**< LC_CODE_SIGNATURE, LC_SEGMENT_SPLIT_INFO, LC_FUNCTION_STARTS */
+    uint32_t            cmdsize;    /**< Size of this structure. */
+    uint32_t            dataoff;    /**< Offset into the file of the data. */
+    uint32_t            datasize;   /**< The size of the data. */
+} linkedit_data_command_t;
+
+typedef struct version_min_command
+{
+    uint32_t            cmd;        /**< LC_VERSION_MIN_MACOSX, LC_VERSION_MIN_IPHONEOS */
+    uint32_t            cmdsize;    /**< Size of this structure. */
+    uint32_t            version;    /**< 31..16=major, 15..8=minor, 7..0=patch. */
+    uint32_t            reserved;   /**< MBZ. */
+} version_min_command_t;
+
 typedef struct macho_nlist_32
 {
     union

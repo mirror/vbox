@@ -41,6 +41,7 @@
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/formats/mz.h>
+#include <iprt/formats/mach-o.h>
 #include "internal/ldr.h"
 
 #ifdef LDR_ONLY_PE
@@ -80,7 +81,13 @@ RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH
     if (    uSign.au16[0] != IMAGE_DOS_SIGNATURE
         &&  uSign.u32     != IMAGE_NT_SIGNATURE
         &&  uSign.u32     != IMAGE_ELF_SIGNATURE
-        &&  uSign.au16[0] != IMAGE_LX_SIGNATURE)
+        &&  uSign.au16[0] != IMAGE_LX_SIGNATURE
+        &&  uSign.u32     != IMAGE_MACHO64_SIGNATURE
+        &&  uSign.u32     != IMAGE_MACHO64_SIGNATURE_OE
+        &&  uSign.u32     != IMAGE_MACHO32_SIGNATURE
+        &&  uSign.u32     != IMAGE_MACHO32_SIGNATURE_OE
+        &&  uSign.u32     != IMAGE_FAT_SIGNATURE
+        &&  uSign.u32     != IMAGE_FAT_SIGNATURE_OE )
     {
         Log(("rtldrOpenWithReader: %s: unknown magic %#x / '%.4s\n", pReader->pfnLogName(pReader), uSign.u32, &uSign.ach[0]));
         return VERR_INVALID_EXE_SIGNATURE;
@@ -125,6 +132,22 @@ RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH
         rc = rtldrELFOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
 #else
         rc = VERR_ELF_EXE_NOT_SUPPORTED;
+#endif
+    else if (   uSign.u32 == IMAGE_MACHO64_SIGNATURE
+             || uSign.u32 == IMAGE_MACHO64_SIGNATURE_OE
+             || uSign.u32 == IMAGE_MACHO32_SIGNATURE
+             || uSign.u32 == IMAGE_MACHO32_SIGNATURE_OE)
+#if defined(LDR_WITH_MACHO)
+        rc = rtldrMachOOpen(pReader, fFlags, enmArch, offHdr, phMod, pErrInfo);
+#else
+        rc = VERR_INVALID_EXE_SIGNATURE;
+#endif
+    else if (   uSign.u32 == IMAGE_FAT_SIGNATURE
+             || uSign.u32 == IMAGE_FAT_SIGNATURE_OE)
+#if defined(LDR_WITH_MACHO)
+        rc = rtldrFatOpen(pReader, fFlags, enmArch, phMod, pErrInfo);
+#else
+        rc = VERR_INVALID_EXE_SIGNATURE;
 #endif
     else if (uSign.au16[0] == IMAGE_LX_SIGNATURE)
 #ifdef LDR_WITH_LX

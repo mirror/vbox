@@ -4478,8 +4478,8 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
  * @param   phLdrMod    Where to store the handle.
  * @param   pErrInfo    Where to return extended error information. Optional.
  */
-int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs,
-                PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs,
+                            PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
 {
     /*
      * Read and validate the file header.

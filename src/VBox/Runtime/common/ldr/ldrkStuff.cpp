@@ -920,7 +920,7 @@ static const RTLDROPS g_rtkldrOps =
  * @param   phLdrMod    Where to store the handle.
  * @param   pErrInfo    Where to return extended error information. Optional.
  */
-int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
 {
     RT_NOREF_PV(pErrInfo);
 

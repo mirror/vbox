@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 /** @file
  * LX structures, types and defines.
  */
@@ -28,11 +28,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___k_kLdrFmts_lx_h___
-#define ___k_kLdrFmts_lx_h___
+#ifndef ___iprt_formats_lx_h___
+#define ___iprt_formats_lx_h___
 
-#include <k/kDefs.h>
-#include <k/kTypes.h>
+#include <iprt/types.h>
+#include <iprt/assertcompile.h>
 
 
 #ifndef IMAGE_OS2_SIGNATURE_LX
@@ -40,7 +40,7 @@
 # define IMAGE_LX_SIGNATURE  K_LE2H_U16('L' | ('X' << 8))
 #endif
 
-#pragma pack(1)
+#pragma pack(1) /** @todo mostly unnecessary. */
 
 /**
  * Linear eXecutable header.
@@ -48,83 +48,84 @@
  */
 struct e32_exe
 {
-    KU8                 e32_magic[2];
-    KU8                 e32_border;
-    KU8                 e32_worder;
-    KU32                e32_level;
-    KU16                e32_cpu;
-    KU16                e32_os;
-    KU32                e32_ver;
-    KU32                e32_mflags;
-    KU32                e32_mpages;
-    KU32                e32_startobj;
-    KU32                e32_eip;
-    KU32                e32_stackobj;
-    KU32                e32_esp;
-    KU32                e32_pagesize;
-    KU32                e32_pageshift;
+    uint8_t             e32_magic[2];
+    uint8_t             e32_border;
+    uint8_t             e32_worder;
+    uint32_t            e32_level;
+    uint16_t            e32_cpu;
+    uint16_t            e32_os;
+    uint32_t            e32_ver;
+    uint32_t            e32_mflags;
+    uint32_t            e32_mpages;
+    uint32_t            e32_startobj;
+    uint32_t            e32_eip;
+    uint32_t            e32_stackobj;
+    uint32_t            e32_esp;
+    uint32_t            e32_pagesize;
+    uint32_t            e32_pageshift;
     /** The size of the fixup section.
      * The fixup section consists of the fixup page table, the fixup record table,
      * the import module table, and the import procedure name table.
      */
-    KU32                e32_fixupsize;
-    KU32                e32_fixupsum;
+    uint32_t            e32_fixupsize;
+    uint32_t            e32_fixupsum;
     /** The size of the resident loader section.
      * This includes the object table, the object page map table, the resource table, the resident name table,
      * the entry table, the module format directives table, and the page checksum table (?). */
-    KU32                e32_ldrsize;
+    uint32_t            e32_ldrsize;
     /** The checksum of the loader section. 0 if not calculated. */
-    KU32                e32_ldrsum;
+    uint32_t            e32_ldrsum;
     /** The offset of the object table relative to this structure. */
-    KU32                e32_objtab;
+    uint32_t            e32_objtab;
     /** Count of objects. */
-    KU32                e32_objcnt;
+    uint32_t            e32_objcnt;
     /** The offset of the object page map table relative to this structure. */
-    KU32                e32_objmap;
+    uint32_t            e32_objmap;
     /** The offset of the object iterated pages (whatever this is used for) relative to the start of the file. */
-    KU32                e32_itermap;
+    uint32_t            e32_itermap;
     /** The offset of the resource table relative to this structure. */
-    KU32                e32_rsrctab;
+    uint32_t            e32_rsrctab;
     /** The number of entries in the resource table. */
-    KU32                e32_rsrccnt;
+    uint32_t            e32_rsrccnt;
     /** The offset of the resident name table relative to this structure. */
-    KU32                e32_restab;
+    uint32_t            e32_restab;
     /** The offset of the entry (export) table relative to this structure. */
-    KU32                e32_enttab;
+    uint32_t            e32_enttab;
     /** The offset of the module format directives table relative to this structure. */
-    KU32                e32_dirtab;
+    uint32_t            e32_dirtab;
     /** The number of entries in the module format directives table. */
-    KU32                e32_dircnt;
+    uint32_t            e32_dircnt;
     /** The offset of the fixup page table relative to this structure. */
-    KU32                e32_fpagetab;
+    uint32_t            e32_fpagetab;
     /** The offset of the fixup record table relative to this structure. */
-    KU32                e32_frectab;
+    uint32_t            e32_frectab;
     /** The offset of the import module name table relative to this structure. */
-    KU32                e32_impmod;
+    uint32_t            e32_impmod;
     /** The number of entries in the import module name table. */
-    KU32                e32_impmodcnt;
+    uint32_t            e32_impmodcnt;
     /** The offset of the import procedure name table relative to this structure. */
-    KU32                e32_impproc;
+    uint32_t            e32_impproc;
     /** The offset of the page checksum table relative to this structure. */
-    KU32                e32_pagesum;
+    uint32_t            e32_pagesum;
     /** The offset of the data pages relative to the start of the file. */
-    KU32                e32_datapage;
+    uint32_t            e32_datapage;
     /** The number of preload pages (ignored). */
-    KU32                e32_preload;
+    uint32_t            e32_preload;
     /** The offset of the non-resident name table relative to the start of the file. */
-    KU32                e32_nrestab;
+    uint32_t            e32_nrestab;
     /** The size of the non-resident name table. */
-    KU32                e32_cbnrestab;
-    KU32                e32_nressum;
-    KU32                e32_autodata;
-    KU32                e32_debuginfo;
-    KU32                e32_debuglen;
-    KU32                e32_instpreload;
-    KU32                e32_instdemand;
-    KU32                e32_heapsize;
-    KU32                e32_stacksize;
-    KU8                 e32_res3[20];
+    uint32_t            e32_cbnrestab;
+    uint32_t            e32_nressum;
+    uint32_t            e32_autodata;
+    uint32_t            e32_debuginfo;
+    uint32_t            e32_debuglen;
+    uint32_t            e32_instpreload;
+    uint32_t            e32_instdemand;
+    uint32_t            e32_heapsize;
+    uint32_t            e32_stacksize;
+    uint8_t             e32_res3[20];
 };
+AssertCompileSize(struct e32_exe, 196);
 
 /** e32_magic[0] */
 #define E32MAGIC1       'L'
@@ -141,7 +142,7 @@ struct e32_exe
 /** e32_worder - big endian */
 #define E32BEWO         1
 /** e32_level */
-#define E32LEVEL        KU32_C(0)
+#define E32LEVEL        UINT32_C(0)
 /** e32_cpu - 80286 */
 #define E32CPU286       1
 /** e32_cpu - 80386 */
@@ -149,29 +150,29 @@ struct e32_exe
 /** e32_cpu - 80486 */
 #define E32CPU486       3
 /** e32_pagesize */
-#define OBJPAGELEN      KU32_C(0x1000)
+#define OBJPAGELEN      UINT32_C(0x1000)
 
 
 /** @name e32_mflags
  * @{ */
 /** App Type: Fullscreen only. */
-#define E32NOPMW         KU32_C(0x00000100)
+#define E32NOPMW         UINT32_C(0x00000100)
 /** App Type: PM API. */
-#define E32PMAPI         KU32_C(0x00000300)
+#define E32PMAPI         UINT32_C(0x00000300)
 /** App Type: PM VIO compatible. */
-#define E32PMW           KU32_C(0x00000200)
+#define E32PMW           UINT32_C(0x00000200)
 /** Application type mask. */
-#define E32APPMASK       KU32_C(0x00000300)
+#define E32APPMASK       UINT32_C(0x00000300)
 /** Executable module. */
-#define E32MODEXE        KU32_C(0x00000000)
+#define E32MODEXE        UINT32_C(0x00000000)
 /** Dynamic link library (DLL / library) module. */
-#define E32MODDLL        KU32_C(0x00008000)
+#define E32MODDLL        UINT32_C(0x00008000)
 /** Protected memory DLL. */
-#define E32PROTDLL       KU32_C(0x00010000)
+#define E32PROTDLL       UINT32_C(0x00010000)
 /** Physical Device Driver. */
-#define E32MODPDEV       KU32_C(0x00020000)
+#define E32MODPDEV       UINT32_C(0x00020000)
 /** Virtual Device Driver. */
-#define E32MODVDEV       KU32_C(0x00028000)
+#define E32MODVDEV       UINT32_C(0x00028000)
 /** Device driver */
 #define E32DEVICE        E32MODPDEV
 /** Dynamic link library (DLL / library) module. */
@@ -179,29 +180,29 @@ struct e32_exe
 /** Protected memory DLL. */
 #define E32MODPROTDLL    (E32MODDLL | E32PROTDLL)
 /** Module Type mask. */
-#define E32MODMASK       KU32_C(0x00038000)
+#define E32MODMASK       UINT32_C(0x00038000)
 /** Not loadable (linker error). */
-#define E32NOLOAD        KU32_C(0x00002000)
+#define E32NOLOAD        UINT32_C(0x00002000)
 /** No internal fixups. */
-#define E32NOINTFIX      KU32_C(0x00000010)
+#define E32NOINTFIX      UINT32_C(0x00000010)
 /** No external fixups (i.e. imports). */
-#define E32NOEXTFIX      KU32_C(0x00000020)
+#define E32NOEXTFIX      UINT32_C(0x00000020)
 /** System DLL, no internal fixups. */
-#define E32SYSDLL        KU32_C(0x00000008)
+#define E32SYSDLL        UINT32_C(0x00000008)
 /** Global (set) or per instance (cleared) library initialization. */
-#define E32LIBINIT       KU32_C(0x00000004)
+#define E32LIBINIT       UINT32_C(0x00000004)
 /** Global (set) or per instance (cleared) library termination. */
-#define E32LIBTERM       KU32_C(0x40000000)
+#define E32LIBTERM       UINT32_C(0x40000000)
 /** Indicates when set in an executable that the process isn't SMP safe. */
-#define E32NOTMPSAFE     KU32_C(0x00080000)
+#define E32NOTMPSAFE     UINT32_C(0x00080000)
 /** @} */
 
 /** @name Relocations (aka Fixups).
  * @{ */
 typedef union _offset
 {
-    KU16                offset16;
-    KU32                offset32;
+    uint16_t            offset16;
+    uint32_t            offset32;
 } offset;
 
 /** A relocation.
@@ -209,10 +210,10 @@ typedef union _offset
  */
 struct r32_rlc
 {
-    KU8                 nr_stype;
-    KU8                 nr_flags;
-    KI16                r32_soff;
-    KU16                r32_objmod;
+    uint8_t             nr_stype;
+    uint8_t             nr_flags;
+    int16_t             r32_soff;
+    uint16_t            r32_objmod;
 
     union targetid
     {
@@ -220,16 +221,16 @@ struct r32_rlc
         union extfixup
         {
             offset      proc;
-            KU32        ord;
+            uint32_t    ord;
         } extref;
         struct addfixup
         {
-            KU16        entry;
+            uint16_t    entry;
             offset      addval;
         } addfix;
     } r32_target;
-    KU16                r32_srccount;
-    KU16                r32_chain;
+    uint16_t            r32_srccount;
+    uint16_t            r32_chain;
 };
 
 /** @name Some attempt at size constanstants.
@@ -284,88 +285,88 @@ struct r32_rlc
 struct o32_obj
 {
     /** The size of the object. */
-    KU32                o32_size;
+    uint32_t            o32_size;
     /** The base address of the object. */
-    KU32                o32_base;
+    uint32_t            o32_base;
     /** Object flags. */
-    KU32                o32_flags;
+    uint32_t            o32_flags;
     /** Page map index. */
-    KU32                o32_pagemap;
+    uint32_t            o32_pagemap;
     /** Page map size. (doesn't need to be o32_size >> page shift). */
-    KU32                o32_mapsize;
+    uint32_t            o32_mapsize;
     /** Reserved */
-    KU32                o32_reserved;
+    uint32_t            o32_reserved;
 };
 
 /** @name o32_flags
  * @{ */
 /** Read access. */
-#define OBJREAD         KU32_C(0x00000001)
+#define OBJREAD         UINT32_C(0x00000001)
 /** Write access. */
-#define OBJWRITE        KU32_C(0x00000002)
+#define OBJWRITE        UINT32_C(0x00000002)
 /** Execute access. */
-#define OBJEXEC         KU32_C(0x00000004)
+#define OBJEXEC         UINT32_C(0x00000004)
 /** Resource object. */
-#define OBJRSRC         KU32_C(0x00000008)
+#define OBJRSRC         UINT32_C(0x00000008)
 /** The object is discarable (i.e. don't swap, just load in pages from the executable).
  * This overlaps a bit with object type. */
-#define OBJDISCARD      KU32_C(0x00000010)
+#define OBJDISCARD      UINT32_C(0x00000010)
 /** The object is shared. */
-#define OBJSHARED       KU32_C(0x00000020)
+#define OBJSHARED       UINT32_C(0x00000020)
 /** The object has preload pages. */
-#define OBJPRELOAD      KU32_C(0x00000040)
+#define OBJPRELOAD      UINT32_C(0x00000040)
 /** The object has invalid pages. */
-#define OBJINVALID      KU32_C(0x00000080)
+#define OBJINVALID      UINT32_C(0x00000080)
 /** Non-permanent, link386 bug. */
-#define LNKNONPERM      KU32_C(0x00000600)
+#define LNKNONPERM      UINT32_C(0x00000600)
 /** Non-permanent, correct 'value'. */
-#define OBJNONPERM      KU32_C(0x00000000)
+#define OBJNONPERM      UINT32_C(0x00000000)
 /** Obj Type: The object is permanent and swappable. */
-#define OBJPERM         KU32_C(0x00000100)
+#define OBJPERM         UINT32_C(0x00000100)
 /** Obj Type: The object is permanent and resident (i.e. not swappable). */
-#define OBJRESIDENT     KU32_C(0x00000200)
+#define OBJRESIDENT     UINT32_C(0x00000200)
 /** Obj Type: The object is resident and contigious. */
-#define OBJCONTIG       KU32_C(0x00000300)
+#define OBJCONTIG       UINT32_C(0x00000300)
 /** Obj Type: The object is permanent and long locable. */
-#define OBJDYNAMIC      KU32_C(0x00000400)
+#define OBJDYNAMIC      UINT32_C(0x00000400)
 /** Object type mask. */
-#define OBJTYPEMASK     KU32_C(0x00000700)
+#define OBJTYPEMASK     UINT32_C(0x00000700)
 /** x86: The object require an 16:16 alias. */
-#define OBJALIAS16      KU32_C(0x00001000)
+#define OBJALIAS16      UINT32_C(0x00001000)
 /** x86: Big/Default selector setting, i.e. toggle 32-bit or 16-bit. */
-#define OBJBIGDEF       KU32_C(0x00002000)
+#define OBJBIGDEF       UINT32_C(0x00002000)
 /** x86: conforming selector setting (weird stuff). */
-#define OBJCONFORM      KU32_C(0x00004000)
+#define OBJCONFORM      UINT32_C(0x00004000)
 /** x86: IOPL. */
-#define OBJIOPL         KU32_C(0x00008000)
+#define OBJIOPL         UINT32_C(0x00008000)
 /** @} */
 
 /** A Object Page Map Entry. */
 struct o32_map
 {
     /** The file offset of the page. */
-    KU32                o32_pagedataoffset;
+    uint32_t            o32_pagedataoffset;
     /** The number of bytes of raw page data. */
-    KU16                o32_pagesize;
+    uint16_t            o32_pagesize;
     /** Per page flags describing how the page is encoded in the file. */
-    KU16                o32_pageflags;
+    uint16_t            o32_pageflags;
 };
 
 /** @name o32 o32_pageflags
  * @{
  */
 /** Raw page (uncompressed) in the file. */
-#define VALID           KU16_C(0x0000)
+#define VALID           UINT16_C(0x0000)
 /** RLE encoded page in file. */
-#define ITERDATA        KU16_C(0x0001)
+#define ITERDATA        UINT16_C(0x0001)
 /** Invalid page, nothing in the file. */
-#define INVALID         KU16_C(0x0002)
+#define INVALID         UINT16_C(0x0002)
 /** Zero page, nothing in file. */
-#define ZEROED          KU16_C(0x0003)
+#define ZEROED          UINT16_C(0x0003)
 /** range of pages (what is this?) */
-#define RANGE           KU16_C(0x0004)
+#define RANGE           UINT16_C(0x0004)
 /** Compressed page in file. */
-#define ITERDATA2       KU16_C(0x0005)
+#define ITERDATA2       UINT16_C(0x0005)
 /** @} */
 
 
@@ -373,11 +374,11 @@ struct o32_map
 struct LX_Iter
 {
     /** Number of iterations. */
-    KU16                LX_nIter;
+    uint16_t            LX_nIter;
     /** The number of bytes that's being iterated. */
-    KU16                LX_nBytes;
+    uint16_t            LX_nBytes;
     /** The bytes. */
-    KU8                 LX_Iterdata;
+    uint8_t             LX_Iterdata;
 };
 
 /** @} */
@@ -387,15 +388,15 @@ struct LX_Iter
 struct rsrc32
 {
     /** Resource Type. */
-    KU16                type;
+    uint16_t            type;
     /** Resource ID. */
-    KU16                name;
+    uint16_t            name;
     /** Resource size in bytes. */
-    KU32                cb;
+    uint32_t            cb;
     /** The index of the object containing the resource. */
-    KU16                obj;
+    uint16_t            obj;
     /** Offset of the resource that within the object. */
-    KU32                offset;
+    uint32_t            offset;
 };
 
 
@@ -407,11 +408,11 @@ struct rsrc32
 struct b32_bundle
 {
     /** The number of entries. */
-    KU8                 b32_cnt;
+    uint8_t             b32_cnt;
     /** The type of bundle. */
-    KU8                 b32_type;
+    uint8_t             b32_type;
     /** The index of the object containing these entry points. */
-    KU16                b32_obj;
+    uint16_t            b32_obj;
 };
 
 /** @name b32_type
@@ -435,26 +436,26 @@ struct b32_bundle
 struct e32_entry
 {
     /** Entry point flags */
-    KU8                 e32_flags;      /* Entry point flags */
+    uint8_t             e32_flags;      /* Entry point flags */
     union entrykind
     {
         /** ENTRY16 or ENTRY32. */
         offset          e32_offset;
         /** GATE16 */
-        struct callgate
+        struct scallgate
         {
             /** Offset into segment. */
-            KU16        offset;
+            uint16_t    offset;
             /** The callgate selector */
-            KU16        callgate;
+            uint16_t    callgate;
         } e32_callgate;
         /** ENTRYFWD */
         struct fwd
         {
             /** Module ordinal number (i.e. into the import module table). */
-            KU16        modord;
+            uint16_t    modord;
             /** Procedure name or ordinal number. */
-            KU32        value;
+            uint32_t    value;
         } e32_fwd;
     } e32_variant;
 };
@@ -482,4 +483,5 @@ struct e32_entry
 #pragma pack()
 
 #endif
+
 

@@ -264,12 +264,14 @@ RuntimeR3_DEFS          = \
 	IN_RT_R3 \
 	LDR_WITH_NATIVE \
 	LDR_WITH_ELF32 \
+	LDR_WITH_LX \
 	LDR_WITH_PE \
 	RT_WITH_VBOX \
 	RT_NO_GIP \
 	RT_WITHOUT_NOCRT_WRAPPERS \
 	IPRT_WITH_OPENSSL \
 	NOFILEID
+#	+= LDR_WITH_MACHO
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3_DEFS         += \
  	IN_SUP_R3
@@ -455,6 +457,8 @@ RuntimeR3_SOURCES       = \
 	common/ldr/ldrEx.cpp \
 	common/ldr/ldrFile.cpp \
 	common/ldr/ldrVfsFile.cpp \
+	common/ldr/ldrLX.cpp \
+	common/ldr/ldrMachO.cpp \
 	common/ldr/ldrMemory.cpp \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
@@ -1624,6 +1628,8 @@ RuntimeBldProg_SOURCES         = \
 	common/ldr/ldrEx.cpp \
 	common/ldr/ldrFile.cpp \
 	common/ldr/ldrkStuff.cpp \
+	common/ldr/ldrLX.cpp \
+	common/ldr/ldrMachO.cpp \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
 	common/ldr/ldrVfsFile.cpp \
