@@ -2251,7 +2251,7 @@ static DECLCALLBACK(int) rtldrLX_RelocateBits(PRTLDRMODINTERNAL pMod, void *pvBi
              */
             while (pb < pbFixupRecEnd)
             {
-                union _rel
+                union
                 {
 
                     const uint8_t          *pb;
