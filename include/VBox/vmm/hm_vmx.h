@@ -1456,7 +1456,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
  * @{
  */
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
-#define VMX_MISC_EXIT_STORE_EFER_LMA                            RT_BIT(5)
+#define VMX_MISC_EXIT_SAVE_EFER_LMA                             RT_BIT(5)
+/** Whether Intel PT is supported in VMX operation. */
+#define VMX_MISC_INTEL_PT                                       RT_BIT(14)
 /** Whether VMWRITE to any valid VMCS field incl. read-only fields, otherwise
  * VMWRITE cannot modify read-only VM-exit information fields. */
 #define VMX_MISC_VMWRITE_ALL                                    RT_BIT(29)
@@ -1471,8 +1473,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_SHIFT                     0
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_MASK                      UINT64_C(0x000000000000001f)
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
-#define VMX_BF_MISC_EXIT_STORE_EFER_LMA_SHIFT                   5
-#define VMX_BF_MISC_EXIT_STORE_EFER_LMA_MASK                    UINT64_C(0x0000000000000020)
+#define VMX_BF_MISC_EXIT_SAVE_EFER_LMA_SHIFT                    5
+#define VMX_BF_MISC_EXIT_SAVE_EFER_LMA_MASK                     UINT64_C(0x0000000000000020)
 /** Activity states supported by the implementation. */
 #define VMX_BF_MISC_ACTIVITY_STATES_SHIFT                       6
 #define VMX_BF_MISC_ACTIVITY_STATES_MASK                        UINT64_C(0x00000000000001c0)
@@ -1480,8 +1482,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_MISC_RSVD_9_13_SHIFT                             9
 #define VMX_BF_MISC_RSVD_9_13_MASK                              UINT64_C(0x0000000000003e00)
 /** Whether Intel PT (Processor Trace) can be used in VMX operation.  */
-#define VMX_BF_MISC_PT_SHIFT                                    14
-#define VMX_BF_MISC_PT_MASK                                     UINT64_C(0x0000000000004000)
+#define VMX_BF_MISC_INTEL_PT_SHIFT                              14
+#define VMX_BF_MISC_INTEL_PT_MASK                               UINT64_C(0x0000000000004000)
 /** Whether RDMSR can be used to read IA32_SMBASE MSR in SMM. */
 #define VMX_BF_MISC_SMM_READ_SMBASE_MSR_SHIFT                   15
 #define VMX_BF_MISC_SMM_READ_SMBASE_MSR_MASK                    UINT64_C(0x0000000000008000)
@@ -1510,7 +1512,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_MISC_MSEG_ID_SHIFT                               32
 #define VMX_BF_MISC_MSEG_ID_MASK                                UINT64_C(0xffffffff00000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_MISC_, UINT64_C(0), UINT64_MAX,
-                            (PREEMPT_TIMER_TSC, EXIT_STORE_EFER_LMA, ACTIVITY_STATES, RSVD_9_13, PT, SMM_READ_SMBASE_MSR,
+                            (PREEMPT_TIMER_TSC, EXIT_SAVE_EFER_LMA, ACTIVITY_STATES, RSVD_9_13, INTEL_PT, SMM_READ_SMBASE_MSR,
                              CR3_TARGET, MAX_MSRS, VMXOFF_BLOCK_SMI, VMWRITE_ALL, ENTRY_INJECT_SOFT_INT, RSVD_31, MSEG_ID));
 /** @} */
 

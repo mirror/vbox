@@ -1267,8 +1267,10 @@ typedef struct CPUMFEATURES
 
     /** @name VMX Miscellaneous data.
      * @{ */
-    /** VMX: Supports storing EFER.LMA on VM-exits into IA32e-mode guest field. */
-    uint32_t        fVmxExitStoreEferLma : 1;
+    /** VMX: Supports storing EFER.LMA into IA32e-mode guest field on VM-exit. */
+    uint32_t        fVmxExitSaveEferLma : 1;
+    /** VMX: Whether Intel PT (Processor Trace) is supported in VMX mode or not. */
+    uint32_t        fVmxIntelPt : 1;
     /** VMX: Supports VMWRITE to any valid VMCS field incl. read-only fields, otherwise
      *  VMWRITE cannot modify read-only VM-exit information fields. */
     uint32_t        fVmxVmwriteAll : 1;
@@ -1278,7 +1280,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding1 : 2;
+    uint32_t        fVmxPadding1 : 1;
     uint32_t        fVmxPadding2;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB

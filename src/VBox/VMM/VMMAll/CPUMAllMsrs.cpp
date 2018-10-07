@@ -1520,10 +1520,10 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxMisc(PVMCPU pVCpu)
         AssertMsgRC(rc, ("HMVmxGetHostMsr failed. rc=%Rrc\n", rc)); RT_NOREF_PV(rc);
         uint8_t const cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_AUTOMSR_COUNT_MAX);
         uint8_t const fActivityState = RT_BF_GET(uHostMsr, VMX_BF_MISC_ACTIVITY_STATES) & VMX_V_GUEST_ACTIVITY_STATE_MASK;
-        uVmxMsr = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,       VMX_V_PREEMPT_TIMER_SHIFT            )
-                | RT_BF_MAKE(VMX_BF_MISC_EXIT_STORE_EFER_LMA,    pGuestFeatures->fVmxExitStoreEferLma  )
+        uVmxMsr = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,      VMX_V_PREEMPT_TIMER_SHIFT             )
+                | RT_BF_MAKE(VMX_BF_MISC_EXIT_SAVE_EFER_LMA,     pGuestFeatures->fVmxExitSaveEferLma   )
                 | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        fActivityState                        )
-                | RT_BF_MAKE(VMX_BF_MISC_PT,                     0                                     )
+                | RT_BF_MAKE(VMX_BF_MISC_INTEL_PT,               pGuestFeatures->fVmxIntelPt           )
                 | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                     )
                 | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT                )
                 | RT_BF_MAKE(VMX_BF_MISC_MAX_MSRS,               cMaxMsrs                              )

@@ -1448,6 +1448,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Allowed settings for the VM-function controls. */
 #define MSR_IA32_VMX_VMFUNC                 0x491
 
+/** Intel PT - Enable and control for trace packet generation. */
+#define MSR_IA32_RTIT_CTL                   0x570
 
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600

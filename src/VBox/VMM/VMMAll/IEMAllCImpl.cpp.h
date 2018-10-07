@@ -6481,9 +6481,11 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
      * Check nested-guest intercepts.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_RDMSR, pVCpu->cpum.GstCtx.ecx))
-        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDMSR, cbInstr);
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_RDMSR, pVCpu->cpum.GstCtx.ecx))
+            IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDMSR, cbInstr);
+    }
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -6553,13 +6555,63 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
+    RTUINT64U uValue;
+    uValue.s.Lo = pVCpu->cpum.GstCtx.eax;
+    uValue.s.Hi = pVCpu->cpum.GstCtx.edx;
+
+    /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
+
     /*
      * Check nested-guest intercepts.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_WRMSR, pVCpu->cpum.GstCtx.ecx))
-        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WRMSR, cbInstr);
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_WRMSR, pVCpu->cpum.GstCtx.ecx))
+            IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WRMSR, cbInstr);
+
+        /* Check x2APIC MSRs first. */
+        if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
+        {
+            switch (pVCpu->cpum.GstCtx.ecx)
+            {
+                case MSR_IA32_X2APIC_TPR:
+                {
+                    if (   !uValue.s.Hi
+                        && !(uValue.s.Lo & UINT32_C(0xffffff00)))
+                    {
+                        uint32_t const uVTpr = (uValue.s.Lo & 0xf) << 4;
+                        iemVmxVirtApicWriteRaw32(pVCpu, uVTpr, XAPIC_OFF_TPR);
+                        VBOXSTRICTRC rcStrict = iemVmxVmexitTprVirtualization(pVCpu, cbInstr);
+                        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                            return rcStrict;
+                        return VINF_SUCCESS;
+                    }
+                    Log(("IEM: Invalid TPR MSR write -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
+                    return iemRaiseGeneralProtectionFault0(pVCpu);
+                }
+
+                case MSR_IA32_X2APIC_EOI:
+                case MSR_IA32_X2APIC_SELF_IPI:
+                {
+                    /** @todo NSTVMX: EOI and Self-IPI virtualization. */
+                    break;
+                }
+            }
+        }
+        else if (pVCpu->cpum.GstCtx.ecx == MSR_IA32_BIOS_UPDT_TRIG)
+        {
+            /** @todo NSTVMX: We must not allow any microcode updates in VMX non-root mode.
+             *        Since we don't implement this MSR anyway it's currently not a problem.
+             *        If we do, we should probably move this check to the MSR handler.  */
+        }
+        else if (pVCpu->cpum.GstCtx.ecx == MSR_IA32_RTIT_CTL)
+        {
+            /** @todo NSTVMX: We don't support Intel PT yet. When we do, this MSR must #GP
+             *        when IntelPT is not supported in VMX. */
+        }
+    }
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -6579,13 +6631,6 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     /*
      * Do the job.
      */
-    RTUINT64U uValue;
-    uValue.s.Lo = pVCpu->cpum.GstCtx.eax;
-    uValue.s.Hi = pVCpu->cpum.GstCtx.edx;
-
-    /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
-    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
-
     VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, uValue.u);
     if (rcStrict == VINF_SUCCESS)
     {

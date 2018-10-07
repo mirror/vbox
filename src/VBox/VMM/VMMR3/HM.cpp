@@ -1597,10 +1597,10 @@ static void hmR3VmxReportMiscMsr(PVM pVM, uint64_t fMisc)
         LogRel(("HM:   PREEMPT_TIMER_TSC                 = %#x - erratum detected, using %#x instead\n", cPreemptTimerShift,
                 pVM->hm.s.vmx.cPreemptTimerShift));
     }
-    LogRel(("HM:   EXIT_STORE_EFER_LMA               = %RTbool\n",    RT_BF_GET(fMisc, VMX_BF_MISC_EXIT_STORE_EFER_LMA)));
+    LogRel(("HM:   EXIT_SAVE_EFER_LMA                = %RTbool\n",    RT_BF_GET(fMisc, VMX_BF_MISC_EXIT_SAVE_EFER_LMA)));
     LogRel(("HM:   ACTIVITY_STATES                   = %#x%s\n",      RT_BF_GET(fMisc, VMX_BF_MISC_ACTIVITY_STATES),
                                                                       hmR3VmxGetActivityStateAllDesc(fMisc)));
-    LogRel(("HM:   PT                                = %RTbool\n",    RT_BF_GET(fMisc, VMX_BF_MISC_PT)));
+    LogRel(("HM:   INTEL_PT                          = %RTbool\n",    RT_BF_GET(fMisc, VMX_BF_MISC_INTEL_PT)));
     LogRel(("HM:   SMM_READ_SMBASE_MSR               = %RTbool\n",    RT_BF_GET(fMisc, VMX_BF_MISC_SMM_READ_SMBASE_MSR)));
     LogRel(("HM:   CR3_TARGET                        = %#x\n",        RT_BF_GET(fMisc, VMX_BF_MISC_CR3_TARGET)));
     LogRel(("HM:   MAX_MSR                           = %#x ( %u )\n", RT_BF_GET(fMisc, VMX_BF_MISC_MAX_MSRS),

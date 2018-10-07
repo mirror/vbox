@@ -1183,11 +1183,9 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("ExitSaveEferMsr - Save IA32_EFER on VM-exit            ", fVmxExitSaveEferMsr);
         VMXFEATDUMP("ExitLoadEferMsr - Load IA32_EFER on VM-exit            ", fVmxExitLoadEferMsr);
         VMXFEATDUMP("SavePreemptTimer - Save VMX-preemption timer           ", fVmxSavePreemptTimer);
-        VMXFEATDUMP("ExitStoreEferLma - Store EFER.LMA on VM-exit           ", fVmxExitStoreEferLma);
-        VMXFEATDUMP("VmwriteAll - VMWRITE to any VMCS field                 ", fVmxVmwriteAll);
-        VMXFEATDUMP("EntryInjectSoftInt - Inject softint. with 0-len instr. ", fVmxEntryInjectSoftInt);
         /* Miscellaneous data. */
-        VMXFEATDUMP("ExitStoreEferLma - Inject softint. with 0-len instr.   ", fVmxExitStoreEferLma);
+        VMXFEATDUMP("ExitSaveEferLma - Save EFER.LMA on VM-exit             ", fVmxExitSaveEferLma);
+        VMXFEATDUMP("IntelPt - Intel PT (Processor Trace) in VMX operation  ", fVmxIntelPt);
         VMXFEATDUMP("VmwriteAll - Inject softint. with 0-len instr.         ", fVmxVmwriteAll);
         VMXFEATDUMP("EntryInjectSoftInt - Inject softint. with 0-len instr. ", fVmxEntryInjectSoftInt);
 #undef VMXFEATDUMP
@@ -1296,7 +1294,8 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
 
         /* Miscellaneous data. */
         uint32_t const fMiscData = VmxMsrs.u64Misc;
-        pHostFeat->fVmxExitStoreEferLma      = RT_BOOL(fMiscData & VMX_MISC_EXIT_STORE_EFER_LMA);
+        pHostFeat->fVmxExitSaveEferLma       = RT_BOOL(fMiscData & VMX_MISC_EXIT_SAVE_EFER_LMA);
+        pHostFeat->fVmxIntelPt               = RT_BOOL(fMiscData & VMX_MISC_INTEL_PT);
         pHostFeat->fVmxVmwriteAll            = RT_BOOL(fMiscData & VMX_MISC_VMWRITE_ALL);
         pHostFeat->fVmxEntryInjectSoftInt    = RT_BOOL(fMiscData & VMX_MISC_ENTRY_INJECT_SOFT_INT);
     }
@@ -1368,7 +1367,8 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     EmuFeat.fVmxExitSaveEferMsr       = 1;
     EmuFeat.fVmxExitLoadEferMsr       = 1;
     EmuFeat.fVmxSavePreemptTimer      = 0;
-    EmuFeat.fVmxExitStoreEferLma      = 1;
+    EmuFeat.fVmxExitSaveEferLma       = 1;
+    EmuFeat.fVmxIntelPt               = 0;
     EmuFeat.fVmxVmwriteAll            = 0;
     EmuFeat.fVmxEntryInjectSoftInt    = 0;
 
@@ -1442,7 +1442,8 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
     pGuestFeat->fVmxExitSaveEferMsr       = (pBaseFeat->fVmxExitSaveEferMsr       & EmuFeat.fVmxExitSaveEferMsr      );
     pGuestFeat->fVmxExitLoadEferMsr       = (pBaseFeat->fVmxExitLoadEferMsr       & EmuFeat.fVmxExitLoadEferMsr      );
     pGuestFeat->fVmxSavePreemptTimer      = (pBaseFeat->fVmxSavePreemptTimer      & EmuFeat.fVmxSavePreemptTimer     );
-    pGuestFeat->fVmxExitStoreEferLma      = (pBaseFeat->fVmxExitStoreEferLma      & EmuFeat.fVmxExitStoreEferLma     );
+    pGuestFeat->fVmxExitSaveEferLma       = (pBaseFeat->fVmxExitSaveEferLma       & EmuFeat.fVmxExitSaveEferLma      );
+    pGuestFeat->fVmxIntelPt               = (pBaseFeat->fVmxIntelPt               & EmuFeat.fVmxIntelPt              );
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
 
