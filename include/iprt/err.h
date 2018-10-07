@@ -2339,9 +2339,9 @@ RT_C_DECLS_END
 /** Bad ASN.1 object length encoding. */
 #define VERR_ASN1_CURSOR_BAD_LENGTH_ENCODING        (-22831)
 /** Indefinite length form is against the rules. */
-#define VERR_ASN1_CURSOR_ILLEGAL_IDEFINITE_LENGTH   (-22832)
-/** Indefinite length form is not implemented. */
-#define VERR_ASN1_CURSOR_IDEFINITE_LENGTH_NOT_SUP   (-22833)
+#define VERR_ASN1_CURSOR_ILLEGAL_INDEFINITE_LENGTH  (-22832)
+/** Malformed indefinite length encoding. */
+#define VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH      (-22833)
 /** ASN.1 object length goes beyond the end of the byte stream being decoded. */
 #define VERR_ASN1_CURSOR_BAD_LENGTH                 (-22834)
 /** Not more data in ASN.1 byte stream. */
@@ -2470,6 +2470,8 @@ RT_C_DECLS_END
 #define VERR_LDRVI_PAGE_HASH_MISMATCH               (-22928)
 /** Image hash mismatch. */
 #define VERR_LDRVI_IMAGE_HASH_MISMATCH              (-22929)
+/** Malformed code signing structure. */
+#define VERR_LDRVI_BAD_CERT_FORMAT                  (-22930)
 
 /** Cannot resolve symbol because it's a forwarder. */
 #define VERR_LDR_FORWARDER                          (-22950)

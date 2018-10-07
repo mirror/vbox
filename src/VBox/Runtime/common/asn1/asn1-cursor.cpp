@@ -313,11 +313,29 @@ RTDECL(int) RTAsn1CursorReadHdr(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core, co
             }
             /* Indefinite form. */
             else if (pCursor->fFlags & RTASN1CURSOR_FLAGS_DER)
-                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_ILLEGAL_IDEFINITE_LENGTH,
+                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_ILLEGAL_INDEFINITE_LENGTH,
                                            "%s: Indefinite length form not allowed in DER mode (uTag=%#x).", pszErrorTag, uTag);
+            else if (pCursor->cbLeft < 2)
+                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
+                                           "%s: Too little data left for indefinite BER/CER encoding (uTag=%#x)", pszErrorTag, uTag);
             else
-                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_IDEFINITE_LENGTH_NOT_SUP,
-                                           "%s: Indefinite BER/CER length not supported (uTag=%#x)", pszErrorTag, uTag);
+            {
+                /* Search forward till we find the two terminating zero bytes. */
+                cb = 0;
+                for (;;)
+                {
+                    uint8_t const *pb = (uint8_t const *)memchr(&pCursor->pbCur[cb], 0x00, pCursor->cbLeft - cb - 1);
+                    if (pb && pb[1] == 0x00)
+                    {
+                        cb = &pb[2] - pCursor->pbCur;
+                        break;
+                    }
+                    if (!pb)
+                        return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
+                                                   "%s: Could not find end of indefinite BER/CER record (uTag=%#x)", pszErrorTag, uTag);
+                    cb = &pb[1] - pCursor->pbCur;
+                }
+            }
         }
 
         /* Check if the length makes sense. */

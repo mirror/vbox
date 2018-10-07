@@ -4,6 +4,19 @@
  */
 
 /*
+ * Copyright (C) 2018 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * --------------------------------------------------------------------
+ *
+ * This code is based on:
+ *
  * Copyright (c) 2006-2013 Knut St. Osmundsen <bird-kStuff-spamix@anduin.net>
  *
  * Permission is hereby granted, free of charge, to any person
@@ -44,6 +57,7 @@
 #include <iprt/string.h>
 
 #include <iprt/formats/mach-o.h>
+#include <iprt/crypto/applecodesign.h>
 #include "internal/ldr.h"
 
 
@@ -200,6 +214,17 @@ typedef struct RTLDRMODMACHO
     /** The image UUID, all zeros if not found. */
     uint8_t                 abImageUuid[16];
 
+    /** The code signature offset.   */
+    uint32_t                offCodeSignature;
+    /** The code signature size (0 if not signed). */
+    uint32_t                cbCodeSignature;
+    /** Pointer to the code signature blob if loaded. */
+    union
+    {
+        uint8_t                *pb;
+        PCRTCRAPLCSSUPERBLOB    pSuper;
+    }                       PtrCodeSignature;
+
     /** The RVA of the Global Offset Table. */
     RTLDRADDR               GotRVA;
     /** The RVA of the indirect GOT jump stubs.  */
@@ -227,7 +252,7 @@ static DECLCALLBACK(int) rtldrMachO_RelocateBits(PRTLDRMODINTERNAL pMod, void *p
                                                  RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
 
 
-static int  kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr, RTFOFF   offImage,
+static int  kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_header_32_t *pHdr, PRTLDRREADER pRdr, RTFOFF offImage,
                                              uint32_t fOpenFlags, uint32_t *pcSegments, uint32_t *pcSections, uint32_t *pcbStringPool,
                                              bool *pfCanLoad, PRTLDRADDR pLinkAddress, uint8_t *puEffFileType, PRTERRINFO pErrInfo);
 static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPool, uint32_t cbStringPool);
@@ -466,6 +491,9 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
     pThis->cchStrings = 0;
     pThis->pchStrings = NULL;
     memset(pThis->abImageUuid, 0, sizeof(pThis->abImageUuid));
+    pThis->offCodeSignature = 0;
+    pThis->cbCodeSignature = 0;
+    pThis->PtrCodeSignature.pb = NULL;
     pThis->GotRVA = NIL_RTLDRADDR;
     pThis->JmpStubsRVA = NIL_RTLDRADDR;
     pThis->cSections = cSections;
@@ -1073,12 +1101,13 @@ static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPo
 {
     union
     {
-        const uint8_t              *pb;
-        const load_command_t       *pLoadCmd;
-        const segment_command_32_t *pSeg32;
-        const segment_command_64_t *pSeg64;
-        const symtab_command_t     *pSymTab;
-        const uuid_command_t       *pUuid;
+        const uint8_t                 *pb;
+        const load_command_t          *pLoadCmd;
+        const segment_command_32_t    *pSeg32;
+        const segment_command_64_t    *pSeg64;
+        const symtab_command_t        *pSymTab;
+        const uuid_command_t          *pUuid;
+        const linkedit_data_command_t *pData;
     } u;
     uint32_t cLeft = pThis->Hdr.ncmds;
     uint32_t cbLeft = pThis->Hdr.sizeofcmds;
@@ -1274,6 +1303,11 @@ static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPo
                 memcpy(pThis->abImageUuid, u.pUuid->uuid, sizeof(pThis->abImageUuid));
                 break;
 
+            case LC_CODE_SIGNATURE:
+                pThis->offCodeSignature = u.pData->dataoff;
+                pThis->cbCodeSignature  = u.pData->datasize;
+                break;
+
             default:
                 break;
         } /* command switch */
@@ -1442,6 +1476,8 @@ static DECLCALLBACK(int) rtldrMachO_Close(PRTLDRMODINTERNAL pMod)
     pThis->pchStrings = NULL;
     RTMemFree(pThis->pvaSymbols);
     pThis->pvaSymbols = NULL;
+    RTMemFree(pThis->PtrCodeSignature.pb);
+    pThis->PtrCodeSignature.pb = NULL;
 
     return VINF_SUCCESS;
 }
@@ -3756,12 +3792,120 @@ static DECLCALLBACK(int) rtldrMachO_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t
 }
 
 
+/**
+ * Loads the code signing blob if necessary (RTLDRMODMACHO::PtrCodeSignature).
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The mach-o instance.
+ */
+static int rtldrMachO_LoadSignatureBlob(PRTLDRMODMACHO pThis)
+{
+    Assert(pThis->cbCodeSignature > 0);
+    if (pThis->PtrCodeSignature.pb != NULL)
+        return VINF_SUCCESS;
+
+    if (   pThis->cbCodeSignature > sizeof(RTCRAPLCSHDR)
+        && pThis->cbCodeSignature <= _1M)
+    {
+        /* Allocate and read. */
+        void *pv = RTMemAllocZ(RT_ALIGN_Z(pThis->cbCodeSignature, 16));
+        AssertReturn(pv, VERR_NO_MEMORY);
+        int rc = pThis->Core.pReader->pfnRead(pThis->Core.pReader, pv, pThis->cbCodeSignature, pThis->offCodeSignature);
+        if (RT_SUCCESS(rc))
+        {
+            /* Check blob signature. */
+            PCRTCRAPLCSSUPERBLOB pSuper = (PCRTCRAPLCSSUPERBLOB)pv;
+            if (pSuper->Hdr.uMagic == RTCRAPLCS_MAGIC_EMBEDDED_SIGNATURE)
+            {
+                uint32_t cbHdr  = RT_BE2H_U32(pSuper->Hdr.cb);
+                uint32_t cSlots = RT_BE2H_U32(pSuper->cSlots);
+                if (   cbHdr  <= pThis->cbCodeSignature
+                    && cbHdr  >  RT_UOFFSETOF(RTCRAPLCSSUPERBLOB, aSlots)
+                    && cSlots >  0
+                    && cSlots <  128
+                    && RT_UOFFSETOF_DYN(RTCRAPLCSSUPERBLOB, aSlots[cSlots]) <= cbHdr)
+                {
+                    pThis->PtrCodeSignature.pSuper = pSuper;
+                    return VINF_SUCCESS;
+                }
+                rc = VERR_LDRVI_BAD_CERT_HDR_LENGTH;
+            }
+            else
+                rc = VERR_LDRVI_BAD_CERT_HDR_TYPE;
+        }
+        RTMemFree(pv);
+        return rc;
+    }
+    return VERR_LDRVI_INVALID_SECURITY_DIR_ENTRY;
+}
+
+
+/**
+ * Handles a RTLDRPROP_PKCS7_SIGNED_DATA query.
+ */
+static int rtldrMachO_QueryPkcs7SignedData(PRTLDRMODMACHO pThis, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    int rc = rtldrMachO_LoadSignatureBlob(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Locate the signature slot.
+         */
+        uint32_t            iSlot = RT_BE2H_U32(pThis->PtrCodeSignature.pSuper->cSlots);
+        PCRTCRAPLCSBLOBSLOT pSlot = &pThis->PtrCodeSignature.pSuper->aSlots[iSlot];
+        while (iSlot-- > 0)
+        {
+            pSlot--;
+            if (pSlot->uType == RTCRAPLCS_SLOT_SIGNATURE)
+            {
+                /*
+                 * Validate the data offset.
+                 */
+                uint32_t offData = RT_BE2H_U32(pSlot->offData);
+                if (   offData < pThis->cbCodeSignature - sizeof(RTCRAPLCSHDR)
+                    || !(offData & 3) )
+                {
+                    /*
+                     * The data is prefixed by a header with magic set to blob wrapper.
+                     * Check that the size is within the bounds of the code signing blob.
+                     */
+                    PCRTCRAPLCSHDR pHdr = (PCRTCRAPLCSHDR)&pThis->PtrCodeSignature.pb[offData];
+                    if (pHdr->uMagic == RTCRAPLCS_MAGIC_BLOBWRAPPER)
+                    {
+                        uint32_t cbData = RT_BE2H_U32(pHdr->cb);
+                        uint32_t cbMax  = pThis->cbCodeSignature - offData ;
+                        if (   cbData <= cbMax
+                            && cbData > sizeof(RTCRAPLCSHDR))
+                        {
+                            /*
+                             * Copy out the requirest data.
+                             */
+                            *pcbRet = cbData;
+                            if (cbData <= cbBuf)
+                            {
+                                memcpy(pvBuf, pHdr + 1, cbData);
+                                return VINF_SUCCESS;
+                            }
+                            memcpy(pvBuf, pHdr + 1, cbBuf);
+                            return VERR_BUFFER_OVERFLOW;
+                        }
+                    }
+                }
+                return VERR_LDRVI_BAD_CERT_FORMAT;
+            }
+        }
+        rc = VERR_NOT_FOUND;
+    }
+    return rc;
+}
+
+
 /** @interface_method_impl{RTLDROPS,pfnQueryProp} */
 static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
                                               void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
-    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
-    int           rc;
+    PRTLDRMODMACHO  pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
+    int             rc    = VERR_NOT_FOUND;
     switch (enmProp)
     {
         case RTLDRPROP_UUID:
@@ -3770,18 +3914,35 @@ static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP 
             {
                 *pcbRet = sizeof(pThis->abImageUuid);
                 memcpy(pvBuf, pThis->abImageUuid, sizeof(pThis->abImageUuid));
-                rc = VINF_SUCCESS;
+                return VINF_SUCCESS;
             }
-            else
-                rc = VERR_NOT_FOUND;
             break;
+
+        case RTLDRPROP_FILE_OFF_HEADER:
+            Assert(cbBuf == sizeof(uint32_t) || cbBuf == sizeof(uint64_t));
+            if (cbBuf == sizeof(uint32_t))
+                *(uint32_t *)pvBuf = pThis->offImage;
+            else
+                *(uint64_t *)pvBuf = pThis->offImage;
+            return VINF_SUCCESS;
+
+        case RTLDRPROP_IS_SIGNED:
+            Assert(cbBuf == sizeof(bool));
+            Assert(*pcbRet == cbBuf);
+            *(bool *)pvBuf = pThis->cbCodeSignature > 0;
+            return VINF_SUCCESS;
+
+        case RTLDRPROP_PKCS7_SIGNED_DATA:
+            if (pThis->cbCodeSignature > 0)
+                return rtldrMachO_QueryPkcs7SignedData(pThis, pvBuf, cbBuf, pcbRet);
+            break;
+
 
 #if 0 /** @todo return LC_ID_DYLIB */
         case RTLDRPROP_INTERNAL_NAME:
 #endif
 
         default:
-            rc = VERR_NOT_FOUND;
             break;
     }
     NOREF(cbBuf);
