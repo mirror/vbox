@@ -594,6 +594,8 @@ RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(RTASN1CORE, RTDECL, RTAsn1Core);
  * set, uData might be NULL or point to some shared static memory for
  * frequently used values. */
 #define RTASN1CORE_F_DECODED_CONTENT    RT_BIT_32(6)
+/** Indefinite length, still pending. */
+#define RTASN1CORE_F_INDEFINITE_LENGTH  RT_BIT_32(7)
 /** @} */
 
 
@@ -1646,8 +1648,10 @@ typedef struct RTASN1CURSOR
     uint8_t                     fFlags;
     /** The cursor depth. */
     uint8_t                     cDepth;
+    /** Number of pending indefinite length records. */
+    uint8_t                     cIndefinedRecs;
     /** Two bytes reserved for future tricks. */
-    uint8_t                     abReserved[2];
+    uint8_t                     abReserved[1];
     /** Pointer to the primary cursor. */
     struct RTASN1CURSORPRIMARY *pPrimary;
     /** Pointer to the parent cursor. */
@@ -1659,9 +1663,11 @@ typedef struct RTASN1CURSOR
 /** @name RTASN1CURSOR_FLAGS_XXX - Cursor flags.
  * @{ */
 /** Enforce DER rules. */
-#define RTASN1CURSOR_FLAGS_DER      RT_BIT(1)
+#define RTASN1CURSOR_FLAGS_DER                  RT_BIT(1)
 /** Enforce CER rules. */
-#define RTASN1CURSOR_FLAGS_CER      RT_BIT(2)
+#define RTASN1CURSOR_FLAGS_CER                  RT_BIT(2)
+/** Pending indefinite length encoding. */
+#define RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH    RT_BIT(3)
 /** @} */
 
 

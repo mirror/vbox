@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/asn1.h>
 
+#include <iprt/asm.h>
 #include <iprt/alloca.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
@@ -66,8 +67,8 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
     pPrimaryCursor->Cursor.cbLeft           = cb;
     pPrimaryCursor->Cursor.fFlags           = (uint8_t)fFlags; Assert(fFlags <= UINT8_MAX);
     pPrimaryCursor->Cursor.cDepth           = 0;
+    pPrimaryCursor->Cursor.cIndefinedRecs   = 0;
     pPrimaryCursor->Cursor.abReserved[0]    = 0;
-    pPrimaryCursor->Cursor.abReserved[1]    = 0;
     pPrimaryCursor->Cursor.pPrimary         = pPrimaryCursor;
     pPrimaryCursor->Cursor.pUp              = NULL;
     pPrimaryCursor->Cursor.pszErrorTag      = pszErrorTag;
@@ -84,11 +85,11 @@ RTDECL(int) RTAsn1CursorInitSub(PRTASN1CURSOR pParent, uint32_t cb, PRTASN1CURSO
 
     pChild->pbCur           = pParent->pbCur;
     pChild->cbLeft          = cb;
-    pChild->fFlags          = pParent->fFlags;
+    pChild->fFlags          = pParent->fFlags & ~RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
     pChild->cDepth          = pParent->cDepth + 1;
     AssertReturn(pChild->cDepth < RTASN1_MAX_NESTING, VERR_ASN1_TOO_DEEPLY_NESTED);
+    pChild->cIndefinedRecs  = 0;
     pChild->abReserved[0]   = 0;
-    pChild->abReserved[1]   = 0;
     pChild->pPrimary        = pParent->pPrimary;
     pChild->pUp             = pParent;
     pChild->pszErrorTag     = pszErrorTag;
@@ -109,11 +110,11 @@ RTDECL(int) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1
 
     pChild->pbCur           = pAsn1Core->uData.pu8;
     pChild->cbLeft          = pAsn1Core->cb;
-    pChild->fFlags          = pParent->fFlags;
+    pChild->fFlags          = pParent->fFlags & ~RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
     pChild->cDepth          = pParent->cDepth + 1;
     AssertReturn(pChild->cDepth < RTASN1_MAX_NESTING, VERR_ASN1_TOO_DEEPLY_NESTED);
+    pChild->cIndefinedRecs  = 0;
     pChild->abReserved[0]   = 0;
-    pChild->abReserved[1]   = 0;
     pChild->pPrimary        = pParent->pPrimary;
     pChild->pUp             = pParent;
     pChild->pszErrorTag     = pszErrorTag;
@@ -188,13 +189,24 @@ RTDECL(int) RTAsn1CursorSetInfo(PRTASN1CURSOR pCursor, int rc, const char *pszMs
 
 RTDECL(bool) RTAsn1CursorIsEnd(PRTASN1CURSOR pCursor)
 {
-    return pCursor->cbLeft == 0;
+    if (pCursor->cbLeft == 0)
+        return true;
+    if (!(pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH))
+        return false;
+    /* This isn't quite right. */
+    if (pCursor->cbLeft > pCursor->cIndefinedRecs * (uint32_t)2)
+        return false;
+    return ASMMemIsZero(pCursor->pbCur, pCursor->cbLeft);
 }
 
 
 RTDECL(int) RTAsn1CursorCheckEnd(PRTASN1CURSOR pCursor)
 {
     if (pCursor->cbLeft == 0)
+        return VINF_SUCCESS;
+    if (   (pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH)
+        && pCursor->cbLeft == pCursor->cIndefinedRecs * (uint32_t)2
+        && ASMMemIsZero(pCursor->pbCur, pCursor->cbLeft))
         return VINF_SUCCESS;
     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
                                "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
@@ -315,26 +327,27 @@ RTDECL(int) RTAsn1CursorReadHdr(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core, co
             else if (pCursor->fFlags & RTASN1CURSOR_FLAGS_DER)
                 return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_ILLEGAL_INDEFINITE_LENGTH,
                                            "%s: Indefinite length form not allowed in DER mode (uTag=%#x).", pszErrorTag, uTag);
+            else if (!(uTag & ASN1_TAGFLAG_CONSTRUCTED))
+                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
+                                           "%s: Indefinite BER/CER encoding is for non-constructed tag (uTag=%#x)", pszErrorTag, uTag);
+            else if (   uTag != (ASN1_TAG_SEQUENCE | ASN1_TAGFLAG_CONSTRUCTED)
+                     && uTag != (ASN1_TAG_SET      | ASN1_TAGFLAG_CONSTRUCTED)
+                     &&    (uTag & (ASN1_TAGFLAG_CONSTRUCTED | ASN1_TAGCLASS_CONTEXT))
+                        !=         (ASN1_TAGFLAG_CONSTRUCTED | ASN1_TAGCLASS_CONTEXT) )
+                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
+                                           "%s: Indefinite BER/CER encoding not supported for this tag (uTag=%#x)", pszErrorTag, uTag);
+            else if (pCursor->cIndefinedRecs > 8)
+                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
+                                           "%s: Too many indefinite BER/CER encodings. (uTag=%#x)", pszErrorTag, uTag);
             else if (pCursor->cbLeft < 2)
                 return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
                                            "%s: Too little data left for indefinite BER/CER encoding (uTag=%#x)", pszErrorTag, uTag);
             else
             {
-                /* Search forward till we find the two terminating zero bytes. */
-                cb = 0;
-                for (;;)
-                {
-                    uint8_t const *pb = (uint8_t const *)memchr(&pCursor->pbCur[cb], 0x00, pCursor->cbLeft - cb - 1);
-                    if (pb && pb[1] == 0x00)
-                    {
-                        cb = &pb[2] - pCursor->pbCur;
-                        break;
-                    }
-                    if (!pb)
-                        return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
-                                                   "%s: Could not find end of indefinite BER/CER record (uTag=%#x)", pszErrorTag, uTag);
-                    cb = &pb[1] - pCursor->pbCur;
-                }
+                pCursor->cIndefinedRecs++;
+                pCursor->fFlags   |= RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
+                pAsn1Core->fFlags |= RTASN1CORE_F_INDEFINITE_LENGTH;
+                cb = pCursor->cbLeft - pCursor->cIndefinedRecs * 2; /* tentatively */
             }
         }
 
