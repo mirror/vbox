@@ -6485,6 +6485,18 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     {
         if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_RDMSR, pVCpu->cpum.GstCtx.ecx))
             IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDMSR, cbInstr);
+
+        /** @todo NSTVMX: Handle other x2APIC MSRs in VMX non-root mode. Perhaps having a
+         *        dedicated virtual-APIC device might be better... */
+        if (   pVCpu->cpum.GstCtx.ecx == MSR_IA32_X2APIC_TPR
+            && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
+        {
+            uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+            pVCpu->cpum.GstCtx.rax = uVTpr;
+            pVCpu->cpum.GstCtx.rdx = 0;
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
     }
 #endif
 
@@ -6581,7 +6593,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
                     if (   !uValue.s.Hi
                         && !(uValue.s.Lo & UINT32_C(0xffffff00)))
                     {
-                        uint32_t const uVTpr = (uValue.s.Lo & 0xf) << 4;
+                        uint32_t const uVTpr = uValue.s.Lo;
                         iemVmxVirtApicWriteRaw32(pVCpu, uVTpr, XAPIC_OFF_TPR);
                         VBOXSTRICTRC rcStrict = iemVmxVmexitTprVirtualization(pVCpu, cbInstr);
                         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
