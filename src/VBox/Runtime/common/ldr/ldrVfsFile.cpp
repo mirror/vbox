@@ -277,35 +277,7 @@ RT_EXPORT_SYMBOL(RTLdrOpenVfsChain);
 RTDECL(int) RTLdrOpenVfsChainkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch,
                                   PRTLDRMOD phLdrMod, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-#ifdef LDR_WITH_KLDR
-    LogFlow(("RTLdrOpenVfsChainkLdr: pszFilename=%p:{%s} fFlags=%#x enmArch=%d phLdrMod=%p\n",
-             pszFilename, pszFilename, fFlags, enmArch, phLdrMod));
-    AssertMsgReturn(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
-
-    /*
-     * Create file reader & invoke worker which identifies and calls the image interpreter.
-     */
-    PRTLDRREADER pReader;
-    int rc = rtldrVfsFileCreate(pszFilename, &pReader, poffError, pErrInfo);
-    if (RT_SUCCESS(rc))
-    {
-        if (poffError)
-            *poffError = 0;
-        rc = rtldrkLdrOpen(pReader, fFlags, enmArch, phLdrMod, pErrInfo);
-        if (RT_SUCCESS(rc))
-        {
-            LogFlow(("RTLdrOpenkLdr: return %Rrc *phLdrMod=%p\n", rc, *phLdrMod));
-            return rc;
-        }
-        pReader->pfnDestroy(pReader);
-    }
-    *phLdrMod = NIL_RTLDRMOD;
-    LogFlow(("RTLdrOpenVfsChainkLdr: return %Rrc\n", rc));
-    return rc;
-
-#else
     return RTLdrOpenVfsChain(pszFilename, fFlags, enmArch, phLdrMod, poffError, pErrInfo);
-#endif
 }
 RT_EXPORT_SYMBOL(RTLdrOpenVfsChainkLdr);
 

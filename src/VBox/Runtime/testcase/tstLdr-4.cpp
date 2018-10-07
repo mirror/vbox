@@ -116,9 +116,6 @@ static int testLdrOne(const char *pszFilename)
         { NULL, NULL, 0, "foo" },
         { NULL, NULL, 0, "bar" },
         { NULL, NULL, 0, "foobar" },
-        { NULL, NULL, 0, "kLdr-foo" },
-        { NULL, NULL, 0, "kLdr-bar" },
-        { NULL, NULL, 0, "kLdr-foobar" }
     };
     unsigned i;
     int rc;
@@ -128,14 +125,7 @@ static int testLdrOne(const char *pszFilename)
      */
     for (i = 0; i < RT_ELEMENTS(aLoads); i++)
     {
-        if (!strncmp(aLoads[i].pszName, RT_STR_TUPLE("kLdr-")))
-        {
-            rc = RTLdrOpenkLdr(pszFilename, 0, RTLDRARCH_WHATEVER, &aLoads[i].hLdrMod);
-            if (rc == VERR_ELF_EXE_NOT_SUPPORTED)
-                continue;
-        }
-        else
-            rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_WHATEVER, &aLoads[i].hLdrMod);
+        rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_WHATEVER, &aLoads[i].hLdrMod);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstLdr-4: Failed to open '%s'/%d, rc=%Rrc. aborting test.\n", pszFilename, i, rc);

@@ -1966,8 +1966,8 @@ RuntimeBldProg_SOURCES.os2 += \
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 ## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP IPRT_WITH_OPENSSL LDR_WITH_KLDR, $(RuntimeR3_DEFS))
-RuntimeGuestR3_DEFS                     := $(filter-out IN_SUP_R3, $(RuntimeGuestR3_DEFS)) ## @todo r=andy Needed to make cross-building with RTLdr API work.
+RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP IPRT_WITH_OPENSSL, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                     := $(filter-out IN_SUP_R3, $(RuntimeGuestR3_DEFS))
 RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
