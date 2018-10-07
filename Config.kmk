@@ -514,10 +514,6 @@ VBOX_WITH_EFI = 1
 #VBOX_WITH_EFIFW_FROM_BUILD_SERVER = 1
 # Include the EFI firmware into the package
 VBOX_WITH_EFIFW_PACKING = 1
-# Use kStuff for MACH-O and LX binary loading.
-if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
- IPRT_WITH_KSTUFF = 1
-endif
 # Enable setuid wrapper for Solaris host DVD.
 #VBOX_WITH_SUID_WRAPPER = 1
 # Enable the virtual SATA/AHCI controller
@@ -6635,10 +6631,6 @@ ifeq ($(KBUILD_HOST),win)
 endif
 TEMPLATE_VBoxAdvBldProg_LIBS    = \
 	$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_HOSTSUFF_LIB) \
-	$(if-expr defined(IPRT_WITH_KSTUFF), \
-		$(PATH_STAGE_LIB)/VBox-kStuffStaticBldProg$(VBOX_HOSTSUFF_LIB) \
-		$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_HOSTSUFF_LIB) \
-	,) \
 	$(TEMPLATE_VBoxBldProg_LIBS)
 TEMPLATE_VBoxAdvBldProg_LIBS.darwin = \
 	$(TEMPLATE_VBoxAdvBldProg_LIBS) \

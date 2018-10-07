@@ -265,23 +265,18 @@ RuntimeR3_DEFS          = \
 	LDR_WITH_NATIVE \
 	LDR_WITH_ELF32 \
 	LDR_WITH_LX \
+	LDR_WITH_MACHO \
 	LDR_WITH_PE \
 	RT_WITH_VBOX \
 	RT_NO_GIP \
 	RT_WITHOUT_NOCRT_WRAPPERS \
 	IPRT_WITH_OPENSSL \
 	NOFILEID
-ifeq ($(USERNAME),bird)
- RuntimeR3_DEFS += LDR_WITH_MACHO
-endif
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3_DEFS         += \
  	IN_SUP_R3
 endif
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
-ifdef IPRT_WITH_KSTUFF
- RuntimeR3_DEFS        += LDR_WITH_KLDR
-endif
 ifdef IPRT_WITH_LZJB
  RuntimeR3_DEFS        += RTZIP_USE_LZJB
 endif
@@ -299,10 +294,6 @@ RuntimeR3_INCS          = \
 	$(SDK_VBOX_ZLIB_INCS)
 RuntimeR3_INCS         += \
 	$(PATH_ROOT)/src/libs/liblzf-3.4
-ifdef IPRT_WITH_KSTUFF
- RuntimeR3_INCS        += \
-	$(PATH_ROOT)/src/libs/kStuff/kStuff/include
-endif
 
 # RuntimeR3_INCS.solaris  = \
 #    /usr/include
@@ -795,11 +786,6 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicReadU64.asm	\
 	common/asm/ASMAtomicUoReadU64.asm
 
-
-ifdef IPRT_WITH_KSTUFF
- RuntimeR3_SOURCES += \
-	common/ldr/ldrkStuff.cpp
-endif
 
 # VBox specific stuff.
 RuntimeR3_SOURCES += \
@@ -1629,7 +1615,6 @@ RuntimeBldProg_SOURCES         = \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \
 	common/ldr/ldrFile.cpp \
-	common/ldr/ldrkStuff.cpp \
 	common/ldr/ldrLX.cpp \
 	common/ldr/ldrMachO.cpp \
 	common/ldr/ldrNative.cpp \
@@ -1989,7 +1974,6 @@ RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
 RuntimeGuestR3_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeGuestR3_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES                  := $(filter-out \
-	common/ldr/ldrkStuff.cpp \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
@@ -2137,10 +2121,6 @@ VBoxRT_LIBS                    = \
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT_LIBS                   += \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
-endif
-ifdef IPRT_WITH_KSTUFF
- VBoxRT_LIBS                  += \
-	$(PATH_STAGE_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT_LIBS                 += \
@@ -2291,10 +2271,6 @@ VBoxRT-x86_LIBS = \
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT-x86_LIBS += \
 	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
-endif
-ifdef IPRT_WITH_KSTUFF
- VBoxRT-x86_LIBS                  += \
-	$(PATH_STAGE_LIB)/VBox-kStuff-x86$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT-x86_LIBS                 += \
@@ -3625,7 +3601,6 @@ $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt: \
 		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-flags.cpp' \
 		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp' \
 		'$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-upper.cpp' \
-		'$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrkStuff.cpp'
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(IPRT_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
