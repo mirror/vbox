@@ -3946,12 +3946,12 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 #
 # SDKs for external libraries.
 #
-SDK_VBOX_LIBXML2          = .
-SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.9.4/include
-SDK_VBOX_LIBXML2_DEFS  ?= _REENTRANT
-SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
-# note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
-# libxml against VBoxRT
+SDK_VBOX_LIBXML2           = .
+SDK_VBOX_LIBXML2_INCS     ?= $(PATH_ROOT)/src/libs/libxml2-2.9.4/include
+SDK_VBOX_LIBXML2_DEFS     ?= _REENTRANT LIBXML_STATIC LIBXML_STATIC_FOR_DLL
+SDK_VBOX_LIBXML2_DEFS.win ?= WIN32 _WINDOWS _MBCS HAVE_WIN32_THREADS HAVE_COMPILER_TLS
+# Note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
+#       libxml against VBoxRT
 
 SDK_VBOX_LIBPNG       = .
 SDK_VBOX_LIBPNG_INCS ?= $(PATH_ROOT)/src/libs/libpng-1.2.54

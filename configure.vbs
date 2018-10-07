@@ -1820,6 +1820,7 @@ sub CheckForXml2(strOptXml2)
    end if
 
    strPathXml2 = UnixSlashes(PathAbs(strPathXml2))
+   CfgPrint "SDK_VBOX_LIBXML2_DEFS  := _REENTRANT"
    CfgPrint "SDK_VBOX_LIBXML2_INCS  := " & strPathXml2 & "/include"
    CfgPrint "SDK_VBOX_LIBXML2_LIBS  := " & strPathXml2 & "/lib/libxml2.lib"
 

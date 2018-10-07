@@ -115,7 +115,7 @@ int xmlNop(void);
 #endif
 #endif
 #endif
-#if !defined(PIC) && !defined(NOLIBTOOL)
+#if !defined(PIC) && !defined(NOLIBTOOL) /* VBox: */ && !defined(LIBXML_STATIC)
 #  define LIBXML_STATIC
 #endif
 #endif /* ! __XML_LIBXML_H__ */

@@ -658,7 +658,7 @@ check_xsltproc()
 
 
 #
-# Check for libxml2, needed by VBoxSettings and Runtime.
+# Check for libxml2, needed by the Runtime.
 # 2.6.24 is known to NOT work, 2.6.26 is known to work (there is no 2.6.25 release)
 #
 check_libxml2()
@@ -692,6 +692,7 @@ EOF
         [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
         if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
           if test_execute; then
+            cnf_append "SDK_VBOX_LIBXML2_DEFS" "_REENTRANT" ## @todo get defines from --cflags
             cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
             cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
           fi
@@ -725,6 +726,7 @@ EOF
         [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
         if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
           if test_execute; then
+            cnf_append "SDK_VBOX_LIBXML2_DEFS" "_REENTRANT" ## @todo get defines from --cflags
             cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
             cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
           fi
