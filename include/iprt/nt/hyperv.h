@@ -36,6 +36,9 @@
 # define AssertCompile(expr)
 # define AssertCompileSize(type, size)
 # define AssertCompileMemberOffset(type, member, off)
+typedef unsigned char uint8_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
 #endif
 
 
@@ -196,8 +199,9 @@ typedef enum
     HvCallGetNextCpuGroupPartition,
     HvCallPrecommitGpaPages = 0xbe,
     HvCallUncommitGpaPages,             /**< Happens when VidDestroyGpaRangeCheckSecure/WHvUnmapGpaRange is called. */
-    /* 0xc0..0xcb are unknown */
+    /* 0xc0 is unknown */
     HvCallVpRunloopRelated = 0xc2,      /**< Fast */
+    /* 0xc3..0xcb are unknown */
     HvCallQueryVtlProtectionMaskRange = 0xcc,
     HvCallModifyVtlProtectionMaskRange,
     /* 0xce..0xd1 are unknown */
@@ -207,7 +211,13 @@ typedef enum
     HvCallAcquireSparseSpaPageHostAccess = 0xd7,
     HvCallReleaseSparseSpaPageHostAccess,
     HvCallAcceptGpaPages,                       /**< 0x18 byte input, zero rep, no output. */
-
+    /* 0xda..0xe0 are unknown (not dug out yet) */
+    HvCallMapVpRegisterPage = 0xe1,             /**< Takes partition id + VP index (16 bytes). Returns a physical address (8 bytes). */
+    HvCallUnmapVpRegisterPage,                  /**< Takes partition id + VP index. */
+    HvCallUnknownE3,
+    HvCallUnknownE4,
+    HvCallUnknownE5,
+    HvCallUnknownE6,
     /** Number of defined hypercalls (varies with version). */
     HvCallCount
 } HV_CALL_CODE;
@@ -219,7 +229,7 @@ AssertCompile(HvCallUnregisterInterceptResult == 0x92);
 AssertCompile(HvCallGetSpaPageList == 0x97);
 AssertCompile(HvCallFlushGuestPhysicalAddressList == 0xb0);
 AssertCompile(HvCallUncommitGpaPages == 0xbf);
-AssertCompile(HvCallCount == 0xda);
+AssertCompile(HvCallCount == 0xe7);
 
 /** Makes the first parameter to a hypercall (rcx).  */
 #define HV_MAKE_CALL_INFO(a_enmCallCode, a_cReps) ( (uint64_t)(a_enmCallCode) | ((uint64_t)(a_cReps) << 32) )
@@ -548,7 +558,9 @@ typedef union
     struct
     {
         uint64_t        CacheType : 8;      /**< HV_CACHE_TYPE */
+#ifndef IN_IDA_PRO
         uint64_t        Reserved  : 56;
+#endif
     };
 } HV_ACCESS_GPA_CONTROL_FLAGS;
 
@@ -974,7 +986,9 @@ typedef union
     struct
     {
         uint64_t        Suspended : 1;
+#ifndef IN_IDA_PRO
         uint64_t        Reserved  : 63;
+#endif
     };
 } HV_EXPLICIT_SUSPEND_REGISTER;
 /** Pointer to a value of HvRegisterExplicitSuspend. */
@@ -988,7 +1002,9 @@ typedef union
     {
         uint64_t        Suspended : 1;
         uint64_t        TlbLocked : 1;
+#ifndef IN_IDA_PRO
         uint64_t        Reserved  : 62;
+#endif
     };
 } HV_INTERCEPT_SUSPEND_REGISTER;
 /** Pointer to a value of HvRegisterInterceptSuspend. */
@@ -1003,7 +1019,9 @@ typedef union
     {
         uint64_t        InterruptShadow : 1;
         uint64_t        NmiMasked       : 1;
+#ifndef IN_IDA_PRO
         uint64_t        Reserved        : 62;
+#endif
     };
 } HV_X64_INTERRUPT_STATE_REGISTER;
 /** Pointer to a value of HvRegisterInterruptState. */
@@ -1051,7 +1069,9 @@ typedef union
         uint64_t        NmiNotification         : 1;
         uint64_t        InterruptNotification   : 1;
         uint64_t        InterruptPriority       : 4;
+#ifndef IN_IDA_PRO
         uint64_t        Reserved                : 58;
+#endif
     };
 } HV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER;
 /** Pointer to a value of HvRegisterPendingEvent0/1. */
@@ -1108,7 +1128,9 @@ typedef union
         uint64_t        Mantissa;
         uint64_t        BiasedExponent  : 15;
         uint64_t        Sign            : 1;
+#ifndef IN_IDA_PRO
         uint64_t        Reserved        : 48;
+#endif
     };
 } HV_X64_FP_REGISTER;
 /** Pointer to a value of HvX64RegisterFpMmx0..7 in floating point mode. */
