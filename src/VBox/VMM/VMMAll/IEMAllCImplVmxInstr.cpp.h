@@ -3390,7 +3390,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
      *
      * See Intel spec. 25.2 "Other Causes Of VM Exits".
      */
-    uint8_t uTaskSwitchSrc;
+    uint32_t uTaskSwitchSrc;
     switch (enmTaskSwitch)
     {
         case IEMTASKSWITCH_CALL:     uTaskSwitchSrc = 0; break;
