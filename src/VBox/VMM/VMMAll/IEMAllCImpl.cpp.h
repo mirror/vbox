@@ -6676,9 +6676,11 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
  * Implements 'IN eAX, port'.
  *
  * @param   u16Port     The source port.
+ * @param   fImm        Whether the port was specified through an immediate operand
+ *                      or the implicit DX register.
  * @param   cbReg       The register size.
  */
-IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
+IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, bool, fImm, uint8_t, cbReg)
 {
     /*
      * CPL check
@@ -6686,6 +6688,20 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
     VBOXSTRICTRC rcStrict = iemHlpCheckPortIOPermission(pVCpu, u16Port, cbReg);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+
+    /*
+     * Check VMX nested-guest IO intercept.
+     */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        rcStrict = iemVmxVmexitInstrIo(pVCpu, VMXINSTRID_IO_IN, u16Port, fImm, cbReg, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#else
+    RT_NOREF(fImm);
+#endif
 
     /*
      * Check SVM nested-guest IO intercept.
@@ -6761,7 +6777,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
  */
 IEM_CIMPL_DEF_1(iemCImpl_in_eAX_DX, uint8_t, cbReg)
 {
-    return IEM_CIMPL_CALL_2(iemCImpl_in, pVCpu->cpum.GstCtx.dx, cbReg);
+    return IEM_CIMPL_CALL_3(iemCImpl_in, pVCpu->cpum.GstCtx.dx, false /* fImm */, cbReg);
 }
 
 
@@ -6769,9 +6785,11 @@ IEM_CIMPL_DEF_1(iemCImpl_in_eAX_DX, uint8_t, cbReg)
  * Implements 'OUT port, eAX'.
  *
  * @param   u16Port     The destination port.
+ * @param   fImm        Whether the port was specified through an immediate operand
+ *                      or the implicit DX register.
  * @param   cbReg       The register size.
  */
-IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
+IEM_CIMPL_DEF_3(iemCImpl_out, uint16_t, u16Port, bool, fImm, uint8_t, cbReg)
 {
     /*
      * CPL check
@@ -6781,7 +6799,21 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         return rcStrict;
 
     /*
-     * Check SVM nested-guest IO intercept.
+     * Check VMX nested-guest I/O intercept.
+     */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        rcStrict = iemVmxVmexitInstrIo(pVCpu, VMXINSTRID_IO_OUT, u16Port, fImm, cbReg, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#else
+    RT_NOREF(fImm);
+#endif
+
+    /*
+     * Check SVM nested-guest I/O intercept.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
@@ -6853,7 +6885,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
  */
 IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
 {
-    return IEM_CIMPL_CALL_2(iemCImpl_out, pVCpu->cpum.GstCtx.dx, cbReg);
+    return IEM_CIMPL_CALL_3(iemCImpl_out, pVCpu->cpum.GstCtx.dx, false /* fImm */, cbReg);
 }
 
 

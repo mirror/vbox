@@ -10398,7 +10398,7 @@ FNIEMOP_DEF(iemOp_in_AL_Ib)
     IEMOP_MNEMONIC(in_AL_Ib, "in AL,Ib");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_in, u8Imm, 1);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_in, u8Imm, true /* fImm */, 1);
 }
 
 
@@ -10408,7 +10408,7 @@ FNIEMOP_DEF(iemOp_in_eAX_Ib)
     IEMOP_MNEMONIC(in_eAX_Ib, "in eAX,Ib");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_in, u8Imm, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_in, u8Imm, true /* fImm */, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
 }
 
 
@@ -10418,7 +10418,7 @@ FNIEMOP_DEF(iemOp_out_Ib_AL)
     IEMOP_MNEMONIC(out_Ib_AL, "out Ib,AL");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_out, u8Imm, 1);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_out, u8Imm, true /* fImm */, 1);
 }
 
 
@@ -10428,7 +10428,7 @@ FNIEMOP_DEF(iemOp_out_Ib_eAX)
     IEMOP_MNEMONIC(out_Ib_eAX, "out Ib,eAX");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_out, u8Imm, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_out, u8Imm, true /* fImm */, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
 }
 
 

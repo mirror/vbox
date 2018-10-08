@@ -83,12 +83,13 @@ static VBOXSTRICTRC iomRCInterpretIN(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIn); RT_NOREF_PV(pVM);
     Assert(pCpu->Param2.fUse & (DISUSE_IMMEDIATE8 | DISUSE_REG_GEN16));
-    uint16_t u16Port = pCpu->Param2.fUse & DISUSE_REG_GEN16 ? pRegFrame->dx : (uint16_t)pCpu->Param2.uValue;
+    bool const     fUseReg = RT_BOOL(pCpu->Param2.fUse & DISUSE_REG_GEN16);
+    uint16_t const u16Port = fUseReg ? pRegFrame->dx : (uint16_t)pCpu->Param2.uValue;
 
     Assert(pCpu->Param1.fUse & (DISUSE_REG_GEN32 | DISUSE_REG_GEN16 | DISUSE_REG_GEN8));
     uint8_t cbValue = pCpu->Param1.fUse & DISUSE_REG_GEN32 ? 4 : pCpu->Param1.fUse & DISUSE_REG_GEN16 ? 2 : 1;
 
-    return IEMExecDecodedIn(pVCpu, pCpu->cbInstr, u16Port, cbValue);
+    return IEMExecDecodedIn(pVCpu, pCpu->cbInstr, u16Port, !fUseReg, cbValue);
 }
 
 
@@ -115,12 +116,13 @@ static VBOXSTRICTRC iomRCInterpretOUT(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOut); RT_NOREF_PV(pVM);
     Assert(pCpu->Param1.fUse & (DISUSE_IMMEDIATE8 | DISUSE_REG_GEN16));
-    uint16_t const u16Port = pCpu->Param1.fUse & DISUSE_REG_GEN16 ? pRegFrame->dx : (uint16_t)pCpu->Param1.uValue;
+    bool const     fUseReg = RT_BOOL(pCpu->Param1.fUse & DISUSE_REG_GEN16);
+    uint16_t const u16Port = fUseReg ? pRegFrame->dx : (uint16_t)pCpu->Param1.uValue;
 
     Assert(pCpu->Param2.fUse & (DISUSE_REG_GEN32 | DISUSE_REG_GEN16 | DISUSE_REG_GEN8));
     uint8_t const cbValue = pCpu->Param2.fUse & DISUSE_REG_GEN32 ? 4 : pCpu->Param2.fUse & DISUSE_REG_GEN16 ? 2 : 1;
 
-    return IEMExecDecodedOut(pVCpu, pCpu->cbInstr, u16Port, cbValue);
+    return IEMExecDecodedOut(pVCpu, pCpu->cbInstr, u16Port, !fUseReg, cbValue);
 }
 
 

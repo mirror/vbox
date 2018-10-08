@@ -2865,15 +2865,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
  *
  * @returns @c true if the instruction is intercepted, @c false otherwise.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uPort           The I/O port being accessed by the instruction.
+ * @param   u16Port         The I/O port being accessed by the instruction.
  */
-IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t uPort)
+IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
     /*
-     * Check whether the IO instruction must cause a VM-exit or not.
+     * Check whether the I/O instruction must cause a VM-exit or not.
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_UNCOND_IO_EXIT)
@@ -2885,7 +2885,7 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t uPort)
         uint8_t const *pbIoBitmapB = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
         Assert(pbIoBitmapA);
         Assert(pbIoBitmapB);
-        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, uPort);
+        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port);
     }
 
     return false;
@@ -3284,6 +3284,48 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr8(PVMCPU pVCpu, uint8_t iGReg, u
         ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to I/O instructions (IN and OUT).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uInstrId    The VM-exit instruction identity (VMXINSTRID_IO_IN or
+ *                      VMXINSTRID_IO_OUT).
+ * @param   u16Port     The I/O port being accessed.
+ * @param   fImm        Whether the I/O port was encoded using an immediate operand
+ *                      or the implicit DX register.
+ * @param   cbAccess    The size of the I/O access in bytes (1, 2 or 4 bytes).
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrIo(PVMCPU pVCpu, VMXINSTRID uInstrId, uint16_t u16Port, bool fImm, uint8_t cbAccess,
+                                            uint8_t cbInstr)
+{
+    Assert(uInstrId == VMXINSTRID_IO_IN || uInstrId == VMXINSTRID_IO_OUT);
+    Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
+
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port);
+    if (fIntercept)
+    {
+        uint32_t const uDirection = uInstrId == VMXINSTRID_IO_IN ? VMX_EXIT_QUAL_IO_DIRECTION_IN
+                                                                 : VMX_EXIT_QUAL_IO_DIRECTION_OUT;
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,  fImm)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
@@ -4726,7 +4768,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_Cr3TargetCount);
 
-    /* IO bitmaps physical addresses. */
+    /* I/O bitmaps physical addresses. */
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
     {
         if (   (pVmcs->u64AddrIoBitmapA.u & X86_PAGE_4K_OFFSET_MASK)
