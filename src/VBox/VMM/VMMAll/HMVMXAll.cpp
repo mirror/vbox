@@ -889,13 +889,13 @@ VMM_INT_DECL(int) HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntry
  * @param   penmWrite       Where to store the write permissions. Optional, can be
  *                          NULL.
  */
-VMM_INT_DECL(int) HMVmxGetMsrPermission(void *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+VMM_INT_DECL(int) HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
                                         PVMXMSREXITWRITE penmWrite)
 {
     AssertPtrReturn(pvMsrBitmap, VERR_INVALID_PARAMETER);
 
     int32_t iBit;
-    uint8_t *pbMsrBitmap = (uint8_t *)pvMsrBitmap;
+    uint8_t const *pbMsrBitmap = (uint8_t *)pvMsrBitmap;
 
     /*
      * MSR Layout:
@@ -952,5 +952,26 @@ VMM_INT_DECL(int) HMVmxGetMsrPermission(void *pvMsrBitmap, uint32_t idMsr, PVMXM
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the permission bits for the specified I/O port from the given I/O bitmaps.
+ *
+ * @returns @c true if the I/O port access must cause a VM-exit, @c false otherwise.
+ * @param   pvIoBitmapA     Pointer to I/O bitmap A.
+ * @param   pvIoBitmapB     Pointer to I/O bitmap B.
+ * @param   uPort           The I/O port being accessed.
+ */
+VMM_INT_DECL(bool) HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort)
+{
+    /* If the port is 0 or ffff ("wrap around"), we cause a VM-exit. */
+    if (   uPort == 0x0000
+        || uPort == 0xffff)
+        return true;
+
+    /* Read the appropriate bit from the corresponding IO bitmap. */
+    void const *pvIoBitmap = uPort < 0x8000 ? pvIoBitmapA : pvIoBitmapB;
+    return ASMBitTest(pvIoBitmap, uPort);
 }
 

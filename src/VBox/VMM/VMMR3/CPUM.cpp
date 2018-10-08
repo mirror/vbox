@@ -933,6 +933,11 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3, VMX_V_VMCS_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3 = NULL;
         }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR3, VMX_V_VMCS_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR3 = NULL;
+        }
         if (pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvVirtApicPageR3, VMX_V_VIRT_APIC_PAGES);
@@ -957,6 +962,11 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3, VMX_V_MSR_BITMAP_PAGES);
             pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3 = NULL;
+        }
+        if (pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR3, VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR3 = NULL;
         }
     }
 }
@@ -990,6 +1000,20 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         {
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pVmcsR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCS\n", pVCpu->idCpu, VMX_V_VMCS_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the nested-guest shadow VMCS.
+         */
+        Assert(VMX_V_VMCS_PAGES == 1);
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR3);
+        rc = SUPR3PageAllocEx(VMX_V_VMCS_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pShadowVmcsR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's shadow VMCS\n", pVCpu->idCpu, VMX_V_VMCS_PAGES));
             break;
         }
 
@@ -1061,6 +1085,21 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
             Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvMsrBitmapR3);
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's MSR bitmap\n", pVCpu->idCpu,
                     VMX_V_MSR_BITMAP_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the I/O bitmaps (A and B).
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR3);
+        rc = SUPR3PageAllocEx(VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES, 0 /* fFlags */,
+                              (void **)&pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.vmx.pvIoBitmapR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's I/O bitmaps\n", pVCpu->idCpu,
+                    VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES));
             break;
         }
     }

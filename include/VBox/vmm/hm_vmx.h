@@ -2499,6 +2499,8 @@ typedef uint32_t VMXINSTRID;
 #define VMXINSTRID_VMRESUME                                     (0x11 | VMXINSTRID_VALID)
 #define VMXINSTRID_VMREAD                                       (0x12 | VMXINSTRID_VALID)
 #define VMXINSTRID_VMWRITE                                      (0x13 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_IO_IN                                        (0x14 | VMXINSTRID_VALID)
+#define VMXINSTRID_IO_OUT                                       (0x15 | VMXINSTRID_VALID)
 /** @} */
 
 
@@ -2725,7 +2727,26 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_CRX_, UINT64_C(0), UINT64_MAX,
 #define VMX_EXIT_QUAL_IO_ENCODING(a)                            (((a) >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
 #define VMX_EXIT_QUAL_IO_PORT(a)                                (((a) >> 16) & 0xffff)
-/* Rest reserved. */
+
+/** Bit fields for Exit qualification for I/O instructions. */
+#define VMX_BF_EXIT_QUAL_IO_WIDTH_SHIFT                         0
+#define VMX_BF_EXIT_QUAL_IO_WIDTH_MASK                          UINT64_C(0x0000000000000007)
+#define VMX_BF_EXIT_QUAL_IO_DIRECTION_SHIFT                     3
+#define VMX_BF_EXIT_QUAL_IO_DIRECTION_MASK                      UINT64_C(0x0000000000000008)
+#define VMX_BF_EXIT_QUAL_IO_IS_STRING_SHIFT                     4
+#define VMX_BF_EXIT_QUAL_IO_IS_STRING_MASK                      UINT64_C(0x0000000000000010)
+#define VMX_BF_EXIT_QUAL_IO_IS_REP_SHIFT                        5
+#define VMX_BF_EXIT_QUAL_IO_IS_REP_MASK                         UINT64_C(0x0000000000000020)
+#define VMX_BF_EXIT_QUAL_IO_ENCODING_SHIFT                      6
+#define VMX_BF_EXIT_QUAL_IO_ENCODING_MASK                       UINT64_C(0x0000000000000040)
+#define VMX_BF_EXIT_QUAL_IO_RSVD_7_15_SHIFT                     7
+#define VMX_BF_EXIT_QUAL_IO_RSVD_7_15_MASK                      UINT64_C(0x000000000000ff80)
+#define VMX_BF_EXIT_QUAL_IO_PORT_SHIFT                          16
+#define VMX_BF_EXIT_QUAL_IO_PORT_MASK                           UINT64_C(0x00000000ffff0000)
+#define VMX_BF_EXIT_QUAL_IO_RSVD_32_63_SHIFT                    32
+#define VMX_BF_EXIT_QUAL_IO_RSVD_32_63_MASK                     UINT64_C(0xffffffff00000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_IO_, UINT64_C(0), UINT64_MAX,
+                            (WIDTH, DIRECTION, IS_STRING, IS_REP, ENCODING, RSVD_7_15, PORT, RSVD_32_63));
 /** @} */
 
 
@@ -3077,6 +3098,16 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the MSR bitmap (in pages). */
 #define VMX_V_MSR_BITMAP_PAGES                                  1
 
+/** The size of I/O bitmap A (in bytes). */
+#define VMX_V_IO_BITMAP_A_SIZE                                  X86_PAGE_4K_SIZE
+/** The size of I/O bitmap A (in pages). */
+#define VMX_V_IO_BITMAP_A_PAGES                                 1
+
+/** The size of I/O bitmap B (in bytes). */
+#define VMX_V_IO_BITMAP_B_SIZE                                  X86_PAGE_4K_SIZE
+/** The size of I/O bitmap B (in pages). */
+#define VMX_V_IO_BITMAP_B_PAGES                                 1
+
 /** The size of the auto-load/store MSR area (in bytes). */
 #define VMX_V_AUTOMSR_AREA_SIZE                                 ((512 * (VMX_V_AUTOMSR_COUNT_MAX + 1)) * sizeof(VMXAUTOMSR))
 /* Assert that the size is page aligned or adjust the VMX_V_AUTOMSR_AREA_PAGES macro below. */
@@ -3119,6 +3150,7 @@ typedef VMXVEXITINFO *PVMXVEXITINFO;
 /** Pointer to a const VMXVEXITINFO struct. */
 typedef const VMXVEXITINFO *PCVMXVEXITINFO;
 AssertCompileMemberAlignment(VMXVEXITINFO, u64Qual, 8);
+
 
 /**
  * Virtual VMCS.
