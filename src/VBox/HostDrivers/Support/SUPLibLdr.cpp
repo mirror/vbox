@@ -196,8 +196,8 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     /*
      * Lookup symbol.
      */
+    /* Skip the 64-bit ELF import prefix first. */
     /** @todo is this actually used??? */
-    /* skip the 64-bit ELF import prefix first. */
     if (!strncmp(pszSymbol, RT_STR_TUPLE("SUPR0$")))
         pszSymbol += sizeof("SUPR0$") - 1;
 
