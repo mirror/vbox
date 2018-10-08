@@ -96,11 +96,12 @@ void UIDetailsModel::updateLayout()
 {
     /* Prepare variables: */
     const QSize viewportSize = paintDevice()->viewport()->size();
+    const QSize rootSize = viewportSize.expandedTo(m_pRoot->minimumSizeHint().toSize());
 
     /* Move root: */
     m_pRoot->setPos(0, 0);
     /* Resize root: */
-    m_pRoot->resize(viewportSize.width(), m_pRoot->minimumHeightHint());
+    m_pRoot->resize(rootSize);
     /* Layout root content: */
     m_pRoot->updateLayout();
 }
