@@ -104,10 +104,9 @@ QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType enmType /* = UIDet
 void UIDetailsGroup::updateLayout()
 {
     /* Prepare variables: */
-    const int iMargin = data(GroupData_Margin).toInt();
     const int iSpacing = data(GroupData_Spacing).toInt();
     const int iMaximumWidth = geometry().size().toSize().width();
-    int iVerticalIndent = iMargin;
+    int iVerticalIndent = 0;
 
     /* Layout all the sets: */
     foreach (UIDetailsItem *pItem, items())
