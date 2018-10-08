@@ -102,16 +102,6 @@ private slots:
 
 private:
 
-    /* Data enumerator: */
-    enum DetailsModelData
-    {
-        /* Layout hints: */
-        DetailsModelData_Margin
-    };
-
-    /* Data provider: */
-    QVariant data(int iKey) const;
-
     /* Helpers: Prepare stuff: */
     void prepareScene();
     void prepareRoot();

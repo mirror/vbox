@@ -95,14 +95,12 @@ UIDetailsItem *UIDetailsModel::root() const
 void UIDetailsModel::updateLayout()
 {
     /* Prepare variables: */
-    const int iSceneMargin = data(DetailsModelData_Margin).toInt();
     const QSize viewportSize = paintDevice()->viewport()->size();
-    const int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
 
     /* Move root: */
-    m_pRoot->setPos(iSceneMargin, iSceneMargin);
+    m_pRoot->setPos(0, 0);
     /* Resize root: */
-    m_pRoot->resize(iViewportWidth, m_pRoot->minimumHeightHint());
+    m_pRoot->resize(viewportSize.width(), m_pRoot->minimumHeightHint());
     /* Layout root content: */
     m_pRoot->updateLayout();
 }
@@ -209,16 +207,6 @@ void UIDetailsModel::sltElementTypeToggled()
 
     /* Rebuild group: */
     m_pRoot->rebuildGroup();
-}
-
-QVariant UIDetailsModel::data(int iKey) const
-{
-    switch (iKey)
-    {
-        case DetailsModelData_Margin: return 0;
-        default: break;
-    }
-    return QVariant();
 }
 
 void UIDetailsModel::prepareScene()
