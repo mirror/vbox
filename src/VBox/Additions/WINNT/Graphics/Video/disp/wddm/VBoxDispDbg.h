@@ -29,6 +29,9 @@
 #ifdef DEBUG
 /* debugging configuration flags */
 
+/* Adds vectored exception handler to be able to catch non-debug UM exceptions in kernel debugger. */
+#define VBOXWDDMDISP_DEBUG_VEHANDLER
+
 /* generic debugging facilities & extra data checks */
 # define VBOXWDDMDISP_DEBUG
 # if defined(DEBUG_misha) || defined(DEBUG_leo)
@@ -38,8 +41,6 @@
 //#  define VBOXWDDMDISP_DEBUG_PRINTDRV
 /* use OutputDebugString */
 //#  define VBOXWDDMDISP_DEBUG_PRINT
-/* adds vectored exception handler to be able to catch non-debug UM exceptions in kernel debugger */
-//#  define VBOXWDDMDISP_DEBUG_VEHANDLER
 /* disable shared resource creation with wine */
 //#  define VBOXWDDMDISP_DEBUG_NOSHARED
 
