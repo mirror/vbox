@@ -120,9 +120,6 @@ UIDetailsView::UIDetailsView(UIDetails *pParent)
     /* Install Details-view accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUIDetailsView::pFactory);
 
-    /* Prepare palette: */
-    preparePalette();
-
     /* Setup frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
@@ -175,15 +172,6 @@ void UIDetailsView::retranslateUi()
 {
     /* Translate this: */
     setToolTip(tr("Contains a list of Virtual Machine details"));
-}
-
-void UIDetailsView::preparePalette()
-{
-    /* Setup palette: */
-    QPalette pal = qApp->palette();
-    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
-    pal.setColor(QPalette::Base, bodyColor);
-    setPalette(pal);
 }
 
 void UIDetailsView::resizeEvent(QResizeEvent *pEvent)
