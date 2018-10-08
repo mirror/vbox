@@ -6600,7 +6600,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
                             return rcStrict;
                         return VINF_SUCCESS;
                     }
-                    Log(("IEM: Invalid TPR MSR write -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
+                    Log(("IEM: Invalid TPR MSR write (%#x,%#x) -> #GP(0)\n", uValue.s.Hi, uValue.s.Lo));
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
 
