@@ -3310,9 +3310,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrIo(PVMCPU pVCpu, VMXINSTRID uInstrId, u
     Assert(uInstrId == VMXINSTRID_IO_IN || uInstrId == VMXINSTRID_IO_OUT);
     Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
 
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-
     bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port);
     if (fIntercept)
     {
