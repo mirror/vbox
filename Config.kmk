@@ -2749,15 +2749,26 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 		$(AUTOCFG) \
 		$(VBOX_GCC_PATH_CC) \
 		$(VBOX_GCC_PATH_CXX) \
+               $(VBOX_GCC_LIBGCC) \
 		$(VBOX_GCC32_PATH_CC) \
 		$(VBOX_GCC32_PATH_CXX) \
+               $(VBOX_GCC32_LIBGCC) \
 		$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "solaris.amd64" && $(KBUILD_HOST_VERSION_MINOR) >= 11 \
 			, /platform/i86pc/kernel/$(KBUILD_HOST_ARCH)/unix,) \
         	| $(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp
 	$(call MSG_GENERATE,,$@,)
 	$(QUIET)$(RM) -f '$@'
 	$(QUIET)$(MKDIR) -p $(@D)
-
+	$(QUIET)$(APPEND) '$@' '# Host version: $(KBUILD_HOST_VERSION_MAJOR).$(KBUILD_HOST_VERSION_MINOR).$(KBUILD_HOST_VERSION_PATCH); full: $(KBUILD_HOST_VERSION)'
+ifneq ($(KBUILD_TARGET),win)
+	$(QUIET)$(APPEND) '$@' '# $(KBUILD_HOST_UNAME_SYSNAME) - $(KBUILD_HOST_UNAME_RELEASE) - $(KBUILD_HOST_UNAME_VERSION)'
+endif
+ifeq ($(KBUILD_TARGET),darwin)
+	$(QUIET)$(APPEND) '$@' '#              VBOX_XCODE_VERSION: $(VBOX_XCODE_VERSION)'
+	$(QUIET)$(APPEND) '$@' '# VBOX_PATH_MACOSX_TOOLCHAIN_ROOT: $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)'
+	$(QUIET)$(APPEND) '$@' '#       VBOX_PATH_MACOSX_SDK_ROOT: $(VBOX_PATH_MACOSX_SDK_ROOT)'
+	$(QUIET)$(APPEND) '$@' '#     VBOX_PATH_MACOSX_DEVEL_ROOT: $(VBOX_PATH_MACOSX_DEVEL_ROOT)'
+endif
 # HC compiler switch detection.
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CC               ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CC))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CXX              ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CXX))'
