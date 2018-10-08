@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,21 +34,11 @@
 
 UIDetails::UIDetails(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
-    , m_pMainLayout(0)
     , m_pDetailsModel(0)
     , m_pDetailsView(0)
 {
-    /* Prepare layout: */
-    prepareLayout();
-
-    /* Prepare model: */
-    prepareModel();
-
-    /* Prepare view: */
-    prepareView();
-
-    /* Prepare connections: */
-    prepareConnections();
+    /* Prepare: */
+    prepare();
 }
 
 void UIDetails::setItems(const QList<UIVirtualMachineItem*> &items)
@@ -57,49 +47,49 @@ void UIDetails::setItems(const QList<UIVirtualMachineItem*> &items)
     m_pDetailsModel->setItems(items);
 }
 
-void UIDetails::prepareLayout()
+void UIDetails::prepare()
 {
-    /* Setup main-layout: */
-    m_pMainLayout = new QVBoxLayout(this);
-    const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 9;
-    m_pMainLayout->setContentsMargins(iL, 0, 0, 0);
-    m_pMainLayout->setSpacing(0);
-}
+    /* Create main-layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
+    {
+        const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 9;
+        pMainLayout->setContentsMargins(iL, 0, 0, 0);
+        pMainLayout->setSpacing(0);
 
-void UIDetails::prepareModel()
-{
-    /* Setup details-model: */
-    m_pDetailsModel = new UIDetailsModel(this);
-}
+        /* Create details-model: */
+        m_pDetailsModel = new UIDetailsModel(this);
+        if (m_pDetailsModel)
+        {
+            /* Create details-view: */
+            m_pDetailsView = new UIDetailsView(this);
+            if (m_pDetailsView)
+            {
+                m_pDetailsView->setScene(m_pDetailsModel->scene());
+                m_pDetailsView->show();
+                setFocusProxy(m_pDetailsView);
 
-void UIDetails::prepareView()
-{
-    /* Setup details-view: */
-    m_pDetailsView = new UIDetailsView(this);
-    m_pDetailsView->setScene(m_pDetailsModel->scene());
-    m_pDetailsView->show();
-    setFocusProxy(m_pDetailsView);
-    m_pMainLayout->addWidget(m_pDetailsView);
-}
+                /* Add into layout: */
+                pMainLayout->addWidget(m_pDetailsView);
+            }
+        }
+    }
 
-void UIDetails::prepareConnections()
-{
     /* Setup details-model connections: */
-    connect(m_pDetailsModel, SIGNAL(sigRootItemMinimumWidthHintChanged(int)),
-            m_pDetailsView, SLOT(sltMinimumWidthHintChanged(int)));
-    connect(m_pDetailsModel, SIGNAL(sigRootItemMinimumHeightHintChanged(int)),
-            m_pDetailsView, SLOT(sltMinimumHeightHintChanged(int)));
-    connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
-            this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
-    connect(this, SIGNAL(sigSlidingStarted()),
-            m_pDetailsModel, SLOT(sltHandleSlidingStarted()));
-    connect(this, SIGNAL(sigToggleStarted()),
-            m_pDetailsModel, SLOT(sltHandleToggleStarted()));
-    connect(this, SIGNAL(sigToggleFinished()),
-            m_pDetailsModel, SLOT(sltHandleToggleFinished()));
+    connect(m_pDetailsModel, &UIDetailsModel::sigRootItemMinimumWidthHintChanged,
+            m_pDetailsView, &UIDetailsView::sltMinimumWidthHintChanged);
+    connect(m_pDetailsModel, &UIDetailsModel::sigRootItemMinimumHeightHintChanged,
+            m_pDetailsView, &UIDetailsView::sltMinimumHeightHintChanged);
+    connect(m_pDetailsModel, &UIDetailsModel::sigLinkClicked,
+            this, &UIDetails::sigLinkClicked);
+    connect(this, &UIDetails::sigSlidingStarted,
+            m_pDetailsModel, &UIDetailsModel::sltHandleSlidingStarted);
+    connect(this, &UIDetails::sigToggleStarted,
+            m_pDetailsModel, &UIDetailsModel::sltHandleToggleStarted);
+    connect(this, &UIDetails::sigToggleFinished,
+            m_pDetailsModel, &UIDetailsModel::sltHandleToggleFinished);
 
     /* Setup details-view connections: */
-    connect(m_pDetailsView, SIGNAL(sigResized()),
-            m_pDetailsModel, SLOT(sltHandleViewResize()));
+    connect(m_pDetailsView, &UIDetailsView::sigResized,
+            m_pDetailsModel, &UIDetailsModel::sltHandleViewResize);
 }
-

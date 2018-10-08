@@ -44,7 +44,7 @@ public:
     /** Returns the details reference. */
     UIDetails *details() const { return m_pDetails; }
 
-private slots:
+public slots:
 
     /* Handlers: Size-hint stuff: */
     void sltMinimumWidthHintChanged(int iMinimumWidthHint);

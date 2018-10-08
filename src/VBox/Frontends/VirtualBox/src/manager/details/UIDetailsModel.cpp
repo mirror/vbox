@@ -118,6 +118,21 @@ void UIDetailsModel::sltHandleViewResize()
     updateLayout();
 }
 
+void UIDetailsModel::sltHandleSlidingStarted()
+{
+    m_pRoot->stopBuildingGroup();
+}
+
+void UIDetailsModel::sltHandleToggleStarted()
+{
+    m_pRoot->stopBuildingGroup();
+}
+
+void UIDetailsModel::sltHandleToggleFinished()
+{
+    m_pRoot->rebuildGroup();
+}
+
 void UIDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
 {
     /* Make sure it is not started yet: */
@@ -193,21 +208,6 @@ void UIDetailsModel::sltElementTypeToggled()
         m_settings[type] = true;
 
     /* Rebuild group: */
-    m_pRoot->rebuildGroup();
-}
-
-void UIDetailsModel::sltHandleSlidingStarted()
-{
-    m_pRoot->stopBuildingGroup();
-}
-
-void UIDetailsModel::sltHandleToggleStarted()
-{
-    m_pRoot->stopBuildingGroup();
-}
-
-void UIDetailsModel::sltHandleToggleFinished()
-{
     m_pRoot->rebuildGroup();
 }
 
