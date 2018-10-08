@@ -178,7 +178,7 @@ int DnDURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, uint32_t fMode /*
 int DnDURIObject::OpenEx(const RTCString &strPathAbs, Type enmType, View enmView,
                          uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */, DNDURIOBJECTFLAGS fFlags /* = DNDURIOBJECT_FLAGS_NONE */)
 {
-    AssertReturn(fFlags & DNDURIOBJECT_FLAGS_VALID_MASK, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~DNDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     RT_NOREF1(fFlags);
 
     int rc = VINF_SUCCESS;
