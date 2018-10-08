@@ -38,9 +38,6 @@ UIDetails::UIDetails(QWidget *pParent /* = 0 */)
     , m_pDetailsModel(0)
     , m_pDetailsView(0)
 {
-    /* Prepare palette: */
-    preparePalette();
-
     /* Prepare layout: */
     prepareLayout();
 
@@ -58,16 +55,6 @@ void UIDetails::setItems(const QList<UIVirtualMachineItem*> &items)
 {
     /* Propagate to details-model: */
     m_pDetailsModel->setItems(items);
-}
-
-void UIDetails::preparePalette()
-{
-    /* Setup palette: */
-    setAutoFillBackground(true);
-    QPalette pal = qApp->palette();
-    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
-    pal.setColor(QPalette::Base, bodyColor);
-    setPalette(pal);
 }
 
 void UIDetails::prepareLayout()

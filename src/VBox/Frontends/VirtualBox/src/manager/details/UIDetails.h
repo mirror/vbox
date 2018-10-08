@@ -60,7 +60,6 @@ public:
 private:
 
     /* Helpers: Prepare stuff: */
-    void preparePalette();
     void prepareLayout();
     void prepareModel();
     void prepareView();
