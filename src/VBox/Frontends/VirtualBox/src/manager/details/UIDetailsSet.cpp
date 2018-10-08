@@ -20,7 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QPainter>
 # include <QStyle>
+# include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
 # include "UIDetailsElements.h"
@@ -195,6 +197,12 @@ void UIDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         /* Notify listener about build done: */
         emit sigBuildDone();
     }
+}
+
+void UIDetailsSet::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *)
+{
+    /* Paint background: */
+    paintBackground(pPainter, pOptions);
 }
 
 QString UIDetailsSet::description() const
@@ -687,4 +695,20 @@ void UIDetailsSet::enumerateLayoutItems(QList<DetailsElementType> &inGroup,
         iAdditionalGroupHeight = iPreviewHeight - iGroupHeight;
     else
         iAdditionalPreviewHeight = iGroupHeight - iPreviewHeight;
+}
+
+void UIDetailsSet::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
+{
+    /* Save painter: */
+    pPainter->save();
+
+    /* Prepare variables: */
+    const QRect optionRect = pOptions->rect;
+
+    /* Paint default background: */
+    const QColor defaultColor = palette().color(QPalette::Active, QPalette::Midlight).darker(110);
+    pPainter->fillRect(optionRect, defaultColor);
+
+    /* Restore painter: */
+    pPainter->restore();
 }
