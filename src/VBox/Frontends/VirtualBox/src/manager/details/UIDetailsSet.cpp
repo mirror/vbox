@@ -313,7 +313,7 @@ void UIDetailsSet::updateLayout()
     const UIDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
     const int iPreviewWidth = pPreviewElement ? pPreviewElement->minimumWidthHint() : 0;
     const int iPreviewHeight = pPreviewElement ? pPreviewElement->minimumHeightHint() : 0;
-    int iVerticalIndent = 0;
+    int iVerticalIndent = iMargin;
 
     /* Calculate Preview group elements: */
     QList<DetailsElementType> inGroup;
@@ -594,8 +594,8 @@ QVariant UIDetailsSet::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case SetData_Margin: return 0;
-        case SetData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
+        case SetData_Margin: return 1;
+        case SetData_Spacing: return 1;
         /* Default: */
         default: break;
     }
