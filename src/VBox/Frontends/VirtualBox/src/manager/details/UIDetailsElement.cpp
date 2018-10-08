@@ -46,8 +46,17 @@ UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enm
     : UIDetailsItem(pParent)
     , m_pSet(pParent)
     , m_enmType(enmType)
-    , m_iLightnessToneStart(155)
-    , m_iLightnessToneFinal(175)
+#ifdef VBOX_WS_MAC
+    , m_iDefaultToneStart(145)
+    , m_iDefaultToneFinal(155)
+    , m_iHoverToneStart(115)
+    , m_iHoverToneFinal(125)
+#else
+    , m_iDefaultToneStart(160)
+    , m_iDefaultToneFinal(190)
+    , m_iHoverToneStart(160)
+    , m_iHoverToneFinal(190)
+#endif
     , m_fHovered(false)
     , m_fNameHovered(false)
     , m_pHoveringMachine(0)
@@ -664,8 +673,8 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
 
     /* Paint default background: */
     const QColor defaultColor = pal.color(QPalette::Active, QPalette::Mid);
-    const QColor dcTone1 = defaultColor.lighter(m_iLightnessToneFinal);
-    const QColor dcTone2 = defaultColor.lighter(m_iLightnessToneStart);
+    const QColor dcTone1 = defaultColor.lighter(m_iDefaultToneFinal);
+    const QColor dcTone2 = defaultColor.lighter(m_iDefaultToneStart);
     QLinearGradient gradientDefault(fullRect.topLeft(), fullRect.bottomLeft());
     gradientDefault.setColorAt(0, dcTone1);
     gradientDefault.setColorAt(1, dcTone2);
@@ -676,8 +685,8 @@ void UIDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGra
     {
         /* Paint hovered background: */
         const QColor hoveredColor = pal.color(QPalette::Active, QPalette::Highlight);
-        QColor hcTone1 = hoveredColor.lighter(m_iLightnessToneFinal);
-        QColor hcTone2 = hoveredColor.lighter(m_iLightnessToneStart);
+        QColor hcTone1 = hoveredColor.lighter(m_iHoverToneFinal);
+        QColor hcTone2 = hoveredColor.lighter(m_iHoverToneStart);
         hcTone1.setAlpha(m_iAnimatedValue);
         hcTone2.setAlpha(m_iAnimatedValue);
         QLinearGradient gradientHovered(headRect.topLeft(), headRect.bottomLeft());
@@ -704,8 +713,10 @@ void UIDetailsElement::paintFrameRect(QPainter *pPainter, const QStyleOptionGrap
                          : optionRect;
 
     /* Paint frame: */
-    const QColor frameColor = palette().color(QPalette::Active, QPalette::Mid);
-    pPainter->setPen(frameColor.lighter(m_iLightnessToneStart));
+    const QColor strokeColor = palette().color(QPalette::Active, QPalette::Mid).lighter(m_iDefaultToneStart);
+    QPen pen(strokeColor);
+    pen.setWidth(0);
+    pPainter->setPen(pen);
     pPainter->drawRect(fullRect);
 
     /* Restore painter: */

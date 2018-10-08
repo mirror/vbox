@@ -375,7 +375,11 @@ void UIVirtualBoxManagerWidget::prepare()
     /* Configure palette: */
     setAutoFillBackground(true);
     QPalette pal = palette();
-    QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
+#ifdef VBOX_WS_MAC
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(145);
+#else
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
+#endif
     pal.setColor(QPalette::Window, color);
     setPalette(pal);
 
