@@ -125,24 +125,10 @@ protected:
 
 private:
 
-    /** Data field types. */
-    enum GroupItemData
-    {
-        /* Layout hints: */
-        GroupData_Margin,
-        GroupData_Spacing
-    };
-
     /** @name Prepare/cleanup cascade.
       * @{ */
         /** Prepares connections. */
         void prepareConnections();
-    /** @} */
-
-    /** @name Item stuff.
-      * @{ */
-        /** Returns abstractly stored data value for certain @a iKey. */
-        QVariant data(int iKey) const;
     /** @} */
 
     /** @name Painting stuff.

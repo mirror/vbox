@@ -104,7 +104,6 @@ QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType enmType /* = UIDet
 void UIDetailsGroup::updateLayout()
 {
     /* Prepare variables: */
-    const int iSpacing = data(GroupData_Spacing).toInt();
     const int iMaximumWidth = geometry().size().toSize().width();
     int iVerticalIndent = 0;
 
@@ -122,7 +121,7 @@ void UIDetailsGroup::updateLayout()
         /* Layout set content: */
         pItem->updateLayout();
         /* Advance indent: */
-        iVerticalIndent += (pItem->minimumHeightHint() + iSpacing);
+        iVerticalIndent += pItem->minimumHeightHint();
     }
 }
 
@@ -152,8 +151,6 @@ int UIDetailsGroup::minimumWidthHint() const
 int UIDetailsGroup::minimumHeightHint() const
 {
     /* Prepare variables: */
-    const int iMargin = data(GroupData_Margin).toInt();
-    const int iSpacing = data(GroupData_Spacing).toInt();
     int iMinimumHeightHint = 0;
     bool fHasItems = false;
 
@@ -165,17 +162,10 @@ int UIDetailsGroup::minimumHeightHint() const
             if (!pSetItem->hasDetails())
                 continue;
         /* And take into account all the others: */
-        iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
+        iMinimumHeightHint += pItem->minimumHeightHint();
         if (!fHasItems)
             fHasItems = true;
     }
-    /* Minus last spacing: */
-    if (fHasItems)
-        iMinimumHeightHint -= iSpacing;
-
-    /* Add two margins finally: */
-    if (fHasItems)
-        iMinimumHeightHint += 2 * iMargin;
 
     /* Return result: */
     return iMinimumHeightHint;
@@ -290,20 +280,6 @@ void UIDetailsGroup::prepareConnections()
             model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
     connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
             model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
-}
-
-QVariant UIDetailsGroup::data(int iKey) const
-{
-    /* Provide other members with required data: */
-    switch (iKey)
-    {
-        /* Layout hints: */
-        case GroupData_Margin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
-        case GroupData_Spacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 6;
-        /* Default: */
-        default: break;
-    }
-    return QVariant();
 }
 
 void UIDetailsGroup::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
