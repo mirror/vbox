@@ -36,6 +36,16 @@
  * @{
  */
 
+/** Apple developer ID for application signing. */
+#define RTCR_APPLE_CS_DEVID_APPLICATION_OID             "1.2.840.113635.100.6.1.13"
+/** Apple developer ID for installer signing. */
+#define RTCR_APPLE_CS_DEVID_INSTALLER_OID               "1.2.840.113635.100.6.1.14"
+/** Apple developer ID for kernel extension signing. */
+#define RTCR_APPLE_CS_DEVID_KEXT_OID                    "1.2.840.113635.100.6.1.18"
+/** Apple certificate policy OID.   */
+#define RTCR_APPLE_CS_CERTIFICATE_POLICY_OID            "1.2.840.113635.100.5.1"
+
+
 /** @name Apple code signing magic values for identifying blobs
  * @note No byte order conversion required.
  * @{ */

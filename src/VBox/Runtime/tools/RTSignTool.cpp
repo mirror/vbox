@@ -85,8 +85,6 @@ typedef struct SIGNTOOLPKCS7
     RTCRPKCS7CONTENTINFO        ContentInfo;
     /** Pointer to the decoded SignedData inside the ContentInfo member. */
     PRTCRPKCS7SIGNEDDATA        pSignedData;
-    /** Pointer to the indirect data content. */
-    PRTCRSPCINDIRECTDATACONTENT pIndData;
 
     /** Newly encoded raw signature.
      * @sa SignToolPkcs7_Encode()  */
@@ -142,9 +140,7 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
 static void SignToolPkcs7_Delete(PSIGNTOOLPKCS7 pThis)
 {
     RTCrPkcs7ContentInfo_Delete(&pThis->ContentInfo);
-    pThis->pIndData    = NULL;
     pThis->pSignedData = NULL;
-    pThis->pIndData    = NULL;
     RTMemFree(pThis->pbBuf);
     pThis->pbBuf       = NULL;
     pThis->cbBuf       = 0;
@@ -198,8 +194,8 @@ static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis, bool fCatalog)
              */
             if (!strcmp(pThis->pSignedData->ContentInfo.ContentType.szObjId, RTCRSPCINDIRECTDATACONTENT_OID))
             {
-                pThis->pIndData = pThis->pSignedData->ContentInfo.u.pIndirectDataContent;
-                Assert(pThis->pIndData);
+                PRTCRSPCINDIRECTDATACONTENT pIndData = pThis->pSignedData->ContentInfo.u.pIndirectDataContent;
+                Assert(pIndData);
 
                 /*
                  * Check that things add up.
@@ -211,7 +207,7 @@ static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis, bool fCatalog)
                                                      RTErrInfoInitStatic(&ErrInfo), "SD");
                 if (RT_SUCCESS(rc))
                 {
-                    rc = RTCrSpcIndirectDataContent_CheckSanityEx(pThis->pIndData,
+                    rc = RTCrSpcIndirectDataContent_CheckSanityEx(pIndData,
                                                                   pThis->pSignedData,
                                                                   RTCRSPCINDIRECTDATACONTENT_SANITY_F_ONLY_KNOWN_HASH,
                                                                   RTErrInfoInitStatic(&ErrInfo));
@@ -222,6 +218,8 @@ static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis, bool fCatalog)
                 else
                     RTMsgError("PKCS#7 sanity check failed for '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
             }
+            else if (!strcmp(pThis->pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID))
+            { /* apple code signing */ }
             else if (!fCatalog)
                 RTMsgError("Unexpected the signed content in '%s': %s (expected %s)", pThis->pszFilename,
                            pThis->pSignedData->ContentInfo.ContentType.szObjId, RTCRSPCINDIRECTDATACONTENT_OID);

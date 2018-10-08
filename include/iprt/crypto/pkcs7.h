@@ -40,6 +40,19 @@ struct RTCRPKCS7CONTENTINFO;
  * @{
  */
 
+/** PKCS \#7 data object ID.*/
+#define RTCR_PKCS7_DATA_OID                         "1.2.840.113549.1.7.1"
+/** PKCS \#7 signedData object ID. */
+#define RTCR_PKCS7_SIGNED_DATA_OID                  "1.2.840.113549.1.7.2"
+/** PKCS \#7 envelopedData object ID. */
+#define RTCR_PKCS7_ENVELOPED_DATA_OID               "1.2.840.113549.1.7.3"
+/** PKCS \#7 signedAndEnvelopedData object ID.  */
+#define RTCR_PKCS7_SIGNED_AND_ENVELOPED_DATA_OID    "1.2.840.113549.1.7.4"
+/** PKCS \#7 digestedData object ID. */
+#define RTCR_PKCS7_DIGESTED_DATA_OID                "1.2.840.113549.1.7.5"
+/** PKCS \#7 encryptedData object ID. */
+#define RTCR_PKCS7_ENCRYPTED_DATA_OID               "1.2.840.113549.1.7.6"
+
 
 /**
  * PKCS \#7 IssuerAndSerialNumber (IPRT representation).
@@ -379,7 +392,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNEDDATA, RTDECL, RTCrPkcs7SignedData,
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SETOFSIGNEDDATA, RTCRPKCS7SIGNEDDATA, RTDECL, RTCrPkcs7SetOfSignedData);
 
 /** PKCS \#7 SignedData object ID.  */
-#define RTCRPKCS7SIGNEDDATA_OID "1.2.840.113549.1.7.2"
+#define RTCRPKCS7SIGNEDDATA_OID   RTCR_PKCS7_SIGNED_DATA_OID
 
 /** PKCS \#7 SignedData version number 1.  */
 #define RTCRPKCS7SIGNEDDATA_V1    1
