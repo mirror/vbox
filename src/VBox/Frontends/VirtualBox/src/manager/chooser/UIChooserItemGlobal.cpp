@@ -587,7 +587,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     if (model()->currentItems().contains(unconst(this)))
     {
         /* Prepare color: */
-        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
+        const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessMax));
@@ -598,7 +598,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     else if (isHovered())
     {
         /* Prepare color: */
-        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
+        const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
@@ -610,7 +610,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     {
 #ifdef VBOX_WS_MAC
         /* Prepare color: */
-        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+        const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
         /* Draw gradient: */
         QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessMax));
@@ -618,12 +618,9 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
         pPainter->fillRect(rectangle, bgGrad);
 #else
         /* Prepare color: */
-        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+        QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
         /* Draw gradient: */
-        QLinearGradient bgGrad(rectangle.topLeft(), rectangle.bottomLeft());
-        bgGrad.setColorAt(0, backgroundColor.lighter(m_iDefaultLightnessMax));
-        bgGrad.setColorAt(1, backgroundColor.lighter(m_iDefaultLightnessMin));
-        pPainter->fillRect(rectangle, bgGrad);
+        pPainter->fillRect(rectangle, backgroundColor);
 #endif
     }
 
