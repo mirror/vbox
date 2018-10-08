@@ -116,6 +116,8 @@ EXPORTS
     RTAsn1Core_ResetImplict
     RTAsn1Core_SetTagAndFlags
     RTAsn1CursorCheckEnd
+    RTAsn1CursorCheckSeqEnd
+    RTAsn1CursorCheckSetEnd
     RTAsn1CursorGetBitString
     RTAsn1CursorGetBitStringEx
     RTAsn1CursorGetBmpString

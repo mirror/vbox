@@ -1648,10 +1648,8 @@ typedef struct RTASN1CURSOR
     uint8_t                     fFlags;
     /** The cursor depth. */
     uint8_t                     cDepth;
-    /** Number of pending indefinite length records. */
-    uint8_t                     cIndefinedRecs;
     /** Two bytes reserved for future tricks. */
-    uint8_t                     abReserved[1];
+    uint8_t                     abReserved[2];
     /** Pointer to the primary cursor. */
     struct RTASN1CURSORPRIMARY *pPrimary;
     /** Pointer to the parent cursor. */
@@ -1789,6 +1787,30 @@ RTDECL(bool) RTAsn1CursorIsEnd(PRTASN1CURSOR pCursor);
  */
 RTDECL(int) RTAsn1CursorCheckEnd(PRTASN1CURSOR pCursor);
 
+/**
+ * Specialization of RTAsn1CursorCheckEnd for handling indefinite length sequences.
+ *
+ * Makes sure we've reached the end of the data for the cursor, and in case of a
+ * an indefinite length sequence it may adjust sequence length and the parent
+ * cursor.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor             The cursor we're decoding from.
+ * @param   pSeqCore            The sequence core record.
+ */
+RTDECL(int) RTAsn1CursorCheckSeqEnd(PRTASN1CURSOR pCursor, PRTASN1SEQUENCECORE pSeqCore);
+
+/**
+ * Specialization of RTAsn1CursorCheckEnd for handling indefinite length sets.
+ *
+ * Makes sure we've reached the end of the data for the cursor, and in case of a
+ * an indefinite length sets it may adjust set length and the parent cursor.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor             The cursor we're decoding from.
+ * @param   pSetCore            The set core record.
+ */
+RTDECL(int) RTAsn1CursorCheckSetEnd(PRTASN1CURSOR pCursor, PRTASN1SETCORE pSetCore);
 
 /**
  * Skips a given number of bytes.

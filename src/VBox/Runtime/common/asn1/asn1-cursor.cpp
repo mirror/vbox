@@ -67,8 +67,8 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
     pPrimaryCursor->Cursor.cbLeft           = cb;
     pPrimaryCursor->Cursor.fFlags           = (uint8_t)fFlags; Assert(fFlags <= UINT8_MAX);
     pPrimaryCursor->Cursor.cDepth           = 0;
-    pPrimaryCursor->Cursor.cIndefinedRecs   = 0;
     pPrimaryCursor->Cursor.abReserved[0]    = 0;
+    pPrimaryCursor->Cursor.abReserved[1]    = 0;
     pPrimaryCursor->Cursor.pPrimary         = pPrimaryCursor;
     pPrimaryCursor->Cursor.pUp              = NULL;
     pPrimaryCursor->Cursor.pszErrorTag      = pszErrorTag;
@@ -88,8 +88,8 @@ RTDECL(int) RTAsn1CursorInitSub(PRTASN1CURSOR pParent, uint32_t cb, PRTASN1CURSO
     pChild->fFlags          = pParent->fFlags & ~RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
     pChild->cDepth          = pParent->cDepth + 1;
     AssertReturn(pChild->cDepth < RTASN1_MAX_NESTING, VERR_ASN1_TOO_DEEPLY_NESTED);
-    pChild->cIndefinedRecs  = 0;
     pChild->abReserved[0]   = 0;
+    pChild->abReserved[1]   = 0;
     pChild->pPrimary        = pParent->pPrimary;
     pChild->pUp             = pParent;
     pChild->pszErrorTag     = pszErrorTag;
@@ -113,8 +113,8 @@ RTDECL(int) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1
     pChild->fFlags          = pParent->fFlags & ~RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
     pChild->cDepth          = pParent->cDepth + 1;
     AssertReturn(pChild->cDepth < RTASN1_MAX_NESTING, VERR_ASN1_TOO_DEEPLY_NESTED);
-    pChild->cIndefinedRecs  = 0;
     pChild->abReserved[0]   = 0;
+    pChild->abReserved[1]   = 0;
     pChild->pPrimary        = pParent->pPrimary;
     pChild->pUp             = pParent;
     pChild->pszErrorTag     = pszErrorTag;
@@ -193,10 +193,9 @@ RTDECL(bool) RTAsn1CursorIsEnd(PRTASN1CURSOR pCursor)
         return true;
     if (!(pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH))
         return false;
-    /* This isn't quite right. */
-    if (pCursor->cbLeft > pCursor->cIndefinedRecs * (uint32_t)2)
-        return false;
-    return ASMMemIsZero(pCursor->pbCur, pCursor->cbLeft);
+    return pCursor->cbLeft >= 2
+        && pCursor->pbCur[0] == 0
+        && pCursor->pbCur[1] == 0;
 }
 
 
@@ -204,12 +203,92 @@ RTDECL(int) RTAsn1CursorCheckEnd(PRTASN1CURSOR pCursor)
 {
     if (pCursor->cbLeft == 0)
         return VINF_SUCCESS;
-    if (   (pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH)
-        && pCursor->cbLeft == pCursor->cIndefinedRecs * (uint32_t)2
-        && ASMMemIsZero(pCursor->pbCur, pCursor->cbLeft))
-        return VINF_SUCCESS;
+
+    if (pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH)
+    {
+        /*
+         * If we've got two zeros here we're good.  This helps us handle apple code
+         * signatures, where most of the big structures are of indefinite length.
+         * The problem here is when rtCrPkcs7ContentInfo_DecodeExtra works the
+         * octet string, it appears as if there extra padding at the end.
+         *
+         * It is of course possible that ASN.1 assumes we will parse the content of
+         * that octet string as if it were an ASN.1 substructure, looking for the
+         * end-of-content sequence and propage that up.  However, this works for now.
+         */
+        if (pCursor->cbLeft >= 2)
+        {
+            if (   pCursor->pbCur[0] == 0
+                && pCursor->pbCur[1] == 0)
+                return VINF_SUCCESS;
+            return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                                       "%u (%#x) bytes left over [indef: %.*Rhxs]",
+                                       pCursor->cbLeft, pCursor->cbLeft, RT_MIN(pCursor->cbLeft, 16), pCursor->pbCur);
+        }
+        return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                                   "%u (%#x) bytes left over [indef len]", pCursor->cbLeft, pCursor->cbLeft);
+    }
     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
                                "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
+}
+
+
+/**
+ * Worker for RTAsn1CursorCheckSeqEnd and RTAsn1CursorCheckSetEnd.
+ */
+static int rtAsn1CursorCheckSeqOrSetEnd(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core)
+{
+    if (pCursor->cbLeft == 0)
+        return VINF_SUCCESS;
+
+    if (pAsn1Core->fFlags & RTASN1CORE_F_INDEFINITE_LENGTH)
+    {
+        if (pCursor->cbLeft >= 2)
+        {
+            if (   pCursor->pbCur[0] == 0
+                && pCursor->pbCur[1] == 0)
+            {
+                pAsn1Core->cb = (uint32_t)(pCursor->pbCur - pAsn1Core->uData.pu8);
+                pCursor->cbLeft -= 2;
+                pCursor->pbCur  += 2;
+
+                PRTASN1CURSOR pParentCursor = pCursor->pUp;
+                if (   pParentCursor
+                    && (pParentCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH))
+                {
+                    pParentCursor->pbCur  -= pCursor->cbLeft;
+                    pParentCursor->cbLeft += pCursor->cbLeft;
+                    return VINF_SUCCESS;
+                }
+
+                if (pCursor->cbLeft == 0)
+                    return VINF_SUCCESS;
+
+                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                                           "%u (%#x) bytes left over (parent not indefinite length)", pCursor->cbLeft, pCursor->cbLeft);
+            }
+            return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END, "%u (%#x) bytes left over [indef: %.*Rhxs]",
+                                       pCursor->cbLeft, pCursor->cbLeft, RT_MIN(pCursor->cbLeft, 16), pCursor->pbCur);
+        }
+        return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                                   "1 byte left over, expected two for indefinite length end-of-content sequence");
+    }
+
+    return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                               "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
+
+}
+
+
+RTDECL(int) RTAsn1CursorCheckSeqEnd(PRTASN1CURSOR pCursor, PRTASN1SEQUENCECORE pSeqCore)
+{
+    return rtAsn1CursorCheckSeqOrSetEnd(pCursor, &pSeqCore->Asn1Core);
+}
+
+
+RTDECL(int) RTAsn1CursorCheckSetEnd(PRTASN1CURSOR pCursor, PRTASN1SETCORE pSetCore)
+{
+    return rtAsn1CursorCheckSeqOrSetEnd(pCursor, &pSetCore->Asn1Core);
 }
 
 
@@ -336,20 +415,20 @@ RTDECL(int) RTAsn1CursorReadHdr(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core, co
                         !=         (ASN1_TAGFLAG_CONSTRUCTED | ASN1_TAGCLASS_CONTEXT) )
                 return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
                                            "%s: Indefinite BER/CER encoding not supported for this tag (uTag=%#x)", pszErrorTag, uTag);
-            else if (pCursor->cIndefinedRecs > 8)
+            else if (pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH)
                 return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
-                                           "%s: Too many indefinite BER/CER encodings. (uTag=%#x)", pszErrorTag, uTag);
+                                           "%s: Nested indefinite BER/CER encoding. (uTag=%#x)", pszErrorTag, uTag);
             else if (pCursor->cbLeft < 2)
                 return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_BAD_INDEFINITE_LENGTH,
                                            "%s: Too little data left for indefinite BER/CER encoding (uTag=%#x)", pszErrorTag, uTag);
             else
             {
-                pCursor->cIndefinedRecs++;
                 pCursor->fFlags   |= RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
                 pAsn1Core->fFlags |= RTASN1CORE_F_INDEFINITE_LENGTH;
-                cb = pCursor->cbLeft - pCursor->cIndefinedRecs * 2; /* tentatively */
+                cb = pCursor->cbLeft - 2; /* tentatively for sequences and sets, definite for others */
             }
         }
+        /* else if (cb == 0 && uTag == 0) { end of content } - callers handle this */
 
         /* Check if the length makes sense. */
         if (cb > pCursor->cbLeft)
@@ -473,16 +552,18 @@ RTDECL(int) RTAsn1CursorGetContextTagNCursor(PRTASN1CURSOR pCursor, uint32_t fFl
 
 RTDECL(int) RTAsn1CursorPeek(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core)
 {
-    uint32_t        cbSavedLeft = pCursor->cbLeft;
-    uint8_t const  *pbSavedCur  = pCursor->pbCur;
-    PRTERRINFO      pErrInfo    = pCursor->pPrimary->pErrInfo;
+    uint32_t            cbSavedLeft         = pCursor->cbLeft;
+    uint8_t const      *pbSavedCur          = pCursor->pbCur;
+    uint8_t const       fSavedFlags         = pCursor->fFlags;
+    PRTERRINFO const    pErrInfo            = pCursor->pPrimary->pErrInfo;
     pCursor->pPrimary->pErrInfo = NULL;
 
     int rc = RTAsn1CursorReadHdr(pCursor, pAsn1Core, "peek");
 
     pCursor->pPrimary->pErrInfo = pErrInfo;
-    pCursor->pbCur  = pbSavedCur;
-    pCursor->cbLeft = cbSavedLeft;
+    pCursor->pbCur              = pbSavedCur;
+    pCursor->cbLeft             = cbSavedLeft;
+    pCursor->fFlags             = fSavedFlags;
     return rc;
 }
 

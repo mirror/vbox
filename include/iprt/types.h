@@ -2990,7 +2990,7 @@ typedef union RTPTRUNION
     /** As a signed integer. */
     intptr_t                i;
     /** As an unsigned integer. */
-    intptr_t                u;
+    uintptr_t               u;
     /** Pointer to char value. */
     char            RT_FAR *pch;
     /** Pointer to char value. */
@@ -3037,7 +3037,7 @@ typedef union RTCPTRUNION
     /** As a signed integer. */
     intptr_t                i;
     /** As an unsigned integer. */
-    intptr_t                u;
+    uintptr_t               u;
     /** Pointer to char value. */
     char const      RT_FAR *pch;
     /** Pointer to char value. */
@@ -3084,7 +3084,7 @@ typedef union RTVPTRUNION
     /** As a signed integer. */
     intptr_t                i;
     /** As an unsigned integer. */
-    intptr_t                u;
+    uintptr_t               u;
     /** Pointer to char value. */
     char volatile  RT_FAR *pch;
     /** Pointer to char value. */
@@ -3131,7 +3131,7 @@ typedef union RTCVPTRUNION
     /** As a signed integer. */
     intptr_t                                i;
     /** As an unsigned integer. */
-    intptr_t                                u;
+    uintptr_t                               u;
     /** Pointer to char value. */
     char const volatile             RT_FAR *pch;
     /** Pointer to char value. */

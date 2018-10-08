@@ -628,6 +628,8 @@ static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const c
             {
                 if (cVerbosity > 2)
                     RTPrintf("PKCS#7 signature: %u bytes\n", cbActual);
+                if (cVerbosity > 3)
+                    RTPrintf("%.*Rhxd\n", cbActual, pvBuf);
 
                 /*
                  * Decode it.
