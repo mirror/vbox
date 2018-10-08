@@ -39,7 +39,11 @@
 
 #define VBOXWDDM_DUMMY_DMABUFFER_SIZE (sizeof(VBOXCMDVBVA_HDR) / 2)
 
+#ifdef DEBUG
+DWORD g_VBoxLogUm = VBOXWDDM_CFG_LOG_UM_BACKDOOR;
+#else
 DWORD g_VBoxLogUm = 0;
+#endif
 
 /* Whether the driver is display-only (no 3D) for Windows 8 or newer guests. */
 DWORD g_VBoxDisplayOnly = 0;
