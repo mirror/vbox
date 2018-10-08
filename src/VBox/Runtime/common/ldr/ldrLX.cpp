@@ -1439,7 +1439,7 @@ static int kldrModLXDoLoadBits(PKLDRMODLX pModLX, void *pvBits)
 
                 case RANGE:
                     KLDRMODLX_ASSERT(!"RANGE");
-                    /* Falls through. */
+                    RT_FALL_THRU();
                 default:
                     rc = VERR_LDRLX_BAD_PAGE_MAP;
                     break;
@@ -2417,7 +2417,7 @@ static DECLCALLBACK(int) rtldrLX_RelocateBits(PRTLDRMODINTERNAL pMod, void *pvBi
 
                     case NRRENT:
                         KLDRMODLX_ASSERT(!"NRRENT");
-                        /* Falls through. */
+                        RT_FALL_THRU();
                     default:
                         iSelector = -1;
                         break;
