@@ -3317,7 +3317,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrIo(PVMCPU pVCpu, VMXINSTRID uInstrId, u
                                                                  : VMX_EXIT_QUAL_IO_DIRECTION_OUT;
         VMXVEXITINFO ExitInfo;
         RT_ZERO(ExitInfo);
-        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.uReason = VMX_EXIT_IO_INSTR;
         ExitInfo.cbInstr = cbInstr;
         ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
