@@ -27,12 +27,10 @@
  *  VMX_EXIT_SMI
  *  VMX_EXIT_INT_WINDOW
  *  VMX_EXIT_NMI_WINDOW
- *  VMX_EXIT_TASK_SWITCH
  *  VMX_EXIT_GETSEC
  *  VMX_EXIT_INVD
  *  VMX_EXIT_RSM
  *  VMX_EXIT_MOV_DRX
- *  VMX_EXIT_IO_INSTR
  *  VMX_EXIT_MWAIT
  *  VMX_EXIT_MTF
  *  VMX_EXIT_MONITOR (APIC access VM-exit caused by MONITOR pending)
@@ -2726,7 +2724,8 @@ DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO 
      *   - VM-exit guest-physical address is undefined.
      *
      * The VM-exit instruction length is mandatory for all VM-exits that are caused by
-     * instruction execution.
+     * instruction execution. For VM-exits that are not due to instruction execution this
+     * field is undefined.
      *
      * In our implementation in IEM, all undefined fields are generally cleared. However,
      * if the caller supplies information (from say the physical CPU directly) it is
@@ -3372,6 +3371,39 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPU pVCpu, VMXINSTRID uInstrId
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to task switches.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   enmTaskSwitch   The cause of the task switch.
+ * @param   SelNewTss       The selector of the new TSS.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss)
+{
+    /*
+     * Task-switch VM-exits are unconditional and only provide the
+     * VM-exit qualification.
+     *
+     * See Intel spec. 25.2 "Other Causes Of VM Exits".
+     */
+    uint8_t uTaskSwitchSrc;
+    switch (enmTaskSwitch)
+    {
+        case IEMTASKSWITCH_CALL:     uTaskSwitchSrc = 0; break;
+        case IEMTASKSWITCH_IRET:     uTaskSwitchSrc = 1; break;
+        case IEMTASKSWITCH_JUMP:     uTaskSwitchSrc = 2; break;
+        case IEMTASKSWITCH_INT_XCPT: uTaskSwitchSrc = 3; break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+
+    uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_NEW_TSS, SelNewTss)
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE,  uTaskSwitchSrc);
+    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH);
 }
 
 

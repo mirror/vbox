@@ -2686,6 +2686,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_CRX_, UINT64_C(0), UINT64_MAX,
 #define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_JMP                      2
 /** Task switch caused by an interrupt gate. */
 #define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IDT                      3
+
+/** Bit fields for Exit qualification for task switches. */
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_NEW_TSS_SHIFT              0
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_NEW_TSS_MASK               UINT64_C(0x000000000000ffff)
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_RSVD_16_29_SHIFT           16
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_RSVD_16_29_MASK            UINT64_C(0x000000003fff0000)
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE_SHIFT               30
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE_MASK                UINT64_C(0x00000000c0000000)
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_RSVD_32_63_SHIFT           32
+#define VMX_BF_EXIT_QUAL_TASK_SWITCH_RSVD_32_63_MASK            UINT64_C(0xffffffff00000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_MAX,
+                            (NEW_TSS, RSVD_16_29, SOURCE, RSVD_32_63));
 /** @} */
 
 

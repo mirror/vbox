@@ -396,19 +396,6 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)  (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
 
 /**
- * Invokes the VMX VM-exit handler for an instruction intercept.
- */
-# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr) \
-    do { return iemVmxVmexitInstr((a_pVCpu), (a_uExitReason), (a_cbInstr)); } while (0)
-
-/**
- * Invokes the VMX VM-exit handler for an instruction intercept where the
- * instruction provides additional VM-exit information.
- */
-# define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr) \
-    do { return iemVmxVmexitInstrNeedsInfo((a_pVCpu), (a_uExitReason), (a_uInstrId), (a_cbInstr)); } while (0)
-
-/**
  * Check if the nested-guest has the given Pin-based VM-execution control set.
  */
 # define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_PinCtl) \
@@ -427,13 +414,33 @@ typedef enum IEMXCPTCLASS
 #define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_ProcCtl2) \
     (CPUMIsGuestVmxProcCtls2Set((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_ProcCtl2)))
 
+/**
+ * Invokes the VMX VM-exit handler for an instruction intercept.
+ */
+# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr) \
+    do { return iemVmxVmexitInstr((a_pVCpu), (a_uExitReason), (a_cbInstr)); } while (0)
+
+/**
+ * Invokes the VMX VM-exit handler for an instruction intercept where the
+ * instruction provides additional VM-exit information.
+ */
+# define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr) \
+    do { return iemVmxVmexitInstrNeedsInfo((a_pVCpu), (a_uExitReason), (a_uInstrId), (a_cbInstr)); } while (0)
+
+/**
+ * Invokes the VMX VM-exit handler for a task switch.
+ */
+# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss) \
+    do { return iemVmxVmexitTaskSwitch((a_pVCpu), (a_enmTaskSwitch), (a_SelNewTss)); } while (0)
+
 #else
 # define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                  (false)
 # define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                              (false)
 # define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_cbInstr)                     (false)
 # define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_cbInstr)                    (false)
 # define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_cbInstr)                   (false)
-# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss)  do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr)            do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)     do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
@@ -950,6 +957,10 @@ IEM_STATIC VBOXSTRICTRC     iemMemStackPushU16(PVMCPU pVCpu, uint16_t u16Value);
 IEM_STATIC VBOXSTRICTRC     iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel);
 IEM_STATIC uint16_t         iemSRegFetchU16(PVMCPU pVCpu, uint8_t iSegReg);
 IEM_STATIC uint64_t         iemSRegBaseFetchU64(PVMCPU pVCpu, uint8_t iSegReg);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss);
+#endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 IEM_STATIC VBOXSTRICTRC     iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2);
@@ -3960,7 +3971,7 @@ IEM_STATIC VBOXSTRICTRC iemHlpTaskSwitchLoadDataSelectorInProtMode(PVMCPU pVCpu,
  *
  * @returns VBox strict status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
- * @param   enmTaskSwitch   What caused this task switch.
+ * @param   enmTaskSwitch   The cause of the task switch.
  * @param   uNextEip        The EIP effective after the task switch.
  * @param   fFlags          The flags, see IEM_XCPT_FLAGS_XXX.
  * @param   uErr            The error value if IEM_XCPT_FLAGS_ERR is set.
@@ -4014,6 +4025,19 @@ iemTaskSwitch(PVMCPU          pVCpu,
     }
 
     /*
+     * Task switches in VMX non-root mode always cause task switches.
+     * The new TSS must have been read and validated (DPL, limits etc.) before a
+     * task-switch VM-exit commences.
+     *
+     * See Intel spec. 25.4.2 ".Treatment of Task Switches"
+     */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        Log(("iemTaskSwitch: Guest intercept (source=%u, sel=%#x) -> VM-exit.\n", enmTaskSwitch, SelTSS));
+        IEM_VMX_VMEXIT_TASK_SWITCH_RET(pVCpu, enmTaskSwitch, SelTSS);
+    }
+
+    /*
      * The SVM nested-guest intercept for task-switch takes priority over all exceptions
      * after validating the incoming (new) TSS, see AMD spec. 15.14.1 "Task Switch Intercept".
      */
@@ -4036,7 +4060,6 @@ iemTaskSwitch(PVMCPU          pVCpu,
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_TASK_SWITCH, uExitInfo1, uExitInfo2);
         RT_NOREF2(uExitInfo1, uExitInfo2);
     }
-    /** @todo Nested-VMX task-switch intercept. */
 
     /*
      * Check the current TSS limit. The last written byte to the current TSS during the
@@ -4117,7 +4140,9 @@ iemTaskSwitch(PVMCPU          pVCpu,
     {
         Log(("iemTaskSwitch: Switching to the same TSS! enmTaskSwitch=%u GCPtr[Cur|New]TSS=%#RGv\n", enmTaskSwitch, GCPtrCurTSS));
         Log(("uCurCr3=%#x uCurEip=%#x uCurEflags=%#x uCurEax=%#x uCurEsp=%#x uCurEbp=%#x uCurCS=%#04x uCurSS=%#04x uCurLdt=%#x\n",
-             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u32, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ldtr.Sel));
+             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.u32, pVCpu->cpum.GstCtx.eax,
+             pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel,
+             pVCpu->cpum.GstCtx.ldtr.Sel));
     }
     if (fIsNewTSS386)
     {
@@ -4419,7 +4444,7 @@ iemTaskSwitch(PVMCPU          pVCpu,
         iemHlpLoadNullDataSelectorProt(pVCpu, &pVCpu->cpum.GstCtx.ldtr, uNewLdt);
     else
     {
-        Assert(!pVCpu->cpum.GstCtx.ldtr.Attr.n.u1Present);       /* Ensures that LDT.TI check passes in iemMemFetchSelDesc() below. */
+        Assert(!pVCpu->cpum.GstCtx.ldtr.Attr.n.u1Present);   /* Ensures that LDT.TI check passes in iemMemFetchSelDesc() below. */
 
         IEMSELDESC DescNewLdt;
         rcStrict = iemMemFetchSelDesc(pVCpu, &DescNewLdt, uNewLdt, X86_XCPT_TS);
@@ -4704,7 +4729,8 @@ iemTaskSwitch(PVMCPU          pVCpu,
         return iemRaiseGeneralProtectionFault(pVCpu, uExt);
     }
 
-    Log(("iemTaskSwitch: Success! New CS:EIP=%#04x:%#x SS=%#04x\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.ss.Sel));
+    Log(("iemTaskSwitch: Success! New CS:EIP=%#04x:%#x SS=%#04x\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip,
+         pVCpu->cpum.GstCtx.ss.Sel));
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }
 
@@ -4863,7 +4889,9 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
         }
 
         /* Do the actual task switch. */
-        return iemTaskSwitch(pVCpu, IEMTASKSWITCH_INT_XCPT, (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pVCpu->cpum.GstCtx.eip + cbInstr : pVCpu->cpum.GstCtx.eip, fFlags, uErr, uCr2, SelTSS, &DescTSS);
+        return iemTaskSwitch(pVCpu, IEMTASKSWITCH_INT_XCPT,
+                             (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pVCpu->cpum.GstCtx.eip + cbInstr : pVCpu->cpum.GstCtx.eip,
+                             fFlags, uErr, uCr2, SelTSS, &DescTSS);
     }
 
     /* A null CS is bad. */
