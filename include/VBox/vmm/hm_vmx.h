@@ -2500,7 +2500,9 @@ typedef uint32_t VMXINSTRID;
 #define VMXINSTRID_VMREAD                                       (0x12 | VMXINSTRID_VALID)
 #define VMXINSTRID_VMWRITE                                      (0x13 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
 #define VMXINSTRID_IO_IN                                        (0x14 | VMXINSTRID_VALID)
-#define VMXINSTRID_IO_OUT                                       (0x15 | VMXINSTRID_VALID)
+#define VMXINSTRID_IO_INS                                       (0x15 | VMXINSTRID_VALID)
+#define VMXINSTRID_IO_OUT                                       (0x16 | VMXINSTRID_VALID)
+#define VMXINSTRID_IO_OUTS                                      (0x17 | VMXINSTRID_VALID)
 /** @} */
 
 

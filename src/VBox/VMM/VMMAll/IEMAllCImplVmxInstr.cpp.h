@@ -3331,6 +3331,50 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrIo(PVMCPU pVCpu, VMXINSTRID uInstrId, u
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to string I/O instructions (INS and OUTS).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_IO_INS or
+ *                          VMXINSTRID_IO_OUTS).
+ * @param   u16Port         The I/O port being accessed.
+ * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
+ * @param   fRep            Whether the instruction has a REP prefix or not.
+ * @param   ExitInstrInfo   The VM-exit instruction info. field.
+ * @param   cbInstr         The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPU pVCpu, VMXINSTRID uInstrId, uint16_t u16Port, uint8_t cbAccess, bool fRep,
+                                               VMXEXITINSTRINFO ExitInstrInfo, uint8_t cbInstr)
+{
+    Assert(uInstrId == VMXINSTRID_IO_INS || uInstrId == VMXINSTRID_IO_OUTS);
+    Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
+    Assert(ExitInstrInfo.StrIo.iSegReg < X86_SREG_COUNT);
+    Assert(ExitInstrInfo.StrIo.u3AddrSize == 0 || ExitInstrInfo.StrIo.u3AddrSize == 1 || ExitInstrInfo.StrIo.u3AddrSize == 2);
+
+    bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port);
+    if (fIntercept)
+    {
+        uint32_t const uDirection = uInstrId == VMXINSTRID_IO_INS ? VMX_EXIT_QUAL_IO_DIRECTION_IN
+                                                                  : VMX_EXIT_QUAL_IO_DIRECTION_OUT;
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason   = VMX_EXIT_IO_INSTR;
+        ExitInfo.cbInstr   = cbInstr;
+        ExitInfo.InstrInfo = ExitInstrInfo;
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_STRING, 1)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_REP,    fRep)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,  0)     /* DX (not immediate). */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * VMX VM-exit handler for TPR virtualization.
  *
  * @returns VBox strict status code.
