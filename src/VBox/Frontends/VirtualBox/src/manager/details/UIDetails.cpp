@@ -20,8 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QApplication>
-# include <QStyle>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -53,8 +51,7 @@ void UIDetails::prepare()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 9;
-        pMainLayout->setContentsMargins(iL, 0, 0, 0);
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->setSpacing(0);
 
         /* Create details-model: */

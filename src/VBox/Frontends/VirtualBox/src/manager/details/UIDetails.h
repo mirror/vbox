@@ -22,8 +22,7 @@
 #include <QWidget>
 
 /* Forward declartions: */
-class QVBoxLayout;
-class QWidget;
+class QString;
 class UIDetailsModel;
 class UIDetailsView;
 class UIVirtualMachineItem;
