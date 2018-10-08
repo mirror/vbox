@@ -1747,9 +1747,10 @@ static int kldrModMachODoQuerySymbol32Bit(PRTLDRMODMACHO pThis, const macho_nlis
     if (iSymbol == UINT32_MAX)
     {
         /* simplify validation. */
-        if (cchStrings <= cchSymbol)
+        /** @todo figure out a better way to deal with underscore prefixes. sigh. */
+        if (cchStrings <= cchSymbol + 1)
             return VERR_SYMBOL_NOT_FOUND;
-        cchStrings -= cchSymbol;
+        cchStrings -= cchSymbol + 1;
 
         /* external symbols are usually at the end, so search the other way. */
         for (iSymbol = cSyms - 1; iSymbol != UINT32_MAX; iSymbol--)
@@ -1772,9 +1773,10 @@ static int kldrModMachODoQuerySymbol32Bit(PRTLDRMODMACHO pThis, const macho_nlis
             if ((uint32_t)paSyms[iSymbol].n_un.n_strx >= cchStrings)
                 continue;
             psz = &pchStrings[paSyms[iSymbol].n_un.n_strx];
-            if (psz[cchSymbol])
+            if (psz[cchSymbol + 1])
                 continue;
-            if (memcmp(psz, pchSymbol, cchSymbol))
+            /** @todo figure out a better way to deal with underscore prefixes. sigh. */
+            if (*psz != '_' || memcmp(psz + 1, pchSymbol, cchSymbol))
                 continue;
 
             /* match! */
@@ -1875,9 +1877,10 @@ static int kldrModMachODoQuerySymbol64Bit(PRTLDRMODMACHO pThis, const macho_nlis
     if (iSymbol == UINT32_MAX)
     {
         /* simplify validation. */
-        if (cchStrings <= cchSymbol)
+        /** @todo figure out a better way to deal with underscore prefixes. sigh. */
+        if (cchStrings <= cchSymbol + 1)
             return VERR_SYMBOL_NOT_FOUND;
-        cchStrings -= cchSymbol;
+        cchStrings -= cchSymbol + 1;
 
         /* external symbols are usually at the end, so search the other way. */
         for (iSymbol = cSyms - 1; iSymbol != UINT32_MAX; iSymbol--)
@@ -1900,9 +1903,9 @@ static int kldrModMachODoQuerySymbol64Bit(PRTLDRMODMACHO pThis, const macho_nlis
             if ((uint32_t)paSyms[iSymbol].n_un.n_strx >= cchStrings)
                 continue;
             psz = &pchStrings[paSyms[iSymbol].n_un.n_strx];
-            if (psz[cchSymbol])
+            if (psz[cchSymbol + 1])
                 continue;
-            if (memcmp(psz, pchSymbol, cchSymbol))
+            if (*psz != '_' || memcmp(psz + 1, pchSymbol, cchSymbol))
                 continue;
 
             /* match! */
@@ -2127,6 +2130,9 @@ static int kldrModMachODoEnumSymbols32Bit(PRTLDRMODMACHO pThis, const macho_nlis
         /*
          * Do callback.
          */
+        /** @todo figure out a better way to deal with underscore prefixes. sigh. */
+        if (cch > 1 && *psz == '_')
+            psz++;
         rc = pfnCallback(&pThis->Core, psz, iSym, uValue/*, fKind*/, pvUser);
         if (rc != VINF_SUCCESS)
             return rc;
@@ -2239,6 +2245,9 @@ static int kldrModMachODoEnumSymbols64Bit(PRTLDRMODMACHO pThis, const macho_nlis
         /*
          * Do callback.
          */
+        /** @todo figure out a better way to deal with underscore prefixes. sigh. */
+        if (cch > 1 && *psz == '_')
+            psz++;
         rc = pfnCallback(&pThis->Core, psz, iSym, uValue/*, fKind*/, pvUser);
         if (rc != VINF_SUCCESS)
             return rc;
@@ -2608,8 +2617,10 @@ static int  kldrModMachOObjDoImports(PRTLDRMODMACHO pThis, RTLDRADDR BaseAddress
                     rc = VERR_SYMBOL_NOT_FOUND;
 
                 /* Ask the user for an address to the symbol. */
+                /** @todo figure out a better way to deal with underscore prefixes. sigh. */
                 if (RT_FAILURE_NP(rc))
-                    rc = pfnGetImport(&pThis->Core, NULL /*pszModule*/, pszSymbol, iSym, &Value/*, &fKind*/, pvUser);
+                    rc = pfnGetImport(&pThis->Core, NULL /*pszModule*/, pszSymbol + (pszSymbol[0] == '_'),
+                                      UINT32_MAX, &Value/*, &fKind*/, pvUser);
                 if (RT_FAILURE(rc))
                 {
                     /* weak reference? */
@@ -2667,8 +2678,10 @@ static int  kldrModMachOObjDoImports(PRTLDRMODMACHO pThis, RTLDRADDR BaseAddress
                     rc = VERR_SYMBOL_NOT_FOUND;
 
                 /* Ask the user for an address to the symbol. */
+                /** @todo figure out a better way to deal with underscore prefixes. sigh. */
                 if (RT_FAILURE_NP(rc))
-                    rc = pfnGetImport(&pThis->Core, NULL, pszSymbol, iSym, &Value, /*&fKind,*/ pvUser);
+                    rc = pfnGetImport(&pThis->Core, NULL, pszSymbol + (*pszSymbol == '_'),
+                                      UINT32_MAX, &Value, /*&fKind,*/ pvUser);
                 if (RT_FAILURE(rc))
                 {
                     /* weak reference? */
