@@ -340,12 +340,12 @@ unsigned int enqueue_key(uint8_t scan_code, uint8_t ascii_code)
 {
     uint16_t    buffer_start, buffer_end, buffer_head, buffer_tail, temp_tail;
 
-#if BX_CPU < 2
-    buffer_start = 0x001E;
-    buffer_end   = 0x003E;
-#else
+#if VBOX_BIOS_CPU >= 80286
     buffer_start = read_word(0x0040, 0x0080);
     buffer_end   = read_word(0x0040, 0x0082);
+#else
+    buffer_start = 0x001E;
+    buffer_end   = 0x003E;
 #endif
 
     buffer_head = read_word(0x0040, 0x001A);
@@ -616,12 +616,12 @@ unsigned int dequeue_key(uint8_t __far *scan_code, uint8_t __far *ascii_code, un
     uint16_t    buffer_start, buffer_end, buffer_head, buffer_tail;
     uint8_t     acode, scode;
 
-#if BX_CPU < 2
-    buffer_start = 0x001E;
-    buffer_end   = 0x003E;
-#else
+#if VBOX_BIOS_CPU >= 80286
     buffer_start = read_word(0x0040, 0x0080);
     buffer_end   = read_word(0x0040, 0x0082);
+#else
+    buffer_start = 0x001E;
+    buffer_end   = 0x003E;
 #endif
 
     buffer_head = read_word(0x0040, 0x001a);
