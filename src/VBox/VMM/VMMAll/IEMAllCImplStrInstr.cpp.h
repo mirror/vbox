@@ -33,20 +33,23 @@
 #define OP_TYPE                     RT_CONCAT3(uint,OP_SIZE,_t)
 
 #if ADDR_SIZE == 16
-# define ADDR_rDI   di
-# define ADDR_rSI   si
-# define ADDR_rCX   cx
-# define ADDR2_TYPE uint32_t
+# define ADDR_rDI       di
+# define ADDR_rSI       si
+# define ADDR_rCX       cx
+# define ADDR2_TYPE     uint32_t
+# define ADDR_VMXSTRIO  0
 #elif ADDR_SIZE == 32
-# define ADDR_rDI   edi
-# define ADDR_rSI   esi
-# define ADDR_rCX   ecx
-# define ADDR2_TYPE uint32_t
+# define ADDR_rDI       edi
+# define ADDR_rSI       esi
+# define ADDR_rCX       ecx
+# define ADDR2_TYPE     uint32_t
+# define ADDR_VMXSTRIO  1
 #elif ADDR_SIZE == 64
-# define ADDR_rDI   rdi
-# define ADDR_rSI   rsi
-# define ADDR_rCX   rcx
-# define ADDR2_TYPE uint64_t
+# define ADDR_rDI       rdi
+# define ADDR_rSI       rsi
+# define ADDR_rCX       rcx
+# define ADDR2_TYPE     uint64_t
+# define ADDR_VMXSTRIO  2
 # define IS_64_BIT_CODE(a_pVCpu)    (true)
 #else
 # error "Bad ADDR_SIZE."
@@ -1203,20 +1206,34 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
-     * Check SVM nested-guest IO intercept.
+     * Check nested-guest I/O intercepts.
      */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VMXEXITINSTRINFO ExitInstrInfo;
+        ExitInstrInfo.u = 0;
+        ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
+        ExitInstrInfo.StrIo.iSegReg    = X86_SREG_ES;
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_INS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, false /* fRep */,
+                                          ExitInstrInfo, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
-        rcStrict = iemSvmHandleIOIntercept(pVCpu, pVCpu->cpum.GstCtx.dx, SVMIOIOTYPE_IN, OP_SIZE / 8, ADDR_SIZE, X86_SREG_ES, false /* fRep */,
-                                           true /* fStrIo */, cbInstr);
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, pVCpu->cpum.GstCtx.dx, SVMIOIOTYPE_IN, OP_SIZE / 8, ADDR_SIZE, X86_SREG_ES,
+                                           false /* fRep */, true /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
-            Log(("iemCImpl_ins_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pVCpu->cpum.GstCtx.dx, OP_SIZE / 8,
-                 VBOXSTRICTRC_VAL(rcStrict)));
+            Log(("iemCImpl_ins_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pVCpu->cpum.GstCtx.dx,
+                 OP_SIZE / 8, VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
     }
@@ -1274,10 +1291,24 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
-     * Check SVM nested-guest IO intercept.
+     * Check nested-guest I/O intercepts.
      */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VMXEXITINSTRINFO ExitInstrInfo;
+        ExitInstrInfo.u = 0;
+        ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
+        ExitInstrInfo.StrIo.iSegReg    = X86_SREG_ES;
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_INS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, true /* fRep */,
+                                          ExitInstrInfo, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
         rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_IN, OP_SIZE / 8, ADDR_SIZE, X86_SREG_ES, true /* fRep */,
@@ -1475,20 +1506,34 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
-     * Check SVM nested-guest IO intercept.
+     * Check nested-guest I/O intercepts.
      */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VMXEXITINSTRINFO ExitInstrInfo;
+        ExitInstrInfo.u = 0;
+        ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
+        ExitInstrInfo.StrIo.iSegReg    = iEffSeg;
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_OUTS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, false /* fRep */,
+                                          ExitInstrInfo, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
-        rcStrict = iemSvmHandleIOIntercept(pVCpu, pVCpu->cpum.GstCtx.dx, SVMIOIOTYPE_OUT, OP_SIZE / 8, ADDR_SIZE, iEffSeg, false /* fRep */,
-                                           true /* fStrIo */, cbInstr);
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, pVCpu->cpum.GstCtx.dx, SVMIOIOTYPE_OUT, OP_SIZE / 8, ADDR_SIZE, iEffSeg,
+                                           false /* fRep */, true /* fStrIo */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
-            Log(("iemCImpl_outs_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pVCpu->cpum.GstCtx.dx, OP_SIZE / 8,
-                 VBOXSTRICTRC_VAL(rcStrict)));
+            Log(("iemCImpl_outs_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pVCpu->cpum.GstCtx.dx,
+                 OP_SIZE / 8, VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
     }
@@ -1534,10 +1579,24 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
-     * Check SVM nested-guest IO intercept.
+     * Check nested-guest I/O intercepts.
      */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VMXEXITINSTRINFO ExitInstrInfo;
+        ExitInstrInfo.u = 0;
+        ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
+        ExitInstrInfo.StrIo.iSegReg    = iEffSeg;
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_OUTS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, true /* fRep */,
+                                          ExitInstrInfo, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
         rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_OUT, OP_SIZE / 8, ADDR_SIZE, iEffSeg, true /* fRep */,
@@ -1705,6 +1764,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 #undef ADDR2_TYPE
 #undef ADDR_TYPE
 #undef ADDR2_TYPE
+#undef ADDR_VMXSTRIO
 #undef IS_64_BIT_CODE
 #undef IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN
 #undef IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN
