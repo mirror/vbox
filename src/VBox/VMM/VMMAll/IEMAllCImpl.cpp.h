@@ -6347,6 +6347,9 @@ IEM_CIMPL_DEF_0(iemCImpl_wbinvd)
 
     IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0);
 
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WBINVD, cbInstr);
+
     /* We currently take no action here. */
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
