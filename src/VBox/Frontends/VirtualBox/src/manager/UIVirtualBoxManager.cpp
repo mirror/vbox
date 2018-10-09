@@ -1988,28 +1988,28 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
 void UIVirtualBoxManager::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
-    const bool fGlobalMenuShown = m_pWidget->isGlobalItemSelected();
-    const bool fMachineMenuShown = !isSingleGroupSelected();
+    const bool fGlobalMenuShown  = m_pWidget->isGlobalItemSelected();
+    const bool fMachineMenuShown = m_pWidget->isMachineItemSelected() && !isSingleGroupSelected();
+    const bool fGroupMenuShown   = m_pWidget->isGroupItemSelected()   &&  isSingleGroupSelected();
     m_pMachineMenuAction->setVisible(fMachineMenuShown);
-    m_pGroupMenuAction->setVisible(!fMachineMenuShown);
+    m_pGroupMenuAction->setVisible(fGroupMenuShown);
 
-    /* Determine whether Media actions should be visible: */
+    /* Determine whether Media menu should be visible: */
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Media;
-    const bool fMediumActionsShown = fMediumMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_Media);
     m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
 
-    /* Determine whether Network actions should be visible: */
+    /* Determine whether Network menu should be visible: */
     const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Network;
-    const bool fNetworkActionsShown = fNetworkMenuShown || !m_pWidget->isToolOpened(ToolTypeGlobal_Network);
     m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
 
-    /* Determine whether Snapshots actions should be visible: */
-    const bool fSnapshotMenuShown = m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
+    /* Determine whether Snapshots menu should be visible: */
+    const bool fSnapshotMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
+                                    m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
     m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
 
-    /* Determine whether Logs actions should be visible: */
-    const bool fLogViewerMenuShown = m_pWidget->currentMachineTool() == ToolTypeMachine_Logs;
-    const bool fLogViewerActionsShown = fLogViewerMenuShown || !m_pWidget->isToolOpened(ToolTypeMachine_Logs);
+    /* Determine whether Logs menu should be visible: */
+    const bool fLogViewerMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
+                                     m_pWidget->currentMachineTool() == ToolTypeMachine_Logs;
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
 
     /* Hide action shortcuts: */
@@ -2019,16 +2019,6 @@ void UIVirtualBoxManager::updateActionsVisibility()
     else
         foreach (UIAction *pAction, m_groupActions)
             pAction->hideShortcut();
-
-    /* Update actions visibility: */
-    foreach (UIAction *pAction, m_virtualMediaManagerActions)
-        pAction->setVisible(fMediumActionsShown);
-    foreach (UIAction *pAction, m_hostNetworkManagerActions)
-        pAction->setVisible(fNetworkActionsShown);
-    foreach (UIAction *pAction, m_snapshotActions)
-        pAction->setVisible(fSnapshotMenuShown);
-    foreach (UIAction *pAction, m_logViewerActions)
-        pAction->setVisible(fLogViewerActionsShown);
 
     /* Show action shortcuts: */
     if (fMachineMenuShown)
