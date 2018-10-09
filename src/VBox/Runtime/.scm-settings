@@ -97,7 +97,6 @@
 /r3/win/VBoxRT-msvcr100-win32.def              : --external-copyright
 
 /common/ldr/ldrLX.cpp                          : --external-copyright
-/common/ldr/ldrMachO.cpp                       : --external-copyright
 
 /common/math/x86/fenv-x86.c                    : --external-copyright --no-convert-tabs
 
