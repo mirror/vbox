@@ -2862,10 +2862,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
  * VM-exit)  or not.
  *
  * @returns @c true if the instruction is intercepted, @c false otherwise.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   u16Port         The I/O port being accessed by the instruction.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   u16Port     The I/O port being accessed by the instruction.
+ * @param   cbAccess    The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port)
+IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2883,7 +2884,7 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port)
         uint8_t const *pbIoBitmapB = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
         Assert(pbIoBitmapA);
         Assert(pbIoBitmapB);
-        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port);
+        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
     }
 
     return false;
@@ -3348,7 +3349,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrIo(PVMCPU pVCpu, VMXINSTRID uInstrId, u
     Assert(uInstrId == VMXINSTRID_IO_IN || uInstrId == VMXINSTRID_IO_OUT);
     Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
 
-    bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port);
+    bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port, cbAccess);
     if (fIntercept)
     {
         uint32_t const uDirection = uInstrId == VMXINSTRID_IO_IN ? VMX_EXIT_QUAL_IO_DIRECTION_IN
@@ -3390,7 +3391,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPU pVCpu, VMXINSTRID uInstrId
     Assert(ExitInstrInfo.StrIo.u3AddrSize == 0 || ExitInstrInfo.StrIo.u3AddrSize == 1 || ExitInstrInfo.StrIo.u3AddrSize == 2);
     Assert(uInstrId != VMXINSTRID_IO_INS || ExitInstrInfo.StrIo.iSegReg == X86_SREG_ES);
 
-    bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port);
+    bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port, cbAccess);
     if (fIntercept)
     {
         /*

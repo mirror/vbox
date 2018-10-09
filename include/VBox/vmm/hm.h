@@ -151,7 +151,8 @@ VMM_INT_DECL(int)               HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, u
                                                                  uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress);
 VMM_INT_DECL(int)               HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
                                                       PVMXMSREXITWRITE penmWrite);
-VMM_INT_DECL(bool)              HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort);
+VMM_INT_DECL(bool)              HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+                                                           uint8_t cbAccess);
 /** @} */
 
 /** @name All-context SVM helpers.

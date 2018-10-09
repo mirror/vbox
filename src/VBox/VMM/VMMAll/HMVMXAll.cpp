@@ -962,12 +962,23 @@ VMM_INT_DECL(int) HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr,
  * @param   pvIoBitmapA     Pointer to I/O bitmap A.
  * @param   pvIoBitmapB     Pointer to I/O bitmap B.
  * @param   uPort           The I/O port being accessed.
+ * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-VMM_INT_DECL(bool) HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort)
+VMM_INT_DECL(bool) HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort, uint8_t cbAccess)
 {
-    /* If the port is 0 or ffff ("wrap around"), we cause a VM-exit. */
-    if (   uPort == 0x0000
-        || uPort == 0xffff)
+    Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
+
+    /*
+     * If the I/O port accecss wraps around the 16-bit port I/O space,
+     * we must cause a VM-exit.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    /** @todo r=ramshankar: Reading 1, 2, 4 bytes at ports 0xffff, 0xfffe and 0xfffc
+     *        respectively are valid and do not constitute a wrap around from what I
+     *        understand. Verify this later. */
+    uint32_t const uPortLast = uPort + cbAccess;
+    if (uPortLast > 0x10000)
         return true;
 
     /* Read the appropriate bit from the corresponding IO bitmap. */
