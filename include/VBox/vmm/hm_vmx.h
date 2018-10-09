@@ -3447,8 +3447,8 @@ typedef struct
     RTUINT64U       u64AddrVmwriteBitmap;
     /** 0x280 - Virtualization-exception information address.  */
     RTUINT64U       u64AddrXcptVeInfo;
-    /** 0x288 - XSS-exiting bitmap address.  */
-    RTUINT64U       u64AddrXssBitmap;
+    /** 0x288 - XSS-exiting bitmap.  */
+    RTUINT64U       u64XssBitmap;
     /** 0x290 - ENCLS-exiting bitmap address.  */
     RTUINT64U       u64AddrEnclsBitmap;
     /** 0x298 - TSC multiplier.  */
