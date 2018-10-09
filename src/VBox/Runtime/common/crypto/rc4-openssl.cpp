@@ -41,7 +41,8 @@
 
 RTDECL(void) RTCrRc4SetKey(PRTCRRC4KEY pKey, size_t cbData, void const *pvData)
 {
-    AssertCompile(sizeof(pKey->au64Padding) == sizeof(pKey->Ossl));
+
+    AssertCompile(sizeof(RC4_INT) == 4 ? sizeof(pKey->au64Padding) == sizeof(pKey->Ossl) : sizeof(pKey->au64Padding) >= sizeof(pKey->Ossl));
     Assert((int)cbData == (ssize_t)cbData);
     AssertPtr(pKey);
 
@@ -51,7 +52,7 @@ RTDECL(void) RTCrRc4SetKey(PRTCRRC4KEY pKey, size_t cbData, void const *pvData)
 
 RTDECL(void) RTCrRc4(PRTCRRC4KEY pKey, size_t cbData, void const *pvDataIn, void *pvDataOut)
 {
-    AssertCompile(sizeof(pKey->au64Padding) == sizeof(pKey->Ossl));
+    AssertCompile(sizeof(RC4_INT) == 4 ? sizeof(pKey->au64Padding) == sizeof(pKey->Ossl) : sizeof(pKey->au64Padding) >= sizeof(pKey->Ossl));
     Assert((int)cbData == (ssize_t)cbData);
     AssertPtr(pKey);
 
