@@ -530,7 +530,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
         return VERR_NO_MEMORY;
 
     /* Assemble the code for resuming the call.*/
-    *ppfnReal = (PFNRT)pbPatchMem;
+    *ppfnReal = (PFNRT)(uintptr_t)pbPatchMem;
 
     /* Go through the instructions to patch and fixup any relative call instructions. */
     uint32_t offInsn = 0;
