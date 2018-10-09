@@ -5281,6 +5281,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    /** @todo NSTVMX: SMSW CR0 masking. */
 
     switch (enmEffOpSize)
     {
@@ -5900,10 +5901,25 @@ IEM_CIMPL_DEF_0(iemCImpl_clts)
  */
 IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Check nested-guest VMX intercept.
+     * Unlike most other intercepts, the Mov DRx intercept takes preceedence
+     * over CPL and CR4.DE and even DR4/DR5 checks.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovDrX(pVCpu, VMXINSTRID_MOV_FROM_DRX, iDrReg, iGReg, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
     /*
      * Check preconditions.
      */
-
     /* Raise GPs. */
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
@@ -5993,6 +6009,22 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
  */
 IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Check nested-guest VMX intercept.
+     * Unlike most other intercepts, the Mov DRx intercept takes preceedence
+     * over CPL and CR4.DE and even DR4/DR5 checks.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovDrX(pVCpu, VMXINSTRID_MOV_TO_DRX, iDrReg, iGReg, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+#endif
+
     /*
      * Check preconditions.
      */

@@ -2503,6 +2503,8 @@ typedef uint32_t VMXINSTRID;
 #define VMXINSTRID_IO_INS                                       (0x15 | VMXINSTRID_VALID)
 #define VMXINSTRID_IO_OUT                                       (0x16 | VMXINSTRID_VALID)
 #define VMXINSTRID_IO_OUTS                                      (0x17 | VMXINSTRID_VALID)
+#define VMXINSTRID_MOV_TO_DRX                                   (0x18 | VMXINSTRID_VALID)
+#define VMXINSTRID_MOV_FROM_DRX                                 (0x19 | VMXINSTRID_VALID)
 /** @} */
 
 
@@ -2611,7 +2613,22 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_TPR_THRESHOLD_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_QUAL_DRX_RES2(a)                               (((a) >> 5) & 7)
 /** 8-11: General purpose register number. */
 #define VMX_EXIT_QUAL_DRX_GENREG(a)                             (((a) >> 8) & 0xf)
-/** Rest: reserved. */
+
+/** Bit fields for Exit qualification due to Mov DRx. */
+#define VMX_BF_EXIT_QUAL_DRX_REGISTER_SHIFT                     0
+#define VMX_BF_EXIT_QUAL_DRX_REGISTER_MASK                      UINT64_C(0x0000000000000007)
+#define VMX_BF_EXIT_QUAL_DRX_RSVD_1_SHIFT                       3
+#define VMX_BF_EXIT_QUAL_DRX_RSVD_1_MASK                        UINT64_C(0x0000000000000008)
+#define VMX_BF_EXIT_QUAL_DRX_DIRECTION_SHIFT                    4
+#define VMX_BF_EXIT_QUAL_DRX_DIRECTION_MASK                     UINT64_C(0x0000000000000010)
+#define VMX_BF_EXIT_QUAL_DRX_RSVD_5_7_SHIFT                     5
+#define VMX_BF_EXIT_QUAL_DRX_RSVD_5_7_MASK                      UINT64_C(0x00000000000000e0)
+#define VMX_BF_EXIT_QUAL_DRX_GENREG_SHIFT                       8
+#define VMX_BF_EXIT_QUAL_DRX_GENREG_MASK                        UINT64_C(0x0000000000000f00)
+#define VMX_BF_EXIT_QUAL_DRX_RSVD_12_63_SHIFT                   12
+#define VMX_BF_EXIT_QUAL_DRX_RSVD_12_63_MASK                    UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_DRX_, UINT64_C(0), UINT64_MAX,
+                            (REGISTER, RSVD_1, DIRECTION, RSVD_5_7, GENREG, RSVD_12_63));
 /** @} */
 
 

@@ -3291,6 +3291,46 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr8(PVMCPU pVCpu, uint8_t iGReg, u
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to 'Mov DRx,GReg' (DRx write) and 'Mov
+ * GReg,DRx' (DRx read).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uInstrid    The instruction identity (VMXINSTRID_MOV_TO_DRX or
+ *                      VMXINSTRID_MOV_FROM_DRX).
+ * @param   iDrReg      The debug register being accessed.
+ * @param   iGReg       The general register to/from which the DRx value is being
+ *                      store/loaded.
+ * @param   cbInstr     The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovDrX(PVMCPU pVCpu, VMXINSTRID uInstrId, uint8_t iDrReg, uint8_t iGReg,
+                                                uint8_t cbInstr)
+{
+    Assert(iDrReg <= 7);
+    Assert(uInstrId == VMXINSTRID_MOV_TO_DRX || uInstrId == VMXINSTRID_MOV_FROM_DRX);
+
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT)
+    {
+        uint32_t const uDirection = uInstrId == VMXINSTRID_MOV_TO_DRX ? VMX_EXIT_QUAL_DRX_DIRECTION_WRITE
+                                                                      : VMX_EXIT_QUAL_DRX_DIRECTION_READ;
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_DRX;
+        ExitInfo.cbInstr = cbInstr;
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_REGISTER,  iDrReg)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_DIRECTION, uDirection)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_DRX_GENREG,    iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to I/O instructions (IN and OUT).
  *
  * @returns VBox strict status code.
@@ -3354,19 +3394,49 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPU pVCpu, VMXINSTRID uInstrId
     bool const fIntercept = iemVmxIsIoInterceptSet(pVCpu, u16Port);
     if (fIntercept)
     {
-        uint32_t const uDirection = uInstrId == VMXINSTRID_IO_INS ? VMX_EXIT_QUAL_IO_DIRECTION_IN
-                                                                  : VMX_EXIT_QUAL_IO_DIRECTION_OUT;
+        /*
+         * Figure out the guest-linear address and the direction bit (INS/OUTS).
+         */
+        /** @todo r=ramshankar: Is there something in IEM that already does this? */
+        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
+        uint8_t const  iSegReg       = ExitInstrInfo.StrIo.iSegReg;
+        uint8_t const  uAddrSize     = ExitInstrInfo.StrIo.u3AddrSize;
+        uint64_t const uAddrSizeMask = s_auAddrSizeMasks[uAddrSize];
+
+        uint32_t uDirection;
+        uint64_t uGuestLinearAddr;
+        if (uInstrId == VMXINSTRID_IO_INS)
+        {
+            uDirection = VMX_EXIT_QUAL_IO_DIRECTION_IN;
+            uGuestLinearAddr = pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base + (pVCpu->cpum.GstCtx.rdi & uAddrSizeMask);
+        }
+        else
+        {
+            uDirection = VMX_EXIT_QUAL_IO_DIRECTION_OUT;
+            uGuestLinearAddr = pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base + (pVCpu->cpum.GstCtx.rsi & uAddrSizeMask);
+        }
+
+        /*
+         * If the segment is ununsable, the guest-linear address in undefined.
+         * We shall clear it for consistency.
+         *
+         * See Intel spec. 27.2.1 "Basic VM-Exit Information".
+         */
+        if (pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Unusable)
+            uGuestLinearAddr = 0;
+
         VMXVEXITINFO ExitInfo;
         RT_ZERO(ExitInfo);
-        ExitInfo.uReason   = VMX_EXIT_IO_INSTR;
-        ExitInfo.cbInstr   = cbInstr;
-        ExitInfo.InstrInfo = ExitInstrInfo;
-        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
-                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
-                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_STRING, 1)
-                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_REP,    fRep)
-                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,  0)     /* DX (not immediate). */
-                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port);
+        ExitInfo.uReason            = VMX_EXIT_IO_INSTR;
+        ExitInfo.cbInstr            = cbInstr;
+        ExitInfo.InstrInfo          = ExitInstrInfo;
+        ExitInfo.u64GuestLinearAddr = uGuestLinearAddr;
+        ExitInfo.u64Qual            = RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_WIDTH,     cbAccess - 1)
+                                    | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_DIRECTION, uDirection)
+                                    | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_STRING, 1)
+                                    | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_IS_REP,    fRep)
+                                    | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_ENCODING,  VMX_EXIT_QUAL_IO_ENCODING_DX)
+                                    | RT_BF_MAKE(VMX_BF_EXIT_QUAL_IO_PORT,      u16Port);
         return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
