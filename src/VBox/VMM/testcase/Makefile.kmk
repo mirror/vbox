@@ -411,7 +411,9 @@ if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  #
  # Special NEM host testcase.
  #
- if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), $(if-expr "$(USERNAME)" == "bird",darwin.amd64 linux.amd64,) win.amd64)
+ if ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "darwin.amd64" && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
+ || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "linux.amd64"  && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
+ || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "win.amd64"    &&  defined(VBOX_WITH_NATIVE_NEM))
   PROGRAMS += NemRawBench-1
   NemRawBench-1_TEMPLATE = VBoxR3Static
   NemRawBench-1_SOURCES = NemRawBench-1.cpp
