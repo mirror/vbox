@@ -1529,6 +1529,10 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *      - \%RMjs            - Takes a string pointer (const char *) and outputs
  *                            it in quotes with proper JSON escaping.
  *
+ *      - \%RMpa            - Takes a string pointer (const char *) and outputs
+ *                            it percent-encoded (RFC-3986).  All reserved characters
+ *                            are encoded.
+ *
  *      - \%RMpf            - Takes a string pointer (const char *) and outputs
  *                            it percent-encoded (RFC-3986), form style.  This
  *                            means '+' is used to escape space (' ') and '%2B'

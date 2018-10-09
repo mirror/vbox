@@ -1458,7 +1458,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     ssize_t     offLast;
 
                     *ppszFormat += 2;
-                    AssertMsgBreak(chVariant == 'p' || chVariant == 'q' || chVariant == 'f',
+                    AssertMsgBreak(chVariant == 'a' || chVariant == 'p' || chVariant == 'q' || chVariant == 'f',
                                    ("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
 
                     if (!VALID_PTR(pszStr))
