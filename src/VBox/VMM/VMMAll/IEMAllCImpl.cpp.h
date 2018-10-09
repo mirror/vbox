@@ -5326,13 +5326,19 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
+    uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        u64GuestCr0 = iemVmxMaskCr0CR4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
+#endif
+
     uint16_t u16Value;
     if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
-        u16Value = (uint16_t)pVCpu->cpum.GstCtx.cr0;
+        u16Value = (uint16_t)u64GuestCr0;
     else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
-        u16Value = (uint16_t)pVCpu->cpum.GstCtx.cr0 | 0xffe0;
+        u16Value = (uint16_t)u64GuestCr0 | 0xffe0;
     else
-        u16Value = (uint16_t)pVCpu->cpum.GstCtx.cr0 | 0xfff0;
+        u16Value = (uint16_t)u64GuestCr0 | 0xfff0;
 
     VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, u16Value);
     if (rcStrict == VINF_SUCCESS)
