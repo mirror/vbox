@@ -7991,6 +7991,8 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
     /*
      * Raise exceptions.
      */
+    if (!(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
+        return iemRaiseUndefinedOpcode(pVCpu);
     /* When in VMX non-root mode and XSAVE/XRSTOR is not enabled, it results in #UD. */
     if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_XSAVES_XRSTORS))
@@ -7998,8 +8000,6 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
         Log(("xrstor: Not enabled for nested-guest execution -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);
     }
-    if (!(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
-        return iemRaiseUndefinedOpcode(pVCpu);
     if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)
         return iemRaiseDeviceNotAvailable(pVCpu);
     if (GCPtrEff & 63)
@@ -8154,6 +8154,8 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     /*
      * Raise exceptions.
      */
+    if (!(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
+        return iemRaiseUndefinedOpcode(pVCpu);
     /* When in VMX non-root mode and XSAVE/XRSTOR is not enabled, it results in #UD. */
     if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_XSAVES_XRSTORS))
@@ -8161,8 +8163,6 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
         Log(("xrstor: Not enabled for nested-guest execution -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);
     }
-    if (!(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
-        return iemRaiseUndefinedOpcode(pVCpu);
     if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)
         return iemRaiseDeviceNotAvailable(pVCpu);
     if (GCPtrEff & 63)
