@@ -2588,6 +2588,9 @@ static int rtldrPE_VerifySignatureDecode(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE p
                                    "Unknown pSignedData.ContentInfo.ContentType.szObjId value: %s (expected %s)",
                                    pSignature->pSignedData->ContentInfo.ContentType.szObjId, RTCRSPCINDIRECTDATACONTENT_OID);
         }
+        else
+            rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_EXPECTED_INDIRECT_DATA_CONTENT_OID, /** @todo error code*/
+                               "PKCS#7 is not 'signedData': %s", pSignature->ContentInfo.ContentType.szObjId);
     }
     return rc;
 }

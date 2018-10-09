@@ -46,7 +46,7 @@
 #define RTCR_APPLE_CS_CERTIFICATE_POLICY_OID            "1.2.840.113635.100.5.1"
 
 
-/** @name Apple code signing magic values for identifying blobs
+/** @name RTCRAPLCS_MAGIC_XXX - Apple code signing magic values for identifying blobs
  * @note No byte order conversion required.
  * @{ */
 #define RTCRAPLCS_MAGIC_BLOBWRAPPER                     RT_N2H_U32_C(UINT32_C(0xfade0b01))
@@ -66,7 +66,7 @@
 #define RTCRAPLCS_VER_SUPPORTS_TEAMID                   UINT32_C(0x00020200)
 /** @} */
 
-/** @name Apple code signing slots.
+/** @name RTCRAPLCS_SLOT_XXX - Apple code signing slots.
  * @note No byte order conversion required.
  * @{ */
 #define RTCRAPLCS_SLOT_CODEDIRECTORY                    RT_N2H_U32_C(UINT32_C(0x00000000))
@@ -86,7 +86,7 @@
 #define RTCRAPLCS_SLOT_SIGNATURE                        RT_N2H_U32_C(UINT32_C(0x00010000))
 /** @} */
 
-/** @name Apple code signing hash types
+/** @name RTCRAPLCS_HASHTYPE_XXX - Apple code signing hash types
  * @note Byte sized field, so no byte order concerns.
  * @{ */
 #define RTCRAPLCS_HASHTYPE_SHA1                         UINT8_C(1)
@@ -118,7 +118,7 @@ typedef RTCRAPLCSHDR const *PCRTCRAPLCSHDR;
  */
 typedef struct RTCRAPLCSBLOBSLOT
 {
-    /** Slot type, RTCRAPLCSSLOT_XXX.
+    /** Slot type, RTCRAPLCS_SLOT_XXX.
      * (Big endian, but so are the constants too). */
     uint32_t            uType;
     /** Data offset.  Big endian. */
@@ -155,7 +155,7 @@ typedef RTCRAPLCSSUPERBLOB const *PCRTCRAPLCSSUPERBLOB;
 typedef struct RTCRAPLCSCODEDIRECTORY
 {
     /** 0x00: Header (uMagic = RTCRAPLCS_MAGIC_CODEDIRECTORY). */
-    RTCRAPLCSHDR   Hdr;
+    RTCRAPLCSHDR    Hdr;
     /** 0x08: The version number (RTCRAPLCS_VER_XXX).
      * @note Big endian, host order constants. */
     uint32_t        uVersion;
@@ -185,7 +185,7 @@ typedef struct RTCRAPLCSCODEDIRECTORY
      * @since RTCRAPLCS_VER_SUPPORTS_SCATTER */
     uint32_t        offScatter;
     /** 0x30: Offset of team identifier (optional).  Big endian.
-     * @since RTCRAPLCS_VER_SUPPORTS_SCATTER */
+     * @since RTCRAPLCS_VER_SUPPORTS_TEAM */
     uint32_t        offTeam;
 } RTCRAPLCSCODEDIRECTORY;
 AssertCompileSize(RTCRAPLCSCODEDIRECTORY, 0x34);

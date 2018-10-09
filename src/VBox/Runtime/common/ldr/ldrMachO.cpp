@@ -237,8 +237,48 @@ typedef struct RTLDRMODMACHO
 
     /** Array of segments parallel to the one in KLDRMOD. */
     RTLDRMODMACHOSEG        aSegments[1];
-} RTLDRMODMACHO, *PRTLDRMODMACHO;
+} RTLDRMODMACHO;
+/** Pointer instance data for an Mach-O module. */
+typedef RTLDRMODMACHO *PRTLDRMODMACHO;
 
+/**
+ * Code directory data.
+ */
+typedef struct RTLDRMACHCODEDIR
+{
+    PCRTCRAPLCSCODEDIRECTORY    pCodeDir;
+    /** The slot type. */
+    uint32_t                    uSlot;
+    /** The naturalized size. */
+    uint32_t                    cb;
+} RTLDRMACHCODEDIR;
+/** Pointer to code directory data. */
+typedef RTLDRMACHCODEDIR *PRTLDRMACHCODEDIR;
+
+/**
+ * Decoded apple Mach-O signature data.
+ * @note The raw signature data lives in RTLDRMODMACHO::PtrCodeSignature.
+ */
+typedef struct RTLDRMACHOSIGNATURE
+{
+    /** Number of code directory slots. */
+    uint32_t                    cCodeDirs;
+    /** Code directories. */
+    RTLDRMACHCODEDIR            aCodeDirs[6];
+
+    /** The index of the PKCS#7 slot. */
+    uint32_t                    idxPkcs7;
+    /** The size of the PKCS#7 data. */
+    uint32_t                    cbPkcs7;
+    /** Pointer to the PKCS#7 data. */
+    uint8_t const              *pbPkcs7;
+    /** Parsed PKCS#7 data. */
+    RTCRPKCS7CONTENTINFO        ContentInfo;
+    /** Pointer to the decoded SignedData inside the ContentInfo member. */
+    PRTCRPKCS7SIGNEDDATA        pSignedData;
+} RTLDRMACHOSIGNATURE;
+/** Pointer to decoded apple code signing data. */
+typedef RTLDRMACHOSIGNATURE *PRTLDRMACHOSIGNATURE;
 
 
 
@@ -3964,6 +4004,222 @@ static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP 
 }
 
 
+#ifndef IPRT_WITHOUT_LDR_VERIFY
+
+/**
+ * Decodes the signature blob at RTLDRMODMACHO::PtrCodeSignature.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The Mach-O module instance.
+ * @param   ppSignature         Where to return the decoded signature data.
+ * @param   pErrInfo            Where to supply extra error details. Optional.
+ */
+static int rtldrMachO_VerifySignatureDecode(PRTLDRMODMACHO pThis, PRTLDRMACHOSIGNATURE *ppSignature, PRTERRINFO pErrInfo)
+{
+    Assert(pThis->PtrCodeSignature.pSuper != NULL);
+
+    /*
+     * Allocate and init decoded signature data structure.
+     */
+    PRTLDRMACHOSIGNATURE pSignature = (PRTLDRMACHOSIGNATURE)RTMemTmpAllocZ(sizeof(*pSignature));
+    *ppSignature = pSignature;
+    if (!pSignature)
+        return VERR_NO_TMP_MEMORY;
+    pSignature->idxPkcs7 = UINT32_MAX;
+
+    /*
+     * Parse the slots, validating the slot headers.
+     */
+    PCRTCRAPLCSSUPERBLOB pSuper     = pThis->PtrCodeSignature.pSuper;
+    uint32_t const       cSlots     = RT_BE2H_U32(pSuper->cSlots);
+    uint32_t const       offFirst   = RT_UOFFSETOF_DYN(RTCRAPLCSSUPERBLOB, aSlots[cSlots]);
+    uint32_t const       cbBlob     = RT_BE2H_U32(pSuper->Hdr.cb);
+    for (uint32_t iSlot = 0; iSlot < cSlots; iSlot++)
+    {
+        uint32_t const offData = RT_BE2H_U32(pSuper->aSlots[iSlot].offData);
+        if (   offData < offFirst
+            || offData > cbBlob - sizeof(RTCRAPLCSHDR)
+            || !(offData & 3))
+            return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                 "Slot #%u has an invalid data offset: %#x (min %#x, max %#x-4)",
+                                 iSlot, offData, offFirst, cbBlob);
+        uint32_t const cbMaxData = cbBlob - offData;
+
+        /*
+         * Code directories.
+         */
+        if (   pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_CODEDIRECTORY
+            || (   pSuper->aSlots[iSlot].uType >= RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES
+                && pSuper->aSlots[iSlot].uType < RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES_END))
+        {
+            if (pSignature->cCodeDirs >= RT_ELEMENTS(pSignature->aCodeDirs))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Too many code directory slots (%u found thus far)",
+                                     iSlot, pSignature->cCodeDirs + 1);
+            if (   pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_CODEDIRECTORY
+                && pSignature->cCodeDirs > 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Already have primary code directory in slot #%u",
+                                     iSlot, pSignature->aCodeDirs[0].uSlot);
+            if (   pSuper->aSlots[iSlot].uType != RTCRAPLCS_SLOT_CODEDIRECTORY /* lazy bird */
+                && pSignature->cCodeDirs == 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Expected alternative code directory after the primary one", iSlot);
+            if (cbMaxData < RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, uUnused))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Insufficient data vailable for code directory (max %#x)", iSlot, cbMaxData);
+
+            PCRTCRAPLCSCODEDIRECTORY pCodeDir = (PCRTCRAPLCSCODEDIRECTORY)&pThis->PtrCodeSignature.pb[offData];
+            if (pCodeDir->Hdr.uMagic != RTCRAPLCS_MAGIC_CODEDIRECTORY)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Invalid code directory magic: %#x", iSlot, RT_BE2H_U32(pCodeDir->Hdr.uMagic));
+            uint32_t const cb = RT_BE2H_U32(pCodeDir->Hdr.cb);
+            if (cb > cbMaxData || cb < RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, offScatter))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Code directory size is out of bound: %#x (min %#x, max %#x)",
+                                     iSlot, cb, RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, offScatter), cbMaxData);
+/** @todo validate all the fields we wish to use here. */
+
+            pSignature->aCodeDirs[pSignature->cCodeDirs].pCodeDir = pCodeDir;
+            pSignature->aCodeDirs[pSignature->cCodeDirs].uSlot    = iSlot;
+            pSignature->aCodeDirs[pSignature->cCodeDirs].cb       = cb;
+            pSignature->cCodeDirs++;
+        }
+        /*
+         * PKCS#7/CMS signature.
+         */
+        else if (pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_SIGNATURE)
+        {
+            if (pSignature->idxPkcs7 != UINT32_MAX)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Already have PKCS#7 data in slot %#u", iSlot, pSignature->idxPkcs7);
+            PCRTCRAPLCSHDR pHdr = (PCRTCRAPLCSHDR)&pThis->PtrCodeSignature.pb[offData];
+            if (pHdr->uMagic != RTCRAPLCS_MAGIC_BLOBWRAPPER)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Invalid PKCS#7 wrapper magic: %#x", iSlot, RT_BE2H_U32(pHdr->uMagic));
+            uint32_t const cb = RT_BE2H_U32(pHdr->cb);
+            if (cb > cbMaxData || cb < sizeof(*pHdr) + 2U)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Invalid PKCS#7 size is out of bound: %#x (min %#x, max %#x)",
+                                     iSlot, cb, sizeof(*pHdr) + 2, cbMaxData);
+            pSignature->idxPkcs7 = iSlot;
+            pSignature->pbPkcs7  = (uint8_t const *)(pHdr + 1);
+            pSignature->cbPkcs7  = cb - sizeof(*pHdr);
+        }
+    }
+
+    /*
+     * Check that we've got at least one code directory and one PKCS#7 signature.
+     */
+    if (pSignature->cCodeDirs == 0)
+        return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "No code directory slot in the code signature");
+    if (pSignature->idxPkcs7 == UINT32_MAX)
+        return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "No PKCS#7 slot in the code signature");
+
+    /*
+     * Decode the PKCS#7 signature.
+     */
+    RTASN1CURSORPRIMARY PrimaryCursor;
+    RTAsn1CursorInitPrimary(&PrimaryCursor, pSignature->pbPkcs7, pSignature->cbPkcs7,
+                            pErrInfo, &g_RTAsn1DefaultAllocator, 0, "Mach-O-BLOB");
+    int rc = RTCrPkcs7ContentInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &pSignature->ContentInfo, "CI");
+    if (RT_SUCCESS(rc))
+    {
+        if (RTCrPkcs7ContentInfo_IsSignedData(&pSignature->ContentInfo))
+        {
+            pSignature->pSignedData = pSignature->ContentInfo.u.pSignedData;
+
+            /*
+             * Check that the signedData stuff adds up.
+             */
+            if (!strcmp(pSignature->pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID))
+            {
+                rc = RTCrPkcs7SignedData_CheckSanity(pSignature->pSignedData,
+                                                     RTCRPKCS7SIGNEDDATA_SANITY_F_AUTHENTICODE /** @todo consider not piggy-backing on auth-code */
+                                                     | RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
+                                                     | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
+                                                     pErrInfo, "SD");
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+            }
+            else
+                rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_EXPECTED_INDIRECT_DATA_CONTENT_OID,
+                                   "Unexpected pSignedData.ContentInfo.ContentType.szObjId value: %s (expected %s)",
+                                   pSignature->pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID);
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_EXPECTED_INDIRECT_DATA_CONTENT_OID, /** @todo error code*/
+                               "PKCS#7 is not 'signedData': %s", pSignature->ContentInfo.ContentType.szObjId);
+    }
+    return rc;
+}
+
+/**
+ * Destroys the decoded signature data structure.
+ *
+ * @param   pSignature      The decoded signature data.  Can be NULL.
+ */
+static void rtldrMachO_VerifySignatureDestroy(PRTLDRMACHOSIGNATURE pSignature)
+{
+    if (pSignature)
+    {
+        RTCrPkcs7ContentInfo_Delete(&pSignature->ContentInfo);
+        RTMemTmpFree(pSignature);
+    }
+}
+
+
+/**
+ * Verifies the code directory hashes embedded in the PKCS\#7 data.
+ *
+ * @returns IPRT status code.
+ * @param   pSignature      The decoded signature data.
+ * @param   pErrInfo        Where to supply extra error details. Optional.
+ */
+static int rtldrMachO_VerifySignatureValidatePkcs7Hashes(PRTLDRMACHOSIGNATURE pSignature, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pSignature, pErrInfo);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Verifies the page hashes of the given code directory.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The Mach-O module instance.
+ * @param   pEntry          The data entry for the code directory to validate.
+ * @param   pErrInfo        Where to supply extra error details. Optional.
+ */
+static int rtldrMachO_VerifySignatureValidateCodeDir(PRTLDRMODMACHO pThis, PRTLDRMACHCODEDIR pEntry, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pThis, pEntry, pErrInfo);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Verifies the page hashes of all the code directories
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The Mach-O module instance.
+ * @param   pSignature      The decoded signature data.
+ * @param   pErrInfo        Where to supply extra error details. Optional.
+ */
+static int rtldrMachO_VerifySignatureValidateCodeDirs(PRTLDRMODMACHO pThis, PRTLDRMACHOSIGNATURE pSignature, PRTERRINFO pErrInfo)
+{
+    int rc = VERR_INTERNAL_ERROR_3;
+    for (uint32_t i = 0; i < pSignature->cCodeDirs; i++)
+    {
+        rc = rtldrMachO_VerifySignatureValidateCodeDir(pThis, &pSignature->aCodeDirs[i], pErrInfo);
+        if (RT_FAILURE(rc))
+            break;
+    }
+    return rc;
+}
+
+#endif /* !IPRT_WITHOUT_LDR_VERIFY*/
+
 /**
  * @interface_method_impl{RTLDROPS,pfnVerifySignature}
  */
@@ -3972,32 +4228,29 @@ rtldrMachO_VerifySignature(PRTLDRMODINTERNAL pMod, PFNRTLDRVALIDATESIGNEDDATA pf
 {
 #ifndef IPRT_WITHOUT_LDR_VERIFY
     PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
-
     int rc = rtldrMachO_LoadSignatureBlob(pThis);
     if (RT_SUCCESS(rc))
     {
-        RT_NOREF(pfnCallback, pvUser, pErrInfo);
-#if 0
-        int rc = rtldrPE_VerifySignatureImagePrecoditions(pModPe, pErrInfo);
+        PRTLDRMACHOSIGNATURE pSignature = NULL;
+        rc = rtldrMachO_VerifySignatureDecode(pThis, &pSignature, pErrInfo);
         if (RT_SUCCESS(rc))
         {
-            PRTLDRPESIGNATURE pSignature = NULL;
-            rc = rtldrPE_VerifySignatureRead(pModPe, &pSignature, pErrInfo);
+            rc = rtldrMachO_VerifySignatureValidatePkcs7Hashes(pSignature, pErrInfo);
             if (RT_SUCCESS(rc))
             {
-                rc = rtldrPE_VerifySignatureDecode(pModPe, pSignature, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtldrPE_VerifySignatureValidateHash(pModPe, pSignature, pErrInfo);
+                rc = rtldrMachO_VerifySignatureValidateCodeDirs(pThis, pSignature, pErrInfo);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = pfnCallback(&pModPe->Core, RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA,
+                    /*
+                     * Finally, let the caller verify the certificate chain for the PKCS#7 bit.
+                     */
+                    rc = pfnCallback(&pThis->Core, RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA,
                                      &pSignature->ContentInfo, sizeof(pSignature->ContentInfo),
                                      pErrInfo, pvUser);
                 }
-                rtldrPE_VerifySignatureDestroy(pModPe, pSignature);
             }
         }
-#endif
+        rtldrMachO_VerifySignatureDestroy(pSignature);
     }
     return rc;
 #else
