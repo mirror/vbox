@@ -267,6 +267,9 @@ typedef uint32_t DNDURILISTFLAGS;
  ** @todo Implement lazy loading.  */
 #define DNDURILIST_FLAGS_LAZY                   RT_BIT(3)
 
+/** Mask of all valid DnD URI list flags. */
+#define DNDURILIST_FLAGS_VALID_MASK             UINT32_C(0xF)
+
 class DnDURIList
 {
 public:
