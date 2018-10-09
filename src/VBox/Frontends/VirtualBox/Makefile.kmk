@@ -944,6 +944,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupStackViewport.h \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
+	src/widgets/UIScaleFactorEditor.h \
 	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
@@ -1172,6 +1173,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupStackViewport.h \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
+	src/widgets/UIScaleFactorEditor.h \
 	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
@@ -1671,6 +1673,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupStackViewport.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
+	src/widgets/UIScaleFactorEditor.cpp \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
@@ -1957,6 +1960,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupStackViewport.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
+	src/widgets/UIScaleFactorEditor.cpp \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \

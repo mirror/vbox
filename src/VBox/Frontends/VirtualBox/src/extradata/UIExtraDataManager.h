@@ -596,9 +596,9 @@ public:
         bool hidLedsSyncState(const QString &strID);
 
         /** Returns the scale-factor. */
-        double scaleFactor(const QString &strID);
+        double scaleFactor(const QString &strID, const int uScreenIndex = 0);
         /** Defines the @a dScaleFactor. */
-        void setScaleFactor(double dScaleFactor, const QString &strID);
+        void setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex = 0);
 
         /** Returns the scaling optimization type. */
         ScalingOptimizationType scalingOptimizationType(const QString &strID);

@@ -3969,10 +3969,10 @@ bool UIExtraDataManager::hidLedsSyncState(const QString &strID)
     return !isFeatureRestricted(GUI_HidLedsSync, strID);
 }
 
-double UIExtraDataManager::scaleFactor(const QString &strID)
+double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIndex /* = 0 */)
 {
     /* Get corresponding extra-data value: */
-    const QString strValue = extraDataString(GUI_ScaleFactor, strID);
+    const QString strValue = extraDataString(extraDataKeyPerScreen(GUI_ScaleFactor, uScreenIndex), strID);
 
     /* Try to convert loaded data to double: */
     bool fOk = false;
@@ -3986,10 +3986,10 @@ double UIExtraDataManager::scaleFactor(const QString &strID)
     return dValue;
 }
 
-void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID)
+void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex /* = 0 */)
 {
     /* Set corresponding extra-data value: */
-    setExtraDataString(GUI_ScaleFactor, QString::number(dScaleFactor), strID);
+    setExtraDataString(extraDataKeyPerScreen(GUI_ScaleFactor, uScreenIndex), QString::number(dScaleFactor), strID);
 }
 
 ScalingOptimizationType UIExtraDataManager::scalingOptimizationType(const QString &strID)
