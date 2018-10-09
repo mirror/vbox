@@ -69,8 +69,10 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
                 if (fFlags & DNDURILIST_FLAGS_KEEP_OPEN) /* Shall we keep the file open while being added to this list? */
                 {
                     /** @todo Add a standard fOpen mode for this list. */
-                    rc = pObjFile->Open(DnDURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, objInfo.Attr.fMode);
+                    rc = pObjFile->Open(DnDURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
                 }
+                else /* Just query the information without opening the file. */
+                    rc = pObjFile->QueryInfo(DnDURIObject::View_Source);
 
                 if (RT_SUCCESS(rc))
                 {
@@ -89,8 +91,7 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
         {
             LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Type_Directory, pcszSource, pcszTarget,
-                                                     objInfo.Attr.fMode, 0 /* Size */);
+            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Type_Directory, pcszSource, pcszTarget);
             if (pObjDir)
             {
                 m_lstTree.append(pObjDir);

@@ -148,8 +148,7 @@ public:
     DnDURIObject(void);
     DnDURIObject(Type type,
                  const RTCString &strSrcPathAbs = "",
-                 const RTCString &strDstPathAbs = "",
-                 uint32_t fMode = 0, uint64_t cbSize = 0);
+                 const RTCString &strDstPathAbs = "");
     virtual ~DnDURIObject(void);
 
 public:
@@ -168,59 +167,38 @@ public:
      */
     const RTCString &GetDestPathAbs(void) const { return m_strTgtPathAbs; }
 
-    /**
-     * Returns the file mode of the object.
-     *
-     * Note: Only applies if the object is of type DnDURIObject::Type_File.
-     *
-     * @return  File mode.
-     */
-    uint32_t GetMode(void) const { AssertReturn(m_Type == Type_File, 0); return u.File.fMode; }
+    RTFMODE GetMode(void) const;
 
-    /**
-     * Returns the bytes already processed (read / written).
-     *
-     * Note: Only applies if the object is of type DnDURIObject::Type_File.
-     *
-     * @return  Bytes already processed (read / written).
-     */
-    uint64_t GetProcessed(void) const { AssertReturn(m_Type == Type_File, 0); return u.File.cbProcessed; }
+    uint64_t GetProcessed(void) const;
 
-    /**
-     * Returns the file's size (in bytes).
-     *
-     * Note: Only applies if the object is of type DnDURIObject::Type_File.
-     *
-     * @return  The file's size (in bytes).
-     */
-    uint64_t GetSize(void) const { AssertReturn(m_Type == Type_File, 0); return u.File.cbSize; }
+    uint64_t GetSize(void) const;
 
     /**
      * Returns the object's type.
      *
      * @return  The object's type.
      */
-    Type GetType(void) const { return m_Type; }
+    Type GetType(void) const { return m_enmType; }
+
+    /**
+     * Returns the object's view.
+     *
+     * @return  The object's view.
+     */
+    View GetView(void) const { return m_enmView; }
 
 public:
 
-    /**
-     * Sets the bytes to process by the object.
-     *
-     * Note: Only applies if the object is of type DnDURIObject::Type_File.
-     *
-     * @return  IPRT return code.
-     * @param   cbSize          Size (in bytes) to process.
-     */
-    int SetSize(uint64_t cbSize) { AssertReturn(m_Type == Type_File, 0); u.File.cbSize = cbSize; return VINF_SUCCESS; }
+    int SetSize(uint64_t cbSize);
 
 public:
 
     void Close(void);
     bool IsComplete(void) const;
     bool IsOpen(void) const;
-    int Open(View enmView, uint64_t fOpen, uint32_t fMode = 0);
-    int OpenEx(const RTCString &strPath, Type enmType, View enmView, uint64_t fOpen = 0, uint32_t fMode = 0, DNDURIOBJECTFLAGS = DNDURIOBJECT_FLAGS_NONE);
+    int Open(View enmView, uint64_t fOpen, RTFMODE fMode = 0);
+    int OpenEx(const RTCString &strPath, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0, DNDURIOBJECTFLAGS = DNDURIOBJECT_FLAGS_NONE);
+    int QueryInfo(View enmView);
     int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
     void Reset(void);
     int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
@@ -232,11 +210,14 @@ public:
 protected:
 
     void closeInternal(void);
+    int queryInfoInternal(View enmView);
 
 protected:
 
     /** The object's type. */
-    Type      m_Type;
+    Type      m_enmType;
+    /** The object's view. */
+    View      m_enmView;
     /** Absolute path (base) for the source. */
     RTCString m_strSrcPathAbs;
     /** Absolute path (base) for the target. */
@@ -252,14 +233,21 @@ protected:
         struct
         {
             /** File handle. */
-            RTFILE   hFile;
-            /** Used file mode. */
-            uint32_t fMode;
-            /** Size (in bytes) to read/write. */
-            uint64_t cbSize;
+            RTFILE      hFile;
+            /** File system object information of this file. */
+            RTFSOBJINFO objInfo;
+            /** Bytes to proces for reading/writing. */
+            uint64_t    cbToProcess;
             /** Bytes processed reading/writing. */
-            uint64_t cbProcessed;
+            uint64_t    cbProcessed;
         } File;
+        struct
+        {
+            /** Directory handle. */
+            RTDIR       hDir;
+            /** File system object information of this directory. */
+            RTFSOBJINFO objInfo;
+        } Dir;
     } u;
 };
 

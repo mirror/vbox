@@ -797,7 +797,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
             /*
              * Create new intermediate object to work with.
              */
-            rc = objCtx.createIntermediate();
+            rc = objCtx.createIntermediate(DnDURIObject::Type_File);
         }
 
         if (RT_SUCCESS(rc))
@@ -823,10 +823,10 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                 break;
             }
 
-            LogRel2(("DnD: Absolute file path on the host now is '%s'\n", pszPathAbs));
+            LogRel2(("DnD: Absolute file path for guest file on the host is now '%s'\n", pszPathAbs));
 
             /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-            rc = pObj->OpenEx(pszPathAbs, DnDURIObject::Type_File, DnDURIObject::View_Target,
+            rc = pObj->OpenEx(pszPathAbs, DnDURIObject::View_Target,
                               RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
                               (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
             if (RT_SUCCESS(rc))
@@ -835,6 +835,8 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                 int rc2 = pCtx->mURI.getDroppedFiles().AddFile(pszPathAbs);
                 AssertRC(rc2);
             }
+            else
+                LogRel(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n", pszPathAbs, rc));
         }
 
         if (RT_SUCCESS(rc))
@@ -853,14 +855,10 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                 pObj->Close();
         }
 
-        if (RT_FAILURE(rc))
-        {
-            LogRel2(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n",
-                     pObj->GetDestPathAbs().c_str(), rc));
-            break;
-        }
-
     } while (0);
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Error receiving guest file header, rc=%Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -922,26 +920,24 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
             if (RT_SUCCESS(rc))
                 rc = updateProgress(&pCtx->mData, pCtx->mpResp, cbWritten);
         }
-        else /* Something went wrong; close the object. */
-            pObj->Close();
+        else
+            LogRel(("DnD: Error writing guest file data for '%s', rc=%Rrc\n", pObj->GetDestPathAbs().c_str(), rc));
 
         if (RT_SUCCESS(rc))
         {
             if (pObj->IsComplete())
             {
                 /** @todo Sanitize path. */
-                LogRel2(("DnD: File transfer to host complete: %s\n", pObj->GetDestPathAbs().c_str()));
+                LogRel2(("DnD: Transferring guest file '%s' to host complete\n", pObj->GetDestPathAbs().c_str()));
                 pCtx->mURI.processObject(*pObj);
                 objCtx.reset();
             }
         }
-        else
-        {
-            /** @todo What to do when the host's disk is full? */
-            LogRel(("DnD: Error writing guest file to host to '%s': %Rrc\n", pObj->GetDestPathAbs().c_str(), rc));
-        }
 
     } while (0);
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Error receiving guest file data, rc=%Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

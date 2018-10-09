@@ -909,7 +909,7 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCt
     if (strPath.length() >= RTPATH_MAX) /* Note: Maximum is RTPATH_MAX on guest side. */
         return VERR_BUFFER_OVERFLOW;
 
-    LogRel2(("DnD: Transferring host directory to guest: %s\n", strPath.c_str()));
+    LogRel2(("DnD: Transferring host directory '%s' to guest\n", strPath.c_str()));
 
     pMsg->setType(HOST_DND_HG_SND_DIR);
     if (mDataBase.m_uProtocolVersion >= 3)
@@ -942,11 +942,11 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
 
     if (!pObj->IsOpen())
     {
-        LogRel2(("DnD: Opening host file for transferring to guest: %s\n", strPathSrc.c_str()));
-        rc = pObj->OpenEx(strPathSrc, DnDURIObject::Type_File, DnDURIObject::View_Source,
-                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
+        LogRel2(("DnD: Opening host file '%s' for transferring to guest\n", strPathSrc.c_str()));
+        rc = pObj->OpenEx(strPathSrc, DnDURIObject::View_Source,
+                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
         if (RT_FAILURE(rc))
-            LogRel(("DnD: Error opening host file '%s', rc=%Rrc\n", strPathSrc.c_str(), rc));
+            LogRel(("DnD: Opening host file '%s' failed, rc=%Rrc\n", strPathSrc.c_str(), rc));
     }
 
     bool fSendData = false;
@@ -996,6 +996,9 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     {
         rc = i_sendFileData(pCtx, pObjCtx, pMsg);
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Sending host file to guest failed, rc=%Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1062,7 +1065,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
 
         if (pObj->IsComplete()) /* Done reading? */
         {
-            LogRel2(("DnD: File transfer to guest complete: %s\n", pObj->GetSourcePathAbs().c_str()));
+            LogRel2(("DnD: Transferring file '%s' to guest complete\n", pObj->GetSourcePathAbs().c_str()));
             LogFlowFunc(("File '%s' complete\n", pObj->GetSourcePathAbs().c_str()));
 
             /* DnDURIObject::Read() returns VINF_EOF when finished reading the entire fire,
@@ -1070,6 +1073,9 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
             rc = VINF_SUCCESS;
         }
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Reading from host file '%s' failed, rc=%Rrc\n", pObj->GetSourcePathAbs().c_str(), rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1464,24 +1470,23 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     DnDURIObject *pCurObj = objCtx.getObj();
     AssertPtr(pCurObj);
 
-    uint32_t fMode = pCurObj->GetMode();
-    LogRel3(("DnD: Processing: srcPath=%s, dstPath=%s, fMode=0x%x, cbSize=%RU32, fIsDir=%RTbool, fIsFile=%RTbool\n",
+    DnDURIObject::Type enmType = pCurObj->GetType();
+    LogRel3(("DnD: Processing: srcPath=%s, dstPath=%s, enmType=%RU32, cbSize=%RU32\n",
              pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str(),
-             fMode, pCurObj->GetSize(),
-             RTFS_IS_DIRECTORY(fMode), RTFS_IS_FILE(fMode)));
+             enmType, pCurObj->GetSize()));
 
-    if (RTFS_IS_DIRECTORY(fMode))
+    if (enmType == DnDURIObject::Type_Directory)
     {
         rc = i_sendDirectory(pCtx, &objCtx, pMsg);
     }
-    else if (RTFS_IS_FILE(fMode))
+    else if (DnDURIObject::Type_File)
     {
         rc = i_sendFile(pCtx, &objCtx, pMsg);
     }
     else
     {
-        AssertMsgFailed(("fMode=0x%x is not supported for srcPath=%s, dstPath=%s\n",
-                         fMode, pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str()));
+        AssertMsgFailed(("enmType=%RU32 is not supported for srcPath=%s, dstPath=%s\n",
+                         enmType, pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str()));
         rc = VERR_NOT_SUPPORTED;
     }
 

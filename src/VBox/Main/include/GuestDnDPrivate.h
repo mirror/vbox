@@ -389,7 +389,7 @@ public:
 
 public:
 
-    int createIntermediate(DnDURIObject::Type enmType = DnDURIObject::Type_Unknown)
+    int createIntermediate(DnDURIObject::Type enmType)
     {
         reset();
 
