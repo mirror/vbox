@@ -64,6 +64,8 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/sha.h>
+#include <iprt/crypto/digest.h>
 
 #include <iprt/formats/mach-o.h>
 #include <iprt/crypto/applecodesign.h>
@@ -233,6 +235,12 @@ typedef struct RTLDRMODMACHO
         uint8_t                *pb;
         PCRTCRAPLCSSUPERBLOB    pSuper;
     }                       PtrCodeSignature;
+    /** File offset of segment 0 (relative to Mach-O header). */
+    uint64_t                offSeg0ForCodeSign;
+    /** File size of segment 0. */
+    uint64_t                cbSeg0ForCodeSign;
+    /** Segment 0 flags. */
+    uint64_t                fSeg0ForCodeSign;
 
     /** The RVA of the Global Offset Table. */
     RTLDRADDR               GotRVA;
@@ -260,6 +268,8 @@ typedef struct RTLDRMACHCODEDIR
     uint32_t                    uSlot;
     /** The naturalized size. */
     uint32_t                    cb;
+    /** The digest type. */
+    RTDIGESTTYPE                enmDigest;
 } RTLDRMACHCODEDIR;
 /** Pointer to code directory data. */
 typedef RTLDRMACHCODEDIR *PRTLDRMACHCODEDIR;
@@ -1165,6 +1175,7 @@ static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPo
     PRTLDRMODMACHOSECT pSectExtra = pThis->paSections;
     const uint32_t cSegments = pThis->cSegments;
     PRTLDRMODMACHOSEG pSegItr;
+    bool fFirstSeg = true;
     RT_NOREF(cbStringPool);
 
     while (cLeft-- > 0)
@@ -1314,7 +1325,16 @@ static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPo
                     /* Close the segment and advance. */ \
                     if (fAddSegOuter) \
                         CLOSE_SEGMENT(); \
-                } while (0) /* ADD_SEGMENT_AND_ITS_SECTIONS */
+                    \
+                    /* Take down 'execSeg' info for signing */ \
+                    if (fFirstSeg) \
+                    { \
+                        fFirstSeg = false; \
+                        pThis->offSeg0ForCodeSign = pSrcSeg->fileoff; \
+                        pThis->cbSeg0ForCodeSign  = pSrcSeg->filesize; /** @todo file or vm size? */ \
+                        pThis->fSeg0ForCodeSign   = pSrcSeg->flags; \
+                    } \
+            } while (0) /* ADD_SEGMENT_AND_ITS_SECTIONS */
 
                 ADD_SEGMENT_AND_ITS_SECTIONS(32);
                 break;
@@ -4048,56 +4068,16 @@ static int rtldrMachO_VerifySignatureDecode(PRTLDRMODMACHO pThis, PRTLDRMACHOSIG
         uint32_t const offData = RT_BE2H_U32(pSuper->aSlots[iSlot].offData);
         if (   offData < offFirst
             || offData > cbBlob - sizeof(RTCRAPLCSHDR)
-            || !(offData & 3))
+            || (offData & 3))
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
                                  "Slot #%u has an invalid data offset: %#x (min %#x, max %#x-4)",
                                  iSlot, offData, offFirst, cbBlob);
         uint32_t const cbMaxData = cbBlob - offData;
 
         /*
-         * Code directories.
-         */
-        if (   pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_CODEDIRECTORY
-            || (   pSuper->aSlots[iSlot].uType >= RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES
-                && pSuper->aSlots[iSlot].uType < RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES_END))
-        {
-            if (pSignature->cCodeDirs >= RT_ELEMENTS(pSignature->aCodeDirs))
-                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
-                                     "Slot #%u: Too many code directory slots (%u found thus far)",
-                                     iSlot, pSignature->cCodeDirs + 1);
-            if (   pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_CODEDIRECTORY
-                && pSignature->cCodeDirs > 0)
-                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
-                                     "Slot #%u: Already have primary code directory in slot #%u",
-                                     iSlot, pSignature->aCodeDirs[0].uSlot);
-            if (   pSuper->aSlots[iSlot].uType != RTCRAPLCS_SLOT_CODEDIRECTORY /* lazy bird */
-                && pSignature->cCodeDirs == 0)
-                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
-                                     "Slot #%u: Expected alternative code directory after the primary one", iSlot);
-            if (cbMaxData < RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, uUnused))
-                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
-                                     "Slot #%u: Insufficient data vailable for code directory (max %#x)", iSlot, cbMaxData);
-
-            PCRTCRAPLCSCODEDIRECTORY pCodeDir = (PCRTCRAPLCSCODEDIRECTORY)&pThis->PtrCodeSignature.pb[offData];
-            if (pCodeDir->Hdr.uMagic != RTCRAPLCS_MAGIC_CODEDIRECTORY)
-                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
-                                     "Slot #%u: Invalid code directory magic: %#x", iSlot, RT_BE2H_U32(pCodeDir->Hdr.uMagic));
-            uint32_t const cb = RT_BE2H_U32(pCodeDir->Hdr.cb);
-            if (cb > cbMaxData || cb < RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, offScatter))
-                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
-                                     "Slot #%u: Code directory size is out of bound: %#x (min %#x, max %#x)",
-                                     iSlot, cb, RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, offScatter), cbMaxData);
-/** @todo validate all the fields we wish to use here. */
-
-            pSignature->aCodeDirs[pSignature->cCodeDirs].pCodeDir = pCodeDir;
-            pSignature->aCodeDirs[pSignature->cCodeDirs].uSlot    = iSlot;
-            pSignature->aCodeDirs[pSignature->cCodeDirs].cb       = cb;
-            pSignature->cCodeDirs++;
-        }
-        /*
          * PKCS#7/CMS signature.
          */
-        else if (pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_SIGNATURE)
+        if (pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_SIGNATURE)
         {
             if (pSignature->idxPkcs7 != UINT32_MAX)
                 return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
@@ -4114,6 +4094,208 @@ static int rtldrMachO_VerifySignatureDecode(PRTLDRMODMACHO pThis, PRTLDRMACHOSIG
             pSignature->idxPkcs7 = iSlot;
             pSignature->pbPkcs7  = (uint8_t const *)(pHdr + 1);
             pSignature->cbPkcs7  = cb - sizeof(*pHdr);
+        }
+        /*
+         * Code directories.
+         */
+        else if (   pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_CODEDIRECTORY
+                 || (  RT_BE2H_U32(pSuper->aSlots[iSlot].uType) - RT_BE2H_U32_C(RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES)
+                     < RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES_COUNT))
+        {
+            /* Make sure we don't get too many code directories and that the first one is a regular one. */
+            if (pSignature->cCodeDirs >= RT_ELEMENTS(pSignature->aCodeDirs))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Too many code directory slots (%u found thus far)",
+                                     iSlot, pSignature->cCodeDirs + 1);
+            if (   pSuper->aSlots[iSlot].uType == RTCRAPLCS_SLOT_CODEDIRECTORY
+                && pSignature->cCodeDirs > 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Already have primary code directory in slot #%u",
+                                     iSlot, pSignature->aCodeDirs[0].uSlot);
+            if (   pSuper->aSlots[iSlot].uType != RTCRAPLCS_SLOT_CODEDIRECTORY /* lazy bird */
+                && pSignature->cCodeDirs == 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Expected alternative code directory after the primary one", iSlot);
+
+            /* Check data header: */
+            if (cbMaxData < RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, uUnused1))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Insufficient data vailable for code directory (max %#x)", iSlot, cbMaxData);
+
+            PCRTCRAPLCSCODEDIRECTORY pCodeDir = (PCRTCRAPLCSCODEDIRECTORY)&pThis->PtrCodeSignature.pb[offData];
+            if (pCodeDir->Hdr.uMagic != RTCRAPLCS_MAGIC_CODEDIRECTORY)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Invalid code directory magic: %#x", iSlot, RT_BE2H_U32(pCodeDir->Hdr.uMagic));
+            uint32_t const cbCodeDir = RT_BE2H_U32(pCodeDir->Hdr.cb);
+            if (cbCodeDir > cbMaxData || cbCodeDir < RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, offScatter))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Code directory size is out of bound: %#x (min %#x, max %#x)",
+                                     iSlot, cbCodeDir, RT_UOFFSETOF(RTCRAPLCSCODEDIRECTORY, offScatter), cbMaxData);
+            pSignature->aCodeDirs[pSignature->cCodeDirs].pCodeDir = pCodeDir;
+            pSignature->aCodeDirs[pSignature->cCodeDirs].cb       = cbCodeDir;
+
+            /* Check Version: */
+            uint32_t const uVersion = RT_BE2H_U32(pCodeDir->uVersion);
+            if (   uVersion < RTCRAPLCS_VER_2_0
+                || uVersion >= RT_MAKE_U32(0, 3))
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Code directory version is out of bounds: %#07x", iSlot, uVersion);
+            uint32_t cbSelf = uVersion >= RTCRAPLCS_VER_SUPPORTS_EXEC_SEG      ? RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, fExecSeg)
+                            : uVersion >= RTCRAPLCS_VER_SUPPORTS_CODE_LIMIT_64 ? RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, cbCodeLimit64)
+                            : uVersion >= RTCRAPLCS_VER_SUPPORTS_TEAMID        ? RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, offTeamId)
+                            : uVersion >= RTCRAPLCS_VER_SUPPORTS_SCATTER       ? RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, offScatter)
+                            :                                                    RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, uUnused1);
+            if (cbSelf > cbCodeDir)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Code directory size is out of bound: %#x (min %#x, max %#x)",
+                                     iSlot, cbCodeDir, cbSelf, cbCodeDir);
+
+            /* hash type and size. */
+            uint8_t      cbHash;
+            RTDIGESTTYPE enmDigest;
+            switch (pCodeDir->bHashType)
+            {
+                case RTCRAPLCS_HASHTYPE_SHA1:
+                    enmDigest = RTDIGESTTYPE_SHA1;
+                    cbHash    = RTSHA1_HASH_SIZE;
+                    break;
+                case RTCRAPLCS_HASHTYPE_SHA256:
+                    enmDigest = RTDIGESTTYPE_SHA256;
+                    cbHash    = RTSHA256_HASH_SIZE;
+                    break;
+                case RTCRAPLCS_HASHTYPE_SHA256_TRUNCATED:
+                    enmDigest = RTDIGESTTYPE_SHA256;
+                    cbHash    = RTSHA1_HASH_SIZE; /* truncated to SHA-1 size. */
+                    break;
+                case RTCRAPLCS_HASHTYPE_SHA384:
+                    enmDigest = RTDIGESTTYPE_SHA384;
+                    cbHash    = RTSHA384_HASH_SIZE;
+                    break;
+                default:
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "Slot #%u: Unknown hash type %#x (LB %#x)",
+                                         iSlot, pCodeDir->bHashType, pCodeDir->cbHash);
+            }
+            pSignature->aCodeDirs[pSignature->cCodeDirs].enmDigest = enmDigest;
+            if (pCodeDir->cbHash != cbHash)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Unexpected hash size for %s: %#x, expected %#x",
+                                     iSlot, RTCrDigestTypeToName(enmDigest), pCodeDir->cbHash, cbHash);
+
+            /* Hash slot offset and counts. Special slots are counted backwards from offHashSlots. */
+            uint32_t const cSpecialSlots = RT_BE2H_U32(pCodeDir->cSpecialSlots);
+            if (cSpecialSlots > 256)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Too many special slots: %#x", iSlot, cSpecialSlots);
+            uint32_t const cCodeSlots = RT_BE2H_U32(pCodeDir->cCodeSlots);
+            if (   cCodeSlots >= UINT32_MAX / 2
+                || cCodeSlots + cSpecialSlots > (cbCodeDir - cbHash) / cbHash)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "Slot #%u: Too many code slots: %#x + %#x (max %#x)",
+                                     iSlot, cCodeSlots, cSpecialSlots, (cbCodeDir - cbHash) / cbHash);
+            uint32_t const offHashSlots = RT_BE2H_U32(pCodeDir->offHashSlots);
+            if (   offHashSlots > cbCodeDir - cCodeSlots * cbHash
+                || offHashSlots < cbSelf + cSpecialSlots * cbHash)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Code directory hash offset is out of bounds: %#x (min: %#x, max: %#x)",
+                                     iSlot, offHashSlots, cbSelf + cSpecialSlots * cbHash, cbCodeDir - cCodeSlots * cbHash);
+
+            /* page shift */
+            if (pCodeDir->cPageShift == 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Unsupported page shift of zero in code directory", iSlot);
+            uint32_t cMaxPageShift;
+            if (   pThis->Core.enmArch == RTLDRARCH_AMD64
+                || pThis->Core.enmArch == RTLDRARCH_X86_32
+                || pThis->Core.enmArch == RTLDRARCH_ARM32)
+                cMaxPageShift = 12;
+            else if (pThis->Core.enmArch == RTLDRARCH_ARM64)
+                cMaxPageShift = 16; /* 16KB */
+            else
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "Unsupported architecture: %d", pThis->Core.enmArch);
+            if (   pCodeDir->cPageShift < 12 /* */
+                || pCodeDir->cPageShift > cMaxPageShift)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Page shift in code directory is out of range: %d (min: 12, max: %d)",
+                                     iSlot, pCodeDir->cPageShift, cMaxPageShift);
+
+            /* code limit vs page shift and code hash slots */
+            uint32_t const cbCodeLimit32       = RT_BE2H_U32(pCodeDir->cbCodeLimit32);
+            uint32_t const cExpectedCodeHashes = pCodeDir->cPageShift == 0 ? 1
+                                               : (cbCodeLimit32 + RT_BIT_32(pCodeDir->cPageShift) - 1) >> pCodeDir->cPageShift;
+            if (cExpectedCodeHashes != cCodeSlots)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Code limit and page shift value does not match code hash slots: cbCodeLimit32=%#x cPageShift=%u -> %#x; cCodeSlots=%#x",
+                                     iSlot, cbCodeLimit32, pCodeDir->cPageShift, cExpectedCodeHashes, cCodeSlots);
+
+            /* Identifier offset: */
+            if (pCodeDir->offIdentifier)
+            {
+                uint32_t const offIdentifier = RT_BE2H_U32(pCodeDir->offIdentifier);
+                if (   offIdentifier < cbSelf
+                    || offIdentifier >= cbCodeDir)
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Slot #%u: Identifier offset is out of bounds: %#x (min: %#x, max: %#x)",
+                                         iSlot, offIdentifier, cbSelf, cbCodeDir - 1);
+                int rc = RTStrValidateEncodingEx((char const *)pCodeDir + offIdentifier, cbCodeDir - offIdentifier,
+                                                 RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                if (RT_FAILURE(rc))
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Slot #%u: Malformed identifier string: %Rrc", iSlot, rc);
+            }
+
+            /* Team identifier: */
+            if (cbSelf >= RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, offTeamId) && pCodeDir->offTeamId)
+            {
+                uint32_t const offTeamId = RT_BE2H_U32(pCodeDir->offTeamId);
+                if (   offTeamId < cbSelf
+                    || offTeamId >= cbCodeDir)
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Slot #%u: Team identifier offset is out of bounds: %#x (min: %#x, max: %#x)",
+                                         iSlot, offTeamId, cbSelf, cbCodeDir - 1);
+                int rc = RTStrValidateEncodingEx((char const *)pCodeDir + offTeamId, cbCodeDir - offTeamId,
+                                                 RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                if (RT_FAILURE(rc))
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Slot #%u: Malformed team identifier string: %Rrc", iSlot, rc);
+            }
+
+            /* We don't support scatter. */
+            if (cbSelf >= RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, offScatter) && pCodeDir->offScatter)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Scatter not supported.", iSlot);
+
+            /* We don't really support the 64-bit code limit either: */
+            if (   cbSelf >= RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, cbCodeLimit64)
+                && pCodeDir->cbCodeLimit64
+                && RT_BE2H_U64(pCodeDir->cbCodeLimit64) != cbCodeLimit32)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: 64-bit code limit does not match 32-bit: %#RX64 vs %#RX32",
+                                     iSlot, RT_BE2H_U64(pCodeDir->cbCodeLimit64), cbCodeLimit32);
+
+            /* Check executable segment info if present: */
+            if (   cbSelf >= RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, fExecSeg)
+                && (   pThis->offSeg0ForCodeSign != RT_BE2H_U64(pCodeDir->offExecSeg)
+                    || pThis->cbSeg0ForCodeSign != RT_BE2H_U64(pCodeDir->cbExecSeg)
+                    || pThis->fSeg0ForCodeSign != RT_BE2H_U64(pCodeDir->fFlags)) )
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Segment #0 info mismatch: @%#RX64 LB %#RX64 flags=%#RX64; expected @%#RX64 LB %#RX64 flags=%#RX64",
+                                     iSlot, RT_BE2H_U64(pCodeDir->offExecSeg), RT_BE2H_U64(pCodeDir->cbExecSeg),
+                                     RT_BE2H_U64(pCodeDir->fExecSeg), pThis->offSeg0ForCodeSign, pThis->cbSeg0ForCodeSign,
+                                     pThis->fSeg0ForCodeSign);
+
+            /* Check fields that must be zero (don't want anyone to use them to counter changes): */
+            if (pCodeDir->uUnused1 != 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Unused field #1 is non-zero: %#x", iSlot, RT_BE2H_U32(pCodeDir->uUnused1));
+            if (   cbSelf >= RT_UOFFSET_AFTER(RTCRAPLCSCODEDIRECTORY, uUnused2)
+                && pCodeDir->uUnused2 != 0)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Slot #%u: Unused field #2 is non-zero: %#x", iSlot, RT_BE2H_U32(pCodeDir->uUnused2));
+
+            /** @todo idPlatform values.   */
+
+
+            /* Commit the code dir entry: */
+            pSignature->aCodeDirs[pSignature->cCodeDirs++].uSlot = iSlot;
         }
     }
 

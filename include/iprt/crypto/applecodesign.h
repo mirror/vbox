@@ -62,8 +62,11 @@
  * @note Requires byte order conversion of the field value.  That way
  *       greater-than and less-than comparisons works correctly.
  * @{  */
+#define RTCRAPLCS_VER_2_0                               UINT32_C(0x00020000)
 #define RTCRAPLCS_VER_SUPPORTS_SCATTER                  UINT32_C(0x00020100)
 #define RTCRAPLCS_VER_SUPPORTS_TEAMID                   UINT32_C(0x00020200)
+#define RTCRAPLCS_VER_SUPPORTS_CODE_LIMIT_64            UINT32_C(0x00020300)
+#define RTCRAPLCS_VER_SUPPORTS_EXEC_SEG                 UINT32_C(0x00020400)
 /** @} */
 
 /** @name RTCRAPLCS_SLOT_XXX - Apple code signing slots.
@@ -77,6 +80,7 @@
 #define RTCRAPLCS_SLOT_ENTITLEMENTS                     RT_N2H_U32_C(UINT32_C(0x00000005))
 #define RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES        RT_N2H_U32_C(UINT32_C(0x00001000))
 #define RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES_END    RT_N2H_U32_C(UINT32_C(0x00001005))
+#define RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORIES_COUNT  UINT32_C(0x00000005)
 #define RTCRAPLCS_SLOT_ALTERNATE_CODEDIRECTORY_INC      RT_N2H_U32_C(UINT32_C(0x00000001))
 /** The signature.
  * This is simply a RTCRAPLCSHDR/RTCRAPLCS_MAGIC_BLOBWRAPPER followed by a DER
@@ -161,7 +165,8 @@ typedef struct RTCRAPLCSCODEDIRECTORY
     uint32_t        uVersion;
     /** 0x0c: Flags & mode, RTCRAPLCS_???.  (Big endian. ) */
     uint32_t        fFlags;
-    /** 0x10: Offset of the hash slots.  Big endian. */
+    /** 0x10: Offset of the hash slots.  Big endian.
+     * Special slots found below this offset, code slots at and after.  */
     uint32_t        offHashSlots;
     /** 0x14: Offset of the identifier string.  Big endian. */
     uint32_t        offIdentifier;
@@ -169,8 +174,8 @@ typedef struct RTCRAPLCSCODEDIRECTORY
     uint32_t        cSpecialSlots;
     /** 0x1c: Number of code hash slots.  Big endian. */
     uint32_t        cCodeSlots;
-    /** 0x20: Number of bytes of code that's covered.  Big endian. */
-    uint32_t        cbCodeLimit;
+    /** 0x20: Number of bytes of code that's covered, 32-bit wide.  Big endian. */
+    uint32_t        cbCodeLimit32;
     /** 0x24: The hash size. */
     uint8_t         cbHash;
     /** 0x25: The hash type (RTCRAPLCS_HASHTYPE_XXX). */
@@ -180,15 +185,31 @@ typedef struct RTCRAPLCSCODEDIRECTORY
     /** 0x27: The page shift value.  zero if infinite page size. */
     uint8_t         cPageShift;
     /** 0x28: Spare field, MBZ. */
-    uint32_t        uUnused;
+    uint32_t        uUnused1;
     /** 0x2c: Offset of scatter vector (optional).  Big endian.
      * @since RTCRAPLCS_VER_SUPPORTS_SCATTER */
     uint32_t        offScatter;
     /** 0x30: Offset of team identifier (optional).  Big endian.
-     * @since RTCRAPLCS_VER_SUPPORTS_TEAM */
-    uint32_t        offTeam;
+     * @since RTCRAPLCS_VER_SUPPORTS_TEAMID */
+    uint32_t        offTeamId;
+    /** 0x34: Unused field, MBZ.
+     * @since RTCRAPLCS_VER_SUPPORTS_CODE_LIMIT_64 */
+    uint32_t        uUnused2;
+    /** 0x38: Number of bytes of code that's covered, 64-bit wide.  Big endian.
+     * @since RTCRAPLCS_VER_SUPPORTS_CODE_LIMIT_64 */
+    uint64_t        cbCodeLimit64;
+    /** 0x40: File offset of the first segment.  Big endian.
+     * @since RTCRAPLCS_VER_SUPPORTS_EXEC_SEG
+     * @note  Would be better to just sign the exe header + load commands. */
+    uint64_t        offExecSeg;
+    /** 0x48: The size of the first segment.  Big endian.
+     * @since RTCRAPLCS_VER_SUPPORTS_EXEC_SEG */
+    uint64_t        cbExecSeg;
+    /** 0x50: Flags for the first segment.  Big endian.
+     * @since RTCRAPLCS_VER_SUPPORTS_EXEC_SEG */
+    uint64_t        fExecSeg;
 } RTCRAPLCSCODEDIRECTORY;
-AssertCompileSize(RTCRAPLCSCODEDIRECTORY, 0x34);
+AssertCompileSize(RTCRAPLCSCODEDIRECTORY, 0x58);
 /** Pointer to a CS code directory. */
 typedef RTCRAPLCSCODEDIRECTORY *PRTCRAPLCSCODEDIRECTORY;
 /** Pointer to a const CS code directory. */
