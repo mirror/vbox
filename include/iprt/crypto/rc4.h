@@ -39,7 +39,7 @@ RT_C_DECLS_BEGIN
 /** RC4 key structure. */
 typedef union RTCRRC4KEY
 {
-    uint64_t    au64Padding[(2 + 256) / 2];
+    uint64_t    au64Padding[(2 + 256) * sizeof(RC4_INT) / 8];
 #ifdef HEADER_RC4_H
     RC4_KEY     Ossl;
 #endif
