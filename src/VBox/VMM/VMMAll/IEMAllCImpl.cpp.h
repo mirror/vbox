@@ -7584,6 +7584,9 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
         {
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_XCRx);
 
+            if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+                IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_XSETBV, cbInstr);
+
             uint32_t uEcx = pVCpu->cpum.GstCtx.ecx;
             uint64_t uNewValue = RT_MAKE_U64(pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.edx);
             switch (uEcx)
