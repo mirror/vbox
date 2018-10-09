@@ -348,12 +348,15 @@ void UIChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
 
 void UIChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget* /* pWidget = 0 */)
 {
+    /* Acquire rectangle: */
+    const QRect rectangle = pOptions->rect;
+
     /* Paint background: */
-    paintBackground(pPainter, pOptions->rect);
+    paintBackground(pPainter, rectangle);
     /* Paint frame: */
-    paintFrameRectangle(pPainter, pOptions->rect);
+    paintFrame(pPainter, rectangle);
     /* Paint header: */
-    paintHeader(pPainter, pOptions->rect);
+    paintHeader(pPainter, rectangle);
 }
 
 void UIChooserItemGroup::show()
@@ -858,9 +861,7 @@ void UIChooserItemGroup::updateLayout()
             /* Relayout group: */
             pItem->updateLayout();
             /* Advance indent for next items: */
-            iPreviousVerticalIndent += iMinimumHeight;
-            if (pItem->type() != UIChooserItemType_Global)
-                iPreviousVerticalIndent += iChildrenSpacing;
+            iPreviousVerticalIndent += (iMinimumHeight + iChildrenSpacing);
         }
     }
 }
@@ -1463,9 +1464,7 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
             /* And every existing child height: */
             foreach (UIChooserItem *pItem, items())
             {
-                iProposedHeight += pItem->minimumHeightHint();
-                if (pItem->type() != UIChooserItemType_Global)
-                    iProposedHeight += iChildrenSpacing;
+                iProposedHeight += (pItem->minimumHeightHint() + iChildrenSpacing);
             }
             /* Minus last spacing: */
             iProposedHeight -= iChildrenSpacing;
@@ -1705,7 +1704,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     pPainter->restore();
 }
 
-void UIChooserItemGroup::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
+void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
 {
     /* Not for roots: */
     if (isRoot())
@@ -1730,14 +1729,13 @@ void UIChooserItemGroup::paintFrameRectangle(QPainter *pPainter, const QRect &re
     pPainter->setPen(pen);
 
     /* Calculate top rectangle: */
-    QRect tRect = rect;
+    QRect topRect = rectangle;
     if (!m_fClosed)
-        tRect.setBottom(tRect.top() + iFullHeaderHeight - 1);
+        topRect.setBottom(topRect.top() + iFullHeaderHeight - 1);
 
     /* Draw borders: */
-    pPainter->drawLine(tRect.topLeft(),    tRect.topRight()    + QPoint(1, 0));
-    pPainter->drawLine(tRect.bottomLeft(), tRect.bottomRight() + QPoint(1, 0));
-    pPainter->drawLine(tRect.topLeft(),    tRect.bottomLeft());
+    pPainter->drawLine(topRect.bottomLeft(), topRect.bottomRight() + QPoint(1, 0));
+    pPainter->drawLine(topRect.topLeft(),    topRect.bottomLeft());
 
     /* Restore painter: */
     pPainter->restore();
