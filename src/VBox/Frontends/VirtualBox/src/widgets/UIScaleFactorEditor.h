@@ -40,13 +40,14 @@ class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWid
     Q_OBJECT;
 
 signals:
-    void sigScaleFactorChanged(int iMonitorID, double scaleFactor);
 
 public:
 
     /** Constructor, passes @a pParent to the QWidget constructor.*/
     UIScaleFactorEditor(QWidget *pParent);
     void setMonitorCount(int iMonitorCount);
+    void setScaleFactors(const QList<double> &scaleFactors);
+    const QList<double>& scaleFactors() const;
 
 protected:
     virtual void retranslateUi() /* override */;
@@ -54,13 +55,19 @@ protected:
 private slots:
     void sltScaleSpinBoxValueChanged(int value);
     void sltScaleSliderValueChanged(int value);
+    void sltMonitorComboIndexChanged(int index);
 
 private:
     void prepare();
+    void setScaleFactor(int iMonitorIndex, int iScaleFactor);
+    void setSliderValue(int iValue);
+    void setSpinBoxValue(int iValue);
     QSpinBox          *m_pScaleSpinBox;
     QGridLayout       *m_pMainLayout;
     QComboBox         *m_pMonitorComboBox;
     QIAdvancedSlider  *m_pScaleSlider;
+    /* Stores the per-monitor scale factors in range [.., 1, ..] */
+    QList<double>      m_scaleFactors;
 };
 
 #endif /* !___UIScaleFactorEditor_h___ */

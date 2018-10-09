@@ -3969,7 +3969,7 @@ bool UIExtraDataManager::hidLedsSyncState(const QString &strID)
     return !isFeatureRestricted(GUI_HidLedsSync, strID);
 }
 
-double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIndex /* = 0 */)
+double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIndex)
 {
     /* Get corresponding extra-data value: */
     const QString strValue = extraDataString(extraDataKeyPerScreen(GUI_ScaleFactor, uScreenIndex), strID);
@@ -3986,7 +3986,7 @@ double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIn
     return dValue;
 }
 
-void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex /* = 0 */)
+void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex)
 {
     /* Set corresponding extra-data value: */
     setExtraDataString(extraDataKeyPerScreen(GUI_ScaleFactor, uScreenIndex), QString::number(dScaleFactor), strID);
@@ -4526,7 +4526,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
                  strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange(strMachineID);
         /* Scale-factor change: */
-        else if (strKey == GUI_ScaleFactor)
+        else if (strKey.contains(GUI_ScaleFactor))
             emit sigScaleFactorChange(strMachineID);
         /* Scaling optimization type change: */
         else if (strKey == GUI_Scaling_Optimization)

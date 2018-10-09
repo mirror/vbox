@@ -42,10 +42,74 @@ UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent)
     prepare();
 }
 
+void UIScaleFactorEditor::setMonitorCount(int iMonitorCount)
+{
+    if (!m_pMonitorComboBox)
+        return;
+    if (iMonitorCount == m_pMonitorComboBox->count())
+        return;
+
+    m_pMonitorComboBox->blockSignals(true);
+    m_pMonitorComboBox->clear();
+    for (int i = 0; i < iMonitorCount; ++i)
+    {
+        m_pMonitorComboBox->addItem(QString("Monitor %1").arg(i));
+
+    }
+    m_pMonitorComboBox->blockSignals(false);
+}
+
+void UIScaleFactorEditor::setScaleFactors(const QList<double> &scaleFactors)
+{
+    if (m_scaleFactors == scaleFactors)
+        return;
+    m_scaleFactors = scaleFactors;
+
+    /* Set the spinbox value for the currently selected monitor: */
+    if (m_pMonitorComboBox)
+    {
+        int currentMonitorIndex = m_pMonitorComboBox->currentIndex();
+        if (m_scaleFactors.size() > currentMonitorIndex && m_pScaleSpinBox)
+            m_pScaleSpinBox->setValue(100 * m_scaleFactors.at(currentMonitorIndex));
+    }
+}
+
+const QList<double>& UIScaleFactorEditor::scaleFactors() const
+{
+    return m_scaleFactors;
+}
+
+void UIScaleFactorEditor::retranslateUi()
+{
+}
+
+void UIScaleFactorEditor::sltScaleSpinBoxValueChanged(int value)
+{
+    setSliderValue(value);
+    if (m_pMonitorComboBox)
+        setScaleFactor(m_pMonitorComboBox->currentIndex(), value);
+}
+
+void UIScaleFactorEditor::sltScaleSliderValueChanged(int value)
+{
+    setSpinBoxValue(value);
+    if (m_pMonitorComboBox)
+        setScaleFactor(m_pMonitorComboBox->currentIndex(), value);
+}
+
+void UIScaleFactorEditor::sltMonitorComboIndexChanged(int index)
+{
+    if (index >= m_scaleFactors.size())
+        return;
+
+    /* Update the slider and spinbox values without emitting signals: */
+    int scaleFactor = 100 *m_scaleFactors[index];
+    setSliderValue(scaleFactor);
+    setSpinBoxValue(scaleFactor);
+}
+
 void UIScaleFactorEditor::prepare()
 {
-    setStyleSheet("background-color:yellow;");
-
     m_pMainLayout = new QGridLayout;
     if (!m_pMainLayout)
         return;
@@ -53,6 +117,8 @@ void UIScaleFactorEditor::prepare()
     if (m_pMonitorComboBox)
     {
         m_pMainLayout->addWidget(m_pMonitorComboBox, 0, 0);
+        connect(m_pMonitorComboBox ,static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                this, &UIScaleFactorEditor::sltMonitorComboIndexChanged);
     }
     m_pScaleSpinBox = new QSpinBox;
     if (m_pScaleSpinBox)
@@ -79,43 +145,33 @@ void UIScaleFactorEditor::prepare()
     setLayout(m_pMainLayout);
 }
 
-void UIScaleFactorEditor::setMonitorCount(int iMonitorCount)
+void UIScaleFactorEditor::setScaleFactor(int iMonitorIndex, int iScaleFactor)
 {
-    if (!m_pMonitorComboBox)
-        return;
-    if (iMonitorCount == m_pMonitorComboBox->count())
-        return;
-
-    m_pMonitorComboBox->blockSignals(true);
-    m_pMonitorComboBox->clear();
-    for (int i = 0; i < iMonitorCount; ++i)
+    /* Make sure we have the corresponding scale value for the @p iMonitorIndex: */
+    if (iMonitorIndex >= m_scaleFactors.size())
     {
-        m_pMonitorComboBox->addItem(QString("Monitor %1").arg(i));
-
+        for (int i = m_scaleFactors.size(); i <= iMonitorIndex; ++i)
+            m_scaleFactors.append(1.0);
     }
-    m_pMonitorComboBox->blockSignals(false);
+    m_scaleFactors[iMonitorIndex] = iScaleFactor / 100.0;
 }
 
-void UIScaleFactorEditor::sltScaleSpinBoxValueChanged(int value)
+void UIScaleFactorEditor::setSliderValue(int iValue)
 {
-    if (m_pScaleSlider && value != m_pScaleSlider->value())
+    if (m_pScaleSlider && iValue != m_pScaleSlider->value())
     {
         m_pScaleSlider->blockSignals(true);
-        m_pScaleSlider->setValue(value);
+        m_pScaleSlider->setValue(iValue);
         m_pScaleSlider->blockSignals(false);
     }
 }
 
-void UIScaleFactorEditor::sltScaleSliderValueChanged(int value)
+void UIScaleFactorEditor::setSpinBoxValue(int iValue)
 {
-    if (m_pScaleSpinBox && value != m_pScaleSpinBox->value())
+    if (m_pScaleSpinBox && iValue != m_pScaleSpinBox->value())
     {
         m_pScaleSpinBox->blockSignals(true);
-        m_pScaleSpinBox->setValue(value);
+        m_pScaleSpinBox->setValue(iValue);
         m_pScaleSpinBox->blockSignals(false);
     }
-}
-
-void UIScaleFactorEditor::retranslateUi()
-{
 }

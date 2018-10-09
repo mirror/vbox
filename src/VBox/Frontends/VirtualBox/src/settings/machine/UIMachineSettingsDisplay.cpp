@@ -74,6 +74,7 @@ struct UIDataSettingsMachineDisplay
                && (m_iCurrentVRAM == other.m_iCurrentVRAM)
                && (m_cGuestScreenCount == other.m_cGuestScreenCount)
                && (m_dScaleFactor == other.m_dScaleFactor)
+               && (m_scaleFactors == other.m_scaleFactors)
                && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
 #ifdef VBOX_WITH_VIDEOHWACCEL
                && (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled)
@@ -244,6 +245,7 @@ struct UIDataSettingsMachineDisplay
     int     m_cGuestScreenCount;
     /** Holds the guest screen scale-factor. */
     double  m_dScaleFactor;
+    QList<double> m_scaleFactors;
     /** Holds whether the 3D acceleration is enabled. */
     bool    m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -361,7 +363,11 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Gather old 'Screen' data: */
     oldDisplayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
     oldDisplayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
-    oldDisplayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
+    oldDisplayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId(), 0);
+    oldDisplayData.m_scaleFactors.clear();
+    for (unsigned i = 0; i < m_machine.GetMonitorCount(); ++i)
+        oldDisplayData.m_scaleFactors.append(gEDataManager->scaleFactor(m_machine.GetId(), (int)i));
+
     oldDisplayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     oldDisplayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
@@ -409,9 +415,7 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Load old 'Screen' data from the cache: */
     m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pScaleFactorEditor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
-    m_pScaleFactorEditor->hide();
-    m_pLabelGuestScreenScaleFactorEditor->hide();
-    m_pEditorGuestScreenScale->setValue((int)(oldDisplayData.m_dScaleFactor * 100));
+    m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dAccelerationEnabled);
@@ -468,7 +472,7 @@ void UIMachineSettingsDisplay::putToCache()
     /* Gather new 'Screen' data: */
     newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
     newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
-    newDisplayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
+    newDisplayData.m_scaleFactors = m_pScaleFactorEditor->scaleFactors();
     newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     newDisplayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
@@ -661,9 +665,6 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderVideoMemorySize, m_pEditorVideoMemorySize);
     setTabOrder(m_pEditorVideoMemorySize, m_pSliderVideoScreenCount);
     setTabOrder(m_pSliderVideoScreenCount, m_pEditorVideoScreenCount);
-    setTabOrder(m_pEditorVideoScreenCount, m_pSliderGuestScreenScale);
-    setTabOrder(m_pSliderGuestScreenScale, m_pEditorGuestScreenScale);
-    setTabOrder(m_pEditorGuestScreenScale, m_pCheckbox3D);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     setTabOrder(m_pCheckbox3D, m_pCheckbox2DVideo);
     setTabOrder(m_pCheckbox2DVideo, m_pCheckboxRemoteDisplay);
@@ -701,8 +702,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelVideoMemorySizeMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
     m_pLabelVideoScreenCountMin->setText(QString::number(1));
     m_pLabelVideoScreenCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
-    m_pLabelGuestScreenScaleMin->setText(tr("%1%").arg(100));
-    m_pLabelGuestScreenScaleMax->setText(tr("%1%").arg(200));
 
     /* Remote Display stuff: */
     m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
@@ -740,11 +739,7 @@ void UIMachineSettingsDisplay::polishPage()
     m_pLabelVideoScreenCountMin->setEnabled(isMachineOffline());
     m_pLabelVideoScreenCountMax->setEnabled(isMachineOffline());
     m_pEditorVideoScreenCount->setEnabled(isMachineOffline());
-    m_pLabelGuestScreenScale->setEnabled(isMachineInValidMode());
-    m_pSliderGuestScreenScale->setEnabled(isMachineInValidMode());
-    m_pLabelGuestScreenScaleMin->setEnabled(isMachineInValidMode());
-    m_pLabelGuestScreenScaleMax->setEnabled(isMachineInValidMode());
-    m_pEditorGuestScreenScale->setEnabled(isMachineInValidMode());
+    m_pScaleFactorEditor->setEnabled(isMachineInValidMode());
     m_pLabelVideoOptions->setEnabled(isMachineOffline());
     m_pCheckbox3D->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -819,22 +814,6 @@ void UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange()
 
     /* Revalidate: */
     revalidate();
-}
-
-void UIMachineSettingsDisplay::sltHandleGuestScreenScaleSliderChange()
-{
-    /* Apply proposed scale-factor: */
-    m_pEditorGuestScreenScale->blockSignals(true);
-    m_pEditorGuestScreenScale->setValue(m_pSliderGuestScreenScale->value());
-    m_pEditorGuestScreenScale->blockSignals(false);
-}
-
-void UIMachineSettingsDisplay::sltHandleGuestScreenScaleEditorChange()
-{
-    /* Apply proposed scale-factor: */
-    m_pSliderGuestScreenScale->blockSignals(true);
-    m_pSliderGuestScreenScale->setValue(m_pEditorGuestScreenScale->value());
-    m_pSliderGuestScreenScale->blockSignals(false);
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
@@ -1017,27 +996,6 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorVideoScreenCount->setMinimum(1);
             m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
         }
-
-        /* Scale-factor slider created in the .ui file. */
-        AssertPtrReturnVoid(m_pSliderGuestScreenScale);
-        {
-            /* Configure slider: */
-            m_pSliderGuestScreenScale->setMinimum(100);
-            m_pSliderGuestScreenScale->setMaximum(200);
-            m_pSliderGuestScreenScale->setPageStep(10);
-            m_pSliderGuestScreenScale->setSingleStep(1);
-            m_pSliderGuestScreenScale->setTickInterval(10);
-            m_pSliderGuestScreenScale->setSnappingEnabled(true);
-        }
-
-        /* Scale-factor editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorGuestScreenScale);
-        {
-            /* Configure editor: */
-            m_pEditorGuestScreenScale->setMinimum(100);
-            m_pEditorGuestScreenScale->setMaximum(200);
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
-        }
     }
 }
 
@@ -1210,8 +1168,7 @@ void UIMachineSettingsDisplay::prepareConnections()
     connect(m_pEditorVideoMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoMemorySizeEditorChange()));
     connect(m_pSliderVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountSliderChange()));
     connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountEditorChange()));
-    connect(m_pSliderGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleSliderChange()));
-    connect(m_pEditorGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleEditorChange()));
+
     connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 #ifdef VBOX_WITH_VIDEOHWACCEL
     connect(m_pCheckbox2DVideo, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
@@ -1451,7 +1408,13 @@ bool UIMachineSettingsDisplay::saveScreenData()
 
         /* Save guest-screen scale-factor: */
         if (fSuccess && newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
-            /* fSuccess = */ gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, strMachineId);
+            /* fSuccess = */ gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, strMachineId, 0);
+        if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
+        {
+            int listSize = newDisplayData.m_scaleFactors.size();
+            for (int i = 0; i < listSize; ++i)
+                gEDataManager->setScaleFactor(newDisplayData.m_scaleFactors[i], strMachineId, i);
+        }
     }
     /* Return result: */
     return fSuccess;
