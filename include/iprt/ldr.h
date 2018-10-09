@@ -1180,7 +1180,8 @@ typedef enum RTLDRSIGNATURETYPE
  * @param   pvUser          User argument.
  *
  */
-typedef DECLCALLBACK(int) FNRTLDRVALIDATESIGNEDDATA(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature, void const *pvSignature, size_t cbSignature,
+typedef DECLCALLBACK(int) FNRTLDRVALIDATESIGNEDDATA(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
+                                                    void const *pvSignature, size_t cbSignature,
                                                     PRTERRINFO pErrInfo, void *pvUser);
 /** Pointer to a signature verification callback. */
 typedef FNRTLDRVALIDATESIGNEDDATA *PFNRTLDRVALIDATESIGNEDDATA;

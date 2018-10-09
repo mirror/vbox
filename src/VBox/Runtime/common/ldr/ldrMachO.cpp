@@ -3965,6 +3965,49 @@ static DECLCALLBACK(int) rtldrMachO_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP 
 
 
 /**
+ * @interface_method_impl{RTLDROPS,pfnVerifySignature}
+ */
+static DECLCALLBACK(int)
+rtldrMachO_VerifySignature(PRTLDRMODINTERNAL pMod, PFNRTLDRVALIDATESIGNEDDATA pfnCallback, void *pvUser, PRTERRINFO pErrInfo)
+{
+#ifndef IPRT_WITHOUT_LDR_VERIFY
+    PRTLDRMODMACHO pThis = RT_FROM_MEMBER(pMod, RTLDRMODMACHO, Core);
+
+    int rc = rtldrMachO_LoadSignatureBlob(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        RT_NOREF(pfnCallback, pvUser, pErrInfo);
+#if 0
+        int rc = rtldrPE_VerifySignatureImagePrecoditions(pModPe, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            PRTLDRPESIGNATURE pSignature = NULL;
+            rc = rtldrPE_VerifySignatureRead(pModPe, &pSignature, pErrInfo);
+            if (RT_SUCCESS(rc))
+            {
+                rc = rtldrPE_VerifySignatureDecode(pModPe, pSignature, pErrInfo);
+                if (RT_SUCCESS(rc))
+                    rc = rtldrPE_VerifySignatureValidateHash(pModPe, pSignature, pErrInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = pfnCallback(&pModPe->Core, RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA,
+                                     &pSignature->ContentInfo, sizeof(pSignature->ContentInfo),
+                                     pErrInfo, pvUser);
+                }
+                rtldrPE_VerifySignatureDestroy(pModPe, pSignature);
+            }
+        }
+#endif
+    }
+    return rc;
+#else
+    RT_NOREF_PV(pMod); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(pvUser); RT_NOREF_PV(pErrInfo);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/**
  * Operations for a Mach-O module interpreter.
  */
 static const RTLDROPS s_rtldrMachOOps=
@@ -3988,7 +4031,7 @@ static const RTLDROPS s_rtldrMachOOps=
     rtldrMachO_RvaToSegOffset,
     rtldrMachO_ReadDbgInfo,
     rtldrMachO_QueryProp,
-    NULL /*pfnVerifySignature*/,
+    rtldrMachO_VerifySignature,
     NULL /*pfnHashImage*/,
     NULL /*pfnUnwindFrame*/,
     42

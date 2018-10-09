@@ -1420,15 +1420,22 @@ static RTEXITCODE HandleVerifyExeWorker(VERIFYEXESTATE *pState, const char *pszF
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening executable image '%s': %Rrc", pszFilename, rc);
 
 
+    RTTIMESPEC Now;
+    bool       fTriedNow = false;
     rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pState->uTimestamp, sizeof(pState->uTimestamp));
+    if (rc == VERR_NOT_FOUND)
+    {
+        fTriedNow = true;
+        pState->uTimestamp = RTTimeSpecGetSeconds(RTTimeNow(&Now));
+        rc = VINF_SUCCESS;
+    }
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
         if (RT_SUCCESS(rc))
             RTMsgInfo("'%s' is valid.\n", pszFilename);
-        else if (rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME)
+        else if (rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME && !fTriedNow)
         {
-            RTTIMESPEC Now;
             pState->uTimestamp = RTTimeSpecGetSeconds(RTTimeNow(&Now));
             rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
             if (RT_SUCCESS(rc))

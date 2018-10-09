@@ -2839,8 +2839,8 @@ static int rtldrPE_VerifySignatureValidateHash(PRTLDRMODPE pModPe, PRTLDRPESIGNA
              * Compare the page hashes if present.
              *
              * Seems the difference between V1 and V2 page hash attributes is
-             * that v1 uses SHA-1 while v2 uses SHA-256. The data structures to
-             * be identical otherwise.  Initially we assumed the digest
+             * that v1 uses SHA-1 while v2 uses SHA-256. The data structures
+             * seems to be identical otherwise.  Initially we assumed the digest
              * algorithm was supposed to be RTCRSPCINDIRECTDATACONTENT::DigestInfo,
              * i.e. the same as for the whole image hash.  The initial approach
              * worked just fine, but this makes more sense.
