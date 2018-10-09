@@ -106,6 +106,8 @@ typedef enum RTCRPKCS7ATTRIBUTETYPE
     RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE,
     /** Microsoft statement type, use pObjIdSeqs. */
     RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE,
+    /** Apple plist with the all code directory digests, use pOctetStrings. */
+    RTCRPKCS7ATTRIBUTETYPE_APPLE_MULTI_CD_PLIST,
     /** Blow the type up to 32-bits. */
     RTCRPKCS7ATTRIBUTETYPE_32BIT_HACK = 0x7fffffff
 } RTCRPKCS7ATTRIBUTETYPE;
@@ -211,6 +213,9 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfo,
 /** Microsoft opus info.
  * @remarks This isn't defined by PKCS \#9, but lumped in here for convenience. It's actually listed as SPC by MS. */
 #define RTCR_PKCS9_ID_MS_SP_OPUS_INFO       "1.3.6.1.4.1.311.2.1.12"
+/** Apple code signing multi-code-directory plist.
+ * @remarks This isn't defined by PKCS \#9, but lumped in here for convenience. */
+#define RTCR_PKCS9_ID_APPLE_MULTI_CD_PLIST  "1.2.840.113635.100.9.1"
 /** @} */
 
 
