@@ -110,6 +110,11 @@ RTDECL(int) RTCrSslCreate(PRTCRSSL phSsl, uint32_t fFlags)
             {
                 /* Help with above aim. */
 # if OPENSSL_VERSION_NUMBER >= 0x10100000
+#  ifndef SSL_CTX_get_min_proto_version
+/* Some older OpenSSL 1.1.0 releases lack the getters, officially they were
+ * added with 1.1.1 but someone cherry picked them, just maybe too late. */
+#   define SSL_CTX_get_min_proto_version(ctx) (0)
+#  endif
                 if (SSL_CTX_get_min_proto_version(pThis->pCtx) < TLS1_VERSION)
                     SSL_CTX_set_min_proto_version(pThis->pCtx, TLS1_VERSION);
 # elif OPENSSL_VERSION_NUMBER >= 0x10002000
