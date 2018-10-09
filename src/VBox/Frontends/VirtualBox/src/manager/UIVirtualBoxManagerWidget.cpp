@@ -378,7 +378,7 @@ void UIVirtualBoxManagerWidget::prepare()
 #ifdef VBOX_WS_MAC
     const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(145);
 #else
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(155);
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
 #endif
     pal.setColor(QPalette::Window, color);
     setPalette(pal);

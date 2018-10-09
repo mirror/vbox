@@ -294,7 +294,7 @@ void UIDetailsGroup::paintBackground(QPainter *pPainter, const QStyleOptionGraph
 #ifdef VBOX_WS_MAC
     const QColor defaultColor = palette().color(QPalette::Active, QPalette::Mid).lighter(145);
 #else
-    const QColor defaultColor = palette().color(QPalette::Active, QPalette::Mid).lighter(155);
+    const QColor defaultColor = palette().color(QPalette::Active, QPalette::Mid).lighter(160);
 #endif
     pPainter->fillRect(optionRect, defaultColor);
 
