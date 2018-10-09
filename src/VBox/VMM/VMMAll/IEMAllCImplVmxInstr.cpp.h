@@ -3475,6 +3475,25 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to MWAIT instruction.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fMonitorHwArmed     Whether the address-range monitor hardware is armed.
+ * @param   cbInstr             The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMwait(PVMCPU pVCpu, bool fMonitorHwArmed, uint8_t cbInstr)
+{
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason = VMX_EXIT_MWAIT;
+    ExitInfo.cbInstr = cbInstr;
+    ExitInfo.u64Qual = fMonitorHwArmed;
+    return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+}
+
+
+/**
  * VMX VM-exit handler for TPR virtualization.
  *
  * @returns VBox strict status code.

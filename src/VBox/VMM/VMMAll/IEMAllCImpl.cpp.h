@@ -7148,11 +7148,16 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
         return iemRaiseUndefinedOpcode(pVCpu);
     }
 
+    /* Check VMX nested-guest intercept. */
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MWAIT_EXIT))
+        IEM_VMX_VMEXIT_MWAIT_RET(pVCpu, EMMonitorIsArmed(pVCpu), cbInstr);
+
     /*
      * Gather the operands and validate them.
      */
-    uint32_t uEax = pVCpu->cpum.GstCtx.eax;
-    uint32_t uEcx = pVCpu->cpum.GstCtx.ecx;
+    uint32_t const uEax = pVCpu->cpum.GstCtx.eax;
+    uint32_t const uEcx = pVCpu->cpum.GstCtx.ecx;
     if (uEcx != 0)
     {
         /* Only supported extension is break on IRQ when IF=0. */
@@ -7170,6 +7175,26 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
             Log2(("mwait eax=%RX32, ecx=%RX32; break-on-IRQ-IF=0 extension not enabled -> #GP(0)\n", uEax, uEcx));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        /*
+         * If the interrupt-window exiting control is set or a virtual-interrupt is pending
+         * for delivery; and interrupts are disabled the processor does not enter its
+         * mwait state but rather passes control to the next instruction.
+         *
+         * See Intel spec. 25.3 "Changes to Instruction Behavior In VMX Non-root Operation".
+         */
+        if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+            && !pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
+        {
+            if (   IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INT_WINDOW_EXIT)
+                || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+            {
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                return VINF_SUCCESS;
+            }
+        }
+#endif
     }
 
     /*

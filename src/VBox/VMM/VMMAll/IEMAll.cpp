@@ -433,15 +433,22 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss) \
     do { return iemVmxVmexitTaskSwitch((a_pVCpu), (a_enmTaskSwitch), (a_SelNewTss)); } while (0)
 
+/**
+ * Invokes the VMX VM-exit handler for MWAIT.
+ */
+# define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr) \
+    do { return iemVmxVmexitInstrMwait((a_pVCpu), (a_fMonitorArmed), (a_cbInstr)); } while (0)
+
 #else
 # define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                  (false)
 # define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                              (false)
 # define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_cbInstr)                     (false)
 # define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_cbInstr)                    (false)
 # define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_cbInstr)                   (false)
-# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss)  do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr)            do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)     do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss)  do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr)          do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
 
