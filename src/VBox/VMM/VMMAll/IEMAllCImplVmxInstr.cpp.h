@@ -30,7 +30,6 @@
  *  VMX_EXIT_GETSEC
  *  VMX_EXIT_INVD
  *  VMX_EXIT_RSM
- *  VMX_EXIT_MOV_DRX
  *  VMX_EXIT_MWAIT
  *  VMX_EXIT_MTF
  *  VMX_EXIT_MONITOR (APIC access VM-exit caused by MONITOR pending)
