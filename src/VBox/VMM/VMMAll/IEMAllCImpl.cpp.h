@@ -5273,7 +5273,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 
 
 /**
- * Implements smsw GReg
+ * Implements smsw GReg.
  *
  * @param   iGReg           The general register to store the CRx value in.
  * @param   enmEffOpSize    The operand size.
@@ -5281,25 +5281,30 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    /** @todo NSTVMX: SMSW CR0 masking. */
+
+    uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        u64GuestCr0 = iemVmxMaskCr0CR4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
+#endif
 
     switch (enmEffOpSize)
     {
         case IEMMODE_16BIT:
             if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)pVCpu->cpum.GstCtx.cr0;
+                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)u64GuestCr0;
             else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)pVCpu->cpum.GstCtx.cr0 | 0xffe0;
+                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)u64GuestCr0 | 0xffe0;
             else
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)pVCpu->cpum.GstCtx.cr0 | 0xfff0;
+                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)u64GuestCr0 | 0xfff0;
             break;
 
         case IEMMODE_32BIT:
-            *(uint64_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)pVCpu->cpum.GstCtx.cr0;
+            *(uint64_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)u64GuestCr0;
             break;
 
         case IEMMODE_64BIT:
-            *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.cr0;
+            *(uint64_t *)iemGRegRef(pVCpu, iGReg) = u64GuestCr0;
             break;
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
