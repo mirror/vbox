@@ -4550,7 +4550,7 @@ static int rtldrMachO_VerifySignatureValidateCdHashesPlist(PRTLDRMACHOSIGNATURE 
                                        "Code directory #%u hash mismatch (plist):\n"
                                        "signed: %.*Rhxs\n"
                                        "our:    %.*Rhxs\n",
-                                       cbActualHash, pbHash,
+                                       iCodeDir, cbActualHash, pbHash,
                                        RTCrDigestGetHashSize(hDigest), RTCrDigestGetHash(hDigest));
             }
             else
