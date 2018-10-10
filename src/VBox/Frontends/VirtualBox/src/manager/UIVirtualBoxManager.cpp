@@ -1196,6 +1196,13 @@ void UIVirtualBoxManager::prepareMenuBar()
 #ifndef VBOX_WS_MAC
     /* Create menu-bar: */
     setMenuBar(new UIMenuBar);
+
+    /* Make sure menu-bar fills own solid background: */
+    menuBar()->setAutoFillBackground(true);
+    QPalette pal = menuBar()->palette();
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
+    pal.setColor(QPalette::Active, QPalette::Button, color);
+    menuBar()->setPalette(pal);
 #endif
 
     /* Create action-pool: */
