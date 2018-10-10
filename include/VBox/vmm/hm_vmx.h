@@ -2553,7 +2553,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_IDT_VECTORING_INFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_IDT_VECTORING_INFO_TYPE_SW_INT                      4
 #define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT                5
 #define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT                     6
-#define VMX_IDT_VECTORING_INFO_TYPE_SW_UNUSED                   7
+#define VMX_IDT_VECTORING_INFO_TYPE_UNUSED                      7
 /** @} */
 
 
@@ -2599,6 +2599,50 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_TPR_THRESHOLD_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_GUEST_INT_STATE_MASK                           UINT32_C(0x1f)
 /** @} */
 
+
+/** @name Exit qualification for debug exceptions.
+ * @{
+ */
+/** Hardware breakpoint 0 was met. */
+#define VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP0                       RT_BIT_64(0)
+/** Hardware breakpoint 1 was met. */
+#define VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP1                       RT_BIT_64(1)
+/** Hardware breakpoint 2 was met. */
+#define VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP2                       RT_BIT_64(2)
+/** Hardware breakpoint 3 was met. */
+#define VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP3                       RT_BIT_64(3)
+/** Debug register access detected. */
+#define VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BD                        RT_BIT_64(13)
+/** A debug exception would have been triggered by single-step execution mode. */
+#define VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BS                        RT_BIT_64(14)
+/** Mask of all valid bits. */
+#define VMX_VMCS_EXIT_QUAL_VALID_MASK                           (  VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP0 \
+                                                                 | VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP1 \
+                                                                 | VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP2 \
+                                                                 | VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BP3 \
+                                                                 | VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BD  \
+                                                                 | VMX_VMCS_EXIT_QUAL_DEBUG_XCPT_BS)
+
+/** Bit fields for Exit qualifications due to debug exceptions. */
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP0_SHIFT                   0
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP0_MASK                    UINT64_C(0x0000000000000001)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP1_SHIFT                   1
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP1_MASK                    UINT64_C(0x0000000000000002)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP2_SHIFT                   2
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP2_MASK                    UINT64_C(0x0000000000000004)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP3_SHIFT                   3
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BP3_MASK                    UINT64_C(0x0000000000000008)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_RSVD_4_12_SHIFT             4
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_RSVD_4_12_MASK              UINT64_C(0x0000000000001ff0)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BD_SHIFT                    13
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BD_MASK                     UINT64_C(0x0000000000002000)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BS_SHIFT                    14
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_BS_MASK                     UINT64_C(0x0000000000004000)
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_RSVD_15_63_SHIFT            15
+#define VMX_BF_EXIT_QUAL_DEBUG_XCPT_RSVD_15_63_MASK             UINT64_C(0xffffffffffff8000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_DEBUG_XCPT_, UINT64_C(0), UINT64_MAX,
+                            (BP0, BP1, BP2, BP3, RSVD_4_12, BD, BS, RSVD_15_63));
+/** @} */
 
 /** @name Exit qualification for Mov DRx.
  * @{
@@ -3182,7 +3226,6 @@ typedef VMXVEXITINFO *PVMXVEXITINFO;
 typedef const VMXVEXITINFO *PCVMXVEXITINFO;
 AssertCompileMemberAlignment(VMXVEXITINFO, u64Qual, 8);
 
-
 /**
  * Virtual VMCS.
  * This is our custom format and merged into the actual VMCS (/shadow) when we
@@ -3327,7 +3370,7 @@ typedef struct
     /** 0xf4 - VM-exit interruption information. */
     uint32_t        u32RoExitIntInfo;
     /** 0xf8 - VM-exit interruption error code. */
-    uint32_t        u32RoExitErrCode;
+    uint32_t        u32RoExitIntErrCode;
     /** 0xfc - IDT-vectoring information. */
     uint32_t        u32RoIdtVectoringInfo;
     /** 0x100 - IDT-vectoring error code. */

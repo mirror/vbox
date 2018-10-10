@@ -967,6 +967,7 @@ IEM_STATIC uint64_t         iemSRegBaseFetchU64(PVMCPU pVCpu, uint8_t iSegReg);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -5509,6 +5510,15 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp);
 #endif
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict0 = iemVmxVmexitEvent(pVCpu, u8Vector, fFlags, uErr, uCr2);
+        if (rcStrict0 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict0;
+    }
+#endif
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
     {
@@ -5516,10 +5526,11 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
          * If the event is being injected as part of VMRUN, it isn't subject to event
          * intercepts in the nested-guest. However, secondary exceptions that occur
          * during injection of any event -are- subject to exception intercepts.
+         *
          * See AMD spec. 15.20 "Event Injection".
          */
         if (!pVCpu->cpum.GstCtx.hwvirt.svm.fInterceptEvents)
-            pVCpu->cpum.GstCtx.hwvirt.svm.fInterceptEvents = 1;
+            pVCpu->cpum.GstCtx.hwvirt.svm.fInterceptEvents = true;
         else
         {
             /*

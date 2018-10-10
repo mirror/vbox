@@ -191,7 +191,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u32RoVmInstrError),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u32RoExitReason),
         /*     2 */ RT_UOFFSETOF(VMXVVMCS, u32RoExitIntInfo),
-        /*     3 */ RT_UOFFSETOF(VMXVVMCS, u32RoExitErrCode),
+        /*     3 */ RT_UOFFSETOF(VMXVVMCS, u32RoExitIntErrCode),
         /*     4 */ RT_UOFFSETOF(VMXVVMCS, u32RoIdtVectoringInfo),
         /*     5 */ RT_UOFFSETOF(VMXVVMCS, u32RoIdtVectoringErrCode),
         /*     6 */ RT_UOFFSETOF(VMXVVMCS, u32RoExitInstrLen),
@@ -1335,6 +1335,50 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
 
 
 /**
+ * Converts an IEM exception event type to a VMX event type.
+ *
+ * @returns The VMX event type.
+ * @param   uVector     The interrupt / exception vector number.
+ * @param   fFlags      The IEM event flag (see IEM_XCPT_FLAGS_XXX).
+ */
+DECLINLINE(uint8_t) iemVmxGetEventType(uint32_t uVector, uint32_t fFlags)
+{
+    /* Paranoia (callers may use these interchangeably). */
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_NMI          == VMX_IDT_VECTORING_INFO_TYPE_NMI);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_HW_XCPT      == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_EXT_INT      == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_SW_XCPT      == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_SW_INT       == VMX_IDT_VECTORING_INFO_TYPE_SW_INT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_NMI          == VMX_ENTRY_INT_INFO_TYPE_NMI);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_HW_XCPT      == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_EXT_INT      == VMX_ENTRY_INT_INFO_TYPE_EXT_INT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_SW_XCPT      == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_SW_INT       == VMX_ENTRY_INT_INFO_TYPE_SW_INT);
+    AssertCompile(VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT);
+
+    if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+    {
+        if (uVector == X86_XCPT_NMI)
+            return VMX_EXIT_INT_INFO_TYPE_NMI;
+        return VMX_EXIT_INT_INFO_TYPE_HW_XCPT;
+    }
+
+    if (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+    {
+        if (fFlags & (IEM_XCPT_FLAGS_BP_INSTR | IEM_XCPT_FLAGS_OF_INSTR))
+            return VMX_EXIT_INT_INFO_TYPE_SW_XCPT;
+        if (fFlags & IEM_XCPT_FLAGS_ICEBP_INSTR)
+            return VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT;
+        return VMX_EXIT_INT_INFO_TYPE_SW_INT;
+    }
+
+    Assert(fFlags & IEM_XCPT_FLAGS_T_EXT_INT);
+    return VMX_EXIT_INT_INFO_TYPE_EXT_INT;
+}
+
+
+/**
  * Sets the VM-instruction error VMCS field.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -1351,7 +1395,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetVmInstrErr(PVMCPU pVCpu, VMXINSTRERR enmIns
  * Sets the VM-exit qualification VMCS field.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uExitQual   The VM-exit qualification field.
+ * @param   uExitQual   The VM-exit qualification.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitQual(PVMCPU pVCpu, uint64_t uExitQual)
 {
@@ -1361,10 +1405,62 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitQual(PVMCPU pVCpu, uint64_t uExitQual)
 
 
 /**
+ * Sets the VM-exit interruption information field.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uExitQual   The VM-exit interruption information.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetExitIntInfo(PVMCPU pVCpu, uint32_t uExitIntInfo)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u32RoExitIntInfo = uExitIntInfo;
+}
+
+
+/**
+ * Sets the VM-exit interruption error code.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uErrCode    The error code.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetExitIntErrCode(PVMCPU pVCpu, uint32_t uErrCode)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u32RoExitIntErrCode = uErrCode;
+}
+
+
+/**
+ * Sets the IDT-vectoring information field.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uIdtVectorInfo  The IDT-vectoring information.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetIdtVectoringInfo(PVMCPU pVCpu, uint32_t uIdtVectorInfo)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u32RoIdtVectoringInfo = uIdtVectorInfo;
+}
+
+
+/**
+ * Sets the IDT-vectoring error code field.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uErrCode    The error code.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetIdtVectoringErrCode(PVMCPU pVCpu, uint32_t uErrCode)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    pVmcs->u32RoIdtVectoringErrCode = uErrCode;
+}
+
+
+/**
  * Sets the VM-exit guest-linear address VMCS field.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
- * @param   uGuestLinearAddr    The VM-exit guest-linear address field.
+ * @param   uGuestLinearAddr    The VM-exit guest-linear address.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestLinearAddr(PVMCPU pVCpu, uint64_t uGuestLinearAddr)
 {
@@ -1377,7 +1473,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestLinearAddr(PVMCPU pVCpu, uint64_t 
  * Sets the VM-exit guest-physical address VMCS field.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uGuestPhysAddr  The VM-exit guest-physical address field.
+ * @param   uGuestPhysAddr  The VM-exit guest-physical address.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestPhysAddr(PVMCPU pVCpu, uint64_t uGuestPhysAddr)
 {
@@ -1406,7 +1502,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrLen(PVMCPU pVCpu, uint32_t cbInstr
  * Sets the VM-exit instruction info. VMCS field.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uExitInstrInfo  The VM-exit instruction info. field.
+ * @param   uExitInstrInfo  The VM-exit instruction information.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitInstrInfo)
 {
@@ -3473,6 +3569,129 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
                              | RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE,  uTaskSwitchSrc);
     iemVmxVmcsSetExitQual(pVCpu, uExitQual);
     return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to delivery of an event (indirectly).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uVector     The interrupt / exception vector number.
+ * @param   fFlags      The flags (see IEM_XCPT_FLAGS_XXX).
+ * @param   uErrCode    The error code associated with the event.
+ * @param   uCr2        The CR2 value in case of a \#PF exception.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * If the event is being injected as part of VM-entry, it isn't subject to event
+     * intercepts in the nested-guest. However, secondary exceptions that occur during
+     * injection of any event -are- subject to event interception.
+     *
+     * See Intel spec. 26.5.1.2 "VM Exits During Event Injection".
+     */
+    if (!pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents)
+    {
+        /* Update the IDT-vectoring event in the VMCS as the source of the upcoming event. */
+        uint8_t  const uIdtVectoringType = iemVmxGetEventType(uVector, fFlags);
+        uint8_t  const fErrCodeValid     = (fFlags & IEM_XCPT_FLAGS_ERR);
+        uint32_t const uIdtVectoringInfo = RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR,         uVector)
+                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,           uIdtVectoringType)
+                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID, fErrCodeValid)
+                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
+        iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
+        iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
+
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
+        return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+    }
+
+    /*
+     * Evaluate intercepts for hardware exceptions including #BP, #DB, #OF
+     * generated by INT3, INT1 (ICEBP) and INTO respectively.
+     */
+    bool     fIntercept = false;
+    bool     fIsHwXcpt  = false;
+    if (fFlags & (IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_T_SOFT_INT))
+    {
+        if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+            ||  (fFlags & (IEM_XCPT_FLAGS_BP_INSTR | IEM_XCPT_FLAGS_OF_INSTR | IEM_XCPT_FLAGS_ICEBP_INSTR)))
+        {
+            fIsHwXcpt = true;
+            do
+            {
+                /* NMIs have a dedicated VM-execution control for causing VM-exits. */
+                if (uVector == X86_XCPT_NMI)
+                {
+                    fIntercept = RT_BOOL(pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT);
+                    break;
+                }
+
+                /* Page-faults are subject to masking using its error code. */
+                uint32_t fXcptBitmap = pVmcs->u32XcptBitmap;
+                if (uVector == X86_XCPT_PF)
+                {
+                    uint32_t const fXcptPFMask  = pVmcs->u32XcptPFMask;
+                    uint32_t const fXcptPFMatch = pVmcs->u32XcptPFMatch;
+                    if ((uErrCode & fXcptPFMask) != fXcptPFMatch)
+                        fXcptBitmap ^= RT_BIT(X86_XCPT_PF);
+                }
+
+                /* Consult the exception bitmap. */
+                if (fXcptBitmap & RT_BIT(uVector))
+                    fIntercept = true;
+            } while (0);
+        }
+        /* else: Software interrupts cannot be intercepted and therefore do not cause a VM-exit. */
+    }
+    else if (fFlags & IEM_XCPT_FLAGS_T_EXT_INT)
+    {
+        /* External interrupts have a dedicated VM-execution control for causing VM-exits. */
+        fIntercept  = RT_BOOL(pVmcs->u32PinCtls & VMX_PIN_CTLS_EXT_INT_EXIT);
+
+        /** @todo NSTVMX: What about "acknowledge interrupt on exit" control? */
+    }
+
+    /*
+     * Now that we've determined whether the external interrupt or hardware exception
+     * causes a VM-exit, we need to construct the relevant VM-exit information and
+     * cause the VM-exit.
+     */
+    if (fIntercept)
+    {
+        uint64_t uExitQual = 0;
+        if (fIsHwXcpt)
+        {
+            if (uVector == X86_XCPT_PF)
+                uExitQual = uCr2;
+            else if (uVector == X86_XCPT_DB)
+            {
+                IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR6);
+                uExitQual = pVCpu->cpum.GstCtx.dr[6] & VMX_VMCS_EXIT_QUAL_VALID_MASK;
+            }
+        }
+
+        /* Construct the rest of the event related information fields and cause the VM-exit. */
+        uint32_t const uExitReason    = (fFlags & IEM_XCPT_FLAGS_T_EXT_INT) ? VMX_EXIT_EXT_INT : VMX_EXIT_XCPT_OR_NMI;
+        uint8_t  const fNmiUnblocking = 0;  /** @todo NSTVMX: Implement NMI-unblocking due to IRET. */
+        uint8_t  const fErrCodeValid  = (fFlags & IEM_XCPT_FLAGS_ERR);
+        uint8_t  const uIntInfoType   = iemVmxGetEventType(uVector, fFlags);
+        uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             uIntInfoType)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID,   fErrCodeValid)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
+        iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
+        iemVmxVmcsSetExitIntErrCode(pVCpu, uErrCode);
+        iemVmxVmcsSetExitQual(pVCpu, uExitQual);
+        iemVmxVmexit(pVCpu, uExitReason);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 
 
