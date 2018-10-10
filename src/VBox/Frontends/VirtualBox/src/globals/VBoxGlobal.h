@@ -166,6 +166,11 @@ public:
         /** Returns whether VBoxGlobal instance is properly initialized. */
         bool isValid() const { return m_fValid; }
 
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+        /** Returns the UI type. */
+        UIType uiType() const { return m_enmType; }
+#endif
+
         /** Returns VBox version string. */
         QString vboxVersionString() const;
         /** Returns normalized VBox version string. */
