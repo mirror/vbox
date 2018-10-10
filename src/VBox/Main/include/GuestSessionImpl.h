@@ -82,13 +82,11 @@ private:
 
     HRESULT copyFromGuest(const std::vector<com::Utf8Str> &aSources,
                           const std::vector<com::Utf8Str> &aFilters,
-                          const std::vector<FsObjType_T> &aTypes,
                           const std::vector<com::Utf8Str> &aFlags,
                           const com::Utf8Str &aDestination,
                           ComPtr<IProgress> &aProgress);
     HRESULT copyToGuest(const std::vector<com::Utf8Str> &aSources,
                         const std::vector<com::Utf8Str> &aFilters,
-                        const std::vector<FsObjType_T> &aTypes,
                         const std::vector<com::Utf8Str> &aFlags,
                         const com::Utf8Str &aDestination,
                         ComPtr<IProgress> &aProgress);

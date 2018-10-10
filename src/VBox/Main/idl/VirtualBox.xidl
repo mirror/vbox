@@ -11968,7 +11968,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="9880f6e3-c4c1-4031-8ec2-28ee088370e4"
+    uuid="07241827-f602-48c8-8511-4d933f3cf0bb"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -12147,9 +12147,6 @@ and "VAR" for unsetting. -->
         <desc>Array of source filters. This uses the
           DOS/NT style wildcard characters '?' and '*'.</desc>
       </param>
-      <param name="types" type="FsObjType" dir="in" safearray="yes">
-        <desc>Array of source <link to="FsObjType"/> types.</desc>
-      </param>
       <param name="flags" type="wstring" dir="in" safearray="yes">
         <desc>Array of comma-separated list of source flags.
 
@@ -12204,9 +12201,6 @@ and "VAR" for unsetting. -->
       <param name="filters" type="wstring" dir="in" safearray="yes">
         <desc>Array of source filters. This uses the
           DOS/NT style wildcard characters '?' and '*'.</desc>
-      </param>
-      <param name="types" type="FsObjType" dir="in" safearray="yes">
-        <desc>Array of source <link to="FsObjType"/> types.</desc>
       </param>
       <param name="flags" type="wstring" dir="in" safearray="yes">
         <desc>Array of comma-separated list of source flags.

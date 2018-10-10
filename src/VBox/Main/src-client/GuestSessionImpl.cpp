@@ -2891,15 +2891,14 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 }
 
 HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
-                                    const std::vector<FsObjType_T> &aTypes, const std::vector<com::Utf8Str> &aFlags,
-                                    const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
+                                    const std::vector<com::Utf8Str> &aFlags, const com::Utf8Str &aDestination,
+                                    ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const size_t cSources = aSources.size();
     if (   aFilters.size() != cSources
-        || aTypes.size()   != cSources
         || aFlags.size()   != cSources)
     {
         return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
@@ -2909,15 +2908,30 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
 
     std::vector<com::Utf8Str>::const_iterator itSource = aSources.begin();
     std::vector<com::Utf8Str>::const_iterator itFilter = aFilters.begin();
-    std::vector<FsObjType_T>::const_iterator  itType   = aTypes.begin();
     std::vector<com::Utf8Str>::const_iterator itFlags  = aFlags.begin();
+
+    const bool fContinueOnErrors = false; /** @todo Do we want a flag for that? */
+    const bool fFollowSymlinks   = true;  /** @todo Ditto. */
 
     while (itSource != aSources.end())
     {
+        GuestFsObjData objData;
+        int rcGuest;
+        int vrc = i_fsQueryInfo(*(itSource), fFollowSymlinks, objData, &rcGuest);
+        if (   RT_FAILURE(vrc)
+            && !fContinueOnErrors)
+        {
+            if (GuestProcess::i_isGuestError(vrc))
+                return setError(E_FAIL, tr("Unable to query type for source '%s': %s"), (*itSource).c_str(),
+                                           GuestProcess::i_guestErrorToString(rcGuest).c_str());
+            else
+                return setError(E_FAIL, tr("Unable to query type for source '%s' (%Rrc)"), (*itSource).c_str(), vrc);
+        }
+
         GuestSessionFsSourceSpec source;
         source.strSource    = *itSource;
         source.strFilter    = *itFilter;
-        source.enmType      = *itType;
+        source.enmType      = objData.mType;
         source.enmPathStyle = i_getPathStyle();
 
         HRESULT hrc;
@@ -2937,7 +2951,6 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
 
         ++itSource;
         ++itFilter;
-        ++itType;
         ++itFlags;
     }
 
@@ -2945,15 +2958,14 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
 }
 
 HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
-                                  const std::vector<FsObjType_T> &aTypes, const std::vector<com::Utf8Str> &aFlags,
-                                  const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
+                                  const std::vector<com::Utf8Str> &aFlags, const com::Utf8Str &aDestination,
+                                  ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const size_t cSources = aSources.size();
     if (   aFilters.size() != cSources
-        || aTypes.size()   != cSources
         || aFlags.size()   != cSources)
     {
         return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
@@ -2963,15 +2975,24 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
 
     std::vector<com::Utf8Str>::const_iterator itSource = aSources.begin();
     std::vector<com::Utf8Str>::const_iterator itFilter = aFilters.begin();
-    std::vector<FsObjType_T>::const_iterator  itType   = aTypes.begin();
     std::vector<com::Utf8Str>::const_iterator itFlags  = aFlags.begin();
+
+    const bool fContinueOnErrors = false; /** @todo Do we want a flag for that? */
 
     while (itSource != aSources.end())
     {
+        RTFSOBJINFO objInfo;
+        int vrc = RTPathQueryInfo((*itSource).c_str(), &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (   RT_FAILURE(vrc)
+            && !fContinueOnErrors)
+        {
+            return setError(E_FAIL, tr("Unable to query type for source '%s' (%Rrc)"), (*itSource).c_str(), vrc);
+        }
+
         GuestSessionFsSourceSpec source;
         source.strSource    = *itSource;
         source.strFilter    = *itFilter;
-        source.enmType      = *itType;
+        source.enmType      = GuestBase::fileModeToFsObjType(objInfo.Attr.fMode);
         source.enmPathStyle = i_getPathStyle();
 
         HRESULT hrc;
@@ -2992,7 +3013,6 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
 
         ++itSource;
         ++itFilter;
-        ++itType;
         ++itFlags;
     }
 

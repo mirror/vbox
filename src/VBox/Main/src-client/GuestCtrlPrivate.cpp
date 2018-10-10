@@ -1132,6 +1132,22 @@ int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
     return vrc;
 }
 
+/**
+ * Converts RTFMODE to FsObjType_T.
+ *
+ * @return  Converted FsObjType_T type.
+ * @param   enmType             RTFMODE to convert.
+ */
+/* static */
+FsObjType_T GuestBase::fileModeToFsObjType(RTFMODE fMode)
+{
+    if (RTFS_IS_FILE(fMode))           return FsObjType_File;
+    else if (RTFS_IS_DIRECTORY(fMode)) return FsObjType_Directory;
+    else if (RTFS_IS_SYMLINK(fMode))   return FsObjType_Symlink;
+
+    return FsObjType_Unknown;
+}
+
 GuestObject::GuestObject(void)
     : mSession(NULL),
       mObjectID(0)
