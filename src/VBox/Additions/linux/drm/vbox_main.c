@@ -272,6 +272,8 @@ static int vbox_accel_init(struct vbox_private *vbox)
 					   i * VBVA_MIN_BUFFER_SIZE,
 					   VBVA_MIN_BUFFER_SIZE);
 
+	vbox_enable_accel(vbox);
+
 	return 0;
 }
 
