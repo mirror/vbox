@@ -3892,7 +3892,8 @@ static int rtldrMachO_LoadSignatureBlob(PRTLDRMODMACHO pThis)
         /* Allocate and read. */
         void *pv = RTMemAllocZ(RT_ALIGN_Z(pThis->cbCodeSignature, 16));
         AssertReturn(pv, VERR_NO_MEMORY);
-        int rc = pThis->Core.pReader->pfnRead(pThis->Core.pReader, pv, pThis->cbCodeSignature, pThis->offCodeSignature);
+        int rc = pThis->Core.pReader->pfnRead(pThis->Core.pReader, pv, pThis->cbCodeSignature,
+                                              pThis->offImage + pThis->offCodeSignature);
         if (RT_SUCCESS(rc))
         {
             /* Check blob signature. */
@@ -4292,7 +4293,24 @@ static int rtldrMachO_VerifySignatureDecode(PRTLDRMODMACHO pThis, PRTLDRMACHOSIG
                                      "Slot #%u: Unused field #2 is non-zero: %#x", iSlot, RT_BE2H_U32(pCodeDir->uUnused2));
 
             /** @todo idPlatform values.   */
+            /** @todo Check for gaps if we know the version number?  Alignment?  */
 
+            /* If first code directory, check that the code limit covers the whole image up to the signature data. */
+            if (pSignature->cCodeDirs == 0)
+            {
+                /** @todo verify the that the signature data is at the very end... */
+                if (cbCodeLimit32 != pThis->offCodeSignature)
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Slot #%u: Unexpected code limit: %#x, expected %#x",
+                                         iSlot, cbCodeLimit32, pThis->offCodeSignature);
+            }
+            /* Otherwise, check that the code limit matches the previous directories. */
+            else
+                for (uint32_t i = 0; i < pSignature->cCodeDirs; i++)
+                    if (pSignature->aCodeDirs[i].pCodeDir->cbCodeLimit32 != pCodeDir->cbCodeLimit32)
+                        return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                             "Slot #%u: Code limit differs from previous directory: %#x, expected %#x",
+                                             iSlot, cbCodeLimit32, RT_BE2H_U32(pSignature->aCodeDirs[i].pCodeDir->cbCodeLimit32));
 
             /* Commit the code dir entry: */
             pSignature->aCodeDirs[pSignature->cCodeDirs++].uSlot = iSlot;
@@ -4361,6 +4379,47 @@ static void rtldrMachO_VerifySignatureDestroy(PRTLDRMACHOSIGNATURE pSignature)
 
 
 /**
+ * Worker for rtldrMachO_VerifySignatureValidatePkcs7Hashes that handles plists
+ * with code directory hashes inside them.
+ *
+ * It is assumed that these plist files was invented to handle alternative code
+ * directories.
+ *
+ * @note    Putting an XML plist into the authenticated attribute list was
+ *          probably not such a great idea, given all the optional and
+ *          adjustable white-space padding.  We should probably validate
+ *          everything very strictly, limiting the elements, require certain
+ *          attribute lists and even have strict expectations about the
+ *          white-space, but right now let just make sure it's xml and get the
+ *          data in the cdhashes array.
+ */
+static int rtldrMachO_VerifySignatureValidateCdHashesPlist(PRTLDRMACHOSIGNATURE pSignature, char *pszPlist,
+                                                           uint8_t *pbHash, uint32_t cbHash, PRTERRINFO pErrInfo)
+{
+    const char * const pszStart = pszPlist;
+#define CHECK_AND_SKIP_OR_RETURN(a_szLead) \
+    do { \
+        if (!RTStrNICmp(pszPlist, RT_STR_TUPLE(a_szLead))) \
+            pszPlist += sizeof(a_szLead) - 1; \
+        else return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, \
+                                  "Expected '%s' found '%.16s...' at %#zu in plist", a_szLead, pszPlist, pszPlist - pszStart); \
+    } while (0)
+#define CHECK_CASE_AND_SKIP_OR_RETURN(a_szLead) \
+    do { \
+        if (!RTStrNCmp(pszPlist, RT_STR_TUPLE(a_szLead))) \
+            pszPlist += sizeof(a_szLead) - 1; \
+        else return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, \
+                                  "Expected '%s' found '%.16s...' at %#zu in plist", a_szLead, pszPlist, pszPlist - pszStart); \
+    } while (0)
+
+    /* <?xml version="1.0" encoding="UTF-8"?> */
+    CHECK_CASE_AND_SKIP_OR_RETURN("<?xml");
+    RT_NOREF(pSignature, pbHash, cbHash);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
  * Verifies the code directory hashes embedded in the PKCS\#7 data.
  *
  * @returns IPRT status code.
@@ -4369,8 +4428,100 @@ static void rtldrMachO_VerifySignatureDestroy(PRTLDRMACHOSIGNATURE pSignature)
  */
 static int rtldrMachO_VerifySignatureValidatePkcs7Hashes(PRTLDRMACHOSIGNATURE pSignature, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pSignature, pErrInfo);
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Look thru the authenticated attributes in the signer info array.
+     */
+    PRTCRPKCS7SIGNEDDATA pSignedData = pSignature->pSignedData;
+    for (uint32_t iSignerInfo = 0; iSignerInfo < pSignedData->SignerInfos.cItems; iSignerInfo++)
+    {
+        PCRTCRPKCS7SIGNERINFO pSignerInfo = pSignedData->SignerInfos.papItems[iSignerInfo];
+        bool                  fMsgDigest  = false;
+        bool                  fPlist      = false;
+        for (uint32_t iAttrib = 0; iAttrib < pSignerInfo->AuthenticatedAttributes.cItems; iAttrib++)
+        {
+            PCRTCRPKCS7ATTRIBUTE pAttrib = pSignerInfo->AuthenticatedAttributes.papItems[iAttrib];
+            if (RTAsn1ObjId_CompareWithString(&pAttrib->Type, RTCR_PKCS9_ID_MESSAGE_DIGEST_OID) == 0)
+            {
+                /*
+                 * Validate the message digest while we're here.
+                 */
+                AssertReturn(pAttrib->uValues.pOctetStrings && pAttrib->uValues.pOctetStrings->cItems == 1, VERR_INTERNAL_ERROR_5);
+
+                RTCRDIGEST hDigest;
+                int rc = RTCrDigestCreateByObjId(&hDigest, &pSignerInfo->DigestAlgorithm.Algorithm);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTCrDigestUpdate(hDigest, pSignature->aCodeDirs[0].pCodeDir, pSignature->aCodeDirs[0].cb);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (!RTCrDigestMatch(hDigest,
+                                             pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
+                                             pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb))
+                            return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MESSAGE_DIGEST_ATTRIB_MISMATCH,
+                                                 "Authenticated message-digest attribute mismatch:\n"
+                                                 "signed: %.*Rhxs\n"
+                                                 "our:    %.*Rhxs\n",
+                                                 pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb,
+                                                 pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
+                                                 RTCrDigestGetHashSize(hDigest), RTCrDigestGetHash(hDigest));
+                    }
+                    else
+                        rc = RTErrInfoSetF(pErrInfo, rc, "RTCrDigestUpdate failed: %Rrc", rc);
+                }
+                else
+                    rc = RTErrInfoSetF(pErrInfo, rc, "Failed to create a digest for OID %s: %Rrc",
+                                       pSignerInfo->DigestAlgorithm.Algorithm.szObjId, rc);
+                if (RT_FAILURE(rc))
+                    return rc;
+                fMsgDigest = true;
+            }
+            else if (pAttrib->enmType == RTCRPKCS7ATTRIBUTETYPE_APPLE_MULTI_CD_PLIST)
+            {
+                /*
+                 * An XML (better be) property list with code directory hashes in it.
+                 */
+                if (!pAttrib->uValues.pOctetStrings || pAttrib->uValues.pOctetStrings->cItems != 1)
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "Bad authenticated plist attribute");
+
+                uint32_t    cch = pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb;
+                char const *pch = pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pch;
+                int rc = RTStrValidateEncodingEx(pch, cch, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+                if (RT_FAILURE(rc))
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Authenticated plist attribute is not valid UTF-8: %Rrc", rc);
+                uint32_t const cchMin = sizeof("<?xml?><plist><dict><key>cdhashes</key><array><data>hul2SSkDQFRXbGlt3AmCp25MU0Y=</data></array></dict></plist>") - 1;
+                if (cch < cchMin)
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Authenticated plist attribute is too short: %#x, min: %#x", cch, cchMin);
+                if (cch > _64K)
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                         "Authenticated plist attribute is too long: %#x, max: 64KB", cch, cchMin);
+
+                /* Copy the plist into a buffer and zero terminate it.  Also allocate room for decoding a hash. */
+                const uint32_t cbMaxHash = 128;
+                char *pszTmp = (char *)RTMemTmpAlloc(cbMaxHash + cch + 3);
+                if (!pszTmp)
+                    return VERR_NO_TMP_MEMORY;
+                pszTmp[cbMaxHash + cch] = '\0';
+                pszTmp[cbMaxHash + cch + 1] = '\0';
+                pszTmp[cbMaxHash + cch + 2] = '\0';
+                rc = rtldrMachO_VerifySignatureValidateCdHashesPlist(pSignature, (char *)memcpy(pszTmp + cbMaxHash, pch, cch),
+                                                                     (uint8_t *)pszTmp, cbMaxHash, pErrInfo);
+                RTMemTmpFree(pszTmp);
+                if (RT_FAILURE(rc))
+                    return rc;
+                fPlist = true;
+            }
+        }
+        if (!fMsgDigest && pSignature->cCodeDirs > 1)
+            return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "Missing authenticated message-digest attribute");
+        if (!fPlist && pSignature->cCodeDirs > 1)
+            return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "Missing authenticated code directory hash plist attribute");
+    }
+    if (pSignedData->SignerInfos.cItems < 1)
+        return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, "PKCS#7 signed data contains no signatures");
+
+    return VINF_SUCCESS;
 }
 
 
@@ -4380,12 +4531,82 @@ static int rtldrMachO_VerifySignatureValidatePkcs7Hashes(PRTLDRMACHOSIGNATURE pS
  * @returns IPRT status code.
  * @param   pThis           The Mach-O module instance.
  * @param   pEntry          The data entry for the code directory to validate.
+ * @param   pbBuf           Read buffer.
+ * @param   cbBuf           Buffer size.
  * @param   pErrInfo        Where to supply extra error details. Optional.
  */
-static int rtldrMachO_VerifySignatureValidateCodeDir(PRTLDRMODMACHO pThis, PRTLDRMACHCODEDIR pEntry, PRTERRINFO pErrInfo)
+static int rtldrMachO_VerifySignatureValidateCodeDir(PRTLDRMODMACHO pThis, PRTLDRMACHCODEDIR pEntry,
+                                                     uint8_t *pbBuf, uint32_t cbBuf, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pThis, pEntry, pErrInfo);
-    return VERR_NOT_IMPLEMENTED;
+    RTCRDIGEST hDigest;
+    int rc = RTCrDigestCreateByType(&hDigest, pEntry->enmDigest);
+    if (RT_SUCCESS(rc))
+    {
+        PCRTCRAPLCSCODEDIRECTORY pCodeDir    = pEntry->pCodeDir;
+        PRTLDRREADER const       pRdr        = pThis->Core.pReader;
+        uint32_t                 cbCodeLimit = RT_BE2H_U32(pCodeDir->cbCodeLimit32);
+        uint32_t const           cbPage      = RT_BIT_32(pCodeDir->cPageShift);
+        uint32_t const           cHashes     = RT_BE2H_U32(pCodeDir->cCodeSlots);
+        uint8_t const            cbHash      = pCodeDir->cbHash;
+        uint8_t const           *pbHash      = (uint8_t const *)pCodeDir + RT_BE2H_U32(pCodeDir->offHashSlots);
+        RTFOFF                   offFile     = pThis->offImage;
+        if (   RT_BE2H_U32(pCodeDir->uVersion) < RTCRAPLCS_VER_SUPPORTS_SCATTER
+            || pCodeDir->offScatter == 0)
+        {
+            /*
+             * Work the image in linear fashion.
+             */
+            for (uint32_t iHash = 0; iHash < cHashes; iHash++, pbHash += cbHash, cbCodeLimit -= cbPage)
+            {
+                RTFOFF const offPage = offFile;
+
+                /*
+                 * Read and digest the data for the current hash page.
+                 */
+                rc = RTCrDigestReset(hDigest);
+                AssertRCBreak(rc);
+                Assert(cbCodeLimit > cbPage || iHash + 1 == cHashes);
+                uint32_t cbLeft = iHash + 1 < cHashes ? cbPage : cbCodeLimit;
+                while (cbLeft > 0)
+                {
+                    uint32_t const cbToRead = RT_MIN(cbBuf, cbLeft);
+                    rc = pRdr->pfnRead(pRdr, pbBuf, cbToRead, offFile);
+                    AssertRCBreak(rc);
+
+                    rc = RTCrDigestUpdate(hDigest, pbBuf, cbToRead);
+                    AssertRCBreak(rc);
+
+                    offFile += cbToRead;
+                    cbLeft  -= cbToRead;
+                }
+                AssertRCBreak(rc);
+                rc = RTCrDigestFinal(hDigest, NULL, 0);
+                AssertRCBreak(rc);
+
+                /*
+                 * Compare it.
+                 * Note! Don't use RTCrDigestMatch here as there is a truncated SHA-256 variant.
+                 */
+                if (memcmp(pbHash, RTCrDigestGetHash(hDigest), cbHash) != 0)
+                {
+                    rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_PAGE_HASH_MISMATCH,
+                                       "Hash #%u (@%RX64 LB %#x) mismatch in code dir #%u: %.*Rhxs, expected %.*Rhxs",
+                                       iHash, offPage, cbPage, pEntry->uSlot, (int)cbHash, pbHash,
+                                       (int)cbHash, RTCrDigestGetHash(hDigest));
+                    break;
+                }
+
+            }
+        }
+        /*
+         * Work the image in scattered fashion.
+         */
+        else
+            rc = VERR_INTERNAL_ERROR_4;
+
+        RTCrDigestRelease(hDigest);
+    }
+    return rc;
 }
 
 
@@ -4399,14 +4620,20 @@ static int rtldrMachO_VerifySignatureValidateCodeDir(PRTLDRMODMACHO pThis, PRTLD
  */
 static int rtldrMachO_VerifySignatureValidateCodeDirs(PRTLDRMODMACHO pThis, PRTLDRMACHOSIGNATURE pSignature, PRTERRINFO pErrInfo)
 {
-    int rc = VERR_INTERNAL_ERROR_3;
-    for (uint32_t i = 0; i < pSignature->cCodeDirs; i++)
+    void *pvBuf = RTMemTmpAllocZ(_4K);
+    if (pvBuf)
     {
-        rc = rtldrMachO_VerifySignatureValidateCodeDir(pThis, &pSignature->aCodeDirs[i], pErrInfo);
-        if (RT_FAILURE(rc))
-            break;
+        int rc = VERR_INTERNAL_ERROR_3;
+        for (uint32_t i = 0; i < pSignature->cCodeDirs; i++)
+        {
+            rc = rtldrMachO_VerifySignatureValidateCodeDir(pThis, &pSignature->aCodeDirs[i], (uint8_t *)pvBuf, _4K, pErrInfo);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        RTMemTmpFree(pvBuf);
+        return rc;
     }
-    return rc;
+    return VERR_NO_TMP_MEMORY;
 }
 
 #endif /* !IPRT_WITHOUT_LDR_VERIFY*/

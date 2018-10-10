@@ -199,8 +199,7 @@ typedef struct RTCRAPLCSCODEDIRECTORY
      * @since RTCRAPLCS_VER_SUPPORTS_CODE_LIMIT_64 */
     uint64_t        cbCodeLimit64;
     /** 0x40: File offset of the first segment.  Big endian.
-     * @since RTCRAPLCS_VER_SUPPORTS_EXEC_SEG
-     * @note  Would be better to just sign the exe header + load commands. */
+     * @since RTCRAPLCS_VER_SUPPORTS_EXEC_SEG */
     uint64_t        offExecSeg;
     /** 0x48: The size of the first segment.  Big endian.
      * @since RTCRAPLCS_VER_SUPPORTS_EXEC_SEG */
