@@ -60,6 +60,8 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/base64.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -4392,30 +4394,211 @@ static void rtldrMachO_VerifySignatureDestroy(PRTLDRMACHOSIGNATURE pSignature)
  *          attribute lists and even have strict expectations about the
  *          white-space, but right now let just make sure it's xml and get the
  *          data in the cdhashes array.
+ *
+ * @todo    The code here is a little braindead and bulky.  It should be
+ *          possible to describe the expected XML structure using a tables.
  */
 static int rtldrMachO_VerifySignatureValidateCdHashesPlist(PRTLDRMACHOSIGNATURE pSignature, char *pszPlist,
                                                            uint8_t *pbHash, uint32_t cbHash, PRTERRINFO pErrInfo)
 {
     const char * const pszStart = pszPlist;
-#define CHECK_AND_SKIP_OR_RETURN(a_szLead) \
+#define CHECK_ISTR_AND_SKIP_OR_RETURN(a_szLead) \
     do { \
         if (!RTStrNICmp(pszPlist, RT_STR_TUPLE(a_szLead))) \
             pszPlist += sizeof(a_szLead) - 1; \
         else return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, \
                                   "Expected '%s' found '%.16s...' at %#zu in plist", a_szLead, pszPlist, pszPlist - pszStart); \
     } while (0)
-#define CHECK_CASE_AND_SKIP_OR_RETURN(a_szLead) \
+#define CHECK_STR_AND_SKIP_OR_RETURN(a_szLead) \
     do { \
         if (!RTStrNCmp(pszPlist, RT_STR_TUPLE(a_szLead))) \
             pszPlist += sizeof(a_szLead) - 1; \
         else return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, \
                                   "Expected '%s' found '%.16s...' at %#zu in plist", a_szLead, pszPlist, pszPlist - pszStart); \
     } while (0)
+#define SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN() \
+    do { /* currently only permitting spaces, tabs and newline, following char must be '<'. */ \
+        char ch; \
+        while ((ch = *pszPlist) == ' ' || ch == '\n' || ch == '\t') \
+            pszPlist++; \
+        if (ch == '<') { /* likely */ } \
+        else return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, \
+                                  "Expected '<' found '%.16s...' at %#zu in plist", pszPlist, pszPlist - pszStart); \
+    } while (0)
+#define SKIP_SPACE_BEFORE_VALUE() \
+    do { /* currently only permitting spaces, tabs and newline. */ \
+        char ch; \
+        while ((ch = *pszPlist) == ' ' || ch == '\n' || ch == '\t') \
+            pszPlist++; \
+    } while (0)
+#define SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN() \
+    do { /* currently only permitting a single space */ \
+        if (pszPlist[0] == ' ' && pszPlist[1] != ' ') \
+            pszPlist++; \
+        else return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT, \
+                                  "Expected ' ' found '%.16s...' at %#zu in plist", pszPlist, pszPlist - pszStart); \
+    } while (0)
+
+    /* Example:
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>cdhashes</key>
+  <array>
+          <data>
+          hul2SSkDQFRXbGlt3AmCp25MU0Y=
+          </data>
+          <data>
+          N0kvxg0CJBNuZTq135PntAaRczw=
+          </data>
+  </array>
+</dict>
+</plist>
+    */
 
     /* <?xml version="1.0" encoding="UTF-8"?> */
-    CHECK_CASE_AND_SKIP_OR_RETURN("<?xml");
-    RT_NOREF(pSignature, pbHash, cbHash);
-    return VERR_NOT_IMPLEMENTED;
+    CHECK_STR_AND_SKIP_OR_RETURN("<?xml");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("version=\"1.0\"");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("encoding=\"UTF-8\"");
+    CHECK_STR_AND_SKIP_OR_RETURN("?>");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /* <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"> */
+    CHECK_STR_AND_SKIP_OR_RETURN("<!DOCTYPE");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("plist");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("PUBLIC");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("\"-//Apple//DTD PLIST 1.0//EN\"");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"");
+    CHECK_STR_AND_SKIP_OR_RETURN(">");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /* <plist version="1.0"> */
+    CHECK_STR_AND_SKIP_OR_RETURN("<plist");
+    SKIP_REQUIRED_SPACE_BETWEEN_ATTRIBUTES_OR_RETURN();
+    CHECK_STR_AND_SKIP_OR_RETURN("version=\"1.0\"");
+    CHECK_STR_AND_SKIP_OR_RETURN(">");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /* <dict> */
+    CHECK_STR_AND_SKIP_OR_RETURN("<dict>");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /* <key>cdhashes</key> */
+    CHECK_STR_AND_SKIP_OR_RETURN("<key>cdhashes</key>");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /* <array> */
+    CHECK_STR_AND_SKIP_OR_RETURN("<array>");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /*
+     * Repeated: <data>hul2SSkDQFRXbGlt3AmCp25MU0Y=</data>
+     */
+    uint32_t iCodeDir = 0;
+    for (;;)
+    {
+        /* Decode the binary data (base64) and skip it. */
+        CHECK_STR_AND_SKIP_OR_RETURN("<data>");
+        SKIP_SPACE_BEFORE_VALUE();
+
+        char ch;
+        size_t cchBase64 = 0;
+        while (RT_C_IS_ALNUM(ch = pszPlist[cchBase64]) || ch == '+' || ch == '/' || ch == '=')
+            cchBase64++;
+        size_t cbActualHash = cbHash;
+        char *pszEnd = NULL;
+        int rc = RTBase64DecodeEx(pszPlist, cchBase64, pbHash, cbHash, &cbActualHash, &pszEnd);
+        if (RT_FAILURE(rc))
+            return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                 "Failed to decode hash #%u in authenticated plist attribute: %Rrc (%.*s)",
+                                 iCodeDir, rc, cchBase64, pszPlist);
+        pszPlist += cchBase64;
+        AssertReturn(pszPlist == pszEnd, VERR_INTERNAL_ERROR_2);
+        SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+        /* The binary hash data must be exactly the size of SHA1, larger
+           hash like SHA-256 and SHA-384 are truncated for some reason. */
+        if (cbActualHash != RTSHA1_HASH_SIZE)
+            return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                 "Hash #%u in authenticated plist attribute has the wrong length: %u, exepcted %u",
+                                 iCodeDir, cbActualHash, RTSHA1_HASH_SIZE);
+
+        /* Skip closing tag. */
+        CHECK_STR_AND_SKIP_OR_RETURN("</data>");
+        SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+
+        /* Calculate the hash and compare. */
+        RTCRDIGEST hDigest;
+        rc = RTCrDigestCreateByType(&hDigest, pSignature->aCodeDirs[iCodeDir].enmDigest);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTCrDigestUpdate(hDigest, pSignature->aCodeDirs[iCodeDir].pCodeDir, pSignature->aCodeDirs[iCodeDir].cb);
+            if (RT_SUCCESS(rc))
+            {
+                if (memcmp(pbHash, RTCrDigestGetHash(hDigest), cbActualHash) == 0)
+                    rc = VINF_SUCCESS;
+                else
+                    rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_IMAGE_HASH_MISMATCH,
+                                       "Code directory #%u hash mismatch (plist):\n"
+                                       "signed: %.*Rhxs\n"
+                                       "our:    %.*Rhxs\n",
+                                       cbActualHash, pbHash,
+                                       RTCrDigestGetHashSize(hDigest), RTCrDigestGetHash(hDigest));
+            }
+            else
+                rc = RTErrInfoSetF(pErrInfo, rc, "RTCrDigestUpdate failed: %Rrc", rc);
+            RTCrDigestRelease(hDigest);
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, rc, "Failed to create a digest of type %u verifying code dir #%u: %Rrc",
+                               pSignature->aCodeDirs[iCodeDir].enmDigest, iCodeDir, rc);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Advance.
+         */
+        iCodeDir++;
+        SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+        if (RTStrNCmp(pszPlist, RT_STR_TUPLE("<data>")) == 0)
+        {
+            if (iCodeDir >= pSignature->cCodeDirs)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                     "Authenticated plist attribute has too many code directories (%u in blob)",
+                                     pSignature->cCodeDirs);
+        }
+        else if (iCodeDir == pSignature->cCodeDirs)
+            break;
+        else
+            return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                                 "Authenticated plist attribute does not include all code directors: %u out of %u",
+                                 iCodeDir, pSignature->cCodeDirs);
+    }
+
+    /*</array>*/
+    CHECK_STR_AND_SKIP_OR_RETURN("</array>");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /*</dict>*/
+    CHECK_STR_AND_SKIP_OR_RETURN("</dict>");
+    SKIP_SPACE_BETWEEN_ELEMENTS_OR_RETURN();
+
+    /*</plist>*/
+    CHECK_STR_AND_SKIP_OR_RETURN("</plist>");
+    SKIP_SPACE_BEFORE_VALUE();
+
+    if (*pszPlist == '\0')
+        return VINF_SUCCESS;
+    return RTErrInfoSetF(pErrInfo, VERR_LDRVI_BAD_CERT_FORMAT,
+                         "Authenticated plist attribute has unexpected trailing content: %.32s", pszPlist);
 }
 
 
@@ -4457,16 +4640,17 @@ static int rtldrMachO_VerifySignatureValidatePkcs7Hashes(PRTLDRMACHOSIGNATURE pS
                         if (!RTCrDigestMatch(hDigest,
                                              pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
                                              pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb))
-                            return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MESSAGE_DIGEST_ATTRIB_MISMATCH,
-                                                 "Authenticated message-digest attribute mismatch:\n"
-                                                 "signed: %.*Rhxs\n"
-                                                 "our:    %.*Rhxs\n",
-                                                 pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb,
-                                                 pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
-                                                 RTCrDigestGetHashSize(hDigest), RTCrDigestGetHash(hDigest));
+                            rc = RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MESSAGE_DIGEST_ATTRIB_MISMATCH,
+                                               "Authenticated message-digest attribute mismatch:\n"
+                                               "signed: %.*Rhxs\n"
+                                               "our:    %.*Rhxs\n",
+                                               pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb,
+                                               pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
+                                               RTCrDigestGetHashSize(hDigest), RTCrDigestGetHash(hDigest));
                     }
                     else
                         rc = RTErrInfoSetF(pErrInfo, rc, "RTCrDigestUpdate failed: %Rrc", rc);
+                    RTCrDigestRelease(hDigest);
                 }
                 else
                     rc = RTErrInfoSetF(pErrInfo, rc, "Failed to create a digest for OID %s: %Rrc",
