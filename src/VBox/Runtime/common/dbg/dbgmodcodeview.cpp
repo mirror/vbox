@@ -576,7 +576,7 @@ DECLINLINE(int) rtDbgModCvAdjustSegAndOffset(PRTDBGMODCV pThis, uint32_t *piSeg,
  * @param   pchName             The symbol name (not necessarily terminated).
  * @param   cchName             The symbol name length.
  * @param   fFlags              Flags reserved for future exploits, MBZ.
- * @param   cbSym               Symbol size, 0 if not avaiable.
+ * @param   cbSym               Symbol size, 0 if not available.
  */
 static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, const char *pchName,
                                uint32_t cchName, uint32_t fFlags, uint32_t cbSym)
