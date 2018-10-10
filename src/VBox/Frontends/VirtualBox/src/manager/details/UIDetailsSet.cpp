@@ -678,7 +678,7 @@ void UIDetailsSet::enumerateLayoutItems(QList<DetailsElementType> &inGroup,
         if (   fPreviewVisible
             && outGroup.isEmpty()
             && (   iGroupHeight == 0
-                || iGroupHeight + iElementHeight < iPreviewHeight))
+                || iGroupHeight + iElementHeight / 2 < iPreviewHeight))
         {
             iGroupHeight += iElementHeight;
             iGroupHeight += iSpacing;
