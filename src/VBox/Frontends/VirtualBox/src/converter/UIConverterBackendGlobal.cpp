@@ -872,10 +872,16 @@ template<> QString toInternalString(const ToolTypeMachine &enmToolTypeMachine)
     QString strResult;
     switch (enmToolTypeMachine)
     {
+#ifndef VBOX_GUI_WITH_NEW_MANAGER
         case ToolTypeMachine_Invalid:   strResult = "None"; break;
         case ToolTypeMachine_Details:   strResult = "Details"; break;
         case ToolTypeMachine_Snapshots: strResult = "Snapshots"; break;
         case ToolTypeMachine_LogViewer: strResult = "LogViewer"; break;
+#else /* VBOX_GUI_WITH_NEW_MANAGER */
+        case ToolTypeMachine_Details:   strResult = "Details"; break;
+        case ToolTypeMachine_Snapshots: strResult = "Snapshots"; break;
+        case ToolTypeMachine_Logs:      strResult = "Logs"; break;
+#endif /* VBOX_GUI_WITH_NEW_MANAGER */
         default:
         {
             AssertMsgFailed(("No text for machine tool type=%d", enmToolTypeMachine));
@@ -891,10 +897,16 @@ template<> ToolTypeMachine fromInternalString<ToolTypeMachine>(const QString &st
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;    QList<ToolTypeMachine> values;
+#ifndef VBOX_GUI_WITH_NEW_MANAGER
     keys << "None";      values << ToolTypeMachine_Invalid;
     keys << "Details";   values << ToolTypeMachine_Details;
     keys << "Snapshots"; values << ToolTypeMachine_Snapshots;
     keys << "LogViewer"; values << ToolTypeMachine_LogViewer;
+#else /* VBOX_GUI_WITH_NEW_MANAGER */
+    keys << "Details";   values << ToolTypeMachine_Details;
+    keys << "Snapshots"; values << ToolTypeMachine_Snapshots;
+    keys << "Logs";      values << ToolTypeMachine_Logs;
+#endif /* VBOX_GUI_WITH_NEW_MANAGER */
     /* Invalid type for unknown words: */
     if (!keys.contains(strToolTypeMachine, Qt::CaseInsensitive))
         return ToolTypeMachine_Invalid;
@@ -908,8 +920,14 @@ template<> QString toInternalString(const ToolTypeGlobal &enmToolTypeGlobal)
     QString strResult;
     switch (enmToolTypeGlobal)
     {
+#ifndef VBOX_GUI_WITH_NEW_MANAGER
         case ToolTypeGlobal_VirtualMedia: strResult = "VirtualMedia"; break;
         case ToolTypeGlobal_HostNetwork:  strResult = "HostNetwork"; break;
+#else /* VBOX_GUI_WITH_NEW_MANAGER */
+        case ToolTypeGlobal_Welcome: strResult = "Welcome"; break;
+        case ToolTypeGlobal_Media:   strResult = "Media"; break;
+        case ToolTypeGlobal_Network: strResult = "Network"; break;
+#endif /* VBOX_GUI_WITH_NEW_MANAGER */
         default:
         {
             AssertMsgFailed(("No text for global tool type=%d", enmToolTypeGlobal));
@@ -925,8 +943,14 @@ template<> ToolTypeGlobal fromInternalString<ToolTypeGlobal>(const QString &strT
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;       QList<ToolTypeGlobal> values;
+#ifndef VBOX_GUI_WITH_NEW_MANAGER
     keys << "VirtualMedia"; values << ToolTypeGlobal_VirtualMedia;
     keys << "HostNetwork";  values << ToolTypeGlobal_HostNetwork;
+#else /* VBOX_GUI_WITH_NEW_MANAGER */
+    keys << "Welcome"; values << ToolTypeGlobal_Welcome;
+    keys << "Media";   values << ToolTypeGlobal_Media;
+    keys << "Network"; values << ToolTypeGlobal_Network;
+#endif /* VBOX_GUI_WITH_NEW_MANAGER */
     /* Invalid type for unknown words: */
     if (!keys.contains(strToolTypeGlobal, Qt::CaseInsensitive))
         return ToolTypeGlobal_Invalid;
