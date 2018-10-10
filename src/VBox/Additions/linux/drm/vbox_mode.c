@@ -538,6 +538,7 @@ static void vbox_set_edid(struct drm_connector *connector, int width,
 #else
 	drm_mode_connector_update_edid_property(connector, (struct edid *)edid);
 }
+#endif
 
 static int vbox_get_modes(struct drm_connector *connector)
 {
