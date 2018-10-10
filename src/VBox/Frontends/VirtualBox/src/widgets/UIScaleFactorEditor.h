@@ -29,6 +29,7 @@
 /* Forward declarations: */
 class QComboBox;
 class QGridLayout;
+class QLabel;
 class QSpinBox;
 class QWidget;
 class QIAdvancedSlider;
@@ -39,8 +40,6 @@ class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWid
 {
     Q_OBJECT;
 
-signals:
-
 public:
 
     /** Constructor, passes @a pParent to the QWidget constructor.*/
@@ -50,22 +49,29 @@ public:
     const QList<double>& scaleFactors() const;
 
 protected:
+
     virtual void retranslateUi() /* override */;
 
 private slots:
+
     void sltScaleSpinBoxValueChanged(int value);
     void sltScaleSliderValueChanged(int value);
     void sltMonitorComboIndexChanged(int index);
 
 private:
+
     void prepare();
     void setScaleFactor(int iMonitorIndex, int iScaleFactor);
+    /* Blocks slider's signals before settting the value. */
     void setSliderValue(int iValue);
+    /* Blocks slider's signals before settting the value. */
     void setSpinBoxValue(int iValue);
     QSpinBox          *m_pScaleSpinBox;
     QGridLayout       *m_pMainLayout;
     QComboBox         *m_pMonitorComboBox;
     QIAdvancedSlider  *m_pScaleSlider;
+    QLabel            *m_pMaxScaleLabel;
+    QLabel            *m_pMinScaleLabel;
     /* Stores the per-monitor scale factors in range [.., 1, ..] */
     QList<double>      m_scaleFactors;
 };

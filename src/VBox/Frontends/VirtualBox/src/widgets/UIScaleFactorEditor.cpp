@@ -20,14 +20,16 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QComboBox>
-#include <QGridLayout>
-#include <QSpinBox>
+# include <QComboBox>
+# include <QGridLayout>
+# include <QLabel>
+# include <QSpacerItem>
+# include <QSpinBox>
 # include <QWidget>
 
 /* GUI includes: */
-#include "QIAdvancedSlider.h"
-#include "UIScaleFactorEditor.h"
+# include "QIAdvancedSlider.h"
+# include "UIScaleFactorEditor.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -37,6 +39,9 @@ UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent)
     , m_pScaleSpinBox(0)
     , m_pMainLayout(0)
     , m_pMonitorComboBox(0)
+    , m_pScaleSlider(0)
+    , m_pMaxScaleLabel(0)
+    , m_pMinScaleLabel(0)
 {
     /* Prepare: */
     prepare();
@@ -70,7 +75,7 @@ void UIScaleFactorEditor::setScaleFactors(const QList<double> &scaleFactors)
     {
         int currentMonitorIndex = m_pMonitorComboBox->currentIndex();
         if (m_scaleFactors.size() > currentMonitorIndex && m_pScaleSpinBox)
-            m_pScaleSpinBox->setValue(100 * m_scaleFactors.at(currentMonitorIndex));
+            setSpinBoxValue(100 * m_scaleFactors.at(currentMonitorIndex));
     }
 }
 
@@ -81,6 +86,15 @@ const QList<double>& UIScaleFactorEditor::scaleFactors() const
 
 void UIScaleFactorEditor::retranslateUi()
 {
+    if (m_pMaxScaleLabel)
+    {
+        m_pMaxScaleLabel->setText(tr("Max"));
+    }
+
+    if (m_pMinScaleLabel)
+    {
+        m_pMinScaleLabel->setText(tr("Min"));
+    }
 }
 
 void UIScaleFactorEditor::sltScaleSpinBoxValueChanged(int value)
@@ -103,7 +117,7 @@ void UIScaleFactorEditor::sltMonitorComboIndexChanged(int index)
         return;
 
     /* Update the slider and spinbox values without emitting signals: */
-    int scaleFactor = 100 *m_scaleFactors[index];
+    int scaleFactor = 100 * m_scaleFactors[index];
     setSliderValue(scaleFactor);
     setSpinBoxValue(scaleFactor);
 }
@@ -113,6 +127,8 @@ void UIScaleFactorEditor::prepare()
     m_pMainLayout = new QGridLayout;
     if (!m_pMainLayout)
         return;
+    QMargins margins = m_pMainLayout->contentsMargins();
+    m_pMainLayout->setContentsMargins(0, margins.top(), 0, margins.bottom());
     m_pMonitorComboBox = new QComboBox;
     if (m_pMonitorComboBox)
     {
@@ -120,19 +136,12 @@ void UIScaleFactorEditor::prepare()
         connect(m_pMonitorComboBox ,static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIScaleFactorEditor::sltMonitorComboIndexChanged);
     }
-    m_pScaleSpinBox = new QSpinBox;
-    if (m_pScaleSpinBox)
-    {
-        m_pMainLayout->addWidget(m_pScaleSpinBox, 0, 2);
-        m_pScaleSpinBox->setMinimum(100);
-        m_pScaleSpinBox->setMaximum(200);
-        connect(m_pScaleSpinBox ,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                this, &UIScaleFactorEditor::sltScaleSpinBoxValueChanged);
-    }
 
+    QGridLayout *pSliderLayout = new QGridLayout;
+    pSliderLayout->setSpacing(0);
     m_pScaleSlider = new QIAdvancedSlider;
     {
-        m_pMainLayout->addWidget(m_pScaleSlider, 0, 1);
+        pSliderLayout->addWidget(m_pScaleSlider, 0, 0, 1, 3);
         m_pScaleSlider->setMinimum(100);
         m_pScaleSlider->setMaximum(200);
         m_pScaleSlider->setPageStep(10);
@@ -142,7 +151,34 @@ void UIScaleFactorEditor::prepare()
         connect(m_pScaleSlider, static_cast<void(QIAdvancedSlider::*)(int)>(&QIAdvancedSlider::valueChanged),
                 this, &UIScaleFactorEditor::sltScaleSliderValueChanged);
     }
+
+    m_pMinScaleLabel = new QLabel;
+    if (m_pMinScaleLabel)
+        pSliderLayout->addWidget(m_pMinScaleLabel, 1, 0);
+
+    QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    if (pSpacer)
+        pSliderLayout->addItem(pSpacer, 1, 1);
+
+    m_pMaxScaleLabel = new QLabel;
+    if (m_pMaxScaleLabel)
+        pSliderLayout->addWidget(m_pMaxScaleLabel, 1, 2);
+
+    m_pMainLayout->addLayout(pSliderLayout, 0, 1, 2, 1);
+
+    m_pScaleSpinBox = new QSpinBox;
+    if (m_pScaleSpinBox)
+    {
+        m_pMainLayout->addWidget(m_pScaleSpinBox, 0, 3);
+        m_pScaleSpinBox->setMinimum(100);
+        m_pScaleSpinBox->setMaximum(200);
+        connect(m_pScaleSpinBox ,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+                this, &UIScaleFactorEditor::sltScaleSpinBoxValueChanged);
+    }
+
+
     setLayout(m_pMainLayout);
+    retranslateUi();
 }
 
 void UIScaleFactorEditor::setScaleFactor(int iMonitorIndex, int iScaleFactor)
