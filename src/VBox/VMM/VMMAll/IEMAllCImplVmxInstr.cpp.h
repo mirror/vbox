@@ -3688,7 +3688,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
         iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
         iemVmxVmcsSetExitIntErrCode(pVCpu, uErrCode);
         iemVmxVmcsSetExitQual(pVCpu, uExitQual);
-        iemVmxVmexit(pVCpu, uExitReason);
+        return iemVmxVmexit(pVCpu, uExitReason);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
