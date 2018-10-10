@@ -5163,11 +5163,6 @@ else
 endif
 TEMPLATE_VBoxR3Static_LIBS         += \
  	$(VBOX_LIB_RUNTIME_STATIC)
-ifndef SDK_VBOX_OPENSSL_LIBS
- TEMPLATE_VBoxR3Static_LIBS        += \
- 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
- 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
-endif
 ifndef SDK_VBOX_LIBXML2_LIBS
  TEMPLATE_VBoxR3Static_LIBS        += \
  	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB)
