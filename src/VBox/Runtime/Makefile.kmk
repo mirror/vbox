@@ -258,7 +258,7 @@ endif
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
 RuntimeR3_TEMPLATE      = VBoxR3Static
-RuntimeR3_SDKS          = VBOX_LIBXML2
+RuntimeR3_SDKS          = VBOX_OPENSSL VBOX_LIBXML2
 RuntimeR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
 RuntimeR3_DEFS          = \
 	IN_RT_R3 \
@@ -270,6 +270,7 @@ RuntimeR3_DEFS          = \
 	RT_WITH_VBOX \
 	RT_NO_GIP \
 	RT_WITHOUT_NOCRT_WRAPPERS \
+	IPRT_WITH_OPENSSL \
 	NOFILEID
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3_DEFS         += \
@@ -1518,7 +1519,7 @@ RuntimeBldProg_EXTENDS         := RuntimeR3
 RuntimeBldProg_BLD_TRG         := $(KBUILD_HOST)
 RuntimeBldProg_BLD_TRG_ARCH    := $(KBUILD_HOST_ARCH)
 RuntimeBldProg_BLD_TRG_CPU     := $(KBUILD_HOST_CPU)
-RuntimeBldProg_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
+RuntimeBldProg_DEFS            := $(filter-out IN_SUP_R3 IN_SUP IPRT_WITH_OPENSSL, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
 RuntimeBldProg_SOURCES         = \
 	common/alloc/alloc.cpp \
 	common/alloc/memcache.cpp \
@@ -1965,7 +1966,7 @@ RuntimeBldProg_SOURCES.os2 += \
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 ## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP IPRT_WITH_OPENSSL, $(RuntimeR3_DEFS))
 RuntimeGuestR3_DEFS                     := $(filter-out IN_SUP_R3, $(RuntimeGuestR3_DEFS))
 RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
@@ -2041,7 +2042,6 @@ else if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win$(VBOX_WITH_HARDEN
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeR3_DEFS)) \
-	IPRT_WITH_OPENSSL \
 	IPRT_WITH_XAR \
 	$(if-expr !defined(VBOX_WITH_ALT_HASH_CODE),IPRT_WITHOUT_SHA512T224 IPRT_WITHOUT_SHA512T256,)
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
