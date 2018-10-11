@@ -1136,7 +1136,7 @@ int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
  * Converts RTFMODE to FsObjType_T.
  *
  * @return  Converted FsObjType_T type.
- * @param   enmType             RTFMODE to convert.
+ * @param   fMode               RTFMODE to convert.
  */
 /* static */
 FsObjType_T GuestBase::fileModeToFsObjType(RTFMODE fMode)
