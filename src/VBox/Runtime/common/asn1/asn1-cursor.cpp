@@ -202,35 +202,29 @@ RTDECL(bool) RTAsn1CursorIsEnd(PRTASN1CURSOR pCursor)
 
 RTDECL(int) RTAsn1CursorCheckEnd(PRTASN1CURSOR pCursor)
 {
-    if (pCursor->cbLeft == 0)
-        return VINF_SUCCESS;
-
-    if (pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH)
+    if (!(pCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH))
     {
-        /*
-         * If we've got two zeros here we're good.  This helps us handle apple code
-         * signatures, where most of the big structures are of indefinite length.
-         * The problem here is when rtCrPkcs7ContentInfo_DecodeExtra works the
-         * octet string, it appears as if there extra padding at the end.
-         *
-         * It is of course possible that ASN.1 assumes we will parse the content of
-         * that octet string as if it were an ASN.1 substructure, looking for the
-         * end-of-content sequence and propage that up.  However, this works for now.
-         */
-        if (pCursor->cbLeft >= 2)
-        {
-            if (   pCursor->pbCur[0] == 0
-                && pCursor->pbCur[1] == 0)
-                return VINF_SUCCESS;
-            return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
-                                       "%u (%#x) bytes left over [indef: %.*Rhxs]",
-                                       pCursor->cbLeft, pCursor->cbLeft, RT_MIN(pCursor->cbLeft, 16), pCursor->pbCur);
-        }
+        if (pCursor->cbLeft == 0)
+            return VINF_SUCCESS;
         return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
-                                   "%u (%#x) bytes left over [indef len]", pCursor->cbLeft, pCursor->cbLeft);
+                                   "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
+    }
+
+    /*
+     * There must be exactly two zero bytes here.
+     */
+    if (pCursor->cbLeft == 2)
+    {
+        if (   pCursor->pbCur[0] == 0
+            && pCursor->pbCur[1] == 0)
+            return VINF_SUCCESS;
+        return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                                   "%u (%#x) bytes left over [indef: %.*Rhxs]",
+                                   pCursor->cbLeft, pCursor->cbLeft, RT_MIN(pCursor->cbLeft, 16), pCursor->pbCur);
     }
     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
-                               "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
+                               "%u (%#x) byte(s) left over, exepcted exactly two zero bytes [indef len]",
+                               pCursor->cbLeft, pCursor->cbLeft);
 }
 
 
