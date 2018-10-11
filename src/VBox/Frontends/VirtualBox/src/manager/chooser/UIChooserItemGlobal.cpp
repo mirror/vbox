@@ -639,9 +639,17 @@ void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle)
 
     /* Prepare color: */
     const QPalette pal = palette();
-    QColor strokeColor = pal.color(QPalette::Active,
-                                   model()->currentItems().contains(unconst(this)) ?
-                                   QPalette::Mid : QPalette::Highlight);
+    QColor strokeColor;
+
+    /* Selection frame: */
+    if (model()->currentItems().contains(unconst(this)))
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
+    /* Hovering frame: */
+    else if (isHovered())
+        strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
+    /* Default frame: */
+    else
+        strokeColor = pal.color(QPalette::Active, QPalette::Mid).lighter(m_iDefaultLightnessMin);
 
     /* Create/assign pen: */
     QPen pen(strokeColor);
