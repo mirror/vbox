@@ -377,6 +377,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_CURSORPOSITIONCHANGEDEVENT,
     /** Main group, IDataModel. */
     LOG_GROUP_MAIN_DATAMODEL,
+    /** Main group, IDataStream. */
+    LOG_GROUP_MAIN_DATASTREAM,
     /** Main group, IDHCPServer. */
     LOG_GROUP_MAIN_DHCPSERVER,
     /** Main group, IDirectory. */
@@ -1009,6 +1011,7 @@ typedef enum LOGGROUP
     "MAIN_CPUEXECUTIONCAPCHANGEDEVENT", \
     "MAIN_CURSORPOSITIONCHANGEDEVENT", \
     "MAIN_DATAMODEL", \
+    "MAIN_DATASTREASTREAM", \
     "MAIN_DHCPSERVER", \
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \

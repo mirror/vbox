@@ -446,6 +446,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_TIMEOUT" value="0x80BB0010">
+    <desc>
+      The operation ran into an explicitly requested timeout.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -2620,11 +2626,11 @@
         a "DVD" device type, this is ignored and read-only mode is always assumed.</desc>
       </param>
       <param name="forceNewUuid" type="boolean" dir="in">
-         <desc>Allows the caller to request a completely new medium UUID for
-           the image which is to be opened. Useful if one intends to open an exact
-           copy of a previously opened image, as this would normally fail due to
-           the duplicate UUID.</desc>
-         </param>
+        <desc>Allows the caller to request a completely new medium UUID for
+          the image which is to be opened. Useful if one intends to open an exact
+          copy of a previously opened image, as this would normally fail due to
+          the duplicate UUID.</desc>
+        </param>
       <param name="medium" type="IMedium" dir="return">
         <desc>Opened medium object.</desc>
       </param>
@@ -2883,18 +2889,18 @@
       <param name="network" type="INATNetwork" dir="return"/>
     </method>
 
-     <!--
+    <!--
           Returns the NATNetwork by name, e.g. for adding port forward rule or deletion.
-      -->
-     <method name="findNATNetworkByName">
+    -->
+    <method name="findNATNetworkByName">
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="INATNetwork" dir="return"/>
     </method>
     <!--
         Deletes given NAT network.
-     -->
+    -->
     <method name="removeNATNetwork">
-       <param name="network" type="INATNetwork" dir="in"/>
+      <param name="network" type="INATNetwork" dir="in"/>
     </method>
 
     <method name="checkFirmwarePresent">
@@ -5463,7 +5469,7 @@
         currently has no snapshots. If it is not @c null, then it was
         set by one of <link to="#takeSnapshot" />, <link to="#deleteSnapshot" />
         or <link to="#restoreSnapshot" />, depending on which was called last.
-       See <link to="ISnapshot"/> for details.
+        See <link to="ISnapshot"/> for details.
       </desc>
     </attribute>
 
@@ -6510,7 +6516,7 @@ and "VAR" for unsetting. -->
       Invalid machine state.
       </result>
 
-       </desc>
+      </desc>
       <param name="name" type="wstring" dir="in">
       <desc>Name of the storage controller.</desc>
       </param>
@@ -10249,23 +10255,23 @@ and "VAR" for unsetting. -->
     </attribute>
     <attribute name="proxyURL" type="wstring" readonly="no">
       <desc>
-       Proxy server URL for the <link to="ProxyMode::Manual" /> proxy mode.
+        Proxy server URL for the <link to="ProxyMode::Manual" /> proxy mode.
 
-       The format is: [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
+        The format is: [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
 
-       Valid types are: http (default), https, socks4, socks4a, socks5, socks5h and direct.
-       Please note that these are proxy types defining how the proxy operates rather than
-       how to proxy any similarly named protocol (i.e. don't confuse a http-proxy with
-       proxying the http protocol, as a http-proxy usually can proxy https and other protocols too).
+        Valid types are: http (default), https, socks4, socks4a, socks5, socks5h and direct.
+        Please note that these are proxy types defining how the proxy operates rather than
+        how to proxy any similarly named protocol (i.e. don't confuse a http-proxy with
+        proxying the http protocol, as a http-proxy usually can proxy https and other protocols too).
 
-       The port number defaults to 80 for http, 443 for https and 1080 for the socks ones.
+        The port number defaults to 80 for http, 443 for https and 1080 for the socks ones.
 
-       <note>The password is currently stored as plain text!  Use the <link to="ProxyMode::System" />
-       mode if you consider the proxy password to be sensitive.</note>
+        <note>The password is currently stored as plain text!  Use the <link to="ProxyMode::System" />
+        mode if you consider the proxy password to be sensitive.</note>
 
-       An empty string will cause the behavior to be identical to <link to="ProxyMode::System" />.
-       For compatibility with libproxy, an URL starting with "direct://" will cause
-       <link to="ProxyMode::NoProxy" /> behavior.
+        An empty string will cause the behavior to be identical to <link to="ProxyMode::System" />.
+        For compatibility with libproxy, an URL starting with "direct://" will cause
+        <link to="ProxyMode::NoProxy" /> behavior.
       </desc>
     </attribute>
 
@@ -11377,7 +11383,7 @@ and "VAR" for unsetting. -->
     <const name="TerminatedAbnormally"  value="511">
       <desc>Process terminated abnormally.</desc>
     </const>
-     <const name="TimedOutKilled"       value="512">
+    <const name="TimedOutKilled"       value="512">
       <desc>Process timed out and was killed.</desc>
     </const>
     <const name="TimedOutAbnormally"    value="513">
@@ -11679,7 +11685,7 @@ and "VAR" for unsetting. -->
 
     <attribute name="protocolVersion" type="unsigned long" readonly="yes">
       <desc>Returns the protocol version which is used to communicate
-       with the guest.</desc>
+        with the guest.</desc>
     </attribute>
 
     <method name="isFormatSupported" >
@@ -12173,7 +12179,7 @@ and "VAR" for unsetting. -->
             <tr>
               <td>Update</td>
               <td>Only copy when the source file is newer than the destination
-               file or when the destination file is missing.</td>
+                file or when the destination file is missing.</td>
             </tr>
           </table>
 
@@ -12228,7 +12234,7 @@ and "VAR" for unsetting. -->
             <tr>
               <td>Update</td>
               <td>Only copy when the source file is newer than the destination
-               file or when the destination file is missing.</td>
+                file or when the destination file is missing.</td>
             </tr>
           </table>
 
@@ -12405,7 +12411,7 @@ and "VAR" for unsetting. -->
           and the existance of the symlink target made the question for this method.
           If @c false, a symbolic link in the final component will make the
           method return @c false (because a symlink isn't a directory).
-         </desc>
+        </desc>
       </param>
       <param name="exists" type="boolean" dir="return">
         <desc>Returns @c true if the directory exists, @c false if not.</desc>
@@ -12482,7 +12488,7 @@ and "VAR" for unsetting. -->
       <param name="flags" type="DirectoryRemoveRecFlag" dir="in" safearray="yes">
         <desc>Zero or more <link to="DirectoryRemoveRecFlag"/> flags.
           <note>WARNING! SPECIFYING <link to="DirectoryRemoveRecFlag_ContentAndDir"/> IS
-             MANDATORY AT THE MOMENT!!</note>
+            MANDATORY AT THE MOMENT!!</note>
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -12669,7 +12675,7 @@ and "VAR" for unsetting. -->
           at least one 'X' character. The first group of consecutive 'X'
           characters in the template will be replaced by a random
           alphanumeric string to produce a unique name.
-         </desc>
+        </desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
         <desc>
@@ -12717,7 +12723,7 @@ and "VAR" for unsetting. -->
           and the existance of the symlink target made the question for this method.
           If @c false, a symbolic link in the final component will make the
           method return @c false (because a symlink isn't a regular file).
-         </desc>
+        </desc>
       </param>
       <param name="exists" type="boolean" dir="return">
         <desc>Returns @c true if the file exists, @c false if not.  @c false is
@@ -12826,11 +12832,11 @@ and "VAR" for unsetting. -->
       </param>
       <param name="followSymlinks" type="boolean" dir="in">
         <desc>
-           It @c true, symbolic links in the final path component will be
-           followed to their target, and the size of the target is returned.
-           If @c false, symbolic links in the final path component will make
-           the method call fail (symblink is not a regular file).
-         </desc>
+          It @c true, symbolic links in the final path component will be
+          followed to their target, and the size of the target is returned.
+          If @c false, symbolic links in the final path component will make
+          the method call fail (symblink is not a regular file).
+        </desc>
       </param>
       <param name="size" type="long long" dir="return">
         <desc>Queried file size.</desc>
@@ -12854,11 +12860,11 @@ and "VAR" for unsetting. -->
       </param>
       <param name="followSymlinks" type="boolean" dir="in">
         <desc>
-           If @c true, symbolic links in the final component will be followed
-           and the method will instead check if the target exists.
-           If @c false, symbolic links in the final component will satisfy the
-           method and it will return @c true in @a exists.
-         </desc>
+          If @c true, symbolic links in the final component will be followed
+          and the method will instead check if the target exists.
+          If @c false, symbolic links in the final component will satisfy the
+          method and it will return @c true in @a exists.
+        </desc>
       </param>
       <param name="exists" type="boolean" dir="return">
         <desc>Returns @c true if the file exists, @c false if not.</desc>
@@ -12883,10 +12889,10 @@ and "VAR" for unsetting. -->
       </param>
       <param name="followSymlinks" type="boolean" dir="in">
         <desc>
-           Information about symbolic links is returned if @c false.  Otherwise,
-           symbolic links are followed and the returned information concerns
-           itself with the symlink target if @c true.
-         </desc>
+          Information about symbolic links is returned if @c false.  Otherwise,
+          symbolic links are followed and the returned information concerns
+          itself with the symlink target if @c true.
+        </desc>
       </param>
       <param name="info" type="IGuestFsObjInfo" dir="return">
         <desc><link to="IGuestFsObjInfo"/> object containing the information.</desc>
@@ -12986,7 +12992,7 @@ and "VAR" for unsetting. -->
           If @c true symbolic links in the final component will be followed,
           otherwise, if @c false, the method will work directly on a symbolic
           link in the final component.
-         </desc>
+        </desc>
       </param>
       <param name="acl" type="wstring" dir="in">
         <desc>The ACL specification string. To-be-defined.</desc>
@@ -16393,8 +16399,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Open the medium for I/O.
       </desc>
       <param name="writable" type="boolean" dir="in">
-       <desc>Set this to open the medium for both reading and writing.  When
-             not set the medium is opened readonly.</desc>
+      <desc>Set this to open the medium for both reading and writing.  When
+        not set the medium is opened readonly.</desc>
       </param>
       <param name="password" type="wstring" dir="in">
         <desc>Password for accessing an encrypted medium. Must be empty if not encrypted.</desc>
@@ -16638,6 +16644,52 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
+  // IDataStream
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="IDataStream" extends="$unknown"
+    uuid="a338ed20-58d9-43ae-8b03-c1fd7088ef15"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+      The IDataStream interface is used to retrieve a data stream. It is
+      returned by <link to="IMedium::convertToStream"/>.
+    </desc>
+
+    <attribute name="readSize" type="unsigned long" readonly="yes">
+      <desc>Recommended size of a read. Requesting a larger read may be
+        possible in certain situations, but it is not guaranteed.</desc>
+    </attribute>
+
+    <method name="read">
+      <desc>
+        Read data from the stream.
+        <result name="VBOX_E_TIMEOUT">
+          Waiting time has expired.
+        </result>
+      </desc>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>How many bytes to try read.</desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) for limiting the wait time for data to be available.
+          Pass 0 for an infinite timeout.
+        </desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>Array of data read. This may be shorter than the specified size.
+          Returning a zero-sized array indicates the end of the stream, if the
+          status is successful.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <!--
   // IMediumIO
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -16657,7 +16709,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMediumIO" extends="$unknown"
-    uuid="43b03a91-ea1a-4bdb-506f-8c418b72d6a3"
+    uuid="e4b301a9-5f86-4d65-ad1b-87ca284fb1c8"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -16748,9 +16800,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="wholeDiskInOneEntry" type="boolean" dir="in">
         <desc>
-           When @c true a partition table entry for the whole disk is created.
-           Otherwise the partition table is empty.
+          When @c true a partition table entry for the whole disk is created.
+          Otherwise the partition table is empty.
         </desc>
+      </param>
+    </method>
+
+    <method name="convertToStream">
+      <desc>
+        Converts the currently opened image into a stream of the specified
+        image type/variant. It is sufficient to open the image in read-only
+        mode. Only few types and variants are supported due to the inherent
+        restrictions of the output style.
+        <result name="VBOX_E_NOT_SUPPORTED">
+          The requested format/variant combination cannot handle stream output.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          An error occurred during the conversion.
+        </result>
+      </desc>
+      <param name="format" type="wstring" dir="in">
+        <desc>Identifier of the storage format to use for output.</desc>
+      </param>
+      <param name="variant" type="MediumVariant" safearray="yes" dir="in">
+        <desc>The partition table format.</desc>
+      </param>
+      <param name="bufferSize" type="unsigned long" dir="in">
+        <desc>
+          Requested buffer size (in bytes) for efficient conversion. Sizes
+          which are too small or too large are silently truncated to suitable
+          values. Tens to hundreds of Megabytes are a good choice.
+        </desc>
+      </param>
+      <param name="stream" type="IDataStream" dir="out">
+        <desc>Data stream object for reading the target image.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
@@ -18019,7 +18105,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="querySourceBitmap" wsmap="suppress">
       <desc>
-         Obtains the guest screen bitmap parameters.
+        Obtains the guest screen bitmap parameters.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="displaySourceBitmap" type="IDisplaySourceBitmap" dir="out"/>
@@ -18027,7 +18113,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="notifyScaleFactorChange">
       <desc>
-         Notify OpenGL HGCM host service about graphics content scaling factor change.
+        Notify OpenGL HGCM host service about graphics content scaling factor change.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="u32ScaleFactorWMultiplied" type="unsigned long" dir="in"/>
@@ -18036,7 +18122,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="notifyHiDPIOutputPolicyChange">
       <desc>
-         Notify OpenGL HGCM host service about HiDPI monitor scaling policy change.
+        Notify OpenGL HGCM host service about HiDPI monitor scaling policy change.
       </desc>
       <param name="fUnscaledHiDPI" type="boolean" dir="in"/>
     </method>
@@ -18538,7 +18624,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Path to the serial port's pipe on the host when <link to="ISerialPort::hostMode"/> is
         PortMode_HostPipe, the host serial device name when
         <link to="ISerialPort::hostMode"/> is PortMode_HostDevice or the TCP
-       <b>port</b> (server) or <b>hostname:port</b> (client) when
+        <b>port</b> (server) or <b>hostname:port</b> (client) when
         <link to="ISerialPort::hostMode"/> is PortMode_TCP.
         For those cases, setting a @c null or empty string as the attribute's
         value is an error. Otherwise, the value of this property is ignored.
@@ -22201,8 +22287,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
   <enum
-     name="BandwidthGroupType"
-     uuid="1d92b67d-dc69-4be9-ad4c-93a01e1e0c8e">
+    name="BandwidthGroupType"
+    uuid="1d92b67d-dc69-4be9-ad4c-93a01e1e0c8e">
 
     <desc>
       Type of a bandwidth control group.

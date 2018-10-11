@@ -393,6 +393,15 @@ HRESULT MediumIO::initializePartitionTable(PartitionTableType_T a_enmFormat, BOO
     return hrc;
 }
 
+HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
+                                  const std::vector<MediumVariant_T> &aVariant,
+                                  ULONG aBufferSize,
+                                  ComPtr<IDataStream> &aStream,
+                                  ComPtr<IProgress> &aProgress)
+{
+    return E_NOTIMPL;
+}
+
 HRESULT MediumIO::close()
 {
     /*

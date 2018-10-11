@@ -51,6 +51,11 @@ private:
     HRESULT write(LONG64 a_off, const std::vector<BYTE> &a_rData, ULONG *a_pcbWritten);
     HRESULT formatFAT(BOOL a_fQuick);
     HRESULT initializePartitionTable(PartitionTableType_T a_enmFormat, BOOL a_fWholeDiskInOneEntry);
+    HRESULT convertToStream(const com::Utf8Str &aFormat,
+                            const std::vector<MediumVariant_T> &aVariant,
+                            ULONG aBufferSize,
+                            ComPtr<IDataStream> &aStream,
+                            ComPtr<IProgress> &aProgress);
     HRESULT close();
     /** @} */
 
