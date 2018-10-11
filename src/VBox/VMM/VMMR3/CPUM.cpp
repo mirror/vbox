@@ -3188,6 +3188,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  fInVmxRootMode             = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxRootMode);
         pHlp->pfnPrintf(pHlp, "  fInVmxNonRootMode          = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxNonRootMode);
         pHlp->pfnPrintf(pHlp, "  fInterceptEvents           = %RTbool\n",   pCtx->hwvirt.vmx.fInterceptEvents);
+        pHlp->pfnPrintf(pHlp, "  uFirstPauseLoopTick        = %RX64\n",     pCtx->hwvirt.vmx.uFirstPauseLoopTick);
+        pHlp->pfnPrintf(pHlp, "  uPrevPauseTick             = %RX64\n",     pCtx->hwvirt.vmx.uPrevPauseTick);
 
         /** @todo NSTVMX: Dump remaining/new fields. */
     }

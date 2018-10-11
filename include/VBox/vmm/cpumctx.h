@@ -653,8 +653,13 @@ typedef struct CPUMCTX
 #if HC_ARCH_BITS == 32
                 uint32_t                uIoBitmapR3;
 #endif
-                /** 0x388 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x388];
+                /** 0x388 - Guest TSC timestamp of the first PAUSE instruction that is considered to
+                 *  be the first in a loop. */
+                uint64_t                uFirstPauseLoopTick;
+                /** 0x390 - Guest TSC timestamp of the previous PAUSE instruction. */
+                uint64_t                uPrevPauseTick;
+                /** 0x398 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x398];
             } vmx;
         } CPUM_UNION_NM(s);
 
@@ -758,6 +763,8 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvMsrBitmapR0,  
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvMsrBitmapR3,          0x370);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR0,           0x378);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR3,           0x380);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uFirstPauseLoopTick,    0x388);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uPrevPauseTick,         0x390);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,           8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,     8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR0,  8);

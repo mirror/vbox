@@ -3538,6 +3538,80 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPU pVCpu, VMXINSTRID uInstrId
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to MWAIT.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fMonitorHwArmed     Whether the address-range monitor hardware is armed.
+ * @param   cbInstr             The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMwait(PVMCPU pVCpu, bool fMonitorHwArmed, uint8_t cbInstr)
+{
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason = VMX_EXIT_MWAIT;
+    ExitInfo.cbInstr = cbInstr;
+    ExitInfo.u64Qual = fMonitorHwArmed;
+    return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to PAUSE.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   cbInstr             The instruction length in bytes.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrPause(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * The PAUSE VM-exit is controlled by the "PAUSE exiting" control and the
+     * "PAUSE-loop exiting" control.
+     *
+     * The PLE-Gap is the maximum number of TSC ticks between two successive executions of
+     * the PAUSE instruction before we cause a VM-exit. The PLE-Window is the maximum amount
+     * of TSC ticks the guest is allowed to execute in a pause loop before we must cause
+     * a VM-exit.
+     *
+     * See Intel spec. 24.6.13 "Controls for PAUSE-Loop Exiting".
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    bool fIntercept = false;
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_PAUSE_EXIT)
+        fIntercept = true;
+    else if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
+    {
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+
+        uint64_t      *puFirstPauseLoopTick = &pVCpu->cpum.GstCtx.hwvirt.vmx.uFirstPauseLoopTick;
+        uint64_t const uPrevPauseTick       = pVCpu->cpum.GstCtx.hwvirt.vmx.uPrevPauseTick;
+        uint32_t const uPleGap              = pVmcs->u32PleGap;
+        uint32_t const uPleWindow           = pVmcs->u32PleWindow;
+        uint64_t const uTick                = TMCpuTickGet(pVCpu);
+        if (uTick - uPrevPauseTick > uPleGap)
+            *puFirstPauseLoopTick = uTick;
+        else if (uTick - *puFirstPauseLoopTick > uPleWindow)
+            fIntercept = true;
+    }
+
+    if (fIntercept)
+    {
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_PAUSE;
+        ExitInfo.cbInstr = cbInstr;
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to task switches.
  *
  * @returns VBox strict status code.
@@ -3714,25 +3788,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
-}
-
-
-/**
- * VMX VM-exit handler for VM-exits due to MWAIT instruction.
- *
- * @returns VBox strict status code.
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   fMonitorHwArmed     Whether the address-range monitor hardware is armed.
- * @param   cbInstr             The instruction length in bytes.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMwait(PVMCPU pVCpu, bool fMonitorHwArmed, uint8_t cbInstr)
-{
-    VMXVEXITINFO ExitInfo;
-    RT_ZERO(ExitInfo);
-    ExitInfo.uReason = VMX_EXIT_MWAIT;
-    ExitInfo.cbInstr = cbInstr;
-    ExitInfo.u64Qual = fMonitorHwArmed;
-    return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
 
@@ -7048,6 +7103,27 @@ IEM_CIMPL_DEF_2(iemCImpl_vmread32_reg, uint32_t *, pu32Dst, uint32_t, u32FieldEn
 IEM_CIMPL_DEF_4(iemCImpl_vmread_mem, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u64FieldEnc)
 {
     return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u64FieldEnc, NULL /* pExitInfo */);
+}
+
+
+/**
+ * Implements VMX's implementation of PAUSE.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmx_pause)
+{
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict = iemVmxVmexitInstrPause(pVCpu, cbInstr);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return rcStrict;
+    }
+
+    /*
+     * Outside VMX non-root operation or if the PAUSE instruction does not cause
+     * a VM-exit, the instruction operates normally.
+     */
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 #endif  /* VBOX_WITH_NESTED_HWVIRT_VMX */

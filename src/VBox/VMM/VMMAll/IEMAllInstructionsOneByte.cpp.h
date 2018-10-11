@@ -4454,6 +4454,10 @@ FNIEMOP_DEF(iemOp_nop)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK)
     {
         IEMOP_MNEMONIC(pause, "pause");
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmx)
+            return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmx_pause);
+#endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvm)
             return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_svm_pause);
