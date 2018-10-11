@@ -62,17 +62,17 @@ static void vbox_ttm_mem_global_release(struct drm_global_reference *ref)
 static int vbox_ttm_global_init(struct vbox_private *vbox)
 {
 	struct drm_global_reference *global_ref;
-	int r;
+	int ret;
 
 	global_ref = &vbox->ttm.mem_global_ref;
 	global_ref->global_type = DRM_GLOBAL_TTM_MEM;
 	global_ref->size = sizeof(struct ttm_mem_global);
 	global_ref->init = &vbox_ttm_mem_global_init;
 	global_ref->release = &vbox_ttm_mem_global_release;
-	r = drm_global_item_ref(global_ref);
-	if (r != 0) {
-		DRM_ERROR("Failed setting up TTM memory accounting subsystem.\n");
-		return r;
+	ret = drm_global_item_ref(global_ref);
+	if (ret) {
+		DRM_ERROR("Failed setting up TTM memory subsystem.\n");
+		return ret;
 	}
 
 	vbox->ttm.bo_global_ref.mem_glob = vbox->ttm.mem_global_ref.object;
@@ -82,11 +82,11 @@ static int vbox_ttm_global_init(struct vbox_private *vbox)
 	global_ref->init = &ttm_bo_global_init;
 	global_ref->release = &ttm_bo_global_release;
 
-	r = drm_global_item_ref(global_ref);
-	if (r != 0) {
+	ret = drm_global_item_ref(global_ref);
+	if (ret) {
 		DRM_ERROR("Failed setting up TTM BO subsystem.\n");
 		drm_global_item_unref(&vbox->ttm.mem_global_ref);
-		return r;
+		return ret;
 	}
 
 	return 0;
@@ -97,12 +97,8 @@ static int vbox_ttm_global_init(struct vbox_private *vbox)
  */
 static void vbox_ttm_global_release(struct vbox_private *vbox)
 {
-	if (!vbox->ttm.mem_global_ref.release)
-		return;
-
 	drm_global_item_unref(&vbox->ttm.bo_global_ref.ref);
 	drm_global_item_unref(&vbox->ttm.mem_global_ref);
-	vbox->ttm.mem_global_ref.release = NULL;
 }
 
 static void vbox_bo_ttm_destroy(struct ttm_buffer_object *tbo)
@@ -304,15 +300,16 @@ int vbox_mm_init(struct vbox_private *vbox)
 				 DRM_FILE_PAGE_OFFSET, true);
 	if (ret) {
 		DRM_ERROR("Error initialising bo driver; %d\n", ret);
-		return ret;
+		goto err_ttm_global_release;
 	}
 
 	ret = ttm_bo_init_mm(bdev, TTM_PL_VRAM,
 			     vbox->available_vram_size >> PAGE_SHIFT);
 	if (ret) {
 		DRM_ERROR("Failed ttm VRAM init: %d\n", ret);
-		return ret;
+		goto err_device_release;
 	}
+
 #ifdef DRM_MTRR_WC
 	vbox->fb_mtrr = drm_mtrr_add(pci_resource_start(dev->pdev, 0),
 				     pci_resource_len(dev->pdev, 0),
@@ -321,30 +318,26 @@ int vbox_mm_init(struct vbox_private *vbox)
 	vbox->fb_mtrr = arch_phys_wc_add(pci_resource_start(dev->pdev, 0),
 					 pci_resource_len(dev->pdev, 0));
 #endif
-
-	vbox->ttm.mm_initialised = true;
-
 	return 0;
+
+err_device_release:
+	ttm_bo_device_release(&vbox->ttm.bdev);
+err_ttm_global_release:
+	vbox_ttm_global_release(vbox);
+	return ret;
 }
 
 void vbox_mm_fini(struct vbox_private *vbox)
 {
 #ifdef DRM_MTRR_WC
-	struct drm_device *dev = vbox->dev;
-#endif
-	if (!vbox->ttm.mm_initialised)
-		return;
-	ttm_bo_device_release(&vbox->ttm.bdev);
-
-	vbox_ttm_global_release(vbox);
-
-#ifdef DRM_MTRR_WC
 	drm_mtrr_del(vbox->fb_mtrr,
-		     pci_resource_start(dev->pdev, 0),
-		     pci_resource_len(dev->pdev, 0), DRM_MTRR_WC);
+		     pci_resource_start(vbox->dev->pdev, 0),
+		     pci_resource_len(vbox->dev->pdev, 0), DRM_MTRR_WC);
 #else
 	arch_phys_wc_del(vbox->fb_mtrr);
 #endif
+	ttm_bo_device_release(&vbox->ttm.bdev);
+	vbox_ttm_global_release(vbox);
 }
 
 void vbox_ttm_placement(struct vbox_bo *bo, int domain)
@@ -372,6 +365,7 @@ void vbox_ttm_placement(struct vbox_bo *bo, int domain)
 
 	bo->placement.num_placement = c;
 	bo->placement.num_busy_placement = c;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
 	for (i = 0; i < c; ++i) {
 		bo->placements[i].fpfn = 0;
@@ -393,10 +387,8 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 		return -ENOMEM;
 
 	ret = drm_gem_object_init(dev, &vboxbo->gem, size);
-	if (ret) {
-		kfree(vboxbo);
-		return ret;
-	}
+	if (ret)
+		goto err_free_vboxbo;
 
 	vboxbo->bo.bdev = &vbox->ttm.bdev;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0) && !defined(RHEL_71)
@@ -416,15 +408,20 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 			  align >> PAGE_SHIFT, false, acc_size,
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
-			  NULL,
-#endif
+			  NULL, NULL, vbox_bo_ttm_destroy);
+#else
 			  NULL, vbox_bo_ttm_destroy);
+#endif
 	if (ret)
-		return ret;
+		goto err_free_vboxbo;
 
 	*pvboxbo = vboxbo;
 
 	return 0;
+
+err_free_vboxbo:
+	kfree(vboxbo);
+	return ret;
 }
 
 static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)

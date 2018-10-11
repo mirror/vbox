@@ -35,10 +35,7 @@
 #ifndef __VBOX_DRV_H__
 #define __VBOX_DRV_H__
 
-#define LOG_GROUP LOG_GROUP_DEV_VGA
-
 #include <linux/version.h>
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
 # include <linux/types.h>
 # include <linux/spinlock_types.h>
@@ -85,12 +82,12 @@
 #endif
 
 #include <drm/drmP.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
-#include <drm/drm_gem.h>
-#endif
-#include <drm/drm_fb_helper.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 #include <drm/drm_encoder.h>
+#endif
+#include <drm/drm_fb_helper.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
+#include <drm/drm_gem.h>
 #endif
 
 #include <drm/ttm/ttm_bo_api.h>
@@ -132,6 +129,14 @@
 /** How frequently we refresh if the guest is not providing dirty rectangles. */
 #define VBOX_REFRESH_PERIOD (HZ / 2)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0) && !defined(RHEL_72)
+static inline void *devm_kcalloc(struct device *dev, size_t n, size_t size,
+				 gfp_t flags)
+{
+    return devm_kzalloc(dev, n * size, flags);
+}
+#endif
+
 struct vbox_fbdev;
 
 struct vbox_private {
@@ -142,7 +147,7 @@ struct vbox_private {
 	struct gen_pool *guest_pool;
 	struct VBVABUFFERCONTEXT *vbva_info;
 	bool any_pitch;
-	unsigned int num_crtcs;
+	u32 num_crtcs;
 	/** Amount of available VRAM, including space used for buffers. */
 	u32 full_vram_size;
 	/** Amount of available VRAM, not including space used for buffers. */
@@ -162,7 +167,6 @@ struct vbox_private {
 	} ttm;
 
 	struct mutex hw_mutex; /* protects modeset and accel/vbva accesses */
-	bool isr_installed;
 	/**
 	 * We decide whether or not user-space supports display hot-plug
 	 * depending on whether they react to a hot-plug event after the initial
@@ -218,8 +222,8 @@ struct vbox_connector {
 	char name[32];
 	struct vbox_crtc *vbox_crtc;
 	struct {
-		u32 width;
-		u32 height;
+		u16 width;
+		u16 height;
 		bool disconnected;
 	} mode_hint;
 };
@@ -284,14 +288,15 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 int vbox_framebuffer_init(struct drm_device *dev,
 			  struct vbox_framebuffer *vbox_fb,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_73)
-			  const
-#endif
+			  const struct DRM_MODE_FB_CMD *mode_cmd,
+#else
 			  struct DRM_MODE_FB_CMD *mode_cmd,
+#endif
 			  struct drm_gem_object *obj);
 
 int vbox_fbdev_init(struct drm_device *dev);
 void vbox_fbdev_fini(struct drm_device *dev);
-void vbox_fbdev_set_suspend(struct drm_device *dev, int state);
+void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr);
 
 struct vbox_bo {
 	struct ttm_buffer_object bo;
@@ -372,14 +377,14 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma);
 int vbox_gem_prime_pin(struct drm_gem_object *obj);
 void vbox_gem_prime_unpin(struct drm_gem_object *obj);
 struct sg_table *vbox_gem_prime_get_sg_table(struct drm_gem_object *obj);
-struct drm_gem_object *vbox_gem_prime_import_sg_table(struct drm_device *dev,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(RHEL_72)
-						      size_t size,
+struct drm_gem_object *vbox_gem_prime_import_sg_table(
+	struct drm_device *dev, size_t size, struct sg_table *table);
 #else
-						      struct dma_buf_attachment
-						      *attach,
+struct drm_gem_object *vbox_gem_prime_import_sg_table(
+	struct drm_device *dev, struct dma_buf_attachment *attach,
+	struct sg_table *table);
 #endif
-						      struct sg_table *table);
 void *vbox_gem_prime_vmap(struct drm_gem_object *obj);
 void vbox_gem_prime_vunmap(struct drm_gem_object *obj, void *vaddr);
 int vbox_gem_prime_mmap(struct drm_gem_object *obj,
@@ -393,14 +398,14 @@ irqreturn_t vbox_irq_handler(int irq, void *arg);
 
 /* vbox_hgsmi.c */
 void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,
-                         u8 channel, u16 channel_info);
+			 u8 channel, u16 channel_info);
 void hgsmi_buffer_free(struct gen_pool *guest_pool, void *buf);
 int hgsmi_buffer_submit(struct gen_pool *guest_pool, void *buf);
 
 static inline void vbox_write_ioport(u16 index, u16 data)
 {
-        outw(index, VBE_DISPI_IOPORT_INDEX);
-        outw(data, VBE_DISPI_IOPORT_DATA);
+	outw(index, VBE_DISPI_IOPORT_INDEX);
+	outw(data, VBE_DISPI_IOPORT_DATA);
 }
 
 #endif

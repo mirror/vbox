@@ -87,12 +87,12 @@ void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,
 	size_t total_size;
 	dma_addr_t offset;
 
-	total_size = size + sizeof(HGSMIBUFFERHEADER) + sizeof(HGSMIBUFFERTAIL);
+	total_size = size + sizeof(*h) + sizeof(*t);
 	h = gen_pool_dma_alloc(guest_pool, total_size, &offset);
 	if (!h)
 		return NULL;
 
-	t = (HGSMIBUFFERTAIL *)((u8 *)h + sizeof(HGSMIBUFFERHEADER) + size);
+	t = (HGSMIBUFFERTAIL *)((u8 *)h + sizeof(*h) + size);
 
 	h->u8Flags = HGSMI_BUFFER_HEADER_F_SEQ_SINGLE;
 	h->u32DataSize = size;
@@ -103,14 +103,14 @@ void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,
 	t->u32Reserved = 0;
 	t->u32Checksum = hgsmi_checksum(offset, h, t);
 
-	return (u8 *)h + sizeof(HGSMIBUFFERHEADER);
+	return (u8 *)h + sizeof(*h);
 }
 
 void hgsmi_buffer_free(struct gen_pool *guest_pool, void *buf)
 {
 	HGSMIBUFFERHEADER *h =
-		(HGSMIBUFFERHEADER *)((u8 *)buf - sizeof(HGSMIBUFFERHEADER));
-	size_t total_size = h->u32DataSize + sizeof(HGSMIBUFFERHEADER) +
+		(HGSMIBUFFERHEADER *)((u8 *)buf - sizeof(*h));
+	size_t total_size = h->u32DataSize + sizeof(*h) +
 					     sizeof(HGSMIBUFFERTAIL);
 
 	gen_pool_free(guest_pool, (unsigned long)h, total_size);
@@ -126,5 +126,5 @@ int hgsmi_buffer_submit(struct gen_pool *guest_pool, void *buf)
 	/* Make the compiler aware that the host has changed memory. */
 	mb();
 
-	return VINF_SUCCESS;
+	return 0;
 }

@@ -32,17 +32,17 @@
  *          Michael Thayer <michael.thayer@oracle.com,
  *          Hans de Goede <hdegoede@redhat.com>
  */
-#include "vbox_drv.h"
-
-#include "version-generated.h"
-#include "revision-generated.h"
-
 #include <linux/module.h>
 #include <linux/console.h>
 #include <linux/vt_kern.h>
 
 #include <drm/drmP.h>
 #include <drm/drm_crtc_helper.h>
+
+#include "vbox_drv.h"
+
+#include "version-generated.h"
+#include "revision-generated.h"
 
 int vbox_modeset = -1;
 
@@ -69,27 +69,39 @@ static void vbox_pci_remove(struct pci_dev *pdev)
 	drm_put_dev(dev);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) && !defined(RHEL_74)
+static void drm_fb_helper_set_suspend_unlocked(struct drm_fb_helper *fb_helper,
+					bool suspend)
+{
+	if (!fb_helper || !fb_helper->fbdev)
+		return;
+
+	console_lock();
+	fb_set_suspend(fb_helper->fbdev, suspend);
+	console_unlock();
+}
+#endif
+
 static int vbox_drm_freeze(struct drm_device *dev)
 {
+	struct vbox_private *vbox = dev->dev_private;
+
 	drm_kms_helper_poll_disable(dev);
 
 	pci_save_state(dev->pdev);
 
-	console_lock();
-	vbox_fbdev_set_suspend(dev, 1);
-	console_unlock();
+	drm_fb_helper_set_suspend_unlocked(&vbox->fbdev->helper, true);
 
 	return 0;
 }
 
 static int vbox_drm_thaw(struct drm_device *dev)
 {
+	struct vbox_private *vbox = dev->dev_private;
+
 	drm_mode_config_reset(dev);
 	drm_helper_resume_force_mode(dev);
-
-	console_lock();
-	vbox_fbdev_set_suspend(dev, 0);
-	console_unlock();
+	drm_fb_helper_set_suspend_unlocked(&vbox->fbdev->helper, false);
 
 	return 0;
 }

@@ -31,10 +31,6 @@
  * Authors: Dave Airlie <airlied@redhat.com>
  *          Michael Thayer <michael.thayer@oracle.com,
  */
-/* Include from most specific to most general to be able to override things. */
-#include "vbox_drv.h"
-#include <VBoxVideo.h>
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -50,7 +46,9 @@
 #include <drm/drm_crtc.h>
 #include <drm/drm_fb_helper.h>
 #include <drm/drm_crtc_helper.h>
+
 #include "vbox_drv.h"
+#include <VBoxVideo.h>
 
 #define VBOX_DIRTY_DELAY (HZ / 30)
 /**
@@ -210,7 +208,7 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 	u32 pitch = mode_cmd->pitches[0];
 #endif
 
-	int ret = 0;
+	int ret;
 
 	size = pitch * mode_cmd->height;
 	ret = vbox_gem_create(dev, size, true, &gobj);
@@ -218,7 +216,8 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 		return ret;
 
 	*gobj_p = gobj;
-	return ret;
+
+	return 0;
 }
 
 static int vboxfb_create(struct drm_fb_helper *helper,
@@ -231,8 +230,8 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	struct drm_framebuffer *fb;
 	struct fb_info *info;
 	struct device *device = &dev->pdev->dev;
-	struct drm_gem_object *gobj = NULL;
-	struct vbox_bo *bo = NULL;
+	struct drm_gem_object *gobj;
+	struct vbox_bo *bo;
 	int size, ret;
 	u32 pitch;
 
@@ -314,8 +313,6 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 		return -ENOMEM;
 	info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
 	info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
-	info->fix.smem_start = 0;
-	info->fix.smem_len = size;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->format->depth);
@@ -344,18 +341,21 @@ static struct drm_fb_helper_funcs vbox_fb_helper_funcs = {
 	.fb_probe = vboxfb_create,
 };
 
-static void vbox_fbdev_destroy(struct drm_device *dev, struct vbox_fbdev *fbdev)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(RHEL_73)
+static void drm_fb_helper_unregister_fbi(struct drm_fb_helper *fb_helper)
 {
-	struct fb_info *info;
+	if (fb_helper && fb_helper->fbdev)
+		unregister_framebuffer(fb_helper->fbdev);
+}
+#endif
+
+void vbox_fbdev_fini(struct drm_device *dev)
+{
+	struct vbox_private *vbox = dev->dev_private;
+	struct vbox_fbdev *fbdev = vbox->fbdev;
 	struct vbox_framebuffer *afb = &fbdev->afb;
 
-	if (fbdev->helper.fbdev) {
-		info = fbdev->helper.fbdev;
-		unregister_framebuffer(info);
-		if (info->cmap.len)
-			fb_dealloc_cmap(&info->cmap);
-		framebuffer_release(info);
-	}
+	drm_fb_helper_unregister_fbi(&fbdev->helper);
 
 	if (afb->obj) {
 		struct vbox_bo *bo = gem_to_vbox_bo(afb->obj);
@@ -388,7 +388,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 	struct vbox_fbdev *fbdev;
 	int ret;
 
-	fbdev = kzalloc(sizeof(*fbdev), GFP_KERNEL);
+	fbdev = devm_kzalloc(dev->dev, sizeof(*fbdev), GFP_KERNEL);
 	if (!fbdev)
 		return -ENOMEM;
 
@@ -408,48 +408,30 @@ int vbox_fbdev_init(struct drm_device *dev)
 			       vbox->num_crtcs);
 #endif
 	if (ret)
-		goto free;
+		return ret;
 
 	ret = drm_fb_helper_single_add_all_connectors(&fbdev->helper);
 	if (ret)
-		goto fini;
+		goto err_fini;
 
 	/* disable all the possible outputs/crtcs before entering KMS mode */
 	drm_helper_disable_unused_functions(dev);
 
 	ret = drm_fb_helper_initial_config(&fbdev->helper, 32);
 	if (ret)
-		goto fini;
+		goto err_fini;
 
 	return 0;
 
-fini:
+err_fini:
 	drm_fb_helper_fini(&fbdev->helper);
-free:
-	kfree(fbdev);
-	vbox->fbdev = NULL;
-
 	return ret;
 }
 
-void vbox_fbdev_fini(struct drm_device *dev)
+void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
 {
-	struct vbox_private *vbox = dev->dev_private;
+	struct fb_info *fbdev = vbox->fbdev->helper.fbdev;
 
-	if (!vbox->fbdev)
-		return;
-
-	vbox_fbdev_destroy(dev, vbox->fbdev);
-	kfree(vbox->fbdev);
-	vbox->fbdev = NULL;
-}
-
-void vbox_fbdev_set_suspend(struct drm_device *dev, int state)
-{
-	struct vbox_private *vbox = dev->dev_private;
-
-	if (!vbox->fbdev)
-		return;
-
-	fb_set_suspend(vbox->fbdev->helper.fbdev, state);
+	fbdev->fix.smem_start = fbdev->apertures->ranges[0].base + gpu_addr;
+	fbdev->fix.smem_len = vbox->available_vram_size - gpu_addr;
 }
