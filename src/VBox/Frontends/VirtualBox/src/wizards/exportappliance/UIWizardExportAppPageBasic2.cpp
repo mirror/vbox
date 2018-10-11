@@ -79,18 +79,20 @@ void UIWizardExportAppPage2::populateFormats()
 {
     AssertReturnVoid(m_pFormatComboBox->count() == 0);
 
-    /* Apply hardcoded format list: */
+    /* Compose hardcoded format list: */
     QStringList formats;
     formats << "ovf-0.9";
     formats << "ovf-1.0";
     formats << "ovf-2.0";
     formats << "opc-1.0";
     formats << "csp-1.0";
-    m_pFormatComboBox->addItems(formats);
-
-    /* Duplicate non-translated names to data fields: */
-    for (int i = 0; i < m_pFormatComboBox->count(); ++i)
-        m_pFormatComboBox->setItemData(i, m_pFormatComboBox->itemText(i));
+    /* Add that list to combo: */
+    foreach (const QString &strShortName, formats)
+    {
+        /* Compose empty item, fill it's data: */
+        m_pFormatComboBox->addItem(QString());
+        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, strShortName, FormatData_ShortName);
+    }
 
     /* Set default: */
     setFormat("ovf-1.0");
@@ -116,24 +118,21 @@ void UIWizardExportAppPage2::populateAccounts()
     /* Make sure this combo isn't filled yet: */
     AssertReturnVoid(m_pAccountComboBox->count() == 0);
 
-    /* Acquire provider list: */
-    QVector<CCloudProvider> comProviders = m_comCloudProviderManager.GetProviders();
-
     /* Iterate through providers: */
-    foreach (const CCloudProvider &comProvider, comProviders)
+    foreach (const CCloudProvider &comCloudProvider, m_comCloudProviderManager.GetProviders())
     {
         /* Skip if we have nothing to populate (file missing?): */
-        if (comProvider.isNull())
+        if (comCloudProvider.isNull())
             continue;
 
         /* Iterate through profile names: */
-        foreach (const QString &strProfileName, comProvider.GetProfileNames())
+        foreach (const QString &strProfileName, comCloudProvider.GetProfileNames())
         {
             m_pAccountComboBox->addItem(QString());
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comProvider.GetId(), ProviderID);
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comProvider.GetName(), ProviderName);
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comProvider.GetShortName(), ProviderShortName);
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, ProfileName);
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comCloudProvider.GetId(),        AccountData_ProviderID);
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comCloudProvider.GetName(),      AccountData_ProviderName);
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comCloudProvider.GetShortName(), AccountData_ProviderShortName);
+            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName,                  AccountData_ProfileName);
         }
     }
 
@@ -144,6 +143,9 @@ void UIWizardExportAppPage2::populateAccounts()
 
 void UIWizardExportAppPage2::populateAccountProperties()
 {
+    /* Clear table initially: */
+    m_pAccountPropertyTable->clear();
+
     /* Acquire Cloud Provider: */
     CCloudProvider comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
     /* Return if the provider has disappeared: */
@@ -155,9 +157,6 @@ void UIWizardExportAppPage2::populateAccountProperties()
     /* Return if the profile has disappeared: */
     if (m_comCloudProfile.isNull())
         return;
-
-    /* Clear table initially: */
-    m_pAccountPropertyTable->clear();
 
     /* Acquire properties: */
     QVector<QString> keys;
@@ -364,14 +363,15 @@ void UIWizardExportAppPage2::adjustAccountPropertyTable()
 
 void UIWizardExportAppPage2::setFormat(const QString &strFormat)
 {
-    const int iIndex = m_pFormatComboBox->findData(strFormat);
+    const int iIndex = m_pFormatComboBox->findData(strFormat, FormatData_ShortName);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pFormatComboBox->setCurrentIndex(iIndex);
 }
+
 QString UIWizardExportAppPage2::format() const
 {
     const int iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex).toString();
+    return m_pFormatComboBox->itemData(iIndex, FormatData_ShortName).toString();
 }
 
 void UIWizardExportAppPage2::setPath(const QString &strPath)
@@ -419,7 +419,7 @@ bool UIWizardExportAppPage2::isIncludeISOsSelected() const
 
 void UIWizardExportAppPage2::setProviderById(const QString &strId)
 {
-    const int iIndex = m_pAccountComboBox->findData(strId, ProviderID);
+    const int iIndex = m_pAccountComboBox->findData(strId, AccountData_ProviderID);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pAccountComboBox->setCurrentIndex(iIndex);
 }
@@ -427,19 +427,19 @@ void UIWizardExportAppPage2::setProviderById(const QString &strId)
 QString UIWizardExportAppPage2::providerId() const
 {
     const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, ProviderID).toString();
+    return m_pAccountComboBox->itemData(iIndex, AccountData_ProviderID).toString();
 }
 
 QString UIWizardExportAppPage2::providerShortName() const
 {
     const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, ProviderShortName).toString();
+    return m_pAccountComboBox->itemData(iIndex, AccountData_ProviderShortName).toString();
 }
 
 QString UIWizardExportAppPage2::profileName() const
 {
     const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, ProfileName).toString();
+    return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
 }
 
 CCloudProfile UIWizardExportAppPage2::profile() const
@@ -752,7 +752,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pFileSelector->setChooseButtonToolTip(UIWizardExportApp::tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
 
-    /* Translate Format combo-box: */
+    /* Translate hardcoded values of Format combo-box: */
     m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
@@ -796,8 +796,8 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
         m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-            .arg(m_pAccountComboBox->itemData(i, ProviderName).toString())
-            .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
+            .arg(m_pAccountComboBox->itemData(i, AccountData_ProviderName).toString())
+            .arg(m_pAccountComboBox->itemData(i, AccountData_ProfileName).toString()));
     }
 
     /* Adjust label widths: */

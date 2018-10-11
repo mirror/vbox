@@ -52,13 +52,19 @@ enum MACAddressPolicy
 };
 Q_DECLARE_METATYPE(MACAddressPolicy);
 
+/** Format combo data fields. */
+enum
+{
+    FormatData_ShortName = Qt::UserRole + 1
+};
+
 /** Account combo data fields. */
 enum
 {
-    ProviderID        = Qt::UserRole + 1,
-    ProviderName      = Qt::UserRole + 2,
-    ProviderShortName = Qt::UserRole + 3,
-    ProfileName       = Qt::UserRole + 4
+    AccountData_ProviderID        = Qt::UserRole + 1,
+    AccountData_ProviderName      = Qt::UserRole + 2,
+    AccountData_ProviderShortName = Qt::UserRole + 3,
+    AccountData_ProfileName       = Qt::UserRole + 4
 };
 
 

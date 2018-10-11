@@ -389,7 +389,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFileSelector->setChooseButtonToolTip(UIWizardExportApp::tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
 
-    /* Translate Format combo-box: */
+    /* Translate hard-coded values of Format combo-box: */
     m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
@@ -433,8 +433,8 @@ void UIWizardExportAppPageExpert::retranslateUi()
     for (int i = 0; i < m_pAccountComboBox->count(); ++i)
     {
         m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-            .arg(m_pAccountComboBox->itemData(i, ProviderName).toString())
-            .arg(m_pAccountComboBox->itemData(i, ProfileName).toString()));
+            .arg(m_pAccountComboBox->itemData(i, AccountData_ProviderName).toString())
+            .arg(m_pAccountComboBox->itemData(i, AccountData_ProfileName).toString()));
     }
 
     /* Adjust label widths: */
