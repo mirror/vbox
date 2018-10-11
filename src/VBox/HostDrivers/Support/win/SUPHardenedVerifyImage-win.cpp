@@ -1055,7 +1055,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
                                              void const *pvExternalData, size_t cbExternalData,
                                              PRTERRINFO pErrInfo, void *pvUser)
 {
-    RT_NOREF2(hLdrMod, enmSignature);
+    RT_NOREF(hLdrMod, enmSignature, pvExternalData, cbExternalData);
 
     /*
      * Check out the input.
