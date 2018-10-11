@@ -465,6 +465,8 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /* Init the UART core structure. */
     rc = uartR3Init(&pThis->UartCore, pDevIns, enmUartType, 0,
                     fYieldOnLSRRead ? UART_CORE_YIELD_ON_LSR_READ : 0, serialIrqReq, pfnSerialIrqReqR0, pfnSerialIrqReqRC);
+    if (RT_FAILURE(rc))
+        return rc;
 
     serialR3Reset(pDevIns);
     return VINF_SUCCESS;
