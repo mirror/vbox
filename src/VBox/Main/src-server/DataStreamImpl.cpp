@@ -172,7 +172,7 @@ HRESULT DataStream::read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData
     /*
      * Manage the result.
      */
-    HRESULT hrc;
+    HRESULT hrc = S_OK;
     if (   RT_SUCCESS(vrc)
         && m_aBuffer.size())
     {
@@ -186,7 +186,6 @@ HRESULT DataStream::read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData
         m_aBuffer.erase(m_aBuffer.begin(), m_aBuffer.begin() + cbCopy);
         vrc = RTSemEventSignal(m_hSemEvtBufSpcAvail);
         AssertRC(vrc);
-        hrc = S_OK;
     }
     else
     {
