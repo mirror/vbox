@@ -21,6 +21,7 @@
 
 #include "DataStreamWrap.h"
 
+#include <iprt/semaphore.h>
 
 class ATL_NO_VTABLE DataStream
     : public DataStreamWrap
@@ -40,13 +41,25 @@ public:
     /// than @a cbWrite). Modeled after RTStrmWriteEx.
     int i_write(const void *pvBuf, size_t cbWrite, size_t *pcbWritten);
 
+    /// Marks the end of the stream.
+    int i_close();
+
 private:
     // wrapped IDataStream attributes and methods
     HRESULT getReadSize(ULONG *aReadSize);
     HRESULT read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData);
 
 private:
+    /** Maximum number of bytes the buffer can hold. */
+    unsigned long     m_aBufferSize;
+    /** The temporary buffer the conversion process writes into and the user reads from. */
     std::vector<BYTE> m_aBuffer;
+    /** Event semaphore for waiting until data is available. */
+    RTSEMEVENT        m_hSemEvtDataAvail;
+    /** Event semaphore for waiting until there is room in the buffer for writing. */
+    RTSEMEVENT        m_hSemEvtBufSpcAvail;
+    /** Flag whether the end of stream flag is set. */
+    bool              m_fEos;
 };
 
 #endif // !____H_DATASTREAMIMPL
