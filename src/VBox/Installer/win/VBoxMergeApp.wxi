@@ -306,15 +306,11 @@
               Source="$(env.PATH_OUT)\bin\VMMRC.rc" />
         <File Id="file_VBoxDDRC.rc" Name="VBoxDDRC.rc"
               Source="$(env.PATH_OUT)\bin\VBoxDDRC.rc" />
-        <File Id="file_VBoxDD2RC.rc" Name="VBoxDD2RC.rc"
-              Source="$(env.PATH_OUT)\bin\VBoxDD2RC.rc" />
 
         <File Id="file_VMMR0.r0" Name="VMMR0.r0"
               Source="$(env.PATH_OUT)\bin\VMMR0.r0" />
         <File Id="file_VBoxDDR0.r0" Name="VBoxDDR0.r0"
               Source="$(env.PATH_OUT)\bin\VBoxDDR0.r0" />
-        <File Id="file_VBoxDD2R0.r0" Name="VBoxDD2R0.r0"
-              Source="$(env.PATH_OUT)\bin\VBoxDD2R0.r0" />
 
 <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
         <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
