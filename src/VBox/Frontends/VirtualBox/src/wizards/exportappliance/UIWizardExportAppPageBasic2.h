@@ -102,30 +102,30 @@ protected:
     /** Adjusts account property table. */
     void adjustAccountPropertyTable();
 
-    /** Returns format. */
-    QString format() const;
     /** Defines @a strFormat. */
     void setFormat(const QString &strFormat);
+    /** Returns format. */
+    QString format() const;
 
-    /** Returns path. */
-    QString path() const;
     /** Defines @a strPath. */
     void setPath(const QString &strPath);
+    /** Returns path. */
+    QString path() const;
 
-    /** Returns MAC address policy. */
-    MACAddressPolicy macAddressPolicy() const;
     /** Defines @a enmMACAddressPolicy. */
     void setMACAddressPolicy(MACAddressPolicy enmMACAddressPolicy);
+    /** Returns MAC address policy. */
+    MACAddressPolicy macAddressPolicy() const;
 
-    /** Returns whether manifest selected. */
-    bool isManifestSelected() const;
     /** Defines whether manifest @a fSelected. */
     void setManifestSelected(bool fChecked);
+    /** Returns whether manifest selected. */
+    bool isManifestSelected() const;
 
-    /** Returns whether include ISOs selected. */
-    bool isIncludeISOsSelected() const;
     /** Defines whether include ISOs @a fSelected. */
     void setIncludeISOsSelected(bool fChecked);
+    /** Returns whether include ISOs selected. */
+    bool isIncludeISOsSelected() const;
 
     /** Defines provider by @a strId. */
     void setProviderById(const QString &strId);

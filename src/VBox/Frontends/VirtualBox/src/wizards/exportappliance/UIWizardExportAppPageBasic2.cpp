@@ -362,22 +362,16 @@ void UIWizardExportAppPage2::adjustAccountPropertyTable()
     m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(true);
 }
 
-QString UIWizardExportAppPage2::format() const
-{
-    const int iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex).toString();
-}
-
 void UIWizardExportAppPage2::setFormat(const QString &strFormat)
 {
     const int iIndex = m_pFormatComboBox->findData(strFormat);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pFormatComboBox->setCurrentIndex(iIndex);
 }
-
-QString UIWizardExportAppPage2::path() const
+QString UIWizardExportAppPage2::format() const
 {
-    return m_pFileSelector->path();
+    const int iIndex = m_pFormatComboBox->currentIndex();
+    return m_pFormatComboBox->itemData(iIndex).toString();
 }
 
 void UIWizardExportAppPage2::setPath(const QString &strPath)
@@ -385,10 +379,9 @@ void UIWizardExportAppPage2::setPath(const QString &strPath)
     m_pFileSelector->setPath(strPath);
 }
 
-MACAddressPolicy UIWizardExportAppPage2::macAddressPolicy() const
+QString UIWizardExportAppPage2::path() const
 {
-    const int iIndex = m_pMACComboBox->currentIndex();
-    return (MACAddressPolicy)m_pMACComboBox->itemData(iIndex).toInt();
+    return m_pFileSelector->path();
 }
 
 void UIWizardExportAppPage2::setMACAddressPolicy(MACAddressPolicy enmMACAddressPolicy)
@@ -398,9 +391,10 @@ void UIWizardExportAppPage2::setMACAddressPolicy(MACAddressPolicy enmMACAddressP
     m_pMACComboBox->setCurrentIndex(iIndex);
 }
 
-bool UIWizardExportAppPage2::isManifestSelected() const
+MACAddressPolicy UIWizardExportAppPage2::macAddressPolicy() const
 {
-    return m_pManifestCheckbox->isChecked();
+    const int iIndex = m_pMACComboBox->currentIndex();
+    return (MACAddressPolicy)m_pMACComboBox->itemData(iIndex).toInt();
 }
 
 void UIWizardExportAppPage2::setManifestSelected(bool fChecked)
@@ -408,14 +402,19 @@ void UIWizardExportAppPage2::setManifestSelected(bool fChecked)
     m_pManifestCheckbox->setChecked(fChecked);
 }
 
-bool UIWizardExportAppPage2::isIncludeISOsSelected() const
+bool UIWizardExportAppPage2::isManifestSelected() const
 {
-    return m_pIncludeISOsCheckbox->isChecked();
+    return m_pManifestCheckbox->isChecked();
 }
 
 void UIWizardExportAppPage2::setIncludeISOsSelected(bool fChecked)
 {
     m_pIncludeISOsCheckbox->setChecked(fChecked);
+}
+
+bool UIWizardExportAppPage2::isIncludeISOsSelected() const
+{
+    return m_pIncludeISOsCheckbox->isChecked();
 }
 
 void UIWizardExportAppPage2::setProviderById(const QString &strId)
