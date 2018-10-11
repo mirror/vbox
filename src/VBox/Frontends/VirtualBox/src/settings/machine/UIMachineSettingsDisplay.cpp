@@ -46,7 +46,6 @@ struct UIDataSettingsMachineDisplay
     UIDataSettingsMachineDisplay()
         : m_iCurrentVRAM(0)
         , m_cGuestScreenCount(0)
-        , m_dScaleFactor(1.0)
         , m_f3dAccelerationEnabled(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
         , m_f2dAccelerationEnabled(false)
@@ -73,7 +72,6 @@ struct UIDataSettingsMachineDisplay
         return true
                && (m_iCurrentVRAM == other.m_iCurrentVRAM)
                && (m_cGuestScreenCount == other.m_cGuestScreenCount)
-               && (m_dScaleFactor == other.m_dScaleFactor)
                && (m_scaleFactors == other.m_scaleFactors)
                && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -244,7 +242,6 @@ struct UIDataSettingsMachineDisplay
     /** Holds the guest screen count. */
     int     m_cGuestScreenCount;
     /** Holds the guest screen scale-factor. */
-    double  m_dScaleFactor;
     QList<double> m_scaleFactors;
     /** Holds whether the 3D acceleration is enabled. */
     bool    m_f3dAccelerationEnabled;
@@ -363,11 +360,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Gather old 'Screen' data: */
     oldDisplayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
     oldDisplayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
-    oldDisplayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId(), 0);
-    oldDisplayData.m_scaleFactors.clear();
-    for (unsigned i = 0; i < m_machine.GetMonitorCount(); ++i)
-        oldDisplayData.m_scaleFactors.append(gEDataManager->scaleFactor(m_machine.GetId(), (int)i));
-
+    oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors(m_machine.GetId());
     oldDisplayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     oldDisplayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
@@ -1292,6 +1285,7 @@ void UIMachineSettingsDisplay::updateGuestScreenCount()
     QVector<BOOL> screens = m_pCache->base().m_screens;
     screens.resize(m_pEditorVideoScreenCount->value());
     m_pScrollerVideoCaptureScreens->setValue(screens);
+    m_pScaleFactorEditor->setMonitorCount(m_pEditorVideoScreenCount->value());
 }
 
 void UIMachineSettingsDisplay::updateVideoCaptureFileSizeHint()
@@ -1407,13 +1401,9 @@ bool UIMachineSettingsDisplay::saveScreenData()
             notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
 
         /* Save guest-screen scale-factor: */
-        if (fSuccess && newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
-            /* fSuccess = */ gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, strMachineId, 0);
         if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
         {
-            int listSize = newDisplayData.m_scaleFactors.size();
-            for (int i = 0; i < listSize; ++i)
-                gEDataManager->setScaleFactor(newDisplayData.m_scaleFactors[i], strMachineId, i);
+            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, strMachineId);
         }
     }
     /* Return result: */

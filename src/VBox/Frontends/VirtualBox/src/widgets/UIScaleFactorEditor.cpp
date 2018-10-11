@@ -55,29 +55,48 @@ void UIScaleFactorEditor::setMonitorCount(int iMonitorCount)
         return;
 
     m_pMonitorComboBox->blockSignals(true);
-    m_pMonitorComboBox->clear();
-    for (int i = 0; i < iMonitorCount; ++i)
+    int iCurrentMonitorCount = m_pMonitorComboBox->count();
+    int iCurrentMonitorIndex = m_pMonitorComboBox->currentIndex();
+    //m_pMonitorComboBox->clear();
+    if (iCurrentMonitorCount < iMonitorCount)
     {
-        m_pMonitorComboBox->addItem(QString("Monitor %1").arg(i));
-
+        for (int i = iCurrentMonitorCount; i < iMonitorCount; ++i)
+        {
+            m_pMonitorComboBox->addItem(QString("Monitor %1").arg(i));
+            /* In case that we have increased the # of monitors add new scale factors to the scale factor cache: */
+            if (i >= m_scaleFactors.size())
+                m_scaleFactors.append(1.0);
+        }
+    }
+    else
+    {
+        for (int i = iCurrentMonitorCount - 1; i >= iMonitorCount; --i)
+            m_pMonitorComboBox->removeItem(i);
     }
     m_pMonitorComboBox->blockSignals(false);
+
+    if (iCurrentMonitorIndex != m_pMonitorComboBox->currentIndex())
+        showMonitorScaleFactor();
 }
 
 void UIScaleFactorEditor::setScaleFactors(const QList<double> &scaleFactors)
 {
     if (m_scaleFactors == scaleFactors)
         return;
-    m_scaleFactors = scaleFactors;
-
-    /* Set the spinbox value for the currently selected monitor: */
-    if (m_pMonitorComboBox)
+    /* if m_scaleFactors has more items than @p scaleFactors than we keep the additional items
+       this can happen for example when extra data has 4 scale factor while machine has 5 monitors: */
+    if (m_scaleFactors.size() > scaleFactors.size())
     {
-        int currentMonitorIndex = m_pMonitorComboBox->currentIndex();
-        if (m_scaleFactors.size() > currentMonitorIndex && m_pScaleSpinBox)
-            setSpinBoxValue(100 * m_scaleFactors.at(currentMonitorIndex));
+        for (int i = 0; i < scaleFactors.size(); ++i)
+            m_scaleFactors[i] = scaleFactors[i];
     }
+    else
+    {
+        m_scaleFactors = scaleFactors;
+    }
+    showMonitorScaleFactor();
 }
+
 
 const QList<double>& UIScaleFactorEditor::scaleFactors() const
 {
@@ -209,5 +228,19 @@ void UIScaleFactorEditor::setSpinBoxValue(int iValue)
         m_pScaleSpinBox->blockSignals(true);
         m_pScaleSpinBox->setValue(iValue);
         m_pScaleSpinBox->blockSignals(false);
+    }
+}
+
+void UIScaleFactorEditor::showMonitorScaleFactor()
+{
+    /* Set the spinbox value for the currently selected monitor: */
+    if (m_pMonitorComboBox)
+    {
+        int currentMonitorIndex = m_pMonitorComboBox->currentIndex();
+        if (m_scaleFactors.size() > currentMonitorIndex && m_pScaleSpinBox)
+        {
+            setSpinBoxValue(100 * m_scaleFactors.at(currentMonitorIndex));
+            setSliderValue(100 * m_scaleFactors.at(currentMonitorIndex));
+        }
     }
 }

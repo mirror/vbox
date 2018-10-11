@@ -60,12 +60,14 @@ private slots:
 
 private:
 
-    void prepare();
-    void setScaleFactor(int iMonitorIndex, int iScaleFactor);
+    void               prepare();
+    void               setScaleFactor(int iMonitorIndex, int iScaleFactor);
     /* Blocks slider's signals before settting the value. */
-    void setSliderValue(int iValue);
+    void               setSliderValue(int iValue);
     /* Blocks slider's signals before settting the value. */
-    void setSpinBoxValue(int iValue);
+    void               setSpinBoxValue(int iValue);
+    /* Set the spinbox and slider to scale factor of currently selected monitor */
+    void               showMonitorScaleFactor();
     QSpinBox          *m_pScaleSpinBox;
     QGridLayout       *m_pMainLayout;
     QComboBox         *m_pMonitorComboBox;

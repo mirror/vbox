@@ -3971,25 +3971,64 @@ bool UIExtraDataManager::hidLedsSyncState(const QString &strID)
 
 double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIndex)
 {
-    /* Get corresponding extra-data value: */
-    const QString strValue = extraDataString(extraDataKeyPerScreen(GUI_ScaleFactor, uScreenIndex), strID);
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
 
-    /* Try to convert loaded data to double: */
+    /* 1.0 is default scale factor: */
+    if (data.size() == 0)
+        return 1.0;
+
+    int index = uScreenIndex;
+    /* use the 0th. scale factor in case we dont have a scale factor for @p uScreenIndex: */
+    if (data.size() <= uScreenIndex)
+        index = 0;
+
     bool fOk = false;
-    double dValue = strValue.toDouble(&fOk);
+    double scaleFactor = data[index].toDouble(&fOk);
+    if (!fOk)
+        return 1.0;
+    return scaleFactor;
+}
 
-    /* Invent the default value: */
-    if (!fOk || !dValue)
-        dValue = 1;
-
-    /* Return value: */
-    return dValue;
+QList<double> UIExtraDataManager::scaleFactors(const QString &strID)
+{
+    QList<double> scaleFactorList;
+    const QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
+    bool fOk = false;
+    double scaleFactor;
+    for (int i = 0; i < data.size(); ++i)
+    {
+        scaleFactor = data[i].toDouble(&fOk);
+        if (!fOk)
+            scaleFactor = 1.0;
+        scaleFactorList.append(scaleFactor);
+    }
+    return scaleFactorList;
 }
 
 void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex)
 {
-    /* Set corresponding extra-data value: */
-    setExtraDataString(extraDataKeyPerScreen(GUI_ScaleFactor, uScreenIndex), QString::number(dScaleFactor), strID);
+    QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
+
+    /* Just make sure that we have corresponding data item: */
+    if (data.size() <= uScreenIndex)
+    {
+        int listSize = data.size();
+        for (int i = listSize; i <= uScreenIndex; ++i)
+            data.append(QString::number(1.0));
+    }
+
+    data[uScreenIndex] = QString::number(dScaleFactor);
+
+    setExtraDataStringList(GUI_ScaleFactor, data, strID);
+}
+
+void UIExtraDataManager::setScaleFactors(const QList<double> &scaleFactors, const QString &strID)
+{
+    QStringList data;
+    for (int i = 0; i < scaleFactors.size(); ++i)
+        data.append(QString::number(scaleFactors[i]));
+    setExtraDataStringList(GUI_ScaleFactor, data, strID);
 }
 
 ScalingOptimizationType UIExtraDataManager::scalingOptimizationType(const QString &strID)
@@ -4526,7 +4565,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
                  strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange(strMachineID);
         /* Scale-factor change: */
-        else if (strKey.contains(GUI_ScaleFactor))
+        else if (strKey ==GUI_ScaleFactor)
             emit sigScaleFactorChange(strMachineID);
         /* Scaling optimization type change: */
         else if (strKey == GUI_Scaling_Optimization)

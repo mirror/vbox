@@ -597,8 +597,10 @@ public:
 
         /** Returns the scale-factor. */
         double scaleFactor(const QString &strID, const int uScreenIndex);
+        QList<double> scaleFactors(const QString &strID);
         /** Defines the @a dScaleFactor. */
         void setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex);
+        void setScaleFactors(const QList<double> &scaleFactors, const QString &strID);
 
         /** Returns the scaling optimization type. */
         ScalingOptimizationType scalingOptimizationType(const QString &strID);
