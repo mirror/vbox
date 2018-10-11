@@ -201,6 +201,10 @@ public:
     UsbCardReader *i_getUsbCardReader() { return mUsbCardReader; }
 #endif
 
+#ifdef VBOX_WITH_VIDEOREC
+    int i_videoCaptureEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock);
+#endif
+
     int i_VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     void i_VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus);
     void i_VRDPClientConnect(uint32_t u32ClientId);

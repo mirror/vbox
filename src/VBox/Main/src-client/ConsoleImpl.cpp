@@ -5601,6 +5601,62 @@ HRESULT Console::i_sendACPIMonitorHotPlugEvent()
     return rc;
 }
 
+#ifdef VBOX_WITH_VIDEOREC
+/**
+ * Enables or disables video (audio) capturing of a VM.
+ *
+ * @returns IPRT status code. Will return VERR_NO_CHANGE if the capturing state has not been changed.
+ * @param   fEnable             Whether to enable or disable the capturing.
+ * @param   pAutoLock           Pointer to auto write lock to use for attaching/detaching required driver(s) at runtime.
+ */
+int Console::i_videoCaptureEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
+{
+    AssertPtrReturn(pAutoLock, VERR_INVALID_POINTER);
+
+    int vrc = VINF_SUCCESS;
+
+    Display *pDisplay = i_getDisplay();
+    if (pDisplay)
+    {
+        if (RT_BOOL(fEnable) != pDisplay->i_videoRecStarted())
+        {
+            LogRel(("VideoRec: %s\n", fEnable ? "Enabling" : "Disabling"));
+
+            pDisplay->i_videoRecInvalidate();
+
+            if (fEnable)
+            {
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+                /* Attach the video recording audio driver if required. */
+                if (   pDisplay->i_videoRecGetFeatures() & VIDEORECFEATURE_AUDIO
+                    && mAudioVideoRec)
+                    vrc = mAudioVideoRec->doAttachDriverViaEmt(mpUVM, pAutoLock);
+# endif
+                if (   RT_SUCCESS(vrc)
+                    && pDisplay->i_videoRecGetFeatures()) /* Any video recording (audio and/or video) feature enabled? */
+                {
+                    vrc = pDisplay->i_videoRecStart();
+                }
+            }
+            else
+            {
+                mDisplay->i_videoRecStop();
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+                mAudioVideoRec->doDetachDriverViaEmt(mpUVM, pAutoLock);
+# endif
+            }
+
+            if (RT_FAILURE(vrc))
+                LogRel(("VideoRec: %s failed with %Rrc\n", fEnable ? "Enabling" : "Disabling", vrc));
+        }
+        else /* Should not happen. */
+            vrc = VERR_NO_CHANGE;
+    }
+
+    return vrc;
+}
+#endif /* VBOX_WITH_VIDEOREC */
+
 HRESULT Console::i_onVideoCaptureChange()
 {
     AutoCaller autoCaller(this);
@@ -5609,55 +5665,25 @@ HRESULT Console::i_onVideoCaptureChange()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
-
 #ifdef VBOX_WITH_VIDEOREC
     /* Don't trigger video capture changes if the VM isn't running. */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        if (mDisplay)
+        BOOL fEnabled;
+        rc = mMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+        AssertComRCReturnRC(rc);
+
+        int vrc = i_videoCaptureEnable(fEnabled, &alock);
+        if (RT_SUCCESS(vrc))
         {
-            Display *pDisplay = mDisplay;
-            AssertPtr(pDisplay);
-
-            pDisplay->i_videoRecInvalidate();
-
-            BOOL fEnabled;
-            rc = mMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-            AssertComRCReturnRC(rc);
-
-            int vrc;
-
-            if (fEnabled)
-            {
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
-                /* Attach the video recording audio driver if required. */
-                if (mDisplay->i_videoRecGetFeatures() & VIDEORECFEATURE_AUDIO)
-                    mAudioVideoRec->doAttachDriverViaEmt(mpUVM, &alock);
-# endif
-                vrc = mDisplay->i_videoRecStart();
-                if (RT_FAILURE(vrc))
-                    rc = setErrorBoth(E_FAIL, vrc, tr("Unable to start video capturing (%Rrc)"), vrc);
-            }
-            else
-            {
-                mDisplay->i_videoRecStop();
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
-                mAudioVideoRec->doDetachDriverViaEmt(mpUVM, &alock);
-# endif
-            }
+            alock.release();
+            fireVideoCaptureChangedEvent(mEventSource);
         }
 
         ptrVM.release();
     }
 #endif /* VBOX_WITH_VIDEOREC */
-
-    /* Notify console callbacks on success. */
-    if (SUCCEEDED(rc))
-    {
-        alock.release();
-        fireVideoCaptureChangedEvent(mEventSource);
-    }
 
     return rc;
 }
@@ -9924,37 +9950,22 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         pConsole->i_consoleVRDPServer()->EnableConnections();
 
 #ifdef VBOX_WITH_VIDEOREC
-        Display *pDisplay = pConsole->i_getDisplay();
-        AssertPtr(pDisplay);
-        if (pDisplay)
+        BOOL fVideoRecEnabled = FALSE;
+        rc = pConsole->mMachine->COMGETTER(VideoCaptureEnabled)(&fVideoRecEnabled);
+        AssertComRCReturnVoid(rc);
+
+        if (fVideoRecEnabled)
         {
-            BOOL fVideoRecEnabled = FALSE;
-            rc = pConsole->mMachine->COMGETTER(VideoCaptureEnabled)(&fVideoRecEnabled);
-            AssertComRCReturnVoid(rc);
-
-            if (fVideoRecEnabled)
+            int vrc2 = pConsole->i_videoCaptureEnable(fVideoRecEnabled, &alock);
+            if (RT_SUCCESS(vrc2))
             {
-                pDisplay->i_videoRecInvalidate();
-
-                /* If video recording fails for whatever reason here, this is
-                 * non-critical and should not be returned at this point -- otherwise
-                 * the display driver construction fails completely. */
-                int vrc2 = VINF_SUCCESS;
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-                /* Attach the video recording audio driver if required. */
-                if (   pDisplay->i_videoRecGetFeatures() & VIDEORECFEATURE_AUDIO
-                    && pConsole->mAudioVideoRec)
-                    vrc2 = pConsole->mAudioVideoRec->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
-#endif
-                if (   RT_SUCCESS(vrc2)
-                    && pDisplay->i_videoRecGetFeatures()) /* Any video recording (audio and/or video) feature enabled? */
-                {
-                    vrc2 = pDisplay->i_videoRecStart();
-                    if (RT_SUCCESS(vrc2))
-                        fireVideoCaptureChangedEvent(pConsole->i_getEventSource());
-                }
+                fireVideoCaptureChangedEvent(pConsole->mEventSource);
             }
+            else
+               LogRel(("VideoRec: Failed with %Rrc on VM power up\n", vrc2));
+
+            /** Note: Do not use vrc here, as starting the video recording isn't critical to
+             *        powering up the VM. */
         }
 #endif
 
