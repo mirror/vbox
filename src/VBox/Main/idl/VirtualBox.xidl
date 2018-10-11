@@ -16656,7 +16656,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       The IDataStream interface is used to retrieve a data stream. It is
-      returned by <link to="IMedium::convertToStream"/>.
+      returned by <link to="IMediumIO::convertToStream"/>.
     </desc>
 
     <attribute name="readSize" type="unsigned long" readonly="yes">
