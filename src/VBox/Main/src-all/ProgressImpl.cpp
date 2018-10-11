@@ -167,19 +167,14 @@ HRESULT Progress::init(
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    HRESULT rc = S_OK;
-    rc = unconst(pEventSource).createObject();
-    if (FAILED(rc)) throw rc;
+    HRESULT rc = unconst(pEventSource).createObject();
+    if (FAILED(rc))
+        return rc;
 
     rc = pEventSource->init();
-    if (FAILED(rc)) throw rc;
+    if (FAILED(rc))
+        return rc;
 
-//    rc = Progress::init(
-//#if !defined(VBOX_COM_INPROC)
-//                        aParent,
-//#endif
-//                         aInitiator, aDescription, FALSE, aId);
-// NA
 #if !defined(VBOX_COM_INPROC)
     AssertReturn(aParent, E_INVALIDARG);
 #else
@@ -215,12 +210,6 @@ HRESULT Progress::init(
 
     unconst(mDescription) = aDescription;
 
-
-// end of assertion
-
-
-    if (FAILED(rc)) return rc;
-
     mCancelable = aCancelable;
 
     m_cOperations = cOperations;
@@ -236,11 +225,10 @@ HRESULT Progress::init(
 
     RTSemEventMultiReset(mCompletedSem);
 
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
+    /* Confirm a successful initialization. */
+    autoInitSpan.setSucceeded();
 
-    return rc;
+    return S_OK;
 }
 
 /**
@@ -268,12 +256,6 @@ HRESULT Progress::init(BOOL aCancelable,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    HRESULT rc = S_OK;
-    /* Guarantees subclasses call this method at the proper time */
-    NOREF(autoInitSpan);
-
-    if (FAILED(rc)) return rc;
-
     mCancelable = aCancelable;
 
     // for this variant we assume for now that all operations are weighed "1"
@@ -291,11 +273,10 @@ HRESULT Progress::init(BOOL aCancelable,
 
     RTSemEventMultiReset(mCompletedSem);
 
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
+    /* Confirm a successful initialization. */
+    autoInitSpan.setSucceeded();
 
-    return rc;
+    return S_OK;
 }
 
 
