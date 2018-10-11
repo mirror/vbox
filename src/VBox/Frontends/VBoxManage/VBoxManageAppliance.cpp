@@ -918,6 +918,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudOCIPublicIP:
                         case VirtualSystemDescriptionType_CloudOCIProfilePath:
                         case VirtualSystemDescriptionType_CloudOCISubnet:
+                        case VirtualSystemDescriptionType_CloudOCIKeepObject:
+                        case VirtualSystemDescriptionType_CloudOCILaunchInstance:
                         case VirtualSystemDescriptionType_Miscellaneous:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;

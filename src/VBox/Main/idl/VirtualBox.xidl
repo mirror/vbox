@@ -3594,6 +3594,8 @@
     <const name="CloudOCIPublicIP" value="32" />
     <const name="CloudOCIProfilePath" value="33" />
     <const name="CloudOCISubnet" value="34" />
+    <const name="CloudOCIKeepObject" value="35" />
+    <const name="CloudOCILaunchInstance" value="36" />
   </enum>
 
   <enum
