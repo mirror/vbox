@@ -1370,6 +1370,7 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
 /** @callback_method_impl{FNRTLDRVALIDATESIGNEDDATA}  */
 static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
                                            void const *pvSignature, size_t cbSignature,
+                                           void const *pvExternalData, size_t cbExternalData,
                                            PRTERRINFO pErrInfo, void *pvUser)
 {
     VERIFYEXESTATE *pState = (VERIFYEXESTATE *)pvUser;
@@ -1395,6 +1396,14 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
              * Do the actual verification.  Will have to modify this so it takes
              * the authenticode policies into account.
              */
+            if (pvExternalData)
+                return RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo,
+                                                                 RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
+                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT,
+                                                                 pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
+                                                                 VerifyExecCertVerifyCallback, pState,
+                                                                 pvExternalData, cbExternalData, pErrInfo);
             return RTCrPkcs7VerifySignedData(pContentInfo,
                                              RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
                                              | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT

@@ -143,7 +143,7 @@ static int rtCrPkcs7ContentInfo_DecodeExtra(PRTASN1CURSOR pCursor, uint32_t fFla
                         break;
                 }
                 if (RT_SUCCESS(rc))
-                    rc = RTAsn1CursorCheckEnd(&ContentCursor);
+                    rc = RTAsn1CursorCheckOctStrEnd(&ContentCursor, &pThis->Content);
                 if (RT_SUCCESS(rc))
                     return VINF_SUCCESS;
 

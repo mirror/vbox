@@ -74,6 +74,7 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
     pPrimaryCursor->Cursor.pszErrorTag      = pszErrorTag;
     pPrimaryCursor->pErrInfo                = pErrInfo;
     pPrimaryCursor->pAllocator              = pAllocator;
+    pPrimaryCursor->pbFirst                 = (uint8_t const *)pvFirst;
     return &pPrimaryCursor->Cursor;
 }
 
@@ -238,45 +239,43 @@ RTDECL(int) RTAsn1CursorCheckEnd(PRTASN1CURSOR pCursor)
  */
 static int rtAsn1CursorCheckSeqOrSetEnd(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core)
 {
-    if (pCursor->cbLeft == 0)
-        return VINF_SUCCESS;
-
-    if (pAsn1Core->fFlags & RTASN1CORE_F_INDEFINITE_LENGTH)
+    if (!(pAsn1Core->fFlags & RTASN1CORE_F_INDEFINITE_LENGTH))
     {
-        if (pCursor->cbLeft >= 2)
-        {
-            if (   pCursor->pbCur[0] == 0
-                && pCursor->pbCur[1] == 0)
-            {
-                pAsn1Core->cb = (uint32_t)(pCursor->pbCur - pAsn1Core->uData.pu8);
-                pCursor->cbLeft -= 2;
-                pCursor->pbCur  += 2;
-
-                PRTASN1CURSOR pParentCursor = pCursor->pUp;
-                if (   pParentCursor
-                    && (pParentCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH))
-                {
-                    pParentCursor->pbCur  -= pCursor->cbLeft;
-                    pParentCursor->cbLeft += pCursor->cbLeft;
-                    return VINF_SUCCESS;
-                }
-
-                if (pCursor->cbLeft == 0)
-                    return VINF_SUCCESS;
-
-                return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
-                                           "%u (%#x) bytes left over (parent not indefinite length)", pCursor->cbLeft, pCursor->cbLeft);
-            }
-            return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END, "%u (%#x) bytes left over [indef: %.*Rhxs]",
-                                       pCursor->cbLeft, pCursor->cbLeft, RT_MIN(pCursor->cbLeft, 16), pCursor->pbCur);
-        }
+        if (pCursor->cbLeft == 0)
+            return VINF_SUCCESS;
         return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
-                                   "1 byte left over, expected two for indefinite length end-of-content sequence");
+                                   "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
     }
 
-    return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
-                               "%u (%#x) bytes left over", pCursor->cbLeft, pCursor->cbLeft);
+    if (pCursor->cbLeft >= 2)
+    {
+        if (   pCursor->pbCur[0] == 0
+            && pCursor->pbCur[1] == 0)
+        {
+            pAsn1Core->cb = (uint32_t)(pCursor->pbCur - pAsn1Core->uData.pu8);
+            pCursor->cbLeft -= 2;
+            pCursor->pbCur  += 2;
 
+            PRTASN1CURSOR pParentCursor = pCursor->pUp;
+            if (   pParentCursor
+                && (pParentCursor->fFlags & RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH))
+            {
+                pParentCursor->pbCur  -= pCursor->cbLeft;
+                pParentCursor->cbLeft += pCursor->cbLeft;
+                return VINF_SUCCESS;
+            }
+
+            if (pCursor->cbLeft == 0)
+                return VINF_SUCCESS;
+
+            return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                                       "%u (%#x) bytes left over (parent not indefinite length)", pCursor->cbLeft, pCursor->cbLeft);
+        }
+        return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END, "%u (%#x) bytes left over [indef: %.*Rhxs]",
+                                   pCursor->cbLeft, pCursor->cbLeft, RT_MIN(pCursor->cbLeft, 16), pCursor->pbCur);
+    }
+    return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_NOT_AT_END,
+                               "1 byte left over, expected two for indefinite length end-of-content sequence");
 }
 
 
@@ -289,6 +288,12 @@ RTDECL(int) RTAsn1CursorCheckSeqEnd(PRTASN1CURSOR pCursor, PRTASN1SEQUENCECORE p
 RTDECL(int) RTAsn1CursorCheckSetEnd(PRTASN1CURSOR pCursor, PRTASN1SETCORE pSetCore)
 {
     return rtAsn1CursorCheckSeqOrSetEnd(pCursor, &pSetCore->Asn1Core);
+}
+
+
+RTDECL(int) RTAsn1CursorCheckOctStrEnd(PRTASN1CURSOR pCursor, PRTASN1OCTETSTRING pOctetString)
+{
+    return rtAsn1CursorCheckSeqOrSetEnd(pCursor, &pOctetString->Asn1Core);
 }
 
 
@@ -425,7 +430,7 @@ RTDECL(int) RTAsn1CursorReadHdr(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core, co
             {
                 pCursor->fFlags   |= RTASN1CURSOR_FLAGS_INDEFINITE_LENGTH;
                 pAsn1Core->fFlags |= RTASN1CORE_F_INDEFINITE_LENGTH;
-                cb = pCursor->cbLeft - 2; /* tentatively for sequences and sets, definite for others */
+                cb = pCursor->cbLeft; /* Start out with the whole sequence, adjusted later upon reach the end. */
             }
         }
         /* else if (cb == 0 && uTag == 0) { end of content } - callers handle this */

@@ -511,11 +511,42 @@ RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, 
  *                              for signing the data is suitable.
  * @param   pvUser              User argument for the callback.
  * @param   pErrInfo            Optional error info buffer.
+ * @sa      RTCrPkcs7VerifySignedDataWithExternalData
  */
 RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint32_t fFlags,
                                       RTCRSTORE hAdditionalCerts, RTCRSTORE hTrustedCerts,
                                       PCRTTIMESPEC pValidationTime, PFNRTCRPKCS7VERIFYCERTCALLBACK pfnVerifyCert, void *pvUser,
                                       PRTERRINFO pErrInfo);
+
+
+/**
+ * Verifies PKCS \#7 SignedData with external data.
+ *
+ * For compatability with alternative crypto providers, the user must work on
+ * the top level PKCS \#7 structure instead directly on the SignedData.
+ *
+ * @returns IPRT status code.
+ * @param   pContentInfo        PKCS \#7 content info structure.
+ * @param   fFlags              RTCRPKCS7VERIFY_SD_F_XXX.
+ * @param   hAdditionalCerts    Store containing additional certificates to
+ *                              supplement those mentioned in the signed data.
+ * @param   hTrustedCerts       Store containing trusted certificates.
+ * @param   pValidationTime     The time we're supposed to validate the
+ *                              certificates chains at.  Ignored for signatures
+ *                              with valid signing time attributes.
+ * @param   pfnVerifyCert       Callback for checking that a certificate used
+ *                              for signing the data is suitable.
+ * @param   pvUser              User argument for the callback.
+ * @param   pvData              The signed external data.
+ * @param   cbData              The size of the signed external data.
+ * @param   pErrInfo            Optional error info buffer.
+ * @sa      RTCrPkcs7VerifySignedData
+ */
+RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint32_t fFlags,
+                                                      RTCRSTORE hAdditionalCerts, RTCRSTORE hTrustedCerts,
+                                                      PCRTTIMESPEC pValidationTime,
+                                                      PFNRTCRPKCS7VERIFYCERTCALLBACK pfnVerifyCert, void *pvUser,
+                                                      void const *pvData, size_t cbData, PRTERRINFO pErrInfo);
 
 /** @name RTCRPKCS7VERIFY_SD_F_XXX - Flags for RTCrPkcs7VerifySignedData
  * @{ */

@@ -4848,6 +4848,7 @@ rtldrMachO_VerifySignature(PRTLDRMODINTERNAL pMod, PFNRTLDRVALIDATESIGNEDDATA pf
                      */
                     rc = pfnCallback(&pThis->Core, RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA,
                                      &pSignature->ContentInfo, sizeof(pSignature->ContentInfo),
+                                     pSignature->aCodeDirs[0].pCodeDir, pSignature->aCodeDirs[0].cb,
                                      pErrInfo, pvUser);
                 }
             }

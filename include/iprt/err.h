@@ -2729,6 +2729,8 @@ RT_C_DECLS_END
 #define VERR_CR_PKCS7_SIGNER_CERT_NOT_SHIPPED                   (-22358)
 /** The encrypted digest algorithm does not match the one in the certificate. */
 #define VERR_CR_PKCS7_SIGNER_INFO_DIGEST_ENCRYPT_MISMATCH       (-22359)
+/** The PKCS \#7 content is not data. */
+#define VERR_CR_PKCS7_NOT_DATA                                  (-22360)
 /** @} */
 
 /** @name RTCrSpc status codes.

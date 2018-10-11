@@ -1176,12 +1176,17 @@ typedef enum RTLDRSIGNATURETYPE
  * @param   enmSignature    The signature format.
  * @param   pvSignature     The signature data. Format given by @a enmSignature.
  * @param   cbSignature     The size of the buffer @a pvSignature points to.
+ * @param   pvExternalData  Pointer to the signed data, if external. NULL if the
+ *                          data is internal to the signature structure.
+ * @param   cbExternalData Size of the signed data, if external.  0 if
+ *                          internal to the signature structure.
  * @param   pErrInfo        Pointer to an error info buffer, optional.
  * @param   pvUser          User argument.
  *
  */
 typedef DECLCALLBACK(int) FNRTLDRVALIDATESIGNEDDATA(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
                                                     void const *pvSignature, size_t cbSignature,
+                                                    void const *pvExternalData, size_t cbExternalData,
                                                     PRTERRINFO pErrInfo, void *pvUser);
 /** Pointer to a signature verification callback. */
 typedef FNRTLDRVALIDATESIGNEDDATA *PFNRTLDRVALIDATESIGNEDDATA;
