@@ -3583,19 +3583,32 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrPause(PVMCPU pVCpu, uint8_t cbInstr)
     bool fIntercept = false;
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_PAUSE_EXIT)
         fIntercept = true;
-    else if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
+    else if (   (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
+             && pVCpu->iem.s.uCpl == 0)
     {
         IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
 
-        uint64_t      *puFirstPauseLoopTick = &pVCpu->cpum.GstCtx.hwvirt.vmx.uFirstPauseLoopTick;
-        uint64_t const uPrevPauseTick       = pVCpu->cpum.GstCtx.hwvirt.vmx.uPrevPauseTick;
-        uint32_t const uPleGap              = pVmcs->u32PleGap;
-        uint32_t const uPleWindow           = pVmcs->u32PleWindow;
-        uint64_t const uTick                = TMCpuTickGet(pVCpu);
-        if (uTick - uPrevPauseTick > uPleGap)
+        /*
+         * A previous-PAUSE-tick value of 0 is used to identify the first time
+         * execution of a PAUSE instruction after VM-entry at CPL 0. We must
+         * consider this to be the first execution of PAUSE in a loop according
+         * to the Intel.
+         *
+         * All subsequent records for the previous-PAUSE-tick we ensure that it
+         * cannot be zero by OR'ing 1 to rule out the TSC wrap-around cases at 0.
+         */
+        uint64_t *puFirstPauseLoopTick = &pVCpu->cpum.GstCtx.hwvirt.vmx.uFirstPauseLoopTick;
+        uint64_t *puPrevPauseTick      = &pVCpu->cpum.GstCtx.hwvirt.vmx.uPrevPauseTick;
+        uint64_t const  uTick          = TMCpuTickGet(pVCpu);
+        uint32_t const  uPleGap        = pVmcs->u32PleGap;
+        uint32_t const  uPleWindow     = pVmcs->u32PleWindow;
+        if (   *puPrevPauseTick == 0
+            || uTick - *puPrevPauseTick > uPleGap)
             *puFirstPauseLoopTick = uTick;
         else if (uTick - *puFirstPauseLoopTick > uPleWindow)
             fIntercept = true;
+
+        *puPrevPauseTick = uTick | 1;
     }
 
     if (fIntercept)
@@ -5746,6 +5759,10 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
     pVCpu->cpum.GstCtx.rsp      = pVmcs->u64GuestRsp.u;
     pVCpu->cpum.GstCtx.rip      = pVmcs->u64GuestRip.u;
     pVCpu->cpum.GstCtx.rflags.u = pVmcs->u64GuestRFlags.u;
+
+    /* Initialize the PAUSE-loop controls as part of VM-entry. */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.uFirstPauseLoopTick = 0;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.uPrevPauseTick      = 0;
 
     iemVmxVmentryLoadGuestNonRegState(pVCpu);
 
