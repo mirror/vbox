@@ -2432,6 +2432,11 @@ extern SUPTAENTRY const             g_aSUPTimestampTAs[];
 /** Number of entries in g_aSUPTimestampTAs. */
 extern unsigned const               g_cSUPTimestampTAs;
 
+/** Root certificates trusted by Apple code signing. */
+extern SUPTAENTRY const             g_aSUPAppleRootTAs[];
+/** Number of entries in g_cSUPAppleRootTAs. */
+extern unsigned const               g_cSUPAppleRootTAs;
+
 /** TAs we trust (the build certificate, Oracle VirtualBox). */
 extern SUPTAENTRY const             g_aSUPTrustedTAs[];
 /** Number of entries in g_aSUPTrustedTAs. */

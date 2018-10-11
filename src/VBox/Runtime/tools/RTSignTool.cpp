@@ -45,6 +45,7 @@
 #ifndef RT_OS_WINDOWS
 # include <iprt/formats/pecoff.h>
 #endif
+#include <iprt/crypto/applecodesign.h>
 #include <iprt/crypto/digest.h>
 #include <iprt/crypto/x509.h>
 #include <iprt/crypto/pkcs7.h>
@@ -1311,11 +1312,13 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
         && (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA))
     {
         /*
-         * If kernel signing, a valid certificate path must be anchored by the
-         * microsoft kernel signing root certificate.  The only alternative is
-         * test signing.
+         * If windows kernel signing, a valid certificate path must be anchored
+         * by the microsoft kernel signing root certificate.  The only
+         * alternative is test signing.
          */
-        if (pState->fKernel && hCertPaths != NIL_RTCRX509CERTPATHS)
+        if (   pState->fKernel
+            && hCertPaths != NIL_RTCRX509CERTPATHS
+            && pState->enmSignType == VERIFYEXESTATE::kSignType_Windows)
         {
             uint32_t cFound = 0;
             uint32_t cValid = 0;
@@ -1360,6 +1363,38 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
                 rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, "Not valid kernel code signature.");
             if (RT_SUCCESS(rc) && cValid != 2)
                 RTMsgWarning("%u valid paths, expected 2", cValid);
+        }
+        /*
+         * For Mac OS X signing, check for special developer ID attributes.
+         */
+        else if (pState->enmSignType == VERIFYEXESTATE::kSignType_OSX)
+        {
+            uint32_t cDevIdApp  = 0;
+            uint32_t cDevIdKext = 0;
+            for (uint32_t i = 0; i < pCert->TbsCertificate.T3.Extensions.cItems; i++)
+            {
+                PCRTCRX509EXTENSION pExt = pCert->TbsCertificate.T3.Extensions.papItems[i];
+                if (RTAsn1ObjId_CompareWithString(&pExt->ExtnId, RTCR_APPLE_CS_DEVID_APPLICATION_OID) == 0)
+                {
+                    cDevIdApp++;
+                    if (!pExt->Critical.fValue)
+                        rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                           "Dev ID Application certificate extension is not flagged critical");
+                }
+                else if (RTAsn1ObjId_CompareWithString(&pExt->ExtnId, RTCR_APPLE_CS_DEVID_KEXT_OID) == 0)
+                {
+                    cDevIdKext++;
+                    if (!pExt->Critical.fValue)
+                        rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                           "Dev ID kext certificate extension is not flagged critical");
+                }
+            }
+            if (cDevIdApp == 0)
+                rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                   "Certificate is missing the 'Dev ID Application' extension");
+            if (cDevIdKext == 0 && pState->fKernel)
+                rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                   "Certificate is missing the 'Dev ID kext' extension");
         }
     }
 
@@ -1417,7 +1452,9 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
     }
 }
 
-/** Worker for HandleVerifyExe. */
+/**
+ * Worker for HandleVerifyExe.
+ */
 static RTEXITCODE HandleVerifyExeWorker(VERIFYEXESTATE *pState, const char *pszFilename, PRTERRINFOSTATIC pStaticErrInfo)
 {
     /*
@@ -1545,15 +1582,12 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
     /*
      * Populate the certificate stores according to the signing type.
      */
-#ifdef VBOX
+# ifdef VBOX
     unsigned          cSets = 0;
     struct STSTORESET aSets[6];
-#endif
-
     switch (State.enmSignType)
     {
         case VERIFYEXESTATE::kSignType_Windows:
-#ifdef VBOX
             aSets[cSets].hStore  = State.hRootStore;
             aSets[cSets].paTAs   = g_aSUPTimestampTAs;
             aSets[cSets].cTAs    = g_cSUPTimestampTAs;
@@ -1570,14 +1604,15 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
             aSets[cSets].paTAs   = g_aSUPNtKernelRootTAs;
             aSets[cSets].cTAs    = g_cSUPNtKernelRootTAs;
             cSets++;
-#endif
             break;
 
         case VERIFYEXESTATE::kSignType_OSX:
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Mac OS X executable signing is not implemented.");
+            aSets[cSets].hStore  = State.hRootStore;
+            aSets[cSets].paTAs   = g_aSUPAppleRootTAs;
+            aSets[cSets].cTAs    = g_cSUPAppleRootTAs;
+            cSets++;
+            break;
     }
-
-#ifdef VBOX
     for (unsigned i = 0; i < cSets; i++)
         for (unsigned j = 0; j < aSets[i].cTAs; j++)
         {
@@ -1587,7 +1622,7 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTCrStoreCertAddEncoded failed (%u/%u): %s",
                                       i, j, StaticErrInfo.szMsg);
         }
-#endif
+# endif /* VBOX */
 
     /*
      * Do it.

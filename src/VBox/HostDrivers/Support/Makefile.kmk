@@ -90,9 +90,11 @@ VBOX_SUP_WIN_CERTS := \
        SpcRootMicrosoft6=SpcRoot-MicrosoftDevelopmentRootCertificateAuthority2014-078f0a9d03df119e434e4fec1bf0235a.taf \
        NtRootMicrosoft7=NtRoot-MicrosoftCodeVerificationRoot-729404101f3e0ca347837fca175a8438.taf \
        TimeRootMicrosoft0=Timestamp-CopyrightC1997MicrosoftCorp-01.taf \
-       TrustedCertVBox0=Trusted-OracleCorporationVirtualBox-51ca009816fdbd80f120e015ee75823e.taf
+       TrustedCertVBox0=Trusted-OracleCorporationVirtualBox-51ca009816fdbd80f120e015ee75823e.taf \
+       AppleRoot0=AppleRoot-2bd06947947609fef46b8d2e40a6f7474d7f085e.taf \
+       AppleRoot1=AppleRoot-G2-c499136c1803c27bc0a3a00d7f72807a1c77268d.taf
 VBOX_SUP_WIN_CERT_NAMES := $(foreach cert,$(VBOX_SUP_WIN_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
-VBOX_PATH_SUPR3_CERTIFICATES := $(PATH_SUB_CURRENT)/win/Certificates
+VBOX_PATH_SUPR3_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
 
 # 1=name, 2=filter, 3=buildcert?.
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING)
@@ -128,11 +130,12 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && defined(VBOX_S
 endif
 # Generate certificate lists.
 	$(QUIET)$(APPEND) -n "$@" '' \
-               $(call VBOX_SUP_GEN_CERT_MACRO,All,%,build) \
-               $(call VBOX_SUP_GEN_CERT_MACRO,SpcRoot,SpcRoot%) \
-               $(call VBOX_SUP_GEN_CERT_MACRO,NtKernelRoot,NtRoot%) \
-               $(call VBOX_SUP_GEN_CERT_MACRO,Timestamp,TimeRoot%) \
-               $(call VBOX_SUP_GEN_CERT_MACRO,Trusted,TrustedCert%,build)
+		$(call VBOX_SUP_GEN_CERT_MACRO,All,%,build) \
+		$(call VBOX_SUP_GEN_CERT_MACRO,SpcRoot,SpcRoot%) \
+		$(call VBOX_SUP_GEN_CERT_MACRO,NtKernelRoot,NtRoot%) \
+		$(call VBOX_SUP_GEN_CERT_MACRO,Timestamp,TimeRoot%) \
+		$(call VBOX_SUP_GEN_CERT_MACRO,AppleRoot,AppleRoot%) \
+		$(call VBOX_SUP_GEN_CERT_MACRO,Trusted,TrustedCert%,build)
 
 tst: $(VBOX_SUP_WIN_CERTS_FILE)
 
