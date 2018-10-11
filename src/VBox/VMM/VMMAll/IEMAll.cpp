@@ -430,8 +430,8 @@ typedef enum IEMXCPTCLASS
 /**
  * Invokes the VMX VM-exit handler for a task switch.
  */
-# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss) \
-    do { return iemVmxVmexitTaskSwitch((a_pVCpu), (a_enmTaskSwitch), (a_SelNewTss)); } while (0)
+# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss, a_cbInstr) \
+    do { return iemVmxVmexitTaskSwitch((a_pVCpu), (a_enmTaskSwitch), (a_SelNewTss), (a_cbInstr)); } while (0)
 
 /**
  * Invokes the VMX VM-exit handler for MWAIT.
@@ -439,16 +439,23 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr) \
     do { return iemVmxVmexitInstrMwait((a_pVCpu), (a_fMonitorArmed), (a_cbInstr)); } while (0)
 
+/**
+ * Invokes the VMX VM-exit handle for triple faults.
+ */
+# define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu) \
+    do { return iemVmxVmexitTripleFault(a_pVCpu); } while (0)
+
 #else
-# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                  (false)
-# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                              (false)
-# define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_cbInstr)                     (false)
-# define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_cbInstr)                    (false)
-# define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_cbInstr)                   (false)
+# define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                          (false)
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                                      (false)
+# define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_cbInstr)                             (false)
+# define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_cbInstr)                            (false)
+# define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_cbInstr)                           (false)
 # define IEM_VMX_VMEXIT_INSTR_RET(a_pVCpu, a_uExitReason, a_cbInstr)            do { return VERR_VMX_IPE_1; } while (0)
-# define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)     do { return VERR_VMX_IPE_1; } while (0)
-# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss)  do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)  do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr)          do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu)                               do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
 
@@ -966,13 +973,16 @@ IEM_STATIC uint16_t         iemSRegFetchU16(PVMCPU pVCpu, uint8_t iSegReg);
 IEM_STATIC uint64_t         iemSRegBaseFetchU64(PVMCPU pVCpu, uint8_t iSegReg);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss, uint8_t cbInstr);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2,
+                                              uint8_t cbInstr);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 IEM_STATIC VBOXSTRICTRC     iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2);
-IEM_STATIC VBOXSTRICTRC     iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2);
+IEM_STATIC VBOXSTRICTRC     iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr,
+                                                       uint64_t uCr2);
 #endif
 
 
@@ -3463,6 +3473,9 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
  */
 IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
 {
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(pVCpu);
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SHUTDOWN))
     {
         Log2(("shutdown: Guest intercept -> #VMEXIT\n"));
@@ -4042,7 +4055,7 @@ iemTaskSwitch(PVMCPU          pVCpu,
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         Log(("iemTaskSwitch: Guest intercept (source=%u, sel=%#x) -> VM-exit.\n", enmTaskSwitch, SelTSS));
-        IEM_VMX_VMEXIT_TASK_SWITCH_RET(pVCpu, enmTaskSwitch, SelTSS);
+        IEM_VMX_VMEXIT_TASK_SWITCH_RET(pVCpu, enmTaskSwitch, SelTSS, uNextEip - pVCpu->cpum.GstCtx.eip);
     }
 
     /*
@@ -5513,7 +5526,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        VBOXSTRICTRC rcStrict0 = iemVmxVmexitEvent(pVCpu, u8Vector, fFlags, uErr, uCr2);
+        VBOXSTRICTRC rcStrict0 = iemVmxVmexitEvent(pVCpu, u8Vector, fFlags, uErr, uCr2, cbInstr);
         if (rcStrict0 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict0;
     }
@@ -5578,6 +5591,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             fFlags   = IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR;
             u8Vector = X86_XCPT_DF;
             uErr     = 0;
+            /** @todo NSTVMX: Do we need to do something here for VMX? */
             /* SVM nested-guest #DF intercepts need to be checked now. See AMD spec. 15.12 "Exception Intercepts". */
             if (IEM_SVM_IS_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
                 IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
