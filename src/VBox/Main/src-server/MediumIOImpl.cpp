@@ -399,6 +399,7 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
                                   ComPtr<IDataStream> &aStream,
                                   ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aFormat, aVariant, aBufferSize, aStream, aProgress);
     return E_NOTIMPL;
 }
 
