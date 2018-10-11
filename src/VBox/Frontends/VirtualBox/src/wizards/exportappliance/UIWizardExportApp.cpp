@@ -67,7 +67,7 @@ bool UIWizardExportApp::exportAppliance()
     AssertPtrReturn(pComAppliance, false);
 
     /* For Filesystem formats only: */
-    if (field("format").toString() != "csp-1.0")
+    if (!field("isFormatCloudOne").toBool())
     {
         /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
          * For that we iterating over all virtual systems & fetch all descriptions of the type HardDiskImage. Also add the
@@ -149,8 +149,8 @@ bool UIWizardExportApp::exportAppliance()
 
 QString UIWizardExportApp::uri(bool fWithFile) const
 {
-    /* For Cloud Service Providers: */
-    if (field("format").toString() == "csp-1.0")
+    /* For Cloud formats: */
+    if (field("isFormatCloudOne").toBool())
         return QString("%1://%2").arg(field("providerShortName").toString(), field("profileName").toString());
     else
     {

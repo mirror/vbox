@@ -344,6 +344,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
     registerField("format", this, "format");
+    registerField("isFormatCloudOne", this, "isFormatCloudOne");
     registerField("path", this, "path");
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
@@ -395,13 +396,19 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
     m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
-    m_pFormatComboBox->setItemText(4, UIWizardExportApp::tr("Cloud Service Provider"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(4, UIWizardExportApp::tr("Export to Cloud Service Provider."), Qt::ToolTipRole);
+    /* Translate received values of Format combo-box.
+     * We are enumerating starting from 0 for simplicity: */
+    for (int i = 0; i < m_pFormatComboBox->count(); ++i)
+        if (isFormatCloudOne(i))
+        {
+            m_pFormatComboBox->setItemText(i, m_pFormatComboBox->itemData(i, FormatData_Name).toString());
+            m_pFormatComboBox->setItemData(i, UIWizardExportApp::tr("Export to cloud service provider."), Qt::ToolTipRole);
+        }
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardExportApp::tr("MAC Address &Policy:"));
@@ -430,12 +437,6 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
     /* Translate Account combo-box: */
     m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
-    for (int i = 0; i < m_pAccountComboBox->count(); ++i)
-    {
-        m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-            .arg(m_pAccountComboBox->itemData(i, AccountData_ProviderName).toString())
-            .arg(m_pAccountComboBox->itemData(i, AccountData_ProfileName).toString()));
-    }
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
@@ -494,7 +495,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fOPC =    field("format").toString() == "opc-1.0";
-        const bool fCSP =    field("format").toString() == "csp-1.0";
+        const bool fCSP =    isFormatCloudOne();
 
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
@@ -544,6 +545,8 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
+    populateAccounts();
+    populateAccountProperties();
     refreshApplianceSettingsWidget();
 }
 

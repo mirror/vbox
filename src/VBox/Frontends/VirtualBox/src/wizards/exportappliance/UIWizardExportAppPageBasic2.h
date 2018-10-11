@@ -55,16 +55,16 @@ Q_DECLARE_METATYPE(MACAddressPolicy);
 /** Format combo data fields. */
 enum
 {
-    FormatData_ShortName = Qt::UserRole + 1
+    FormatData_ID              = Qt::UserRole + 1,
+    FormatData_Name            = Qt::UserRole + 2,
+    FormatData_ShortName       = Qt::UserRole + 3,
+    FormatData_IsItCloudFormat = Qt::UserRole + 4
 };
 
 /** Account combo data fields. */
 enum
 {
-    AccountData_ProviderID        = Qt::UserRole + 1,
-    AccountData_ProviderName      = Qt::UserRole + 2,
-    AccountData_ProviderShortName = Qt::UserRole + 3,
-    AccountData_ProfileName       = Qt::UserRole + 4
+    AccountData_ProfileName = Qt::UserRole + 1
 };
 
 
@@ -112,6 +112,8 @@ protected:
     void setFormat(const QString &strFormat);
     /** Returns format. */
     QString format() const;
+    /** Returns whether format under certain @a iIndex is cloud one. */
+    bool isFormatCloudOne(int iIndex = -1) const;
 
     /** Defines @a strPath. */
     void setPath(const QString &strPath);
@@ -203,6 +205,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
 {
     Q_OBJECT;
     Q_PROPERTY(QString format READ format WRITE setFormat);
+    Q_PROPERTY(bool isFormatCloudOne READ isFormatCloudOne);
     Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);

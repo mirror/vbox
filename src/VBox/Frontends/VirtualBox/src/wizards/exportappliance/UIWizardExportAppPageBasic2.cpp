@@ -85,13 +85,27 @@ void UIWizardExportAppPage2::populateFormats()
     formats << "ovf-1.0";
     formats << "ovf-2.0";
     formats << "opc-1.0";
-    formats << "csp-1.0";
     /* Add that list to combo: */
     foreach (const QString &strShortName, formats)
     {
         /* Compose empty item, fill it's data: */
         m_pFormatComboBox->addItem(QString());
         m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, strShortName, FormatData_ShortName);
+    }
+
+    /* Iterate through existing providers: */
+    foreach (const CCloudProvider &comProvider, m_comCloudProviderManager.GetProviders())
+    {
+        /* Skip if we have nothing to populate (file missing?): */
+        if (comProvider.isNull())
+            continue;
+
+        /* Compose empty item, fill it's data: */
+        m_pFormatComboBox->addItem(QString());
+        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetId(),        FormatData_ID);
+        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
+        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
+        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
     }
 
     /* Set default: */
@@ -115,36 +129,37 @@ void UIWizardExportAppPage2::populateMACAddressPolicies()
 
 void UIWizardExportAppPage2::populateAccounts()
 {
-    /* Make sure this combo isn't filled yet: */
-    AssertReturnVoid(m_pAccountComboBox->count() == 0);
+    /* Clear combo initially: */
+    m_pAccountComboBox->clear();
+    /* Return if no provider chosen: */
+    if (providerId().isNull())
+        return;
 
-    /* Iterate through providers: */
-    foreach (const CCloudProvider &comCloudProvider, m_comCloudProviderManager.GetProviders())
+    /* Acquire Cloud Provider: */
+    CCloudProvider comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
+    /* Return if the provider has disappeared: */
+    if (comCloudProvider.isNull())
+        return;
+
+    /* Iterate through profile names: */
+    foreach (const QString &strProfileName, comCloudProvider.GetProfileNames())
     {
-        /* Skip if we have nothing to populate (file missing?): */
-        if (comCloudProvider.isNull())
-            continue;
-
-        /* Iterate through profile names: */
-        foreach (const QString &strProfileName, comCloudProvider.GetProfileNames())
-        {
-            m_pAccountComboBox->addItem(QString());
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comCloudProvider.GetId(),        AccountData_ProviderID);
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comCloudProvider.GetName(),      AccountData_ProviderName);
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, comCloudProvider.GetShortName(), AccountData_ProviderShortName);
-            m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName,                  AccountData_ProfileName);
-        }
+        m_pAccountComboBox->addItem(strProfileName);
+        m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
     }
 
     /* Set default: */
     if (m_pAccountComboBox->count() != 0)
-        setProviderById("54e11de4-afcc-47fb-9c39-b24244cfa044");
+        m_pAccountComboBox->setCurrentIndex(0);
 }
 
 void UIWizardExportAppPage2::populateAccountProperties()
 {
     /* Clear table initially: */
     m_pAccountPropertyTable->clear();
+    /* Return if no provider chosen: */
+    if (providerId().isNull())
+        return;
 
     /* Acquire Cloud Provider: */
     CCloudProvider comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
@@ -213,8 +228,7 @@ void UIWizardExportAppPage2::populateAccountProperties()
 void UIWizardExportAppPage2::updatePageAppearance()
 {
     /* Update page appearance according to chosen storage-type: */
-    const bool fCSP = fieldImp("format").toString() == "csp-1.0";
-    m_pSettingsWidget->setCurrentIndex((int)fCSP);
+    m_pSettingsWidget->setCurrentIndex((int)isFormatCloudOne());
 }
 
 void UIWizardExportAppPage2::refreshFileSelectorName()
@@ -232,8 +246,8 @@ void UIWizardExportAppPage2::refreshFileSelectorName()
 
 void UIWizardExportAppPage2::refreshFileSelectorExtension()
 {
-    /* If the format is set to CSP: */
-    if (fieldImp("format").toString() == "csp-1.0")
+    /* If format is cloud one: */
+    if (isFormatCloudOne())
     {
         /* We use no extension: */
         m_strFileSelectorExt.clear();
@@ -278,8 +292,8 @@ void UIWizardExportAppPage2::refreshFileSelectorPath()
 
 void UIWizardExportAppPage2::refreshManifestCheckBoxAccess()
 {
-    /* If the format is set to CSP || OPC: */
-    if (   fieldImp("format").toString() == "csp-1.0"
+    /* If format is cloud one or OPC: */
+    if (   isFormatCloudOne()
         || fieldImp("format").toString() == "opc-1.0")
     {
         /* Disable manifest check-box: */
@@ -297,8 +311,8 @@ void UIWizardExportAppPage2::refreshManifestCheckBoxAccess()
 
 void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess()
 {
-    /* If the format is set to CSP || OPC: */
-    if (   fieldImp("format").toString() == "csp-1.0"
+    /* If format is cloud one or OPC: */
+    if (   isFormatCloudOne()
         || fieldImp("format").toString() == "opc-1.0")
     {
         /* Disable include ISO check-box: */
@@ -374,6 +388,13 @@ QString UIWizardExportAppPage2::format() const
     return m_pFormatComboBox->itemData(iIndex, FormatData_ShortName).toString();
 }
 
+bool UIWizardExportAppPage2::isFormatCloudOne(int iIndex /* = -1 */) const
+{
+    if (iIndex == -1)
+        iIndex = m_pFormatComboBox->currentIndex();
+    return m_pFormatComboBox->itemData(iIndex, FormatData_IsItCloudFormat).toBool();
+}
+
 void UIWizardExportAppPage2::setPath(const QString &strPath)
 {
     m_pFileSelector->setPath(strPath);
@@ -419,21 +440,21 @@ bool UIWizardExportAppPage2::isIncludeISOsSelected() const
 
 void UIWizardExportAppPage2::setProviderById(const QString &strId)
 {
-    const int iIndex = m_pAccountComboBox->findData(strId, AccountData_ProviderID);
+    const int iIndex = m_pFormatComboBox->findData(strId, FormatData_ID);
     AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pAccountComboBox->setCurrentIndex(iIndex);
+    m_pFormatComboBox->setCurrentIndex(iIndex);
 }
 
 QString UIWizardExportAppPage2::providerId() const
 {
-    const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, AccountData_ProviderID).toString();
+    const int iIndex = m_pFormatComboBox->currentIndex();
+    return m_pFormatComboBox->itemData(iIndex, FormatData_ID).toString();
 }
 
 QString UIWizardExportAppPage2::providerShortName() const
 {
-    const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, AccountData_ProviderShortName).toString();
+    const int iIndex = m_pFormatComboBox->currentIndex();
+    return m_pFormatComboBox->itemData(iIndex, FormatData_ShortName).toString();
 }
 
 QString UIWizardExportAppPage2::profileName() const
@@ -698,6 +719,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
 
     /* Register fields: */
     registerField("format", this, "format");
+    registerField("isFormatCloudOne", this, "isFormatCloudOne");
     registerField("path", this, "path");
     registerField("macAddressPolicy", this, "macAddressPolicy");
     registerField("manifestSelected", this, "manifestSelected");
@@ -758,13 +780,19 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
     m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
-    m_pFormatComboBox->setItemText(4, UIWizardExportApp::tr("Cloud Service Provider"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(4, UIWizardExportApp::tr("Export to Cloud Service Provider."), Qt::ToolTipRole);
+    /* Translate received values of Format combo-box.
+     * We are enumerating starting from 0 for simplicity: */
+    for (int i = 0; i < m_pFormatComboBox->count(); ++i)
+        if (isFormatCloudOne(i))
+        {
+            m_pFormatComboBox->setItemText(i, m_pFormatComboBox->itemData(i, FormatData_Name).toString());
+            m_pFormatComboBox->setItemData(i, UIWizardExportApp::tr("Export to cloud service provider."), Qt::ToolTipRole);
+        }
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardExportApp::tr("MAC Address &Policy:"));
@@ -793,12 +821,6 @@ void UIWizardExportAppPageBasic2::retranslateUi()
 
     /* Translate Account combo-box: */
     m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
-    for (int i = 0; i < m_pAccountComboBox->count(); ++i)
-    {
-        m_pAccountComboBox->setItemText(i, UIWizardExportApp::tr("%1: %2", "provider: profile")
-            .arg(m_pAccountComboBox->itemData(i, AccountData_ProviderName).toString())
-            .arg(m_pAccountComboBox->itemData(i, AccountData_ProfileName).toString()));
-    }
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
@@ -854,7 +876,7 @@ bool UIWizardExportAppPageBasic2::isComplete() const
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fOPC =    field("format").toString() == "opc-1.0";
-        const bool fCSP =    field("format").toString() == "csp-1.0";
+        const bool fCSP =    isFormatCloudOne();
 
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
@@ -872,7 +894,7 @@ void UIWizardExportAppPageBasic2::updatePageAppearance()
     UIWizardExportAppPage2::updatePageAppearance();
 
     /* Update page appearance according to chosen storage-type: */
-    if (field("format").toString() == "csp-1.0")
+    if (isFormatCloudOne())
     {
         m_pLabelSettings->setText(UIWizardExportApp::
                                   tr("<p>Please choose one of cloud service accounts you have registered to export virtual "
@@ -901,6 +923,8 @@ void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
+    populateAccounts();
+    populateAccountProperties();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleMACAddressPolicyComboChange()

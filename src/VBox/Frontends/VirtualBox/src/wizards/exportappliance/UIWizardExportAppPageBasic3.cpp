@@ -261,7 +261,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                 CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
                 if (comMachine.isOk() && comVsd.isNotNull())
                 {
-                    if (fieldImp("format").toString() == "csp-1.0")
+                    if (fieldImp("isFormatCloudOne").toBool())
                     {
                         /* Populate Cloud Client parameters: */
                         populateCloudClientParameters();
