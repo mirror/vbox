@@ -42,25 +42,24 @@
 ; This is part of  the VMCPU structure.
 struc VMCPU
     .fLocalForcedActions    resd 1
+    alignb 8
     .enmState               resd 1
-    .pUVCpu                 RTR3PTR_RES 1
-    .pVMR3                  RTR3PTR_RES 1
-    .pVMR0                  RTR0PTR_RES 1
-    .pVMRC                  RTRCPTR_RES 1
-    .idCpu                  resd 1
-
-    .hNativeThread          RTR0PTR_RES 1
-    .hNativeThreadR0        RTR0PTR_RES 1
     .idHostCpu              resd 1
     .iHostCpuSet            resd 1
-%if HC_ARCH_BITS == 32
-    .abAlignment1           resb 12
-%else
-;    .abAlignment1           resb 0
-%endif
 
     alignb 64
     .iem                    resb 18496
+
+    alignb 64
+    .idCpu                  resd 1
+    .pVMRC                  RTRCPTR_RES 1
+    .pVMR3                  RTR3PTR_RES 1
+    .pVMR0                  RTR0PTR_RES 1
+    .pUVCpu                 RTR3PTR_RES 1
+    .hNativeThread          RTR0PTR_RES 1
+    .hNativeThreadR0        RTR0PTR_RES 1
+
+    alignb 64
     .hm                     resb 5888
     .nem                    resb 512
     .trpm                   resb 128

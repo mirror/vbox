@@ -98,45 +98,24 @@ typedef enum VMCPUSTATE
  */
 typedef struct VMCPU
 {
+    /** @name Volatile per-cpu data.
+     * @{ */
     /** Per CPU forced action.
      * See the VMCPU_FF_* \#defines. Updated atomically. */
-    uint32_t volatile       fLocalForcedActions;                    /* 0 */
+    uint32_t volatile       fLocalForcedActions;
+    uint32_t                fForLocalForcedActionsExpansion;
     /** The CPU state. */
-    VMCPUSTATE volatile     enmState;                               /* 4 */
+    VMCPUSTATE volatile     enmState;
 
-    /** Pointer to the ring-3 UVMCPU structure. */
-    PUVMCPU                 pUVCpu;                                 /* 8 */
-    /** Ring-3 Host Context VM Pointer. */
-    PVMR3                   pVMR3;                                  /* 16 / 12 */
-    /** Ring-0 Host Context VM Pointer. */
-    PVMR0                   pVMR0;                                  /* 24 / 16 */
-    /** Raw-mode Context VM Pointer. */
-    PVMRC                   pVMRC;                                  /* 32 / 20 */
-    /** The CPU ID.
-     * This is the index into the VM::aCpu array. */
-    VMCPUID                 idCpu;                                  /* 36 / 24 */
-    /** The native thread handle. */
-    RTNATIVETHREAD          hNativeThread;                          /* 40 / 28 */
-    /** The native R0 thread handle. (different from the R3 handle!) */
-    RTNATIVETHREAD          hNativeThreadR0;                        /* 48 / 32 */
     /** Which host CPU ID is this EMT running on.
      * Only valid when in RC or HMR0 with scheduling disabled. */
-    RTCPUID volatile        idHostCpu;                              /* 56 / 36 */
+    RTCPUID volatile        idHostCpu;
     /** The CPU set index corresponding to idHostCpu, UINT32_MAX if not valid.
      * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
-    uint32_t volatile       iHostCpuSet;                            /* 60 / 40 */
-
-#if HC_ARCH_BITS == 32
-    /** Align the structures below bit on a 64-byte boundary and make sure it starts
-     * at the same offset in both 64-bit and 32-bit builds.
-     *
-     * @remarks The alignments of the members that are larger than 48 bytes should be
-     *          64-byte for cache line reasons. structs containing small amounts of
-     *          data could be lumped together at the end with a < 64 byte padding
-     *          following it (to grow into and align the struct size).
-     */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 0 : 20];
-#endif
+    uint32_t volatile       iHostCpuSet;
+    /** Padding up to 64 bytes. */
+    uint8_t                 abAlignment0[64 - 20];
+    /** @} */
 
     /** IEM part.
      * @remarks This comes first as it allows the use of 8-bit immediates for the
@@ -152,6 +131,35 @@ typedef struct VMCPU
 #endif
         uint8_t             padding[18496];     /* multiple of 64 */
     } iem;
+
+    /** @name Static per-cpu data.
+     * (Putting this after IEM, hoping that it's less frequently used than it.)
+     * @{ */
+    /** The CPU ID.
+     * This is the index into the VM::aCpu array. */
+    VMCPUID                 idCpu;
+    /** Raw-mode Context VM Pointer. */
+    PVMRC                   pVMRC;
+    /** Ring-3 Host Context VM Pointer. */
+    PVMR3                   pVMR3;
+    /** Ring-0 Host Context VM Pointer. */
+    PVMR0                   pVMR0;
+    /** Pointer to the ring-3 UVMCPU structure. */
+    PUVMCPU                 pUVCpu;
+    /** The native thread handle. */
+    RTNATIVETHREAD          hNativeThread;
+    /** The native R0 thread handle. (different from the R3 handle!) */
+    RTNATIVETHREAD          hNativeThreadR0;
+    /** Align the structures below bit on a 64-byte boundary and make sure it starts
+     * at the same offset in both 64-bit and 32-bit builds.
+     *
+     * @remarks The alignments of the members that are larger than 48 bytes should be
+     *          64-byte for cache line reasons. structs containing small amounts of
+     *          data could be lumped together at the end with a < 64 byte padding
+     *          following it (to grow into and align the struct size).
+     */
+    uint8_t                 abAlignment1[64 - 4 - 4 - 5 * (HC_ARCH_BITS == 64 ? 8 : 4)];
+    /** @} */
 
     /** HM part. */
     union VMCPUUNIONHM
@@ -257,7 +265,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[2872];
+    uint8_t                 abAlignment2[2808];
 
     /** PGM part. */
     union VMCPUUNIONPGM
