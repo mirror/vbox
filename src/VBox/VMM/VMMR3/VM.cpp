@@ -2872,7 +2872,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3HardReset(PVM pVM, PVMCPU pVCpu, void *pvU
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED);
 
     /* Clear all pending forced actions. */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_REQUEST);
+    VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_REQUEST);
 
     /*
      * Reset the VM components.
