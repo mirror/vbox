@@ -1545,7 +1545,17 @@ KVirtualSystemDescriptionType UIApplianceSortProxyModel::s_aSortList[] =
     KVirtualSystemDescriptionType_HardDiskControllerIDE,
     KVirtualSystemDescriptionType_HardDiskControllerSATA,
     KVirtualSystemDescriptionType_HardDiskControllerSCSI,
-    KVirtualSystemDescriptionType_HardDiskControllerSAS
+    KVirtualSystemDescriptionType_HardDiskControllerSAS,
+    /* OCI */
+    KVirtualSystemDescriptionType_CloudOCIBucket,
+    KVirtualSystemDescriptionType_CloudOCIKeepObject,
+    KVirtualSystemDescriptionType_CloudOCILaunchInstance,
+    KVirtualSystemDescriptionType_CloudOCIInstanceShape,
+    KVirtualSystemDescriptionType_CloudOCIBootDiskSize,
+    KVirtualSystemDescriptionType_CloudOCIVCN,
+    KVirtualSystemDescriptionType_CloudOCISubnet,
+    KVirtualSystemDescriptionType_CloudOCIPublicIP,
+    KVirtualSystemDescriptionType_CloudOCIDomain
 };
 
 UIApplianceSortProxyModel::UIApplianceSortProxyModel(QObject *pParent)
