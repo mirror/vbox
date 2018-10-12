@@ -293,7 +293,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
          */
         if (pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions)
         {
-            VMCPU_FF_SET(pVCpu, pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions);
+            VMCPU_FF_SET_MASK(pVCpu, pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions);
             pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = 0;
         }
 

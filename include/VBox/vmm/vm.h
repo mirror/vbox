@@ -619,13 +619,22 @@ typedef struct VMCPU
 /** @} */
 
 /** @def VM_FF_SET
- * Sets a force action flag.
+ * Sets a single force action flag.
  *
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to set.
  */
 #if 1
-# define VM_FF_SET(pVM, fFlag)              ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag))
+# if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
+#  define VM_FF_SET(pVM, fFlag)              ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag))
+# else
+#  define VM_FF_SET(pVM, fFlag) \
+    ([](PVM a_pVM) -> void \
+    { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        ASMAtomicOrU32(&a_pVM->fGlobalForcedActions, (fFlag)); \
+    }(pVM))
+# endif
 #else
 # define VM_FF_SET(pVM, fFlag) \
     do { ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag)); \
@@ -634,12 +643,31 @@ typedef struct VMCPU
 #endif
 
 /** @def VMCPU_FF_SET
- * Sets a force action flag for the given VCPU.
+ * Sets a single force action flag for the given VCPU.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to set.
+ * @sa      VMCPU_FF_SET_MASK
  */
-#define VMCPU_FF_SET(pVCpu, fFlag)          ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
+#if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
+# define VMCPU_FF_SET(pVCpu, fFlag)          ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
+#else
+# define VMCPU_FF_SET(pVCpu, fFlag) \
+    ([](PVMCPU a_pVCpu) -> void \
+    { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlag)); \
+    }(pVCpu))
+#endif
+
+/** @def VMCPU_FF_SET
+ * Sets a two or more force action flag for the given VCPU.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   fFlags  The flags to set.
+ * @sa      VMCPU_FF_SET
+ */
+#define VMCPU_FF_SET_MASK(a_pVCpu, fFlags)  ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlags))
 
 /** @def VM_FF_CLEAR
  * Clears a single force action flag.
@@ -731,6 +759,7 @@ typedef struct VMCPU
  *
  * @param   pVM     The cross context VM structure.
  * @param   fFlags  The flags to check for.
+ * @sa      VM_FF_IS_SET
  */
 #define VM_FF_IS_ANY_SET(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
 
