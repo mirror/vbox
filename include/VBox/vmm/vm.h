@@ -724,17 +724,7 @@ typedef struct VMCPU
  * @param   fFlags  The flags to check for.
  * @param   fExcpt  The flags that should not be set.
  */
-#define VM_FF_IS_PENDING_EXCEPT(pVM, fFlags, fExcpt)            ( ((pVM)->fGlobalForcedActions & (fFlags)) && !((pVM)->fGlobalForcedActions & (fExcpt)) )
-
-/** @def VMCPU_FF_IS_PENDING_EXCEPT
- * Checks if one or more force action in the specified set is pending for the given
- * VCPU while one or more other ones are not.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The flags to check for.
- * @param   fExcpt  The flags that should not be set.
- */
-#define VMCPU_FF_IS_PENDING_EXCEPT(pVCpu, fFlags, fExcpt) ( ((pVCpu)->fLocalForcedActions & (fFlags)) && !((pVCpu)->fLocalForcedActions & (fExcpt)) )
+#define VM_FF_IS_PENDING_EXCEPT(pVM, fFlags, fExcpt)      ( ((pVM)->fGlobalForcedActions & (fFlags)) && !((pVM)->fGlobalForcedActions & (fExcpt)) )
 
 /** @def VM_IS_EMT
  * Checks if the current thread is the emulation thread (EMT).
