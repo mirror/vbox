@@ -701,17 +701,17 @@ typedef struct VMCPU
  */
 #ifdef VMCPU_WITH_64_BIT_FFS
 # if ARCH_BITS > 32
-#  define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) \
-    do { ASMAtomicOrU64(&a_pVCpu->fLocalForcedActions, (fFlags)); } while (0)
+#  define VMCPU_FF_SET_MASK(pVCpu, fFlags) \
+    do { ASMAtomicOrU64(&pVCpu->fLocalForcedActions, (fFlags)); } while (0)
 # else
-#  define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) do { \
-        if (!((fFlags) >> 32)) ASMAtomicOrU32((uint32_t volatile *)&a_pVCpu->fLocalForcedActions, (uint32_t)(fFlags)); \
-        else ASMAtomicOrU64(&a_pVCpu->fLocalForcedActions, (fFlags)); \
+#  define VMCPU_FF_SET_MASK(pVCpu, fFlags) do { \
+        if (!((fFlags) >> 32)) ASMAtomicOrU32((uint32_t volatile *)&pVCpu->fLocalForcedActions, (uint32_t)(fFlags)); \
+        else ASMAtomicOrU64(&pVCpu->fLocalForcedActions, (fFlags)); \
     } while (0)
 # endif
 #else
-# define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) \
-    do { ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlags)); } while (0)
+# define VMCPU_FF_SET_MASK(pVCpu, fFlags) \
+    do { ASMAtomicOrU32(&pVCpu->fLocalForcedActions, (fFlags)); } while (0)
 #endif
 
 /** @def VM_FF_CLEAR
