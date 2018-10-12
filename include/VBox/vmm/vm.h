@@ -672,13 +672,23 @@ typedef struct VMCPU
  */
 #define VM_FF_IS_SET(pVM, fFlag)            (((pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
 
+
 /** @def VMCPU_FF_IS_SET
  * Checks if a force action flag is set for the given VCPU.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to check.
  */
-#define VMCPU_FF_IS_SET(pVCpu, fFlag)       (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
+#if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
+# define VMCPU_FF_IS_SET(pVCpu, fFlag)      (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
+#else
+# define VMCPU_FF_IS_SET(pVCpu, fFlag) \
+                   ([](PVMCPU a_pVCpu) -> bool \
+                   { \
+                       AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+                       return (a_pVCpu->fLocalForcedActions & (fFlag)) == (fFlag); \
+                   }(pVCpu))
+#endif
 
 /** @def VM_FF_IS_PENDING
  * Checks if one or more force action in the specified set is pending.
@@ -687,6 +697,14 @@ typedef struct VMCPU
  * @param   fFlags  The flags to check for.
  */
 #define VM_FF_IS_PENDING(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
+
+/** @def VMCPU_FF_IS_PENDING
+ * Checks if one or more force action in the specified set is pending for the given VCPU.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   fFlags  The flags to check for.
+ */
+#define VMCPU_FF_IS_PENDING(pVCpu, fFlags)  RT_BOOL((pVCpu)->fLocalForcedActions & (fFlags))
 
 /** @def VM_FF_TEST_AND_CLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -708,14 +726,6 @@ typedef struct VMCPU
  */
 #define VMCPU_FF_TEST_AND_CLEAR(pVCpu, iBit) (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
 
-/** @def VMCPU_FF_IS_PENDING
- * Checks if one or more force action in the specified set is pending for the given VCPU.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The flags to check for.
- */
-#define VMCPU_FF_IS_PENDING(pVCpu, fFlags)  RT_BOOL((pVCpu)->fLocalForcedActions & (fFlags))
-
 /** @def VM_FF_IS_PENDING_EXCEPT
  * Checks if one or more force action in the specified set is pending while one
  * or more other ones are not.
@@ -724,7 +734,7 @@ typedef struct VMCPU
  * @param   fFlags  The flags to check for.
  * @param   fExcpt  The flags that should not be set.
  */
-#define VM_FF_IS_PENDING_EXCEPT(pVM, fFlags, fExcpt)      ( ((pVM)->fGlobalForcedActions & (fFlags)) && !((pVM)->fGlobalForcedActions & (fExcpt)) )
+#define VM_FF_IS_PENDING_EXCEPT(pVM, fFlags, fExcpt) ( ((pVM)->fGlobalForcedActions & (fFlags)) && !((pVM)->fGlobalForcedActions & (fExcpt)) )
 
 /** @def VM_IS_EMT
  * Checks if the current thread is the emulation thread (EMT).

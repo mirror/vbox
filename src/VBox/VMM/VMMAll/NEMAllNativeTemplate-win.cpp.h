@@ -416,20 +416,20 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu)
         ==          (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI) )
     {
         ADD_REG64(WHvRegisterInterruptState, 0);
-        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pVCpu->cpum.GstCtx.rip)
             aValues[iReg - 1].InterruptState.InterruptShadow = 1;
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             aValues[iReg - 1].InterruptState.NmiMasked = 1;
     }
     else if (fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT)
     {
         if (   pVCpu->nem.s.fLastInterruptShadow
-            || (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            || (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                 && EMGetInhibitInterruptsPC(pVCpu) == pVCpu->cpum.GstCtx.rip))
         {
             ADD_REG64(WHvRegisterInterruptState, 0);
-            if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                 && EMGetInhibitInterruptsPC(pVCpu) == pVCpu->cpum.GstCtx.rip)
                 aValues[iReg - 1].InterruptState.InterruptShadow = 1;
             /** @todo Retrieve NMI state, currently assuming it's zero. (yes this may happen on I/O) */
@@ -1574,7 +1574,7 @@ nemHCWinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, HV_X64_INTERCEPT_MESSAGE_HEADER 
     pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
 
     /* Update interrupt inhibition. */
-    if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     { /* likely */ }
     else if (pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -1599,7 +1599,7 @@ DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, WHV_VP_EXIT_CON
     pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
 
     /* Update interrupt inhibition. */
-    if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     { /* likely */ }
     else if (pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -1915,7 +1915,7 @@ DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPU pVCpu, HV_X64_INTERCEPT_M
     pVCpu->nem.s.fLastInterruptShadow = pHdr->ExecutionState.InterruptShadow;
     if (!pHdr->ExecutionState.InterruptShadow)
     {
-        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         { /* likely */ }
         else
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -1946,7 +1946,7 @@ DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPU pVCpu, WHV_VP_EXIT_CONTEX
     pVCpu->nem.s.fLastInterruptShadow = pExitCtx->ExecutionState.InterruptShadow;
     if (!pExitCtx->ExecutionState.InterruptShadow)
     {
-        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         { /* likely */ }
         else
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -3969,14 +3969,14 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
     /*
      * We don't currently implement SMIs.
      */
-    AssertReturn(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_SMI), VERR_NEM_IPE_0);
+    AssertReturn(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI), VERR_NEM_IPE_0);
 
     /*
      * Check if we've got the minimum of state required for deciding whether we
      * can inject interrupts and NMIs.  If we don't have it, get all we might require
      * for injection via IEM.
      */
-    bool const fPendingNmi = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+    bool const fPendingNmi = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
     uint64_t   fNeedExtrn  = CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS
                            | (fPendingNmi ? CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI : 0);
     if (pVCpu->cpum.GstCtx.fExtrn & fNeedExtrn)
@@ -3986,7 +3986,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
     }
-    bool const fInhibitInterrupts = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+    bool const fInhibitInterrupts = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                                  && EMGetInhibitInterruptsPC(pVCpu) == pVCpu->cpum.GstCtx.rip;
 
     /*
@@ -3995,7 +3995,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
     if (fPendingNmi)
     {
         if (   !fInhibitInterrupts
-            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         {
             VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu,
                                                                       NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "NMI");

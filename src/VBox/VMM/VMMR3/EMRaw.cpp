@@ -1179,9 +1179,9 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu)
      * and PGMShwModifyPage, so we're in for trouble if for instance a
      * PGMSyncCR3+pgmR3PoolClearAll is pending.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
     {
-        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
             && EMIsRawRing0Enabled(pVM)
             && CSAMIsEnabled(pVM))
         {
@@ -1198,7 +1198,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu)
     /*
      * Sync TSS.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
     {
         int rc = SELMR3SyncTSS(pVM, pVCpu);
         if (RT_FAILURE(rc))

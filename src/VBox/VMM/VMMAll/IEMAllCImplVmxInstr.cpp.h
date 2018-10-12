@@ -1924,7 +1924,7 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
     Assert(pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions == 0);
 
     /* MTF should not be set outside VMX non-root mode. */
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_MTF));
+    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_MTF));
 
     /*
      * Preserve the required force-flags.
@@ -2130,10 +2130,10 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
     pVmcs->u32GuestIntrState = 0;
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
     { /** @todo NSTVMX: Virtual-NMI blocking. */ }
-    else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
 
-    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
     {
         /** @todo NSTVMX: We can't distinguish between blocking-by-MovSS and blocking-by-STI
@@ -5781,12 +5781,12 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
         else
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS));
 
         if (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
             EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
         else
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
         /* SMI blocking is irrelevant. We don't support SMIs yet. */
     }
@@ -5929,7 +5929,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
     /** @todo Distinguish block-by-MOV-SS from block-by-STI. Currently we
      *        use block-by-STI here which is not quite correct. */
-    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
     {
         Log(("%s: VM entry with events blocked by MOV SS -> VMFail\n", pszInstr));

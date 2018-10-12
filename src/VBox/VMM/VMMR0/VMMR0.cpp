@@ -903,25 +903,25 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
             break;
         case VINF_EM_RAW_TO_R3:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Total);
-            if (VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+            if (VM_FF_IS_SET(pVM, VM_FF_TM_VIRTUAL_SYNC))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3TMVirt);
-            else if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
+            else if (VM_FF_IS_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3HandyPages);
-            else if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_QUEUES))
+            else if (VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3PDMQueues);
-            else if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            else if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Rendezvous);
-            else if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_DMA))
+            else if (VM_FF_IS_SET(pVM, VM_FF_PDM_DMA))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3DMA);
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Timer);
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PDM_CRITSECT))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3CritSect);
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TO_R3))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TO_R3))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3FF);
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IEM))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Iem);
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IOM))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IOM))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Iom);
             else
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Unknown);

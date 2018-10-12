@@ -238,7 +238,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
                )
             {
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSetFF);
-                Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_PENDING(pVCpuDst, VMCPU_FF_TIMER)));
+                Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
                 VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
 # ifdef VBOX_WITH_REM
@@ -395,7 +395,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
         VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_PENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsghcul]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
@@ -483,7 +483,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
         VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, !!VMCPU_FF_IS_PENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsgl]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
@@ -710,7 +710,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
         if (!VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
         {
-            Log5(("TMAllVirtual(%u): FF: %d -> 1 (NoLock)\n", __LINE__, VMCPU_FF_IS_PENDING(pVCpuDst, VMCPU_FF_TIMER)));
+            Log5(("TMAllVirtual(%u): FF: %d -> 1 (NoLock)\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
             VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC); /* Hmm? */
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3

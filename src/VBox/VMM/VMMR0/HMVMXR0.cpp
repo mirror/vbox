@@ -1847,7 +1847,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
     AssertPtr(pVCpu);
     LogFlowFunc(("pVCpu=%p GCVirt=%RGv\n", pVCpu, GCVirt));
 
-    bool fFlushPending = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH);
+    bool fFlushPending = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     if (!fFlushPending)
     {
         /*
@@ -3451,7 +3451,7 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPU pVCpu)
      * Check if we should inhibit interrupt delivery due to instructions like STI and MOV SS.
      */
     uint32_t fIntrState = 0;
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         /* If inhibition is active, RIP & RFLAGS should've been accessed
            (i.e. read previously from the VMCS or from ring-3). */
@@ -3467,7 +3467,7 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPU pVCpu)
             else
                 fIntrState = VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
         }
-        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         {
             /*
              * We can clear the inhibit force flag as even if we go back to the recompiler
@@ -3485,7 +3485,7 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPU pVCpu)
      *
      * See Intel spec. 26.6.1 "Interruptibility state". See @bugref{7445}.
      */
-    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS)
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS)
         && (pVCpu->hm.s.vmx.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
     {
         fIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
@@ -6209,7 +6209,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
          *
          * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
          */
-        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS)
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS)
             && uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI
             && (   enmRaise   == IEMXCPTRAISE_PREV_EVENT
                 || (fRaiseInfo & IEMXCPTRAISEINFO_NMI_PF))
@@ -6311,7 +6311,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
          * We need to set the block-by-NMI field so that NMIs remain blocked until the IRET execution is restarted.
          * See Intel spec. 30.7.1.2 "Resuming guest software after handling an exception".
          */
-        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         {
             Log4Func(("Setting VMCPU_FF_BLOCK_NMIS. fValid=%RTbool uExitReason=%u\n",
                       VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo), pVmxTransient->uExitReason));
@@ -6495,14 +6495,14 @@ DECLINLINE(int) hmR0VmxImportGuestIntrState(PVMCPU pVCpu)
          */
         if (!u32Val)
         {
-            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
             {
                 rc =  hmR0VmxImportGuestRip(pVCpu);
                 rc |= hmR0VmxImportGuestRFlags(pVCpu);
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
             }
 
-            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
         else
@@ -6515,15 +6515,15 @@ DECLINLINE(int) hmR0VmxImportGuestIntrState(PVMCPU pVCpu)
             {
                 EMSetInhibitInterruptsPC(pVCpu, pCtx->rip);
             }
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
             if (u32Val & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
             {
-                if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
             }
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
     }
@@ -6840,17 +6840,17 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
      */
     if (VMMRZCallRing3IsEnabled(pVCpu))
     {
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
         {
             Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
             PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         }
 
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
             PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
 
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
     }
 
     return VINF_SUCCESS;
@@ -6911,7 +6911,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4)));
         VBOXSTRICTRC rcStrict2 = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4,
-                                            VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+                                            VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (rcStrict2 != VINF_SUCCESS)
         {
             AssertRC(VBOXSTRICTRC_VAL(rcStrict2));
@@ -6932,7 +6932,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
 
     /* Pending VM request packets, such as hardware interrupts. */
     if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+        || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
     {
         Log4Func(("Pending VM request forcing us back to ring-3\n"));
         return VINF_EM_PENDING_REQUEST;
@@ -7518,7 +7518,7 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
      * to ring-3 before executing guest code, see hmR0VmxExitToRing3(). We must NOT restore these force-flags.
      */
                                                                /** @todo SMI. SMIs take priority over NMIs. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts. */
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))        /* NMI. NMIs take priority over regular interrupts. */
     {
         /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
         if (   !pVCpu->hm.s.Event.fPending
@@ -8526,18 +8526,18 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * hmR0VmxInjectPendingEvent() call may lazily import guest-CPU state on demand causing
      * the below force flags to be set.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
     {
         Assert(!(ASMAtomicUoReadU64(&pVCpu->cpum.GstCtx.fExtrn) & CPUMCTX_EXTRN_CR3));
         int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         AssertMsgReturn(rc2 == VINF_SUCCESS || rc2 == VINF_PGM_SYNC_CR3,
                         ("%Rrc\n", rc2), RT_FAILURE_NP(rc2) ? rc2 : VERR_IPE_UNEXPECTED_INFO_STATUS);
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     }
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
     {
         PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
     }
 
     /*
@@ -8848,8 +8848,8 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
         {
             VMMRZCallRing3Enable(pVCpu);
 
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
             rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
@@ -10464,7 +10464,7 @@ DECLINLINE(void) hmR0VmxAdvanceGuestRipBy(PVMCPU pVCpu, uint32_t cbInstr)
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP);
 
     /* Update interrupt inhibition. */
-    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 }
@@ -11289,7 +11289,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
         HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
     }
 
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
+    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS));
 
     /*
      * If block-by-STI is set when we get this VM-exit, it means the CPU doesn't block NMIs following STI.
@@ -11301,7 +11301,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
 
     bool const fBlockSti = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI);
     if (   fBlockSti
-        && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
     }

@@ -1649,21 +1649,21 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
 {
     VBOXVMM_EM_FF_HIGH(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, VBOXSTRICTRC_VAL(rc));
 
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectBothFF(pVCpu);
 
     /* Update CR3 (Nested Paging case for HM). */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
     {
         CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER, rc);
         int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         if (RT_FAILURE(rc2))
             return rc2;
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     }
 
     /* Update PAE PDPEs. This must be done *after* PGMUpdateCR3() and used only by the Nested Paging case for HM. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
     {
         CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER, rc);
         if (CPUMIsGuestInPAEMode(pVCpu))
@@ -1672,18 +1672,18 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
             AssertPtr(pPdpes);
 
             PGMGstUpdatePaePdpes(pVCpu, pPdpes);
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
         }
         else
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
     }
 
     /* IEM has pending work (typically memory write after INS instruction). */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IEM))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM))
         rc = IEMR3ProcessForceFlag(pVM, pVCpu, rc);
 
     /* IOM has pending work (comitting an I/O or MMIO write). */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IOM))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IOM))
     {
         rc = IOMR3ProcessForceFlag(pVM, pVCpu, rc);
         if (pVCpu->em.s.idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
@@ -1695,7 +1695,7 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
     }
 
 #ifdef VBOX_WITH_RAW_MODE
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);
 #endif
 
@@ -1778,7 +1778,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
                 }
             }
 
-            if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
+            if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
                 && CPUMCanSvmNstGstTakeVirtIntr(pVCpu, &pVCpu->cpum.GstCtx))
             {
                 if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_VINTR))
@@ -1915,8 +1915,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Debugger Facility polling.
          */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_DBGF)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_DBGF) )
+        if (   VM_FF_IS_SET(pVM, VM_FF_DBGF)
+            || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_DBGF) )
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = DBGFR3VMMForcedAction(pVM, pVCpu);
@@ -1937,8 +1937,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * CSAM page scanning.
          */
-        if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
-            &&  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
+        if (    !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
+            &&  VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
         {
             /** @todo check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
@@ -2055,13 +2055,13 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * Normal priority then. (per-VCPU)
      * (Executed in no particular order.)
      */
-    if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
+    if (    !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
         &&  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_MASK))
     {
         /*
          * Requests from other threads.
          */
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu, false /*fPriorityOnly*/);
@@ -2099,7 +2099,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Timers before interrupts.
          */
-        if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER)
+        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER)
             &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
             TMR3TimerQueuesDo(pVM);
 
@@ -2121,7 +2121,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          *       unlikely, but such timing sensitive problem are not as rare as
          *       you might think.
          */
-        if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
             CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
@@ -2141,7 +2141,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM))
         {
-            if (   !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            if (   !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                 && !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
                 Assert(!HMR3IsEventPending(pVCpu));
@@ -2209,7 +2209,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * Debugger Facility request.
          */
         if (   (   VM_FF_IS_PENDING(pVM, VM_FF_DBGF)
-                || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_DBGF) )
+                || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_DBGF) )
             && !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY) )
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
@@ -2721,7 +2721,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 /* Clear MWait flags and the unhalt FF. */
                 if (   enmOldState == EMSTATE_HALTED
                     && (   (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
-                        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
+                        || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_UNHALT))
                     && (   enmNewState == EMSTATE_RAW
                         || enmNewState == EMSTATE_HM
                         || enmNewState == EMSTATE_NEM
@@ -2738,7 +2738,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         LogFlow(("EMR3ExecuteVM: Clearing MWAIT\n"));
                         pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
                     }
-                    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
+                    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_UNHALT))
                     {
                         LogFlow(("EMR3ExecuteVM: Clearing UNHALT\n"));
                         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);

@@ -3340,7 +3340,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
     Log3(("APIC%u: APICUpdatePendingInterrupts: fHasPendingIntrs=%RTbool\n", pVCpu->idCpu, fHasPendingIntrs));
 
     if (   fHasPendingIntrs
-        && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC))
+        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC))
         apicSignalNextPendingIntr(pVCpu);
 }
 

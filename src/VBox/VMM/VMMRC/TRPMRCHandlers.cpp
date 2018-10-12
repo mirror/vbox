@@ -183,7 +183,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
         {
             TMTimerPollVoid(pVM, pVCpu);
             Log2(("TMTimerPoll at %08RX32 - VM_FF_TM_VIRTUAL_SYNC=%d VM_FF_TM_VIRTUAL_SYNC=%d\n", pRegFrame->eip,
-                  VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC), VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER)));
+                  VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC), VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER)));
         }
     }
     else
@@ -240,7 +240,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
                 rc = VINF_EM_RAW_TO_R3;
             }
             /* Pending timer action. */
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER))
                 rc = VINF_EM_RAW_TIMER_PENDING;
             /* The Virtual Sync clock has stopped. */
             else if (VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
@@ -250,13 +250,13 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
                 rc = VINF_EM_RAW_TO_R3;
             /* Pending request packets might contain actions that need immediate
                attention, such as pending hardware interrupts. */
-            else if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-                     || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+            else if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
+                     || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
                 rc = VINF_EM_PENDING_REQUEST;
             /* Pending GDT/LDT/TSS sync. */
             else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS))
                 rc = VINF_SELM_SYNC_GDT;
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
                 rc = VINF_EM_RAW_TO_R3;
             /* Possibly pending interrupt: dispatch it. */
             else if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)

@@ -298,7 +298,7 @@ VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
                        first.  The request processing is a bit crazy, but
                        unfortunately required by plugin unloading. */
                     if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-                        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+                        || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
                     {
                         LogFlow(("DBGFR3PowerOff: Processes priority requests...\n"));
                         rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
@@ -391,7 +391,7 @@ bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
 
         /* Process priority stuff. */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+            || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
         {
             int rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
             if (rc == VINF_SUCCESS)
@@ -834,7 +834,7 @@ static int dbgfR3VMMWait(PVM pVM)
         {
             int rc;
             if (    !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
-                &&  !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+                &&  !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
             {
                 rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);
                 if (RT_SUCCESS(rc))
@@ -852,7 +852,7 @@ static int dbgfR3VMMWait(PVM pVM)
                 cPollHack = 1;
             }
             else if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-                     || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+                     || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
                 rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, false /*fPriorityOnly*/);

@@ -1157,7 +1157,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fSupported);
 
-    bool const fFlushPending = pVCpu->CTX_SUFF(pVM)->hm.s.svm.fAlwaysFlushTLB || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH);
+    bool const fFlushPending = pVCpu->CTX_SUFF(pVM)->hm.s.svm.fAlwaysFlushTLB || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
@@ -2805,7 +2805,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
         if (fWhat & CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ)
         {
             if (  !pVmcbCtrl->IntCtrl.n.u1VIrqPending
-                && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+                && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
         }
 #endif
@@ -2814,7 +2814,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
         {
             if (pVmcbCtrl->IntShadow.n.u1IntShadow)
                 EMSetInhibitInterruptsPC(pVCpu, pVmcbGuest->u64RIP);
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
 
@@ -3021,7 +3021,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
      * and does not process force-flag like regular exits to ring-3 either, we cover for it here.
      */
     if (   VMMRZCallRing3IsEnabled(pVCpu)
-        && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+        && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
     {
         Assert(pCtx->cr3 == pVmcbGuest->u64CR3);
         PGMUpdateCR3(pVCpu, pCtx->cr3);
@@ -3668,7 +3668,7 @@ static void hmR0SvmSetIntWindowExiting(PVMCPU pVCpu, PSVMVMCB pVmcb)
     /** @todo Does this mean we end up prioritizing virtual interrupt
      *        delivery/window over a physical interrupt (from the outer guest)
      *        might be pending? */
-    bool const fEnableIntWindow = !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+    bool const fEnableIntWindow = !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
     if (!fEnableIntWindow)
     {
         Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx));
@@ -3734,11 +3734,11 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
 
     bool const fVirtualGif = CPUMGetSvmNstGstVGif(pCtx);
     bool const fIntShadow  = hmR0SvmIsIntrShadowActive(pVCpu);
-    bool const fBlockNmi   = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    bool const fBlockNmi   = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     Log4Func(("fVirtualGif=%RTbool fBlockNmi=%RTbool fIntShadow=%RTbool fIntPending=%RTbool fNmiPending=%RTbool\n",
               fVirtualGif, fBlockNmi, fIntShadow, VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
-              VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
+              VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
 
     /** @todo SMI. SMIs take priority over NMIs. */
 
@@ -3747,7 +3747,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
      * Nested NMIs are not allowed, see AMD spec. 8.1.4 "Masking External Interrupts".
      * NMIs take priority over maskable interrupts, see AMD spec. 8.5 "Priorities".
      */
-    if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+    if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
         && !fBlockNmi)
     {
         if (    fVirtualGif
@@ -3859,12 +3859,12 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu)
 #endif
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu);
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-    bool const fBlockNmi  = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    bool const fBlockNmi  = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     Log4Func(("fGif=%RTbool fBlockNmi=%RTbool fBlockInt=%RTbool fIntShadow=%RTbool fIntPending=%RTbool NMI pending=%RTbool\n",
               fGif, fBlockNmi, fBlockInt, fIntShadow,
               VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
-              VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
+              VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
 
     /** @todo SMI. SMIs take priority over NMIs. */
 
@@ -3873,7 +3873,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu)
      * Nested NMIs are not allowed, see AMD spec. 8.1.4 "Masking External Interrupts".
      * NMIs take priority over maskable interrupts, see AMD spec. 8.5 "Priorities".
      */
-    if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+    if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
         && !fBlockNmi)
     {
         if (    fGif
@@ -4001,7 +4001,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PSVMVMCB pVmcb)
          */
         if (    Event.n.u3Type   == SVM_EVENT_NMI
             &&  Event.n.u8Vector == X86_XCPT_NMI
-            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
@@ -4026,7 +4026,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PSVMVMCB pVmcb)
      * hardware-assisted SVM. In which case, we would not have any events pending (above)
      * but we still need to intercept IRET in order to eventually clear NMI inhibition.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_IRET);
 
     /*
@@ -4208,10 +4208,10 @@ static void hmR0SvmReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun)
 static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
     /* Could happen as a result of longjump. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
         PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
 
     /* Update pending interrupts into the APIC's IRR. */
@@ -4228,7 +4228,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
             int rc = PGMSyncCR3(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4,
-                                VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+                                VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             if (rc != VINF_SUCCESS)
             {
                 Log4Func(("PGMSyncCR3 forcing us back to ring-3. rc=%d\n", rc));
@@ -4248,8 +4248,8 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         }
 
         /* Pending VM request packets, such as hardware interrupts. */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+        if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
+            || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
         {
             Log4Func(("Pending VM request forcing us back to ring-3\n"));
             return VINF_EM_PENDING_REQUEST;
@@ -6042,7 +6042,7 @@ DECLINLINE(void) hmR0SvmAdvanceRip(PVMCPU pVCpu, uint32_t cb)
     pCtx->rip += cb;
 
     /* Update interrupt shadow. */
-    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 }
@@ -7455,7 +7455,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
     /* Clear NMI blocking. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
