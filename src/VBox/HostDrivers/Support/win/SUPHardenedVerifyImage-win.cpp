@@ -1069,7 +1069,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
     AssertReturn(pContentInfo->u.pSignedData->SignerInfos.cItems == 1, VERR_INTERNAL_ERROR_5);
     PCRTCRPKCS7SIGNERINFO pSignerInfo = pContentInfo->u.pSignedData->SignerInfos.papItems[0];
 
-    AssertReturn(pvExternalData, VERR_INTERNAL_ERROR_5);
+    AssertReturn(!pvExternalData, VERR_INTERNAL_ERROR_5);
 
     /*
      * If special certificate requirements, check them out before validating
