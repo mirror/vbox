@@ -19,6 +19,7 @@
 #Sources are MIT licensed for simplier upstreaming, several files are external.
 /*.c|/*.h:     --license-based-on-mit --no-convert-tabs
 /vbox_hgsmi.c: --license-mit
+/vbox_prime.c: --license-mit
 /Makefile.module.kms: --treat-as Makefile
 
 --filter-out-files /README.testing
