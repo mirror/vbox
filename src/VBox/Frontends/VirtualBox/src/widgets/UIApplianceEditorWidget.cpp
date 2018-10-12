@@ -364,7 +364,9 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
             m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
             m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
             m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
-            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP)
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP ||
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIKeepObject ||
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCILaunchInstance)
             enmFlags |= Qt::ItemIsUserCheckable;
         /* Some items are editable */
         if ((m_enmVSDType == KVirtualSystemDescriptionType_Name ||
@@ -420,6 +422,8 @@ bool UIVirtualHardwareItem::setData(int iColumn, const QVariant &value, int iRol
                     }
                     /* These option items can be enabled: */
                     case KVirtualSystemDescriptionType_CloudOCIPublicIP:
+                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
+                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance:
                     {
                         if (value.toInt() == Qt::Unchecked)
                             m_strConfigValue = "false";
@@ -495,7 +499,9 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
                     case KVirtualSystemDescriptionType_CloudOCIBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:       value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
+                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
+                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance: value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
                     default:                                                   value = UIApplianceEditorWidget::tr("Unknown Hardware Item"); break;
                 }
             }
@@ -521,6 +527,8 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_SoundCard:        value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:   value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_CloudOCIPublicIP: break;
+                    case KVirtualSystemDescriptionType_CloudOCIKeepObject: break;
+                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance: break;
                     default:                                             value = m_strConfigValue; break;
                 }
             }
@@ -569,7 +577,9 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
                     case KVirtualSystemDescriptionType_CloudOCIBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:       value = UIIconPool::iconSet(":/session_info_16px.png"); break;
+                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
+                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
+                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance: value = UIIconPool::iconSet(":/session_info_16px.png"); break;
                     default: break;
                 }
             }
@@ -618,6 +628,8 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     }
                     /* These option items can be enabled: */
                     case KVirtualSystemDescriptionType_CloudOCIPublicIP:
+                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
+                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance:
                     {
                         if (m_strConfigValue == "true")
                             value = Qt::Checked;
