@@ -164,7 +164,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
                 break;
             }
 
-            if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
             {
                 rc = VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
                 Log(("vmR3EmulationThread: Rendezvous rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));

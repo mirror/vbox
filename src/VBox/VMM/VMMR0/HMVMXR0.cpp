@@ -6925,13 +6925,13 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
         || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
-        int rc2 = RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
+        int rc2 = RT_LIKELY(!VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_RAW_TO_R3 : VINF_EM_NO_MEMORY;
         Log4Func(("HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc2));
         return rc2;
     }
 
     /* Pending VM request packets, such as hardware interrupts. */
-    if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+    if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
         || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
     {
         Log4Func(("Pending VM request forcing us back to ring-3\n"));
@@ -6939,14 +6939,14 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     }
 
     /* Pending PGM pool flushes. */
-    if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
+    if (VM_FF_IS_SET(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
     {
         Log4Func(("PGM pool flush pending forcing us back to ring-3\n"));
         return VINF_PGM_POOL_FLUSH_PENDING;
     }
 
     /* Pending DMA requests. */
-    if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_DMA))
+    if (VM_FF_IS_SET(pVM, VM_FF_PDM_DMA))
     {
         Log4Func(("Pending DMA request forcing us back to ring-3\n"));
         return VINF_EM_RAW_TO_R3;

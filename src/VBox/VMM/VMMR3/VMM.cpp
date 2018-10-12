@@ -2360,7 +2360,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
             Log(("VMMR3EmtRendezvous: %#x EMT#%u, waiting for lock...\n", fFlags, pVCpu->idCpu));
             while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
             {
-                if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
                 {
                     rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
                     if (    rc != VINF_SUCCESS
@@ -2374,7 +2374,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         }
 
         Log(("VMMR3EmtRendezvous: %#x EMT#%u\n", fFlags, pVCpu->idCpu));
-        Assert(!VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS));
+        Assert(!VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS));
         Assert(!pVCpu->vmm.s.fInRendezvous);
         pVCpu->vmm.s.fInRendezvous = true;
 

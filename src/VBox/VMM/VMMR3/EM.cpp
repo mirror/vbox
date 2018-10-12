@@ -1699,7 +1699,7 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
         CSAMR3DoPendingAction(pVM, pVCpu);
 #endif
 
-    if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+    if (VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
     {
         if (    rc > VINF_EM_NO_MEMORY
             &&  rc <= VINF_EM_LAST)
@@ -1868,7 +1868,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * EMT Rendezvous (must be serviced before termination).
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+        if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
@@ -1889,7 +1889,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * State change request (cleared by vmR3SetStateLocked).
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_CHECK_VM_STATE))
+        if (VM_FF_IS_SET(pVM, VM_FF_CHECK_VM_STATE))
         {
             VMSTATE enmState = VMR3GetState(pVM);
             switch (enmState)
@@ -1951,7 +1951,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Out of memory? Putting this after CSAM as it may in theory cause us to run out of memory.
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
@@ -1985,7 +1985,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * EMT Rendezvous (make sure they are handled before the requests).
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+        if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
@@ -2099,8 +2099,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Timers before interrupts.
          */
-        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER)
-            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER)
+            && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
             TMR3TimerQueuesDo(pVM);
 
         /*
@@ -2121,8 +2121,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          *       unlikely, but such timing sensitive problem are not as rare as
          *       you might think.
          */
-        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
         {
             CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
             if (CPUMGetGuestRIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
@@ -2138,8 +2138,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * Interrupts.
          */
         bool fWakeupPending = false;
-        if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
-            &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM))
+        if (   !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
+            && (!rc || rc >= VINF_EM_RESCHEDULE_HM))
         {
             if (   !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                 && !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
@@ -2208,9 +2208,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Debugger Facility request.
          */
-        if (   (   VM_FF_IS_PENDING(pVM, VM_FF_DBGF)
+        if (   (   VM_FF_IS_SET(pVM, VM_FF_DBGF)
                 || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_DBGF) )
-            && !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY) )
+            && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY) )
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = DBGFR3VMMForcedAction(pVM, pVCpu);
@@ -2221,7 +2221,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * EMT Rendezvous (must be serviced before termination).
          */
         if (   !fWakeupPending /* don't miss the wakeup from EMSTATE_HALTED! */
-            && VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            && VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
         {
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
@@ -2242,7 +2242,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * State change request (cleared by vmR3SetStateLocked).
          */
         if (   !fWakeupPending /* don't miss the wakeup from EMSTATE_HALTED! */
-            && VM_FF_IS_PENDING(pVM, VM_FF_CHECK_VM_STATE))
+            && VM_FF_IS_SET(pVM, VM_FF_CHECK_VM_STATE))
         {
             VMSTATE enmState = VMR3GetState(pVM);
             switch (enmState)
@@ -2271,7 +2271,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * at the end rather than the start. Also, VM_FF_TERMINATE has higher priority
          * than us since we can terminate without allocating more memory.
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
@@ -2282,14 +2282,14 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * If the virtual sync clock is still stopped, make TM restart it.
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+        if (VM_FF_IS_SET(pVM, VM_FF_TM_VIRTUAL_SYNC))
             TMR3VirtualSyncFF(pVM, pVCpu);
 
 #ifdef DEBUG
         /*
          * Debug, pause the VM.
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_DEBUG_SUSPEND))
+        if (VM_FF_IS_SET(pVM, VM_FF_DEBUG_SUSPEND))
         {
             VM_FF_CLEAR(pVM, VM_FF_DEBUG_SUSPEND);
             Log(("emR3ForcedActions: returns VINF_EM_SUSPEND\n"));

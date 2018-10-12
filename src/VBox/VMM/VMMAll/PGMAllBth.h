@@ -1079,7 +1079,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
                     return rc;
                 }
-                if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
                     return VINF_EM_NO_MEMORY;
             }
 
@@ -2161,7 +2161,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
                     if (    cPages > 1
                         &&  !(uErr & X86_TRAP_PF_P)
-                        &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                        &&  !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
                     {
                         /*
                          * This code path is currently only taken when the caller is PGMTrap0eHandler
@@ -2433,7 +2433,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (    cPages > 1
         &&  !(uErr & X86_TRAP_PF_P)
-        &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        &&  !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
     {
         /*
          * This code path is currently only taken when the caller is PGMTrap0eHandler
@@ -2461,7 +2461,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
-                if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
                     break;
             }
             else
@@ -3115,7 +3115,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             PPGMRAMRANGE    pRam   = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
             unsigned        iPTDst = 0;
             while (     iPTDst < RT_ELEMENTS(pPTDst->a)
-                   &&   !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                   &&   !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
             {
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
@@ -3150,7 +3150,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                         {
                             rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
-                            if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                            if (VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
                                 break;
                         }
 # endif
@@ -3425,7 +3425,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                   SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                   SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
-            if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+            if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
                 break;
         }
     }

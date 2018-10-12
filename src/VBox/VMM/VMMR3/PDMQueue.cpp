@@ -662,7 +662,7 @@ VMMR3_INT_DECL(void) PDMR3QueueFlushAll(PVM pVM)
 
         /* We're done if there were no inserts while we were busy. */
         if (   !ASMBitTest(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT)
-            && !VM_FF_IS_PENDING(pVM, VM_FF_PDM_QUEUES))
+            && !VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES))
             break;
         VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
     }

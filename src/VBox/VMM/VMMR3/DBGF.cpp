@@ -297,7 +297,7 @@ VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
                     /* Wait for new command, processing pending priority requests
                        first.  The request processing is a bit crazy, but
                        unfortunately required by plugin unloading. */
-                    if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+                    if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
                         || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
                     {
                         LogFlow(("DBGFR3PowerOff: Processes priority requests...\n"));
@@ -308,7 +308,7 @@ VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
                         cPollHack = 1;
                     }
                     /* Need to handle rendezvous too, for generic debug event management. */
-                    else if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                    else if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
                     {
                         rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
                         AssertLogRel(rc == VINF_SUCCESS);
@@ -390,7 +390,7 @@ bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
         }
 
         /* Process priority stuff. */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+        if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
             || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
         {
             int rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
@@ -846,12 +846,12 @@ static int dbgfR3VMMWait(PVM pVM)
                 }
             }
 
-            if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
             {
                 rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
                 cPollHack = 1;
             }
-            else if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+            else if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
                      || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));

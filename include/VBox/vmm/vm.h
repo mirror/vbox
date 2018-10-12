@@ -691,16 +691,25 @@ typedef struct VMCPU
 #define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags)  ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlags))
 
 /** @def VM_FF_IS_SET
- * Checks if a force action flag is set.
+ * Checks if single a force action flag is set.
  *
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to check.
+ * @sa      VM_FF_IS_ANY_SET
  */
-#define VM_FF_IS_SET(pVM, fFlag)            (((pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
-
+#if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
+# define VM_FF_IS_SET(pVM, fFlag)           (((pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
+#else
+# define VM_FF_IS_SET(pVM, fFlag) \
+    ([](PVM a_pVM) -> bool \
+    { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        return (a_pVM->fGlobalForcedActions & (fFlag)) == (fFlag); \
+    }(pVM))
+#endif
 
 /** @def VMCPU_FF_IS_SET
- * Checks if a force action flag is set for the given VCPU.
+ * Checks if a single force action flag is set for the given VCPU.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to check.
