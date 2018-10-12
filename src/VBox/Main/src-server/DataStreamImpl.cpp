@@ -77,12 +77,14 @@ HRESULT DataStream::init(unsigned long aBufferSize)
      */
     HRESULT hrc = S_OK;
 
-    m_aBufferSize        = aBufferSize;
     m_hSemEvtDataAvail   = NIL_RTSEMEVENT;
     m_hSemEvtBufSpcAvail = NIL_RTSEMEVENT;
+    m_pBuffer            = NULL;
     int vrc = RTSemEventCreate(&m_hSemEvtDataAvail);
     if (RT_SUCCESS(vrc))
         vrc = RTSemEventCreate(&m_hSemEvtBufSpcAvail);
+    if (RT_SUCCESS(vrc))
+        vrc = RTCircBufCreate(&m_pBuffer, aBufferSize);
 
     if (RT_FAILURE(vrc))
         hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to initialize data stream object (%Rrc)"), vrc);
@@ -110,11 +112,12 @@ void DataStream::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (!autoUninitSpan.uninitDone())
     {
-        m_aBuffer.clear();
         if (m_hSemEvtDataAvail != NIL_RTSEMEVENT)
             RTSemEventDestroy(m_hSemEvtDataAvail);
         if (m_hSemEvtBufSpcAvail != NIL_RTSEMEVENT)
             RTSemEventDestroy(m_hSemEvtBufSpcAvail);
+        if (m_pBuffer != NULL)
+            RTCircBufDestroy(m_pBuffer);
         m_hSemEvtDataAvail = NIL_RTSEMEVENT;
         m_hSemEvtBufSpcAvail = NIL_RTSEMEVENT;
     }
@@ -130,7 +133,7 @@ void DataStream::uninit()
 HRESULT DataStream::getReadSize(ULONG *aReadSize)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aReadSize = (ULONG)m_aBuffer.size();
+    *aReadSize = (ULONG)RTCircBufUsed(m_pBuffer);
     return S_OK;
 }
 
@@ -159,7 +162,7 @@ HRESULT DataStream::read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int vrc = VINF_SUCCESS;
-    while (   !m_aBuffer.size()
+    while (   !RTCircBufUsed(m_pBuffer)
            && !m_fEos
            && RT_SUCCESS(vrc))
     {
@@ -174,16 +177,29 @@ HRESULT DataStream::read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData
      */
     HRESULT hrc = S_OK;
     if (   RT_SUCCESS(vrc)
-        && m_aBuffer.size())
+        && RTCircBufUsed(m_pBuffer))
     {
-        size_t cbCopy = RT_MIN(aSize, m_aBuffer.size());
+
+        size_t off = 0;
+        size_t cbCopy = RT_MIN(aSize, RTCircBufUsed(m_pBuffer));
         if (cbCopy != aSize)
         {
             Assert(cbCopy < aSize);
             aData.resize(cbCopy);
         }
-        aData.insert(aData.begin(), m_aBuffer.begin(), m_aBuffer.begin() + cbCopy);
-        m_aBuffer.erase(m_aBuffer.begin(), m_aBuffer.begin() + cbCopy);
+
+        while (cbCopy)
+        {
+            void *pvSrc = NULL;
+            size_t cbThisCopy = 0;
+
+            RTCircBufAcquireReadBlock(m_pBuffer, cbCopy, &pvSrc, &cbThisCopy);
+            memcpy(&aData.front() + off, pvSrc, cbThisCopy);
+            RTCircBufReleaseReadBlock(m_pBuffer, cbThisCopy);
+
+            cbCopy -= cbThisCopy;
+            off    += cbThisCopy;
+        }
         vrc = RTSemEventSignal(m_hSemEvtBufSpcAvail);
         AssertRC(vrc);
     }
@@ -191,7 +207,7 @@ HRESULT DataStream::read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData
     {
         Assert(   RT_FAILURE(vrc)
                || (   m_fEos
-                   && !m_aBuffer.size()));
+                   && !RTCircBufUsed(m_pBuffer)));
 
         aData.resize(0);
         if (vrc == VERR_TIMEOUT)
@@ -221,8 +237,10 @@ int DataStream::i_write(const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(!m_fEos, VERR_INVALID_STATE);
 
+    *pcbWritten = 0;
+
     int vrc = VINF_SUCCESS;
-    while (   m_aBuffer.size() == m_aBufferSize
+    while (   !RTCircBufFree(m_pBuffer)
            && RT_SUCCESS(vrc))
     {
         /* Wait for space to become available. */
@@ -233,12 +251,24 @@ int DataStream::i_write(const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 
     if (RT_SUCCESS(vrc))
     {
-        Assert(m_aBuffer.size() < m_aBufferSize);
-        size_t cbCopy = RT_MIN(cbWrite, m_aBufferSize - m_aBuffer.size());
-        if (m_aBuffer.capacity() < m_aBuffer.size() + cbWrite)
-            m_aBuffer.reserve(m_aBuffer.size() + cbWrite);
-        memcpy(&m_aBuffer.front() + m_aBuffer.size(), pvBuf, cbCopy);
+        const uint8_t *pbBuf = (const uint8_t *)pvBuf;
+        size_t cbCopy = RT_MIN(cbWrite, RTCircBufFree(m_pBuffer));
+
         *pcbWritten = cbCopy;
+
+        while (cbCopy)
+        {
+            void *pvDst = NULL;
+            size_t cbThisCopy = 0;
+
+            RTCircBufAcquireWriteBlock(m_pBuffer, cbCopy, &pvDst, &cbThisCopy);
+            memcpy(pvDst, pbBuf, cbThisCopy);
+            RTCircBufReleaseWriteBlock(m_pBuffer, cbThisCopy);
+
+            cbCopy -= cbThisCopy;
+            pbBuf  += cbThisCopy;
+        }
+
         RTSemEventSignal(m_hSemEvtDataAvail);
     }
 
