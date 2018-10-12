@@ -281,6 +281,7 @@
         <file alias="vm_settings_disabled_16px_x2.png">images/x2/vm_settings_disabled_16px_x2.png</file>
         <file alias="vm_settings_disabled_32px_x2.png">images/x2/vm_settings_disabled_32px_x2.png</file>
         <file alias="vm_show_logs_16px_x2.png">images/x2/vm_show_logs_16px_x2.png</file>
+        <file alias="vm_show_logs_24px_x2.png">images/x2/vm_show_logs_24px_x2.png</file>
         <file alias="vm_show_logs_32px_x2.png">images/x2/vm_show_logs_32px_x2.png</file>
         <file alias="vm_show_logs_disabled_16px_x2.png">images/x2/vm_show_logs_disabled_16px_x2.png</file>
         <file alias="vm_show_logs_disabled_32px_x2.png">images/x2/vm_show_logs_disabled_32px_x2.png</file>
