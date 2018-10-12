@@ -729,6 +729,7 @@ typedef struct VMCPU
     ([](PVM a_pVM) -> bool \
     { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
         return (a_pVM->fGlobalForcedActions & (fFlag)) == (fFlag); \
     }(pVM))
 #endif
@@ -747,6 +748,7 @@ typedef struct VMCPU
     ([](PVMCPU a_pVCpu) -> bool \
     { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
         return (a_pVCpu->fLocalForcedActions & (fFlag)) == (fFlag); \
     }(pVCpu))
 #endif
