@@ -441,7 +441,7 @@ void UIToolsModel::prepareItems()
 
     /* Prepare icons: */
     QList<QIcon> icons;
-    icons << UIIconPool::iconSet(":/log_viewer_save_22px.png"); /// @toso use proper one
+    icons << UIIconPool::iconSet(":/welcome_screen_24px.png");
     icons << UIIconPool::iconSet(":/media_manager_22px.png");
     icons << UIIconPool::iconSet(":/host_iface_manager_22px.png");
     icons << UIIconPool::iconSet(":/machine_details_manager_22px.png");
