@@ -1952,7 +1952,7 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
     pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & VMCPU_FF_BLOCK_NMIS;
 
     if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS))
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS);
+        VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS);
 }
 
 
@@ -1965,7 +1965,7 @@ IEM_STATIC void iemVmxVmexitRestoreForceFlags(PVMCPU pVCpu)
 {
     if (pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions)
     {
-        VMCPU_FF_SET(pVCpu, pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions);
+        VMCPU_FF_SET_MASK(pVCpu, pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions);
         pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = 0;
     }
 }
