@@ -4219,7 +4219,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         APICUpdatePendingInterrupts(pVCpu);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (   VM_FF_IS_PENDING(pVM, !pVCpu->hm.s.fSingleInstruction
+    if (   VM_FF_IS_ANY_SET(pVM, !pVCpu->hm.s.fSingleInstruction
                             ? VM_FF_HP_R0_PRE_HM_MASK : VM_FF_HP_R0_PRE_HM_STEP_MASK)
         || VMCPU_FF_IS_ANY_SET(pVCpu, !pVCpu->hm.s.fSingleInstruction
                                ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
@@ -4238,7 +4238,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
 
         /* Pending HM-to-R3 operations (critsects, timers, EMT rendezvous etc.) */
         /* -XXX- what was that about single stepping?  */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
+        if (   VM_FF_IS_ANY_SET(pVM, VM_FF_HM_TO_R3_MASK)
             || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
@@ -4368,7 +4368,7 @@ static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
      * to ring-3 before executing guest code.
      */
     pSvmTransient->fEFlags = ASMIntDisableFlags();
-    if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+    if (   VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
         || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         ASMSetFlags(pSvmTransient->fEFlags);
@@ -4481,7 +4481,7 @@ static int hmR0SvmPreRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
      * to ring-3 before executing guest code.
      */
     pSvmTransient->fEFlags = ASMIntDisableFlags();
-    if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+    if (   VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
         || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         ASMSetFlags(pSvmTransient->fEFlags);

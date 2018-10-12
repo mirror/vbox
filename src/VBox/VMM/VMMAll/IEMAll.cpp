@@ -14353,7 +14353,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                         if (RT_LIKELY(   (   !fCpu
                                           || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                                               && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
-                                      && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK) ))
+                                      && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                         {
                             if (cInstr-- > 0)
                             {
@@ -14515,7 +14515,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                         if (RT_LIKELY(   (   (   !fCpu
                                               || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                                                   && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF))
-                                          && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK) )
+                                          && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) )
                                       || pStats->cInstructions < cMinInstructions))
                         {
                             if (pStats->cInstructions < cMaxInstructions)

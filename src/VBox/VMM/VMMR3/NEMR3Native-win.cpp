@@ -1704,7 +1704,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                     AssertRCReturn(rc, rc);
                     if (rcStrict == VINF_NEM_FLUSH_TLB)
                     {
-                        if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
+                        if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
                             && !VMCPU_FF_IS_ANY_SET(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
                                                            & ~VMCPU_FF_RESUME_GUEST_MASK))
                         {

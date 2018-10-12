@@ -1162,7 +1162,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
              * The normal exit.
              */
             case EXCP_SINGLE_INSTR:
-                if (   !VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+                if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_REM_MASK)
                     && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK))
                     continue;
                 RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
@@ -1195,7 +1195,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
                 if (rc == VINF_EM_DBG_STEPPED)
                 {
-                    if (   !VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+                    if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_REM_MASK)
                         && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK))
                         continue;
 

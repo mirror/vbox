@@ -6899,9 +6899,9 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (  !fStepping
-        ?    !VM_FF_IS_PENDING(pVM, VM_FF_HP_R0_PRE_HM_MASK)
+        ?    !VM_FF_IS_ANY_SET(pVM, VM_FF_HP_R0_PRE_HM_MASK)
           && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HP_R0_PRE_HM_MASK)
-        :    !VM_FF_IS_PENDING(pVM, VM_FF_HP_R0_PRE_HM_STEP_MASK)
+        :    !VM_FF_IS_ANY_SET(pVM, VM_FF_HP_R0_PRE_HM_STEP_MASK)
           && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
         return VINF_SUCCESS;
 
@@ -6921,7 +6921,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     }
 
     /* Pending HM-to-R3 operations (critsects, timers, EMT rendezvous etc.) */
-    if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
+    if (   VM_FF_IS_ANY_SET(pVM, VM_FF_HM_TO_R3_MASK)
         || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
@@ -8583,7 +8583,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      */
     pVmxTransient->fEFlags = ASMIntDisableFlags();
 
-    if (   (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+    if (   (   !VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
             && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         || (   fStepping /* Optimized for the non-stepping case, so a bit of unnecessary work when stepping. */
             && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )

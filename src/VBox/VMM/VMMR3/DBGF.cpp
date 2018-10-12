@@ -833,7 +833,7 @@ static int dbgfR3VMMWait(PVM pVM)
         for (;;)
         {
             int rc;
-            if (    !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
+            if (    !VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
                 &&  !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
             {
                 rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);

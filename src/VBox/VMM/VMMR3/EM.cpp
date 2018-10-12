@@ -1186,7 +1186,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
              * We might have missed the raising of VMREQ, TIMER and some other
              * important FFs while we were busy switching the state. So, check again.
              */
-            if (    VM_FF_IS_PENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
+            if (    VM_FF_IS_ANY_SET(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
                 ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
             {
                 LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
@@ -1221,7 +1221,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Deal with high priority post execution FFs before doing anything
          * else.  Sync back the state and leave the lock to be on the safe side.
          */
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
         {
 #ifdef VBOX_WITH_REM
@@ -1273,7 +1273,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         TMTimerPollVoid(pVM, pVCpu);
 #endif
         AssertCompile(VMCPU_FF_ALL_REM_MASK & VMCPU_FF_TIMER);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_REM_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu,
                                      VMCPU_FF_ALL_REM_MASK
                                    & VM_WHEN_RAW_MODE(~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE), UINT32_MAX)) )
@@ -1398,7 +1398,7 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Check for pending actions.
          */
-        if (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+        if (   VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_REM_MASK)
             || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT))
             return VINF_SUCCESS;
     }
@@ -1862,7 +1862,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     /*
      * Post execution chunk first.
      */
-    if (    VM_FF_IS_PENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
+    if (    VM_FF_IS_ANY_SET(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
         ||  (VMCPU_FF_NORMAL_PRIORITY_POST_MASK && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK)) )
     {
         /*
@@ -2093,7 +2093,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * High priority pre execution chunk last.
      * (Executed in ascending priority order.)
      */
-    if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK)
+    if (    VM_FF_IS_ANY_SET(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK)
         ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_MASK))
     {
         /*
@@ -2415,7 +2415,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 && RT_SUCCESS(rc)
                 && rc != VINF_EM_TERMINATE
                 && rc != VINF_EM_OFF
-                && (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+                && (   VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_REM_MASK)
                     || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);

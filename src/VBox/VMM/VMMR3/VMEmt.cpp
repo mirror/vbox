@@ -371,12 +371,12 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
         TMR3TimerQueuesDo(pVM);
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
         uint64_t u64NanoTS;
         TMTimerPollGIP(pVM, pVCpu, &u64NanoTS);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
 
@@ -570,7 +570,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         TMR3TimerQueuesDo(pVM);
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
 
@@ -579,7 +579,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
          */
         uint64_t u64NanoTS;
         TMTimerPollGIP(pVM, pVCpu, &u64NanoTS);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
 
@@ -719,7 +719,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         TMR3TimerQueuesDo(pVM);
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
 
@@ -729,7 +729,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         //u64NowLog = RTTimeNanoTS();
         uint64_t u64Delta;
         uint64_t u64GipTime = TMTimerPollGIP(pVM, pVCpu, &u64Delta);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
 
@@ -739,7 +739,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         if (u64Delta >= pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg)
         {
             VMMR3YieldStop(pVM);
-            if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
                 ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
                 break;
 
@@ -807,7 +807,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
         /*
          * Check Relevant FFs.
          */
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_EXTERNAL_SUSPENDED_MASK))
             break;
 
@@ -897,7 +897,7 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVMCPU pUVCpu)
             break;
 
         if (    pUVCpu->pVM
-            &&  (   VM_FF_IS_PENDING(pUVCpu->pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+            &&  (   VM_FF_IS_ANY_SET(pUVCpu->pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
                  || VMCPU_FF_IS_ANY_SET(VMMGetCpu(pUVCpu->pVM), VMCPU_FF_EXTERNAL_SUSPENDED_MASK)
                 )
             )
@@ -959,7 +959,7 @@ static DECLCALLBACK(int) vmR3DefaultWait(PUVMCPU pUVCpu)
         /*
          * Check Relevant FFs.
          */
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+        if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_EXTERNAL_SUSPENDED_MASK))
             break;
 
@@ -1108,7 +1108,7 @@ VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts
     const uint32_t fMask = !fIgnoreInterrupts
         ? VMCPU_FF_EXTERNAL_HALTED_MASK
         : VMCPU_FF_EXTERNAL_HALTED_MASK & ~(VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC);
-    if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+    if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
         ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
     {
         LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x FFCPU %#x)\n", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
@@ -1189,7 +1189,7 @@ VMMR3_INT_DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
     PVMCPU pVCpu = pUVCpu->pVCpu;
 
     if (    pVM
-        &&  (   VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+        &&  (   VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
              || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_EXTERNAL_SUSPENDED_MASK)
             )
         )

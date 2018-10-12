@@ -726,13 +726,13 @@ typedef struct VMCPU
     }(pVCpu))
 #endif
 
-/** @def VM_FF_IS_PENDING
+/** @def VM_FF_IS_ANY_SET
  * Checks if one or more force action in the specified set is pending.
  *
  * @param   pVM     The cross context VM structure.
  * @param   fFlags  The flags to check for.
  */
-#define VM_FF_IS_PENDING(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
+#define VM_FF_IS_ANY_SET(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
 
 /** @def VMCPU_FF_IS_ANY_SET
  * Checks if two or more force action flags in the specified set is set for the given VCPU.
