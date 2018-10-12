@@ -653,8 +653,11 @@ typedef struct VMCPU
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to set.
  */
-#define VM_FF_SET(pVM, fFlag) \
-    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag)); } while (0)
+#define VM_FF_SET(pVM, fFlag) do { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag)); \
+    } while (0)
 
 /** @def VMCPU_FF_SET
  * Sets a single force action flag for the given VCPU.
@@ -663,8 +666,11 @@ typedef struct VMCPU
  * @param   fFlag   The flag to set.
  * @sa      VMCPU_FF_SET_MASK
  */
-#define VMCPU_FF_SET(pVCpu, fFlag) \
-    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag)); } while (0)
+#define VMCPU_FF_SET(pVCpu, fFlag) do { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag)); \
+    } while (0)
 
 /** @def VMCPU_FF_SET_MASK
  * Sets a two or more force action flag for the given VCPU.
@@ -682,8 +688,11 @@ typedef struct VMCPU
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to clear.
  */
-#define VM_FF_CLEAR(pVM, fFlag) \
-    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag)); } while (0)
+#define VM_FF_CLEAR(pVM, fFlag) do { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag)); \
+    } while (0)
 
 /** @def VMCPU_FF_CLEAR
  * Clears a single force action flag for the given VCPU.
@@ -691,8 +700,11 @@ typedef struct VMCPU
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to clear.
  */
-#define VMCPU_FF_CLEAR(pVCpu, fFlag) \
-    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag)); } while (0)
+#define VMCPU_FF_CLEAR(pVCpu, fFlag) do { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag)); \
+    } while (0)
 
 /** @def VMCPU_FF_CLEAR_MASK
  * Clears two or more force action flags for the given VCPU.
