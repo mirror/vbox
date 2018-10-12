@@ -39,6 +39,8 @@
 #include <VBoxVideoGuest.h>
 #include <VBoxVideoVBE.h>
 
+#include "hgsmi_channels.h"
+
 static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
 {
 	struct vbox_framebuffer *vbox_fb = to_vbox_framebuffer(fb);
@@ -231,9 +233,45 @@ static const struct drm_mode_config_funcs vbox_mode_funcs = {
 	ioremap(pci_resource_start(dev, bar) + (offset), maxlen)
 #endif
 
+/**
+ * Tell the host about the views.  This design originally targeted the
+ * Windows XP driver architecture and assumed that each screen would
+ * have a dedicated frame buffer with the command buffer following it,
+ * the whole being a "view".  The host works out which screen a command
+ * buffer belongs to by checking whether it is in the first view, then
+ * whether it is in the second and so on.  The first match wins.  We
+ * cheat around this by making the first view be the managed memory
+ * plus the first command buffer, the second the same plus the second
+ * buffer and so on.
+ */
+static int vbox_set_views(struct vbox_private *vbox)
+{
+	VBVAINFOVIEW *p;
+	int i;
+
+	p = VBoxHGSMIBufferAlloc(vbox->guest_pool, sizeof(*p),
+			       HGSMI_CH_VBVA, VBVA_INFO_VIEW);
+	if (!p)
+		return -ENOMEM;
+
+	for (i = 0; i < vbox->num_crtcs; ++i) {
+		p->u32ViewIndex = i;
+		p->u32ViewOffset = 0;
+		p->u32ViewSize = vbox->available_vram_size +
+			i * VBVA_MIN_BUFFER_SIZE;
+		p->u32MaxScreenSize = vbox->available_vram_size;
+
+		VBoxHGSMIBufferSubmit(vbox->guest_pool, p);
+	}
+
+	VBoxHGSMIBufferFree(vbox->guest_pool, p);
+
+	return 0;
+}
+
 static int vbox_accel_init(struct vbox_private *vbox)
 {
-	unsigned int i;
+	unsigned int i, ret;
 
 	vbox->vbva_info = devm_kcalloc(vbox->dev->dev, vbox->num_crtcs,
 				       sizeof(*vbox->vbva_info), GFP_KERNEL);
@@ -257,8 +295,15 @@ static int vbox_accel_init(struct vbox_private *vbox)
 					  VBVA_MIN_BUFFER_SIZE);
 
 	vbox_enable_accel(vbox);
+	ret = vbox_set_views(vbox);
+	if (ret)
+		goto err_pci_iounmap;
 
 	return 0;
+
+err_pci_iounmap:
+	pci_iounmap(vbox->dev->pdev, vbox->vbva_buffers);
+	return ret;
 }
 
 static void vbox_accel_fini(struct vbox_private *vbox)

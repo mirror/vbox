@@ -44,7 +44,6 @@
 #endif
 
 #include "VBoxVideo.h"
-#include "hgsmi_channels.h"
 
 static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 			    u32 handle, u32 width, u32 height,
@@ -107,44 +106,10 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 		 0 : VBVA_SCREEN_F_BLANK;
 	flags |= vbox_crtc->disconnected ? VBVA_SCREEN_F_DISABLED : 0;
 	VBoxHGSMIProcessDisplayInfo(vbox->guest_pool, vbox_crtc->crtc_id,
-				   x_offset, y_offset,
+				   x_offset, y_offset, vbox_crtc->fb_offset +
 				   crtc->x * bpp / 8 + crtc->y * pitch,
 				   pitch, width, height,
 				   vbox_crtc->blanked ? 0 : bpp, flags);
-}
-
-static int vbox_set_view(struct drm_crtc *crtc)
-{
-	struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtc);
-	struct vbox_private *vbox = crtc->dev->dev_private;
-	VBVAINFOVIEW *p;
-
-	/*
-	 * Tell the host about the view.  This design originally targeted the
-	 * Windows XP driver architecture and assumed that each screen would
-	 * have a dedicated frame buffer with the command buffer following it,
-	 * the whole being a "view".  The host works out which screen a command
-	 * buffer belongs to by checking whether it is in the first view, then
-	 * whether it is in the second and so on.  The first match wins.  We
-	 * cheat around this by making the first view be the managed memory
-	 * plus the first command buffer, the second the same plus the second
-	 * buffer and so on.
-	 */
-	p = VBoxHGSMIBufferAlloc(vbox->guest_pool, sizeof(*p),
-			       HGSMI_CH_VBVA, VBVA_INFO_VIEW);
-	if (!p)
-		return -ENOMEM;
-
-	p->u32ViewIndex = vbox_crtc->crtc_id;
-	p->u32ViewOffset = vbox_crtc->fb_offset;
-	p->u32ViewSize = vbox->available_vram_size - vbox_crtc->fb_offset +
-		       vbox_crtc->crtc_id * VBVA_MIN_BUFFER_SIZE;
-	p->u32MaxScreenSize = vbox->available_vram_size - vbox_crtc->fb_offset;
-
-	VBoxHGSMIBufferSubmit(vbox->guest_pool, p);
-	VBoxHGSMIBufferFree(vbox->guest_pool, p);
-
-	return 0;
 }
 
 static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
@@ -286,7 +251,6 @@ static int vbox_crtc_set_base(struct drm_crtc *crtc,
 
 		list_for_each_entry(crtci, &vbox->dev->mode_config.crtc_list,
 				    head) {
-			vbox_set_view(crtc);
 			vbox_do_modeset(crtci, &crtci->mode);
 		}
 	}
@@ -304,7 +268,6 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
 	if (ret)
 		return ret;
 	mutex_lock(&vbox->hw_mutex);
-	ret = vbox_set_view(crtc);
 	if (!ret)
 		vbox_do_modeset(crtc, mode);
 	VBoxHGSMIUpdateInputMapping(vbox->guest_pool, 0, 0,
