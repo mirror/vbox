@@ -314,7 +314,7 @@ pgmPhysRomWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, voi
 
                     AssertMsg(    rc == VINF_SUCCESS
                               || (  rc == VINF_PGM_SYNC_CR3
-                                  && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+                                  && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
                               , ("%Rrc\n", rc));
                     rc = VINF_SUCCESS;
                 }

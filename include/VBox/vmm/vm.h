@@ -704,6 +704,7 @@ typedef struct VMCPU
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to check.
+ * @sa      VMCPU_FF_IS_ANY_SET
  */
 #if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
 # define VMCPU_FF_IS_SET(pVCpu, fFlag)      (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
@@ -724,13 +725,14 @@ typedef struct VMCPU
  */
 #define VM_FF_IS_PENDING(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
 
-/** @def VMCPU_FF_IS_PENDING
- * Checks if one or more force action in the specified set is pending for the given VCPU.
+/** @def VMCPU_FF_IS_ANY_SET
+ * Checks if two or more force action flags in the specified set is set for the given VCPU.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The flags to check for.
+ * @sa      VMCPU_FF_IS_SET
  */
-#define VMCPU_FF_IS_PENDING(pVCpu, fFlags)  RT_BOOL((pVCpu)->fLocalForcedActions & (fFlags))
+#define VMCPU_FF_IS_ANY_SET(pVCpu, fFlags)  RT_BOOL((pVCpu)->fLocalForcedActions & (fFlags))
 
 /** @def VM_FF_TEST_AND_CLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -738,9 +740,9 @@ typedef struct VMCPU
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  * @param   pVM     The cross context VM structure.
- * @param   iBit    Bit position to check and clear
+ * @param   fFlag   Flag constant to check and clear (_BIT is appended).
  */
-#define VM_FF_TEST_AND_CLEAR(pVM, iBit)     (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
+#define VM_FF_TEST_AND_CLEAR(pVM, fFlag)    (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, fFlag##_BIT))
 
 /** @def VMCPU_FF_TEST_AND_CLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -748,9 +750,9 @@ typedef struct VMCPU
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  * @param   pVCpu   The cross context virtual CPU structure.
- * @param   iBit    Bit position to check and clear
+ * @param   fFlag   Flag constant to check and clear (_BIT is appended).
  */
-#define VMCPU_FF_TEST_AND_CLEAR(pVCpu, iBit) (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
+#define VMCPU_FF_TEST_AND_CLEAR(pVCpu, fFlag) (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, fFlag##_BIT))
 
 /** @def VM_FF_IS_PENDING_EXCEPT
  * Checks if one or more force action in the specified set is pending while one
@@ -760,7 +762,8 @@ typedef struct VMCPU
  * @param   fFlags  The flags to check for.
  * @param   fExcpt  The flags that should not be set.
  */
-#define VM_FF_IS_PENDING_EXCEPT(pVM, fFlags, fExcpt) ( ((pVM)->fGlobalForcedActions & (fFlags)) && !((pVM)->fGlobalForcedActions & (fExcpt)) )
+#define VM_FF_IS_PENDING_EXCEPT(pVM, fFlags, fExcpt) \
+    ( ((pVM)->fGlobalForcedActions & (fFlags)) && !((pVM)->fGlobalForcedActions & (fExcpt)) )
 
 /** @def VM_IS_EMT
  * Checks if the current thread is the emulation thread (EMT).

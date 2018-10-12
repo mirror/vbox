@@ -73,7 +73,7 @@
 #ifdef IN_RC
 # define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fEflags) \
     do { \
-        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
+        if (RT_LIKELY(   !VMCPU_FF_IS_ANY_SET(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
                                                                                 : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
                       && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) \
                       )) \
@@ -96,7 +96,7 @@
 #else
 # define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fEflags) \
     do { \
-        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
+        if (RT_LIKELY(   !VMCPU_FF_IS_ANY_SET(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
                                                                                 : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
                       && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) \
                       )) \
@@ -117,7 +117,7 @@
  * ones that are typically cheap. */
 #define IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fExitExpr) \
     do { \
-        if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
+        if (RT_LIKELY(   (   !VMCPU_FF_IS_ANY_SET(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
                           && !VM_FF_IS_PENDING(a_pVM,         VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK)) \
                       || (a_fExitExpr) )) \
         { /* very likely */ } \
@@ -138,7 +138,7 @@
  */
 #define IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fExitExpr) \
     do { \
-        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
+        if (RT_LIKELY(   !VMCPU_FF_IS_ANY_SET(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
                       || (a_fExitExpr) )) \
         { /* very likely */ } \
         else \

@@ -95,7 +95,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint
          * Service necessary FFs before going into HM.
          */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             VBOXSTRICTRC rcStrict = emR3HmForcedActions(pVM, pVCpu);
             if (rcStrict != VINF_SUCCESS)
@@ -119,7 +119,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint
          */
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
         {
             rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, rcStrict);
             LogFlow(("EMR3HmSingleInstruction: FFs after -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -300,7 +300,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu)
     /*
      * Sync page directory.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
         CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4);
         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
@@ -309,7 +309,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu)
             return rc;
 
 #ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
 
         /* Prefetch pages for EIP and ESP. */
@@ -332,7 +332,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu)
         }
         /** @todo maybe prefetch the supervisor stack page as well */
 #ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
     }
 
@@ -401,10 +401,10 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Process high priority pre-execution raw-mode FFs.
          */
 #ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3HmForcedActions(pVM, pVCpu);
             if (rc != VINF_SUCCESS)
@@ -465,7 +465,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
 
         /*
@@ -485,7 +485,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         TMTimerPollVoid(pVM, pVCpu);
 #endif
         if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_MASK))
         {
             rc = emR3ForcedActions(pVM, pVCpu, rc);
             VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);

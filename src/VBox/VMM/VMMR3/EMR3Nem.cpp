@@ -95,7 +95,7 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
          * Service necessary FFs before going into HM.
          */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             VBOXSTRICTRC rcStrict = emR3NemForcedActions(pVM, pVCpu);
             if (rcStrict != VINF_SUCCESS)
@@ -119,7 +119,7 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
          */
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
         {
             rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, rcStrict);
             LogFlow(("emR3NemSingleInstruction: FFs after -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -300,13 +300,13 @@ static int emR3NemExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_RAW_MODE
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+    Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
 
     /*
      * Sync page directory should not happen in NEM mode.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
         Log(("NEM: TODO: Make VMCPU_FF_PGM_SYNC_CR3 / VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL quiet! (%#x)\n", pVCpu->fLocalForcedActions));
         VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
@@ -379,7 +379,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Process high priority pre-execution raw-mode FFs.
          */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rcStrict = emR3NemForcedActions(pVM, pVCpu);
             if (rcStrict != VINF_SUCCESS)
@@ -448,7 +448,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, rcStrict);
 
         /*
@@ -468,7 +468,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         TMTimerPollVoid(pVM, pVCpu);
 #endif
         if (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_MASK))
         {
             rcStrict = emR3ForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
             VBOXVMM_EM_FF_ALL_RET(pVCpu, VBOXSTRICTRC_VAL(rcStrict));

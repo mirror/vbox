@@ -1137,7 +1137,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
 #else
         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
 #endif
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
         RTLogPrintf("remR3RunLoggingStep: interrupt_request=%#x halted=%d exception_index=%#x\n",
                     pVM->rem.s.Env.interrupt_request,
@@ -1163,7 +1163,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
              */
             case EXCP_SINGLE_INSTR:
                 if (   !VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-                    && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+                    && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK))
                     continue;
                 RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
                             pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
@@ -1196,7 +1196,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
                 if (rc == VINF_EM_DBG_STEPPED)
                 {
                     if (   !VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-                        && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+                        && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK))
                         continue;
 
                     RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
@@ -2539,7 +2539,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER);
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
         APICUpdatePendingInterrupts(pVCpu);
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
         pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
 
     /*
@@ -4483,7 +4483,7 @@ int cpu_get_pic_interrupt(CPUX86State *env)
              u8Interrupt, rc, env->segs[R_CS].selector, (uint64_t)env->eip, (uint64_t)env->eflags));
     if (RT_SUCCESS(rc))
     {
-        if (VMCPU_FF_IS_PENDING(env->pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+        if (VMCPU_FF_IS_ANY_SET(env->pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             env->interrupt_request |= CPU_INTERRUPT_HARD;
         return u8Interrupt;
     }

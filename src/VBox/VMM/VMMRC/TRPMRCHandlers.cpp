@@ -211,7 +211,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
      */
     if (    rc == VINF_SUCCESS
         &&  (   VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_DMA)
-             || VMCPU_FF_IS_PENDING(pVCpu,  VMCPU_FF_TIMER         | VMCPU_FF_TO_R3
+             || VMCPU_FF_IS_ANY_SET(pVCpu,  VMCPU_FF_TIMER         | VMCPU_FF_TO_R3
                                           | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                           | VMCPU_FF_REQUEST       | VMCPU_FF_PGM_SYNC_CR3   | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                           | VMCPU_FF_PDM_CRITSECT  | VMCPU_FF_IEM            | VMCPU_FF_SELM_SYNC_GDT
@@ -234,7 +234,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
                 CPUMRCProcessForceFlag(pVCpu);
 
             /* Pending Ring-3 action. */
-            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_IEM | VMCPU_FF_IOM))
+            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_IEM | VMCPU_FF_IOM))
             {
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
                 rc = VINF_EM_RAW_TO_R3;
@@ -254,12 +254,12 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
                      || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
                 rc = VINF_EM_PENDING_REQUEST;
             /* Pending GDT/LDT/TSS sync. */
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS))
+            else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS))
                 rc = VINF_SELM_SYNC_GDT;
             else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
                 rc = VINF_EM_RAW_TO_R3;
             /* Possibly pending interrupt: dispatch it. */
-            else if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+            else if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                      && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                      &&  PATMAreInterruptsEnabledByCtx(pVM, CPUMCTX_FROM_CORE(pRegFrame))
                )
@@ -295,7 +295,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             /*
              * Try sync CR3?
              */
-            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+            else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
             {
 #if 1
                 PGMRZDynMapReleaseAutoSet(pVCpu);

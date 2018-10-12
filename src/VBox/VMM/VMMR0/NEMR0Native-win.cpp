@@ -1238,7 +1238,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
                 && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
                 pInput->Elements[iReg].Value.InterruptState.InterruptShadow = 1;
             /** @todo Retrieve NMI state, currently assuming it's zero. (yes this may happen on I/O) */
-            //if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            //if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             //    pInput->Elements[iReg].Value.InterruptState.NmiMasked = 1;
             iReg++;
         }

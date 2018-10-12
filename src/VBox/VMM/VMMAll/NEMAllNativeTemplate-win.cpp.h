@@ -433,7 +433,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu)
                 && EMGetInhibitInterruptsPC(pVCpu) == pVCpu->cpum.GstCtx.rip)
                 aValues[iReg - 1].InterruptState.InterruptShadow = 1;
             /** @todo Retrieve NMI state, currently assuming it's zero. (yes this may happen on I/O) */
-            //if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            //if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             //    aValues[iReg - 1].InterruptState.NmiMasked = 1;
         }
     }
@@ -3961,7 +3961,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
     {
         APICUpdatePendingInterrupts(pVCpu);
-        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+        if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                       | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
             return VINF_SUCCESS;
     }
@@ -4014,7 +4014,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
     /*
      * APIC or PIC interrupt?
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
     {
         if (   !fInhibitInterrupts
             && pVCpu->cpum.GstCtx.rflags.Bits.u1IF)
@@ -4114,7 +4114,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
          * to the state syncing.
          */
         pVCpu->nem.s.fDesiredInterruptWindows = 0;
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC
                                      | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
         {
 # ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
@@ -4188,7 +4188,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         uint64_t       offDeltaIgnored;
         uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
         if (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+            && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
 # ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
             if (pVCpu->nem.s.fHandleAndGetFlags)
@@ -4303,7 +4303,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                  * If no relevant FFs are pending, loop.
                  */
                 if (   !VM_FF_IS_PENDING(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
-                    && !VMCPU_FF_IS_PENDING(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+                    && !VMCPU_FF_IS_ANY_SET(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
                     continue;
 
                 /** @todo Try handle pending flags, not just return to EM loops.  Take care
@@ -4356,7 +4356,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         else if (rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
             fImport = CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT;
 # endif
-        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
+        else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
                                           | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
             fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
 

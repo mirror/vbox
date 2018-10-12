@@ -217,7 +217,7 @@ VMM_INT_DECL(bool) EMMonitorWaitShouldContinue(PVMCPU pVCpu, PCPUMCTX pCtx)
         || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
             ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
     {
-        if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
         {
             pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
             return true;
@@ -240,7 +240,7 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /** @todo Shouldn't we be checking GIF here? */
     if (pCtx->eflags.Bits.u1IF)
-        return VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
+        return VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
     return false;
 }
 

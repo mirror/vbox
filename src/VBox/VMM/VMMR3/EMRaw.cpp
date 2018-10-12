@@ -172,7 +172,7 @@ int emR3RawStep(PVM pVM, PVMCPU pVCpu)
          * Check vital forced actions, but ignore pending interrupts and timers.
          */
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu);
             VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
@@ -1165,7 +1165,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu)
     /*
      * Sync selector tables.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT))
     {
         VBOXSTRICTRC rcStrict = SELMR3UpdateFromCPUM(pVM, pVCpu);
         if (rcStrict != VINF_SUCCESS)
@@ -1208,14 +1208,14 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu)
     /*
      * Sync page directory.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
         int rc = PGMSyncCR3(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (RT_FAILURE(rc))
             return rc == VERR_PGM_NO_HYPERVISOR_ADDRESS ? VINF_EM_RESCHEDULE_REM : rc;
 
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 
         /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
@@ -1234,7 +1234,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu)
                 return rc;
         }
         /** @todo maybe prefetch the supervisor stack page as well */
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
     }
 
     /*
@@ -1304,7 +1304,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         AssertMsg(   (pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_IF)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pVCpu->cpum.GstCtx.eip),
                   ("Tried to execute code with IF at EIP=%08x!\n", pVCpu->cpum.GstCtx.eip));
-        if (    !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+        if (    !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             &&  PGMMapHasConflicts(pVM))
         {
             PGMMapCheck(pVM);
@@ -1317,7 +1317,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Process high priority pre-execution raw-mode FFs.
          */
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu);
             VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
@@ -1348,7 +1348,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             CSAMR3CheckCodeEx(pVM, &pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.eip);
             STAM_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWEntry, b);
             if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-                ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+                ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
             {
                 rc = emR3RawForcedActions(pVM, pVCpu);
                 VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
@@ -1417,14 +1417,14 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         rc = CPUMRawLeave(pVCpu, rc);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
 
 #ifdef VBOX_STRICT
         /*
          * Assert TSS consistency & rc vs patch code.
          */
-        if (   !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT) /* GDT implies TSS at the moment. */
+        if (   !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT) /* GDT implies TSS at the moment. */
             &&  EMIsRawRing0Enabled(pVM))
             SELMR3CheckTSS(pVM);
         switch (rc)
@@ -1448,7 +1448,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Let's go paranoid!
          */
-        if (    !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+        if (    !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             &&  PGMMapHasConflicts(pVM))
         {
             PGMMapCheck(pVM);
@@ -1484,7 +1484,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #endif
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
         if (    VM_FF_IS_PENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, ~VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, ~VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             Assert(pVCpu->cpum.GstCtx.eflags.Bits.u1VM || (pVCpu->cpum.GstCtx.ss.Sel & X86_SEL_RPL) != (EMIsRawRing1Enabled(pVM) ? 2U : 1U));
 

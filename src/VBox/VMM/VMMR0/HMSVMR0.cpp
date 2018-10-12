@@ -3737,7 +3737,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
     bool const fBlockNmi   = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     Log4Func(("fVirtualGif=%RTbool fBlockNmi=%RTbool fIntShadow=%RTbool fIntPending=%RTbool fNmiPending=%RTbool\n",
-              fVirtualGif, fBlockNmi, fIntShadow, VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
+              fVirtualGif, fBlockNmi, fIntShadow, VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
               VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
 
     /** @todo SMI. SMIs take priority over NMIs. */
@@ -3787,7 +3787,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
      * Physical interrupts always take priority over virtual interrupts,
      * see AMD spec. 15.21.4 "Injecting Virtual (INTR) Interrupts".
      */
-    else if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+    else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
              && !pVCpu->hm.s.fSingleInstruction)
     {
         if (    fVirtualGif
@@ -3863,7 +3863,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu)
 
     Log4Func(("fGif=%RTbool fBlockNmi=%RTbool fBlockInt=%RTbool fIntShadow=%RTbool fIntPending=%RTbool NMI pending=%RTbool\n",
               fGif, fBlockNmi, fBlockInt, fIntShadow,
-              VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
+              VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
               VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
 
     /** @todo SMI. SMIs take priority over NMIs. */
@@ -3898,7 +3898,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu)
      * returns a valid interrupt we -must- deliver the interrupt. We can no longer re-request
      * it from the APIC device.
      */
-    else if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+    else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
              && !pVCpu->hm.s.fSingleInstruction)
     {
         if (    fGif
@@ -4221,11 +4221,11 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   VM_FF_IS_PENDING(pVM, !pVCpu->hm.s.fSingleInstruction
                             ? VM_FF_HP_R0_PRE_HM_MASK : VM_FF_HP_R0_PRE_HM_STEP_MASK)
-        || VMCPU_FF_IS_PENDING(pVCpu, !pVCpu->hm.s.fSingleInstruction
+        || VMCPU_FF_IS_ANY_SET(pVCpu, !pVCpu->hm.s.fSingleInstruction
                                ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
     {
         /* Pending PGM C3 sync. */
-        if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+        if (VMCPU_FF_IS_ANY_SET(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
             int rc = PGMSyncCR3(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4,
                                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
@@ -4239,7 +4239,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         /* Pending HM-to-R3 operations (critsects, timers, EMT rendezvous etc.) */
         /* -XXX- what was that about single stepping?  */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
             int rc = RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
@@ -4369,7 +4369,7 @@ static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
      */
     pSvmTransient->fEFlags = ASMIntDisableFlags();
     if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         ASMSetFlags(pSvmTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
@@ -4482,7 +4482,7 @@ static int hmR0SvmPreRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
      */
     pSvmTransient->fEFlags = ASMIntDisableFlags();
     if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         ASMSetFlags(pSvmTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);

@@ -1136,7 +1136,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
 #if defined(VBOX_STRICT) && defined(DEBUG_bird)
-    AssertMsg(   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+    AssertMsg(   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
               || !MMHyperIsInsideArea(pVM, CPUMGetGuestEIP(pVCpu)),  /** @todo @bugref{1419} - get flat address. */
               ("cs:eip=%RX16:%RX32\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 #endif
@@ -1187,7 +1187,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
              * important FFs while we were busy switching the state. So, check again.
              */
             if (    VM_FF_IS_PENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
-                ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
+                ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
             {
                 LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
                 goto l_REMDoForcedActions;
@@ -1222,7 +1222,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * else.  Sync back the state and leave the lock to be on the safe side.
          */
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
         {
 #ifdef VBOX_WITH_REM
             fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
@@ -1274,7 +1274,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #endif
         AssertCompile(VMCPU_FF_ALL_REM_MASK & VMCPU_FF_TIMER);
         if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu,
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu,
                                      VMCPU_FF_ALL_REM_MASK
                                    & VM_WHEN_RAW_MODE(~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE), UINT32_MAX)) )
         {
@@ -1399,7 +1399,7 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check for pending actions.
          */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT))
+            || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT))
             return VINF_SUCCESS;
     }
 
@@ -1737,7 +1737,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
             if (CPUMCanSvmNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.GstCtx))
             {
                 Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
-                if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                 {
                     if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_INTR))
                     {
@@ -1863,7 +1863,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * Post execution chunk first.
      */
     if (    VM_FF_IS_PENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
-        ||  (VMCPU_FF_NORMAL_PRIORITY_POST_MASK && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK)) )
+        ||  (VMCPU_FF_NORMAL_PRIORITY_POST_MASK && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK)) )
     {
         /*
          * EMT Rendezvous (must be serviced before termination).
@@ -2056,7 +2056,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * (Executed in no particular order.)
      */
     if (    !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
-        &&  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_MASK))
+        &&  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_NORMAL_PRIORITY_MASK))
     {
         /*
          * Requests from other threads.
@@ -2094,7 +2094,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * (Executed in ascending priority order.)
      */
     if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK)
-        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_MASK))
+        ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_MASK))
     {
         /*
          * Timers before interrupts.
@@ -2164,7 +2164,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
                 {
                     CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RFLAGS);
-                    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+                    if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                         && pVCpu->cpum.GstCtx.hwvirt.fGif
 #endif
@@ -2416,7 +2416,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 && rc != VINF_EM_TERMINATE
                 && rc != VINF_EM_OFF
                 && (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-                    || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT)))
+                    || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
@@ -2854,7 +2854,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pVCpu);
 
-                            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                                          | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
                             {
                                 Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
@@ -2868,7 +2868,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         /* We're only interested in NMI/SMIs here which have their own FFs, so we don't need to
                            check VMCPU_FF_UPDATE_APIC here. */
                         if (   rc == VINF_SUCCESS
-                            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                            && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
                         {
                             Log(("EMR3ExecuteVM: Triggering reschedule on pending NMI/SMI/UNHALT after HLT\n"));
                             rc = VINF_EM_RESCHEDULE;

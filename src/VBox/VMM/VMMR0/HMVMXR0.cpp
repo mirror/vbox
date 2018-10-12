@@ -6900,13 +6900,13 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (  !fStepping
         ?    !VM_FF_IS_PENDING(pVM, VM_FF_HP_R0_PRE_HM_MASK)
-          && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HP_R0_PRE_HM_MASK)
+          && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HP_R0_PRE_HM_MASK)
         :    !VM_FF_IS_PENDING(pVM, VM_FF_HP_R0_PRE_HM_STEP_MASK)
-          && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+          && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
         return VINF_SUCCESS;
 
     /* Pending PGM C3 sync. */
-    if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    if (VMCPU_FF_IS_ANY_SET(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4)));
@@ -6922,7 +6922,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
 
     /* Pending HM-to-R3 operations (critsects, timers, EMT rendezvous etc.) */
     if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
-        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         int rc2 = RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
@@ -7540,7 +7540,7 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
      * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
      * a valid interrupt we must- deliver the interrupt. We can no longer re-request it from the APIC.
      */
-    else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+    else if (   VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
              && !pVCpu->hm.s.fSingleInstruction)
     {
         Assert(!DBGFIsStepping(pVCpu));
@@ -8584,9 +8584,9 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
     pVmxTransient->fEFlags = ASMIntDisableFlags();
 
     if (   (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+            && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         || (   fStepping /* Optimized for the non-stepping case, so a bit of unnecessary work when stepping. */
-            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )
+            && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )
     {
         if (!RTThreadPreemptIsPending(NIL_RTTHREAD))
         {
