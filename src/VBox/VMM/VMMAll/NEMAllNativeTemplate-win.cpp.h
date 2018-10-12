@@ -4308,8 +4308,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
 
                 /** @todo Try handle pending flags, not just return to EM loops.  Take care
                  *        not to set important RCs here unless we've handled a message. */
-                LogFlow(("NEM/%u: breaking: pending FF (%#x / %#x)\n",
-                         pVCpu->idCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
+                LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
+                         pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
             }
             else

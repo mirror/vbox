@@ -1111,7 +1111,7 @@ VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts
     if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
         ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
     {
-        LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x FFCPU %#x)\n", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
+        LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x FFCPU %#RX64)\n", pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
         return VINF_SUCCESS;
     }
 

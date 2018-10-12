@@ -308,7 +308,7 @@ static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu)
      */
     if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
-        Log(("NEM: TODO: Make VMCPU_FF_PGM_SYNC_CR3 / VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL quiet! (%#x)\n", pVCpu->fLocalForcedActions));
+        Log(("NEM: TODO: Make VMCPU_FF_PGM_SYNC_CR3 / VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL quiet! (%#RX64)\n", (uint64_t)pVCpu->fLocalForcedActions));
         VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
     }
 

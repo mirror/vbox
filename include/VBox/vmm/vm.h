@@ -102,8 +102,12 @@ typedef struct VMCPU
      * @{ */
     /** Per CPU forced action.
      * See the VMCPU_FF_* \#defines. Updated atomically. */
+#ifdef VMCPU_WITH_64_BIT_FFS
+    uint64_t volatile       fLocalForcedActions;
+#else
     uint32_t volatile       fLocalForcedActions;
     uint32_t                fForLocalForcedActionsExpansion;
+#endif
     /** The CPU state. */
     VMCPUSTATE volatile     enmState;
 
@@ -674,11 +678,19 @@ typedef struct VMCPU
  * @param   fFlag   The flag to set.
  * @sa      VMCPU_FF_SET_MASK
  */
-#define VMCPU_FF_SET(pVCpu, fFlag) do { \
+#ifdef VMCPU_WITH_64_BIT_FFS
+# define VMCPU_FF_SET(pVCpu, fFlag) do { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        ASMAtomicBitSet(&(pVCpu)->fLocalForcedActions, fFlag##_BIT); \
+    } while (0)
+#else
+# define VMCPU_FF_SET(pVCpu, fFlag) do { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
         AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
         ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag)); \
     } while (0)
+#endif
 
 /** @def VMCPU_FF_SET_MASK
  * Sets a two or more force action flag for the given VCPU.
@@ -687,8 +699,20 @@ typedef struct VMCPU
  * @param   fFlags  The flags to set.
  * @sa      VMCPU_FF_SET
  */
-#define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) \
+#ifdef VMCPU_WITH_64_BIT_FFS
+# if ARCH_BITS > 32
+#  define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) \
+    do { ASMAtomicOrU64(&a_pVCpu->fLocalForcedActions, (fFlags)); } while (0)
+# else
+#  define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) do { \
+        if (!((fFlags) >> 32)) ASMAtomicOrU32((uint32_t volatile *)&a_pVCpu->fLocalForcedActions, (uint32_t)(fFlags)); \
+        else ASMAtomicOrU64(&a_pVCpu->fLocalForcedActions, (fFlags)); \
+    } while (0)
+# endif
+#else
+# define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) \
     do { ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlags)); } while (0)
+#endif
 
 /** @def VM_FF_CLEAR
  * Clears a single force action flag.
@@ -708,11 +732,19 @@ typedef struct VMCPU
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to clear.
  */
-#define VMCPU_FF_CLEAR(pVCpu, fFlag) do { \
+#ifdef VMCPU_WITH_64_BIT_FFS
+# define VMCPU_FF_CLEAR(pVCpu, fFlag) do { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        ASMAtomicBitClear(&(pVCpu)->fLocalForcedActions, fFlag##_BIT); \
+    } while (0)
+#else
+# define VMCPU_FF_CLEAR(pVCpu, fFlag) do { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
         AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
         ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag)); \
     } while (0)
+#endif
 
 /** @def VMCPU_FF_CLEAR_MASK
  * Clears two or more force action flags for the given VCPU.
@@ -720,8 +752,20 @@ typedef struct VMCPU
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The flags to clear.
  */
-#define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags) \
+#ifdef VMCPU_WITH_64_BIT_FFS
+# if ARCH_BITS > 32
+# define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags) \
+    do { ASMAtomicAndU64(&(pVCpu)->fLocalForcedActions, ~(fFlags)); } while (0)
+# else
+# define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags) do { \
+        if (!((fFlags) >> 32)) ASMAtomicAndU32((uint32_t volatile *)&(pVCpu)->fLocalForcedActions, ~(uint32_t)(fFlags)); \
+        else ASMAtomicAndU64(&(pVCpu)->fLocalForcedActions, ~(fFlags)); \
+    } while (0)
+# endif
+#else
+# define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags) \
     do { ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlags)); } while (0)
+#endif
 
 /** @def VM_FF_IS_SET
  * Checks if single a force action flag is set.
@@ -731,14 +775,14 @@ typedef struct VMCPU
  * @sa      VM_FF_IS_ANY_SET
  */
 #if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
-# define VM_FF_IS_SET(pVM, fFlag)           (((pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
+# define VM_FF_IS_SET(pVM, fFlag)           RT_BOOL((pVM)->fGlobalForcedActions & (fFlag))
 #else
 # define VM_FF_IS_SET(pVM, fFlag) \
     ([](PVM a_pVM) -> bool \
     { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
         AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
-        return (a_pVM->fGlobalForcedActions & (fFlag)) == (fFlag); \
+        return RT_BOOL(a_pVM->fGlobalForcedActions & (fFlag)); \
     }(pVM))
 #endif
 
@@ -750,14 +794,14 @@ typedef struct VMCPU
  * @sa      VMCPU_FF_IS_ANY_SET
  */
 #if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
-# define VMCPU_FF_IS_SET(pVCpu, fFlag)      (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
+# define VMCPU_FF_IS_SET(pVCpu, fFlag)      RT_BOOL((pVCpu)->fLocalForcedActions & (fFlag))
 #else
 # define VMCPU_FF_IS_SET(pVCpu, fFlag) \
     ([](PVMCPU a_pVCpu) -> bool \
     { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
         AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
-        return (a_pVCpu->fLocalForcedActions & (fFlag)) == (fFlag); \
+        return RT_BOOL(a_pVCpu->fLocalForcedActions & (fFlag)); \
     }(pVCpu))
 #endif
 

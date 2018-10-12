@@ -88,8 +88,8 @@
         } \
         else \
         { \
-            LogFlow(("%s: Leaving early (outer)! ffcpu=%#x ffvm=%#x\n", \
-                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            LogFlow(("%s: Leaving early (outer)! ffcpu=%#RX64 ffvm=%#x\n", \
+                     __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
             return VINF_SUCCESS; \
         } \
     } while (0)
@@ -103,8 +103,8 @@
         { /* probable */ } \
         else  \
         { \
-            LogFlow(("%s: Leaving early (outer)! ffcpu=%#x ffvm=%#x\n", \
-                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            LogFlow(("%s: Leaving early (outer)! ffcpu=%#RX64 ffvm=%#x\n", \
+                     __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
             return VINF_SUCCESS; \
         } \
     } while (0)
@@ -123,8 +123,8 @@
         { /* very likely */ } \
         else \
         { \
-            LogFlow(("%s: Leaving early (inner)! ffcpu=%#x ffvm=%#x\n", \
-                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            LogFlow(("%s: Leaving early (inner)! ffcpu=%#RX64 ffvm=%#x\n", \
+                     __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
             return VINF_SUCCESS; \
         } \
     } while (0)
@@ -143,8 +143,8 @@
         { /* very likely */ } \
         else \
         { \
-            LogFlow(("%s: Leaving early (inner)! ffcpu=%#x (ffvm=%#x)\n", \
-                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            LogFlow(("%s: Leaving early (inner)! ffcpu=%#RX64 (ffvm=%#x)\n", \
+                     __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
             return VINF_SUCCESS; \
         } \
     } while (0)

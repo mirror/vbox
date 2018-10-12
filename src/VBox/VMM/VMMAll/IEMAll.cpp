@@ -14336,7 +14336,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                     pVCpu->iem.s.cInstructions++;
                     if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
                     {
-                        uint32_t fCpu = pVCpu->fLocalForcedActions
+                        uint64_t fCpu = pVCpu->fLocalForcedActions
                                       & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
                                                                 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                                 | VMCPU_FF_TLB_FLUSH
@@ -14498,7 +14498,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                     cInstructionSinceLastExit++;
                     if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
                     {
-                        uint32_t fCpu = pVCpu->fLocalForcedActions
+                        uint64_t fCpu = pVCpu->fLocalForcedActions
                                       & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
                                                                 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                                 | VMCPU_FF_TLB_FLUSH

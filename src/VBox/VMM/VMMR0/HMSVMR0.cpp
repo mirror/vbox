@@ -3235,7 +3235,7 @@ static int hmR0SvmExitToRing3(PVMCPU pVCpu, int rcExit)
 
     /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
     VMMRZCallRing3Disable(pVCpu);
-    Log4Func(("rcExit=%d LocalFF=%#RX32 GlobalFF=%#RX32\n", rcExit, pVCpu->fLocalForcedActions,
+    Log4Func(("rcExit=%d LocalFF=%#RX64 GlobalFF=%#RX32\n", rcExit, (uint64_t)pVCpu->fLocalForcedActions,
               pVCpu->CTX_SUFF(pVM)->fGlobalForcedActions));
 
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
