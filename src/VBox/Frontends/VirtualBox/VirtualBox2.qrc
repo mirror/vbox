@@ -93,11 +93,9 @@
         <file alias="proxy_warning_16px.png">images/proxy_warning_16px.png</file>
         <file alias="ram_16px.png">images/ram_16px.png</file>
         <file alias="refresh_16px.png">images/refresh_16px.png</file>
-        <file alias="refresh_22px.png">images/refresh_22px.png</file>
         <file alias="refresh_24px.png">images/refresh_24px.png</file>
         <file alias="refresh_32px.png">images/refresh_32px.png</file>
         <file alias="refresh_disabled_16px.png">images/refresh_disabled_16px.png</file>
-        <file alias="refresh_disabled_22px.png">images/refresh_disabled_22px.png</file>
         <file alias="refresh_disabled_32px.png">images/refresh_disabled_32px.png</file>
         <file alias="refresh_warning_16px.png">images/refresh_warning_16px.png</file>
         <file alias="reset_warnings_16px.png">images/reset_warnings_16px.png</file>

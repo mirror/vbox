@@ -2072,8 +2072,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorMediumPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/refresh_22px.png",          ":/refresh_16px.png",
-                         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png")
+                         ":/refresh_32px.png",          ":/refresh_16px.png",
+                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
     {}
 
 protected:
@@ -2253,8 +2253,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorNetworkPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/refresh_22px.png",          ":/refresh_16px.png",
-                         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png")
+                         ":/refresh_32px.png",          ":/refresh_16px.png",
+                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
     {}
 
 protected:

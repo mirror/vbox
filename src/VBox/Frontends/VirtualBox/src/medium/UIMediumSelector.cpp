@@ -254,9 +254,9 @@ void UIMediumSelector::prepareActions()
         /* Configure add-action: */
         m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
 
-        m_pActionAdd->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_22px.png").arg(strPrefix),
+        m_pActionAdd->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_32px.png").arg(strPrefix),
                                                       QString(":/%1_add_16px.png").arg(strPrefix),
-                                                      QString(":/%1_add_disabled_22px.png").arg(strPrefix),
+                                                      QString(":/%1_add_disabled_32px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
     }
 
@@ -269,9 +269,9 @@ void UIMediumSelector::prepareActions()
     {
 
         m_pActionCreate->setShortcut(QKeySequence("Ctrl+C"));
-        m_pActionCreate->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_22px.png").arg(strPrefix),
+        m_pActionCreate->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_32px.png").arg(strPrefix),
                                                          QString(":/%1_add_16px.png").arg(strPrefix),
-                                                         QString(":/%1_add_disabled_22px.png").arg(strPrefix),
+                                                         QString(":/%1_add_disabled_32px.png").arg(strPrefix),
                                                          QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
     }
 
@@ -281,8 +281,8 @@ void UIMediumSelector::prepareActions()
     {
         m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
         if (m_pActionRefresh && m_pActionRefresh->icon().isNull())
-            m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_22px.png", ":/refresh_16px.png",
-                                                              ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
+            m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_32px.png", ":/refresh_16px.png",
+                                                              ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
     }
 }
 

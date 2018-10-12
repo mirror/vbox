@@ -346,7 +346,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
     QAction *pActionRefresh = menu->addAction(UIVMInformationDialog::tr("Refresh"));
     if (pActionRefresh)
     {
-        pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
+        pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24.png")));
         connect(pActionRefresh, &QAction::triggered, this, &UIGuestControlFileView::sigRefresh);
     }
 
@@ -896,7 +896,7 @@ void UIGuestControlFileTable::prepareActions()
     if (m_pRefresh)
     {
         connect(m_pRefresh, &QAction::triggered, this, &UIGuestControlFileTable::sltRefresh);
-        m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
+        m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24.png")));
         m_pToolBar->addAction(m_pRefresh);
     }
 
