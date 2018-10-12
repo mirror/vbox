@@ -6238,7 +6238,11 @@ static DECLCALLBACK(int) onlineMergeMediumProgress(void *pvUser, unsigned uPerce
     HRESULT rc = S_OK;
     IProgress *pProgress = static_cast<IProgress *>(pvUser);
     if (pProgress)
-        rc = pProgress->SetCurrentOperationProgress(uPercentage);
+    {
+        ComPtr<IInternalProgressControl> pProgressControl(pProgress);
+        AssertReturn(!!pProgressControl, VERR_INVALID_PARAMETER);
+        rc = pProgressControl->SetCurrentOperationProgress(uPercentage);
+    }
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
@@ -7854,6 +7858,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
+    ComPtr<IInternalProgressControl> pProgressControl(aProgress);
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Total # of steps for the progress object. Must correspond to the
@@ -7946,8 +7952,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     }
 
     /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount );
+    if (pProgressControl)
+        pProgressControl->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
 
     /* ----------------------------------------------------------------------
@@ -7975,8 +7981,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     }
 
     /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount );
+    if (pProgressControl)
+        pProgressControl->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
     vrc = VINF_SUCCESS;
 
@@ -8000,8 +8006,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     }
 
     /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount );
+    if (pProgressControl)
+        pProgressControl->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
 #ifdef VBOX_WITH_HGCM
     /* Shutdown HGCM services before destroying the VM. */
@@ -8018,8 +8024,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     }
 
     /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
+    if (pProgressControl)
+        pProgressControl->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
 #endif /* VBOX_WITH_HGCM */
 
@@ -8060,8 +8066,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         alock.acquire();
 
         /* advance percent count */
-        if (aProgress)
-            aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
+        if (pProgressControl)
+            pProgressControl->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
         if (RT_SUCCESS(vrc))
         {
@@ -8092,8 +8098,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         }
 
         /* advance percent count */
-        if (aProgress)
-            aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
+        if (pProgressControl)
+            pProgressControl->SetCurrentOperationProgress(99 * (++step) / StepCount);
     }
     else
         rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not power off the machine. (Error: %Rrc)"), vrc);
@@ -9503,7 +9509,11 @@ DECLCALLBACK(int) Console::i_stateProgressCallback(PUVM pUVM, unsigned uPercent,
 
     /* update the progress object */
     if (pProgress)
-        pProgress->SetCurrentOperationProgress(uPercent);
+    {
+        ComPtr<IInternalProgressControl> pProgressControl(pProgress);
+        AssertReturn(!!pProgressControl, VERR_INVALID_PARAMETER);
+        pProgressControl->SetCurrentOperationProgress(uPercent);
+    }
 
     NOREF(pUVM);
     return VINF_SUCCESS;

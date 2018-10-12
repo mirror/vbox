@@ -1809,7 +1809,9 @@ ExtPack::i_hlpUpdateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress)
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
-    return pProgress->SetCurrentOperationProgress(uPercent);
+    ComPtr<IInternalProgressControl> pProgressControl(pProgress);
+    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    return pProgressControl->SetCurrentOperationProgress(uPercent);
 }
 
 /*static*/ DECLCALLBACK(uint32_t)
@@ -1827,12 +1829,14 @@ ExtPack::i_hlpNextOperationProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IPr
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
-    return pProgress->SetNextOperation(Bstr(pcszNextOperationDescription).raw(), uNextOperationWeight);
+    ComPtr<IInternalProgressControl> pProgressControl(pProgress);
+    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    return pProgressControl->SetNextOperation(Bstr(pcszNextOperationDescription).raw(), uNextOperationWeight);
 }
 
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpWaitOtherProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
-                                VBOXEXTPACK_IF_CS(IProgress) *pProgressOther)
+                                VBOXEXTPACK_IF_CS(IProgress) *pProgressOther, uint32_t cTimeoutMS)
 {
     /*
      * Validate the input and get our bearings.
@@ -1843,8 +1847,9 @@ ExtPack::i_hlpWaitOtherProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgre
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
-    Progress *pProgressInt = static_cast<Progress *>(pProgress);
-    return pProgressInt->i_waitForOtherProgressCompletion(pProgressOther);
+    ComPtr<IInternalProgressControl> pProgressControl(pProgress);
+    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    return pProgressControl->WaitForOtherProgressCompletion(pProgressOther, cTimeoutMS);
 }
 
 /*static*/ DECLCALLBACK(uint32_t)
@@ -1859,8 +1864,16 @@ ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgres
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
-    Progress *pProgressInt = static_cast<Progress *>(pProgress);
-    return pProgressInt->i_notifyComplete(uResultCode);
+    ComPtr<IInternalProgressControl> pProgressControl(pProgress);
+    AssertReturn(!!pProgressControl, E_INVALIDARG);
+
+    ComPtr<IVirtualBoxErrorInfo> errorInfo;
+    if (FAILED((HRESULT)uResultCode))
+    {
+        ErrorInfoKeeper eik;
+        eik.getVirtualBoxErrorInfo(errorInfo);
+    }
+    return pProgressControl->NotifyComplete(uResultCode, errorInfo);
 }
 
 /*static*/ DECLCALLBACK(int)

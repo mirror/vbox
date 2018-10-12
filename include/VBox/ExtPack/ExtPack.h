@@ -280,9 +280,11 @@ typedef struct VBOXEXTPACKHLP
      *                          by pfnCreateProgress.
      * @param   pProgressOther  Pointer to an IProgress object reference, the one
      *                          to be waited for.
+     * @param   cTimeoutMS      Timeout in milliseconds, 0 for indefinite wait.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnWaitOtherProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
-                                                         VBOXEXTPACK_IF_CS(IProgress) *pProgressOther));
+                                                         VBOXEXTPACK_IF_CS(IProgress) *pProgressOther,
+                                                         uint32_t cTimeoutMS));
 
     /**
      * Marks the whole task as complete and sets the result code.

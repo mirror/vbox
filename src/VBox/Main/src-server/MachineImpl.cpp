@@ -5497,7 +5497,7 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
                 ComPtr<IProgress> pProgress2;
                 rc = pMedium->DeleteStorage(pProgress2.asOutParam());
                 if (FAILED(rc)) throw rc;
-                rc = task.m_pProgress->i_waitForOtherProgressCompletion(pProgress2);
+                rc = task.m_pProgress->WaitForOtherProgressCompletion(pProgress2, 0 /* indefinite wait */);
                 if (FAILED(rc)) throw rc;
             }
 
@@ -10942,6 +10942,9 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
 {
     LogFlowThisFunc(("aOnline=%d\n", aOnline));
 
+    ComPtr<IInternalProgressControl> pProgressControl(aProgress);
+    AssertReturn(!!pProgressControl, E_INVALIDARG);
+
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
@@ -11047,12 +11050,12 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
                 if (devType == DeviceType_HardDisk)
                 {
                     if (pMedium == NULL)
-                        aProgress->SetNextOperation(Bstr(tr("Skipping attachment without medium")).raw(),
-                                                    aWeight);        // weight
+                        pProgressControl->SetNextOperation(Bstr(tr("Skipping attachment without medium")).raw(),
+                                                           aWeight);        // weight
                     else
-                        aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                            pMedium->i_getBase()->i_getName().c_str()).raw(),
-                                                    aWeight);        // weight
+                        pProgressControl->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
+                                                                   pMedium->i_getBase()->i_getName().c_str()).raw(),
+                                                           aWeight);        // weight
                 }
 
                 mMediumAttachments->push_back(pAtt);
@@ -11060,9 +11063,9 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
             }
 
             /* need a diff */
-            aProgress->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
-                                                pMedium->i_getBase()->i_getName().c_str()).raw(),
-                                        aWeight);        // weight
+            pProgressControl->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
+                                                       pMedium->i_getBase()->i_getName().c_str()).raw(),
+                                               aWeight);        // weight
 
             Utf8Str strFullSnapshotFolder;
             i_calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);

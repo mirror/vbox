@@ -2655,7 +2655,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                 /* Now wait for the background import operation to complete; this throws
                  * HRESULTs on error. */
-                stack.pProgress->i_waitForOtherProgressCompletion(pProgressImport);
+                stack.pProgress->WaitForOtherProgressCompletion(pProgressImport, 0 /* indefinite wait */);
             }
         }
         catch (...)

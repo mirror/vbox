@@ -1113,7 +1113,7 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
                  * Call i_waitForOtherProgressCompletion only in success
                  */
                 /* Wait until the other process has finished. */
-                rc = m_pProgress->i_waitForOtherProgressCompletion(moveDiskProgress);
+                rc = m_pProgress->WaitForOtherProgressCompletion(moveDiskProgress, 0 /* indefinite wait */);
             }
 
             /*acquire the lock back*/

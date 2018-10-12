@@ -14268,9 +14268,10 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IProgress" extends="$unknown"
-    uuid="64c7fb5c-ce8f-4681-9c8c-d523cb4dea3d"
+    uuid="d3ee3588-a762-4ba1-9e9e-23146587ed3a"
     wsmap="managed"
-    reservedMethods="1" reservedAttributes="2"
+    wrap-hint-server-addinterfaces="IInternalProgressControl"
+    reservedMethods="4" reservedAttributes="8"
     >
     <desc>
         The IProgress interface is used to track and control
@@ -14407,16 +14408,6 @@ and "VAR" for unsetting. -->
 
     <attribute name="eventSource" type="IEventSource" readonly="yes"/>
 
-    <method name="setCurrentOperationProgress">
-      <desc>Internal method, not to be called externally.</desc>
-      <param name="percent" type="unsigned long" dir="in" />
-    </method>
-    <method name="setNextOperation">
-      <desc>Internal method, not to be called externally.</desc>
-      <param name="nextOperationDescription" type="wstring" dir="in" />
-      <param name="nextOperationsWeight" type="unsigned long" dir="in" />
-    </method>
-
     <method name="waitForCompletion">
       <desc>
           Waits until the task is done (including all sub-operations)
@@ -14479,6 +14470,67 @@ and "VAR" for unsetting. -->
         </result>
 
       </desc>
+    </method>
+
+  </interface>
+
+  <interface
+    name="IInternalProgressControl" extends="$unknown"
+    uuid="9bf38c56-ac64-4f72-871a-321a25f52a57"
+    internal="yes"
+    wsmap="suppress"
+    reservedMethods="4" reservedAttributes="8"
+    >
+
+    <method name="setCurrentOperationProgress">
+      <desc>Internal method, not to be called externally.</desc>
+      <param name="percent" type="unsigned long" dir="in" />
+    </method>
+
+    <method name="waitForOtherProgressCompletion">
+      <desc>
+        Internal method, not to be called externally.
+
+        Waits until the other task is completed (including all sub-operations)
+        and forward all changes from the other progress to this progress. This
+        means sub-operation number, description, percent and so on.
+
+        The caller is responsible for having at least the same count of
+        sub-operations in this progress object as there are in the other
+        progress object.
+
+        If the other progress object supports cancel and this object gets any
+        cancel request (when here enabled as well), it will be forwarded to
+        the other progress object.
+
+        Error information is automatically preserved (by transferring it to
+        the current thread's error information). If the caller wants to set it
+        as the completion state of this progress it needs to be done separately.
+
+        <result name="VBOX_E_TIMEOUT">
+          Waiting time has expired.
+        </result>
+      </desc>
+      <param name="progressOther" type="IProgress" dir="in" />
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>Timeout (in ms). Pass 0 for an infinite timeout.</desc>
+      </param>
+    </method>
+
+    <method name="setNextOperation">
+      <desc>Internal method, not to be called externally.</desc>
+      <param name="nextOperationDescription" type="wstring" dir="in" />
+      <param name="nextOperationsWeight" type="unsigned long" dir="in" />
+    </method>
+
+    <method name="notifyPointOfNoReturn">
+      <desc>Internal method, not to be called externally.</desc>
+    </method>
+
+    <method name="notifyComplete">
+      <desc>Internal method, not to be called externally.</desc>
+      <param name="resultCode" type="long" dir="in" />
+      <param name="errorInfo" type="IVirtualBoxErrorInfo" dir="in" />
     </method>
 
   </interface>

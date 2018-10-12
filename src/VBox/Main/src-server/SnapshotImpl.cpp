@@ -1746,7 +1746,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
             else
                 LogRel(("Machine: skipped saving state as part of online snapshot\n"));
 
-            if (!task.m_pProgress->i_notifyPointOfNoReturn())
+            if (FAILED(task.m_pProgress->NotifyPointOfNoReturn()))
                 throw setError(E_FAIL, tr("Canceled"));
 
             // STEP 4: reattach hard disks

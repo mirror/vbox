@@ -135,32 +135,7 @@ public:
                               const char *pcszComponent,
                               const char *aText,
                               va_list va);
-    HRESULT i_notifyCompleteEI(HRESULT aResultCode,
-                               const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo);
-    /**
-     * Waits until the other task is completed (including all sub-operations)
-     * and forward all changes from the other progress to this progress. This
-     * means sub-operation number, description, percent and so on.
-     *
-     * The caller is responsible for having at least the same count of
-     * sub-operations in this progress object as there are in the other
-     * progress object.
-     *
-     * If the other progress object supports cancel and this object gets any
-     * cancel request (when here enabled as well), it will be forwarded to
-     * the other progress object.
-     *
-     * Error information is automatically preserved (by transferring it to
-     * the current thread's error information). If the caller wants to set it
-     * as the completion state of this progress it needs to be done separately.
-     *
-     * @param   aProgressOther  Progress object from which the state is
-     *                  forwarded until it is signalling completion.
-     * @return COM error status, also reflecting the failed completion.
-     */
-    HRESULT i_waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgressOther);
 
-    bool i_notifyPointOfNoReturn(void);
     bool i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
 
     static DECLCALLBACK(int) i_iprtProgressCallback(unsigned uPercentage, void *pvUser);
@@ -228,13 +203,20 @@ private:
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
 
     // wrapped IProgress methods
-    HRESULT setCurrentOperationProgress(ULONG aPercent);
-    HRESULT setNextOperation(const com::Utf8Str &aNextOperationDescription,
-                             ULONG aNextOperationsWeight);
     HRESULT waitForCompletion(LONG aTimeout);
     HRESULT waitForOperationCompletion(ULONG aOperation,
                                        LONG aTimeout);
     HRESULT cancel();
+
+    // wrapped IInternalProgressControl methods
+    HRESULT setCurrentOperationProgress(ULONG aPercent);
+    HRESULT waitForOtherProgressCompletion(const ComPtr<IProgress> &aProgressOther,
+                                           ULONG aTimeoutMS);
+    HRESULT setNextOperation(const com::Utf8Str &aNextOperationDescription,
+                             ULONG aNextOperationsWeight);
+    HRESULT notifyPointOfNoReturn();
+    HRESULT notifyComplete(LONG aResultCode,
+                           const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo);
 
     // internal helper methods
     double i_calcTotalPercent();

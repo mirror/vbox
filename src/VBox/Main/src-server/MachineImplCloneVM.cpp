@@ -1289,7 +1289,7 @@ HRESULT MachineCloneVM::run()
 
                         /* Wait until the async process has finished. */
                         srcLock.release();
-                        rc = d->pProgress->i_waitForOtherProgressCompletion(progress2);
+                        rc = d->pProgress->WaitForOtherProgressCompletion(progress2, 0 /* indefinite wait */);
                         srcLock.acquire();
                         if (FAILED(rc)) throw rc;
 

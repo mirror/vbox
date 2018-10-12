@@ -162,7 +162,8 @@ protected:
                                                              const char *pcszNextOperationDescription,
                                                              uint32_t uNextOperationWeight);
     static DECLCALLBACK(uint32_t) i_hlpWaitOtherProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
-                                                         VBOXEXTPACK_IF_CS(IProgress) *pProgressOther);
+                                                         VBOXEXTPACK_IF_CS(IProgress) *pProgressOther,
+                                                         uint32_t cTimeoutMS);
     static DECLCALLBACK(uint32_t) i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                                         uint32_t uResultCode);
     static DECLCALLBACK(int)    i_hlpReservedN(PCVBOXEXTPACKHLP pHlp);
