@@ -3839,7 +3839,7 @@ HRESULT Medium::openForIO(BOOL aWritable, com::Utf8Str const &aPassword, ComPtr<
     HRESULT hrc = ptrIO.createObject();
     if (SUCCEEDED(hrc))
     {
-        hrc = ptrIO->initForMedium(this, aWritable != FALSE, strKeyId, aPassword);
+        hrc = ptrIO->initForMedium(this, m->pVirtualBox, aWritable != FALSE, strKeyId, aPassword);
         if (SUCCEEDED(hrc))
             ptrIO.queryInterfaceTo(aMediumIO.asOutParam());
     }

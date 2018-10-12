@@ -57,6 +57,19 @@
       <arg>--size=<replaceable>bytes</replaceable></arg>
       <arg>--output=<replaceable>-|filename</replaceable></arg>
     </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-mediumio-stream">
+      <command>VBoxManage mediumio</command>
+      <group choice="req">
+        <arg>--disk=<replaceable>uuid|filename</replaceable></arg>
+        <arg>--dvd=<replaceable>uuid|filename</replaceable></arg>
+        <arg>--floppy=<replaceable>uuid|filename</replaceable></arg>
+      </group>
+      <arg>--password-file<replaceable>-|filename</replaceable></arg>
+      <arg choice="plain">stream</arg>
+      <arg>--format=<replaceable>image-format</replaceable></arg>
+      <arg>--variant=<replaceable>image-variant</replaceable></arg>
+      <arg>--output=<replaceable>-|filename</replaceable></arg>
+    </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1>
@@ -117,6 +130,26 @@
         </varlistentry>
         <varlistentry>
           <term><option>--size</option></term><listitem><para>The number of bytes to dump.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--output</option></term>
+          <listitem><para>The output filename.  As usual <option>-</option> is take to mean stdout.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-mediumio-stream">
+      <title>mediumio stream</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Converts the medium to a streamable format and dumps it to the given output.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--format</option></term><listitem><para>The format of the destination image.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--variant</option></term><listitem><para>The medium variant for the destination.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--output</option></term>

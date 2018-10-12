@@ -2372,6 +2372,144 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
     return rcExit;
 }
 
+/**
+ * mediumio stream
+ */
+static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOPT pCommonOpts)
+{
+    /*
+     * Parse the options.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        MEDIUMIOCOMMONOPT_DEFS(),
+        { "--output",   'O', RTGETOPT_REQ_STRING },
+        { "--format",   'F', RTGETOPT_REQ_STRING },
+        { "--variant",  'v', RTGETOPT_REQ_STRING }
+    };
+    const char *pszOutput = NULL;
+    MediumVariant_T enmMediumVariant = MediumVariant_Standard;
+    Bstr strFormat;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRC(rc);
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            MEDIUMIOCOMMONOPT_CASES(pCommonOpts);
+
+            case 'O':
+                pszOutput = ValueUnion.psz;
+                break;
+            case 'F':
+                strFormat = ValueUnion.psz;
+                break;
+            case 'v':   // --variant
+            {
+                int vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
+                if (RT_FAILURE(vrc))
+                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                break;
+            }
+
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Open the medium for I/O.
+     */
+    ComPtr<IMediumIO>   ptrMediumIO;
+    uint64_t            cbMedium;
+    RTEXITCODE rcExit = mediumIOOpenMediumForIO(a, pCommonOpts, false /*fWritable*/, ptrMediumIO, &cbMedium);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Do we have an output file or do we write to stdout?
+         */
+        PRTSTREAM pOut = NULL;
+        if (pszOutput && (pszOutput[0] != '-' || pszOutput[1] != '\0'))
+        {
+            int vrc = RTStrmOpen(pszOutput, "wb", &pOut);
+            if (RT_FAILURE(vrc))
+                rcExit = RTMsgErrorExitFailure("Error opening '%s' for writing: %Rrc", pszOutput, vrc);
+        }
+        else
+        {
+            pOut = g_pStdOut;
+            RTStrmSetMode(pOut, true, -1);
+        }
+
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            ComPtr<IDataStream> ptrDataStream;
+            ComPtr<IProgress> ptrProgress;
+
+            com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
+
+            for (ULONG i = 0; i < l_variants.size(); ++i)
+            {
+                ULONG temp = enmMediumVariant;
+                temp &= 1<<i;
+                l_variants [i] = (MediumVariant_T)temp;
+            }
+
+            HRESULT hrc = ptrMediumIO->ConvertToStream(strFormat.raw(), ComSafeArrayAsInParam(l_variants), 10 * _1M, ptrDataStream.asOutParam(), ptrProgress.asOutParam());
+            if (hrc == S_OK)
+            {
+                /* Read until we reached the end of the stream. */
+                for (;;)
+                {
+                    SafeArray<BYTE> SafeArrayBuf;
+
+                    hrc = ptrDataStream->Read(_64K, 0 /*Infinite wait*/, ComSafeArrayAsOutParam(SafeArrayBuf));
+                    if (   FAILED(hrc)
+                        || SafeArrayBuf.size() == 0)
+                        break;
+
+                    /* Output the data. */
+                    size_t const cbReturned = SafeArrayBuf.size();
+                    if (cbReturned)
+                    {
+                        BYTE const *pbBuf = SafeArrayBuf.raw();
+                        int vrc = VINF_SUCCESS;
+                        vrc = RTStrmWrite(pOut, pbBuf, cbReturned);
+                        if (RT_FAILURE(vrc))
+                        {
+                            rcExit = RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszOutput, vrc);
+                            break;
+                        }
+                    }
+
+                    /** @todo: Check progress. */
+                }
+            }
+            else
+            {
+                com::GlueHandleComError(ptrMediumIO, "ConvertToStream()", hrc, __FILE__, __LINE__);
+                rcExit = RTEXITCODE_FAILURE;
+            }
+
+            /*
+             * Close output.
+             */
+            if (pOut != g_pStdOut)
+            {
+                int vrc = RTStrmClose(pOut);
+                if (RT_FAILURE(vrc))
+                    rcExit = RTMsgErrorExitFailure("Error closing '%s': %Rrc", pszOutput, vrc);
+            }
+            else
+                RTStrmSetMode(pOut, false, -1);
+        }
+    }
+    return rcExit;
+}
+
 
 RTEXITCODE handleMediumIO(HandlerArg *a)
 {
@@ -2384,6 +2522,7 @@ RTEXITCODE handleMediumIO(HandlerArg *a)
         /* sub-commands */
         { "formatfat",  1000, RTGETOPT_REQ_NOTHING },
         { "cat",        1001, RTGETOPT_REQ_NOTHING },
+        { "stream",     1002, RTGETOPT_REQ_NOTHING },
     };
     MEDIUMIOCOMMONOPT   CommonOpts = { NULL, DeviceType_Null, NULL };
 
@@ -2404,6 +2543,9 @@ RTEXITCODE handleMediumIO(HandlerArg *a)
             case 1001:
                 setCurrentSubcommand(HELP_SCOPE_MEDIUMIO_CAT);
                 return handleMediumIOCat(a, GetState.iNext, &CommonOpts);
+            case 1002:
+                setCurrentSubcommand(HELP_SCOPE_MEDIUMIO_STREAM);
+                return handleMediumIOStream(a, GetState.iNext, &CommonOpts);
 
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);

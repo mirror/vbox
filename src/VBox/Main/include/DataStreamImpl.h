@@ -21,6 +21,7 @@
 
 #include "DataStreamWrap.h"
 
+#include <iprt/circbuf.h>
 #include <iprt/semaphore.h>
 
 class ATL_NO_VTABLE DataStream
@@ -50,10 +51,8 @@ private:
     HRESULT read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData);
 
 private:
-    /** Maximum number of bytes the buffer can hold. */
-    unsigned long     m_aBufferSize;
     /** The temporary buffer the conversion process writes into and the user reads from. */
-    std::vector<BYTE> m_aBuffer;
+    PRTCIRCBUF        m_pBuffer;
     /** Event semaphore for waiting until data is available. */
     RTSEMEVENT        m_hSemEvtDataAvail;
     /** Event semaphore for waiting until there is room in the buffer for writing. */

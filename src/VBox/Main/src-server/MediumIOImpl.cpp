@@ -23,13 +23,18 @@
 #include "MediumIOImpl.h"
 #include "MediumImpl.h"
 #include "MediumLock.h"
+#include "DataStreamImpl.h"
 #include "Global.h"
+#include "ProgressImpl.h"
+#include "VirtualBoxImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
+#include "ThreadTask.h"
 
 #include <iprt/fsvfs.h>
 #include <iprt/dvm.h>
+#include <iprt/zero.h>
 #include <iprt/cpp/utils.h>
 
 
@@ -41,8 +46,9 @@
  */
 struct MediumIO::Data
 {
-    Data(Medium * const a_pMedium, bool a_fWritable, uint32_t a_cbSector = 512)
+    Data(Medium * const a_pMedium, VirtualBox * const a_pVirtualBox, bool a_fWritable, uint32_t a_cbSector = 512)
         : ptrMedium(a_pMedium)
+        , ptrVirtualBox(a_pVirtualBox)
         , fWritable(a_fWritable)
         , cbSector(a_cbSector)
         , PasswordStore(false /*fKeyBufNonPageable*/)
@@ -53,6 +59,8 @@ struct MediumIO::Data
 
     /** Reference to the medium we're accessing. */
     ComPtr<Medium>                  ptrMedium;
+    /** Reference to the VirtualBox object the medium is part of. */
+    ComPtr<VirtualBox>              ptrVirtualBox;
     /** Set if writable, clear if readonly. */
     bool                            fWritable;
     /** The sector size. */
@@ -71,6 +79,393 @@ struct MediumIO::Data
 private:
     Data() : PasswordStore(false) { }
 };
+
+
+/**
+ * MediumIO::StreamTask class for asynchronous convert to stream operation.
+ *
+ * @note Instances of this class must be created using new() because the
+ *       task thread function will delete them when the task is complete.
+ *
+ * @note The constructor of this class adds a caller on the managed Medium
+ *       object which is automatically released upon destruction.
+ */
+class MediumIO::StreamTask : public ThreadTask
+{
+public:
+    StreamTask(MediumIO *pMediumIO, DataStream *pDataStream, Progress *pProgress, const char *pszFormat,
+               MediumVariant_T fMediumVariant)
+        : ThreadTask("StreamTask"),
+          mVDOperationIfaces(NULL),
+          mMediumIO(pMediumIO),
+          mMediumCaller(pMediumIO->m->ptrMedium),
+          m_pDataStream(pDataStream),
+          m_fMediumVariant(fMediumVariant),
+          m_strFormat(pszFormat),
+          mProgress(pProgress),
+          mVirtualBoxCaller(NULL)
+    {
+        AssertReturnVoidStmt(pMediumIO, mRC = E_FAIL);
+        AssertReturnVoidStmt(pDataStream, mRC = E_FAIL);
+        mRC = mMediumCaller.rc();
+        if (FAILED(mRC))
+            return;
+
+        /* Get strong VirtualBox reference, see below. */
+        VirtualBox *pVirtualBox = pMediumIO->m->ptrVirtualBox;
+        mVirtualBox = pVirtualBox;
+        mVirtualBoxCaller.attach(pVirtualBox);
+        mRC = mVirtualBoxCaller.rc();
+        if (FAILED(mRC))
+            return;
+
+        /* Set up a per-operation progress interface, can be used freely (for
+         * binary operations you can use it either on the source or target). */
+        if (mProgress)
+        {
+            mVDIfProgress.pfnProgress = pProgress->i_vdProgressCallback;
+            int vrc = VDInterfaceAdd(&mVDIfProgress.Core,
+                                     "Medium::Task::vdInterfaceProgress",
+                                     VDINTERFACETYPE_PROGRESS,
+                                     mProgress,
+                                     sizeof(mVDIfProgress),
+                                     &mVDOperationIfaces);
+            AssertRC(vrc);
+            if (RT_FAILURE(vrc))
+                mRC = E_FAIL;
+        }
+    }
+
+    // Make all destructors virtual. Just in case.
+    virtual ~StreamTask()
+    {
+        /* send the notification of completion.*/
+        if (   isAsync()
+            && !mProgress.isNull())
+            mProgress->i_notifyComplete(mRC);
+    }
+
+    HRESULT rc() const { return mRC; }
+    bool isOk() const { return SUCCEEDED(rc()); }
+
+    const ComPtr<Progress>& GetProgressObject() const {return mProgress;}
+
+    /**
+     * Implementation code for the "create base" task.
+     * Used as function for execution from a standalone thread.
+     */
+    void handler()
+    {
+        LogFlowFuncEnter();
+        try
+        {
+            mRC = executeTask(); /* (destructor picks up mRC, see above) */
+            LogFlowFunc(("rc=%Rhrc\n", mRC));
+        }
+        catch (...)
+        {
+            LogRel(("Some exception in the function MediumIO::StreamTask:handler()\n"));
+        }
+
+        LogFlowFuncLeave();
+    }
+
+    PVDINTERFACE mVDOperationIfaces;
+
+    const ComObjPtr<MediumIO> mMediumIO;
+    AutoCaller mMediumCaller;
+
+protected:
+    HRESULT         mRC;
+
+    DataStream      *m_pDataStream;
+    MediumVariant_T m_fMediumVariant;
+    Utf8Str         m_strFormat;
+
+private:
+    HRESULT executeTask();
+
+    const ComObjPtr<Progress> mProgress;
+
+    VDINTERFACEPROGRESS mVDIfProgress;
+
+    /* Must have a strong VirtualBox reference during a task otherwise the
+     * reference count might drop to 0 while a task is still running. This
+     * would result in weird behavior, including deadlocks due to uninit and
+     * locking order issues. The deadlock often is not detectable because the
+     * uninit uses event semaphores which sabotages deadlock detection. */
+    ComObjPtr<VirtualBox> mVirtualBox;
+    AutoCaller mVirtualBoxCaller;
+
+    static DECLCALLBACK(int) i_vdStreamOpen(void *pvUser, const char *pszLocation, uint32_t fOpen,
+                                            PFNVDCOMPLETED pfnCompleted, void **ppStorage);
+    static DECLCALLBACK(int) i_vdStreamClose(void *pvUser, void *pStorage);
+    static DECLCALLBACK(int) i_vdStreamDelete(void *pvUser, const char *pcszFilename);
+    static DECLCALLBACK(int) i_vdStreamMove(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove);
+    static DECLCALLBACK(int) i_vdStreamGetFreeSpace(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace);
+    static DECLCALLBACK(int) i_vdStreamGetModificationTime(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime);
+    static DECLCALLBACK(int) i_vdStreamGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize);
+    static DECLCALLBACK(int) i_vdStreamSetSize(void *pvUser, void *pStorage, uint64_t cbSize);
+    static DECLCALLBACK(int) i_vdStreamRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
+                                            size_t *pcbRead);
+    static DECLCALLBACK(int) i_vdStreamWrite(void *pvUser, void *pStorage, uint64_t uOffset,
+                                             const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten);
+    static DECLCALLBACK(int) i_vdStreamFlush(void *pvUser, void *pStorage);
+};
+
+
+/**
+ * State of a streamed file.
+ */
+typedef struct STREAMFILE
+{
+    /** The data stream for this file state. */
+    DataStream              *pDataStream;
+    /** The last seen offset used to stream zeroes for non consecutive writes. */
+    uint64_t                uOffsetLast;
+    /** Set file size. */
+    uint64_t                cbFile;
+} STREAMFILE;
+/** Pointer to the stream file state. */
+typedef STREAMFILE *PSTREAMFILE;
+
+
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamOpen(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
+                                                       void **ppStorage)
+{
+    RT_NOREF2(pvUser, pszLocation);
+
+    /* Validate input. */
+    AssertPtrReturn(ppStorage, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
+    AssertReturn((fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_WRITE, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    PSTREAMFILE pStreamFile = (PSTREAMFILE)RTMemAllocZ(sizeof(*pStreamFile));
+    if (RT_LIKELY(pStreamFile))
+    {
+        pStreamFile->pDataStream = (DataStream *)pvUser;
+        pStreamFile->uOffsetLast = 0;
+        pStreamFile->cbFile      = 0;
+        *ppStorage = pStreamFile;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamClose(void *pvUser, void *pStorage)
+{
+    RT_NOREF(pvUser);
+    PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
+    int rc = VINF_SUCCESS;
+
+    /* Fill up to the configured file size. */
+    if (pStreamFile->uOffsetLast < pStreamFile->cbFile)
+    {
+        do
+        {
+            size_t cbThisWrite = RT_MIN(pStreamFile->cbFile - pStreamFile->uOffsetLast, sizeof(g_abRTZero64K));
+            size_t cbWritten = 0;
+
+            rc = pStreamFile->pDataStream->i_write(&g_abRTZero64K[0], cbThisWrite, &cbWritten);
+            if (RT_SUCCESS(rc))
+                pStreamFile->uOffsetLast += cbWritten;
+
+        } while (   RT_SUCCESS(rc)
+                 && pStreamFile->uOffsetLast < pStreamFile->cbFile);
+    }
+
+    int rc2 = pStreamFile->pDataStream->i_close();
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    RTMemFree(pStreamFile);
+    return rc;
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamDelete(void *pvUser, const char *pcszFilename)
+{
+    NOREF(pvUser);
+    NOREF(pcszFilename);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamMove(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+{
+    NOREF(pvUser);
+    NOREF(pcszSrc);
+    NOREF(pcszDst);
+    NOREF(fMove);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamGetFreeSpace(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+{
+    NOREF(pvUser);
+    NOREF(pcszFilename);
+    AssertPtrReturn(pcbFreeSpace, VERR_INVALID_POINTER);
+    *pcbFreeSpace = INT64_MAX;
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamGetModificationTime(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+{
+    NOREF(pvUser);
+    NOREF(pcszFilename);
+    AssertPtrReturn(pModificationTime, VERR_INVALID_POINTER);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
+{
+    NOREF(pvUser);
+    PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
+
+    *pcbSize = pStreamFile->cbFile;
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
+{
+    RT_NOREF(pvUser);
+    PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
+
+    /* Reducing the size is not supported. */
+    int rc = VINF_SUCCESS;
+    if (pStreamFile->cbFile < cbSize)
+        pStreamFile->cbFile = cbSize;
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    return rc;
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
+                                                       size_t *pcbRead)
+{
+    NOREF(pvUser);
+    NOREF(pStorage);
+    NOREF(uOffset);
+    NOREF(cbBuffer);
+    NOREF(pcbRead);
+    AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamWrite(void *pvUser, void *pStorage, uint64_t uOffset, const void *pvBuffer, size_t cbBuffer,
+                                                        size_t *pcbWritten)
+{
+    RT_NOREF(pvUser);
+    PSTREAMFILE pStreamFile = (PSTREAMFILE)pStorage;
+    int rc = VINF_SUCCESS;
+
+    /* Fill up to the new offset if there is non consecutive access. */
+    if (pStreamFile->uOffsetLast < uOffset)
+    {
+        do
+        {
+            size_t cbThisWrite = RT_MIN(uOffset - pStreamFile->uOffsetLast, sizeof(g_abRTZero64K));
+            size_t cbWritten = 0;
+
+            rc = pStreamFile->pDataStream->i_write(&g_abRTZero64K[0], cbThisWrite, &cbWritten);
+            if (RT_SUCCESS(rc))
+                pStreamFile->uOffsetLast += cbWritten;
+
+        } while (   RT_SUCCESS(rc)
+                 && pStreamFile->uOffsetLast < uOffset);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbWritten)
+            rc = pStreamFile->pDataStream->i_write(pvBuffer, cbBuffer, pcbWritten);
+        else
+        {
+            const uint8_t *pbBuf = (const uint8_t *)pvBuffer;
+            size_t cbLeft = cbBuffer;
+            size_t cbWritten = 0;
+            while (   cbLeft > 0
+                   && RT_SUCCESS(rc))
+            {
+                rc = pStreamFile->pDataStream->i_write(pbBuf, cbLeft, &cbWritten);
+                if (RT_SUCCESS(rc))
+                {
+                    pbBuf  += cbWritten;
+                    cbLeft -= cbWritten;
+                }
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            size_t cbWritten = pcbWritten ? *pcbWritten : cbBuffer;
+
+            /* Adjust file size. */
+            if (uOffset + cbWritten > pStreamFile->cbFile)
+                pStreamFile->cbFile = uOffset + cbWritten;
+
+            pStreamFile->uOffsetLast = uOffset + cbWritten;
+        }
+    }
+
+    return rc;
+}
+
+DECLCALLBACK(int) MediumIO::StreamTask::i_vdStreamFlush(void *pvUser, void *pStorage)
+{
+    NOREF(pvUser);
+    NOREF(pStorage);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Implementation code for the "stream" task.
+ */
+HRESULT MediumIO::StreamTask::executeTask()
+{
+    HRESULT hrc = S_OK;
+    VDINTERFACEIO IfsOutputIO;
+    PVDINTERFACE pIfsOp = NULL;
+    PVDISK pDstDisk;
+
+    IfsOutputIO.pfnOpen                   = i_vdStreamOpen;
+    IfsOutputIO.pfnClose                  = i_vdStreamClose;
+    IfsOutputIO.pfnDelete                 = i_vdStreamDelete;
+    IfsOutputIO.pfnMove                   = i_vdStreamMove;
+    IfsOutputIO.pfnGetFreeSpace           = i_vdStreamGetFreeSpace;
+    IfsOutputIO.pfnGetModificationTime    = i_vdStreamGetModificationTime;
+    IfsOutputIO.pfnGetSize                = i_vdStreamGetSize;
+    IfsOutputIO.pfnSetSize                = i_vdStreamSetSize;
+    IfsOutputIO.pfnReadSync               = i_vdStreamRead;
+    IfsOutputIO.pfnWriteSync              = i_vdStreamWrite;
+    IfsOutputIO.pfnFlushSync              = i_vdStreamFlush;
+    VDInterfaceAdd(&IfsOutputIO.Core, "stream", VDINTERFACETYPE_IO,
+                   m_pDataStream, sizeof(VDINTERFACEIO), &pIfsOp);
+
+    int vrc = VDCreate(NULL, VDTYPE_HDD, &pDstDisk);
+    if (RT_SUCCESS(vrc))
+    {
+        /* Create the output image */
+        vrc = VDCopy(mMediumIO->m->pHdd, VD_LAST_IMAGE, pDstDisk, m_strFormat.c_str(),
+                     "stream", false, 0, m_fMediumVariant, NULL,
+                     VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL, NULL,
+                     pIfsOp, NULL);
+        if (RT_FAILURE(vrc))
+            hrc = mMediumIO->setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                          tr("Failed to convert and stream disk image"));
+
+        VDDestroy(pDstDisk);
+    }
+    else
+        hrc = mMediumIO->setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                      tr("Failed to create destination disk container"));
+
+    return hrc;
+}
 
 
 /*********************************************************************************************************************************
@@ -102,6 +497,7 @@ void MediumIO::FinalRelease()
  * Initializes the medium I/O object.
  *
  * @param   pMedium         Pointer to the medium to access.
+ * @param   pMedium         Pointer to the VirtualBox object the medium is part of.
  * @param   fWritable       Read-write (true) or readonly (false) access.
  * @param   rStrKeyId       The key ID for an encrypted medium.  Empty if not
  *                          encrypted.
@@ -109,9 +505,10 @@ void MediumIO::FinalRelease()
  *                          encrypted.
  *
  */
-HRESULT MediumIO::initForMedium(Medium *pMedium, bool fWritable, com::Utf8Str const &rStrKeyId, com::Utf8Str const &rStrPassword)
+HRESULT MediumIO::initForMedium(Medium *pMedium, VirtualBox *pVirtualBox, bool fWritable,
+                                com::Utf8Str const &rStrKeyId, com::Utf8Str const &rStrPassword)
 {
-    LogFlowThisFunc(("pMedium=%p fWritable=%RTbool\n", pMedium, fWritable));
+    LogFlowThisFunc(("pMedium=%p pVirtualBox=%p fWritable=%RTbool\n", pMedium, pVirtualBox, fWritable));
     CheckComArgExpr(rStrPassword, rStrPassword.isEmpty() == rStrKeyId.isEmpty()); /* checked by caller */
 
     /*
@@ -124,7 +521,7 @@ HRESULT MediumIO::initForMedium(Medium *pMedium, bool fWritable, com::Utf8Str co
      * Allocate data instance.
      */
     HRESULT hrc = S_OK;
-    m = new(std::nothrow) Data(pMedium, fWritable);
+    m = new(std::nothrow) Data(pMedium, pVirtualBox, fWritable);
     if (m)
     {
         /*
@@ -399,8 +796,52 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
                                   ComPtr<IDataStream> &aStream,
                                   ComPtr<IProgress> &aProgress)
 {
-    RT_NOREF(aFormat, aVariant, aBufferSize, aStream, aProgress);
-    return E_NOTIMPL;
+    HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    ComObjPtr<DataStream> pDataStream;
+    MediumIO::StreamTask *pTask = NULL;
+
+    pProgress.createObject();
+    pDataStream.createObject();
+
+    try
+    {
+        rc = pDataStream->init(aBufferSize);
+        if (FAILED(rc))
+            throw rc;
+
+        ULONG mediumVariantFlags = 0;
+
+        if (aVariant.size())
+        {
+            for (size_t i = 0; i < aVariant.size(); i++)
+                mediumVariantFlags |= (ULONG)aVariant[i];
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new MediumIO::StreamTask(this, pDataStream, pProgress,
+                                         aFormat.c_str(), (MediumVariant_T)mediumVariantFlags);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+            throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        rc = pTask->createThread();
+
+        if (SUCCEEDED(rc))
+        {
+            pDataStream.queryInterfaceTo(aStream.asOutParam());
+            pProgress.queryInterfaceTo(aProgress.asOutParam());
+        }
+    }
+    else if (pTask != NULL)
+        delete pTask;
+
+    return rc;
 }
 
 HRESULT MediumIO::close()
