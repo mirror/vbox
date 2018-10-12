@@ -1810,7 +1810,7 @@ ExtPack::i_hlpUpdateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress)
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     ComPtr<IInternalProgressControl> pProgressControl(pProgress);
-    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    AssertReturn(!!pProgressControl, (uint32)E_INVALIDARG);
     return pProgressControl->SetCurrentOperationProgress(uPercent);
 }
 
@@ -1830,7 +1830,7 @@ ExtPack::i_hlpNextOperationProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IPr
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     ComPtr<IInternalProgressControl> pProgressControl(pProgress);
-    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    AssertReturn(!!pProgressControl, (uint32)E_INVALIDARG);
     return pProgressControl->SetNextOperation(Bstr(pcszNextOperationDescription).raw(), uNextOperationWeight);
 }
 
@@ -1848,7 +1848,7 @@ ExtPack::i_hlpWaitOtherProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgre
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     ComPtr<IInternalProgressControl> pProgressControl(pProgress);
-    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    AssertReturn(!!pProgressControl, (uint32)E_INVALIDARG);
     return pProgressControl->WaitForOtherProgressCompletion(pProgressOther, cTimeoutMS);
 }
 
@@ -1865,7 +1865,7 @@ ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgres
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 
     ComPtr<IInternalProgressControl> pProgressControl(pProgress);
-    AssertReturn(!!pProgressControl, E_INVALIDARG);
+    AssertReturn(!!pProgressControl, (uint32)E_INVALIDARG);
 
     ComPtr<IVirtualBoxErrorInfo> errorInfo;
     if (FAILED((HRESULT)uResultCode))
