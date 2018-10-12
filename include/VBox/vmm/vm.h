@@ -642,13 +642,22 @@ typedef struct VMCPU
 #define VMCPU_FF_SET(pVCpu, fFlag)          ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
 
 /** @def VM_FF_CLEAR
- * Clears a force action flag.
+ * Clears a single force action flag.
  *
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to clear.
  */
 #if 1
-# define VM_FF_CLEAR(pVM, fFlag)            ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag))
+# if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
+#  define VM_FF_CLEAR(pVM, fFlag)            ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag))
+# else
+#  define VM_FF_CLEAR(pVM, fFlag) \
+    ([](PVM a_pVM) -> void \
+    { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        ASMAtomicAndU32(&a_pVM->fGlobalForcedActions, ~(fFlag)); \
+    }(pVM))
+# endif
 #else
 # define VM_FF_CLEAR(pVM, fFlag) \
     do { ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag)); \
@@ -666,11 +675,11 @@ typedef struct VMCPU
 # define VMCPU_FF_CLEAR(pVCpu, fFlag)       ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag))
 #else
 # define VMCPU_FF_CLEAR(pVCpu, fFlag) \
-                   ([](PVMCPU a_pVCpu) -> void \
-                   { \
-                       AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-                       ASMAtomicAndU32(&a_pVCpu->fLocalForcedActions, ~(fFlag)); \
-                   }(pVCpu))
+    ([](PVMCPU a_pVCpu) -> void \
+    { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        ASMAtomicAndU32(&a_pVCpu->fLocalForcedActions, ~(fFlag)); \
+    }(pVCpu))
 #endif
 
 /** @def VMCPU_FF_CLEAR_MASK
@@ -700,11 +709,11 @@ typedef struct VMCPU
 # define VMCPU_FF_IS_SET(pVCpu, fFlag)      (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
 #else
 # define VMCPU_FF_IS_SET(pVCpu, fFlag) \
-                   ([](PVMCPU a_pVCpu) -> bool \
-                   { \
-                       AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-                       return (a_pVCpu->fLocalForcedActions & (fFlag)) == (fFlag); \
-                   }(pVCpu))
+    ([](PVMCPU a_pVCpu) -> bool \
+    { \
+        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
+        return (a_pVCpu->fLocalForcedActions & (fFlag)) == (fFlag); \
+    }(pVCpu))
 #endif
 
 /** @def VM_FF_IS_PENDING
