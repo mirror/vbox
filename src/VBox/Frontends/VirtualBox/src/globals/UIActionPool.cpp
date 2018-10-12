@@ -1220,7 +1220,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogTogglePaneFind(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_find_22px.png", ":/log_viewer_find_disabled_22px.png")
+                         ":/log_viewer_find_32px.png", ":/log_viewer_find_disabled_32px.png")
     {}
 
 protected:
@@ -1257,7 +1257,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogTogglePaneFilter(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_filter_22px.png", ":/log_viewer_filter_disabled_22px.png")
+                         ":/log_viewer_filter_32px.png", ":/log_viewer_filter_disabled_32px.png")
     {}
 
 protected:
@@ -1294,7 +1294,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogTogglePaneBookmark(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_bookmark_22px.png", ":/log_viewer_bookmark_disabled_22px.png")
+                         ":/log_viewer_bookmark_32px.png", ":/log_viewer_bookmark_disabled_32px.png")
     {}
 
 protected:
@@ -1331,7 +1331,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogTogglePaneSettings(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_settings_22px.png", ":/log_viewer_settings_disabled_22px.png")
+                         ":/log_viewer_settings_32px.png", ":/log_viewer_settings_disabled_32px.png")
     {}
 
 protected:
@@ -1368,7 +1368,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/log_viewer_refresh_22px.png", ":/log_viewer_refresh_disabled_22px.png")
+                         ":/log_viewer_refresh_32px.png", ":/log_viewer_refresh_disabled_32px.png")
     {}
 
 protected:
@@ -1405,7 +1405,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogPerformSave(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/log_viewer_save_22px.png", ":/log_viewer_save_disabled_22px.png")
+                         ":/log_viewer_save_32px.png", ":/log_viewer_save_disabled_32px.png")
     {}
 
 protected:

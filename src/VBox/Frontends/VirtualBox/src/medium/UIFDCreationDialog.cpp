@@ -91,7 +91,7 @@ void UIFDCreationDialog::prepare()
 {
 
 #ifndef VBOX_WS_MAC
-    setWindowIcon(QIcon(":/fd_add_22px.png"));
+    setWindowIcon(QIcon(":/fd_add_32px.png"));
 #endif
 
     setWindowModality(Qt::WindowModal);

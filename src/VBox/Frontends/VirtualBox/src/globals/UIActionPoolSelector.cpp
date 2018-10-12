@@ -1595,8 +1595,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorSnapshotPerformTake(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
-                         ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png")
+                         ":/snapshot_take_32px.png", ":/snapshot_take_16px.png",
+                         ":/snapshot_take_disabled_32px.png", ":/snapshot_take_disabled_16px.png")
     {}
 
 protected:
@@ -1633,8 +1633,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorSnapshotPerformDelete(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/snapshot_delete_22px.png", ":/snapshot_delete_16px.png",
-                         ":/snapshot_delete_disabled_22px.png", ":/snapshot_delete_disabled_16px.png")
+                         ":/snapshot_delete_32px.png", ":/snapshot_delete_16px.png",
+                         ":/snapshot_delete_disabled_32px.png", ":/snapshot_delete_disabled_16px.png")
     {}
 
 protected:
@@ -1671,8 +1671,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorSnapshotPerformRestore(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/snapshot_restore_22px.png", ":/snapshot_restore_16px.png",
-                         ":/snapshot_restore_disabled_22px.png", ":/snapshot_restore_disabled_16px.png")
+                         ":/snapshot_restore_32px.png", ":/snapshot_restore_16px.png",
+                         ":/snapshot_restore_disabled_32px.png", ":/snapshot_restore_disabled_16px.png")
     {}
 
 protected:
@@ -1747,8 +1747,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorSnapshotPerformClone(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/vm_clone_22px.png", ":/vm_clone_16px.png",
-                         ":/vm_clone_disabled_22px.png", ":/vm_clone_disabled_16px.png")
+                         ":/vm_clone_32px.png", ":/vm_clone_16px.png",
+                         ":/vm_clone_disabled_32px.png", ":/vm_clone_disabled_16px.png")
     {}
 
 protected:
@@ -1815,12 +1815,12 @@ public:
     UIActionMenuSelectorMediumPerformAdd(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
-        setIcon(0, UIIconPool::iconSetFull(":/hd_add_22px.png",          ":/hd_add_16px.png",
-                                           ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_add_22px.png",          ":/cd_add_16px.png",
-                                           ":/cd_add_disabled_22px.png", ":/cd_add_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_add_22px.png",          ":/fd_add_16px.png",
-                                           ":/fd_add_disabled_22px.png", ":/fd_add_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_add_32px.png",          ":/hd_add_16px.png",
+                                           ":/hd_add_disabled_32px.png", ":/hd_add_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_add_32px.png",          ":/cd_add_16px.png",
+                                           ":/cd_add_disabled_32px.png", ":/cd_add_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_add_32px.png",          ":/fd_add_16px.png",
+                                           ":/fd_add_disabled_32px.png", ":/fd_add_disabled_16px.png"));
     }
 
 protected:
@@ -1858,12 +1858,12 @@ public:
     UIActionMenuSelectorMediumPerformCopy(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
-        setIcon(0, UIIconPool::iconSetFull(":/hd_copy_22px.png",          ":/hd_copy_16px.png",
-                                           ":/hd_copy_disabled_22px.png", ":/hd_copy_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_copy_22px.png",          ":/cd_copy_16px.png",
-                                           ":/cd_copy_disabled_22px.png", ":/cd_copy_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_copy_22px.png",          ":/fd_copy_16px.png",
-                                           ":/fd_copy_disabled_22px.png", ":/fd_copy_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_copy_32px.png",          ":/hd_copy_16px.png",
+                                           ":/hd_copy_disabled_32px.png", ":/hd_copy_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_copy_32px.png",          ":/cd_copy_16px.png",
+                                           ":/cd_copy_disabled_32px.png", ":/cd_copy_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_copy_32px.png",          ":/fd_copy_16px.png",
+                                           ":/fd_copy_disabled_32px.png", ":/fd_copy_disabled_16px.png"));
     }
 
 protected:
@@ -1901,12 +1901,12 @@ public:
     UIActionMenuSelectorMediumPerformMove(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
-        setIcon(0, UIIconPool::iconSetFull(":/hd_move_22px.png",          ":/hd_move_16px.png",
-                                           ":/hd_move_disabled_22px.png", ":/hd_move_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_move_22px.png",          ":/cd_move_16px.png",
-                                           ":/cd_move_disabled_22px.png", ":/cd_move_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_move_22px.png",          ":/fd_move_16px.png",
-                                           ":/fd_move_disabled_22px.png", ":/fd_move_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_move_32px.png",          ":/hd_move_16px.png",
+                                           ":/hd_move_disabled_32px.png", ":/hd_move_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_move_32px.png",          ":/cd_move_16px.png",
+                                           ":/cd_move_disabled_32px.png", ":/cd_move_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_move_32px.png",          ":/fd_move_16px.png",
+                                           ":/fd_move_disabled_32px.png", ":/fd_move_disabled_16px.png"));
     }
 
 protected:
@@ -1944,12 +1944,12 @@ public:
     UIActionMenuSelectorMediumPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
-        setIcon(0, UIIconPool::iconSetFull(":/hd_remove_22px.png",          ":/hd_remove_16px.png",
-                                           ":/hd_remove_disabled_22px.png", ":/hd_remove_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_remove_22px.png",          ":/cd_remove_16px.png",
-                                           ":/cd_remove_disabled_22px.png", ":/cd_remove_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_remove_22px.png",          ":/fd_remove_16px.png",
-                                           ":/fd_remove_disabled_22px.png", ":/fd_remove_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_remove_32px.png",          ":/hd_remove_16px.png",
+                                           ":/hd_remove_disabled_32px.png", ":/hd_remove_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_remove_32px.png",          ":/cd_remove_16px.png",
+                                           ":/cd_remove_disabled_32px.png", ":/cd_remove_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_remove_32px.png",          ":/fd_remove_16px.png",
+                                           ":/fd_remove_disabled_32px.png", ":/fd_remove_disabled_16px.png"));
     }
 
 protected:
@@ -1987,12 +1987,12 @@ public:
     UIActionMenuSelectorMediumPerformRelease(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
-        setIcon(0, UIIconPool::iconSetFull(":/hd_release_22px.png",          ":/hd_release_16px.png",
-                                           ":/hd_release_disabled_22px.png", ":/hd_release_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_release_22px.png",          ":/cd_release_16px.png",
-                                           ":/cd_release_disabled_22px.png", ":/cd_release_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_release_22px.png",          ":/fd_release_16px.png",
-                                           ":/fd_release_disabled_22px.png", ":/fd_release_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_release_32px.png",          ":/hd_release_16px.png",
+                                           ":/hd_release_disabled_32px.png", ":/hd_release_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_release_32px.png",          ":/cd_release_16px.png",
+                                           ":/cd_release_disabled_32px.png", ":/cd_release_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_release_32px.png",          ":/fd_release_16px.png",
+                                           ":/fd_release_disabled_32px.png", ":/fd_release_disabled_16px.png"));
     }
 
 protected:
@@ -2030,12 +2030,12 @@ public:
     UIActionMenuSelectorMediumToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
-        setIcon(0, UIIconPool::iconSetFull(":/hd_modify_22px.png",          ":/hd_modify_16px.png",
-                                           ":/hd_modify_disabled_22px.png", ":/hd_modify_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_modify_22px.png",          ":/cd_modify_16px.png",
-                                           ":/cd_modify_disabled_22px.png", ":/cd_modify_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_modify_22px.png",          ":/fd_modify_16px.png",
-                                           ":/fd_modify_disabled_22px.png", ":/fd_modify_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_modify_32px.png",          ":/hd_modify_16px.png",
+                                           ":/hd_modify_disabled_32px.png", ":/hd_modify_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_modify_32px.png",          ":/cd_modify_16px.png",
+                                           ":/cd_modify_disabled_32px.png", ":/cd_modify_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_modify_32px.png",          ":/fd_modify_16px.png",
+                                           ":/fd_modify_disabled_32px.png", ":/fd_modify_disabled_16px.png"));
     }
 
 protected:
@@ -2139,8 +2139,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorNetworkPerformCreate(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/host_iface_add_22px.png",          ":/host_iface_add_16px.png",
-                         ":/host_iface_add_disabled_22px.png", ":/host_iface_add_disabled_16px.png")
+                         ":/host_iface_add_32px.png",          ":/host_iface_add_16px.png",
+                         ":/host_iface_add_disabled_32px.png", ":/host_iface_add_disabled_16px.png")
     {}
 
 protected:
@@ -2177,8 +2177,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorNetworkPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/host_iface_remove_22px.png",          ":/host_iface_remove_16px.png",
-                         ":/host_iface_remove_disabled_22px.png", ":/host_iface_remove_disabled_16px.png")
+                         ":/host_iface_remove_32px.png",          ":/host_iface_remove_16px.png",
+                         ":/host_iface_remove_disabled_32px.png", ":/host_iface_remove_disabled_16px.png")
     {}
 
 protected:
@@ -2215,8 +2215,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorNetworkToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/host_iface_edit_22px.png",          ":/host_iface_edit_16px.png",
-                         ":/host_iface_edit_disabled_22px.png", ":/host_iface_edit_disabled_16px.png")
+                         ":/host_iface_edit_32px.png",          ":/host_iface_edit_16px.png",
+                         ":/host_iface_edit_disabled_32px.png", ":/host_iface_edit_disabled_16px.png")
     {}
 
 protected:

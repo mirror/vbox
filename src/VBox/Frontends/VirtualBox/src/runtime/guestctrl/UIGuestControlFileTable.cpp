@@ -384,7 +384,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         pActionCopy = menu->addAction(UIVMInformationDialog::tr("Copy"));
         if (pActionCopy)
         {
-            pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
+            pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_32px.png")));
             pActionCopy->setEnabled(selectionAvaible);
             connect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
         }
@@ -392,7 +392,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         pActionCut = menu->addAction(UIVMInformationDialog::tr("Cut"));
         if (pActionCut)
         {
-            pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
+            pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_32px.png")));
             pActionCut->setEnabled(selectionAvaible);
             connect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
         }
@@ -931,7 +931,7 @@ void UIGuestControlFileTable::prepareActions()
     m_pCopy = new QAction(this);
     if (m_pCopy)
     {
-        m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
+        m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_32px.png")));
         m_pToolBar->addAction(m_pCopy);
         connect(m_pCopy, &QAction::triggered, this, &UIGuestControlFileTable::sltCopy);
         m_selectionDependentActions.push_back(m_pCopy);
@@ -940,7 +940,7 @@ void UIGuestControlFileTable::prepareActions()
     m_pCut = new QAction(this);
     if (m_pCut)
     {
-        m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
+        m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_32px.png")));
         m_pToolBar->addAction(m_pCut);
         connect(m_pCut, &QAction::triggered, this, &UIGuestControlFileTable::sltCut);
         m_selectionDependentActions.push_back(m_pCut);
