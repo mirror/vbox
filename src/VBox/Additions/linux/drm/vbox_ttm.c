@@ -253,7 +253,7 @@ static void vbox_ttm_tt_unpopulate(struct ttm_tt *ttm)
 }
 #endif
 
-struct ttm_bo_driver vbox_bo_driver = {
+static struct ttm_bo_driver vbox_bo_driver = {
 	.ttm_tt_create = vbox_ttm_tt_create,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 	.ttm_tt_populate = vbox_ttm_tt_populate,
