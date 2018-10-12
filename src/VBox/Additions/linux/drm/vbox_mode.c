@@ -268,8 +268,7 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
 	if (ret)
 		return ret;
 	mutex_lock(&vbox->hw_mutex);
-	if (!ret)
-		vbox_do_modeset(crtc, mode);
+	vbox_do_modeset(crtc, mode);
 	VBoxHGSMIUpdateInputMapping(vbox->guest_pool, 0, 0,
 				   vbox->input_mapping_width,
 				   vbox->input_mapping_height);
