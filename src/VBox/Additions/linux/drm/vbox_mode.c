@@ -60,14 +60,12 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 	struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtc);
 	struct vbox_private *vbox;
 	int width, height, bpp, pitch;
-	unsigned int crtc_id;
 	u16 flags;
 	s32 x_offset, y_offset;
 
 	vbox = crtc->dev->dev_private;
 	width = mode->hdisplay ? mode->hdisplay : 640;
 	height = mode->vdisplay ? mode->vdisplay : 480;
-	crtc_id = vbox_crtc->crtc_id;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 	bpp = crtc->enabled ? CRTC_FB(crtc)->format->cpp[0] * 8 : 32;
 	pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
@@ -580,9 +578,6 @@ static int vbox_mode_valid(struct drm_connector *connector,
 
 static void vbox_connector_destroy(struct drm_connector *connector)
 {
-	struct vbox_connector *vbox_connector;
-
-	vbox_connector = to_vbox_connector(connector);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(RHEL_72)
 	drm_sysfs_connector_remove(connector);
 #else
