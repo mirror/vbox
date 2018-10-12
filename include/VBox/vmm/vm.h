@@ -624,23 +624,8 @@ typedef struct VMCPU
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to set.
  */
-#if 1
-# if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
-#  define VM_FF_SET(pVM, fFlag)              ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag))
-# else
-#  define VM_FF_SET(pVM, fFlag) \
-    ([](PVM a_pVM) -> void \
-    { \
-        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        ASMAtomicOrU32(&a_pVM->fGlobalForcedActions, (fFlag)); \
-    }(pVM))
-# endif
-#else
-# define VM_FF_SET(pVM, fFlag) \
-    do { ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag)); \
-         RTLogPrintf("VM_FF_SET  : %08x %s - %s(%d) %s\n", (pVM)->fGlobalForcedActions, #fFlag, __FILE__, __LINE__, __FUNCTION__); \
-    } while (0)
-#endif
+#define VM_FF_SET(pVM, fFlag) \
+    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicOrU32(&(pVM)->fGlobalForcedActions, (fFlag)); } while (0)
 
 /** @def VMCPU_FF_SET
  * Sets a single force action flag for the given VCPU.
@@ -649,16 +634,8 @@ typedef struct VMCPU
  * @param   fFlag   The flag to set.
  * @sa      VMCPU_FF_SET_MASK
  */
-#if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
-# define VMCPU_FF_SET(pVCpu, fFlag)          ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
-#else
-# define VMCPU_FF_SET(pVCpu, fFlag) \
-    ([](PVMCPU a_pVCpu) -> void \
-    { \
-        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlag)); \
-    }(pVCpu))
-#endif
+#define VMCPU_FF_SET(pVCpu, fFlag) \
+    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag)); } while (0)
 
 /** @def VMCPU_FF_SET
  * Sets a two or more force action flag for the given VCPU.
@@ -667,7 +644,8 @@ typedef struct VMCPU
  * @param   fFlags  The flags to set.
  * @sa      VMCPU_FF_SET
  */
-#define VMCPU_FF_SET_MASK(a_pVCpu, fFlags)  ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlags))
+#define VMCPU_FF_SET_MASK(a_pVCpu, fFlags) \
+    do { ASMAtomicOrU32(&a_pVCpu->fLocalForcedActions, (fFlags)); } while (0)
 
 /** @def VM_FF_CLEAR
  * Clears a single force action flag.
@@ -675,23 +653,8 @@ typedef struct VMCPU
  * @param   pVM     The cross context VM structure.
  * @param   fFlag   The flag to clear.
  */
-#if 1
-# if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
-#  define VM_FF_CLEAR(pVM, fFlag)            ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag))
-# else
-#  define VM_FF_CLEAR(pVM, fFlag) \
-    ([](PVM a_pVM) -> void \
-    { \
-        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        ASMAtomicAndU32(&a_pVM->fGlobalForcedActions, ~(fFlag)); \
-    }(pVM))
-# endif
-#else
-# define VM_FF_CLEAR(pVM, fFlag) \
-    do { ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag)); \
-         RTLogPrintf("VM_FF_CLEAR: %08x %s - %s(%d) %s\n", (pVM)->fGlobalForcedActions, #fFlag, __FILE__, __LINE__, __FUNCTION__); \
-    } while (0)
-#endif
+#define VM_FF_CLEAR(pVM, fFlag) \
+    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicAndU32(&(pVM)->fGlobalForcedActions, ~(fFlag)); } while (0)
 
 /** @def VMCPU_FF_CLEAR
  * Clears a single force action flag for the given VCPU.
@@ -699,16 +662,8 @@ typedef struct VMCPU
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlag   The flag to clear.
  */
-#if !defined(VBOX_STRICT) || !defined(RT_COMPILER_SUPPORTS_LAMBDA)
-# define VMCPU_FF_CLEAR(pVCpu, fFlag)       ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag))
-#else
-# define VMCPU_FF_CLEAR(pVCpu, fFlag) \
-    ([](PVMCPU a_pVCpu) -> void \
-    { \
-        AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        ASMAtomicAndU32(&a_pVCpu->fLocalForcedActions, ~(fFlag)); \
-    }(pVCpu))
-#endif
+#define VMCPU_FF_CLEAR(pVCpu, fFlag) \
+    do { AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag)); } while (0)
 
 /** @def VMCPU_FF_CLEAR_MASK
  * Clears two or more force action flags for the given VCPU.
@@ -716,7 +671,8 @@ typedef struct VMCPU
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The flags to clear.
  */
-#define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags)  ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlags))
+#define VMCPU_FF_CLEAR_MASK(pVCpu, fFlags) \
+    do { ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlags)); } while (0)
 
 /** @def VM_FF_IS_SET
  * Checks if single a force action flag is set.
