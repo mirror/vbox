@@ -1359,8 +1359,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsMachineShowDetails(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/machine_details_manager_22px.png", ":/machine_details_manager_16px.png",
-                         ":/machine_details_manager_22px.png", ":/machine_details_manager_16px.png")
+                         ":/machine_details_manager_24px.png", ":/machine_details_manager_16px.png",
+                         ":/machine_details_manager_24px.png", ":/machine_details_manager_16px.png")
     {}
 
 protected:
@@ -1389,8 +1389,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsMachineShowSnapshots(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/snapshot_manager_22px.png", ":/snapshot_manager_16px.png",
-                         ":/snapshot_manager_22px.png", ":/snapshot_manager_16px.png")
+                         ":/snapshot_manager_24px.png", ":/snapshot_manager_16px.png",
+                         ":/snapshot_manager_24px.png", ":/snapshot_manager_16px.png")
     {}
 
 protected:
@@ -1506,8 +1506,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/media_manager_22px.png", ":/media_manager_16px.png",
-                         ":/media_manager_22px.png", ":/media_manager_16px.png")
+                         ":/media_manager_24px.png", ":/media_manager_16px.png",
+                         ":/media_manager_24px.png", ":/media_manager_16px.png")
     {}
 
 protected:
@@ -1536,8 +1536,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/host_iface_manager_22px.png", ":/host_iface_manager_16px.png",
-                         ":/host_iface_manager_22px.png", ":/host_iface_manager_16px.png")
+                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
+                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png")
     {}
 
 protected:

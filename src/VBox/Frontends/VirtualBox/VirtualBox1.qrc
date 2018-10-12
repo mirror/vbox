@@ -197,7 +197,7 @@
         <file alias="host_iface_edit_disabled_16px.png">images/host_iface_edit_disabled_16px.png</file>
         <file alias="host_iface_edit_disabled_32px.png">images/host_iface_edit_disabled_32px.png</file>
         <file alias="host_iface_manager_16px.png">images/host_iface_manager_16px.png</file>
-        <file alias="host_iface_manager_22px.png">images/host_iface_manager_22px.png</file>
+        <file alias="host_iface_manager_24px.png">images/host_iface_manager_24px.png</file>
         <file alias="host_iface_manager_32px.png">images/host_iface_manager_32px.png</file>
         <file alias="host_iface_remove_16px.png">images/host_iface_remove_16px.png</file>
         <file alias="host_iface_remove_32px.png">images/host_iface_remove_32px.png</file>
@@ -262,10 +262,10 @@
         <file alias="machine_32px.png">images/machine_32px.png</file>
         <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
         <file alias="machine_details_manager_16px.png">images/machine_details_manager_16px.png</file>
-        <file alias="machine_details_manager_22px.png">images/machine_details_manager_22px.png</file>
+        <file alias="machine_details_manager_24px.png">images/machine_details_manager_24px.png</file>
         <file alias="machine_warning_16px.png">images/machine_warning_16px.png</file>
         <file alias="media_manager_16px.png">images/media_manager_16px.png</file>
-        <file alias="media_manager_22px.png">images/media_manager_22px.png</file>
+        <file alias="media_manager_24px.png">images/media_manager_24px.png</file>
         <file alias="media_manager_32px.png">images/media_manager_32px.png</file>
         <file alias="meditation_32px.png">images/meditation_32px.png</file>
         <file alias="menubar_16px.png">images/menubar_16px.png</file>
