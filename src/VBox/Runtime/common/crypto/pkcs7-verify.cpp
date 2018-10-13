@@ -830,4 +830,3 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
                                        pfnVerifyCert, pvUser, pvData, cbData, pErrInfo);
 }
 
-
