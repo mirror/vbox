@@ -154,6 +154,11 @@ bool UIToolsModel::areToolsEnabled(UIToolsClass enmClass) const
     return m_statesToolsEnabled.value(enmClass);
 }
 
+void UIToolsModel::closeParent()
+{
+    m_pTools->close();
+}
+
 void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
 {
     /* Is there something changed? */

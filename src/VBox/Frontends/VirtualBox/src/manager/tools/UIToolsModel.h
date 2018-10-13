@@ -107,6 +107,9 @@ public:
         void setToolsEnabled(UIToolsClass enmClass, bool fEnabled);
         /** Returns whether certain class of tools is enabled.*/
         bool areToolsEnabled(UIToolsClass enmClass) const;
+
+        /** Closes parent. */
+        void closeParent();
     /** @} */
 
     /** @name Children stuff.
