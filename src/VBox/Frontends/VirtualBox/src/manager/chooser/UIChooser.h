@@ -117,6 +117,14 @@ public slots:
         void sltHandleToolbarResize(const QSize &newSize);
     /** @} */
 
+private slots:
+
+    /** @name General stuff.
+      * @{ */
+        /** Handles signal about tool popup-menu request for certain tool @a enmClass and in specified @a position. */
+        void sltToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+    /** @} */
+
 private:
 
     /** @name Prepare/Cleanup cascade.

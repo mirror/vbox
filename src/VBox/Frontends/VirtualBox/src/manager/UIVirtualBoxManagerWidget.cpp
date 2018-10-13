@@ -315,7 +315,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolsClass enmClass
     m_pPaneTools->setToolsClass(enmClass);
 
     /* Move, resize and show: */
-    m_pPaneTools->move(m_pPaneChooser->mapToGlobal(position));
+    m_pPaneTools->move(position);
     m_pPaneTools->show();
     // WORKAROUND:
     // Don't want even to think why, but for Qt::Popup resize to

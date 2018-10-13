@@ -100,6 +100,12 @@ void UIChooser::sltHandleToolbarResize(const QSize &newSize)
     model()->setGlobalItemHeightHint(newSize.height());
 }
 
+void UIChooser::sltToolMenuRequested(UIToolsClass enmClass, const QPoint &position)
+{
+    /* Translate scene coordinates to global one: */
+    emit sigToolMenuRequested(enmClass, mapToGlobal(view()->mapFromScene(position)));
+}
+
 void UIChooser::prepare()
 {
     /* Prepare palette: */
@@ -171,7 +177,7 @@ void UIChooser::prepareConnections()
     connect(m_pChooserModel, &UIChooserModel::sigFocusChanged,
             m_pChooserView, &UIChooserView::sltFocusChanged);
     connect(m_pChooserModel, &UIChooserModel::sigToolMenuRequested,
-            this, &UIChooser::sigToolMenuRequested);
+            this, &UIChooser::sltToolMenuRequested);
 
     /* Setup chooser-view connections: */
     connect(m_pChooserView, &UIChooserView::sigResized,
