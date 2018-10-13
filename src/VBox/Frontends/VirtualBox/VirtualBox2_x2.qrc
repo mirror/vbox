@@ -308,6 +308,7 @@
         <file alias="web_camera_unavailable_16px_x2.png">images/x2/web_camera_unavailable_16px_x2.png</file>
         <file alias="web_camera_unavailable_disabled_16px_x2.png">images/x2/web_camera_unavailable_disabled_16px_x2.png</file>
         <file alias="welcome_200px_x2.png">images/x2/welcome_200px_x2.png</file>
+        <file alias="welcome_screen_24px_x2.png">images/x2/welcome_screen_24px_x2.png</file>
         <file alias="wizard_clone_x2.png">images/x2/wizard_clone_x2.png</file>
         <file alias="wizard_first_run_x2.png">images/x2/wizard_first_run_x2.png</file>
         <file alias="wizard_new_harddisk_x2.png">images/x2/wizard_new_harddisk_x2.png</file>
