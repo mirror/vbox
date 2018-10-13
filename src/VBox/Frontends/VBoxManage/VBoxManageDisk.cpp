@@ -2485,7 +2485,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
                         }
                     }
 
-                    /** @todo: Check progress. */
+                    /** @todo Check progress. */
                 }
             }
             else
