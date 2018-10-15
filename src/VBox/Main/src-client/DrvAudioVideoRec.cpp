@@ -372,7 +372,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                                                            WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cBits,
+                            rc = pSink->Con.WebM.pWebM->AddAudioTrack(uHz, cChannels, cBytes * 8 /* Bits */,
                                                                       &pSink->Con.WebM.uTrack);
                             if (RT_SUCCESS(rc))
                             {
