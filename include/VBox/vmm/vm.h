@@ -90,6 +90,9 @@ typedef enum VMCPUSTATE
     VMCPUSTATE_32BIT_HACK = 0x7fffffff
 } VMCPUSTATE;
 
+/** Enables 64-bit FFs. */
+#define VMCPU_WITH_64_BIT_FFS
+
 
 /**
  * The cross context virtual CPU structure.
@@ -426,123 +429,123 @@ typedef struct VMCPU
 
 
 /** This action forces the VM to check any pending interrupts on the APIC. */
-#define VMCPU_FF_INTERRUPT_APIC             RT_BIT_32(VMCPU_FF_INTERRUPT_APIC_BIT)
+#define VMCPU_FF_INTERRUPT_APIC             RT_BIT_64(VMCPU_FF_INTERRUPT_APIC_BIT)
 #define VMCPU_FF_INTERRUPT_APIC_BIT         0
 /** This action forces the VM to check any pending interrups on the PIC. */
-#define VMCPU_FF_INTERRUPT_PIC              RT_BIT_32(VMCPU_FF_INTERRUPT_PIC_BIT)
+#define VMCPU_FF_INTERRUPT_PIC              RT_BIT_64(VMCPU_FF_INTERRUPT_PIC_BIT)
 #define VMCPU_FF_INTERRUPT_PIC_BIT          1
 /** This action forces the VM to schedule and run pending timer (TM).
  * @remarks Don't move - PATM compatibility.  */
-#define VMCPU_FF_TIMER                      RT_BIT_32(VMCPU_FF_TIMER_BIT)
+#define VMCPU_FF_TIMER                      RT_BIT_64(VMCPU_FF_TIMER_BIT)
 #define VMCPU_FF_TIMER_BIT                  2
 /** This action forces the VM to check any pending NMIs. */
-#define VMCPU_FF_INTERRUPT_NMI              RT_BIT_32(VMCPU_FF_INTERRUPT_NMI_BIT)
+#define VMCPU_FF_INTERRUPT_NMI              RT_BIT_64(VMCPU_FF_INTERRUPT_NMI_BIT)
 #define VMCPU_FF_INTERRUPT_NMI_BIT          3
 /** This action forces the VM to check any pending SMIs. */
-#define VMCPU_FF_INTERRUPT_SMI              RT_BIT_32(VMCPU_FF_INTERRUPT_SMI_BIT)
+#define VMCPU_FF_INTERRUPT_SMI              RT_BIT_64(VMCPU_FF_INTERRUPT_SMI_BIT)
 #define VMCPU_FF_INTERRUPT_SMI_BIT          4
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
-#define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(VMCPU_FF_PDM_CRITSECT_BIT)
+#define VMCPU_FF_PDM_CRITSECT               RT_BIT_64(VMCPU_FF_PDM_CRITSECT_BIT)
 #define VMCPU_FF_PDM_CRITSECT_BIT           5
 /** Special EM internal force flag that is used by EMUnhaltAndWakeUp() to force
  * the virtual CPU out of the next (/current) halted state.  It is not processed
  * nor cleared by emR3ForcedActions (similar to VMCPU_FF_BLOCK_NMIS), instead it
  * is cleared the next time EM leaves the HALTED state. */
-#define VMCPU_FF_UNHALT                     RT_BIT_32(VMCPU_FF_UNHALT_BIT)
+#define VMCPU_FF_UNHALT                     RT_BIT_64(VMCPU_FF_UNHALT_BIT)
 #define VMCPU_FF_UNHALT_BIT                 6
 /** Pending IEM action (mask). */
-#define VMCPU_FF_IEM                        RT_BIT_32(VMCPU_FF_IEM_BIT)
+#define VMCPU_FF_IEM                        RT_BIT_64(VMCPU_FF_IEM_BIT)
 /** Pending IEM action (bit number). */
 #define VMCPU_FF_IEM_BIT                    7
 /** Pending APIC action (bit number). */
 #define VMCPU_FF_UPDATE_APIC_BIT            8
 /** This action forces the VM to update APIC's asynchronously arrived
  *  interrupts as pending interrupts. */
-#define VMCPU_FF_UPDATE_APIC                RT_BIT_32(VMCPU_FF_UPDATE_APIC_BIT)
+#define VMCPU_FF_UPDATE_APIC                RT_BIT_64(VMCPU_FF_UPDATE_APIC_BIT)
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
-#define VMCPU_FF_REQUEST                    RT_BIT_32(VMCPU_FF_REQUEST_BIT)
+#define VMCPU_FF_REQUEST                    RT_BIT_64(VMCPU_FF_REQUEST_BIT)
 #define VMCPU_FF_REQUEST_BIT                9
 /** Pending DBGF event (alternative to passing VINF_EM_DBG_EVENT around).  */
-#define VMCPU_FF_DBGF                       RT_BIT_32(VMCPU_FF_DBGF_BIT)
+#define VMCPU_FF_DBGF                       RT_BIT_64(VMCPU_FF_DBGF_BIT)
 /** The bit number for VMCPU_FF_DBGF. */
 #define VMCPU_FF_DBGF_BIT                   10
 /** Pending MTF (Monitor Trap Flag) event - Intel only.  */
-#define VMCPU_FF_MTF                        RT_BIT_32(VMCPU_FF_MTF_BIT)
+#define VMCPU_FF_MTF                        RT_BIT_64(VMCPU_FF_MTF_BIT)
 /** The bit number for VMCPU_FF_MTF. */
 #define VMCPU_FF_MTF_BIT                    11
 /** This action forces the VM to service any pending updates to CR3 (used only
  *  by HM). */
-#define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_32(VMCPU_FF_HM_UPDATE_CR3_BIT)
+#define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_64(VMCPU_FF_HM_UPDATE_CR3_BIT)
 #define VMCPU_FF_HM_UPDATE_CR3_BIT          12
 /** This action forces the VM to service any pending updates to PAE PDPEs (used
  *  only by HM). */
-#define VMCPU_FF_HM_UPDATE_PAE_PDPES        RT_BIT_32(VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT)
+#define VMCPU_FF_HM_UPDATE_PAE_PDPES        RT_BIT_64(VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT)
 #define VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT    13
 /** This action forces the VM to resync the page tables before going
  * back to execute guest code. (GLOBAL FLUSH) */
-#define VMCPU_FF_PGM_SYNC_CR3               RT_BIT_32(VMCPU_FF_PGM_SYNC_CR3_BIT)
+#define VMCPU_FF_PGM_SYNC_CR3               RT_BIT_64(VMCPU_FF_PGM_SYNC_CR3_BIT)
 #define VMCPU_FF_PGM_SYNC_CR3_BIT           16
 /** Same as VM_FF_PGM_SYNC_CR3 except that global pages can be skipped.
  * (NON-GLOBAL FLUSH) */
-#define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_32(VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL_BIT)
+#define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_64(VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL_BIT)
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL_BIT 17
 /** Check for pending TLB shootdown actions (deprecated)
  * Reserved for furture HM re-use if necessary / safe.
  * Consumer: HM */
-#define VMCPU_FF_TLB_SHOOTDOWN_UNUSED       RT_BIT_32(VMCPU_FF_TLB_SHOOTDOWN_UNUSED_BIT)
+#define VMCPU_FF_TLB_SHOOTDOWN_UNUSED       RT_BIT_64(VMCPU_FF_TLB_SHOOTDOWN_UNUSED_BIT)
 #define VMCPU_FF_TLB_SHOOTDOWN_UNUSED_BIT   18
 /** Check for pending TLB flush action.
  * Consumer: HM
  * @todo rename to VMCPU_FF_HM_TLB_FLUSH  */
-#define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
+#define VMCPU_FF_TLB_FLUSH                  RT_BIT_64(VMCPU_FF_TLB_FLUSH_BIT)
 /** The bit number for VMCPU_FF_TLB_FLUSH. */
 #define VMCPU_FF_TLB_FLUSH_BIT              19
 #ifdef VBOX_WITH_RAW_MODE
 /** Check the interrupt and trap gates */
-# define VMCPU_FF_TRPM_SYNC_IDT             RT_BIT_32(VMCPU_FF_TRPM_SYNC_IDT_BIT)
+# define VMCPU_FF_TRPM_SYNC_IDT             RT_BIT_64(VMCPU_FF_TRPM_SYNC_IDT_BIT)
 # define VMCPU_FF_TRPM_SYNC_IDT_BIT         20
 /** Check Guest's TSS ring 0 stack */
-# define VMCPU_FF_SELM_SYNC_TSS             RT_BIT_32(VMCPU_FF_SELM_SYNC_TSS_BIT)
+# define VMCPU_FF_SELM_SYNC_TSS             RT_BIT_64(VMCPU_FF_SELM_SYNC_TSS_BIT)
 # define VMCPU_FF_SELM_SYNC_TSS_BIT         21
 /** Check Guest's GDT table */
-# define VMCPU_FF_SELM_SYNC_GDT             RT_BIT_32(VMCPU_FF_SELM_SYNC_GDT_BIT)
+# define VMCPU_FF_SELM_SYNC_GDT             RT_BIT_64(VMCPU_FF_SELM_SYNC_GDT_BIT)
 # define VMCPU_FF_SELM_SYNC_GDT_BIT         22
 /** Check Guest's LDT table */
-# define VMCPU_FF_SELM_SYNC_LDT             RT_BIT_32(VMCPU_FF_SELM_SYNC_LDT_BIT)
+# define VMCPU_FF_SELM_SYNC_LDT             RT_BIT_64(VMCPU_FF_SELM_SYNC_LDT_BIT)
 # define VMCPU_FF_SELM_SYNC_LDT_BIT         23
 #endif /* VBOX_WITH_RAW_MODE */
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
-#define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_32(VMCPU_FF_INHIBIT_INTERRUPTS_BIT)
+#define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_64(VMCPU_FF_INHIBIT_INTERRUPTS_BIT)
 #define VMCPU_FF_INHIBIT_INTERRUPTS_BIT     24
 /** Block injection of non-maskable interrupts to the guest. */
-#define VMCPU_FF_BLOCK_NMIS                 RT_BIT_32(VMCPU_FF_BLOCK_NMIS_BIT)
+#define VMCPU_FF_BLOCK_NMIS                 RT_BIT_64(VMCPU_FF_BLOCK_NMIS_BIT)
 #define VMCPU_FF_BLOCK_NMIS_BIT             25
 #ifdef VBOX_WITH_RAW_MODE
 /** CSAM needs to scan the page that's being executed */
-# define VMCPU_FF_CSAM_SCAN_PAGE            RT_BIT_32(VMCPU_FF_CSAM_SCAN_PAGE_BIT)
+# define VMCPU_FF_CSAM_SCAN_PAGE            RT_BIT_64(VMCPU_FF_CSAM_SCAN_PAGE_BIT)
 # define VMCPU_FF_CSAM_SCAN_PAGE_BIT        26
 /** CSAM needs to do some homework. */
-# define VMCPU_FF_CSAM_PENDING_ACTION       RT_BIT_32(VMCPU_FF_CSAM_PENDING_ACTION_BIT)
+# define VMCPU_FF_CSAM_PENDING_ACTION       RT_BIT_64(VMCPU_FF_CSAM_PENDING_ACTION_BIT)
 # define VMCPU_FF_CSAM_PENDING_ACTION_BIT   27
 #endif /* VBOX_WITH_RAW_MODE */
 /** Force return to Ring-3. */
-#define VMCPU_FF_TO_R3                      RT_BIT_32(VMCPU_FF_TO_R3_BIT)
+#define VMCPU_FF_TO_R3                      RT_BIT_64(VMCPU_FF_TO_R3_BIT)
 #define VMCPU_FF_TO_R3_BIT                  28
 /** Force return to ring-3 to service pending I/O or MMIO write.
  * This is a backup for mechanism VINF_IOM_R3_IOPORT_COMMIT_WRITE and
  * VINF_IOM_R3_MMIO_COMMIT_WRITE, allowing VINF_EM_DBG_BREAKPOINT and similar
  * status codes to be propagated at the same time without loss. */
-#define VMCPU_FF_IOM                        RT_BIT_32(VMCPU_FF_IOM_BIT)
+#define VMCPU_FF_IOM                        RT_BIT_64(VMCPU_FF_IOM_BIT)
 #define VMCPU_FF_IOM_BIT                    29
 #ifdef VBOX_WITH_RAW_MODE
 /** CPUM need to adjust CR0.TS/EM before executing raw-mode code again.  */
-# define VMCPU_FF_CPUM                      RT_BIT_32(VMCPU_FF_CPUM_BIT)
+# define VMCPU_FF_CPUM                      RT_BIT_64(VMCPU_FF_CPUM_BIT)
 /** The bit number for VMCPU_FF_CPUM. */
 # define VMCPU_FF_CPUM_BIT                  30
 #endif /* VBOX_WITH_RAW_MODE */
 /** Hardware virtualized nested-guest interrupt pending. */
-#define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_32(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
+#define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_64(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 31
 
 
@@ -681,7 +684,7 @@ typedef struct VMCPU
 #ifdef VMCPU_WITH_64_BIT_FFS
 # define VMCPU_FF_SET(pVCpu, fFlag) do { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        AssertCompile((fFlag) == RT_BIT_64(fFlag##_BIT)); \
         ASMAtomicBitSet(&(pVCpu)->fLocalForcedActions, fFlag##_BIT); \
     } while (0)
 #else
@@ -735,7 +738,7 @@ typedef struct VMCPU
 #ifdef VMCPU_WITH_64_BIT_FFS
 # define VMCPU_FF_CLEAR(pVCpu, fFlag) do { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        AssertCompile((fFlag) == RT_BIT_64(fFlag##_BIT)); \
         ASMAtomicBitClear(&(pVCpu)->fLocalForcedActions, fFlag##_BIT); \
     } while (0)
 #else
@@ -800,7 +803,7 @@ typedef struct VMCPU
     ([](PVMCPU a_pVCpu) -> bool \
     { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
-        AssertCompile((fFlag) == RT_BIT_32(fFlag##_BIT)); \
+        AssertCompile((fFlag) == RT_BIT_64(fFlag##_BIT)); \
         return RT_BOOL(a_pVCpu->fLocalForcedActions & (fFlag)); \
     }(pVCpu))
 #endif
