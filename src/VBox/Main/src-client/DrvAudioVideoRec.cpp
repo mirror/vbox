@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -170,13 +170,8 @@ typedef struct AVRECCONTAINER
  */
 typedef struct AVRECCODECPARMS
 {
-    /** The encoding rate to use. */
-    uint32_t                uHz;
-    /** Number of audio channels to encode.
-     *  Currently we only supported stereo (2) channels. */
-    uint8_t                 cChannels;
-    /** Bits per sample. */
-    uint8_t                 cBits;
+    /** The codec's used PCM properties. */
+    PDMAUDIOPCMPROPS        PCMProps;
     /** The codec's bitrate. 0 if not used / cannot be specified. */
     uint32_t                uBitrate;
 
@@ -285,9 +280,9 @@ typedef struct DRVAUDIOVIDEOREC
  */
 static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
 {
-    uint32_t uHz       = pCodecParms->uHz;
-    uint8_t  cBits     = pCodecParms->cBits;
-    uint8_t  cChannels = pCodecParms->cChannels;
+    uint32_t uHz       = pCodecParms->PCMProps.uHz;
+    uint8_t  cBytes    = pCodecParms->PCMProps.cBytes;
+    uint8_t  cChannels = pCodecParms->PCMProps.cChannels;
     uint32_t uBitrate  = pCodecParms->uBitrate;
 
     /* Opus only supports certain input sample rates in an efficient manner.
@@ -417,10 +412,12 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
     {
         pSink->Con.Parms.enmType     = pConParms->enmType;
 
-        pSink->Codec.Parms.uHz       = uHz;
-        pSink->Codec.Parms.cChannels = cChannels;
-        pSink->Codec.Parms.cBits     = cBits;
-        pSink->Codec.Parms.uBitrate  = uBitrate;
+        pSink->Codec.Parms.PCMProps.uHz       = uHz;
+        pSink->Codec.Parms.PCMProps.cChannels = cChannels;
+        pSink->Codec.Parms.PCMProps.cBytes    = cBytes;
+        pSink->Codec.Parms.PCMProps.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pSink->Codec.Parms.PCMProps.cBytes,
+                                                                                  pSink->Codec.Parms.PCMProps.cChannels);
+        pSink->Codec.Parms.uBitrate           = uBitrate;
 
         pSink->Codec.Opus.pEnc       = pEnc;
         pSink->Codec.Opus.msFrame    = 20; /** @todo 20 ms of audio data. Make this configurable? */
@@ -521,8 +518,8 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
 #ifdef VBOX_WITH_LIBOPUS
     const unsigned cFrames = 2; /** @todo Use the PreRoll param for that? */
 
-    const uint32_t csFrame = pSink->Codec.Parms.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
-    const uint32_t cbFrame = csFrame * pSink->Codec.Parms.cChannels * (pSink->Codec.Parms.cBits / 8 /* Bytes */);
+    const uint32_t csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
+    const uint32_t cbFrame = DrvAudioHlpFramesToBytes(csFrame, &pSink->Codec.Parms.PCMProps);
 
     rc = RTCircBufCreate(&pStreamAV->pCircBuf, cbFrame * cFrames);
     if (RT_SUCCESS(rc))
@@ -534,7 +531,7 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
         {
             /* Make sure to let the driver backend know that we need the audio data in
              * a specific sampling rate Opus is optimized for. */
-            pCfgAcq->Props.uHz         = pSink->Codec.Parms.uHz;
+            pCfgAcq->Props.uHz         = pSink->Codec.Parms.PCMProps.uHz;
             pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
 
             /* Every Opus frame marks a period for now. Optimize this later. */
@@ -621,10 +618,11 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
     ContainerParms.enmType = AVRECCONTAINERTYPE_MAIN_CONSOLE; /** @todo Make this configurable. */
 
     AVRECCODECPARMS CodecParms;
-    CodecParms.uHz       = AVREC_OPUS_HZ_MAX;  /** @todo Make this configurable. */
-    CodecParms.cChannels = 2;                  /** @todo Make this configurable. */
-    CodecParms.cBits     = 16;                 /** @todo Make this configurable. */
-    CodecParms.uBitrate  = 0;                  /* Let Opus decide, based on the number of channels and the input sampling rate. */
+    CodecParms.PCMProps.uHz       = AVREC_OPUS_HZ_MAX;  /** @todo Make this configurable. */
+    CodecParms.PCMProps.cChannels = 2;                  /** @todo Make this configurable. */
+    CodecParms.PCMProps.cBytes    = 2;                  /** 16 bit @todo Make this configurable. */
+
+    CodecParms.uBitrate = 0; /* Let Opus decide, based on the number of channels and the input sampling rate. */
 
     int rc = avRecSinkInit(pThis, &pThis->Sink, &ContainerParms, &CodecParms);
     if (RT_FAILURE(rc))
@@ -719,8 +717,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
     uint8_t abSrc[_64K]; /** @todo Fix! */
     size_t  cbSrc;
 
-    const uint32_t csFrame = pSink->Codec.Parms.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
-    const uint32_t cbFrame = csFrame * pSink->Codec.Parms.cChannels * (pSink->Codec.Parms.cBits / 8 /* Bytes */);
+    const uint32_t csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
+    const uint32_t cbFrame = DrvAudioHlpFramesToBytes(csFrame, &pSink->Codec.Parms.PCMProps);
 
     /* Only encode data if we have data for the given time period (or more). */
     while (RTCircBufUsed(pCircBuf) >= cbFrame)
