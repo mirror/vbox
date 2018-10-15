@@ -407,8 +407,8 @@ void UIMachineSettingsDisplay::getFromCache()
 
     /* Load old 'Screen' data from the cache: */
     m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
-    m_pScaleFactorEditor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
     m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
+    m_pScaleFactorEditor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dAccelerationEnabled);

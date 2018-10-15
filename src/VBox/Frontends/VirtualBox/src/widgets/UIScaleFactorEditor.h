@@ -34,19 +34,23 @@ class QSpinBox;
 class QWidget;
 class QIAdvancedSlider;
 
-/** QWidget reimplementation
- * providing GUI with monitor scale factor editing functionality. */
+/** QWidget reimplementation providing GUI with monitor scale factor editing functionality.
+ *  It includes a combo box to select a monitor, a slider, and a spinbox to display/modify values.
+ *  The first item in the combo box is used to change the scale factor of all monitors.*/
 class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor, passes @a pParent to the QWidget constructor.*/
     UIScaleFactorEditor(QWidget *pParent);
-    void setMonitorCount(int iMonitorCount);
-    void setScaleFactors(const QList<double> &scaleFactors);
-    const QList<double>& scaleFactors() const;
+    void           setMonitorCount(int iMonitorCount);
+    void           setScaleFactors(const QList<double> &scaleFactors);
+    /* Returns either a single global scale factor or a list of scale factor for each monitor. */
+    QList<double>  scaleFactors() const;
+
+    void           isGlobalScaleFactor(bool bFlag);
+    void           setDefaultScaleFactor(double dDefaultScaleFactor);
 
 protected:
 
@@ -67,15 +71,16 @@ private:
     /* Blocks slider's signals before settting the value. */
     void               setSpinBoxValue(int iValue);
     /* Set the spinbox and slider to scale factor of currently selected monitor */
-    void               showMonitorScaleFactor();
+    void               updateValuesAfterMonitorChange();
     QSpinBox          *m_pScaleSpinBox;
     QGridLayout       *m_pMainLayout;
     QComboBox         *m_pMonitorComboBox;
     QIAdvancedSlider  *m_pScaleSlider;
     QLabel            *m_pMaxScaleLabel;
     QLabel            *m_pMinScaleLabel;
-    /* Stores the per-monitor scale factors in range [.., 1, ..] */
+    /* Stores the per-monitor scale factors. The 0th item is for all monitors (global) */
     QList<double>      m_scaleFactors;
+    double             m_dDefaultScaleFactor;
 };
 
 #endif /* !___UIScaleFactorEditor_h___ */

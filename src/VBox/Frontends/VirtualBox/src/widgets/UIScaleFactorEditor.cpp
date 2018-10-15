@@ -42,78 +42,130 @@ UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent)
     , m_pScaleSlider(0)
     , m_pMaxScaleLabel(0)
     , m_pMinScaleLabel(0)
+    , m_dDefaultScaleFactor(1.0)
 {
     /* Prepare: */
     prepare();
+    /* Append a default scale factor to the list as an global scale factor: */
+    m_scaleFactors.append(1.0);
 }
 
 void UIScaleFactorEditor::setMonitorCount(int iMonitorCount)
 {
     if (!m_pMonitorComboBox)
         return;
-    if (iMonitorCount == m_pMonitorComboBox->count())
-        return;
-
-    m_pMonitorComboBox->blockSignals(true);
+    /* We always have 0th for global scale factor (in combo box and scale factor list): */
+    int iEndMonitorCount = iMonitorCount + 1;
     int iCurrentMonitorCount = m_pMonitorComboBox->count();
+    if (iEndMonitorCount == iCurrentMonitorCount)
+        return;
+    m_pMonitorComboBox->setEnabled(iMonitorCount > 1);
+    m_pMonitorComboBox->blockSignals(true);
     int iCurrentMonitorIndex = m_pMonitorComboBox->currentIndex();
-    //m_pMonitorComboBox->clear();
-    if (iCurrentMonitorCount < iMonitorCount)
+    if (iCurrentMonitorCount < iEndMonitorCount)
     {
-        for (int i = iCurrentMonitorCount; i < iMonitorCount; ++i)
-        {
-            m_pMonitorComboBox->addItem(QString("Monitor %1").arg(i));
-            /* In case that we have increased the # of monitors add new scale factors to the scale factor cache: */
-            if (i >= m_scaleFactors.size())
-                m_scaleFactors.append(1.0);
-        }
+        for (int i = iCurrentMonitorCount; i < iEndMonitorCount; ++i)
+            m_pMonitorComboBox->insertItem(i, QString("Monitor %1").arg(i));
     }
     else
     {
-        for (int i = iCurrentMonitorCount - 1; i >= iMonitorCount; --i)
+        for (int i = iCurrentMonitorCount - 1; i >= iEndMonitorCount; --i)
             m_pMonitorComboBox->removeItem(i);
     }
+    m_pMonitorComboBox->setEnabled(iMonitorCount > 1);
+    if (iMonitorCount <= 1)
+        m_pMonitorComboBox->setCurrentIndex(0);
     m_pMonitorComboBox->blockSignals(false);
-
+    /* Update the slider and spinbox values if the combobox index has changed: */
     if (iCurrentMonitorIndex != m_pMonitorComboBox->currentIndex())
-        showMonitorScaleFactor();
+        updateValuesAfterMonitorChange();
 }
 
 void UIScaleFactorEditor::setScaleFactors(const QList<double> &scaleFactors)
 {
-    if (m_scaleFactors == scaleFactors)
-        return;
-    /* if m_scaleFactors has more items than @p scaleFactors than we keep the additional items
-       this can happen for example when extra data has 4 scale factor while machine has 5 monitors: */
-    if (m_scaleFactors.size() > scaleFactors.size())
+    m_scaleFactors.clear();
+    /* If we have a single value from the extra data and we treat if as a default scale factor: */
+    if (scaleFactors.size() == 1)
     {
-        for (int i = 0; i < scaleFactors.size(); ++i)
-            m_scaleFactors[i] = scaleFactors[i];
+        m_dDefaultScaleFactor = scaleFactors.at(0);
+        m_scaleFactors.append(m_dDefaultScaleFactor);
+        isGlobalScaleFactor(true);
+        return;
+    }
+
+    // Insert 0th element as the global scalar value
+    m_scaleFactors.append(m_dDefaultScaleFactor);
+    m_scaleFactors.append(scaleFactors);
+    isGlobalScaleFactor(false);
+}
+
+QList<double> UIScaleFactorEditor::scaleFactors() const
+{
+    QList<double> scaleFactorList;
+    if (m_scaleFactors.size() == 0)
+        return scaleFactorList;
+
+    /* Decide if the users wants a global (not per monitor) scaling. */
+    bool globalScaleFactor = false;
+
+    /* if "All Monitors" item is selected in the combobox: */
+    if (m_pMonitorComboBox && m_pMonitorComboBox->currentIndex() == 0)
+        globalScaleFactor = true;
+    /* Also check if all of the monitor scale factors equal to the global scale factor: */
+    if (!globalScaleFactor)
+    {
+        globalScaleFactor = true;
+        for (int i = 1; i < m_scaleFactors.size() && globalScaleFactor; ++i)
+            if (m_scaleFactors[0] != m_scaleFactors[i])
+                globalScaleFactor = false;
+    }
+
+    if (globalScaleFactor)
+    {
+        scaleFactorList << m_scaleFactors.at(0);
     }
     else
     {
-        m_scaleFactors = scaleFactors;
+        /* Skip the 0th scale factor: */
+        for (int i = 1; i < m_scaleFactors.size(); ++i)
+            scaleFactorList.append(m_scaleFactors.at(i));
     }
-    showMonitorScaleFactor();
+
+    return scaleFactorList;
 }
 
-
-const QList<double>& UIScaleFactorEditor::scaleFactors() const
+void UIScaleFactorEditor::isGlobalScaleFactor(bool bFlag)
 {
-    return m_scaleFactors;
+    if (!m_pMonitorComboBox)
+        return;
+    if (bFlag && m_pMonitorComboBox->count() >= 1)
+        m_pMonitorComboBox->setCurrentIndex(0);
+    else
+        if(m_pMonitorComboBox->count() >= 2)
+            m_pMonitorComboBox->setCurrentIndex(1);
+    updateValuesAfterMonitorChange();
+}
+
+void UIScaleFactorEditor::setDefaultScaleFactor(double dDefaultScaleFactor)
+{
+    m_dDefaultScaleFactor = dDefaultScaleFactor;
 }
 
 void UIScaleFactorEditor::retranslateUi()
 {
     if (m_pMaxScaleLabel)
-    {
         m_pMaxScaleLabel->setText(tr("Max"));
-    }
 
     if (m_pMinScaleLabel)
-    {
         m_pMinScaleLabel->setText(tr("Min"));
+
+    if (m_pMonitorComboBox && m_pMonitorComboBox->count() > 0)
+    {
+        m_pMonitorComboBox->setItemText(0, tr("All Monitors"));
+        for (int i = 0; i < m_pMonitorComboBox->count(); ++i)
+            m_pMonitorComboBox->setItemText(i, tr("Monitor(%1)").arg(i));
     }
+    setToolTip(tr("Controls the guest screen scale factor"));
 }
 
 void UIScaleFactorEditor::sltScaleSpinBoxValueChanged(int value)
@@ -130,15 +182,9 @@ void UIScaleFactorEditor::sltScaleSliderValueChanged(int value)
         setScaleFactor(m_pMonitorComboBox->currentIndex(), value);
 }
 
-void UIScaleFactorEditor::sltMonitorComboIndexChanged(int index)
+void UIScaleFactorEditor::sltMonitorComboIndexChanged(int)
 {
-    if (index >= m_scaleFactors.size())
-        return;
-
-    /* Update the slider and spinbox values without emitting signals: */
-    int scaleFactor = 100 * m_scaleFactors[index];
-    setSliderValue(scaleFactor);
-    setSpinBoxValue(scaleFactor);
+    updateValuesAfterMonitorChange();
 }
 
 void UIScaleFactorEditor::prepare()
@@ -152,6 +198,7 @@ void UIScaleFactorEditor::prepare()
     if (m_pMonitorComboBox)
     {
         m_pMainLayout->addWidget(m_pMonitorComboBox, 0, 0);
+        m_pMonitorComboBox->insertItem(0, "All Monitors");
         connect(m_pMonitorComboBox ,static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIScaleFactorEditor::sltMonitorComboIndexChanged);
     }
@@ -202,11 +249,11 @@ void UIScaleFactorEditor::prepare()
 
 void UIScaleFactorEditor::setScaleFactor(int iMonitorIndex, int iScaleFactor)
 {
-    /* Make sure we have the corresponding scale value for the @p iMonitorIndex: */
-    if (iMonitorIndex >= m_scaleFactors.size())
+    /* Make sure we have the corresponding scale values for all monitors: */
+    if (m_pMonitorComboBox->count() > m_scaleFactors.size())
     {
-        for (int i = m_scaleFactors.size(); i <= iMonitorIndex; ++i)
-            m_scaleFactors.append(1.0);
+        for (int i = m_scaleFactors.size(); i < m_pMonitorComboBox->count(); ++i)
+            m_scaleFactors.append(m_dDefaultScaleFactor);
     }
     m_scaleFactors[iMonitorIndex] = iScaleFactor / 100.0;
 }
@@ -231,16 +278,17 @@ void UIScaleFactorEditor::setSpinBoxValue(int iValue)
     }
 }
 
-void UIScaleFactorEditor::showMonitorScaleFactor()
+void UIScaleFactorEditor::updateValuesAfterMonitorChange()
 {
     /* Set the spinbox value for the currently selected monitor: */
     if (m_pMonitorComboBox)
     {
         int currentMonitorIndex = m_pMonitorComboBox->currentIndex();
-        if (m_scaleFactors.size() > currentMonitorIndex && m_pScaleSpinBox)
-        {
-            setSpinBoxValue(100 * m_scaleFactors.at(currentMonitorIndex));
-            setSliderValue(100 * m_scaleFactors.at(currentMonitorIndex));
-        }
+        while (m_scaleFactors.size() <= currentMonitorIndex)
+            m_scaleFactors.append(m_dDefaultScaleFactor);
+
+        setSpinBoxValue(100 * m_scaleFactors.at(currentMonitorIndex));
+        setSliderValue(100 * m_scaleFactors.at(currentMonitorIndex));
+
     }
 }
