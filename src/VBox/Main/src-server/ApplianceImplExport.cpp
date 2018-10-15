@@ -2486,6 +2486,8 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
         /// @todo that's to be moved to ExpTack, but we need to have that method
         /// exposed in .xidl
         if (m->virtualSystemDescriptions.size() == 1) {
+            ComPtr<IVirtualBox> VBox(mVirtualBox);
+
             pTask->pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                          Bstr("Test progress").raw(),
                          TRUE /* aCancelable */,
@@ -2494,7 +2496,7 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
                          Bstr("Do something").raw(), // aFirstOperationDescription
                          25); // ULONG ulFirstOperationWeight,
 
-            hrc = cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress);
+            hrc = cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
         } else {
             /// @todo Fail here with user notification. We do export 1 VM only
         }

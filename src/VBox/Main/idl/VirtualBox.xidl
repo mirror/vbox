@@ -25381,6 +25381,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="progress" type="IProgress" dir="in">
         <desc>Progress object to track the operation completion.</desc>
       </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+	<desc>Reference to the server-side API root object.</desc>
+      </param>
     </method>
 
 
