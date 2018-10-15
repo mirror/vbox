@@ -326,6 +326,18 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
+    const bool fUseVBR = true; /** Use Variable Bit Rate (VBR) by default. @todo Make this configurable? */
+
+    orc = opus_encoder_ctl(pEnc, OPUS_SET_VBR(fUseVBR ? 1 : 0));
+    if (orc != OPUS_OK)
+    {
+        opus_encoder_destroy(pEnc);
+        pEnc = NULL;
+
+        LogRel(("VideoRec: Audio codec failed to %s VBR mode: %s\n", fUseVBR ? "enable" : "disable", opus_strerror(orc)));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+
     int rc = VINF_SUCCESS;
 
     try
