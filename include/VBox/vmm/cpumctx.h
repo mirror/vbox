@@ -670,8 +670,12 @@ typedef struct CPUMCTX
         bool                    afPadding1[3];
         /** 0x3f8 - A subset of guest force flags that are saved while running the
          *  nested-guest. */
+#ifdef VMCPU_WITH_64_BIT_FFS
+        uint64_t                fLocalForcedActions;
+#else
         uint32_t                fLocalForcedActions;
-        uint8_t                 abPadding[4];
+        uint32_t                fPadding;
+#endif
     } hwvirt;
     /** @} */
 } CPUMCTX;
