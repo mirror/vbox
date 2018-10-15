@@ -2916,7 +2916,7 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
     if (fXchg)
     {
         uint32_t cNew = ASMAtomicDecU32(&pThis->cIoReqsActive);
-        AssertMsg(cNew != UINT32_MAX, ("Number of active requests underflowed!\n"));
+        AssertMsg(cNew != UINT32_MAX, ("Number of active requests underflowed!\n")); RT_NOREF(cNew);
     }
     else
     {
@@ -3065,7 +3065,7 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
             RTListAppend(&pThis->LstIoReqRedo, &pIoReq->NdLstWait);
             RTCritSectLeave(&pThis->CritSectIoReqRedo);
             uint32_t cNew = ASMAtomicDecU32(&pThis->cIoReqsActive);
-            AssertMsg(cNew != UINT32_MAX, ("Number of active requests underflowed!\n"));
+            AssertMsg(cNew != UINT32_MAX, ("Number of active requests underflowed!\n")); RT_NOREF(cNew);
             pThis->pDrvMediaExPort->pfnIoReqStateChanged(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
                                                          PDMMEDIAEXIOREQSTATE_SUSPENDED);
             LogFlowFunc(("Suspended I/O request %#p\n", pIoReq));
@@ -3711,7 +3711,7 @@ static bool drvvdMediaExIoReqCancel(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
     if (fXchg && enmStateOld == VDIOREQSTATE_ACTIVE)
     {
         uint32_t cNew = ASMAtomicDecU32(&pThis->cIoReqsActive);
-        AssertMsg(cNew != UINT32_MAX, ("Number of active requests underflowed!\n"));
+        AssertMsg(cNew != UINT32_MAX, ("Number of active requests underflowed!\n")); RT_NOREF(cNew);
     }
 
     return fXchg;
