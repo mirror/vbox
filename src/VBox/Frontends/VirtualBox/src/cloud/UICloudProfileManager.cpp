@@ -408,7 +408,7 @@ void UICloudProfileManagerWidget::updateItemForCloudProfile(const UIDataCloudPro
 
 
 /*********************************************************************************************************************************
-*   Class UICloudProfileManagerFactory implementation.                                                                            *
+*   Class UICloudProfileManagerFactory implementation.                                                                           *
 *********************************************************************************************************************************/
 
 UICloudProfileManagerFactory::UICloudProfileManagerFactory(UIActionPool *pActionPool /* = 0 */)
@@ -423,7 +423,7 @@ void UICloudProfileManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pC
 
 
 /*********************************************************************************************************************************
-*   Class UICloudProfileManager implementation.                                                                                   *
+*   Class UICloudProfileManager implementation.                                                                                  *
 *********************************************************************************************************************************/
 
 UICloudProfileManager::UICloudProfileManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
