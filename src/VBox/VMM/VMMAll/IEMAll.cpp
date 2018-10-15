@@ -977,6 +977,7 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH e
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2,
                                               uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -13891,6 +13892,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
 /** @todo adjust for VINF_EM_RAW_EMULATE_INSTR   */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+            if (   rcStrict == VINF_VMX_VMEXIT
+                && rcPassUp == VINF_SUCCESS)
+                rcStrict = VINF_SUCCESS;
+            else
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (   rcStrict == VINF_SVM_VMEXIT
                 && rcPassUp == VINF_SUCCESS)
                 rcStrict = VINF_SUCCESS;
@@ -15629,6 +15636,26 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
+/**
+ * Interface for HM and EM to emulate VM-exit due to external interrupts.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   uVector         The external interrupt vector.
+ * @param   fIntPending     Whether the external interrupt is pending or
+ *                          acknowdledged in the interrupt controller.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending)
+{
+    /* IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK); */ /** @todo NSTVMX: VMX_EXIT_MASK */
+    VBOXSTRICTRC rcStrict = iemVmxVmexitExtInt(pVCpu, uVector, fIntPending);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
 
 /**
  * Interface for HM and EM to emulate the VMREAD instruction.
