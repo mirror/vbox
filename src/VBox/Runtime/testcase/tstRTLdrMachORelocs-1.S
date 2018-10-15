@@ -1,6 +1,6 @@
 /*
- * as -o tstRTLdrMachORelocs-1-as.o tstRTLdrMachORelocs-1.S
- * ld -r -o tstRTLdrMachORelocs-1.o tstRTLdrMachORelocs-1-as.o
+ * as -arch x86_64 -mmacosx-version-min=10.7-o tstRTLdrMachORelocs-1-as.o tstRTLdrMachORelocs-1.S
+ * ld -arch x86_64 -r -o tstRTLdrMachORelocs-1.o tstRTLdrMachORelocs-1-as.o
  * tstLdr-3 0x2000 tstRTLdrMachORelocs-1.o 0x2000 > tmp.disas
  * diff tmp.disas tstRTLdrMachORelocs-1.disas
  */
@@ -51,7 +51,6 @@ Leh_func_begin6:
 	cmpw	$1106, abssym(%rip)
 	cmpl	$99881106, abssym(%rip)
        jmp     abssym
-1193046 = 0x123456 (1193046)+00000000000000dd
 
        .byte 0x90
 	cmpb	$1, _g_Data.4.1(%rip)
@@ -63,7 +62,7 @@ Leh_func_begin6:
        .byte 0x48, 0xb8                 /* movabsq  */
        .quad   Leh_func_end6 - _g_Data.0
        .byte 0x48, 0xb8                 /* movabsq  */
-       .quad   Leh_func_end6 - _g_Data.0 + 0x80
+       .quad   Leh_func_end6 - _g_Data.0 + 0x80  /* buggy assembler here? (clang-900.0.39.2) */
        .byte 0x48, 0xb8                 /* movabsq  */
        .quad   _myfunc6_end - _g_Data.0
        .byte 0x48, 0xb8                 /* movabsq  */
@@ -83,7 +82,7 @@ Leh_func_end6:
         .byte 0xcc
         .byte 0xcc
 
-	.section	__DATA,__data,regular,pure_instructions
+	.section	__DATA,__data //,regular,pure_instructions
        .align 3, 0xcc
 _g_Data.0:
        .byte 0x90
