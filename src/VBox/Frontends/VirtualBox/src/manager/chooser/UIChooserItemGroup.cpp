@@ -1441,9 +1441,14 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         /* Main root-item always takes body into account: */
         if (hasItems())
         {
+            /* Prepare variables: */
+            const int iChildrenSpacing = data(GroupItemData_ChildrenSpacing).toInt();
+
             /* And every existing child height: */
             foreach (UIChooserItem *pItem, items())
-                iProposedHeight += pItem->minimumHeightHint();
+                iProposedHeight += (pItem->minimumHeightHint() + iChildrenSpacing);
+            /* Minus last spacing: */
+            iProposedHeight -= iChildrenSpacing;
         }
     }
     /* Other items, including temporary roots: */
@@ -1463,9 +1468,7 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         {
             /* And every existing child height: */
             foreach (UIChooserItem *pItem, items())
-            {
                 iProposedHeight += (pItem->minimumHeightHint() + iChildrenSpacing);
-            }
             /* Minus last spacing: */
             iProposedHeight -= iChildrenSpacing;
         }
