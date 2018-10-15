@@ -304,7 +304,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
         cChannels = 2;
     }
 
-    LogRel2(("VideoRec: Recording audio in %RU16Hz, %RU8 channels, %RU32 bitrate\n", uHz, cChannels, uBitrate));
+    LogRel2(("VideoRec: Recording audio in %RU16Hz, %RU8 channels\n", uHz, cChannels));
 
     int orc;
     OpusEncoder *pEnc = opus_encoder_create(uHz, cChannels, OPUS_APPLICATION_AUDIO, &orc);
@@ -316,14 +316,17 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
 
     AssertPtr(pEnc);
 
-    opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(uBitrate));
-    if (orc != OPUS_OK)
+    if (uBitrate) /* Only explicitly set the bitrate if we specified one. Otherwise let Opus decide. */
     {
-        opus_encoder_destroy(pEnc);
-        pEnc = NULL;
+        opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(uBitrate));
+        if (orc != OPUS_OK)
+        {
+            opus_encoder_destroy(pEnc);
+            pEnc = NULL;
 
-        LogRel(("VideoRec: Audio codec failed to set bitrate (%RU32): %s\n", uBitrate, opus_strerror(orc)));
-        return VERR_AUDIO_BACKEND_INIT_FAILED;
+            LogRel(("VideoRec: Audio codec failed to set bitrate (%RU32): %s\n", uBitrate, opus_strerror(orc)));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
     }
 
     const bool fUseVBR = true; /** Use Variable Bit Rate (VBR) by default. @todo Make this configurable? */
@@ -621,7 +624,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
     CodecParms.uHz       = AVREC_OPUS_HZ_MAX;  /** @todo Make this configurable. */
     CodecParms.cChannels = 2;                  /** @todo Make this configurable. */
     CodecParms.cBits     = 16;                 /** @todo Make this configurable. */
-    CodecParms.uBitrate  = 196000;             /** @todo Make this configurable. */
+    CodecParms.uBitrate  = 0;                  /* Let Opus decide, based on the number of channels and the input sampling rate. */
 
     int rc = avRecSinkInit(pThis, &pThis->Sink, &ContainerParms, &CodecParms);
     if (RT_FAILURE(rc))
