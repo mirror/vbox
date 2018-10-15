@@ -395,12 +395,12 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
-    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
+    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Cloud Infrastructure - Classic"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Cloud Infrastructure - Classic format."), Qt::ToolTipRole);
     /* Translate received values of Format combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pFormatComboBox->count(); ++i)

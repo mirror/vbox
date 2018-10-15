@@ -262,7 +262,7 @@ void UIWizardExportAppPage2::refreshFileSelectorExtension()
         m_strFileSelectorExt = ".tar.gz";
 
         /* Update file chooser accordingly: */
-        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Oracle Public Cloud Format Archive (%1)").arg("*.tar.gz"));
+        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Oracle Cloud Infrastructure - Classic Archive (%1)").arg("*.tar.gz"));
     }
     /* Otherwise: */
     else
@@ -764,7 +764,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
                                "If you use the <b>ovf</b> extension, several files will be written separately. "
                                "If you use the <b>ova</b> extension, all the files will be combined into one Open "
                                "Virtualization Format archive.</p>"
-                               "<p>The <b>Oracle Public Cloud Format</b> supports only the <b>tar.gz</b> extension. "
+                               "<p>The <b>Oracle Cloud Infrastructure - Classic</b> format supports only the <b>tar.gz</b> extension. "
                                "Each virtual disk file will be written separately.</p>"
                                "<p>The <b>Cloud Service Provider Format</b> supports exporting to remote cloud services only. "
                                "Main virtual disk of each selected machine will be uploaded to remote server.</p>"));
@@ -779,12 +779,12 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
-    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
+    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Cloud Infrastructure - Classic"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Cloud Infrastructure - Classic format."), Qt::ToolTipRole);
     /* Translate received values of Format combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pFormatComboBox->count(); ++i)
