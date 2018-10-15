@@ -18,7 +18,6 @@
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** @todo NSTVMX: The following VM-exit intercepts are pending:
- *  VMX_EXIT_EXT_INT ("acknowledge interrupt on exit" behavior pending)
  *  VMX_EXIT_INIT_SIGNAL
  *  VMX_EXIT_SIPI
  *  VMX_EXIT_IO_SMI
