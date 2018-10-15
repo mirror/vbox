@@ -3863,8 +3863,7 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
             case IMAGE_DIRECTORY_ENTRY_SECURITY:      // 4
                 /* The VirtualAddress is a PointerToRawData. */
                 cb = (size_t)cbRawImage; Assert((RTFOFF)cb == cbRawImage);
-                Log(("rtldrPEOpen: %s: dir no. %d (SECURITY) VirtualAddress=%#x Size=%#x is not supported!!!\n",
-                     pszLogName, i, pDir->VirtualAddress, pDir->Size));
+                Log(("rtldrPEOpen: %s: dir no. %d (SECURITY) VirtualAddress=%#x Size=%#x\n", pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 if (pDir->Size < sizeof(WIN_CERTIFICATE))
                 {
                     Log(("rtldrPEOpen: %s: Security directory #%u is too small: %#x bytes\n", pszLogName, i, pDir->Size));
