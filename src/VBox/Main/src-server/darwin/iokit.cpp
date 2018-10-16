@@ -1691,7 +1691,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                         /* The BSD Name from the interface dictionary.  No assert here as the belkin USB-C gadget
                            does not always end up with a BSD name, typically requiring replugging. */
                         char szBSDName[RT_SIZEOFMEMB(DARWINETHERNIC, szBSDName)];
-                        if (RT_UNLIKELY(darwinDictGetString(IfPropsRef, CFSTR("BSD Name"), szBSDName, sizeof(szBSDName))))
+                        if (RT_UNLIKELY(!darwinDictGetString(IfPropsRef, CFSTR("BSD Name"), szBSDName, sizeof(szBSDName))))
                         {
                             LogRelMax(32, ("DarwinGetEthernetControllers: Warning! Failed to get 'BSD Name'; provider class %s\n", szTmp));
                             break;
