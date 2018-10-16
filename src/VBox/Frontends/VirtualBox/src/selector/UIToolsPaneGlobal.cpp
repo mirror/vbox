@@ -212,6 +212,10 @@ void UIToolsPaneGlobal::retranslateUi()
                                           "for operations on the networks like possibility to <u>create</u>, <u>remove</u> "
                                           "and observe their properties. Allows to <u>edit</u> various "
                                           "<u>attributes</u> for host-only interface and corresponding DHCP server."));
+    QAction *pAction3 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager);
+    m_pPaneDesktop->addToolDescription(pAction3,
+                                       QString("Tool to control cloud profiles. "
+                                               "To be explained more if necessary."));
 }
 
 void UIToolsPaneGlobal::prepare()

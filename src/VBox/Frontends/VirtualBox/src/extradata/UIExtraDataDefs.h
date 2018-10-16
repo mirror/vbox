@@ -673,6 +673,7 @@ enum ToolTypeGlobal
     ToolTypeGlobal_Desktop,
     ToolTypeGlobal_VirtualMedia,
     ToolTypeGlobal_HostNetwork,
+    ToolTypeGlobal_CloudProfile,
 };
 Q_DECLARE_METATYPE(ToolTypeGlobal);
 
@@ -695,6 +696,7 @@ enum UIToolsType
     UIToolsType_Welcome,
     UIToolsType_Media,
     UIToolsType_Network,
+    UIToolsType_Cloud,
     /* Machine types: */
     UIToolsType_Details,
     UIToolsType_Snapshots,
@@ -709,6 +711,7 @@ enum ToolTypeGlobal
     ToolTypeGlobal_Welcome,
     ToolTypeGlobal_Media,
     ToolTypeGlobal_Network,
+    ToolTypeGlobal_Cloud,
 };
 Q_DECLARE_METATYPE(ToolTypeGlobal);
 

@@ -431,6 +431,7 @@ void UIToolsModel::prepareItems()
     classes << UIToolsClass_Global;
     classes << UIToolsClass_Global;
     classes << UIToolsClass_Global;
+    //classes << UIToolsClass_Global;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
@@ -440,6 +441,7 @@ void UIToolsModel::prepareItems()
     types << UIToolsType_Welcome;
     types << UIToolsType_Media;
     types << UIToolsType_Network;
+    //types << UIToolsType_Cloud;
     types << UIToolsType_Details;
     types << UIToolsType_Snapshots;
     types << UIToolsType_Logs;
@@ -449,6 +451,7 @@ void UIToolsModel::prepareItems()
     icons << UIIconPool::iconSet(":/welcome_screen_24px.png");
     icons << UIIconPool::iconSet(":/media_manager_24px.png");
     icons << UIIconPool::iconSet(":/host_iface_manager_24px.png");
+    //icons << UIIconPool::iconSet(":/host_iface_manager_24px.png");
     icons << UIIconPool::iconSet(":/machine_details_manager_24px.png");
     icons << UIIconPool::iconSet(":/snapshot_manager_24px.png");
     icons << UIIconPool::iconSet(":/vm_show_logs_24px.png");
@@ -458,6 +461,7 @@ void UIToolsModel::prepareItems()
     names << tr("Welcome");
     names << tr("Media");
     names << tr("Network");
+    //names << tr("Cloud");
     names << tr("Details");
     names << tr("Snapshots");
     names << tr("Logs");
@@ -580,6 +584,7 @@ QString UIToolsModel::typeToString(UIToolsType enmType)
     values[UIToolsType_Welcome]   = "Welcome";
     values[UIToolsType_Media]     = "Media";
     values[UIToolsType_Network]   = "Network";
+    values[UIToolsType_Cloud]     = "Cloud";
     /* Machine classes: */
     values[UIToolsType_Details]   = "Details";
     values[UIToolsType_Snapshots] = "Snapshots";
@@ -596,6 +601,7 @@ UIToolsType UIToolsModel::typeFromString(const QString &strType)
     values["Welcome"]   = UIToolsType_Welcome;
     values["Media"]     = UIToolsType_Media;
     values["Network"]   = UIToolsType_Network;
+    values["Cloud"]     = UIToolsType_Cloud;
     /* Machine classes: */
     values["Details"]   = UIToolsType_Details;
     values["Snapshots"] = UIToolsType_Snapshots;
@@ -616,6 +622,7 @@ bool UIToolsModel::isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass)
                 case UIToolsType_Welcome:
                 case UIToolsType_Media:
                 case UIToolsType_Network:
+                case UIToolsType_Cloud:
                     return true;
                 default:
                     break;

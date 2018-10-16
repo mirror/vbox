@@ -923,10 +923,12 @@ template<> QString toInternalString(const ToolTypeGlobal &enmToolTypeGlobal)
 #ifndef VBOX_GUI_WITH_NEW_MANAGER
         case ToolTypeGlobal_VirtualMedia: strResult = "VirtualMedia"; break;
         case ToolTypeGlobal_HostNetwork:  strResult = "HostNetwork"; break;
+        case ToolTypeGlobal_CloudProfile: strResult = "CloudProfile"; break;
 #else /* VBOX_GUI_WITH_NEW_MANAGER */
         case ToolTypeGlobal_Welcome: strResult = "Welcome"; break;
         case ToolTypeGlobal_Media:   strResult = "Media"; break;
         case ToolTypeGlobal_Network: strResult = "Network"; break;
+        case ToolTypeGlobal_Cloud:   strResult = "Cloud"; break;
 #endif /* VBOX_GUI_WITH_NEW_MANAGER */
         default:
         {
@@ -946,10 +948,12 @@ template<> ToolTypeGlobal fromInternalString<ToolTypeGlobal>(const QString &strT
 #ifndef VBOX_GUI_WITH_NEW_MANAGER
     keys << "VirtualMedia"; values << ToolTypeGlobal_VirtualMedia;
     keys << "HostNetwork";  values << ToolTypeGlobal_HostNetwork;
+    keys << "CloudProfile"; values << ToolTypeGlobal_CloudProfile;
 #else /* VBOX_GUI_WITH_NEW_MANAGER */
     keys << "Welcome"; values << ToolTypeGlobal_Welcome;
     keys << "Media";   values << ToolTypeGlobal_Media;
     keys << "Network"; values << ToolTypeGlobal_Network;
+    keys << "Cloud";   values << ToolTypeGlobal_Cloud;
 #endif /* VBOX_GUI_WITH_NEW_MANAGER */
     /* Invalid type for unknown words: */
     if (!keys.contains(strToolTypeGlobal, Qt::CaseInsensitive))

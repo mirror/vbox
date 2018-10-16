@@ -449,6 +449,13 @@ void UIVirtualBoxManager::sltCloseHostNetworkManagerWindow()
 
 void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
 {
+    /* First check if instance of widget opened the embedded way: */
+    if (m_pWidget->isToolOpened(ToolTypeGlobal_Cloud))
+    {
+        m_pWidget->switchToTool(ToolTypeGlobal_Cloud);
+        return;
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerCloudProfile)
     {
@@ -1277,8 +1284,8 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_pHostNetworkManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Network)->menu());
 
     /* Prepare 'Cloud' menu: */
-    //prepareMenuCloud(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
-    //m_pCloudProfileManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
+    prepareMenuCloud(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
+    m_pCloudProfileManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
 
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
@@ -2064,6 +2071,10 @@ void UIVirtualBoxManager::updateActionsVisibility()
     /* Determine whether Network menu should be visible: */
     const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Network;
     m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
+
+    /* Determine whether Cloud menu should be visible: */
+    const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Cloud;
+    m_pCloudProfileManagerMenuAction->setVisible(fCloudMenuShown);
 
     /* Determine whether Snapshots menu should be visible: */
     const bool fSnapshotMenuShown = (fMachineMenuShown || fGroupMenuShown) &&

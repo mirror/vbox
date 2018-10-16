@@ -29,10 +29,11 @@ class QHBoxLayout;
 class QStackedLayout;
 class QVBoxLayout;
 class UIActionPool;
-class UIWelcomePane;
+class UICloudProfileManagerWidget;
 class UIHostNetworkManagerWidget;
 class UIMediumManagerWidget;
 class UIVirtualMachineItem;
+class UIWelcomePane;
 class CMachine;
 
 
@@ -70,13 +71,15 @@ private:
     UIActionPool *m_pActionPool;
 
     /** Holds the stacked-layout instance. */
-    QStackedLayout             *m_pLayout;
+    QStackedLayout              *m_pLayout;
     /** Holds the Welcome pane instance. */
-    UIWelcomePane              *m_pPaneWelcome;
+    UIWelcomePane               *m_pPaneWelcome;
     /** Holds the Virtual Media Manager instance. */
-    UIMediumManagerWidget      *m_pPaneMedia;
+    UIMediumManagerWidget       *m_pPaneMedia;
     /** Holds the Host Network Manager instance. */
-    UIHostNetworkManagerWidget *m_pPaneNetwork;
+    UIHostNetworkManagerWidget  *m_pPaneNetwork;
+    /** Holds the Cloud Profile Manager instance. */
+    UICloudProfileManagerWidget *m_pPaneCloud;
 };
 
 #endif /* !___UIToolPaneGlobal_h___ */

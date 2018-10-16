@@ -28,6 +28,7 @@
 
 /* GUI includes */
 # include "UIActionPoolSelector.h"
+# include "UICloudProfileManager.h"
 # include "UIHostNetworkManager.h"
 # include "UIMediumManager.h"
 # include "UIToolPaneGlobal.h"
@@ -46,6 +47,7 @@ UIToolPaneGlobal::UIToolPaneGlobal(UIActionPool *pActionPool, QWidget *pParent /
     , m_pPaneWelcome(0)
     , m_pPaneMedia(0)
     , m_pPaneNetwork(0)
+    , m_pPaneCloud(0)
 {
     /* Prepare: */
     prepare();
@@ -146,6 +148,26 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 }
                 break;
             }
+            case ToolTypeGlobal_Cloud:
+            {
+                /* Create Cloud Profile Manager: */
+                m_pPaneCloud = new UICloudProfileManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                AssertPtrReturnVoid(m_pPaneCloud);
+                {
+#ifndef VBOX_WS_MAC
+                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                    m_pPaneCloud->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
+                    /* Configure pane: */
+                    m_pPaneCloud->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Cloud));
+
+                    /* Add into layout: */
+                    m_pLayout->addWidget(m_pPaneCloud);
+                    m_pLayout->setCurrentWidget(m_pPaneCloud);
+                }
+                break;
+            }
             default:
                 AssertFailedReturnVoid();
         }
@@ -169,6 +191,7 @@ void UIToolPaneGlobal::closeTool(ToolTypeGlobal enmType)
             case ToolTypeGlobal_Welcome: m_pPaneWelcome = 0; break;
             case ToolTypeGlobal_Media:   m_pPaneMedia = 0; break;
             case ToolTypeGlobal_Network: m_pPaneNetwork = 0; break;
+            case ToolTypeGlobal_Cloud:   m_pPaneCloud = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */

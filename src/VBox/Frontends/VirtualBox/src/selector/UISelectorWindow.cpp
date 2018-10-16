@@ -505,6 +505,13 @@ void UISelectorWindow::sltCloseHostNetworkManagerWindow()
 
 void UISelectorWindow::sltOpenCloudProfileManagerWindow()
 {
+    /* First check if instance of widget opened embedded: */
+    if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_CloudProfile))
+    {
+        sltHandleToolOpenedGlobal(ToolTypeGlobal_CloudProfile);
+        return;
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerCloudProfile)
     {
