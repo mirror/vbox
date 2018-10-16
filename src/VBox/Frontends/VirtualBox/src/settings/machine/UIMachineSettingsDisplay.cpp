@@ -444,10 +444,11 @@ void UIMachineSettingsDisplay::getFromCache()
                                                                                    UIDataSettingsMachineDisplay::VideoCaptureOption_VC);
     if (fAudioCapture && fVideoCapture)
         m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoAudio));
-    else if (!fAudioCapture && fVideoCapture)
-        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly));
     else if (fAudioCapture && !fVideoCapture)
         m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_AudioOnly));
+    else
+        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::CaptureMode_VideoOnly));
+
     m_pSliderAudioCaptureQuality->setValue(UIDataSettingsMachineDisplay::getAudioQualityFromOptions(oldDisplayData.m_strVideoCaptureOptions));
 
     /* Polish page finally: */
