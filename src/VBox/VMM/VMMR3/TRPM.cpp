@@ -1526,6 +1526,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                 && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
             {
                 VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
+                Assert(rcStrict != VINF_PGM_CHANGE_MODE);
                 if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
                     return rcStrict;
             }
