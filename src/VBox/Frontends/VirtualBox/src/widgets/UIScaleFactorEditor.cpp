@@ -162,7 +162,7 @@ void UIScaleFactorEditor::retranslateUi()
     if (m_pMonitorComboBox && m_pMonitorComboBox->count() > 0)
     {
         m_pMonitorComboBox->setItemText(0, tr("All Monitors"));
-        for (int i = 0; i < m_pMonitorComboBox->count(); ++i)
+        for (int i = 1; i < m_pMonitorComboBox->count(); ++i)
             m_pMonitorComboBox->setItemText(i, tr("Monitor(%1)").arg(i));
     }
     setToolTip(tr("Controls the guest screen scale factor"));
