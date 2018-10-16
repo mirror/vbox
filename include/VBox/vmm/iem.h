@@ -221,6 +221,11 @@ typedef uint8_t IEMMODE;
                                                     | CPUMCTX_EXTRN_DR7 /* for memory breakpoints */ )
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+# define IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK         CPUMCTX_EXTRN_ABSOLUTELY_ALL
+# define IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK        IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK
+#endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /** The CPUMCTX_EXTRN_XXX mask needed when calling IEMExecSvmVmexit().
  * IEM will ASSUME the caller has ensured these are already present. */
 # define IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK         (  CPUMCTX_EXTRN_RSP \
@@ -323,6 +328,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, u
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitIntWindow(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmread(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);

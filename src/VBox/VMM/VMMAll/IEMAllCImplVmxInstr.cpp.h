@@ -3733,6 +3733,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
 
 
 /**
+ * VMX VM-exit handler for interrupt-window VM-exits.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitIntWindow(PVMCPU pVCpu)
+{
+    iemVmxVmcsSetExitQual(pVCpu, 0);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW);
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to delivery of an event.
  *
  * @returns VBox strict status code.
