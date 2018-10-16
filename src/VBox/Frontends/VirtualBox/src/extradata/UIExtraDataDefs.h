@@ -183,6 +183,12 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_HostNetworkManager_Details_Expanded;
     /** @} */
 
+    /** @name Cloud Profile Manager
+      * @{ */
+        /** Holds whether Cloud Profile Manager details expanded. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloudProfileManager_Details_Expanded;
+    /** @} */
+
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name Extra-data Manager
       * @{ */

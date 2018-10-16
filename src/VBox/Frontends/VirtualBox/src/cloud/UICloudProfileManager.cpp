@@ -166,7 +166,7 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
 void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
-    /// @todo implement extra-data setter!
+    gEDataManager->setCloudProfileManagerDetailsExpanded(fVisible);
     /* Show/hide details area and Apply button: */
     m_pDetailsWidget->setVisible(fVisible);
     /* Notify external lsiteners: */
@@ -380,7 +380,7 @@ void UICloudProfileManagerWidget::prepareDetailsWidget()
 void UICloudProfileManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    /// @todo implement extra-data getter!
+    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setChecked(gEDataManager->cloudProfileManagerDetailsExpanded());
 }
 
 void UICloudProfileManagerWidget::loadCloudProfiles()
@@ -535,7 +535,8 @@ void UICloudProfileManager::configureButtonBox()
     // WORKAROUND:
     // Since we connected signals later than extra-data loaded
     // for signals above, we should handle that stuff here again:
-    /// @todo implement extra-data getter!
+    button(ButtonType_Apply)->setVisible(gEDataManager->cloudProfileManagerDetailsExpanded());
+    button(ButtonType_Reset)->setVisible(gEDataManager->cloudProfileManagerDetailsExpanded());
 }
 
 void UICloudProfileManager::finalize()

@@ -1979,6 +1979,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_SnapshotManager_Details_Expanded
            << GUI_VirtualMediaManager_Details_Expanded
            << GUI_HostNetworkManager_Details_Expanded
+           << GUI_CloudProfileManager_Details_Expanded
            << GUI_HideDescriptionForWizards
            << GUI_HideFromManager << GUI_HideDetails
            << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
@@ -2935,6 +2936,18 @@ void UIExtraDataManager::setHostNetworkManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_HostNetworkManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
+bool UIExtraDataManager::cloudProfileManagerDetailsExpanded()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_CloudProfileManager_Details_Expanded);
+}
+
+void UIExtraDataManager::setCloudProfileManagerDetailsExpanded(bool fExpanded)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(GUI_CloudProfileManager_Details_Expanded, toFeatureAllowed(fExpanded));
 }
 
 WizardMode UIExtraDataManager::modeForWizardType(WizardType type)

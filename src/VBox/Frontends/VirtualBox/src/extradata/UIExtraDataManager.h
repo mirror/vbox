@@ -375,6 +375,14 @@ public:
         void setHostNetworkManagerDetailsExpanded(bool fExpanded);
     /** @} */
 
+    /** @name Cloud Profile Manager
+      * @{ */
+        /** Returns whether Cloud Profile Manager details expanded. */
+        bool cloudProfileManagerDetailsExpanded();
+        /** Defines whether Cloud Profile Manager details @a fExpanded. */
+        void setCloudProfileManagerDetailsExpanded(bool fExpanded);
+    /** @} */
+
     /** @name Wizards
       * @{ */
         /** Returns mode for wizard of passed @a type. */
