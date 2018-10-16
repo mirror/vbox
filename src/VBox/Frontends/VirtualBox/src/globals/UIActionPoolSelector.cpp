@@ -2405,7 +2405,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setIconText(QApplication::translate("UIActionPool", "Create"));
+        setName(QApplication::translate("UIActionPool", "&Create Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Create new cloud profile"));
         setToolTip(tr("Create Cloud Profile (%1)").arg(shortcut().toString()));
@@ -2443,7 +2444,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Remove..."));
+        setIconText(QApplication::translate("UIActionPool", "Remove"));
+        setName(QApplication::translate("UIActionPool", "&Remove Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected cloud profile"));
         setToolTip(tr("Remove Cloud Profile (%1)").arg(shortcut().toString()));
@@ -2481,7 +2483,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Properties"));
+        setIconText(QApplication::translate("UIActionPool", "Properties"));
+        setName(QApplication::translate("UIActionPool", "Profile &Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected cloud profile properties"));
         setToolTip(tr("Open Cloud Profile Properties (%1)").arg(shortcut().toString()));
@@ -2519,7 +2522,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Re&fresh..."));
+        setIconText(QApplication::translate("UIActionPool", "Refresh"));
+        setName(QApplication::translate("UIActionPool", "Re&fresh Profiles..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of cloud profiles"));
         setToolTip(tr("Refresh Cloud Profiles (%1)").arg(shortcut().toString()));
