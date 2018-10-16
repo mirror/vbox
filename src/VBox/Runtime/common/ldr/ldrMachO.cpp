@@ -410,7 +410,7 @@ static int kldrModMachODoCreate(PRTLDRREADER pRdr, RTFOFF offImage, uint32_t fOp
             cbJmpStub = 0;
             break;
         case CPU_TYPE_X86_64:
-            fMakeGot = s.Hdr32.filetype == MH_OBJECT;
+            fMakeGot = s.Hdr32.filetype == MH_OBJECT || s.Hdr32.filetype == MH_KEXT_BUNDLE;
             cbJmpStub = fMakeGot ? 8 : 0;
             break;
         default:
@@ -3515,7 +3515,6 @@ static int  kldrModMachOApplyFixupsGeneric32Bit(PRTLDRMODMACHO pThis, uint8_t *p
  * @param   paFixups        The fixups.
  * @param   cFixups         Number of fixups.
  * @param   pauVirginData   The virgin data / addends.  Parallel to paFixups.
- * @param   pFixupSect      The section being fixed up.
  * @param   paSyms          Pointer to the symbol table.
  * @param   cSyms           Number of symbols.
  * @param   NewBaseAddress  The new base image address.
