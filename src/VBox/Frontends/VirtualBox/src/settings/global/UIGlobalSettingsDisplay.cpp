@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIGlobalSettingsDisplay.h"
 # include "UIMessageCenter.h"
@@ -44,6 +45,7 @@ struct UIDataSettingsGlobalDisplay
                && (m_enmMaxGuestResolution == other.m_enmMaxGuestResolution)
                && (m_maxGuestResolution == other.m_maxGuestResolution)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
+               && (m_scaleFactors == other.m_scaleFactors)
                ;
     }
 
@@ -58,6 +60,8 @@ struct UIDataSettingsGlobalDisplay
     QSize m_maxGuestResolution;
     /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool m_fActivateHoveredMachineWindow;
+    /** Holds the guest screen scale-factor. */
+    QList<double> m_scaleFactors;
 };
 
 
@@ -90,6 +94,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     if (oldDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
         oldDisplayData.m_maxGuestResolution = gEDataManager->maxGuestResolutionForPolicyFixed();
     oldDisplayData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
+    oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors();
 
     /* Cache old display data: */
     m_pCache->cacheInitialData(oldDisplayData);
@@ -111,6 +116,8 @@ void UIGlobalSettingsDisplay::getFromCache()
         m_pResolutionHeightSpin->setValue(oldDisplayData.m_maxGuestResolution.height());
     }
     m_pCheckBoxActivateOnMouseHover->setChecked(oldDisplayData.m_fActivateHoveredMachineWindow);
+    m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
+    m_pScaleFactorEditor->setMonitorCount(gpDesktop->screenCount());
 }
 
 void UIGlobalSettingsDisplay::putToCache()
@@ -123,6 +130,7 @@ void UIGlobalSettingsDisplay::putToCache()
     if (newDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
         newDisplayData.m_maxGuestResolution = QSize(m_pResolutionWidthSpin->value(), m_pResolutionHeightSpin->value());
     newDisplayData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
+    newDisplayData.m_scaleFactors = m_pScaleFactorEditor->scaleFactors();
 
     /* Cache new display data: */
     m_pCache->cacheCurrentData(newDisplayData);
@@ -257,8 +265,10 @@ bool UIGlobalSettingsDisplay::saveDisplayData()
         /* Save whether hovered machine-window should be activated automatically: */
         if (fSuccess && newDisplayData.m_fActivateHoveredMachineWindow != oldDisplayData.m_fActivateHoveredMachineWindow)
             gEDataManager->setActivateHoveredMachineWindow(newDisplayData.m_fActivateHoveredMachineWindow);
+        /* Save guest-screen scale-factor: */
+        if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
+            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors);
     }
     /* Return result: */
     return fSuccess;
 }
-

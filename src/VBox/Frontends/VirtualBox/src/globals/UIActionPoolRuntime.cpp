@@ -3156,7 +3156,7 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewScaleFactor(QAction *pAction
 
     /* Change scale-factor directly: */
     const double dScaleFactor = pAction->property("Requested Scale Factor").toDouble();
-    gEDataManager->setScaleFactor(dScaleFactor, vboxGlobal().managedVMUuid(), 0);
+    gEDataManager->setScaleFactor(dScaleFactor, 0, vboxGlobal().managedVMUuid());
 }
 
 void UIActionPoolRuntime::sltPrepareMenuViewScreen()
@@ -3782,7 +3782,7 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
         pActionGroup->setExclusive(true);
 
         /* Get current scale-factor: */
-        const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), 0);
+        const double dCurrentScaleFactor = gEDataManager->scaleFactor(0, vboxGlobal().managedVMUuid());
 
         /* Get device-pixel-ratio: */
         bool fDevicePixelRatioMentioned = false;

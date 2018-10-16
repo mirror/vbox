@@ -3985,10 +3985,14 @@ bool UIExtraDataManager::hidLedsSyncState(const QString &strID)
     return !isFeatureRestricted(GUI_HidLedsSync, strID);
 }
 
-double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIndex)
+double UIExtraDataManager::scaleFactor(const int uScreenIndex, const QString &strID /* = GlobalID */)
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
+    /* Get corresponding extra-data for this machine: */
+    QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
+
+    /* If that fails check the global scale factor: */
+    if (data.size() == 0)
+        data = extraDataStringList(GUI_ScaleFactor, GlobalID);
 
     /* 1.0 is default scale factor: */
     if (data.size() == 0)
@@ -4006,10 +4010,23 @@ double UIExtraDataManager::scaleFactor(const QString &strID, const int uScreenIn
     return scaleFactor;
 }
 
-QList<double> UIExtraDataManager::scaleFactors(const QString &strID)
+QList<double> UIExtraDataManager::scaleFactors(const QString &strID /* = GlobalID */)
 {
+    /* Look for the scale factor for this machine first: */
+    QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
+
+    /* then looks for the global scale factors: */
+    if (data.size() == 0)
+        data = extraDataStringList(GUI_ScaleFactor, GlobalID);
+
     QList<double> scaleFactorList;
-    const QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
+    /* 1.0 is default scale factor: */
+    if (data.size() == 0)
+    {
+        scaleFactorList.append(1.0);
+        return scaleFactorList;
+    }
+
     bool fOk = false;
     double scaleFactor;
     for (int i = 0; i < data.size(); ++i)
@@ -4022,7 +4039,7 @@ QList<double> UIExtraDataManager::scaleFactors(const QString &strID)
     return scaleFactorList;
 }
 
-void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID, const int uScreenIndex)
+void UIExtraDataManager::setScaleFactor(double dScaleFactor, const int uScreenIndex, const QString &strID /* = GlobalID */)
 {
     QStringList data = extraDataStringList(GUI_ScaleFactor, strID);
 
@@ -4039,7 +4056,7 @@ void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strI
     setExtraDataStringList(GUI_ScaleFactor, data, strID);
 }
 
-void UIExtraDataManager::setScaleFactors(const QList<double> &scaleFactors, const QString &strID)
+void UIExtraDataManager::setScaleFactors(const QList<double> &scaleFactors, const QString &strID /* = GlobalID */)
 {
     QStringList data;
     for (int i = 0; i < scaleFactors.size(); ++i)

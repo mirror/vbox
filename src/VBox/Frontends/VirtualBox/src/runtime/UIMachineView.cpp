@@ -247,7 +247,7 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 void UIMachineView::applyMachineViewScaleFactor()
 {
     /* Acquire selected scale-factor: */
-    double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
+    double dScaleFactor = gEDataManager->scaleFactor(m_uScreenId, vboxGlobal().managedVMUuid());
 
     /* Take the device-pixel-ratio into account: */
     const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
@@ -507,7 +507,7 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
         return;
 
     /* Acquire selected scale-factor: */
-    double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
+    double dScaleFactor = gEDataManager->scaleFactor(m_uScreenId, vboxGlobal().managedVMUuid());
 
     /* Take the device-pixel-ratio into account: */
     const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
@@ -701,7 +701,7 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
 
         /* Acquire selected scale-factor: */
-        double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
+        double dScaleFactor = gEDataManager->scaleFactor(m_uScreenId, vboxGlobal().managedVMUuid());
 
         /* Take the device-pixel-ratio into account: */
         const double dDevicePixelRatioFormal = gpDesktop->devicePixelRatio(machineWindow());
