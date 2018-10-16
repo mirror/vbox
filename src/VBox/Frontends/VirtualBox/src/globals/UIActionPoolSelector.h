@@ -171,7 +171,7 @@ protected:
     void updateMenuNetworkWindow();
     /** Updates 'Network' menu. */
     void updateMenuNetwork();
-    /** Updates 'Medium' @a pMenu. */
+    /** Updates 'Network' @a pMenu. */
     void updateMenuNetworkWrapper(UIMenu *pMenu);
 
     /** Updates shortcuts. */
