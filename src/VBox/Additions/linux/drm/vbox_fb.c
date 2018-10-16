@@ -50,7 +50,7 @@
 #include "vbox_drv.h"
 #include <VBoxVideo.h>
 
-#define VBOX_DIRTY_DELAY (HZ / 30)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
 /**
  * Tell the host about dirty rectangles to update.
  */
@@ -123,9 +123,11 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
 
 	vbox_bo_unreserve(bo);
 }
+#endif
 
 #ifdef CONFIG_FB_DEFERRED_IO
-static void vbox_deferred_io(struct fb_info *info, struct list_head *pagelist)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
+static void drm_fb_helper_deferred_io(struct fb_info *info, struct list_head *pagelist)
 {
 	struct vbox_fbdev *fbdev = info->par;
 	unsigned long start, end, min, max;
@@ -149,14 +151,16 @@ static void vbox_deferred_io(struct fb_info *info, struct list_head *pagelist)
 		vbox_dirty_update(fbdev, 0, y1, info->var.xres, y2 - y1 - 1);
 	}
 }
+# endif
 
 static struct fb_deferred_io vbox_defio = {
-	.delay = VBOX_DIRTY_DELAY,
-	.deferred_io = vbox_deferred_io,
+	.delay = HZ / 30,
+	.deferred_io = drm_fb_helper_deferred_io,
 };
 #endif
 
-static void vbox_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(RHEL_73)
+static void drm_fb_helper_sys_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
 {
 	struct vbox_fbdev *fbdev = info->par;
 
@@ -164,7 +168,7 @@ static void vbox_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
 	vbox_dirty_update(fbdev, rect->dx, rect->dy, rect->width, rect->height);
 }
 
-static void vbox_copyarea(struct fb_info *info, const struct fb_copyarea *area)
+static void drm_fb_helper_sys_copyarea(struct fb_info *info, const struct fb_copyarea *area)
 {
 	struct vbox_fbdev *fbdev = info->par;
 
@@ -172,7 +176,7 @@ static void vbox_copyarea(struct fb_info *info, const struct fb_copyarea *area)
 	vbox_dirty_update(fbdev, area->dx, area->dy, area->width, area->height);
 }
 
-static void vbox_imageblit(struct fb_info *info, const struct fb_image *image)
+static void drm_fb_helper_sys_imageblit(struct fb_info *info, const struct fb_image *image)
 {
 	struct vbox_fbdev *fbdev = info->par;
 
@@ -180,14 +184,15 @@ static void vbox_imageblit(struct fb_info *info, const struct fb_image *image)
 	vbox_dirty_update(fbdev, image->dx, image->dy, image->width,
 			  image->height);
 }
+#endif
 
 static struct fb_ops vboxfb_ops = {
 	.owner = THIS_MODULE,
 	.fb_check_var = drm_fb_helper_check_var,
 	.fb_set_par = drm_fb_helper_set_par,
-	.fb_fillrect = vbox_fillrect,
-	.fb_copyarea = vbox_copyarea,
-	.fb_imageblit = vbox_imageblit,
+	.fb_fillrect = drm_fb_helper_sys_fillrect,
+	.fb_copyarea = drm_fb_helper_sys_copyarea,
+	.fb_imageblit = drm_fb_helper_sys_imageblit,
 	.fb_pan_display = drm_fb_helper_pan_display,
 	.fb_blank = drm_fb_helper_blank,
 	.fb_setcmap = drm_fb_helper_setcmap,
@@ -220,6 +225,31 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(RHEL_73)
+static struct fb_info *drm_fb_helper_alloc_fbi(struct drm_fb_helper *helper)
+{
+	struct fb_info *info;
+	struct vbox_fbdev *fbdev =
+	    container_of(helper, struct vbox_fbdev, helper);
+	struct drm_device *dev = fbdev->helper.dev;
+	struct device *device = &dev->pdev->dev;
+
+	info = framebuffer_alloc(0, device);
+	if (!info)
+		return ERR_PTR(-ENOMEM);
+	fbdev->helper.fbdev = info;
+
+	if (fb_alloc_cmap(&info->cmap, 256, 0))
+		return ERR_PTR(-ENOMEM);
+
+	info->apertures = alloc_apertures(1);
+	if (!info->apertures)
+		return ERR_PTR(-ENOMEM);
+
+	return info;
+}
+#endif
+
 static int vboxfb_create(struct drm_fb_helper *helper,
 			 struct drm_fb_helper_surface_size *sizes)
 {
@@ -229,7 +259,6 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	struct DRM_MODE_FB_CMD mode_cmd;
 	struct drm_framebuffer *fb;
 	struct fb_info *info;
-	struct device *device = &dev->pdev->dev;
 	struct drm_gem_object *gobj;
 	struct vbox_bo *bo;
 	int size, ret;
@@ -279,16 +308,16 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 		return ret;
 	}
 
-	info = framebuffer_alloc(0, device);
-	if (!info)
-		return -ENOMEM;
+	info = drm_fb_helper_alloc_fbi(helper);
+	if (IS_ERR(info))
+		return -PTR_ERR(info);
+
 	info->par = fbdev;
 
 	fbdev->size = size;
 
 	fb = &fbdev->afb.base;
 	fbdev->helper.fb = fb;
-	fbdev->helper.fbdev = info;
 
 	strcpy(info->fix.id, "vboxdrmfb");
 
@@ -300,17 +329,10 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 		      FBINFO_MISC_ALWAYS_SETPAR;
 	info->fbops = &vboxfb_ops;
 
-	ret = fb_alloc_cmap(&info->cmap, 256, 0);
-	if (ret)
-		return -ENOMEM;
-
 	/*
 	 * This seems to be done for safety checking that the framebuffer
 	 * is not registered twice by different drivers.
 	 */
-	info->apertures = alloc_apertures(1);
-	if (!info->apertures)
-		return -ENOMEM;
 	info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
 	info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
 
