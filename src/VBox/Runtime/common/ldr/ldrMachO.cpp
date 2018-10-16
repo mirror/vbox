@@ -3635,7 +3635,10 @@ static int  kldrModMachOApplyFixupsAMD64(PRTLDRMODMACHO pThis, uint8_t *pbBits, 
                                        - pSym->n_value
                                        + UINT64_C(0x80000000)
                                     >= UINT64_C(0xffffff20))
+                            {
+                                RTLDRMODMACHO_CHECK_RETURN(pThis->JmpStubsRVA != NIL_RTLDRADDR, VERR_LDR_ADDRESS_OVERFLOW);
                                 SymAddr += pThis->cbJmpStub * Fixup.r.r_symbolnum + pThis->JmpStubsRVA + NewBaseAddress;
+                            }
                             else
                                 SymAddr += pSym->n_value;
                             break;

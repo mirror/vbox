@@ -45,6 +45,7 @@ static RTUINTPTR g_uLoadAddr;
 static RTLDRMOD  g_hLdrMod;
 static void     *g_pvBits;
 static uint8_t   g_cBits;
+static uint8_t   g_fNearImports;
 
 /**
  * Current nearest symbol.
@@ -214,12 +215,14 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
                                        unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
     RT_NOREF5(hLdrMod, pszModule, pszSymbol, uSymbol, pvUser);
-#if 1
     RTUINTPTR BaseAddr = *(PCRTUINTPTR)pvUser;
-    *pValue = BaseAddr + UINT32_C(0x604020f0);
-#else
-    *pValue = UINT64_C(0xffffff7f820df000);
-#endif
+    if (g_fNearImports)
+        *pValue = BaseAddr + UINT32_C(0x604020f0);
+    else if (   BaseAddr < UINT64_C(0xffffff7f820df000) - _4G
+             || BaseAddr > UINT64_C(0xffffff7f820df000) + _4G)
+        *pValue = UINT64_C(0xffffff7f820df000);
+    else
+        *pValue = UINT64_C(0xffffff7c820df000);
     if (g_cBits == 32)
         *pValue &= UINT32_MAX;
     return VINF_SUCCESS;
@@ -288,28 +291,36 @@ int main(int argc, char **argv)
 {
     RTR3InitExe(argc, &argv, 0);
 
-    int rcRet = 0;
-    if (argc <= 2)
-    {
-        RTPrintf("usage: %s <load-addr> <module> [addr1 []]\n", argv[0]);
-        return 1;
-    }
-
     /*
      * Module & code bitness (optional).
      */
     g_cBits = ARCH_BITS;
-    if (!strcmp(argv[1], "--32"))
+#if !defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+    g_fNearImports = false;
+#else
+    g_fNearImports = true;
+#endif
+    while (argc > 1)
     {
-        g_cBits = 32;
+        if (!strcmp(argv[1], "--32"))
+            g_cBits = 32;
+        else if (!strcmp(argv[1], "--64"))
+            g_cBits = 64;
+        else if (!strcmp(argv[1], "--near-imports"))
+            g_fNearImports = true;
+        else if (!strcmp(argv[1], "--wide-imports"))
+            g_fNearImports = false;
+        else
+            break;
         argc--;
         argv++;
     }
-    else if (!strcmp(argv[1], "--64"))
+
+    int rcRet = 0;
+    if (argc <= 2)
     {
-        g_cBits = 64;
-        argc--;
-        argv++;
+        RTPrintf("usage: %s [--32|--64] [--<near|wide>-imports] <load-addr> <module> [addr1 []]\n", argv[0]);
+        return 1;
     }
 
     /*
