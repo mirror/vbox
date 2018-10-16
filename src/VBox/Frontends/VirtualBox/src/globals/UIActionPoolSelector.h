@@ -36,6 +36,7 @@ enum UIActionIndexST
     UIActionIndexST_M_File = UIActionIndex_Max + 1,
     UIActionIndexST_M_File_S_ShowVirtualMediumManager,
     UIActionIndexST_M_File_S_ShowHostNetworkManager,
+    UIActionIndexST_M_File_S_ShowCloudProfileManager,
     UIActionIndexST_M_File_S_ImportAppliance,
     UIActionIndexST_M_File_S_ExportAppliance,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -106,6 +107,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Tools_M_Global,
     UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager,
     UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager,
+    UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager,
 
     /* Snapshot Pane actions: */
     UIActionIndexST_M_Snapshot,
@@ -133,6 +135,14 @@ enum UIActionIndexST
     UIActionIndexST_M_Network_S_Remove,
     UIActionIndexST_M_Network_T_Details,
     UIActionIndexST_M_Network_S_Refresh,
+
+    /* Host Cloud Profile actions: */
+    UIActionIndexST_M_CloudWindow,
+    UIActionIndexST_M_Cloud,
+    UIActionIndexST_M_Cloud_S_Create,
+    UIActionIndexST_M_Cloud_S_Remove,
+    UIActionIndexST_M_Cloud_T_Details,
+    UIActionIndexST_M_Cloud_S_Refresh,
 
     /* Maximum index: */
     UIActionIndexST_Max
@@ -173,6 +183,13 @@ protected:
     void updateMenuNetwork();
     /** Updates 'Network' @a pMenu. */
     void updateMenuNetworkWrapper(UIMenu *pMenu);
+
+    /** Updates 'Cloud' window menu. */
+    void updateMenuCloudWindow();
+    /** Updates 'Cloud' menu. */
+    void updateMenuCloud();
+    /** Updates 'Cloud' @a pMenu. */
+    void updateMenuCloudWrapper(UIMenu *pMenu);
 
     /** Updates shortcuts. */
     virtual void updateShortcuts() /* override */;

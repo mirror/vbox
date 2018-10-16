@@ -130,6 +130,10 @@ private slots:
         void sltOpenHostNetworkManagerWindow();
         /** Handles call to close Host Network Manager window. */
         void sltCloseHostNetworkManagerWindow();
+        /** Handles call to open Cloud Profile Manager window. */
+        void sltOpenCloudProfileManagerWindow();
+        /** Handles call to close Cloud Profile Manager window. */
+        void sltCloseCloudProfileManagerWindow();
         /** Handles call to close a Machine LogViewer window. */
         void sltCloseLogViewerWindow();
         /** Handles call to open Import Appliance wizard.
@@ -388,6 +392,8 @@ private:
     QIManagerDialog *m_pManagerVirtualMedia;
     /** Holds the Host Network Manager window instance. */
     QIManagerDialog *m_pManagerHostNetwork;
+    /** Holds the Host Cloud Profile window instance. */
+    QIManagerDialog *m_pManagerCloudProfile;
     /** Holds a map of (machineUUID, UIVMLogViewerDialog). */
     VMLogViewerMap m_logViewers;
 };

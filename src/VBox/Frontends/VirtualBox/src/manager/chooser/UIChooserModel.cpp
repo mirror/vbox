@@ -1344,6 +1344,7 @@ void UIChooserModel::prepareContextMenu()
 # endif
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1357,6 +1358,7 @@ void UIChooserModel::prepareContextMenu()
 # endif
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
         if (gEDataManager->applicationUpdateEnabled())

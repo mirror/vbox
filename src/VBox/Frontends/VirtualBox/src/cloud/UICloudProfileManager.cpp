@@ -100,8 +100,7 @@ UICloudProfileManagerWidget::UICloudProfileManagerWidget(EmbedTo enmEmbedding, U
 
 QMenu *UICloudProfileManagerWidget::menu() const
 {
-    /// @todo implement menu action!
-    return 0;
+    return m_pActionPool->action(UIActionIndexST_M_CloudWindow)->menu();
 }
 
 void UICloudProfileManagerWidget::retranslateUi()
@@ -206,7 +205,8 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
     UIItemCloudProfile *pItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
 
     /* Update actions availability: */
-    /// @todo implement % enable/disable actions!
+    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItem);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -223,7 +223,18 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
 {
     /* Compose temporary context-menu: */
     QMenu menu;
-    /// @todo implement & insert actions!
+    if (m_pTreeWidget->itemAt(position))
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
+        menu.addSeparator();
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+    }
+    else
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create));
+//        menu.addSeparator();
+//        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
+    }
 
     /* And show it: */
     menu.exec(m_pTreeWidget->mapToGlobal(position));
@@ -249,7 +260,14 @@ void UICloudProfileManagerWidget::prepare()
 void UICloudProfileManagerWidget::prepareActions()
 {
     /* Connect actions: */
-    /// @todo implement & connect actions!
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltCreateCloudProfile);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
+            this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltRefreshCloudProfiles);
 }
 
 void UICloudProfileManagerWidget::prepareWidgets()
@@ -288,7 +306,12 @@ void UICloudProfileManagerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        /// @todo implement & add actions!
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+//        m_pToolBar->addSeparator();
+//        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -325,7 +348,8 @@ void UICloudProfileManagerWidget::prepareTreeWidget()
                 this, &UICloudProfileManagerWidget::sltHandleContextMenuRequest);
         connect(m_pTreeWidget, &QITreeWidget::itemChanged,
                 this, &UICloudProfileManagerWidget::sltHandleItemChange);
-        /// @todo implement & connect actions!
+        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::setChecked);
 
         /* Add into layout: */
         layout()->addWidget(m_pTreeWidget);

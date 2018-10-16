@@ -29,6 +29,7 @@
 /* GUI includes: */
 # include "QIFileDialog.h"
 # include "UIActionPoolSelector.h"
+# include "UICloudProfileManager.h"
 # include "UIDesktopServices.h"
 # include "UIExtraDataManager.h"
 # include "UIHostNetworkManager.h"
@@ -116,8 +117,10 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pLogViewerMenuAction(0)
     , m_pVirtualMediaManagerMenuAction(0)
     , m_pHostNetworkManagerMenuAction(0)
+    , m_pCloudProfileManagerMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
+    , m_pManagerCloudProfile(0)
 {
     s_pInstance = this;
 }
@@ -442,6 +445,29 @@ void UIVirtualBoxManager::sltCloseHostNetworkManagerWindow()
     /* Destroy instance if still exists: */
     if (m_pManagerHostNetwork)
         UIHostNetworkManagerFactory().cleanup(m_pManagerHostNetwork);
+}
+
+void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
+{
+    /* Create instance if not yet created: */
+    if (!m_pManagerCloudProfile)
+    {
+        UICloudProfileManagerFactory(m_pActionPool).prepare(m_pManagerCloudProfile, this);
+        connect(m_pManagerCloudProfile, &QIManagerDialog::sigClose,
+                this, &UIVirtualBoxManager::sltCloseCloudProfileManagerWindow);
+    }
+
+    /* Show instance: */
+    m_pManagerCloudProfile->show();
+    m_pManagerCloudProfile->setWindowState(m_pManagerCloudProfile->windowState() & ~Qt::WindowMinimized);
+    m_pManagerCloudProfile->activateWindow();
+}
+
+void UIVirtualBoxManager::sltCloseCloudProfileManagerWindow()
+{
+    /* Destroy instance if still exists: */
+    if (m_pManagerCloudProfile)
+        UIHostNetworkManagerFactory().cleanup(m_pManagerCloudProfile);
 }
 
 void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -1250,6 +1276,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     prepareMenuNetwork(actionPool()->action(UIActionIndexST_M_Network)->menu());
     m_pHostNetworkManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Network)->menu());
 
+    /* Prepare 'Cloud' menu: */
+    //prepareMenuCloud(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
+    //m_pCloudProfileManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
+
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
     UIWindowMenuManager::create();
@@ -1302,6 +1332,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
+    //pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1320,6 +1352,7 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
 #  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    //addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 #  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
@@ -1346,6 +1379,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
+    //pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -1713,6 +1748,22 @@ void UIVirtualBoxManager::prepareMenuNetwork(QMenu *pMenu)
                                 << actionPool()->action(UIActionIndexST_M_Network_S_Refresh);
 }
 
+void UIVirtualBoxManager::prepareMenuCloud(QMenu *pMenu)
+{
+    /* We are doing it inside the UIActionPoolSelector. */
+    Q_UNUSED(pMenu);
+
+    /* Do not touch if filled already: */
+    if (!m_cloudProfileManagerActions.isEmpty())
+        return;
+
+    /* Remember action list: */
+    m_cloudProfileManagerActions << actionPool()->action(UIActionIndexST_M_Cloud_S_Create)
+                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Remove)
+                                 << actionPool()->action(UIActionIndexST_M_Cloud_T_Details)
+                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Refresh);
+}
+
 void UIVirtualBoxManager::prepareStatusBar()
 {
     /* We are not using status-bar anymore: */
@@ -1765,6 +1816,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow);
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenHostNetworkManagerWindow);
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenCloudProfileManagerWindow);
     connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenImportApplianceWizardDefault);
     connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), &UIAction::triggered,
@@ -1914,6 +1967,7 @@ void UIVirtualBoxManager::cleanup()
     /* Close the sub-dialogs first: */
     sltCloseVirtualMediumManagerWindow();
     sltCloseHostNetworkManagerWindow();
+    sltCloseCloudProfileManagerWindow();
 
     /* Save settings: */
     saveSettings();
@@ -1983,9 +2037,9 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             /* Fetch item launch mode: */
             VBoxGlobal::LaunchMode enmItemLaunchMode = enmLaunchMode;
             if (enmItemLaunchMode == VBoxGlobal::LaunchMode_Invalid)
-                enmItemLaunchMode = UIVirtualMachineItem::isItemRunningHeadless(pItem)         ? VBoxGlobal::LaunchMode_Separate :
-                                    qApp->keyboardModifiers() == Qt::ShiftModifier ? VBoxGlobal::LaunchMode_Headless :
-                                                                                     VBoxGlobal::LaunchMode_Default;
+                enmItemLaunchMode = UIVirtualMachineItem::isItemRunningHeadless(pItem) ? VBoxGlobal::LaunchMode_Separate :
+                                    qApp->keyboardModifiers() == Qt::ShiftModifier     ? VBoxGlobal::LaunchMode_Headless :
+                                                                                         VBoxGlobal::LaunchMode_Default;
 
             /* Launch current VM: */
             CMachine machine = pItem->machine();

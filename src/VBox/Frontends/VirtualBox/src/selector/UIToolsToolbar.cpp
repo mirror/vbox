@@ -250,6 +250,11 @@ void UIToolsToolbar::prepareMenu()
                 this, &UIToolsToolbar::sltHandleOpenToolGlobal);
         m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager)
             ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_HostNetwork));
+
+        /* Add 'Cloud Profile Manager' action: */
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager), &UIAction::triggered,
+                this, &UIToolsToolbar::sltHandleOpenToolGlobal);
     }
 
     /* Configure 'Global' toggle action: */

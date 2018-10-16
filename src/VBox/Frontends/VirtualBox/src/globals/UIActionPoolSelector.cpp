@@ -130,6 +130,40 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
+class UIActionSimpleSelectorFileShowCloudProfileManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorFileShowCloudProfileManager(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CloudProfileManager");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+C");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Cloud Profile Manager..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the Cloud Profile Manager window"));
+    }
+};
+
 /** Simple action extension, used as 'Show Import Appliance Wizard' action class. */
 class UIActionSimpleSelectorFileShowImportApplianceWizard : public UIActionSimple
 {
@@ -1556,6 +1590,36 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
+class UIActionSimpleSelectorToolsGlobalShowCloudProfileManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
+                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalCloudProfileManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Cloud Profile Manager"));
+    }
+};
+
 
 /** Menu action extension, used as 'Snapshot' menu class. */
 class UIActionMenuSelectorSnapshot : public UIActionMenu
@@ -2282,6 +2346,187 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Cloud' menu class. */
+class UIActionMenuSelectorCloud : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloud(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CloudProfileMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Cloud"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the cloud menu"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Create' action class. */
+class UIActionMenuSelectorCloudPerformCreate : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudPerformCreate(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/host_iface_add_32px.png",          ":/host_iface_add_16px.png",
+                         ":/host_iface_add_disabled_32px.png", ":/host_iface_add_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CreateCloudProfile");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+C");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create new cloud profile"));
+        setToolTip(tr("Create Cloud Profile (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Remove' action class. */
+class UIActionMenuSelectorCloudPerformRemove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudPerformRemove(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/host_iface_remove_32px.png",          ":/host_iface_remove_16px.png",
+                         ":/host_iface_remove_disabled_32px.png", ":/host_iface_remove_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RemoveCloudProfile");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+R");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Remove..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove selected cloud profile"));
+        setToolTip(tr("Remove Cloud Profile (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Toggle action extension, used as 'Toggle Properties' action class. */
+class UIActionMenuSelectorCloudToggleProperties : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudToggleProperties(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/host_iface_edit_32px.png",          ":/host_iface_edit_16px.png",
+                         ":/host_iface_edit_disabled_32px.png", ":/host_iface_edit_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleCloudProfileProperties");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Space");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Properties"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected cloud profile properties"));
+        setToolTip(tr("Open Cloud Profile Properties (%1)").arg(shortcut().toString()));
+    }
+};
+
+/** Simple action extension, used as 'Perform Refresh' action class. */
+class UIActionMenuSelectorCloudPerformRefresh : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudPerformRefresh(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/refresh_32px.png",          ":/refresh_16px.png",
+                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RefreshCloudProfiles");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Re&fresh..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of cloud profiles"));
+        setToolTip(tr("Refresh Cloud Profiles (%1)").arg(shortcut().toString()));
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIActionPoolSelector implementation.                                                                                   *
 *********************************************************************************************************************************/
@@ -2297,6 +2542,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_File] = new UIActionMenuSelectorFile(this);
     m_pool[UIActionIndexST_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleSelectorFileShowVirtualMediaManager(this);
     m_pool[UIActionIndexST_M_File_S_ShowHostNetworkManager] = new UIActionSimpleSelectorFileShowHostNetworkManager(this);
+    m_pool[UIActionIndexST_M_File_S_ShowCloudProfileManager] = new UIActionSimpleSelectorFileShowCloudProfileManager(this);
     m_pool[UIActionIndexST_M_File_S_ImportAppliance] = new UIActionSimpleSelectorFileShowImportApplianceWizard(this);
     m_pool[UIActionIndexST_M_File_S_ExportAppliance] = new UIActionSimpleSelectorFileShowExportApplianceWizard(this);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -2367,6 +2613,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
     m_pool[UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(this);
     m_pool[UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(this);
+    m_pool[UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(this);
 
     /* Snapshot Pane actions: */
     m_pool[UIActionIndexST_M_Snapshot] = new UIActionMenuSelectorSnapshot(this);
@@ -2395,11 +2642,21 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Network_T_Details] = new UIActionMenuSelectorNetworkToggleProperties(this);
     m_pool[UIActionIndexST_M_Network_S_Refresh] = new UIActionMenuSelectorNetworkPerformRefresh(this);
 
+    /* Cloud Profile Manager actions: */
+    m_pool[UIActionIndexST_M_CloudWindow] = new UIActionMenuSelectorCloud(this);
+    m_pool[UIActionIndexST_M_Cloud] = new UIActionMenuSelectorCloud(this);
+    m_pool[UIActionIndexST_M_Cloud_S_Create] = new UIActionMenuSelectorCloudPerformCreate(this);
+    m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
+    m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
+    m_pool[UIActionIndexST_M_Cloud_S_Refresh] = new UIActionMenuSelectorCloudPerformRefresh(this);
+
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfs = &UIActionPoolSelector::updateMenuMediumWindow;
     m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfs = &UIActionPoolSelector::updateMenuMedium;
     m_menuUpdateHandlers[UIActionIndexST_M_NetworkWindow].ptfs = &UIActionPoolSelector::updateMenuNetworkWindow;
     m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfs = &UIActionPoolSelector::updateMenuNetwork;
+    m_menuUpdateHandlers[UIActionIndexST_M_CloudWindow].ptfs = &UIActionPoolSelector::updateMenuCloudWindow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Cloud].ptfs = &UIActionPoolSelector::updateMenuCloud;
 
     /* Call to base-class: */
     UIActionPool::preparePool();
@@ -2540,6 +2797,58 @@ void UIActionPoolSelector::updateMenuNetworkWrapper(UIMenu *pMenu)
 
 //    /* 'Refresh' action: */
 //    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Refresh)) || fSeparator;;
+}
+
+void UIActionPoolSelector::updateMenuCloudWindow()
+{
+    /* Update corresponding menu: */
+    updateMenuCloudWrapper(action(UIActionIndexST_M_CloudWindow)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_CloudWindow);
+}
+
+void UIActionPoolSelector::updateMenuCloud()
+{
+    /* Update corresponding menu: */
+    updateMenuCloudWrapper(action(UIActionIndexST_M_Cloud)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Cloud);
+}
+
+void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
+{
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator? */
+    bool fSeparator = false;
+
+    /* 'Create' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Create)) || fSeparator;
+    /* 'Remove' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Remove)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Properties' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_T_Details)) || fSeparator;
+
+//    /* Separator? */
+//    if (fSeparator)
+//    {
+//        pMenu->addSeparator();
+//        fSeparator = false;
+//    }
+
+//    /* 'Refresh' action: */
+//    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Refresh)) || fSeparator;;
 }
 
 void UIActionPoolSelector::updateShortcuts()

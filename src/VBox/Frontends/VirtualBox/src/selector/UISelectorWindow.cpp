@@ -32,6 +32,7 @@
 # include "QIFileDialog.h"
 # include "QISplitter.h"
 # include "UIActionPoolSelector.h"
+# include "UICloudProfileManager.h"
 # include "UIDesktopServices.h"
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
@@ -139,6 +140,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pMachineMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
+    , m_pManagerCloudProfile(0)
 {
     m_spInstance = this;
 }
@@ -499,6 +501,29 @@ void UISelectorWindow::sltCloseHostNetworkManagerWindow()
     /* Destroy instance if still exists: */
     if (m_pManagerHostNetwork)
         UIHostNetworkManagerFactory().cleanup(m_pManagerHostNetwork);
+}
+
+void UISelectorWindow::sltOpenCloudProfileManagerWindow()
+{
+    /* Create instance if not yet created: */
+    if (!m_pManagerCloudProfile)
+    {
+        UICloudProfileManagerFactory(m_pActionPool).prepare(m_pManagerCloudProfile, this);
+        connect(m_pManagerCloudProfile, &QIManagerDialog::sigClose,
+                this, &UISelectorWindow::sltCloseCloudProfileManagerWindow);
+    }
+
+    /* Show instance: */
+    m_pManagerCloudProfile->show();
+    m_pManagerCloudProfile->setWindowState(m_pManagerCloudProfile->windowState() & ~Qt::WindowMinimized);
+    m_pManagerCloudProfile->activateWindow();
+}
+
+void UISelectorWindow::sltCloseCloudProfileManagerWindow()
+{
+    /* Destroy instance if still exists: */
+    if (m_pManagerCloudProfile)
+        UICloudProfileManagerFactory().cleanup(m_pManagerCloudProfile);
 }
 
 void UISelectorWindow::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -1584,6 +1609,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
+    //pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1602,6 +1629,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 #  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    //addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 #  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
@@ -1628,6 +1656,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
+    //pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -2114,6 +2144,7 @@ void UISelectorWindow::prepareConnections()
     /* 'File' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenVirtualMediumManagerWindow()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager), SIGNAL(triggered()), this, SLOT(sltOpenHostNetworkManagerWindow()));
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager), SIGNAL(triggered()), this, SLOT(sltOpenCloudProfileManagerWindow()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenImportApplianceWizard()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenExportApplianceWizard()));
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -2263,7 +2294,8 @@ void UISelectorWindow::loadSettings()
         /* We can restore previously opened Global tools right here: */
         QMap<ToolTypeGlobal, QAction*> mapActionsGlobal;
         mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager);
-        mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
+        mapActionsGlobal[ToolTypeGlobal_HostNetwork]  = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager);
+        mapActionsGlobal[ToolTypeGlobal_CloudProfile] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager);
         for (int i = m_orderGlobal.size() - 1; i >= 0; --i)
             if (m_orderGlobal.at(i) != ToolTypeGlobal_Invalid)
                 mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
@@ -2331,6 +2363,7 @@ void UISelectorWindow::cleanup()
     /* Close the sub-dialogs first: */
     sltCloseVirtualMediumManagerWindow();
     sltCloseHostNetworkManagerWindow();
+    sltCloseCloudProfileManagerWindow();
 
     /* Save settings: */
     saveSettings();
