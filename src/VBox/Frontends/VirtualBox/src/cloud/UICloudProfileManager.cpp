@@ -44,11 +44,26 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** Tree-widget column tags. */
+/** Tree-widget item types. */
+enum CloudItemType
+{
+    CloudItemType_Provider = QTreeWidgetItem::UserType + 1,
+    CloudItemType_Profile  = QTreeWidgetItem::UserType + 2
+};
+Q_DECLARE_METATYPE(CloudItemType);
+
+/** Tree-widget data types. */
+enum
+{
+    Data_ItemType   = Qt::UserRole + 1,
+    Data_ProviderID = Qt::UserRole + 2,
+};
+
+/** Tree-widget column types. */
 enum
 {
     Column_Name,
-    Column_Max,
+    Column_Max
 };
 
 
@@ -56,6 +71,9 @@ enum
 class UIItemCloudProvider : public QITreeWidgetItem, public UIDataCloudProvider
 {
 public:
+
+    /** Constructs item. */
+    UIItemCloudProvider();
 
     /** Updates item fields from base-class data. */
     void updateFields();
@@ -69,6 +87,9 @@ class UIItemCloudProfile : public QITreeWidgetItem, public UIDataCloudProfile
 {
 public:
 
+    /** Constructs item. */
+    UIItemCloudProfile();
+
     /** Updates item fields from base-class data. */
     void updateFields();
 
@@ -81,16 +102,29 @@ public:
 *   Class UIItemCloudProvider implementation.                                                                                    *
 *********************************************************************************************************************************/
 
+UIItemCloudProvider::UIItemCloudProvider()
+{
+    /* Assign item type: */
+    setData(Column_Name, Data_ItemType, CloudItemType_Provider);
+}
+
 void UIItemCloudProvider::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
+    setData(Column_Name, Data_ProviderID, m_uuid);
 }
 
 
 /*********************************************************************************************************************************
 *   Class UIItemCloudProfile implementation.                                                                                     *
 *********************************************************************************************************************************/
+
+UIItemCloudProfile::UIItemCloudProfile()
+{
+    /* Assign item type: */
+    setData(Column_Name, Data_ItemType, CloudItemType_Profile);
+}
 
 void UIItemCloudProfile::updateFields()
 {
@@ -190,38 +224,52 @@ void UICloudProfileManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
 
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
 {
-    /* Get profile item: */
-    UIItemCloudProfile *pItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
+    /* Get items: */
+    QTreeWidgetItem *pItem = m_pTreeWidget->currentItem();
+    UIItemCloudProvider *pItemProvider = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Provider
+                                       ? static_cast<UIItemCloudProvider*>(pItem)
+                                       : 0;
+    UIItemCloudProfile  *pItemProfile  = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Profile
+                                       ? static_cast<UIItemCloudProfile*>(pItem)
+                                       : 0;
 
     /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItem);
-    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create)->setEnabled(!pItem || pItemProvider);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItemProfile);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItemProfile);
 
     /* If there is an item => update details data: */
-    if (pItem)
-        m_pDetailsWidget->setData(*pItem);
+    if (pItemProfile)
+        m_pDetailsWidget->setData(*pItemProfile);
+    /* Otherwise => clear details data: */
     else
-    {
-        /* Otherwise => clear details and close the area: */
         m_pDetailsWidget->setData(UIDataCloudProfile());
-        sltToggleCloudProfileDetailsVisibility(false);
-    }
+
+    /* Update details area visibility: */
+    sltToggleCloudProfileDetailsVisibility(pItem && m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->isChecked());
 }
 
 void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
+    /* Get items: */
+    QTreeWidgetItem *pItem = m_pTreeWidget->itemAt(position);
+    UIItemCloudProvider *pItemProvider = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Provider
+                                       ? static_cast<UIItemCloudProvider*>(pItem)
+                                       : 0;
+    UIItemCloudProfile  *pItemProfile  = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Profile
+                                       ? static_cast<UIItemCloudProfile*>(pItem)
+                                       : 0;
+
     /* Compose temporary context-menu: */
     QMenu menu;
-    if (m_pTreeWidget->itemAt(position))
+    if (pItemProfile)
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
-        menu.addSeparator();
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
     }
-    else
+    else if (pItemProvider)
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create));
-//        menu.addSeparator();
 //        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
     }
 
@@ -296,8 +344,8 @@ void UICloudProfileManagerWidget::prepareToolBar()
 
         /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
         m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
 //        m_pToolBar->addSeparator();
 //        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
