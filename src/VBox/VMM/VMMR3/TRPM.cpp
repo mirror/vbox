@@ -1528,7 +1528,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                 VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
                 Assert(rcStrict != VINF_PGM_CHANGE_MODE);
                 if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                    return rcStrict;
+                    return VBOXSTRICTRC_TODO(rcStrict);
             }
         }
 #endif
