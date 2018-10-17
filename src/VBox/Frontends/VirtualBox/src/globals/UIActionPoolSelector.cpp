@@ -139,7 +139,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowCloudProfileManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_16px.png")
+        : UIActionSimple(pParent, ":/cloud_profile_manager_16px.png", ":/cloud_profile_manager_16px.png")
     {}
 
 protected:
@@ -1600,8 +1600,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
-                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png")
+                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
+                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png")
     {}
 
 protected:

@@ -626,7 +626,7 @@ void UICloudProfileManager::configure()
 {
     /* Apply window icons: */
     /// @todo apply proper cloud profile manager icons!
-    setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(":/cloud_profile_manager_32px.png", ":/cloud_profile_manager_16px.png"));
 }
 
 void UICloudProfileManager::configureCentralWidget()
