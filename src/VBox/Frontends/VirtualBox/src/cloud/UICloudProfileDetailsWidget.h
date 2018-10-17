@@ -148,8 +148,10 @@ private:
       * @{ */
         /** Revalidates changes for passed @a pWidget. */
         void revalidate(QWidget *pWidget = 0);
+
         /** Retranslates validation for passed @a pWidget. */
         void retranslateValidation(QWidget *pWidget = 0);
+
         /** Updates button states. */
         void updateButtonStates();
     /** @} */

@@ -103,8 +103,7 @@ void UICloudProfileDetailsWidget::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /* Configure layout: */
-        pLayout->setContentsMargins(0, 0, 0, 0);
+        /// @todo sync layout margins with other tools!
 
         /* Create tab-widget: */
         m_pTableWidget = new QTableWidget;
@@ -112,6 +111,20 @@ void UICloudProfileDetailsWidget::prepareWidgets()
         {
             /* Add into layout: */
             pLayout->addWidget(m_pTableWidget);
+        }
+
+        /* If parent embedded into stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Create button-box: */
+            m_pButtonBox = new QIDialogButtonBox;
+            AssertPtrReturnVoid(m_pButtonBox);
+            /* Configure button-box: */
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+            connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UICloudProfileDetailsWidget::sltHandleButtonBoxClick);
+
+            /* Add into layout: */
+            pLayout->addWidget(m_pButtonBox);
         }
     }
 }
