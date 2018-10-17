@@ -223,7 +223,7 @@ start()
 {
     begin "Starting."
     # If we got this far assume that the slow set-up has been done.
-    QUICKSETUP=yes
+    QUICKSETUP=start
     if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
         uname -r | grep -q -E '^2\.6|^3|^4' 2>/dev/null &&
             ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
@@ -379,6 +379,16 @@ setup_modules()
     test -n "${QUICKSETUP}" && test -f "${MODULE_DIR}/vboxguest.ko" && return 0
     info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
 
+    # If the kernel headers are not there, wait at bit in case they get
+    # installed.  Package managers have been known to trigger module rebuilds
+    # before actually installing the headers.
+    for count in 1 2 3 4 5; do
+        test "x${QUICKSETUP}" = xyes || break
+        test -d "/lib/modules/${KERN_VER}/build" && break
+        printf "Kernel modules not yet installed, waiting five minutes (%s of 5)" "${count}"
+        sleep 300
+    done
+
     log "Building the main Guest Additions module."
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
@@ -463,8 +473,9 @@ create_module_rebuild_script()
     mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
     cat << EOF > /etc/kernel/postinst.d/vboxadd
 #!/bin/sh
-test -d "/lib/modules/\${1}/build" || exit 0
-KERN_VER="\${1}" /sbin/rcvboxadd quicksetup
+# Run in the background so that we can wait in case the package installer has
+# not yet installed the kernel headers we need.
+KERN_VER="\${1}" /sbin/rcvboxadd quicksetup &
 exit 0
 EOF
     cat << EOF > /etc/kernel/prerm.d/vboxadd
