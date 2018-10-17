@@ -39,6 +39,7 @@
 
 /* COM includes: */
 #include "CCloudProfile.h"
+#include "CCloudProvider.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -52,12 +53,24 @@ enum
 };
 
 
-/** Cloud Profile Manager tree-widget item. */
+/** Cloud Profile Manager provider's tree-widget item. */
+class UIItemCloudProvider : public QITreeWidgetItem, public UIDataCloudProvider
+{
+public:
+
+    /** Updates item fields from base-class data. */
+    void updateFields();
+
+    /** Returns item name. */
+    QString name() const { return m_strName; }
+};
+
+/** Cloud Profile Manager profile's tree-widget item. */
 class UIItemCloudProfile : public QITreeWidgetItem, public UIDataCloudProfile
 {
 public:
 
-    /** Updates item fields from data. */
+    /** Updates item fields from base-class data. */
     void updateFields();
 
     /** Returns item name. */
@@ -66,12 +79,27 @@ public:
 
 
 /*********************************************************************************************************************************
+*   Class UIItemCloudProvider implementation.                                                                                    *
+*********************************************************************************************************************************/
+
+void UIItemCloudProvider::updateFields()
+{
+    /* Update item fields: */
+    setText(Column_Name, m_strName);
+    /// @todo assign rest of field values!
+
+    /* Compose item tool-tip: */
+    /// @todo assign tool-tips!
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIItemCloudProfile implementation.                                                                                     *
 *********************************************************************************************************************************/
 
 void UIItemCloudProfile::updateFields()
 {
-    /* Compose item fields: */
+    /* Update item fields: */
     setText(Column_Name, m_strName);
     /// @todo assign rest of field values!
 
@@ -175,6 +203,8 @@ void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fV
 
 void UICloudProfileManagerWidget::sltRefreshCloudProfiles()
 {
+    /// @todo refresh cloud profiles!
+
     // Not implemented.
     AssertMsgFailed(("Not implemented!"));
 }
@@ -253,8 +283,8 @@ void UICloudProfileManagerWidget::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Load cloud profiles: */
-    loadCloudProfiles();
+    /* Load cloud stuff: */
+    loadCloudStuff();
 }
 
 void UICloudProfileManagerWidget::prepareActions()
@@ -383,12 +413,20 @@ void UICloudProfileManagerWidget::loadSettings()
     m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setChecked(gEDataManager->cloudProfileManagerDetailsExpanded());
 }
 
-void UICloudProfileManagerWidget::loadCloudProfiles()
+void UICloudProfileManagerWidget::loadCloudStuff()
 {
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
 
     /// @todo load cloud profiles!
+}
+
+void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data)
+{
+    Q_UNUSED(comProvider);
+    Q_UNUSED(data);
+
+    /// @todo load cloud profile!
 }
 
 void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile, UIDataCloudProfile &data)
@@ -399,17 +437,35 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
     /// @todo load cloud profile!
 }
 
-void UICloudProfileManagerWidget::createItemForCloudProfile(const UIDataCloudProfile &data, bool fChooseItem)
+void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudProvider &data, bool fChooseItem)
 {
-    /* Create new item: */
+    /* Create new provider item: */
+    UIItemCloudProvider *pItem = new UIItemCloudProvider;
+    if (pItem)
+    {
+        /* Configure item: */
+        pItem->UIDataCloudProvider::operator=(data);
+        pItem->updateFields();
+        /* Add item to the tree: */
+        m_pTreeWidget->addTopLevelItem(pItem);
+        /* And choose it as current if necessary: */
+        if (fChooseItem)
+            m_pTreeWidget->setCurrentItem(pItem);
+    }
+}
+
+void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &data, bool fChooseItem)
+{
+    /* Create new profile item: */
     UIItemCloudProfile *pItem = new UIItemCloudProfile;
     if (pItem)
     {
         /* Configure item: */
+        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
         pItem->UIDataCloudProfile::operator=(data);
         pItem->updateFields();
-        /* Add item to the tree: */
-        m_pTreeWidget->addTopLevelItem(pItem);
+        /* Add item to the parent: */
+        pParent->addChild(pItem);
         /* And choose it as current if necessary: */
         if (fChooseItem)
             m_pTreeWidget->setCurrentItem(pItem);

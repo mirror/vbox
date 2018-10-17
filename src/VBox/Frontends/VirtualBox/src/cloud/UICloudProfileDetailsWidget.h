@@ -19,6 +19,7 @@
 #define ___UICloudProfileDetailsWidget_h___
 
 /* Qt includes: */
+#include <QUuid>
 #include <QWidget>
 
 /* GUI includes: */
@@ -30,6 +31,34 @@ class QAbstractButton;
 class QTableWidget;
 class QIDialogButtonBox;
 
+
+/** Cloud Provider data structure. */
+struct UIDataCloudProvider
+{
+    /** Constructs data. */
+    UIDataCloudProvider()
+        : m_strName(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataCloudProvider &other) const
+    {
+        return true
+               && (m_uuid == other.m_uuid)
+               && (m_strName == other.m_strName)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataCloudProvider &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataCloudProvider &other) const { return !equal(other); }
+
+    /** Holds the provider ID. */
+    QUuid    m_uuid;
+    /** Holds the provider name. */
+    QString  m_strName;
+};
 
 /** Cloud Profile data structure. */
 struct UIDataCloudProfile
@@ -52,7 +81,7 @@ struct UIDataCloudProfile
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataCloudProfile &other) const { return !equal(other); }
 
-    /** Holds the snapshot name. */
+    /** Holds the profile name. */
     QString  m_strName;
 };
 

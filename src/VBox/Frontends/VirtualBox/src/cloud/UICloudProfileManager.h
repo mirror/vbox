@@ -29,9 +29,12 @@ class QITreeWidget;
 class UIActionPool;
 class UICloudProfileDetailsWidget;
 class UIItemCloudProfile;
+class UIItemCloudProvider;
 class UIToolBar;
 struct UIDataCloudProfile;
+struct UIDataCloudProvider;
 class CCloudProfile;
+class CCloudProvider;
 
 
 /** QWidget extension providing GUI with the pane to control cloud profile related functionality. */
@@ -136,16 +139,21 @@ private:
 
     /** @name Loading stuff.
       * @{ */
-        /** Loads cloud profiles. */
-        void loadCloudProfiles();
-        /** Loads host @a comInterface data to passed @a data container. */
-        void loadCloudProfile(const CCloudProfile &comInterface, UIDataCloudProfile &data);
+        /** Loads cloud stuff. */
+        void loadCloudStuff();
+        /** Loads cloud @a comProvider data to passed @a data container. */
+        void loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data);
+        /** Loads cloud @a comProfile data to passed @a data container. */
+        void loadCloudProfile(const CCloudProfile &comProfile, UIDataCloudProfile &data);
     /** @} */
 
     /** @name Tree-widget stuff.
       * @{ */
         /** Creates a new tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
-        void createItemForCloudProfile(const UIDataCloudProfile &data, bool fChooseItem);
+        void createItemForCloudProvider(const UIDataCloudProvider &data, bool fChooseItem);
+
+        /** Creates a new tree-widget item as a child of certain @a pParent, on the basis of passed @a data, @a fChooseItem if requested. */
+        void createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &data, bool fChooseItem);
         /** Updates the passed tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForCloudProfile(const UIDataCloudProfile &data, bool fChooseItem, UIItemCloudProfile *pItem);
     /** @} */
