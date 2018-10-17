@@ -48,7 +48,6 @@
 enum
 {
     Column_Name,
-    /// @todo rest of columns?
     Column_Max,
 };
 
@@ -86,10 +85,6 @@ void UIItemCloudProvider::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
-    /// @todo assign rest of field values!
-
-    /* Compose item tool-tip: */
-    /// @todo assign tool-tips!
 }
 
 
@@ -101,10 +96,6 @@ void UIItemCloudProfile::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
-    /// @todo assign rest of field values!
-
-    /* Compose item tool-tip: */
-    /// @todo assign tool-tips!
 }
 
 
@@ -143,27 +134,6 @@ void UICloudProfileManagerWidget::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
-
-    /* Translate tree-widget: */
-    /// @todo assign tree-widget column names!
-}
-
-void UICloudProfileManagerWidget::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
-
-    /* Adjust tree-widget: */
-    sltAdjustTreeWidget();
-}
-
-void UICloudProfileManagerWidget::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
-
-    /* Adjust tree-widget: */
-    sltAdjustTreeWidget();
 }
 
 void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
@@ -207,17 +177,6 @@ void UICloudProfileManagerWidget::sltRefreshCloudProfiles()
 
     // Not implemented.
     AssertMsgFailed(("Not implemented!"));
-}
-
-void UICloudProfileManagerWidget::sltAdjustTreeWidget()
-{
-    /* Calculate the total tree-widget width: */
-    const int iTotal = m_pTreeWidget->viewport()->width();
-
-    /// @todo calculate proposed column widths!
-
-    /* Apply the proposal: */
-    m_pTreeWidget->setColumnWidth(Column_Name, iTotal /*- iWidth1 - iWidth2 - iWidth3*/);
 }
 
 void UICloudProfileManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)

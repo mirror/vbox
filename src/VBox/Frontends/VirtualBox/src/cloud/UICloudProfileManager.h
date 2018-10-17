@@ -72,12 +72,6 @@ protected:
       * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
-
-        /** Handles resize @a pEvent. */
-        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-
-        /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** @} */
 
 public slots:
@@ -106,9 +100,6 @@ private slots:
 
     /** @name Tree-widget stuff.
       * @{ */
-        /** Handles command to adjust tree-widget. */
-        void sltAdjustTreeWidget();
-
         /** Handles tree-widget @a pItem change. */
         void sltHandleItemChange(QTreeWidgetItem *pItem);
         /** Handles tree-widget current item change. */
