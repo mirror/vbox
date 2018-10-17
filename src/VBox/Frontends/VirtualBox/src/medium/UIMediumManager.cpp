@@ -913,6 +913,7 @@ void UIMediumManagerWidget::loadSettings()
 {
     /* Details action/widget: */
     m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
+    sltToggleMediumDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->isChecked());
 }
 
 void UIMediumManagerWidget::repopulateTreeWidgets()

@@ -422,6 +422,7 @@ void UICloudProfileManagerWidget::loadSettings()
 {
     /* Details action/widget: */
     m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setChecked(gEDataManager->cloudProfileManagerDetailsExpanded());
+    sltToggleCloudProfileDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->isChecked());
 }
 
 void UICloudProfileManagerWidget::loadCloudStuff()

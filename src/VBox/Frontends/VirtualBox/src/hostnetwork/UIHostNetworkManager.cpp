@@ -816,6 +816,7 @@ void UIHostNetworkManagerWidget::loadSettings()
 {
     /* Details action/widget: */
     m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
+    sltToggleHostNetworkDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->isChecked());
 }
 
 void UIHostNetworkManagerWidget::loadHostNetworks()
