@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QHeaderView>
 # include <QPushButton>
 # include <QVBoxLayout>
 
@@ -371,6 +372,7 @@ void UICloudProfileManagerWidget::prepareTreeWidget()
     if (m_pTreeWidget)
     {
         /* Configure tree-widget: */
+        m_pTreeWidget->header()->hide();
         m_pTreeWidget->setRootIsDecorated(false);
         m_pTreeWidget->setAlternatingRowColors(true);
         m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -378,7 +380,7 @@ void UICloudProfileManagerWidget::prepareTreeWidget()
         m_pTreeWidget->setColumnCount(Column_Max);
         m_pTreeWidget->setSortingEnabled(true);
         m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
-        m_pTreeWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+        m_pTreeWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
         connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
                 this, &UICloudProfileManagerWidget::sltHandleCurrentItemChange);
         connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
@@ -401,7 +403,7 @@ void UICloudProfileManagerWidget::prepareDetailsWidget()
     {
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
-        m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
         connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChanged,
                 this, &UICloudProfileManagerWidget::sigCloudProfileDetailsDataChanged);
         connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChangeRejected,
