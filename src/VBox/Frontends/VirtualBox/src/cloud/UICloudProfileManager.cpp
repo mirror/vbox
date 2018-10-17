@@ -216,15 +216,6 @@ void UICloudProfileManagerWidget::sltRefreshCloudProfiles()
     AssertMsgFailed(("Not implemented!"));
 }
 
-void UICloudProfileManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
-{
-    /* Get profile item: */
-    UIItemCloudProfile *pChangedItem = static_cast<UIItemCloudProfile*>(pItem);
-    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
-
-    /// @todo handle item change!
-}
-
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
 {
     /* Get items: */
@@ -387,8 +378,6 @@ void UICloudProfileManagerWidget::prepareTreeWidget()
                 this, &UICloudProfileManagerWidget::sltHandleCurrentItemChange);
         connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
                 this, &UICloudProfileManagerWidget::sltHandleContextMenuRequest);
-        connect(m_pTreeWidget, &QITreeWidget::itemChanged,
-                this, &UICloudProfileManagerWidget::sltHandleItemChange);
         connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
                 m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::setChecked);
 
@@ -566,7 +555,6 @@ void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pPa
     if (pItem)
     {
         /* Configure item: */
-        pItem->setFlags(pItem->flags() | Qt::ItemIsEditable);
         pItem->UIDataCloudProfile::operator=(data);
         pItem->updateFields();
         /* Add item to the parent: */

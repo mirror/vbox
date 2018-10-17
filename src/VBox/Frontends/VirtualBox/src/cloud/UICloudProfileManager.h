@@ -100,8 +100,6 @@ private slots:
 
     /** @name Tree-widget stuff.
       * @{ */
-        /** Handles tree-widget @a pItem change. */
-        void sltHandleItemChange(QTreeWidgetItem *pItem);
         /** Handles tree-widget current item change. */
         void sltHandleCurrentItemChange();
         /** Handles context menu request for tree-widget @a position. */
