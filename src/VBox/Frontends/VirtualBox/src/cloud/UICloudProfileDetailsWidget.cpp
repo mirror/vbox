@@ -109,7 +109,8 @@ void UICloudProfileDetailsWidget::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /// @todo sync layout margins with other tools!
+        /* Configure layout: */
+        pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create tab-widget: */
         m_pTableWidget = new QTableWidget;
@@ -127,15 +128,27 @@ void UICloudProfileDetailsWidget::prepareWidgets()
         /* If parent embedded into stack: */
         if (m_enmEmbedding == EmbedTo_Stack)
         {
-            /* Create button-box: */
-            m_pButtonBox = new QIDialogButtonBox;
-            AssertPtrReturnVoid(m_pButtonBox);
-            /* Configure button-box: */
-            m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-            connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UICloudProfileDetailsWidget::sltHandleButtonBoxClick);
+            QVBoxLayout *pButtonBoxLayout = new QVBoxLayout;
+            if (pButtonBoxLayout)
+            {
+                const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 4;
+                const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2;
+                pButtonBoxLayout->setContentsMargins(0, 0, iR, iB);
 
-            /* Add into layout: */
-            pLayout->addWidget(m_pButtonBox);
+                /* Create button-box: */
+                m_pButtonBox = new QIDialogButtonBox;
+                if  (m_pButtonBox)
+                {
+                    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+                    connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UICloudProfileDetailsWidget::sltHandleButtonBoxClick);
+
+                    /* Add into layout: */
+                    pButtonBoxLayout->addWidget(m_pButtonBox);
+                }
+
+                /* Add into layout: */
+                pLayout->addLayout(pButtonBoxLayout);
+            }
         }
     }
 }
