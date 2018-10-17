@@ -1862,11 +1862,17 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
                     LogRel2(("Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
                     break;
                 }
-                else if (rc != VERR_AUDIO_STREAM_NOT_READY)
+                else if (rc == VERR_AUDIO_STREAM_NOT_READY)
+                {
+                    /* Stream is not enabled, just skip. */
+                    rc = VINF_SUCCESS;
+                }
+                else
                     LogRel2(("Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n",
                              pMixStream->pszName, pSink->pszName, rc));
 
-                LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc));
+                if (RT_FAILURE(rc))
+                    LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc));
             }
         }
 
