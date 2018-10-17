@@ -1795,7 +1795,7 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
     }
 #endif
 
-    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    if (pVM->cpum.ro.GuestFeatures.fVmx)
         cpumR3FreeVmxHwVirtState(pVM);
     else if (pVM->cpum.ro.GuestFeatures.fSvm)
         cpumR3FreeSvmHwVirtState(pVM);
