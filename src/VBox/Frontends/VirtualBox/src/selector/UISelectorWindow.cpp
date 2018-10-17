@@ -328,6 +328,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
 
 void UISelectorWindow::sltHandleMediumEnumerationFinish()
 {
+    printf("Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
     /* We try to warn about inaccessible media only once
      * (after media emumeration started from main() at startup),
      * to avoid annoying the user: */
@@ -357,6 +358,7 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
         /* Open the MM window: */
         sltOpenVirtualMediumManagerWindow();
     }
+
 }
 
 void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)

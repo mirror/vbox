@@ -94,7 +94,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     if (oldDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
         oldDisplayData.m_maxGuestResolution = gEDataManager->maxGuestResolutionForPolicyFixed();
     oldDisplayData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
-    oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors();
+    oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors(UIExtraDataManager::GlobalID);
 
     /* Cache old display data: */
     m_pCache->cacheInitialData(oldDisplayData);
@@ -267,7 +267,7 @@ bool UIGlobalSettingsDisplay::saveDisplayData()
             gEDataManager->setActivateHoveredMachineWindow(newDisplayData.m_fActivateHoveredMachineWindow);
         /* Save guest-screen scale-factor: */
         if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
-            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors);
+            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, UIExtraDataManager::GlobalID);
     }
     /* Return result: */
     return fSuccess;
