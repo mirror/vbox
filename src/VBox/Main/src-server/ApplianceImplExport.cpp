@@ -658,6 +658,13 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
     /* Parse all necessary info out of the URI */
     i_parseURI(aPath, m->locInfo);
 
+    /** @todo r=klaus all of this code should be made fully generic, applicable
+     * to any cloud provider. This implies changing the method names accordingly
+     * and (more importantly) moving all the cloud specific checking code to the
+     * actual ICloudClient implementation in the corresponding extpack. It will
+     * move the check to the async task, but that's a bearable cost, not getting
+     * the error straight from the API call but a tiny bit later through the
+     * Progress object. */
     if (m->locInfo.storageType == VFSType_OCI)//(isCloudDestination(aPath))
     {
         rc = S_OK;
@@ -856,6 +863,11 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
     HRESULT rc;
     try
     {
+        /** @todo r=klaus all of this code should be made fully generic,
+         * doing only what is common for all cloud providers, i.e. pretty
+         * much nothing. The logic and data types need to be moved to the
+         * extension pack, anything else will not work. */
+
         //remove all disks from the VirtualSystemDescription exept one
         for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
              it = m->virtualSystemDescriptions.begin();
@@ -874,46 +886,13 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
             itSkipped = skipped.begin();
 
-            ComObjPtr<Medium> ptrSourceDisk;
+            Utf8Str strBootLocation;
             while (itSkipped != skipped.end())
             {
-                Utf8Str path = (*itSkipped)->strVBoxCurrent;
-                // Locate the Medium object for this entry (by location/path).
-                Log(("Finding source disk \"%s\"\n", path.c_str()));
-                rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrSourceDisk);
-                if (SUCCEEDED(rc))
-                    break;
+                if (strBootLocation.isEmpty())
+                    strBootLocation = (*itSkipped)->strVBoxCurrent;
                 else
-                    ++itSkipped;
-            }
-
-            ComPtr<IMedium> pBootableBaseMedium;
-            // returns pBootableMedium if there are no diff images
-            rc = ptrSourceDisk->COMGETTER(Base)(pBootableBaseMedium.asOutParam());
-            if (FAILED(rc))
-                throw rc;
-
-            //Get base bootable disk location
-            Bstr bstrBootLocation;
-            rc = pBootableBaseMedium->COMGETTER(Location)(bstrBootLocation.asOutParam());
-            if (FAILED(rc)) throw rc;
-            Utf8Str strBootLocation = bstrBootLocation;
-
-            skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
-            itSkipped = skipped.begin();
-            while (itSkipped != skipped.end())
-            {
-                Utf8Str path = (*itSkipped)->strVBoxCurrent;
-                // Locate the Medium object for this entry (by location/path).
-                Log(("Finding disk \"%s\"\n", path.c_str()));
-                ComObjPtr<Medium> ptrDisk;
-                rc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrDisk);
-                if (FAILED(rc))
-                    throw rc;
-
-                if (!path.equalsIgnoreCase(strBootLocation))
                     (*itSkipped)->skipIt = true;
-
                 ++itSkipped;
             }
 
