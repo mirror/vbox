@@ -140,6 +140,9 @@ private:
 
     /** @name Tree-widget stuff.
       * @{ */
+        /** Seearches a provider item with specified @a uuid. */
+        UIItemCloudProvider *searchItem(const QUuid &uuid) const;
+
         /** Creates a new tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void createItemForCloudProvider(const UIDataCloudProvider &data, bool fChooseItem);
 

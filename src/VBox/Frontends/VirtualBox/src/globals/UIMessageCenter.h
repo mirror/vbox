@@ -359,6 +359,11 @@ public:
     void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
     void cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
 
+    /* API: Cloud Profile Manager warnings: */
+    void cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
+    void cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
+    void cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
+
     /* API: Wizards warnings: */
     bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
     void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;

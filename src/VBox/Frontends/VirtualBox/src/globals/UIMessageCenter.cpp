@@ -56,6 +56,8 @@
 # endif
 
 /* COM includes: */
+# include "CCloudProfile.h"
+# include "CCloudProvider.h"
 # include "CNATNetwork.h"
 # include "CDHCPServer.h"
 # include "CNATEngine.h"
@@ -1607,6 +1609,27 @@ void UIMessageCenter::cannotSaveDHCPServerParameter(const CDHCPServer &comServer
     error(pParent, MessageType_Error,
           tr("Failed to save DHCP server parameter."),
           UIErrorString::formatErrorInfo(comServer));
+}
+
+void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud provider manager."),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud provider parameter."),
+          UIErrorString::formatErrorInfo(comProvider));
+}
+
+void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud profile parameter."),
+          UIErrorString::formatErrorInfo(comProfile));
 }
 
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const

@@ -33,6 +33,7 @@
 # include "UIIconPool.h"
 # include "UICloudProfileDetailsWidget.h"
 # include "UICloudProfileManager.h"
+# include "UIMessageCenter.h"
 # include "UIToolBar.h"
 # ifdef VBOX_WS_MAC
 #  include "UIWindowMenuManager.h"
@@ -41,6 +42,7 @@
 /* COM includes: */
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
+#include "CCloudProviderManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -427,7 +429,48 @@ void UICloudProfileManagerWidget::loadCloudStuff()
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
 
-    /// @todo load cloud profiles!
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Get CloudProviderManager for further activities: */
+    const CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
+    else
+    {
+        /* Iterate through existing providers: */
+        foreach (const CCloudProvider &comCloudProvider, comCloudProviderManager.GetProviders())
+        {
+            /* Skip if we have nothing to populate (file missing?): */
+            if (comCloudProvider.isNull())
+                continue;
+
+            /* Load provider data: */
+            UIDataCloudProvider providerData;
+            loadCloudProvider(comCloudProvider, providerData);
+            createItemForCloudProvider(providerData, false);
+
+            /* Make sure provider item is properly inserted: */
+            UIItemCloudProvider *pItem = searchItem(providerData.m_uuid);
+
+            /* Iterate through existing profiles: */
+            foreach (const CCloudProfile &comCloudProfile, comCloudProvider.GetProfiles())
+            {
+                /* Load profile data: */
+                UIDataCloudProfile profileData;
+                loadCloudProfile(comCloudProfile, profileData);
+                createItemForCloudProfile(pItem, profileData, false);
+            }
+
+            /* Expand provider item finally: */
+            pItem->setExpanded(true);
+        }
+
+        /* Choose the 1st item as current initially: */
+        m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
+        sltHandleCurrentItemChange();
+    }
 }
 
 void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data)
@@ -435,7 +478,15 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
     Q_UNUSED(comProvider);
     Q_UNUSED(data);
 
-    /// @todo load cloud profile!
+    /* Gather provider settings: */
+    if (comProvider.isOk())
+        data.m_uuid = comProvider.GetId();
+    if (comProvider.isOk())
+        data.m_strName = comProvider.GetName();
+
+    /* Show error message if necessary: */
+    if (!comProvider.isOk())
+        msgCenter().cannotAcquireCloudProviderParameter(comProvider, this);
 }
 
 void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile, UIDataCloudProfile &data)
@@ -443,7 +494,23 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
     Q_UNUSED(comProfile);
     Q_UNUSED(data);
 
-    /// @todo load cloud profile!
+    /* Gather profile settings: */
+    if (comProfile.isOk())
+        data.m_strName = comProfile.GetName();
+
+    /* Show error message if necessary: */
+    if (!comProfile.isOk())
+        msgCenter().cannotAcquireCloudProfileParameter(comProfile, this);
+}
+
+UIItemCloudProvider *UICloudProfileManagerWidget::searchItem(const QUuid &uuid) const
+{
+    /* Iterated through top-level items: */
+    for (int i = 0; i < m_pTreeWidget->topLevelItemCount(); ++i)
+        if (m_pTreeWidget->topLevelItem(i)->data(0, Data_ProviderID).toUuid() == uuid)
+            return static_cast<UIItemCloudProvider*>(m_pTreeWidget->topLevelItem(i));
+    /* Null by default: */
+    return 0;
 }
 
 void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudProvider &data, bool fChooseItem)
