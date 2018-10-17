@@ -137,7 +137,7 @@ void UIMachineWindow::prepare()
     QString strWindowName = strWindowClass;
     /* Check if we want Window Manager to distinguish Virtual Machine windows: */
     if (gEDataManager->distinguishMachineWindowGroups(vboxGlobal().managedVMUuid()))
-        strWindowName = QString("VirtualBox Machine UUID: %1").arg(vboxGlobal().managedVMUuid());
+        strWindowName = QString("VirtualBox Machine UUID: %1").arg(vboxGlobal().managedVMUuid().toString());
     /* Assign WM_CLASS property: */
     VBoxGlobal::setWMClass(this, strWindowName, strWindowClass);
 #endif
