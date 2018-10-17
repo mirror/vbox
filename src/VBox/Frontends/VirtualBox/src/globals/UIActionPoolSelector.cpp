@@ -2384,8 +2384,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorCloudPerformCreate(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/host_iface_add_32px.png",          ":/host_iface_add_16px.png",
-                         ":/host_iface_add_disabled_32px.png", ":/host_iface_add_disabled_16px.png")
+                         ":/cloud_profile_add_32px.png",          ":/cloud_profile_add_16px.png",
+                         ":/cloud_profile_add_disabled_32px.png", ":/cloud_profile_add_disabled_16px.png")
     {}
 
 protected:
@@ -2423,8 +2423,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorCloudPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/host_iface_remove_32px.png",          ":/host_iface_remove_16px.png",
-                         ":/host_iface_remove_disabled_32px.png", ":/host_iface_remove_disabled_16px.png")
+                         ":/cloud_profile_remove_32px.png",          ":/cloud_profile_remove_16px.png",
+                         ":/cloud_profile_remove_disabled_32px.png", ":/cloud_profile_remove_disabled_16px.png")
     {}
 
 protected:
@@ -2462,8 +2462,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorCloudToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/host_iface_edit_32px.png",          ":/host_iface_edit_16px.png",
-                         ":/host_iface_edit_disabled_32px.png", ":/host_iface_edit_disabled_16px.png")
+                         ":/cloud_profile_edit_32px.png",          ":/cloud_profile_edit_16px.png",
+                         ":/cloud_profile_edit_disabled_32px.png", ":/cloud_profile_edit_disabled_16px.png")
     {}
 
 protected:
