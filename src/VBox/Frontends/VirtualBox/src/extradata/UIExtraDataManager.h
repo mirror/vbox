@@ -22,6 +22,7 @@
 #include <QMap>
 #include <QObject>
 #include <QSize>
+#include <QUuid>
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include <QPointer>
 #endif
@@ -37,8 +38,8 @@ class UIExtraDataManagerWindow;
 
 /** Defines the map of extra data values. The index is an extra-data key. */
 typedef QMap<QString, QString> ExtraDataMap;
-/** Defines the map of extra data maps. The index is a UUID string. */
-typedef QMap<QString, ExtraDataMap> MapOfExtraDataMaps;
+/** Defines the map of extra data maps. */
+typedef QMap<QUuid, ExtraDataMap> MapOfExtraDataMaps;
 
 /** Singleton QObject extension
   * providing GUI with corresponding extra-data values,
@@ -55,10 +56,10 @@ class SHARED_LIBRARY_STUFF UIExtraDataManager : public QObject
 signals:
 
     /** Notifies about extra-data map acknowledging. */
-    void sigExtraDataMapAcknowledging(QString strID);
+    void sigExtraDataMapAcknowledging(const QUuid &aID);
 
     /** Notifies about extra-data change. */
-    void sigExtraDataChange(QString strID, QString strKey, QString strValue);
+    void sigExtraDataChange(const QUuid &aID, const QString &strKey, const QString &strValue);
 
     /** Notifies about GUI language change. */
     void sigLanguageChange(QString strLanguage);
@@ -71,22 +72,22 @@ signals:
     void sigRuntimeUIHostKeyCombinationChange();
 
     /** Notifies about menu-bar configuration change. */
-    void sigMenuBarConfigurationChange(const QString &strMachineID);
+    void sigMenuBarConfigurationChange(const QUuid &aMachineID);
     /** Notifies about status-bar configuration change. */
-    void sigStatusBarConfigurationChange(const QString &strMachineID);
+    void sigStatusBarConfigurationChange(const QUuid &aMachineID);
 
     /** Notifies about HID LEDs synchronization state change. */
     void sigHidLedsSyncStateChange(bool fEnabled);
 
     /** Notifies about the scale-factor change. */
-    void sigScaleFactorChange(const QString &strMachineID);
+    void sigScaleFactorChange(const QUuid &aMachineID);
 
     /** Notifies about the scaling optimization type change. */
-    void sigScalingOptimizationTypeChange(const QString &strMachineID);
+    void sigScalingOptimizationTypeChange(const QUuid &aMachineID);
 
 #ifdef VBOX_WS_MAC
     /** Notifies about the HiDPI optimization type change. */
-    void sigHiDPIOptimizationTypeChange(const QString &strMachineID);
+    void sigHiDPIOptimizationTypeChange(const QUuid &aMachineID);
 
     /** Mac OS X: Notifies about 'dock icon' appearance change. */
     void sigDockIconAppearanceChange(bool fEnabled);
@@ -97,7 +98,7 @@ signals:
 public:
 
     /** Global extra-data ID. */
-    static const QString GlobalID;
+    static const QUuid GlobalID;
 
     /** Static Extra-data Manager instance/constructor. */
     static UIExtraDataManager* instance();
@@ -112,26 +113,26 @@ public:
     /** @name Base
       * @{ */
         /** Returns whether Extra-data Manager cached the map with passed @a strID. */
-        bool contains(const QString &strID) const { return m_data.contains(strID); }
+        bool contains(const QUuid &aID) const { return m_data.contains(aID); }
         /** Returns read-only extra-data map for passed @a strID. */
-        const ExtraDataMap map(const QString &strID) const { return m_data.value(strID); }
+        const ExtraDataMap map(const QUuid &aID) const { return m_data.value(aID); }
 
         /** Hot-load machine extra-data map. */
-        void hotloadMachineExtraDataMap(const QString &strID);
+        void hotloadMachineExtraDataMap(const QUuid &aID);
 
         /** Returns extra-data value corresponding to passed @a strKey as QString.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-        QString extraDataString(const QString &strKey, const QString &strID = GlobalID);
+        QString extraDataString(const QString &strKey, const QUuid &aID = GlobalID);
         /** Defines extra-data value corresponding to passed @a strKey as strValue.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-        void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = GlobalID);
+        void setExtraDataString(const QString &strKey, const QString &strValue, const QUuid &aID = GlobalID);
 
         /** Returns extra-data value corresponding to passed @a strKey as QStringList.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-        QStringList extraDataStringList(const QString &strKey, const QString &strID = GlobalID);
+        QStringList extraDataStringList(const QString &strKey, const QUuid &aID = GlobalID);
         /** Defines extra-data value corresponding to passed @a strKey as value.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-        void setExtraDataStringList(const QString &strKey, const QStringList &value, const QString &strID = GlobalID);
+        void setExtraDataStringList(const QString &strKey, const QStringList &value, const QUuid &aID = GlobalID);
     /** @} */
 
     /** @name General
@@ -143,7 +144,7 @@ public:
     /** @name Messaging
       * @{ */
         /** Returns the list of supressed messages for the Message/Popup center frameworks. */
-        QStringList suppressedMessages(const QString &strID = GlobalID);
+        QStringList suppressedMessages(const QUuid &aID = GlobalID);
         /** Defines the @a list of supressed messages for the Message/Popup center frameworks. */
         void setSuppressedMessages(const QStringList &list);
 
@@ -188,7 +189,7 @@ public:
         /** Returns restricted global settings pages. */
         QList<GlobalSettingsPageType> restrictedGlobalSettingsPages();
         /** Returns restricted machine settings pages. */
-        QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QString &strID);
+        QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QUuid &aID);
     /** @} */
 
     /** @name Settings: General
@@ -394,234 +395,234 @@ public:
     /** @name Virtual Machine
       * @{ */
         /** Returns whether machine should be shown in selector-window chooser-pane. */
-        bool showMachineInSelectorChooser(const QString &strID);
+        bool showMachineInSelectorChooser(const QUuid &aID);
         /** Returns whether machine should be shown in selector-window details-pane. */
-        bool showMachineInSelectorDetails(const QString &strID);
+        bool showMachineInSelectorDetails(const QUuid &aID);
 
         /** Returns whether machine reconfiguration enabled. */
-        bool machineReconfigurationEnabled(const QString &strID);
+        bool machineReconfigurationEnabled(const QUuid &aID);
         /** Returns whether machine snapshot operations enabled. */
-        bool machineSnapshotOperationsEnabled(const QString &strID);
+        bool machineSnapshotOperationsEnabled(const QUuid &aID);
 
         /** Returns whether this machine is first time started. */
-        bool machineFirstTimeStarted(const QString &strID);
+        bool machineFirstTimeStarted(const QUuid &aID);
         /** Returns whether this machine is fFirstTimeStarted. */
-        void setMachineFirstTimeStarted(bool fFirstTimeStarted, const QString &strID);
+        void setMachineFirstTimeStarted(bool fFirstTimeStarted, const QUuid &aID);
 
         /** Except Mac OS X: Returns redefined machine-window icon names. */
-        QStringList machineWindowIconNames(const QString &strID);
+        QStringList machineWindowIconNames(const QUuid &aID);
 #ifndef VBOX_WS_MAC
         /** Except Mac OS X: Returns redefined machine-window name postfix. */
-        QString machineWindowNamePostfix(const QString &strID);
+        QString machineWindowNamePostfix(const QUuid &aID);
 #endif
 
         /** Returns geometry for machine-window with @a uScreenIndex in @a visualStateType. */
-        QRect machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strID);
+        QRect machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QUuid &sID);
         /** Returns whether machine-window with @a uScreenIndex in @a visualStateType should be maximized. */
-        bool machineWindowShouldBeMaximized(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strID);
+        bool machineWindowShouldBeMaximized(UIVisualStateType visualStateType, ulong uScreenIndex, const QUuid &aID);
         /** Defines @a geometry and @a fMaximized state for machine-window with @a uScreenIndex in @a visualStateType. */
-        void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strID);
+        void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QUuid &aID);
 
 #ifndef VBOX_WS_MAC
         /** Returns whether Runtime UI menu-bar is enabled. */
-        bool menuBarEnabled(const QString &strID);
+        bool menuBarEnabled(const QUuid &aID);
         /** Defines whether Runtime UI menu-bar is @a fEnabled. */
-        void setMenuBarEnabled(bool fEnabled, const QString &strID);
+        void setMenuBarEnabled(bool fEnabled, const QUuid &aID);
 #endif /* !VBOX_WS_MAC */
 
         /** Returns whether Runtime UI menu-bar context-menu is enabled. */
-        bool menuBarContextMenuEnabled(const QString &strID);
+        bool menuBarContextMenuEnabled(const QUuid &aID);
         /** Defines whether Runtime UI menu-bar context-menu is @a fEnabled. */
-        void setMenuBarContextMenuEnabled(bool fEnabled, const QString &strID);
+        void setMenuBarContextMenuEnabled(bool fEnabled, const QUuid &aID);
 
         /** Returns restricted Runtime UI menu types. */
-        UIExtraDataMetaDefs::MenuType restrictedRuntimeMenuTypes(const QString &strID);
+        UIExtraDataMetaDefs::MenuType restrictedRuntimeMenuTypes(const QUuid &aID);
         /** Defines restricted Runtime UI menu types. */
-        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QString &strID);
+        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QUuid &aID);
 
         /** Returns restricted Runtime UI action types for Application menu. */
-        UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for Application menu. */
-        void setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QUuid &aID);
 
         /** Returns restricted Runtime UI action types for Machine menu. */
-        UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for Machine menu. */
-        void setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QUuid &aID);
 
         /** Returns restricted Runtime UI action types for View menu. */
-        UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for View menu. */
-        void setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QUuid &aID);
 
         /** Returns restricted Runtime UI action types for Input menu. */
-        UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictedRuntimeMenuInputActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictedRuntimeMenuInputActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for Input menu. */
-        void setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QUuid &aID);
 
         /** Returns restricted Runtime UI action types for Devices menu. */
-        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for Devices menu. */
-        void setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QUuid &aID);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Returns restricted Runtime UI action types for Debugger menu. */
-        UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for Debugger menu. */
-        void setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QUuid &aID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Window menu. */
-        UIExtraDataMetaDefs::MenuWindowActionType restrictedRuntimeMenuWindowActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::MenuWindowActionType restrictedRuntimeMenuWindowActionTypes(const QUuid &aID);
         /** Mac OS X: Defines restricted Runtime UI action types for Window menu. */
-        void setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QUuid &aID);
 #endif /* VBOX_WS_MAC */
 
         /** Returns restricted Runtime UI action types for Help menu. */
-        UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QUuid &aID);
         /** Defines restricted Runtime UI action types for Help menu. */
-        void setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QString &strID);
+        void setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QUuid &aID);
 
         /** Returns restricted Runtime UI visual-states. */
-        UIVisualStateType restrictedVisualStates(const QString &strID);
+        UIVisualStateType restrictedVisualStates(const QUuid &aID);
 
         /** Returns requested Runtime UI visual-state. */
-        UIVisualStateType requestedVisualState(const QString &strID);
+        UIVisualStateType requestedVisualState(const QUuid &aID);
         /** Defines requested Runtime UI visual-state as @a visualState. */
-        void setRequestedVisualState(UIVisualStateType visualState, const QString &strID);
+        void setRequestedVisualState(UIVisualStateType visualState, const QUuid &aID);
 
 #ifdef VBOX_WS_X11
         /** Returns whether legacy full-screen mode is requested. */
         bool legacyFullscreenModeRequested();
 
         /** Returns whether internal machine-window name should be unique. */
-        bool distinguishMachineWindowGroups(const QString &strID);
+        bool distinguishMachineWindowGroups(const QUuid &aID);
         /** Defines whether internal machine-window name should be unique. */
-        void setDistinguishMachineWindowGroups(const QString &strID, bool fEnabled);
+        void setDistinguishMachineWindowGroups(const QUuid &aID, bool fEnabled);
 #endif /* VBOX_WS_X11 */
 
         /** Returns whether guest-screen auto-resize according machine-window size is enabled. */
-        bool guestScreenAutoResizeEnabled(const QString &strID);
+        bool guestScreenAutoResizeEnabled(const QUuid &aID);
         /** Defines whether guest-screen auto-resize according machine-window size is @a fEnabled. */
-        void setGuestScreenAutoResizeEnabled(bool fEnabled, const QString &strID);
+        void setGuestScreenAutoResizeEnabled(bool fEnabled, const QUuid &aID);
 
         /** Returns last guest-screen visibility status for screen with @a uScreenIndex. */
-        bool lastGuestScreenVisibilityStatus(ulong uScreenIndex, const QString &strID);
+        bool lastGuestScreenVisibilityStatus(ulong uScreenIndex, const QUuid &aID);
         /** Defines whether last guest-screen visibility status was @a fEnabled for screen with @a uScreenIndex. */
-        void setLastGuestScreenVisibilityStatus(ulong uScreenIndex, bool fEnabled, const QString &strID);
+        void setLastGuestScreenVisibilityStatus(ulong uScreenIndex, bool fEnabled, const QUuid &aID);
 
         /** Returns last guest-screen size-hint for screen with @a uScreenIndex. */
-        QSize lastGuestScreenSizeHint(ulong uScreenIndex, const QString &strID);
+        QSize lastGuestScreenSizeHint(ulong uScreenIndex, const QUuid &aID);
         /** Defines last guest-screen @a sizeHint for screen with @a uScreenIndex. */
-        void setLastGuestScreenSizeHint(ulong uScreenIndex, const QSize &sizeHint, const QString &strID);
+        void setLastGuestScreenSizeHint(ulong uScreenIndex, const QSize &sizeHint, const QUuid &aID);
 
         /** Returns host-screen index corresponding to passed guest-screen @a iGuestScreenIndex. */
-        int hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID);
+        int hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QUuid &aID);
         /** Defines @a iHostScreenIndex corresponding to passed guest-screen @a iGuestScreenIndex. */
-        void setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QString &strID);
+        void setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QUuid &aID);
 
         /** Returns whether automatic mounting/unmounting of guest-screens enabled. */
-        bool autoMountGuestScreensEnabled(const QString &strID);
+        bool autoMountGuestScreensEnabled(const QUuid &aID);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /** Returns whether 2D acceleration should use linear sretch. */
-        bool useLinearStretch(const QString &strID);
+        bool useLinearStretch(const QUuid &aID);
         /** Returns whether 2D acceleration should use YV12 pixel format. */
-        bool usePixelFormatYV12(const QString &strID);
+        bool usePixelFormatYV12(const QUuid &aID);
         /** Returns whether 2D acceleration should use UYVY pixel format. */
-        bool usePixelFormatUYVY(const QString &strID);
+        bool usePixelFormatUYVY(const QUuid &aID);
         /** Returns whether 2D acceleration should use YUY2 pixel format. */
-        bool usePixelFormatYUY2(const QString &strID);
+        bool usePixelFormatYUY2(const QUuid &aID);
         /** Returns whether 2D acceleration should use AYUV pixel format. */
-        bool usePixelFormatAYUV(const QString &strID);
+        bool usePixelFormatAYUV(const QUuid &aID);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifndef VBOX_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */
-        bool miniToolbarEnabled(const QString &strID);
+        bool miniToolbarEnabled(const QUuid &aID);
         /** Defines whether mini-toolbar is @a fEnabled for full and seamless screens. */
-        void setMiniToolbarEnabled(bool fEnabled, const QString &strID);
+        void setMiniToolbarEnabled(bool fEnabled, const QUuid &aID);
 
         /** Returns whether mini-toolbar should auto-hide itself. */
-        bool autoHideMiniToolbar(const QString &strID);
+        bool autoHideMiniToolbar(const QUuid &aID);
         /** Defines whether mini-toolbar should @a fAutoHide itself. */
-        void setAutoHideMiniToolbar(bool fAutoHide, const QString &strID);
+        void setAutoHideMiniToolbar(bool fAutoHide, const QUuid &aID);
 
         /** Returns mini-toolbar alignment. */
-        Qt::AlignmentFlag miniToolbarAlignment(const QString &strID);
+        Qt::AlignmentFlag miniToolbarAlignment(const QUuid &aID);
         /** Returns mini-toolbar @a alignment. */
-        void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
+        void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QUuid &aID);
 #endif /* VBOX_WS_MAC */
 
         /** Returns whether Runtime UI status-bar is enabled. */
-        bool statusBarEnabled(const QString &strID);
+        bool statusBarEnabled(const QUuid &aID);
         /** Defines whether Runtime UI status-bar is @a fEnabled. */
-        void setStatusBarEnabled(bool fEnabled, const QString &strID);
+        void setStatusBarEnabled(bool fEnabled, const QUuid &aID);
 
         /** Returns whether Runtime UI status-bar context-menu is enabled. */
-        bool statusBarContextMenuEnabled(const QString &strID);
+        bool statusBarContextMenuEnabled(const QUuid &aID);
         /** Defines whether Runtime UI status-bar context-menu is @a fEnabled. */
-        void setStatusBarContextMenuEnabled(bool fEnabled, const QString &strID);
+        void setStatusBarContextMenuEnabled(bool fEnabled, const QUuid &aID);
 
         /** Returns restricted Runtime UI status-bar indicator list. */
-        QList<IndicatorType> restrictedStatusBarIndicators(const QString &strID);
+        QList<IndicatorType> restrictedStatusBarIndicators(const QUuid &aID);
         /** Defines restricted Runtime UI status-bar indicator @a list. */
-        void setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QString &strID);
+        void setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QUuid &aID);
 
         /** Returns Runtime UI status-bar indicator order list. */
-        QList<IndicatorType> statusBarIndicatorOrder(const QString &strID);
+        QList<IndicatorType> statusBarIndicatorOrder(const QUuid &aID);
         /** Defines Runtime UI status-bar indicator order @a list. */
-        void setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QString &strID);
+        void setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QUuid &aID);
 
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns whether Dock icon should be updated at runtime. */
-        bool realtimeDockIconUpdateEnabled(const QString &strID);
+        bool realtimeDockIconUpdateEnabled(const QUuid &aID);
         /** Mac OS X: Defines whether Dock icon update should be fEnabled at runtime. */
-        void setRealtimeDockIconUpdateEnabled(bool fEnabled, const QString &strID);
+        void setRealtimeDockIconUpdateEnabled(bool fEnabled, const QUuid &aID);
 
         /** Mac OS X: Returns guest-screen which Dock icon should reflect at runtime. */
-        int realtimeDockIconUpdateMonitor(const QString &strID);
+        int realtimeDockIconUpdateMonitor(const QUuid &aID);
         /** Mac OS X: Defines guest-screen @a iIndex which Dock icon should reflect at runtime. */
-        void setRealtimeDockIconUpdateMonitor(int iIndex, const QString &strID);
+        void setRealtimeDockIconUpdateMonitor(int iIndex, const QUuid &aID);
 
         /** Mac OS X: Returns whether Dock icon overlay is disabled. */
-        bool dockIconDisableOverlay(const QString &strID);
+        bool dockIconDisableOverlay(const QUuid &aID);
         /** Mac OS X: Defines whether Dock icon overlay is @a fDisabled. */
-        void setDockIconDisableOverlay(bool fDisabled, const QString &strID);
+        void setDockIconDisableOverlay(bool fDisabled, const QUuid &aID);
 #endif /* VBOX_WS_MAC */
 
         /** Returns whether machine should pass CAD to guest. */
-        bool passCADtoGuest(const QString &strID);
+        bool passCADtoGuest(const QUuid &aID);
 
         /** Returns the mouse-capture policy. */
-        MouseCapturePolicy mouseCapturePolicy(const QString &strID);
+        MouseCapturePolicy mouseCapturePolicy(const QUuid &aID);
 
         /** Returns redefined guru-meditation handler type. */
-        GuruMeditationHandlerType guruMeditationHandlerType(const QString &strID);
+        GuruMeditationHandlerType guruMeditationHandlerType(const QUuid &aID);
 
         /** Returns whether machine should perform HID LEDs synchronization. */
-        bool hidLedsSyncState(const QString &strID);
+        bool hidLedsSyncState(const QUuid &aID);
 
         /** Returns the scale-factor. */
-        double scaleFactor(const int uScreenIndex, const QString &strID = GlobalID);
-        QList<double> scaleFactors(const QString &strID = GlobalID);
+        double scaleFactor(const int uScreenIndex, const QUuid &aID = GlobalID);
+        QList<double> scaleFactors(const QUuid &aID = GlobalID);
         /** Defines the @a dScaleFactor. */
-        void setScaleFactor(double dScaleFactor, const int uScreenIndex, const QString &strID = GlobalID);
-        void setScaleFactors(const QList<double> &scaleFactors, const QString &strID = GlobalID);
+        void setScaleFactor(double dScaleFactor, const int uScreenIndex, const QUuid &aID = GlobalID);
+        void setScaleFactors(const QList<double> &scaleFactors, const QUuid &aID = GlobalID);
 
         /** Returns the scaling optimization type. */
-        ScalingOptimizationType scalingOptimizationType(const QString &strID);
+        ScalingOptimizationType scalingOptimizationType(const QUuid &aID);
     /** @} */
 
     /** @name Virtual Machine: Information dialog
       * @{ */
         /** Returns information-window geometry using @a pWidget and @a pParentWidget as hints. */
-        QRect informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QString &strID);
+        QRect informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QUuid &aID);
         /** Returns whether information-window should be maximized or not. */
-        bool informationWindowShouldBeMaximized(const QString &strID);
+        bool informationWindowShouldBeMaximized(const QUuid &aID);
         /** Defines information-window @a geometry and @a fMaximized state. */
-        void setInformationWindowGeometry(const QRect &geometry, bool fMaximized, const QString &strID);
+        void setInformationWindowGeometry(const QRect &geometry, bool fMaximized, const QUuid &aID);
 
         /** Returns information-window elements. */
         QMap<InformationElementType, bool> informationWindowElements();
@@ -636,17 +637,17 @@ public:
     /** @name Virtual Machine: Close dialog
       * @{ */
         /** Returns default machine close action. */
-        MachineCloseAction defaultMachineCloseAction(const QString &strID);
+        MachineCloseAction defaultMachineCloseAction(const QUuid &aID);
         /** Returns restricted machine close actions. */
-        MachineCloseAction restrictedMachineCloseActions(const QString &strID);
+        MachineCloseAction restrictedMachineCloseActions(const QUuid &aID);
 
         /** Returns last machine close action. */
-        MachineCloseAction lastMachineCloseAction(const QString &strID);
+        MachineCloseAction lastMachineCloseAction(const QUuid &aID);
         /** Defines last @a machineCloseAction. */
-        void setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QString &strID);
+        void setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QUuid &aID);
 
         /** Returns machine close hook script name as simple string. */
-        QString machineCloseHookScript(const QString &strID);
+        QString machineCloseHookScript(const QUuid &aID);
     /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -698,7 +699,7 @@ public:
 private slots:
 
     /** Handles 'extra-data change' event: */
-    void sltExtraDataChange(QString strMachineID, QString strKey, QString strValue);
+    void sltExtraDataChange(const QUuid &aMachineID, const QString &strKey, const QString &strValue);
 
 private:
 
@@ -734,17 +735,17 @@ private:
       *
       * @returns String value if found, null string if not.
       * @param   strKey      The extra-data key to get.
-      * @param   strID       Machine UUID or #GlobalID.
+      * @param   aID         Machine UUID or #GlobalID.
       * @param   strValue    Where to return the value when found. */
-    QString extraDataStringUnion(const QString &strKey, const QString &strID);
+    QString extraDataStringUnion(const QString &strKey, const QUuid &aID);
     /** Determines whether feature corresponding to passed @a strKey is allowed.
-      * If valid @a strID is set => applies to machine and global extra-data,
+      * If valid @a aID is set => applies to machine and global extra-data,
       * otherwise => only to global one. */
-    bool isFeatureAllowed(const QString &strKey, const QString &strID = GlobalID);
+    bool isFeatureAllowed(const QString &strKey, const QUuid &aID = GlobalID);
     /** Determines whether feature corresponding to passed @a strKey is restricted.
-      * If valid @a strID is set => applies to machine and global extra-data,
+      * If valid @a aID is set => applies to machine and global extra-data,
       * otherwise => only to global one. */
-    bool isFeatureRestricted(const QString &strKey, const QString &strID = GlobalID);
+    bool isFeatureRestricted(const QString &strKey, const QUuid &aID = GlobalID);
 
     /** Translates bool flag into QString value. */
     QString toFeatureState(bool fState);

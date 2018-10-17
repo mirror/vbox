@@ -52,7 +52,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
     {
         QPixmap pixIcon;
         QString strName;
-        QString strUuid;
+        QUuid uUuid;
         bool fInSaveState = false;
         bool fEnabled = false;
         const QStyle *pStyle = QApplication::style();
@@ -63,7 +63,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
             if (pixIcon.isNull())
                 pixIcon = vboxGlobal().vmGuestOSTypePixmapDefault(machine.GetOSTypeId());
             strName = machine.GetName();
-            strUuid = machine.GetId();
+            uUuid = machine.GetId();
             fEnabled = machine.GetSessionState() == KSessionState_Unlocked;
             fInSaveState = machine.GetState() == KMachineState_Saved;
         }
@@ -74,7 +74,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
             strName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
             pixIcon = QPixmap(":/os_other.png").scaled(iIconMetric, iIconMetric, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
-        QListWidgetItem *pItem = new UIVMListWidgetItem(pixIcon, strName, strUuid, fInSaveState, m_pVMSelector);
+        QListWidgetItem *pItem = new UIVMListWidgetItem(pixIcon, strName, uUuid, fInSaveState, m_pVMSelector);
         if (!fEnabled)
             pItem->setFlags(0);
         m_pVMSelector->addItem(pItem);
@@ -106,13 +106,13 @@ QStringList UIWizardExportAppPage1::machineNames() const
     return machineNames;
 }
 
-QStringList UIWizardExportAppPage1::machineIDs() const
+QList<QUuid> UIWizardExportAppPage1::machineIDs() const
 {
     /* Prepare list: */
-    QStringList machineIDs;
+    QList<QUuid> machineIDs;
     /* Iterate over all the selected items: */
     foreach (QListWidgetItem *pItem, m_pVMSelector->selectedItems())
-        machineIDs << static_cast<UIVMListWidgetItem*>(pItem)->uuid();
+        machineIDs.append(static_cast<UIVMListWidgetItem*>(pItem)->uuid());
     /* Return result list: */
     return machineIDs;
 }

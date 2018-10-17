@@ -18,6 +18,9 @@
 #ifndef __UIGDetailsItem_h__
 #define __UIGDetailsItem_h__
 
+/* Qt includes: */
+#include <QUuid>
+
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
 #include "QIWithRetranslateUI.h"
@@ -49,7 +52,7 @@ class UIGDetailsItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 signals:
 
     /* Notifiers: Build stuff: */
-    void sigBuildStep(QString strStepId, int iStepNumber);
+    void sigBuildStep(const QUuid &aStepId, const int iStepNumber);
     void sigBuildDone();
 
 public:
@@ -88,7 +91,7 @@ public:
 protected slots:
 
     /* Handler: Build stuff: */
-    virtual void sltBuildStep(QString strStepId, int iStepNumber);
+    virtual void sltBuildStep(const QUuid & aStepId, const int iStepNumber);
 
 protected:
 
@@ -117,12 +120,12 @@ class UIBuildStep : public QObject
 signals:
 
     /* Notifier: Build stuff: */
-    void sigStepDone(QString strStepId, int iStepNumber);
+    void sigStepDone(const QUuid &aStepId, const int iStepNumber);
 
 public:
 
     /* Constructor: */
-    UIBuildStep(QObject *pParent, QObject *pBuildObject, const QString &strStepId, int iStepNumber);
+    UIBuildStep(QObject *pParent, QObject *pBuildObject, const QUuid &aStepId, int iStepNumber);
 
 private slots:
 
@@ -132,7 +135,7 @@ private slots:
 private:
 
     /* Variables: */
-    QString m_strStepId;
+    QUuid m_uStepId;
     int m_iStepNumber;
 };
 

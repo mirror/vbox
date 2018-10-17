@@ -438,17 +438,17 @@ bool UIWizardExportAppPage2::isIncludeISOsSelected() const
     return m_pIncludeISOsCheckbox->isChecked();
 }
 
-void UIWizardExportAppPage2::setProviderById(const QString &strId)
+void UIWizardExportAppPage2::setProviderById(const QUuid &aId)
 {
-    const int iIndex = m_pFormatComboBox->findData(strId, FormatData_ID);
+    const int iIndex = m_pFormatComboBox->findData(aId, FormatData_ID);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pFormatComboBox->setCurrentIndex(iIndex);
 }
 
-QString UIWizardExportAppPage2::providerId() const
+QUuid UIWizardExportAppPage2::providerId() const
 {
     const int iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex, FormatData_ID).toString();
+    return m_pFormatComboBox->itemData(iIndex, FormatData_ID).toUuid();
 }
 
 QString UIWizardExportAppPage2::providerShortName() const

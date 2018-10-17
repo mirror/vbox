@@ -37,7 +37,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
     Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
-    Q_PROPERTY(QString virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
+    Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
     Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
 
 public:

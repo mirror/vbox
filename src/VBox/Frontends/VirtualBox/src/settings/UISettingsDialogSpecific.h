@@ -80,10 +80,10 @@ class SHARED_LIBRARY_STUFF UISettingsDialogMachine : public UISettingsDialog
 public:
 
     /** Constructs settings dialog passing @a pParent to the base-class.
-      * @param  strMachineId  Brings the machine ID.
+      * @param  aMachineId    Brings the machine ID.
       * @param  strCategory   Brings the name of category to be opened.
       * @param  strControl    Brings the name of control to be focused. */
-    UISettingsDialogMachine(QWidget *pParent, const QString &strMachineId,
+    UISettingsDialogMachine(QWidget *pParent, const QUuid &aMachineId,
                             const QString &strCategory, const QString &strControl);
 
 protected:
@@ -116,12 +116,12 @@ protected slots:
 
 private slots:
 
-    /** Handles session state change for machine with certain @a strMachineId to @a enmSessionState. */
-    void sltSessionStateChanged(QString strMachineId, KSessionState enmSessionState);
-    /** Handles machine state change for machine with certain @a strMachineId to @a enmMachineState. */
-    void sltMachineStateChanged(QString strMachineId, KMachineState enmMachineState);
-    /** Handles machine data change for machine with certain @a strMachineId. */
-    void sltMachineDataChanged(QString strMachineId);
+    /** Handles session state change for machine with certain @a aMachineId to @a enmSessionState. */
+    void sltSessionStateChanged(const QUuid &aMachineId, const KSessionState enmSessionState);
+    /** Handles machine state change for machine with certain @a aMachineId to @a enmMachineState. */
+    void sltMachineStateChanged(const QUuid &aMachineId, const KMachineState enmMachineState);
+    /** Handles machine data change for machine with certain @a aMachineId. */
+    void sltMachineDataChanged(const QUuid &aMachineId);
 
     /** Handles request to allow to reset first run flag. */
     void sltAllowResetFirstRunFlag();
@@ -143,7 +143,7 @@ private:
     void updateConfigurationAccessLevel();
 
     /** Holds the machine ID. */
-    QString  m_strMachineId;
+    QUuid    m_uMachineId;
     /** Holds the name of category to be opened. */
     QString  m_strCategory;
     /** Holds the name of control to be focused. */

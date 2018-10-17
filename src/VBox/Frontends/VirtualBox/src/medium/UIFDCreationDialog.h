@@ -20,7 +20,7 @@
 
 /* Qt includes: */
 #include <QDialog>
-
+#include <QUuid>
 
 /* GUI Includes */
 #include "QIWithRetranslateUI.h"
@@ -47,7 +47,7 @@ public:
 
     virtual void accept() /* override */;
     /* Return the mediumID */
-    QString mediumID() const;
+    QUuid mediumID() const;
 
 protected:
 
@@ -76,7 +76,7 @@ private:
     QCheckBox          *m_pFormatCheckBox;
     QString             m_strMachineName;
     QString             m_strMachineFolder;
-    QString             m_strMediumID;
+    QUuid               m_uMediumID;
 };
 
 #endif // __UIFDCreationDialog_h__

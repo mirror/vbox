@@ -170,9 +170,9 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     finalize();
 }
 
-QStringList UIMediumSelector::selectedMediumIds() const
+QList<QUuid> UIMediumSelector::selectedMediumIds() const
 {
-    QStringList selectedIds;
+    QList<QUuid> selectedIds;
     if (!m_pTreeWidget)
         return selectedIds;
     QList<QTreeWidgetItem*> selectedItems = m_pTreeWidget->selectedItems();
@@ -364,7 +364,7 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium, QITre
             /* Make sure corresponding parent medium is already cached! */
             UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
             if (parentMedium.isNull())
-                AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toUtf8().constData()));
+                AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toString().toUtf8().constData()));
             /* Try to create parent medium-item: */
             else
                 pParentMediumItem = createHardDiskItem(parentMedium, pParent);
@@ -372,22 +372,22 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium, QITre
         if (pParentMediumItem)
         {
             pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
-            LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+            LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toString().toUtf8().constData()));
         }
         else
-            AssertMsgFailed(("Parent medium with ID={%s} could not be created!\n", medium.parentID().toUtf8().constData()));
+            AssertMsgFailed(("Parent medium with ID={%s} could not be created!\n", medium.parentID().toString().toUtf8().constData()));
     }
 
     /* No parents, thus just create item as top-level one: */
     else
     {
         pMediumItem = new UIMediumItemHD(medium, pParent);
-        LogRel2(("UIMediumManager: Root hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+        LogRel2(("UIMediumManager: Root hard-disk medium-item with ID={%s} created.\n", medium.id().toString().toUtf8().constData()));
     }
     return pMediumItem;
 }
 
-void UIMediumSelector::restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList)
+void UIMediumSelector::restoreSelection(const QList<QUuid> &selectedMediums, QVector<UIMediumItem*> &mediumList)
 {
     if (!m_pTreeWidget)
         return;
@@ -474,11 +474,11 @@ void UIMediumSelector::prepareWidgets()
 void UIMediumSelector::sltAddMedium()
 {
     QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    QString strMediumID = vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
-    if (strMediumID.isEmpty())
+    QUuid uMediumID = vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
+    if (uMediumID.isNull())
         return;
     repopulateTreeWidget();
-    selectMedium(strMediumID);
+    selectMedium(uMediumID);
 
 }
 
@@ -544,11 +544,11 @@ void UIMediumSelector::sltHandleSearchTermChange(QString searchTerm)
     performMediumSearch();
 }
 
-void UIMediumSelector::selectMedium(const QString &strMediumID)
+void UIMediumSelector::selectMedium(const QUuid &aMediumID)
 {
     if (!m_pTreeWidget)
         return;
-    UIMediumItem *pMediumItem = searchItem(0, strMediumID);
+    UIMediumItem *pMediumItem = searchItem(0, aMediumID);
     if (pMediumItem)
     {
         m_pTreeWidget->setCurrentItem(pMediumItem);
@@ -622,7 +622,7 @@ void UIMediumSelector::repopulateTreeWidget()
         return;
     /* Cache the currently selected items: */
     QList<QTreeWidgetItem*> selectedItems = m_pTreeWidget->selectedItems();
-    QStringList selectedMedia = selectedMediumIds();
+    QList<QUuid> selectedMedia = selectedMediumIds();
     /* uuid list of selected items: */
     /* Reset the related data structure: */
     m_mediumItemList.clear();
@@ -631,9 +631,9 @@ void UIMediumSelector::repopulateTreeWidget()
     m_pNotAttachedSubTreeRoot = 0;
     QVector<UIMediumItem*> menuItemVector;
 
-    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
     {
-        UIMedium medium = vboxGlobal().medium(strMediumID);
+        UIMedium medium = vboxGlobal().medium(uMediumID);
         //printf("name %s\n", qPrintable(medium.name()));
         if (medium.type() == m_enmMediumType)
         {
@@ -696,7 +696,7 @@ void UIMediumSelector::saveDefaultForeground()
     }
 }
 
-UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const QString &mediumId)
+UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const QUuid &mediumId)
 {
     if (!m_pTreeWidget)
         return 0;
@@ -758,7 +758,7 @@ void UIMediumSelector::performMediumSearch()
         if (searchType == UIMediumSearchWidget::SearchByName)
             strMedium = m_mediumItemList[i]->medium().name();
         else if(searchType == UIMediumSearchWidget::SearchByUUID)
-            strMedium = m_mediumItemList[i]->medium().id();
+            strMedium = m_mediumItemList[i]->medium().id().toString();
         if (strMedium.isEmpty())
             continue;
         if (strMedium.contains(strTerm, Qt::CaseInsensitive))

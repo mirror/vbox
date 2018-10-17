@@ -67,13 +67,13 @@ class CheckIfSuitableByID : public CheckIfSuitableBy
 {
 public:
     /** Constructor accepting @a strID to compare with. */
-    CheckIfSuitableByID(const QString &strID) : m_strID(strID) {}
+    CheckIfSuitableByID(const QUuid &aID) : m_uID(aID) {}
 
 private:
     /** Determines whether passed UIMediumItem is suitable by @a strID. */
-    bool isItSuitable(UIMediumItem *pItem) const { return pItem->id() == m_strID; }
+    bool isItSuitable(UIMediumItem *pItem) const { return pItem->id() == m_uID; }
     /** Holds the @a strID to compare to. */
-    QString m_strID;
+    QUuid m_uID;
 };
 
 /** Functor allowing to check if passed UIMediumItem is suitable by @a state. */
@@ -382,10 +382,10 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     sltHandleCurrentTabChanged();
 }
 
-void UIMediumManagerWidget::sltHandleMediumCreated(const QString &strMediumID)
+void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &aMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(strMediumID);
+    UIMedium medium = vboxGlobal().medium(aMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -413,10 +413,10 @@ void UIMediumManagerWidget::sltHandleMediumCreated(const QString &strMediumID)
         setCurrentItem(treeWidget(medium.type()), pMediumItem);
 }
 
-void UIMediumManagerWidget::sltHandleMediumDeleted(const QString &strMediumID)
+void UIMediumManagerWidget::sltHandleMediumDeleted(const QUuid &aMediumID)
 {
     /* Make sure corresponding medium-item deleted: */
-    deleteMediumItem(strMediumID);
+    deleteMediumItem(aMediumID);
 }
 
 void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
@@ -458,10 +458,10 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
     refetchCurrentChosenMediumItem();
 }
 
-void UIMediumManagerWidget::sltHandleMediumEnumerated(const QString &strMediumID)
+void UIMediumManagerWidget::sltHandleMediumEnumerated(const QUuid &aMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(strMediumID);
+    UIMedium medium = vboxGlobal().medium(aMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -919,11 +919,11 @@ void UIMediumManagerWidget::repopulateTreeWidgets()
 {
     /* Remember current medium-items: */
     if (UIMediumItem *pMediumItem = mediumItem(UIMediumDeviceType_HardDisk))
-        m_strCurrentIdHD = pMediumItem->id();
+        m_uCurrentIdHD = pMediumItem->id();
     if (UIMediumItem *pMediumItem = mediumItem(UIMediumDeviceType_DVD))
-        m_strCurrentIdCD = pMediumItem->id();
+        m_uCurrentIdCD = pMediumItem->id();
     if (UIMediumItem *pMediumItem = mediumItem(UIMediumDeviceType_Floppy))
-        m_strCurrentIdFD = pMediumItem->id();
+        m_uCurrentIdFD = pMediumItem->id();
 
     /* Clear tree-widgets: */
     QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumDeviceType_HardDisk);
@@ -947,8 +947,8 @@ void UIMediumManagerWidget::repopulateTreeWidgets()
 
     /* Create medium-items (do not change current one): */
     m_fPreventChangeCurrentItem = true;
-    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
-        sltHandleMediumCreated(strMediumID);
+    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
+        sltHandleMediumCreated(uMediumID);
     m_fPreventChangeCurrentItem = false;
 
     /* Select first item as current one if nothing selected: */
@@ -1143,10 +1143,10 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
                 /* Make sure item was created: */
                 if (!pMediumItem)
                     break;
-                if (pMediumItem->id() == m_strCurrentIdHD)
+                if (pMediumItem->id() == m_uCurrentIdHD)
                 {
                     setCurrentItem(pTreeWidget, pMediumItem);
-                    m_strCurrentIdHD = QString();
+                    m_uCurrentIdHD = QUuid();
                 }
             }
             break;
@@ -1163,11 +1163,11 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
                 /* Make sure item was created: */
                 if (!pMediumItem)
                     break;
-                LogRel2(("UIMediumManager: Optical medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
-                if (pMediumItem->id() == m_strCurrentIdCD)
+                LogRel2(("UIMediumManager: Optical medium-item with ID={%s} created.\n", medium.id().toString().toUtf8().constData()));
+                if (pMediumItem->id() == m_uCurrentIdCD)
                 {
                     setCurrentItem(pTreeWidget, pMediumItem);
-                    m_strCurrentIdCD = QString();
+                    m_uCurrentIdCD = QUuid();
                 }
             }
             break;
@@ -1184,11 +1184,11 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
                 /* Make sure item was created: */
                 if (!pMediumItem)
                     break;
-                LogRel2(("UIMediumManager: Floppy medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
-                if (pMediumItem->id() == m_strCurrentIdFD)
+                LogRel2(("UIMediumManager: Floppy medium-item with ID={%s} created.\n", medium.id().toString().toUtf8().constData()));
+                if (pMediumItem->id() == m_uCurrentIdFD)
                 {
                     setCurrentItem(pTreeWidget, pMediumItem);
-                    m_strCurrentIdFD = QString();
+                    m_uCurrentIdFD = QUuid();
                 }
             }
             break;
@@ -1237,7 +1237,7 @@ UIMediumItem* UIMediumManagerWidget::createHardDiskItem(const UIMedium &medium)
                     /* Make sure corresponding parent medium is already cached! */
                     UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
                     if (parentMedium.isNull())
-                        AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toUtf8().constData()));
+                        AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toString().toUtf8().constData()));
                     /* Try to create parent medium-item: */
                     else
                         pParentMediumItem = createHardDiskItem(parentMedium);
@@ -1246,14 +1246,14 @@ UIMediumItem* UIMediumManagerWidget::createHardDiskItem(const UIMedium &medium)
                 if (pParentMediumItem)
                 {
                     pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
-                    LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+                    LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toString().toUtf8().constData()));
                 }
             }
             /* Else just create item as top-level one: */
             if (!pMediumItem)
             {
                 pMediumItem = new UIMediumItemHD(medium, pTreeWidget);
-                LogRel2(("UIMediumManager: Root hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+                LogRel2(("UIMediumManager: Root hard-disk medium-item with ID={%s} created.\n", medium.id().toString().toUtf8().constData()));
             }
         }
 
@@ -1283,7 +1283,7 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
 
     /* Update medium-item: */
     pMediumItem->setMedium(medium);
-    LogRel2(("UIMediumManager: Medium-item with ID={%s} updated.\n", medium.id().toUtf8().constData()));
+    LogRel2(("UIMediumManager: Medium-item with ID={%s} updated.\n", medium.id().toString().toUtf8().constData()));
 
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, Action_Edit);
@@ -1293,7 +1293,7 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
         refetchCurrentMediumItem(type);
 }
 
-void UIMediumManagerWidget::deleteMediumItem(const QString &strMediumID)
+void UIMediumManagerWidget::deleteMediumItem(const QUuid &aMediumID)
 {
     /* Search for corresponding tree-widget: */
     QList<UIMediumDeviceType> types;
@@ -1305,7 +1305,7 @@ void UIMediumManagerWidget::deleteMediumItem(const QString &strMediumID)
         /* Get iterated tree-widget: */
         pTreeWidget = treeWidget(type);
         /* Search for existing medium-item: */
-        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(strMediumID));
+        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(aMediumID));
         if (pMediumItem)
             break;
     }
@@ -1319,7 +1319,7 @@ void UIMediumManagerWidget::deleteMediumItem(const QString &strMediumID)
 
     /* Delete medium-item: */
     delete pMediumItem;
-    LogRel2(("UIMediumManager: Medium-item with ID={%s} deleted.\n", strMediumID.toUtf8().constData()));
+    LogRel2(("UIMediumManager: Medium-item with ID={%s} deleted.\n", aMediumID.toString().toUtf8().constData()));
 
     /* If there is no current medium-item now selected
      * we have to choose first-available medium-item as current one: */

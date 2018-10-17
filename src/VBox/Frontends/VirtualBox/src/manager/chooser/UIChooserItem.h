@@ -22,6 +22,7 @@
 #include <QMimeData>
 #include <QRectF>
 #include <QString>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
@@ -173,9 +174,9 @@ public:
         virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) = 0;
 
         /** Updates all children items with specified @a strId. */
-        virtual void updateAllItems(const QString &strId) = 0;
+        virtual void updateAllItems(const QUuid &aId) = 0;
         /** Removes all children items with specified @a strId. */
-        virtual void removeAllItems(const QString &strId) = 0;
+        virtual void removeAllItems(const QUuid &aId) = 0;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
         virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;

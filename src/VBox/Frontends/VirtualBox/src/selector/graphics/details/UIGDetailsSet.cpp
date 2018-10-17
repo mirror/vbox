@@ -112,14 +112,14 @@ void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<D
     rebuildSet();
 }
 
-void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
+void UIGDetailsSet::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
 {
     /* Cleanup build-step: */
     delete m_pBuildStep;
     m_pBuildStep = 0;
 
     /* Is step id valid? */
-    if (strStepId != m_strSetId)
+    if (aStepId != m_uSetId)
         return;
 
     /* Step number feats the bounds: */
@@ -172,7 +172,7 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         if (pElement->isVisible())
         {
             /* Create next build-step: */
-            m_pBuildStep = new UIBuildStep(this, pElement, strStepId, iStepNumber + 1);
+            m_pBuildStep = new UIBuildStep(this, pElement, aStepId, iStepNumber + 1);
 
             /* Build element: */
             pElement->updateAppearance();
@@ -181,7 +181,7 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         else
         {
             /* Just build next step: */
-            sltBuildStep(strStepId, iStepNumber + 1);
+            sltBuildStep(aStepId, iStepNumber + 1);
         }
     }
     /* Step number out of bounds: */
@@ -197,20 +197,20 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
     }
 }
 
-void UIGDetailsSet::sltMachineStateChange(QString strId)
+void UIGDetailsSet::sltMachineStateChange(const QUuid &aId)
 {
     /* Is this our VM changed? */
-    if (m_machine.GetId() != strId)
+    if (m_machine.GetId() != aId)
         return;
 
     /* Update appearance: */
     rebuildSet();
 }
 
-void UIGDetailsSet::sltMachineAttributesChange(QString strId)
+void UIGDetailsSet::sltMachineAttributesChange(const QUuid &aId)
 {
     /* Is this our VM changed? */
-    if (m_machine.GetId() != strId)
+    if (m_machine.GetId() != aId)
         return;
 
     /* Update appearance: */
@@ -345,13 +345,13 @@ void UIGDetailsSet::prepareSet()
 void UIGDetailsSet::prepareConnections()
 {
     /* Global-events connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QUuid, KMachineState)), this, SLOT(sltMachineStateChange(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QUuid, KSessionState)), this, SLOT(sltMachineAttributesChange(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
 
     /* Meidum-enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
@@ -566,10 +566,10 @@ void UIGDetailsSet::rebuildSet()
     m_pBuildStep = 0;
 
     /* Generate new set-id: */
-    m_strSetId = QUuid::createUuid().toString();
+    m_uSetId = QUuid::createUuid();
 
     /* Request to build first step: */
-    emit sigBuildStep(m_strSetId, DetailsElementType_General);
+    emit sigBuildStep(m_uSetId, DetailsElementType_General);
 }
 
 UIGDetailsElement* UIGDetailsSet::createElement(DetailsElementType elementType, bool fOpen)

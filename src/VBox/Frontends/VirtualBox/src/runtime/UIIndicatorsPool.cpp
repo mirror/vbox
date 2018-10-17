@@ -1266,10 +1266,10 @@ void UIIndicatorsPool::setAutoUpdateIndicatorStates(bool fEnabled)
         m_pTimerAutoUpdate->stop();
 }
 
-void UIIndicatorsPool::sltHandleConfigurationChange(const QString &strMachineID)
+void UIIndicatorsPool::sltHandleConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != strMachineID)
+    if (vboxGlobal().managedVMUuid() != aMachineID)
         return;
 
     /* Update pool: */
@@ -1347,8 +1347,8 @@ void UIIndicatorsPool::prepare()
 void UIIndicatorsPool::prepareConnections()
 {
     /* Listen for the status-bar configuration changes: */
-    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
-            this, SLOT(sltHandleConfigurationChange(const QString&)));
+    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QUuid &)),
+            this, SLOT(sltHandleConfigurationChange(const QUuid &)));
 }
 
 void UIIndicatorsPool::prepareContents()

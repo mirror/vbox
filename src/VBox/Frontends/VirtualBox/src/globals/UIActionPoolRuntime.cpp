@@ -3139,10 +3139,10 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIActionPoolRuntime::sltHandleConfigurationChange(const QString &strMachineID)
+void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != strMachineID)
+    if (vboxGlobal().managedVMUuid() != aMachineID)
         return;
 
     /* Update configuration: */
@@ -3337,8 +3337,8 @@ void UIActionPoolRuntime::prepareConnections()
     /* Prepare connections: */
     connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
     connect(gShortcutPool, SIGNAL(sigMachineShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
-    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
-            this, SLOT(sltHandleConfigurationChange(const QString&)));
+    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QUuid &)),
+            this, SLOT(sltHandleConfigurationChange(const QUuid &)));
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();
@@ -3347,27 +3347,27 @@ void UIActionPoolRuntime::prepareConnections()
 void UIActionPoolRuntime::updateConfiguration()
 {
     /* Get machine ID: */
-    const QString strMachineID = vboxGlobal().managedVMUuid();
-    if (strMachineID.isNull())
+    const QUuid aMachineID = vboxGlobal().managedVMUuid();
+    if (aMachineID.isNull())
         return;
 
     /* Recache common action restrictions: */
-    m_restrictedMenus[UIActionRestrictionLevel_Base] =                  gEDataManager->restrictedRuntimeMenuTypes(strMachineID);
-    m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(strMachineID);
-    m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuMachineActionTypes(strMachineID);
-    m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuViewActionTypes(strMachineID);
-    m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuInputActionTypes(strMachineID);
-    m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuDevicesActionTypes(strMachineID);
+    m_restrictedMenus[UIActionRestrictionLevel_Base] =                  gEDataManager->restrictedRuntimeMenuTypes(aMachineID);
+    m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(aMachineID);
+    m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuMachineActionTypes(aMachineID);
+    m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuViewActionTypes(aMachineID);
+    m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuInputActionTypes(aMachineID);
+    m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuDevicesActionTypes(aMachineID);
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    m_restrictedActionsMenuDebug[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(strMachineID);
+    m_restrictedActionsMenuDebug[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(aMachineID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef VBOX_WS_MAC
-    m_restrictedActionsMenuWindow[UIActionRestrictionLevel_Base] =      gEDataManager->restrictedRuntimeMenuWindowActionTypes(strMachineID);
+    m_restrictedActionsMenuWindow[UIActionRestrictionLevel_Base] =      gEDataManager->restrictedRuntimeMenuWindowActionTypes(aMachineID);
 #endif /* VBOX_WS_MAC */
-    m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuHelpActionTypes(strMachineID);
+    m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuHelpActionTypes(aMachineID);
 
     /* Recache visual state action restrictions: */
-    UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(strMachineID);
+    UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(aMachineID);
     {
         if (restrictedVisualStates & UIVisualStateType_Fullscreen)
             m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
@@ -3381,7 +3381,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache reconfiguration action restrictions: */
-    bool fReconfigurationAllowed = gEDataManager->machineReconfigurationEnabled(strMachineID);
+    bool fReconfigurationAllowed = gEDataManager->machineReconfigurationEnabled(aMachineID);
     if (!fReconfigurationAllowed)
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
@@ -3401,7 +3401,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache snapshot related action restrictions: */
-    bool fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(strMachineID);
+    bool fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(aMachineID);
     if (!fSnapshotOperationsAllowed)
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
@@ -3422,7 +3422,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache close related action restrictions: */
-    MachineCloseAction restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(strMachineID);
+    MachineCloseAction restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(aMachineID);
     bool fAllCloseActionsRestricted =    (!vboxGlobal().isSeparateProcess() || (restrictedCloseActions & MachineCloseAction_Detach))
                                       && (restrictedCloseActions & MachineCloseAction_SaveState)
                                       && (restrictedCloseActions & MachineCloseAction_Shutdown)

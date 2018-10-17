@@ -32,7 +32,7 @@ class UIThreadPool;
 class UITask;
 
 /* Typedefs: */
-typedef QMap<QString, CMedium> CMediumMap;
+typedef QMap<QUuid, CMedium> CMediumMap;
 
 /* Medium-enumerator prototype.
  * Manages access to medium information using thread-pool interface. */
@@ -43,12 +43,12 @@ class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QIWithRetranslateUI3<QObj
 signals:
 
     /* Notifiers: Medium-operations stuff: */
-    void sigMediumCreated(const QString &strMediumID);
-    void sigMediumDeleted(const QString &strMediumID);
+    void sigMediumCreated(const QUuid &aMediumID);
+    void sigMediumDeleted(const QUuid &aMediumID);
 
     /* Notifiers: Medium-enumeration stuff: */
     void sigMediumEnumerationStarted();
-    void sigMediumEnumerated(const QString &strMediumID);
+    void sigMediumEnumerated(const QUuid &aMediumID);
     void sigMediumEnumerationFinished();
 
 public:
@@ -57,10 +57,10 @@ public:
     UIMediumEnumerator();
 
     /* API: Medium-access stuff: */
-    QList<QString> mediumIDs() const;
-    UIMedium medium(const QString &strMediumID);
+    QList<QUuid> mediumIDs() const;
+    UIMedium medium(const QUuid &aMediumID);
     void createMedium(const UIMedium &medium);
-    void deleteMedium(const QString &strMediumID);
+    void deleteMedium(const QUuid &aMediumID);
 
     /* API: Medium-enumeration stuff: */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
@@ -70,11 +70,11 @@ public:
 private slots:
 
     /** Handles machine-data-change and snapshot-change events. */
-    void sltHandleMachineUpdate(QString strMachineID);
+    void sltHandleMachineUpdate(const QUuid &aMachineID);
     /** Handles machine-[un]registration events. */
-    void sltHandleMachineRegistration(QString strMachineID, bool fRegistered);
+    void sltHandleMachineRegistration(const QUuid &aMachineID, const bool fRegistered);
     /** Handles snapshot-deleted events. */
-    void sltHandleSnapshotDeleted(QString strMachineID, QString strSnapshotID);
+    void sltHandleSnapshotDeleted(const QUuid &aMachineID, const QUuid &aSnapshotID);
 
     /* Handler: Medium-enumeration stuff: */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
@@ -90,12 +90,12 @@ private:
     void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
     /* Helpers: Medium re-caching stuff: */
-    void calculateCachedUsage(const QString &strMachineID, QStringList &previousUIMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
-    void calculateActualUsage(const QString &strMachineID, CMediumMap &currentCMediums, QStringList &currentCMediumIDs, bool fTakeIntoAccountCurrentStateOnly) const;
-    void calculateActualUsage(const CSnapshot &snapshot, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const;
-    void calculateActualUsage(const CMachine &machine, CMediumMap &currentCMediums, QStringList &currentCMediumIDs) const;
-    void recacheFromCachedUsage(const QStringList &previousUIMediumIDs);
-    void recacheFromActualUsage(const CMediumMap &currentCMediums, const QStringList &currentCMediumIDs);
+    void calculateCachedUsage(const QUuid &aMachineID, QList<QUuid> &previousUIMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const QUuid &strMachineID, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const CSnapshot &snapshot, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs) const;
+    void calculateActualUsage(const CMachine &machine, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs) const;
+    void recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs);
+    void recacheFromActualUsage(const CMediumMap &currentCMediums, const QList<QUuid> &currentCMediumIDs);
 
     /* Variables: */
     bool m_fMediumEnumerationInProgress;

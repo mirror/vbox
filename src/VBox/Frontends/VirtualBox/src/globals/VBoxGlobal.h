@@ -90,14 +90,14 @@ signals:
     /** @name COM: Virtual Media stuff.
      * @{ */
         /** Notifies listeners about medium with certain @a strMediumID created. */
-        void sigMediumCreated(const QString &strMediumID);
+        void sigMediumCreated(const QUuid &aMediumID);
         /** Notifies listeners about medium with certain @a strMediumID deleted. */
-        void sigMediumDeleted(const QString &strMediumID);
+        void sigMediumDeleted(const QUuid &aMediumID);
 
         /** Notifies listeners about medium enumeration started. */
         void sigMediumEnumerationStarted();
         /** Notifies listeners about medium with certain @a strMediumID enumerated. */
-        void sigMediumEnumerated(const QString &strMediumID);
+        void sigMediumEnumerated(const QUuid &aMediumID);
         /** Notifies listeners about medium enumeration finished. */
         void sigMediumEnumerationFinished();
     /** @} */
@@ -210,7 +210,7 @@ public:
         QList<QUrl> takeArgumentUrls();
 
         /** Returns the --startvm option value (managed VM id). */
-        QString managedVMUuid() const { return m_strManagedVMId; }
+        QUuid managedVMUuid() const { return m_strManagedVMId; }
         /** Returns whether this is VM console process. */
         bool isVMConsoleProcess() const { return !m_strManagedVMId.isNull(); }
         /** Returns the --separate option value (whether GUI process is separate from VM process). */
@@ -227,13 +227,13 @@ public:
         void setShouldRestoreCurrentSnapshot(bool fRestore) { m_fRestoreCurrentSnapshot = fRestore; }
 
         /** Returns the --fda option value (whether we have floppy image). */
-        bool hasFloppyImageToMount() const { return !m_strFloppyImage.isEmpty(); }
+        bool hasFloppyImageToMount() const { return !m_strFloppyImage.isNull(); }
         /** Returns the --dvd | --cdrom option value (whether we have DVD image). */
-        bool hasDvdImageToMount() const { return !m_strDvdImage.isEmpty(); }
+        bool hasDvdImageToMount() const { return !m_strDvdImage.isNull(); }
         /** Returns floppy image name. */
-        QString const &getFloppyImage() const { return m_strFloppyImage; }
+        QUuid const &getFloppyImage() const { return m_strFloppyImage; }
         /** Returns DVD image name. */
-        QString const &getDvdImage() const { return m_strDvdImage; }
+        QUuid const &getDvdImage() const { return m_strDvdImage; }
 
         /** Returns the --disable-patm option value. */
         bool isPatmDisabled() const { return m_fDisablePatm; }
@@ -473,9 +473,9 @@ public:
         bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
 
         /** Opens session of certain @a enmLockType for VM with certain @a strId. */
-        CSession openSession(const QString &strId, KLockType enmLockType = KLockType_Write);
+        CSession openSession(const QUuid &aId, KLockType enmLockType = KLockType_Write);
         /** Opens session of KLockType_Shared type for VM with certain @a strId. */
-        CSession openExistingSession(const QString &strId) { return openSession(strId, KLockType_Shared); }
+        CSession openExistingSession(const QUuid &aId) { return openSession(aId, KLockType_Shared); }
     /** @} */
 
     /** @name COM: Virtual Media stuff.
@@ -487,40 +487,40 @@ public:
         /** Returns whether medium enumeration is in progress. */
         bool isMediumEnumerationInProgress() const;
         /** Returns enumerated medium with certain @a strMediumID. */
-        UIMedium medium(const QString &strMediumID) const;
+        UIMedium medium(const QUuid &aMediumID) const;
         /** Returns enumerated medium IDs. */
-        QList<QString> mediumIDs() const;
+        QList<QUuid> mediumIDs() const;
         /** Creates medium on the basis of passed @a guiMedium description. */
         void createMedium(const UIMedium &guiMedium);
         /** Deletes medium with certain @a strMediumID. */
-        void deleteMedium(const QString &strMediumID);
+        void deleteMedium(const QUuid &aMediumID);
 
         /** Opens external medium by passed @a strMediumLocation.
           * @param  enmMediumType      Brings the medium type.
           * @param  pParent            Brings the dialog parent.
           * @param  strMediumLocation  Brings the file path to load medium from.
           * @param  pParent            Brings the dialog parent. */
-        QString openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent = 0);
+        QUuid openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent = 0);
 
         /** Opens external medium using file-open dialog.
           * @param  enmMediumType     Brings the medium type.
           * @param  pParent           Brings the dialog parent.
           * @param  strDefaultFolder  Brings the folder to browse for medium.
           * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
-        QString openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
+        QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
                                              const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
 
         /** Creates a VISO using the file-open dialog.
           * @param  pParent    Brings the dialog parent.
           * @param  strFolder  Brings the folder to browse for VISO file contents. */
-        QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder);
+        QUuid createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder);
 
         /** Creates and shows a dialog thru which user can create a new floppy disk a VISO using the file-open dialog.
           * @param  parent            Passes the parent of the dialog,
           * @param  strMachineName    Passes the name of the machine,
           * @param  strMachineFolder  Passes the machine folder,
           * returns the ID of the newly created medium if successful, an empty string otherwise.*/
-        QString showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
+        QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
@@ -762,7 +762,7 @@ private:
         QList<QUrl>  m_listArgUrls;
 
         /** Holds the --startvm option value (managed VM id). */
-        QString  m_strManagedVMId;
+        QUuid  m_strManagedVMId;
         /** Holds the --separate option value (whether GUI process is separate from VM process). */
         bool     m_fSeparateProcess;
         /** Holds the --no-startvm-errormsgbox option value (whether startup VM errors are disabled). */
@@ -775,9 +775,9 @@ private:
         bool  m_fRestoreCurrentSnapshot;
 
         /** Holds the --fda option value (floppy image). */
-        QString  m_strFloppyImage;
+        QUuid  m_strFloppyImage;
         /** Holds the --dvd | --cdrom option value (DVD image). */
-        QString  m_strDvdImage;
+        QUuid  m_strDvdImage;
 
         /** Holds the --disable-patm option value. */
         bool      m_fDisablePatm;

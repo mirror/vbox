@@ -151,8 +151,8 @@ bool UIMediumItem::release(bool fInduced /* = false */)
         return false;
 
     /* Release: */
-    foreach (const QString &strMachineId, medium().curStateMachineIds())
-        if (!releaseFrom(strMachineId))
+    foreach (const QUuid &uMachineId, medium().curStateMachineIds())
+        if (!releaseFrom(uMachineId))
             return false;
 
     /* True by default: */
@@ -230,7 +230,7 @@ void UIMediumItem::refresh()
             m_details.m_aFields << (encryptionPasswordID().isNull() ?
                                     formatFieldText(QApplication::translate("UIMediumManager", "<i>Not&nbsp;Encrypted</i>"), false) :
                                     formatFieldText(encryptionPasswordID()));
-            m_details.m_aFields << id();
+            m_details.m_aFields << id().toString();
 
             break;
         }
@@ -243,7 +243,7 @@ void UIMediumItem::refresh()
             m_details.m_aFields << (usage().isNull() ?
                                     formatFieldText(QApplication::translate("UIMediumManager", "<i>Not&nbsp;Attached</i>"), false) :
                                     formatFieldText(usage()));
-            m_details.m_aFields << id();
+            m_details.m_aFields << id().toString();
             break;
         }
         default:
@@ -251,10 +251,10 @@ void UIMediumItem::refresh()
     }
 }
 
-bool UIMediumItem::releaseFrom(const QString &strMachineId)
+bool UIMediumItem::releaseFrom(const QUuid &aMachineId)
 {
     /* Open session: */
-    CSession session = vboxGlobal().openSession(strMachineId);
+    CSession session = vboxGlobal().openSession(aMachineId);
     if (session.isNull())
         return false;
 
@@ -322,7 +322,7 @@ bool UIMediumItemHD::remove()
 
     /* Remember some of hard-disk attributes: */
     CMedium hardDisk = medium().medium();
-    QString strMediumID = id();
+    QUuid uMediumID = id();
 
     /* Propose to remove medium storage: */
     if (!maybeRemoveStorage())
@@ -337,7 +337,7 @@ bool UIMediumItemHD::remove()
     }
 
     /* Remove UIMedium finally: */
-    vboxGlobal().deleteMedium(strMediumID);
+    vboxGlobal().deleteMedium(uMediumID);
 
     /* True by default: */
     return true;
@@ -449,7 +449,7 @@ bool UIMediumItemCD::remove()
 
     /* Remember some of optical-disk attributes: */
     CMedium image = medium().medium();
-    QString strMediumID = id();
+    QUuid uMediumID = id();
 
     /* Close optical-disk: */
     image.Close();
@@ -460,7 +460,7 @@ bool UIMediumItemCD::remove()
     }
 
     /* Remove UIMedium finally: */
-    vboxGlobal().deleteMedium(strMediumID);
+    vboxGlobal().deleteMedium(uMediumID);
 
     /* True by default: */
     return true;
@@ -520,7 +520,7 @@ bool UIMediumItemFD::remove()
 
     /* Remember some of floppy-disk attributes: */
     CMedium image = medium().medium();
-    QString strMediumID = id();
+    QUuid uMediumID = id();
 
     /* Close floppy-disk: */
     image.Close();
@@ -531,7 +531,7 @@ bool UIMediumItemFD::remove()
     }
 
     /* Remove UIMedium finally: */
-    vboxGlobal().deleteMedium(strMediumID);
+    vboxGlobal().deleteMedium(uMediumID);
 
     /* True by default: */
     return true;

@@ -53,7 +53,7 @@ public:
     void prepare();
 
     /** Returns the Id of newly created VM. */
-    QString createdMachineId() const { return m_machine.GetId(); }
+    QUuid createdMachineId() const { return m_machine.GetId(); }
 
 protected:
 

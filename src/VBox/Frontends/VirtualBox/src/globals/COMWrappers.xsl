@@ -1401,7 +1401,7 @@
       </xsl:choose>
     </xsl:when>
     <!-- string types -->
-    <xsl:when test="@type = 'wstring' or @type = 'uuid'">
+    <xsl:when test="@type = 'wstring'">
       <xsl:choose>
         <xsl:when test="$isIn">
           <xsl:text>BSTRIn(a</xsl:text>
@@ -1412,6 +1412,25 @@
         </xsl:when>
         <xsl:when test="$isOut">
           <xsl:text>BSTROut(a</xsl:text>
+          <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="@name"/>
+          </xsl:call-template>
+          <xsl:text>)</xsl:text>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:when>
+    <!-- uuid is represented as string in the com -->
+    <xsl:when test="@type = 'uuid'">
+      <xsl:choose>
+        <xsl:when test="$isIn">
+          <xsl:text>GuidAsBStrIn(a</xsl:text>
+          <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="@name"/>
+          </xsl:call-template>
+          <xsl:text>)</xsl:text>
+        </xsl:when>
+        <xsl:when test="$isOut">
+          <xsl:text>GuidAsBStrOut(a</xsl:text>
           <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
           </xsl:call-template>
@@ -1531,7 +1550,7 @@
           <xsl:choose>
             <!-- standard types -->
             <!--xsl:when test=".='result'">??</xsl:when-->
-            <xsl:when test=".='uuid'">QString</xsl:when>
+            <xsl:when test=".='uuid'">QUuid</xsl:when>
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>

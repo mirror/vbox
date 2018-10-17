@@ -63,7 +63,7 @@ signals:
           * @param  strCategory  Brings the link category.
           * @param  strControl   Brings the wanted settings control.
           * @param  strId        Brings the ID. */
-        void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+        void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &strId);
     /** @} */
 
 public:

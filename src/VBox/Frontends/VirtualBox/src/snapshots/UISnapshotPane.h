@@ -86,21 +86,21 @@ private slots:
     /** @name Main event handlers.
       * @{ */
         /** Handles machine data change for machine with @a strMachineId. */
-        void sltHandleMachineDataChange(QString strMachineId);
+        void sltHandleMachineDataChange(const QUuid &aMachineId);
         /** Handles machine @a enmState change for machine with @a strMachineId. */
-        void sltHandleMachineStateChange(QString strMachineId, KMachineState enmState);
+        void sltHandleMachineStateChange(const QUuid &aMachineId, const KMachineState enmState);
 
         /** Handles session @a enmState change for machine with @a strMachineId. */
-        void sltHandleSessionStateChange(QString strMachineId, KSessionState enmState);
+        void sltHandleSessionStateChange(const QUuid &aMachineId, const KSessionState enmState);
 
         /** Handles snapshot take event for machine with @a strMachineId. */
-        void sltHandleSnapshotTake(QString strMachineId, QString strSnapshotId);
+        void sltHandleSnapshotTake(const QUuid &aMachineId, const QUuid &aSnapshotId);
         /** Handles snapshot delete event for machine with @a strMachineId. */
-        void sltHandleSnapshotDelete(QString strMachineId, QString strSnapshotId);
+        void sltHandleSnapshotDelete(const QUuid &aMachineId, const QUuid &aSnapshotId);
         /** Handles snapshot change event for machine with @a strMachineId. */
-        void sltHandleSnapshotChange(QString strMachineId, QString strSnapshotId);
+        void sltHandleSnapshotChange(const QUuid &aMachineId, const QUuid &aSnapshotId);
         /** Handles snapshot restore event for machine with @a strMachineId. */
-        void sltHandleSnapshotRestore(QString strMachineId, QString strSnapshotId);
+        void sltHandleSnapshotRestore(const QUuid &aMachineId, const QUuid &aSnapshotId);
     /** @} */
 
     /** @name Timer event handlers.
@@ -188,7 +188,7 @@ private:
         void adjustTreeWidget();
 
         /** Searches for an item with corresponding @a strSnapshotID. */
-        UISnapshotItem *findItem(const QString &strSnapshotID) const;
+        UISnapshotItem *findItem(const QUuid &aSnapshotID) const;
 
         /** Searches for smallest snapshot age starting with @a pItem as parent. */
         SnapshotAgeFormat traverseSnapshotAge(QTreeWidgetItem *pItem) const;
@@ -206,7 +206,7 @@ private:
         /** Holds the COM machine object. */
         CMachine       m_comMachine;
         /** Holds the machine object ID. */
-        QString        m_strMachineId;
+        QUuid        m_uMachineId;
         /** Holds the cached session state. */
         KSessionState  m_enmSessionState;
 

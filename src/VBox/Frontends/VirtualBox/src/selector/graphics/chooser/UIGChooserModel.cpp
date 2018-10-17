@@ -677,27 +677,27 @@ bool UIGChooserModel::isGroupSavingInProgress() const
            UIGroupOrderSaveThread::instance();
 }
 
-void UIGChooserModel::sltMachineStateChanged(QString strId, KMachineState)
+void UIGChooserModel::sltMachineStateChanged(const QUuid &aId, const KMachineState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAll(aId);
 }
 
-void UIGChooserModel::sltMachineDataChanged(QString strId)
+void UIGChooserModel::sltMachineDataChanged(const QUuid &aId)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAll(aId);
 }
 
-void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
+void UIGChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegistered)
 {
     /* New VM registered? */
     if (fRegistered)
     {
         /* Search for corresponding machine: */
-        CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
+        CMachine machine = vboxGlobal().virtualBox().FindMachine(aId.toString());
         /* Should we show this machine? */
-        if (gEDataManager->showMachineInSelectorChooser(strId))
+        if (gEDataManager->showMachineInSelectorChooser(aId))
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(machine, true);
@@ -705,7 +705,7 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
             updateNavigation();
             updateLayout();
             /* Change current-item only if VM was created from the GUI side: */
-            if (strId == m_strLastCreatedMachineId)
+            if (aId == m_uLastCreatedMachineId)
             {
                 setCurrentItem(mainRoot()->searchForItem(machine.GetName(),
                                                          UIGChooserItemSearchFlag_Machine |
@@ -717,7 +717,7 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
     else
     {
         /* Remove machine-items with passed id: */
-        mainRoot()->removeAll(strId);
+        mainRoot()->removeAll(aId);
         /* Update model: */
         cleanupGroupTree();
         updateNavigation();
@@ -733,16 +733,16 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
     }
 }
 
-void UIGChooserModel::sltSessionStateChanged(QString strId, KSessionState)
+void UIGChooserModel::sltSessionStateChanged(const QUuid &aId, const KSessionState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAll(aId);
 }
 
-void UIGChooserModel::sltSnapshotChanged(QString strId, QString)
+void UIGChooserModel::sltSnapshotChanged(const QUuid &aId, const QUuid &)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(strId);
+    mainRoot()->updateAll(aId);
 }
 
 void UIGChooserModel::sltHandleViewResized()
@@ -935,7 +935,7 @@ void UIGChooserModel::sltCreateNewMachine()
     /* Execute wizard and store created VM Id
      * on success for current-item handling: */
     if (pWizard->exec() == QDialog::Accepted)
-        m_strLastCreatedMachineId = pWizard->createdMachineId();
+        m_uLastCreatedMachineId = pWizard->createdMachineId();
 
     if (pWizard)
         delete pWizard;
@@ -996,16 +996,16 @@ void UIGChooserModel::sltGroupSelectedMachines()
     saveGroupSettings();
 }
 
-void UIGChooserModel::sltReloadMachine(const QString &strId)
+void UIGChooserModel::sltReloadMachine(const QUuid &aId)
 {
     /* Remove all the items first: */
-    mainRoot()->removeAll(strId);
+    mainRoot()->removeAll(aId);
     /* Wipe out empty groups: */
     cleanupGroupTree();
 
     /* Show machine if we should: */
-    CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
-    if (gEDataManager->showMachineInSelectorChooser(strId))
+    CMachine machine = vboxGlobal().virtualBox().FindMachine(aId.toString());
+    if (gEDataManager->showMachineInSelectorChooser(aId))
         addMachineIntoTheTree(machine);
 
     /* And update model: */
@@ -1089,21 +1089,21 @@ void UIGChooserModel::sltRemoveSelectedMachine()
     UIGChooserItemMachine::enumerateMachineItems(mainRoot()->items(), existingMachineItemList);
 
     /* Prepare arrays: */
-    QMap<QString, bool> verdicts;
+    QMap<QUuid, bool> verdicts;
     QList<UIGChooserItem*> itemsToRemove;
-    QStringList machinesToUnregister;
+    QList<QUuid> machinesToUnregister;
 
     /* For each selected machine-item: */
     foreach (UIGChooserItem *pItem, selectedMachineItemList)
     {
         /* Get machine-item id: */
-        QString strId = pItem->toMachineItem()->id();
+        QUuid aId = pItem->toMachineItem()->id();
 
         /* We already decided for that machine? */
-        if (verdicts.contains(strId))
+        if (verdicts.contains(aId))
         {
             /* To remove similar machine items? */
-            if (!verdicts[strId])
+            if (!verdicts[aId])
                 itemsToRemove << pItem;
             continue;
         }
@@ -1111,20 +1111,20 @@ void UIGChooserModel::sltRemoveSelectedMachine()
         /* Selected copy count: */
         int iSelectedCopyCount = 0;
         foreach (UIGChooserItem *pSelectedItem, selectedMachineItemList)
-            if (pSelectedItem->toMachineItem()->id() == strId)
+            if (pSelectedItem->toMachineItem()->id() == aId)
                 ++iSelectedCopyCount;
         /* Existing copy count: */
         int iExistingCopyCount = 0;
         foreach (UIGChooserItem *pExistingItem, existingMachineItemList)
-            if (pExistingItem->toMachineItem()->id() == strId)
+            if (pExistingItem->toMachineItem()->id() == aId)
                 ++iExistingCopyCount;
         /* If selected copy count equal to existing copy count,
          * we will propose ro unregister machine fully else
          * we will just propose to remove selected items: */
         bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
-        verdicts.insert(strId, fVerdict);
+        verdicts.insert(aId, fVerdict);
         if (fVerdict)
-            machinesToUnregister << strId;
+            machinesToUnregister.append(aId);
         else
             itemsToRemove << pItem;
     }
@@ -1331,22 +1331,22 @@ void UIGChooserModel::prepareConnections()
             parent(), SIGNAL(sigGroupSavingStateChanged()));
 
     /* Setup global connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
-            this, SLOT(sltMachineDataChanged(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
-            this, SLOT(sltMachineRegistered(QString, bool)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
-            this, SLOT(sltSessionStateChanged(QString, KSessionState)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)),
-            this, SLOT(sltSnapshotChanged(QString, QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)),
-            this, SLOT(sltSnapshotChanged(QString, QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
-            this, SLOT(sltSnapshotChanged(QString, QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)),
-            this, SLOT(sltSnapshotChanged(QString, QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
+            this, SLOT(sltMachineStateChanged(QUuid, KMachineState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QUuid)),
+            this, SLOT(sltMachineDataChanged(QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QUuid, bool)),
+            this, SLOT(sltMachineRegistered(QUuid, bool)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QUuid, KSessionState)),
+            this, SLOT(sltSessionStateChanged(QUuid, KSessionState)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QUuid, QUuid)),
+            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QUuid, QUuid)),
+            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QUuid, QUuid)),
+            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
+            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
 }
 
 void UIGChooserModel::loadLastSelectedItem()
@@ -1543,14 +1543,14 @@ void UIGChooserModel::removeItems(const QList<UIGChooserItem*> &itemsToRemove)
     saveGroupSettings();
 }
 
-void UIGChooserModel::unregisterMachines(const QStringList &ids)
+void UIGChooserModel::unregisterMachines(const QList<QUuid> &ids)
 {
     /* Populate machine list: */
     QList<CMachine> machines;
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    foreach (const QString &strId, ids)
+    foreach (const QUuid &uId, ids)
     {
-        CMachine machine = vbox.FindMachine(strId);
+        CMachine machine = vbox.FindMachine(uId.toString());
         if (!machine.isNull())
             machines << machine;
     }
@@ -1753,8 +1753,8 @@ void UIGChooserModel::loadGroupTree()
     LogRelFlow(("UIGChooserModel: Loading VMs...\n"));
     foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
     {
-        const QString strMachineID = machine.GetId();
-        if (!strMachineID.isEmpty() && gEDataManager->showMachineInSelectorChooser(strMachineID))
+        const QUuid uMachineID = machine.GetId();
+        if (!uMachineID.isNull() && gEDataManager->showMachineInSelectorChooser(uMachineID))
             addMachineIntoTheTree(machine);
     }
     LogRelFlow(("UIGChooserModel: VMs loaded.\n"));
@@ -1768,7 +1768,7 @@ void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeI
     AssertReturnVoid(!machine.isNull());
 
     /* Which VM we are loading: */
-    LogRelFlow(("UIGChooserModel: Loading VM with ID={%s}...\n", machine.GetId().toUtf8().constData()));
+    LogRelFlow(("UIGChooserModel: Loading VM with ID={%s}...\n", machine.GetId().toString().toUtf8().constData()));
     /* Is that machine accessible? */
     if (machine.GetAccessible())
     {
@@ -1792,13 +1792,13 @@ void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeI
             createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
         }
         /* Update group definitions: */
-        m_groups[machine.GetId()] = groupList;
+        m_groups[machine.GetId().toString()] = groupList;
     }
     /* Inaccessible machine: */
     else
     {
         /* VM is accessible: */
-        LogRelFlow(("UIGChooserModel:  VM {%s} is inaccessible.\n", machine.GetId().toUtf8().constData()));
+        LogRelFlow(("UIGChooserModel:  VM {%s} is inaccessible.\n", machine.GetId().toString().toUtf8().constData()));
         /* Create machine-item with main-root group-item as parent: */
         createMachineItem(machine, mainRoot());
     }
@@ -1893,7 +1893,7 @@ int UIGChooserModel::getDesiredPosition(UIGChooserItem *pParentItem, UIGChooserI
             UIGChooserItem *pItem = items[i];
             /* Which position should be current item placed by definitions? */
             QString strDefinitionName = pItem->type() == UIGChooserItemType_Group ? pItem->name() :
-                                        pItem->type() == UIGChooserItemType_Machine ? pItem->toMachineItem()->id() :
+                                        pItem->type() == UIGChooserItemType_Machine ? pItem->toMachineItem()->id().toString() :
                                         QString();
             AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
             int iItemDefinitionPosition = positionFromDefinitions(pParentItem, type, strDefinitionName);
@@ -1963,7 +1963,7 @@ void UIGChooserModel::createMachineItem(const CMachine &machine, UIGChooserItem 
     new UIGChooserItemMachine(/* Parent item and corresponding machine: */
                               pParentItem, machine,
                               /* Which position new group-item should be placed in? */
-                              getDesiredPosition(pParentItem, UIGChooserItemType_Machine, machine.GetId()));
+                              getDesiredPosition(pParentItem, UIGChooserItemType_Machine, machine.GetId().toString()));
 }
 
 void UIGChooserModel::saveGroupDefinitions()
@@ -1979,8 +1979,8 @@ void UIGChooserModel::saveGroupDefinitions()
     /* Save information in other thread: */
     UIGroupDefinitionSaveThread::prepare();
     emit sigGroupSavingStateChanged();
-    connect(UIGroupDefinitionSaveThread::instance(), SIGNAL(sigReload(QString)),
-            this, SLOT(sltReloadMachine(QString)));
+    connect(UIGroupDefinitionSaveThread::instance(), SIGNAL(sigReload(QUuid)),
+            this, SLOT(sltReloadMachine(QUuid)));
     UIGroupDefinitionSaveThread::instance()->configure(this, m_groups, groups);
     UIGroupDefinitionSaveThread::instance()->start();
     m_groups = groups;
@@ -2010,7 +2010,7 @@ void UIGChooserModel::gatherGroupDefinitions(QMap<QString, QStringList> &groups,
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Machine))
         if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
             if (pMachineItem->accessible())
-                groups[pMachineItem->id()] << pParentGroup->fullName();
+                groups[pMachineItem->id().toString()] << pParentGroup->fullName();
     /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Group))
         gatherGroupDefinitions(groups, pItem);
@@ -2030,7 +2030,7 @@ void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
     }
     /* Iterate over all the machine-items: */
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Machine))
-        groups[strExtraDataKey] << QString("m=%1").arg(pItem->toMachineItem()->id());
+        groups[strExtraDataKey] << QString("m=%1").arg(pItem->toMachineItem()->id().toString());
 }
 
 void UIGChooserModel::makeSureGroupDefinitionsSaveIsFinished()
@@ -2129,7 +2129,7 @@ void UIGroupDefinitionSaveThread::run()
         do
         {
             /* 1. Open session: */
-            session = vboxGlobal().openSession(strId);
+            session = vboxGlobal().openSession(QUuid(strId));
             if (session.isNull())
                 break;
 
@@ -2157,7 +2157,7 @@ void UIGroupDefinitionSaveThread::run()
 
         /* Cleanup if necessary: */
         if (machine.isNull() || !machine.isOk())
-            emit sigReload(strId);
+            emit sigReload(QUuid(strId));
         if (!session.isNull())
             session.UnlockMachine();
     }

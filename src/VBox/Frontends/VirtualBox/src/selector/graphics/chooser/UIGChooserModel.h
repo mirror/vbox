@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QUuid>
 #include <QPointer>
 #include <QTransform>
 #include <QMap>
@@ -158,11 +159,11 @@ public:
 private slots:
 
     /* Handlers: Global events: */
-    void sltMachineStateChanged(QString strId, KMachineState state);
-    void sltMachineDataChanged(QString strId);
-    void sltMachineRegistered(QString strId, bool fRegistered);
-    void sltSessionStateChanged(QString strId, KSessionState state);
-    void sltSnapshotChanged(QString strId, QString strSnapshotId);
+    void sltMachineStateChanged(const QUuid &aId, const KMachineState state);
+    void sltMachineDataChanged(const QUuid &aId);
+    void sltMachineRegistered(const QUuid &aId, const bool fRegistered);
+    void sltSessionStateChanged(const QUuid &aId, const KSessionState state);
+    void sltSnapshotChanged(const QUuid &aId, const QUuid &aSnapshotId);
 
     /* Handler: Chooser-view stuff: */
     void sltHandleViewResized();
@@ -183,7 +184,7 @@ private slots:
     /* Handlers: Machine-item stuff: */
     void sltCreateNewMachine();
     void sltGroupSelectedMachines();
-    void sltReloadMachine(const QString &strId);
+    void sltReloadMachine(const QUuid &aId);
     void sltSortParentGroup();
     void sltPerformRefreshAction();
     void sltRemoveSelectedMachine();
@@ -246,7 +247,7 @@ private:
 
     /* Helpers: Machine-item stuff: */
     void removeItems(const QList<UIGChooserItem*> &itemsToRemove);
-    void unregisterMachines(const QStringList &ids);
+    void unregisterMachines(const QList<QUuid> &ids);
 
     /* Helpers: Context-menu stuff: */
     bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
@@ -302,7 +303,7 @@ private:
     QString m_strLookupString;
 
     /** Holds the Id of last VM created from the GUI side. */
-    QString m_strLastCreatedMachineId;
+    QUuid m_uLastCreatedMachineId;
 };
 
 /* Allows to save group definitions asynchronously: */
@@ -313,7 +314,7 @@ class UIGroupDefinitionSaveThread : public QThread
 signals:
 
     /* Notifier: Reload stuff: */
-    void sigReload(QString strId);
+    void sigReload(const QUuid &aId);
 
     /* Notifier: Complete stuff: */
     void sigComplete();

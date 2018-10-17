@@ -870,10 +870,10 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                         continue;
 
                     /* Get medium id for further activities: */
-                    QString strMediumId;
+                    QUuid aMediumId;
                     if (fSuccess)
                     {
-                        strMediumId = comMedium.GetId();
+                        aMediumId = comMedium.GetId();
                         fSuccess = comMedium.isOk();
                     }
 
@@ -905,7 +905,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                         const EncryptionPasswordMap &encryptionPasswords = newGeneralData.m_encryptionPasswords;
 
                         /* Check if old password exists/provided: */
-                        const QString strOldPasswordId = encryptedMedium.key(strMediumId);
+                        const QString strOldPasswordId = encryptedMedium.key(aMediumId);
                         const QString strOldPassword = encryptionPasswords.value(strOldPasswordId);
 
                         /* Create encryption progress: */

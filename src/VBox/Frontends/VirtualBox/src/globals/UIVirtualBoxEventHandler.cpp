@@ -46,21 +46,21 @@ signals:
     void sigVBoxSVCAvailabilityChange(bool fAvailable);
 
     /** Notifies about @a state change event for the machine with @a strId. */
-    void sigMachineStateChange(QString strId, KMachineState state);
+    void sigMachineStateChange(const QUuid &aId, const KMachineState state);
     /** Notifies about data change event for the machine with @a strId. */
-    void sigMachineDataChange(QString strId);
+    void sigMachineDataChange(const QUuid &aId);
     /** Notifies about machine with @a strId was @a fRegistered. */
-    void sigMachineRegistered(QString strId, bool fRegistered);
+    void sigMachineRegistered(const QUuid &aId, const bool fRegistered);
     /** Notifies about @a state change event for the session of the machine with @a strId. */
-    void sigSessionStateChange(QString strId, KSessionState state);
+    void sigSessionStateChange(const QUuid &aId, const KSessionState state);
     /** Notifies about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
-    void sigSnapshotTake(QString strId, QString strSnapshotId);
+    void sigSnapshotTake(const QUuid &aId, const QUuid &aSnapshotId);
     /** Notifies about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
-    void sigSnapshotDelete(QString strId, QString strSnapshotId);
+    void sigSnapshotDelete(const QUuid &aId, const QUuid &aSnapshotId);
     /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
-    void sigSnapshotChange(QString strId, QString strSnapshotId);
+    void sigSnapshotChange(const QUuid &aId, const QUuid &aSnapshotId);
     /** Notifies about snapshot with @a strSnapshotId was restored for the machine with @a strId. */
-    void sigSnapshotRestore(QString strId, QString strSnapshotId);
+    void sigSnapshotRestore(const QUuid &aId, const QUuid &aSnapshotId);
 
 public:
 
@@ -184,29 +184,29 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
+            this, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineDataChange(QString)),
-            this, SIGNAL(sigMachineDataChange(QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineDataChange(QUuid)),
+            this, SIGNAL(sigMachineDataChange(QUuid)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineRegistered(QString, bool)),
-            this, SIGNAL(sigMachineRegistered(QString, bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineRegistered(QUuid, bool)),
+            this, SIGNAL(sigMachineRegistered(QUuid, bool)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigSessionStateChange(QString, KSessionState)),
-            this, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSessionStateChange(QUuid, KSessionState)),
+            this, SIGNAL(sigSessionStateChange(QUuid, KSessionState)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotTake(QString, QString)),
-            this, SIGNAL(sigSnapshotTake(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotTake(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotTake(QUuid, QUuid)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotDelete(QString, QString)),
-            this, SIGNAL(sigSnapshotDelete(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotDelete(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotDelete(QUuid, QUuid)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotChange(QString, QString)),
-            this, SIGNAL(sigSnapshotChange(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotChange(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotChange(QUuid, QUuid)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotRestore(QString, QString)),
-            this, SIGNAL(sigSnapshotRestore(QString, QString)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
             Qt::DirectConnection);
 }
 
@@ -281,29 +281,29 @@ void UIVirtualBoxEventHandler::prepareConnections()
     connect(m_pProxy, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+    connect(m_pProxy, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
+            this, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigMachineDataChange(QString)),
-            this, SIGNAL(sigMachineDataChange(QString)),
+    connect(m_pProxy, SIGNAL(sigMachineDataChange(QUuid)),
+            this, SIGNAL(sigMachineDataChange(QUuid)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigMachineRegistered(QString, bool)),
-            this, SIGNAL(sigMachineRegistered(QString, bool)),
+    connect(m_pProxy, SIGNAL(sigMachineRegistered(QUuid, bool)),
+            this, SIGNAL(sigMachineRegistered(QUuid, bool)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigSessionStateChange(QString, KSessionState)),
-            this, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+    connect(m_pProxy, SIGNAL(sigSessionStateChange(QUuid, KSessionState)),
+            this, SIGNAL(sigSessionStateChange(QUuid, KSessionState)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigSnapshotTake(QString, QString)),
-            this, SIGNAL(sigSnapshotTake(QString, QString)),
+    connect(m_pProxy, SIGNAL(sigSnapshotTake(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotTake(QUuid, QUuid)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigSnapshotDelete(QString, QString)),
-            this, SIGNAL(sigSnapshotDelete(QString, QString)),
+    connect(m_pProxy, SIGNAL(sigSnapshotDelete(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotDelete(QUuid, QUuid)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigSnapshotChange(QString, QString)),
-            this, SIGNAL(sigSnapshotChange(QString, QString)),
+    connect(m_pProxy, SIGNAL(sigSnapshotChange(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotChange(QUuid, QUuid)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigSnapshotRestore(QString, QString)),
-            this, SIGNAL(sigSnapshotRestore(QString, QString)),
+    connect(m_pProxy, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
+            this, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
             Qt::QueuedConnection);
 }
 

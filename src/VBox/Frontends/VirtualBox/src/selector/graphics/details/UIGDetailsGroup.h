@@ -55,7 +55,7 @@ public:
 private slots:
 
     /* Handler: Build stuff: */
-    void sltBuildStep(QString strStepId, int iStepNumber);
+    void sltBuildStep(const QUuid &aStepId, const int iStepNumber);
 
 private:
 
@@ -95,7 +95,7 @@ private:
     QList<UIGDetailsItem*> m_items;
     QList<UIVMItem*> m_machineItems;
     UIBuildStep *m_pBuildStep;
-    QString m_strGroupId;
+    QUuid m_uGroupId;
 
     /* Friends: */
     friend class UIGDetailsModel;

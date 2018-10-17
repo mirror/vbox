@@ -2361,7 +2361,7 @@ bool VBoxGlobal::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /*
     return true;
 }
 
-CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = KLockType_Shared */)
+CSession VBoxGlobal::openSession(const QUuid &aId, KLockType lockType /* = KLockType_Shared */)
 {
     /* Prepare session: */
     CSession comSession;
@@ -2379,10 +2379,10 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
         }
 
         /* Search for the corresponding machine: */
-        CMachine comMachine = m_comVBox.FindMachine(strId);
+        CMachine comMachine = m_comVBox.FindMachine(aId.toString());
         if (comMachine.isNull())
         {
-            msgCenter().cannotFindMachineById(m_comVBox, strId);
+            msgCenter().cannotFindMachineById(m_comVBox, aId);
             break;
         }
 
@@ -2485,32 +2485,32 @@ bool VBoxGlobal::isMediumEnumerationInProgress() const
            && m_pMediumEnumerator->isMediumEnumerationInProgress();
 }
 
-UIMedium VBoxGlobal::medium(const QString &strMediumID) const
+UIMedium VBoxGlobal::medium(const QUuid &aMediumID) const
 {
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Redirect call to medium-enumerator: */
         UIMedium guiMedium;
         if (m_pMediumEnumerator)
-            guiMedium = m_pMediumEnumerator->medium(strMediumID);
+            guiMedium = m_pMediumEnumerator->medium(aMediumID);
         m_meCleanupProtectionToken.unlock();
         return guiMedium;
     }
     return UIMedium();
 }
 
-QList<QString> VBoxGlobal::mediumIDs() const
+QList<QUuid> VBoxGlobal::mediumIDs() const
 {
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Redirect call to medium-enumerator: */
-        QList<QString> listOfMedia;
+        QList<QUuid> listOfMedia;
         if (m_pMediumEnumerator)
             listOfMedia = m_pMediumEnumerator->mediumIDs();
         m_meCleanupProtectionToken.unlock();
         return listOfMedia;
     }
-    return QList<QString>();
+    return QList<QUuid>();
 }
 
 void VBoxGlobal::createMedium(const UIMedium &guiMedium)
@@ -2524,18 +2524,18 @@ void VBoxGlobal::createMedium(const UIMedium &guiMedium)
     }
 }
 
-void VBoxGlobal::deleteMedium(const QString &strMediumID)
+void VBoxGlobal::deleteMedium(const QUuid &aMediumID)
 {
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Delete medium from medium-enumerator: */
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->deleteMedium(strMediumID);
+            m_pMediumEnumerator->deleteMedium(aMediumID);
         m_meCleanupProtectionToken.unlock();
     }
 }
 
-QString VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
+QUuid VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
 {
     /* Convert to native separators: */
     strMediumLocation = QDir::toNativeSeparators(strMediumLocation);
@@ -2567,10 +2567,10 @@ QString VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMedi
     else
         msgCenter().cannotOpenMedium(comVBox, enmMediumType, strMediumLocation, pParent);
 
-    return QString();
+    return QUuid();
 }
 
-QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent,
+QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent,
                                                  const QString &strDefaultFolder /* = QString() */,
                                                  bool fUseLastFolder /* = false */)
 {
@@ -2648,10 +2648,10 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumTyp
     if (!files.empty() && !files[0].isEmpty())
         return openMedium(enmMediumType, files[0], pParent);
 
-    return QString();
+    return QUuid();
 }
 
-QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder)
+QUuid VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder)
 {
     AssertReturn(!strFolder.isEmpty(), QString());
 
@@ -2671,7 +2671,7 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
 
     /* Return if no result. */
     if (files.empty() || files[0].isEmpty())
-        return QString();
+        return QUuid();
 
     /* Remember folder for the next time. */
     gEDataManager->setRecentFolderForVISOContent(QFileInfo(files[0]).absolutePath());
@@ -2720,10 +2720,10 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
         return openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
 
     /** @todo error message. */
-    return QString();
+    return QUuid();
 }
 
-QString VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder)
+QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder)
 {
     UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strMachineName, strMachineFolder);
     if (pDialog->exec())
@@ -2731,7 +2731,7 @@ QString VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &
         return pDialog->mediumID();
     }
     delete pDialog;
-    return QString();
+    return QUuid();
 }
 
 void VBoxGlobal::prepareStorageMenu(QMenu &menu,
@@ -2743,7 +2743,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                                                                   storageSlot.port,
                                                                                   storageSlot.device);
     const CMedium comCurrentMedium = comCurrentAttachment.GetMedium();
-    const QString strCurrentID = comCurrentMedium.isNull() ? QString() : comCurrentMedium.GetId();
+    const QUuid uCurrentID = comCurrentMedium.isNull() ? QUuid() : comCurrentMedium.GetId();
     const QString strCurrentLocation = comCurrentMedium.isNull() ? QString() : comCurrentMedium.GetLocation();
 
     /* Other medium-attachments of same machine: */
@@ -2817,13 +2817,13 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
         {
             QAction *pActionChooseHostDrive = menu.addAction(UIMedium(comMedium, enmMediumType).name(), pListener, pszSlotName);
             pActionChooseHostDrive->setCheckable(true);
-            pActionChooseHostDrive->setChecked(!comCurrentMedium.isNull() && comMedium.GetId() == strCurrentID);
+            pActionChooseHostDrive->setChecked(!comCurrentMedium.isNull() && comMedium.GetId() == uCurrentID);
             pActionChooseHostDrive->setData(QVariant::fromValue(UIMediumTarget(strControllerName,
                                                                                comCurrentAttachment.GetPort(),
                                                                                comCurrentAttachment.GetDevice(),
                                                                                enmMediumType,
                                                                                UIMediumTarget::UIMediumTargetType_WithID,
-                                                                               comMedium.GetId())));
+                                                                               comMedium.GetId().toString())));
         }
     }
 
@@ -2907,14 +2907,14 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
     /* Null medium (by default): */
     CMedium comMedium;
     /* With null ID (by default): */
-    QString strActualID;
+    QUuid uActualID;
 
     /* Current mount-target attributes: */
     const CStorageController comCurrentController = comConstMachine.GetStorageControllerByName(target.name);
     const KStorageBus enmCurrentStorageBus = comCurrentController.GetBus();
     const CMediumAttachment comCurrentAttachment = comConstMachine.GetMediumAttachment(target.name, target.port, target.device);
     const CMedium comCurrentMedium = comCurrentAttachment.GetMedium();
-    const QString strCurrentID = comCurrentMedium.isNull() ? QString() : comCurrentMedium.GetId();
+    const QUuid uCurrentID = comCurrentMedium.isNull() ? QUuid() : comCurrentMedium.GetId();
     const QString strCurrentLocation = comCurrentMedium.isNull() ? QString() : comCurrentMedium.GetLocation();
 
     /* Which additional info do we have? */
@@ -2926,7 +2926,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
         case UIMediumTarget::UIMediumTargetType_CreateFloppyDisk:
         {
             /* New mount-target attributes: */
-            QString strNewID;
+            QUuid uNewID;
 
             /* Invoke file-open dialog to choose medium ID: */
             if (target.mediumType != UIMediumDeviceType_Invalid && target.data.isNull())
@@ -2942,52 +2942,52 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 }
                 /* Call for file-open dialog: */
                 const QString strMachineFolder(QFileInfo(comConstMachine.GetSettingsFilePath()).absolutePath());
-                QString strMediumID;
+                QUuid uMediumID;
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
-                    strMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
+                    uMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                    strMediumID = createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(), strMachineFolder);
+                    uMediumID = createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(), strMachineFolder);
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
-                    strMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
+                    uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
 
                 /* Return focus back: */
                 if (pLastFocusedWidget)
                     pLastFocusedWidget->setFocus();
                 /* Accept new medium ID: */
-                if (!strMediumID.isNull())
-                    strNewID = strMediumID;
+                if (!uMediumID.isNull())
+                    uNewID = uMediumID;
                 /* Else just exit: */
                 else return;
             }
             /* Use medium ID which was passed: */
-            else if (!target.data.isNull() && target.data != strCurrentID)
-                strNewID = target.data;
+            else if (!target.data.isNull() && target.data != uCurrentID.toString())
+                uNewID = target.data;
 
             /* Should we mount or unmount? */
-            fMount = !strNewID.isEmpty();
+            fMount = !uNewID.isNull();
 
             /* Prepare target medium: */
-            const UIMedium guiMedium = medium(strNewID);
+            const UIMedium guiMedium = medium(uNewID);
             comMedium = guiMedium.medium();
-            strActualID = fMount ? strNewID : strCurrentID;
+            uActualID = fMount ? uNewID : uCurrentID;
             break;
         }
         /* Do we have a resent location? */
         case UIMediumTarget::UIMediumTargetType_WithLocation:
         {
             /* Open medium by location and get new medium ID if any: */
-            const QString strNewID = openMedium(target.mediumType, target.data);
+            const QUuid uNewID = openMedium(target.mediumType, target.data);
             /* Else just exit: */
-            if (strNewID.isEmpty())
+            if (uNewID.isNull())
                 return;
 
             /* Should we mount or unmount? */
-            fMount = strNewID != strCurrentID;
+            fMount = uNewID != uCurrentID;
 
             /* Prepare target medium: */
-            const UIMedium guiMedium = fMount ? medium(strNewID) : UIMedium();
+            const UIMedium guiMedium = fMount ? medium(uNewID) : UIMedium();
             comMedium = fMount ? guiMedium.medium() : CMedium();
-            strActualID = fMount ? strNewID : strCurrentID;
+            uActualID = fMount ? uNewID : uCurrentID;
             break;
         }
     }
@@ -3049,14 +3049,14 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
         if (!fWasMounted)
         {
             /* Ask for force remounting: */
-            if (msgCenter().cannotRemountMedium(comMachine, medium(strActualID),
+            if (msgCenter().cannotRemountMedium(comMachine, medium(uActualID),
                                                 fMount, true /* retry? */))
             {
                 /* Force remounting: */
                 comMachine.MountMedium(target.name, target.port, target.device, comMedium, true /* force? */);
                 fWasMounted = comMachine.isOk();
                 if (!fWasMounted)
-                    msgCenter().cannotRemountMedium(comMachine, medium(strActualID),
+                    msgCenter().cannotRemountMedium(comMachine, medium(uActualID),
                                                     fMount, false /* retry? */);
             }
         }
@@ -3085,15 +3085,15 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
 QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml /* = true */)
 {
     /* Search for corresponding UI medium: */
-    const QString strMediumID = comMedium.isNull() ? UIMedium::nullID() : comMedium.GetId();
-    UIMedium guiMedium = medium(strMediumID);
+    const QUuid uMediumID = comMedium.isNull() ? UIMedium::nullID() : comMedium.GetId();
+    UIMedium guiMedium = medium(uMediumID);
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among our media, request enumeration: */
         startMediumEnumeration();
 
         /* Search for corresponding UI medium again: */
-        guiMedium = medium(strMediumID);
+        guiMedium = medium(uMediumID);
         if (guiMedium.isNull())
         {
             /* Medium might be deleted already, return null string: */
@@ -4148,7 +4148,7 @@ void VBoxGlobal::prepare()
     if (m_fSettingsPwSet)
         m_comVBox.SetSettingsSecret(m_astrSettingsPw);
 
-    if (visualStateType != UIVisualStateType_Invalid && !m_strManagedVMId.isEmpty())
+    if (visualStateType != UIVisualStateType_Invalid && !m_strManagedVMId.isNull())
         gEDataManager->setRequestedVisualState(visualStateType, m_strManagedVMId);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

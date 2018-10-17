@@ -24,6 +24,7 @@
 #include <QPointer>
 #include <QThread>
 #include <QTransform>
+#include <QUuid>
 
 /* GUI includes: */
 #include "UIChooserItem.h"
@@ -265,15 +266,15 @@ private slots:
     /** @name Main event handling stuff.
       * @{ */
         /** Handles machine @a enmState change for machine with certain @a strId. */
-        void sltMachineStateChanged(QString strId, KMachineState enmState);
+        void sltMachineStateChanged(const QUuid &aId, const KMachineState enmState);
         /** Handles machine data change for machine with certain @a strId. */
-        void sltMachineDataChanged(QString strId);
+        void sltMachineDataChanged(const QUuid &aId);
         /** Handles machine registering/unregistering for machine with certain @a strId. */
-        void sltMachineRegistered(QString strId, bool fRegistered);
+        void sltMachineRegistered(const QUuid &aId, const bool fRegistered);
         /** Handles session @a enmState change for machine with certain @a strId. */
-        void sltSessionStateChanged(QString strId, KSessionState enmState);
+        void sltSessionStateChanged(const QUuid &aId, const KSessionState enmState);
         /** Handles snapshot change for machine/snapshot with certain @a strId / @a strSnapshotId. */
-        void sltSnapshotChanged(QString strId, QString strSnapshotId);
+        void sltSnapshotChanged(const QUuid &aId, const QUuid &aSnapshotId);
     /** @} */
 
     /** @name Selection stuff.
@@ -303,7 +304,7 @@ private slots:
         /** Handles group selected machines request. */
         void sltGroupSelectedMachines();
         /** Handles reload machine with certain @a strId request. */
-        void sltReloadMachine(const QString &strId);
+        void sltReloadMachine(const QUuid &aId);
         /** Handles sort parent group request. */
         void sltSortParentGroup();
         /** Handles refresh request. */
@@ -430,7 +431,7 @@ private:
         /** Removes machine @a items. */
         void removeItems(const QList<UIChooserItem*> &items);
         /** Unregisters virtual machines using list of @a ids. */
-        void unregisterMachines(const QStringList &ids);
+        void unregisterMachines(const QList<QUuid> &ids);
 
         /** Processes drag move @a pEvent. */
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
@@ -513,7 +514,7 @@ private:
         QString  m_strLookupString;
 
         /** Holds the Id of last VM created from the GUI side. */
-        QString  m_strLastCreatedMachineId;
+        QUuid  m_uLastCreatedMachineId;
     /** @} */
 
     /** @name Group saving stuff.
@@ -532,7 +533,7 @@ class UIThreadGroupDefinitionSave : public QThread
 signals:
 
     /** Notifies about machine with certain @a strId to be reloaded. */
-    void sigReload(QString strId);
+    void sigReload(const QUuid &aId);
 
     /** Notifies about task is complete. */
     void sigComplete();

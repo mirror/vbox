@@ -51,7 +51,7 @@ signals:
     void sigGroupSavingStateChanged();
 
     /** Notifies aboud Details-pane link clicked. */
-    void sigMachineSettingsLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+    void sigMachineSettingsLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &aId);
 
     /** Notifies about Tool type change. */
     void sigToolTypeChange();

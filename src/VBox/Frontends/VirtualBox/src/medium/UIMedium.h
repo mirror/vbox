@@ -125,8 +125,8 @@ public:
       * @note   Also make sure wrapped CMedium is NULL object if his ID == #nullID(). */
     bool isNull() const
     {
-        AssertReturn(m_strId != nullID() || m_medium.isNull(), true);
-        return m_strId == nullID();
+        AssertReturn(m_uId != nullID() || m_medium.isNull(), true);
+        return m_uId == nullID();
     }
 
     /** Returns the medium state.
@@ -154,20 +154,20 @@ public:
     QString lastAccessError() const { return m_strLastAccessError; }
 
     /** Returns the medium ID. */
-    QString id() const { return m_strId; }
+    QUuid id() const { return m_uId; }
 
     /** Returns the medium root ID. */
-    QString rootID() const { return m_strRootId; }
+    QUuid rootID() const { return m_uRootId; }
     /** Returns the medium parent ID. */
-    QString parentID() const { return m_strParentId; }
+    QUuid parentID() const { return m_uParentId; }
 
     /** Updates medium parent. */
     void updateParentID();
 
     /** Returns the medium cache key. */
-    QString key() const { return m_strKey; }
+    QUuid key() const { return m_uKey; }
     /** Defines the medium cache @a strKey. */
-    void setKey(const QString &strKey) { m_strKey = strKey; }
+    void setKey(const QUuid &aKey) { m_uKey = aKey; }
 
     /** Returns the medium name.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -308,16 +308,16 @@ public:
     bool isAttachedInCurStateTo(const QString &strMachineId) const { return m_curStateMachineIds.indexOf(strMachineId) >= 0; }
 
     /** Returns a vector of IDs of all machines this medium is attached to. */
-    const QList<QString>& machineIds() const { return m_machineIds; }
+    const QList<QUuid>& machineIds() const { return m_machineIds; }
     /** Returns a vector of IDs of all machines this medium is attached to
       * in their current state (i.e. excluding snapshots). */
-    const QList<QString>& curStateMachineIds() const { return m_curStateMachineIds; }
+    const QList<QUuid>& curStateMachineIds() const { return m_curStateMachineIds; }
 
     /** Returns NULL medium ID. */
-    static QString nullID();
+    static QUuid nullID();
 
     /** Returns passed @a strID if it's valid or #nullID() overwise. */
-    static QString normalizedID(const QString &strID);
+    static QUuid normalizedID(const QUuid &aID);
 
     /** Determines if passed @a medium is attached to hidden machines only. */
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
@@ -350,14 +350,14 @@ private:
     QString m_strLastAccessError;
 
     /** Holds the medium ID. */
-    QString m_strId;
+    QUuid m_uId;
     /** Holds the medium root ID. */
-    QString m_strRootId;
+    QUuid m_uRootId;
     /** Holds the medium parent ID. */
-    QString m_strParentId;
+    QUuid m_uParentId;
 
     /** Holds the medium cache key. */
-    QString m_strKey;
+    QUuid m_uKey;
 
     /** Holds the medium name. */
     QString m_strName;
@@ -396,10 +396,10 @@ private:
     /** Holds the medium tool-tip. */
     QString m_strToolTip;
     /** Holds the vector of IDs of all machines this medium is attached to. */
-    QList<QString> m_machineIds;
+    QList<QUuid> m_machineIds;
     /** Hodls the vector of IDs of all machines this medium is attached to
       * in their current state (i.e. excluding snapshots). */
-    QList<QString> m_curStateMachineIds;
+    QList<QUuid> m_curStateMachineIds;
 
     /** Holds the medium cache for "don't show diffs" mode. */
     NoDiffsCache m_noDiffs;
@@ -418,7 +418,7 @@ private:
     bool m_fEncrypted                : 1;
 
     /** Holds the NULL medium ID. */
-    static QString m_sstrNullID;
+    static QUuid m_uNullID;
     /** Holds the medium tool-tip table template. */
     static QString m_sstrTable;
     /** Holds the medium tool-tip table row template. */
@@ -426,6 +426,6 @@ private:
 };
 Q_DECLARE_METATYPE(UIMedium);
 
-typedef QMap<QString, UIMedium> UIMediumMap;
+typedef QMap<QUuid, UIMedium> UIMediumMap;
 
 #endif /* !___UIMedium_h___ */

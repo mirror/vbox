@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QMap>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -76,13 +77,13 @@ public:
       * @param  pActionPool             Brings the action-pool to be used by the editor. */
     UIMenuBarEditorWidget(QWidget *pParent,
                           bool fStartedFromVMSettings = true,
-                          const QString &strMachineID = QString(),
+                          const QUuid &aMachineID = QUuid(),
                           UIActionPool *pActionPool = 0);
 
     /** Returns the machine ID instance. */
-    const QString &machineID() const { return m_strMachineID; }
+    const QUuid &machineID() const { return m_uMachineID; }
     /** Defines the @a strMachineID instance. */
-    void setMachineID(const QString &strMachineID);
+    void setMachineID(const QUuid &aMachineID);
 
     /** Returns the action-pool reference. */
     const UIActionPool *actionPool() const { return m_pActionPool; }
@@ -153,7 +154,7 @@ protected:
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QString &strMachineID);
+    void sltHandleConfigurationChange(const QUuid &aMachineID);
 
     /** Handles menu-bar menu click. */
     void sltHandleMenuBarMenuClick();
@@ -209,7 +210,7 @@ private:
         /** Holds whether 'this' is a part of VM settings. */
         bool                m_fStartedFromVMSettings;
         /** Holds the machine ID instance. */
-        QString             m_strMachineID;
+        QUuid               m_uMachineID;
         /** Holds the action-pool reference. */
         const UIActionPool *m_pActionPool;
     /** @} */

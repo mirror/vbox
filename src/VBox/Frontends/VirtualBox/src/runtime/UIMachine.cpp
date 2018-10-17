@@ -42,7 +42,7 @@
 UIMachine* UIMachine::m_spInstance = 0;
 
 /* static */
-bool UIMachine::startMachine(const QString &strID)
+bool UIMachine::startMachine(const QUuid &aID)
 {
     /* Make sure machine is not created: */
     AssertReturn(!m_spInstance, false);
@@ -51,7 +51,7 @@ bool UIMachine::startMachine(const QString &strID)
     if (vboxGlobal().shouldRestoreCurrentSnapshot())
     {
         /* Create temporary session: */
-        CSession session = vboxGlobal().openSession(strID, KLockType_VM);
+        CSession session = vboxGlobal().openSession(aID, KLockType_VM);
         if (session.isNull())
             return false;
 
@@ -81,7 +81,7 @@ bool UIMachine::startMachine(const QString &strID)
     if (vboxGlobal().isSeparateProcess())
     {
         /* Get corresponding machine: */
-        CMachine machine = vboxGlobal().virtualBox().FindMachine(vboxGlobal().managedVMUuid());
+        CMachine machine = vboxGlobal().virtualBox().FindMachine(vboxGlobal().managedVMUuid().toString());
         AssertMsgReturn(!machine.isNull(), ("VBoxGlobal::managedVMUuid() should have filter that case before!\n"), false);
 
         /* Try to launch corresponding machine: */

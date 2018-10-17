@@ -48,7 +48,7 @@ public:
 
     /** Static factory to start machine with passed @a strID.
       * @return true if machine was started, false otherwise. */
-    static bool startMachine(const QString &strID);
+    static bool startMachine(const QUuid &aID);
     /** Static constructor. */
     static bool create();
     /** Static destructor. */

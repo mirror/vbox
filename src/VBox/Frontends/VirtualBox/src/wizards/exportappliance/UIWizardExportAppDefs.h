@@ -38,9 +38,9 @@ public:
     /** Constructs VM list item passing @a pixIcon, @a strText and @a pParent to the base-class.
       * @param  strUuid       Brings the machine ID.
       * @param  fInSaveState  Brings whether machine is in Saved state. */
-    UIVMListWidgetItem(QPixmap &pixIcon, QString &strText, QString strUuid, bool fInSaveState, QListWidget *pParent)
+    UIVMListWidgetItem(QPixmap &pixIcon, QString &strText, QUuid aUuid, bool fInSaveState, QListWidget *pParent)
         : QListWidgetItem(pixIcon, strText, pParent)
-        , m_strUuid(strUuid)
+        , m_uUuid(aUuid)
         , m_fInSaveState(fInSaveState)
     {}
 
@@ -51,14 +51,14 @@ public:
     }
 
     /** Returns the machine ID. */
-    QString uuid() const { return m_strUuid; }
+    QUuid uuid() const { return m_uUuid; }
     /** Returns whether machine is in Saved state. */
     bool isInSaveState() const { return m_fInSaveState; }
 
 private:
 
     /** Holds the machine ID. */
-    QString  m_strUuid;
+    QUuid    m_uUuid;
     /** Holds whether machine is in Saved state. */
     bool     m_fInSaveState;
 };

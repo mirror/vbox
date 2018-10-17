@@ -322,7 +322,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     if (!strScript.isEmpty())
     {
         /* Execute asynchronously and leave: */
-        QProcess::startDetached(strScript, QStringList() << machine().GetId());
+        QProcess::startDetached(strScript, QStringList() << machine().GetId().toString());
         return;
     }
 

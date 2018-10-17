@@ -326,12 +326,12 @@ UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionP
 
 UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
                                              bool fStartedFromVMSettings /* = true */,
-                                             const QString &strMachineID /* = QString() */,
+                                             const QUuid &aMachineID /* = QUuid() */,
                                              UIActionPool *pActionPool /* = 0 */)
     : QIWithRetranslateUI2<QWidget>(pParent)
     , m_fPrepared(false)
     , m_fStartedFromVMSettings(fStartedFromVMSettings)
-    , m_strMachineID(strMachineID)
+    , m_uMachineID(aMachineID)
     , m_pActionPool(pActionPool)
     , m_pMainLayout(0)
     , m_pToolBar(0)
@@ -358,10 +358,10 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
     prepare();
 }
 
-void UIMenuBarEditorWidget::setMachineID(const QString &strMachineID)
+void UIMenuBarEditorWidget::setMachineID(const QUuid &aMachineID)
 {
     /* Remember new machine ID: */
-    m_strMachineID = strMachineID;
+    m_uMachineID = aMachineID;
     /* Prepare: */
     prepare();
 }
@@ -746,10 +746,10 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent *)
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
-void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
+void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (machineID() != strMachineID)
+    if (machineID() != aMachineID)
         return;
 
     /* Recache menu-bar configuration: */
@@ -962,7 +962,7 @@ void UIMenuBarEditorWidget::prepare()
         return;
 
     /* Do not prepare if machine ID or action-pool is not set: */
-    if (m_strMachineID.isEmpty() || !m_pActionPool)
+    if (m_uMachineID.isNull() || !m_pActionPool)
         return;
 
     /* Install tool-bar button accessibility interface factory: */

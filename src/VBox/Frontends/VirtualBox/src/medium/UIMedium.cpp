@@ -37,7 +37,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-QString UIMedium::m_sstrNullID = QUuid().toString().remove('{').remove('}');
+QUuid   UIMedium::m_uNullID;
 QString UIMedium::m_sstrTable = QString("<table>%1</table>");
 QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
 
@@ -86,11 +86,11 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_result = other.result();
     m_strLastAccessError = other.lastAccessError();
 
-    m_strId = other.id();
-    m_strRootId = other.rootID();
-    m_strParentId = other.parentID();
+    m_uId = other.id();
+    m_uRootId = other.rootID();
+    m_uParentId = other.parentID();
 
-    m_strKey = other.key();
+    m_uKey = other.key();
 
     m_strName = other.name();
     m_strLocation = other.location();
@@ -154,9 +154,9 @@ void UIMedium::blockAndQueryState()
 void UIMedium::refresh()
 {
     /* Reset ID parameters: */
-    m_strId = nullID();
-    m_strRootId = nullID();
-    m_strParentId = nullID();
+    m_uId = nullID();
+    m_uRootId = nullID();
+    m_uParentId = nullID();
 
     /* Reset cache parameters: */
     //m_strKey = nullID();
@@ -199,13 +199,13 @@ void UIMedium::refresh()
     if (!m_medium.isNull())
     {
         /* Refresh medium ID: */
-        m_strId = normalizedID(m_medium.GetId());
+        m_uId = normalizedID(m_medium.GetId());
         /* Refresh root medium ID: */
-        m_strRootId = m_strId;
+        m_uRootId = m_uId;
 
         /* Init medium key if necessary: */
-        if (m_strKey.isNull())
-            m_strKey = m_strId;
+        if (m_uKey.isNull())
+            m_uKey = m_uId;
 
         /* Check whether this is host-drive medium: */
         m_fHostDrive = m_medium.GetHostDrive();
@@ -272,7 +272,7 @@ void UIMedium::refresh()
             /* Refresh parent hard drive ID: */
             CMedium parentMedium = m_medium.GetParent();
             if (!parentMedium.isNull())
-                m_strParentId = normalizedID(parentMedium.GetId());
+                m_uParentId = normalizedID(parentMedium.GetId());
 
             /* Only for created and accessible media: */
             if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated)
@@ -280,12 +280,12 @@ void UIMedium::refresh()
                 /* Refresh root hard drive ID: */
                 while (!parentMedium.isNull())
                 {
-                    m_strRootId = normalizedID(parentMedium.GetId());
+                    m_uRootId = normalizedID(parentMedium.GetId());
                     parentMedium = parentMedium.GetParent();
                 }
 
                 /* Refresh encryption attributes: */
-                if (m_strRootId != m_strId)
+                if (m_uRootId != m_uId)
                 {
                     m_strEncryptionPasswordID = root().encryptionPasswordID();
                     m_fEncrypted = root().isEncrypted();
@@ -328,10 +328,10 @@ void UIMedium::refresh()
             /* Prepare machine usage: */
             QString strMachineUsage;
             /* Walk through all the machines this medium attached to: */
-            foreach (const QString &strMachineID, m_machineIds)
+            foreach (const QUuid &uMachineID, m_machineIds)
             {
                 /* Look for the corresponding machine: */
-                CMachine machine = vbox.FindMachine(strMachineID);
+                CMachine machine = vbox.FindMachine(uMachineID.toString());
 
                 /* UIMedium object can wrap newly created CMedium object
                  * which belongs to not yet registered machine, like while creating VM clone.
@@ -345,25 +345,25 @@ void UIMedium::refresh()
                 }
 
                 /* Finally we can precisely check if current machine is 'hidden': */
-                if (gEDataManager->showMachineInSelectorChooser(strMachineID))
+                if (gEDataManager->showMachineInSelectorChooser(uMachineID))
                     m_fUsedByHiddenMachinesOnly = false;
 
                 /* Prepare snapshot usage: */
                 QString strSnapshotUsage;
                 /* Walk through all the snapshots this medium attached to: */
-                foreach (const QString &strSnapshotID, m_medium.GetSnapshotIds(strMachineID))
+                foreach (const QUuid &uSnapshotID, m_medium.GetSnapshotIds(uMachineID))
                 {
-                    if (strSnapshotID == strMachineID)
+                    if (uSnapshotID == uMachineID)
                     {
                         /* The medium is attached to the machine in the current
                          * state, we don't distinguish this for now by always
                          * giving the VM name in front of snapshot names. */
-                        m_curStateMachineIds.push_back(strSnapshotID);
+                        m_curStateMachineIds.push_back(uSnapshotID);
                         continue;
                     }
 
                     /* Look for the corresponding snapshot: */
-                    CSnapshot snapshot = machine.FindSnapshot(strSnapshotID);
+                    CSnapshot snapshot = machine.FindSnapshot(uSnapshotID.toString());
 
                     /* Snapshot can be NULL while takeSnaphot is in progress: */
                     if (snapshot.isNull())
@@ -432,12 +432,12 @@ void UIMedium::refresh()
 
 void UIMedium::updateParentID()
 {
-    m_strParentId = nullID();
+    m_uParentId = nullID();
     if (m_type == UIMediumDeviceType_HardDisk)
     {
         CMedium parentMedium = m_medium.GetParent();
         if (!parentMedium.isNull())
-            m_strParentId = normalizedID(parentMedium.GetId());
+            m_uParentId = normalizedID(parentMedium.GetId());
     }
 }
 
@@ -564,18 +564,16 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
 }
 
 /* static */
-QString UIMedium::nullID()
+QUuid UIMedium::nullID()
 {
-    return m_sstrNullID;
+    return m_uNullID;
 }
 
 /* static */
-QString UIMedium::normalizedID(const QString &strID)
+QUuid UIMedium::normalizedID(const QUuid &aID)
 {
-    /* Handle wrong UUID (null/empty or invalid format): */
-    if (QUuid(strID).toString().remove('{').remove('}') != strID)
-        return nullID();
-    return strID;
+    /// @todo wipe out!
+    return aID;
 }
 
 /* static */
@@ -600,13 +598,13 @@ bool UIMedium::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
 UIMedium UIMedium::root() const
 {
     /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strRootId);
+    return vboxGlobal().medium(m_uRootId);
 }
 
 UIMedium UIMedium::parent() const
 {
     /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strParentId);
+    return vboxGlobal().medium(m_uParentId);
 }
 
 void UIMedium::checkNoDiffs(bool fNoDiffs)

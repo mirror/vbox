@@ -54,6 +54,14 @@ enum UIEncryptionDataTableSection
     UIEncryptionDataTableSection_Max
 };
 
+template<class T>
+static QStringList toStringList(const QList<T> &list)
+{
+    QStringList l;
+    foreach(const T &t, list)
+        l << t.toString();
+    return l;
+}
 
 /** QLineEdit extension used as
   * the embedded password editor for the UIEncryptionDataTable. */
@@ -314,7 +322,7 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
         {
             /* We are generating tool-tip here and not in retranslateUi() because of the tricky plural form handling,
              * but be quiet, it's safe enough because the tool-tip being re-acquired every time on mouse-hovering. */
-            const QStringList encryptedMedia = m_encryptedMedia.values(m_encryptionPasswords.keys().at(index.row()));
+            const QList<QUuid> encryptedMedia = m_encryptedMedia.values(m_encryptionPasswords.keys().at(index.row()));
             return UIAddDiskEncryptionPasswordDialog::tr("<nobr>Used by the following %n hard disk(s):</nobr><br>%1",
                                                          "This text is never used with n == 0. "
                                                          "Feel free to drop the %n where possible, "
@@ -322,7 +330,7 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
                                                          "(but the user can see how many hard drives are in the tool-tip "
                                                          "and doesn't need to be told).",
                                                          encryptedMedia.size())
-                                                         .arg(encryptedMedia.join("<br>"));
+                                                         .arg(toStringList(encryptedMedia).join("<br>"));
         }
         default:
             break;
@@ -499,9 +507,9 @@ void UIAddDiskEncryptionPasswordDialog::accept()
     /* Validate passwords status: */
     foreach (const QString &strPasswordId, m_encryptedMedia.uniqueKeys())
     {
-        const QString strMediumId = m_encryptedMedia.values(strPasswordId).first();
+        const QUuid uMediumId = m_encryptedMedia.values(strPasswordId).first();
         const QString strPassword = m_pTableEncryptionData->encryptionPasswords().value(strPasswordId);
-        if (!isPasswordValid(strMediumId, strPassword))
+        if (!isPasswordValid(uMediumId, strPassword))
         {
             msgCenter().warnAboutInvalidEncryptionPassword(strPasswordId, this);
             AssertPtrReturnVoid(m_pTableEncryptionData);
@@ -568,10 +576,10 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
 }
 
 /* static */
-bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QString strMediumId, const QString strPassword)
+bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QUuid &aMediumId, const QString strPassword)
 {
     /* Look for the medium with passed ID: */
-    const UIMedium uimedium = vboxGlobal().medium(strMediumId);
+    const UIMedium uimedium = vboxGlobal().medium(aMediumId);
     if (!uimedium.isNull())
     {
         /* Check wrapped medium for validity: */

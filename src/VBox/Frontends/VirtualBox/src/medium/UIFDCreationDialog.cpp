@@ -212,7 +212,7 @@ void UIFDCreationDialog::accept()
         return;
     }
     /* Store the id of the newly create medium: */
-    m_strMediumID = newMedium.GetId();
+    m_uMediumID = newMedium.GetId();
 
     /* Notify VBoxGlobal about the new medium: */
     vboxGlobal().createMedium(UIMedium(newMedium, UIMediumDeviceType_Floppy, KMediumState_Created));
@@ -224,7 +224,7 @@ void UIFDCreationDialog::accept()
     QDialog::accept();
 }
 
-QString UIFDCreationDialog::mediumID() const
+QUuid UIFDCreationDialog::mediumID() const
 {
-    return m_strMediumID;
+    return m_uMediumID;
 }

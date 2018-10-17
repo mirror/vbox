@@ -18,6 +18,9 @@
 #ifndef ___UIDetailsItem_h___
 #define ___UIDetailsItem_h___
 
+/* Qt includes */
+#include <QUuid>
+
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
 #include "QIWithRetranslateUI.h"
@@ -55,7 +58,7 @@ signals:
         /** Notifies listeners about step build should be started.
           * @param  strStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
-        void sigBuildStep(QString strStepId, int iStepNumber);
+        void sigBuildStep(const QUuid &aStepId, int iStepNumber);
         /** Notifies listeners about step build complete. */
         void sigBuildDone();
     /** @} */
@@ -126,7 +129,7 @@ protected slots:
           * @param  strStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
     /** @} */
-    virtual void sltBuildStep(QString strStepId, int iStepNumber);
+    virtual void sltBuildStep(const QUuid &aStepId, int iStepNumber);
 
 protected:
 
@@ -153,7 +156,7 @@ signals:
     /** Notifies listeners about step preparing is complete.
       * @param  strStepId    Brings the step ID.
       * @param  iStepNumber  Brings the step number. */
-    void sigStepDone(QString strStepId, int iStepNumber);
+    void sigStepDone(const QUuid& aStepId, int iStepNumber);
 
 public:
 
@@ -161,7 +164,7 @@ public:
       * @param  pBuildObject  Brings the build object reference.
       * @param  strStepId     Brings the step ID.
       * @param  iStepNumber   Brings the step number.*/
-    UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QString &strStepId, int iStepNumber);
+    UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUuid &aStepId, int iStepNumber);
 
 private slots:
 
@@ -171,9 +174,9 @@ private slots:
 private:
 
     /** Holds the step ID. */
-    QString  m_strStepId;
+    QUuid  m_uStepId;
     /** Holds the step number. */
-    int      m_iStepNumber;
+    int    m_iStepNumber;
 };
 
 

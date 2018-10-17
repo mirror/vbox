@@ -49,7 +49,7 @@ public:
 
     UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName = QString(),
                      const QString &machineSettigFilePath = QString(), QWidget *pParent = 0);
-    QStringList selectedMediumIds() const;
+    QList<QUuid> selectedMediumIds() const;
 
 protected:
 
@@ -92,14 +92,14 @@ private:
     /** Disable/enable 'ok' button on the basis of having a selected item */
     void          updateOkButton();
     UIMediumItem* addTreeItem(const UIMedium &medium, QITreeWidgetItem *pParent);
-    void          restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList);
+    void          restoreSelection(const QList<QUuid> &selectedMediums, QVector<UIMediumItem*> &mediumList);
     /** Recursively create the hard disk hierarchy under the tree widget */
     UIMediumItem* createHardDiskItem(const UIMedium &medium, QITreeWidgetItem *pParent);
-    UIMediumItem* searchItem(const QTreeWidgetItem *pParent, const QString &mediumId);
+    UIMediumItem* searchItem(const QTreeWidgetItem *pParent, const QUuid &mediumId);
     void          performMediumSearch();
     /** Remember the default foreground brush of the tree so that we can reset tree items' foreground later */
     void          saveDefaultForeground();
-    void          selectMedium(const QString &strMediumID);
+    void          selectMedium(const QUuid &aMediumID);
 
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;

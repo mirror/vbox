@@ -294,9 +294,9 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 
     /* Look for at least one inaccessible medium: */
     bool fIsThereAnyInaccessibleMedium = false;
-    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
     {
-        if (vboxGlobal().medium(strMediumID).state() == KMediumState_Inaccessible)
+        if (vboxGlobal().medium(uMediumID).state() == KMediumState_Inaccessible)
         {
             fIsThereAnyInaccessibleMedium = true;
             break;
@@ -382,7 +382,7 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     updateActionsAppearance();
 }
 
-void UIVirtualBoxManager::sltHandleStateChange(const QString &)
+void UIVirtualBoxManager::sltHandleStateChange(const QUuid &)
 {
     updateActionsAppearance();
 }
@@ -597,7 +597,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
     }
 
     /* Make sure this machine was NOT registered already: */
-    CMachine comMachineOld = comVBox.FindMachine(comMachineNew.GetId());
+    CMachine comMachineOld = comVBox.FindMachine(comMachineNew.GetId().toString());
     if (!comMachineOld.isNull())
     {
         msgCenter().cannotReregisterExistingMachine(strTmpFile, comMachineOld.GetName());
@@ -610,7 +610,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
 
 void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
                                                        QString strControl /* = QString() */,
-                                                       const QString &strID /* = QString() */)
+                                                       const QUuid &aID /* = QString() */)
 {
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -643,7 +643,7 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
 
         /* Create and execute corresponding VM settings window: */
         QPointer<UISettingsDialogMachine> pDlg = new UISettingsDialogMachine(this,
-                                                                             QUuid(strID).isNull() ? pItem->id() : strID,
+                                                                             aID.isNull() ? pItem->id() : aID,
                                                                              strCategory, strControl);
         pDlg->execute();
         delete pDlg;
@@ -1065,20 +1065,20 @@ void UIVirtualBoxManager::sltOpenMachineLogDialog()
 
         QIManagerDialog *pLogViewerDialog = 0;
         /* Create and Show VM Log Viewer: */
-        if (!m_logViewers[pItem->machine().GetHardwareUUID()])
+        if (!m_logViewers[pItem->machine().GetHardwareUUID().toString()])
         {
             UIVMLogViewerDialogFactory dialogFactory(actionPool(), pItem->machine());
             dialogFactory.prepare(pLogViewerDialog, this);
             if (pLogViewerDialog)
             {
-                m_logViewers[pItem->machine().GetHardwareUUID()] = pLogViewerDialog;
+                m_logViewers[pItem->machine().GetHardwareUUID().toString()] = pLogViewerDialog;
                 connect(pLogViewerDialog, &QIManagerDialog::sigClose,
                         this, &UIVirtualBoxManager::sltCloseLogViewerWindow);
             }
         }
         else
         {
-            pLogViewerDialog = m_logViewers[pItem->machine().GetHardwareUUID()];
+            pLogViewerDialog = m_logViewers[pItem->machine().GetHardwareUUID().toString()];
         }
         if (pLogViewerDialog)
         {

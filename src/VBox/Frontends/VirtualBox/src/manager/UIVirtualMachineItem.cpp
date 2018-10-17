@@ -119,7 +119,7 @@ bool UIVirtualMachineItem::recache()
 {
     bool needsResort = true;
 
-    m_strId = m_machine.GetId();
+    m_uId = m_machine.GetId();
     m_strSettingsFile = m_machine.GetSettingsFilePath();
 
     m_fAccessible = m_machine.GetAccessible();
@@ -157,11 +157,11 @@ bool UIVirtualMachineItem::recache()
         m_configurationAccessLevel = ::configurationAccessLevel(m_sessionState, m_machineState);
         /* Also take restrictions into account: */
         if (   m_configurationAccessLevel != ConfigurationAccessLevel_Null
-            && !gEDataManager->machineReconfigurationEnabled(m_strId))
+            && !gEDataManager->machineReconfigurationEnabled(m_uId))
             m_configurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Should we show details for this item? */
-        m_fHasDetails = gEDataManager->showMachineInSelectorDetails(m_strId);
+        m_fHasDetails = gEDataManager->showMachineInSelectorDetails(m_uId);
     }
     else
     {

@@ -1390,10 +1390,10 @@ bool UIMachineSettingsDisplay::saveScreenData()
 #endif
 
         /* Get machine ID for further activities: */
-        QString strMachineId;
+        QUuid uMachineId;
         if (fSuccess)
         {
-            strMachineId = m_machine.GetId();
+            uMachineId = m_machine.GetId();
             fSuccess = m_machine.isOk();
         }
 
@@ -1404,7 +1404,7 @@ bool UIMachineSettingsDisplay::saveScreenData()
         /* Save guest-screen scale-factor: */
         if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
         {
-            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, strMachineId);
+            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, uMachineId);
         }
     }
     /* Return result: */

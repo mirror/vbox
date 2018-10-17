@@ -275,7 +275,7 @@ void UIChooserItemGlobal::clearItems(UIChooserItemType)
     AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
 
-void UIChooserItemGlobal::updateAllItems(const QString &)
+void UIChooserItemGlobal::updateAllItems(const QUuid &)
 {
     /* Update this global-item: */
     updatePixmaps();
@@ -286,7 +286,7 @@ void UIChooserItemGlobal::updateAllItems(const QString &)
     parentItem()->update();
 }
 
-void UIChooserItemGlobal::removeAllItems(const QString &)
+void UIChooserItemGlobal::removeAllItems(const QUuid &)
 {
     // Just do nothing ..
 }

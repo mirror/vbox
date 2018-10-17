@@ -52,13 +52,13 @@ void UIWizardNewVMPage3::updateVirtualDiskSource()
     /* Fetch filed values: */
     if (m_pDiskSkip->isChecked())
     {
-        m_strVirtualDiskId = QString();
+        m_uVirtualDiskId = QUuid();
         m_strVirtualDiskName = QString();
         m_strVirtualDiskLocation = QString();
     }
     else if (m_pDiskPresent->isChecked())
     {
-        m_strVirtualDiskId = m_pDiskSelector->id();
+        m_uVirtualDiskId = m_pDiskSelector->id();
         m_strVirtualDiskName = m_pDiskSelector->currentText();
         m_strVirtualDiskLocation = m_pDiskSelector->location();
     }
@@ -67,11 +67,11 @@ void UIWizardNewVMPage3::updateVirtualDiskSource()
 void UIWizardNewVMPage3::getWithFileOpenDialog()
 {
     /* Get opened medium id: */
-    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumDeviceType_HardDisk, thisImp());
-    if (!strMediumId.isNull())
+    QUuid uMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumDeviceType_HardDisk, thisImp());
+    if (!uMediumId.isNull())
     {
         /* Update medium-combo if necessary: */
-        m_pDiskSelector->setCurrentItem(strMediumId);
+        m_pDiskSelector->setCurrentItem(uMediumId);
         /* Update hard disk source: */
         updateVirtualDiskSource();
         /* Focus on hard disk combo: */
@@ -108,7 +108,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
         return;
 
     /* Remember virtual-disk attributes: */
-    QString strMediumID = m_virtualDisk.GetId();
+    QUuid uMediumID = m_virtualDisk.GetId();
     QString strLocation = m_virtualDisk.GetLocation();
     /* Prepare delete storage progress: */
     CProgress progress = m_virtualDisk.DeleteStorage();
@@ -123,7 +123,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
         msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, thisImp());
 
     /* Inform VBoxGlobal about it: */
-    vboxGlobal().deleteMedium(strMediumID);
+    vboxGlobal().deleteMedium(uMediumID);
 
     /* Detach virtual-disk anyway: */
     m_virtualDisk.detach();
@@ -265,7 +265,7 @@ bool UIWizardNewVMPageBasic3::validatePage()
     bool fResult = true;
 
     /* Ensure unused virtual-disk is deleted: */
-    if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_strVirtualDiskId != m_virtualDisk.GetId()))
+    if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
         ensureNewVirtualDiskDeleted();
 
     if (m_pDiskSkip->isChecked())

@@ -33,7 +33,7 @@ class QIDialogButtonBox;
 class UIEncryptionDataTable;
 
 /* Type definitions: */
-typedef QMultiMap<QString, QString> EncryptedMediumMap;
+typedef QMultiMap<QString, QUuid> EncryptedMediumMap;
 typedef QMap<QString, QString> EncryptionPasswordMap;
 typedef QMap<QString, bool> EncryptionPasswordStatusMap;
 
@@ -75,7 +75,7 @@ private:
     void prepare();
 
     /** Returns whether passed @a strPassword is valid for medium with passed @a strMediumId. */
-    static bool isPasswordValid(const QString strMediumId, const QString strPassword);
+    static bool isPasswordValid(const QUuid &aMediumId, const QString strPassword);
 
     /** Holds the name of the machine we show this dialog for. */
     const QString  m_strMachineName;

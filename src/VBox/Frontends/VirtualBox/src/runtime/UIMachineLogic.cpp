@@ -120,11 +120,11 @@
 
 struct USBTarget
 {
-    USBTarget() : attach(false), id(QString()) {}
-    USBTarget(bool fAttach, const QString &strId)
-        : attach(fAttach), id(strId) {}
+    USBTarget() : attach(false), id(QUuid()) {}
+    USBTarget(bool fAttach, const QUuid &aId)
+        : attach(fAttach), id(aId) {}
     bool attach;
-    QString id;
+    QUuid id;
 };
 Q_DECLARE_METATYPE(USBTarget);
 
@@ -1750,9 +1750,9 @@ void UIMachineLogic::sltTakeSnapshot()
     /* Was the dialog accepted? */
     if (fDialogAccepted)
     {
-        QString strSnapshotId;
+        QUuid uSnapshotId;
         /* Prepare the take-snapshot progress: */
-        CProgress progress = machine().TakeSnapshot(strSnapshotName, strSnapshotDescription, true, strSnapshotId);
+        CProgress progress = machine().TakeSnapshot(strSnapshotName, strSnapshotDescription, true, uSnapshotId);
         if (machine().isOk())
         {
             /* Show the take-snapshot progress: */

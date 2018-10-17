@@ -40,7 +40,7 @@ signals:
       * @param  strId        Brings machine ID. */
     void sigLinkClicked(const QString &strCategory,
                         const QString &strControl,
-                        const QString &strId);
+                        const QUuid &aId);
 
     /** Notifies listeners about sliding started. */
     void sigSlidingStarted();

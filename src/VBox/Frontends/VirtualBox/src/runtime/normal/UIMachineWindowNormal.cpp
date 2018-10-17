@@ -137,10 +137,10 @@ void UIMachineWindowNormal::sltHandleSessionInitialized()
 }
 
 #ifndef RT_OS_DARWIN
-void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QString &strMachineID)
+void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != strMachineID)
+    if (vboxGlobal().managedVMUuid() != aMachineID)
         return;
 
     /* Check whether menu-bar is enabled: */
@@ -171,10 +171,10 @@ void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &pos
 }
 #endif /* !RT_OS_DARWIN */
 
-void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QString &strMachineID)
+void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != strMachineID)
+    if (vboxGlobal().managedVMUuid() != aMachineID)
         return;
 
     /* Check whether status-bar is enabled: */
@@ -305,8 +305,8 @@ void UIMachineWindowNormal::prepareStatusBar()
             statusBar()->addPermanentWidget(m_pIndicatorsPool, 0);
         }
         /* Post-configure status-bar: */
-        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
-                this, SLOT(sltHandleStatusBarConfigurationChange(const QString&)));
+        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QUuid &)),
+                this, SLOT(sltHandleStatusBarConfigurationChange(const QUuid &)));
 #ifdef VBOX_WS_MAC
         /* Make sure the status-bar is aware of action hovering: */
         connect(actionPool(), SIGNAL(sigActionHovered(UIAction *)),

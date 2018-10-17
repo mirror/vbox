@@ -58,9 +58,9 @@ class UIProgressEventHandler : public QObject
 signals:
 
     /** Notifies about @a iPercent change for progress with @a strProgressId. */
-    void sigProgressPercentageChange(QString strProgressId, int iPercent);
+    void sigProgressPercentageChange(const QUuid &aProgressId, const int iPercent);
     /** Notifies about task complete for progress with @a strProgressId. */
-    void sigProgressTaskComplete(QString strProgressId);
+    void sigProgressTaskComplete(const QUuid &aProgressId);
 
 public:
 
@@ -330,7 +330,7 @@ void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
         pEvent->ignore();
 }
 
-void UIProgressDialog::sltHandleProgressPercentageChange(QString, int iPercent)
+void UIProgressDialog::sltHandleProgressPercentageChange(const QUuid &, const int iPercent)
 {
     /* New mode only: */
     AssertReturnVoid(!m_fLegacyHandling);
@@ -340,7 +340,7 @@ void UIProgressDialog::sltHandleProgressPercentageChange(QString, int iPercent)
     updateProgressPercentage(iPercent);
 }
 
-void UIProgressDialog::sltHandleProgressTaskComplete(QString)
+void UIProgressDialog::sltHandleProgressTaskComplete(const QUuid &)
 {
     /* New mode only: */
     AssertReturnVoid(!m_fLegacyHandling);

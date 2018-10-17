@@ -50,24 +50,24 @@ public:
     UIMediumDeviceType type() const { return m_enmMediaType; }
 
     /** Defines @a strMachineId. */
-    void setMachineId(const QString &strMachineId) { m_strMachineId = strMachineId; }
+    void setMachineId(const QUuid &aMachineId) { m_uMachineId = aMachineId; }
 
     /** Defines current item through @a strItemId. */
-    void setCurrentItem(const QString &strItemId);
+    void setCurrentItem(const QUuid &aItemId);
 
     /** Returns id of item with certain @a iIndex. */
-    QString id(int iIndex = -1) const;
+    QUuid id(int iIndex = -1) const;
     /** Returns location of item with certain @a iIndex. */
     QString location(int iIndex = -1) const;
 
 protected slots:
 
     /** Habdles medium-created signal for medium with @a strMediumId. */
-    void sltHandleMediumCreated(const QString &strMediumId);
+    void sltHandleMediumCreated(const QUuid &aMediumId);
     /** Habdles medium-enumerated signal for medium with @a strMediumId. */
-    void sltHandleMediumEnumerated(const QString &strMediumId);
+    void sltHandleMediumEnumerated(const QUuid &aMediumId);
     /** Habdles medium-deleted signal for medium with @a strMediumId. */
-    void sltHandleMediumDeleted(const QString &strMediumId);
+    void sltHandleMediumDeleted(const QUuid &aMediumId);
 
     /** Handles medium enumeration start. */
     void sltHandleMediumEnumerationStart();
@@ -92,25 +92,25 @@ protected:
     void replaceItem(int iPosition, const UIMedium &guiMedium);
 
     /** Searches for a @a iIndex of medium with certain @a strId. */
-    bool findMediaIndex(const QString &strId, int &iIndex);
+    bool findMediaIndex(const QUuid &aId, int &iIndex);
 
     /** Holds the media type. */
     UIMediumDeviceType  m_enmMediaType;
 
     /** Holds the machine ID. */
-    QString  m_strMachineId;
+    QUuid  m_uMachineId;
 
     /** Simplified media description. */
     struct Medium
     {
         Medium() {}
-        Medium(const QString &strId,
+        Medium(const QUuid &aId,
                const QString &strLocation,
                const QString &strToolTip)
-            : id(strId), location(strLocation), toolTip(strToolTip)
+            : id(aId), location(strLocation), toolTip(strToolTip)
         {}
 
-        QString  id;
+        QUuid    id;
         QString  location;
         QString  toolTip;
     };
@@ -121,7 +121,7 @@ protected:
     Media  m_media;
 
     /** Holds the last chosen medium ID. */
-    QString  m_strLastItemId;
+    QUuid  m_uLastItemId;
 };
 
 #endif /* !___UIMediaComboBox_h___ */

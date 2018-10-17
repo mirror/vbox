@@ -84,8 +84,8 @@ bool UIWizardFirstRun::insertMedium()
     // already opened for the VM which being cached in this wizard.
 
     /* Get chosen 'dvd' medium to mount: */
-    const QString strMediumId = field("id").toString();
-    const UIMedium guiMedium = vboxGlobal().medium(strMediumId);
+    const QUuid uMediumId = field("id").toUuid();
+    const UIMedium guiMedium = vboxGlobal().medium(uMediumId);
     const CMedium comMedium = guiMedium.medium();
 
     /* Mount medium to the predefined port/device: */

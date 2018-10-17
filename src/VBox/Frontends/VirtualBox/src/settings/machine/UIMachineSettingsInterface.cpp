@@ -133,8 +133,8 @@ struct UIDataSettingsMachineInterface
 };
 
 
-UIMachineSettingsInterface::UIMachineSettingsInterface(const QString strMachineId)
-    : m_strMachineId(strMachineId)
+UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &aMachineId)
+    : m_uMachineId(aMachineId)
     , m_pActionPool(0)
     , m_pCache(0)
 {
@@ -318,14 +318,14 @@ void UIMachineSettingsInterface::prepare()
             /* Configure editor: */
             m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
             m_pMenuBarEditor->setActionPool(m_pActionPool);
-            m_pMenuBarEditor->setMachineID(m_strMachineId);
+            m_pMenuBarEditor->setMachineID(m_uMachineId);
         }
 
         /* Status-bar editor created in the .ui file. */
         AssertPtrReturnVoid(m_pStatusBarEditor);
         {
             /* Configure editor: */
-            m_pStatusBarEditor->setMachineID(m_strMachineId);
+            m_pStatusBarEditor->setMachineID(m_uMachineId);
         }
     }
 

@@ -65,7 +65,7 @@ public:
 private slots:
 
     /* Handler: Global-event listener stuff: */
-    void sltMachineStateChange(QString strId);
+    void sltMachineStateChange(const QUuid &aId);
 
     /* Handler: Preview recreator: */
     void sltRecreatePreview();

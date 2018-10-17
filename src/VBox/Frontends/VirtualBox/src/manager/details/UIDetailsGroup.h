@@ -85,7 +85,7 @@ protected slots:
           * @param  strStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
     /** @} */
-    virtual void sltBuildStep(QString strStepId, int iStepNumber) /* override */;
+    virtual void sltBuildStep(const QUuid &aStepId, int iStepNumber) /* override */;
 
 protected:
 
@@ -142,7 +142,7 @@ private:
         /** Holds the build step instance. */
         UIPrepareStep *m_pBuildStep;
         /** Holds the generated group ID. */
-        QString        m_strGroupId;
+        QUuid          m_uGroupId;
     /** @} */
 
     /** @name Children stuff.

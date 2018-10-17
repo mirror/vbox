@@ -117,7 +117,7 @@ private slots:
     /** @name CVirtualBox event handling stuff.
       * @{ */
         /** Handles CVirtualBox event about state change for machine with @a strID. */
-        void sltHandleStateChange(QString strID);
+        void sltHandleStateChange(const QUuid &aID);
     /** @} */
 
     /** @name File menu stuff.
@@ -162,7 +162,7 @@ private slots:
           * @param strID       can bring the ID of machine to manage. */
         void sltOpenMachineSettingsDialog(const QString &strCategory = QString(),
                                           const QString &strControl = QString(),
-                                          const QString &strID = QString());
+                                          const QUuid &aID = QString());
         /** Handles call to open Clone Machine wizard. */
         void sltOpenCloneMachineWizard();
         /** Handles the Move Machine action. */

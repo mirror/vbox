@@ -52,8 +52,8 @@ protected:
     void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
 
     /* Stuff for 'virtualDiskId' field: */
-    QString virtualDiskId() const { return m_strVirtualDiskId; }
-    void setVirtualDiskId(const QString &strVirtualDiskId) { m_strVirtualDiskId = strVirtualDiskId; }
+    QUuid virtualDiskId() const { return m_uVirtualDiskId; }
+    void setVirtualDiskId(const QUuid &aVirtualDiskId) { m_uVirtualDiskId = aVirtualDiskId; }
 
     /* Stuff for 'virtualDiskName' field: */
     QString virtualDiskName() const { return m_strVirtualDiskName; }
@@ -71,7 +71,7 @@ protected:
 
     /* Variables: */
     CMedium m_virtualDisk;
-    QString m_strVirtualDiskId;
+    QUuid   m_uVirtualDiskId;
     QString m_strVirtualDiskName;
     QString m_strVirtualDiskLocation;
 
@@ -88,7 +88,7 @@ class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
-    Q_PROPERTY(QString virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
+    Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
     Q_PROPERTY(QString virtualDiskName READ virtualDiskName WRITE setVirtualDiskName);
     Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
 

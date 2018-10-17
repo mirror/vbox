@@ -112,8 +112,8 @@ UIMachinePreview::UIMachinePreview(QIGraphicsWidget *pParent)
 
     /* Setup connections: */
     connect(m_pUpdateTimer, SIGNAL(timeout()), this, SLOT(sltRecreatePreview()));
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
+            this, SLOT(sltMachineStateChange(QUuid)));
 
     /* Retranslate the UI */
     retranslateUi();
@@ -169,10 +169,10 @@ CMachine UIMachinePreview::machine() const
     return m_machine;
 }
 
-void UIMachinePreview::sltMachineStateChange(QString strId)
+void UIMachinePreview::sltMachineStateChange(const QUuid &aId)
 {
     /* Make sure its the event for our machine: */
-    if (m_machine.isNull() || m_machine.GetId() != strId)
+    if (m_machine.isNull() || m_machine.GetId() != aId)
         return;
 
     /* Restart the preview: */

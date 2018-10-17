@@ -18,13 +18,16 @@
 #ifndef ___UIDesktopServices_h___
 #define ___UIDesktopServices_h___
 
+/* Qt includes */
+#include <QUuid>
+
 /* Qt forward declarations */
 class QString;
 
 class UIDesktopServices
 {
 public:
-    static bool createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QString &strUuid);
+    static bool createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QUuid &aUuid);
     static bool openInFileManager(const QString &strFile);
 };
 

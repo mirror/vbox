@@ -169,10 +169,10 @@ CMachine UIGMachinePreview::machine() const
     return m_machine;
 }
 
-void UIGMachinePreview::sltMachineStateChange(QString strId)
+void UIGMachinePreview::sltMachineStateChange(const QUuid &aId)
 {
     /* Make sure its the event for our machine: */
-    if (m_machine.isNull() || m_machine.GetId() != strId)
+    if (m_machine.isNull() || m_machine.GetId() != aId)
         return;
 
     /* Restart the preview: */

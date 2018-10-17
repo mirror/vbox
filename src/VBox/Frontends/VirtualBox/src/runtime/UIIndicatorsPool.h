@@ -66,7 +66,7 @@ public:
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QString &strMachineID);
+    void sltHandleConfigurationChange(const QUuid &aMachineID);
 
     /** Handles indicator-states auto-update. */
     void sltAutoUpdateIndicatorStates();

@@ -409,11 +409,11 @@ UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
 
 UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
                                                  bool fStartedFromVMSettings /* = true */,
-                                                 const QString &strMachineID /* = QString() */)
+                                                 const QUuid &aMachineID /* = QString() */)
     : QIWithRetranslateUI2<QWidget>(pParent)
     , m_fPrepared(false)
     , m_fStartedFromVMSettings(fStartedFromVMSettings)
-    , m_strMachineID(strMachineID)
+    , m_uMachineID(aMachineID)
     , m_pMainLayout(0), m_pButtonLayout(0)
     , m_pButtonClose(0)
     , m_pCheckBoxEnable(0)
@@ -424,10 +424,10 @@ UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
     prepare();
 }
 
-void UIStatusBarEditorWidget::setMachineID(const QString &strMachineID)
+void UIStatusBarEditorWidget::setMachineID(const QUuid &aMachineID)
 {
     /* Remember new machine ID: */
-    m_strMachineID = strMachineID;
+    m_uMachineID = aMachineID;
     /* Prepare: */
     prepare();
 }
@@ -689,10 +689,10 @@ void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
     }
 }
 
-void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
+void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (machineID() != strMachineID)
+    if (machineID() != aMachineID)
         return;
 
     /* Recache status-bar configuration: */
@@ -743,7 +743,7 @@ void UIStatusBarEditorWidget::prepare()
         return;
 
     /* Do not prepare if machine ID is not set: */
-    if (m_strMachineID.isEmpty())
+    if (m_uMachineID.isNull())
         return;
 
     /* Install tool-bar button accessibility interface factory: */
@@ -850,8 +850,8 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
         setStatusBarConfiguration(gEDataManager->restrictedStatusBarIndicators(machineID()),
                                   gEDataManager->statusBarIndicatorOrder(machineID()));
         /* And listen for the status-bar configuration changes after that: */
-        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
-                this, SLOT(sltHandleConfigurationChange(const QString&)));
+        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QUuid &)),
+                this, SLOT(sltHandleConfigurationChange(const QUuid &)));
     }
 }
 

@@ -238,8 +238,8 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
     /* Get the map of the password IDs: */
     EncryptedMediumMap encryptedMedia;
     foreach (const QString &strPasswordId, comAppliance.GetPasswordIds())
-        foreach (const QString &strMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
-            encryptedMedia.insert(strPasswordId, strMediumId);
+        foreach (const QUuid &uMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
+            encryptedMedia.insert(strPasswordId, uMediumId);
 
     /* Ask for the disk encryption passwords if necessary: */
     if (!encryptedMedia.isEmpty())

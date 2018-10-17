@@ -392,7 +392,7 @@ private:
      ComPtr<IUnknown> m_pUnkMarshaler;
 #endif /* Q_OS_WIN */
      /** Identifier returned by AttachFramebuffer. Used in DetachFramebuffer. */
-     QString m_strFramebufferId;
+     QUuid m_uFramebufferId;
 };
 
 
@@ -614,7 +614,7 @@ void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
 
 void UIFrameBufferPrivate::attach()
 {
-    m_strFramebufferId = display().AttachFramebuffer(m_uScreenId, CFramebuffer(this));
+    m_uFramebufferId = display().AttachFramebuffer(m_uScreenId, CFramebuffer(this));
 }
 
 void UIFrameBufferPrivate::detach()
@@ -622,8 +622,8 @@ void UIFrameBufferPrivate::detach()
     CFramebuffer frameBuffer = display().QueryFramebuffer(m_uScreenId);
     if (!frameBuffer.isNull())
     {
-        display().DetachFramebuffer(m_uScreenId, m_strFramebufferId);
-        m_strFramebufferId.clear();
+        display().DetachFramebuffer(m_uScreenId, m_uFramebufferId);
+        m_uFramebufferId = QUuid();
     }
 }
 

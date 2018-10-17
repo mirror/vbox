@@ -136,9 +136,9 @@ protected:
     bool isIncludeISOsSelected() const;
 
     /** Defines provider by @a strId. */
-    void setProviderById(const QString &strId);
+    void setProviderById(const QUuid &strId);
     /** Returns provider ID. */
-    QString providerId() const;
+    QUuid providerId() const;
     /** Returns provider short name. */
     QString providerShortName() const;
     /** Returns profile name. */

@@ -75,29 +75,29 @@ signals:
     /** @name VirtualBox related signals
       * @{ */
         /** Notifies about @a state change event for the machine with @a strId. */
-        void sigMachineStateChange(QString strId, KMachineState state);
+        void sigMachineStateChange(const QUuid &aId, const KMachineState state);
         /** Notifies about data change event for the machine with @a strId. */
-        void sigMachineDataChange(QString strId);
+        void sigMachineDataChange(const QUuid &aId);
         /** Notifies about machine with @a strId was @a fRegistered. */
-        void sigMachineRegistered(QString strId, bool fRegistered);
+        void sigMachineRegistered(const QUuid &aId, const bool fRegistered);
         /** Notifies about @a state change event for the session of the machine with @a strId. */
-        void sigSessionStateChange(QString strId, KSessionState state);
+        void sigSessionStateChange(const QUuid &aId, const KSessionState state);
         /** Notifies about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
-        void sigSnapshotTake(QString strId, QString strSnapshotId);
+        void sigSnapshotTake(const QUuid &aId, const QUuid &aSnapshotId);
         /** Notifies about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
-        void sigSnapshotDelete(QString strId, QString strSnapshotId);
+        void sigSnapshotDelete(const QUuid &aId, const QUuid &aSnapshotId);
         /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
-        void sigSnapshotChange(QString strId, QString strSnapshotId);
+        void sigSnapshotChange(const QUuid &aId, const QUuid &aSnapshotId);
         /** Notifies about snapshot with @a strSnapshotId was restored for the machine with @a strId. */
-        void sigSnapshotRestore(QString strId, QString strSnapshotId);
+        void sigSnapshotRestore(const QUuid &aId, const QUuid &aSnapshotId);
     /** @} */
 
     /** @name VirtualBox Extra-data related signals
       * @{ */
         /** Notifies about extra-data of the machine with @a strId can be changed for the key @a strKey to value @a strValue. */
-        void sigExtraDataCanChange(QString strId, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason); /* use Qt::DirectConnection */
+        void sigExtraDataCanChange(const QUuid &aId, const QString &strKey, const QString &strValue, bool &fVeto, QString &strVetoReason); /* use Qt::DirectConnection */
         /** Notifies about extra-data of the machine with @a strId changed for the key @a strKey to value @a strValue. */
-        void sigExtraDataChange(QString strId, QString strKey, QString strValue);
+        void sigExtraDataChange(const QUuid &aId, const QString &strKey, const QString &strValue);
     /** @} */
 
     /** @name Console related signals
@@ -148,9 +148,9 @@ signals:
     /** @name Progress related signals
       * @{ */
         /** Notifies about @a iPercent change for progress with @a strProgressId. */
-        void sigProgressPercentageChange(QString strProgressId, int iPercent);
+        void sigProgressPercentageChange(const QUuid &aProgressId, const int iPercent);
         /** Notifies about task complete for progress with @a strProgressId. */
-        void sigProgressTaskComplete(QString strProgressId);
+        void sigProgressTaskComplete(const QUuid &aProgressId);
     /** @} */
 
     /** @name Guest Session related signals

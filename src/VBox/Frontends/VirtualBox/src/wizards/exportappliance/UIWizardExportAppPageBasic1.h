@@ -18,6 +18,9 @@
 #ifndef ___UIWizardExportAppPageBasic1_h___
 #define ___UIWizardExportAppPageBasic1_h___
 
+/* Qt includes */
+#include <QUuid>
+
 /* GUI includes: */
 #include "UIWizardPage.h"
 
@@ -40,7 +43,7 @@ protected:
     /** Returns a list of selected machine names. */
     QStringList machineNames() const;
     /** Returns a list of selected machine IDs. */
-    QStringList machineIDs() const;
+    QList<QUuid> machineIDs() const;
 
     /** Holds the VM selector instance. */
     QListWidget *m_pVMSelector;
@@ -52,7 +55,7 @@ class UIWizardExportAppPageBasic1 : public UIWizardPage, public UIWizardExportAp
 {
     Q_OBJECT;
     Q_PROPERTY(QStringList machineNames READ machineNames);
-    Q_PROPERTY(QStringList machineIDs READ machineIDs);
+    Q_PROPERTY(QList<QUuid> machineIDs READ machineIDs);
 
 public:
 

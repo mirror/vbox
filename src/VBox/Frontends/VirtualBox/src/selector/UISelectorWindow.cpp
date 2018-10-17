@@ -342,9 +342,9 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
 
     /* Look for at least one inaccessible medium: */
     bool fIsThereAnyInaccessibleMedium = false;
-    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
     {
-        if (vboxGlobal().medium(strMediumID).state() == KMediumState_Inaccessible)
+        if (vboxGlobal().medium(uMediumID).state() == KMediumState_Inaccessible)
         {
             fIsThereAnyInaccessibleMedium = true;
             break;
@@ -430,7 +430,7 @@ void UISelectorWindow::sltActionHovered(UIAction *pAction)
 }
 #endif /* VBOX_WS_MAC */
 
-void UISelectorWindow::sltHandleStateChange(QString)
+void UISelectorWindow::sltHandleStateChange(const QUuid &)
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
@@ -653,7 +653,7 @@ void UISelectorWindow::sltOpenAddMachineDialog(const QString &strFileName /* = Q
     }
 
     /* Make sure this machine was NOT registered already: */
-    CMachine oldMachine = vbox.FindMachine(newMachine.GetId());
+    CMachine oldMachine = vbox.FindMachine(newMachine.GetId().toString());
     if (!oldMachine.isNull())
     {
         msgCenter().cannotReregisterExistingMachine(strTmpFile, oldMachine.GetName());
@@ -666,7 +666,7 @@ void UISelectorWindow::sltOpenAddMachineDialog(const QString &strFileName /* = Q
 
 void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRef /* = QString() */,
                                                     const QString &strControlRef /* = QString() */,
-                                                    const QString &strID /* = QString() */)
+                                                    const QUuid &aID /* = QString() */)
 {
     /* This slot should not be called when there is not selection: */
     AssertMsgReturnVoid(currentItem(), ("Current item should be selected!\n"));
@@ -704,7 +704,7 @@ void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRe
 
     /* Create and execute corresponding VM settings window: */
     UISettingsDialogMachine dialog(this,
-                                   QUuid(strID).isNull() ? currentItem()->id() : strID,
+                                   aID.isNull() ? currentItem()->id() : aID,
                                    strCategory, strControl);
     dialog.execute();
 
@@ -1118,20 +1118,20 @@ void UISelectorWindow::sltOpenMachineLogDialog()
 
         QIManagerDialog *pLogViewerDialog = 0;
         /* Create and Show VM Log Viewer: */
-        if (!m_logViewers[pItem->machine().GetHardwareUUID()])
+        if (!m_logViewers[pItem->machine().GetHardwareUUID().toString()])
         {
             UIVMLogViewerDialogFactory dialogFactory(actionPool(), pItem->machine());
             dialogFactory.prepare(pLogViewerDialog, this);
             if (pLogViewerDialog)
             {
-                m_logViewers[pItem->machine().GetHardwareUUID()] = pLogViewerDialog;
+                m_logViewers[pItem->machine().GetHardwareUUID().toString()] = pLogViewerDialog;
                 connect(pLogViewerDialog, &QIManagerDialog::sigClose,
                         this, &UISelectorWindow::sltCloseLogViewerWindow);
             }
         }
         else
         {
-            pLogViewerDialog = m_logViewers[pItem->machine().GetHardwareUUID()];
+            pLogViewerDialog = m_logViewers[pItem->machine().GetHardwareUUID().toString()];
         }
         if (pLogViewerDialog)
         {
@@ -2237,8 +2237,8 @@ void UISelectorWindow::prepareConnections()
     connect(m_pToolbarTools, &UIToolsToolbar::sigToolClosedGlobal,  this, &UISelectorWindow::sltHandleToolClosedGlobal);
 
     /* VM desktop connections: */
-    connect(m_pPaneToolsMachine, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
-            this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QString&)));
+    connect(m_pPaneToolsMachine, SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid&)),
+            this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QUuid&)));
 
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltHandleStateChange(QString)));

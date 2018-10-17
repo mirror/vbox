@@ -500,10 +500,10 @@ void UIMachineView::sltDesktopResized()
     setMaxGuestSize();
 }
 
-void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
+void UIMachineView::sltHandleScaleFactorChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (strMachineID != vboxGlobal().managedVMUuid())
+    if (aMachineID != vboxGlobal().managedVMUuid())
         return;
 
     /* Acquire selected scale-factor: */
@@ -548,10 +548,10 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     updateViewport();
 }
 
-void UIMachineView::sltHandleScalingOptimizationChange(const QString &strMachineID)
+void UIMachineView::sltHandleScalingOptimizationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (strMachineID != vboxGlobal().managedVMUuid())
+    if (aMachineID != vboxGlobal().managedVMUuid())
         return;
 
     /* Take the scaling-optimization type into account: */
@@ -825,11 +825,11 @@ void UIMachineView::prepareConnections()
     connect(gpDesktop, SIGNAL(sigHostScreenResized(int)), this,
             SLOT(sltDesktopResized()));
     /* Scale-factor change: */
-    connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
-            this, SLOT(sltHandleScaleFactorChange(const QString&)));
+    connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QUuid &)),
+            this, SLOT(sltHandleScaleFactorChange(const QUuid &)));
     /* Scaling-optimization change: */
-    connect(gEDataManager, SIGNAL(sigScalingOptimizationTypeChange(const QString&)),
-            this, SLOT(sltHandleScalingOptimizationChange(const QString&)));
+    connect(gEDataManager, SIGNAL(sigScalingOptimizationTypeChange(const QUuid &)),
+            this, SLOT(sltHandleScalingOptimizationChange(const QUuid &)));
 }
 
 void UIMachineView::prepareConsoleConnections()

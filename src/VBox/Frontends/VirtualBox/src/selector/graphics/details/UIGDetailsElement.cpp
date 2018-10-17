@@ -469,8 +469,8 @@ void UIGDetailsElement::prepareElement()
             this, &UIGDetailsElement::sltHandleWindowRemapped);
     connect(this, SIGNAL(sigToggleElement(DetailsElementType, bool)),
             model(), SLOT(sltToggleElements(DetailsElementType, bool)));
-    connect(this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
-            model(), SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
+    connect(this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid&)),
+            model(), SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid&)));
 }
 
 void UIGDetailsElement::prepareButton()

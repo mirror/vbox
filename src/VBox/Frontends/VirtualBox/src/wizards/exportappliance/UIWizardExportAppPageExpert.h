@@ -34,7 +34,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
 {
     Q_OBJECT;
     Q_PROPERTY(QStringList machineNames READ machineNames);
-    Q_PROPERTY(QStringList machineIDs READ machineIDs);
+    Q_PROPERTY(QList<QUuid> machineIDs READ machineIDs);
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool isFormatCloudOne READ isFormatCloudOne);
     Q_PROPERTY(QString path READ path WRITE setPath);

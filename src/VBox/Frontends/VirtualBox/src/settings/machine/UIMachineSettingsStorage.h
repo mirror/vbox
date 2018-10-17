@@ -271,9 +271,9 @@ public:
 
     AbstractItem* parent() const;
     QUuid id() const;
-    QString machineId() const;
+    QUuid machineId() const;
 
-    void setMachineId (const QString &aMchineId);
+    void setMachineId (const QUuid &aMchineId);
 
     virtual ItemType rtti() const = 0;
     virtual AbstractItem* childItem (int aIndex) const = 0;
@@ -289,7 +289,7 @@ protected:
 
     AbstractItem *m_pParentItem;
     QUuid         mId;
-    QString       mMachineId;
+    QUuid         mMachineId;
 };
 Q_DECLARE_METATYPE (AbstractItem::ItemType);
 
@@ -380,7 +380,7 @@ public:
     SlotsList attSlots() const;
     KDeviceType attDeviceType() const;
     DeviceTypeList attDeviceTypes() const;
-    QString attMediumId() const;
+    QUuid attMediumId() const;
     bool attIsHostDrive() const;
     bool attIsPassthrough() const;
     bool attIsTempEject() const;
@@ -389,7 +389,7 @@ public:
 
     void setAttSlot (const StorageSlot &aAttSlot);
     void setAttDevice (KDeviceType aAttDeviceType);
-    void setAttMediumId (const QString &aAttMediumId);
+    void setAttMediumId (const QUuid &aAttMediumId);
     void setAttIsPassthrough (bool aPassthrough);
     void setAttIsTempEject (bool aTempEject);
     void setAttIsNonRotational (bool aNonRotational);
@@ -421,7 +421,7 @@ private:
     KDeviceType mAttDeviceType;
 
     StorageSlot mAttSlot;
-    QString mAttMediumId;
+    QUuid mAttMediumId;
     bool mAttIsHostDrive;
     bool mAttIsPassthrough;
     bool mAttIsTempEject;
@@ -541,10 +541,10 @@ public:
     QModelIndex addController (const QString &aCtrName, KStorageBus aBusType, KStorageControllerType aCtrType);
     void delController (const QUuid &aCtrId);
 
-    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QString &strMediumId);
+    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QUuid &aMediumId);
     void delAttachment (const QUuid &aCtrId, const QUuid &aAttId);
 
-    void setMachineId (const QString &aMachineId);
+    void setMachineId (const QUuid &aMachineId);
 
     void sort(int iColumn = 0, Qt::SortOrder order = Qt::AscendingOrder);
     QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
@@ -654,9 +654,9 @@ protected:
 private slots:
 
     /** Handles enumeration of medium with @a strMediumId. */
-    void sltHandleMediumEnumerated(const QString &strMediumId);
+    void sltHandleMediumEnumerated(const QUuid &aMediumId);
     /** Handles removing of medium with @a strMediumId. */
-    void sltHandleMediumDeleted(const QString &strMediumId);
+    void sltHandleMediumDeleted(const QUuid &aMediumId);
 
     /** Handles command to add controller. */
     void sltAddController();
@@ -741,7 +741,7 @@ private:
     /** Prepares connections. */
     void prepareConnections();
     /** Opens medium selector dialog and retrieves uuid of a selected medium (if any). */
-    QString openMediumSelectorDialog(UIMediumDeviceType  enmMediumType);
+    QUuid openMediumSelectorDialog(UIMediumDeviceType  enmMediumType);
     /** Cleanups all. */
     void cleanup();
 
@@ -751,7 +751,7 @@ private:
     void addAttachmentWrapper(KDeviceType enmDevice);
 
     /** Creates new hard-drive. */
-    QString getWithNewHDWizard();
+    QUuid getWithNewHDWizard();
 
     /** Updates additions details according to passed @a enmType. */
     void updateAdditionalDetails(KDeviceType enmType);
@@ -793,7 +793,7 @@ private:
     bool isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const;
 
     /** Holds the machine ID. */
-    QString  m_strMachineId;
+    QUuid  m_uMachineId;
     /** Holds the machine settings file-path. */
     QString  m_strMachineSettingsFilePath;
     /** Holds the machine settings file-path. */

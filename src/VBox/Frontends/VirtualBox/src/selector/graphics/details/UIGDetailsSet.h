@@ -62,11 +62,11 @@ public:
 private slots:
 
     /* Handler: Build stuff: */
-    void sltBuildStep(QString strStepId, int iStepNumber);
+    void sltBuildStep(const QUuid &aStepId, const int iStepNumber);
 
     /* Handlers: Global event stuff: */
-    void sltMachineStateChange(QString strId);
-    void sltMachineAttributesChange(QString strId);
+    void sltMachineStateChange(const QUuid &aId);
+    void sltMachineAttributesChange(const QUuid &aId);
 
     /* Handler: Update stuff: */
     void sltUpdateAppearance();
@@ -123,7 +123,7 @@ private:
     bool m_fFullSet;
     UIBuildStep *m_pBuildStep;
     int m_iLastStepNumber;
-    QString m_strSetId;
+    QUuid m_uSetId;
     QMap<DetailsElementType, bool> m_settings;
 };
 

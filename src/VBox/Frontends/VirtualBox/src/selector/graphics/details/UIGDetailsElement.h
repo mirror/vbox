@@ -58,7 +58,7 @@ signals:
     void sigToggleElementFinished();
 
     /* Notifier: Link-click stuff: */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &aId);
 
 public:
 

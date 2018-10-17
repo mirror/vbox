@@ -237,6 +237,25 @@ void COMBase::FromSafeArray (const com::SafeGUIDArray &aArr,
     }
 }
 
+/* static */
+void COMBase::ToSafeArray (const QVector <QUuid> &aVec,
+                           com::SafeArray <BSTR> &aArr)
+{
+    aArr.reset (aVec.size());
+    for (int i = 0; i < aVec.size(); ++ i)
+        aArr [i] = SysAllocString ((const OLECHAR *)
+            (aVec.at (i).isNull() ? 0 : aVec.at(i).toString().utf16()));
+}
+
+/* static */
+void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
+                             QVector <QUuid> &aVec)
+{
+    aVec.resize (static_cast <int> (aArr.size()));
+    for (int i = 0; i < aVec.size(); ++ i)
+        aVec [i] = QUuid(QString::fromUtf16 (aArr [i]));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)

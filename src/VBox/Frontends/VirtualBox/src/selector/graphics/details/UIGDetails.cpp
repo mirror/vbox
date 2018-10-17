@@ -101,8 +101,8 @@ void UIGDetails::prepareConnections()
             m_pDetailsView, SLOT(sltMinimumWidthHintChanged(int)));
     connect(m_pDetailsModel, SIGNAL(sigRootItemMinimumHeightHintChanged(int)),
             m_pDetailsView, SLOT(sltMinimumHeightHintChanged(int)));
-    connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
-            this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
+    connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid&)),
+            this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid&)));
     connect(this, SIGNAL(sigSlidingStarted()),
             m_pDetailsModel, SLOT(sltHandleSlidingStarted()));
     connect(this, SIGNAL(sigToggleStarted()),

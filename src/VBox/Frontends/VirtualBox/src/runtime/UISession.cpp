@@ -203,9 +203,9 @@ bool UISession::initialize()
 
     /* Apply ad-hoc reconfigurations from the command line: */
     if (vboxGlobal().hasFloppyImageToMount())
-        mountAdHocImage(KDeviceType_Floppy, UIMediumDeviceType_Floppy, vboxGlobal().getFloppyImage());
+        mountAdHocImage(KDeviceType_Floppy, UIMediumDeviceType_Floppy, vboxGlobal().getFloppyImage().toString());
     if (vboxGlobal().hasDvdImageToMount())
-        mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, vboxGlobal().getDvdImage());
+        mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, vboxGlobal().getDvdImage().toString());
 
     /* Power UP if this is NOT separate process: */
     if (!vboxGlobal().isSeparateProcess())
@@ -424,12 +424,12 @@ bool UISession::restoreCurrentSnapshot()
     {
         /* Search for corresponding VM: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        const QString strMachineID = vboxGlobal().managedVMUuid();
-        const CMachine mach = vbox.FindMachine(strMachineID);
+        const QUuid uMachineID = vboxGlobal().managedVMUuid();
+        const CMachine mach = vbox.FindMachine(uMachineID.toString());
         if (!vbox.isOk() || mach.isNull())
         {
             /* Unable to find VM: */
-            msgCenter().cannotFindMachineById(vbox, strMachineID);
+            msgCenter().cannotFindMachineById(vbox, uMachineID);
             break;
         }
 
@@ -597,10 +597,10 @@ void UISession::sltCloseRuntimeUI()
 }
 
 #ifdef RT_OS_DARWIN
-void UISession::sltHandleMenuBarConfigurationChange(const QString &strMachineID)
+void UISession::sltHandleMenuBarConfigurationChange(const QUuid &aMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != strMachineID)
+    if (vboxGlobal().managedVMUuid() != aMachineID)
         return;
 
     /* Update Mac OS X menu-bar: */
@@ -1253,7 +1253,7 @@ void UISession::loadSessionSettings()
     /* Load extra-data settings: */
     {
         /* Get machine ID: */
-        const QString strMachineID = vboxGlobal().managedVMUuid();
+        const QUuid uMachineID = vboxGlobal().managedVMUuid();
 
         /* Prepare machine-window icon: */
         {
@@ -1271,21 +1271,21 @@ void UISession::loadSessionSettings()
 
 #ifndef VBOX_WS_MAC
         /* Load user's machine-window name postfix: */
-        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);
+        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
 #endif
 
         /* Is there should be First RUN Wizard? */
-        m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(strMachineID);
+        m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(uMachineID);
 
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
-        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(strMachineID));
+        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(uMachineID));
 
 #ifndef VBOX_WS_MAC
         /* Menu-bar options: */
         {
             const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoMenuBar);
-            const bool fEnabledForMachine = gEDataManager->menuBarEnabled(strMachineID);
+            const bool fEnabledForMachine = gEDataManager->menuBarEnabled(uMachineID);
             const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
             QAction *pActionMenuBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings);
             pActionMenuBarSettings->setEnabled(fEnabled);
@@ -1299,7 +1299,7 @@ void UISession::loadSessionSettings()
         /* Status-bar options: */
         {
             const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoStatusBar);
-            const bool fEnabledForMachine = gEDataManager->statusBarEnabled(strMachineID);
+            const bool fEnabledForMachine = gEDataManager->statusBarEnabled(uMachineID);
             const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
             QAction *pActionStatusBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
             pActionStatusBarSettings->setEnabled(fEnabled);
@@ -1324,8 +1324,8 @@ void UISession::loadSessionSettings()
         }
 
         /* What is the default close action and the restricted are? */
-        m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(strMachineID);
-        m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(strMachineID);
+        m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
+        m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
         m_fAllCloseActionsRestricted =  (!vboxGlobal().isSeparateProcess() || (m_restrictedCloseActions & MachineCloseAction_Detach))
                                      && (m_restrictedCloseActions & MachineCloseAction_SaveState)
                                      && (m_restrictedCloseActions & MachineCloseAction_Shutdown)
@@ -1925,11 +1925,11 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
         }
 
         /* Make sure medium ID is valid: */
-        const QString strMediumId = comMedium.GetId();
-        AssertReturn(!strMediumId.isNull(), false);
+        const QUuid uMediumId = comMedium.GetId();
+        AssertReturn(!uMediumId.isNull(), false);
 
         /* Try to find UIMedium among cached: */
-        guiMedium = vboxGlobal().medium(strMediumId);
+        guiMedium = vboxGlobal().medium(uMediumId);
         if (guiMedium.isNull())
         {
             /* Cache new one if necessary: */

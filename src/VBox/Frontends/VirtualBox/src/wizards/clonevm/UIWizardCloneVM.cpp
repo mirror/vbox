@@ -87,8 +87,8 @@ bool UIWizardCloneVM::cloneVM()
 
         /* Take the snapshot: */
         QString strSnapshotName = tr("Linked Base for %1 and %2").arg(m_machine.GetName()).arg(strName);
-        QString strSnapshotId;
-        CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true, strSnapshotId);
+        QUuid uSnapshotId;
+        CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
 
         if (machine.isOk())
         {
@@ -111,7 +111,7 @@ bool UIWizardCloneVM::cloneVM()
         session.UnlockMachine();
 
         /* Get the new snapshot and the snapshot machine. */
-        const CSnapshot &newSnapshot = m_machine.FindSnapshot(strSnapshotId);
+        const CSnapshot &newSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
         if (newSnapshot.isNull())
         {
             msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);

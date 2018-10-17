@@ -518,11 +518,11 @@ void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QSt
           UIErrorString::formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QString &strId) const
+void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QUuid &aId) const
 {
     error(0, MessageType_Error,
           tr("There is no virtual machine with the identifier <b>%1</b>.")
-             .arg(strId),
+             .arg(aId.toString()),
           UIErrorString::formatErrorInfo(vbox));
 }
 
@@ -671,7 +671,7 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                 {
                     /* Check if that hard disk isn't shared.
                      * If hard disk is shared, it will *never* be deleted: */
-                    QVector<QString> usedMachineList = attachment.GetMedium().GetMachineIds();
+                    QVector<QUuid> usedMachineList = attachment.GetMedium().GetMachineIds();
                     if (usedMachineList.size() == 1)
                     {
                         fMachineWithHardDiskPresent = true;
@@ -1017,12 +1017,12 @@ void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
 }
 
 void UIMessageCenter::cannotFindSnapshotById(const CMachine &comMachine,
-                                             const QString &strId,
+                                             const QUuid &aId,
                                              QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Can't find snapshot with ID=<b>%1</b>.")
-             .arg(strId),
+             .arg(aId.toString()),
           UIErrorString::formatErrorInfo(comMachine));
 }
 
@@ -1275,9 +1275,9 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced
     /* Prepare the usage: */
     QStringList usage;
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    foreach (const QString &strMachineID, medium.curStateMachineIds())
+    foreach (const QUuid &uMachineID, medium.curStateMachineIds())
     {
-        CMachine machine = vbox.FindMachine(strMachineID);
+        CMachine machine = vbox.FindMachine(uMachineID.toString());
         if (!vbox.isOk() || machine.isNull())
             continue;
         usage << machine.GetName();
@@ -2796,8 +2796,8 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     QStringList confirmedMessageList;
     if (!strAutoConfirmId.isEmpty())
     {
-        const QString strID = vboxGlobal().isVMConsoleProcess() ? vboxGlobal().managedVMUuid() : UIExtraDataManager::GlobalID;
-        confirmedMessageList = gEDataManager->suppressedMessages(strID);
+        const QUuid uID = vboxGlobal().isVMConsoleProcess() ? vboxGlobal().managedVMUuid() : UIExtraDataManager::GlobalID;
+        confirmedMessageList = gEDataManager->suppressedMessages(uID);
         if (   confirmedMessageList.contains(strAutoConfirmId)
             || confirmedMessageList.contains("allMessageBoxes")
             || confirmedMessageList.contains("all") )

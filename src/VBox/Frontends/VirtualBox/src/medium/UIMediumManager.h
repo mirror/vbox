@@ -147,9 +147,9 @@ private slots:
     /** @name Medium operation stuff.
       * @{ */
         /** Handles VBoxGlobal::sigMediumCreated signal. */
-        void sltHandleMediumCreated(const QString &strMediumID);
+        void sltHandleMediumCreated(const QUuid &aMediumID);
         /** Handles VBoxGlobal::sigMediumDeleted signal. */
-        void sltHandleMediumDeleted(const QString &strMediumID);
+        void sltHandleMediumDeleted(const QUuid &aMediumID);
     /** @} */
 
     /** @name Medium enumeration stuff.
@@ -157,7 +157,7 @@ private slots:
         /** Handles VBoxGlobal::sigMediumEnumerationStarted signal. */
         void sltHandleMediumEnumerationStart();
         /** Handles VBoxGlobal::sigMediumEnumerated signal. */
-        void sltHandleMediumEnumerated(const QString &strMediumID);
+        void sltHandleMediumEnumerated(const QUuid &aMediumID);
         /** Handles VBoxGlobal::sigMediumEnumerationFinished signal. */
         void sltHandleMediumEnumerationFinish();
     /** @} */
@@ -248,7 +248,7 @@ private:
         /** Updates UIMediumItem for corresponding @a medium. */
         void updateMediumItem(const UIMedium &medium);
         /** Deletes UIMediumItem for corresponding @a strMediumID. */
-        void deleteMediumItem(const QString &strMediumID);
+        void deleteMediumItem(const QUuid &aMediumID);
 
         /** Returns tab for passed medium @a type. */
         QWidget *tab(UIMediumDeviceType type) const;
@@ -326,11 +326,11 @@ private:
         /** Holds cached floppy-disk tab-widget icon. */
         const QIcon                  m_iconFD;
         /** Holds current hard-drive tree-view item ID. */
-        QString                      m_strCurrentIdHD;
+        QUuid                        m_uCurrentIdHD;
         /** Holds current optical-disk tree-view item ID. */
-        QString                      m_strCurrentIdCD;
+        QUuid                        m_uCurrentIdCD;
         /** Holds current floppy-disk tree-view item ID. */
-        QString                      m_strCurrentIdFD;
+        QUuid                        m_uCurrentIdFD;
     /** @} */
 
     /** @name Details-widget variables.

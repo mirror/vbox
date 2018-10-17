@@ -91,7 +91,7 @@ public:
     /** Returns item snapshot. */
     CSnapshot snapshot() const { return m_comSnapshot; }
     /** Returns item snapshot ID. */
-    QString snapshotID() const { return m_strSnapshotID; }
+    QUuid snapshotID() const { return m_uSnapshotID; }
 
     /** Returns whether this is the "current state" item. */
     bool isCurrentStateItem() const { return m_fCurrentStateItem; }
@@ -136,9 +136,9 @@ private:
     CMachine   m_comMachine;
 
     /** Holds the "current snapshot" ID. */
-    QString  m_strSnapshotID;
+    QUuid  m_uSnapshotID;
     /** Holds whether the "current snapshot" is online one. */
-    bool     m_fOnline;
+    bool   m_fOnline;
 
     /** Holds the item timestamp. */
     QDateTime  m_timestamp;
@@ -292,7 +292,7 @@ void UISnapshotItem::recache()
     {
         /* Fetch snapshot information: */
         AssertReturnVoid(m_comSnapshot.isNotNull());
-        m_strSnapshotID = m_comSnapshot.GetId();
+        m_uSnapshotID = m_comSnapshot.GetId();
         m_strName = m_comSnapshot.GetName();
         setText(Column_Name, m_strName);
         m_fOnline = m_comSnapshot.GetOnline();
@@ -485,15 +485,15 @@ void UISnapshotPane::setMachine(const CMachine &comMachine)
     /* Cache machine details: */
     if (m_comMachine.isNull())
     {
-        m_strMachineId = QString();
+        m_uMachineId = QUuid();
         m_enmSessionState = KSessionState_Null;
         m_fShapshotOperationsAllowed = false;
     }
     else
     {
-        m_strMachineId = comMachine.GetId();
+        m_uMachineId = comMachine.GetId();
         m_enmSessionState = comMachine.GetSessionState();
-        m_fShapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(m_strMachineId);
+        m_fShapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(m_uMachineId);
     }
 
     /* Refresh everything: */
@@ -549,10 +549,10 @@ void UISnapshotPane::showEvent(QShowEvent *pEvent)
     adjustTreeWidget();
 }
 
-void UISnapshotPane::sltHandleMachineDataChange(QString strMachineId)
+void UISnapshotPane::sltHandleMachineDataChange(const QUuid &aMachineId)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     /* Prevent snapshot editing in the meantime: */
@@ -565,10 +565,10 @@ void UISnapshotPane::sltHandleMachineDataChange(QString strMachineId)
     sltHandleCurrentItemChange();
 }
 
-void UISnapshotPane::sltHandleMachineStateChange(QString strMachineId, KMachineState enmState)
+void UISnapshotPane::sltHandleMachineStateChange(const QUuid &aMachineId, const KMachineState enmState)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     /* Prevent snapshot editing in the meantime: */
@@ -579,10 +579,10 @@ void UISnapshotPane::sltHandleMachineStateChange(QString strMachineId, KMachineS
     m_pCurrentStateItem->setMachineState(enmState);
 }
 
-void UISnapshotPane::sltHandleSessionStateChange(QString strMachineId, KSessionState enmState)
+void UISnapshotPane::sltHandleSessionStateChange(const QUuid &aMachineId, const KSessionState enmState)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     /* Prevent snapshot editing in the meantime: */
@@ -595,14 +595,14 @@ void UISnapshotPane::sltHandleSessionStateChange(QString strMachineId, KSessionS
     updateActionStates();
 }
 
-void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnapshotId)
+void UISnapshotPane::sltHandleSnapshotTake(const QUuid &aMachineId, const QUuid &aSnapshotId)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     LogRel(("GUI: Updating snapshot tree after TAKING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
-            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+            aMachineId.toString().toUtf8().constData(), aSnapshotId.toString().toUtf8().constData()));
 
     /* Prepare result: */
     bool fSuccess = true;
@@ -611,12 +611,12 @@ void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnap
         QWriteLocker locker(m_pLockReadWrite);
 
         /* Search for corresponding snapshot: */
-        CSnapshot comSnapshot = m_comMachine.FindSnapshot(strSnapshotId);
+        CSnapshot comSnapshot = m_comMachine.FindSnapshot(aSnapshotId.toString());
         fSuccess = m_comMachine.isOk() && !comSnapshot.isNull();
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotFindSnapshotById(m_comMachine, strSnapshotId, this);
+            msgCenter().cannotFindSnapshotById(m_comMachine, aSnapshotId, this);
         else
         {
             /* Where will be the newly created item located? */
@@ -627,7 +627,7 @@ void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnap
             if (comParentSnapshot.isNotNull())
             {
                 /* Acquire parent snapshot id: */
-                const QString strParentSnapshotId = comParentSnapshot.GetId();
+                const QUuid uParentSnapshotId = comParentSnapshot.GetId();
                 fSuccess = comParentSnapshot.isOk();
 
                 /* Show error message if necessary: */
@@ -636,7 +636,7 @@ void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnap
                 else
                 {
                     /* Search for an existing parent-item with such id: */
-                    pParentItem = findItem(strParentSnapshotId);
+                    pParentItem = findItem(uParentSnapshotId);
                     fSuccess = pParentItem;
                 }
             }
@@ -691,14 +691,14 @@ void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnap
     }
 }
 
-void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSnapshotId)
+void UISnapshotPane::sltHandleSnapshotDelete(const QUuid &aMachineId, const QUuid &aSnapshotId)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     LogRel(("GUI: Updating snapshot tree after DELETING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
-            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+            aMachineId.toString().toUtf8().constData(), aSnapshotId.toString().toUtf8().constData()));
 
     /* Prepare result: */
     bool fSuccess = false;
@@ -707,7 +707,7 @@ void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSn
         QWriteLocker locker(m_pLockReadWrite);
 
         /* Search for an existing item with such id: */
-        UISnapshotItem *pItem = findItem(strSnapshotId);
+        UISnapshotItem *pItem = findItem(aSnapshotId);
         fSuccess = pItem;
 
         /* Make sure item has no more than one child: */
@@ -773,14 +773,14 @@ void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSn
     }
 }
 
-void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSnapshotId)
+void UISnapshotPane::sltHandleSnapshotChange(const QUuid &aMachineId, const QUuid &aSnapshotId)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     LogRel(("GUI: Updating snapshot tree after CHANGING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
-            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+            aMachineId.toString().toUtf8().constData(), aSnapshotId.toString().toUtf8().constData()));
 
     /* Prepare result: */
     bool fSuccess = true;
@@ -789,7 +789,7 @@ void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSn
         QWriteLocker locker(m_pLockReadWrite);
 
         /* Search for an existing item with such id: */
-        UISnapshotItem *pItem = findItem(strSnapshotId);
+        UISnapshotItem *pItem = findItem(aSnapshotId);
         fSuccess = pItem;
 
         /* Update the item: */
@@ -813,14 +813,14 @@ void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSn
     }
 }
 
-void UISnapshotPane::sltHandleSnapshotRestore(QString strMachineId, QString strSnapshotId)
+void UISnapshotPane::sltHandleSnapshotRestore(const QUuid &aMachineId, const QUuid &aSnapshotId)
 {
     /* Make sure it's our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     LogRel(("GUI: Updating snapshot tree after RESTORING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
-            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+            aMachineId.toString().toUtf8().constData(), aSnapshotId.toString().toUtf8().constData()));
 
     /* Prepare result: */
     bool fSuccess = true;
@@ -829,7 +829,7 @@ void UISnapshotPane::sltHandleSnapshotRestore(QString strMachineId, QString strS
         QWriteLocker locker(m_pLockReadWrite);
 
         /* Search for an existing item with such id: */
-        UISnapshotItem *pItem = findItem(strSnapshotId);
+        UISnapshotItem *pItem = findItem(aSnapshotId);
         fSuccess = pItem;
 
         /* Choose this item as new "current snapshot": */
@@ -923,9 +923,9 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_strMachineId);
+            comSession = vboxGlobal().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_strMachineId);
+            comSession = vboxGlobal().openSession(m_uMachineId);
         if (comSession.isNotNull())
         {
             /* Get corresponding machine object: */
@@ -935,10 +935,10 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
             do
             {
                 /* Take snapshot: */
-                QString strSnapshotId;
+                QUuid uSnapshotId;
                 CProgress comProgress = comMachine.TakeSnapshot(newData.m_strName,
                                                                 newData.m_strDescription,
-                                                                true, strSnapshotId);
+                                                                true, uSnapshotId);
                 if (!comMachine.isOk())
                 {
                     msgCenter().cannotTakeSnapshot(comMachine, comMachine.GetName());
@@ -979,9 +979,9 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_strMachineId);
+            comSession = vboxGlobal().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_strMachineId);
+            comSession = vboxGlobal().openSession(m_uMachineId);
         if (comSession.isNotNull())
         {
             /* Get corresponding machine object: */
@@ -1334,13 +1334,13 @@ void UISnapshotPane::refreshAll()
     }
 
     /* Remember the selected item and it's first child: */
-    QString strSelectedItem, strFirstChildOfSelectedItem;
+    QUuid uSelectedItem, uFirstChildOfSelectedItem;
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     if (pSnapshotItem)
     {
-        strSelectedItem = pSnapshotItem->snapshotID();
+        uSelectedItem = pSnapshotItem->snapshotID();
         if (pSnapshotItem->child(0))
-            strFirstChildOfSelectedItem = UISnapshotItem::toSnapshotItem(pSnapshotItem->child(0))->snapshotID();
+            uFirstChildOfSelectedItem = UISnapshotItem::toSnapshotItem(pSnapshotItem->child(0))->snapshotID();
     }
 
     /* Clear the tree: */
@@ -1362,9 +1362,9 @@ void UISnapshotPane::refreshAll()
         m_pCurrentStateItem->recache();
 
         /* Search for a previously selected item: */
-        UISnapshotItem *pCurrentItem = findItem(strSelectedItem);
+        UISnapshotItem *pCurrentItem = findItem(uSelectedItem);
         if (pCurrentItem == 0)
-            pCurrentItem = findItem(strFirstChildOfSelectedItem);
+            pCurrentItem = findItem(uFirstChildOfSelectedItem);
         if (pCurrentItem == 0)
             pCurrentItem = m_pCurrentStateItem;
 
@@ -1512,9 +1512,9 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_strMachineId);
+            comSession = vboxGlobal().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_strMachineId);
+            comSession = vboxGlobal().openSession(m_uMachineId);
         if (comSession.isNull())
             break;
 
@@ -1579,8 +1579,8 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
             }
 
             /* Take snapshot: */
-            QString strSnapshotId;
-            CProgress comProgress = comMachine.TakeSnapshot(strFinalName, strFinalDescription, true, strSnapshotId);
+            QUuid uSnapshotId;
+            CProgress comProgress = comMachine.TakeSnapshot(strFinalName, strFinalDescription, true, uSnapshotId);
             if (!comMachine.isOk())
             {
                 msgCenter().cannotTakeSnapshot(comMachine, comMachine.GetName());
@@ -1646,9 +1646,9 @@ bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_strMachineId);
+            comSession = vboxGlobal().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_strMachineId);
+            comSession = vboxGlobal().openSession(m_uMachineId);
         if (comSession.isNull())
             break;
 
@@ -1726,7 +1726,7 @@ bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)
         }
 
         /* Open a direct session (this call will handle all errors): */
-        CSession comSession = vboxGlobal().openSession(m_strMachineId);
+        CSession comSession = vboxGlobal().openSession(m_uMachineId);
         if (comSession.isNull())
             break;
 
@@ -1812,14 +1812,14 @@ void UISnapshotPane::adjustTreeWidget()
     m_pSnapshotTree->setColumnWidth(Column_Name, iTotal - iWidth1);
 }
 
-UISnapshotItem *UISnapshotPane::findItem(const QString &strSnapshotID) const
+UISnapshotItem *UISnapshotPane::findItem(const QUuid &aSnapshotID) const
 {
     /* Search for the first item with required ID: */
     QTreeWidgetItemIterator it(m_pSnapshotTree);
     while (*it)
     {
         UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(*it);
-        if (pSnapshotItem->snapshotID() == strSnapshotID)
+        if (pSnapshotItem->snapshotID() == aSnapshotID)
             return pSnapshotItem;
         ++it;
     }

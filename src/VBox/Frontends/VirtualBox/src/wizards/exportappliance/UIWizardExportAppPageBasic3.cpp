@@ -250,11 +250,11 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
     if (pAppliance->isOk())
     {
         /* Iterate over all the selected machine ids: */
-        QStringList uuids = fieldImp("machineIDs").toStringList();
-        foreach (const QString &uuid, uuids)
+        QList<QUuid> uuids = fieldImp("machineIDs").value<QList<QUuid> >();
+        foreach (const QUuid &uuid, uuids)
         {
             /* Get the machine with the uuid: */
-            CMachine comMachine = comVBox.FindMachine(uuid);
+            CMachine comMachine = comVBox.FindMachine(uuid.toString());
             if (comVBox.isOk() && comMachine.isNotNull())
             {
                 /* Add the export description to our appliance object: */

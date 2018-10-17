@@ -21,6 +21,7 @@
 /* Qt includes: */
 #include <QList>
 #include <QMap>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -74,12 +75,12 @@ public:
       * @param  strMachineID            Brings the machine ID to be used by the editor. */
     UIStatusBarEditorWidget(QWidget *pParent,
                             bool fStartedFromVMSettings = true,
-                            const QString &strMachineID = QString());
+                            const QUuid &aMachineID = QUuid());
 
     /** Returns the machine ID instance. */
-    const QString &machineID() const { return m_strMachineID; }
+    const QUuid &machineID() const { return m_uMachineID; }
     /** Defines the @a strMachineID instance. */
-    void setMachineID(const QString &strMachineID);
+    void setMachineID(const QUuid &aMachineID);
 
     /** Returns whether the status-bar enabled. */
     bool isStatusBarEnabled() const;
@@ -113,7 +114,7 @@ protected:
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QString &strMachineID);
+    void sltHandleConfigurationChange(const QUuid &aMachineID);
 
     /** Handles button click. */
     void sltHandleButtonClick();
@@ -140,7 +141,7 @@ private:
         /** Holds whether 'this' is a part of VM settings. */
         bool     m_fStartedFromVMSettings;
         /** Holds the machine ID instance. */
-        QString  m_strMachineID;
+        QUuid  m_uMachineID;
     /** @} */
 
     /** @name Contents

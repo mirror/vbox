@@ -329,10 +329,10 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId) const
 *   Class UISettingsDialogMachine implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString &strMachineId,
+UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QUuid &aMachineId,
                                                  const QString &strCategory, const QString &strControl)
     : UISettingsDialog(pParent)
-    , m_strMachineId(strMachineId)
+    , m_uMachineId(aMachineId)
     , m_strCategory(strCategory)
     , m_strControl(strControl)
     , m_fAllowResetFirstRunFlag(false)
@@ -407,8 +407,8 @@ void UISettingsDialogMachine::loadOwnData()
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
-                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_strMachineId) :
-                                                                              vboxGlobal().openExistingSession(m_strMachineId);
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_uMachineId) :
+                                                                              vboxGlobal().openExistingSession(m_uMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
@@ -433,8 +433,8 @@ void UISettingsDialogMachine::saveOwnData()
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
-                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_strMachineId) :
-                                                                              vboxGlobal().openExistingSession(m_strMachineId);
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_uMachineId) :
+                                                                              vboxGlobal().openExistingSession(m_uMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
@@ -481,7 +481,7 @@ void UISettingsDialogMachine::saveOwnData()
 
         /* Disable First RUN Wizard: */
         if (m_fResetFirstRunFlag)
-            gEDataManager->setMachineFirstTimeStarted(false, m_strMachineId);
+            gEDataManager->setMachineFirstTimeStarted(false, m_uMachineId);
 
         /* Save settings finally: */
         m_machine.SaveSettings();
@@ -508,7 +508,7 @@ QString UISettingsDialogMachine::title() const
 {
     QString strDialogTitle;
     /* Get corresponding machine (required to compose dialog title): */
-    const CMachine &machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);
+    const CMachine &machine = vboxGlobal().virtualBox().FindMachine(m_uMachineId.toString());
     if (!machine.isNull())
         strDialogTitle = tr("%1 - %2").arg(machine.GetName()).arg(titleExtension());
     return strDialogTitle;
@@ -602,13 +602,13 @@ void UISettingsDialogMachine::sltMarkSaved()
     }
 }
 
-void UISettingsDialogMachine::sltSessionStateChanged(QString strMachineId, KSessionState enmSessionState)
+void UISettingsDialogMachine::sltSessionStateChanged(const QUuid &aMachineId, const KSessionState enmSessionState)
 {
     /* Ignore if serialization is in progress: */
     if (isSerializationInProgress())
         return;
     /* Ignore if thats NOT our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     /* Ignore if state was NOT actually changed: */
@@ -621,13 +621,13 @@ void UISettingsDialogMachine::sltSessionStateChanged(QString strMachineId, KSess
     updateConfigurationAccessLevel();
 }
 
-void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMachineState enmMachineState)
+void UISettingsDialogMachine::sltMachineStateChanged(const QUuid &aMachineId, const KMachineState enmMachineState)
 {
     /* Ignore if serialization is in progress: */
     if (isSerializationInProgress())
         return;
     /* Ignore if thats NOT our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     /* Ignore if state was NOT actually changed: */
@@ -640,13 +640,13 @@ void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMach
     updateConfigurationAccessLevel();
 }
 
-void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
+void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &aMachineId)
 {
     /* Ignore if serialization is in progress: */
     if (isSerializationInProgress())
         return;
     /* Ignore if thats NOT our VM: */
-    if (strMachineId != m_strMachineId)
+    if (aMachineId != m_uMachineId)
         return;
 
     /* Check if user had changed something and warn him about he will loose settings on reloading: */
@@ -688,13 +688,13 @@ void UISettingsDialogMachine::prepare()
             this, &UISettingsDialogMachine::sltMachineDataChanged);
 
     /* Get corresponding machine (required to determine dialog type and page availability): */
-    m_machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);
+    m_machine = vboxGlobal().virtualBox().FindMachine(m_uMachineId.toString());
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
     m_enmSessionState = m_machine.GetSessionState();
     m_enmMachineState = m_machine.GetState();
 
     /* Creating settings pages: */
-    QList<MachineSettingsPageType> restrictedMachineSettingsPages = gEDataManager->restrictedMachineSettingsPages(m_strMachineId);
+    QList<MachineSettingsPageType> restrictedMachineSettingsPages = gEDataManager->restrictedMachineSettingsPages(m_uMachineId);
     for (int iPageIndex = MachineSettingsPageType_General; iPageIndex < MachineSettingsPageType_Max; ++iPageIndex)
     {
         /* Make sure page was not restricted: */

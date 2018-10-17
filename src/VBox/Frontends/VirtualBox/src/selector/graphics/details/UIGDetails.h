@@ -35,7 +35,7 @@ class UIGDetails : public QWidget
 signals:
 
     /* Notifier: Link processing stuff: */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
+    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &aId);
 
     /* Notifier: Sliding stuff: */
     void sigSlidingStarted();

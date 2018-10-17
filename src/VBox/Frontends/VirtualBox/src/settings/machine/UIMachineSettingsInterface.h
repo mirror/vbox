@@ -36,7 +36,7 @@ class SHARED_LIBRARY_STUFF UIMachineSettingsInterface : public UISettingsPageMac
 public:
 
     /** Constructs User Interface settings page. */
-    UIMachineSettingsInterface(const QString strMachineId);
+    UIMachineSettingsInterface(const QUuid &aMachineId);
     /** Destructs User Interface settings page. */
     ~UIMachineSettingsInterface();
 
@@ -82,7 +82,7 @@ private:
     bool saveMiniToolbarData();
 
     /** Holds the machine ID copy. */
-    const QString  m_strMachineId;
+    const QUuid    m_uMachineId;
     /** Holds the action-pool instance. */
     UIActionPool  *m_pActionPool;
 

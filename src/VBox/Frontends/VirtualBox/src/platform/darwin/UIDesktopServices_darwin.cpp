@@ -23,12 +23,12 @@
 /* Qt includes */
 #include <QString>
 
-bool UIDesktopServices::createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QString &strUuid)
+bool UIDesktopServices::createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QUuid &aUuid)
 {
     return ::darwinCreateMachineShortcut(::darwinToNativeString(strSrcFile.toUtf8().constData()),
                                          ::darwinToNativeString(strDstPath.toUtf8().constData()),
                                          ::darwinToNativeString(strName.toUtf8().constData()),
-                                         ::darwinToNativeString(strUuid.toUtf8().constData()));
+                                         ::darwinToNativeString(aUuid.toString().toUtf8().constData()));
 }
 
 bool UIDesktopServices::openInFileManager(const QString &strFile)
