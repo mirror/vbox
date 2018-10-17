@@ -498,6 +498,34 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
     if (comProfile.isOk())
         data.m_strName = comProfile.GetName();
 
+    if (comProfile.isOk())
+    {
+        /* Acquire properties: */
+        QVector<QString> keys;
+        QVector<QString> values;
+        QVector<QString> descriptions;
+        values = comProfile.GetProperties(QString(), keys);
+
+        /* Sync sizes: */
+        values.resize(keys.size());
+        descriptions.resize(keys.size());
+
+        if (comProfile.isOk())
+        {
+            /* Acquire descriptions: */
+            for (int i = 0; i < keys.size(); ++i)
+            {
+                descriptions[i] = comProfile.GetPropertyDescription(keys.at(i));
+                if (!comProfile.isOk())
+                    continue;
+            }
+
+            /* Enumerate all the keys: */
+            for (int i = 0; i < keys.size(); ++i)
+                data.m_data[keys.at(i)] = qMakePair(values.at(i), descriptions.at(i));
+        }
+    }
+
     /* Show error message if necessary: */
     if (!comProfile.isOk())
         msgCenter().cannotAcquireCloudProfileParameter(comProfile, this);

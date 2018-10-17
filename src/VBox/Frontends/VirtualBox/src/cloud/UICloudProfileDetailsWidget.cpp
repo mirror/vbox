@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QHeaderView>
 # include <QPushButton>
 # include <QTableWidget>
 # include <QVBoxLayout>
@@ -56,11 +57,16 @@ void UICloudProfileDetailsWidget::setData(const UIDataCloudProfile &data)
 
 void UICloudProfileDetailsWidget::retranslateUi()
 {
+    /// @todo add description tool-tips
+
     /* Translate table-widget: */
     m_pTableWidget->setToolTip(tr("Contains cloud profile settings"));
 
     /* Retranslate validation: */
     retranslateValidation();
+
+    /* Update table tool-tips: */
+    updateTableToolTips();
 }
 
 void UICloudProfileDetailsWidget::sltTableChanged()
@@ -109,6 +115,11 @@ void UICloudProfileDetailsWidget::prepareWidgets()
         m_pTableWidget = new QTableWidget;
         if (m_pTableWidget)
         {
+            m_pTableWidget->setAlternatingRowColors(true);
+            m_pTableWidget->horizontalHeader()->setVisible(false);
+            m_pTableWidget->verticalHeader()->setVisible(false);
+            m_pTableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
             /* Add into layout: */
             pLayout->addWidget(m_pTableWidget);
         }
@@ -131,7 +142,50 @@ void UICloudProfileDetailsWidget::prepareWidgets()
 
 void UICloudProfileDetailsWidget::loadData()
 {
-    /// @todo load profile settings table data!
+    /* Clear table initially: */
+    m_pTableWidget->clear();
+
+    /* Configure table: */
+    m_pTableWidget->setRowCount(m_oldData.m_data.keys().size());
+    m_pTableWidget->setColumnCount(2);
+
+    /* Push acquired keys/values to data fields: */
+    for (int i = 0; i < m_pTableWidget->rowCount(); ++i)
+    {
+        /* Gather values: */
+        const QString strKey = m_oldData.m_data.keys().at(i);
+        const QString strValue = m_oldData.m_data.value(strKey).first;
+        const QString strToolTip = m_oldData.m_data.value(strKey).second;
+
+        /* Create key item: */
+        QTableWidgetItem *pItemK = new QTableWidgetItem(strKey);
+        if (pItemK)
+        {
+            /* Non-editable for sure, but non-selectable? */
+            pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
+            /* Use non-translated description as tool-tip: */
+            pItemK->setData(Qt::UserRole, strToolTip);
+
+            /* Insert into table: */
+            m_pTableWidget->setItem(i, 0, pItemK);
+        }
+
+        /* Create value item: */
+        QTableWidgetItem *pItemV = new QTableWidgetItem(strValue);
+        if (pItemV)
+        {
+            /* Use the value as tool-tip, there can be quite long values: */
+            pItemV->setToolTip(strValue);
+
+            /* Insert into table: */
+            m_pTableWidget->setItem(i, 1, pItemV);
+        }
+    }
+
+    /* Update table tooltips: */
+    updateTableToolTips();
+    /* Adjust table contents: */
+    adjustTableContents();
 }
 
 void UICloudProfileDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
@@ -147,6 +201,38 @@ void UICloudProfileDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 
     Q_UNUSED(pWidget);
 
     /// @todo retranslate profile settings vaidation!
+}
+
+void UICloudProfileDetailsWidget::updateTableToolTips()
+{
+    /* Iterate through all the key items: */
+    for (int i = 0; i < m_pTableWidget->rowCount(); ++i)
+    {
+        /* Acquire current key item: */
+        QTableWidgetItem *pItemK = m_pTableWidget->item(i, 0);
+        if (pItemK)
+        {
+            const QString strToolTip = pItemK->data(Qt::UserRole).toString();
+            pItemK->setToolTip(tr(strToolTip.toUtf8().constData()));
+        }
+    }
+}
+
+void UICloudProfileDetailsWidget::adjustTableContents()
+{
+    /* Disable last column stretching temporary: */
+    m_pTableWidget->horizontalHeader()->setStretchLastSection(false);
+
+    /* Resize both columns to contents: */
+    m_pTableWidget->resizeColumnsToContents();
+    /* Then acquire full available width: */
+    const int iFullWidth = m_pTableWidget->viewport()->width();
+    /* First column should not be less than it's minimum size, last gets the rest: */
+    const int iMinimumWidth0 = qMin(m_pTableWidget->horizontalHeader()->sectionSize(0), iFullWidth / 2);
+    m_pTableWidget->horizontalHeader()->resizeSection(0, iMinimumWidth0);
+
+    /* Enable last column stretching again: */
+    m_pTableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
 void UICloudProfileDetailsWidget::updateButtonStates()

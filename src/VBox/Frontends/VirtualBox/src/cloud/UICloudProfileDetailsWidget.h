@@ -83,6 +83,9 @@ struct UIDataCloudProfile
 
     /** Holds the profile name. */
     QString  m_strName;
+
+    /** Holds the profile data. */
+    QMap<QString, QPair<QString, QString> >  m_data;
 };
 
 
@@ -151,6 +154,11 @@ private:
 
         /** Retranslates validation for passed @a pWidget. */
         void retranslateValidation(QWidget *pWidget = 0);
+
+        /** Updates table tooltips. */
+        void updateTableToolTips();
+        /** Adjusts table contents. */
+        void adjustTableContents();
 
         /** Updates button states. */
         void updateButtonStates();
