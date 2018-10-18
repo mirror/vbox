@@ -63,16 +63,19 @@ void UICloudProfileDetailsWidget::retranslateUi()
     m_pTableWidget->setToolTip(tr("Contains cloud profile settings"));
 
     /* Translate button-box: */
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current profile details"));
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current profile details"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->
-        setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
-    m_pButtonBox->button(QDialogButtonBox::Ok)->
-        setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+    if (m_pButtonBox)
+    {
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current profile details"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current profile details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->
+            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+    }
 
     /* Retranslate validation: */
     retranslateValidation();
