@@ -937,7 +937,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORE
                             RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
 
         if (RT_SUCCESS(rc)) /* Wait for the thread to start. */
-            rc = RTThreadUserWait(pCtx->Thread, 30 * 1000 /* 30s timeout */);
+            rc = RTThreadUserWait(pCtx->Thread, 30 * RT_MS_1SEC /* 30s timeout */);
 
         if (RT_SUCCESS(rc))
         {
@@ -1289,7 +1289,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 
     PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
 
-    pStream->Video.uDelayMs = 1000 / pCfg->Video.uFPS;
+    pStream->Video.uDelayMs = RT_MS_1SEC / pCfg->Video.uFPS;
 
     switch (pStream->enmDst)
     {
@@ -1511,7 +1511,7 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
     const PVIDEORECCFG pCfg = &pCtx->Cfg;
 
     if (   pCfg->uMaxTimeS
-        && tsNowMs >= pCtx->tsStartMs + (pCfg->uMaxTimeS * 1000))
+        && tsNowMs >= pCtx->tsStartMs + (pCfg->uMaxTimeS * RT_MS_1SEC))
     {
         return true;
     }
