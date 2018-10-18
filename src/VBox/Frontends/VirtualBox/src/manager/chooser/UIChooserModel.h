@@ -455,6 +455,10 @@ private:
         void makeSureGroupDefinitionsSaveIsFinished();
         /** Makes sure group orders saving is finished. */
         void makeSureGroupOrdersSaveIsFinished();
+
+        /** Returns QString representation for passed @a uId, wiping out {} symbols.
+          * @note  Required for backward compatibility after QString=>QUuid change. */
+        static QString toOldStyleUuid(const QUuid &uId);
     /** @} */
 
     /** @name General stuff.

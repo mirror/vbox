@@ -1768,7 +1768,7 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
     AssertReturnVoid(!machine.isNull());
 
     /* Which VM we are loading: */
-    LogRelFlow(("UIChooserModel: Loading VM with ID={%s}...\n", machine.GetId().toString().toUtf8().constData()));
+    LogRelFlow(("UIChooserModel: Loading VM with ID={%s}...\n", toOldStyleUuid(machine.GetId()).toUtf8().constData()));
     /* Is that machine accessible? */
     if (machine.GetAccessible())
     {
@@ -1792,13 +1792,13 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
             createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
         }
         /* Update group definitions: */
-        m_groups[machine.GetId().toString()] = groupList;
+        m_groups[toOldStyleUuid(machine.GetId())] = groupList;
     }
     /* Inaccessible machine: */
     else
     {
         /* VM is accessible: */
-        LogRelFlow(("UIChooserModel:  VM {%s} is inaccessible.\n", machine.GetId().toString().toUtf8().constData()));
+        LogRelFlow(("UIChooserModel:  VM {%s} is inaccessible.\n", toOldStyleUuid(machine.GetId()).toUtf8().constData()));
         /* Create machine-item with main-root group-item as parent: */
         createMachineItem(machine, mainRoot());
     }
@@ -1910,7 +1910,7 @@ int UIChooserModel::getDesiredPosition(UIChooserItem *pParentItem, UIChooserItem
             UIChooserItem *pItem = items[i];
             /* Which position should be current item placed by definitions? */
             QString strDefinitionName = pItem->type() == UIChooserItemType_Group ? pItem->name() :
-                                        pItem->type() == UIChooserItemType_Machine ? pItem->toMachineItem()->id().toString() :
+                                        pItem->type() == UIChooserItemType_Machine ? toOldStyleUuid(pItem->toMachineItem()->id()) :
                                         QString();
             AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
             int iItemDefinitionPosition = positionFromDefinitions(pParentItem, type, strDefinitionName);
@@ -1977,7 +1977,7 @@ int UIChooserModel::positionFromDefinitions(UIChooserItem *pParentItem, UIChoose
 void UIChooserModel::createMachineItem(const CMachine &machine, UIChooserItem *pParentItem)
 {
     /* Create machine-item: */
-    new UIChooserItemMachine(pParentItem, machine, getDesiredPosition(pParentItem, UIChooserItemType_Machine, machine.GetId().toString()));
+    new UIChooserItemMachine(pParentItem, machine, getDesiredPosition(pParentItem, UIChooserItemType_Machine, toOldStyleUuid(machine.GetId())));
 }
 
 void UIChooserModel::createGlobalItem(UIChooserItem *pParentItem)
@@ -2159,7 +2159,7 @@ void UIChooserModel::gatherGroupDefinitions(QMap<QString, QStringList> &definiti
     foreach (UIChooserItem *pItem, pParentGroup->items(UIChooserItemType_Machine))
         if (UIChooserItemMachine *pMachineItem = pItem->toMachineItem())
             if (pMachineItem->accessible())
-                definitions[pMachineItem->id().toString()] << pParentGroup->fullName();
+                definitions[toOldStyleUuid(pMachineItem->id())] << pParentGroup->fullName();
     /* Iterate over all the group-items: */
     foreach (UIChooserItem *pItem, pParentGroup->items(UIChooserItemType_Group))
         gatherGroupDefinitions(definitions, pItem);
@@ -2179,7 +2179,7 @@ void UIChooserModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
     }
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Machine))
-        orders[strExtraDataKey] << QString("m=%1").arg(pItem->toMachineItem()->id().toString());
+        orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pItem->toMachineItem()->id()));
 }
 
 void UIChooserModel::makeSureGroupDefinitionsSaveIsFinished()
@@ -2194,6 +2194,12 @@ void UIChooserModel::makeSureGroupOrdersSaveIsFinished()
     /* Cleanup if necessary: */
     if (UIThreadGroupOrderSave::instance())
         UIThreadGroupOrderSave::cleanup();
+}
+
+/* static */
+QString UIChooserModel::toOldStyleUuid(const QUuid &uId)
+{
+    return uId.toString().remove(QRegExp("[{}]"));
 }
 
 
