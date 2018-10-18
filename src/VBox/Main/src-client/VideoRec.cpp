@@ -283,7 +283,8 @@ struct VIDEORECSTREAM
     {
         /** Codec-specific data. */
         VIDEORECVIDEOCODEC  Codec;
-        /** Minimal delay (in ms) between two frames. */
+        /** Minimal delay (in ms) between two video frames.
+         *  This value is based on the configured FPS rate. */
         uint32_t            uDelayMs;
         /** Target X resolution (in pixels). */
         uint32_t            uWidth;
@@ -1444,31 +1445,36 @@ VIDEORECFEATURES VideoRecGetFeatures(PVIDEORECCFG pCfg)
 }
 
 /**
- * Checks if recording engine is ready to accept a new frame for the given screen.
+ * Checks if recording engine is ready to accept new recording data for a given screen.
  *
- * @returns true if recording engine is ready.
+ * @returns true if recording engine is ready, false if not.
  * @param   pCtx                Pointer to video recording context.
  * @param   uScreen             Screen ID.
- * @param   uTimeStampMs        Current time stamp (in ms).
+ * @param   uTimeStampMs        Current time stamp (in ms). Currently not being used.
  */
 bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStampMs)
 {
     AssertPtrReturn(pCtx, false);
+    RT_NOREF(uTimeStampMs);
 
     if (ASMAtomicReadU32(&pCtx->enmState) != VIDEORECSTS_INITIALIZED)
         return false;
 
+    bool fIsReady = false;
+
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
-    if (   !pStream
-        || !pStream->fEnabled)
+    if (pStream)
     {
-        return false;
+        videoRecStreamLock(pStream);
+        fIsReady = pStream->fEnabled;
+        videoRecStreamUnlock(pStream);
     }
 
-    if (uTimeStampMs < pStream->Video.uLastTimeStampMs + pStream->Video.uDelayMs)
-        return false;
+    /* Note: Do not check for other constraints like the video FPS rate here,
+     *       as this check then also would affect other (non-FPS related) stuff
+     *       like audio data. */
 
-    return true;
+    return fIsReady;
 }
 
 /**
