@@ -58,6 +58,7 @@
 /* COM includes: */
 # include "CCloudProfile.h"
 # include "CCloudProvider.h"
+# include "CCloudProviderManager.h"
 # include "CNATNetwork.h"
 # include "CDHCPServer.h"
 # include "CNATEngine.h"
@@ -1618,6 +1619,13 @@ void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVB
           UIErrorString::formatErrorInfo(comVBox));
 }
 
+void UIMessageCenter::cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to find cloud provider with following uuid: <b>%1</b>.").arg(uId.toString()),
+          UIErrorString::formatErrorInfo(comManager));
+}
+
 void UIMessageCenter::cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1625,10 +1633,24 @@ void UIMessageCenter::cannotAcquireCloudProviderParameter(const CCloudProvider &
           UIErrorString::formatErrorInfo(comProvider));
 }
 
+void UIMessageCenter::cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to find cloud profile with following name: <b>%1</b>.").arg(strName),
+          UIErrorString::formatErrorInfo(comProvider));
+}
+
 void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to acquire cloud profile parameter."),
+          UIErrorString::formatErrorInfo(comProfile));
+}
+
+void UIMessageCenter::cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to assign cloud profile parameter."),
           UIErrorString::formatErrorInfo(comProfile));
 }
 

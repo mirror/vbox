@@ -182,10 +182,75 @@ void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
 void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 {
     /* Get profile item: */
-    UIItemCloudProfile *pItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
-    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+    UIItemCloudProfile *pProfileItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
+    AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
 
-    /// @todo apply cloud profile details!
+    /* Get item data: */
+    UIDataCloudProfile oldData = *pProfileItem;
+    UIDataCloudProfile newData = m_pDetailsWidget->data();
+
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Get CloudProviderManager for further activities: */
+    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
+    else
+    {
+        /* Get provider item: */
+        UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
+        /* Acquire provider ID: */
+        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+
+        /* Look for corresponding provider: */
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        /* Show error message if necessary: */
+        if (!comCloudProviderManager.isOk())
+            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+        else
+        {
+            /* Look for corresponding profile: */
+            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(oldData.m_strName);
+            /* Show error message if necessary: */
+            if (!comCloudProvider.isOk())
+                msgCenter().cannotFindCloudProfile(comCloudProvider, oldData.m_strName, this);
+            else
+            {
+                /* Iterate through old/new data: */
+                foreach (const QString &strKey, oldData.m_data.keys())
+                {
+                    /* Get values: */
+                    const QString strOldValue = oldData.m_data.value(strKey).first;
+                    const QString strNewValue = newData.m_data.value(strKey).first;
+                    if (strNewValue != strOldValue)
+                    {
+                        /* Apply property: */
+                        comCloudProfile.SetProperty(strKey, strNewValue);
+                        /* Show error message if necessary: */
+                        if (!comCloudProfile.isOk())
+                        {
+                            msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                            break;
+                        }
+                    }
+                }
+
+                /* If profile is Ok finally: */
+                if (comCloudProfile.isOk())
+                {
+                    /* Update profile in the tree: */
+                    UIDataCloudProfile data;
+                    loadCloudProfile(comCloudProfile, data);
+                    updateItemForCloudProfile(data, true, pProfileItem);
+
+                    /* Make sure current item fetched: */
+                    sltHandleCurrentItemChange();
+                }
+            }
+        }
+    }
 }
 
 void UICloudProfileManagerWidget::sltCreateCloudProfile()

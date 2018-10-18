@@ -81,9 +81,29 @@ void UICloudProfileDetailsWidget::retranslateUi()
     updateTableToolTips();
 }
 
-void UICloudProfileDetailsWidget::sltTableChanged()
+void UICloudProfileDetailsWidget::sltTableChanged(QTableWidgetItem *pItem)
 {
-    /// @todo handle profile settings table change!
+    /* Make sure item is valid: */
+    AssertPtrReturnVoid(pItem);
+    const int iRow = pItem->row();
+    AssertReturnVoid(iRow >= 0);
+
+    /* Skip if one of items isn't yet created.
+     * This can happen when 1st is already while 2nd isn't yet. */
+    QTableWidgetItem *pItemK = m_pTableWidget->item(iRow, 0);
+    QTableWidgetItem *pItemV = m_pTableWidget->item(iRow, 1);
+    if (!pItemK || !pItemV)
+        return;
+
+    /* Push changes back: */
+    const QString strKey = pItemK->text();
+    const QString strValue = pItemV->text();
+    m_newData.m_data[strKey] = qMakePair(strValue, m_newData.m_data.value(strKey).second);
+
+    /* Revalidate: */
+    revalidate(m_pTableWidget);
+    /* Update button states: */
+    updateButtonStates();
 }
 
 void UICloudProfileDetailsWidget::sltHandleButtonBoxClick(QAbstractButton *pButton)
@@ -132,6 +152,7 @@ void UICloudProfileDetailsWidget::prepareWidgets()
             m_pTableWidget->horizontalHeader()->setVisible(false);
             m_pTableWidget->verticalHeader()->setVisible(false);
             m_pTableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+            connect(m_pTableWidget, &QTableWidget::itemChanged, this, &UICloudProfileDetailsWidget::sltTableChanged);
 
             /* Add into layout: */
             pLayout->addWidget(m_pTableWidget);
@@ -262,19 +283,25 @@ void UICloudProfileDetailsWidget::adjustTableContents()
 
 void UICloudProfileDetailsWidget::updateButtonStates()
 {
-    /// @todo update that printf as well!
 #if 0
     if (m_oldData != m_newData)
-        printf("Interface: %s, %s, %s, %s;  DHCP server: %d, %s, %s, %s, %s\n",
-               m_newData.m_interface.m_strAddress.toUtf8().constData(),
-               m_newData.m_interface.m_strMask.toUtf8().constData(),
-               m_newData.m_interface.m_strAddress6.toUtf8().constData(),
-               m_newData.m_interface.m_strPrefixLength6.toUtf8().constData(),
-               (int)m_newData.m_dhcpserver.m_fEnabled,
-               m_newData.m_dhcpserver.m_strAddress.toUtf8().constData(),
-               m_newData.m_dhcpserver.m_strMask.toUtf8().constData(),
-               m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData(),
-               m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData());
+    {
+        printf("Old data:\n");
+        foreach (const QString &strKey, m_oldData.m_data.keys())
+        {
+            const QString strValue = m_oldData.m_data.value(strKey).first;
+            const QString strDecription = m_oldData.m_data.value(strKey).second;
+            printf(" %s: %s, %s\n", strKey.toUtf8().constData(), strValue.toUtf8().constData(), strDecription.toUtf8().constData());
+        }
+        printf("New data:\n");
+        foreach (const QString &strKey, m_newData.m_data.keys())
+        {
+            const QString strValue = m_newData.m_data.value(strKey).first;
+            const QString strDecription = m_newData.m_data.value(strKey).second;
+            printf(" %s: %s, %s\n", strKey.toUtf8().constData(), strValue.toUtf8().constData(), strDecription.toUtf8().constData());
+        }
+        printf("\n");
+    }
 #endif
 
     /* Update 'Apply' / 'Reset' button states: */
