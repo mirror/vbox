@@ -1340,7 +1340,7 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    //pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1359,7 +1359,7 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
 #  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
-    //addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 #  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
@@ -1387,7 +1387,7 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    //pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));

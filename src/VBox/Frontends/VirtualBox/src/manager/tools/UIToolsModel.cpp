@@ -431,7 +431,7 @@ void UIToolsModel::prepareItems()
     classes << UIToolsClass_Global;
     classes << UIToolsClass_Global;
     classes << UIToolsClass_Global;
-    //classes << UIToolsClass_Global;
+    classes << UIToolsClass_Global;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
     classes << UIToolsClass_Machine;
@@ -441,7 +441,7 @@ void UIToolsModel::prepareItems()
     types << UIToolsType_Welcome;
     types << UIToolsType_Media;
     types << UIToolsType_Network;
-    //types << UIToolsType_Cloud;
+    types << UIToolsType_Cloud;
     types << UIToolsType_Details;
     types << UIToolsType_Snapshots;
     types << UIToolsType_Logs;
@@ -461,7 +461,7 @@ void UIToolsModel::prepareItems()
     names << tr("Welcome");
     names << tr("Media");
     names << tr("Network");
-    //names << tr("Cloud");
+    names << tr("Cloud");
     names << tr("Details");
     names << tr("Snapshots");
     names << tr("Logs");
