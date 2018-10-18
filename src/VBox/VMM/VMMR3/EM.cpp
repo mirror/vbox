@@ -1769,12 +1769,12 @@ static int emR3VmxNstGstInjectIntr(PVMCPU pVCpu, bool *pfWakeupPending, bool *pf
     *pfInjected      = false;
 
     /** @todo NSTVMX: Virtual interrupt injection. */
-    if (   pVCpu->cpum.GstCtx.eflags.Bits.u1IF
-        && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+    if (pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
     {
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
         if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
         {
-            /* CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK); */ /** @todo NSTVMX: Mask. */
+            CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
             VBOXSTRICTRC rcStrict = IEMExecVmxVmexitIntWindow(pVCpu);
             if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             {
@@ -1791,10 +1791,14 @@ static int emR3VmxNstGstInjectIntr(PVMCPU pVCpu, bool *pfWakeupPending, bool *pf
             }
         }
 
-        int rc = emR3GstInjectIntr(pVCpu, pfWakeupPending, pfInjected);
-        if (rc == VINF_VMX_VMEXIT)
-            rc = VINF_SUCCESS;
-        return rc;
+        Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+        {
+            int rc = emR3GstInjectIntr(pVCpu, pfWakeupPending, pfInjected);
+            if (rc == VINF_VMX_VMEXIT)
+                rc = VINF_SUCCESS;
+            return rc;
+        }
     }
 
     return VINF_NO_CHANGE;
