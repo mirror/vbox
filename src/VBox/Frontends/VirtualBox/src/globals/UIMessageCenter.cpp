@@ -1654,6 +1654,13 @@ void UIMessageCenter::cannotSaveCloudProfiles(const CCloudProvider &comProvider,
           UIErrorString::formatErrorInfo(comProvider));
 }
 
+void UIMessageCenter::cannotImportCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to import cloud profiles."),
+          UIErrorString::formatErrorInfo(comProvider));
+}
+
 void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1675,6 +1682,17 @@ bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget
                              .arg(strName),
                           0 /* auto-confirm id */,
                           tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmCloudProfilesImport(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to import cloud profiles from external files?</p>"
+                             "<p>VirtualBox cloud profiles will be overwritten and their data will be lost.</p>"),
+                          0 /* auto-confirm id */,
+                          tr("Import") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
 }

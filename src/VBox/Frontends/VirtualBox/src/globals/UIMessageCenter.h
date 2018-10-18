@@ -366,9 +366,11 @@ public:
     void cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent = 0) const;
     void cannotCreateCloudProfle(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
     void cannotSaveCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
+    void cannotImportCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
     void cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
     void cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
     bool confirmCloudProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
+    bool confirmCloudProfilesImport(QWidget *pParent = 0) const;
 
     /* API: Wizards warnings: */
     bool confirmHardDisklessMachine(QWidget *pParent = 0) const;

@@ -2492,17 +2492,17 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
-class UIActionMenuSelectorCloudPerformRefresh : public UIActionSimple
+class UIActionMenuSelectorCloudPerformImport : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudPerformRefresh(UIActionPool *pParent)
+    UIActionMenuSelectorCloudPerformImport(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/refresh_32px.png",          ":/refresh_16px.png",
-                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
+                         ":/cloud_profile_restore_32px.png",          ":/cloud_profile_restore_16px.png",
+                         ":/cloud_profile_restore_disabled_32px.png", ":/cloud_profile_restore_disabled_16px.png")
     {}
 
 protected:
@@ -2510,23 +2510,23 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("RefreshCloudProfiles");
+        return QString("ImportCloudProfiles");
     }
 
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+Shift+F");
+        return QKeySequence("Ctrl+Shift+I");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setIconText(QApplication::translate("UIActionPool", "Refresh"));
-        setName(QApplication::translate("UIActionPool", "Re&fresh Profiles..."));
+        setIconText(QApplication::translate("UIActionPool", "Import"));
+        setName(QApplication::translate("UIActionPool", "&Import Profiles..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of cloud profiles"));
-        setToolTip(tr("Refresh Cloud Profiles (%1)").arg(shortcut().toString()));
+        setStatusTip(QApplication::translate("UIActionPool", "Import the list of cloud profiles from external files"));
+        setToolTip(tr("Import Cloud Profiles (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2652,7 +2652,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_Add] = new UIActionMenuSelectorCloudPerformAdd(this);
     m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
     m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
-    m_pool[UIActionIndexST_M_Cloud_S_Refresh] = new UIActionMenuSelectorCloudPerformRefresh(this);
+    m_pool[UIActionIndexST_M_Cloud_S_Import] = new UIActionMenuSelectorCloudPerformImport(this);
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfs = &UIActionPoolSelector::updateMenuMediumWindow;
@@ -2844,15 +2844,15 @@ void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_T_Details)) || fSeparator;
 
-//    /* Separator? */
-//    if (fSeparator)
-//    {
-//        pMenu->addSeparator();
-//        fSeparator = false;
-//    }
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-//    /* 'Refresh' action: */
-//    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Refresh)) || fSeparator;;
+    /* 'Import' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Import)) || fSeparator;
 }
 
 void UIActionPoolSelector::updateShortcuts()

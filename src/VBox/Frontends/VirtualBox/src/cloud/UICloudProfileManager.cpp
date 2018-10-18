@@ -408,12 +408,46 @@ void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fV
     emit sigCloudProfileDetailsVisibilityChanged(fVisible);
 }
 
-void UICloudProfileManagerWidget::sltRefreshCloudProfiles()
+void UICloudProfileManagerWidget::sltImportCloudProfiles()
 {
-    /// @todo refresh cloud profiles!
+    /* Get provider item: */
+    UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
+    AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
 
-    // Not implemented.
-    AssertMsgFailed(("Not implemented!"));
+    /* Confirm cloud profile removal: */
+    if (!msgCenter().confirmCloudProfilesImport(this))
+        return;
+
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Get CloudProviderManager for further activities: */
+    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
+    else
+    {
+        /* Acquire provider ID: */
+        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+
+        /* Look for corresponding provider: */
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        /* Show error message if necessary: */
+        if (!comCloudProviderManager.isOk())
+            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+        else
+        {
+            /* Import profiles: */
+            comCloudProvider.ImportProfiles();
+
+            /* Show error message if necessary: */
+            if (!comCloudProvider.isOk())
+                msgCenter().cannotImportCloudProfiles(comCloudProvider, this);
+            else
+                loadCloudStuff();
+        }
+    }
 }
 
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
@@ -431,6 +465,7 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItemProfile);
     m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItemProfile);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import)->setEnabled(!pItem || pItemProvider);
 
     /* If there is an item => update details data: */
     if (pItemProfile)
@@ -464,7 +499,7 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
     else if (pItemProvider)
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
-//        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
     }
 
     /* And show it: */
@@ -497,8 +532,8 @@ void UICloudProfileManagerWidget::prepareActions()
             this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
             this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltRefreshCloudProfiles);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltImportCloudProfiles);
 }
 
 void UICloudProfileManagerWidget::prepareWidgets()
@@ -541,8 +576,8 @@ void UICloudProfileManagerWidget::prepareToolBar()
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
-//        m_pToolBar->addSeparator();
-//        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */

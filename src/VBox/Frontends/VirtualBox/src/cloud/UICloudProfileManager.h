@@ -94,8 +94,8 @@ private slots:
         void sltRemoveCloudProfile();
         /** Handles command to make cloud profile details @a fVisible. */
         void sltToggleCloudProfileDetailsVisibility(bool fVisible);
-        /** Handles command to refresh cloud profiles. */
-        void sltRefreshCloudProfiles();
+        /** Handles command to import cloud profiles. */
+        void sltImportCloudProfiles();
     /** @} */
 
     /** @name Tree-widget stuff.

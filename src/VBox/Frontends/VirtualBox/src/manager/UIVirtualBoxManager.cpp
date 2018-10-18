@@ -1768,7 +1768,7 @@ void UIVirtualBoxManager::prepareMenuCloud(QMenu *pMenu)
     m_cloudProfileManagerActions << actionPool()->action(UIActionIndexST_M_Cloud_S_Add)
                                  << actionPool()->action(UIActionIndexST_M_Cloud_S_Remove)
                                  << actionPool()->action(UIActionIndexST_M_Cloud_T_Details)
-                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Refresh);
+                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Import);
 }
 
 void UIVirtualBoxManager::prepareStatusBar()
