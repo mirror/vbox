@@ -1309,7 +1309,6 @@ void UIMenuBarEditorWidget::prepareMenuView()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_StatusBar));
         pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_ScaleFactor));
         prepareNamedAction(pMenu, tr("Virtual Screen Resize"),
                            UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize,
                            gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));

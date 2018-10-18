@@ -1381,44 +1381,6 @@ protected:
     }
 };
 
-/** Menu action extension, used as 'Scale Factor' menu class. */
-class UIActionMenuRuntimeScaleFactor : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuRuntimeScaleFactor(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/scale_factor_16px.png", ":/scale_factor_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
-    {
-        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor;
-    }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
-    {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
-    }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
-    {
-        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "S&cale Factor"));
-    }
-};
-
-
 /** Menu action extension, used as 'Input' menu class. */
 class UIActionMenuRuntimeInput : public UIActionMenu
 {
@@ -3156,7 +3118,8 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewScaleFactor(QAction *pAction
 
     /* Change scale-factor directly: */
     const double dScaleFactor = pAction->property("Requested Scale Factor").toDouble();
-    gEDataManager->setScaleFactor(dScaleFactor, vboxGlobal().managedVMUuid(), 0);
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
+    gEDataManager->setScaleFactor(dScaleFactor, vboxGlobal().managedVMUuid(), iGuestScreenIndex);
 }
 
 void UIActionPoolRuntime::sltPrepareMenuViewScreen()
@@ -3251,7 +3214,6 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuRuntimeStatusBar(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleRuntimeShowStatusBarSettings(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleRuntimeStatusBar(this);
-    m_pool[UIActionIndexRT_M_View_M_ScaleFactor] = new UIActionMenuRuntimeScaleFactor(this);
 
     /* 'Input' actions: */
     m_pool[UIActionIndexRT_M_Input] = new UIActionMenuRuntimeInput(this);
@@ -3314,7 +3276,6 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_VideoCapture].ptfr =     &UIActionPoolRuntime::updateMenuViewVideoCapture;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_MenuBar].ptfr =          &UIActionPoolRuntime::updateMenuViewMenuBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_StatusBar].ptfr =        &UIActionPoolRuntime::updateMenuViewStatusBar;
-    m_menuUpdateHandlers[UIActionIndexRT_M_View_M_ScaleFactor].ptfr =      &UIActionPoolRuntime::updateMenuViewScaleFactor;
     m_menuUpdateHandlers[UIActionIndexRT_M_Input].ptfr =                   &UIActionPoolRuntime::updateMenuInput;
     m_menuUpdateHandlers[UIActionIndexRT_M_Input_M_Keyboard].ptfr =        &UIActionPoolRuntime::updateMenuInputKeyboard;
     m_menuUpdateHandlers[UIActionIndexRT_M_Input_M_Mouse].ptfr =           &UIActionPoolRuntime::updateMenuInputMouse;
@@ -3616,10 +3577,6 @@ void UIActionPoolRuntime::updateMenuView()
         fSeparator = false;
     }
 
-    /* 'Scale Factor' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_ScaleFactor)) || fSeparator;
-    updateMenuViewScaleFactor();
-
     /* Do we have to show resize or multiscreen menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
     const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
@@ -3678,10 +3635,6 @@ void UIActionPoolRuntime::updateMenuViewPopup()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
-    /* 'Scale Factor' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_ScaleFactor)) || fSeparator;
-    updateMenuViewScaleFactor();
 
     /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
@@ -3766,13 +3719,9 @@ void UIActionPoolRuntime::updateMenuViewStatusBar()
     m_invalidations.remove(UIActionIndexRT_M_View_M_StatusBar);
 }
 
-void UIActionPoolRuntime::updateMenuViewScaleFactor()
+void UIActionPoolRuntime::updateMenuViewScaleFactor(QMenu *pMenu)
 {
-    /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexRT_M_View_M_ScaleFactor)->menu();
     AssertPtrReturnVoid(pMenu);
-    /* Clear contents: */
-    pMenu->clear();
 
     /* Create exclusive 'scale-factor' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
@@ -3782,7 +3731,8 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
         pActionGroup->setExclusive(true);
 
         /* Get current scale-factor: */
-        const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), 0);
+        const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
+        const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), iGuestScreenIndex);
 
         /* Get device-pixel-ratio: */
         bool fDevicePixelRatioMentioned = false;
@@ -3802,6 +3752,7 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
             QAction *pAction = pActionGroup->addAction(QString());
             AssertPtrReturnVoid(pAction);
             {
+                pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 /* For the 'unscaled' action: */
                 if (dScaleFactor == 1.0)
                 {
@@ -3923,6 +3874,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
         connect(pActionGroup, SIGNAL(triggered(QAction*)),
                 this, SLOT(sltHandleActionTriggerViewScreenResize(QAction*)));
     }
+    updateMenuViewScaleFactor(pMenu);
 }
 
 void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)

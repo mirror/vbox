@@ -2050,4 +2050,3 @@ bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fRea
 
 
 #include "UIActionPool.moc"
-

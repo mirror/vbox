@@ -4042,7 +4042,6 @@ void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QUuid &aID, c
     }
 
     data[uScreenIndex] = QString::number(dScaleFactor);
-
     setExtraDataStringList(GUI_ScaleFactor, data, aID);
 }
 
