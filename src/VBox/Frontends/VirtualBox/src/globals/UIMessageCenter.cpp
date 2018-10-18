@@ -1647,6 +1647,13 @@ void UIMessageCenter::cannotCreateCloudProfle(const CCloudProvider &comProvider,
           UIErrorString::formatErrorInfo(comProvider));
 }
 
+void UIMessageCenter::cannotSaveCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save cloud profiles."),
+          UIErrorString::formatErrorInfo(comProvider));
+}
+
 void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
