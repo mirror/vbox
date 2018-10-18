@@ -232,7 +232,8 @@ struct VideoRecBlockSet
         {
             it->second->Clear();
             delete it->second;
-            it = Map.erase(it);
+            Map.erase(it);
+            it = Map.begin();
         }
 
         Assert(Map.size() == 0);
@@ -803,7 +804,8 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
                         if (--pBlockCommon->cRefs == 0)
                         {
                             videoRecBlockFree(pBlockCommon);
-                            itBlockCommon = itCommon->second->List.erase(itBlockCommon);
+                            itCommon->second->List.erase(itBlockCommon);
+                            itBlockCommon = itCommon->second->List.begin();
                         }
                         else
                             ++itBlockCommon;
@@ -1052,7 +1054,8 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
                     break;
             }
 
-            it = pCtx->vecStreams.erase(it);
+            pCtx->vecStreams.erase(it);
+            it = pCtx->vecStreams.begin();
 
             videoRecStreamUnlock(pStream);
 
