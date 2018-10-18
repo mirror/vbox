@@ -186,6 +186,12 @@ void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
 
 void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 {
+    /* Is can be that there is provider item, not profile item currently selected.
+     * In such case we are not applying parameters, we are creating new one profile. */
+    UIItemCloudProvider *pMaybeProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
+    if (pMaybeProviderItem)
+        return sltAddCloudProfile();
+
     /* Get profile item: */
     UIItemCloudProfile *pProfileItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
     AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
@@ -223,21 +229,30 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                 msgCenter().cannotFindCloudProfile(comCloudProvider, oldData.m_strName, this);
             else
             {
-                /* Iterate through old/new data: */
-                foreach (const QString &strKey, oldData.m_data.keys())
+                /* Set profile name, if necessary: */
+                if (newData.m_strName != oldData.m_strName)
+                    comCloudProfile.SetName(newData.m_strName);
+                /* Show error message if necessary: */
+                if (!comCloudProfile.isOk())
+                    msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                else
                 {
-                    /* Get values: */
-                    const QString strOldValue = oldData.m_data.value(strKey).first;
-                    const QString strNewValue = newData.m_data.value(strKey).first;
-                    if (strNewValue != strOldValue)
+                    /* Iterate through old/new data: */
+                    foreach (const QString &strKey, oldData.m_data.keys())
                     {
-                        /* Apply property: */
-                        comCloudProfile.SetProperty(strKey, strNewValue);
-                        /* Show error message if necessary: */
-                        if (!comCloudProfile.isOk())
+                        /* Get values: */
+                        const QString strOldValue = oldData.m_data.value(strKey).first;
+                        const QString strNewValue = newData.m_data.value(strKey).first;
+                        if (strNewValue != strOldValue)
                         {
-                            msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
-                            break;
+                            /* Apply property: */
+                            comCloudProfile.SetProperty(strKey, strNewValue);
+                            /* Show error message if necessary: */
+                            if (!comCloudProfile.isOk())
+                            {
+                                msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                                break;
+                            }
                         }
                     }
                 }
@@ -270,21 +285,24 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
     UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
     AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
 
-    /* Acquire profile name first of all: */
-    QString strProfileName;
-    QPointer<QInputDialog> pDialog = new QInputDialog(this);
-    pDialog->setInputMode(QInputDialog::TextInput);
-    pDialog->setWindowIcon(UIIconPool::iconSet(":/cloud_profile_add_16px.png"));
-    pDialog->setWindowTitle(tr("Add Profile"));
-    pDialog->setLabelText(tr("Name:"));
-    bool fCancelled = false;
-    if (pDialog->exec() == QDialog::Accepted)
-        strProfileName = pDialog->textValue();
-    else
-        fCancelled = true;
-    delete pDialog;
-    if (fCancelled)
-        return;
+    /* Acquire profile name if not proposed by details widget: */
+    QString strProfileName = m_pDetailsWidget->data().m_strName;
+    if (strProfileName.isNull())
+    {
+        QPointer<QInputDialog> pDialog = new QInputDialog(this);
+        pDialog->setInputMode(QInputDialog::TextInput);
+        pDialog->setWindowIcon(UIIconPool::iconSet(":/cloud_profile_add_16px.png"));
+        pDialog->setWindowTitle(tr("Add Profile"));
+        pDialog->setLabelText(tr("Name:"));
+        bool fCancelled = false;
+        if (pDialog->exec() == QDialog::Accepted)
+            strProfileName = pDialog->textValue();
+        else
+            fCancelled = true;
+        delete pDialog;
+        if (fCancelled)
+            return;
+    }
 
     /* Get VirtualBox for further activities: */
     const CVirtualBox comVBox = vboxGlobal().virtualBox();
@@ -464,7 +482,7 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
     /* Update actions availability: */
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItemProfile);
-    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItemProfile);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItemProfile || pItemProvider);
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import)->setEnabled(!pItem || pItemProvider);
 
     /* If there is an item => update details data: */
@@ -499,6 +517,7 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
     else if (pItemProvider)
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
     }
 

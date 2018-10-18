@@ -28,6 +28,8 @@
 
 /* Forward declarations: */
 class QAbstractButton;
+class QLabel;
+class QLineEdit;
 class QTableWidget;
 class QTableWidgetItem;
 class QIDialogButtonBox;
@@ -121,11 +123,17 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+    /** Handles editor translation. */
+    void retranslateEditor();
+    /** Handles buttons translation. */
+    void retranslateButtons();
 
 private slots:
 
     /** @name Change handling stuff.
       * @{ */
+        /** Handles name change. */
+        void sltNameChanged(const QString &strName);
         /** Handles table change. */
         void sltTableChanged(QTableWidgetItem *pItem);
 
@@ -177,9 +185,16 @@ private:
         UIDataCloudProfile  m_newData;
     /** @} */
 
-    /** @name Interface variables.
+    /** @name Widget variables.
       * @{ */
-        /** Holds the automatic interface configuration button. */
+        /** Holds the name label instance. */
+        QLabel    *m_pLabelName;
+        /** Holds the name editor instance. */
+        QLineEdit *m_pEditorName;
+
+        /** Holds the table-widget label instance. */
+        QLabel       *m_pLabelTableWidget;
+        /** Holds the table-widget instance. */
         QTableWidget *m_pTableWidget;
 
         /** Holds the server button-box instance. */

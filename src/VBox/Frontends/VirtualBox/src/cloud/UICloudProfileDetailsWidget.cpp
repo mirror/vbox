@@ -20,7 +20,10 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QGridLayout>
 # include <QHeaderView>
+# include <QLabel>
+# include <QLineEdit>
 # include <QPushButton>
 # include <QTableWidget>
 # include <QVBoxLayout>
@@ -53,35 +56,86 @@ void UICloudProfileDetailsWidget::setData(const UIDataCloudProfile &data)
 
     /* Load data: */
     loadData();
+
+    /* Translate linked widgets: */
+    retranslateEditor();
+    retranslateButtons();
 }
 
 void UICloudProfileDetailsWidget::retranslateUi()
 {
     /// @todo add description tool-tips
 
+    /* Translate name-editor label: */
+    m_pLabelName->setText(tr("Name:"));
+    /* Translate name-editor: */
+    retranslateEditor();
+
+    /* Translate table-widget label: */
+    m_pLabelTableWidget->setText(tr("Properties:"));
     /* Translate table-widget: */
     m_pTableWidget->setToolTip(tr("Contains cloud profile settings"));
 
-    /* Translate button-box: */
-    if (m_pButtonBox)
-    {
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current profile details"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current profile details"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
-    }
+    /* Translate buttons: */
+    retranslateButtons();
 
     /* Retranslate validation: */
     retranslateValidation();
 
     /* Update table tool-tips: */
     updateTableToolTips();
+}
+
+void UICloudProfileDetailsWidget::retranslateEditor()
+{
+    /* Translate placeholders: */
+    m_pEditorName->setPlaceholderText(  m_oldData.m_strName.isNull()
+                                      ? tr("Enter a name for the new profile...")
+                                      : tr("Enter a name for this profile..."));
+}
+
+void UICloudProfileDetailsWidget::retranslateButtons()
+{
+    /* Translate button-box: */
+    if (m_pButtonBox)
+    {
+        /* Common: 'Reset' button: */
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current profile details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+
+        if (m_oldData.m_strName.isNull())
+        {
+            /* Provider: 'Add' button: */
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Add"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Add a new profile with following name"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->
+                setToolTip(tr("Add Profile (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+        }
+        else
+        {
+            /* Profile: 'Apply' button: */
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current profile details"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+            m_pButtonBox->button(QDialogButtonBox::Ok)->
+                setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+        }
+    }
+}
+
+void UICloudProfileDetailsWidget::sltNameChanged(const QString &strName)
+{
+    /* Push changes back: */
+    m_newData.m_strName = strName;
+
+    /* Revalidate: */
+    revalidate(m_pEditorName);
+    /* Update button states: */
+    updateButtonStates();
 }
 
 void UICloudProfileDetailsWidget::sltTableChanged(QTableWidgetItem *pItem)
@@ -141,11 +195,38 @@ void UICloudProfileDetailsWidget::prepare()
 void UICloudProfileDetailsWidget::prepareWidgets()
 {
     /* Create layout: */
-    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    QGridLayout *pLayout = new QGridLayout(this);
     if (pLayout)
     {
-        /* Configure layout: */
-        pLayout->setContentsMargins(0, 0, 0, 0);
+        if (m_enmEmbedding == EmbedTo_Dialog)
+        {
+            pLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+            pLayout->setSpacing(10);
+#else
+            pLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
+        }
+
+        /* Create name editor: */
+        m_pEditorName = new QLineEdit;
+        if (m_pEditorName)
+        {
+            connect(m_pEditorName, &QLineEdit::textChanged, this, &UICloudProfileDetailsWidget::sltNameChanged);
+
+            /* Add into layout: */
+            pLayout->addWidget(m_pEditorName, 0, 1);
+        }
+        /* Create name label: */
+        m_pLabelName = new QLabel;
+        if (m_pLabelName)
+        {
+            m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLabelName->setBuddy(m_pEditorName);
+
+            /* Add into layout: */
+            pLayout->addWidget(m_pLabelName, 0, 0);
+        }
 
         /* Create tab-widget: */
         m_pTableWidget = new QTableWidget;
@@ -158,7 +239,17 @@ void UICloudProfileDetailsWidget::prepareWidgets()
             connect(m_pTableWidget, &QTableWidget::itemChanged, this, &UICloudProfileDetailsWidget::sltTableChanged);
 
             /* Add into layout: */
-            pLayout->addWidget(m_pTableWidget);
+            pLayout->addWidget(m_pTableWidget, 1, 1);
+        }
+        /* Create tab-widget label: */
+        m_pLabelTableWidget = new QLabel;
+        if (m_pLabelTableWidget)
+        {
+            m_pLabelTableWidget->setAlignment(Qt::AlignRight | Qt::AlignTop);
+            m_pLabelTableWidget->setBuddy(m_pTableWidget);
+
+            /* Add into layout: */
+            pLayout->addWidget(m_pLabelTableWidget, 1, 0);
         }
 
         /* If parent embedded into stack: */
@@ -183,7 +274,7 @@ void UICloudProfileDetailsWidget::prepareWidgets()
                 }
 
                 /* Add into layout: */
-                pLayout->addLayout(pButtonBoxLayout);
+                pLayout->addLayout(pButtonBoxLayout, 2, 0, 1, 2);
             }
         }
     }
@@ -193,6 +284,9 @@ void UICloudProfileDetailsWidget::loadData()
 {
     /* Clear table initially: */
     m_pTableWidget->clear();
+
+    /* Fill name editor: */
+    m_pEditorName->setText(m_oldData.m_strName);
 
     /* Configure table: */
     m_pTableWidget->setRowCount(m_oldData.m_data.keys().size());
