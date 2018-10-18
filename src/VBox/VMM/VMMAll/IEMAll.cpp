@@ -13888,11 +13888,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
                       || rcStrict == VINF_CSAM_PENDING_ACTION
                       || rcStrict == VINF_PATM_CHECK_PATCH_PAGE
                       /* nested hw.virt codes: */
+                      || rcStrict == VINF_VMX_VMEXIT
                       || rcStrict == VINF_SVM_VMEXIT
                       , ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-/** @todo adjust for VINF_EM_RAW_EMULATE_INSTR   */
+/** @todo adjust for VINF_EM_RAW_EMULATE_INSTR. */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             if (   rcStrict == VINF_VMX_VMEXIT
                 && rcPassUp == VINF_SUCCESS)
                 rcStrict = VINF_SUCCESS;
