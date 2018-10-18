@@ -2641,7 +2641,7 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
                 IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
             }
             else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadRsvd);
+                IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadRsvd);
         }
     }
     else
@@ -2790,7 +2790,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     /* We're no longer in nested-guest execution mode. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
-    return rcStrict;
+    Assert(rcStrict == VINF_SUCCESS);
+    return VINF_VMX_VMEXIT;
 }
 
 
@@ -4928,6 +4929,39 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
 
 
 /**
+ * Checks if an interrupt-window exiting occurs immediately as part of VM-entry.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
+ *
+ * @remarks This must be called after loading the guest-state and switching
+ *          page-tables as part of VM-entry!
+ */
+IEM_STATIC int iemVmxVmentryCheckIntWindowExit(PVMCPU pVCpu, const char *pszInstr)
+{
+    /*
+     * An interrupt-window exit occurs immediately after VM-entry if interrupts
+     * are enabled and the interrupt-window exit control is set.
+     *
+     * See Intel spec. 25.2 "Other Causes Of VM Exits".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    if (   (pVmcs->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT)
+        &&  pVCpu->cpum.GstCtx.eflags.Bits.u1IF
+        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    {
+        Log(("%s: Interrupt-window detected during VM-entry -> VM-exit\n", pszInstr));
+        return iemVmxVmexitIntWindow(pVCpu);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * Checks host-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -6054,6 +6088,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* We've now entered nested-guest execution. */
                                 pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
+
+                                /* Check premature interrupt-window exiting. */
+                                rc = iemVmxVmentryCheckIntWindowExit(pVCpu, pszInstr);
+                                if (rc == VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                                { /* likely */ }
+                                else if (rc == VINF_VMX_VMEXIT)
+                                    return VINF_SUCCESS;
 
                                 /* Now that we've switched page tables, we can inject events if any. */
                                 iemVmxVmentryInjectEvent(pVCpu, pszInstr);
