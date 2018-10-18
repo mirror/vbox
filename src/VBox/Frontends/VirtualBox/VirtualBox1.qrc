@@ -74,6 +74,10 @@
         <file alias="cloud_profile_remove_32px.png">images/cloud_profile_remove_32px.png</file>
         <file alias="cloud_profile_remove_disabled_16px.png">images/cloud_profile_remove_disabled_16px.png</file>
         <file alias="cloud_profile_remove_disabled_32px.png">images/cloud_profile_remove_disabled_32px.png</file>
+        <file alias="cloud_profile_restore_16px.png">images/cloud_profile_restore_16px.png</file>
+        <file alias="cloud_profile_restore_32px.png">images/cloud_profile_restore_32px.png</file>
+        <file alias="cloud_profile_restore_disabled_16px.png">images/cloud_profile_restore_disabled_16px.png</file>
+        <file alias="cloud_profile_restore_disabled_32px.png">images/cloud_profile_restore_disabled_32px.png</file>
         <file alias="connect_16px.png">images/connect_16px.png</file>
         <file alias="connect_on_16px.png">images/connect_on_16px.png</file>
         <file alias="controller_add_16px.png">images/controller_add_16px.png</file>
