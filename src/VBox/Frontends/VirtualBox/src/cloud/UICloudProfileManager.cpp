@@ -257,7 +257,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
     }
 }
 
-void UICloudProfileManagerWidget::sltCreateCloudProfile()
+void UICloudProfileManagerWidget::sltAddCloudProfile()
 {
     /// @todo create cloud profile!
 }
@@ -297,7 +297,7 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
                                        : 0;
 
     /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create)->setEnabled(!pItem || pItemProvider);
+    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItemProfile);
     m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItemProfile);
 
@@ -332,7 +332,7 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
     }
     else if (pItemProvider)
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
 //        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Refresh));
     }
 
@@ -360,8 +360,8 @@ void UICloudProfileManagerWidget::prepare()
 void UICloudProfileManagerWidget::prepareActions()
 {
     /* Connect actions: */
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltCreateCloudProfile);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltAddCloudProfile);
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
@@ -406,7 +406,7 @@ void UICloudProfileManagerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Create));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));

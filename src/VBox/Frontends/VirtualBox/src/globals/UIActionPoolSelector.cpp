@@ -2374,15 +2374,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Perform Create' action class. */
-class UIActionMenuSelectorCloudPerformCreate : public UIActionSimple
+/** Simple action extension, used as 'Perform Add' action class. */
+class UIActionMenuSelectorCloudPerformAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudPerformCreate(UIActionPool *pParent)
+    UIActionMenuSelectorCloudPerformAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_add_32px.png",          ":/cloud_profile_add_16px.png",
                          ":/cloud_profile_add_disabled_32px.png", ":/cloud_profile_add_disabled_16px.png")
@@ -2393,23 +2393,23 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("CreateCloudProfile");
+        return QString("AddCloudProfile");
     }
 
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+Shift+C");
+        return QKeySequence("Ctrl+Shift+A");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setIconText(QApplication::translate("UIActionPool", "Create"));
-        setName(QApplication::translate("UIActionPool", "&Create Profile..."));
+        setIconText(QApplication::translate("UIActionPool", "Add"));
+        setName(QApplication::translate("UIActionPool", "&Add Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Create new cloud profile"));
-        setToolTip(tr("Create Cloud Profile (%1)").arg(shortcut().toString()));
+        setStatusTip(QApplication::translate("UIActionPool", "Add new cloud profile"));
+        setToolTip(tr("Add Cloud Profile (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2649,7 +2649,7 @@ void UIActionPoolSelector::preparePool()
     /* Cloud Profile Manager actions: */
     m_pool[UIActionIndexST_M_CloudWindow] = new UIActionMenuSelectorCloud(this);
     m_pool[UIActionIndexST_M_Cloud] = new UIActionMenuSelectorCloud(this);
-    m_pool[UIActionIndexST_M_Cloud_S_Create] = new UIActionMenuSelectorCloudPerformCreate(this);
+    m_pool[UIActionIndexST_M_Cloud_S_Add] = new UIActionMenuSelectorCloudPerformAdd(this);
     m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
     m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
     m_pool[UIActionIndexST_M_Cloud_S_Refresh] = new UIActionMenuSelectorCloudPerformRefresh(this);
@@ -2829,10 +2829,8 @@ void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
     /* Separator? */
     bool fSeparator = false;
 
-    /* 'Create' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Create)) || fSeparator;
-    /* 'Remove' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Remove)) || fSeparator;
+    /* 'Add' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Add)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -2841,6 +2839,8 @@ void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
         fSeparator = false;
     }
 
+    /* 'Remove' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Remove)) || fSeparator;
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_T_Details)) || fSeparator;
 

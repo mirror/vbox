@@ -1765,7 +1765,7 @@ void UIVirtualBoxManager::prepareMenuCloud(QMenu *pMenu)
         return;
 
     /* Remember action list: */
-    m_cloudProfileManagerActions << actionPool()->action(UIActionIndexST_M_Cloud_S_Create)
+    m_cloudProfileManagerActions << actionPool()->action(UIActionIndexST_M_Cloud_S_Add)
                                  << actionPool()->action(UIActionIndexST_M_Cloud_S_Remove)
                                  << actionPool()->action(UIActionIndexST_M_Cloud_T_Details)
                                  << actionPool()->action(UIActionIndexST_M_Cloud_S_Refresh);
