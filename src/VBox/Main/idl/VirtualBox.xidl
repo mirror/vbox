@@ -25402,7 +25402,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
-    <attribute name="name" type="wstring" readonly="yes">
+    <attribute name="name" type="wstring">
       <desc>
         Returns the profile name.
       </desc>
