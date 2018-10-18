@@ -1521,7 +1521,7 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
 
         if (pCfg->File.uMaxSizeMB)
         {
-            uint64_t sizeInMB = pStream->File.pWEBM->GetFileSize() / (1024 * 1024);
+            uint64_t sizeInMB = pStream->File.pWEBM->GetFileSize() / _1M;
             if(sizeInMB >= pCfg->File.uMaxSizeMB)
                 return true;
         }
