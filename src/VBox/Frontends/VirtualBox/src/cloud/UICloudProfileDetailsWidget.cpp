@@ -207,6 +207,19 @@ void UICloudProfileDetailsWidget::prepareWidgets()
             pLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
 #endif
         }
+        else
+        {
+#ifdef VBOX_WS_MAC
+            pLayout->setContentsMargins(13, 0, 13, 13);
+            pLayout->setSpacing(10);
+#else
+            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) * 1.5;
+            const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) * 1.5;
+            const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) * 1.5;
+            const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) * 1.5;
+            pLayout->setContentsMargins(iL, iT, iR, iB);
+#endif
+        }
 
         /* Create name editor: */
         m_pEditorName = new QLineEdit;
@@ -255,26 +268,15 @@ void UICloudProfileDetailsWidget::prepareWidgets()
         /* If parent embedded into stack: */
         if (m_enmEmbedding == EmbedTo_Stack)
         {
-            QVBoxLayout *pButtonBoxLayout = new QVBoxLayout;
-            if (pButtonBoxLayout)
+            /* Create button-box: */
+            m_pButtonBox = new QIDialogButtonBox;
+            if  (m_pButtonBox)
             {
-                const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 4;
-                const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2;
-                pButtonBoxLayout->setContentsMargins(0, 0, iR, iB);
-
-                /* Create button-box: */
-                m_pButtonBox = new QIDialogButtonBox;
-                if  (m_pButtonBox)
-                {
-                    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-                    connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UICloudProfileDetailsWidget::sltHandleButtonBoxClick);
-
-                    /* Add into layout: */
-                    pButtonBoxLayout->addWidget(m_pButtonBox);
-                }
+                m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+                connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UICloudProfileDetailsWidget::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
-                pLayout->addLayout(pButtonBoxLayout, 2, 0, 1, 2);
+                pLayout->addWidget(m_pButtonBox, 2, 0, 1, 2);
             }
         }
     }
