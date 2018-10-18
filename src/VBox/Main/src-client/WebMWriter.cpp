@@ -179,31 +179,23 @@ int WebMWriter::Close(void)
 int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
 {
 #ifdef VBOX_WITH_LIBOPUS
-    int rc;
+    AssertReturn(uHz,       VERR_INVALID_PARAMETER);
+    AssertReturn(cBits,     VERR_INVALID_PARAMETER);
+    AssertReturn(cChannels, VERR_INVALID_PARAMETER);
 
     /*
-     * Check if the requested codec rate is supported.
+     * Adjust the handed-in Hz rate to values which are supported by the Opus codec.
      *
      * Only the following values are supported by an Opus standard build
      * -- every other rate only is supported by a custom build.
+     *
+     * See opus_encoder_create() for more information.
      */
-    switch (uHz)
-    {
-        case 48000:
-        case 24000:
-        case 16000:
-        case 12000:
-        case  8000:
-            rc = VINF_SUCCESS;
-            break;
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-    }
-
-    if (RT_FAILURE(rc))
-        return rc;
+    if      (uHz > 24000) uHz = 48000;
+    else if (uHz > 16000) uHz = 24000;
+    else if (uHz > 12000) uHz = 16000;
+    else if (uHz > 8000 ) uHz = 12000;
+    else     uHz = 8000;
 
     /* Some players (e.g. Firefox with Nestegg) rely on track numbers starting at 1.
      * Using a track number 0 will show those files as being corrupted. */
