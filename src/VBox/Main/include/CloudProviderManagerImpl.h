@@ -20,7 +20,7 @@
 #define ____H_CLOUDPROVIDERMANAGERIMPL
 
 #include "CloudProviderManagerWrap.h"
-#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
+#ifdef VBOX_WITH_EXTPACK
 class ExtPackManager;
 #endif
 
@@ -37,7 +37,7 @@ public:
     HRESULT init(VirtualBox *aParent);
     void uninit();
 
-#if defined(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK) && defined(VBOX_WITH_EXTPACK)
+#ifdef VBOX_WITH_EXTPACK
     // Safe helpers, take care of caller and lock themselves.
     void i_refreshProviders();
 #endif
@@ -53,7 +53,7 @@ private:
                               ComPtr<ICloudProvider> &aProvider);
 
 private:
-#ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
+#ifdef VBOX_WITH_EXTPACK
     ComObjPtr<ExtPackManager> mpExtPackMgr;
     uint64_t mcExtPackMgrUpdate;
     std::map<com::Utf8Str, ComPtr<ICloudProviderManager> > m_mapCloudProviderManagers;

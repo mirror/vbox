@@ -37,9 +37,7 @@ else ifdef VBOX_ONLY_EXTPACKS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
- ifdef VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK
-  include $(PATH_SUB_CURRENT)/Main/Makefile.kmk
- endif
+ include $(PATH_SUB_CURRENT)/Main/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Storage/Makefile.kmk
  include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
  ifdef VBOX_WITH_VRDP

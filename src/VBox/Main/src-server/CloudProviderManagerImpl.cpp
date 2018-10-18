@@ -60,7 +60,7 @@ HRESULT CloudProviderManager::init(VirtualBox *aParent)
 
     m_apCloudProviders.clear();
 
-#if defined(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK) && defined(VBOX_WITH_EXTPACK)
+#ifdef VBOX_WITH_EXTPACK
     // Engage the extension pack manager and get all the implementations of
     // this class and all implemented cloud providers.
     ExtPackManager *pExtPackMgr = aParent->i_getExtPackManager();
@@ -88,7 +88,7 @@ void CloudProviderManager::uninit()
         return;
 }
 
-#if defined(VBOX_WITH_CLOUD_PROVIDERS_IN_EXTPACK) && defined(VBOX_WITH_EXTPACK)
+#ifdef VBOX_WITH_EXTPACK
 void CloudProviderManager::i_refreshProviders()
 {
     uint64_t cExtPackMgrUpdate;
@@ -136,7 +136,7 @@ void CloudProviderManager::i_refreshProviders()
         }
     }
 }
-#endif
+#endif  /* VBOX_WITH_EXTPACK */
 
 HRESULT CloudProviderManager::getProviders(std::vector<ComPtr<ICloudProvider> > &aProviders)
 {
