@@ -1063,33 +1063,33 @@
     <message>
         <source>Scale to %1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skalieren auf %1%</translation>
     </message>
     <message>
         <source>Scale to %1% (unscaled output)</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skalieren auf %1% (unskalierte Ausgabe)</translation>
     </message>
     <message>
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skalieren auf %1% (automatisch skalierte Ausgabe)</translation>
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished">&amp;Verschieben...</translation>
+        <translation>&amp;Verschieben...</translation>
     </message>
     <message>
         <source>Move selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Verschiebe ausgewählte virtuelle Maschine</translation>
     </message>
     <message>
         <source>&amp;Logs</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Logdateien</translation>
     </message>
     <message>
         <source>Open the machine logs pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet das Logfenster der virtuellen Maschine</translation>
     </message>
 </context>
 <context>
@@ -5320,7 +5320,7 @@
     <message>
         <source>Create ad hoc VISO...</source>
         <comment>This is used for optical media</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ad hoc VISO (virtuelle ISO-Datei) erstellen...</translation>
     </message>
 </context>
 <context>
@@ -7417,7 +7417,7 @@
     </message>
     <message>
         <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht verschoben werden.</translation>
     </message>
 </context>
 <context>
@@ -7753,7 +7753,7 @@
     </message>
     <message>
         <source>Select a destination folder to move the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Einen Zielordner für das Verschieben der virtuellen Maschine auswählen</translation>
     </message>
 </context>
 <context>
@@ -8282,7 +8282,7 @@
     </message>
     <message>
         <source>Tool to display  virtual machine (VM) logs. </source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Logdateien der virtuellen Maschine (VM)</translation>
     </message>
 </context>
 <context>
@@ -8772,206 +8772,206 @@
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Log-Betrachter</translation>
     </message>
 </context>
 <context>
     <name>UIVMLogViewerWidget</name>
     <message>
         <source>Delete the current bookmark.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das aktuelle Lesezeichen löschen.</translation>
     </message>
     <message>
         <source>Delete all bookmarks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Lesezeichen löschen.</translation>
     </message>
     <message>
         <source>Delete all</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles löschen</translation>
     </message>
     <message>
         <source>Goto the next bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum nächsten Lesezeichen gehen</translation>
     </message>
     <message>
         <source>Goto the previous bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum vorherigen Lesezeichen gehen</translation>
     </message>
     <message>
         <source>Goto selected bookmark.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum ausgewählten Lesezeichen gehen.</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Schließen</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Log-Anzeige</translation>
     </message>
     <message>
         <source>Enter filtering string here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hier Filter eingeben.</translation>
     </message>
     <message>
         <source>Add filter term. (Enter)</source>
-        <translation type="unfinished"></translation>
+        <translation>Filterregel hinzufügen. (Enter)</translation>
     </message>
     <message>
         <source>Showing %1/%2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1/%2 wird angezeigt</translation>
     </message>
     <message>
         <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Filterregelliste. Eine Regel zum Entfernen auswählen oder die Schaltfläche auf der rechten Seite verwenden um alle Regeln zu entfernen.</translation>
     </message>
     <message>
         <source>The type of boolean operator for filter operation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Boolescher Typ für die Filteroperation.</translation>
     </message>
     <message>
         <source>Close the search panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließt das Suchfeld.</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation type="unfinished">&amp;Suche</translation>
+        <translation>&amp;Suchen</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation type="unfinished">Geben Sie den Suchtext hier ein</translation>
+        <translation>Geben Sie den Suchtext hier ein</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string (F3)</source>
-        <translation type="unfinished"></translation>
+        <translation>Durchsucht den Text vorwärts (F3)</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string (Shift+F3)</source>
-        <translation type="unfinished"></translation>
+        <translation>Durchsucht den Text rückwärts (Shift+F3)</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation type="unfinished">Berücksichtige &amp;Groß- und Kleinschreibung</translation>
+        <translation>&amp;Groß- und Kleinschreibung berücksichtigen</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation type="unfinished">Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
+        <translation>Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
     </message>
     <message>
         <source>Ma&amp;tch Whole Word</source>
-        <translation type="unfinished"></translation>
+        <translation>Ganzes Wor&amp;t berücksichtigen</translation>
     </message>
     <message>
         <source>Search matches only complete words when checked</source>
-        <translation type="unfinished"></translation>
+        <translation>Suche berücksichtigt nur komplette Wörter wenn ausgewählt</translation>
     </message>
     <message>
         <source>&amp;Highlight All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles &amp;auswählen</translation>
     </message>
     <message>
         <source>All occurence of the search text are highlighted</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Übereinstimmungen mit dem Suchtext sind hervorgehoben</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation type="unfinished">Suchtext nicht gefunden</translation>
+        <translation>Suchtext nicht gefunden</translation>
     </message>
     <message>
         <source>%1 Matches Found</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Übereinstimmung(en) gefunden</translation>
     </message>
     <message>
         <source>Show Line Numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeilennummern anzeigen</translation>
     </message>
     <message>
         <source>Wrap Lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeilenumbruch</translation>
     </message>
     <message>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Schriftgröße</translation>
     </message>
     <message>
         <source>Log Viewer Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Schriftgröße der Log-Anzeige</translation>
     </message>
     <message>
         <source>Filtered</source>
-        <translation type="unfinished"></translation>
+        <translation>Gefiltert</translation>
     </message>
     <message>
         <source>Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesezeichen</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished">VirtualBox Log-Datei sichern als</translation>
+        <translation>VirtualBox Log-Datei sichern als</translation>
     </message>
     <message>
         <source>&amp;Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Log-Anzeige</translation>
     </message>
     <message>
         <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet/Schließt das Suchfenster (Ctrl+F)</translation>
     </message>
     <message>
         <source>&amp;Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Filter</translation>
     </message>
     <message>
         <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet/Schließt das Filterfenster (Ctrl+T)</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">&amp;Aktualisieren</translation>
+        <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
         <source>Reload the log (F5)</source>
-        <translation type="unfinished"></translation>
+        <translation>Log aktualisieren (F5)</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished">&amp;Abspeichern...</translation>
+        <translation>&amp;Abspeichern...</translation>
     </message>
     <message>
         <source>Save the log (Ctrl+S)</source>
-        <translation type="unfinished"></translation>
+        <translation>Logdatei speichern (Ctrl+S)</translation>
     </message>
     <message>
         <source>Save the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Logdatei speichern</translation>
     </message>
     <message>
         <source>&amp;Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lesezeichen</translation>
     </message>
     <message>
         <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet/Schließt das Lesezeichenfenster (Ctrl+D)</translation>
     </message>
     <message>
         <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet/Schließt das Lesezeichenfenster</translation>
     </message>
     <message>
         <source>&amp;Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Einstellungen</translation>
     </message>
     <message>
         <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet/Schließt das Einstellungsfenster (Ctrl+P)</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Momentan ist &lt;b&gt;keine virtuelle Maschine&lt;/b&gt; ausgewählt oder die ausgewählte Maschine ist ungültig. Bitte eine virtuelle Maschine auswählen um die dazugehörigen Logs zu sehen</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Keine Log-Dateien gefunden. Klicken Sie auf &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Klicken Sie auf &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11325,7 +11325,7 @@
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte Dateien auswählen, die auf der virtuellen ISO (VISO) enthalten sein sollen</translation>
     </message>
 </context>
 <context>
