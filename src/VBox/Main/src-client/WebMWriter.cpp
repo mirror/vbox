@@ -431,6 +431,14 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
     {
         const WebMTimecodeAbs tcAbsPTS = a_pBlock->Data.tcAbsPTSMs;
 
+        /* Check if the current segment already has been started.
+         * If not, use the current (absolute) time stamp for it. */
+        if (CurSeg.tcAbsStartMs == 0)
+        {
+            CurSeg.tcAbsStartMs = tcAbsPTS;
+            LogFunc(("Segment started @ %RU64ms\n", CurSeg.tcAbsStartMs));
+        }
+
         /* See if we already have an entry for the specified timecode in our queue. */
         WebMBlockMap::iterator itQueue = CurSeg.queueBlocks.Map.find(tcAbsPTS);
         if (itQueue != CurSeg.queueBlocks.Map.end()) /* Use existing queue. */
