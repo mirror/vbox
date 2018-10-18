@@ -73,6 +73,7 @@ struct UIDataCloudProfile
     {
         return true
                && (m_strName == other.m_strName)
+               && (m_data == other.m_data)
                ;
     }
 
