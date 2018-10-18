@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QHeaderView>
+# include <QInputDialog>
 # include <QPushButton>
 # include <QVBoxLayout>
 
@@ -259,12 +260,124 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 
 void UICloudProfileManagerWidget::sltAddCloudProfile()
 {
-    /// @todo create cloud profile!
+    /* Get provider item: */
+    UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
+    AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
+
+    /* Acquire profile name first of all: */
+    QString strProfileName;
+    QPointer<QInputDialog> pDialog = new QInputDialog(this);
+    pDialog->setInputMode(QInputDialog::TextInput);
+    pDialog->setWindowIcon(UIIconPool::iconSet(":/cloud_profile_add_16px.png"));
+    pDialog->setWindowTitle(tr("Add Profile"));
+    pDialog->setLabelText(tr("Name:"));
+    bool fCancelled = false;
+    if (pDialog->exec() == QDialog::Accepted)
+        strProfileName = pDialog->textValue();
+    else
+        fCancelled = true;
+    delete pDialog;
+    if (fCancelled)
+        return;
+
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Get CloudProviderManager for further activities: */
+    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
+    else
+    {
+        /* Acquire provider ID: */
+        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+
+        /* Look for corresponding provider: */
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        /* Show error message if necessary: */
+        if (!comCloudProviderManager.isOk())
+            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+        else
+        {
+            /* Create new profile: */
+            QVector<QString> keys;
+            QVector<QString> values;
+            comCloudProvider.CreateProfile(strProfileName, keys, values);
+
+            /* Show error message if necessary: */
+            if (!comCloudProvider.isOk())
+                msgCenter().cannotCreateCloudProfle(comCloudProvider, this);
+            else
+            {
+                /* Look for corresponding profile: */
+                CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
+                /* Show error message if necessary: */
+                if (!comCloudProvider.isOk())
+                    msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName, this);
+                else
+                {
+                    /* Add profile to the tree: */
+                    UIDataCloudProfile data;
+                    loadCloudProfile(comCloudProfile, data);
+                    createItemForCloudProfile(pProviderItem, data, true);
+                }
+            }
+        }
+    }
 }
 
 void UICloudProfileManagerWidget::sltRemoveCloudProfile()
 {
-    /// @todo remove cloud profile!
+    /* Get profile item: */
+    UIItemCloudProfile *pProfileItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
+    AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
+
+    /* Get profile name: */
+    const QString strProfileName(pProfileItem->name());
+
+    /* Confirm cloud profile removal: */
+    if (!msgCenter().confirmCloudProfileRemoval(strProfileName, this))
+        return;
+
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Get CloudProviderManager for further activities: */
+    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
+    else
+    {
+        /* Get provider item: */
+        UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
+        /* Acquire provider ID: */
+        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+
+        /* Look for corresponding provider: */
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        /* Show error message if necessary: */
+        if (!comCloudProviderManager.isOk())
+            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+        else
+        {
+            /* Look for corresponding profile: */
+            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
+            /* Show error message if necessary: */
+            if (!comCloudProvider.isOk())
+                msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName, this);
+            else
+            {
+                /* Remove current profile: */
+                comCloudProfile.Remove();
+                /// @todo how do we check that?
+
+                /* Remove interface from the tree: */
+                delete pProfileItem;
+            }
+        }
+    }
 }
 
 void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fVisible)
