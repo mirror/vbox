@@ -289,7 +289,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
 
     /* Acquire profile name if not proposed by details widget: */
     QString strProfileName = m_pDetailsWidget->data().m_strName;
-    if (strProfileName.isNull())
+    if (strProfileName.isEmpty())
     {
         QPointer<QInputDialog> pDialog = new QInputDialog(this);
         pDialog->setInputMode(QInputDialog::TextInput);
