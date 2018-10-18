@@ -67,6 +67,7 @@
         <file alias="preview_full_16to9_242x155px_x2.png">images/x2/preview_full_16to9_242x155px_x2.png</file>
         <file alias="preview_full_4to3_242x192px_x2.png">images/x2/preview_full_4to3_242x192px_x2.png</file>
         <file alias="previous_16px_x2.png">images/x2/previous_16px_x2.png</file>
+        <file alias="profile_16px_x2.png">images/x2/profile_16px_x2.png</file>
         <file alias="progress_clone_90px_x2.png">images/x2/progress_clone_90px_x2.png</file>
         <file alias="progress_delete_90px_x2.png">images/x2/progress_delete_90px_x2.png</file>
         <file alias="progress_dnd_gh_90px_x2.png">images/x2/progress_dnd_gh_90px_x2.png</file>
@@ -89,6 +90,7 @@
         <file alias="progress_start_90px_x2.png">images/x2/progress_start_90px_x2.png</file>
         <file alias="progress_state_restore_90px_x2.png">images/x2/progress_state_restore_90px_x2.png</file>
         <file alias="progress_state_save_90px_x2.png">images/x2/progress_state_save_90px_x2.png</file>
+        <file alias="provider_oracle_16px_x2.png">images/x2/provider_oracle_16px_x2.png</file>
         <file alias="proxy_16px_x2.png">images/x2/proxy_16px_x2.png</file>
         <file alias="proxy_24px_x2.png">images/x2/proxy_24px_x2.png</file>
         <file alias="proxy_32px_x2.png">images/x2/proxy_32px_x2.png</file>
