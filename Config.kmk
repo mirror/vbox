@@ -782,6 +782,8 @@ VBOX_WITH_EXTPACK = 1
 VBOX_WITH_EXTPACK_PUEL = 1
 # Enables building+packing the Oracle VM VirtualBox Extension Pack, includes VBOX_WITH_EXTPACK_PUEL
 VBOX_WITH_EXTPACK_PUEL_BUILD = 1
+# Build ExportVM functionality based on generated REST API
+VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS = 1
 # Enable the BusMouse sample extension pack.
 #VBOX_WITH_EXTPACK_BUSMOUSESAMPLE = 1
 # Enable the VNC server extension pack (GPL only).
