@@ -1,10 +1,17 @@
 /* $Id$ */
 /** @file
- * Video capturing utility routines.
+ * Video recording (with optional audio recording) code.
+ *
+ * This code employs a separate encoding thread per recording context
+ * to keep time spent in EMT as short as possible. Each configured VM display
+ * is represented by an own recording stream, which in turn has its own rendering
+ * queue. Common recording data across all recording streams is kept in a
+ * separate queue in the recording context to minimize data duplication and
+ * multiplexing overhead in EMT.
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,24 +52,8 @@
 # include "vpx/vpx_encoder.h"
 #endif /* VBOX_WITH_LIBVPX */
 
-struct VIDEORECVIDEOFRAME;
-typedef struct VIDEORECVIDEOFRAME *PVIDEORECVIDEOFRAME;
-
-static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME pFrame);
-static int videoRecRGBToYUV(uint32_t uPixelFormat,
-                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
-                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
-
-static int videoRecStreamCloseFile(PVIDEORECSTREAM pStream);
-static void videoRecStreamLock(PVIDEORECSTREAM pStream);
-static void videoRecStreamUnlock(PVIDEORECSTREAM pStream);
-
 using namespace com;
 
-#if 0
-/** Enables support for encoding multiple audio / video data frames at once. */
-#define VBOX_VIDEOREC_WITH_QUEUE
-#endif
 #ifdef DEBUG_andy
 /** Enables dumping audio / video data for debugging reasons. */
 //# define VBOX_VIDEOREC_DUMP
@@ -130,8 +121,6 @@ typedef struct VIDEORECVIDEOFRAME
     uint32_t            uHeight;
     /** Pixel format of this frame. */
     uint32_t            uPixelFormat;
-    /** Time stamp (in ms). */
-    uint64_t            uTimeStampMs;
     /** RGB buffer containing the unmodified frame buffer data from Main's display. */
     uint8_t            *pu8RGBBuf;
     /** Size (in bytes) of the RGB buffer. */
@@ -144,17 +133,121 @@ typedef struct VIDEORECVIDEOFRAME
  */
 typedef struct VIDEORECAUDIOFRAME
 {
-    uint8_t             abBuf[_64K]; /** @todo Fix! */
+    /** Pointer to audio data. */
+    uint8_t            *pvBuf;
+    /** Size (in bytes) of audio data. */
     size_t              cbBuf;
-    /** Absolute time stamp (in ms). */
-    uint64_t            uTimeStampMs;
 } VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
 #endif
 
 /**
- * Strucutre for maintaining a video recording stream.
+ * Enumeration for specifying a video recording block type.
  */
-typedef struct VIDEORECSTREAM
+typedef enum VIDEORECBLOCKTYPE
+{
+    /** Uknown block type, do not use. */
+    VIDEORECBLOCKTYPE_UNKNOWN = 0,
+    /** The block is a video frame. */
+    VIDEORECBLOCKTYPE_VIDEO,
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    /** The block is an audio frame. */
+    VIDEORECBLOCKTYPE_AUDIO
+#endif
+} VIDEORECBLOCKTYPE;
+
+/**
+ * Generic structure for keeping a single video recording (data) block.
+ */
+typedef struct VIDEORECBLOCK
+{
+    /** The block's type. */
+    VIDEORECBLOCKTYPE  enmType;
+    /** Number of references held of this block. */
+    uint16_t           cRefs;
+    /** The (absolute) time stamp (in ms, PTS) of this block. */
+    uint64_t           uTimeStampMs;
+    /** Opaque data block to the actual block data, depending on the block's type. */
+    void              *pvData;
+    /** Size (in bytes) of the (opaque) data block. */
+    size_t             cbData;
+} VIDEORECBLOCK, *PVIDEORECBLOCK;
+
+/** List for keeping video recording (data) blocks. */
+typedef std::list<PVIDEORECBLOCK> VideoRecBlockList;
+
+static void videoRecBlockFree(PVIDEORECBLOCK pBlock);
+
+/** Structure for queuing all blocks bound to a single timecode.
+ *  This can happen if multiple tracks are being involved. */
+struct VideoRecBlocks
+{
+    virtual ~VideoRecBlocks()
+    {
+        Clear();
+    }
+
+    /**
+     * Resets a video recording block list by removing (destroying)
+     * all current elements.
+     */
+    void Clear()
+    {
+        while (!List.empty())
+        {
+            PVIDEORECBLOCK pBlock = List.front();
+            videoRecBlockFree(pBlock);
+            List.pop_front();
+        }
+
+        Assert(List.size() == 0);
+    }
+
+    /** The actual block list for this timecode. */
+    VideoRecBlockList List;
+};
+
+/** A block map containing all currently queued blocks.
+ *  The key specifies a unique timecode, whereas the value
+ *  is a list of blocks which all correlate to the same key (timecode). */
+typedef std::map<uint64_t, VideoRecBlocks *> VideoRecBlockMap;
+
+/**
+ * Structure for holding a set of video recording (data) blocks.
+ */
+struct VideoRecBlockSet
+{
+    virtual ~VideoRecBlockSet()
+    {
+        Clear();
+    }
+
+    /**
+     * Resets a video recording block set by removing (destroying)
+     * all current elements.
+     */
+    void Clear()
+    {
+        VideoRecBlockMap::iterator it = Map.begin();
+        while (it != Map.end())
+        {
+            it->second->Clear();
+            delete it->second;
+            it = Map.erase(it);
+        }
+
+        Assert(Map.size() == 0);
+    }
+
+    /** Timestamp (in ms) when this set was last processed. */
+    uint64_t         tsLastProcessedMs;
+    /** All blocks related to this block set. */
+    VideoRecBlockMap Map;
+};
+
+/**
+ * Structure for maintaining a video recording stream.
+ */
+struct VIDEORECSTREAM
 {
     /** Video recording context this stream is associated to. */
     PVIDEORECCONTEXT            pCtx;
@@ -199,16 +292,14 @@ typedef struct VIDEORECSTREAM
         uint64_t            uLastTimeStampMs;
         /** Pointer to the codec's internal YUV buffer. */
         uint8_t            *pu8YuvBuf;
-#ifdef VBOX_VIDEOREC_WITH_QUEUE
-# error "Implement me!"
-#else
-        VIDEORECVIDEOFRAME  Frame;
-        bool                fHasVideoData;
-#endif
         /** Number of failed attempts to encode the current video frame in a row. */
         uint16_t            cFailedEncodingFrames;
     } Video;
-} VIDEORECSTREAM, *PVIDEORECSTREAM;
+
+    /** Common set of video recording (data) blocks, needed for
+     *  multiplexing to all recording streams. */
+    VideoRecBlockSet Blocks;
+};
 
 /** Vector of video recording streams. */
 typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
@@ -216,7 +307,7 @@ typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
 /**
  * Structure for keeping a video recording context.
  */
-typedef struct VIDEORECCONTEXT
+struct VIDEORECCONTEXT
 {
     /** Used recording configuration. */
     VIDEORECCFG         Cfg;
@@ -232,18 +323,20 @@ typedef struct VIDEORECCONTEXT
     bool                fShutdown;
     /** Worker thread. */
     RTTHREAD            Thread;
-    /** Vector of current recording stream contexts. */
+    /** Vector of current recording streams.
+     *  Per VM screen (display) one recording stream is being used. */
     VideoRecStreams     vecStreams;
     /** Timestamp (in ms) of when recording has been started. */
     uint64_t            tsStartMs;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    struct
-    {
-        bool                fHasAudioData;
-        VIDEORECAUDIOFRAME  Frame;
-    } Audio;
-#endif
-} VIDEORECCONTEXT, *PVIDEORECCONTEXT;
+    /** Block map of common blocks which need to get multiplexed
+     *  to all recording streams. This common block maps should help
+     *  reducing the time spent in EMT and avoid doing the (expensive)
+     *  multiplexing work in there.
+     *
+     *  For now this only affects audio, e.g. all recording streams
+     *  need to have the same audio data at a specific point in time. */
+    VideoRecBlockMap    mapBlocksCommon;
+};
 
 #ifdef VBOX_VIDEOREC_DUMP
 #pragma pack(push)
@@ -439,6 +532,18 @@ private:
     uint8_t *mBuf;
 };
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+static void videoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame);
+#endif
+static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
+static int videoRecRGBToYUV(uint32_t uPixelFormat,
+                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
+static int videoRecStreamCloseFile(PVIDEORECSTREAM pStream);
+static void videoRecStreamLock(PVIDEORECSTREAM pStream);
+static void videoRecStreamUnlock(PVIDEORECSTREAM pStream);
+static void videoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame);
+
 /**
  * Convert an image to YUV420p format.
  *
@@ -546,10 +651,62 @@ inline bool colorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
     return rc;
 }
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+/**
+ * Frees a previously allocated video recording audio frame.
+ *
+ * @param   pFrame              Audio frame to free. The pointer will be invalid after return.
+ */
+static void videoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame)
+{
+    if (!pFrame)
+        return;
+
+    if (pFrame->pvBuf)
+    {
+        Assert(pFrame->cbBuf);
+        RTMemFree(pFrame->pvBuf);
+    }
+    RTMemFree(pFrame);
+    pFrame = NULL;
+}
+#endif
+
+/**
+ * Frees a video recording (data) block.
+ *
+ * @returns IPRT status code.
+ * @param   pBlock              Video recording (data) block to free. The pointer will be invalid after return.
+ */
+static void videoRecBlockFree(PVIDEORECBLOCK pBlock)
+{
+    if (!pBlock)
+        return;
+
+    switch (pBlock->enmType)
+    {
+        case VIDEORECBLOCKTYPE_VIDEO:
+            videoRecVideoFrameFree((PVIDEORECVIDEOFRAME)pBlock->pvData);
+            break;
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        case VIDEORECBLOCKTYPE_AUDIO:
+            videoRecAudioFrameFree((PVIDEORECAUDIOFRAME)pBlock->pvData);
+            break;
+#endif
+        default:
+            AssertFailed();
+            break;
+    }
+
+    RTMemFree(pBlock);
+    pBlock = NULL;
+}
+
 /**
  * Worker thread for all streams of a video recording context.
  *
- * Does RGB/YUV conversion and encoding.
+ * For video frames, this also does the RGB/YUV conversion and encoding.
  */
 static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -558,45 +715,19 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
     /* Signal that we're up and rockin'. */
     RTThreadUserSignal(hThreadSelf);
 
+    LogFunc(("Thread started\n"));
+
     for (;;)
     {
         int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(rc);
 
-        if (ASMAtomicReadBool(&pCtx->fShutdown))
-            break;
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        VIDEORECAUDIOFRAME audioFrame;
-        RT_ZERO(audioFrame);
-
-        int rc2 = RTCritSectEnter(&pCtx->CritSect);
-        AssertRC(rc2);
-
-        const bool fEncodeAudio = pCtx->Audio.fHasAudioData;
-        if (fEncodeAudio)
-        {
-            /*
-             * Every recording stream needs to get the same audio data at a certain point in time.
-             * Do the multiplexing here to not block EMT for too long.
-             *
-             * For now just doing a simple copy of the current audio frame should be good enough.
-             */
-            memcpy(&audioFrame, &pCtx->Audio.Frame, sizeof(VIDEORECAUDIOFRAME));
-
-            pCtx->Audio.fHasAudioData = false;
-        }
-
-        rc2 = RTCritSectLeave(&pCtx->CritSect);
-        AssertRC(rc2);
-#endif
-
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
          *               all screens.  */
-        for (VideoRecStreams::iterator it = pCtx->vecStreams.begin(); it != pCtx->vecStreams.end(); it++)
+        for (VideoRecStreams::iterator itStream = pCtx->vecStreams.begin(); itStream != pCtx->vecStreams.end(); itStream++)
         {
-            PVIDEORECSTREAM pStream = (*it);
+            PVIDEORECSTREAM pStream = (*itStream);
 
             videoRecStreamLock(pStream);
 
@@ -606,61 +737,121 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
                 continue;
             }
 
-            PVIDEORECVIDEOFRAME pVideoFrame = &pStream->Video.Frame;
-            const bool fEncodeVideo = pStream->Video.fHasVideoData;
-
-            if (fEncodeVideo)
+            VideoRecBlockMap::iterator itBlockStream = pStream->Blocks.Map.begin();
+            while (itBlockStream != pStream->Blocks.Map.end())
             {
-                rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
-                                      /* Destination */
-                                      pStream->Video.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
-                                      /* Source */
-                                      pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
-                if (RT_SUCCESS(rc))
-                    rc = videoRecEncodeAndWrite(pStream, pVideoFrame);
+                const uint64_t        uTimeStampMs = itBlockStream->first;
+                      VideoRecBlocks *pBlocks      = itBlockStream->second;
 
-                pStream->Video.fHasVideoData = false;
+                AssertPtr(pBlocks);
+
+                while (!pBlocks->List.empty())
+                {
+                    PVIDEORECBLOCK pBlock = pBlocks->List.front();
+                    AssertPtr(pBlock);
+
+                    if (pBlock->enmType == VIDEORECBLOCKTYPE_VIDEO)
+                    {
+                        PVIDEORECVIDEOFRAME pVideoFrame  = (PVIDEORECVIDEOFRAME)pBlock->pvData;
+
+                        rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
+                                              /* Destination */
+                                              pStream->Video.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
+                                              /* Source */
+                                              pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
+                        if (RT_SUCCESS(rc))
+                            rc = videoRecEncodeAndWrite(pStream, uTimeStampMs, pVideoFrame);
+                    }
+
+                    videoRecBlockFree(pBlock);
+                    pBlock = NULL;
+
+                    pBlocks->List.pop_front();
+                }
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+                /* As each (enabled) screen has to get the same audio data, look for common (audio) data which needs to be
+                 * written to the screen's assigned recording stream. */
+                VideoRecBlockMap::iterator itCommon = pCtx->mapBlocksCommon.begin();
+                while (itCommon != pCtx->mapBlocksCommon.end())
+                {
+                    VideoRecBlockList::iterator itBlockCommon = itCommon->second->List.begin();
+                    while (itBlockCommon != itCommon->second->List.end())
+                    {
+                        PVIDEORECBLOCK pBlockCommon = (PVIDEORECBLOCK)(*itBlockCommon);
+                        switch (pBlockCommon->enmType)
+                        {
+                            case VIDEORECBLOCKTYPE_AUDIO:
+                            {
+                                PVIDEORECAUDIOFRAME pAudioFrame = (PVIDEORECAUDIOFRAME)pBlockCommon->pvData;
+                                AssertPtr(pAudioFrame);
+                                AssertPtr(pAudioFrame->pvBuf);
+                                Assert(pAudioFrame->cbBuf);
+
+                                WebMWriter::BlockData_Opus blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
+                                                                         pBlockCommon->uTimeStampMs };
+                                rc = pStream->File.pWEBM->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
+                                break;
+                            }
+
+                            default:
+                                AssertFailed();
+                                break;
+                        }
+
+                        Assert(pBlockCommon->cRefs);
+                        if (--pBlockCommon->cRefs == 0)
+                        {
+                            videoRecBlockFree(pBlockCommon);
+                            itBlockCommon = itCommon->second->List.erase(itBlockCommon);
+                        }
+                        else
+                            ++itBlockCommon;
+                    }
+
+                    /* If no entries are left over in the block map, remove it altogether. */
+                    if (itCommon->second->List.empty())
+                    {
+                        delete itCommon->second;
+                        pCtx->mapBlocksCommon.erase(itCommon);
+                    }
+
+                    itCommon = pCtx->mapBlocksCommon.begin();
+
+                    LogFunc(("Common blocks: %zu\n", pCtx->mapBlocksCommon.size()));
+                }
+#endif
+                ++itBlockStream;
             }
 
             videoRecStreamUnlock(pStream);
-
-            if (RT_FAILURE(rc))
-            {
-                static unsigned s_cErrEncVideo = 0;
-                if (s_cErrEncVideo < 32)
-                {
-                    LogRel(("VideoRec: Error %Rrc encoding / writing video frame\n", rc));
-                    s_cErrEncVideo++;
-                }
-            }
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-            /* Each (enabled) screen has to get the same audio data. */
-            if (fEncodeAudio)
-            {
-                Assert(audioFrame.cbBuf);
-                Assert(audioFrame.cbBuf <= _64K); /** @todo Fix. */
-
-                WebMWriter::BlockData_Opus blockData = { audioFrame.abBuf, audioFrame.cbBuf, audioFrame.uTimeStampMs };
-                rc = pStream->File.pWEBM->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
-                if (RT_FAILURE(rc))
-                {
-                    static unsigned s_cErrEncAudio = 0;
-                    if (s_cErrEncAudio < 32)
-                    {
-                        LogRel(("VideoRec: Error %Rrc encoding audio frame\n", rc));
-                        s_cErrEncAudio++;
-                    }
-                }
-            }
-#endif
         }
 
         /* Keep going in case of errors. */
 
+        if (ASMAtomicReadBool(&pCtx->fShutdown))
+        {
+            LogFunc(("Thread is shutting down ...\n"));
+            break;
+        }
+
     } /* for */
 
+    LogFunc(("Thread ended\n"));
     return VINF_SUCCESS;
+}
+
+/**
+ * Notifies a recording context's encoding thread.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                Video recording context to notify thread for.
+ */
+static int videoRecThreadNotify(PVIDEORECCONTEXT pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    return RTSemEventSignal(pCtx->WaitEvent);
 }
 
 /**
@@ -677,21 +868,31 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORE
     AssertPtrReturn(pVideoRecCfg, VERR_INVALID_POINTER);
     AssertPtrReturn(ppCtx,        VERR_INVALID_POINTER);
 
-    PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)RTMemAllocZ(sizeof(VIDEORECCONTEXT));
-    if (!pCtx)
+    VIDEORECCONTEXT *pCtx = NULL;
+    try
+    {
+        pCtx = new VIDEORECCONTEXT();
+    }
+    catch (std::bad_alloc &)
+    {
         return VERR_NO_MEMORY;
+    }
 
     int rc = RTCritSectInit(&pCtx->CritSect);
     if (RT_FAILURE(rc))
     {
-        RTMemFree(pCtx);
+        delete pCtx;
         return rc;
     }
 
     for (uint32_t uScreen = 0; uScreen < cScreens; uScreen++)
     {
-        PVIDEORECSTREAM pStream = (PVIDEORECSTREAM)RTMemAllocZ(sizeof(VIDEORECSTREAM));
-        if (!pStream)
+        VIDEORECSTREAM *pStream = NULL;
+        try
+        {
+            pStream = new VIDEORECSTREAM();
+        }
+        catch (std::bad_alloc &)
         {
             rc = VERR_NO_MEMORY;
             break;
@@ -764,28 +965,39 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
     if (!pCtx)
         return VINF_SUCCESS;
 
+    int rc = VINF_SUCCESS;
+
     if (pCtx->enmState == VIDEORECSTS_INITIALIZED)
     {
+        LogFunc(("Shutting down thread ...\n"));
+
         /* Set shutdown indicator. */
         ASMAtomicWriteBool(&pCtx->fShutdown, true);
 
-        /* Signal the thread. */
-        RTSemEventSignal(pCtx->WaitEvent);
+        /* Signal the thread and wait for it to shut down. */
+        rc = videoRecThreadNotify(pCtx);
+        if (RT_SUCCESS(rc))
+            rc = RTThreadWait(pCtx->Thread, 10 * 1000 /* 10s timeout */, NULL);
 
-        int rc = RTThreadWait(pCtx->Thread, 10 * 1000 /* 10s timeout */, NULL);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (RT_SUCCESS(rc))
+        {
+            /* Disable the context. */
+            ASMAtomicWriteBool(&pCtx->fStarted, false);
 
-        /* Disable the context. */
-        ASMAtomicWriteBool(&pCtx->fStarted, false);
+            int rc2 = RTSemEventDestroy(pCtx->WaitEvent);
+            AssertRC(rc2);
 
-        rc = RTSemEventDestroy(pCtx->WaitEvent);
-        AssertRC(rc);
-
-        pCtx->WaitEvent = NIL_RTSEMEVENT;
+            pCtx->WaitEvent = NIL_RTSEMEVENT;
+        }
     }
 
-    int rc = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_FAILURE(rc))
+    {
+        AssertRC(rc);
+        return rc;
+    }
+
+    rc = RTCritSectEnter(&pCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
         VideoRecStreams::iterator it = pCtx->vecStreams.begin();
@@ -815,20 +1027,7 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
                 vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
                 Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 
-#ifdef VBOX_VIDEOREC_WITH_QUEUE
-# error "Implement me!"
-#else
-                PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
-#endif
-                if (pFrame->pu8RGBBuf)
-                {
-                    Assert(pFrame->cbRGBBuf);
-
-                    RTMemFree(pFrame->pu8RGBBuf);
-                    pFrame->pu8RGBBuf = NULL;
-                }
-
-                pFrame->cbRGBBuf = 0;
+                pStream->Blocks.Clear();
 
                 LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreenID));
             }
@@ -859,18 +1058,20 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
 
             RTCritSectDelete(&pStream->CritSect);
 
-            RTMemFree(pStream);
+            delete pStream;
             pStream = NULL;
         }
 
+        /* Sanity. */
         Assert(pCtx->vecStreams.empty());
+        Assert(pCtx->mapBlocksCommon.size() == 0);
 
         int rc2 = RTCritSectLeave(&pCtx->CritSect);
         AssertRC(rc2);
 
         RTCritSectDelete(&pCtx->CritSect);
 
-        RTMemFree(pCtx);
+        delete pCtx;
         pCtx = NULL;
     }
 
@@ -1055,6 +1256,18 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
+    PVIDEORECCFG pCfg = &pCtx->Cfg;
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    if (pCfg->Audio.fEnabled)
+    {
+        /* Sanity. */
+        AssertReturn(pCfg->Audio.uHz,       VERR_INVALID_PARAMETER);
+        AssertReturn(pCfg->Audio.cBits,     VERR_INVALID_PARAMETER);
+        AssertReturn(pCfg->Audio.cChannels, VERR_INVALID_PARAMETER);
+    }
+#endif
+
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
     if (!pStream)
         return VERR_NOT_FOUND;
@@ -1063,29 +1276,12 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     if (RT_FAILURE(rc))
         return rc;
 
-    PVIDEORECCFG pCfg = &pCtx->Cfg;
-
     pStream->pCtx = pCtx;
 
     /** @todo Make the following parameters configurable on a per-stream basis? */
     pStream->Video.uWidth                = pCfg->Video.uWidth;
     pStream->Video.uHeight               = pCfg->Video.uHeight;
     pStream->Video.cFailedEncodingFrames = 0;
-
-#ifndef VBOX_VIDEOREC_WITH_QUEUE
-    /* When not using a queue, we only use one frame per stream at once.
-     * So do the initialization here. */
-    PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
-
-    const size_t cbRGBBuf =   pStream->Video.uWidth
-                            * pStream->Video.uHeight
-                            * 4 /* 32 BPP maximum */;
-    AssertReturn(cbRGBBuf, VERR_INVALID_PARAMETER);
-
-    pFrame->pu8RGBBuf = (uint8_t *)RTMemAllocZ(cbRGBBuf);
-    AssertReturn(pFrame->pu8RGBBuf, VERR_NO_MEMORY);
-    pFrame->cbRGBBuf  = cbRGBBuf;
-#endif
 
     PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
 
@@ -1266,9 +1462,7 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStam
         return false;
     }
 
-    PVIDEORECVIDEOFRAME pLastFrame = &pStream->Video.Frame;
-
-    if (uTimeStampMs < pLastFrame->uTimeStampMs + pStream->Video.uDelayMs)
+    if (uTimeStampMs < pStream->Video.uLastTimeStampMs + pStream->Video.uDelayMs)
         return false;
 
     return true;
@@ -1340,9 +1534,10 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
  *
  * @returns IPRT status code.
  * @param   pStream             Stream to encode and submit to.
+ * @param   uTimeStampMs        Absolute timestamp (PTS) of frame (in ms) to encode.
  * @param   pFrame              Frame to encode and submit.
  */
-static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME pFrame)
+static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pFrame,  VERR_INVALID_POINTER);
@@ -1354,7 +1549,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, PVIDEORECVIDEOFRAME p
     PVIDEORECVIDEOCODEC pVC  = &pStream->Video.Codec;
 #ifdef VBOX_WITH_LIBVPX
     /* Presentation Time Stamp (PTS). */
-    vpx_codec_pts_t pts = pFrame->uTimeStampMs;
+    vpx_codec_pts_t pts = uTimeStampMs;
     vpx_codec_err_t rcv = vpx_codec_encode(&pVC->VPX.Ctx,
                                            &pVC->VPX.RawImage,
                                            pts                                    /* Time stamp */,
@@ -1444,35 +1639,66 @@ static int videoRecRGBToYUV(uint32_t uPixelFormat,
  * @returns IPRT status code.
  * @param   pCtx                Pointer to the video recording context.
  * @param   pvData              Audio frame data to send.
- * @param   cbData              Size (in bytes) of audio frame data.
+ * @param   cbData              Size (in bytes) of (encoded) audio frame data.
  * @param   uTimeStampMs        Time stamp (in ms) of audio playback.
  */
 int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimeStampMs)
 {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    AssertReturn(cbData <= _64K, VERR_INVALID_PARAMETER);
-
-    int rc = RTCritSectEnter(&pCtx->CritSect);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     /* To save time spent in EMT, do the required audio multiplexing in the encoding thread.
      *
      * The multiplexing is needed to supply all recorded (enabled) screens with the same
      * audio data at the same given point in time.
      */
-    PVIDEORECAUDIOFRAME pFrame = &pCtx->Audio.Frame;
+    PVIDEORECBLOCK pBlock = (PVIDEORECBLOCK)RTMemAlloc(sizeof(VIDEORECBLOCK));
+    AssertPtrReturn(pBlock, VERR_NO_MEMORY);
+    pBlock->enmType = VIDEORECBLOCKTYPE_AUDIO;
 
-    memcpy(pFrame->abBuf, pvData, RT_MIN(_64K /** @todo Fix! */, cbData));
+    PVIDEORECAUDIOFRAME pFrame = (PVIDEORECAUDIOFRAME)RTMemAlloc(sizeof(VIDEORECAUDIOFRAME));
+    AssertPtrReturn(pFrame, VERR_NO_MEMORY);
 
-    pFrame->cbBuf        = cbData;
-    pFrame->uTimeStampMs = uTimeStampMs;
+    pFrame->pvBuf = (uint8_t *)RTMemAlloc(cbData);
+    AssertPtrReturn(pFrame->pvBuf, VERR_NO_MEMORY);
+    pFrame->cbBuf = cbData;
 
-    pCtx->Audio.fHasAudioData = true;
+    memcpy(pFrame->pvBuf, pvData, cbData);
 
-    rc = RTCritSectLeave(&pCtx->CritSect);
+    pBlock->pvData       = pFrame;
+    pBlock->cbData       = sizeof(VIDEORECAUDIOFRAME) + cbData;
+    pBlock->cRefs        = (uint16_t)pCtx->vecStreams.size(); /* All streams need the same audio data. */
+    pBlock->uTimeStampMs = uTimeStampMs;
+
+    int rc = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    try
+    {
+        VideoRecBlockMap::iterator itBlocks = pCtx->mapBlocksCommon.find(uTimeStampMs);
+        if (itBlocks == pCtx->mapBlocksCommon.end())
+        {
+            VideoRecBlocks *pVideoRecBlocks = new VideoRecBlocks();
+            pVideoRecBlocks->List.push_back(pBlock);
+
+            pCtx->mapBlocksCommon.insert(std::make_pair(uTimeStampMs, pVideoRecBlocks));
+        }
+        else
+            itBlocks->second->List.push_back(pBlock);
+    }
+    catch (const std::exception &ex)
+    {
+        RT_NOREF(ex);
+        rc = VERR_NO_MEMORY;
+    }
+
+    int rc2 = RTCritSectLeave(&pCtx->CritSect);
+    AssertRC(rc2);
+
     if (RT_SUCCESS(rc))
-        rc = RTSemEventSignal(pCtx->WaitEvent);
+        rc = videoRecThreadNotify(pCtx);
 
     return rc;
 #else
@@ -1510,13 +1736,21 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
     AssertReturn(uSrcHeight, VERR_INVALID_PARAMETER);
     AssertReturn(puSrcData,  VERR_INVALID_POINTER);
 
+    int rc = RTCritSectEnter(&pCtx->CritSect);
+    AssertRC(rc);
+
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
     if (!pStream)
+    {
+        rc = RTCritSectLeave(&pCtx->CritSect);
+        AssertRC(rc);
+
         return VERR_NOT_FOUND;
+    }
 
     videoRecStreamLock(pStream);
 
-    int rc = VINF_SUCCESS;
+    PVIDEORECVIDEOFRAME pFrame = NULL;
 
     do
     {
@@ -1583,11 +1817,9 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         if (destY + h > pStream->Video.uHeight)
             h = pStream->Video.uHeight - destY;
 
-#ifdef VBOX_VIDEOREC_WITH_QUEUE
-# error "Implement me!"
-#else
-        PVIDEORECVIDEOFRAME pFrame = &pStream->Video.Frame;
-#endif
+        pFrame = (PVIDEORECVIDEOFRAME)RTMemAllocZ(sizeof(VIDEORECVIDEOFRAME));
+        AssertBreakStmt(pFrame, rc = VERR_NO_MEMORY);
+
         /* Calculate bytes per pixel and set pixel format. */
         const unsigned uBytesPerPixel = uBPP / 8;
         if (uPixelFormat == BitmapFormat_BGR)
@@ -1611,19 +1843,25 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         else
             AssertMsgFailed(("Unknown pixel format (%RU32)\n", uPixelFormat));
 
-#ifndef VBOX_VIDEOREC_WITH_QUEUE
-        /* If we don't use a queue then we have to compare the dimensions
-         * of the current frame with the previous frame:
-         *
-         * If it's smaller than before then clear the entire buffer to prevent artifacts
-         * from the previous frame. */
-        if (   uSrcWidth  < pFrame->uWidth
-            || uSrcHeight < pFrame->uHeight)
+        const size_t cbRGBBuf =   pStream->Video.uWidth
+                                * pStream->Video.uHeight
+                                * uBytesPerPixel;
+        AssertBreakStmt(cbRGBBuf, rc = VERR_INVALID_PARAMETER);
+
+        pFrame->pu8RGBBuf = (uint8_t *)RTMemAlloc(cbRGBBuf);
+        AssertBreakStmt(pFrame->pu8RGBBuf, rc = VERR_NO_MEMORY);
+        pFrame->cbRGBBuf  = cbRGBBuf;
+        pFrame->uWidth    = uSrcWidth;
+        pFrame->uHeight   = uSrcHeight;
+
+        /* If the current video frame is smaller than video resolution we're going to encode,
+         * clear the frame beforehand to prevent artifacts. */
+        if (   uSrcWidth  < pStream->Video.uWidth
+            || uSrcHeight < pStream->Video.uHeight)
         {
-            /** @todo r=andy Only clear dirty areas. */
             RT_BZERO(pFrame->pu8RGBBuf, pFrame->cbRGBBuf);
         }
-#endif
+
         /* Calculate start offset in source and destination buffers. */
         uint32_t offSrc = y * uBytesPerLine + x * uBytesPerPixel;
         uint32_t offDst = (destY * pStream->Video.uWidth + destX) * uBytesPerPixel;
@@ -1679,22 +1917,73 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         if (RT_SUCCESS(rc2))
             RTFileClose(fh);
 #endif
-        pFrame->uTimeStampMs = uTimeStampMs;
-        pFrame->uWidth       = uSrcWidth;
-        pFrame->uHeight      = uSrcHeight;
-
-        pStream->Video.fHasVideoData = true;
 
     } while (0);
 
+    if (rc == VINF_SUCCESS) /* Note: Also could be VINF_TRY_AGAIN. */
+    {
+        PVIDEORECBLOCK pBlock = (PVIDEORECBLOCK)RTMemAlloc(sizeof(VIDEORECBLOCK));
+        if (pBlock)
+        {
+            AssertPtr(pFrame);
+
+            pBlock->enmType = VIDEORECBLOCKTYPE_VIDEO;
+            pBlock->pvData  = pFrame;
+            pBlock->cbData  = sizeof(VIDEORECVIDEOFRAME) + pFrame->cbRGBBuf;
+
+            try
+            {
+                VideoRecBlocks *pVideoRecBlocks = new VideoRecBlocks();
+                pVideoRecBlocks->List.push_back(pBlock);
+
+                Assert(pStream->Blocks.Map.find(uTimeStampMs) == pStream->Blocks.Map.end());
+                pStream->Blocks.Map.insert(std::make_pair(uTimeStampMs, pVideoRecBlocks));
+            }
+            catch (const std::exception &ex)
+            {
+                RT_NOREF(ex);
+
+                RTMemFree(pBlock);
+                rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(rc))
+        videoRecVideoFrameFree(pFrame);
+
     videoRecStreamUnlock(pStream);
+
+    int rc2 = RTCritSectLeave(&pCtx->CritSect);
+    AssertRC(rc2);
 
     if (   RT_SUCCESS(rc)
         && rc != VINF_TRY_AGAIN) /* Only signal the thread if operation was successful. */
     {
-        int rc2 = RTSemEventSignal(pCtx->WaitEvent);
-        AssertRC(rc2);
+        videoRecThreadNotify(pCtx);
     }
 
     return rc;
 }
+
+/**
+ * Frees a video recording video frame.
+ *
+ * @returns IPRT status code.
+ * @param   pFrame              Pointer to video frame to free. The pointer will be invalid after return.
+ */
+static void videoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame)
+{
+    if (!pFrame)
+        return;
+
+    if (pFrame->pu8RGBBuf)
+    {
+        Assert(pFrame->cbRGBBuf);
+        RTMemFree(pFrame->pu8RGBBuf);
+    }
+    RTMemFree(pFrame);
+}
+
