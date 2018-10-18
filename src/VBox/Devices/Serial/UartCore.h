@@ -32,13 +32,15 @@ RT_C_DECLS_BEGIN
 *********************************************************************************************************************************/
 
 /** The current serial code saved state version. */
-#define UART_SAVED_STATE_VERSION              6
+#define UART_SAVED_STATE_VERSION                                        7
+/** Saved state version before the TX timer for the connected device case was added. */
+#define UART_SAVED_STATE_VERSION_PRE_UNCONNECTED_TX_TIMER               6
 /** Saved state version of the legacy code which got replaced after 5.2. */
-#define UART_SAVED_STATE_VERSION_LEGACY_CODE  5
+#define UART_SAVED_STATE_VERSION_LEGACY_CODE                            5
 /** Includes some missing bits from the previous saved state. */
-#define UART_SAVED_STATE_VERSION_MISSING_BITS 4
+#define UART_SAVED_STATE_VERSION_MISSING_BITS                           4
 /** Saved state version when only the 16450 variant was implemented. */
-#define UART_SAVED_STATE_VERSION_16450        3
+#define UART_SAVED_STATE_VERSION_16450                                  3
 
 /** Maximum size of a FIFO. */
 #define UART_FIFO_LENGTH_MAX                 128
@@ -139,18 +141,26 @@ typedef struct UARTCORE
     /** The selected UART type. */
     UARTTYPE                        enmType;
 
-    /** R3 timer pointer fo the character timeout indication. */
+    /** R3 timer pointer for the character timeout indication. */
     PTMTIMERR3                      pTimerRcvFifoTimeoutR3;
+    /** R3 timer pointer for the send loop if no driver is connected. */
+    PTMTIMERR3                      pTimerTxUnconnectedR3;
     /** R3 interrupt request callback of the owning device. */
     R3PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR3;
     /** R0 timer pointer fo the character timeout indication. */
     PTMTIMERR0                      pTimerRcvFifoTimeoutR0;
+    /** R0 timer pointer for the send loop if no driver is connected. */
+    PTMTIMERR0                      pTimerTxUnconnectedR0;
     /** R0 interrupt request callback of the owning device. */
     R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR0;
     /** RC timer pointer fo the character timeout indication. */
     PTMTIMERRC                      pTimerRcvFifoTimeoutRC;
-        /** RC interrupt request callback of the owning device. */
+    /** RC timer pointer for the send loop if no driver is connected. */
+    PTMTIMERRC                      pTimerTxUnconnectedRC;
+    /** RC interrupt request callback of the owning device. */
     RCPTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqRC;
+    /** Alignment */
+    uint32_t                        u32Alignment;
 
     /** The divisor register (DLAB = 1). */
     uint16_t                        uRegDivisor;
@@ -186,7 +196,7 @@ typedef struct UARTCORE
     bool                            fThreEmptyPending;
     /** Alignment. */
     bool                            afAlignment[2];
-        /** The transmit FIFO. */
+    /** The transmit FIFO. */
     UARTFIFO                        FifoXmit;
     /** The receive FIFO. */
     UARTFIFO                        FifoRecv;

@@ -731,6 +731,49 @@ static void uartR3XferReset(PUARTCORE pThis)
     }
 
 }
+
+
+/**
+ * Tries to copy the specified amount of data from the active TX queue (register or FIFO).
+ *
+ * @returns nothing.
+ * @param   pThis               The serial port instance.
+ * @param   pvBuf               Where to store the data.
+ * @param   cbRead              How much to read from the TX queue.
+ * @param   pcbRead             Where to store the amount of data read.
+ */
+static void uartR3TxQueueCopyFrom(PUARTCORE pThis, void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
+    {
+        *pcbRead = uartFifoCopyTo(&pThis->FifoXmit, pvBuf, cbRead);
+        if (!pThis->FifoXmit.cbUsed)
+        {
+            UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
+            pThis->fThreEmptyPending = true;
+        }
+        if (*pcbRead)
+            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
+        uartIrqUpdate(pThis);
+    }
+    else if (!(pThis->uRegLsr & UART_REG_LSR_THRE))
+    {
+        *(uint8_t *)pvBuf = pThis->uRegThr;
+        *pcbRead = 1;
+        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
+        UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
+        pThis->fThreEmptyPending = true;
+        uartIrqUpdate(pThis);
+    }
+    else
+    {
+        /*
+         * This can happen if there was data in the FIFO when the connection was closed,
+         * indicate this condition to the lower driver by returning 0 bytes.
+         */
+        *pcbRead = 0;
+    }
+}
 #endif
 
 
@@ -802,6 +845,8 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
                     if (RT_FAILURE(rc2))
                         LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
                 }
+                else
+                    TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
 #endif
             }
             else
@@ -1376,6 +1421,23 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
     PDMCritSectLeave(&pThis->CritSect);
 }
 
+/**
+ * @callback_method_impl{FNTMTIMERDEV, TX timer function when there is no driver connected for draining the THR/FIFO.}
+ */
+static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    LogFlowFunc(("pDevIns=%#p pTimer=%#p pvUser=%#p\n", pDevIns, pTimer, pvUser));
+    RT_NOREF(pDevIns, pTimer);
+    PUARTCORE pThis = (PUARTCORE)pvUser;
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    uint8_t bIgnore = 0;
+    size_t cbRead = 0;
+    uartR3TxQueueCopyFrom(pThis, &bIgnore, sizeof(uint8_t), &cbRead);
+    if (cbRead == 1)
+        TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
+    PDMCritSectLeave(&pThis->CritSect);
+}
+
 
 /* -=-=-=-=-=-=-=-=- PDMISERIALPORT on LUN#0 -=-=-=-=-=-=-=-=- */
 
@@ -1437,35 +1499,7 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-    {
-        *pcbRead = uartFifoCopyTo(&pThis->FifoXmit, pvBuf, cbRead);
-        if (!pThis->FifoXmit.cbUsed)
-        {
-            UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
-            pThis->fThreEmptyPending = true;
-        }
-        if (*pcbRead)
-            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
-        uartIrqUpdate(pThis);
-    }
-    else if (!(pThis->uRegLsr & UART_REG_LSR_THRE))
-    {
-        *(uint8_t *)pvBuf = pThis->uRegThr;
-        *pcbRead = 1;
-        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
-        UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
-        pThis->fThreEmptyPending = true;
-        uartIrqUpdate(pThis);
-    }
-    else
-    {
-        /*
-         * This can happen if there was data in the FIFO when the connection was closed,
-         * idicate this condition to the lower driver by returning 0 bytes.
-         */
-        *pcbRead = 0;
-    }
+    uartR3TxQueueCopyFrom(pThis, pvBuf, cbRead, pcbRead);
     PDMCritSectLeave(&pThis->CritSect);
 
     LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
@@ -1538,7 +1572,11 @@ DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbMax);
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbItl);
 
-    return TMR3TimerSave(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+    int rc = TMR3TimerSave(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+    if (RT_SUCCESS(rc))
+        rc = TMR3TimerSave(pThis->pTimerTxUnconnectedR3, pSSM);
+
+    return rc;
 }
 
 
@@ -1569,6 +1607,8 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbItl);
 
         TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+        if (uVersion > UART_SAVED_STATE_VERSION_PRE_UNCONNECTED_TX_TIMER)
+            TMR3TimerLoad(pThis->pTimerTxUnconnectedR3, pSSM);
     }
     else
     {
@@ -1664,6 +1704,7 @@ DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta)
     RT_NOREF(offDelta);
     pThis->pDevInsRC              = PDMDEVINS_2_RCPTR(pThis->pDevInsR3);
     pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
+    pThis->pTimerTxUnconnectedRC  = TMTimerRCPtr(pThis->pTimerTxUnconnectedR3);
 }
 
 
@@ -1808,6 +1849,20 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
 
     pThis->pTimerRcvFifoTimeoutR0 = TMTimerR0Ptr(pThis->pTimerRcvFifoTimeoutR3);
     pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
+
+    /*
+     * Create the transmit timer when no device is connected.
+     */
+    rc = PDMDevHlpTMTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3TxUnconnectedTimer, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "UART TX uncon. Timer",
+                                &pThis->pTimerTxUnconnectedR3);
+    AssertRCReturn(rc, rc);
+
+    rc = TMR3TimerSetCritSect(pThis->pTimerTxUnconnectedR3, &pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    pThis->pTimerTxUnconnectedR0 = TMTimerR0Ptr(pThis->pTimerTxUnconnectedR3);
+    pThis->pTimerTxUnconnectedRC = TMTimerRCPtr(pThis->pTimerTxUnconnectedR3);
 
     uartR3Reset(pThis);
     return VINF_SUCCESS;

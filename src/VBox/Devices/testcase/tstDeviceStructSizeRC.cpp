@@ -1291,10 +1291,13 @@ int main()
     GEN_CHECK_OFF(UARTCORE, fFlags);
     GEN_CHECK_OFF(UARTCORE, enmType);
     GEN_CHECK_OFF(UARTCORE, pTimerRcvFifoTimeoutR3);
+    GEN_CHECK_OFF(UARTCORE, pTimerTxUnconnectedR3);
     GEN_CHECK_OFF(UARTCORE, pfnUartIrqReqR3);
     GEN_CHECK_OFF(UARTCORE, pTimerRcvFifoTimeoutR0);
+    GEN_CHECK_OFF(UARTCORE, pTimerTxUnconnectedR0);
     GEN_CHECK_OFF(UARTCORE, pfnUartIrqReqR0);
     GEN_CHECK_OFF(UARTCORE, pTimerRcvFifoTimeoutRC);
+    GEN_CHECK_OFF(UARTCORE, pTimerTxUnconnectedRC);
     GEN_CHECK_OFF(UARTCORE, pfnUartIrqReqRC);
     GEN_CHECK_OFF(UARTCORE, uRegDivisor);
     GEN_CHECK_OFF(UARTCORE, uRegRbr);
