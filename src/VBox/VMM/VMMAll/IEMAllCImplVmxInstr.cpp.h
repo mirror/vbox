@@ -4945,6 +4945,7 @@ IEM_STATIC int iemVmxVmentryCheckIntWindowExit(PVMCPU pVCpu, const char *pszInst
      * are enabled and the interrupt-window exit control is set.
      *
      * See Intel spec. 25.2 "Other Causes Of VM Exits".
+     * See Intel spec. 26.6.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -6089,6 +6090,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 /* We've now entered nested-guest execution. */
                                 pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
 
+                                /** The priority of potential VM-exits during VM-entry is important. */
+                                /** @todo NSTVMX: Any debug trap exceptions must be handled here. */
+                                /** @todo NSTVMX: VMX preemption timer exiting. */
+                                /** @todo NSTVMX: TPR thresholding exiting. */
+                                /** @todo NSTVMX: NMI-window exiting. */
+
                                 /* Check premature interrupt-window exiting. */
                                 rc = iemVmxVmentryCheckIntWindowExit(pVCpu, pszInstr);
                                 if (rc == VINF_VMX_INTERCEPT_NOT_ACTIVE)
@@ -6096,11 +6103,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 else if (rc == VINF_VMX_VMEXIT)
                                     return VINF_SUCCESS;
 
+                                /** @todo NSTVMX: Pending MTF exiting. */
+
                                 /* Now that we've switched page tables, we can inject events if any. */
                                 iemVmxVmentryInjectEvent(pVCpu, pszInstr);
-
-                                /** @todo NSTVMX: Setup VMX preemption timer */
-                                /** @todo NSTVMX: TPR thresholding. */
 
                                 return VINF_SUCCESS;
                             }
