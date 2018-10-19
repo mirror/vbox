@@ -1178,6 +1178,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Preferences...", "global preferences window"));
         setStatusTip(QApplication::translate("UIActionPool", "Display the global preferences window"));
+        setToolTip(text().remove('&').remove('.') +
+                   (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 

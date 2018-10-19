@@ -196,6 +196,8 @@ protected:
         setIconText(QApplication::translate("UIActionPool", "Import"));
         setName(QApplication::translate("UIActionPool", "&Import Appliance..."));
         setStatusTip(QApplication::translate("UIActionPool", "Import an appliance into VirtualBox"));
+        setToolTip(text().remove('&').remove('.') +
+                   (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -231,6 +233,8 @@ protected:
         setIconText(QApplication::translate("UIActionPool", "Export"));
         setName(QApplication::translate("UIActionPool", "&Export Appliance..."));
         setStatusTip(QApplication::translate("UIActionPool", "Export one or more VirtualBox virtual machines as an appliance"));
+        setToolTip(text().remove('&').remove('.') +
+                   (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -583,6 +587,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setStatusTip(QApplication::translate("UIActionPool", "Add existing virtual machine"));
+        setToolTip(text().remove('&').remove('.') +
+                   (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
