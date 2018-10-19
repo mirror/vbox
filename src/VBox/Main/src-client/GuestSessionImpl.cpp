@@ -2898,8 +2898,8 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const size_t cSources = aSources.size();
-    if (   aFilters.size() != cSources
-        || aFlags.size()   != cSources)
+    if (   (aFilters.size() && aFilters.size() != cSources)
+        || (aFlags.size()   && aFlags.size()   != cSources))
     {
         return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
     }
@@ -2928,20 +2928,34 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
                 return setError(E_FAIL, tr("Unable to query type for source '%s' (%Rrc)"), (*itSource).c_str(), vrc);
         }
 
+        Utf8Str strFlags;
+        if (itFlags != aFlags.end())
+        {
+            strFlags = *itFlags;
+            ++itFlags;
+        }
+
+        Utf8Str strFilter;
+        if (itFilter != aFilters.end())
+        {
+            strFilter = *itFilter;
+            ++itFilter;
+        }
+
         GuestSessionFsSourceSpec source;
         source.strSource    = *itSource;
-        source.strFilter    = *itFilter;
+        source.strFilter    = strFilter;
         source.enmType      = objData.mType;
         source.enmPathStyle = i_getPathStyle();
 
         HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
         {
-            hrc = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
+            hrc = GuestSession::i_directoryCopyFlagFromStr(strFlags, &source.Type.Dir.fCopyFlags);
             source.Type.Dir.fRecursive = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
-            hrc = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
+            hrc = GuestSession::i_fileCopyFlagFromStr(strFlags, &source.Type.File.fCopyFlags);
         else
             return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
         if (FAILED(hrc))
@@ -2950,8 +2964,6 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
         SourceSet.push_back(source);
 
         ++itSource;
-        ++itFilter;
-        ++itFlags;
     }
 
     return i_copyFromGuest(SourceSet, aDestination, aProgress);
@@ -2965,8 +2977,8 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const size_t cSources = aSources.size();
-    if (   aFilters.size() != cSources
-        || aFlags.size()   != cSources)
+    if (   (aFilters.size() && aFilters.size() != cSources)
+        || (aFlags.size()   && aFlags.size()   != cSources))
     {
         return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
     }
@@ -2989,21 +3001,35 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
             return setError(E_FAIL, tr("Unable to query type for source '%s' (%Rrc)"), (*itSource).c_str(), vrc);
         }
 
+        Utf8Str strFlags;
+        if (itFlags != aFlags.end())
+        {
+            strFlags = *itFlags;
+            ++itFlags;
+        }
+
+        Utf8Str strFilter;
+        if (itFilter != aFilters.end())
+        {
+            strFilter = *itFilter;
+            ++itFilter;
+        }
+
         GuestSessionFsSourceSpec source;
         source.strSource    = *itSource;
-        source.strFilter    = *itFilter;
+        source.strFilter    = strFilter;
         source.enmType      = GuestBase::fileModeToFsObjType(objInfo.Attr.fMode);
         source.enmPathStyle = i_getPathStyle();
 
         HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
         {
-            hrc = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
+            hrc = GuestSession::i_directoryCopyFlagFromStr(strFlags, &source.Type.Dir.fCopyFlags);
             source.Type.Dir.fFollowSymlinks = true; /** @todo Add a flag for that in DirectoryCopyFlag_T. Later. */
             source.Type.Dir.fRecursive      = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
-            hrc = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
+            hrc = GuestSession::i_fileCopyFlagFromStr(strFlags, &source.Type.File.fCopyFlags);
         else
             return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
         if (FAILED(hrc))
@@ -3012,8 +3038,6 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
         SourceSet.push_back(source);
 
         ++itSource;
-        ++itFilter;
-        ++itFlags;
     }
 
     return i_copyToGuest(SourceSet, aDestination, aProgress);
