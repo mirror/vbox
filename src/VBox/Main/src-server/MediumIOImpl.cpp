@@ -118,22 +118,6 @@ public:
         mRC = mVirtualBoxCaller.rc();
         if (FAILED(mRC))
             return;
-
-        /* Set up a per-operation progress interface, can be used freely (for
-         * binary operations you can use it either on the source or target). */
-        if (mProgress)
-        {
-            mVDIfProgress.pfnProgress = pProgress->i_vdProgressCallback;
-            int vrc = VDInterfaceAdd(&mVDIfProgress.Core,
-                                     "Medium::Task::vdInterfaceProgress",
-                                     VDINTERFACETYPE_PROGRESS,
-                                     mProgress,
-                                     sizeof(mVDIfProgress),
-                                     &mVDOperationIfaces);
-            AssertRC(vrc);
-            if (RT_FAILURE(vrc))
-                mRC = E_FAIL;
-        }
     }
 
     // Make all destructors virtual. Just in case.
@@ -170,8 +154,6 @@ public:
         LogFlowFuncLeave();
     }
 
-    PVDINTERFACE mVDOperationIfaces;
-
     const ComObjPtr<MediumIO> mMediumIO;
     AutoCaller mMediumCaller;
 
@@ -186,8 +168,6 @@ private:
     HRESULT executeTask();
 
     const ComObjPtr<Progress> mProgress;
-
-    VDINTERFACEPROGRESS mVDIfProgress;
 
     /* Must have a strong VirtualBox reference during a task otherwise the
      * reference count might drop to 0 while a task is still running. This
@@ -435,8 +415,20 @@ HRESULT MediumIO::StreamTask::executeTask()
 {
     HRESULT hrc = S_OK;
     VDINTERFACEIO IfsOutputIO;
+    VDINTERFACEPROGRESS IfsProgress;
     PVDINTERFACE pIfsOp = NULL;
     PVDISK pDstDisk;
+
+    if (mProgress)
+    {
+        IfsProgress.pfnProgress = pProgress->i_vdProgressCallback;
+        int vrc = VDInterfaceAdd(&IfsProgress.Core,
+                                 "Medium::StreamTask::vdInterfaceProgress",
+                                 VDINTERFACETYPE_PROGRESS,
+                                 mProgress,
+                                 sizeof(IfsProgress),
+                                 &pIfsOp);
+    }
 
     IfsOutputIO.pfnOpen                   = i_vdStreamOpen;
     IfsOutputIO.pfnClose                  = i_vdStreamClose;
