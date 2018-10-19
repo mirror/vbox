@@ -83,6 +83,9 @@ enum
     GPE1_OFFSET                         =   -1    /**<  not supported  */
 };
 
+/* Maximum supported number of custom ACPI tables */
+#define MAX_CUST_TABLES 4
+
 /* Undef this to enable 24 bit PM timer (mostly for debugging purposes) */
 #define PM_TMR_32BIT
 
@@ -437,8 +440,8 @@ typedef struct ACPIState
     /** Pointer to default PCI config write function. */
     R3PTRTYPE(PFNPCICONFIGWRITE)  pfnAcpiPciConfigWrite;
 
-    /** If custom table should be supported */
-    bool                fUseCust;
+    /** Number of custom ACPI tables */
+    uint8_t             cCustTbls;
     /** ACPI OEM ID */
     uint8_t             au8OemId[6];
     /** ACPI Crator ID */
@@ -451,10 +454,10 @@ typedef struct ACPIState
     uint32_t            u32OemRevision;
     uint32_t            Alignment4;
 
-    /** The custom table binary data. */
-    R3PTRTYPE(uint8_t *) pu8CustBin;
+    /** Custom ACPI tables binary data. */
+    R3PTRTYPE(uint8_t *) apu8CustBin[MAX_CUST_TABLES];
     /** The size of the custom table binary. */
-    uint64_t            cbCustBin;
+    uint64_t            acbCustBin[MAX_CUST_TABLES];
 
     /** SMBus Host Status Register */
     uint8_t             u8SMBusHstSts;
@@ -2801,7 +2804,7 @@ static int acpiR3SetupXsdt(ACPIState *pThis, RTGCPHYS32 addr, unsigned int nb_en
 
     acpiR3PrepareHeader(pThis, &xsdt->header, "XSDT", (uint32_t)size, 1 /* according to ACPI 3.0 specs */);
 
-    if (pThis->fUseCust)
+    if (pThis->cCustTbls > 0)
         memcpy(xsdt->header.au8OemTabId, pThis->au8OemTabId, 8);
 
     for (unsigned int i = 0; i < nb_entries; ++i)
@@ -3056,22 +3059,6 @@ static void acpiR3SetupHpet(ACPIState *pThis, RTGCPHYS32 addr)
 }
 
 
-/** Custom Description Table */
-static void acpiR3SetupCust(ACPIState *pThis, RTGCPHYS32 addr)
-{
-    ACPITBLCUST cust;
-
-    /* First the ACPI version 1 version of the structure. */
-    memset(&cust, 0, sizeof(cust));
-    acpiR3PrepareHeader(pThis, &cust.header, "CUST", sizeof(cust), 1);
-
-    memcpy(cust.header.au8OemTabId, pThis->au8OemTabId, 8);
-    cust.header.u32OemRevision = RT_H2LE_U32(pThis->u32OemRevision);
-    cust.header.u8Checksum = acpiR3Checksum((uint8_t *)&cust, sizeof(cust));
-
-    acpiR3PhysCopy(pThis, addr, pThis->pu8CustBin, pThis->cbCustBin);
-}
-
 /**
  * Used by acpiR3PlantTables to plant a MMCONFIG PCI config space access (MCFG)
  * descriptor.
@@ -3113,6 +3100,56 @@ static uint32_t apicR3FindRsdpSpace(void)
 }
 
 /**
+ * Called by acpiR3Construct to read and allocate a custom ACPI table
+ *
+ * @param   pDevIns         The device instance.
+ * @param   ppu8CustBin     Address to receive the address of the table
+ * @param   pcbCustBin      Address to receive the size of the the table.
+ * @param   pszCustBinFile
+ * @param   pBufAvail       Maximum space in bytes available for the custom
+ *                          table (including header).
+ */
+static int acpiR3ReadCustomTable(PPDMDEVINS pDevIns, uint8_t **ppu8CustBin, uint64_t *pcbCustBin,
+                                 char *pszCustBinFile, uint32_t cbBufAvail)
+{
+    RTFILE FileCUSTBin;
+    int rc = RTFileOpen(&FileCUSTBin, pszCustBinFile,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileGetSize(FileCUSTBin, pcbCustBin);
+        if (RT_SUCCESS(rc))
+        {
+            /* The following checks should be in sync the AssertReleaseMsg's below. */
+            if (    *pcbCustBin > cbBufAvail
+                ||  *pcbCustBin < sizeof(ACPITBLHEADER))
+                rc = VERR_TOO_MUCH_DATA;
+
+            /*
+             * Allocate buffer for the custom table binary data.
+             */
+            *ppu8CustBin = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, *pcbCustBin);
+            if (*ppu8CustBin)
+            {
+                rc = RTFileRead(FileCUSTBin, *ppu8CustBin, *pcbCustBin, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", *pcbCustBin, rc));
+                    PDMDevHlpMMHeapFree(pDevIns, *ppu8CustBin);
+                    *ppu8CustBin = NULL;
+                }
+            }
+            else
+            {
+                rc = VERR_NO_MEMORY;
+            }
+            RTFileClose(FileCUSTBin);
+        }
+    }
+    return rc;
+}
+
+/**
  * Create the ACPI tables in guest memory.
  */
 static int acpiR3PlantTables(ACPIState *pThis)
@@ -3123,10 +3160,10 @@ static int acpiR3PlantTables(ACPIState *pThis)
     RTGCPHYS32 GCPhysApic = 0;
     RTGCPHYS32 GCPhysSsdt = 0;
     RTGCPHYS32 GCPhysMcfg = 0;
-    RTGCPHYS32 GCPhysCust = 0;
+    RTGCPHYS32 aGCPhysCust[MAX_CUST_TABLES] = {0};
     uint32_t   addend = 0;
-    RTGCPHYS32 aGCPhysRsdt[8];
-    RTGCPHYS32 aGCPhysXsdt[8];
+    RTGCPHYS32 aGCPhysRsdt[7 + MAX_CUST_TABLES];
+    RTGCPHYS32 aGCPhysXsdt[7 + MAX_CUST_TABLES];
     uint32_t   cAddr;
     uint32_t   iMadt  = 0;
     uint32_t   iHpet  = 0;
@@ -3146,8 +3183,11 @@ static int acpiR3PlantTables(ACPIState *pThis)
     if (pThis->fUseMcfg)
         iMcfg = cAddr++;        /* MCFG */
 
-    if (pThis->fUseCust)
-        iCust = cAddr++;        /* CUST */
+    if (pThis->cCustTbls > 0)
+    {
+        iCust = cAddr;          /* CUST */
+        cAddr += pThis->cCustTbls;
+    }
 
     iSsdt = cAddr++;            /* SSDT */
 
@@ -3220,10 +3260,11 @@ static int acpiR3PlantTables(ACPIState *pThis)
         /* Assume one entry */
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLMCFG) + sizeof(ACPITBLMCFGENTRY), 16);
     }
-    if (pThis->fUseCust)
+
+    for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
-        GCPhysCust = GCPhysCur;
-        GCPhysCur = RT_ALIGN_32(GCPhysCur + pThis->cbCustBin, 16);
+        aGCPhysCust[i] = GCPhysCur;
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + pThis->acbCustBin[i], 16);
     }
 
     void  *pvSsdtCode = NULL;
@@ -3260,8 +3301,8 @@ static int acpiR3PlantTables(ACPIState *pThis)
         Log((" HPET 0x%08X", GCPhysHpet + addend));
     if (pThis->fUseMcfg)
         Log((" MCFG 0x%08X", GCPhysMcfg + addend));
-    if (pThis->fUseCust)
-        Log((" CUST 0x%08X", GCPhysCust + addend));
+    for (uint8_t i = 0; i < pThis->cCustTbls; i++)
+        Log((" CUST(%d) 0x%08X", i, aGCPhysCust[i] + addend));
     Log((" SSDT 0x%08X", GCPhysSsdt + addend));
     Log(("\n"));
 
@@ -3291,11 +3332,15 @@ static int acpiR3PlantTables(ACPIState *pThis)
         aGCPhysRsdt[iMcfg] = GCPhysMcfg + addend;
         aGCPhysXsdt[iMcfg] = GCPhysMcfg + addend;
     }
-    if (pThis->fUseCust)
+    for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
-        acpiR3SetupCust(pThis, GCPhysCust + addend);
-        aGCPhysRsdt[iCust] = GCPhysCust + addend;
-        aGCPhysXsdt[iCust] = GCPhysCust + addend;
+        Assert(i < MAX_CUST_TABLES);
+        acpiR3PhysCopy(pThis, aGCPhysCust[i] + addend, pThis->apu8CustBin[i], pThis->acbCustBin[i]);
+        aGCPhysRsdt[iCust + i] = aGCPhysCust[i] + addend;
+        aGCPhysXsdt[iCust + i] = aGCPhysCust[i] + addend;
+        uint8_t* pSig = pThis->apu8CustBin[i];
+        LogRel(("ACPI: Planted custom table '%c%c%c%c' at 0x%08X\n",
+               pSig[0], pSig[1], pSig[2], pSig[3], aGCPhysCust[i] + addend));
     }
 
     acpiR3SetupSsdt(pThis, GCPhysSsdt + addend, pvSsdtCode, cbSsdt);
@@ -3539,10 +3584,13 @@ static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
-    if (pThis->pu8CustBin)
+    for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
-        PDMDevHlpMMHeapFree(pDevIns, pThis->pu8CustBin);
-        pThis->pu8CustBin = NULL;
+        if (pThis->apu8CustBin[i])
+        {
+            PDMDevHlpMMHeapFree(pDevIns, pThis->apu8CustBin[i]);
+            pThis->apu8CustBin[i] = NULL;
+        }
     }
     return VINF_SUCCESS;
 }
@@ -3632,7 +3680,10 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "AcpiCreatorId\0"
                               "AcpiCreatorRev\0"
                               "CustomTable\0"
-                              "SLICTable\0"
+                              "CustomTable0\0"
+                              "CustomTable1\0"
+                              "CustomTable2\0"
+                              "CustomTable3\0"
                               "Parallel0IoPortBase\0"
                               "Parallel1IoPortBase\0"
                               "Parallel0Irq\0"
@@ -3687,9 +3738,6 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"PciPref64LimitGB\""));
     pThis->u64PciPref64Max = _1G64 * u64PciPref64MaxGB;
-
-    /* query whether we are supposed to present custom table */
-    pThis->fUseCust = false;
 
     /* query whether we are supposed to present SMC */
     rc = CFGMR3QueryBoolDef(pCfg, "SmcEnabled", &pThis->fUseSmc, false);
@@ -3894,79 +3942,89 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->u32OemRevision         = RT_H2LE_U32(0x1);
 
     /*
-     * Get the custom table binary file name.
+     * Load custom ACPI tables.
      */
     char *pszCustBinFile;
+
+    /* Maintain legacy behavior for CustomTable config key.
+     * If present, use it as alias for CustomTable1. */
     rc = CFGMR3QueryStringAlloc(pCfg, "CustomTable", &pszCustBinFile);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryStringAlloc(pCfg, "SLICTable", &pszCustBinFile);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    if (rc != VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pszCustBinFile = NULL;
-        rc = VINF_SUCCESS;
-    }
-    else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"CustomTable\" as a string failed"));
-    else if (!*pszCustBinFile)
-    {
-        MMR3HeapFree(pszCustBinFile);
-        pszCustBinFile = NULL;
-    }
-
-    /*
-     * Determine the custom table binary size, open specified ROM file in the process.
-     */
-    if (pszCustBinFile)
-    {
-        RTFILE FileCUSTBin;
-        rc = RTFileOpen(&FileCUSTBin, pszCustBinFile,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileGetSize(FileCUSTBin, &pThis->cbCustBin);
-            if (RT_SUCCESS(rc))
-            {
-                /* The following checks should be in sync the AssertReleaseMsg's below. */
-                if (    pThis->cbCustBin > 3072
-                    ||  pThis->cbCustBin < sizeof(ACPITBLHEADER))
-                    rc = VERR_TOO_MUCH_DATA;
-
-                /*
-                 * Allocate buffer for the custom table binary data.
-                 */
-                pThis->pu8CustBin = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbCustBin);
-                if (pThis->pu8CustBin)
-                {
-                    rc = RTFileRead(FileCUSTBin, pThis->pu8CustBin, pThis->cbCustBin, NULL);
-                    if (RT_FAILURE(rc))
-                    {
-                        AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", pThis->cbCustBin, rc));
-                        PDMDevHlpMMHeapFree(pDevIns, pThis->pu8CustBin);
-                        pThis->pu8CustBin = NULL;
-                    }
-                    else
-                    {
-                        pThis->fUseCust = true;
-                        memcpy(&pThis->au8OemId[0], &pThis->pu8CustBin[10], 6);
-                        memcpy(&pThis->au8OemTabId[0], &pThis->pu8CustBin[16], 8);
-                        memcpy(&pThis->u32OemRevision, &pThis->pu8CustBin[24], 4);
-                        memcpy(&pThis->au8CreatorId[0], &pThis->pu8CustBin[28], 4);
-                        memcpy(&pThis->u32CreatorRev, &pThis->pu8CustBin[32], 4);
-                        LogRel(("ACPI: Reading custom ACPI table from file '%s' (%d bytes)\n", pszCustBinFile,
-                                pThis->cbCustBin));
-                    }
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-
-                RTFileClose(FileCUSTBin);
-            }
-        }
-        MMR3HeapFree(pszCustBinFile);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("Error reading custom ACPI table"));
+                                    N_("Configuration error: Querying \"CustomTable\" as a string failed"));
+        if (!*pszCustBinFile)
+        {
+            MMR3HeapFree(pszCustBinFile);
+            pszCustBinFile = NULL;
+        }
+        else if (pszCustBinFile)
+        {
+            /* Try creating CustomTable0 using legacy value. */
+            rc = CFGMR3InsertString(pCfg, "CustomTable0", pszCustBinFile);
+            if (rc == VERR_CFGM_LEAF_EXISTS)
+                LogRel(("ACPI: Warning: \"CustomTable\" configuration"
+                        " setting ignored as \"CustomTable0\" setting exists.\n"));
+            MMR3HeapFree(pszCustBinFile);
+        }
+    }
+
+    /* Total space available for custom ACPI tables
+     * @todo define as appropriate, remove as a magic number, and document
+     *       limitation in product manual */
+    uint32_t cbBufAvail = 3072;
+    pThis->cCustTbls = 0;
+
+    const char* custTblConfigKeys[] = {"CustomTable0", "CustomTable1", "CustomTable2", "CustomTable3"};
+    for (unsigned i = 0; i < RT_ELEMENTS(custTblConfigKeys); ++i)
+    {
+        const char* pszConfigKey = custTblConfigKeys[i];
+
+        /*
+         * Get the custom table binary file name.
+         */
+        rc = CFGMR3QueryStringAlloc(pCfg, pszConfigKey, &pszCustBinFile);
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            pszCustBinFile = NULL;
+            rc = VINF_SUCCESS;
+        }
+        else if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                    N_("Configuration error: Querying \"CustomTableN\" as a string failed"));
+        else if (!*pszCustBinFile)
+        {
+            MMR3HeapFree(pszCustBinFile);
+            pszCustBinFile = NULL;
+        }
+        /*
+         * Determine the custom table binary size, open specified file in the process.
+         */
+        if (pszCustBinFile)
+        {
+            uint32_t tblIdx = pThis->cCustTbls;
+            rc = acpiR3ReadCustomTable(pDevIns, &(pThis->apu8CustBin[tblIdx]),
+                                       &(pThis->acbCustBin[tblIdx]), pszCustBinFile, cbBufAvail);
+            LogRel(("ACPI: Reading custom ACPI table(%u) from file '%s' (%d bytes)\n",
+                    tblIdx, pszCustBinFile, pThis->acbCustBin[tblIdx]));
+            MMR3HeapFree(pszCustBinFile);
+            if (RT_FAILURE(rc))
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("Error reading custom ACPI table."));
+            cbBufAvail -= pThis->acbCustBin[tblIdx];
+
+            /* Update custom OEM attributes based on custom table
+             * @todo: is it intended for custom tables to overwrite user provided values above? */
+            ACPITBLHEADER *pTblHdr = (ACPITBLHEADER*)pThis->apu8CustBin[tblIdx];
+            memcpy(&pThis->au8OemId[0], &pTblHdr->au8OemId[0], 6);
+            memcpy(&pThis->au8OemTabId[0], &pTblHdr->au8OemTabId[0], 8);
+            pThis->u32OemRevision = pTblHdr->u32OemRevision;
+            memcpy(&pThis->au8CreatorId[0], &pTblHdr->au8CreatorId[0], 4);
+            pThis->u32CreatorRev = pTblHdr->u32CreatorRev;
+
+            pThis->cCustTbls++;
+            Assert(pThis->cCustTbls <= MAX_CUST_TABLES);
+        }
     }
 
     /* Set default PM port base */

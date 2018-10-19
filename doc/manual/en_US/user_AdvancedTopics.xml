@@ -2382,20 +2382,25 @@ VBoxManage setextradata "VM name"
 
   <sect1 id="changeacpicust">
 
-    <title>Configuring the Custom ACPI Table</title>
+    <title>Configuring Custom ACPI Tables</title>
 
     <para>
-      VirtualBox can be configured to present an custom ACPI table to
-      the guest. Use the following command to configure this:
+      VirtualBox can be configured to present up to four custom ACPI tables
+      to the guest. A command such as the following can be used to configure
+      custom ACPI tables (note that CustomTable1, CustomTable2, and
+      CustomTable3 are available in addition to CustomTable0):
     </para>
 
 <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/acpi/0/Config/CustomTable" "/path/to/table.bin"</screen>
+      "VBoxInternal/Devices/acpi/0/Config/CustomTable0" "/path/to/table.bin"</screen>
 
     <para>
-      Configuring a custom ACPI table can prevent Windows Vista and
-      Windows 7 from asking for a new product key. On Linux hosts, one
-      of the host tables can be read from
+      Configuring custom ACPI tables can for example avoid the need to
+      ask for a new product key in Windows Vista/7/8 and later guests.
+    </para>
+
+    <para>
+      On Linux hosts, one of the system's ACPI tables can be read from
       <filename>/sys/firmware/acpi/tables/</filename>.
     </para>
 
