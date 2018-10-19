@@ -3827,6 +3827,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
     const QString strControllerName(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
+    bool fCancelled = false;
     QUuid uMediumId;
     switch (enmDevice)
     {
@@ -3837,30 +3838,32 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
                 uMediumId = getWithNewHDWizard();
             else if (iAnswer == AlertButton_Choice2)
                 uMediumId = openMediumSelectorDialog(UIMediumDeviceType_HardDisk);
+            else if (iAnswer == AlertButton_Cancel)
+                fCancelled = true;
             break;
         }
         case KDeviceType_DVD:
         {
             int iAnswer = msgCenter().confirmOpticalAttachmentCreation(strControllerName, this);
-            if (iAnswer == AlertButton_Choice1)
-                uMediumId = vboxGlobal().medium(uMediumId).id();
-            else if (iAnswer == AlertButton_Choice2)
+            if (iAnswer == AlertButton_Choice2)
                 uMediumId = openMediumSelectorDialog(UIMediumDeviceType_DVD);
+            else if (iAnswer == AlertButton_Cancel)
+                fCancelled = true;
             break;
         }
         case KDeviceType_Floppy:
         {
             int iAnswer = msgCenter().confirmFloppyAttachmentCreation(strControllerName, this);
-            if (iAnswer == AlertButton_Choice1)
-                uMediumId = vboxGlobal().medium(uMediumId).id();
-            else if (iAnswer == AlertButton_Choice2)
+            if (iAnswer == AlertButton_Choice2)
                 uMediumId = openMediumSelectorDialog(UIMediumDeviceType_Floppy);
+            else if (iAnswer == AlertButton_Cancel)
+                fCancelled = true;
             break;
         }
         default: break; /* Shut up, MSC! */
     }
 
-    if (!uMediumId.isNull())
+    if (!fCancelled)
     {
         m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDevice, uMediumId);
         m_pModelStorage->sort();
