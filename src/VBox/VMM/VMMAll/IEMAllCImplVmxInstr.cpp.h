@@ -6098,10 +6098,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* Check premature interrupt-window exiting. */
                                 rc = iemVmxVmentryCheckIntWindowExit(pVCpu, pszInstr);
-                                if (rc == VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                                { /* likely */ }
-                                else if (rc == VINF_VMX_VMEXIT)
-                                    return VINF_SUCCESS;
+                                if (rc != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                                    return rc;
 
                                 /** @todo NSTVMX: Pending MTF exiting. */
 
