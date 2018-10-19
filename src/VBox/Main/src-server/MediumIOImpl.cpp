@@ -798,12 +798,18 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
     ComObjPtr<DataStream> pDataStream;
     MediumIO::StreamTask *pTask = NULL;
 
-    pProgress.createObject();
-    pDataStream.createObject();
-
     try
     {
+        pDataStream.createObject();
         rc = pDataStream->init(aBufferSize);
+        if (FAILED(rc))
+            throw rc;
+
+        pProgress.createObject();
+        rc = pProgress->init(m->ptrVirtualBox,
+                             static_cast<IMediumIO*>(this),
+                             BstrFmt(tr("Converting medium '%s' to data stream"), m->ptrMedium->i_getLocationFull().c_str()),
+                             TRUE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
 
