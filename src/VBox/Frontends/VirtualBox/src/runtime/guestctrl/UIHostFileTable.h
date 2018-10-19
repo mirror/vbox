@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileTable class declaration.
+ * VBox Qt GUI - UIHostFileTable class declaration.
  */
 
 /*
@@ -50,4 +50,4 @@ private:
     QString permissionString(QFileDevice::Permissions permissions);
 };
 
-#endif /* !___UIGuestControlFileTable_h___ */
+#endif /* !___UIHostFileTable_h___ */

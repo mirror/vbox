@@ -120,8 +120,8 @@ void UIVMInformationDialog::retranslateUi()
     /* Translate tabs: */
     m_pTabWidget->setTabText(0, tr("Configuration &Details"));
     m_pTabWidget->setTabText(1, tr("&Runtime Information"));
-    m_pTabWidget->setTabText(2, tr("&Guest Session Manager"));
-    m_pTabWidget->setTabText(3, tr("&Guest File Manager"));
+    m_pTabWidget->setTabText(2, tr("Guest &Session Manager"));
+    m_pTabWidget->setTabText(3, tr("Guest &File Manager"));
 }
 
 bool UIVMInformationDialog::event(QEvent *pEvent)

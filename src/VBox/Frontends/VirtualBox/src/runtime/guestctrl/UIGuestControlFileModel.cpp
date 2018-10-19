@@ -27,6 +27,7 @@
 # include "UIErrorString.h"
 # include "UIGuestControlFileModel.h"
 # include "UIGuestControlFileTable.h"
+# include "UIGuestControlFileManager.h"
 
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -40,18 +41,27 @@ UIGuestControlFileProxyModel::UIGuestControlFileProxyModel(QObject *parent /* = 
 
 bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
-    QVariant leftData = sourceModel()->data(left);
-    QVariant rightData = sourceModel()->data(right);
+    UIFileTableItem *pLeftItem = static_cast<UIFileTableItem*>(left.internalPointer());
+    UIFileTableItem *pRightItem = static_cast<UIFileTableItem*>(right.internalPointer());
 
-    if (leftData.canConvert(QMetaType::QString) && rightData.canConvert(QMetaType::QString))
+    UIGuestControlFileManagerSettings *settings = UIGuestControlFileManagerSettings::instance();
+
+    if (pLeftItem && pRightItem)
     {
-
-        if (leftData == UIGuestControlFileModel::strUpDirectoryString)
+        /* List the directories before the files if settings say so: */
+        if (settings && settings->bListDirectoriesOnTop)
+        {
+            if (pLeftItem->isDirectory() && !pRightItem->isDirectory())
+                return true && (sortOrder() == Qt::AscendingOrder);
+            if (!pLeftItem->isDirectory() && pRightItem->isDirectory())
+                return false && (sortOrder() == Qt::AscendingOrder);
+        }
+        /* Up directory item should be always the first item: */
+        if (pLeftItem->isUpDirectory())
             return true && (sortOrder() == Qt::AscendingOrder);
-        else if (rightData == UIGuestControlFileModel::strUpDirectoryString)
+        else if (pRightItem->isUpDirectory())
             return false && (sortOrder() == Qt::AscendingOrder);
     }
-
     return QSortFilterProxyModel::lessThan(left, right);
 }
 

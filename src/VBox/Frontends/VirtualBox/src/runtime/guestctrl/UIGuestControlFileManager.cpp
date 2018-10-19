@@ -57,6 +57,30 @@
 # include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+UIGuestControlFileManagerSettings *UIGuestControlFileManagerSettings::m_pInstance = 0;
+
+UIGuestControlFileManagerSettings* UIGuestControlFileManagerSettings::instance()
+{
+    return m_pInstance;
+}
+
+void UIGuestControlFileManagerSettings::create()
+{
+    if (m_pInstance)
+        return;
+    m_pInstance = new UIGuestControlFileManagerSettings;
+}
+
+void UIGuestControlFileManagerSettings::destroy()
+{
+    delete m_pInstance;
+}
+
+UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
+    : bListDirectoriesOnTop(true)
+{
+}
+
 /*********************************************************************************************************************************
 *   UIFileOperationsList definition.                                                                                   *
 *********************************************************************************************************************************/
@@ -283,6 +307,7 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     prepareConnections();
     retranslateUi();
     loadSettings();
+    UIGuestControlFileManagerSettings::create();
 }
 
 UIGuestControlFileManager::~UIGuestControlFileManager()
@@ -292,6 +317,7 @@ UIGuestControlFileManager::~UIGuestControlFileManager()
     if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
     saveSettings();
+    UIGuestControlFileManagerSettings::destroy();
 }
 
 void UIGuestControlFileManager::retranslateUi()
@@ -363,7 +389,7 @@ void UIGuestControlFileManager::prepareObjects()
             m_pFileTableContainerWidget->setLayout(m_pFileTableContainerLayout);
             m_pFileTableContainerLayout->setSpacing(0);
             m_pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
-            m_pGuestFileTable = new UIGuestFileTable;
+            m_pGuestFileTable = new  UIGuestFileTable;
             m_pGuestFileTable->setEnabled(false);
 
             m_pHostFileTable = new UIHostFileTable;
@@ -712,4 +738,3 @@ void UIGuestControlFileManager::loadSettings()
 }
 
 #include "UIGuestControlFileManager.moc"
-

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileTable class declaration.
+ * VBox Qt GUI - UIGuestFileTable class declaration.
  */
 
 /*
@@ -61,4 +61,4 @@ private:
 
 };
 
-#endif /* !___UIGuestControlFileTable_h___ */
+#endif /* !___UIGuestFileTable_h___ */

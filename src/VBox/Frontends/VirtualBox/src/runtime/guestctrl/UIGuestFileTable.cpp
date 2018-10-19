@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileTable class implementation.
+ * VBox Qt GUI - UIGuestFileTable class implementation.
  */
 
 /*
