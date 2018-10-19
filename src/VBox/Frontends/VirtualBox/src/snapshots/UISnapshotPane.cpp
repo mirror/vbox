@@ -1043,7 +1043,7 @@ void UISnapshotPane::sltHandleCurrentItemChange()
     updateActionStates();
 
     /* Update details-widget if it's visible: */
-    if (pSnapshotItem && m_pDetailsWidget->isVisible())
+    if (pSnapshotItem && !m_pDetailsWidget->isHidden())
     {
         if (pSnapshotItem->isCurrentStateItem())
             m_pDetailsWidget->setData(m_comMachine);
