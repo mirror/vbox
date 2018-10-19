@@ -43,7 +43,7 @@ protected:
 
     /* Stuff for 'id' field: */
     QUuid id() const;
-    void setId(const QUuid &aId);
+    void setId(const QUuid &uId);
 
     /* Variables: */
     bool m_fBootHardDiskWasSet;
@@ -63,7 +63,7 @@ class UIWizardFirstRunPageBasic : public UIWizardPage, public UIWizardFirstRunPa
 public:
 
     /* Constructor: */
-    UIWizardFirstRunPageBasic(const QUuid &aMachineId, bool fBootHardDiskWasSet);
+    UIWizardFirstRunPageBasic(const QUuid &uMachineId, bool fBootHardDiskWasSet);
 
 protected:
 

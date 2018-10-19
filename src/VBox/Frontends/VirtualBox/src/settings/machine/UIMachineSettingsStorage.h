@@ -273,11 +273,11 @@ public:
     QUuid id() const;
     QUuid machineId() const;
 
-    void setMachineId (const QUuid &aMchineId);
+    void setMachineId (const QUuid &uMchineId);
 
     virtual ItemType rtti() const = 0;
     virtual AbstractItem* childItem (int aIndex) const = 0;
-    virtual AbstractItem* childItemById (const QUuid &aId) const = 0;
+    virtual AbstractItem* childItemById (const QUuid &uId) const = 0;
     virtual int posOfChild (AbstractItem *aItem) const = 0;
     virtual QString tip() const = 0;
     virtual QPixmap pixmap (ItemState aState = State_DefaultItem) = 0;
@@ -307,7 +307,7 @@ private:
 
     ItemType rtti() const;
     AbstractItem* childItem (int aIndex) const;
-    AbstractItem* childItemById (const QUuid &aId) const;
+    AbstractItem* childItemById (const QUuid &uId) const;
     int posOfChild (AbstractItem *aItem) const;
     int childCount() const;
     QString text() const;
@@ -352,7 +352,7 @@ private:
 
     ItemType rtti() const;
     AbstractItem* childItem (int aIndex) const;
-    AbstractItem* childItemById (const QUuid &aId) const;
+    AbstractItem* childItemById (const QUuid &uId) const;
     int posOfChild (AbstractItem *aItem) const;
     int childCount() const;
     QString text() const;
@@ -389,7 +389,7 @@ public:
 
     void setAttSlot (const StorageSlot &aAttSlot);
     void setAttDevice (KDeviceType aAttDeviceType);
-    void setAttMediumId (const QUuid &aAttMediumId);
+    void setAttMediumId (const QUuid &uAttMediumId);
     void setAttIsPassthrough (bool aPassthrough);
     void setAttIsTempEject (bool aTempEject);
     void setAttIsNonRotational (bool aNonRotational);
@@ -409,7 +409,7 @@ private:
 
     ItemType rtti() const;
     AbstractItem* childItem (int aIndex) const;
-    AbstractItem* childItemById (const QUuid &aId) const;
+    AbstractItem* childItemById (const QUuid &uId) const;
     int posOfChild (AbstractItem *aItem) const;
     int childCount() const;
     QString text() const;
@@ -539,12 +539,12 @@ public:
     bool setData (const QModelIndex &aIndex, const QVariant &aValue, int aRole);
 
     QModelIndex addController (const QString &aCtrName, KStorageBus aBusType, KStorageControllerType aCtrType);
-    void delController (const QUuid &aCtrId);
+    void delController (const QUuid &uCtrId);
 
-    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QUuid &aMediumId);
-    void delAttachment (const QUuid &aCtrId, const QUuid &aAttId);
+    QModelIndex addAttachment (const QUuid &uCtrId, KDeviceType aDeviceType, const QUuid &uMediumId);
+    void delAttachment (const QUuid &uCtrId, const QUuid &uAttId);
 
-    void setMachineId (const QUuid &aMachineId);
+    void setMachineId (const QUuid &uMachineId);
 
     void sort(int iColumn = 0, Qt::SortOrder order = Qt::AscendingOrder);
     QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
@@ -653,10 +653,10 @@ protected:
 
 private slots:
 
-    /** Handles enumeration of medium with @a strMediumId. */
-    void sltHandleMediumEnumerated(const QUuid &aMediumId);
-    /** Handles removing of medium with @a strMediumId. */
-    void sltHandleMediumDeleted(const QUuid &aMediumId);
+    /** Handles enumeration of medium with @a uMediumId. */
+    void sltHandleMediumEnumerated(const QUuid &uMediumId);
+    /** Handles removing of medium with @a uMediumId. */
+    void sltHandleMediumDeleted(const QUuid &uMediumId);
 
     /** Handles command to add controller. */
     void sltAddController();

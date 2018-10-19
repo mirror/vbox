@@ -27,7 +27,7 @@ class QString;
 class UIDesktopServices
 {
 public:
-    static bool createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QUuid &aUuid);
+    static bool createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QUuid &uUuid);
     static bool openInFileManager(const QString &strFile);
 };
 

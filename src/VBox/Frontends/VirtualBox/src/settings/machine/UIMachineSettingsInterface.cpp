@@ -133,8 +133,8 @@ struct UIDataSettingsMachineInterface
 };
 
 
-UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &aMachineId)
-    : m_uMachineId(aMachineId)
+UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &uMachineId)
+    : m_uMachineId(uMachineId)
     , m_pActionPool(0)
     , m_pCache(0)
 {

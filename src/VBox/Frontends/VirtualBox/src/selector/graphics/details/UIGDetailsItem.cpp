@@ -328,9 +328,9 @@ void UIGDetailsItem::paintText(QPainter *pPainter, QPoint point,
     pPainter->restore();
 }
 
-UIBuildStep::UIBuildStep(QObject *pParent, QObject *pBuildObject, const QUuid &aStepId, int iStepNumber)
+UIBuildStep::UIBuildStep(QObject *pParent, QObject *pBuildObject, const QUuid &uStepId, int iStepNumber)
     : QObject(pParent)
-    , m_uStepId(aStepId)
+    , m_uStepId(uStepId)
     , m_iStepNumber(iStepNumber)
 {
     /* Prepare connections: */

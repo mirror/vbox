@@ -87,10 +87,10 @@ protected:
 
 private slots:
 
-    /** Handles percentage changed event for progress with @a strProgressId to @a iPercent. */
-    void sltHandleProgressPercentageChange(const QUuid &aProgressId, const int iPercent);
-    /** Handles task completed event for progress with @a strProgressId. */
-    void sltHandleProgressTaskComplete(const QUuid &aProgressId);
+    /** Handles percentage changed event for progress with @a uProgressId to @a iPercent. */
+    void sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
+    /** Handles task completed event for progress with @a uProgressId. */
+    void sltHandleProgressTaskComplete(const QUuid &uProgressId);
 
     /** Handles window stack changed signal. */
     void sltHandleWindowStackChange();

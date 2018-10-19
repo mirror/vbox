@@ -258,11 +258,11 @@ void UIGChooserItemGroup::open(bool fAnimated /* = true */)
     m_pToggleButton->setToggled(true, fAnimated);
 }
 
-bool UIGChooserItemGroup::isContainsMachine(const QUuid &aId) const
+bool UIGChooserItemGroup::isContainsMachine(const QUuid &uId) const
 {
     /* Check each machine-item: */
     foreach (UIGChooserItem *pItem, m_machineItems)
-        if (pItem->toMachineItem()->id() == aId)
+        if (pItem->toMachineItem()->id() == uId)
             return true;
     /* Found nothing? */
     return false;
@@ -933,18 +933,18 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
     updateGeometry();
 }
 
-void UIGChooserItemGroup::updateAll(const QUuid &aId)
+void UIGChooserItemGroup::updateAll(const QUuid &uId)
 {
     /* Update all the required items recursively: */
     foreach (UIGChooserItem *pItem, items())
-        pItem->updateAll(aId);
+        pItem->updateAll(uId);
 }
 
-void UIGChooserItemGroup::removeAll(const QUuid &aId)
+void UIGChooserItemGroup::removeAll(const QUuid &uId)
 {
     /* Remove all the required items recursively: */
     foreach (UIGChooserItem *pItem, items())
-        pItem->removeAll(aId);
+        pItem->removeAll(uId);
 }
 
 UIGChooserItem* UIGChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)

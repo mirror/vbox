@@ -78,7 +78,7 @@ public:
     void open(bool fAnimated = true);
 
     /* API: Children stuff: */
-    bool isContainsMachine(const QUuid &aId) const;
+    bool isContainsMachine(const QUuid &uId) const;
     bool isContainsLockedMachine();
 
 private slots:
@@ -142,8 +142,8 @@ private:
     QList<UIGChooserItem*> items(UIGChooserItemType type = UIGChooserItemType_Any) const;
     bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const;
     void clearItems(UIGChooserItemType type = UIGChooserItemType_Any);
-    void updateAll(const QUuid &aId);
-    void removeAll(const QUuid &aId);
+    void updateAll(const QUuid &uId);
+    void removeAll(const QUuid &uId);
     UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
     void sortItems();

@@ -3101,10 +3101,10 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &aMachineID)
+void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != aMachineID)
+    if (vboxGlobal().managedVMUuid() != uMachineID)
         return;
 
     /* Update configuration: */
@@ -3308,27 +3308,27 @@ void UIActionPoolRuntime::prepareConnections()
 void UIActionPoolRuntime::updateConfiguration()
 {
     /* Get machine ID: */
-    const QUuid aMachineID = vboxGlobal().managedVMUuid();
-    if (aMachineID.isNull())
+    const QUuid uMachineID = vboxGlobal().managedVMUuid();
+    if (uMachineID.isNull())
         return;
 
     /* Recache common action restrictions: */
-    m_restrictedMenus[UIActionRestrictionLevel_Base] =                  gEDataManager->restrictedRuntimeMenuTypes(aMachineID);
-    m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(aMachineID);
-    m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuMachineActionTypes(aMachineID);
-    m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuViewActionTypes(aMachineID);
-    m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuInputActionTypes(aMachineID);
-    m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuDevicesActionTypes(aMachineID);
+    m_restrictedMenus[UIActionRestrictionLevel_Base] =                  gEDataManager->restrictedRuntimeMenuTypes(uMachineID);
+    m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(uMachineID);
+    m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuMachineActionTypes(uMachineID);
+    m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuViewActionTypes(uMachineID);
+    m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuInputActionTypes(uMachineID);
+    m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuDevicesActionTypes(uMachineID);
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    m_restrictedActionsMenuDebug[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(aMachineID);
+    m_restrictedActionsMenuDebug[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(uMachineID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef VBOX_WS_MAC
-    m_restrictedActionsMenuWindow[UIActionRestrictionLevel_Base] =      gEDataManager->restrictedRuntimeMenuWindowActionTypes(aMachineID);
+    m_restrictedActionsMenuWindow[UIActionRestrictionLevel_Base] =      gEDataManager->restrictedRuntimeMenuWindowActionTypes(uMachineID);
 #endif /* VBOX_WS_MAC */
-    m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuHelpActionTypes(aMachineID);
+    m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuHelpActionTypes(uMachineID);
 
     /* Recache visual state action restrictions: */
-    UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(aMachineID);
+    UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(uMachineID);
     {
         if (restrictedVisualStates & UIVisualStateType_Fullscreen)
             m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
@@ -3342,7 +3342,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache reconfiguration action restrictions: */
-    bool fReconfigurationAllowed = gEDataManager->machineReconfigurationEnabled(aMachineID);
+    bool fReconfigurationAllowed = gEDataManager->machineReconfigurationEnabled(uMachineID);
     if (!fReconfigurationAllowed)
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
@@ -3362,7 +3362,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache snapshot related action restrictions: */
-    bool fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(aMachineID);
+    bool fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(uMachineID);
     if (!fSnapshotOperationsAllowed)
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
@@ -3383,7 +3383,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache close related action restrictions: */
-    MachineCloseAction restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(aMachineID);
+    MachineCloseAction restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
     bool fAllCloseActionsRestricted =    (!vboxGlobal().isSeparateProcess() || (restrictedCloseActions & MachineCloseAction_Detach))
                                       && (restrictedCloseActions & MachineCloseAction_SaveState)
                                       && (restrictedCloseActions & MachineCloseAction_Shutdown)

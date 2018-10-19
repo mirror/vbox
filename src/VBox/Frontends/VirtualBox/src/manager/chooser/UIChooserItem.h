@@ -173,10 +173,10 @@ public:
         /** Clears children items of certain @a enmType. */
         virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) = 0;
 
-        /** Updates all children items with specified @a strId. */
-        virtual void updateAllItems(const QUuid &aId) = 0;
-        /** Removes all children items with specified @a strId. */
-        virtual void removeAllItems(const QUuid &aId) = 0;
+        /** Updates all children items with specified @a uId. */
+        virtual void updateAllItems(const QUuid &uId) = 0;
+        /** Removes all children items with specified @a uId. */
+        virtual void removeAllItems(const QUuid &uId) = 0;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
         virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;

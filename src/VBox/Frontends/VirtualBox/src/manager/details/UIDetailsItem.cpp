@@ -280,9 +280,9 @@ void UIDetailsItem::sltBuildStep(const QUuid &, int)
 *   Class UIPrepareStep implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIPrepareStep::UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUuid &aStepId, int iStepNumber)
+UIPrepareStep::UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUuid &uStepId, int iStepNumber)
     : QObject(pParent)
-    , m_uStepId(aStepId)
+    , m_uStepId(uStepId)
     , m_iStepNumber(iStepNumber)
 {
     /* Prepare connections (old style, polymorph): */

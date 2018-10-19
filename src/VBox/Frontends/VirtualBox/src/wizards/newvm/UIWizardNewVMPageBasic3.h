@@ -53,7 +53,7 @@ protected:
 
     /* Stuff for 'virtualDiskId' field: */
     QUuid virtualDiskId() const { return m_uVirtualDiskId; }
-    void setVirtualDiskId(const QUuid &aVirtualDiskId) { m_uVirtualDiskId = aVirtualDiskId; }
+    void setVirtualDiskId(const QUuid &uVirtualDiskId) { m_uVirtualDiskId = uVirtualDiskId; }
 
     /* Stuff for 'virtualDiskName' field: */
     QString virtualDiskName() const { return m_strVirtualDiskName; }

@@ -36,7 +36,7 @@ class SHARED_LIBRARY_STUFF UIMachineSettingsInterface : public UISettingsPageMac
 public:
 
     /** Constructs User Interface settings page. */
-    UIMachineSettingsInterface(const QUuid &aMachineId);
+    UIMachineSettingsInterface(const QUuid &uMachineId);
     /** Destructs User Interface settings page. */
     ~UIMachineSettingsInterface();
 

@@ -109,8 +109,8 @@ private:
     /** Refreshes item information such as icon, text and tool-tip. */
     void refresh();
 
-    /** Releases UIMedium wrapped by <i>this</i> item from virtual machine with @a strMachineId. */
-    bool releaseFrom(const QUuid &aMachineId);
+    /** Releases UIMedium wrapped by <i>this</i> item from virtual machine with @a uMachineId. */
+    bool releaseFrom(const QUuid &uMachineId);
 
     /** Formats field text. */
     static QString formatFieldText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");

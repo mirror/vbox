@@ -610,7 +610,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
 
 void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
                                                        QString strControl /* = QString() */,
-                                                       const QUuid &aID /* = QString() */)
+                                                       const QUuid &uID /* = QString() */)
 {
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -643,7 +643,7 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
 
         /* Create and execute corresponding VM settings window: */
         QPointer<UISettingsDialogMachine> pDlg = new UISettingsDialogMachine(this,
-                                                                             aID.isNull() ? pItem->id() : aID,
+                                                                             uID.isNull() ? pItem->id() : uID,
                                                                              strCategory, strControl);
         pDlg->execute();
         delete pDlg;

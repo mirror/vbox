@@ -265,16 +265,16 @@ private slots:
 
     /** @name Main event handling stuff.
       * @{ */
-        /** Handles machine @a enmState change for machine with certain @a strId. */
-        void sltMachineStateChanged(const QUuid &aId, const KMachineState enmState);
-        /** Handles machine data change for machine with certain @a strId. */
-        void sltMachineDataChanged(const QUuid &aId);
-        /** Handles machine registering/unregistering for machine with certain @a strId. */
-        void sltMachineRegistered(const QUuid &aId, const bool fRegistered);
-        /** Handles session @a enmState change for machine with certain @a strId. */
-        void sltSessionStateChanged(const QUuid &aId, const KSessionState enmState);
-        /** Handles snapshot change for machine/snapshot with certain @a strId / @a strSnapshotId. */
-        void sltSnapshotChanged(const QUuid &aId, const QUuid &aSnapshotId);
+        /** Handles machine @a enmState change for machine with certain @a uId. */
+        void sltMachineStateChanged(const QUuid &uId, const KMachineState enmState);
+        /** Handles machine data change for machine with certain @a uId. */
+        void sltMachineDataChanged(const QUuid &uId);
+        /** Handles machine registering/unregistering for machine with certain @a uId. */
+        void sltMachineRegistered(const QUuid &uId, const bool fRegistered);
+        /** Handles session @a enmState change for machine with certain @a uId. */
+        void sltSessionStateChanged(const QUuid &uId, const KSessionState enmState);
+        /** Handles snapshot change for machine/snapshot with certain @a uId / @a uSnapshotId. */
+        void sltSnapshotChanged(const QUuid &uId, const QUuid &uSnapshotId);
     /** @} */
 
     /** @name Selection stuff.
@@ -303,8 +303,8 @@ private slots:
         void sltCreateNewMachine();
         /** Handles group selected machines request. */
         void sltGroupSelectedMachines();
-        /** Handles reload machine with certain @a strId request. */
-        void sltReloadMachine(const QUuid &aId);
+        /** Handles reload machine with certain @a uId request. */
+        void sltReloadMachine(const QUuid &uId);
         /** Handles sort parent group request. */
         void sltSortParentGroup();
         /** Handles refresh request. */
@@ -536,8 +536,8 @@ class UIThreadGroupDefinitionSave : public QThread
 
 signals:
 
-    /** Notifies about machine with certain @a strId to be reloaded. */
-    void sigReload(const QUuid &aId);
+    /** Notifies about machine with certain @a uId to be reloaded. */
+    void sigReload(const QUuid &uId);
 
     /** Notifies about task is complete. */
     void sigComplete();

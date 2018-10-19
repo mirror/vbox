@@ -118,8 +118,8 @@ private slots:
 
     /** @name CVirtualBox event handling stuff.
       * @{ */
-        /** Handles CVirtualBox event about state change for machine with @a strID. */
-        void sltHandleStateChange(const QUuid &aID);
+        /** Handles CVirtualBox event about state change for machine with @a uID. */
+        void sltHandleStateChange(const QUuid &uID);
     /** @} */
 
     /** @name File menu stuff.
@@ -173,10 +173,10 @@ private slots:
         /** Handles call to open Machine Settings dialog.
           * @param strCategory can bring the settings category to start from.
           * @param strControl  can bring the widget of the page to focus.
-          * @param strID       can bring the ID of machine to manage. */
+          * @param uID       can bring the ID of machine to manage. */
         void sltOpenMachineSettingsDialog(QString strCategory = QString(),
                                           QString strControl = QString(),
-                                          const QUuid &aID = QUuid());
+                                          const QUuid &uID = QUuid());
         /** Handles call to open Machine Settings dialog the default way. */
         void sltOpenMachineSettingsDialogDefault() { sltOpenMachineSettingsDialog(); }
 

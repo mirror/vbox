@@ -82,10 +82,10 @@ protected slots:
     /** @name Item stuff.
       * @{ */
         /** Handles request about starting step build.
-          * @param  strStepId    Brings the step ID.
+          * @param  uStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
     /** @} */
-    virtual void sltBuildStep(const QUuid &aStepId, int iStepNumber) /* override */;
+    virtual void sltBuildStep(const QUuid &uStepId, int iStepNumber) /* override */;
 
 protected:
 

@@ -135,8 +135,8 @@ protected:
     /** Returns whether include ISOs selected. */
     bool isIncludeISOsSelected() const;
 
-    /** Defines provider by @a strId. */
-    void setProviderById(const QUuid &strId);
+    /** Defines provider by @a uId. */
+    void setProviderById(const QUuid &uId);
     /** Returns provider ID. */
     QUuid providerId() const;
     /** Returns provider short name. */

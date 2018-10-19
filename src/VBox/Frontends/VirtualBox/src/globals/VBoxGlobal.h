@@ -89,15 +89,15 @@ signals:
 
     /** @name COM: Virtual Media stuff.
      * @{ */
-        /** Notifies listeners about medium with certain @a strMediumID created. */
-        void sigMediumCreated(const QUuid &aMediumID);
-        /** Notifies listeners about medium with certain @a strMediumID deleted. */
-        void sigMediumDeleted(const QUuid &aMediumID);
+        /** Notifies listeners about medium with certain @a uMediumID created. */
+        void sigMediumCreated(const QUuid &uMediumID);
+        /** Notifies listeners about medium with certain @a uMediumID deleted. */
+        void sigMediumDeleted(const QUuid &uMediumID);
 
         /** Notifies listeners about medium enumeration started. */
         void sigMediumEnumerationStarted();
-        /** Notifies listeners about medium with certain @a strMediumID enumerated. */
-        void sigMediumEnumerated(const QUuid &aMediumID);
+        /** Notifies listeners about medium with certain @a uMediumID enumerated. */
+        void sigMediumEnumerated(const QUuid &uMediumID);
         /** Notifies listeners about medium enumeration finished. */
         void sigMediumEnumerationFinished();
     /** @} */
@@ -472,10 +472,10 @@ public:
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
         bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
 
-        /** Opens session of certain @a enmLockType for VM with certain @a strId. */
-        CSession openSession(const QUuid &aId, KLockType enmLockType = KLockType_Write);
-        /** Opens session of KLockType_Shared type for VM with certain @a strId. */
-        CSession openExistingSession(const QUuid &aId) { return openSession(aId, KLockType_Shared); }
+        /** Opens session of certain @a enmLockType for VM with certain @a uId. */
+        CSession openSession(const QUuid &uId, KLockType enmLockType = KLockType_Write);
+        /** Opens session of KLockType_Shared type for VM with certain @a uId. */
+        CSession openExistingSession(const QUuid &uId) { return openSession(uId, KLockType_Shared); }
     /** @} */
 
     /** @name COM: Virtual Media stuff.
@@ -486,14 +486,14 @@ public:
         void refreshMedia();
         /** Returns whether medium enumeration is in progress. */
         bool isMediumEnumerationInProgress() const;
-        /** Returns enumerated medium with certain @a strMediumID. */
-        UIMedium medium(const QUuid &aMediumID) const;
+        /** Returns enumerated medium with certain @a uMediumID. */
+        UIMedium medium(const QUuid &uMediumID) const;
         /** Returns enumerated medium IDs. */
         QList<QUuid> mediumIDs() const;
         /** Creates medium on the basis of passed @a guiMedium description. */
         void createMedium(const UIMedium &guiMedium);
-        /** Deletes medium with certain @a strMediumID. */
-        void deleteMedium(const QUuid &aMediumID);
+        /** Deletes medium with certain @a uMediumID. */
+        void deleteMedium(const QUuid &uMediumID);
 
         /** Opens external medium by passed @a strMediumLocation.
           * @param  enmMediumType      Brings the medium type.

@@ -570,10 +570,10 @@ QUuid UIMedium::nullID()
 }
 
 /* static */
-QUuid UIMedium::normalizedID(const QUuid &aID)
+QUuid UIMedium::normalizedID(const QUuid &uID)
 {
     /// @todo wipe out!
-    return aID;
+    return uID;
 }
 
 /* static */

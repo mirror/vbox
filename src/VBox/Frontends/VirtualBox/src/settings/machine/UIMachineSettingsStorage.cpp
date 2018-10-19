@@ -608,9 +608,9 @@ QUuid AbstractItem::machineId() const
     return mMachineId;
 }
 
-void AbstractItem::setMachineId (const QUuid &aMachineId)
+void AbstractItem::setMachineId (const QUuid &uMachineId)
 {
-    mMachineId = aMachineId;
+    mMachineId = uMachineId;
 }
 
 
@@ -648,10 +648,10 @@ AbstractItem* RootItem::childItem (int aIndex) const
     return mControllers [aIndex];
 }
 
-AbstractItem* RootItem::childItemById (const QUuid &aId) const
+AbstractItem* RootItem::childItemById (const QUuid &uId) const
 {
     for (int i = 0; i < childCount(); ++ i)
-        if (mControllers [i]->id() == aId)
+        if (mControllers [i]->id() == uId)
             return mControllers [i];
     return 0;
 }
@@ -846,10 +846,10 @@ AbstractItem* ControllerItem::childItem (int aIndex) const
     return mAttachments [aIndex];
 }
 
-AbstractItem* ControllerItem::childItemById (const QUuid &aId) const
+AbstractItem* ControllerItem::childItemById (const QUuid &uId) const
 {
     for (int i = 0; i < childCount(); ++ i)
-        if (mAttachments [i]->id() == aId)
+        if (mAttachments [i]->id() == uId)
             return mAttachments [i];
     return 0;
 }
@@ -982,11 +982,11 @@ void AttachmentItem::setAttDevice (KDeviceType aAttDeviceType)
     mAttDeviceType = aAttDeviceType;
 }
 
-void AttachmentItem::setAttMediumId (const QUuid &aAttMediumId)
+void AttachmentItem::setAttMediumId (const QUuid &uAttMediumId)
 {
     /// @todo is this required?
     //AssertMsg(!aAttMediumId.isNull(), ("Medium ID value can't be null!\n"));
-    mAttMediumId = vboxGlobal().medium(aAttMediumId).id();
+    mAttMediumId = vboxGlobal().medium(uAttMediumId).id();
     cache();
 }
 
@@ -1104,7 +1104,7 @@ AbstractItem* AttachmentItem::childItem (int /* aIndex */) const
     return 0;
 }
 
-AbstractItem* AttachmentItem::childItemById (const QUuid& /* aId */) const
+AbstractItem* AttachmentItem::childItemById (const QUuid& /* uId */) const
 {
     return 0;
 }
@@ -1823,9 +1823,9 @@ QModelIndex StorageModel::addController (const QString &aCtrName, KStorageBus aB
     return index (mRootItem->childCount() - 1, 0, root());
 }
 
-void StorageModel::delController (const QUuid &aCtrId)
+void StorageModel::delController (const QUuid &uCtrId)
 {
-    if (AbstractItem *item = mRootItem->childItemById (aCtrId))
+    if (AbstractItem *item = mRootItem->childItemById (uCtrId))
     {
         int itemPosition = mRootItem->posOfChild (item);
         beginRemoveRows (root(), itemPosition, itemPosition);
@@ -1834,28 +1834,28 @@ void StorageModel::delController (const QUuid &aCtrId)
     }
 }
 
-QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QUuid &aMediumId)
+QModelIndex StorageModel::addAttachment (const QUuid &uCtrId, KDeviceType aDeviceType, const QUuid &uMediumId)
 {
-    if (AbstractItem *parent = mRootItem->childItemById (aCtrId))
+    if (AbstractItem *parent = mRootItem->childItemById (uCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
         AttachmentItem *pItem = new AttachmentItem (parent, aDeviceType);
         pItem->setAttIsHotPluggable(m_configurationAccessLevel != ConfigurationAccessLevel_Full);
-        pItem->setAttMediumId(aMediumId);
+        pItem->setAttMediumId(uMediumId);
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
     }
     return QModelIndex();
 }
 
-void StorageModel::delAttachment (const QUuid &aCtrId, const QUuid &aAttId)
+void StorageModel::delAttachment (const QUuid &uCtrId, const QUuid &uAttId)
 {
-    if (AbstractItem *parent = mRootItem->childItemById (aCtrId))
+    if (AbstractItem *parent = mRootItem->childItemById (uCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
-        if (AbstractItem *item = parent->childItemById (aAttId))
+        if (AbstractItem *item = parent->childItemById (uAttId))
         {
             int itemPosition = parent->posOfChild (item);
             beginRemoveRows (index (parentPosition, 0, root()), itemPosition, itemPosition);
@@ -1865,9 +1865,9 @@ void StorageModel::delAttachment (const QUuid &aCtrId, const QUuid &aAttId)
     }
 }
 
-void StorageModel::setMachineId (const QUuid &aMachineId)
+void StorageModel::setMachineId (const QUuid &uMachineId)
 {
-    mRootItem->setMachineId (aMachineId);
+    mRootItem->setMachineId (uMachineId);
 }
 
 void StorageModel::sort(int /* iColumn */, Qt::SortOrder order)
@@ -2121,7 +2121,7 @@ public:
     UIMediumIDHolder(QWidget *pParent) : QObject(pParent) {}
 
     QUuid id() const { return m_uId; }
-    void setId(const QUuid &aId) { m_uId = aId; emit sigChanged(); }
+    void setId(const QUuid &uId) { m_uId = uId; emit sigChanged(); }
 
     UIMediumDeviceType type() const { return m_type; }
     void setType(UIMediumDeviceType type) { m_type = type; }
@@ -2627,10 +2627,10 @@ void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
     UISettingsPageMachine::showEvent(pEvent);
 }
 
-void UIMachineSettingsStorage::sltHandleMediumEnumerated(const QUuid &aMediumId)
+void UIMachineSettingsStorage::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    const UIMedium medium = vboxGlobal().medium(aMediumId);
+    const UIMedium medium = vboxGlobal().medium(uMediumId);
 
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
@@ -2651,7 +2651,7 @@ void UIMachineSettingsStorage::sltHandleMediumEnumerated(const QUuid &aMediumId)
     }
 }
 
-void UIMachineSettingsStorage::sltHandleMediumDeleted(const QUuid &aMediumId)
+void UIMachineSettingsStorage::sltHandleMediumDeleted(const QUuid &uMediumId)
 {
     QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
@@ -2661,7 +2661,7 @@ void UIMachineSettingsStorage::sltHandleMediumDeleted(const QUuid &aMediumId)
         {
             QModelIndex attIndex = ctrIndex.child(j, 0);
             QUuid attMediumId = m_pModelStorage->data(attIndex, StorageModel::R_AttMediumId).toString();
-            if (attMediumId == aMediumId)
+            if (attMediumId == uMediumId)
             {
                 m_pModelStorage->setData(attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
 

@@ -409,11 +409,11 @@ UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
 
 UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
                                                  bool fStartedFromVMSettings /* = true */,
-                                                 const QUuid &aMachineID /* = QString() */)
+                                                 const QUuid &uMachineID /* = QString() */)
     : QIWithRetranslateUI2<QWidget>(pParent)
     , m_fPrepared(false)
     , m_fStartedFromVMSettings(fStartedFromVMSettings)
-    , m_uMachineID(aMachineID)
+    , m_uMachineID(uMachineID)
     , m_pMainLayout(0), m_pButtonLayout(0)
     , m_pButtonClose(0)
     , m_pCheckBoxEnable(0)
@@ -424,10 +424,10 @@ UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
     prepare();
 }
 
-void UIStatusBarEditorWidget::setMachineID(const QUuid &aMachineID)
+void UIStatusBarEditorWidget::setMachineID(const QUuid &uMachineID)
 {
     /* Remember new machine ID: */
-    m_uMachineID = aMachineID;
+    m_uMachineID = uMachineID;
     /* Prepare: */
     prepare();
 }
@@ -689,10 +689,10 @@ void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
     }
 }
 
-void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QUuid &aMachineID)
+void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (machineID() != aMachineID)
+    if (machineID() != uMachineID)
         return;
 
     /* Recache status-bar configuration: */

@@ -73,17 +73,17 @@ public:
 
     /** Constructs menu-bar editor widget passing @a pParent to the base-class.
       * @param  fStartedFromVMSettings  Brings whether 'this' is a part of VM settings.
-      * @param  strMachineID            Brings the machine ID to be used by the editor.
+      * @param  uMachineID              Brings the machine ID to be used by the editor.
       * @param  pActionPool             Brings the action-pool to be used by the editor. */
     UIMenuBarEditorWidget(QWidget *pParent,
                           bool fStartedFromVMSettings = true,
-                          const QUuid &aMachineID = QUuid(),
+                          const QUuid &uMachineID = QUuid(),
                           UIActionPool *pActionPool = 0);
 
     /** Returns the machine ID instance. */
     const QUuid &machineID() const { return m_uMachineID; }
-    /** Defines the @a strMachineID instance. */
-    void setMachineID(const QUuid &aMachineID);
+    /** Defines the @a uMachineID instance. */
+    void setMachineID(const QUuid &uMachineID);
 
     /** Returns the action-pool reference. */
     const UIActionPool *actionPool() const { return m_pActionPool; }
@@ -154,7 +154,7 @@ protected:
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QUuid &aMachineID);
+    void sltHandleConfigurationChange(const QUuid &uMachineID);
 
     /** Handles menu-bar menu click. */
     void sltHandleMenuBarMenuClick();

@@ -677,27 +677,27 @@ bool UIGChooserModel::isGroupSavingInProgress() const
            UIGroupOrderSaveThread::instance();
 }
 
-void UIGChooserModel::sltMachineStateChanged(const QUuid &aId, const KMachineState)
+void UIGChooserModel::sltMachineStateChanged(const QUuid &uId, const KMachineState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(aId);
+    mainRoot()->updateAll(uId);
 }
 
-void UIGChooserModel::sltMachineDataChanged(const QUuid &aId)
+void UIGChooserModel::sltMachineDataChanged(const QUuid &uId)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(aId);
+    mainRoot()->updateAll(uId);
 }
 
-void UIGChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegistered)
+void UIGChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegistered)
 {
     /* New VM registered? */
     if (fRegistered)
     {
         /* Search for corresponding machine: */
-        CMachine machine = vboxGlobal().virtualBox().FindMachine(aId.toString());
+        CMachine machine = vboxGlobal().virtualBox().FindMachine(uId.toString());
         /* Should we show this machine? */
-        if (gEDataManager->showMachineInSelectorChooser(aId))
+        if (gEDataManager->showMachineInSelectorChooser(uId))
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(machine, true);
@@ -705,7 +705,7 @@ void UIGChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegiste
             updateNavigation();
             updateLayout();
             /* Change current-item only if VM was created from the GUI side: */
-            if (aId == m_uLastCreatedMachineId)
+            if (uId == m_uLastCreatedMachineId)
             {
                 setCurrentItem(mainRoot()->searchForItem(machine.GetName(),
                                                          UIGChooserItemSearchFlag_Machine |
@@ -717,7 +717,7 @@ void UIGChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegiste
     else
     {
         /* Remove machine-items with passed id: */
-        mainRoot()->removeAll(aId);
+        mainRoot()->removeAll(uId);
         /* Update model: */
         cleanupGroupTree();
         updateNavigation();
@@ -733,16 +733,16 @@ void UIGChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegiste
     }
 }
 
-void UIGChooserModel::sltSessionStateChanged(const QUuid &aId, const KSessionState)
+void UIGChooserModel::sltSessionStateChanged(const QUuid &uId, const KSessionState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(aId);
+    mainRoot()->updateAll(uId);
 }
 
-void UIGChooserModel::sltSnapshotChanged(const QUuid &aId, const QUuid &)
+void UIGChooserModel::sltSnapshotChanged(const QUuid &uId, const QUuid &)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAll(aId);
+    mainRoot()->updateAll(uId);
 }
 
 void UIGChooserModel::sltHandleViewResized()
@@ -996,16 +996,16 @@ void UIGChooserModel::sltGroupSelectedMachines()
     saveGroupSettings();
 }
 
-void UIGChooserModel::sltReloadMachine(const QUuid &aId)
+void UIGChooserModel::sltReloadMachine(const QUuid &uId)
 {
     /* Remove all the items first: */
-    mainRoot()->removeAll(aId);
+    mainRoot()->removeAll(uId);
     /* Wipe out empty groups: */
     cleanupGroupTree();
 
     /* Show machine if we should: */
-    CMachine machine = vboxGlobal().virtualBox().FindMachine(aId.toString());
-    if (gEDataManager->showMachineInSelectorChooser(aId))
+    CMachine machine = vboxGlobal().virtualBox().FindMachine(uId.toString());
+    if (gEDataManager->showMachineInSelectorChooser(uId))
         addMachineIntoTheTree(machine);
 
     /* And update model: */
@@ -1097,13 +1097,13 @@ void UIGChooserModel::sltRemoveSelectedMachine()
     foreach (UIGChooserItem *pItem, selectedMachineItemList)
     {
         /* Get machine-item id: */
-        QUuid aId = pItem->toMachineItem()->id();
+        QUuid uId = pItem->toMachineItem()->id();
 
         /* We already decided for that machine? */
-        if (verdicts.contains(aId))
+        if (verdicts.contains(uId))
         {
             /* To remove similar machine items? */
-            if (!verdicts[aId])
+            if (!verdicts[uId])
                 itemsToRemove << pItem;
             continue;
         }
@@ -1111,12 +1111,12 @@ void UIGChooserModel::sltRemoveSelectedMachine()
         /* Selected copy count: */
         int iSelectedCopyCount = 0;
         foreach (UIGChooserItem *pSelectedItem, selectedMachineItemList)
-            if (pSelectedItem->toMachineItem()->id() == aId)
+            if (pSelectedItem->toMachineItem()->id() == uId)
                 ++iSelectedCopyCount;
         /* Existing copy count: */
         int iExistingCopyCount = 0;
         foreach (UIGChooserItem *pExistingItem, existingMachineItemList)
-            if (pExistingItem->toMachineItem()->id() == aId)
+            if (pExistingItem->toMachineItem()->id() == uId)
                 ++iExistingCopyCount;
         /* If selected copy count equal to existing copy count,
          * we will propose ro unregister machine fully else
@@ -1124,7 +1124,7 @@ void UIGChooserModel::sltRemoveSelectedMachine()
         bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
         verdicts.insert(aId, fVerdict);
         if (fVerdict)
-            machinesToUnregister.append(aId);
+            machinesToUnregister.append(uId);
         else
             itemsToRemove << pItem;
     }

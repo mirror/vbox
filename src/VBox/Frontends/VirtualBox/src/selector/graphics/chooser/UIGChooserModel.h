@@ -159,11 +159,11 @@ public:
 private slots:
 
     /* Handlers: Global events: */
-    void sltMachineStateChanged(const QUuid &aId, const KMachineState state);
-    void sltMachineDataChanged(const QUuid &aId);
-    void sltMachineRegistered(const QUuid &aId, const bool fRegistered);
-    void sltSessionStateChanged(const QUuid &aId, const KSessionState state);
-    void sltSnapshotChanged(const QUuid &aId, const QUuid &aSnapshotId);
+    void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
+    void sltMachineDataChanged(const QUuid &uId);
+    void sltMachineRegistered(const QUuid &uId, const bool fRegistered);
+    void sltSessionStateChanged(const QUuid &uId, const KSessionState state);
+    void sltSnapshotChanged(const QUuid &uId, const QUuid &uSnapshotId);
 
     /* Handler: Chooser-view stuff: */
     void sltHandleViewResized();
@@ -184,7 +184,7 @@ private slots:
     /* Handlers: Machine-item stuff: */
     void sltCreateNewMachine();
     void sltGroupSelectedMachines();
-    void sltReloadMachine(const QUuid &aId);
+    void sltReloadMachine(const QUuid &uId);
     void sltSortParentGroup();
     void sltPerformRefreshAction();
     void sltRemoveSelectedMachine();
@@ -314,7 +314,7 @@ class UIGroupDefinitionSaveThread : public QThread
 signals:
 
     /* Notifier: Reload stuff: */
-    void sigReload(const QUuid &aId);
+    void sigReload(const QUuid &uId);
 
     /* Notifier: Complete stuff: */
     void sigComplete();

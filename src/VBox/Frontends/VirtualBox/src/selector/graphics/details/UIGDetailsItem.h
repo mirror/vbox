@@ -52,7 +52,7 @@ class UIGDetailsItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 signals:
 
     /* Notifiers: Build stuff: */
-    void sigBuildStep(const QUuid &aStepId, const int iStepNumber);
+    void sigBuildStep(const QUuid &uStepId, const int iStepNumber);
     void sigBuildDone();
 
 public:
@@ -120,12 +120,12 @@ class UIBuildStep : public QObject
 signals:
 
     /* Notifier: Build stuff: */
-    void sigStepDone(const QUuid &aStepId, const int iStepNumber);
+    void sigStepDone(const QUuid &uStepId, const int iStepNumber);
 
 public:
 
     /* Constructor: */
-    UIBuildStep(QObject *pParent, QObject *pBuildObject, const QUuid &aStepId, int iStepNumber);
+    UIBuildStep(QObject *pParent, QObject *pBuildObject, const QUuid &uStepId, int iStepNumber);
 
 private slots:
 

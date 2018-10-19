@@ -37,10 +37,10 @@ signals:
     /** Notifies listeners about link click.
       * @param  strCategory  Brings link category.
       * @param  strControl   Brings control name.
-      * @param  strId        Brings machine ID. */
+      * @param  uId        Brings machine ID. */
     void sigLinkClicked(const QString &strCategory,
                         const QString &strControl,
-                        const QUuid &aId);
+                        const QUuid &uId);
 
     /** Notifies listeners about sliding started. */
     void sigSlidingStarted();

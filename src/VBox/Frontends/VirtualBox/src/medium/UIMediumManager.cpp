@@ -62,17 +62,17 @@
 
 
 
-/** Functor allowing to check if passed UIMediumItem is suitable by @a strID. */
+/** Functor allowing to check if passed UIMediumItem is suitable by @a uID. */
 class CheckIfSuitableByID : public CheckIfSuitableBy
 {
 public:
-    /** Constructor accepting @a strID to compare with. */
-    CheckIfSuitableByID(const QUuid &aID) : m_uID(aID) {}
+    /** Constructor accepting @a uID to compare with. */
+    CheckIfSuitableByID(const QUuid &uID) : m_uID(uID) {}
 
 private:
-    /** Determines whether passed UIMediumItem is suitable by @a strID. */
+    /** Determines whether passed UIMediumItem is suitable by @a uID. */
     bool isItSuitable(UIMediumItem *pItem) const { return pItem->id() == m_uID; }
-    /** Holds the @a strID to compare to. */
+    /** Holds the @a uID to compare to. */
     QUuid m_uID;
 };
 
@@ -382,10 +382,10 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     sltHandleCurrentTabChanged();
 }
 
-void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &aMediumID)
+void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &uMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(aMediumID);
+    UIMedium medium = vboxGlobal().medium(uMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -413,10 +413,10 @@ void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &aMediumID)
         setCurrentItem(treeWidget(medium.type()), pMediumItem);
 }
 
-void UIMediumManagerWidget::sltHandleMediumDeleted(const QUuid &aMediumID)
+void UIMediumManagerWidget::sltHandleMediumDeleted(const QUuid &uMediumID)
 {
     /* Make sure corresponding medium-item deleted: */
-    deleteMediumItem(aMediumID);
+    deleteMediumItem(uMediumID);
 }
 
 void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
@@ -458,10 +458,10 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
     refetchCurrentChosenMediumItem();
 }
 
-void UIMediumManagerWidget::sltHandleMediumEnumerated(const QUuid &aMediumID)
+void UIMediumManagerWidget::sltHandleMediumEnumerated(const QUuid &uMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(aMediumID);
+    UIMedium medium = vboxGlobal().medium(uMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -1294,7 +1294,7 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
         refetchCurrentMediumItem(type);
 }
 
-void UIMediumManagerWidget::deleteMediumItem(const QUuid &aMediumID)
+void UIMediumManagerWidget::deleteMediumItem(const QUuid &uMediumID)
 {
     /* Search for corresponding tree-widget: */
     QList<UIMediumDeviceType> types;
@@ -1306,7 +1306,7 @@ void UIMediumManagerWidget::deleteMediumItem(const QUuid &aMediumID)
         /* Get iterated tree-widget: */
         pTreeWidget = treeWidget(type);
         /* Search for existing medium-item: */
-        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(aMediumID));
+        pMediumItem = searchItem(pTreeWidget, CheckIfSuitableByID(uMediumID));
         if (pMediumItem)
             break;
     }
@@ -1320,7 +1320,7 @@ void UIMediumManagerWidget::deleteMediumItem(const QUuid &aMediumID)
 
     /* Delete medium-item: */
     delete pMediumItem;
-    LogRel2(("UIMediumManager: Medium-item with ID={%s} deleted.\n", aMediumID.toString().toUtf8().constData()));
+    LogRel2(("UIMediumManager: Medium-item with ID={%s} deleted.\n", uMediumID.toString().toUtf8().constData()));
 
     /* If there is no current medium-item now selected
      * we have to choose first-available medium-item as current one: */

@@ -147,9 +147,9 @@ private slots:
     /** @name Medium operation stuff.
       * @{ */
         /** Handles VBoxGlobal::sigMediumCreated signal. */
-        void sltHandleMediumCreated(const QUuid &aMediumID);
+        void sltHandleMediumCreated(const QUuid &uMediumID);
         /** Handles VBoxGlobal::sigMediumDeleted signal. */
-        void sltHandleMediumDeleted(const QUuid &aMediumID);
+        void sltHandleMediumDeleted(const QUuid &uMediumID);
     /** @} */
 
     /** @name Medium enumeration stuff.
@@ -157,7 +157,7 @@ private slots:
         /** Handles VBoxGlobal::sigMediumEnumerationStarted signal. */
         void sltHandleMediumEnumerationStart();
         /** Handles VBoxGlobal::sigMediumEnumerated signal. */
-        void sltHandleMediumEnumerated(const QUuid &aMediumID);
+        void sltHandleMediumEnumerated(const QUuid &uMediumID);
         /** Handles VBoxGlobal::sigMediumEnumerationFinished signal. */
         void sltHandleMediumEnumerationFinish();
     /** @} */
@@ -247,8 +247,8 @@ private:
         UIMediumItem *createHardDiskItem(const UIMedium &medium);
         /** Updates UIMediumItem for corresponding @a medium. */
         void updateMediumItem(const UIMedium &medium);
-        /** Deletes UIMediumItem for corresponding @a strMediumID. */
-        void deleteMediumItem(const QUuid &aMediumID);
+        /** Deletes UIMediumItem for corresponding @a uMediumID. */
+        void deleteMediumItem(const QUuid &uMediumID);
 
         /** Returns tab for passed medium @a type. */
         QWidget *tab(UIMediumDeviceType type) const;

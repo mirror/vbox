@@ -51,7 +51,7 @@ signals:
     /** Redirects signal from UIVirtualBoxManager to UIDetails. */
     void sigToggleFinished();
     /** Redirects signal from UIDetails to UIVirtualBoxManager. */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &aId);
+    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &uId);
 
 public:
 

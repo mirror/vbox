@@ -521,11 +521,11 @@ void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QSt
           UIErrorString::formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QUuid &aId) const
+void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QUuid &uId) const
 {
     error(0, MessageType_Error,
           tr("There is no virtual machine with the identifier <b>%1</b>.")
-             .arg(aId.toString()),
+             .arg(uId.toString()),
           UIErrorString::formatErrorInfo(vbox));
 }
 
@@ -1020,12 +1020,12 @@ void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
 }
 
 void UIMessageCenter::cannotFindSnapshotById(const CMachine &comMachine,
-                                             const QUuid &aId,
+                                             const QUuid &uId,
                                              QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Can't find snapshot with ID=<b>%1</b>.")
-             .arg(aId.toString()),
+             .arg(uId.toString()),
           UIErrorString::formatErrorInfo(comMachine));
 }
 

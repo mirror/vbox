@@ -57,10 +57,10 @@ class UIProgressEventHandler : public QObject
 
 signals:
 
-    /** Notifies about @a iPercent change for progress with @a strProgressId. */
-    void sigProgressPercentageChange(const QUuid &aProgressId, const int iPercent);
-    /** Notifies about task complete for progress with @a strProgressId. */
-    void sigProgressTaskComplete(const QUuid &aProgressId);
+    /** Notifies about @a iPercent change for progress with @a uProgressId. */
+    void sigProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
+    /** Notifies about task complete for progress with @a uProgressId. */
+    void sigProgressTaskComplete(const QUuid &uProgressId);
 
 public:
 

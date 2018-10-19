@@ -1266,10 +1266,10 @@ void UIIndicatorsPool::setAutoUpdateIndicatorStates(bool fEnabled)
         m_pTimerAutoUpdate->stop();
 }
 
-void UIIndicatorsPool::sltHandleConfigurationChange(const QUuid &aMachineID)
+void UIIndicatorsPool::sltHandleConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != aMachineID)
+    if (vboxGlobal().managedVMUuid() != uMachineID)
         return;
 
     /* Update pool: */

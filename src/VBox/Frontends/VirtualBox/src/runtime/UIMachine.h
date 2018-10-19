@@ -46,9 +46,9 @@ signals:
 
 public:
 
-    /** Static factory to start machine with passed @a strID.
+    /** Static factory to start machine with passed @a uID.
       * @return true if machine was started, false otherwise. */
-    static bool startMachine(const QUuid &aID);
+    static bool startMachine(const QUuid &uID);
     /** Static constructor. */
     static bool create();
     /** Static destructor. */

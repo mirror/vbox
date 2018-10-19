@@ -544,11 +544,11 @@ void UIMediumSelector::sltHandleSearchTermChange(QString searchTerm)
     performMediumSearch();
 }
 
-void UIMediumSelector::selectMedium(const QUuid &aMediumID)
+void UIMediumSelector::selectMedium(const QUuid &uMediumID)
 {
     if (!m_pTreeWidget)
         return;
-    UIMediumItem *pMediumItem = searchItem(0, aMediumID);
+    UIMediumItem *pMediumItem = searchItem(0, uMediumID);
     if (pMediumItem)
     {
         m_pTreeWidget->setCurrentItem(pMediumItem);

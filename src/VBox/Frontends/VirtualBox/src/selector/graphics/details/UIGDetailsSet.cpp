@@ -112,14 +112,14 @@ void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QMap<D
     rebuildSet();
 }
 
-void UIGDetailsSet::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
+void UIGDetailsSet::sltBuildStep(const QUuid &uStepId, const int iStepNumber)
 {
     /* Cleanup build-step: */
     delete m_pBuildStep;
     m_pBuildStep = 0;
 
     /* Is step id valid? */
-    if (aStepId != m_uSetId)
+    if (uStepId != m_uSetId)
         return;
 
     /* Step number feats the bounds: */
@@ -172,7 +172,7 @@ void UIGDetailsSet::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
         if (pElement->isVisible())
         {
             /* Create next build-step: */
-            m_pBuildStep = new UIBuildStep(this, pElement, aStepId, iStepNumber + 1);
+            m_pBuildStep = new UIBuildStep(this, pElement, uStepId, iStepNumber + 1);
 
             /* Build element: */
             pElement->updateAppearance();
@@ -181,7 +181,7 @@ void UIGDetailsSet::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
         else
         {
             /* Just build next step: */
-            sltBuildStep(aStepId, iStepNumber + 1);
+            sltBuildStep(uStepId, iStepNumber + 1);
         }
     }
     /* Step number out of bounds: */
@@ -197,20 +197,20 @@ void UIGDetailsSet::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
     }
 }
 
-void UIGDetailsSet::sltMachineStateChange(const QUuid &aId)
+void UIGDetailsSet::sltMachineStateChange(const QUuid &uId)
 {
     /* Is this our VM changed? */
-    if (m_machine.GetId() != aId)
+    if (m_machine.GetId() != uId)
         return;
 
     /* Update appearance: */
     rebuildSet();
 }
 
-void UIGDetailsSet::sltMachineAttributesChange(const QUuid &aId)
+void UIGDetailsSet::sltMachineAttributesChange(const QUuid &uId)
 {
     /* Is this our VM changed? */
-    if (m_machine.GetId() != aId)
+    if (m_machine.GetId() != uId)
         return;
 
     /* Update appearance: */

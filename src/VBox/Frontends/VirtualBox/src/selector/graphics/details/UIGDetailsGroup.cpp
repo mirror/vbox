@@ -88,14 +88,14 @@ void UIGDetailsGroup::stopBuildingGroup()
     m_uGroupId = QUuid::createUuid();
 }
 
-void UIGDetailsGroup::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
+void UIGDetailsGroup::sltBuildStep(const QUuid &uStepId, const int iStepNumber)
 {
     /* Cleanup build-step: */
     delete m_pBuildStep;
     m_pBuildStep = 0;
 
     /* Is step id valid? */
-    if (aStepId != m_uGroupId)
+    if (uStepId != m_uGroupId)
         return;
 
     /* Step number feats the bounds: */
@@ -110,7 +110,7 @@ void UIGDetailsGroup::sltBuildStep(const QUuid &aStepId, const int iStepNumber)
             pSet = m_items.at(iStepNumber)->toSet();
 
         /* Create next build-step: */
-        m_pBuildStep = new UIBuildStep(this, pSet, aStepId, iStepNumber + 1);
+        m_pBuildStep = new UIBuildStep(this, pSet, uStepId, iStepNumber + 1);
 
         /* Build set: */
         pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, model()->settings());

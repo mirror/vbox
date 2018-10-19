@@ -68,10 +68,10 @@ protected slots:
     /** @name Item stuff.
       * @{ */
         /** Handles request about starting step build.
-          * @param  strStepId    Brings the step ID.
+          * @param  uStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
     /** @} */
-    virtual void sltBuildStep(const QUuid &aStepId, int iStepNumber) /* override */;
+    virtual void sltBuildStep(const QUuid &uStepId, int iStepNumber) /* override */;
 
 protected:
 
@@ -123,10 +123,10 @@ private slots:
 
     /** @name Event-handling stuff.
       * @{ */
-        /** Handles machine-state change for item with @a strId. */
-        void sltMachineStateChange(const QUuid &aId);
-        /** Handles machine-attribute change for item with @a strId. */
-        void sltMachineAttributesChange(const QUuid &aId);
+        /** Handles machine-state change for item with @a uId. */
+        void sltMachineStateChange(const QUuid &uId);
+        /** Handles machine-attribute change for item with @a uId. */
+        void sltMachineAttributesChange(const QUuid &uId);
     /** @} */
 
     /** @name Item stuff.

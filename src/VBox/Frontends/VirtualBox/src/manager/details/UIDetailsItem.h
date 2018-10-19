@@ -56,9 +56,9 @@ signals:
     /** @name Item stuff.
       * @{ */
         /** Notifies listeners about step build should be started.
-          * @param  strStepId    Brings the step ID.
+          * @param  uStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
-        void sigBuildStep(const QUuid &aStepId, int iStepNumber);
+        void sigBuildStep(const QUuid &uStepId, int iStepNumber);
         /** Notifies listeners about step build complete. */
         void sigBuildDone();
     /** @} */
@@ -126,10 +126,10 @@ protected slots:
     /** @name Item stuff.
       * @{ */
         /** Handles request about starting step build.
-          * @param  strStepId    Brings the step ID.
+          * @param  uStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
     /** @} */
-    virtual void sltBuildStep(const QUuid &aStepId, int iStepNumber);
+    virtual void sltBuildStep(const QUuid &uStepId, int iStepNumber);
 
 protected:
 
@@ -162,9 +162,9 @@ public:
 
     /** Constructs step preparing object passing @a pParent to the base-class.
       * @param  pBuildObject  Brings the build object reference.
-      * @param  strStepId     Brings the step ID.
+      * @param  uStepId       Brings the step ID.
       * @param  iStepNumber   Brings the step number.*/
-    UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUuid &aStepId, int iStepNumber);
+    UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUuid &uStepId, int iStepNumber);
 
 private slots:
 

@@ -160,10 +160,10 @@ protected:
         /** Clears children items of certain @a enmType. */
         virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
 
-        /** Updates all children items with specified @a strId. */
-        virtual void updateAllItems(const QUuid &aId) /* override */;
-        /** Removes all children items with specified @a strId. */
-        virtual void removeAllItems(const QUuid &aId) /* override */;
+        /** Updates all children items with specified @a uId. */
+        virtual void updateAllItems(const QUuid &uId) /* override */;
+        /** Removes all children items with specified @a uId. */
+        virtual void removeAllItems(const QUuid &uId) /* override */;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
         virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) /* override */;
@@ -279,8 +279,8 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Returns whether group contains machine with @a strId. */
-        bool isContainsMachine(const QUuid &aId) const;
+        /** Returns whether group contains machine with @a uId. */
+        bool isContainsMachine(const QUuid &uId) const;
         /** Returns whether group contains locked machine. */
         bool isContainsLockedMachine();
 

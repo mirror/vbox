@@ -166,8 +166,8 @@ public:
 
     /** Returns the medium cache key. */
     QUuid key() const { return m_uKey; }
-    /** Defines the medium cache @a strKey. */
-    void setKey(const QUuid &aKey) { m_uKey = aKey; }
+    /** Defines the medium cache @a uKey. */
+    void setKey(const QUuid &uKey) { m_uKey = uKey; }
 
     /** Returns the medium name.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -305,7 +305,7 @@ public:
     bool isUsed() const { return !m_strUsage.isNull(); }
 
     /** Returns whether this medium is attached to the given machine in the current state. */
-    bool isAttachedInCurStateTo(const QString &strMachineId) const { return m_curStateMachineIds.indexOf(strMachineId) >= 0; }
+    bool isAttachedInCurStateTo(const QUuid &uMachineId) const { return m_curStateMachineIds.indexOf(uMachineId) >= 0; }
 
     /** Returns a vector of IDs of all machines this medium is attached to. */
     const QList<QUuid>& machineIds() const { return m_machineIds; }
@@ -316,8 +316,8 @@ public:
     /** Returns NULL medium ID. */
     static QUuid nullID();
 
-    /** Returns passed @a strID if it's valid or #nullID() overwise. */
-    static QUuid normalizedID(const QUuid &aID);
+    /** Returns passed @a uID if it's valid or #nullID() overwise. */
+    static QUuid normalizedID(const QUuid &uID);
 
     /** Determines if passed @a medium is attached to hidden machines only. */
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);

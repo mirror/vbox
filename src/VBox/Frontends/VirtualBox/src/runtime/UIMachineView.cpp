@@ -500,10 +500,10 @@ void UIMachineView::sltDesktopResized()
     setMaxGuestSize();
 }
 
-void UIMachineView::sltHandleScaleFactorChange(const QUuid &aMachineID)
+void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (aMachineID != vboxGlobal().managedVMUuid())
+    if (uMachineID != vboxGlobal().managedVMUuid())
         return;
 
     /* Acquire selected scale-factor: */
@@ -548,10 +548,10 @@ void UIMachineView::sltHandleScaleFactorChange(const QUuid &aMachineID)
     updateViewport();
 }
 
-void UIMachineView::sltHandleScalingOptimizationChange(const QUuid &aMachineID)
+void UIMachineView::sltHandleScalingOptimizationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (aMachineID != vboxGlobal().managedVMUuid())
+    if (uMachineID != vboxGlobal().managedVMUuid())
         return;
 
     /* Take the scaling-optimization type into account: */

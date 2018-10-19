@@ -748,27 +748,27 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QObject::eventFilter(pWatched, pEvent);
 }
 
-void UIChooserModel::sltMachineStateChanged(const QUuid &aId, const KMachineState)
+void UIChooserModel::sltMachineStateChanged(const QUuid &uId, const KMachineState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(aId);
+    mainRoot()->updateAllItems(uId);
 }
 
-void UIChooserModel::sltMachineDataChanged(const QUuid &aId)
+void UIChooserModel::sltMachineDataChanged(const QUuid &uId)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(aId);
+    mainRoot()->updateAllItems(uId);
 }
 
-void UIChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegistered)
+void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegistered)
 {
     /* New VM registered? */
     if (fRegistered)
     {
         /* Search for corresponding machine: */
-        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(aId.toString());
+        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
         /* Should we show this machine? */
-        if (gEDataManager->showMachineInSelectorChooser(aId))
+        if (gEDataManager->showMachineInSelectorChooser(uId))
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(comMachine, true);
@@ -776,7 +776,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegister
             updateNavigation();
             updateLayout();
             /* Change current-item only if VM was created from the GUI side: */
-            if (aId == m_uLastCreatedMachineId)
+            if (uId == m_uLastCreatedMachineId)
             {
                 setCurrentItem(mainRoot()->searchForItem(comMachine.GetName(),
                                                          UIChooserItemSearchFlag_Machine |
@@ -788,7 +788,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegister
     else
     {
         /* Remove machine-items with passed id: */
-        mainRoot()->removeAllItems(aId.toString());
+        mainRoot()->removeAllItems(uId.toString());
         /* Update model: */
         cleanupGroupTree();
         updateNavigation();
@@ -804,16 +804,16 @@ void UIChooserModel::sltMachineRegistered(const QUuid &aId, const bool fRegister
     }
 }
 
-void UIChooserModel::sltSessionStateChanged(const QUuid &aId, const KSessionState)
+void UIChooserModel::sltSessionStateChanged(const QUuid &uId, const KSessionState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(aId);
+    mainRoot()->updateAllItems(uId);
 }
 
-void UIChooserModel::sltSnapshotChanged(const QUuid &aId, const QUuid &)
+void UIChooserModel::sltSnapshotChanged(const QUuid &uId, const QUuid &)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(aId);
+    mainRoot()->updateAllItems(uId);
 }
 
 void UIChooserModel::sltFocusItemDestroyed()
@@ -1062,16 +1062,16 @@ void UIChooserModel::sltGroupSelectedMachines()
     saveGroupSettings();
 }
 
-void UIChooserModel::sltReloadMachine(const QUuid &aId)
+void UIChooserModel::sltReloadMachine(const QUuid &uId)
 {
     /* Remove all the items first: */
-    mainRoot()->removeAllItems(aId);
+    mainRoot()->removeAllItems(uId);
     /* Wipe out empty groups: */
     cleanupGroupTree();
 
     /* Show machine if we should: */
-    CMachine comMachine = vboxGlobal().virtualBox().FindMachine(aId.toString());
-    if (gEDataManager->showMachineInSelectorChooser(aId))
+    CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
+    if (gEDataManager->showMachineInSelectorChooser(uId))
         addMachineIntoTheTree(comMachine);
 
     /* And update model: */

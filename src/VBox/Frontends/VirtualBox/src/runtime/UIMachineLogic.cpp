@@ -121,8 +121,8 @@
 struct USBTarget
 {
     USBTarget() : attach(false), id(QUuid()) {}
-    USBTarget(bool fAttach, const QUuid &aId)
-        : attach(fAttach), id(aId) {}
+    USBTarget(bool fAttach, const QUuid &uId)
+        : attach(fAttach), id(uId) {}
     bool attach;
     QUuid id;
 };

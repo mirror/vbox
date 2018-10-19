@@ -85,22 +85,22 @@ private slots:
 
     /** @name Main event handlers.
       * @{ */
-        /** Handles machine data change for machine with @a strMachineId. */
-        void sltHandleMachineDataChange(const QUuid &aMachineId);
-        /** Handles machine @a enmState change for machine with @a strMachineId. */
-        void sltHandleMachineStateChange(const QUuid &aMachineId, const KMachineState enmState);
+        /** Handles machine data change for machine with @a uMachineId. */
+        void sltHandleMachineDataChange(const QUuid &uMachineId);
+        /** Handles machine @a enmState change for machine with @a uMachineId. */
+        void sltHandleMachineStateChange(const QUuid &uMachineId, const KMachineState enmState);
 
-        /** Handles session @a enmState change for machine with @a strMachineId. */
-        void sltHandleSessionStateChange(const QUuid &aMachineId, const KSessionState enmState);
+        /** Handles session @a enmState change for machine with @a uMachineId. */
+        void sltHandleSessionStateChange(const QUuid &uMachineId, const KSessionState enmState);
 
-        /** Handles snapshot take event for machine with @a strMachineId. */
-        void sltHandleSnapshotTake(const QUuid &aMachineId, const QUuid &aSnapshotId);
-        /** Handles snapshot delete event for machine with @a strMachineId. */
-        void sltHandleSnapshotDelete(const QUuid &aMachineId, const QUuid &aSnapshotId);
-        /** Handles snapshot change event for machine with @a strMachineId. */
-        void sltHandleSnapshotChange(const QUuid &aMachineId, const QUuid &aSnapshotId);
-        /** Handles snapshot restore event for machine with @a strMachineId. */
-        void sltHandleSnapshotRestore(const QUuid &aMachineId, const QUuid &aSnapshotId);
+        /** Handles snapshot take event for machine with @a uMachineId. */
+        void sltHandleSnapshotTake(const QUuid &uMachineId, const QUuid &uSnapshotId);
+        /** Handles snapshot delete event for machine with @a uMachineId. */
+        void sltHandleSnapshotDelete(const QUuid &uMachineId, const QUuid &uSnapshotId);
+        /** Handles snapshot change event for machine with @a uMachineId. */
+        void sltHandleSnapshotChange(const QUuid &uMachineId, const QUuid &uSnapshotId);
+        /** Handles snapshot restore event for machine with @a uMachineId. */
+        void sltHandleSnapshotRestore(const QUuid &uMachineId, const QUuid &uSnapshotId);
     /** @} */
 
     /** @name Timer event handlers.
@@ -187,8 +187,8 @@ private:
         /** Handles command to adjust snapshot tree. */
         void adjustTreeWidget();
 
-        /** Searches for an item with corresponding @a strSnapshotID. */
-        UISnapshotItem *findItem(const QUuid &aSnapshotID) const;
+        /** Searches for an item with corresponding @a uSnapshotID. */
+        UISnapshotItem *findItem(const QUuid &uSnapshotID) const;
 
         /** Searches for smallest snapshot age starting with @a pItem as parent. */
         SnapshotAgeFormat traverseSnapshotAge(QTreeWidgetItem *pItem) const;

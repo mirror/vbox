@@ -345,10 +345,10 @@ void UIChooserItemMachine::clearItems(UIChooserItemType)
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
 }
 
-void UIChooserItemMachine::updateAllItems(const QUuid &aId)
+void UIChooserItemMachine::updateAllItems(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (id() != QUuid(aId))
+    if (id() != QUuid(uId))
         return;
 
     /* Update this machine-item: */
@@ -364,10 +364,10 @@ void UIChooserItemMachine::updateAllItems(const QUuid &aId)
     parentItem()->update();
 }
 
-void UIChooserItemMachine::removeAllItems(const QUuid &aId)
+void UIChooserItemMachine::removeAllItems(const QUuid &uId)
 {
     /* Skip wrong id: */
-    if (id() != QUuid(aId))
+    if (id() != QUuid(uId))
         return;
 
     /* Exclude itself from the current items: */

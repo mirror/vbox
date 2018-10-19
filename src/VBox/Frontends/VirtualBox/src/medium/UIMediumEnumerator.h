@@ -43,12 +43,12 @@ class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QIWithRetranslateUI3<QObj
 signals:
 
     /* Notifiers: Medium-operations stuff: */
-    void sigMediumCreated(const QUuid &aMediumID);
-    void sigMediumDeleted(const QUuid &aMediumID);
+    void sigMediumCreated(const QUuid &uMediumID);
+    void sigMediumDeleted(const QUuid &uMediumID);
 
     /* Notifiers: Medium-enumeration stuff: */
     void sigMediumEnumerationStarted();
-    void sigMediumEnumerated(const QUuid &aMediumID);
+    void sigMediumEnumerated(const QUuid &uMediumID);
     void sigMediumEnumerationFinished();
 
 public:
@@ -58,9 +58,9 @@ public:
 
     /* API: Medium-access stuff: */
     QList<QUuid> mediumIDs() const;
-    UIMedium medium(const QUuid &aMediumID);
+    UIMedium medium(const QUuid &uMediumID);
     void createMedium(const UIMedium &medium);
-    void deleteMedium(const QUuid &aMediumID);
+    void deleteMedium(const QUuid &uMediumID);
 
     /* API: Medium-enumeration stuff: */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
@@ -70,11 +70,11 @@ public:
 private slots:
 
     /** Handles machine-data-change and snapshot-change events. */
-    void sltHandleMachineUpdate(const QUuid &aMachineID);
+    void sltHandleMachineUpdate(const QUuid &uMachineID);
     /** Handles machine-[un]registration events. */
-    void sltHandleMachineRegistration(const QUuid &aMachineID, const bool fRegistered);
+    void sltHandleMachineRegistration(const QUuid &uMachineID, const bool fRegistered);
     /** Handles snapshot-deleted events. */
-    void sltHandleSnapshotDeleted(const QUuid &aMachineID, const QUuid &aSnapshotID);
+    void sltHandleSnapshotDeleted(const QUuid &uMachineID, const QUuid &uSnapshotID);
 
     /* Handler: Medium-enumeration stuff: */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
@@ -90,8 +90,8 @@ private:
     void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
     /* Helpers: Medium re-caching stuff: */
-    void calculateCachedUsage(const QUuid &aMachineID, QList<QUuid> &previousUIMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
-    void calculateActualUsage(const QUuid &strMachineID, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateCachedUsage(const QUuid &uMachineID, QList<QUuid> &previousUIMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const QUuid &uMachineID, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
     void calculateActualUsage(const CSnapshot &snapshot, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs) const;
     void calculateActualUsage(const CMachine &machine, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs) const;
     void recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs);

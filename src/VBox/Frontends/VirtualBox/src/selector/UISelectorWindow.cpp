@@ -668,7 +668,7 @@ void UISelectorWindow::sltOpenAddMachineDialog(const QString &strFileName /* = Q
 
 void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRef /* = QString() */,
                                                     const QString &strControlRef /* = QString() */,
-                                                    const QUuid &aID /* = QString() */)
+                                                    const QUuid   &uID /* = QString() */)
 {
     /* This slot should not be called when there is not selection: */
     AssertMsgReturnVoid(currentItem(), ("Current item should be selected!\n"));
@@ -706,7 +706,7 @@ void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRe
 
     /* Create and execute corresponding VM settings window: */
     UISettingsDialogMachine dialog(this,
-                                   aID.isNull() ? currentItem()->id() : aID,
+                                   uID.isNull() ? currentItem()->id() : uID,
                                    strCategory, strControl);
     dialog.execute();
 

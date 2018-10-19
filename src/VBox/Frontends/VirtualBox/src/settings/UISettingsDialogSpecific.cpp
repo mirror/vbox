@@ -329,10 +329,10 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId) const
 *   Class UISettingsDialogMachine implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QUuid &aMachineId,
+UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QUuid &uMachineId,
                                                  const QString &strCategory, const QString &strControl)
     : UISettingsDialog(pParent)
-    , m_uMachineId(aMachineId)
+    , m_uMachineId(uMachineId)
     , m_strCategory(strCategory)
     , m_strControl(strControl)
     , m_fAllowResetFirstRunFlag(false)
@@ -602,13 +602,13 @@ void UISettingsDialogMachine::sltMarkSaved()
     }
 }
 
-void UISettingsDialogMachine::sltSessionStateChanged(const QUuid &aMachineId, const KSessionState enmSessionState)
+void UISettingsDialogMachine::sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmSessionState)
 {
     /* Ignore if serialization is in progress: */
     if (isSerializationInProgress())
         return;
     /* Ignore if thats NOT our VM: */
-    if (aMachineId != m_uMachineId)
+    if (uMachineId != m_uMachineId)
         return;
 
     /* Ignore if state was NOT actually changed: */
@@ -621,13 +621,13 @@ void UISettingsDialogMachine::sltSessionStateChanged(const QUuid &aMachineId, co
     updateConfigurationAccessLevel();
 }
 
-void UISettingsDialogMachine::sltMachineStateChanged(const QUuid &aMachineId, const KMachineState enmMachineState)
+void UISettingsDialogMachine::sltMachineStateChanged(const QUuid &uMachineId, const KMachineState enmMachineState)
 {
     /* Ignore if serialization is in progress: */
     if (isSerializationInProgress())
         return;
     /* Ignore if thats NOT our VM: */
-    if (aMachineId != m_uMachineId)
+    if (uMachineId != m_uMachineId)
         return;
 
     /* Ignore if state was NOT actually changed: */
@@ -640,13 +640,13 @@ void UISettingsDialogMachine::sltMachineStateChanged(const QUuid &aMachineId, co
     updateConfigurationAccessLevel();
 }
 
-void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &aMachineId)
+void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &uMachineId)
 {
     /* Ignore if serialization is in progress: */
     if (isSerializationInProgress())
         return;
     /* Ignore if thats NOT our VM: */
-    if (aMachineId != m_uMachineId)
+    if (uMachineId != m_uMachineId)
         return;
 
     /* Check if user had changed something and warn him about he will loose settings on reloading: */

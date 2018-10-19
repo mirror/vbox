@@ -576,10 +576,10 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
 }
 
 /* static */
-bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QUuid &aMediumId, const QString strPassword)
+bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QUuid &uMediumId, const QString strPassword)
 {
     /* Look for the medium with passed ID: */
-    const UIMedium uimedium = vboxGlobal().medium(aMediumId);
+    const UIMedium uimedium = vboxGlobal().medium(uMediumId);
     if (!uimedium.isNull())
     {
         /* Check wrapped medium for validity: */

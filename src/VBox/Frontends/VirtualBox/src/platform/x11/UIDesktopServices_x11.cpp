@@ -33,7 +33,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, const QString &strDstPath, const QString &strName, const QUuid &aUuid)
+bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, const QString &strDstPath, const QString &strName, const QUuid &uUuid)
 {
     QFile link(strDstPath + QDir::separator() + strName + ".desktop");
     if (link.open(QFile::WriteOnly | QFile::Truncate))
@@ -47,7 +47,7 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
             << "Name=" << strName << endl
             << "Comment=Starts the VirtualBox machine " << strName << endl
             << "Type=Application" << endl
-            << "Exec=" << QCoreApplication::applicationFilePath() << " --comment \"" << strName << "\" --startvm \"" << aUuid.toString() << "\"" << endl
+            << "Exec=" << QCoreApplication::applicationFilePath() << " --comment \"" << strName << "\" --startvm \"" << uUuid.toString() << "\"" << endl
             << "Icon=virtualbox-vbox.png" << endl;
         /* This would be a real file link entry, but then we could also simply
          * use a soft link (on most UNIX fs):

@@ -49,11 +49,11 @@ public:
     /** Returns media type. */
     UIMediumDeviceType type() const { return m_enmMediaType; }
 
-    /** Defines @a strMachineId. */
-    void setMachineId(const QUuid &aMachineId) { m_uMachineId = aMachineId; }
+    /** Defines @a uMachineId. */
+    void setMachineId(const QUuid &uMachineId) { m_uMachineId = uMachineId; }
 
-    /** Defines current item through @a strItemId. */
-    void setCurrentItem(const QUuid &aItemId);
+    /** Defines current item through @a uItemId. */
+    void setCurrentItem(const QUuid &uItemId);
 
     /** Returns id of item with certain @a iIndex. */
     QUuid id(int iIndex = -1) const;
@@ -62,12 +62,12 @@ public:
 
 protected slots:
 
-    /** Habdles medium-created signal for medium with @a strMediumId. */
-    void sltHandleMediumCreated(const QUuid &aMediumId);
-    /** Habdles medium-enumerated signal for medium with @a strMediumId. */
-    void sltHandleMediumEnumerated(const QUuid &aMediumId);
-    /** Habdles medium-deleted signal for medium with @a strMediumId. */
-    void sltHandleMediumDeleted(const QUuid &aMediumId);
+    /** Habdles medium-created signal for medium with @a uMediumId. */
+    void sltHandleMediumCreated(const QUuid &uMediumId);
+    /** Habdles medium-enumerated signal for medium with @a uMediumId. */
+    void sltHandleMediumEnumerated(const QUuid &uMediumId);
+    /** Habdles medium-deleted signal for medium with @a uMediumId. */
+    void sltHandleMediumDeleted(const QUuid &uMediumId);
 
     /** Handles medium enumeration start. */
     void sltHandleMediumEnumerationStart();
@@ -91,8 +91,8 @@ protected:
     /** Replases item on certain @a iPosition with new item based on @a guiMedium. */
     void replaceItem(int iPosition, const UIMedium &guiMedium);
 
-    /** Searches for a @a iIndex of medium with certain @a strId. */
-    bool findMediaIndex(const QUuid &aId, int &iIndex);
+    /** Searches for a @a iIndex of medium with certain @a uId. */
+    bool findMediaIndex(const QUuid &uId, int &iIndex);
 
     /** Holds the media type. */
     UIMediumDeviceType  m_enmMediaType;
@@ -104,10 +104,10 @@ protected:
     struct Medium
     {
         Medium() {}
-        Medium(const QUuid &aId,
+        Medium(const QUuid &uId,
                const QString &strLocation,
                const QString &strToolTip)
-            : id(aId), location(strLocation), toolTip(strToolTip)
+            : id(uId), location(strLocation), toolTip(strToolTip)
         {}
 
         QUuid    id;

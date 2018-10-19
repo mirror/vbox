@@ -124,8 +124,8 @@ private:
     QList<UIGChooserItem*> items(UIGChooserItemType type) const;
     bool hasItems(UIGChooserItemType type) const;
     void clearItems(UIGChooserItemType type);
-    void updateAll(const QUuid &aId);
-    void removeAll(const QUuid &aId);
+    void updateAll(const QUuid &uId);
+    void removeAll(const QUuid &uId);
     UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
     void sortItems();

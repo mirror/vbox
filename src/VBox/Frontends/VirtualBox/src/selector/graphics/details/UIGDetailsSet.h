@@ -62,11 +62,11 @@ public:
 private slots:
 
     /* Handler: Build stuff: */
-    void sltBuildStep(const QUuid &aStepId, const int iStepNumber);
+    void sltBuildStep(const QUuid &uStepId, const int iStepNumber);
 
     /* Handlers: Global event stuff: */
-    void sltMachineStateChange(const QUuid &aId);
-    void sltMachineAttributesChange(const QUuid &aId);
+    void sltMachineStateChange(const QUuid &uId);
+    void sltMachineAttributesChange(const QUuid &uId);
 
     /* Handler: Update stuff: */
     void sltUpdateAppearance();

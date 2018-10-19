@@ -199,7 +199,7 @@ public:
 protected slots:
 
     /** Handles configuration-change. */
-    void sltHandleConfigurationChange(const QUuid &aMachineID);
+    void sltHandleConfigurationChange(const QUuid &uMachineID);
 
     /** Handles 'View' : 'Scale Factor' menu : @a pAction trigger. */
     void sltHandleActionTriggerViewScaleFactor(QAction *pAction);

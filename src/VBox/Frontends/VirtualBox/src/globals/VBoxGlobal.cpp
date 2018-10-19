@@ -2361,7 +2361,7 @@ bool VBoxGlobal::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /*
     return true;
 }
 
-CSession VBoxGlobal::openSession(const QUuid &aId, KLockType lockType /* = KLockType_Shared */)
+CSession VBoxGlobal::openSession(const QUuid &uId, KLockType lockType /* = KLockType_Shared */)
 {
     /* Prepare session: */
     CSession comSession;
@@ -2379,10 +2379,10 @@ CSession VBoxGlobal::openSession(const QUuid &aId, KLockType lockType /* = KLock
         }
 
         /* Search for the corresponding machine: */
-        CMachine comMachine = m_comVBox.FindMachine(aId.toString());
+        CMachine comMachine = m_comVBox.FindMachine(uId.toString());
         if (comMachine.isNull())
         {
-            msgCenter().cannotFindMachineById(m_comVBox, aId);
+            msgCenter().cannotFindMachineById(m_comVBox, uId);
             break;
         }
 
@@ -2485,14 +2485,14 @@ bool VBoxGlobal::isMediumEnumerationInProgress() const
            && m_pMediumEnumerator->isMediumEnumerationInProgress();
 }
 
-UIMedium VBoxGlobal::medium(const QUuid &aMediumID) const
+UIMedium VBoxGlobal::medium(const QUuid &uMediumID) const
 {
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Redirect call to medium-enumerator: */
         UIMedium guiMedium;
         if (m_pMediumEnumerator)
-            guiMedium = m_pMediumEnumerator->medium(aMediumID);
+            guiMedium = m_pMediumEnumerator->medium(uMediumID);
         m_meCleanupProtectionToken.unlock();
         return guiMedium;
     }
@@ -2524,13 +2524,13 @@ void VBoxGlobal::createMedium(const UIMedium &guiMedium)
     }
 }
 
-void VBoxGlobal::deleteMedium(const QUuid &aMediumID)
+void VBoxGlobal::deleteMedium(const QUuid &uMediumID)
 {
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Delete medium from medium-enumerator: */
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->deleteMedium(aMediumID);
+            m_pMediumEnumerator->deleteMedium(uMediumID);
         m_meCleanupProtectionToken.unlock();
     }
 }

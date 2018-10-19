@@ -52,7 +52,7 @@ signals:
     /** Redirects signal from UISelectorWindow to UIGDetails. */
     void sigToggleFinished();
     /** Redirects signal from UIGDetails to UISelectorWindow. */
-    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &aId);
+    void sigLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &uId);
 
 public:
 

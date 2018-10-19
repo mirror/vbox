@@ -74,30 +74,30 @@ signals:
 
     /** @name VirtualBox related signals
       * @{ */
-        /** Notifies about @a state change event for the machine with @a strId. */
-        void sigMachineStateChange(const QUuid &aId, const KMachineState state);
-        /** Notifies about data change event for the machine with @a strId. */
-        void sigMachineDataChange(const QUuid &aId);
-        /** Notifies about machine with @a strId was @a fRegistered. */
-        void sigMachineRegistered(const QUuid &aId, const bool fRegistered);
-        /** Notifies about @a state change event for the session of the machine with @a strId. */
-        void sigSessionStateChange(const QUuid &aId, const KSessionState state);
-        /** Notifies about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
-        void sigSnapshotTake(const QUuid &aId, const QUuid &aSnapshotId);
-        /** Notifies about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
-        void sigSnapshotDelete(const QUuid &aId, const QUuid &aSnapshotId);
-        /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
-        void sigSnapshotChange(const QUuid &aId, const QUuid &aSnapshotId);
-        /** Notifies about snapshot with @a strSnapshotId was restored for the machine with @a strId. */
-        void sigSnapshotRestore(const QUuid &aId, const QUuid &aSnapshotId);
+        /** Notifies about @a state change event for the machine with @a uId. */
+        void sigMachineStateChange(const QUuid &uId, const KMachineState state);
+        /** Notifies about data change event for the machine with @a uId. */
+        void sigMachineDataChange(const QUuid &uId);
+        /** Notifies about machine with @a uId was @a fRegistered. */
+        void sigMachineRegistered(const QUuid &uId, const bool fRegistered);
+        /** Notifies about @a state change event for the session of the machine with @a uId. */
+        void sigSessionStateChange(const QUuid &uId, const KSessionState state);
+        /** Notifies about snapshot with @a uSnapshotId was taken for the machine with @a uId. */
+        void sigSnapshotTake(const QUuid &uId, const QUuid &uSnapshotId);
+        /** Notifies about snapshot with @a uSnapshotId was deleted for the machine with @a uId. */
+        void sigSnapshotDelete(const QUuid &uId, const QUuid &uSnapshotId);
+        /** Notifies about snapshot with @a uSnapshotId was changed for the machine with @a uId. */
+        void sigSnapshotChange(const QUuid &uId, const QUuid &uSnapshotId);
+        /** Notifies about snapshot with @a uSnapshotId was restored for the machine with @a uId. */
+        void sigSnapshotRestore(const QUuid &uId, const QUuid &uSnapshotId);
     /** @} */
 
     /** @name VirtualBox Extra-data related signals
       * @{ */
-        /** Notifies about extra-data of the machine with @a strId can be changed for the key @a strKey to value @a strValue. */
-        void sigExtraDataCanChange(const QUuid &aId, const QString &strKey, const QString &strValue, bool &fVeto, QString &strVetoReason); /* use Qt::DirectConnection */
-        /** Notifies about extra-data of the machine with @a strId changed for the key @a strKey to value @a strValue. */
-        void sigExtraDataChange(const QUuid &aId, const QString &strKey, const QString &strValue);
+        /** Notifies about extra-data of the machine with @a uId can be changed for the key @a strKey to value @a strValue. */
+        void sigExtraDataCanChange(const QUuid &uId, const QString &strKey, const QString &strValue, bool &fVeto, QString &strVetoReason); /* use Qt::DirectConnection */
+        /** Notifies about extra-data of the machine with @a uId changed for the key @a strKey to value @a strValue. */
+        void sigExtraDataChange(const QUuid &uId, const QString &strKey, const QString &strValue);
     /** @} */
 
     /** @name Console related signals
@@ -147,10 +147,10 @@ signals:
 
     /** @name Progress related signals
       * @{ */
-        /** Notifies about @a iPercent change for progress with @a strProgressId. */
-        void sigProgressPercentageChange(const QUuid &aProgressId, const int iPercent);
-        /** Notifies about task complete for progress with @a strProgressId. */
-        void sigProgressTaskComplete(const QUuid &aProgressId);
+        /** Notifies about @a iPercent change for progress with @a uProgressId. */
+        void sigProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
+        /** Notifies about task complete for progress with @a uProgressId. */
+        void sigProgressTaskComplete(const QUuid &uProgressId);
     /** @} */
 
     /** @name Guest Session related signals

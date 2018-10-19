@@ -80,10 +80,10 @@ class SHARED_LIBRARY_STUFF UISettingsDialogMachine : public UISettingsDialog
 public:
 
     /** Constructs settings dialog passing @a pParent to the base-class.
-      * @param  aMachineId    Brings the machine ID.
+      * @param  uMachineId    Brings the machine ID.
       * @param  strCategory   Brings the name of category to be opened.
       * @param  strControl    Brings the name of control to be focused. */
-    UISettingsDialogMachine(QWidget *pParent, const QUuid &aMachineId,
+    UISettingsDialogMachine(QWidget *pParent, const QUuid &uMachineId,
                             const QString &strCategory, const QString &strControl);
 
 protected:
@@ -116,12 +116,12 @@ protected slots:
 
 private slots:
 
-    /** Handles session state change for machine with certain @a aMachineId to @a enmSessionState. */
-    void sltSessionStateChanged(const QUuid &aMachineId, const KSessionState enmSessionState);
-    /** Handles machine state change for machine with certain @a aMachineId to @a enmMachineState. */
-    void sltMachineStateChanged(const QUuid &aMachineId, const KMachineState enmMachineState);
-    /** Handles machine data change for machine with certain @a aMachineId. */
-    void sltMachineDataChanged(const QUuid &aMachineId);
+    /** Handles session state change for machine with certain @a uMachineId to @a enmSessionState. */
+    void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmSessionState);
+    /** Handles machine state change for machine with certain @a uMachineId to @a enmMachineState. */
+    void sltMachineStateChanged(const QUuid &uMachineId, const KMachineState enmMachineState);
+    /** Handles machine data change for machine with certain @a uMachineId. */
+    void sltMachineDataChanged(const QUuid &uMachineId);
 
     /** Handles request to allow to reset first run flag. */
     void sltAllowResetFirstRunFlag();

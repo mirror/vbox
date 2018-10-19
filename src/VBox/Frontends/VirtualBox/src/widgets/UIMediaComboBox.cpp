@@ -69,15 +69,15 @@ void UIMediaComboBox::repopulate()
         refresh();
 }
 
-void UIMediaComboBox::setCurrentItem(const QUuid &aItemId)
+void UIMediaComboBox::setCurrentItem(const QUuid &uItemId)
 {
-    m_uLastItemId = aItemId;
+    m_uLastItemId = uItemId;
 
     int iIndex;
     // WORKAROUND:
     // Note that the media combo-box may be not populated here yet,
     // so we don't assert..
-    if (findMediaIndex(aItemId, iIndex))
+    if (findMediaIndex(uItemId, iIndex))
     {
         QComboBox::setCurrentIndex(iIndex);
         emit activated(iIndex);
@@ -106,10 +106,10 @@ QString UIMediaComboBox::location(int iIndex /* = -1 */) const
     return iIndex == -1 ? QString() : m_media.at(iIndex).location;
 }
 
-void UIMediaComboBox::sltHandleMediumCreated(const QUuid &aMediumId)
+void UIMediaComboBox::sltHandleMediumCreated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    UIMedium guiMedium = vboxGlobal().medium(aMediumId);
+    UIMedium guiMedium = vboxGlobal().medium(uMediumId);
 
     /* Ignore media (and their children) which are
      * marked as hidden or attached to hidden machines only: */
@@ -135,10 +135,10 @@ void UIMediaComboBox::sltHandleMediumCreated(const QUuid &aMediumId)
         QComboBox::setCurrentIndex(count() - 1);
 }
 
-void UIMediaComboBox::sltHandleMediumEnumerated(const QUuid &aMediumId)
+void UIMediaComboBox::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    UIMedium guiMedium = vboxGlobal().medium(aMediumId);
+    UIMedium guiMedium = vboxGlobal().medium(uMediumId);
 
     /* Add only 1. NULL medium and 2. media of required type: */
     if (!guiMedium.isNull() && guiMedium.type() != m_enmMediaType)
@@ -156,11 +156,11 @@ void UIMediaComboBox::sltHandleMediumEnumerated(const QUuid &aMediumId)
     emit activated(currentIndex());
 }
 
-void UIMediaComboBox::sltHandleMediumDeleted(const QUuid &aMediumId)
+void UIMediaComboBox::sltHandleMediumDeleted(const QUuid &uMediumId)
 {
     /* Search for corresponding item index: */
     int iIndex;
-    if (!findMediaIndex(aMediumId, iIndex))
+    if (!findMediaIndex(uMediumId, iIndex))
         return;
 
     /* Replace medium from combo-box: */
@@ -255,12 +255,12 @@ void UIMediaComboBox::replaceItem(int iIndex, const UIMedium &guiMedium)
         updateToolTip(iIndex);
 }
 
-bool UIMediaComboBox::findMediaIndex(const QUuid &aId, int &iIndex)
+bool UIMediaComboBox::findMediaIndex(const QUuid &uId, int &iIndex)
 {
     iIndex = 0;
 
     for (; iIndex < m_media.size(); ++ iIndex)
-        if (m_media.at(iIndex).id == aId)
+        if (m_media.at(iIndex).id == uId)
             break;
 
     return iIndex < m_media.size();

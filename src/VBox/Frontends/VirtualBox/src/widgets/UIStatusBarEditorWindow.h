@@ -72,15 +72,15 @@ public:
 
     /** Constructs status-bar editor widget passing @a pParent to the base-class.
       * @param  fStartedFromVMSettings  Brings whether 'this' is a part of VM settings.
-      * @param  strMachineID            Brings the machine ID to be used by the editor. */
+      * @param  uMachineID              Brings the machine ID to be used by the editor. */
     UIStatusBarEditorWidget(QWidget *pParent,
                             bool fStartedFromVMSettings = true,
-                            const QUuid &aMachineID = QUuid());
+                            const QUuid &uMachineID = QUuid());
 
     /** Returns the machine ID instance. */
     const QUuid &machineID() const { return m_uMachineID; }
-    /** Defines the @a strMachineID instance. */
-    void setMachineID(const QUuid &aMachineID);
+    /** Defines the @a uMachineID instance. */
+    void setMachineID(const QUuid &uMachineID);
 
     /** Returns whether the status-bar enabled. */
     bool isStatusBarEnabled() const;
@@ -114,7 +114,7 @@ protected:
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QUuid &aMachineID);
+    void sltHandleConfigurationChange(const QUuid &uMachineID);
 
     /** Handles button click. */
     void sltHandleButtonClick();

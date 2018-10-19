@@ -251,10 +251,10 @@ void UIMediumItem::refresh()
     }
 }
 
-bool UIMediumItem::releaseFrom(const QUuid &aMachineId)
+bool UIMediumItem::releaseFrom(const QUuid &uMachineId)
 {
     /* Open session: */
-    CSession session = vboxGlobal().openSession(aMachineId);
+    CSession session = vboxGlobal().openSession(uMachineId);
     if (session.isNull())
         return false;
 

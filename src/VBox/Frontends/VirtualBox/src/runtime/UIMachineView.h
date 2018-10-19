@@ -126,10 +126,10 @@ protected slots:
     void sltDesktopResized();
 
     /** Handles the scale-factor change. */
-    void sltHandleScaleFactorChange(const QUuid &aMachineID);
+    void sltHandleScaleFactorChange(const QUuid &uMachineID);
 
     /** Handles the scaling-optimization change. */
-    void sltHandleScalingOptimizationChange(const QUuid &aMachineID);
+    void sltHandleScalingOptimizationChange(const QUuid &uMachineID);
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();

@@ -137,10 +137,10 @@ void UIMachineWindowNormal::sltHandleSessionInitialized()
 }
 
 #ifndef RT_OS_DARWIN
-void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QUuid &aMachineID)
+void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != aMachineID)
+    if (vboxGlobal().managedVMUuid() != uMachineID)
         return;
 
     /* Check whether menu-bar is enabled: */
@@ -171,10 +171,10 @@ void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &pos
 }
 #endif /* !RT_OS_DARWIN */
 
-void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QUuid &aMachineID)
+void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != aMachineID)
+    if (vboxGlobal().managedVMUuid() != uMachineID)
         return;
 
     /* Check whether status-bar is enabled: */

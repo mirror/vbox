@@ -656,18 +656,18 @@ void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemTyp
     updateGeometry();
 }
 
-void UIChooserItemGroup::updateAllItems(const QUuid &aId)
+void UIChooserItemGroup::updateAllItems(const QUuid &uId)
 {
     /* Update all the required items recursively: */
     foreach (UIChooserItem *pItem, items())
-        pItem->updateAllItems(aId);
+        pItem->updateAllItems(uId);
 }
 
-void UIChooserItemGroup::removeAllItems(const QUuid &aId)
+void UIChooserItemGroup::removeAllItems(const QUuid &uId)
 {
     /* Remove all the required items recursively: */
     foreach (UIChooserItem *pItem, items())
-        pItem->removeAllItems(aId);
+        pItem->removeAllItems(uId);
 }
 
 UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
@@ -1318,11 +1318,11 @@ void UIChooserItemGroup::updateToggleButtonToolTip()
     m_pToggleButton->setToolTip(isOpened() ? tr("Collapse group") : tr("Expand group"));
 }
 
-bool UIChooserItemGroup::isContainsMachine(const QUuid &aId) const
+bool UIChooserItemGroup::isContainsMachine(const QUuid &uId) const
 {
     /* Check each machine-item: */
     foreach (UIChooserItem *pItem, m_machineItems)
-        if (pItem->toMachineItem()->id() == aId)
+        if (pItem->toMachineItem()->id() == uId)
             return true;
     /* Found nothing? */
     return false;

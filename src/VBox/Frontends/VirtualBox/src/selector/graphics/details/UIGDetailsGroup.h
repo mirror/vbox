@@ -55,7 +55,7 @@ public:
 private slots:
 
     /* Handler: Build stuff: */
-    void sltBuildStep(const QUuid &aStepId, const int iStepNumber);
+    void sltBuildStep(const QUuid &uStepId, const int iStepNumber);
 
 private:
 

@@ -597,10 +597,10 @@ void UISession::sltCloseRuntimeUI()
 }
 
 #ifdef RT_OS_DARWIN
-void UISession::sltHandleMenuBarConfigurationChange(const QUuid &aMachineID)
+void UISession::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != aMachineID)
+    if (vboxGlobal().managedVMUuid() != uMachineID)
         return;
 
     /* Update Mac OS X menu-bar: */
