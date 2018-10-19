@@ -89,8 +89,6 @@ namespace UIDefs
     SHARED_LIBRARY_STUFF extern QStringList VBoxExtPackFileExts;
     /** Allowed OVF file extensions. */
     SHARED_LIBRARY_STUFF extern QStringList OVFFileExts;
-    /** Allowed OPC file extensions. */
-    SHARED_LIBRARY_STUFF extern QStringList OPCFileExts;
 }
 using namespace UIDefs /* if header included */;
 
@@ -158,4 +156,3 @@ struct ExactStorageSlot : public StorageSlot
 
 
 #endif /* !___UIDefs_h___ */
-

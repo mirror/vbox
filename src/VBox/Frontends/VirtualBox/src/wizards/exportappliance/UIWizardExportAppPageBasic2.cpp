@@ -84,7 +84,6 @@ void UIWizardExportAppPage2::populateFormats()
     formats << "ovf-0.9";
     formats << "ovf-1.0";
     formats << "ovf-2.0";
-    formats << "opc-1.0";
     /* Add that list to combo: */
     foreach (const QString &strShortName, formats)
     {
@@ -255,15 +254,6 @@ void UIWizardExportAppPage2::refreshFileSelectorExtension()
         /* Update file chooser accordingly: */
         m_pFileSelector->setFileFilters(QString());
     }
-    /* Else if the format is set to OPC: */
-    else if (fieldImp("format").toString() == "opc-1.0")
-    {
-        /* We use .tar.gz extension: */
-        m_strFileSelectorExt = ".tar.gz";
-
-        /* Update file chooser accordingly: */
-        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Oracle Cloud Infrastructure - Classic Archive (%1)").arg("*.tar.gz"));
-    }
     /* Otherwise: */
     else
     {
@@ -292,9 +282,8 @@ void UIWizardExportAppPage2::refreshFileSelectorPath()
 
 void UIWizardExportAppPage2::refreshManifestCheckBoxAccess()
 {
-    /* If format is cloud one or OPC: */
-    if (   isFormatCloudOne()
-        || fieldImp("format").toString() == "opc-1.0")
+    /* If format is cloud one: */
+    if (isFormatCloudOne())
     {
         /* Disable manifest check-box: */
         m_pManifestCheckbox->setChecked(false);
@@ -311,9 +300,8 @@ void UIWizardExportAppPage2::refreshManifestCheckBoxAccess()
 
 void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess()
 {
-    /* If format is cloud one or OPC: */
-    if (   isFormatCloudOne()
-        || fieldImp("format").toString() == "opc-1.0")
+    /* If format is cloud one: */
+    if (isFormatCloudOne())
     {
         /* Disable include ISO check-box: */
         m_pIncludeISOsCheckbox->setChecked(false);
@@ -764,9 +752,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
                                "If you use the <b>ovf</b> extension, several files will be written separately. "
                                "If you use the <b>ova</b> extension, all the files will be combined into one Open "
                                "Virtualization Format archive.</p>"
-                               "<p>The <b>Oracle Cloud Infrastructure - Classic</b> format supports only the <b>tar.gz</b> extension. "
-                               "Each virtual disk file will be written separately.</p>"
-                               "<p>The <b>Cloud Service Provider Format</b> supports exporting to remote cloud services only. "
+                               "<p>The <b>Oracle Cloud Infrastructure</b> format supports exporting to remote cloud servers only. "
                                "Main virtual disk of each selected machine will be uploaded to remote server.</p>"));
 
     /* Translate file selector: */
@@ -779,12 +765,10 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
-    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Cloud Infrastructure - Classic"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Cloud Infrastructure - Classic format."), Qt::ToolTipRole);
     /* Translate received values of Format combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pFormatComboBox->count(); ++i)
@@ -875,13 +859,10 @@ bool UIWizardExportAppPageBasic2::isComplete() const
         const bool fOVF =    field("format").toString() == "ovf-0.9"
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
-        const bool fOPC =    field("format").toString() == "opc-1.0";
         const bool fCSP =    isFormatCloudOne();
 
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
-                  || (   fOPC
-                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts))
                   || fCSP;
     }
 
