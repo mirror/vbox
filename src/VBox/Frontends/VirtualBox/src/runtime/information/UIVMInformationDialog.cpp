@@ -38,8 +38,10 @@
 # include "VBoxGlobal.h"
 # include "VBoxUtils.h"
 # include "UIInformationConfiguration.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlWidget.h"
+# ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
+#  include "UIGuestControlFileManager.h"
+#  include "UIGuestControlWidget.h"
+# endif
 # include "UIInformationRuntime.h"
 # include "UIMachine.h"
 
@@ -243,7 +245,7 @@ void UIVMInformationDialog::prepareTabWidget()
             m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
         }
-
+#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
         if(m_pMachineWindow->console().isOk())
         {
             UIGuestControlWidget *pGuestControlWidget =
@@ -264,8 +266,7 @@ void UIVMInformationDialog::prepareTabWidget()
                 m_pTabWidget->addTab(m_tabs.value(3), QString());
             }
         }
-
-
+#endif
         /* Set Runtime Information tab as default: */
         m_pTabWidget->setCurrentIndex(1);
 

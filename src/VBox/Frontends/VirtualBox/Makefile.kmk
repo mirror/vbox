@@ -269,6 +269,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  endif
  ifneq ($(KBUILD_TYPE),release)
   VirtualBoxVM_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+  VirtualBoxVM_DEFS          += VBOX_GUI_WITH_GUEST_CONTROL_UI
  endif
  ifdef VBOX_WITH_ICHAT_THEATER
   VirtualBoxVM_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
