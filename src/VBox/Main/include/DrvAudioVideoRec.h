@@ -23,6 +23,7 @@
 #include <VBox/vmm/pdmifs.h>
 
 #include "AudioDriver.h"
+#include "VideoRec.h"
 
 using namespace com;
 
@@ -42,6 +43,10 @@ public:
 
 public:
 
+    int applyConfiguration(const PVIDEORECCFG pVideoRecCfg);
+
+public:
+
     static DECLCALLBACK(int)  drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void) drvDestruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)  drvAttach(PPDMDRVINS pDrvIns, uint32_t fFlags);
@@ -53,6 +58,8 @@ private:
 
     /** Pointer to the associated video recording audio driver. */
     struct DRVAUDIOVIDEOREC *mpDrv;
+    /** Video recording configuration used for configuring the driver. */
+    struct VIDEORECCFG       mVideoRecCfg;
 };
 
 #endif /* !____H_DRVAUDIOVIDEOREC */
