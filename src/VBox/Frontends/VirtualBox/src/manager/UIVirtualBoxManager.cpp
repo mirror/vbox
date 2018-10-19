@@ -1806,7 +1806,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged,
             this, &UIVirtualBoxManager::sltHandleGroupSavingProgressChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
-            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
+            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
             this, &UIVirtualBoxManager::sltHandleToolTypeChange);
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
