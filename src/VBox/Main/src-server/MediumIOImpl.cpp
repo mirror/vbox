@@ -416,6 +416,7 @@ HRESULT MediumIO::StreamTask::executeTask()
     VDINTERFACEIO IfsOutputIO;
     VDINTERFACEPROGRESS IfsProgress;
     PVDINTERFACE pIfsOp = NULL;
+    PVDINTERFACE pIfsImg = NULL;
     PVDISK pDstDisk;
 
     if (mProgress)
@@ -441,7 +442,7 @@ HRESULT MediumIO::StreamTask::executeTask()
     IfsOutputIO.pfnWriteSync              = i_vdStreamWrite;
     IfsOutputIO.pfnFlushSync              = i_vdStreamFlush;
     VDInterfaceAdd(&IfsOutputIO.Core, "stream", VDINTERFACETYPE_IO,
-                   m_pDataStream, sizeof(VDINTERFACEIO), &pIfsOp);
+                   m_pDataStream, sizeof(VDINTERFACEIO), &pIfsImg);
 
     int vrc = VDCreate(NULL, VDTYPE_HDD, &pDstDisk);
     if (RT_SUCCESS(vrc))
@@ -449,8 +450,8 @@ HRESULT MediumIO::StreamTask::executeTask()
         /* Create the output image */
         vrc = VDCopy(mMediumIO->m->pHdd, VD_LAST_IMAGE, pDstDisk, m_strFormat.c_str(),
                      "stream", false, 0, m_fMediumVariant, NULL,
-                     VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL, NULL,
-                     pIfsOp, NULL);
+                     VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL, pIfsOp,
+                     pIfsImg, NULL);
         if (RT_FAILURE(vrc))
             hrc = mMediumIO->setErrorBoth(VBOX_E_FILE_ERROR, vrc,
                                           tr("Failed to convert and stream disk image"));
