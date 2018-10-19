@@ -1122,7 +1122,7 @@ void UIGChooserModel::sltRemoveSelectedMachine()
          * we will propose ro unregister machine fully else
          * we will just propose to remove selected items: */
         bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
-        verdicts.insert(aId, fVerdict);
+        verdicts.insert(uId, fVerdict);
         if (fVerdict)
             machinesToUnregister.append(uId);
         else
