@@ -650,7 +650,7 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 HRESULT GeneralTextScript::parse()
 {
-    AssertReturn(!mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, "parse called more than once"));
+//  AssertReturn(!mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, "parse called more than once"));
 
     /*
      * Split the raw context into an array of lines.
