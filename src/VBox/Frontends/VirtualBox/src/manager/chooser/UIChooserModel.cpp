@@ -988,6 +988,7 @@ void UIChooserModel::sltCreateNewMachine()
         strGroupName = pGroup->fullName();
 
     /* Lock the action preventing cascade calls: */
+    actionPool()->action(UIActionIndexST_M_Welcome_S_New)->setEnabled(false);
     actionPool()->action(UIActionIndexST_M_Machine_S_New)->setEnabled(false);
     actionPool()->action(UIActionIndexST_M_Group_S_New)->setEnabled(false);
 
@@ -1006,6 +1007,7 @@ void UIChooserModel::sltCreateNewMachine()
         delete pWizard;
 
     /* Unlock the action allowing further calls: */
+    actionPool()->action(UIActionIndexST_M_Welcome_S_New)->setEnabled(true);
     actionPool()->action(UIActionIndexST_M_Machine_S_New)->setEnabled(true);
     actionPool()->action(UIActionIndexST_M_Group_S_New)->setEnabled(true);
 }
@@ -1457,6 +1459,8 @@ void UIChooserModel::prepareConnections()
             this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
 
     /* Setup action connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_New), SIGNAL(triggered()),
+            this, SLOT(sltCreateNewMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Group_S_New), SIGNAL(triggered()),
             this, SLOT(sltCreateNewMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), SIGNAL(triggered()),

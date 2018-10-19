@@ -111,6 +111,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
+    , m_pWelcomeMenuAction(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
     , m_pSnapshotMenuAction(0)
@@ -1247,6 +1248,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     prepareMenuFile(actionPool()->action(UIActionIndexST_M_File)->menu());
     menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_File)->menu());
 
+    /* Prepare 'Welcome' menu: */
+    prepareMenuWelcome(actionPool()->action(UIActionIndexST_M_Welcome)->menu());
+    m_pWelcomeMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Welcome)->menu());
+
     /* Prepare 'Group' / 'Start or Show' menu: */
     prepareMenuGroupStartOrShow(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->menu());
 
@@ -1405,6 +1410,28 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
 
 #endif /* !VBOX_WS_MAC */
+}
+
+void UIVirtualBoxManager::prepareMenuWelcome(QMenu *pMenu)
+{
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_New));
+    addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_Add));
+#endif /* VBOX_WS_X11 */
+
+    /* Populate Machine-menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_New));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_Add));
+
+    /* Remember action list: */
+    m_welcomeActions << actionPool()->action(UIActionIndexST_M_Welcome_S_New)
+                     << actionPool()->action(UIActionIndexST_M_Welcome_S_Add);
 }
 
 void UIVirtualBoxManager::prepareMenuGroup(QMenu *pMenu)
@@ -1838,6 +1865,10 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_File_S_Close), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformExit);
 
+    /* 'Welcome' menu connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_Add), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
+
     /* 'Group' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
@@ -2061,6 +2092,7 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fGlobalMenuShown  = m_pWidget->isGlobalItemSelected();
     const bool fMachineMenuShown = m_pWidget->isMachineItemSelected() && !isSingleGroupSelected();
     const bool fGroupMenuShown   = m_pWidget->isGroupItemSelected()   &&  isSingleGroupSelected();
+    m_pWelcomeMenuAction->setVisible(fGlobalMenuShown);
     m_pMachineMenuAction->setVisible(fMachineMenuShown);
     m_pGroupMenuAction->setVisible(fGroupMenuShown);
 
@@ -2087,18 +2119,24 @@ void UIVirtualBoxManager::updateActionsVisibility()
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
 
     /* Hide action shortcuts: */
+    if (!fGlobalMenuShown)
+        foreach (UIAction *pAction, m_welcomeActions)
+            pAction->hideShortcut();
     if (!fMachineMenuShown)
         foreach (UIAction *pAction, m_machineActions)
             pAction->hideShortcut();
-    else
+    if (!fGroupMenuShown)
         foreach (UIAction *pAction, m_groupActions)
             pAction->hideShortcut();
 
     /* Show action shortcuts: */
+    if (fGlobalMenuShown)
+        foreach (UIAction *pAction, m_welcomeActions)
+            pAction->showShortcut();
     if (fMachineMenuShown)
         foreach (UIAction *pAction, m_machineActions)
             pAction->showShortcut();
-    else
+    if (fGroupMenuShown)
         foreach (UIAction *pAction, m_groupActions)
             pAction->showShortcut();
 }

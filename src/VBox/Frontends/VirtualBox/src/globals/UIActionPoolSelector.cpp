@@ -2557,6 +2557,11 @@ void UIActionPoolSelector::preparePool()
 #endif
     m_pool[UIActionIndexST_M_File_S_Close] = new UIActionSimpleSelectorFilePerformExit(this);
 
+    /* 'Welcome' actions: */
+    m_pool[UIActionIndexST_M_Welcome] = new UIActionMenuSelectorMachine(this);
+    m_pool[UIActionIndexST_M_Welcome_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
+    m_pool[UIActionIndexST_M_Welcome_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
+
     /* 'Group' actions: */
     m_pool[UIActionIndexST_M_Group] = new UIActionMenuSelectorGroup(this);
     m_pool[UIActionIndexST_M_Group_S_New] = new UIActionSimpleSelectorGroupPerformCreateMachine(this);

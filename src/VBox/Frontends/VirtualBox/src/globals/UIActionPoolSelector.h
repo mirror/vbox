@@ -44,6 +44,11 @@ enum UIActionIndexST
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     UIActionIndexST_M_File_S_Close,
 
+    /* 'Welcome' menu actions: */
+    UIActionIndexST_M_Welcome,
+    UIActionIndexST_M_Welcome_S_New,
+    UIActionIndexST_M_Welcome_S_Add,
+
     /* 'Group' menu actions: */
     UIActionIndexST_M_Group,
     UIActionIndexST_M_Group_S_New,
