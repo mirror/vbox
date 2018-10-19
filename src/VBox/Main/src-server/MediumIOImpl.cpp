@@ -96,7 +96,6 @@ public:
     StreamTask(MediumIO *pMediumIO, DataStream *pDataStream, Progress *pProgress, const char *pszFormat,
                MediumVariant_T fMediumVariant)
         : ThreadTask("StreamTask"),
-          mVDOperationIfaces(NULL),
           mMediumIO(pMediumIO),
           mMediumCaller(pMediumIO->m->ptrMedium),
           m_pDataStream(pDataStream),
@@ -421,13 +420,13 @@ HRESULT MediumIO::StreamTask::executeTask()
 
     if (mProgress)
     {
-        IfsProgress.pfnProgress = pProgress->i_vdProgressCallback;
-        int vrc = VDInterfaceAdd(&IfsProgress.Core,
-                                 "Medium::StreamTask::vdInterfaceProgress",
-                                 VDINTERFACETYPE_PROGRESS,
-                                 mProgress,
-                                 sizeof(IfsProgress),
-                                 &pIfsOp);
+        IfsProgress.pfnProgress = mProgress->i_vdProgressCallback;
+        VDInterfaceAdd(&IfsProgress.Core,
+                       "Medium::StreamTask::vdInterfaceProgress",
+                       VDINTERFACETYPE_PROGRESS,
+                       mProgress,
+                       sizeof(IfsProgress),
+                       &pIfsOp);
     }
 
     IfsOutputIO.pfnOpen                   = i_vdStreamOpen;
