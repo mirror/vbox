@@ -348,6 +348,47 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
                     loadCloudProfile(comCloudProfile, data);
                     createItemForCloudProfile(pProviderItem, data, true);
 
+                    /* If profile still Ok: */
+                    if (comCloudProfile.isOk())
+                    {
+                        /* Acquire supported property names: */
+                        const QVector<QString> supportedNames = comCloudProfile.GetSupportedPropertyNames();
+                        /* Show error message if necessary: */
+                        if (!comCloudProfile.isOk())
+                            msgCenter().cannotAcquireCloudProfileParameter(comCloudProfile, this);
+                        else
+                        {
+                            /* Add unknown supported properties to known properties list.
+                             * That allows to have at least something if we have nothing. */
+                            foreach (const QString &strSupportedName, supportedNames)
+                                if (!data.m_data.contains(strSupportedName))
+                                    data.m_data[strSupportedName] = qMakePair(QString(), QString());
+                        }
+                    }
+
+                    /* If profile still Ok: */
+                    if (comCloudProfile.isOk())
+                    {
+                        /* Now push known properties back to profile all together.
+                         * That will rewrite empty profile with values gathered above. */
+                        const QVector<QString> updatedKeys = data.m_data.keys().toVector();
+                        QVector<QString> updatedValues;
+                        typedef QPair<QString, QString> QStringPair;
+                        foreach (const QStringPair &valuePair, data.m_data.values())
+                            updatedValues += valuePair.first;
+                        comCloudProfile.SetProperties(updatedKeys, updatedValues);
+                        /* Show error message if necessary: */
+                        if (!comCloudProfile.isOk())
+                            msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                        else
+                        {
+                            /* Update profile in the tree: */
+                            UIDataCloudProfile updatedData;
+                            loadCloudProfile(comCloudProfile, updatedData);
+                            updateItemForCloudProfile(updatedData, true, static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem()));
+                        }
+                    }
+
                     /* Save profile changes: */
                     comCloudProvider.SaveProfiles();
                     /* Show error message if necessary: */
