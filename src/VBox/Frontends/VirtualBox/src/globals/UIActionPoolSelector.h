@@ -145,9 +145,9 @@ enum UIActionIndexST
     UIActionIndexST_M_CloudWindow,
     UIActionIndexST_M_Cloud,
     UIActionIndexST_M_Cloud_S_Add,
+    UIActionIndexST_M_Cloud_S_Import,
     UIActionIndexST_M_Cloud_S_Remove,
     UIActionIndexST_M_Cloud_T_Details,
-    UIActionIndexST_M_Cloud_S_Import,
 
     /* Maximum index: */
     UIActionIndexST_Max

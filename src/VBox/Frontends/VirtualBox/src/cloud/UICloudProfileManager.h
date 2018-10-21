@@ -90,12 +90,12 @@ private slots:
       * @{ */
         /** Handles command to create cloud profile. */
         void sltAddCloudProfile();
+        /** Handles command to import cloud profiles. */
+        void sltImportCloudProfiles();
         /** Handles command to remove cloud profile. */
         void sltRemoveCloudProfile();
         /** Handles command to make cloud profile details @a fVisible. */
         void sltToggleCloudProfileDetailsVisibility(bool fVisible);
-        /** Handles command to import cloud profiles. */
-        void sltImportCloudProfiles();
     /** @} */
 
     /** @name Tree-widget stuff.

@@ -643,11 +643,10 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 case ToolTypeGlobal_Cloud:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Add));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Import));
                     m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Remove));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_T_Details));
-                    m_pToolBar->addSeparator();
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Import));
                     break;
                 }
                 default:
