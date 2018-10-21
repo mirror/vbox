@@ -31,6 +31,7 @@
 # include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
+# include "UIImageTools.h"
 # include "UITools.h"
 # include "UIToolsItem.h"
 # include "UIToolsModel.h"
@@ -712,7 +713,7 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iHighlightLightnessMax));
         bgGrad.setColorAt(1, backgroundColor.lighter(m_iHighlightLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
-    }
+        }
     /* Hovering background: */
     else if (isHovered())
     {
@@ -725,7 +726,7 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
         bgGrad.setColorAt(0, backgroundColor.lighter(m_iHoverLightnessMax));
         bgGrad.setColorAt(1, backgroundColor.lighter(m_iHoverLightnessMin));
         pPainter->fillRect(rectangle, bgGrad);
-    }
+        }
     /* Default background: */
     else
     {
@@ -746,6 +747,10 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
 
 void UIToolsItem::paintFrame(QPainter *pPainter, const QRect &rectangle) const
 {
+    /* Don't paint frame for disabled items: */
+    if (!isEnabled())
+        return;
+
     /* Save painter: */
     pPainter->save();
 
@@ -826,12 +831,25 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
         int iPixmapX = iMargin;
         int iPixmapY = (iFullHeight - m_pixmap.height() / m_pixmap.devicePixelRatio()) / 2;
         /* Paint pixmap: */
-        paintPixmap(/* Painter: */
-                    pPainter,
-                    /* Point to paint in: */
-                    QPoint(iPixmapX, iPixmapY),
-                    /* Pixmap to paint: */
-                    m_pixmap);
+        // WORKAROUND:
+        // We have no disabled tool icons for now.
+        // So we will emulate that functionality.
+        // Maybe one day we should do that everywhere?
+        /// @todo just use proper icons!
+        if (!isEnabled())
+            paintPixmap(/* Painter: */
+                        pPainter,
+                        /* Point to paint in: */
+                        QPoint(iPixmapX, iPixmapY),
+                        /* Pixmap to paint: */
+                        QPixmap::fromImage(toGray(m_pixmap.toImage())));
+        else
+            paintPixmap(/* Painter: */
+                        pPainter,
+                        /* Point to paint in: */
+                        QPoint(iPixmapX, iPixmapY),
+                        /* Pixmap to paint: */
+                        m_pixmap);
     }
 
     /* Paint right column: */
