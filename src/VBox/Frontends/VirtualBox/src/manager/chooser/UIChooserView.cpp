@@ -153,7 +153,9 @@ void UIChooserView::sltMinimumHeightHintChanged(int iHint)
 void UIChooserView::retranslateUi()
 {
     /* Translate this: */
+#if 0 /* we will leave that for accessibility needs. */
     setToolTip(tr("Contains a tree of Virtual Machines and their groups"));
+#endif  /* to be integrated to accessibility interface. */
 }
 
 void UIChooserView::prepare()

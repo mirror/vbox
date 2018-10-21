@@ -171,7 +171,9 @@ void UIDetailsView::sltMinimumHeightHintChanged(int iMinimumHeightHint)
 void UIDetailsView::retranslateUi()
 {
     /* Translate this: */
+#if 0 /* we will leave that for accessibility needs. */
     setToolTip(tr("Contains a list of Virtual Machine details"));
+#endif  /* to be integrated to accessibility interface. */
 }
 
 void UIDetailsView::resizeEvent(QResizeEvent *pEvent)

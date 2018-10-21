@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QAccessibleWidget>
+# include <QApplication>
 # include <QScrollBar>
 
 /* GUI includes: */
@@ -156,7 +157,9 @@ void UIToolsView::sltMinimumHeightHintChanged(int iHint)
 void UIToolsView::retranslateUi()
 {
     /* Translate this: */
-    setToolTip(tr("Contains a list of tools"));
+#if 0 /* we will leave that for accessibility needs. */
+    setToolTip(tr("Contains a list of VirtualBox tools"));
+#endif  /* to be integrated to accessibility interface. */
 }
 
 void UIToolsView::prepare()
