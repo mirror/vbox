@@ -29,7 +29,7 @@
 namespace UIImageTools
 {
     /** Converts @a image to gray-scale. */
-    QImage toGray(const QImage &image);
+    SHARED_LIBRARY_STUFF QImage toGray(const QImage &image);
 
     /** Makes @a image more dark and dim. */
     SHARED_LIBRARY_STUFF void dimImage(QImage &image);
