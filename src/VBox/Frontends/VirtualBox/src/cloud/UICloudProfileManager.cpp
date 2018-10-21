@@ -511,6 +511,11 @@ void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fV
     emit sigCloudProfileDetailsVisibilityChanged(fVisible);
 }
 
+void UICloudProfileManagerWidget::sltShowCloudProfileHelp()
+{
+    vboxGlobal().openURL("https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm");
+}
+
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
 {
     /* Get items: */
@@ -596,6 +601,8 @@ void UICloudProfileManagerWidget::prepareActions()
             this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
             this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltShowCloudProfileHelp);
 }
 
 void UICloudProfileManagerWidget::prepareWidgets()
@@ -639,6 +646,8 @@ void UICloudProfileManagerWidget::prepareToolBar()
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */

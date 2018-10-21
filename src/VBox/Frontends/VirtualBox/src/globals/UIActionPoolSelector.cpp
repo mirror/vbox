@@ -2539,6 +2539,45 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Help' action class. */
+class UIActionMenuSelectorCloudShowHelp : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudShowHelp(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_profile_help_32px.png",          ":/cloud_profile_help_16px.png",
+                         ":/cloud_profile_help_disabled_32px.png", ":/cloud_profile_help_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ShowCloudProfileHelp");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+H");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setIconText(QApplication::translate("UIActionPool", "Help"));
+        setName(QApplication::translate("UIActionPool", "&Show Help..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show cloud profile help"));
+        setToolTip(tr("Show Cloud Profile Help (%1)").arg(shortcut().toString()));
+    }
+};
+
 
 /*********************************************************************************************************************************
 *   Class UIActionPoolSelector implementation.                                                                                   *
@@ -2667,6 +2706,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_Import] = new UIActionMenuSelectorCloudPerformImport(this);
     m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
     m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
+    m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfs = &UIActionPoolSelector::updateMenuMediumWindow;
@@ -2859,6 +2899,16 @@ void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Remove)) || fSeparator;
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_T_Details)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Help' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Help)) || fSeparator;
 }
 
 void UIActionPoolSelector::updateShortcuts()
