@@ -101,8 +101,11 @@ signals:
 public:
 
     /** Constructs item passing @a pParent to the base-class.
-      * @param  fTemporary  Brings whether this item created for temporary needs. */
-    UIChooserItem(UIChooserItem *pParent, bool fTemporary);
+      * @param  fTemporary     Brings whether this item created for temporary needs.
+      * @param  iDefaultValue  Brings default value for hovering animation.
+      * @param  iHoveredValue  Brings hovered value for hovering animation. */
+    UIChooserItem(UIChooserItem *pParent, bool fTemporary,
+                  int iDefaultValue = 100, int iHoveredValue = 90);
 
     /** @name Item stuff.
       * @{ */

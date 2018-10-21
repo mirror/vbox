@@ -198,7 +198,8 @@ private:
 *   Class UIChooserItem implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary)
+UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary,
+                             int iDefaultValue /* = 100 */, int iHoveredValue /* = 90 */)
     : m_pParent(pParent)
     , m_fTemporary(fTemporary)
     , m_fRoot(!pParent)
@@ -207,8 +208,8 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary)
     , m_pHoveringAnimationForward(0)
     , m_pHoveringAnimationBackward(0)
     , m_iAnimationDuration(400)
-    , m_iDefaultValue(100)
-    , m_iHoveredValue(90)
+    , m_iDefaultValue(iDefaultValue)
+    , m_iHoveredValue(iHoveredValue)
     , m_iAnimatedValue(m_iDefaultValue)
     , m_iPreviousMinimumWidthHint(0)
     , m_iPreviousMinimumHeightHint(0)
