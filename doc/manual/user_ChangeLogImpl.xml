@@ -36,7 +36,8 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>OCI Itegration: implemented support for exporting a VM to Oracle Cloud Infrastructure</para>
+        <para>OCI Itegration: implemented support for exporting a VM to
+          Oracle Cloud Infrastructure</para>
       </listitem>
 
       <listitem>
@@ -44,6 +45,7 @@ are ordered as follows:
       </listitem>
 
     </itemizedlist>
+
   <para>In addition, the following items were fixed and/or added:</para>
 
     <itemizedlist>
@@ -55,12 +57,12 @@ are ordered as follows:
 
       <listitem>
         <para>Guest Control: various new APIs and features were implemented
-        (see SDK documentation for more)</para>
+          (see SDK documentation for more)</para>
       </listitem>
 
     <listitem>
         <para>Networking: Added a workaround for older guests which do not enable
-        bus mastering for the virtio PCI device</para>
+          bus mastering for the virtio PCI device</para>
       </listitem>
 
     </itemizedlist>
