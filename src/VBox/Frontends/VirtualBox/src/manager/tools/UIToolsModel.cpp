@@ -135,6 +135,20 @@ UIToolsClass UIToolsModel::toolsClass() const
     return m_enmCurrentClass;
 }
 
+void UIToolsModel::setToolsType(UIToolsType enmType)
+{
+    /* Update linked values: */
+    if (currentItem()->itemType() != enmType)
+    {
+        foreach (UIToolsItem *pItem, items())
+            if (pItem->itemType() == enmType)
+            {
+                setCurrentItem(pItem);
+                break;
+            }
+    }
+}
+
 UIToolsType UIToolsModel::toolsType() const
 {
     return currentItem()->itemType();

@@ -86,6 +86,11 @@ public:
         /** Returns whether single group is selected. */
         bool isSingleGroupSelected() const;
 
+        /** Defines tools @a enmType. */
+        void setToolsType(UIToolsType enmType);
+        /** Returns tools type. */
+        UIToolsType toolsType() const;
+
         /** Returns a type of curent Machine tool. */
         ToolTypeMachine currentMachineTool() const;
         /** Returns a type of curent Global tool. */
@@ -98,6 +103,10 @@ public:
         void switchToTool(ToolTypeMachine enmType);
         /** Switches to Global tool of passed @a enmType. */
         void switchToTool(ToolTypeGlobal enmType);
+        /** Closes Machine tool of passed @a enmType. */
+        void closeTool(ToolTypeMachine enmType);
+        /** Closes Global tool of passed @a enmType. */
+        void closeTool(ToolTypeGlobal enmType);
     /** @} */
 
 public slots:

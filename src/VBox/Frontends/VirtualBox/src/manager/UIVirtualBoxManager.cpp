@@ -381,6 +381,16 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
 {
     updateActionsVisibility();
     updateActionsAppearance();
+
+    /* Make sure separate dialogs are closed when corresponding tools are opened: */
+    switch (m_pWidget->toolsType())
+    {
+        case UIToolsType_Media:   sltCloseVirtualMediumManagerWindow();
+        case UIToolsType_Network: sltCloseHostNetworkManagerWindow();
+        case UIToolsType_Cloud:   sltCloseCloudProfileManagerWindow();
+        case UIToolsType_Logs:    sltCloseLogViewerWindow();
+        default: break;
+    }
 }
 
 void UIVirtualBoxManager::sltHandleStateChange(const QUuid &)
@@ -393,8 +403,8 @@ void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
     /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isToolOpened(ToolTypeGlobal_Media))
     {
-        m_pWidget->switchToTool(ToolTypeGlobal_Media);
-        return;
+        m_pWidget->setToolsType(UIToolsType_Welcome);
+        m_pWidget->closeTool(ToolTypeGlobal_Media);
     }
 
     /* Create instance if not yet created: */
@@ -423,8 +433,8 @@ void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
     /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isToolOpened(ToolTypeGlobal_Network))
     {
-        m_pWidget->switchToTool(ToolTypeGlobal_Network);
-        return;
+        m_pWidget->setToolsType(UIToolsType_Welcome);
+        m_pWidget->closeTool(ToolTypeGlobal_Network);
     }
 
     /* Create instance if not yet created: */
@@ -453,8 +463,8 @@ void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
     /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isToolOpened(ToolTypeGlobal_Cloud))
     {
-        m_pWidget->switchToTool(ToolTypeGlobal_Cloud);
-        return;
+        m_pWidget->setToolsType(UIToolsType_Welcome);
+        m_pWidget->closeTool(ToolTypeGlobal_Cloud);
     }
 
     /* Create instance if not yet created: */
@@ -1044,17 +1054,17 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     }
 }
 
-void UIVirtualBoxManager::sltOpenMachineLogDialog()
+void UIVirtualBoxManager::sltOpenLogViewerWindow()
 {
     /* Get selected items: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    /* First check if a logviewer is already opened in embedded mode: */
+    /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isToolOpened(ToolTypeMachine_Logs))
     {
-        m_pWidget->switchToTool(ToolTypeMachine_Logs);
-        return;
+        m_pWidget->setToolsType(UIToolsType_Details);
+        m_pWidget->closeTool(ToolTypeMachine_Logs);
     }
 
     /* For each selected item: */
@@ -1093,24 +1103,42 @@ void UIVirtualBoxManager::sltOpenMachineLogDialog()
 
 void UIVirtualBoxManager::sltCloseLogViewerWindow()
 {
-    /* Search for the sender of the signal within the m_logViewers map: */
-    QMap<QString, QIManagerDialog*>::iterator sendersIterator = m_logViewers.begin();
-    while (sendersIterator != m_logViewers.end() && sendersIterator.value() != sender())
-        ++sendersIterator;
-    /* Do nothing if we cannot find it with the map: */
-    if (sendersIterator == m_logViewers.end())
-        return;
+    /* If there is a proper sender: */
+    if (qobject_cast<QIManagerDialog*>(sender()))
+    {
+        /* Search for the sender of the signal within the m_logViewers map: */
+        QMap<QString, QIManagerDialog*>::iterator sendersIterator = m_logViewers.begin();
+        while (sendersIterator != m_logViewers.end() && sendersIterator.value() != sender())
+            ++sendersIterator;
+        /* Do nothing if we cannot find it with the map: */
+        if (sendersIterator == m_logViewers.end())
+            return;
 
-    /* Check whether we have found the proper dialog: */
-    QIManagerDialog *pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
-    if (!pDialog)
-        return;
+        /* Check whether we have found the proper dialog: */
+        QIManagerDialog *pDialog = qobject_cast<QIManagerDialog*>(sendersIterator.value());
+        if (!pDialog)
+            return;
 
-    /* First remove this log-viewer dialog from the map.
-     * This should be done before closing the dialog which will incur
-     * a second call to this function and result in double delete!!!: */
-    m_logViewers.erase(sendersIterator);
-    UIVMLogViewerDialogFactory().cleanup(pDialog);
+        /* First remove this log-viewer dialog from the map.
+         * This should be done before closing the dialog which will incur
+         * a second call to this function and result in double delete!!! */
+        m_logViewers.erase(sendersIterator);
+        UIVMLogViewerDialogFactory().cleanup(pDialog);
+    }
+    /* Otherwise: */
+    else
+    {
+        /* Just wipe out everything: */
+        foreach (const QString &strKey, m_logViewers.keys())
+        {
+            /* First remove each log-viewer dialog from the map.
+             * This should be done before closing the dialog which will incur
+             * a second call to this function and result in double delete!!! */
+            QIManagerDialog *pDialog = m_logViewers.value(strKey);
+            m_logViewers.remove(strKey);
+            UIVMLogViewerDialogFactory().cleanup(pDialog);
+        }
+    }
 }
 
 void UIVirtualBoxManager::sltShowMachineInFileManager()
@@ -1882,7 +1910,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenMachineLogDialog);
+            this, &UIVirtualBoxManager::sltOpenLogViewerWindow);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltShowMachineInFileManager);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut), &UIAction::triggered,
@@ -1906,7 +1934,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenMachineLogDialog);
+            this, &UIVirtualBoxManager::sltOpenLogViewerWindow);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltShowMachineInFileManager);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), &UIAction::triggered,

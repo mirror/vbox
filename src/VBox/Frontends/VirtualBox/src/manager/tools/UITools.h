@@ -74,6 +74,9 @@ public:
         void setToolsClass(UIToolsClass enmClass);
         /** Returns current tools class. */
         UIToolsClass toolsClass() const;
+
+        /** Defines current tools @a enmType. */
+        void setToolsType(UIToolsType enmType);
         /** Returns current tools type. */
         UIToolsType toolsType() const;
 

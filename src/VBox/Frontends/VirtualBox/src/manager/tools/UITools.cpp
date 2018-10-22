@@ -64,6 +64,11 @@ UIToolsClass UITools::toolsClass() const
     return m_pToolsModel->toolsClass();
 }
 
+void UITools::setToolsType(UIToolsType enmType)
+{
+    m_pToolsModel->setToolsType(enmType);
+}
+
 UIToolsType UITools::toolsType() const
 {
     return m_pToolsModel->toolsType();
