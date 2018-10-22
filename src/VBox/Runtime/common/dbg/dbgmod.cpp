@@ -1839,7 +1839,7 @@ RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGI
                     ("%#x\n", iSeg),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(off + cb >= off, ("off=%RTptr cb=%RTptr\n", off, cb), VERR_DBG_ADDRESS_WRAP);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER); /* currently reserved. */
+    AssertReturn(!(fFlags & ~RTDBGSYMBOLADD_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     RTDBGMOD_LOCK(pDbgMod);
 

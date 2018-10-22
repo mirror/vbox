@@ -395,6 +395,47 @@ static DECLCALLBACK(uint32_t) rtDbgModContainer_SymbolCount(PRTDBGMODINT pMod)
 }
 
 
+/**
+ * Worker for rtDbgModContainer_SymbolAdd that removes a symbol to resolve
+ * address conflicts.
+ *
+ * We don't shift ordinals up as that could be very expensive, instead we move
+ * the last one up to take the place of the one we're removing.  Caller must
+ * take this into account.
+ *
+ * @param   pThis               The container.
+ * @param   pAddrTree           The address tree to remove from.
+ * @param   pToRemove           The conflicting symbol to be removed.
+ */
+static void rtDbgModContainer_SymbolReplace(PRTDBGMODCTN pThis, PAVLRUINTPTRTREE pAddrTree, PRTDBGMODCTNSYMBOL pToRemove)
+{
+    /* Unlink it. */
+    PRTSTRSPACECORE pRemovedName = RTStrSpaceRemove(&pThis->Names, pToRemove->NameCore.pszString);
+    Assert(pRemovedName); RT_NOREF_PV(pRemovedName);
+    pToRemove->NameCore.pszString = NULL;
+
+    PAVLRUINTPTRNODECORE pRemovedAddr = RTAvlrUIntPtrRemove(pAddrTree, pToRemove->AddrCore.Key);
+    Assert(pRemovedAddr); RT_NOREF_PV(pRemovedAddr);
+    pToRemove->AddrCore.Key = 0;
+    pToRemove->AddrCore.KeyLast = 0;
+
+    uint32_t const iOrdinal = pToRemove->OrdinalCore.Key;
+    PAVLU32NODECORE pRemovedOrdinal = RTAvlU32Remove(&pThis->SymbolOrdinalTree, iOrdinal);
+    Assert(pRemovedOrdinal); RT_NOREF_PV(pRemovedOrdinal);
+
+    RTMemFree(pToRemove);
+
+    /* Jump the last symbol ordinal to take its place. */
+    PAVLU32NODECORE pLastOrdinal = RTAvlU32Remove(&pThis->SymbolOrdinalTree, pThis->iNextSymbolOrdinal - 1);
+    AssertReturnVoid(pLastOrdinal);
+
+    pThis->iNextSymbolOrdinal -= 1;
+    pLastOrdinal->Key = iOrdinal;
+    bool fInsert = RTAvlU32Insert(&pThis->SymbolOrdinalTree, pLastOrdinal);
+    Assert(fInsert); RT_NOREF_PV(fInsert);
+}
+
+
 /** @copydoc RTDBGMODVTDBG::pfnSymbolAdd */
 static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
                                                      RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags,
@@ -447,6 +488,9 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
             {
                 if (RTAvlU32Insert(&pThis->SymbolOrdinalTree, &pSymbol->OrdinalCore))
                 {
+                    /*
+                     * Success.
+                     */
                     if (piOrdinal)
                         *piOrdinal = pThis->iNextSymbolOrdinal;
                     pThis->iNextSymbolOrdinal++;
@@ -456,6 +500,91 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                 /* bail out */
                 rc = VERR_INTERNAL_ERROR_5;
                 RTAvlrUIntPtrRemove(pAddrTree, pSymbol->AddrCore.Key);
+            }
+            /*
+             * Did the caller specify a conflict resolution method?
+             */
+            else if (fFlags & (  RTDBGSYMBOLADD_F_REPLACE_SAME_ADDR
+                               | RTDBGSYMBOLADD_F_REPLACE_ANY
+                               | RTDBGSYMBOLADD_F_ADJUST_SIZES_ON_CONFLICT))
+            {
+                /*
+                 * Handle anything at or before the start address first:
+                 */
+                AssertCompileMemberOffset(RTDBGMODCTNSYMBOL, AddrCore, 0);
+                PRTDBGMODCTNSYMBOL pConflict = (PRTDBGMODCTNSYMBOL)RTAvlrUIntPtrRangeGet(pAddrTree, pSymbol->AddrCore.Key);
+                if (pConflict)
+                {
+                    if (pConflict->AddrCore.Key == pSymbol->AddrCore.Key)
+                    {
+                        /* Same address, only option is replacing it. */
+                        if (fFlags & (RTDBGSYMBOLADD_F_REPLACE_SAME_ADDR | RTDBGSYMBOLADD_F_REPLACE_ANY))
+                            rtDbgModContainer_SymbolReplace(pThis, pAddrTree, pConflict);
+                        else
+                            rc = VERR_DBG_ADDRESS_CONFLICT;
+                    }
+                    else if (fFlags & RTDBGSYMBOLADD_F_ADJUST_SIZES_ON_CONFLICT)
+                    {
+                        /* Reduce the size of the symbol before us, adopting the size if we've got none. */
+                        Assert(pConflict->AddrCore.Key < pSymbol->AddrCore.Key);
+                        if (!pSymbol->cb)
+                        {
+                            pSymbol->AddrCore.KeyLast = pSymbol->AddrCore.KeyLast;
+                            pSymbol->cb               = pSymbol->AddrCore.KeyLast - pConflict->AddrCore.Key + 1;
+                            rc = VINF_DBG_ADJUSTED_SYM_SIZE;
+                        }
+                        pConflict->AddrCore.KeyLast = pSymbol->AddrCore.Key - 1;
+                        pConflict->cb               = pSymbol->AddrCore.Key - pConflict->AddrCore.Key;
+                    }
+                    else if (fFlags & RTDBGSYMBOLADD_F_REPLACE_ANY)
+                        rtDbgModContainer_SymbolReplace(pThis, pAddrTree, pConflict);
+                    else
+                        rc = VERR_DBG_ADDRESS_CONFLICT;
+                }
+
+                /*
+                 * Try insert again and deal with symbols in the range.
+                 */
+                while (RT_SUCCESS(rc))
+                {
+                    if (RTAvlrUIntPtrInsert(pAddrTree, &pSymbol->AddrCore))
+                    {
+                        pSymbol->OrdinalCore.Key = pThis->iNextSymbolOrdinal;
+                        if (RTAvlU32Insert(&pThis->SymbolOrdinalTree, &pSymbol->OrdinalCore))
+                        {
+                            /*
+                             * Success.
+                             */
+                            if (piOrdinal)
+                                *piOrdinal = pThis->iNextSymbolOrdinal;
+                            pThis->iNextSymbolOrdinal++;
+                            return rc;
+                        }
+
+                        rc = VERR_INTERNAL_ERROR_5;
+                        RTAvlrUIntPtrRemove(pAddrTree, pSymbol->AddrCore.Key);
+                        break;
+                    }
+
+                    /* Get the first symbol above us and see if we can do anything about it (or ourselves). */
+                    AssertCompileMemberOffset(RTDBGMODCTNSYMBOL, AddrCore, 0);
+                    pConflict = (PRTDBGMODCTNSYMBOL)RTAvlrUIntPtrGetBestFit(pAddrTree, pSymbol->AddrCore.Key, true /*fAbove*/);
+                    AssertBreakStmt(pConflict, rc = VERR_DBG_ADDRESS_CONFLICT);
+                    Assert(pSymbol->AddrCore.Key     != pConflict->AddrCore.Key);
+                    Assert(pSymbol->AddrCore.KeyLast >= pConflict->AddrCore.Key);
+
+                    if (fFlags & RTDBGSYMBOLADD_F_ADJUST_SIZES_ON_CONFLICT)
+                    {
+                        Assert(pSymbol->cb > 0);
+                        pSymbol->AddrCore.Key = pConflict->AddrCore.Key - 1;
+                        pSymbol->cb           = pConflict->AddrCore.Key - pSymbol->AddrCore.Key;
+                        rc = VINF_DBG_ADJUSTED_SYM_SIZE;
+                    }
+                    else if (fFlags & RTDBGSYMBOLADD_F_REPLACE_ANY)
+                        rtDbgModContainer_SymbolReplace(pThis, pAddrTree, pConflict);
+                    else
+                        rc = VERR_DBG_ADDRESS_CONFLICT;
+                }
             }
             else
                 rc = VERR_DBG_ADDRESS_CONFLICT;
@@ -675,8 +804,16 @@ static DECLCALLBACK(int)  rtDbgModContainer_DestroyTreeNode(PAVLRUINTPTRNODECORE
     PRTDBGMODCTNSYMBOL pSym = RT_FROM_MEMBER(pNode, RTDBGMODCTNSYMBOL, AddrCore);
     RTStrCacheRelease(g_hDbgModStrCache, pSym->NameCore.pszString);
     pSym->NameCore.pszString = NULL;
+
+#if 0
+    //PRTDBGMODCTN pThis = (PRTDBGMODCTN)pvUser;
+    //PAVLU32NODECORE pRemoved = RTAvlU32Remove(&pThis->SymbolOrdinalTree, pSym->OrdinalCore.Key);
+    //Assert(pRemoved == &pSym->OrdinalCore); RT_NOREF_PV(pRemoved);
+#else
+    RT_NOREF_PV(pvUser);
+#endif
+
     RTMemFree(pSym);
-    NOREF(pvUser);
     return 0;
 }
 
@@ -691,12 +828,13 @@ static DECLCALLBACK(int) rtDbgModContainer_Close(PRTDBGMODINT pMod)
      */
     for (uint32_t iSeg = 0; iSeg < pThis->cSegs; iSeg++)
     {
-        RTAvlrUIntPtrDestroy(&pThis->paSegs[iSeg].SymAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
+        RTAvlrUIntPtrDestroy(&pThis->paSegs[iSeg].SymAddrTree, rtDbgModContainer_DestroyTreeNode, pThis);
         RTStrCacheRelease(g_hDbgModStrCache, pThis->paSegs[iSeg].pszName);
         pThis->paSegs[iSeg].pszName = NULL;
     }
 
-    RTAvlrUIntPtrDestroy(&pThis->AbsAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
+    RTAvlrUIntPtrDestroy(&pThis->AbsAddrTree, rtDbgModContainer_DestroyTreeNode, pThis);
+
     pThis->Names = NULL;
 
 #ifdef RTDBGMODCNT_WITH_MEM_CACHE

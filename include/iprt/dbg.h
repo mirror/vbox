@@ -77,6 +77,18 @@ typedef RTDBGSEGIDX const  *PCRTDBGSEGIDX;
 #define RTDBGSYMADDR_FLAGS_VALID_MASK           UINT32_C(7)
 /** @} */
 
+/** @name RTDBGSYMBOLADD_F_XXX - Flags for RTDbgModSymbolAdd and RTDbgAsSymbolAdd.
+ * @{ */
+/** Replace existing symbol with same address. */
+#define RTDBGSYMBOLADD_F_REPLACE_SAME_ADDR         UINT32_C(0x00000001)
+/** Replace any existing symbols overlapping the symbol range. */
+#define RTDBGSYMBOLADD_F_REPLACE_ANY               UINT32_C(0x00000002)
+/** Adjust sizes on address conflict.  This applies to the symbol being added
+ * as well as existing symbols. */
+#define RTDBGSYMBOLADD_F_ADJUST_SIZES_ON_CONFLICT  UINT32_C(0x00000004)
+/** Mask of valid flags. */
+#define RTDBGSYMBOLADD_F_VALID_MASK                UINT32_C(0x00000007)
+/** @} */
 
 /** Max length (including '\\0') of a segment name. */
 #define RTDBG_SEGMENT_NAME_LENGTH   (128 - 8 - 8 - 8 - 4 - 4)
@@ -1028,7 +1040,7 @@ RTDECL(int) RTDbgAsModuleQueryMapByIndex(RTDBGAS hDbgAs, uint32_t iModule, PRTDB
  * @param   pszSymbol       The symbol name.
  * @param   Addr            The address of the symbol.
  * @param   cb              The size of the symbol.
- * @param   fFlags          Symbol flags.
+ * @param   fFlags          Symbol flags, RTDBGSYMBOLADD_F_XXX.
  * @param   piOrdinal       Where to return the symbol ordinal on success. If
  *                          the interpreter doesn't do ordinals, this will be set to
  *                          UINT32_MAX. Optional
@@ -1045,7 +1057,7 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
  *
  * @param   hDbgAs          The address space handle.
  * @param   Addr            The address which closest symbol is requested.
- * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
+ * @param   fFlags          Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   pSymbol         Where to return the symbol info.
@@ -1064,7 +1076,7 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, uint32_t fFlags,
  *
  * @param   hDbgAs          The address space handle.
  * @param   Addr            The address which closest symbol is requested.
- * @param   fFlags              Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
+ * @param   fFlags          Symbol search flags, see RTDBGSYMADDR_FLAGS_XXX.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   ppSymInfo       Where to return the pointer to the allocated symbol
@@ -1518,7 +1530,7 @@ RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
  * @param   off             The segment offset.
  * @param   cb              The size of the symbol. Can be zero, although this
  *                          may depend somewhat on the debug interpreter.
- * @param   fFlags          Symbol flags. Reserved for the future, MBZ.
+ * @param   fFlags          Symbol flags, RTDBGSYMBOLADD_F_XXX.
  * @param   piOrdinal       Where to return the symbol ordinal on success. If
  *                          the interpreter doesn't do ordinals, this will be set to
  *                          UINT32_MAX. Optional.
