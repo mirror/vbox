@@ -2775,14 +2775,6 @@ void UIActionPoolSelector::updateMenuMediumWrapper(UIMenu *pMenu)
 
     /* 'Add' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Add)) || fSeparator;
-    /* 'Copy' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Copy)) || fSeparator;
-    /* 'Move' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Move)) || fSeparator;
-    /* 'Remove' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Remove)) || fSeparator;
-    /* 'Release' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -2791,6 +2783,14 @@ void UIActionPoolSelector::updateMenuMediumWrapper(UIMenu *pMenu)
         fSeparator = false;
     }
 
+    /* 'Copy' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Copy)) || fSeparator;
+    /* 'Move' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Move)) || fSeparator;
+    /* 'Remove' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Remove)) || fSeparator;
+    /* 'Release' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
 
@@ -2833,8 +2833,6 @@ void UIActionPoolSelector::updateMenuNetworkWrapper(UIMenu *pMenu)
 
     /* 'Create' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Create)) || fSeparator;
-    /* 'Remove' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Remove)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -2843,6 +2841,8 @@ void UIActionPoolSelector::updateMenuNetworkWrapper(UIMenu *pMenu)
         fSeparator = false;
     }
 
+    /* 'Remove' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Remove)) || fSeparator;
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_T_Details)) || fSeparator;
 

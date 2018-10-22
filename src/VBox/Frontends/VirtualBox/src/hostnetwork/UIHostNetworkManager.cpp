@@ -662,13 +662,11 @@ void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &posit
     if (m_pTreeWidget->itemAt(position))
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
-        menu.addSeparator();
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
     }
     else
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
-//        menu.addSeparator();
 //        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
     }
     /* And show it: */
@@ -742,8 +740,8 @@ void UIHostNetworkManagerWidget::prepareToolBar()
 
         /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
         m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
 //        m_pToolBar->addSeparator();
 //        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
