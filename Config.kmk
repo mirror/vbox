@@ -6848,21 +6848,21 @@ endif
 #
 # Template for building normal R3 (dynamic) libraries for the guest additions with Visual C++ 2013 or later, strict.
 #
-TEMPLATE_NewerVccVBoxGuestR3Dll          = VBoxGuestR3Dll with the newer Visual C++ version (2013 or later).
-TEMPLATE_NewerVccVBoxGuestR3Dll_EXTENDS  = VBoxGuestR3Dll
+TEMPLATE_NewerVccVBoxGuestR3Dll          = VBOXGUESTR3DLL with the newer Visual C++ version (2013 or later).
+TEMPLATE_NewerVccVBoxGuestR3Dll_EXTENDS  = VBOXGUESTR3DLL
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86    = $(VBOX_NEWER_VCC_TOOL_STEM)X86
  TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64  = $(VBOX_NEWER_VCC_TOOL_STEM)AMD64
  TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS        = \
- 	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBoxGuestR3Dll_CXXFLAGS)) \
+ 	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS)) \
 	$(VBOX_NEWER_VCC_WARN_ALL) $(VBOX_VCC_WERR)
- TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS          = $(TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS)
+ TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS          = $(TEMPLATE_NewerVccVBOXGUESTR3DLL_CXXFLAGS)
 # Hack begin
 # Does not work when building x86 for amd64 build (No rule to make target /oldnames.lib).
 # TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86        = \
-# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3Dll_TOOL.win.x86)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB), $(TEMPLATE_VBoxGuestR3Dll_LIBS.x86))
+# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3DLL_TOOL.win.x86)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB), $(TEMPLATE_VBOXGUESTR3DLL_LIBS.x86))
 # TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.amd64      = \
-# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3Dll_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB), $(TEMPLATE_VBoxGuestR3Dll_LIBS.amd64))
+# 	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3DLL_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB), $(TEMPLATE_VBOXGUESTR3DLL_LIBS.amd64))
 # Directly assign TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.
  TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86           = \
  	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB)/oldnames.lib \
