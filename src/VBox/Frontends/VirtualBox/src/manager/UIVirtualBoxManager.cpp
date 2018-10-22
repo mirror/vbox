@@ -385,10 +385,10 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     /* Make sure separate dialogs are closed when corresponding tools are opened: */
     switch (m_pWidget->toolsType())
     {
-        case UIToolsType_Media:   sltCloseVirtualMediumManagerWindow();
-        case UIToolsType_Network: sltCloseHostNetworkManagerWindow();
-        case UIToolsType_Cloud:   sltCloseCloudProfileManagerWindow();
-        case UIToolsType_Logs:    sltCloseLogViewerWindow();
+        case UIToolsType_Media:   sltCloseVirtualMediumManagerWindow(); break;
+        case UIToolsType_Network: sltCloseHostNetworkManagerWindow(); break;
+        case UIToolsType_Cloud:   sltCloseCloudProfileManagerWindow(); break;
+        case UIToolsType_Logs:    sltCloseLogViewerWindow(); break;
         default: break;
     }
 }
