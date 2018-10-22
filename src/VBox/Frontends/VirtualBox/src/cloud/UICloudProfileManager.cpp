@@ -947,7 +947,6 @@ void UICloudProfileManager::retranslateUi()
 void UICloudProfileManager::configure()
 {
     /* Apply window icons: */
-    /// @todo apply proper cloud profile manager icons!
     setWindowIcon(UIIconPool::iconSetFull(":/cloud_profile_manager_32px.png", ":/cloud_profile_manager_16px.png"));
 }
 
