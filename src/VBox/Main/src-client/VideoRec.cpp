@@ -105,6 +105,8 @@ typedef struct VIDEORECVIDEOCODEC
             vpx_codec_enc_cfg_t Cfg;
             /** VPX image context. */
             vpx_image_t         RawImage;
+            /** Pointer to the codec's internal YUV buffer. */
+            uint8_t            *pu8YuvBuf;
         } VPX;
 #endif /* VBOX_WITH_LIBVPX */
     };
@@ -292,8 +294,6 @@ struct VIDEORECSTREAM
         uint32_t            uHeight;
         /** Time stamp (in ms) of the last video frame we encoded. */
         uint64_t            uLastTimeStampMs;
-        /** Pointer to the codec's internal YUV buffer. */
-        uint8_t            *pu8YuvBuf;
         /** Number of failed attempts to encode the current video frame in a row. */
         uint16_t            cFailedEncodingFrames;
     } Video;
@@ -752,19 +752,20 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
                     PVIDEORECBLOCK pBlock = pBlocks->List.front();
                     AssertPtr(pBlock);
 
+#ifdef VBOX_WITH_LIBVPX
                     if (pBlock->enmType == VIDEORECBLOCKTYPE_VIDEO)
                     {
                         PVIDEORECVIDEOFRAME pVideoFrame  = (PVIDEORECVIDEOFRAME)pBlock->pvData;
 
                         rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
                                               /* Destination */
-                                              pStream->Video.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
+                                              pStream->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
                                               /* Source */
                                               pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
                         if (RT_SUCCESS(rc))
                             rc = videoRecEncodeAndWrite(pStream, uTimeStampMs, pVideoFrame);
                     }
-
+#endif
                     videoRecBlockFree(pBlock);
                     pBlock = NULL;
 
@@ -1413,7 +1414,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     }
 
     /* Save a pointer to the first raw YUV plane. */
-    pStream->Video.pu8YuvBuf = pVC->VPX.RawImage.planes[0];
+    pStream->Video.Codec.VPX.pu8YuvBuf = pVC->VPX.RawImage.planes[0];
 #endif
     pStream->fEnabled = true;
 
