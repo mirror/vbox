@@ -56,8 +56,14 @@ if [ "$1" = "configure" ]; then
 
   # The starters need to be Suid root. They drop the privileges before starting
   # the real frontend.
-  if ! dpkg-statoverride --list /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1; then
-    chmod 4511 /usr/lib/virtualbox/VirtualBox
+  if test -e /usr/lib/virtualbox/VirtualBoxVM; then
+    if ! dpkg-statoverride --list /usr/lib/virtualbox/VirtualBoxVM > /dev/null 2>&1; then
+      chmod 4511 /usr/lib/virtualbox/VirtualBoxVM
+    fi
+  else
+    if ! dpkg-statoverride --list /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1; then
+      chmod 4511 /usr/lib/virtualbox/VirtualBox
+    fi
   fi
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxHeadless

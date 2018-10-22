@@ -48,7 +48,7 @@ ifeq ($(wildcard rpm/rules),)
 $(error call rpm/rules from src/VBox/Installer/linux)
 endif
 
-verpkg   := VirtualBox-5.2
+verpkg   := VirtualBox-6.0
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
