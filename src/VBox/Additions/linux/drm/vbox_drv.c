@@ -258,6 +258,7 @@ static void vbox_master_drop(struct drm_device *dev, struct drm_file *file_priv)
 
 	/* See vbox_master_set() */
 	vbox->initial_mode_queried = false;
+	vbox_report_caps(vbox);
 
 	mutex_lock(&vbox->hw_mutex);
 	vbox->need_refresh_timer = false;
