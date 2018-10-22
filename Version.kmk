@@ -33,4 +33,4 @@ VBOX_BUILD_PUBLISHER =
 VBOX_VERSION_PRERELEASE = BETA1
 # Force a release-type build with exactly matching Additions etc, even if
 # our numbering does not say this is a release build, by setting this non-empty.
-VBOX_RELEASE_EXACT_MATCH = 1
+VBOX_RELEASE_EXACT_MATCH =
