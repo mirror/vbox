@@ -1894,8 +1894,11 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         bmpDIBHdr.u32XPelsPerMeter = 5000;
         bmpDIBHdr.u32YPelsPerMeter = 5000;
 
+        char szFileName[RTPATH_MAX];
+        RTStrPrintf2(szFileName, sizeof(szFileName), "/tmp/VideoRecFrame-%RU32.bmp", uScreen);
+
         RTFILE fh;
-        int rc2 = RTFileOpen(&fh, "/tmp/VideoRecFrame.bmp",
+        int rc2 = RTFileOpen(&fh, szFileName,
                              RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc2))
         {
