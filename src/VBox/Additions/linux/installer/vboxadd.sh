@@ -328,10 +328,16 @@ update_initramfs()
     test -d "/lib/modules/${version}/initrd" &&
         test -f "/lib/modules/${version}/misc/vboxvideo.ko" &&
         touch "/lib/modules/${version}/initrd/vboxvideo"
+
+    # Systems without systemd-inhibit probably don't need their initramfs
+    # rebuild here anyway.
+    type systemd-inhibit >/dev/null 2>&1 || return
     if type dracut >/dev/null 2>&1; then
-        dracut -f --kver "${version}"
+        systemd-inhibit --why="Installing VirtualBox Guest Additions" \
+            dracut -f --kver "${version}"
     elif type update-initramfs >/dev/null 2>&1; then
-        update-initramfs -u -k "${version}"
+        systemd-inhibit --why="Installing VirtualBox Guest Additions" \
+            update-initramfs -u -k "${version}"
     fi
 }
 
@@ -382,13 +388,15 @@ setup_modules()
     # If the kernel headers are not there, wait at bit in case they get
     # installed.  Package managers have been known to trigger module rebuilds
     # before actually installing the headers.
-    for count in 1 2 3 4 5; do
+    for delay in 60 60 60 60 60 300 30 300 300; do
         test "x${QUICKSETUP}" = xyes || break
         test -d "/lib/modules/${KERN_VER}/build" && break
-        printf "Kernel modules not yet installed, waiting five minutes (%s of 5)" "${count}"
-        sleep 300
+        printf "Kernel modules not yet installed, waiting %s seconds." "${delay}"
+        sleep "${delay}"
     done
 
+    # Inhibit shutdown for up to ten minutes if possible.
+    systemd-inhibit 600 2>/dev/null &
     log "Building the main Guest Additions module."
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
@@ -398,7 +406,7 @@ setup_modules()
         module_build_log "$myerr"
         "${INSTALL_DIR}"/other/check_module_dependencies.sh 2>&1 &&
             info "Look at $LOG to find out what went wrong"
-        update_initramfs "${KERN_VER}"
+        kill $! 2>/dev/null
         return 0
     fi
     log "Building the shared folder support module."
@@ -408,7 +416,7 @@ setup_modules()
         --no-print-directory install 2>&1`; then
         module_build_log "$myerr"
         info  "Look at $LOG to find out what went wrong"
-        update_initramfs "${KERN_VER}"
+        kill $! 2>/dev/null
         return 0
     fi
     log "Building the graphics driver module."
@@ -425,6 +433,7 @@ setup_modules()
     echo "override vboxvideo * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
     update_initramfs "${KERN_VER}"
     depmod
+    kill $! 2>/dev/null
     return 0
 }
 
