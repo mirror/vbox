@@ -67,6 +67,8 @@
         <file alias="cloud_profile_edit_32px.png">images/cloud_profile_edit_32px.png</file>
         <file alias="cloud_profile_edit_disabled_16px.png">images/cloud_profile_edit_disabled_16px.png</file>
         <file alias="cloud_profile_edit_disabled_32px.png">images/cloud_profile_edit_disabled_32px.png</file>
+        <file alias="cloud_profile_help_disabled_16px.png">images/cloud_profile_help_disabled_16px.png</file>
+        <file alias="cloud_profile_help_disabled_32px.png">images/cloud_profile_help_disabled_32px.png</file>
         <file alias="cloud_profile_help_16px.png">images/cloud_profile_help_16px.png</file>
         <file alias="cloud_profile_help_32px.png">images/cloud_profile_help_32px.png</file>
         <file alias="cloud_profile_manager_16px.png">images/cloud_profile_manager_16px.png</file>
