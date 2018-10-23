@@ -407,8 +407,9 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
     UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
     AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
 
-    /* Confirm cloud profile removal: */
-    if (!msgCenter().confirmCloudProfilesImport(this))
+    /* If there are profiles exist => confirm cloud profile import. */
+    if (   pProviderItem->childCount() != 0
+        && !msgCenter().confirmCloudProfilesImport(this))
         return;
 
     /* Get VirtualBox for further activities: */
