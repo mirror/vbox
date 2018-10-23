@@ -386,6 +386,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
                             UIDataCloudProfile updatedData;
                             loadCloudProfile(comCloudProfile, updatedData);
                             updateItemForCloudProfile(updatedData, true, static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem()));
+                            sltHandleCurrentItemChange();
                         }
                     }
 
