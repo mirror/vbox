@@ -509,14 +509,11 @@ void UIToolsModel::prepareConnections()
 void UIToolsModel::loadLastSelectedItems()
 {
     /* Load selected items data: */
-    const QString strData = gEDataManager->toolsPaneLastItemsChosen();
-
-    /* Split serialized data to pair of values: */
-    const QStringList values = strData.split(",");
+    const QList<UIToolType> data = gEDataManager->toolsPaneLastItemsChosen();
 
     /* First of them is current global class item definition: */
-    UIToolType enmTypeGlobal = typeFromString(values.value(0));
-    if (!isTypeOfClass(enmTypeGlobal, UIToolClass_Global))
+    UIToolType enmTypeGlobal = data.value(0);
+    if (!UIToolStuff::isTypeOfClass(enmTypeGlobal, UIToolClass_Global))
         enmTypeGlobal = UIToolType_Welcome;
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeGlobal)
@@ -524,8 +521,8 @@ void UIToolsModel::loadLastSelectedItems()
     AssertPtr(m_pLastItemGlobal.data());
 
     /* Second of them is current machine class item definition: */
-    UIToolType enmTypeMachine = typeFromString(values.value(1));
-    if (!isTypeOfClass(enmTypeMachine, UIToolClass_Machine))
+    UIToolType enmTypeMachine = data.value(1);
+    if (!UIToolStuff::isTypeOfClass(enmTypeMachine, UIToolClass_Machine))
         enmTypeMachine = UIToolType_Details;
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeMachine)
@@ -536,12 +533,10 @@ void UIToolsModel::loadLastSelectedItems()
 void UIToolsModel::saveLastSelectedItems()
 {
     /* Prepare selected items data: */
-    const QString strData = QString("%1,%2")
-          .arg(typeToString(m_pLastItemGlobal->itemType()))
-          .arg(typeToString(m_pLastItemMachine->itemType()));
+    const QList<UIToolType> set = QList<UIToolType>() << m_pLastItemGlobal->itemType() << m_pLastItemMachine->itemType();
 
     /* Save selected items data: */
-    gEDataManager->setToolsPaneLastItemsChosen(strData);
+    gEDataManager->setToolsPaneLastItemsChosen(set);
 }
 
 void UIToolsModel::cleanupHandlers()
@@ -588,76 +583,4 @@ QVariant UIToolsModel::data(int iKey) const
         default: break;
     }
     return QVariant();
-}
-
-/* static */
-QString UIToolsModel::typeToString(UIToolType enmType)
-{
-    QMap<UIToolType, QString> values;
-    /* Global classes: */
-    values[UIToolType_Welcome]   = "Welcome";
-    values[UIToolType_Media]     = "Media";
-    values[UIToolType_Network]   = "Network";
-    values[UIToolType_Cloud]     = "Cloud";
-    /* Machine classes: */
-    values[UIToolType_Details]   = "Details";
-    values[UIToolType_Snapshots] = "Snapshots";
-    values[UIToolType_Logs]      = "Logs";
-    /* Return value, null-string by default: */
-    return values.value(enmType, QString());
-}
-
-/* static */
-UIToolType UIToolsModel::typeFromString(const QString &strType)
-{
-    QMap<QString, UIToolType> values;
-    /* Global classes: */
-    values["Welcome"]   = UIToolType_Welcome;
-    values["Media"]     = UIToolType_Media;
-    values["Network"]   = UIToolType_Network;
-    values["Cloud"]     = UIToolType_Cloud;
-    /* Machine classes: */
-    values["Details"]   = UIToolType_Details;
-    values["Snapshots"] = UIToolType_Snapshots;
-    values["Logs"]      = UIToolType_Logs;
-    /* Return value, UIToolType_Invalid by default: */
-    return values.value(strType, UIToolType_Invalid);
-}
-
-/* static */
-bool UIToolsModel::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
-{
-    switch (enmClass)
-    {
-        case UIToolClass_Global:
-        {
-            switch (enmType)
-            {
-                case UIToolType_Welcome:
-                case UIToolType_Media:
-                case UIToolType_Network:
-                case UIToolType_Cloud:
-                    return true;
-                default:
-                    break;
-            }
-            break;
-        }
-        case UIToolClass_Machine:
-        {
-            switch (enmType)
-            {
-                case UIToolType_Details:
-                case UIToolType_Snapshots:
-                case UIToolType_Logs:
-                    return true;
-                default:
-                    break;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return false;
 }

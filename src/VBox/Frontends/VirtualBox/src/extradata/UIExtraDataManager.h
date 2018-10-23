@@ -310,9 +310,9 @@ public:
         void setSelectorWindowToolBarTextVisible(bool fVisible);
 
         /** Returns last selected tool set of VirtualBox Manager. */
-        QString toolsPaneLastItemsChosen();
-        /** Defines last selected tool @a strSet of VirtualBox Manager. */
-        void setToolsPaneLastItemsChosen(const QString &strSet);
+        QList<UIToolType> toolsPaneLastItemsChosen();
+        /** Defines last selected tool @a set of VirtualBox Manager. */
+        void setToolsPaneLastItemsChosen(const QList<UIToolType> &set);
 
         /** Returns whether selector-window status-bar visible. */
         bool selectorWindowStatusBarVisible();

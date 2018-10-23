@@ -685,6 +685,14 @@ enum UIToolType
 Q_DECLARE_METATYPE(UIToolType);
 
 
+/** Contains stuff related to tools handling. */
+namespace UIToolStuff
+{
+    /** Returns whether passed @a enmType is of passed @a enmClass. */
+    SHARED_LIBRARY_STUFF bool isTypeOfClass(UIToolType enmType, UIToolClass enmClass);
+}
+
+
 /** Selector UI: Details-element types. */
 enum DetailsElementType
 {

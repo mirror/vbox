@@ -215,3 +215,41 @@ const char *UIExtraDataDefs::GUI_LogViewerSettings = "GUI/LogViewerSettings";
 const char *UIExtraDataDefs::GUI_LogViewerWrapLinesEnabled = "WrapLines";
 const char *UIExtraDataDefs::GUI_LogViewerShowLineNumbersDisabled = "showLineNumbersDisabled";
 const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
+
+
+bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
+{
+    switch (enmClass)
+    {
+        case UIToolClass_Global:
+        {
+            switch (enmType)
+            {
+                case UIToolType_Welcome:
+                case UIToolType_Media:
+                case UIToolType_Network:
+                case UIToolType_Cloud:
+                    return true;
+                default:
+                    break;
+            }
+            break;
+        }
+        case UIToolClass_Machine:
+        {
+            switch (enmType)
+            {
+                case UIToolType_Details:
+                case UIToolType_Snapshots:
+                case UIToolType_Logs:
+                    return true;
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return false;
+}
