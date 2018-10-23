@@ -537,11 +537,19 @@ private:
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
 static void videoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame);
 #endif
-static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
 static int videoRecRGBToYUV(uint32_t uPixelFormat,
                             uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                             uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
-static int videoRecStreamCloseFile(PVIDEORECSTREAM pStream);
+static int videoRecStreamClose(PVIDEORECSTREAM pStream);
+static int videoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+static int videoRecStreamUninit(PVIDEORECSTREAM pStream);
+static int videoRecStreamUnitVideo(PVIDEORECSTREAM pStream);
+static int videoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+#ifdef VBOX_WITH_LIBVPX
+static int videoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+static int videoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream);
+static int videoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
+#endif
 static void videoRecStreamLock(PVIDEORECSTREAM pStream);
 static void videoRecStreamUnlock(PVIDEORECSTREAM pStream);
 static void videoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame);
@@ -763,7 +771,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
                                               /* Source */
                                               pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
                         if (RT_SUCCESS(rc))
-                            rc = videoRecEncodeAndWrite(pStream, uTimeStampMs, pVideoFrame);
+                            rc = videoRecStreamWriteVideoVPX(pStream, uTimeStampMs, pVideoFrame);
                     }
 #endif
                     videoRecBlockFree(pBlock);
@@ -1011,50 +1019,13 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
 
             videoRecStreamLock(pStream);
 
-            if (pStream->fEnabled)
-            {
-                switch (pStream->enmDst)
-                {
-                    case VIDEORECDEST_FILE:
-                    {
-                        if (pStream->File.pWEBM)
-                            pStream->File.pWEBM->Close();
-                        break;
-                    }
+            int rc2 = videoRecStreamClose(pStream);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
 
-                    default:
-                        AssertFailed(); /* Should never happen. */
-                        break;
-                }
-
-                vpx_img_free(&pStream->Video.Codec.VPX.RawImage);
-                vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
-                Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
-
-                pStream->Blocks.Clear();
-
-                LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreenID));
-            }
-
-            switch (pStream->enmDst)
-            {
-                case VIDEORECDEST_FILE:
-                {
-                    int rc2 = videoRecStreamCloseFile(pStream);
-                    AssertRC(rc2);
-
-                    if (pStream->File.pWEBM)
-                    {
-                        delete pStream->File.pWEBM;
-                        pStream->File.pWEBM = NULL;
-                    }
-                    break;
-                }
-
-                default:
-                    AssertFailed(); /* Should never happen. */
-                    break;
-            }
+            rc2 = videoRecStreamUninit(pStream);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
 
             pCtx->vecStreams.erase(it);
             it = pCtx->vecStreams.begin();
@@ -1131,123 +1102,111 @@ static void videoRecStreamUnlock(PVIDEORECSTREAM pStream)
 }
 
 /**
- * Opens a file for a given recording stream to capture to.
+ * Opens a recording stream.
  *
  * @returns IPRT status code.
- * @param   pStream             Recording stream to open file for.
+ * @param   pStream             Recording stream to open.
  * @param   pCfg                Recording configuration to use.
  */
-static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+static int videoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
 
     Assert(pStream->enmDst == VIDEORECDEST_INVALID);
-    Assert(pCfg->enmDst    == VIDEORECDEST_FILE);
-
-    Assert(pCfg->File.strName.isNotEmpty());
-
-    char *pszAbsPath = RTPathAbsDup(com::Utf8Str(pCfg->File.strName).c_str());
-    AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
-
-    RTPathStripSuffix(pszAbsPath);
-
-    char *pszSuff = RTStrDup(".webm");
-    if (!pszSuff)
-    {
-        RTStrFree(pszAbsPath);
-        return VERR_NO_MEMORY;
-    }
-
-    char *pszFile = NULL;
 
     int rc;
-    if (pCfg->aScreens.size() > 1)
-        rc = RTStrAPrintf(&pszFile, "%s-%u%s", pszAbsPath, pStream->uScreenID + 1, pszSuff);
-    else
-        rc = RTStrAPrintf(&pszFile, "%s%s", pszAbsPath, pszSuff);
 
-    if (RT_SUCCESS(rc))
+    switch (pCfg->enmDst)
     {
-        uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
-
-        /* Play safe: the file must not exist, overwriting is potentially
-         * hazardous as nothing prevents the user from picking a file name of some
-         * other important file, causing unintentional data loss. */
-        fOpen |= RTFILE_O_CREATE;
-
-        RTFILE hFile;
-        rc = RTFileOpen(&hFile, pszFile, fOpen);
-        if (rc == VERR_ALREADY_EXISTS)
+        case VIDEORECDEST_FILE:
         {
-            RTStrFree(pszFile);
-            pszFile = NULL;
+            Assert(pCfg->File.strName.isNotEmpty());
 
-            RTTIMESPEC ts;
-            RTTimeNow(&ts);
-            RTTIME time;
-            RTTimeExplode(&time, &ts);
+            char *pszAbsPath = RTPathAbsDup(com::Utf8Str(pCfg->File.strName).c_str());
+            AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
+
+            RTPathStripSuffix(pszAbsPath);
+
+            char *pszSuff = RTStrDup(".webm");
+            if (!pszSuff)
+            {
+                RTStrFree(pszAbsPath);
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            char *pszFile = NULL;
 
             if (pCfg->aScreens.size() > 1)
-                rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
-                                  pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
-                                  time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                  pStream->uScreenID + 1, pszSuff);
+                rc = RTStrAPrintf(&pszFile, "%s-%u%s", pszAbsPath, pStream->uScreenID + 1, pszSuff);
             else
-                rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
-                                  pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
-                                  time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                  pszSuff);
+                rc = RTStrAPrintf(&pszFile, "%s%s", pszAbsPath, pszSuff);
 
             if (RT_SUCCESS(rc))
+            {
+                uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
+
+                /* Play safe: the file must not exist, overwriting is potentially
+                 * hazardous as nothing prevents the user from picking a file name of some
+                 * other important file, causing unintentional data loss. */
+                fOpen |= RTFILE_O_CREATE;
+
+                RTFILE hFile;
                 rc = RTFileOpen(&hFile, pszFile, fOpen);
+                if (rc == VERR_ALREADY_EXISTS)
+                {
+                    RTStrFree(pszFile);
+                    pszFile = NULL;
+
+                    RTTIMESPEC ts;
+                    RTTimeNow(&ts);
+                    RTTIME time;
+                    RTTimeExplode(&time, &ts);
+
+                    if (pCfg->aScreens.size() > 1)
+                        rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
+                                          pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                          time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                          pStream->uScreenID + 1, pszSuff);
+                    else
+                        rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
+                                          pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                          time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                          pszSuff);
+
+                    if (RT_SUCCESS(rc))
+                        rc = RTFileOpen(&hFile, pszFile, fOpen);
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    pStream->enmDst       = VIDEORECDEST_FILE;
+                    pStream->File.hFile   = hFile;
+                    pStream->File.pszFile = pszFile; /* Assign allocated string to our stream's config. */
+                }
+            }
+
+            RTStrFree(pszSuff);
+            RTStrFree(pszAbsPath);
+
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("VideoRec: Failed to open file '%s' for screen %RU32, rc=%Rrc\n",
+                        pszFile ? pszFile : "<Unnamed>", pStream->uScreenID, rc));
+                RTStrFree(pszFile);
+            }
+
+            break;
         }
 
-        if (RT_SUCCESS(rc))
-        {
-            pStream->enmDst       = VIDEORECDEST_FILE;
-            pStream->File.hFile   = hFile;
-            pStream->File.pszFile = pszFile; /* Assign allocated string to our stream's config. */
-        }
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
     }
 
-    RTStrFree(pszSuff);
-    RTStrFree(pszAbsPath);
-
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("VideoRec: Failed to open file '%s' for screen %RU32, rc=%Rrc\n",
-                pszFile ? pszFile : "<Unnamed>", pStream->uScreenID, rc));
-        RTStrFree(pszFile);
-    }
-
+    LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-/**
- * Closes a recording stream's file again.
- *
- * @returns IPRT status code.
- * @param   pStream             Recording stream to close file for.
- */
-static int videoRecStreamCloseFile(PVIDEORECSTREAM pStream)
-{
-    Assert(pStream->enmDst == VIDEORECDEST_FILE);
-
-    pStream->enmDst = VIDEORECDEST_INVALID;
-
-    AssertPtr(pStream->File.pszFile);
-
-    if (RTFileIsValid(pStream->File.hFile))
-    {
-        RTFileClose(pStream->File.hFile);
-        LogRel(("VideoRec: Closed file '%s'\n", pStream->File.pszFile));
-    }
-
-    RTStrFree(pStream->File.pszFile);
-    pStream->File.pszFile = NULL;
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -1277,20 +1236,14 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     if (!pStream)
         return VERR_NOT_FOUND;
 
-    int rc = videoRecStreamOpenFile(pStream, &pCtx->Cfg);
+    int rc = videoRecStreamOpen(pStream, pCfg);
     if (RT_FAILURE(rc))
         return rc;
 
     pStream->pCtx = pCtx;
 
-    /** @todo Make the following parameters configurable on a per-stream basis? */
-    pStream->Video.uWidth                = pCfg->Video.uWidth;
-    pStream->Video.uHeight               = pCfg->Video.uHeight;
-    pStream->Video.cFailedEncodingFrames = 0;
-
-    PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
-
-    pStream->Video.uDelayMs = RT_MS_1SEC / pCfg->Video.uFPS;
+    if (pCfg->Video.fEnabled)
+        rc = videoRecStreamInitVideo(pStream, pCfg);
 
     switch (pStream->enmDst)
     {
@@ -1321,8 +1274,9 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
                     break;
                 }
 
-                LogRel(("VideoRec: Recording screen #%u with %RU32x%RU32 @ %RU32 kbps, %RU32 FPS\n",
-                        uScreen, pCfg->Video.uWidth, pCfg->Video.uHeight, pCfg->Video.uRate, pCfg->Video.uFPS));
+                LogRel(("VideoRec: Recording video of screen #%u with %RU32x%RU32 @ %RU32 kbps, %RU32 FPS (track #%RU8)\n",
+                        uScreen, pCfg->Video.uWidth, pCfg->Video.uHeight, pCfg->Video.uRate, pCfg->Video.uFPS,
+                        pStream->uTrackVideo));
             }
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
@@ -1336,8 +1290,9 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
                     break;
                 }
 
-                LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s\n",
-                        pCfg->Audio.uHz, pCfg->Audio.cBits, pCfg->Audio.cChannels, pCfg->Audio.cChannels ? "channels" : "channel"));
+                LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s (track #%RU8)\n",
+                        pCfg->Audio.uHz, pCfg->Audio.cBits, pCfg->Audio.cChannels, pCfg->Audio.cChannels ? "channels" : "channel",
+                        pStream->uTrackAudio));
             }
 #endif
 
@@ -1371,9 +1326,189 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     }
 
     if (RT_FAILURE(rc))
+    {
+        int rc2 = videoRecStreamClose(pStream);
+        AssertRC(rc2);
         return rc;
+    }
+
+    pStream->fEnabled = true;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Closes a recording stream.
+ * Depending on the stream's recording destination, this function closes all associated handles
+ * and finalizes recording.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to close.
+ *
+ */
+static int videoRecStreamClose(PVIDEORECSTREAM pStream)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pStream->fEnabled)
+    {
+        switch (pStream->enmDst)
+        {
+            case VIDEORECDEST_FILE:
+            {
+                if (pStream->File.pWEBM)
+                    rc = pStream->File.pWEBM->Close();
+                break;
+            }
+
+            default:
+                AssertFailed(); /* Should never happen. */
+                break;
+        }
+
+        pStream->Blocks.Clear();
+
+        LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreenID));
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VideoRec: Error stopping recording screen #%u, rc=%Rrc\n", pStream->uScreenID, rc));
+        return rc;
+    }
+
+    switch (pStream->enmDst)
+    {
+        case VIDEORECDEST_FILE:
+        {
+            AssertPtr(pStream->File.pszFile);
+            if (RTFileIsValid(pStream->File.hFile))
+            {
+                rc = RTFileClose(pStream->File.hFile);
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel(("VideoRec: Closed file '%s'\n", pStream->File.pszFile));
+                }
+                else
+                {
+                    LogRel(("VideoRec: Error closing file '%s', rc=%Rrc\n", pStream->File.pszFile, rc));
+                    break;
+                }
+            }
+
+            RTStrFree(pStream->File.pszFile);
+            pStream->File.pszFile = NULL;
+
+            if (pStream->File.pWEBM)
+            {
+                delete pStream->File.pWEBM;
+                pStream->File.pWEBM = NULL;
+            }
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pStream->enmDst = VIDEORECDEST_INVALID;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Uninitializes a recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to uninitialize.
+ */
+static int videoRecStreamUninit(PVIDEORECSTREAM pStream)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pStream->pCtx->Cfg.Video.fEnabled)
+    {
+        int rc2 = videoRecStreamUnitVideo(pStream);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+/**
+ * Uninitializes video recording for a certain recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to uninitialize video recording for.
+ */
+static int videoRecStreamUnitVideo(PVIDEORECSTREAM pStream)
+{
+#ifdef VBOX_WITH_LIBVPX
+    /* At the moment we only have VPX. */
+    return videoRecStreamUninitVideoVPX(pStream);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
 
 #ifdef VBOX_WITH_LIBVPX
+/**
+ * Uninitializes the VPX codec for a certain recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to uninitialize VPX codec for.
+ */
+static int videoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream)
+{
+    vpx_img_free(&pStream->Video.Codec.VPX.RawImage);
+    vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
+    Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
+
+    return VINF_SUCCESS;
+}
+#endif
+
+/**
+ * Initializes the video recording for a certain recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to initialize video recording for.
+ * @param   pCfg                Video recording configuration to use for initialization.
+ */
+static int videoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+{
+#ifdef VBOX_WITH_LIBVPX
+    /* At the moment we only have VPX. */
+    return videoRecStreamInitVideoVPX(pStream, pCfg);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+#ifdef VBOX_WITH_LIBVPX
+/**
+ * Initializes the VPX codec for a certain recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to initialize VPX codec for.
+ * @param   pCfg                Video recording configuration to use for initialization.
+ */
+static int videoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+{
+    pStream->Video.uWidth                = pCfg->Video.uWidth;
+    pStream->Video.uHeight               = pCfg->Video.uHeight;
+    pStream->Video.cFailedEncodingFrames = 0;
+
+    PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
+
+    pStream->Video.uDelayMs = RT_MS_1SEC / pCfg->Video.uFPS;
+
 # ifdef VBOX_WITH_LIBVPX_VP9
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
 # else /* Default is using VP8. */
@@ -1415,11 +1550,10 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 
     /* Save a pointer to the first raw YUV plane. */
     pStream->Video.Codec.VPX.pu8YuvBuf = pVC->VPX.RawImage.planes[0];
-#endif
-    pStream->fEnabled = true;
 
     return VINF_SUCCESS;
 }
+#endif
 
 /**
  * Returns which recording features currently are enabled for a given configuration.
@@ -1539,6 +1673,7 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
     return false;
 }
 
+#ifdef VBOX_WITH_LIBVPX
 /**
  * Encodes the source image and write the encoded image to the stream's destination.
  *
@@ -1547,7 +1682,7 @@ bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t ts
  * @param   uTimeStampMs        Absolute timestamp (PTS) of frame (in ms) to encode.
  * @param   pFrame              Frame to encode and submit.
  */
-static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame)
+static int videoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pFrame,  VERR_INVALID_POINTER);
@@ -1557,7 +1692,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs
     AssertPtr(pStream->pCtx);
     PVIDEORECCFG        pCfg = &pStream->pCtx->Cfg;
     PVIDEORECVIDEOCODEC pVC  = &pStream->Video.Codec;
-#ifdef VBOX_WITH_LIBVPX
+
     /* Presentation Time Stamp (PTS). */
     vpx_codec_pts_t pts = uTimeStampMs;
     vpx_codec_err_t rcv = vpx_codec_encode(&pVC->VPX.Ctx,
@@ -1600,12 +1735,10 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs
                 break;
         }
     }
-#else
-    RT_NOREF(pStream);
-    rc = VERR_NOT_SUPPORTED;
-#endif /* VBOX_WITH_LIBVPX */
+
     return rc;
 }
+#endif /* VBOX_WITH_LIBVPX */
 
 /**
  * Converts a RGB to YUV buffer.
