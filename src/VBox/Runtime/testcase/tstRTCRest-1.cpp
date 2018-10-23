@@ -2027,7 +2027,7 @@ public:
         RTCString strPath;
         RTTESTI_CHECK_RC(doPathParameters(&strPath, RT_STR_TUPLE("my/{integer}/{string}/array:{array}/path"),
                                           s_aParams, aState, RT_ELEMENTS(aState)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strPath.equals(a_pszExpected), ("actual: '%s'\nexpect: %s\n", strPath.c_str(), a_pszExpected));
+        RTTESTI_CHECK_MSG(strPath.equals(a_pszExpected), ("actual: '%s'\nexpect: '%s'\n", strPath.c_str(), a_pszExpected));
     }
 
     void testQuery(const char *a_pszCsv,
@@ -2109,7 +2109,7 @@ void testClientRequestBase()
     RTTestSub(g_hTest, "RTCRestClientRequestBase");
     {
         TestRequest Req1("this-is-a-string", 123456789, 5, "1", "22", "333", "444", "555");
-        Req1.testPath("my/123456789/this-is-a-string/array:1,22,333,444,555/path");
+        Req1.testPath("my/123456789/this-is-a-string/array:1%2C22%2C333%2C444%2C555/path");
         Req1.testQuery("?string=this-is-a-string&integer=123456789&array=1%2C22%2C333%2C444%2C555",
                        "?string=this-is-a-string&integer=123456789&array=1%2022%20333%20444%20555",
                        "?string=this-is-a-string&integer=123456789&array=1%0922%09333%09444%09555",
@@ -2122,7 +2122,7 @@ void testClientRequestBase()
         RTTESTI_CHECK_RC(Req2.m_Map.put("stuff-1", new RTCRestString("stuffy-value-1")), VINF_SUCCESS);
         RTTESTI_CHECK_RC(Req2.m_Map.put("stuff-2", new RTCRestString("stuffy-value-2")), VINF_SUCCESS);
         RTTESTI_CHECK_RC(Req2.m_Map.put("2222", new RTCRestString("33")), VINF_SUCCESS);
-        Req2.testPath("my/42/;'[]/array:null,foo,bar/path"); /// @todo shouldn't the string chars (;'[]) be escaped?
+        Req2.testPath("my/42/%3B%27%5B%5D/array:null%2Cfoo%2Cbar/path");
         Req2.testQuery("?string=%3B%27%5B%5D&integer=42&array=null%2Cfoo%2Cbar",
                        "?string=%3B%27%5B%5D&integer=42&array=null%20foo%20bar",
                        "?string=%3B%27%5B%5D&integer=42&array=null%09foo%09bar",
