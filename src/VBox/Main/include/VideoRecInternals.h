@@ -18,6 +18,7 @@
 #ifndef ____H_VIDEOREC_INTERNALS
 #define ____H_VIDEOREC_INTERNALS
 
+#include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 #include <list>
 
 #ifdef VBOX_WITH_LIBVPX
