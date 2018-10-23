@@ -569,6 +569,8 @@ typedef struct ISCSIIMAGE
     uint32_t            uReadTimeout;
     /** Flag whether to automatically generate the initiator name. */
     bool                fAutomaticInitiatorName;
+    /** Flag whether to automatically determine the LUN. */
+    bool                fAutomaticLUN;
     /** Flag whether to use the host IP stack or DevINIP. */
     bool                fHostIP;
     /** Flag whether to dump malformed packets in the release log. */
@@ -4060,21 +4062,31 @@ static int iscsiOpenImageParseCfg(PISCSIIMAGE pImage)
     else if (RT_FAILURE(rc))
         return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read InitiatorName as string"));
 
-    rc = VDCFGQueryStringAllocDef(pImage->pIfConfig, "LUN", &pszLUN, s_iscsiConfigDefaultLUN);
-    if (RT_FAILURE(rc))
+    rc = VDCFGQueryStringAlloc(pImage->pIfConfig, "LUN", &pszLUN);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+    {
+        rc = VINF_SUCCESS;
+        pImage->fAutomaticLUN = true;
+    }
+    else if (RT_FAILURE(rc))
         return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read LUN as string"));
 
-    pszLUNInitial = pszLUN;
-    if (!strncmp(pszLUN, "enc", 3))
+    if (pImage->fAutomaticLUN)
+        pImage->LUN = 0;    /* Default to LUN 0. */
+    else
     {
-        fLunEncoded = true;
-        pszLUN += 3;
-    }
-    rc = RTStrToUInt64Full(pszLUN, 0, &pImage->LUN);
-    if (RT_FAILURE(rc))
-        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to convert LUN to integer"));
+        pszLUNInitial = pszLUN;
+        if (!strncmp(pszLUN, "enc", 3))
+        {
+            fLunEncoded = true;
+            pszLUN += 3;
+        }
+        rc = RTStrToUInt64Full(pszLUN, 0, &pImage->LUN);
+        if (RT_FAILURE(rc))
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to convert LUN to integer"));
 
-    RTMemFree(pszLUNInitial);
+        RTMemFree(pszLUNInitial);
+    }
     if (RT_SUCCESS(rc) && !fLunEncoded)
     {
         if (pImage->LUN <= 255)
@@ -4196,7 +4208,7 @@ static int iscsiOpenImageReportLuns(PISCSIIMAGE pImage)
     uint8_t rlundata[16];
 
     /*
-     * Inquire available LUNs - purely dummy request.
+     * Inquire available LUNs.
      */
     RT_ZERO(sr.abCDB);
     sr.abCDB[0] = SCSI_REPORT_LUNS;
@@ -4227,6 +4239,51 @@ static int iscsiOpenImageReportLuns(PISCSIIMAGE pImage)
     int rc = iscsiCommandSync(pImage, &sr, false, VERR_INVALID_STATE);
     if (RT_FAILURE(rc))
         LogRel(("iSCSI: Could not get LUN info for target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
+
+    /* If there is a single LUN on the target, then either verify that it matches the explicitly
+     * configured LUN, or just use it if a LUN was not configured (defaulted to 0). For multi-LUN targets,
+     * require a correctly configured LUN.
+     */
+    uint32_t    cbLuns = (rlundata[0] << 24) | (rlundata[1] << 16) | (rlundata[2] << 8) | rlundata[3];
+    unsigned    cLuns  = cbLuns / 8;
+
+    /* Dig out the first LUN. */
+    uint64_t    uTgtLun = 0;
+    if ((rlundata[8] & 0xc0) == 0)
+    {
+        /* Single-byte LUN in 0-255 range. */
+        uTgtLun = rlundata[9];
+    }
+    else if ((rlundata[8] & 0xc0) == 0x40)
+    {
+        /* Two-byte LUN in 256-16383 range. */
+        uTgtLun = rlundata[9] | ((rlundata[8] & 0x3f) << 8);
+        uTgtLun = (uTgtLun << 48) | RT_BIT_64(62);
+    }
+    else
+        rc = vdIfError(pImage->pIfError, VERR_OUT_OF_RANGE, RT_SRC_POS, N_("iSCSI: Reported LUN number out of range (0-16383)"));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    LogRel(("iSCSI: %u LUN(s), first LUN %RX64\n", cLuns, uTgtLun));
+
+    /* Convert the LUN back into the 64-bit format. */
+    if (uTgtLun <= 255)
+        uTgtLun = uTgtLun << 48;
+    else
+    {
+        Assert(uTgtLun <= 16383);
+        uTgtLun = (uTgtLun << 48) | RT_BIT_64(62);
+    }
+
+    if (cLuns == 1)
+    {
+        /* NB: It is valid to have a single LUN other than zero, at least in SPC-3. */
+        if (pImage->fAutomaticLUN)
+            pImage->LUN = uTgtLun;
+        else if (pImage->LUN != uTgtLun)
+            rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_INVALID_TYPE, RT_SRC_POS, N_("iSCSI: configuration error: Configured LUN does not match what target provides"));
+    }
 
     return rc;
 }
