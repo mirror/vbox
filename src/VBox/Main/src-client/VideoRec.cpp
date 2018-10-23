@@ -388,12 +388,14 @@ public:
         mSize = aWidth * aHeight * PIX_SIZE;
         mBuf = aBuf;
     }
+
     /**
      * Convert the next pixel to RGB.
+     *
      * @returns true on success, false if we have reached the end of the buffer
-     * @param   aRed    where to store the red value
-     * @param   aGreen  where to store the green value
-     * @param   aBlue   where to store the blue value
+     * @param   aRed            where to store the red value.
+     * @param   aGreen          where to store the green value.
+     * @param   aBlue           where to store the blue value.
      */
     bool getRGB(unsigned *aRed, unsigned *aGreen, unsigned *aBlue)
     {
@@ -410,19 +412,20 @@ public:
     }
 
     /**
-     * Skip forward by a certain number of pixels
-     * @param aPixels  how many pixels to skip
+     * Skip forward by a certain number of pixels.
+     *
+     * @param aPixels           How many pixels to skip.
      */
     void skip(unsigned aPixels)
     {
         mPos += PIX_SIZE * aPixels;
     }
 private:
-    /** Size of the picture buffer */
+    /** Size of the picture buffer. */
     unsigned mSize;
-    /** Current position in the picture buffer */
+    /** Current position in the picture buffer. */
     unsigned mPos;
-    /** Address of the picture buffer */
+    /** Address of the picture buffer. */
     uint8_t *mBuf;
 };
 
@@ -441,12 +444,14 @@ public:
         mSize = aWidth * aHeight * PIX_SIZE;
         mBuf = aBuf;
     }
+
     /**
      * Convert the next pixel to RGB.
-     * @returns true on success, false if we have reached the end of the buffer
-     * @param   aRed    where to store the red value
-     * @param   aGreen  where to store the green value
-     * @param   aBlue   where to store the blue value
+     *
+     * @returns true on success, false if we have reached the end of the buffer.
+     * @param   aRed            where to store the red value.
+     * @param   aGreen          where to store the green value.
+     * @param   aBlue           where to store the blue value.
      */
     bool getRGB(unsigned *aRed, unsigned *aGreen, unsigned *aBlue)
     {
@@ -463,19 +468,20 @@ public:
     }
 
     /**
-     * Skip forward by a certain number of pixels
-     * @param aPixels  how many pixels to skip
+     * Skip forward by a certain number of pixels.
+     *
+     * @param aPixels           How many pixels to skip.
      */
     void skip(unsigned aPixels)
     {
         mPos += PIX_SIZE * aPixels;
     }
 private:
-    /** Size of the picture buffer */
+    /** Size of the picture buffer. */
     unsigned mSize;
-    /** Current position in the picture buffer */
+    /** Current position in the picture buffer. */
     unsigned mPos;
-    /** Address of the picture buffer */
+    /** Address of the picture buffer. */
     uint8_t *mBuf;
 };
 
@@ -494,12 +500,14 @@ public:
         mSize = aWidth * aHeight * PIX_SIZE;
         mBuf = aBuf;
     }
+
     /**
      * Convert the next pixel to RGB.
-     * @returns true on success, false if we have reached the end of the buffer
-     * @param   aRed    where to store the red value
-     * @param   aGreen  where to store the green value
-     * @param   aBlue   where to store the blue value
+     *
+     * @returns true on success, false if we have reached the end of the buffer.
+     * @param   aRed            Where to store the red value.
+     * @param   aGreen          where to store the green value.
+     * @param   aBlue           where to store the blue value.
      */
     bool getRGB(unsigned *aRed, unsigned *aGreen, unsigned *aBlue)
     {
@@ -518,19 +526,20 @@ public:
     }
 
     /**
-     * Skip forward by a certain number of pixels
-     * @param aPixels  how many pixels to skip
+     * Skip forward by a certain number of pixels.
+     *
+     * @param aPixels           How many pixels to skip.
      */
     void skip(unsigned aPixels)
     {
         mPos += PIX_SIZE * aPixels;
     }
 private:
-    /** Size of the picture buffer */
+    /** Size of the picture buffer. */
     unsigned mSize;
-    /** Current position in the picture buffer */
+    /** Current position in the picture buffer. */
     unsigned mPos;
-    /** Address of the picture buffer */
+    /** Address of the picture buffer. */
     uint8_t *mBuf;
 };
 
@@ -1744,7 +1753,13 @@ static int videoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeSt
  * Converts a RGB to YUV buffer.
  *
  * @returns IPRT status code.
- * TODO
+ * @param   uPixelFormat        Pixel format to use for conversion.
+ * @param   paDst               Pointer to destination buffer.
+ * @param   uDstWidth           Width (X, in pixels) of destination buffer.
+ * @param   uDstHeight          Height (Y, in pixels) of destination buffer.
+ * @param   paSrc               Pointer to source buffer.
+ * @param   uSrcWidth           Width (X, in pixels) of source buffer.
+ * @param   uSrcHeight          Height (Y, in pixels) of source buffer.
  */
 static int videoRecRGBToYUV(uint32_t uPixelFormat,
                             uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
