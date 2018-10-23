@@ -658,33 +658,6 @@ enum WizardMode
 };
 
 
-#ifndef VBOX_GUI_WITH_NEW_MANAGER
-
-/** Selector UI: Machine tool types. */
-enum ToolTypeMachine
-{
-    ToolTypeMachine_Invalid,
-    ToolTypeMachine_Desktop,
-    ToolTypeMachine_Details,
-    ToolTypeMachine_Snapshots,
-    ToolTypeMachine_LogViewer
-};
-Q_DECLARE_METATYPE(ToolTypeMachine);
-
-
-/** Selector UI: Global tool types. */
-enum ToolTypeGlobal
-{
-    ToolTypeGlobal_Invalid,
-    ToolTypeGlobal_Desktop,
-    ToolTypeGlobal_VirtualMedia,
-    ToolTypeGlobal_HostNetwork,
-    ToolTypeGlobal_CloudProfile,
-};
-Q_DECLARE_METATYPE(ToolTypeGlobal);
-
-#else /* VBOX_GUI_WITH_NEW_MANAGER */
-
 /** Tool item classes. */
 enum UIToolsClass
 {
@@ -732,8 +705,6 @@ enum ToolTypeMachine
     ToolTypeMachine_Logs
 };
 Q_DECLARE_METATYPE(ToolTypeMachine);
-
-#endif /* VBOX_GUI_WITH_NEW_MANAGER */
 
 
 /** Selector UI: Details-element types. */
