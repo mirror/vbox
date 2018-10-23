@@ -39,13 +39,30 @@ typedef enum VIDEORECDEST
 } VIDEORECDEST;
 
 /**
+ * Enumeration for the video recording video codec type.
+ */
+typedef enum VIDEORECVIDEOCODECTYPE
+{
+    /** Unknown codec type, do not use. */
+    VIDEORECVIDEOCODECTYPE_UNKNOWN,
+    /** Codec is VP8. */
+    VIDEORECVIDEOCODECTYPE_VP8,
+# ifdef VBOX_WITH_LIBVPX_VP9
+    /** Codec is VP9. */
+    VIDEORECVIDEOCODECTYPE_VP9
+#endif
+} VIDEORECVIDEOCODECTYPE;
+
+/**
  * Structure for keeping specific video recording codec data.
  */
 typedef struct VIDEORECVIDEOCODEC
 {
+    /** Used codec type. */
+    VIDEORECVIDEOCODECTYPE enmType;
+#ifdef VBOX_WITH_LIBVPX
     union
     {
-#ifdef VBOX_WITH_LIBVPX
         struct
         {
             /** VPX codec context. */
@@ -57,8 +74,8 @@ typedef struct VIDEORECVIDEOCODEC
             /** Pointer to the codec's internal YUV buffer. */
             uint8_t            *pu8YuvBuf;
         } VPX;
-#endif /* VBOX_WITH_LIBVPX */
     };
+#endif /* VBOX_WITH_LIBVPX */
 } VIDEORECVIDEOCODEC, *PVIDEORECVIDEOCODEC;
 
 /**

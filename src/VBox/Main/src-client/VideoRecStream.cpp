@@ -495,6 +495,8 @@ int videoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
 
     pStream->Video.uDelayMs = RT_MS_1SEC / pCfg->Video.uFPS;
 
+    pVC->enmType = VIDEORECVIDEOCODECTYPE_VP8; /** @todo Make this configurable. */
+
 # ifdef VBOX_WITH_LIBVPX_VP9
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
 # else /* Default is using VP8. */
