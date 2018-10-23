@@ -82,6 +82,12 @@ static void test1(RTTEST hTest)
     CHECK(empty.length() == 0);
     CHECK(empty.capacity() == 0);
 
+    empty.reserve(1);
+    CHECK(empty.length() == 0);
+    CHECK(empty.capacity() == 1);
+    char *pszEmpty = empty.mutableRaw();
+    CHECK(pszEmpty != NULL);
+
     RTCString sixbytes("12345");
     CHECK(sixbytes.length() == 5);
     CHECK(sixbytes.capacity() == 6);

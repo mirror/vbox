@@ -243,9 +243,10 @@ public:
      */
     void reserve(size_t cb)
     {
-        if (    cb != m_cbAllocated
-             && cb > m_cch + 1
-           )
+        if (   (   cb != m_cbAllocated
+                && cb > m_cch + 1)
+            || (   m_psz == NULL
+                && cb > 0))
         {
             int rc = RTStrRealloc(&m_psz, cb);
             if (RT_SUCCESS(rc))
@@ -265,9 +266,10 @@ public:
      */
     int reserveNoThrow(size_t cb) RT_NOEXCEPT
     {
-        if (    cb != m_cbAllocated
-             && cb > m_cch + 1
-           )
+        if (   (   cb != m_cbAllocated
+                && cb > m_cch + 1)
+            || (   m_psz == NULL
+                && cb > 0))
         {
             int rc = RTStrRealloc(&m_psz, cb);
             if (RT_SUCCESS(rc))
