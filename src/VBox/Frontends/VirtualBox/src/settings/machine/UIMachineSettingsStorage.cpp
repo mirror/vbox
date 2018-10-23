@@ -3795,30 +3795,6 @@ void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KSto
     emit sigStorageChanged();
 }
 
-QUuid UIMachineSettingsStorage::openMediumSelectorDialog(UIMediumDeviceType  enmMediumType)
-{
-    QWidget *pParent = windowManager().realParentWindow(this);
-    QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, m_strMachineName,
-                                                                m_strMachineSettingsFilePath, pParent);
-
-    if (!pSelector)
-        return QString();
-    windowManager().registerNewParent(pSelector, pParent);
-    if (pSelector->execute(true, false))
-    {
-        QList<QUuid> selectedMediumIds = pSelector->selectedMediumIds();
-        delete pSelector;
-        /* Currently we only care about the 0th since we support single selection by intention: */
-        if (selectedMediumIds.isEmpty())
-            return QUuid();
-        else
-            return selectedMediumIds[0];
-    }
-
-    delete pSelector;
-    return QUuid();
-}
-
 void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
 {
     const QModelIndex index = m_pTreeStorage->currentIndex();
@@ -3837,7 +3813,8 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
             if (iAnswer == AlertButton_Choice1)
                 uMediumId = getWithNewHDWizard();
             else if (iAnswer == AlertButton_Choice2)
-                uMediumId = openMediumSelectorDialog(UIMediumDeviceType_HardDisk);
+                uMediumId = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_HardDisk,
+                                                                  m_strMachineName, m_strMachineSettingsFilePath);
             else if (iAnswer == AlertButton_Cancel)
                 fCancelled = true;
             break;
@@ -3846,7 +3823,8 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
         {
             int iAnswer = msgCenter().confirmOpticalAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Choice2)
-                uMediumId = openMediumSelectorDialog(UIMediumDeviceType_DVD);
+                uMediumId = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_DVD,
+                                                                  m_strMachineName, m_strMachineSettingsFilePath);
             else if (iAnswer == AlertButton_Cancel)
                 fCancelled = true;
             break;
@@ -3855,7 +3833,8 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
         {
             int iAnswer = msgCenter().confirmFloppyAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Choice2)
-                uMediumId = openMediumSelectorDialog(UIMediumDeviceType_Floppy);
+                uMediumId = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_Floppy,
+                                                                  m_strMachineName, m_strMachineSettingsFilePath);
             else if (iAnswer == AlertButton_Cancel)
                 fCancelled = true;
             break;

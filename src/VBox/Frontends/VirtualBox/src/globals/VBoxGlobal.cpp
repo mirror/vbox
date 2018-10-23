@@ -71,6 +71,7 @@
 # include "UIConverter.h"
 # include "UIMediumEnumerator.h"
 # include "UIMedium.h"
+# include "UIMediumSelector.h"
 # include "UIModalWindowManager.h"
 # include "UIIconPool.h"
 # include "UIVirtualBoxEventHandler.h"
@@ -2731,6 +2732,30 @@ QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &st
         return pDialog->mediumID();
     }
     delete pDialog;
+    return QUuid();
+}
+
+QUuid VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                           const QString &strMachineName, const QString &strMachineFolder)
+{
+    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
+    QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, strMachineName,
+                                                                strMachineFolder, pDialogParent);
+
+    if (!pSelector)
+        return QString();
+    windowManager().registerNewParent(pSelector, pDialogParent);
+    if (pSelector->execute(true, false))
+    {
+        QList<QUuid> selectedMediumIds = pSelector->selectedMediumIds();
+        delete pSelector;
+        /* Currently we only care about the 0th since we support single selection by intention: */
+        if (selectedMediumIds.isEmpty())
+            return QUuid();
+        else
+            return selectedMediumIds[0];
+    }
+    delete pSelector;
     return QUuid();
 }
 

@@ -522,6 +522,15 @@ public:
           * returns the ID of the newly created medium if successful, an empty string otherwise.*/
         QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
 
+        /** Creates and shows a UIMediumSelector dialog.
+          * @param  parent            Passes the parent of the dialog,
+          * @param  enmMediumType     Passes the medium type.
+          * @param  strMachineName    Passes the name of the machine,
+          * @param  strMachineFolder  Passes the machine folder,
+          * returns the ID of the  selected/created medium if successful, an empty string otherwise.*/
+        QUuid openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                       const QString &strMachineName, const QString &strMachineFolder);
+
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
           * @param  pListener          Brings the listener #QObject, this @a menu being prepared for.

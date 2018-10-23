@@ -741,7 +741,8 @@ private:
     /** Prepares connections. */
     void prepareConnections();
     /** Opens medium selector dialog and retrieves uuid of a selected medium (if any). */
-    QUuid openMediumSelectorDialog(UIMediumDeviceType  enmMediumType);
+    QUuid openMediumSelectorDialog(UIMediumDeviceType  enmMediumType,
+                                   const QString &strMachineName, const QString &strMachineSettingsFilePath);
     /** Cleanups all. */
     void cleanup();
 
