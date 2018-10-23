@@ -1080,7 +1080,7 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
     rc = CFGMR3InsertInteger(pLunCfg, "CodecBitrate", 0); /* Let Opus decide for now. */
     AssertRCReturn(rc, rc);
 
-    return rc;
+    return AudioDriver::configureDriver(pLunCfg);
 }
 
 

@@ -605,10 +605,12 @@ AudioVRDE::~AudioVRDE(void)
  */
 int AudioVRDE::configureDriver(PCFGMNODE pLunCfg)
 {
-    CFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
+    int rc = CFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
+    AssertRCReturn(rc, rc);
     CFGMR3InsertInteger(pLunCfg, "ObjectVRDPServer", (uintptr_t)mpConsole->i_consoleVRDPServer());
+    AssertRCReturn(rc, rc);
 
-    return VINF_SUCCESS;
+    return AudioDriver::configureDriver(pLunCfg);
 }
 
 
