@@ -916,9 +916,10 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
  * @param   pImage              The image data (still in the open state).
  * @param   pv                  The address within the image.
  * @param   pbImageBits         The image bits as loaded by ring-3.
+ * @param   pszSymbol           The name of the entrypoint being checked.
  */
 int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
-                                           void *pv, const uint8_t *pbImageBits);
+                                           void *pv, const uint8_t *pbImageBits, const char *pszSymbol);
 
 /**
  * Load the image.

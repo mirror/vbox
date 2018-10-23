@@ -2007,7 +2007,7 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             Log(("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rcNt=%#x '%ls'\n",
                  Info.ImageAddress, Info.SectionPointer, Info.ImageLength, pImage->cbImageBits, rcNt, Info.Name.Buffer));
 # ifdef DEBUG_bird
-            SUPR0Printf("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rcNt=%#x '%ws'\n",
+            SUPR0Printf("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rcNt=%#x '%ls'\n",
                         Info.ImageAddress, Info.SectionPointer, Info.ImageLength, pImage->cbImageBits, rcNt, Info.Name.Buffer);
 # endif
             if (pImage->cbImageBits == Info.ImageLength)
@@ -2087,10 +2087,134 @@ void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
     NOREF(pDevExt); NOREF(pImage);
 }
 
-int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, const uint8_t *pbImageBits)
+/*
+ * Note! Similar code in rtR0DbgKrnlNtParseModule.
+ */
+int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv,
+                                           const uint8_t *pbImageBits, const char *pszSymbol)
 {
-    NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits);
+#if 1
+    RT_NOREF(pDevExt, pbImageBits);
+    AssertReturn(pImage->pvNtSectionObj, VERR_INVALID_STATE);
+
+    /*
+     * Locate the export directory in the loaded image.
+     */
+    uint8_t const  *pbMapping      = (uint8_t const  *)pImage->pvImage;
+    uint32_t const  cbMapping      = pImage->cbImageBits;
+    uint32_t const  uRvaToValidate = (uint32_t)((uintptr_t)pv - (uintptr_t)pbMapping);
+    AssertReturn(uRvaToValidate < cbMapping, VERR_INTERNAL_ERROR_3);
+
+    uint32_t const  offNtHdrs = *(uint16_t *)pbMapping == IMAGE_DOS_SIGNATURE
+                              ? ((IMAGE_DOS_HEADER const *)pbMapping)->e_lfanew
+                              : 0;
+    AssertLogRelReturn(offNtHdrs + sizeof(IMAGE_NT_HEADERS) < cbMapping, VERR_INTERNAL_ERROR_5);
+
+    IMAGE_NT_HEADERS const *pNtHdrs = (IMAGE_NT_HEADERS const *)((uintptr_t)pbMapping + offNtHdrs);
+    AssertLogRelReturn(pNtHdrs->Signature == IMAGE_NT_SIGNATURE, VERR_INVALID_EXE_SIGNATURE);
+    AssertLogRelReturn(pNtHdrs->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR_MAGIC, VERR_BAD_EXE_FORMAT);
+    AssertLogRelReturn(pNtHdrs->OptionalHeader.NumberOfRvaAndSizes == IMAGE_NUMBEROF_DIRECTORY_ENTRIES, VERR_BAD_EXE_FORMAT);
+
+    uint32_t const offEndSectHdrs = offNtHdrs
+                                  + sizeof(*pNtHdrs)
+                                  + pNtHdrs->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+    AssertReturn(offEndSectHdrs < cbMapping, VERR_BAD_EXE_FORMAT);
+
+    /*
+     * Find the export directory.
+     */
+    IMAGE_DATA_DIRECTORY ExpDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+    if (!ExpDir.Size)
+    {
+        SUPR0Printf("SUPDrv: No exports in %s!\n", pImage->szName);
+        return VERR_NOT_FOUND;
+    }
+    AssertReturn(   ExpDir.Size >= sizeof(IMAGE_EXPORT_DIRECTORY)
+                 && ExpDir.VirtualAddress >= offEndSectHdrs
+                 && ExpDir.VirtualAddress < cbMapping
+                 && ExpDir.VirtualAddress + ExpDir.Size <= cbMapping, VERR_BAD_EXE_FORMAT);
+
+    IMAGE_EXPORT_DIRECTORY const *pExpDir = (IMAGE_EXPORT_DIRECTORY const *)&pbMapping[ExpDir.VirtualAddress];
+
+    uint32_t const cNamedExports = pExpDir->NumberOfNames;
+    AssertReturn(cNamedExports              < _1M, VERR_BAD_EXE_FORMAT);
+    AssertReturn(pExpDir->NumberOfFunctions < _1M, VERR_BAD_EXE_FORMAT);
+    if (pExpDir->NumberOfFunctions == 0 || cNamedExports == 0)
+    {
+        SUPR0Printf("SUPDrv: No exports in %s!\n", pImage->szName);
+        return VERR_NOT_FOUND;
+    }
+
+    uint32_t const cExports = RT_MAX(cNamedExports, pExpDir->NumberOfFunctions);
+
+    AssertReturn(   pExpDir->AddressOfFunctions >= offEndSectHdrs
+                 && pExpDir->AddressOfFunctions < cbMapping
+                 && pExpDir->AddressOfFunctions + cExports * sizeof(uint32_t) <= cbMapping,
+                 VERR_BAD_EXE_FORMAT);
+    uint32_t const * const paoffExports = (uint32_t const *)&pbMapping[pExpDir->AddressOfFunctions];
+
+    AssertReturn(   pExpDir->AddressOfNames >= offEndSectHdrs
+                 && pExpDir->AddressOfNames < cbMapping
+                 && pExpDir->AddressOfNames + cNamedExports * sizeof(uint32_t) <= cbMapping,
+                 VERR_BAD_EXE_FORMAT);
+    uint32_t const * const paoffNamedExports = (uint32_t const *)&pbMapping[pExpDir->AddressOfNames];
+
+    AssertReturn(   pExpDir->AddressOfNameOrdinals >= offEndSectHdrs
+                 && pExpDir->AddressOfNameOrdinals < cbMapping
+                 && pExpDir->AddressOfNameOrdinals + cNamedExports * sizeof(uint32_t) <= cbMapping,
+                 VERR_BAD_EXE_FORMAT);
+    uint16_t const * const pau16NameOrdinals = (uint16_t const *)&pbMapping[pExpDir->AddressOfNameOrdinals];
+
+    /*
+     * Validate the entrypoint RVA by scanning the export table.
+     */
+    uint32_t iExportOrdinal = UINT32_MAX;
+    for (uint32_t i = 0; i < cExports; i++)
+        if (paoffExports[i] == uRvaToValidate)
+        {
+            iExportOrdinal = i;
+            break;
+        }
+    if (iExportOrdinal == UINT32_MAX)
+    {
+        SUPR0Printf("SUPDrv: No export with rva %#x (%s) in %s!\n", uRvaToValidate, pszSymbol, pImage->szName);
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Can we validate the symbol name too?  If so, just do a linear search.
+     */
+    if (pszSymbol && RT_C_IS_UPPER(*pszSymbol))
+    {
+        size_t const cchSymbol  = strlen(pszSymbol);
+        for (uint32_t i = 0; i < cNamedExports; i++)
+        {
+            uint32_t const     offName = paoffNamedExports[i];
+            AssertReturn(offName < cbMapping, VERR_BAD_EXE_FORMAT);
+            uint32_t const     cchMaxName = cbMapping - offName;
+            const char * const pszName    = (const char *)&pbImageBits[offName];
+            const char * const pszEnd     = (const char *)memchr(pszName, '\0', cchMaxName);
+            AssertReturn(pszEnd, VERR_BAD_EXE_FORMAT);
+
+            if (   cchSymbol == (size_t)(pszEnd - pszName)
+                && memcmp(pszName, pszSymbol, cchSymbol) == 0)
+            {
+                if (pau16NameOrdinals[i] == iExportOrdinal)
+                    return VINF_SUCCESS;
+                SUPR0Printf("SUPDrv: Different exports found for %s and rva %#x in %s: %#x vs %#x\n",
+                            pszSymbol, uRvaToValidate, pImage->szName, pau16NameOrdinals[i], iExportOrdinal);
+                return VERR_LDR_BAD_FIXUP;
+            }
+        }
+        SUPR0Printf("SUPDrv: No export named %s (%#x) in  %s!\n", pszSymbol, uRvaToValidate, pImage->szName);
+        return VERR_SYMBOL_NOT_FOUND;
+    }
     return VINF_SUCCESS;
+
+#else
+    NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits); NOREF(pszSymbol);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
@@ -2178,8 +2302,7 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 
         /*
          * On Windows 10 the ImageBase member of the optional header is sometimes
-         * updated with the actual load address and sometimes not.  Try compare
-         *
+         * updated with the actual load address and sometimes not.
          */
         uint32_t const  offNtHdrs = *(uint16_t *)pbImageBits == IMAGE_DOS_SIGNATURE
                                   ? ((IMAGE_DOS_HEADER const *)pbImageBits)->e_lfanew
