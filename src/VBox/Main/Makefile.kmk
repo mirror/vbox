@@ -801,7 +801,10 @@ ifdef VBOX_WITH_VIDEOREC
    VBoxC_SDKS += VBOX_VPX
    VBoxC_DEFS += VBOX_WITH_LIBVPX
    VBoxC_SOURCES += \
-	src-client/VideoRec.cpp
+	src-client/VideoRec.cpp \
+	src-client/VideoRecInternals.cpp \
+	src-client/VideoRecStream.cpp \
+	src-client/VideoRecUtils.cpp
   else
    $(error "VBox: No alternative for VPX when using video capturing support yet")
   endif

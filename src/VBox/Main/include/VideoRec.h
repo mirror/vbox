@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * Encodes the screen content in VPX format.
+ * Video recording code header.
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,23 +19,13 @@
 #define ____H_VIDEOREC
 
 #include <VBox/com/array.h>
+#include <VBox/com/VirtualBox.h>
+#include <VBox/err.h>
 
-struct VIDEORECCONTEXT;
-typedef struct VIDEORECCONTEXT *PVIDEORECCONTEXT;
+using namespace com;
 
-struct VIDEORECSTREAM;
-typedef struct VIDEORECSTREAM *PVIDEORECSTREAM;
-
-/**
- * Enumeration for video recording destinations.
- */
-typedef enum VIDEORECDEST
-{
-    /** Invalid destination, do not use. */
-    VIDEORECDEST_INVALID = 0,
-    /** Write to a file. */
-    VIDEORECDEST_FILE    = 1
-} VIDEORECDEST;
+#include "VideoRecInternals.h"
+#include "VideoRecStream.h"
 
 /**
  * Enumeration for definining a video / audio
@@ -50,6 +40,16 @@ typedef enum VIDEORECPROFILE
     VIDEORECPROFILE_BEST,
     VIDEORECPROFILE_REALTIME
 } VIDEORECPROFILE;
+
+/** Stores video recording features. */
+typedef uint32_t VIDEORECFEATURES;
+
+/** Video recording is disabled completely. */
+#define VIDEORECFEATURE_NONE        0
+/** Capturing video is enabled. */
+#define VIDEORECFEATURE_VIDEO       RT_BIT(0)
+/** Capturing audio is enabled. */
+#define VIDEORECFEATURE_AUDIO       RT_BIT(1)
 
 /**
  * Structure for keeping a video recording configuration.
@@ -157,15 +157,39 @@ typedef struct VIDEORECCFG
 
 } VIDEORECCFG, *PVIDEORECCFG;
 
-/** Stores video recording features. */
-typedef uint32_t VIDEORECFEATURES;
-
-/** Video recording is disabled completely. */
-#define VIDEORECFEATURE_NONE        0
-/** Capturing video is enabled. */
-#define VIDEORECFEATURE_VIDEO       RT_BIT(0)
-/** Capturing audio is enabled. */
-#define VIDEORECFEATURE_AUDIO       RT_BIT(1)
+/**
+ * Structure for keeping a video recording context.
+ */
+typedef struct VIDEORECCONTEXT
+{
+    /** Used recording configuration. */
+    VIDEORECCFG         Cfg;
+    /** The current state. */
+    uint32_t            enmState;
+    /** Critical section to serialize access. */
+    RTCRITSECT          CritSect;
+    /** Semaphore to signal the encoding worker thread. */
+    RTSEMEVENT          WaitEvent;
+    /** Whether this conext is in started state or not. */
+    bool                fStarted;
+    /** Shutdown indicator. */
+    bool                fShutdown;
+    /** Worker thread. */
+    RTTHREAD            Thread;
+    /** Vector of current recording streams.
+     *  Per VM screen (display) one recording stream is being used. */
+    VideoRecStreams     vecStreams;
+    /** Timestamp (in ms) of when recording has been started. */
+    uint64_t            tsStartMs;
+    /** Block map of common blocks which need to get multiplexed
+     *  to all recording streams. This common block maps should help
+     *  reducing the time spent in EMT and avoid doing the (expensive)
+     *  multiplexing work in there.
+     *
+     *  For now this only affects audio, e.g. all recording streams
+     *  need to have the same audio data at a specific point in time. */
+    VideoRecBlockMap    mapBlocksCommon;
+} VIDEORECCONTEXT, *PVIDEORECCONTEXT;
 
 int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORECCONTEXT *ppCtx);
 int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx);
