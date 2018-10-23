@@ -1521,7 +1521,8 @@ void UIGuestControlFileTable::retranslateUi()
 
 bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
 {
-    if (pEvent->type() == QEvent::KeyPress)
+    Q_UNUSED(pObject);
+    IF (pEvent->type() == QEvent::KeyPress)
     {
         QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
         if (pKeyEvent)
