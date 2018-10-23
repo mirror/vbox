@@ -61,13 +61,13 @@ public:
     virtual ~UIToolPaneMachine() /* override */;
 
     /** Returns type of tool currently opened. */
-    ToolTypeMachine currentTool() const;
+    UIToolType currentTool() const;
     /** Returns whether tool of particular @a enmType is opened. */
-    bool isToolOpened(ToolTypeMachine enmType) const;
+    bool isToolOpened(UIToolType enmType) const;
     /** Activates tool of passed @a enmType, creates new one if necessary. */
-    void openTool(ToolTypeMachine enmType);
+    void openTool(UIToolType enmType);
     /** Closes tool of passed @a enmType, deletes one if exists. */
-    void closeTool(ToolTypeMachine enmType);
+    void closeTool(UIToolType enmType);
 
     /** Defines error @a strDetails and switches to Error pane. */
     void setErrorDetails(const QString &strDetails);

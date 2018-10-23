@@ -2736,68 +2736,6 @@ void UIExtraDataManager::setSelectorWindowToolBarTextVisible(bool fVisible)
     setExtraDataString(GUI_Toolbar_Text, toFeatureRestricted(!fVisible));
 }
 
-QList<ToolTypeMachine> UIExtraDataManager::selectorWindowToolsOrderMachine()
-{
-    /* Prepare result: */
-    QList<ToolTypeMachine> aLoadedOrder;
-    /* Get machine tools order: */
-    foreach (const QString &strValue, extraDataStringList(GUI_Toolbar_MachineTools_Order))
-    {
-        const ToolTypeMachine enmValue = gpConverter->fromInternalString<ToolTypeMachine>(strValue);
-        if (!aLoadedOrder.contains(enmValue))
-            aLoadedOrder << enmValue;
-    }
-
-    /* If the list is empty => add 'Details' at least: */
-    if (aLoadedOrder.isEmpty())
-        aLoadedOrder << ToolTypeMachine_Details;
-
-    /* Return result: */
-    return aLoadedOrder;
-}
-
-void UIExtraDataManager::setSelectorWindowToolsOrderMachine(const QList<ToolTypeMachine> &aOrder)
-{
-    /* Parse passed list: */
-    QStringList aSavedOrder;
-    foreach (const ToolTypeMachine &enmToolType, aOrder)
-        aSavedOrder << gpConverter->toInternalString(enmToolType);
-
-    /* If the list is empty => add 'None' at least: */
-    if (aSavedOrder.isEmpty())
-        aSavedOrder << gpConverter->toInternalString(ToolTypeMachine_Invalid);
-
-    /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_Toolbar_MachineTools_Order, aSavedOrder);
-}
-
-QList<ToolTypeGlobal> UIExtraDataManager::selectorWindowToolsOrderGlobal()
-{
-    /* Prepare result: */
-    QList<ToolTypeGlobal> aLoadedOrder;
-    /* Get global tools order: */
-    foreach (const QString &strValue, extraDataStringList(GUI_Toolbar_GlobalTools_Order))
-    {
-        const ToolTypeGlobal enmValue = gpConverter->fromInternalString<ToolTypeGlobal>(strValue);
-        if (enmValue != ToolTypeGlobal_Invalid && !aLoadedOrder.contains(enmValue))
-            aLoadedOrder << enmValue;
-    }
-
-    /* Return result: */
-    return aLoadedOrder;
-}
-
-void UIExtraDataManager::setSelectorWindowToolsOrderGlobal(const QList<ToolTypeGlobal> &aOrder)
-{
-    /* Parse passed list: */
-    QStringList aSavedOrder;
-    foreach (const ToolTypeGlobal &enmToolType, aOrder)
-        aSavedOrder << gpConverter->toInternalString(enmToolType);
-
-    /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_Toolbar_GlobalTools_Order, aSavedOrder);
-}
-
 QString UIExtraDataManager::toolsPaneLastItemsChosen()
 {
     return extraDataString(GUI_Tools_LastItemsSelected);

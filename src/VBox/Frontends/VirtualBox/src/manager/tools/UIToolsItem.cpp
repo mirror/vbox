@@ -179,7 +179,7 @@ private:
 *********************************************************************************************************************************/
 
 UIToolsItem::UIToolsItem(QGraphicsScene *pScene,
-                         UIToolsClass enmClass, UIToolsType enmType,
+                         UIToolClass enmClass, UIToolType enmType,
                          const QIcon &icon, const QString &strName)
     : m_pScene(pScene)
     , m_enmClass(enmClass)
@@ -221,7 +221,7 @@ UIToolsModel *UIToolsItem::model() const
     return pModel;
 }
 
-void UIToolsItem::reconfigure(UIToolsClass enmClass, UIToolsType enmType,
+void UIToolsItem::reconfigure(UIToolClass enmClass, UIToolType enmType,
                               const QIcon &icon, const QString &strName)
 {
     /* If class is changed: */
@@ -252,12 +252,12 @@ void UIToolsItem::reconfigure(UIToolsClass enmClass, UIToolsType enmType,
     }
 }
 
-UIToolsClass UIToolsItem::itemClass() const
+UIToolClass UIToolsItem::itemClass() const
 {
     return m_enmClass;
 }
 
-UIToolsType UIToolsItem::itemType() const
+UIToolType UIToolsItem::itemType() const
 {
     return m_enmType;
 }

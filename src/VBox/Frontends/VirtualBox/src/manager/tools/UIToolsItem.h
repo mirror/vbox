@@ -77,7 +77,7 @@ public:
       * @param  icon     Brings the item icon.
       * @param  strName  Brings the item name. */
     UIToolsItem(QGraphicsScene *pScene,
-                UIToolsClass enmClass, UIToolsType enmType,
+                UIToolClass enmClass, UIToolType enmType,
                 const QIcon &icon, const QString &strName);
     /** Destructs item. */
     virtual ~UIToolsItem() /* override */;
@@ -88,13 +88,13 @@ public:
         UIToolsModel *model() const;
 
         /** Reconfigures icon with new @a enmClass, @a enmType, @a icon and @a strName. */
-        void reconfigure(UIToolsClass enmClass, UIToolsType enmType,
+        void reconfigure(UIToolClass enmClass, UIToolType enmType,
                          const QIcon &icon, const QString &strName);
 
         /** Returns item class. */
-        UIToolsClass itemClass() const;
+        UIToolClass itemClass() const;
         /** Returns item type. */
-        UIToolsType itemType() const;
+        UIToolType itemType() const;
         /** Returns item icon. */
         const QIcon &icon() const;
         /** Returns item name. */
@@ -245,9 +245,9 @@ private:
         /** Holds the item parent. */
         QGraphicsScene *m_pScene;
         /** Holds the item class. */
-        UIToolsClass    m_enmClass;
+        UIToolClass     m_enmClass;
         /** Holds the item type. */
-        UIToolsType     m_enmType;
+        UIToolType      m_enmType;
         /** Holds the item icon. */
         QIcon           m_icon;
         /** Holds the item name. */

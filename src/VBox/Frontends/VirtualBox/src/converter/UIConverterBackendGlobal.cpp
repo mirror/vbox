@@ -52,8 +52,7 @@ template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>()
 #ifdef VBOX_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>() { return true; }
 #endif /* VBOX_WS_MAC */
-template<> bool canConvert<ToolTypeMachine>() { return true; }
-template<> bool canConvert<ToolTypeGlobal>() { return true; }
+template<> bool canConvert<UIToolType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<PreviewUpdateIntervalType>() { return true; }
@@ -866,74 +865,46 @@ template<> UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraD
 }
 #endif /* VBOX_WS_MAC */
 
-/* QString <= ToolTypeMachine: */
-template<> QString toInternalString(const ToolTypeMachine &enmToolTypeMachine)
+/* QString <= UIToolType: */
+template<> QString toInternalString(const UIToolType &enmToolType)
 {
     QString strResult;
-    switch (enmToolTypeMachine)
+    switch (enmToolType)
     {
-        case ToolTypeMachine_Details:   strResult = "Details"; break;
-        case ToolTypeMachine_Snapshots: strResult = "Snapshots"; break;
-        case ToolTypeMachine_Logs:      strResult = "Logs"; break;
+        case UIToolType_Welcome:   strResult = "Welcome"; break;
+        case UIToolType_Media:     strResult = "Media"; break;
+        case UIToolType_Network:   strResult = "Network"; break;
+        case UIToolType_Cloud:     strResult = "Cloud"; break;
+        case UIToolType_Details:   strResult = "Details"; break;
+        case UIToolType_Snapshots: strResult = "Snapshots"; break;
+        case UIToolType_Logs:      strResult = "Logs"; break;
         default:
         {
-            AssertMsgFailed(("No text for machine tool type=%d", enmToolTypeMachine));
+            AssertMsgFailed(("No text for tool type=%d", enmToolType));
             break;
         }
     }
     return strResult;
 }
 
-/* ToolTypeMachine <= QString: */
-template<> ToolTypeMachine fromInternalString<ToolTypeMachine>(const QString &strToolTypeMachine)
+/* UIToolType <= QString: */
+template<> UIToolType fromInternalString<UIToolType>(const QString &strToolType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;    QList<ToolTypeMachine> values;
-    keys << "Details";   values << ToolTypeMachine_Details;
-    keys << "Snapshots"; values << ToolTypeMachine_Snapshots;
-    keys << "Logs";      values << ToolTypeMachine_Logs;
+    QStringList keys;    QList<UIToolType> values;
+    keys << "Welcome";   values << UIToolType_Welcome;
+    keys << "Media";     values << UIToolType_Media;
+    keys << "Network";   values << UIToolType_Network;
+    keys << "Cloud";     values << UIToolType_Cloud;
+    keys << "Details";   values << UIToolType_Details;
+    keys << "Snapshots"; values << UIToolType_Snapshots;
+    keys << "Logs";      values << UIToolType_Logs;
     /* Invalid type for unknown words: */
-    if (!keys.contains(strToolTypeMachine, Qt::CaseInsensitive))
-        return ToolTypeMachine_Invalid;
+    if (!keys.contains(strToolType, Qt::CaseInsensitive))
+        return UIToolType_Invalid;
     /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strToolTypeMachine, Qt::CaseInsensitive)));
-}
-
-/* QString <= ToolTypeGlobal: */
-template<> QString toInternalString(const ToolTypeGlobal &enmToolTypeGlobal)
-{
-    QString strResult;
-    switch (enmToolTypeGlobal)
-    {
-        case ToolTypeGlobal_Welcome: strResult = "Welcome"; break;
-        case ToolTypeGlobal_Media:   strResult = "Media"; break;
-        case ToolTypeGlobal_Network: strResult = "Network"; break;
-        case ToolTypeGlobal_Cloud:   strResult = "Cloud"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for global tool type=%d", enmToolTypeGlobal));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* ToolTypeGlobal <= QString: */
-template<> ToolTypeGlobal fromInternalString<ToolTypeGlobal>(const QString &strToolTypeGlobal)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;       QList<ToolTypeGlobal> values;
-    keys << "Welcome"; values << ToolTypeGlobal_Welcome;
-    keys << "Media";   values << ToolTypeGlobal_Media;
-    keys << "Network"; values << ToolTypeGlobal_Network;
-    keys << "Cloud";   values << ToolTypeGlobal_Cloud;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strToolTypeGlobal, Qt::CaseInsensitive))
-        return ToolTypeGlobal_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strToolTypeGlobal, Qt::CaseInsensitive)));
+    return values.at(keys.indexOf(QRegExp(strToolType, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIVisualStateType: */

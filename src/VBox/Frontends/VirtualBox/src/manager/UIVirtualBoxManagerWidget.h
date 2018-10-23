@@ -87,26 +87,26 @@ public:
         bool isSingleGroupSelected() const;
 
         /** Defines tools @a enmType. */
-        void setToolsType(UIToolsType enmType);
+        void setToolsType(UIToolType enmType);
         /** Returns tools type. */
-        UIToolsType toolsType() const;
+        UIToolType toolsType() const;
 
         /** Returns a type of curent Machine tool. */
-        ToolTypeMachine currentMachineTool() const;
+        UIToolType currentMachineTool() const;
         /** Returns a type of curent Global tool. */
-        ToolTypeGlobal currentGlobalTool() const;
+        UIToolType currentGlobalTool() const;
         /** Returns whether Machine tool of passed @a enmType is opened. */
-        bool isToolOpened(ToolTypeMachine enmType) const;
+        bool isMachineToolOpened(UIToolType enmType) const;
         /** Returns whether Global tool of passed @a enmType is opened. */
-        bool isToolOpened(ToolTypeGlobal enmType) const;
+        bool isGlobalToolOpened(UIToolType enmType) const;
         /** Switches to Machine tool of passed @a enmType. */
-        void switchToTool(ToolTypeMachine enmType);
+        void switchToMachineTool(UIToolType enmType);
         /** Switches to Global tool of passed @a enmType. */
-        void switchToTool(ToolTypeGlobal enmType);
+        void switchToGlobalTool(UIToolType enmType);
         /** Closes Machine tool of passed @a enmType. */
-        void closeTool(ToolTypeMachine enmType);
+        void closeMachineTool(UIToolType enmType);
         /** Closes Global tool of passed @a enmType. */
-        void closeTool(ToolTypeGlobal enmType);
+        void closeGlobalTool(UIToolType enmType);
     /** @} */
 
 public slots:
@@ -147,7 +147,7 @@ private slots:
     /** @name Tools stuff.
       * @{ */
         /** Handles tool menu request. */
-        void sltHandleToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+        void sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position);
 
         /** Handles signal abour Tools-pane index change. */
         void sltHandleToolsPaneIndexChange();

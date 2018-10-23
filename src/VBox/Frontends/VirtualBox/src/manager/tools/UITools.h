@@ -71,19 +71,19 @@ public:
         UIToolsView *view() const { return m_pToolsView; }
 
         /** Defines current tools @a enmClass. */
-        void setToolsClass(UIToolsClass enmClass);
+        void setToolsClass(UIToolClass enmClass);
         /** Returns current tools class. */
-        UIToolsClass toolsClass() const;
+        UIToolClass toolsClass() const;
 
         /** Defines current tools @a enmType. */
-        void setToolsType(UIToolsType enmType);
+        void setToolsType(UIToolType enmType);
         /** Returns current tools type. */
-        UIToolsType toolsType() const;
+        UIToolType toolsType() const;
 
         /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
-        void setToolsEnabled(UIToolsClass enmClass, bool fEnabled);
+        void setToolsEnabled(UIToolClass enmClass, bool fEnabled);
         /** Returns whether certain class of tools is enabled.*/
-        bool areToolsEnabled(UIToolsClass enmClass) const;
+        bool areToolsEnabled(UIToolClass enmClass) const;
     /** @} */
 
     /** @name Current item stuff.

@@ -54,32 +54,32 @@ UIActionPool *UITools::actionPool() const
     return managerWidget()->actionPool();
 }
 
-void UITools::setToolsClass(UIToolsClass enmClass)
+void UITools::setToolsClass(UIToolClass enmClass)
 {
     m_pToolsModel->setToolsClass(enmClass);
 }
 
-UIToolsClass UITools::toolsClass() const
+UIToolClass UITools::toolsClass() const
 {
     return m_pToolsModel->toolsClass();
 }
 
-void UITools::setToolsType(UIToolsType enmType)
+void UITools::setToolsType(UIToolType enmType)
 {
     m_pToolsModel->setToolsType(enmType);
 }
 
-UIToolsType UITools::toolsType() const
+UIToolType UITools::toolsType() const
 {
     return m_pToolsModel->toolsType();
 }
 
-void UITools::setToolsEnabled(UIToolsClass enmClass, bool fEnabled)
+void UITools::setToolsEnabled(UIToolClass enmClass, bool fEnabled)
 {
     m_pToolsModel->setToolsEnabled(enmClass, fEnabled);
 }
 
-bool UITools::areToolsEnabled(UIToolsClass enmClass) const
+bool UITools::areToolsEnabled(UIToolClass enmClass) const
 {
     return m_pToolsModel->areToolsEnabled(enmClass);
 }

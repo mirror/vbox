@@ -659,52 +659,30 @@ enum WizardMode
 
 
 /** Tool item classes. */
-enum UIToolsClass
+enum UIToolClass
 {
-    UIToolsClass_Invalid,
-    UIToolsClass_Global,
-    UIToolsClass_Machine
+    UIToolClass_Invalid,
+    UIToolClass_Global,
+    UIToolClass_Machine
 };
 
 
 /** Tool item types. */
-enum UIToolsType
+enum UIToolType
 {
-    UIToolsType_Invalid,
+    UIToolType_Invalid,
     /* Global types: */
-    UIToolsType_Welcome,
-    UIToolsType_Media,
-    UIToolsType_Network,
-    UIToolsType_Cloud,
+    UIToolType_Welcome,
+    UIToolType_Media,
+    UIToolType_Network,
+    UIToolType_Cloud,
     /* Machine types: */
-    UIToolsType_Details,
-    UIToolsType_Snapshots,
-    UIToolsType_Logs,
+    UIToolType_Error,
+    UIToolType_Details,
+    UIToolType_Snapshots,
+    UIToolType_Logs,
 };
-
-
-/** Selector UI: Global tool types. */
-enum ToolTypeGlobal
-{
-    ToolTypeGlobal_Invalid,
-    ToolTypeGlobal_Welcome,
-    ToolTypeGlobal_Media,
-    ToolTypeGlobal_Network,
-    ToolTypeGlobal_Cloud,
-};
-Q_DECLARE_METATYPE(ToolTypeGlobal);
-
-
-/** Selector UI: Machine tool types. */
-enum ToolTypeMachine
-{
-    ToolTypeMachine_Invalid,
-    ToolTypeMachine_Error,
-    ToolTypeMachine_Details,
-    ToolTypeMachine_Snapshots,
-    ToolTypeMachine_Logs
-};
-Q_DECLARE_METATYPE(ToolTypeMachine);
+Q_DECLARE_METATYPE(UIToolType);
 
 
 /** Selector UI: Details-element types. */

@@ -88,8 +88,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::RuntimeMenu
 #ifdef VBOX_WS_MAC
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>();
 #endif /* VBOX_WS_MAC */
-template<> SHARED_LIBRARY_STUFF bool canConvert<ToolTypeMachine>();
-template<> SHARED_LIBRARY_STUFF bool canConvert<ToolTypeGlobal>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIToolType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIVisualStateType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<DetailsElementType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<PreviewUpdateIntervalType>();
@@ -164,10 +163,8 @@ template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::RuntimeMenuDebuggerActionTy
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::MenuWindowActionType &menuWindowActionType);
 template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraDataMetaDefs::MenuWindowActionType>(const QString &strMenuWindowActionType);
 #endif /* VBOX_WS_MAC */
-template<> SHARED_LIBRARY_STUFF QString toInternalString(const ToolTypeMachine &enmToolTypeMachine);
-template<> SHARED_LIBRARY_STUFF ToolTypeMachine fromInternalString<ToolTypeMachine>(const QString &strToolTypeMachine);
-template<> SHARED_LIBRARY_STUFF QString toInternalString(const ToolTypeGlobal &enmToolTypeGlobal);
-template<> SHARED_LIBRARY_STUFF ToolTypeGlobal fromInternalString<ToolTypeGlobal>(const QString &strToolTypeGlobal);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIToolType &enmToolType);
+template<> SHARED_LIBRARY_STUFF UIToolType fromInternalString<UIToolType>(const QString &strToolType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIVisualStateType &visualStateType);
 template<> SHARED_LIBRARY_STUFF UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);
 template<> SHARED_LIBRARY_STUFF QString toString(const DetailsElementType &detailsElementType);

@@ -309,16 +309,6 @@ public:
         /** Defines whether selector-window tool-bar text @a fVisible. */
         void setSelectorWindowToolBarTextVisible(bool fVisible);
 
-        /** Returns selector-window machine tools order. */
-        QList<ToolTypeMachine> selectorWindowToolsOrderMachine();
-        /** Defines selector-window machine tools @a aOrder. */
-        void setSelectorWindowToolsOrderMachine(const QList<ToolTypeMachine> &aOrder);
-
-        /** Returns selector-window global tools order. */
-        QList<ToolTypeGlobal> selectorWindowToolsOrderGlobal();
-        /** Defines selector-window global tools @a aOrder. */
-        void setSelectorWindowToolsOrderGlobal(const QList<ToolTypeGlobal> &aOrder);
-
         /** Returns last selected tool set of VirtualBox Manager. */
         QString toolsPaneLastItemsChosen();
         /** Defines last selected tool @a strSet of VirtualBox Manager. */

@@ -68,7 +68,7 @@ signals:
     /** @name General stuff.
       * @{ */
         /** Notify listeners about tool menu popup request for certain @a enmClass and @a position. */
-        void sigToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+        void sigToolMenuRequested(UIToolClass enmClass, const QPoint &position);
     /** @} */
 
     /** @name Selection stuff.

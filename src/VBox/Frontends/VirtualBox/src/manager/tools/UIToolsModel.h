@@ -97,19 +97,19 @@ public:
         QGraphicsItem *itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
 
         /** Defines current tools @a enmClass. */
-        void setToolsClass(UIToolsClass enmClass);
+        void setToolsClass(UIToolClass enmClass);
         /** Returns current tools class. */
-        UIToolsClass toolsClass() const;
+        UIToolClass toolsClass() const;
 
         /** Defines current tools @a enmType. */
-        void setToolsType(UIToolsType enmType);
+        void setToolsType(UIToolType enmType);
         /** Returns current tools type. */
-        UIToolsType toolsType() const;
+        UIToolType toolsType() const;
 
         /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
-        void setToolsEnabled(UIToolsClass enmClass, bool fEnabled);
+        void setToolsEnabled(UIToolClass enmClass, bool fEnabled);
         /** Returns whether certain class of tools is enabled.*/
-        bool areToolsEnabled(UIToolsClass enmClass) const;
+        bool areToolsEnabled(UIToolClass enmClass) const;
 
         /** Closes parent. */
         void closeParent();
@@ -229,13 +229,13 @@ private:
 
         /** Returns @a enmType string representation.
           * @todo move to UIConverter one day .. */
-        static QString typeToString(UIToolsType enmType);
-        /** Returns @a strType converted to corresponding UIToolsType.
+        static QString typeToString(UIToolType enmType);
+        /** Returns @a strType converted to corresponding UIToolType.
           * @todo move to UIConverter one day .. */
-        static UIToolsType typeFromString(const QString &strType);
+        static UIToolType typeFromString(const QString &strType);
 
         /** Returns whether passed @a enmType is of passed @a enmClass. */
-        static bool isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass);
+        static bool isTypeOfClass(UIToolType enmType, UIToolClass enmClass);
     /** @} */
 
     /** @name General stuff.
@@ -252,10 +252,10 @@ private:
         UIToolsHandlerKeyboard *m_pKeyboardHandler;
 
         /** Holds current tools class. */
-        UIToolsClass  m_enmCurrentClass;
+        UIToolClass  m_enmCurrentClass;
 
         /** Holds whether tools of particular class are enabled. */
-        QMap<UIToolsClass, bool>  m_statesToolsEnabled;
+        QMap<UIToolClass, bool>  m_statesToolsEnabled;
     /** @} */
 
     /** @name Children stuff.

@@ -290,7 +290,7 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
     /* Make sure MM window/tool is not opened,
      * otherwise user sees everything himself: */
     if (   m_pManagerVirtualMedia
-        || m_pWidget->isToolOpened(ToolTypeGlobal_Media))
+        || m_pWidget->isGlobalToolOpened(UIToolType_Media))
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -385,10 +385,10 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     /* Make sure separate dialogs are closed when corresponding tools are opened: */
     switch (m_pWidget->toolsType())
     {
-        case UIToolsType_Media:   sltCloseVirtualMediumManagerWindow(); break;
-        case UIToolsType_Network: sltCloseHostNetworkManagerWindow(); break;
-        case UIToolsType_Cloud:   sltCloseCloudProfileManagerWindow(); break;
-        case UIToolsType_Logs:    sltCloseLogViewerWindow(); break;
+        case UIToolType_Media:   sltCloseVirtualMediumManagerWindow(); break;
+        case UIToolType_Network: sltCloseHostNetworkManagerWindow(); break;
+        case UIToolType_Cloud:   sltCloseCloudProfileManagerWindow(); break;
+        case UIToolType_Logs:    sltCloseLogViewerWindow(); break;
         default: break;
     }
 }
@@ -401,10 +401,10 @@ void UIVirtualBoxManager::sltHandleStateChange(const QUuid &)
 void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isToolOpened(ToolTypeGlobal_Media))
+    if (m_pWidget->isGlobalToolOpened(UIToolType_Media))
     {
-        m_pWidget->setToolsType(UIToolsType_Welcome);
-        m_pWidget->closeTool(ToolTypeGlobal_Media);
+        m_pWidget->setToolsType(UIToolType_Welcome);
+        m_pWidget->closeGlobalTool(UIToolType_Media);
     }
 
     /* Create instance if not yet created: */
@@ -431,10 +431,10 @@ void UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow()
 void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isToolOpened(ToolTypeGlobal_Network))
+    if (m_pWidget->isGlobalToolOpened(UIToolType_Network))
     {
-        m_pWidget->setToolsType(UIToolsType_Welcome);
-        m_pWidget->closeTool(ToolTypeGlobal_Network);
+        m_pWidget->setToolsType(UIToolType_Welcome);
+        m_pWidget->closeGlobalTool(UIToolType_Network);
     }
 
     /* Create instance if not yet created: */
@@ -461,10 +461,10 @@ void UIVirtualBoxManager::sltCloseHostNetworkManagerWindow()
 void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isToolOpened(ToolTypeGlobal_Cloud))
+    if (m_pWidget->isGlobalToolOpened(UIToolType_Cloud))
     {
-        m_pWidget->setToolsType(UIToolsType_Welcome);
-        m_pWidget->closeTool(ToolTypeGlobal_Cloud);
+        m_pWidget->setToolsType(UIToolType_Welcome);
+        m_pWidget->closeGlobalTool(UIToolType_Cloud);
     }
 
     /* Create instance if not yet created: */
@@ -1061,10 +1061,10 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isToolOpened(ToolTypeMachine_Logs))
+    if (m_pWidget->isMachineToolOpened(UIToolType_Logs))
     {
-        m_pWidget->setToolsType(UIToolsType_Details);
-        m_pWidget->closeTool(ToolTypeMachine_Logs);
+        m_pWidget->setToolsType(UIToolType_Details);
+        m_pWidget->closeMachineTool(UIToolType_Logs);
     }
 
     /* For each selected item: */
@@ -2126,25 +2126,25 @@ void UIVirtualBoxManager::updateActionsVisibility()
     m_pGroupMenuAction->setVisible(fGroupMenuShown);
 
     /* Determine whether Media menu should be visible: */
-    const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Media;
+    const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Media;
     m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
 
     /* Determine whether Network menu should be visible: */
-    const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Network;
+    const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Network;
     m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
 
     /* Determine whether Cloud menu should be visible: */
-    const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == ToolTypeGlobal_Cloud;
+    const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Cloud;
     m_pCloudProfileManagerMenuAction->setVisible(fCloudMenuShown);
 
     /* Determine whether Snapshots menu should be visible: */
     const bool fSnapshotMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
-                                    m_pWidget->currentMachineTool() == ToolTypeMachine_Snapshots;
+                                    m_pWidget->currentMachineTool() == UIToolType_Snapshots;
     m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
 
     /* Determine whether Logs menu should be visible: */
     const bool fLogViewerMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
-                                     m_pWidget->currentMachineTool() == ToolTypeMachine_Logs;
+                                     m_pWidget->currentMachineTool() == UIToolType_Logs;
     m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
 
     /* Hide action shortcuts: */

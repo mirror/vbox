@@ -53,7 +53,7 @@ signals:
         void sigToggleFinished();
 
         /** Notifies listeners about tool popup-menu request for certain tool @a enmClass and in specified @a position. */
-        void sigToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+        void sigToolMenuRequested(UIToolClass enmClass, const QPoint &position);
     /** @} */
 
     /** @name Group saving stuff.
@@ -122,7 +122,7 @@ private slots:
     /** @name General stuff.
       * @{ */
         /** Handles signal about tool popup-menu request for certain tool @a enmClass and in specified @a position. */
-        void sltToolMenuRequested(UIToolsClass enmClass, const QPoint &position);
+        void sltToolMenuRequested(UIToolClass enmClass, const QPoint &position);
     /** @} */
 
 private:

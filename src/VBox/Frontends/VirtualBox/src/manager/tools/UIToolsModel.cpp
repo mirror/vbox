@@ -61,7 +61,7 @@ UIToolsModel:: UIToolsModel(UITools *pParent)
     , m_pScene(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
-    , m_enmCurrentClass(UIToolsClass_Global)
+    , m_enmCurrentClass(UIToolClass_Global)
 {
     /* Prepare: */
     prepare();
@@ -118,7 +118,7 @@ QGraphicsItem *UIToolsModel::itemAt(const QPointF &position, const QTransform &d
     return scene()->itemAt(position, deviceTransform);
 }
 
-void UIToolsModel::setToolsClass(UIToolsClass enmClass)
+void UIToolsModel::setToolsClass(UIToolClass enmClass)
 {
     /* Update linked values: */
     if (m_enmCurrentClass != enmClass)
@@ -130,12 +130,12 @@ void UIToolsModel::setToolsClass(UIToolsClass enmClass)
     }
 }
 
-UIToolsClass UIToolsModel::toolsClass() const
+UIToolClass UIToolsModel::toolsClass() const
 {
     return m_enmCurrentClass;
 }
 
-void UIToolsModel::setToolsType(UIToolsType enmType)
+void UIToolsModel::setToolsType(UIToolType enmType)
 {
     /* Update linked values: */
     if (currentItem()->itemType() != enmType)
@@ -149,12 +149,12 @@ void UIToolsModel::setToolsType(UIToolsType enmType)
     }
 }
 
-UIToolsType UIToolsModel::toolsType() const
+UIToolType UIToolsModel::toolsType() const
 {
     return currentItem()->itemType();
 }
 
-void UIToolsModel::setToolsEnabled(UIToolsClass enmClass, bool fEnabled)
+void UIToolsModel::setToolsEnabled(UIToolClass enmClass, bool fEnabled)
 {
     /* Update linked values: */
     m_statesToolsEnabled[enmClass] = fEnabled;
@@ -163,7 +163,7 @@ void UIToolsModel::setToolsEnabled(UIToolsClass enmClass, bool fEnabled)
             pItem->setEnabled(m_statesToolsEnabled.value(enmClass));
 }
 
-bool UIToolsModel::areToolsEnabled(UIToolsClass enmClass) const
+bool UIToolsModel::areToolsEnabled(UIToolClass enmClass) const
 {
     return m_statesToolsEnabled.value(enmClass);
 }
@@ -191,8 +191,8 @@ void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
             m_pCurrentItem = pItem;
             switch (m_pCurrentItem->itemClass())
             {
-                case UIToolsClass_Global:  m_pLastItemGlobal  = m_pCurrentItem; break;
-                case UIToolsClass_Machine: m_pLastItemMachine = m_pCurrentItem; break;
+                case UIToolClass_Global:  m_pLastItemGlobal  = m_pCurrentItem; break;
+                case UIToolClass_Machine: m_pLastItemMachine = m_pCurrentItem; break;
                 default: break;
             }
         }
@@ -295,7 +295,7 @@ void UIToolsModel::updateNavigation()
             m_navigationList << pItem;
 
     /* Choose last selected item of current class: */
-    UIToolsItem *pLastSelectedItem = m_enmCurrentClass == UIToolsClass_Global
+    UIToolsItem *pLastSelectedItem = m_enmCurrentClass == UIToolClass_Global
                                    ? m_pLastItemGlobal : m_pLastItemMachine;
     if (navigationList().contains(pLastSelectedItem))
         setCurrentItem(pLastSelectedItem);
@@ -437,28 +437,28 @@ void UIToolsModel::prepareScene()
 void UIToolsModel::prepareItems()
 {
     /* Enable all classes of tools initially: */
-    m_statesToolsEnabled[UIToolsClass_Global] = true;
-    m_statesToolsEnabled[UIToolsClass_Machine] = true;
+    m_statesToolsEnabled[UIToolClass_Global] = true;
+    m_statesToolsEnabled[UIToolClass_Machine] = true;
 
     /* Prepare classes: */
-    QList<UIToolsClass> classes;
-    classes << UIToolsClass_Global;
-    classes << UIToolsClass_Global;
-    classes << UIToolsClass_Global;
-    classes << UIToolsClass_Global;
-    classes << UIToolsClass_Machine;
-    classes << UIToolsClass_Machine;
-    classes << UIToolsClass_Machine;
+    QList<UIToolClass> classes;
+    classes << UIToolClass_Global;
+    classes << UIToolClass_Global;
+    classes << UIToolClass_Global;
+    classes << UIToolClass_Global;
+    classes << UIToolClass_Machine;
+    classes << UIToolClass_Machine;
+    classes << UIToolClass_Machine;
 
     /* Prepare types: */
-    QList<UIToolsType> types;
-    types << UIToolsType_Welcome;
-    types << UIToolsType_Media;
-    types << UIToolsType_Network;
-    types << UIToolsType_Cloud;
-    types << UIToolsType_Details;
-    types << UIToolsType_Snapshots;
-    types << UIToolsType_Logs;
+    QList<UIToolType> types;
+    types << UIToolType_Welcome;
+    types << UIToolType_Media;
+    types << UIToolType_Network;
+    types << UIToolType_Cloud;
+    types << UIToolType_Details;
+    types << UIToolType_Snapshots;
+    types << UIToolType_Logs;
 
     /* Prepare icons: */
     QList<QIcon> icons;
@@ -515,18 +515,18 @@ void UIToolsModel::loadLastSelectedItems()
     const QStringList values = strData.split(",");
 
     /* First of them is current global class item definition: */
-    UIToolsType enmTypeGlobal = typeFromString(values.value(0));
-    if (!isTypeOfClass(enmTypeGlobal, UIToolsClass_Global))
-        enmTypeGlobal = UIToolsType_Welcome;
+    UIToolType enmTypeGlobal = typeFromString(values.value(0));
+    if (!isTypeOfClass(enmTypeGlobal, UIToolClass_Global))
+        enmTypeGlobal = UIToolType_Welcome;
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeGlobal)
             m_pLastItemGlobal = pItem;
     AssertPtr(m_pLastItemGlobal.data());
 
     /* Second of them is current machine class item definition: */
-    UIToolsType enmTypeMachine = typeFromString(values.value(1));
-    if (!isTypeOfClass(enmTypeMachine, UIToolsClass_Machine))
-        enmTypeMachine = UIToolsType_Details;
+    UIToolType enmTypeMachine = typeFromString(values.value(1));
+    if (!isTypeOfClass(enmTypeMachine, UIToolClass_Machine))
+        enmTypeMachine = UIToolType_Details;
     foreach (UIToolsItem *pItem, items())
         if (pItem->itemType() == enmTypeMachine)
             m_pLastItemMachine = pItem;
@@ -591,65 +591,65 @@ QVariant UIToolsModel::data(int iKey) const
 }
 
 /* static */
-QString UIToolsModel::typeToString(UIToolsType enmType)
+QString UIToolsModel::typeToString(UIToolType enmType)
 {
-    QMap<UIToolsType, QString> values;
+    QMap<UIToolType, QString> values;
     /* Global classes: */
-    values[UIToolsType_Welcome]   = "Welcome";
-    values[UIToolsType_Media]     = "Media";
-    values[UIToolsType_Network]   = "Network";
-    values[UIToolsType_Cloud]     = "Cloud";
+    values[UIToolType_Welcome]   = "Welcome";
+    values[UIToolType_Media]     = "Media";
+    values[UIToolType_Network]   = "Network";
+    values[UIToolType_Cloud]     = "Cloud";
     /* Machine classes: */
-    values[UIToolsType_Details]   = "Details";
-    values[UIToolsType_Snapshots] = "Snapshots";
-    values[UIToolsType_Logs]      = "Logs";
+    values[UIToolType_Details]   = "Details";
+    values[UIToolType_Snapshots] = "Snapshots";
+    values[UIToolType_Logs]      = "Logs";
     /* Return value, null-string by default: */
     return values.value(enmType, QString());
 }
 
 /* static */
-UIToolsType UIToolsModel::typeFromString(const QString &strType)
+UIToolType UIToolsModel::typeFromString(const QString &strType)
 {
-    QMap<QString, UIToolsType> values;
+    QMap<QString, UIToolType> values;
     /* Global classes: */
-    values["Welcome"]   = UIToolsType_Welcome;
-    values["Media"]     = UIToolsType_Media;
-    values["Network"]   = UIToolsType_Network;
-    values["Cloud"]     = UIToolsType_Cloud;
+    values["Welcome"]   = UIToolType_Welcome;
+    values["Media"]     = UIToolType_Media;
+    values["Network"]   = UIToolType_Network;
+    values["Cloud"]     = UIToolType_Cloud;
     /* Machine classes: */
-    values["Details"]   = UIToolsType_Details;
-    values["Snapshots"] = UIToolsType_Snapshots;
-    values["Logs"]      = UIToolsType_Logs;
-    /* Return value, UIToolsType_Invalid by default: */
-    return values.value(strType, UIToolsType_Invalid);
+    values["Details"]   = UIToolType_Details;
+    values["Snapshots"] = UIToolType_Snapshots;
+    values["Logs"]      = UIToolType_Logs;
+    /* Return value, UIToolType_Invalid by default: */
+    return values.value(strType, UIToolType_Invalid);
 }
 
 /* static */
-bool UIToolsModel::isTypeOfClass(UIToolsType enmType, UIToolsClass enmClass)
+bool UIToolsModel::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
 {
     switch (enmClass)
     {
-        case UIToolsClass_Global:
+        case UIToolClass_Global:
         {
             switch (enmType)
             {
-                case UIToolsType_Welcome:
-                case UIToolsType_Media:
-                case UIToolsType_Network:
-                case UIToolsType_Cloud:
+                case UIToolType_Welcome:
+                case UIToolType_Media:
+                case UIToolType_Network:
+                case UIToolType_Cloud:
                     return true;
                 default:
                     break;
             }
             break;
         }
-        case UIToolsClass_Machine:
+        case UIToolClass_Machine:
         {
             switch (enmType)
             {
-                case UIToolsType_Details:
-                case UIToolsType_Snapshots:
-                case UIToolsType_Logs:
+                case UIToolType_Details:
+                case UIToolType_Snapshots:
+                case UIToolType_Logs:
                     return true;
                 default:
                     break;

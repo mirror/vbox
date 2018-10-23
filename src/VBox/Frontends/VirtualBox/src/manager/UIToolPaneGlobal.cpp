@@ -59,26 +59,26 @@ UIToolPaneGlobal::~UIToolPaneGlobal()
     cleanup();
 }
 
-ToolTypeGlobal UIToolPaneGlobal::currentTool() const
+UIToolType UIToolPaneGlobal::currentTool() const
 {
-    return m_pLayout->currentWidget()->property("ToolType").value<ToolTypeGlobal>();
+    return m_pLayout->currentWidget()->property("ToolType").value<UIToolType>();
 }
 
-bool UIToolPaneGlobal::isToolOpened(ToolTypeGlobal enmType) const
+bool UIToolPaneGlobal::isToolOpened(UIToolType enmType) const
 {
     /* Search through the stacked widgets: */
     for (int iIndex = 0; iIndex < m_pLayout->count(); ++iIndex)
-        if (m_pLayout->widget(iIndex)->property("ToolType").value<ToolTypeGlobal>() == enmType)
+        if (m_pLayout->widget(iIndex)->property("ToolType").value<UIToolType>() == enmType)
             return true;
     return false;
 }
 
-void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
+void UIToolPaneGlobal::openTool(UIToolType enmType)
 {
     /* Search through the stacked widgets: */
     int iActualIndex = -1;
     for (int iIndex = 0; iIndex < m_pLayout->count(); ++iIndex)
-        if (m_pLayout->widget(iIndex)->property("ToolType").value<ToolTypeGlobal>() == enmType)
+        if (m_pLayout->widget(iIndex)->property("ToolType").value<UIToolType>() == enmType)
             iActualIndex = iIndex;
 
     /* If widget with such type exists: */
@@ -93,14 +93,14 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
         /* Create, remember, append corresponding stacked widget: */
         switch (enmType)
         {
-            case ToolTypeGlobal_Welcome:
+            case UIToolType_Welcome:
             {
                 /* Create Desktop pane: */
                 m_pPaneWelcome = new UIWelcomePane;
                 if (m_pPaneWelcome)
                 {
                     /* Configure pane: */
-                    m_pPaneWelcome->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Welcome));
+                    m_pPaneWelcome->setProperty("ToolType", QVariant::fromValue(UIToolType_Welcome));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneWelcome);
@@ -108,7 +108,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 }
                 break;
             }
-            case ToolTypeGlobal_Media:
+            case UIToolType_Media:
             {
                 /* Create Virtual Media Manager: */
                 m_pPaneMedia = new UIMediumManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -120,7 +120,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneMedia->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Media));
+                    m_pPaneMedia->setProperty("ToolType", QVariant::fromValue(UIToolType_Media));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneMedia);
@@ -128,7 +128,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 }
                 break;
             }
-            case ToolTypeGlobal_Network:
+            case UIToolType_Network:
             {
                 /* Create Host Network Manager: */
                 m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -140,7 +140,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneNetwork->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Network));
+                    m_pPaneNetwork->setProperty("ToolType", QVariant::fromValue(UIToolType_Network));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneNetwork);
@@ -148,7 +148,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
                 }
                 break;
             }
-            case ToolTypeGlobal_Cloud:
+            case UIToolType_Cloud:
             {
                 /* Create Cloud Profile Manager: */
                 m_pPaneCloud = new UICloudProfileManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -160,7 +160,7 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneCloud->setProperty("ToolType", QVariant::fromValue(ToolTypeGlobal_Cloud));
+                    m_pPaneCloud->setProperty("ToolType", QVariant::fromValue(UIToolType_Cloud));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneCloud);
@@ -174,12 +174,12 @@ void UIToolPaneGlobal::openTool(ToolTypeGlobal enmType)
     }
 }
 
-void UIToolPaneGlobal::closeTool(ToolTypeGlobal enmType)
+void UIToolPaneGlobal::closeTool(UIToolType enmType)
 {
     /* Search through the stacked widgets: */
     int iActualIndex = -1;
     for (int iIndex = 0; iIndex < m_pLayout->count(); ++iIndex)
-        if (m_pLayout->widget(iIndex)->property("ToolType").value<ToolTypeGlobal>() == enmType)
+        if (m_pLayout->widget(iIndex)->property("ToolType").value<UIToolType>() == enmType)
             iActualIndex = iIndex;
 
     /* If widget with such type doesn't exist: */
@@ -188,10 +188,10 @@ void UIToolPaneGlobal::closeTool(ToolTypeGlobal enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case ToolTypeGlobal_Welcome: m_pPaneWelcome = 0; break;
-            case ToolTypeGlobal_Media:   m_pPaneMedia = 0; break;
-            case ToolTypeGlobal_Network: m_pPaneNetwork = 0; break;
-            case ToolTypeGlobal_Cloud:   m_pPaneCloud = 0; break;
+            case UIToolType_Welcome: m_pPaneWelcome = 0; break;
+            case UIToolType_Media:   m_pPaneMedia = 0; break;
+            case UIToolType_Network: m_pPaneNetwork = 0; break;
+            case UIToolType_Cloud:   m_pPaneCloud = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -207,7 +207,7 @@ void UIToolPaneGlobal::prepare()
     m_pLayout = new QStackedLayout(this);
 
     /* Create desktop pane: */
-    openTool(ToolTypeGlobal_Welcome);
+    openTool(UIToolType_Welcome);
 }
 
 void UIToolPaneGlobal::cleanup()

@@ -103,47 +103,46 @@ bool UIVirtualBoxManagerWidget::isSingleGroupSelected() const
     return m_pPaneChooser->isSingleGroupSelected();
 }
 
-void UIVirtualBoxManagerWidget::setToolsType(UIToolsType enmType)
+void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)
 {
     m_pPaneTools->setToolsType(enmType);
 }
 
-UIToolsType UIVirtualBoxManagerWidget::toolsType() const
+UIToolType UIVirtualBoxManagerWidget::toolsType() const
 {
     return m_pPaneTools->toolsType();
 }
 
-ToolTypeMachine UIVirtualBoxManagerWidget::currentMachineTool() const
+UIToolType UIVirtualBoxManagerWidget::currentMachineTool() const
 {
     return m_pPaneToolsMachine->currentTool();
 }
 
-ToolTypeGlobal UIVirtualBoxManagerWidget::currentGlobalTool() const
+UIToolType UIVirtualBoxManagerWidget::currentGlobalTool() const
 {
     return m_pPaneToolsGlobal->currentTool();
 }
 
-bool UIVirtualBoxManagerWidget::isToolOpened(ToolTypeMachine enmType) const
+bool UIVirtualBoxManagerWidget::isMachineToolOpened(UIToolType enmType) const
 {
     return m_pPaneToolsMachine ? m_pPaneToolsMachine->isToolOpened(enmType) : false;
 }
 
-bool UIVirtualBoxManagerWidget::isToolOpened(ToolTypeGlobal enmType) const
+bool UIVirtualBoxManagerWidget::isGlobalToolOpened(UIToolType enmType) const
 {
     return m_pPaneToolsGlobal ? m_pPaneToolsGlobal->isToolOpened(enmType) : false;
 }
 
-void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
+void UIVirtualBoxManagerWidget::switchToMachineTool(UIToolType enmType)
 {
     /* Open corresponding tool: */
     m_pPaneToolsMachine->openTool(enmType);
 
     /* If that was 'Details' => pass there current items: */
-    if (   enmType == ToolTypeMachine_Details
-        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+    if (enmType == UIToolType_Details)
         m_pPaneToolsMachine->setItems(currentItems());
     /* If that was 'Snapshot' or 'LogViewer' => pass there current or null machine: */
-    if (enmType == ToolTypeMachine_Snapshots || enmType == ToolTypeMachine_Logs)
+    if (enmType == UIToolType_Snapshots || enmType == UIToolType_Logs)
     {
         UIVirtualMachineItem *pItem = currentItem();
         m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
@@ -156,7 +155,7 @@ void UIVirtualBoxManagerWidget::switchToTool(ToolTypeMachine enmType)
     updateToolbar();
 }
 
-void UIVirtualBoxManagerWidget::switchToTool(ToolTypeGlobal enmType)
+void UIVirtualBoxManagerWidget::switchToGlobalTool(UIToolType enmType)
 {
     /* Open corresponding tool: */
     m_pPaneToolsGlobal->openTool(enmType);
@@ -168,12 +167,12 @@ void UIVirtualBoxManagerWidget::switchToTool(ToolTypeGlobal enmType)
     updateToolbar();
 }
 
-void UIVirtualBoxManagerWidget::closeTool(ToolTypeMachine enmType)
+void UIVirtualBoxManagerWidget::closeMachineTool(UIToolType enmType)
 {
     m_pPaneToolsMachine->closeTool(enmType);
 }
 
-void UIVirtualBoxManagerWidget::closeTool(ToolTypeGlobal enmType)
+void UIVirtualBoxManagerWidget::closeGlobalTool(UIToolType enmType)
 {
     m_pPaneToolsGlobal->closeTool(enmType);
 }
@@ -268,18 +267,17 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
         m_pPaneToolsMachine->setCurrentItem(pItem);
 
         /* Update Machine Tools availability: */
-        m_pPaneTools->setToolsEnabled(UIToolsClass_Machine, pItem && pItem->accessible());
+        m_pPaneTools->setToolsEnabled(UIToolClass_Machine, pItem && pItem->accessible());
 
         /* If current item exists & accessible: */
         if (pItem && pItem->accessible())
         {
             /* If Error pane is chosen currently => open tool currently chosen in Tools-pane: */
-            if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Error)
+            if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
                 sltHandleToolsPaneIndexChange();
 
             /* Update Details-pane (if requested): */
-            if (   fUpdateDetails
-                && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+            if (fUpdateDetails)
                 m_pPaneToolsMachine->setItems(currentItems());
             /* Update the Snapshots-pane or/and Logviewer-pane (if requested): */
             if (fUpdateSnapshots || fUpdateLogViewer)
@@ -288,7 +286,7 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
         else
         {
             /* Make sure Error pane raised: */
-            m_pPaneToolsMachine->openTool(ToolTypeMachine_Error);
+            m_pPaneToolsMachine->openTool(UIToolType_Error);
 
             /* Note that the machine becomes inaccessible (or if the last VM gets
              * deleted), we have to update all fields, ignoring input arguments. */
@@ -299,8 +297,7 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
             }
 
             /* Update Details-pane (in any case): */
-            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-                m_pPaneToolsMachine->setItems(currentItems());
+            m_pPaneToolsMachine->setItems(currentItems());
             /* Update Snapshots-pane and Logviewer-pane (in any case): */
             m_pPaneToolsMachine->setMachine(CMachine());
         }
@@ -314,13 +311,13 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     {
         case SlidingDirection_Forward:
         {
-            m_pPaneTools->setToolsClass(UIToolsClass_Machine);
+            m_pPaneTools->setToolsClass(UIToolClass_Machine);
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
             break;
         }
         case SlidingDirection_Reverse:
         {
-            m_pPaneTools->setToolsClass(UIToolsClass_Global);
+            m_pPaneTools->setToolsClass(UIToolClass_Global);
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal);
             break;
         }
@@ -329,7 +326,7 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     sltHandleChooserPaneIndexChangeDefault();
 }
 
-void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolsClass enmClass, const QPoint &position)
+void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position)
 {
     /* Define current tools class: */
     m_pPaneTools->setToolsClass(enmClass);
@@ -347,43 +344,20 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
 {
     switch (m_pPaneTools->toolsClass())
     {
-        case UIToolsClass_Global:
+        case UIToolClass_Global:
         {
-            ToolTypeGlobal enmType = ToolTypeGlobal_Invalid;
-            if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Global))
-                enmType = ToolTypeGlobal_Welcome;
-            else
-            {
-                switch (m_pPaneTools->toolsType())
-                {
-                    case UIToolsType_Welcome: enmType = ToolTypeGlobal_Welcome; break;
-                    case UIToolsType_Media:   enmType = ToolTypeGlobal_Media; break;
-                    case UIToolsType_Network: enmType = ToolTypeGlobal_Network; break;
-                    case UIToolsType_Cloud:   enmType = ToolTypeGlobal_Cloud; break;
-                    default: break;
-                }
-            }
-            if (enmType != ToolTypeGlobal_Invalid)
-                switchToTool(enmType);
+            const UIToolType enmType = m_pPaneTools->areToolsEnabled(UIToolClass_Global)
+                                     ? m_pPaneTools->toolsType()
+                                     : UIToolType_Welcome;
+            switchToGlobalTool(enmType);
             break;
         }
-        case UIToolsClass_Machine:
+        case UIToolClass_Machine:
         {
-            ToolTypeMachine enmType = ToolTypeMachine_Invalid;
-            if (!m_pPaneTools->areToolsEnabled(UIToolsClass_Machine))
-                enmType = ToolTypeMachine_Details;
-            else
-            {
-                switch (m_pPaneTools->toolsType())
-                {
-                    case UIToolsType_Details:   enmType = ToolTypeMachine_Details; break;
-                    case UIToolsType_Snapshots: enmType = ToolTypeMachine_Snapshots; break;
-                    case UIToolsType_Logs:      enmType = ToolTypeMachine_Logs; break;
-                    default: break;
-                }
-            }
-            if (enmType != ToolTypeMachine_Invalid)
-                switchToTool(enmType);
+            const UIToolType enmType = m_pPaneTools->areToolsEnabled(UIToolClass_Machine)
+                                     ? m_pPaneTools->toolsType()
+                                     : UIToolType_Details;
+            switchToMachineTool(enmType);
             break;
         }
         default:
@@ -539,9 +513,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
         {
             /* Choose which pane should be active initially: */
             if (m_pPaneChooser->isGlobalItemSelected())
-                m_pPaneTools->setToolsClass(UIToolsClass_Global);
+                m_pPaneTools->setToolsClass(UIToolClass_Global);
             else
-                m_pPaneTools->setToolsClass(UIToolsClass_Machine);
+                m_pPaneTools->setToolsClass(UIToolClass_Machine);
         }
     }
 
@@ -623,11 +597,11 @@ void UIVirtualBoxManagerWidget::updateToolbar()
     switch (m_pPaneTools->toolsClass())
     {
         /* Global toolbar: */
-        case UIToolsClass_Global:
+        case UIToolClass_Global:
         {
             switch (currentGlobalTool())
             {
-                case ToolTypeGlobal_Welcome:
+                case UIToolType_Welcome:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
                     m_pToolBar->addSeparator();
@@ -638,7 +612,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_Add));
                     break;
                 }
-                case ToolTypeGlobal_Media:
+                case UIToolType_Media:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
                     m_pToolBar->addSeparator();
@@ -651,7 +625,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Refresh));
                     break;
                 }
-                case ToolTypeGlobal_Network:
+                case UIToolType_Network:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Create));
                     m_pToolBar->addSeparator();
@@ -660,7 +634,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     //m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Network_S_Refresh));
                     break;
                 }
-                case ToolTypeGlobal_Cloud:
+                case UIToolType_Cloud:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Add));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Import));
@@ -677,11 +651,11 @@ void UIVirtualBoxManagerWidget::updateToolbar()
             break;
         }
         /* Machine toolbar: */
-        case UIToolsClass_Machine:
+        case UIToolClass_Machine:
         {
             switch (currentMachineTool())
             {
-                case ToolTypeMachine_Details:
+                case UIToolType_Details:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
@@ -689,7 +663,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
                     break;
                 }
-                case ToolTypeMachine_Snapshots:
+                case UIToolType_Snapshots:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
@@ -703,7 +677,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
                     break;
                 }
-                case ToolTypeMachine_Logs:
+                case UIToolType_Logs:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));

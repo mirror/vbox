@@ -62,26 +62,26 @@ UIToolPaneMachine::~UIToolPaneMachine()
     cleanup();
 }
 
-ToolTypeMachine UIToolPaneMachine::currentTool() const
+UIToolType UIToolPaneMachine::currentTool() const
 {
-    return m_pLayout->currentWidget()->property("ToolType").value<ToolTypeMachine>();
+    return m_pLayout->currentWidget()->property("ToolType").value<UIToolType>();
 }
 
-bool UIToolPaneMachine::isToolOpened(ToolTypeMachine enmType) const
+bool UIToolPaneMachine::isToolOpened(UIToolType enmType) const
 {
     /* Search through the stacked widgets: */
     for (int iIndex = 0; iIndex < m_pLayout->count(); ++iIndex)
-        if (m_pLayout->widget(iIndex)->property("ToolType").value<ToolTypeMachine>() == enmType)
+        if (m_pLayout->widget(iIndex)->property("ToolType").value<UIToolType>() == enmType)
             return true;
     return false;
 }
 
-void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
+void UIToolPaneMachine::openTool(UIToolType enmType)
 {
     /* Search through the stacked widgets: */
     int iActualIndex = -1;
     for (int iIndex = 0; iIndex < m_pLayout->count(); ++iIndex)
-        if (m_pLayout->widget(iIndex)->property("ToolType").value<ToolTypeMachine>() == enmType)
+        if (m_pLayout->widget(iIndex)->property("ToolType").value<UIToolType>() == enmType)
             iActualIndex = iIndex;
 
     /* If widget with such type exists: */
@@ -96,14 +96,14 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
         /* Create, remember, append corresponding stacked widget: */
         switch (enmType)
         {
-            case ToolTypeMachine_Error:
+            case UIToolType_Error:
             {
                 /* Create Desktop pane: */
                 m_pPaneError = new UIErrorPane(m_pActionPool->action(UIActionIndexST_M_Group_S_Refresh));
                 if (m_pPaneError)
                 {
                     /* Configure pane: */
-                    m_pPaneError->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Error));
+                    m_pPaneError->setProperty("ToolType", QVariant::fromValue(UIToolType_Error));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneError);
@@ -111,14 +111,14 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
                 }
                 break;
             }
-            case ToolTypeMachine_Details:
+            case UIToolType_Details:
             {
                 /* Create Details pane: */
                 m_pPaneDetails = new UIDetails;
                 AssertPtrReturnVoid(m_pPaneDetails);
                 {
                     /* Configure pane: */
-                    m_pPaneDetails->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Details));
+                    m_pPaneDetails->setProperty("ToolType", QVariant::fromValue(UIToolType_Details));
                     connect(this, &UIToolPaneMachine::sigSlidingStarted, m_pPaneDetails, &UIDetails::sigSlidingStarted);
                     connect(this, &UIToolPaneMachine::sigToggleStarted,  m_pPaneDetails, &UIDetails::sigToggleStarted);
                     connect(this, &UIToolPaneMachine::sigToggleFinished, m_pPaneDetails, &UIDetails::sigToggleFinished);
@@ -130,7 +130,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
                 }
                 break;
             }
-            case ToolTypeMachine_Snapshots:
+            case UIToolType_Snapshots:
             {
                 /* Create Snapshots pane: */
                 m_pPaneSnapshots = new UISnapshotPane(m_pActionPool, false /* show toolbar? */);
@@ -142,7 +142,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneSnapshots->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Snapshots));
+                    m_pPaneSnapshots->setProperty("ToolType", QVariant::fromValue(UIToolType_Snapshots));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneSnapshots);
@@ -150,7 +150,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
                 }
                 break;
             }
-            case ToolTypeMachine_Logs:
+            case UIToolType_Logs:
             {
                 /* Create the Logviewer pane: */
                 m_pPaneLogViewer = new UIVMLogViewerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -162,7 +162,7 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(ToolTypeMachine_Logs));
+                    m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(UIToolType_Logs));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneLogViewer);
@@ -176,12 +176,12 @@ void UIToolPaneMachine::openTool(ToolTypeMachine enmType)
     }
 }
 
-void UIToolPaneMachine::closeTool(ToolTypeMachine enmType)
+void UIToolPaneMachine::closeTool(UIToolType enmType)
 {
     /* Search through the stacked widgets: */
     int iActualIndex = -1;
     for (int iIndex = 0; iIndex < m_pLayout->count(); ++iIndex)
-        if (m_pLayout->widget(iIndex)->property("ToolType").value<ToolTypeMachine>() == enmType)
+        if (m_pLayout->widget(iIndex)->property("ToolType").value<UIToolType>() == enmType)
             iActualIndex = iIndex;
 
     /* If widget with such type doesn't exist: */
@@ -190,10 +190,10 @@ void UIToolPaneMachine::closeTool(ToolTypeMachine enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case ToolTypeMachine_Error:     m_pPaneError = 0; break;
-            case ToolTypeMachine_Details:   m_pPaneDetails = 0; break;
-            case ToolTypeMachine_Snapshots: m_pPaneSnapshots = 0; break;
-            case ToolTypeMachine_Logs:      m_pPaneLogViewer = 0; break;
+            case UIToolType_Error:     m_pPaneError = 0; break;
+            case UIToolType_Details:   m_pPaneDetails = 0; break;
+            case UIToolType_Snapshots: m_pPaneSnapshots = 0; break;
+            case UIToolType_Logs:      m_pPaneLogViewer = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -221,21 +221,24 @@ void UIToolPaneMachine::setCurrentItem(UIVirtualMachineItem *pItem)
 
 void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
 {
-    /* Update details pane: */
-    AssertPtrReturnVoid(m_pPaneDetails);
-    m_pPaneDetails->setItems(items);
+    /* Update details pane is it is open: */
+    if (isToolOpened(UIToolType_Details))
+    {
+        AssertPtrReturnVoid(m_pPaneDetails);
+        m_pPaneDetails->setItems(items);
+    }
 }
 
 void UIToolPaneMachine::setMachine(const CMachine &comMachine)
 {
     /* Update snapshots pane is it is open: */
-    if (isToolOpened(ToolTypeMachine_Snapshots))
+    if (isToolOpened(UIToolType_Snapshots))
     {
         AssertPtrReturnVoid(m_pPaneSnapshots);
         m_pPaneSnapshots->setMachine(comMachine);
     }
     /* Update logviewer pane is it is open: */
-    if (isToolOpened(ToolTypeMachine_Logs))
+    if (isToolOpened(UIToolType_Logs))
     {
         AssertPtrReturnVoid(m_pPaneLogViewer);
         m_pPaneLogViewer->setMachine(comMachine);
@@ -248,7 +251,7 @@ void UIToolPaneMachine::prepare()
     m_pLayout = new QStackedLayout(this);
 
     /* Create Details pane: */
-    openTool(ToolTypeMachine_Details);
+    openTool(UIToolType_Details);
 }
 
 void UIToolPaneMachine::cleanup()

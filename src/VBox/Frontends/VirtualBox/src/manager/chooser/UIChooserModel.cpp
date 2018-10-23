@@ -157,11 +157,11 @@ void UIChooserModel::handleToolButtonClick(UIChooserItem *pItem)
     switch (pItem->type())
     {
         case UIChooserItemType_Global:
-            emit sigToolMenuRequested(UIToolsClass_Global, pItem->geometry().topRight().toPoint());
+            emit sigToolMenuRequested(UIToolClass_Global, pItem->geometry().topRight().toPoint());
             break;
         case UIChooserItemType_Group:
         case UIChooserItemType_Machine:
-            emit sigToolMenuRequested(UIToolsClass_Machine, pItem->geometry().topRight().toPoint());
+            emit sigToolMenuRequested(UIToolClass_Machine, pItem->geometry().topRight().toPoint());
             break;
         default:
             break;

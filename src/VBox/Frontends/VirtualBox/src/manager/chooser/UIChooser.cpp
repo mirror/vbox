@@ -100,7 +100,7 @@ void UIChooser::sltHandleToolbarResize(const QSize &newSize)
     model()->setGlobalItemHeightHint(newSize.height());
 }
 
-void UIChooser::sltToolMenuRequested(UIToolsClass enmClass, const QPoint &position)
+void UIChooser::sltToolMenuRequested(UIToolClass enmClass, const QPoint &position)
 {
     /* Translate scene coordinates to global one: */
     emit sigToolMenuRequested(enmClass, mapToGlobal(view()->mapFromScene(position)));
