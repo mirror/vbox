@@ -37,6 +37,7 @@
 
 #include "VideoRec.h"
 #include "VideoRecStream.h"
+#include "WebMWriter.h"
 
 
 /**

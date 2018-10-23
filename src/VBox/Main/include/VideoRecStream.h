@@ -18,13 +18,18 @@
 #ifndef ____H_VIDEOREC_STREAM
 #define ____H_VIDEOREC_STREAM
 
+#include <map>
+#include <vector>
+
+#include <iprt/critsect.h>
+
 #include <VBox/com/array.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/err.h>
 
-#include "WebMWriter.h"
 #include "VideoRecInternals.h"
 
+class WebMWriter;
 
 struct VIDEORECCFG;
 typedef struct VIDEORECCFG *PVIDEORECCFG;

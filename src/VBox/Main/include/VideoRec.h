@@ -19,6 +19,7 @@
 #define ____H_VIDEOREC
 
 #include <VBox/com/array.h>
+#include <VBox/com/string.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/err.h>
 
