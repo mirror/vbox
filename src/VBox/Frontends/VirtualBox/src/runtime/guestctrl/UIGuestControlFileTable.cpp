@@ -80,7 +80,6 @@ signals:
     void sigCopy();
     void sigPaste();
     void sigShowProperties();
-
     void sigSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
 
 public:
@@ -92,11 +91,12 @@ protected:
 
     virtual void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) /*override */;
     void contextMenuEvent(QContextMenuEvent *pEvent);
+    //void keyPressEvent(QKeyEvent * pEvent);
 
 private:
 
     void configure();
-
+    QWidget *m_pParent;
 };
 
 
@@ -303,8 +303,9 @@ const QChar UIPathOperations::dosDelimiter = QChar('\\');
 *   UIGuestControlFileView implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIGuestControlFileView::UIGuestControlFileView(QWidget * parent)
+UIGuestControlFileView::UIGuestControlFileView(QWidget *parent)
     :QTableView(parent)
+    , m_pParent(parent)
 {
     configure();
 }
@@ -318,6 +319,7 @@ void UIGuestControlFileView::configure()
     /* Minimize the row height: */
     verticalHeader()->setDefaultSectionSize(verticalHeader()->minimumSectionSize());
     setAlternatingRowColors(true);
+    installEventFilter(m_pParent);
 }
 
 void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
@@ -346,7 +348,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
     QAction *pActionRefresh = menu->addAction(UIVMInformationDialog::tr("Refresh"));
     if (pActionRefresh)
     {
-        pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24.png")));
+        pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24px.png")));
         connect(pActionRefresh, &QAction::triggered, this, &UIGuestControlFileView::sigRefresh);
     }
 
@@ -833,18 +835,19 @@ void UIGuestControlFileTable::prepareObjects()
         return;
     m_pProxyModel->setSourceModel(m_pModel);
 
-    m_pView = new UIGuestControlFileView;
+    m_pView = new UIGuestControlFileView(this);
     if (m_pView)
     {
         m_pMainLayout->addWidget(m_pView, 2, 0, 5, 5);
         m_pView->setModel(m_pProxyModel);
-        //m_pView->setModel(m_pModel);
         m_pView->setItemDelegate(new UIFileDelegate);
         m_pView->setSortingEnabled(true);
         m_pView->sortByColumn(0, Qt::AscendingOrder);
 
         connect(m_pView, &UIGuestControlFileView::doubleClicked,
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);
+        connect(m_pView, &UIGuestControlFileView::clicked,
+                this, &UIGuestControlFileTable::sltItemClicked);
         connect(m_pView, &UIGuestControlFileView::sigGoUp,
                 this, &UIGuestControlFileTable::sltGoUp);
         connect(m_pView, &UIGuestControlFileView::sigGoHome,
@@ -868,6 +871,15 @@ void UIGuestControlFileTable::prepareObjects()
         connect(m_pView, &UIGuestControlFileView::sigSelectionChanged,
                 this, &UIGuestControlFileTable::sltSelectionChanged);
 
+    }
+    m_pSearchLineEdit = new QILineEdit;
+    if (m_pSearchLineEdit)
+    {
+        m_pMainLayout->addWidget(m_pSearchLineEdit, 8, 0, 1, 5);
+        m_pSearchLineEdit->hide();
+        m_pSearchLineEdit->setClearButtonEnabled(true);
+        connect(m_pSearchLineEdit, &QLineEdit::textChanged,
+                this, &UIGuestControlFileTable::sltSearchTextChanged);
     }
 }
 
@@ -896,7 +908,7 @@ void UIGuestControlFileTable::prepareActions()
     if (m_pRefresh)
     {
         connect(m_pRefresh, &QAction::triggered, this, &UIGuestControlFileTable::sltRefresh);
-        m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24.png")));
+        m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24px.png")));
         m_pToolBar->addAction(m_pRefresh);
     }
 
@@ -1097,6 +1109,12 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
         return;
     QModelIndex nIndex = m_pProxyModel ? m_pProxyModel->mapToSource(index) : index;
     goIntoDirectory(nIndex);
+}
+
+void UIGuestControlFileTable::sltItemClicked(const QModelIndex &index)
+{
+    Q_UNUSED(index);
+    disableSelectionSearch();
 }
 
 void UIGuestControlFileTable::sltGoUp()
@@ -1341,6 +1359,11 @@ void UIGuestControlFileTable::sltInvertSelection()
     deSelectUpDirectoryItem();
 }
 
+void UIGuestControlFileTable::sltSearchTextChanged(const QString &strText)
+{
+    performSelectionSearch(strText);
+}
+
 void UIGuestControlFileTable::deSelectUpDirectoryItem()
 {
     if (!m_pView)
@@ -1387,6 +1410,17 @@ void UIGuestControlFileTable::setSelectionForAll(QItemSelectionModel::SelectionF
         QModelIndex indexToSelect = m_pProxyModel ? m_pProxyModel->mapFromSource(index) : index;
         pSelectionModel->select(indexToSelect, flags);
     }
+}
+
+void UIGuestControlFileTable::setSelection(const QModelIndex &indexInProxyModel)
+{
+    if (!m_pView)
+        return;
+    QItemSelectionModel *selectionModel =  m_pView->selectionModel();
+    if (!selectionModel)
+        return;
+    selectionModel->select(indexInProxyModel, QItemSelectionModel::Current | QItemSelectionModel::Rows | QItemSelectionModel::Select);
+    m_pView->scrollTo(indexInProxyModel, QAbstractItemView::EnsureVisible);
 }
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
@@ -1485,34 +1519,52 @@ void UIGuestControlFileTable::retranslateUi()
     }
 }
 
-
-void UIGuestControlFileTable::keyPressEvent(QKeyEvent * pEvent)
+bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
 {
-    /* Browse into directory with enter: */
-    if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)
+    if (pEvent->type() == QEvent::KeyPress)
     {
-        if (m_pView && m_pModel)
+        QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
+        if (pKeyEvent)
         {
-            /* Get the selected item. If there are 0 or more than 1 selection do nothing: */
-            QItemSelectionModel *selectionModel =  m_pView->selectionModel();
-            if (selectionModel)
+            if (pKeyEvent->key() == Qt::Key_Enter || pKeyEvent->key() == Qt::Key_Return)
             {
-                QModelIndexList selectedItemIndices = selectionModel->selectedRows();
-                if (selectedItemIndices.size() == 1)
-                    goIntoDirectory(selectedItemIndices.at(0));
+                if (m_pView && m_pModel)
+                {
+                    /* Get the selected item. If there are 0 or more than 1 selection do nothing: */
+                    QItemSelectionModel *selectionModel =  m_pView->selectionModel();
+                    if (selectionModel)
+                    {
+                        QModelIndexList selectedItemIndices = selectionModel->selectedRows();
+                        if (selectedItemIndices.size() == 1 && m_pModel)
+                            goIntoDirectory( m_pProxyModel->mapToSource(selectedItemIndices.at(0)));
+                    }
+                }
+                return true;
+            }
+            else if (pKeyEvent->key() == Qt::Key_Delete)
+            {
+                sltDelete();
+                return true;
+            }
+            else if (pKeyEvent->key() == Qt::Key_Backspace)
+            {
+                sltGoUp();
+                return true;
+            }
+            else if (pKeyEvent->text().length() == 1 && pKeyEvent->text().at(0).unicode() <= 127)
+            {
+                if (m_pSearchLineEdit)
+                {
+                    m_pSearchLineEdit->show();
+                    QString strText = m_pSearchLineEdit->text();
+                    strText.append(pKeyEvent->text());
+                    m_pSearchLineEdit->setText(strText);
+                }
             }
         }
     }
-    else if (pEvent->key() == Qt::Key_Delete)
-    {
-        sltDelete();
-    }
-    else if (pEvent->key() == Qt::Key_Backspace)
-    {
-        sltGoUp();
-    }
 
-    QWidget::keyPressEvent(pEvent);
+    return false;
 }
 
 UIFileTableItem *UIGuestControlFileTable::getStartDirectoryItem()
@@ -1542,7 +1594,7 @@ QString UIGuestControlFileTable::currentDirectoryPath() const
 {
     if (!m_pView)
         return QString();
-    QModelIndex currentRoot = m_pView->rootIndex();
+    QModelIndex currentRoot = currentRootIndex();
     if (!currentRoot.isValid())
         return QString();
     UIFileTableItem *item = static_cast<UIFileTableItem*>(currentRoot.internalPointer());
@@ -1662,4 +1714,41 @@ QModelIndex UIGuestControlFileTable::currentRootIndex() const
     return m_pProxyModel->mapToSource(m_pView->rootIndex());
 }
 
+void UIGuestControlFileTable::performSelectionSearch(const QString &strSearchText)
+{
+    if (!m_pProxyModel | !m_pView || strSearchText.isEmpty())
+        return;
+
+    int rowCount = m_pProxyModel->rowCount(m_pView->rootIndex());
+    UIFileTableItem *pFoundItem = 0;
+    QModelIndex index;
+    for (int i = 0; i < rowCount && !pFoundItem; ++i)
+    {
+        index = m_pProxyModel->index(i, 0, m_pView->rootIndex());
+        if (!index.isValid())
+            continue;
+        pFoundItem = static_cast<UIFileTableItem*>(m_pProxyModel->mapToSource(index).internalPointer());
+        if (!pFoundItem)
+            continue;
+        const QString &strName = pFoundItem->name();
+        if (!strName.startsWith(m_pSearchLineEdit->text(), Qt::CaseInsensitive))
+            pFoundItem = 0;
+    }
+    if (pFoundItem)
+    {
+        /* Deselect anything that is already selected: */
+        m_pView->clearSelection();
+        setSelection(index);
+    }
+}
+
+void UIGuestControlFileTable::disableSelectionSearch()
+{
+    if (!m_pSearchLineEdit)
+        return;
+    m_pSearchLineEdit->blockSignals(true);
+    m_pSearchLineEdit->clear();
+    m_pSearchLineEdit->hide();
+    m_pSearchLineEdit->blockSignals(false);
+}
 #include "UIGuestControlFileTable.moc"

@@ -55,6 +55,7 @@ public:
     static void destroy();
 
     bool bListDirectoriesOnTop;
+    bool bAskDeleteConfirmation;
 private:
     UIGuestControlFileManagerSettings();
 

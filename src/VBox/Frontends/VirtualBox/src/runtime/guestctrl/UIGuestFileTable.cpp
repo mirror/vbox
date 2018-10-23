@@ -315,8 +315,14 @@ void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
 
 void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
 {
-    for (int i = 0; i < hostSourcePathList.size(); ++i)
-        copyHostToGuest(hostSourcePathList.at(i), currentDirectoryPath());
+    QVector<QString> sourcePaths = hostSourcePathList.toVector();
+    QVector<QString>  aFilters;
+    QVector<QString>  aFlags;
+    m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, currentDirectoryPath());
+    if (!m_comGuestSession.isOk())
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+    else
+        refresh();
 }
 
 bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath)
@@ -343,10 +349,11 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
         QString sourceWithDelimiter =  UIPathOperations::addTrailingDelimiters(guestSourcePath);
 
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath/*destinatioFilePath*/ , aFlags);
-        m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, destinatioFilePath , aFlags);
-        m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, destinatioFilePath , aFlags);
-        m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, hostDestinationPath , aFlags);
+        /*CProgress comProgress = */
+        // m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath/*destinatioFilePath*/ , aFlags);
+        // m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, destinatioFilePath , aFlags);
+        // m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, destinatioFilePath , aFlags);
+        // m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, hostDestinationPath , aFlags);
 
     }
     if (!m_comGuestSession.isOk())
@@ -358,48 +365,48 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
     return true;
 }
 
-bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QString &guestDestinationPath)
-{
-    if (m_comGuestSession.isNull())
-        return false;
-    QFileInfo hostFileInfo(hostSourcePath);
-    if (!hostFileInfo.exists())
-        return false;
-    CProgress comProgress;
-    /* Currently API expects a path including a file name for file copy*/
-    if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
-    {
-        QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
-        QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
-        /** @todo listen to CProgress object to monitor copy operation: */
-        comProgress = m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
-    }
-    else if(hostFileInfo.isDir())
-    {
+// bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QString &guestDestinationPath)
+// {
+//     if (m_comGuestSession.isNull())
+//         return false;
+//     QFileInfo hostFileInfo(hostSourcePath);
+//     if (!hostFileInfo.exists())
+//         return false;
+//     CProgress comProgress;
+//     /* Currently API expects a path including a file name for file copy*/
+//     if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
+//     {
+//         QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
+//         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
+//         /** @todo listen to CProgress object to monitor copy operation: */
+//         comProgress = m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
+//     }
+//     else if(hostFileInfo.isDir())
+//     {
 
-        QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
-        QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
-        /** @todo listen to CProgress object to monitor copy operation: */
-        comProgress = m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
-    }
-    /** @todo currently I cannot get an errorfrom CProgress: */
-    if (m_comGuestSession.isOk())
-    {
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            emit sigLogOutput(UIErrorString::formatErrorInfo(comProgress));
-            return false;
-        }
-    }
-    else
-    {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
-        return false;
-    }
-    /** @todo we have to until CProgress finishes to refresh: */
-    refresh();
-    return true;
-}
+//         QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+//         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
+//         /** @todo listen to CProgress object to monitor copy operation: */
+//         comProgress = m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
+//     }
+//     /** @todo currently I cannot get an errorfrom CProgress: */
+//     if (m_comGuestSession.isOk())
+//     {
+//         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+//         {
+//             emit sigLogOutput(UIErrorString::formatErrorInfo(comProgress));
+//             return false;
+//         }
+//     }
+//     else
+//     {
+//         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+//         return false;
+//     }
+//     /** @todo we have to until CProgress finishes to refresh: */
+//     refresh();
+//     return true;
+// }
 
 FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
 {

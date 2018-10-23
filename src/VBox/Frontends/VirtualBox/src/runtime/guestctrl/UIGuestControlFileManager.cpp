@@ -78,6 +78,7 @@ void UIGuestControlFileManagerSettings::destroy()
 
 UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
     : bListDirectoriesOnTop(true)
+    , bAskDeleteConfirmation(false)
 {
 }
 
@@ -389,7 +390,7 @@ void UIGuestControlFileManager::prepareObjects()
             m_pFileTableContainerWidget->setLayout(m_pFileTableContainerLayout);
             m_pFileTableContainerLayout->setSpacing(0);
             m_pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
-            m_pGuestFileTable = new  UIGuestFileTable;
+            m_pGuestFileTable = new UIGuestFileTable;
             m_pGuestFileTable->setEnabled(false);
 
             m_pHostFileTable = new UIHostFileTable;

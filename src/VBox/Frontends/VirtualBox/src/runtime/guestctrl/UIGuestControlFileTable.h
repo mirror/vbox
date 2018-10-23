@@ -289,7 +289,7 @@ protected:
     /** Goes into directory pointed by the @p item */
     void             goIntoDirectory(UIFileTableItem *item);
     UIFileTableItem* indexData(const QModelIndex &index) const;
-    void             keyPressEvent(QKeyEvent * pEvent);
+    bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
 
     UIFileTableItem         *m_pRootItem;
@@ -310,6 +310,7 @@ private slots:
 
     /* index is passed by the item view and represents the double clicked object's 'proxy' model index */
     void sltItemDoubleClicked(const QModelIndex &index);
+    void sltItemClicked(const QModelIndex &index);
     void sltGoUp();
     void sltGoHome();
     void sltRefresh();
@@ -324,6 +325,7 @@ private slots:
     void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSelectAll();
     void sltInvertSelection();
+    void sltSearchTextChanged(const QString &strText);
 
 private:
 
@@ -339,10 +341,16 @@ private:
     void            disableSelectionDependentActions();
     void            deSelectUpDirectoryItem();
     void            setSelectionForAll(QItemSelectionModel::SelectionFlags flags);
+    void            setSelection(const QModelIndex &indexInProxyModel);
     /** The start directory requires a special attention since on file systems with drive letters
      *  drive letter are direct children of the start directory. On other systems start directory is '/' */
     void            populateStartDirectory(UIFileTableItem *startItem);
     QModelIndex     currentRootIndex() const;
+    /* Searches the content of m_pSearchLineEdit within the current items' names and selects the item if found. */
+    void            performSelectionSearch(const QString &strSearchText);
+    /* Clears the m_pSearchLineEdit and hides it. */
+    void            disableSelectionSearch();
+
     UIGuestControlFileModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
     UIGuestControlFileProxyModel *m_pProxyModel;
@@ -363,8 +371,9 @@ private:
     QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
-    QStringList       m_copyCutBuffer;
-    friend class UIGuestControlFileModel;
+    QStringList     m_copyCutBuffer;
+    QILineEdit     *m_pSearchLineEdit;
+    friend class    UIGuestControlFileModel;
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
