@@ -63,7 +63,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog displaying machine logs. */
-class SHARED_LIBRARY_STUFF UIGuestControlDialog : public QIWithRetranslateUI<QIManagerDialog>
+class UIGuestControlDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
