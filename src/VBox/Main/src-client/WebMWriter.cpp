@@ -440,14 +440,6 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
     {
         const WebMTimecodeAbs tcAbsPTS = a_pBlock->Data.tcAbsPTSMs;
 
-        /* Check if the current segment already has been started.
-         * If not, use the current (absolute) time stamp for it. */
-        if (CurSeg.tcAbsStartMs == 0)
-        {
-            CurSeg.tcAbsStartMs = tcAbsPTS;
-            LogFunc(("Segment started @ %RU64ms\n", CurSeg.tcAbsStartMs));
-        }
-
         /* See if we already have an entry for the specified timecode in our queue. */
         WebMBlockMap::iterator itQueue = CurSeg.queueBlocks.Map.find(tcAbsPTS);
         if (itQueue != CurSeg.queueBlocks.Map.end()) /* Use existing queue. */
@@ -463,7 +455,7 @@ int WebMWriter::writeSimpleBlockQueued(WebMTrack *a_pTrack, WebMSimpleBlock *a_p
             CurSeg.queueBlocks.Map[tcAbsPTS] = Blocks;
         }
 
-        processQueue(&CurSeg.queueBlocks, false /* fForce */);
+        rc = processQueue(&CurSeg.queueBlocks, false /* fForce */);
     }
     catch(...)
     {
@@ -495,6 +487,7 @@ int WebMWriter::writeSimpleBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg
     if (   tcAbsPTSMs
         && tcAbsPTSMs <= a_pTrack->tcAbsLastWrittenMs)
     {
+        AssertFailed(); /* Should never happen. */
         tcAbsPTSMs = a_pTrack->tcAbsLastWrittenMs + 1;
     }
 
@@ -645,6 +638,14 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
         /* Whether to start a new cluster or not. */
         bool fClusterStart = false;
 
+        /* If the current segment does not have any clusters (yet),
+         * take the first absolute PTS as the starting point for that segment. */
+        if (CurSeg.cClusters == 0)
+        {
+            CurSeg.tcAbsStartMs = mapAbsPTSMs;
+            fClusterStart = true;
+        }
+
         /* No blocks written yet? Start a new cluster. */
         if (Cluster.cBlocks == 0)
             fClusterStart = true;
@@ -660,21 +661,36 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
         if (   fClusterStart
             && !mapBlocks.fClusterStarted)
         {
+            /* Last written timecode of the current cluster. */
+            uint64_t tcAbsClusterLastWrittenMs;
+
             if (Cluster.fOpen) /* Close current cluster first. */
             {
-                /* Make sure that the current cluster contained some data.  */
+                Log2Func(("[C%RU64] End @ %RU64ms (duration = %RU64ms)\n",
+                          Cluster.uID, Cluster.tcAbsLastWrittenMs, Cluster.tcAbsLastWrittenMs - Cluster.tcAbsStartMs));
+
+                /* Make sure that the current cluster contained some data. */
                 Assert(Cluster.offStart);
                 Assert(Cluster.cBlocks);
+
+                /* Save the last written timecode of the current cluster before closing it. */
+                tcAbsClusterLastWrittenMs = Cluster.tcAbsLastWrittenMs;
 
                 subEnd(MkvElem_Cluster);
                 Cluster.fOpen = false;
             }
+            else /* First cluster ever? Use the segment's starting timecode. */
+                tcAbsClusterLastWrittenMs = CurSeg.tcAbsStartMs;
 
-            Cluster.fOpen        = true;
-            Cluster.uID          = CurSeg.cClusters;
-            Cluster.tcAbsStartMs = mapAbsPTSMs;
-            Cluster.offStart     = RTFileTell(getFile());
-            Cluster.cBlocks      = 0;
+            Assert(tcAbsClusterLastWrittenMs >= CurSeg.tcAbsStartMs);
+
+            Cluster.fOpen              = true;
+            Cluster.uID                = CurSeg.cClusters;
+            /* Use the last written timecode of the former cluster as starting point. */
+            Cluster.tcAbsStartMs       = tcAbsClusterLastWrittenMs;
+            Cluster.tcAbsLastWrittenMs = Cluster.tcAbsStartMs;
+            Cluster.offStart           = RTFileTell(getFile());
+            Cluster.cBlocks            = 0;
 
             Log2Func(("[C%RU64] Start @ %RU64ms (map TC is %RU64) / %RU64 bytes\n",
                       Cluster.uID, Cluster.tcAbsStartMs, mapAbsPTSMs, Cluster.offStart));
@@ -692,12 +708,15 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
             CurSeg.lstCuePoints.push_back(pCuePoint);
 
             subStart(MkvElem_Cluster)
-                .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcAbsStartMs);
+                .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcAbsStartMs - CurSeg.tcAbsStartMs);
 
             CurSeg.cClusters++;
 
             mapBlocks.fClusterStarted = true;
         }
+
+        Log2Func(("[C%RU64] SegTcAbsStartMs=%RU64, ClusterTcAbsStartMs=%RU64, ClusterTcAbsLastWrittenMs=%RU64, mapAbsPTSMs=%RU64\n",
+                   Cluster.uID, CurSeg.tcAbsStartMs, Cluster.tcAbsStartMs, Cluster.tcAbsLastWrittenMs, mapAbsPTSMs));
 
         /* Iterate through all blocks related to the current timecode. */
         while (!mapBlocks.Queue.empty())
@@ -716,9 +735,10 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
             AssertRC(rc2);
 
             Cluster.cBlocks++;
+            Cluster.tcAbsLastWrittenMs = pBlock->Data.tcAbsPTSMs;
 
             pTrack->cTotalBlocks++;
-            pTrack->tcAbsLastWrittenMs = pBlock->Data.tcAbsPTSMs;
+            pTrack->tcAbsLastWrittenMs = Cluster.tcAbsLastWrittenMs;
 
             if (CurSeg.tcAbsLastWrittenMs < pTrack->tcAbsLastWrittenMs)
                 CurSeg.tcAbsLastWrittenMs = pTrack->tcAbsLastWrittenMs;
@@ -729,7 +749,7 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
                 && (pBlock->Data.fFlags & VBOX_WEBM_BLOCK_FLAG_KEY_FRAME))
             {
                 /* Insert cue points for all tracks if a new cluster has been started. */
-                WebMCuePoint *pCuePoint = new WebMCuePoint(CurSeg.tcAbsLastWrittenMs);
+                WebMCuePoint *pCuePoint = new WebMCuePoint(Cluster.tcAbsLastWrittenMs);
 
                 WebMTracks::iterator itTrack = CurSeg.mapTracks.begin();
                 while (itTrack != CurSeg.mapTracks.end())
@@ -846,7 +866,7 @@ void WebMWriter::writeSeekHeader(void)
     else
         CurSeg.offSeekInfo = RTFileTell(getFile());
 
-    LogFunc(("Seek Headeder @ %RU64\n", CurSeg.offSeekInfo));
+    LogFunc(("Seek Header @ %RU64\n", CurSeg.offSeekInfo));
 
     subStart(MkvElem_SeekHead);
 

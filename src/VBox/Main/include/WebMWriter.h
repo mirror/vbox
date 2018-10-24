@@ -362,6 +362,8 @@ public:
         bool            fOpen;
         /** Absolute timecode (in ms) when this cluster starts. */
         WebMTimecodeAbs tcAbsStartMs;
+        /** Absolute timecode (in ms) of when last written to this cluster. */
+        WebMTimecodeAbs tcAbsLastWrittenMs;
         /** Number of (simple) blocks in this cluster. */
         uint64_t        cBlocks;
     };
