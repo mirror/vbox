@@ -2941,6 +2941,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
 	r0drv/darwin/dbgkrnlinfo-r0drv-darwin.cpp \
+	r0drv/darwin/fileio-r0drv-darwin.cpp \
 	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/mp-r0drv-darwin.cpp \
 	r0drv/darwin/memuserkernel-r0drv-darwin.cpp \
