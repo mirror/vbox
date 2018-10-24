@@ -36,12 +36,12 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>OCI Itegration: implemented support for exporting a VM to
+        <para>OCI Integration: implemented support for exporting a VM to
           Oracle Cloud Infrastructure</para>
       </listitem>
 
       <listitem>
-        <para>Improvents in GUI design</para>
+        <para>Improvements in GUI design</para>
       </listitem>
 
     </itemizedlist>
