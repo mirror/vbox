@@ -529,7 +529,7 @@ protected:
     int writeSimpleBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, WebMTimecodeAbs tcAbsPTSMs);
 #endif
 
-    int processQueues(WebMQueue *pQueue, bool fForce);
+    int processQueue(WebMQueue *pQueue, bool fForce);
 
 protected:
 
