@@ -381,6 +381,7 @@ public:
             , offSeekInfo(0)
             , offTracks(0)
             , offCues(0)
+            , cClusters(0)
         {
             uTimecodeScaleFactor = VBOX_WEBM_TIMECODESCALE_FACTOR_MS;
 
