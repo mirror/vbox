@@ -60,9 +60,21 @@ are ordered as follows:
           (see SDK documentation for more)</para>
       </listitem>
 
-    <listitem>
+      <listitem>
         <para>Networking: Added a workaround for older guests which do not enable
           bus mastering for the virtio PCI device</para>
+      </listitem>
+
+      <listitem>
+        <para>iSCSI: In cases where there is no ambiguity, the LUN of an iSCSI
+          target is automatically determined; this makes eases the use of iSCSI
+          targets with LUNs other than zero
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>ACPI: Up to four custom ACPI tables can now be configured for a VM
+        </para>
       </listitem>
 
     </itemizedlist>
