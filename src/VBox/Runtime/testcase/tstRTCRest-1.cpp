@@ -40,8 +40,6 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
-#include <float.h> /* DBL_MIN, DBL_MAX */
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -596,11 +594,15 @@ void testDouble(void)
 {
     RTTestSub(g_hTest, "RTCRestDouble");
 #if defined(RT_OS_WINDOWS)
-# define DBL_MAX_STRING  "1.7976931348623157e+308"
-# define DBL_MIN_STRING  "2.2250738585072014e-308"
+# define TST_DBL_MAX_STRING     "1.7976931348623157e+308"
+# define TST_DBL_MIN_STRING     "2.2250738585072014e-308"
+# define TST_DBL_MAX            (1.7976931348623157e+308)
+# define TST_DBL_MIN            (2.2250738585072014e-308)
 #else
-# define DBL_MAX_STRING  "1.79769313486231571e+308"
-# define DBL_MIN_STRING  "2.22507385850720138e-308"
+# define TST_DBL_MAX_STRING     "1.79769313486231571e+308"
+# define TST_DBL_MIN_STRING     "2.22507385850720138e-308"
+# define TST_DBL_MAX            (1.79769313486231571e+308)
+# define TST_DBL_MIN            (2.22507385850720138e-308)
 #endif
 
     {
@@ -639,12 +641,12 @@ void testDouble(void)
         RTTESTI_CHECK(obj3.m_rdValue == 42.42);
         RTTESTI_CHECK(obj3.isNull() == false);
 
-        obj3.assignValue(DBL_MAX);
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        obj3.assignValue(TST_DBL_MAX);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj3.isNull() == false);
 
-        obj3.assignValue(DBL_MIN);
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
+        obj3.assignValue(TST_DBL_MIN);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MIN);
         RTTESTI_CHECK(obj3.isNull() == false);
 
         /* Reset to default: */
@@ -659,11 +661,11 @@ void testDouble(void)
         RTTESTI_CHECK(obj3.isNull() == false);
 
         /* Copy assignments: */
-        RTCRestDouble obj3Max(DBL_MAX);
-        RTTESTI_CHECK(obj3Max.m_rdValue == DBL_MAX);
+        RTCRestDouble obj3Max(TST_DBL_MAX);
+        RTTESTI_CHECK(obj3Max.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj3Max.isNull() == false);
-        RTCRestDouble obj3Min(DBL_MIN);
-        RTTESTI_CHECK(obj3Min.m_rdValue == DBL_MIN);
+        RTCRestDouble obj3Min(TST_DBL_MIN);
+        RTTESTI_CHECK(obj3Min.m_rdValue == TST_DBL_MIN);
         RTTESTI_CHECK(obj3Min.isNull() == false);
         RTCRestDouble obj3Null;
         obj3Null.setNull();
@@ -672,7 +674,7 @@ void testDouble(void)
 
         RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
         RTTESTI_CHECK_RC(obj3.assignCopy(obj3Max), VINF_SUCCESS);
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj3.isNull() == false);
 
         RTTESTI_CHECK_RC(obj3.assignCopy(obj3Null), VINF_SUCCESS);
@@ -680,7 +682,7 @@ void testDouble(void)
         RTTESTI_CHECK(obj3.isNull() == true);
 
         RTTESTI_CHECK_RC(obj3.assignCopy(obj3Min), VINF_SUCCESS);
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MIN);
         RTTESTI_CHECK(obj3.isNull() == false);
 
         obj3 = obj3Null;
@@ -688,7 +690,7 @@ void testDouble(void)
         RTTESTI_CHECK(obj3.isNull() == true);
 
         obj3 = obj3Max;
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj3.isNull() == false);
 
         obj3 = obj3Null;
@@ -696,12 +698,12 @@ void testDouble(void)
         RTTESTI_CHECK(obj3.isNull() == true);
 
         obj3 = obj3Min;
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MIN);
         RTTESTI_CHECK(obj3.isNull() == false);
 
         /* setNull implies resetToDefault: */
         obj3 = obj3Max;
-        RTTESTI_CHECK(obj3.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK(obj3.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj3.isNull() == false);
         RTTESTI_CHECK_RC(obj3.setNull(), VINF_SUCCESS);
         RTTESTI_CHECK(obj3.isNull() == true);
@@ -710,12 +712,12 @@ void testDouble(void)
         /* Copy constructors: */
         {
             RTCRestDouble obj3a(obj3Max);
-            RTTESTI_CHECK(obj3a.m_rdValue == DBL_MAX);
+            RTTESTI_CHECK(obj3a.m_rdValue == TST_DBL_MAX);
             RTTESTI_CHECK(obj3a.isNull() == false);
         }
         {
             RTCRestDouble obj3b(obj3Min);
-            RTTESTI_CHECK(obj3b.m_rdValue == DBL_MIN);
+            RTTESTI_CHECK(obj3b.m_rdValue == TST_DBL_MIN);
             RTTESTI_CHECK(obj3b.isNull() == false);
         }
         {
@@ -726,9 +728,9 @@ void testDouble(void)
 
         /* Serialization to json: */
         const char *pszJson = toJson(&obj3Max);
-        RTTESTI_CHECK_MSG(strcmp(pszJson, DBL_MAX_STRING) == 0, ("pszJson=%s\n", pszJson));
+        RTTESTI_CHECK_MSG(strcmp(pszJson, TST_DBL_MAX_STRING) == 0, ("pszJson=%s\n", pszJson));
         pszJson = toJson(&obj3Min);
-        RTTESTI_CHECK_MSG(strcmp(pszJson, DBL_MIN_STRING) == 0, ("pszJson=%s\n", pszJson));
+        RTTESTI_CHECK_MSG(strcmp(pszJson, TST_DBL_MIN_STRING) == 0, ("pszJson=%s\n", pszJson));
         pszJson = toJson(&obj3Null);
         RTTESTI_CHECK_MSG(strcmp(pszJson, "null") == 0, ("pszJson=%s\n", pszJson));
 
@@ -737,17 +739,17 @@ void testDouble(void)
         RTCString strExpect;
         str = "lead-in:";
         RTTESTI_CHECK_RC(obj3Max.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
-        strExpect.printf("lead-in:%s", DBL_MAX_STRING);
+        strExpect.printf("lead-in:%s", TST_DBL_MAX_STRING);
         RTTESTI_CHECK_MSG(str.equals(strExpect), ("str=%s strExpect=%s\n", str.c_str(), strExpect.c_str()));
         RTTESTI_CHECK_RC(obj3Max.toString(&str), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(str.equals(DBL_MAX_STRING), ("str=%s\n", str.c_str()));
+        RTTESTI_CHECK_MSG(str.equals(TST_DBL_MAX_STRING), ("str=%s\n", str.c_str()));
 
         str = "lead-in:";
         RTTESTI_CHECK_RC(obj3Min.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
-        strExpect.printf("lead-in:%s", DBL_MIN_STRING);
+        strExpect.printf("lead-in:%s", TST_DBL_MIN_STRING);
         RTTESTI_CHECK_MSG(str.equals(strExpect), ("str=%s strExpect=%s\n", str.c_str(), strExpect.c_str()));
         RTTESTI_CHECK_RC(obj3Min.toString(&str), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(str.equals(DBL_MIN_STRING), ("str=%s\n", str.c_str()));
+        RTTESTI_CHECK_MSG(str.equals(TST_DBL_MIN_STRING), ("str=%s\n", str.c_str()));
 
         str = "lead-in:";
         RTTESTI_CHECK_RC(obj3Null.toString(&str, RTCRestObjectBase::kToString_Append), VINF_SUCCESS);
@@ -772,13 +774,13 @@ void testDouble(void)
         RTTESTI_CHECK(obj4.isNull() == false);
 
         obj4.setNull();
-        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, DBL_MAX_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
-        RTTESTI_CHECK(obj4.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, TST_DBL_MAX_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj4.isNull() == false);
 
         obj4.setNull();
-        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, DBL_MIN_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
-        RTTESTI_CHECK(obj4.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, TST_DBL_MIN_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MIN);
         RTTESTI_CHECK(obj4.isNull() == false);
 
         RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
@@ -796,13 +798,13 @@ void testDouble(void)
         RTTESTI_CHECK(obj4.isNull() == false);
 
         /* object goes to default state on failure: */
-        obj4.assignValue(DBL_MIN);
+        obj4.assignValue(TST_DBL_MIN);
         RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "false", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE);
         RTTESTI_CHECK(obj4.m_rdValue == 0.0);
         RTTESTI_CHECK(obj4.isNull() == false);
         RTTESTI_CHECK(RTErrInfoIsSet(&ErrInfo.Core));
 
-        obj4.assignValue(DBL_MAX);
+        obj4.assignValue(TST_DBL_MAX);
         RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "\"false\"", &ErrInfo, RT_XSTR(__LINE__)), VERR_REST_WRONG_JSON_TYPE_FOR_DOUBLE);
         RTTESTI_CHECK(obj4.m_rdValue == 0.0);
         RTTESTI_CHECK(obj4.isNull() == false);
@@ -823,12 +825,12 @@ void testDouble(void)
         RTTESTI_CHECK(obj4.m_rdValue == -42.22);
         RTTESTI_CHECK(obj4.isNull() == false);
 
-        RTTESTI_CHECK_RC(fromString(&obj4, DBL_MAX_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
-        RTTESTI_CHECK(obj4.m_rdValue == DBL_MAX);
+        RTTESTI_CHECK_RC(fromString(&obj4, TST_DBL_MAX_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj4.isNull() == false);
 
-        RTTESTI_CHECK_RC(fromString(&obj4, DBL_MIN_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
-        RTTESTI_CHECK(obj4.m_rdValue == DBL_MIN);
+        RTTESTI_CHECK_RC(fromString(&obj4, TST_DBL_MIN_STRING, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+        RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MIN);
         RTTESTI_CHECK(obj4.isNull() == false);
 
         obj4.m_rdValue = 33.33;
