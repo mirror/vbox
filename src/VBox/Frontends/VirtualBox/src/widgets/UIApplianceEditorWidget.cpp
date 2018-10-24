@@ -577,7 +577,60 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
             if (iColumn == ApplianceViewSection_ConfigValue)
             {
                 if (!m_strOrigValue.isEmpty())
-                    value = UIApplianceEditorWidget::tr("<b>Original Value:</b> %1").arg(m_strOrigValue);
+                {
+                    /* Prepare tool-tip pattern/body: */
+                    const QString strToolTipPattern = UIApplianceEditorWidget::tr("<b>Original Value:</b> %1");
+                    QString strToolTipBody;
+
+                    /* Handle certain VSD types separately: */
+                    switch (m_enmVSDType)
+                    {
+                        case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+                        case KVirtualSystemDescriptionType_CloudOCIDomain:
+                        case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+                        case KVirtualSystemDescriptionType_CloudOCIBucket:
+                        case KVirtualSystemDescriptionType_CloudOCIVCN:
+                        {
+                            /* Get VSD type hint and check which kind of data it is.
+                             * These VSD types can have masks if represented by arrays. */
+                            const QVariant get = m_pParent->getHint(m_enmVSDType);
+                            switch (m_pParent->kindHint(m_enmVSDType))
+                            {
+                                case ParameterKind_Array:
+                                {
+                                    QString strMask;
+                                    AbstractVSDParameterArray array = get.value<AbstractVSDParameterArray>();
+                                    /* Every array member is a complex value, - string pair,
+                                     * "first" is always present while "second" can be null. */
+                                    foreach (const QIStringPair &pair, array.values)
+                                    {
+                                        /* If "second" isn't null & equal to m_strOrigValue => return "first": */
+                                        if (!pair.second.isNull() && pair.second == m_strOrigValue)
+                                        {
+                                            strMask = pair.first;
+                                            break;
+                                        }
+                                    }
+                                    /* Use mask if found: */
+                                    if (!strMask.isNull())
+                                        strToolTipBody = strMask;
+                                    break;
+                                }
+                                default:
+                                    break;
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+
+                    /* Make sure we have at least something: */
+                    if (strToolTipBody.isNull())
+                        strToolTipBody = m_strOrigValue;
+                    /* Compose tool-tip finally: */
+                    value = strToolTipPattern.arg(strToolTipBody);
+                }
             }
             break;
         }
