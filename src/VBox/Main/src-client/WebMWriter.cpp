@@ -679,19 +679,17 @@ int WebMWriter::processQueues(WebMQueue *pQueue, bool fForce)
             Log2Func(("[C%RU64] Start @ %RU64ms (map TC is %RU64) / %RU64 bytes\n",
                       Cluster.uID, Cluster.tcAbsStartMs, mapAbsPTSMs, Cluster.offStart));
 
-            if (CurSeg.cClusters)
-                AssertMsg(Cluster.tcAbsStartMs, ("[C%RU64] @ %RU64 starting timecode is 0 which is invalid\n",
-                                                 Cluster.uID, Cluster.offStart));
+            /* Insert cue points for all tracks if a new cluster has been started. */
+            WebMCuePoint *pCuePoint = new WebMCuePoint(Cluster.tcAbsStartMs);
 
             WebMTracks::iterator itTrack = CurSeg.mapTracks.begin();
             while (itTrack != CurSeg.mapTracks.end())
             {
-                /* Insert cue points for all tracks if a new cluster has been started. */
-                WebMCuePoint cue(itTrack->second /* pTrack */, Cluster.offStart, Cluster.tcAbsStartMs);
-                CurSeg.lstCues.push_back(cue);
-
+                pCuePoint->Pos[itTrack->first] = new WebMCueTrackPosEntry(Cluster.offStart);
                 ++itTrack;
             }
+
+            CurSeg.lstCuePoints.push_back(pCuePoint);
 
             subStart(MkvElem_Cluster)
                 .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcAbsStartMs);
@@ -730,8 +728,17 @@ int WebMWriter::processQueues(WebMQueue *pQueue, bool fForce)
             if (   !fClusterStart
                 && (pBlock->Data.fFlags & VBOX_WEBM_BLOCK_FLAG_KEY_FRAME))
             {
-                WebMCuePoint cue(pBlock->pTrack, Cluster.offStart, Cluster.tcAbsStartMs);
-                CurSeg.lstCues.push_back(cue);
+                /* Insert cue points for all tracks if a new cluster has been started. */
+                WebMCuePoint *pCuePoint = new WebMCuePoint(CurSeg.tcAbsLastWrittenMs);
+
+                WebMTracks::iterator itTrack = CurSeg.mapTracks.begin();
+                while (itTrack != CurSeg.mapTracks.end())
+                {
+                    pCuePoint->Pos[itTrack->first] = new WebMCueTrackPosEntry(Cluster.offStart);
+                    ++itTrack;
+                }
+
+                CurSeg.lstCuePoints.push_back(pCuePoint);
             }
 
             delete pBlock;
@@ -783,25 +790,38 @@ int WebMWriter::writeFooter(void)
 
     subStart(MkvElem_Cues);
 
-    std::list<WebMCuePoint>::iterator itCuePoint = CurSeg.lstCues.begin();
-    while (itCuePoint != CurSeg.lstCues.end())
+    WebMCuePointList::iterator itCuePoint = CurSeg.lstCuePoints.begin();
+    while (itCuePoint != CurSeg.lstCuePoints.end())
     {
-        /* Sanity. */
-        AssertPtr(itCuePoint->pTrack);
+        WebMCuePoint *pCuePoint = (*itCuePoint);
+        AssertPtr(pCuePoint);
 
-        LogFunc(("CuePoint @ %RU64: Track #%RU8 (Cluster @ %RU64, tcAbs=%RU64)\n",
-                 RTFileTell(getFile()), itCuePoint->pTrack->uTrack,
-                 itCuePoint->offCluster, itCuePoint->tcAbs));
+        LogFunc(("CuePoint @ %RU64: %zu tracks, tcAbs=%RU64)\n",
+                 RTFileTell(getFile()), pCuePoint->Pos.size(), pCuePoint->tcAbs));
 
         subStart(MkvElem_CuePoint)
-            .serializeUnsignedInteger(MkvElem_CueTime,                itCuePoint->tcAbs)
-            .subStart(MkvElem_CueTrackPositions)
-                .serializeUnsignedInteger(MkvElem_CueTrack,           itCuePoint->pTrack->uTrack)
-                .serializeUnsignedInteger(MkvElem_CueClusterPosition, itCuePoint->offCluster - CurSeg.offStart, 8)
-                .subEnd(MkvElem_CueTrackPositions)
-            .subEnd(MkvElem_CuePoint);
+            .serializeUnsignedInteger(MkvElem_CueTime, pCuePoint->tcAbs);
 
-        itCuePoint++;
+            WebMCueTrackPosMap::iterator itTrackPos = pCuePoint->Pos.begin();
+            while (itTrackPos != pCuePoint->Pos.end())
+            {
+                WebMCueTrackPosEntry *pTrackPos = itTrackPos->second;
+                AssertPtr(pTrackPos);
+
+                LogFunc(("TrackPos (track #%RU32) @ %RU64, offCluster=%RU64)\n",
+                         itTrackPos->first, RTFileTell(getFile()), pTrackPos->offCluster));
+
+                subStart(MkvElem_CueTrackPositions)
+                    .serializeUnsignedInteger(MkvElem_CueTrack,           itTrackPos->first)
+                    .serializeUnsignedInteger(MkvElem_CueClusterPosition, pTrackPos->offCluster - CurSeg.offStart, 8)
+                    .subEnd(MkvElem_CueTrackPositions);
+
+                ++itTrackPos;
+            }
+
+        subEnd(MkvElem_CuePoint);
+
+        ++itCuePoint;
     }
 
     subEnd(MkvElem_Cues);
@@ -871,7 +891,7 @@ void WebMWriter::writeSeekHeader(void)
 
     const WebMTimecodeAbs tcAbsDurationMs = CurSeg.tcAbsLastWrittenMs - CurSeg.tcAbsStartMs;
 
-    if (!CurSeg.lstCues.empty())
+    if (!CurSeg.lstCuePoints.empty())
     {
         LogFunc(("tcAbsDurationMs=%RU64\n", tcAbsDurationMs));
         AssertMsg(tcAbsDurationMs, ("Segment seems to be empty (duration is 0)\n"));

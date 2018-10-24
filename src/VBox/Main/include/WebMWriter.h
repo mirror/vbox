@@ -288,21 +288,58 @@ public:
     };
 
     /**
+     * Structure for a single cue point track position entry.
+     */
+    struct WebMCueTrackPosEntry
+    {
+        WebMCueTrackPosEntry(uint64_t a_offCluster)
+            : offCluster(a_offCluster) { }
+
+        /** Offset (in bytes) of the related cluster containing the given position. */
+        uint64_t offCluster;
+    };
+
+    /** Map for keeping track position entries for a single cue point.
+     *  The key is the track number (*not* UUID!). */
+    typedef std::map<uint8_t, WebMCueTrackPosEntry *> WebMCueTrackPosMap;
+
+    /**
      * Structure for keeping a cue point.
      */
     struct WebMCuePoint
     {
-        WebMCuePoint(WebMTrack *a_pTrack, uint64_t a_offCluster, WebMTimecodeAbs a_tcAbs)
-            : pTrack(a_pTrack)
-            , offCluster(a_offCluster), tcAbs(a_tcAbs) { }
+        WebMCuePoint(WebMTimecodeAbs a_tcAbs)
+            : tcAbs(a_tcAbs) { }
 
-        /** Associated track. */
-        WebMTrack      *pTrack;
-        /** Offset (in bytes) of the related cluster containing the given position. */
-        uint64_t        offCluster;
+        virtual ~WebMCuePoint()
+        {
+            Clear();
+        }
+
+        void Clear(void)
+        {
+            WebMCueTrackPosMap::iterator itTrackPos = Pos.begin();
+            while (itTrackPos != Pos.end())
+            {
+                WebMCueTrackPosEntry *pTrackPos = itTrackPos->second;
+                AssertPtr(pTrackPos);
+                delete pTrackPos;
+
+                Pos.erase(itTrackPos);
+                itTrackPos = Pos.begin();
+            }
+
+            Assert(Pos.empty());
+        }
+
+        /** Map containing all track positions for this specific cue point. */
+        WebMCueTrackPosMap Pos;
         /** Absolute time code according to the segment time base. */
-        WebMTimecodeAbs tcAbs;
+        WebMTimecodeAbs    tcAbs;
     };
+
+    /** List of cue points. */
+    typedef std::list<WebMCuePoint *> WebMCuePointList;
 
     /**
      * Structure for keeping a WebM cluster entry.
@@ -382,7 +419,7 @@ public:
         /** Absolute offset (in bytes) of cues table. */
         uint64_t                        offCues;
         /** List of cue points. Needed for seeking table. */
-        std::list<WebMCuePoint>         lstCues;
+        WebMCuePointList                lstCuePoints;
 
         /** Total number of clusters. */
         uint64_t                        cClusters;
