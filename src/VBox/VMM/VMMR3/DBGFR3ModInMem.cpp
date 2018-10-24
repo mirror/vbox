@@ -251,9 +251,10 @@ static DECLCALLBACK(int) dbgfModInMemPeRdr_Read(void *pvBuf, size_t cb, size_t o
 /**
  * @callback_method_impl{PFNRTLDRRDRMEMDTOR}
  */
-static DECLCALLBACK(void) dbgfModInMemPeRdr_Dtor(void *pvUser)
+static DECLCALLBACK(void) dbgfModInMemPeRdr_Dtor(void *pvUser, size_t cbImage)
 {
     PDBGFMODPERDR pThis = (PDBGFMODPERDR)pvUser;
+    RT_NOREF(cbImage);
 
     VMR3ReleaseUVM(pThis->pUVM);
     pThis->pUVM = NULL;

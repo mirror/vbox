@@ -1142,31 +1142,349 @@ bool VBOXCALL supdrvOSAreTscDeltasInSync(void)
 }
 
 
+#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+
+/**
+ * @callback_method_impl{FNRTLDRIMPORT}
+ */
+static DECLCALLBACK(int) supdrvDarwinLdrOpenImportCallback(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol,
+                                                           unsigned uSymbol, PRTLDRADDR pValue, void *pvUser)
+{
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+
+    /*
+     * Consult the SUPDrv export table first.
+     */
+    uintptr_t uValue = 0;
+    int rc = supdrvLdrGetExportedSymbol(pszSymbol, &uValue);
+    if (RT_SUCCESS(rc))
+    {
+        *pValue = uValue;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Check already loaded modules.
+     */
+    for (PSUPDRVLDRIMAGE pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext);
+        if (   pImage->uState == SUP_IOCTL_LDR_LOAD
+            && pImage->hLdrMod != NIL_RTLDRMOD)
+        {
+            rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pvImage, (uintptr_t)pImage->pvImage, UINT32_MAX, pszSymbol, pValue);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+        }
+
+    /*
+     * Failed.
+     */
+    printf("VBoxDrv: Unable to resolve symbol '%s'.\n", pszSymbol);
+    return VERR_SYMBOL_NOT_FOUND;
+}
+
+
+/**
+ * @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK,
+ *      Verify that the signing certificate is sane.}
+ */
+static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCertificatCallback(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+                                                                     uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pvUser); //PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+
+# if 0
+    /*
+     * Test signing certificates normally doesn't have all the necessary
+     * features required below.  So, treat them as special cases.
+     */
+    if (   hCertPaths == NIL_RTCRX509CERTPATHS
+        && RTCrX509Name_Compare(&pCert->TbsCertificate.Issuer, &pCert->TbsCertificate.Subject) == 0)
+    {
+        RTMsgInfo("Test signed.\n");
+        return VINF_SUCCESS;
+    }
+# endif
+
+    /*
+     * Standard code signing capabilites required.
+     */
+    int rc = RTCrPkcs7VerifyCertCallbackCodeSigning(pCert, hCertPaths, fFlags, NULL, pErrInfo);
+    if (   RT_SUCCESS(rc)
+        && (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA))
+    {
+        uint32_t cDevIdApp  = 0;
+        uint32_t cDevIdKext = 0;
+        for (uint32_t i = 0; i < pCert->TbsCertificate.T3.Extensions.cItems; i++)
+        {
+            PCRTCRX509EXTENSION pExt = pCert->TbsCertificate.T3.Extensions.papItems[i];
+            if (RTAsn1ObjId_CompareWithString(&pExt->ExtnId, RTCR_APPLE_CS_DEVID_APPLICATION_OID) == 0)
+            {
+                cDevIdApp++;
+                if (!pExt->Critical.fValue)
+                    rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                       "Dev ID Application certificate extension is not flagged critical");
+            }
+            else if (RTAsn1ObjId_CompareWithString(&pExt->ExtnId, RTCR_APPLE_CS_DEVID_KEXT_OID) == 0)
+            {
+                cDevIdKext++;
+                if (!pExt->Critical.fValue)
+                    rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                                       "Dev ID kext certificate extension is not flagged critical");
+            }
+        }
+        if (cDevIdApp == 0)
+            rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                               "Certificate is missing the 'Dev ID Application' extension");
+        if (cDevIdKext == 0 && pState->fKernel)
+            rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                               "Certificate is missing the 'Dev ID kext' extension");
+    }
+
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNRTLDRVALIDATESIGNEDDATA}
+ */
+static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
+                                                           void const *pvSignature, size_t cbSignature,
+                                                           void const *pvExternalData, size_t cbExternalData,
+                                                           PRTERRINFO pErrInfo, void *pvUser)
+{
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+    switch (enmSignature)
+    {
+        case RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA:
+            if (pvExternalData)
+            {
+                PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pvSignature;
+                RTTIMESPEC             ValidationTime;
+                RTTimeNow(&ValidationTime)
+
+                return RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo,
+                                                                 RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
+                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT,
+                                                                 pDevExt->hAdditionalStore, pDevExt->hRootStore, &ValidationTime,
+                                                                 supdrvDarwinLdrOpenVerifyCertificatCallback, pDevExt
+                                                                 pvExternalData, cbExternalData, pErrInfo);
+            }
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Expected external data with signature!");
+
+        default:
+            RT_NOREF_PV(hLdrMod); RT_NOREF_PV(cbSignature);
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported signature type: %d", enmSignature);
+    }
+}
+
+#endif /* SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
+
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
+#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+    /*
+     * Initialize our members.
+     */
+    pImage->hLdrMod   = NIL_RTLDRMOD;
+    pImage->hMemAlloc = NIL_RTR0MEMOBJ;
+
+    /*
+     * We have to double buffer the file to be avoid a potential race between
+     * validation and actual image loading.  This could be eliminated later by
+     * baking the image validation into the RTLdrGetBits operation.
+     *
+     * Note! After calling RTLdrOpenInMemory, pvFile is owned by the loader and will be
+     *       freed via the RTFileReadAllFree callback when the loader module is closed.
+     */
+    void     *pvFile  = NULL;
+    size_t   *pcbFile = 0;
+    int rc = RTFileReadAllEx(pszFilename, 0, _32M, RTFILE_RDALL_O_DENY_WRITE, &pvFile, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        PRTERRINFOSTATIC pErrInfo = (PRTERRINFOSTATIC)RTMemTmpAlloc(sizeof(RTERRINFOSTATIC));
+        RTLDRMOD         hLdrMod = NIL_RTLDRMOD;
+        rc = RTLdrOpenInMemory(pszFilename, 0 /*fFlags*/, RTLDRARCH_HOST, cbFile,
+                               NULL /*pfnRead*/, RTFileReadAllFree, pvFile,
+                               &hLdrMod, pErrInfo ? RTErrInfoInitStatic(pErrInfo) : NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Validate the image.
+             */
+            rc = RTLdrVerifySignature(hLdrMod, supdrvDarwinLdrOpenVerifyCallback, pDevExt,
+                                      pErrInfo ? RTErrInfoInitStatic(pErrInfo) : NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Allocate memory for the object and load it into it.
+                 */
+                size_t cbImage = RTLdrSize(hLdrMod);
+                if (cbImage == pImage->cbImageBits)
+                {
+                    RTR0MEMOBJ hMemAlloc;
+                    rc = RTR0MemObjAllocPage(&hMemAlloc, cbImage, true /*fExecutable*/);
+                    if (RT_SUCCESS(rc))
+                    {
+                        void *pvImageBits = RTR0MemObjAddress(hMemAlloc);
+                        rc = RTLdrGetBits(hLdrMod, pvImageBits, (uintptr_t)pvImageBits,
+                                          supdrvDarwinLdrOpenImportCallback, pDevExt);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Commit.
+                             */
+                            pImage->hMemAlloc   = hMemAlloc;
+                            pImage->hLdrMod     = hLdrMod;
+                            pImage->pvImage     = pvImageBits;
+                            RTMemTmpFree(pErrInfo);
+                            /** @todo Call RTLdrDone. */
+                            return VINF_SUCCESS;
+                        }
+
+                        RTR0MemObjFree(hMemObj, true /*fFreeMappings*/);
+                    }
+                    else
+                        printf("VBoxDrv: Failed to allocate %u bytes for %s: %d\n", (unsigned)cbImage, rc);
+                }
+                else
+                {
+                    printf("VBoxDrv: Image size mismatch for %s: %#x, ring-3 says %#x\n",
+                           pszFilename, cbImage, pImage->cbImageBits);
+                    rc = VERR_LDR_MISMATCH_NATIVE;
+                }
+            }
+            else if (pErrInfo && RTErrInfoIsSet(&pErrInfo->Core))
+                printf("VBoxDrv: RTLdrOpenInMemory(%s) failed: %d - %s\n", pszFilename, rc, pErrInfo->Core.pszMsg);
+            else
+                printf("VBoxDrv: RTLdrOpenInMemory(%s) failed: %d\n", pszFilename, rc);
+            RTLdrClose(hLdrMod);
+        }
+        else if (pErrInfo && RTErrInfoIsSet(&pErrInfo->Core))
+            printf("VBoxDrv: RTLdrOpenInMemory(%s) failed: %d - %s\n", pszFilename, rc, pErrInfo->Core.pszMsg);
+        else
+            printf("VBoxDrv: RTLdrOpenInMemory(%s) failed: %d\n", pszFilename, rc);
+        RTMemTmpFree(pErrInfo);
+    }
+    return rc;
+#else  /* !SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
     NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
     return VERR_NOT_SUPPORTED;
+#endif /* !SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
 }
+
+
+#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+/**
+ *  @callback_method_impl{FNRTLDRENUMSYMS,
+ *      Worker for supdrvOSLdrValidatePointer.
+ */
+static DECLCALLBACK(int) supdrvDarwinLdrValidatePointerCallback(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
+                                                                RTLDRADDR Value, void *pvUser)
+{
+    RT_NOREF(hLdrMod, pszSymbol, uSymbol);
+    if (uValue == (uintptr_t)pvUser)
+        return VINF_CALLBACK_RETURN;
+    return VINF_SUCCESS;
+}
+#endif
 
 
 int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv,
                                            const uint8_t *pbImageBits, const char *pszSymbol)
 {
+#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+    AssertReturn(pImage->hLdrMod != NIL_RTLDRMOD, VERR_INVALID_STATE);
+
+    /*
+     * If we've got a symbol name, just to a lookup and compare addresses.
+     */
+    int rc;
+    if (RT_C_IS_UPPER(*pszSymbol))
+    {
+        void *pvFound = NULL;
+        rc = RTLdrGetSymbol(pImage->hLdrMod, pszSymbol, &pvFound);
+        if (RT_SUCCESS(rc))
+        {
+            if (pvFound == pv)
+                rc = VINF_SUCCESS;
+            else
+            {
+                SUPR0Printf("SUPDrv: Different exports found for %s in %s: %p, expected %p\n",
+                            pszSymbol, pImage->szName, pvFound, pv);
+                rc = VERR_LDR_BAD_FIXUP;
+            }
+        }
+        else
+            SUPR0Printf("SUPDrv: No export named %s (%p) in %s!\n", pszSymbol, uRvaToValidate, pImage->szName);
+    }
+    /*
+     * Otherwise do a symbol enumeration and look for the entrypoint.
+     */
+    else
+    {
+        rc = RTLdrEnumSymbols(pImage->hLdrMod, 0 /*fFlags*/, pImage->pvImage, (uintptr_t)pImage->pvImage,
+                              supdrvDarwinLdrValidatePointerCallback, pv);
+        if (rc == VINF_CALLBACK_RETURN)
+            rc = VINF_SUCCESS;
+        else if (RT_SUCCESS(rc))
+        {
+            SUPR0Printf("SUPDrv: No export with address %p (%s) in %s!\n", pv, pszSymbol, pImage->szName);
+            rc = VERR_NOT_FOUND;
+        }
+        else
+            SUPR0Printf("SUPDrv: RTLdrEnumSymbols failed on %s: %Rrc\n", pImage->szName, rc);
+    }
+    RT_NOREF(pDevExt, pbImageBits);
+    return rc;
+#else
     NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits); NOREF(pszSymbol);
     return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
 {
+#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+    /* State paranoia. */
+    AssertReturn(pImage->hLdrMod != NIL_RTLDRMOD, VERR_INVALID_STATE);
+    AssertReturn(pImage->hMemAlloc != NIL_RTR0MEMOBJ, VERR_INVALID_STATE);
+    AssertReturn(pImage->pvImage, VERR_INVALID_STATE);
+
+    /*
+     * We should get an identical match with ring-3 here, so the code here is
+     * trivial in comparision to SUPDrv-win.cpp.
+     */
+    if (!memcmp(pImage->pvImage, pbImageBits, pImage->cbImageBits))
+        return VINF_SUCCESS;
+    return VERR_LDR_MISMATCH_NATIVE;
+
+#else
     NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits); NOREF(pReq);
     return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
+#ifdef
+    if (pImage->hLdrMod != NIL_RTLDRMOD)
+    {
+        int rc = RTLdrClose(pImage->hLdrMod);
+        AssertRC(rc);
+        pImage->hLdrMod = NIL_RTLDRMOD;
+    }
+    if (pImage->hMemAlloc != NIL_RTR0MEMOBJ)
+    {
+        RTR0MemObjFree(pImage->hMemAlloc, true /*fFreeMappings*/);
+        pImage->hMemAlloc = NIL_RTR0MEMOBJ;
+    }
+    NOREF(pDevExt);
+#else
     NOREF(pDevExt); NOREF(pImage);
+#endif
 }
 
 

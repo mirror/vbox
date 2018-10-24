@@ -470,8 +470,9 @@ typedef FNRTLDRRDRMEMREAD *PFNRTLDRRDRMEMREAD;
  *
  * @returns IPRT status code
  * @param   pvUser      The user parameter.
+ * @param   cbImage     The image size.
  */
-typedef DECLCALLBACK(void) FNRTLDRRDRMEMDTOR(void *pvUser);
+typedef DECLCALLBACK(void) FNRTLDRRDRMEMDTOR(void *pvUser, size_t cbImage);
 /** Pointer to a RTLdrOpenInMemory destructor callback. */
 typedef FNRTLDRRDRMEMDTOR *PFNRTLDRRDRMEMDTOR;
 

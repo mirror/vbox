@@ -2206,7 +2206,7 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
                 return VERR_LDR_BAD_FIXUP;
             }
         }
-        SUPR0Printf("SUPDrv: No export named %s (%#x) in  %s!\n", pszSymbol, uRvaToValidate, pImage->szName);
+        SUPR0Printf("SUPDrv: No export named %s (%#x) in %s!\n", pszSymbol, uRvaToValidate, pImage->szName);
         return VERR_SYMBOL_NOT_FOUND;
     }
     return VINF_SUCCESS;

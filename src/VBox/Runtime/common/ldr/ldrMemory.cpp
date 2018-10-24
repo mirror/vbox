@@ -79,8 +79,9 @@ typedef RTLDRRDRMEM *PRTLDRRDRMEM;
  * @callback_method_impl{FNRTLDRRDRMEMDTOR,
  *      Default destructor - pvUser points to the image memory block}
  */
-static DECLCALLBACK(void) rtldrRdrMemDefaultDtor(void *pvUser)
+static DECLCALLBACK(void) rtldrRdrMemDefaultDtor(void *pvUser, size_t cbImage)
 {
+    RT_NOREF(cbImage);
     RTMemFree(pvUser);
 }
 
@@ -201,7 +202,9 @@ static DECLCALLBACK(int) rtldrRdrMem_Unmap(PRTLDRREADER pReader, const void *pvB
 static DECLCALLBACK(int) rtldrRdrMem_Destroy(PRTLDRREADER pReader)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
-    pThis->pfnDtor(pThis->pvUser);
+    pThis->pfnDtor(pThis->pvUser, pThis->cbImage);
+    pThis->pfnDtor = NULL;
+    pThis->pvUser = NULL;
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
@@ -278,14 +281,14 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
 
     /* The rest of the validations will call the destructor. */
     AssertMsgReturnStmt(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags),
-                        pfnDtor(pvUser), VERR_INVALID_PARAMETER);
+                        pfnDtor(pvUser, cbImage), VERR_INVALID_PARAMETER);
     AssertMsgReturnStmt(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, ("%d\n", enmArch),
-                        pfnDtor(pvUser), VERR_INVALID_PARAMETER);
+                        pfnDtor(pvUser, cbImage), VERR_INVALID_PARAMETER);
     if (!pfnRead)
         pfnRead = rtldrRdrMemDefaultReader;
     else
-        AssertReturnStmt(RT_VALID_PTR(pfnRead), pfnDtor(pvUser), VERR_INVALID_POINTER);
-    AssertReturnStmt(cbImage > 0, pfnDtor(pvUser), VERR_INVALID_PARAMETER);
+        AssertReturnStmt(RT_VALID_PTR(pfnRead), pfnDtor(pvUser, cbImage), VERR_INVALID_POINTER);
+    AssertReturnStmt(cbImage > 0, pfnDtor(pvUser, cbImage), VERR_INVALID_PARAMETER);
 
     /*
      * Resolve RTLDRARCH_HOST.
@@ -311,7 +314,7 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
     }
     else
     {
-        pfnDtor(pvUser);
+        pfnDtor(pvUser, cbImage);
         rc = RTErrInfoSetF(pErrInfo, rc, "rtldrRdrMem_Create failed: %Rrc", rc);
     }
     *phLdrMod = NIL_RTLDRMOD;
