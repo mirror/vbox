@@ -392,15 +392,23 @@ public:
 
         virtual ~WebMSegment()
         {
-            destroy();
+            uninit();
         }
 
+        /**
+         * Initializes a segment.
+         *
+         * @returns IPRT status code.
+         */
         int init(void)
         {
             return RTCritSectInit(&CritSect);
         }
 
-        void destroy(void)
+        /**
+         * Uninitializes a segment.
+         */
+        void uninit(void)
         {
             clear();
 
