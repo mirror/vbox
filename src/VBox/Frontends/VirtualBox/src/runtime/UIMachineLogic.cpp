@@ -1800,8 +1800,8 @@ void UIMachineLogic::sltShowGuestControlDialog()
         pGuestControlDialog->show();
         pGuestControlDialog->setWindowState(pGuestControlDialog->windowState() & ~Qt::WindowMinimized);
         pGuestControlDialog->activateWindow();
-        connect(pGuestControlDialog, &QIManagerDialog::sigClose,
-                this, &UIMachineLogic::sltCloseGuestControlWindow);
+        // connect(pGuestControlDialog, &QIManagerDialog::sigClose,
+        //         this, &UIMachineLogic::sltCloseGuestControlWindow);
     }
 
 }
