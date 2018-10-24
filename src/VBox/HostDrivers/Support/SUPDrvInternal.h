@@ -794,6 +794,11 @@ typedef struct SUPDRVDEVEXT
     PCALLBACK_OBJECT                pObjPowerCallback;
     /** Callback handle returned by ExRegisterCallback. */
     PVOID                           hPowerCallback;
+# elif defined(RT_OS_DARWIN)
+    /** Trusted root certificates for code signing validation. */
+    RTCRSTORE                       hRootStore;
+    /** Intermedite certificates for code signing validation. */
+    RTCRSTORE                       hAdditionalStore;
 # endif
 #endif
 } SUPDRVDEVEXT;
