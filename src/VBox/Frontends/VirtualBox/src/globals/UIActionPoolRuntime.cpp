@@ -229,6 +229,56 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Guest Control Dialog' action class. */
+class UIActionSimpleRuntimeShowGuestControlDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleRuntimeShowGuestControlDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png", true)
+    {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("GuestControlDialog");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Guest Control..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine guest control window"));
+    }
+};
+
 /** Toggle action extension, used as 'Pause' action class. */
 class UIActionToggleRuntimePause : public UIActionToggle
 {
@@ -3183,6 +3233,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleRuntimeShowSettings(this);
     m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimpleRuntimePerformTakeSnapshot(this);
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleRuntimeShowInformationDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowGuestControl] = new UIActionSimpleRuntimeShowGuestControlDialog(this);
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionToggleRuntimePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimpleRuntimePerformReset(this);
     m_pool[UIActionIndexRT_M_Machine_S_Detach] = new UIActionSimpleRuntimePerformDetach(this);
@@ -3484,6 +3535,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestControl)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)

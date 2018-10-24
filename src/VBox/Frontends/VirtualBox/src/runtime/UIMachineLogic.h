@@ -273,6 +273,7 @@ private slots:
     void sltTypeHostKeyComboPressRelease(bool fToggleSequence);
     void sltTakeSnapshot();
     void sltShowInformationDialog();
+    void sltShowGuestControlDialog();
     void sltReset();
     void sltPause(bool fOn);
     void sltDetach();
@@ -426,6 +427,7 @@ private:
 
     /** Holds the log viewer dialog instance. */
     QIManagerDialog *m_pLogViewerDialog;
+    QIManagerDialog *m_pGuestControlDialog;
 
     /* Friend classes: */
     friend class UIMachineWindow;

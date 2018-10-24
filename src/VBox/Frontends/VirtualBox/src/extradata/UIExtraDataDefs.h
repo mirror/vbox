@@ -459,18 +459,19 @@ public:
     /** Runtime UI: Menu "Machine": Action types. */
     enum RuntimeMenuMachineActionType
     {
-        RuntimeMenuMachineActionType_Invalid           = 0,
-        RuntimeMenuMachineActionType_SettingsDialog    = RT_BIT(0),
-        RuntimeMenuMachineActionType_TakeSnapshot      = RT_BIT(1),
-        RuntimeMenuMachineActionType_InformationDialog = RT_BIT(2),
-        RuntimeMenuMachineActionType_Pause             = RT_BIT(3),
-        RuntimeMenuMachineActionType_Reset             = RT_BIT(4),
-        RuntimeMenuMachineActionType_Detach            = RT_BIT(5),
-        RuntimeMenuMachineActionType_SaveState         = RT_BIT(6),
-        RuntimeMenuMachineActionType_Shutdown          = RT_BIT(7),
-        RuntimeMenuMachineActionType_PowerOff          = RT_BIT(8),
-        RuntimeMenuMachineActionType_Nothing           = RT_BIT(9),
-        RuntimeMenuMachineActionType_All               = 0xFFFF
+        RuntimeMenuMachineActionType_Invalid            = 0,
+        RuntimeMenuMachineActionType_SettingsDialog     = RT_BIT(0),
+        RuntimeMenuMachineActionType_TakeSnapshot       = RT_BIT(1),
+        RuntimeMenuMachineActionType_InformationDialog  = RT_BIT(2),
+        RuntimeMenuMachineActionType_GuestControlDialog = RT_BIT(3),
+        RuntimeMenuMachineActionType_Pause              = RT_BIT(4),
+        RuntimeMenuMachineActionType_Reset              = RT_BIT(5),
+        RuntimeMenuMachineActionType_Detach             = RT_BIT(6),
+        RuntimeMenuMachineActionType_SaveState          = RT_BIT(7),
+        RuntimeMenuMachineActionType_Shutdown           = RT_BIT(8),
+        RuntimeMenuMachineActionType_PowerOff           = RT_BIT(9),
+        RuntimeMenuMachineActionType_Nothing            = RT_BIT(10),
+        RuntimeMenuMachineActionType_All                = 0xFFFF
     };
 
     /** Runtime UI: Menu "View": Action types. */

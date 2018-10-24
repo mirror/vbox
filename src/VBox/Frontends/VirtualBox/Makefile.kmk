@@ -844,6 +844,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationView.h \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/runtime/guestctrl/UIGuestControlConsole.h \
+	src/runtime/guestctrl/UIGuestControlDialog.h \
 	src/runtime/guestctrl/UIGuestControlFileManager.h \
 	src/runtime/guestctrl/UIGuestControlFileModel.h \
 	src/runtime/guestctrl/UIGuestControlFileTable.h \
@@ -992,6 +993,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationView.h \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/runtime/guestctrl/UIGuestControlConsole.h \
+	src/runtime/guestctrl/UIGuestControlDialog.h \
 	src/runtime/guestctrl/UIGuestControlFileManager.h \
 	src/runtime/guestctrl/UIGuestControlFileModel.h \
 	src/runtime/guestctrl/UIGuestControlFileTable.h \
@@ -1541,6 +1543,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationView.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
 	src/runtime/guestctrl/UIGuestControlConsole.cpp \
+	src/runtime/guestctrl/UIGuestControlDialog.cpp \
 	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
 	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
 	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
@@ -1713,6 +1716,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationView.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
 	src/runtime/guestctrl/UIGuestControlConsole.cpp \
+	src/runtime/guestctrl/UIGuestControlDialog.cpp \
 	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
 	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
 	src/runtime/guestctrl/UIGuestControlFileTable.cpp \

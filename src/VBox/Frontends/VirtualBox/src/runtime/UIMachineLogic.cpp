@@ -65,6 +65,7 @@
 # include "UIExtraDataManager.h"
 # include "UIAddDiskEncryptionPasswordDialog.h"
 # include "UIVMInformationDialog.h"
+# include "UIGuestControlDialog.h"
 # ifdef VBOX_WS_MAC
 #  include "DockIconPreview.h"
 #  include "UIExtraDataManager.h"
@@ -852,6 +853,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pHostLedsState(NULL)
     , m_fIsHidLedsSyncEnabled(false)
     , m_pLogViewerDialog(0)
+    , m_pGuestControlDialog(0)
 {
 }
 
@@ -1107,6 +1109,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTakeSnapshot()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowGuestControl), SIGNAL(triggered()),
+            this, SLOT(sltShowGuestControlDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
             this, SLOT(sltPause(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
@@ -1774,6 +1778,32 @@ void UIMachineLogic::sltShowInformationDialog()
 
     /* Invoke VM information dialog: */
     UIVMInformationDialog::invoke(activeMachineWindow());
+}
+
+void UIMachineLogic::sltShowGuestControlDialog()
+{
+    if (machine().isNull() || !activeMachineWindow())
+        return;
+
+    /* Create a logviewer only if we don't have one already */
+    if (m_pGuestControlDialog)
+        return;
+
+    QIManagerDialog *pGuestControlDialog;
+    UIGuestControlDialogFactory dialogFactory(actionPool(), machine());
+    dialogFactory.prepare(pGuestControlDialog, activeMachineWindow());
+    if (pGuestControlDialog)
+    {
+        m_pGuestControlDialog = pGuestControlDialog;
+
+        /* Show instance: */
+        pGuestControlDialog->show();
+        pGuestControlDialog->setWindowState(pGuestControlDialog->windowState() & ~Qt::WindowMinimized);
+        pGuestControlDialog->activateWindow();
+        connect(pGuestControlDialog, &QIManagerDialog::sigClose,
+                this, &UIMachineLogic::sltCloseGuestControlWindow);
+    }
+
 }
 
 void UIMachineLogic::sltReset()
