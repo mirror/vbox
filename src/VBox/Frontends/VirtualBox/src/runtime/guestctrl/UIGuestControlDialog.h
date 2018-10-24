@@ -40,7 +40,7 @@ class CMachine;
 
 
 /** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */
-class SHARED_LIBRARY_STUFF UIGuestControlDialogFactory : public QIManagerDialogFactory
+class UIGuestControlDialogFactory : public QIManagerDialogFactory
 {
 public:
 
