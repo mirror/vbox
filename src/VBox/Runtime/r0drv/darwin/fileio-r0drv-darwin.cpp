@@ -299,7 +299,7 @@ RTDECL(int) RTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod, uint64_t
             return VERR_INVALID_PARAMETER;
     }
 
-    if ((RTFOFF)offNew > 0)
+    if ((RTFOFF)offNew >= 0)
     {
         pThis->offFile = offNew;
         if (poffActual)
