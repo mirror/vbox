@@ -6309,7 +6309,7 @@ ifdef VBOX_WITH_QTGUI
 
   ## @todo Use VBOX_GCC_PEDANTIC_CXX?
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
-	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions \
+	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused $(VBOX_GCC_Wno-unused-parameter),$(VBOX_GCC_WARN)) -frtti -fno-exceptions \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_Wno-ignored-qualifiers) \
 	$(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
