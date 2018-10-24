@@ -979,18 +979,8 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             LogRel(("OCI public IP: %s\n", m->m_OciExportData.fPublicIP ? "yes" : "no"));
         }
 
-#ifndef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS
-        SetUpProgressMode mode = ExportOCI;
-
-        rc = i_setUpProgress(aProgress,
-                             BstrFmt(tr("Export appliance to Cloud '%s'"), aLocInfo.strPath.c_str()),
-                             mode);
-        if (FAILED(rc))
-            return rc;
-#else
         // we need to do that as otherwise Task won't be created successfully
         aProgress.createObject();
-#endif
 
         // Initialize our worker task
         TaskOCI* task = NULL;
@@ -2355,8 +2345,6 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
 {
     LogRel(("Appliance::i_writeFSOCI\n"));
-
-    RT_NOREF(pTask); // XXX
     LogFlowFuncEnter();
 
     HRESULT hrc = S_OK;
@@ -2370,94 +2358,6 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
     ComObjPtr<ICloudClient> cloudClient;
     hrc = ociProfile->CreateCloudClient(cloudClient.asOutParam());
 
-#ifndef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS
-
-    int vrc = VINF_SUCCESS;
-    //fills by values from m->m_OciExportData
-    //mostly all names(keys) come from official OCI API documentation (see LaunchInstance description)
-    SafeArray <BSTR> paramNames;
-    SafeArray <BSTR> paramValues;
-
-    Bstr("displayName").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strDisplayMachineName).detachTo(paramValues.appendedRaw());
-    Bstr("objectName").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strBootImageName).detachTo(paramValues.appendedRaw());
-    Bstr("vcnId").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strVCN).detachTo(paramValues.appendedRaw());
-    Bstr("bucketName").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strBucketId).detachTo(paramValues.appendedRaw());
-    Bstr("bootVolumeSizeInGBs").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strBootDiskSize).detachTo(paramValues.appendedRaw());
-    Bstr("availabilityDomain").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strDomainName).detachTo(paramValues.appendedRaw());
-    Bstr("shape").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strInstanceShapeId).detachTo(paramValues.appendedRaw());
-    Bstr("profileName").detachTo(paramNames.appendedRaw());
-    Bstr(m->m_OciExportData.strProfileName).detachTo(paramValues.appendedRaw());
-    Bstr("assignPublicIp").detachTo(paramNames.appendedRaw());
-    Utf8Str fIP = (m->m_OciExportData.fPublicIP == true) ? "true" : "false";
-    Bstr(fIP.c_str()).detachTo(paramValues.appendedRaw());
-
-    com::SafeArray<CloudCommand_T> commandList;
-
-    if (SUCCEEDED(hrc))
-    {
-        try
-        {
-            hrc = cloudClient->GetCommandsForOperation(CloudOperation_exportVM, false,
-                                                        ComSafeArrayAsOutParam(commandList));
-            if (SUCCEEDED(hrc))
-            {
-                SafeArray <BSTR> commandIdList;
-
-                for (ULONG i = 0; i < commandList.size(); i++)
-                {
-                    CloudCommand_T cmd = commandList[i];
-                    Utf8Str cond;
-                    switch(cmd)
-                    {
-                        case CloudCommand_getImage:
-                        case CloudCommand_getSubnet:
-                            cond.assign("AVAILABLE");
-                            break;
-                        case CloudCommand_getInstance:
-                            cond.assign("RUNNING");
-                            break;
-                        default:
-                            break;
-                    }
-
-                    Bstr bStrId;
-                    hrc = cloudClient->CreateCommand(cmd, (cond.isEmpty()) ? NULL : Bstr(cond.c_str()).raw(), bStrId.asOutParam());
-
-                    if (SUCCEEDED(hrc))
-                    {
-                        bStrId.detachTo(commandIdList.appendedRaw());
-                    }
-                }
-
-                if (SUCCEEDED(hrc))
-                    vrc = cloudClient->RunSeveralCommands(ComSafeArrayAsInParam(commandIdList),
-                                                          ComSafeArrayAsInParam(paramNames),
-                                                          ComSafeArrayAsInParam(paramValues),
-                                                          pTask->pProgress);
-                if (RT_FAILURE(vrc))
-                    hrc = E_FAIL;
-            }
-        }
-        catch (HRESULT arc)
-        {
-            hrc = arc;
-        }
-        catch (...)
-        {
-            LogRel(("Appliance::i_writeFSOCI(): get caught unknown exception\n"));
-        }
-
-        cloudClient.setNull();
-    }
-#else
-    LogRel(("Appliance::i_writeFSOCI(): #ifdef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS section \n"));
     if (SUCCEEDED(hrc))
     {
         LogRel(("Appliance::i_writeFSOCI(): calling OCICloudClient::exportVM\n"));
@@ -2480,11 +2380,12 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
             /// @todo Fail here with user notification. We do export 1 VM only
         }
     }
-#endif
 
     LogFlowFuncLeave();
     return hrc;
 }
+
+
 /**
  * Writes the Oracle Public Cloud appliance.
  *

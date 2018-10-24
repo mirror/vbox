@@ -66,12 +66,8 @@ void UIWizardExportAppPage3::populateCloudClientParameters()
     AssertMsgReturnVoid(comCloudProfile.isOk() && comCloudClient.isNotNull(),
                         ("Can't create Cloud Client object!"));
 
-#ifndef VBOX_WITH_CLOUD_PROVIDERS_NO_COMMANDS
     /* Read Cloud Client parameters for Export VM operation: */
-    QString strJSON = comCloudClient.GetOperationParameters(KCloudOperation_exportVM);
-#else
     QString strJSON = comCloudClient.GetExportParameters();
-#endif
 
     /* Create JSON document on the basis of it, make sure it isn't empty: */
     const QJsonDocument document = QJsonDocument::fromJson(strJSON.toUtf8());
