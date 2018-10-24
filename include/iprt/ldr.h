@@ -422,18 +422,6 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
 RTDECL(int) RTLdrOpenEx(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo);
 
 /**
- * Opens a binary image file using kLdr.
- *
- * @returns iprt status code.
- * @param   pszFilename Image filename.
- * @param   phLdrMod    Where to store the handle to the loaded module.
- * @param   fFlags      Valid RTLDR_O_XXX combination.
- * @param   enmArch     CPU architecture specifier for the image to be loaded.
- * @remark  Primarily for testing the loader.
- */
-RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
-
-/**
  * Open a binary image file allowing VFS chains in the filename.
  *
  * @returns iprt status code.
