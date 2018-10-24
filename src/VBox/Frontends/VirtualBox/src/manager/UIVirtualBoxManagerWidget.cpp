@@ -113,14 +113,19 @@ UIToolType UIVirtualBoxManagerWidget::toolsType() const
     return m_pPaneTools->toolsType();
 }
 
+UIToolType UIVirtualBoxManagerWidget::currentGlobalTool() const
+{
+    return m_pPaneToolsGlobal->currentTool();
+}
+
 UIToolType UIVirtualBoxManagerWidget::currentMachineTool() const
 {
     return m_pPaneToolsMachine->currentTool();
 }
 
-UIToolType UIVirtualBoxManagerWidget::currentGlobalTool() const
+bool UIVirtualBoxManagerWidget::isGlobalToolOpened(UIToolType enmType) const
 {
-    return m_pPaneToolsGlobal->currentTool();
+    return m_pPaneToolsGlobal ? m_pPaneToolsGlobal->isToolOpened(enmType) : false;
 }
 
 bool UIVirtualBoxManagerWidget::isMachineToolOpened(UIToolType enmType) const
@@ -128,9 +133,16 @@ bool UIVirtualBoxManagerWidget::isMachineToolOpened(UIToolType enmType) const
     return m_pPaneToolsMachine ? m_pPaneToolsMachine->isToolOpened(enmType) : false;
 }
 
-bool UIVirtualBoxManagerWidget::isGlobalToolOpened(UIToolType enmType) const
+void UIVirtualBoxManagerWidget::switchToGlobalTool(UIToolType enmType)
 {
-    return m_pPaneToolsGlobal ? m_pPaneToolsGlobal->isToolOpened(enmType) : false;
+    /* Open corresponding tool: */
+    m_pPaneToolsGlobal->openTool(enmType);
+
+    /* Let the parent know: */
+    emit sigToolTypeChange();
+
+    /* Update toolbar: */
+    updateToolbar();
 }
 
 void UIVirtualBoxManagerWidget::switchToMachineTool(UIToolType enmType)
@@ -155,26 +167,14 @@ void UIVirtualBoxManagerWidget::switchToMachineTool(UIToolType enmType)
     updateToolbar();
 }
 
-void UIVirtualBoxManagerWidget::switchToGlobalTool(UIToolType enmType)
+void UIVirtualBoxManagerWidget::closeGlobalTool(UIToolType enmType)
 {
-    /* Open corresponding tool: */
-    m_pPaneToolsGlobal->openTool(enmType);
-
-    /* Let the parent know: */
-    emit sigToolTypeChange();
-
-    /* Update toolbar: */
-    updateToolbar();
+    m_pPaneToolsGlobal->closeTool(enmType);
 }
 
 void UIVirtualBoxManagerWidget::closeMachineTool(UIToolType enmType)
 {
     m_pPaneToolsMachine->closeTool(enmType);
-}
-
-void UIVirtualBoxManagerWidget::closeGlobalTool(UIToolType enmType)
-{
-    m_pPaneToolsGlobal->closeTool(enmType);
 }
 
 void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &position)

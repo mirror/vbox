@@ -91,22 +91,22 @@ public:
         /** Returns tools type. */
         UIToolType toolsType() const;
 
-        /** Returns a type of curent Machine tool. */
-        UIToolType currentMachineTool() const;
         /** Returns a type of curent Global tool. */
         UIToolType currentGlobalTool() const;
-        /** Returns whether Machine tool of passed @a enmType is opened. */
-        bool isMachineToolOpened(UIToolType enmType) const;
+        /** Returns a type of curent Machine tool. */
+        UIToolType currentMachineTool() const;
         /** Returns whether Global tool of passed @a enmType is opened. */
         bool isGlobalToolOpened(UIToolType enmType) const;
-        /** Switches to Machine tool of passed @a enmType. */
-        void switchToMachineTool(UIToolType enmType);
+        /** Returns whether Machine tool of passed @a enmType is opened. */
+        bool isMachineToolOpened(UIToolType enmType) const;
         /** Switches to Global tool of passed @a enmType. */
         void switchToGlobalTool(UIToolType enmType);
-        /** Closes Machine tool of passed @a enmType. */
-        void closeMachineTool(UIToolType enmType);
+        /** Switches to Machine tool of passed @a enmType. */
+        void switchToMachineTool(UIToolType enmType);
         /** Closes Global tool of passed @a enmType. */
         void closeGlobalTool(UIToolType enmType);
+        /** Closes Machine tool of passed @a enmType. */
+        void closeMachineTool(UIToolType enmType);
     /** @} */
 
 public slots:
