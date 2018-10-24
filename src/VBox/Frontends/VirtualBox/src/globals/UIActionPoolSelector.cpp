@@ -1780,8 +1780,8 @@ public:
     UIActionMenuSelectorSnapshotToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
-        setIcon(UIIconPool::iconSetFull(":/snapshot_show_details_16px.png", ":/snapshot_show_details_16px.png",
-                                        ":/snapshot_show_details_disabled_16px.png", ":/snapshot_show_details_disabled_16px.png"));
+        setIcon(UIIconPool::iconSetFull(":/snapshot_show_details_32px.png", ":/snapshot_show_details_16px.png",
+                                        ":/snapshot_show_details_disabled_32px.png", ":/snapshot_show_details_disabled_16px.png"));
     }
 
 protected:
