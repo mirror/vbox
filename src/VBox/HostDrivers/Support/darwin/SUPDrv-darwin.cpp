@@ -1469,7 +1469,7 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
-#ifdef
+#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
     if (pImage->hLdrMod != NIL_RTLDRMOD)
     {
         int rc = RTLdrClose(pImage->hLdrMod);
