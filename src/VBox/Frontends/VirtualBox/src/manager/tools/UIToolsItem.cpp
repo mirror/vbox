@@ -588,7 +588,7 @@ QVariant UIToolsItem::data(int iKey) const
 void UIToolsItem::updatePixmap()
 {
     /* Prepare variables: */
-    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.5;
 
     /* Prepare new pixmap size: */
     const QSize pixmapSize = QSize(iIconMetric, iIconMetric);
