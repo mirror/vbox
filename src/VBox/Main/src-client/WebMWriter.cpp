@@ -347,7 +347,7 @@ int WebMWriter::init(void)
  */
 void WebMWriter::destroy(void)
 {
-    CurSeg.destroy();
+    CurSeg.uninit();
 }
 
 /**
