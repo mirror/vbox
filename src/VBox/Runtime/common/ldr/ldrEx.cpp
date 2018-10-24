@@ -44,7 +44,7 @@
 #include <iprt/formats/mach-o.h>
 #include "internal/ldr.h"
 
-#ifdef LDR_ONLY_PE
+#if defined(LDR_ONLY_PE) || defined(LDR_ONLY_MACHO)
 # undef LDR_WITH_PE
 # undef LDR_WITH_ELF
 # undef LDR_WITH_LX
@@ -53,7 +53,12 @@
 # undef LDR_WITH_NE
 # undef LDR_WITH_MZ
 # undef LDR_WITH_AOUT
-# define LDR_WITH_PE
+# ifdef LDR_ONLY_PE
+#  define LDR_WITH_PE
+# endif
+# ifdef LDR_ONLY_MACHO
+#  define LDR_WITH_MACHO
+# endif
 #endif
 
 

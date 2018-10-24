@@ -123,7 +123,8 @@ $$(VBOX_SUP_WIN_CERTS_FILE): $(MAKEFILE_CURRENT) \
 		"$(VBOX_PATH_SUPR3_CERTIFICATES)/$(lastword $(subst =,$(SP) ,$(cert)))" \
 		"$@")
 # The build certificate.
-if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && defined(VBOX_SIGNING_MODE)
+if  ("$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && defined(VBOX_SIGNING_MODE)) \
+ || ("$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION) && defined(VBOX_SIGNING_MODE))
 	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --exe $(VBOX_RTSIGNTOOL) --output "$@.cer" --der
 	$(VBOX_BIN2C) -ascii --append SUPBuildCert "$@.cer" $@
 	$(QUIET)$(RM) -f -- $@.cer
@@ -618,6 +619,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  ifdef VBOX_WITH_RAW_MODE
   VBoxDrv_DEFS.darwin    += VBOX_WITH_RAW_MODE
  endif
+ ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
+  VBoxDrv_DEFS.darwin    += VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
+ endif
  ifdef VBOX_WITH_NETFLT
   VBoxDrv_DEFS.solaris   += VBOX_WITH_NETFLT
  endif
@@ -660,6 +664,10 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
 
  VBoxDrv_SOURCES.darwin   = \
 	darwin/SUPDrv-darwin.cpp
+ ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
+  VBoxDrv_SOURCES.darwin += \
+  	$(VBOX_SUP_WIN_CERTS_FILE)
+ endif
  VBoxDrv_SOURCES.solaris  = \
 	solaris/SUPDrv-solaris.c
  VBoxDrv_SOURCES.win      = \

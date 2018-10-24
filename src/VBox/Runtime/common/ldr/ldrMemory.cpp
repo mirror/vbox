@@ -277,7 +277,7 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
     if (!pfnDtor)
         pfnDtor = rtldrRdrMemDefaultDtor;
     else
-        AssertPtrReturn(pfnRead, VERR_INVALID_POINTER);
+        AssertPtrReturn(pfnDtor, VERR_INVALID_POINTER);
 
     /* The rest of the validations will call the destructor. */
     AssertMsgReturnStmt(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags),

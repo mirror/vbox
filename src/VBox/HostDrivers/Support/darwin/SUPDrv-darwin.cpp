@@ -100,7 +100,7 @@ RT_C_DECLS_END
 RT_C_DECLS_BEGIN
 static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData);
 static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvData);
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
 static int              supdrvDarwinInitCertStores(PSUPDRVDEVEXT pDevExt);
 static void             supdrvDarwinDestroyCertStores(PSUPDRVDEVEXT pDevExt);
 #endif
@@ -285,7 +285,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
         rc = supdrvInitDevExt(&g_DevExt, sizeof(SUPDRVSESSION));
         if (RT_SUCCESS(rc))
         {
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
             supdrvDarwinInitCertStores(&g_DevExt);
 #endif
 
@@ -352,7 +352,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                     else
                         LogRel(("VBoxDrv: cdevsw_add failed (%d)\n", g_iMajorDeviceNo));
                 }
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
                 supdrvDarwinDestroyCertStores(&g_DevExt);
 #endif
                 RTSpinlockDestroy(g_Spinlock);
@@ -438,7 +438,7 @@ static int vboxdrvDarwinResolveSymbols(void)
 }
 
 
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
 
 /**
  * Initalizes the certificate stores (code signing) in the device extension.
@@ -494,7 +494,7 @@ static void supdrvDarwinDestroyCertStores(PSUPDRVDEVEXT pDevExt)
     }
 }
 
-#endif /* SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
+#endif /* VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION */
 
 /**
  * Stop the kernel module.
@@ -533,7 +533,7 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
     AssertRC(rc);
     g_Spinlock = NIL_RTSPINLOCK;
 
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
     supdrvDarwinDestroyCertStores(&g_DevExt);
 #endif
 
@@ -1222,7 +1222,7 @@ bool VBOXCALL supdrvOSAreTscDeltasInSync(void)
 }
 
 
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
 
 /**
  * @callback_method_impl{FNRTLDRIMPORT}
@@ -1272,6 +1272,9 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCertificatCallback(PCRTCRX509C
                                                                      uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo)
 {
     RT_NOREF(pvUser); //PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+# ifdef DEBUG_bird
+    printf("supdrvDarwinLdrOpenVerifyCertificatCallback: pCert=%p hCertPaths=%p\n", pCert, hCertPaths);
+# endif
 
 # if 0
     /*
@@ -1360,11 +1363,11 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCallback(RTLDRMOD hLdrMod, RTL
     }
 }
 
-#endif /* SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
+#endif /* VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION */
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
     /*
      * Initialize our members.
      */
@@ -1449,14 +1452,14 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         RTMemTmpFree(pErrInfo);
     }
     return rc;
-#else  /* !SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
+#else  /* !VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION */
     NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
     return VERR_NOT_SUPPORTED;
-#endif /* !SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION */
+#endif /* !VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION */
 }
 
 
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
 /**
  *  @callback_method_impl{FNRTLDRENUMSYMS,
  *      Worker for supdrvOSLdrValidatePointer.
@@ -1475,7 +1478,7 @@ static DECLCALLBACK(int) supdrvDarwinLdrValidatePointerCallback(RTLDRMOD hLdrMod
 int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv,
                                            const uint8_t *pbImageBits, const char *pszSymbol)
 {
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
     AssertReturn(pImage->hLdrMod != NIL_RTLDRMOD, VERR_INVALID_STATE);
 
     /*
@@ -1484,16 +1487,16 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
     int rc;
     if (RT_C_IS_UPPER(*pszSymbol))
     {
-        void *pvFound = NULL;
-        rc = RTLdrGetSymbol(pImage->hLdrMod, pszSymbol, &pvFound);
+        RTLDRADDR uValueFound;
+        rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pvImage, (uintptr_t)pImage->pvImage, UINT32_MAX, pszSymbol, &uValueFound);
         if (RT_SUCCESS(rc))
         {
-            if (pvFound == pv)
+            if (uValueFound == (uintptr_t)pv)
                 rc = VINF_SUCCESS;
             else
             {
-                SUPR0Printf("SUPDrv: Different exports found for %s in %s: %p, expected %p\n",
-                            pszSymbol, pImage->szName, pvFound, pv);
+                SUPR0Printf("SUPDrv: Different exports found for %s in %s: %RTptr, expected %p\n",
+                            pszSymbol, pImage->szName, (RTUINTPTR)uValueFound, pv);
                 rc = VERR_LDR_BAD_FIXUP;
             }
         }
@@ -1528,7 +1531,7 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
 {
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
     /* State paranoia. */
     AssertReturn(pImage->hLdrMod != NIL_RTLDRMOD, VERR_INVALID_STATE);
     AssertReturn(pImage->hMemAlloc != NIL_RTR0MEMOBJ, VERR_INVALID_STATE);
@@ -1553,7 +1556,7 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
-#ifdef SUPDRV_WITH_DARWIN_IMAGE_VERIFICATION
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
     if (pImage->hLdrMod != NIL_RTLDRMOD)
     {
         int rc = RTLdrClose(pImage->hLdrMod);

@@ -368,7 +368,7 @@ typedef struct SUPDRVLDRIMAGE
     /** Hack for seeing the module in perf, dtrace and other stack crawlers. */
     struct module                  *pLnxModHack;
 #endif
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION)
     /** Load module handle. */
     RTLDRMOD                        hLdrMod;
     /** Allocate object. */
@@ -794,7 +794,7 @@ typedef struct SUPDRVDEVEXT
     PCALLBACK_OBJECT                pObjPowerCallback;
     /** Callback handle returned by ExRegisterCallback. */
     PVOID                           hPowerCallback;
-# elif defined(RT_OS_DARWIN)
+# elif defined(RT_OS_DARWIN) && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION)
     /** Trusted root certificates for code signing validation. */
     RTCRSTORE                       hRootStore;
     /** Intermedite certificates for code signing validation. */

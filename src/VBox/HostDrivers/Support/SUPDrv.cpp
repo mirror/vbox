@@ -5571,6 +5571,13 @@ int VBOXCALL supdrvLdrGetExportedSymbol(const char *pszSymbol, uintptr_t *puValu
             *puValue = (uintptr_t)g_aFunctions[i].pfn;
             return VINF_SUCCESS;
         }
+
+    if (!strcmp(pszSymbol, "g_SUPGlobalInfoPage"))
+    {
+        *puValue = (uintptr_t)g_pSUPGlobalInfoPage;
+        return VINF_SUCCESS;
+    }
+
     return VERR_SYMBOL_NOT_FOUND;
 }
 

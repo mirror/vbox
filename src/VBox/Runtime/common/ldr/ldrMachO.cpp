@@ -781,12 +781,12 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                     \
                     case S_MOD_INIT_FUNC_POINTERS: \
                         /** @todo this requires a query API or flag... (e.g. C++ constructors) */ \
-                        RTLDRMODMACHO_CHECK_RETURN(fOpenFlags & RTLDR_O_FOR_DEBUG, \
+                        RTLDRMODMACHO_CHECK_RETURN(fOpenFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION), \
                                                   VERR_LDRMACHO_UNSUPPORTED_INIT_SECTION); \
                         RT_FALL_THRU(); \
                     case S_MOD_TERM_FUNC_POINTERS: \
                         /** @todo this requires a query API or flag... (e.g. C++ destructors) */ \
-                        RTLDRMODMACHO_CHECK_RETURN(fOpenFlags & RTLDR_O_FOR_DEBUG, \
+                        RTLDRMODMACHO_CHECK_RETURN(fOpenFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION), \
                                                   VERR_LDRMACHO_UNSUPPORTED_TERM_SECTION); \
                         RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved1, VERR_LDRMACHO_BAD_SECTION); \
                         RTLDRMODMACHO_CHECK_RETURN(!pSect->reserved2, VERR_LDRMACHO_BAD_SECTION); \
@@ -1198,7 +1198,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
             case LC_DYLD_ENVIRONMENT:   /** @todo dylib */
             case LC_MAIN: /** @todo parse this and find and entry point or smth. */
                 /** @todo valid command size. */
-                if (!(fOpenFlags & RTLDR_O_FOR_DEBUG))
+                if (!(fOpenFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION)))
                     RTLDRMODMACHO_FAILED_RETURN(RTErrInfoSetF(pErrInfo, VERR_LDRMACHO_UNSUPPORTED_LOAD_COMMAND,
                                                              "cmd=%#x", u.pLoadCmd->cmd));
                 Log(("ldrMachO: Can't load because of load command: %#x\n", u.pLoadCmd->cmd));
