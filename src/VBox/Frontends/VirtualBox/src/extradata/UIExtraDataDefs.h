@@ -29,6 +29,11 @@
 #include <iprt/cdefs.h>
 
 
+/** Typedef for QPair of QStrings. */
+typedef QPair<QString, QString> QIStringPair;
+typedef QList<QIStringPair> QIStringPairList;
+
+
 /** Extra-data namespace. */
 namespace UIExtraDataDefs
 {

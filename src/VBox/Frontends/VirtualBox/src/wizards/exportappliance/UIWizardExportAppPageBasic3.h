@@ -23,6 +23,7 @@
 #include <QVariant>
 
 /* GUI includes: */
+#include "UIExtraDataDefs.h"
 #include "UIWizardExportAppDefs.h"
 #include "UIWizardPage.h"
 
@@ -53,7 +54,7 @@ protected:
     /** Parses JSON string @a field. */
     static QString parseJsonFieldString(const QString &strFieldName, const QJsonValue &field);
     /** Parses JSON array @a field. */
-    static QStringList parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field);
+    static QIStringPairList parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field);
 
     /** Refreshes appliance settings widget. */
     void refreshApplianceSettingsWidget();

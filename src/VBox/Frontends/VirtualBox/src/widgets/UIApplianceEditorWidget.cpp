@@ -526,6 +526,44 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"); break;
                     case KVirtualSystemDescriptionType_SoundCard:        value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:   value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
+                    case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
+                    case KVirtualSystemDescriptionType_CloudOCIDomain:
+                    case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
+                    case KVirtualSystemDescriptionType_CloudOCIBucket:
+                    case KVirtualSystemDescriptionType_CloudOCIVCN:
+                    {
+                        /* Get VSD type hint and check which kind of data it is.
+                         * These VSD types can have masks if represented by arrays. */
+                        const QVariant get = m_pParent->getHint(m_enmVSDType);
+                        switch (m_pParent->kindHint(m_enmVSDType))
+                        {
+                            case ParameterKind_Array:
+                            {
+                                QString strMask;
+                                AbstractVSDParameterArray array = get.value<AbstractVSDParameterArray>();
+                                /* Every array member is a complex value, - string pair,
+                                 * "first" is always present while "second" can be null. */
+                                foreach (const QIStringPair &pair, array.values)
+                                {
+                                    /* If "second" isn't null & equal to m_strConfigValue => return "first": */
+                                    if (!pair.second.isNull() && pair.second == m_strConfigValue)
+                                    {
+                                        strMask = pair.first;
+                                        break;
+                                    }
+                                }
+                                /* Use mask if found, m_strConfigValue otherwise: */
+                                value = strMask.isNull() ? m_strConfigValue : strMask;
+                                break;
+                            }
+                            default:
+                            {
+                                value = m_strConfigValue;
+                                break;
+                            }
+                        }
+                        break;
+                    }
                     case KVirtualSystemDescriptionType_CloudOCIPublicIP: break;
                     case KVirtualSystemDescriptionType_CloudOCIKeepObject: break;
                     case KVirtualSystemDescriptionType_CloudOCILaunchInstance: break;
@@ -813,7 +851,19 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
                     {
                         AbstractVSDParameterArray value = get.value<AbstractVSDParameterArray>();
                         QComboBox *pComboBox = new QComboBox(pParent);
-                        pComboBox->addItems(value.values);
+                        /* Every array member is a complex value, - string pair,
+                         * "first" is always present while "second" can be null. */
+                        foreach (const QIStringPair &pair, value.values)
+                        {
+                            /* First always goes to combo item text: */
+                            pComboBox->addItem(pair.first);
+                            /* If "second" present => it goes to new item data: */
+                            if (!pair.second.isNull())
+                                pComboBox->setItemData(pComboBox->count() - 1, pair.second);
+                            /* Otherwise => "first" goes to new item data as well: */
+                            else
+                                pComboBox->setItemData(pComboBox->count() - 1, pair.first);
+                        }
                         pEditor = pComboBox;
                         break;
                     }
@@ -949,7 +999,16 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
                 {
                     if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
                     {
-                        pComboBox->setCurrentText(m_strConfigValue);
+                        /* Every array member is a complex value, - string pair,
+                         * "first" is always present while "second" can be null.
+                         * Actual config value is always stored in item data. */
+                        const int iIndex = pComboBox->findData(m_strConfigValue);
+                        /* If item was found => choose it: */
+                        if (iIndex != -1)
+                            pComboBox->setCurrentIndex(iIndex);
+                        /* Otherwise => just choose the text: */
+                        else
+                            pComboBox->setCurrentText(m_strConfigValue);
                         fDone = true;
                     }
                     break;
@@ -1126,7 +1185,16 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
                 {
                     if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
                     {
-                        m_strConfigValue = pComboBox->currentText();
+                        /* Every array member is a complex value, - string pair,
+                         * "first" is always present while "second" can be null.
+                         * Actual config value is always stored in item data. */
+                        const QString strData = pComboBox->currentData().toString();
+                        /* If item data isn't null => pass it: */
+                        if (!strData.isNull())
+                            m_strConfigValue = strData;
+                        /* Otherwise => just pass the text: */
+                        else
+                            m_strConfigValue = pComboBox->currentText();
                         fDone = true;
                     }
                     break;

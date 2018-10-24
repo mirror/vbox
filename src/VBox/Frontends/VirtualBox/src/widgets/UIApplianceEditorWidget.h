@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -101,12 +102,12 @@ struct AbstractVSDParameterArray
 {
     /** Public default constructor to fit Q_DECLARE_METATYPE rule. */
     AbstractVSDParameterArray()
-        : values(QStringList()) {}
+        : values(QIStringPairList()) {}
     /** Public copy constructor to fit Q_DECLARE_METATYPE rule. */
     AbstractVSDParameterArray(const AbstractVSDParameterArray &other)
         : values(other.values) {}
     /** Holds the values array. */
-    QStringList values;
+    QIStringPairList values;
 };
 Q_DECLARE_METATYPE(AbstractVSDParameterArray);
 

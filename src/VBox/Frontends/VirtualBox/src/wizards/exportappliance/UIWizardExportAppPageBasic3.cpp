@@ -208,13 +208,13 @@ QString UIWizardExportAppPage3::parseJsonFieldString(const QString &strFieldName
 }
 
 /* static */
-QStringList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field)
+QIStringPairList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field)
 {
     /* Make sure field is array: */
     Q_UNUSED(strFieldName);
-    AssertMsgReturn(field.isArray(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QStringList());
+    AssertMsgReturn(field.isArray(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QIStringPairList());
     const QJsonArray fieldValueArray = field.toArray();
-    QStringList fieldValueStringList;
+    QIStringPairList fieldValueStringPairList;
     /* Parse array: */
     for (int i = 0; i < fieldValueArray.count(); ++i)
     {
@@ -222,20 +222,24 @@ QStringList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldN
         const QJsonValue value = fieldValueArray[i];
         /* If value is of string type, we just take it: */
         if (value.isString())
-            fieldValueStringList << fieldValueArray[i].toString();
-        /* If value is of object type, we take object "key : value" pairs: */
+            fieldValueStringPairList << qMakePair(fieldValueArray[i].toString(), QString());
+        /* If value is of object type, we take object key/value pairs: */
         else if (value.isObject())
         {
             const QJsonObject valueObject = value.toObject();
             foreach (const QString &strKey, valueObject.keys())
-                fieldValueStringList << QString("%1 : %2")
-                                            .arg(strKey)
-                                            .arg(valueObject.value(strKey).toString());
+                fieldValueStringPairList << qMakePair(strKey, valueObject.value(strKey).toString());
         }
     }
-    //printf("  Field value: \"%s\"\n", fieldValueStringList.join(", ").toUtf8().constData());
+    //QStringList test;
+    //foreach (const QIStringPair &pair, fieldValueStringPairList)
+    //    if (pair.second.isNull())
+    //        test << QString("{%1}").arg(pair.first);
+    //    else
+    //        test << QString("{%1 : %2}").arg(pair.first, pair.second);
+    //printf("  Field value: \"%s\"\n", test.join(", ").toUtf8().constData());
 
-    return fieldValueStringList;
+    return fieldValueStringPairList;
 }
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
@@ -279,8 +283,12 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                                     strValue = parameter.get.value<AbstractVSDParameterString>().value;
                                     break;
                                 case ParameterKind_Array:
-                                    strValue = parameter.get.value<AbstractVSDParameterArray>().values.value(0);
+                                {
+                                    const QString strFirst = parameter.get.value<AbstractVSDParameterArray>().values.value(0).first;
+                                    const QString strSecond = parameter.get.value<AbstractVSDParameterArray>().values.value(0).second;
+                                    strValue = strSecond.isNull() ? strFirst : strSecond;
                                     break;
+                                }
                                 default:
                                     break;
                             }
