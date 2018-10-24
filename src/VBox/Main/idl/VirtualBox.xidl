@@ -25040,29 +25040,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   // ICloudClient
   //////////////////////////////////////////////////////////////////////////
   -->
-  <enum
-    name="CloudProfilePropertyType"
-    uuid="4c549e52-3ca6-4c6a-8c49-288e8c0890f6"
-    >
-    <const name="unknown" value="0"/>
-    <const name="stringT" value="1"/>
-    <const name="array" value="2"/>
-    <const name="flag" value="3"/>
-  </enum>
-
-  <enum
-    name="CloudProviderId"
-    uuid="c3856743-aa5d-404d-847d-14b6cf523677"
-    >
-    <const name="Unknown" value="0"/>
-    <const name="OCI" value="1"/>
-    <const name="GCP" value="2"/>
-    <const name="AWS" value="3"/>
-    <const name="MicrosoftAzure" value="4"/>
-    <const name="IBMCloud" value="5"/>
-    <const name="DigitalOcean" value="6"/>
-  </enum>
-
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="86b831ff-ffe4-49c2-843f-0c8b03817025"
