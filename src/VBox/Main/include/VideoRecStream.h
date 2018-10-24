@@ -168,6 +168,7 @@ typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
 int videoRecStreamClose(PVIDEORECSTREAM pStream);
 PVIDEORECSTREAM videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uScreen);
 int videoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+int VideoRecStreamProcess(PVIDEORECSTREAM pStream);
 int videoRecStreamUninit(PVIDEORECSTREAM pStream);
 int videoRecStreamUnitVideo(PVIDEORECSTREAM pStream);
 int videoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);

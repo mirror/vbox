@@ -121,112 +121,25 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
         int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(rc);
 
+        Log2Func(("Processing %zu streams\n", pCtx->vecStreams.size()));
+
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
          *               all screens.  */
-        for (VideoRecStreams::iterator itStream = pCtx->vecStreams.begin(); itStream != pCtx->vecStreams.end(); itStream++)
+        VideoRecStreams::iterator itStream = pCtx->vecStreams.begin();
+        while (itStream != pCtx->vecStreams.end())
         {
             PVIDEORECSTREAM pStream = (*itStream);
 
-            videoRecStreamLock(pStream);
+            rc = VideoRecStreamProcess(pStream);
+            if (RT_FAILURE(rc))
+                break;
 
-            if (!pStream->fEnabled)
-            {
-                videoRecStreamUnlock(pStream);
-                continue;
-            }
-
-            VideoRecBlockMap::iterator itBlockStream = pStream->Blocks.Map.begin();
-            while (itBlockStream != pStream->Blocks.Map.end())
-            {
-                const uint64_t        uTimeStampMs = itBlockStream->first;
-                      VideoRecBlocks *pBlocks      = itBlockStream->second;
-
-                AssertPtr(pBlocks);
-
-                while (!pBlocks->List.empty())
-                {
-                    PVIDEORECBLOCK pBlock = pBlocks->List.front();
-                    AssertPtr(pBlock);
-
-#ifdef VBOX_WITH_LIBVPX
-                    if (pBlock->enmType == VIDEORECBLOCKTYPE_VIDEO)
-                    {
-                        PVIDEORECVIDEOFRAME pVideoFrame  = (PVIDEORECVIDEOFRAME)pBlock->pvData;
-
-                        rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
-                                              /* Destination */
-                                              pStream->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
-                                              /* Source */
-                                              pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
-                        if (RT_SUCCESS(rc))
-                            rc = videoRecStreamWriteVideoVPX(pStream, uTimeStampMs, pVideoFrame);
-                    }
-#endif
-                    VideoRecBlockFree(pBlock);
-                    pBlock = NULL;
-
-                    pBlocks->List.pop_front();
-                }
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-                /* As each (enabled) screen has to get the same audio data, look for common (audio) data which needs to be
-                 * written to the screen's assigned recording stream. */
-                VideoRecBlockMap::iterator itCommon = pCtx->mapBlocksCommon.begin();
-                while (itCommon != pCtx->mapBlocksCommon.end())
-                {
-                    VideoRecBlockList::iterator itBlockCommon = itCommon->second->List.begin();
-                    while (itBlockCommon != itCommon->second->List.end())
-                    {
-                        PVIDEORECBLOCK pBlockCommon = (PVIDEORECBLOCK)(*itBlockCommon);
-                        switch (pBlockCommon->enmType)
-                        {
-                            case VIDEORECBLOCKTYPE_AUDIO:
-                            {
-                                PVIDEORECAUDIOFRAME pAudioFrame = (PVIDEORECAUDIOFRAME)pBlockCommon->pvData;
-                                AssertPtr(pAudioFrame);
-                                AssertPtr(pAudioFrame->pvBuf);
-                                Assert(pAudioFrame->cbBuf);
-
-                                WebMWriter::BlockData_Opus blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
-                                                                         pBlockCommon->uTimeStampMs };
-                                rc = pStream->File.pWEBM->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
-                                break;
-                            }
-
-                            default:
-                                AssertFailed();
-                                break;
-                        }
-
-                        Assert(pBlockCommon->cRefs);
-                        if (--pBlockCommon->cRefs == 0)
-                        {
-                            VideoRecBlockFree(pBlockCommon);
-                            itCommon->second->List.erase(itBlockCommon);
-                            itBlockCommon = itCommon->second->List.begin();
-                        }
-                        else
-                            ++itBlockCommon;
-                    }
-
-                    /* If no entries are left over in the block map, remove it altogether. */
-                    if (itCommon->second->List.empty())
-                    {
-                        delete itCommon->second;
-                        pCtx->mapBlocksCommon.erase(itCommon);
-                    }
-
-                    itCommon = pCtx->mapBlocksCommon.begin();
-
-                    LogFunc(("Common blocks: %zu\n", pCtx->mapBlocksCommon.size()));
-                }
-#endif
-                ++itBlockStream;
-            }
-
-            videoRecStreamUnlock(pStream);
+            ++itStream;
         }
+
+        if (RT_FAILURE(rc))
+            LogRel(("VideoRec: Encoding thread failed with rc=%Rrc\n", rc));
 
         /* Keep going in case of errors. */
 
@@ -378,7 +291,7 @@ int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
         /* Signal the thread and wait for it to shut down. */
         rc = videoRecThreadNotify(pCtx);
         if (RT_SUCCESS(rc))
-            rc = RTThreadWait(pCtx->Thread, 10 * 1000 /* 10s timeout */, NULL);
+            rc = RTThreadWait(pCtx->Thread, 30 * 1000 /* 10s timeout */, NULL);
 
         if (RT_SUCCESS(rc))
         {

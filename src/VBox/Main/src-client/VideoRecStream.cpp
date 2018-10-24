@@ -37,6 +37,7 @@
 
 #include "VideoRec.h"
 #include "VideoRecStream.h"
+#include "VideoRecUtils.h"
 #include "WebMWriter.h"
 
 
@@ -192,6 +193,139 @@ int videoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
     }
 
     LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Processes a recording stream.
+ * This function takes care of the actual encoding and writing of a certain stream.
+ * As this can be very CPU intensive, this function usually is called from a separate thread.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             Recording stream to process.
+ */
+int VideoRecStreamProcess(PVIDEORECSTREAM pStream)
+{
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    videoRecStreamLock(pStream);
+
+    if (!pStream->fEnabled)
+    {
+        videoRecStreamUnlock(pStream);
+        return VINF_SUCCESS;
+    }
+
+    int rc = VINF_SUCCESS;
+
+    const PVIDEORECCONTEXT pCtx = pStream->pCtx;
+    AssertPtr(pCtx);
+
+    VideoRecBlockMap::iterator itStreamBlocks = pStream->Blocks.Map.begin();
+    while (itStreamBlocks != pStream->Blocks.Map.end())
+    {
+        const uint64_t        uTimeStampMs = itStreamBlocks->first;
+              VideoRecBlocks *pBlocks      = itStreamBlocks->second;
+
+        AssertPtr(pBlocks);
+
+        while (!pBlocks->List.empty())
+        {
+            PVIDEORECBLOCK pBlock = pBlocks->List.front();
+            AssertPtr(pBlock);
+
+#ifdef VBOX_WITH_LIBVPX
+            if (pBlock->enmType == VIDEORECBLOCKTYPE_VIDEO)
+            {
+                PVIDEORECVIDEOFRAME pVideoFrame  = (PVIDEORECVIDEOFRAME)pBlock->pvData;
+
+                rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
+                                      /* Destination */
+                                      pStream->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
+                                      /* Source */
+                                      pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = videoRecStreamWriteVideoVPX(pStream, uTimeStampMs, pVideoFrame);
+                }
+                else
+                    break;
+            }
+#endif
+            VideoRecBlockFree(pBlock);
+            pBlock = NULL;
+
+            pBlocks->List.pop_front();
+        }
+
+        ++itStreamBlocks;
+    }
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    /* As each (enabled) screen has to get the same audio data, look for common (audio) data which needs to be
+     * written to the screen's assigned recording stream. */
+    VideoRecBlockMap::iterator itCommonBlocks = pCtx->mapBlocksCommon.begin();
+    while (itCommonBlocks != pCtx->mapBlocksCommon.end())
+    {
+        VideoRecBlockList::iterator itBlock = itCommonBlocks->second->List.begin();
+        while (itBlock != itCommonBlocks->second->List.end())
+        {
+            PVIDEORECBLOCK pBlockCommon = (PVIDEORECBLOCK)(*itBlock);
+            switch (pBlockCommon->enmType)
+            {
+                case VIDEORECBLOCKTYPE_AUDIO:
+                {
+                    PVIDEORECAUDIOFRAME pAudioFrame = (PVIDEORECAUDIOFRAME)pBlockCommon->pvData;
+                    AssertPtr(pAudioFrame);
+                    AssertPtr(pAudioFrame->pvBuf);
+                    Assert(pAudioFrame->cbBuf);
+
+                    WebMWriter::BlockData_Opus blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
+                                                             pBlockCommon->uTimeStampMs };
+                    AssertPtr(pStream->File.pWEBM);
+                    rc = pStream->File.pWEBM->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
+                    break;
+                }
+
+                default:
+                    AssertFailed();
+                    break;
+            }
+
+            if (RT_FAILURE(rc))
+                break;
+
+            Assert(pBlockCommon->cRefs);
+            pBlockCommon->cRefs--;
+            if (pBlockCommon->cRefs == 0)
+            {
+                VideoRecBlockFree(pBlockCommon);
+                itCommonBlocks->second->List.erase(itBlock);
+                itBlock = itCommonBlocks->second->List.begin();
+            }
+            else
+                ++itBlock;
+        }
+
+        /* If no entries are left over in the block map, remove it altogether. */
+        if (itCommonBlocks->second->List.empty())
+        {
+            delete itCommonBlocks->second;
+            pCtx->mapBlocksCommon.erase(itCommonBlocks);
+            itCommonBlocks = pCtx->mapBlocksCommon.begin();
+        }
+        else
+            ++itCommonBlocks;
+
+        LogFunc(("Common blocks: %zu\n", pCtx->mapBlocksCommon.size()));
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+#endif
+
+    videoRecStreamUnlock(pStream);
+
     return rc;
 }
 
