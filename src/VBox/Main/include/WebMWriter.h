@@ -387,6 +387,11 @@ public:
             LogFunc(("Default timecode scale is: %RU64ns\n", uTimecodeScaleFactor));
         }
 
+        virtual ~WebMSegment()
+        {
+            destroy();
+        }
+
         int init(void)
         {
             return RTCritSectInit(&CritSect);
@@ -394,7 +399,28 @@ public:
 
         void destroy(void)
         {
+            clear();
+
             RTCritSectDelete(&CritSect);
+        }
+
+        /**
+         * Clear the segment's data by removing (and freeing) all data.
+         */
+        void clear(void)
+        {
+            WebMCuePointList::iterator itCuePoint = lstCuePoints.begin();
+            while (itCuePoint != lstCuePoints.end())
+            {
+                WebMCuePoint *pCuePoint = (*itCuePoint);
+                AssertPtr(pCuePoint);
+                delete pCuePoint;
+
+                lstCuePoints.erase(itCuePoint);
+                itCuePoint = lstCuePoints.begin();
+            }
+
+            Assert(lstCuePoints.empty());
         }
 
         /** Critical section for serializing access to this segment. */
