@@ -75,6 +75,7 @@ private:
     QITabWidget                  *m_pTabWidget;
     UIGuestProcessControlWidget *m_pProcessControlWidget;
     UIGuestControlFileManager   *m_pFileManager;
+    bool                         m_fShowToolbar;
 };
 
 #endif /* !___UIGuestControlWidget_h___ */

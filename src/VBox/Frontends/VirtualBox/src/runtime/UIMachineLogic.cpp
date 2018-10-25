@@ -2502,11 +2502,6 @@ void UIMachineLogic::sltCloseLogViewerWindow()
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIMachineLogic::sltCloseGuestControlWindow()
-{
-
-}
-
 #ifdef VBOX_WS_MAC
 void UIMachineLogic::sltSwitchToMachineWindow()
 {
