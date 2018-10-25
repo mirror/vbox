@@ -212,7 +212,7 @@ public:
     VIDEORECFEATURES         i_videoRecGetFeatures(void);
     bool                     i_videoRecStarted(void);
     void                     i_videoRecInvalidate();
-    int                      i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
+    int                      i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
     int                      i_videoRecStart(void);
     void                     i_videoRecStop(void);
     void                     i_videoRecScreenChanged(unsigned uScreenId);
