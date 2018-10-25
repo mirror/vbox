@@ -391,7 +391,8 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
              m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIDomain ||
              m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIBootDiskSize ||
              m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIBucket ||
-             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIVCN) &&
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIVCN ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCISubnet) &&
             m_checkState == Qt::Checked) /* Item has to be enabled */
             enmFlags |= Qt::ItemIsEditable;
     }
@@ -499,6 +500,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
                     case KVirtualSystemDescriptionType_CloudOCIBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
+                    case KVirtualSystemDescriptionType_CloudOCISubnet:
                     case KVirtualSystemDescriptionType_CloudOCIPublicIP:
                     case KVirtualSystemDescriptionType_CloudOCIKeepObject:
                     case KVirtualSystemDescriptionType_CloudOCILaunchInstance: value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
@@ -531,6 +533,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
                     case KVirtualSystemDescriptionType_CloudOCIBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
+                    case KVirtualSystemDescriptionType_CloudOCISubnet:
                     {
                         /* Get VSD type hint and check which kind of data it is.
                          * These VSD types can have masks if represented by arrays. */
@@ -590,6 +593,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                         case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
                         case KVirtualSystemDescriptionType_CloudOCIBucket:
                         case KVirtualSystemDescriptionType_CloudOCIVCN:
+                        case KVirtualSystemDescriptionType_CloudOCISubnet:
                         {
                             /* Get VSD type hint and check which kind of data it is.
                              * These VSD types can have masks if represented by arrays. */
@@ -668,6 +672,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
                     case KVirtualSystemDescriptionType_CloudOCIBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
+                    case KVirtualSystemDescriptionType_CloudOCISubnet:
                     case KVirtualSystemDescriptionType_CloudOCIPublicIP:
                     case KVirtualSystemDescriptionType_CloudOCIKeepObject:
                     case KVirtualSystemDescriptionType_CloudOCILaunchInstance: value = UIIconPool::iconSet(":/session_info_16px.png"); break;
@@ -881,6 +886,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
             case KVirtualSystemDescriptionType_CloudOCIBucket:
             case KVirtualSystemDescriptionType_CloudOCIVCN:
+            case KVirtualSystemDescriptionType_CloudOCISubnet:
             {
                 const QVariant get = m_pParent->getHint(m_enmVSDType);
                 switch (m_pParent->kindHint(m_enmVSDType))
@@ -1027,6 +1033,7 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
         case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
         case KVirtualSystemDescriptionType_CloudOCIBucket:
         case KVirtualSystemDescriptionType_CloudOCIVCN:
+        case KVirtualSystemDescriptionType_CloudOCISubnet:
         {
             switch (m_pParent->kindHint(m_enmVSDType))
             {
@@ -1213,6 +1220,7 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
         case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
         case KVirtualSystemDescriptionType_CloudOCIBucket:
         case KVirtualSystemDescriptionType_CloudOCIVCN:
+        case KVirtualSystemDescriptionType_CloudOCISubnet:
         {
             switch (m_pParent->kindHint(m_enmVSDType))
             {
