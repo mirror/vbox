@@ -293,7 +293,7 @@ SOLARIS_STRIP_EXES.SRC     := $(PATH_STAGE_BIN)
 SOLARIS_STRIP_EXES.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)
 SOLARIS_STRIP_EXES = \
 	VBoxZoneAccess \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
+	$(if $(VBOX_WITH_QTGUI),VirtualBox $(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM),) \
 	VBoxManage \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
@@ -372,7 +372,7 @@ ifdef VBOX_WITH_HARDENING
 	VBoxNetDHCP.so \
 	VBoxNetNAT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox.so,)
+	$(if $(VBOX_WITH_QTGUI),$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM.so VBoxGlobal.so,VirtualBox.so),)
 endif
 
 ## @def SOLARIS_STRIP_OBJS
@@ -407,7 +407,7 @@ SOLARIS_NO_STRIP = \
 # List of links to create in /usr/bin to /opt/VirtualBox/VBox.sh.
 # Naturally no subdirectories.
 SOLARIS_USRBIN_LINKS = \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
+	$(if $(VBOX_WITH_QTGUI),VirtualBox $(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM),) \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	VBoxManage \
