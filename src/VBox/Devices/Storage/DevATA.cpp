@@ -685,6 +685,8 @@ static bool ataR3WriteSectorsSS(ATADevState *);
 static bool ataR3ExecuteDeviceDiagnosticSS(ATADevState *);
 static bool ataR3TrimSS(ATADevState *);
 static bool ataR3PacketSS(ATADevState *);
+static bool ataR3InitDevParmSS(ATADevState *);
+static bool ataR3RecalibrateSS(ATADevState *);
 static bool atapiR3GetConfigurationSS(ATADevState *);
 static bool atapiR3GetEventStatusNotificationSS(ATADevState *);
 static bool atapiR3IdentifySS(ATADevState *);
@@ -745,6 +747,8 @@ typedef enum ATAFNSS
     ATAFN_SS_EXECUTE_DEVICE_DIAGNOSTIC,
     ATAFN_SS_TRIM,
     ATAFN_SS_PACKET,
+    ATAFN_SS_INITIALIZE_DEVICE_PARAMETERS,
+    ATAFN_SS_RECALIBRATE,
     ATAFN_SS_ATAPI_GET_CONFIGURATION,
     ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION,
     ATAFN_SS_ATAPI_IDENTIFY,
@@ -780,6 +784,8 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     ataR3ExecuteDeviceDiagnosticSS,
     ataR3TrimSS,
     ataR3PacketSS,
+    ataR3InitDevParmSS,
+    ataR3RecalibrateSS,
     atapiR3GetConfigurationSS,
     atapiR3GetEventStatusNotificationSS,
     atapiR3IdentifySS,
@@ -3896,6 +3902,36 @@ static bool ataR3ExecuteDeviceDiagnosticSS(ATADevState *s)
 }
 
 
+static bool ataR3InitDevParmSS(ATADevState *s)
+{
+    PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
+
+    LogFlowFunc(("\n"));
+    LogRel(("ATA: LUN#%d: INITIALIZE DEVICE PARAMETERS: %u logical sectors, %u heads\n",
+            s->iLUN, s->uATARegNSector, s->uATARegSelect & 0x0f));
+    ataR3LockLeave(pCtl);
+    RTThreadSleep(pCtl->DelayIRQMillies);
+    ataR3LockEnter(pCtl);
+    ataR3CmdOK(s, ATA_STAT_SEEK);
+    ataHCSetIRQ(s);
+    return false;
+}
+
+
+static bool ataR3RecalibrateSS(ATADevState *s)
+{
+    PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
+
+    LogFlowFunc(("\n"));
+    ataR3LockLeave(pCtl);
+    RTThreadSleep(pCtl->DelayIRQMillies);
+    ataR3LockEnter(pCtl);
+    ataR3CmdOK(s, ATA_STAT_SEEK);
+    ataHCSetIRQ(s);
+    return false;
+}
+
+
 static int ataR3TrimSectors(ATADevState *s, uint64_t u64Sector, uint32_t cSectors,
                             bool *pfRedo)
 {
@@ -4008,10 +4044,12 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
         case ATA_RECALIBRATE:
             if (s->fATAPI)
                 goto abort_cmd;
-            RT_FALL_THRU();
+            ataR3StartTransfer(s, 0, PDMMEDIATXDIR_NONE, ATAFN_BT_NULL, ATAFN_SS_RECALIBRATE, false);
+            break;
         case ATA_INITIALIZE_DEVICE_PARAMETERS:
-            ataR3CmdOK(s, ATA_STAT_SEEK);
-            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
+            if (s->fATAPI)
+                goto abort_cmd;
+            ataR3StartTransfer(s, 0, PDMMEDIATXDIR_NONE, ATAFN_BT_NULL, ATAFN_SS_INITIALIZE_DEVICE_PARAMETERS, false);
             break;
         case ATA_SET_MULTIPLE_MODE:
             if (    s->uATARegNSector != 0
