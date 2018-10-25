@@ -108,7 +108,8 @@
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
 
-#define AVREC_OPUS_HZ_MAX       48000           /** Maximum sample rate (in Hz) Opus can handle. */
+#define AVREC_OPUS_HZ_MAX               48000           /** Maximum sample rate (in Hz) Opus can handle. */
+#define AVREC_OPUS_FRAME_MS_DEFAULT     20              /** Default Opus frame size (in ms). */
 
 
 /*********************************************************************************************************************************
@@ -212,6 +213,10 @@ typedef struct AVRECCODEC
              *  60           2880
              */
             uint32_t        msFrame;
+            /** The frame size in bytes (based on msFrame). */
+            uint32_t        cbFrame;
+            /** The frame size in samples per frame (based on msFrame). */
+            uint32_t        csFrame;
         } Opus;
 #endif /* VBOX_WITH_LIBOPUS */
     };
@@ -253,6 +258,14 @@ typedef struct AVRECSTREAM
     PAVRECSINK           pSink;
     /** Last encoded PTS (in ms). */
     uint64_t             uLastPTSMs;
+    /** Temporary buffer for the input (source) data to encode. */
+    void                *pvSrcBuf;
+    /** Size (in bytes) of the temporary buffer holding the input (source) data to encode. */
+    size_t               cbSrcBuf;
+    /** Temporary buffer for the encoded output (destination) data. */
+    void                *pvDstBuf;
+    /** Size (in bytes) of the temporary buffer holding the encoded output (destination) data. */
+    size_t               cbDstBuf;
 } AVRECSTREAM, *PAVRECSTREAM;
 
 /**
@@ -409,21 +422,27 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
     {
         pSink->Con.Parms.enmType     = pConParms->enmType;
 
-        pSink->Codec.Parms.PCMProps.uHz       = uHz;
-        pSink->Codec.Parms.PCMProps.cChannels = cChannels;
-        pSink->Codec.Parms.PCMProps.cBytes    = cBytes;
-        pSink->Codec.Parms.PCMProps.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pSink->Codec.Parms.PCMProps.cBytes,
-                                                                                  pSink->Codec.Parms.PCMProps.cChannels);
-        pSink->Codec.Parms.uBitrate           = uBitrate;
+        PAVRECCODEC pCodec = &pSink->Codec;
 
-        pSink->Codec.Opus.pEnc       = pEnc;
-        pSink->Codec.Opus.msFrame    = 20; /** @todo 20 ms of audio data. Make this configurable? */
+        pCodec->Parms.PCMProps.uHz       = uHz;
+        pCodec->Parms.PCMProps.cChannels = cChannels;
+        pCodec->Parms.PCMProps.cBytes    = cBytes;
+        pCodec->Parms.PCMProps.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pSink->Codec.Parms.PCMProps.cBytes,
+                                                                             pSink->Codec.Parms.PCMProps.cChannels);
+        pCodec->Parms.uBitrate           = uBitrate;
+
+        pCodec->Opus.pEnc       = pEnc;
+        pCodec->Opus.msFrame    = AVREC_OPUS_FRAME_MS_DEFAULT;
+
+        if (!pCodec->Opus.msFrame)
+            pCodec->Opus.msFrame = AVREC_OPUS_FRAME_MS_DEFAULT; /* 20ms by default; to prevent division by zero. */
+        pCodec->Opus.csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
+        pCodec->Opus.cbFrame = DrvAudioHlpFramesToBytes(pCodec->Opus.csFrame, &pSink->Codec.Parms.PCMProps);
 
 #ifdef VBOX_WITH_STATISTICS
         pSink->Codec.STAM.cEncFrames = 0;
         pSink->Codec.STAM.msEncTotal = 0;
 #endif
-
         pSink->tsStartMs             = RTTimeMilliTS();
     }
     else
@@ -513,29 +532,40 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_LIBOPUS
-    const unsigned cFrames = 2; /** @todo Use the PreRoll param for that? */
-
-    const uint32_t csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
-    const uint32_t cbFrame = DrvAudioHlpFramesToBytes(csFrame, &pSink->Codec.Parms.PCMProps);
-
-    rc = RTCircBufCreate(&pStreamAV->pCircBuf, cbFrame * cFrames);
+    rc = RTCircBufCreate(&pStreamAV->pCircBuf, pSink->Codec.Opus.cbFrame * 2 /* Use "double buffering" */);
     if (RT_SUCCESS(rc))
     {
-        pStreamAV->pSink      = pSink; /* Assign sink to stream. */
-        pStreamAV->uLastPTSMs = 0;
-
-        if (pCfgAcq)
+        size_t cbScratchBuf = pSink->Codec.Opus.cbFrame;
+        pStreamAV->pvSrcBuf = RTMemAlloc(cbScratchBuf);
+        if (pStreamAV->pvSrcBuf)
         {
-            /* Make sure to let the driver backend know that we need the audio data in
-             * a specific sampling rate Opus is optimized for. */
-            pCfgAcq->Props.uHz         = pSink->Codec.Parms.PCMProps.uHz;
-            pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
+            pStreamAV->cbSrcBuf = cbScratchBuf;
+            pStreamAV->pvDstBuf = RTMemAlloc(cbScratchBuf);
+            if (pStreamAV->pvDstBuf)
+            {
+                pStreamAV->cbDstBuf = cbScratchBuf;
 
-            /* Every Opus frame marks a period for now. Optimize this later. */
-            pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMilliToFrames(pSink->Codec.Opus.msFrame, &pCfgAcq->Props);
-            pCfgAcq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(100 /* ms */, &pCfgAcq->Props); /** @todo Make this configurable. */
-            pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfPeriod * 2;
+                pStreamAV->pSink      = pSink; /* Assign sink to stream. */
+                pStreamAV->uLastPTSMs = 0;
+
+                if (pCfgAcq)
+                {
+                    /* Make sure to let the driver backend know that we need the audio data in
+                     * a specific sampling rate Opus is optimized for. */
+                    pCfgAcq->Props.uHz         = pSink->Codec.Parms.PCMProps.uHz;
+                    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
+
+                    /* Every Opus frame marks a period for now. Optimize this later. */
+                    pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMilliToFrames(pSink->Codec.Opus.msFrame, &pCfgAcq->Props);
+                    pCfgAcq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(100 /* ms */, &pCfgAcq->Props); /** @todo Make this configurable. */
+                    pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfPeriod * 2;
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
+        else
+            rc = VERR_NO_MEMORY;
     }
 #else
     RT_NOREF(pThis, pSink, pStreamAV, pCfgReq, pCfgAcq);
@@ -562,6 +592,20 @@ static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV
     {
         RTCircBufDestroy(pStreamAV->pCircBuf);
         pStreamAV->pCircBuf = NULL;
+    }
+
+    if (pStreamAV->pvSrcBuf)
+    {
+        Assert(pStreamAV->cbSrcBuf);
+        RTMemFree(pStreamAV->pvSrcBuf);
+        pStreamAV->cbSrcBuf = 0;
+    }
+
+    if (pStreamAV->pvDstBuf)
+    {
+        Assert(pStreamAV->cbDstBuf);
+        RTMemFree(pStreamAV->pvDstBuf);
+        pStreamAV->cbDstBuf = 0;
     }
 
     return VINF_SUCCESS;
@@ -668,6 +712,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
 #ifdef VBOX_WITH_LIBOPUS
     PAVRECSINK pSink    = pStreamAV->pSink;
     AssertPtr(pSink);
+    PAVRECCODEC pCodec  = &pSink->Codec;
+    AssertPtr(pCodec);
     PRTCIRCBUF pCircBuf = pStreamAV->pCircBuf;
     AssertPtr(pCircBuf);
 
@@ -705,27 +751,26 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
      * Process our internal ring buffer and encode the data.
      */
 
-    uint8_t abSrc[_64K]; /** @todo Fix! */
-    size_t  cbSrc;
-
-    const uint32_t csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
-    const uint32_t cbFrame = DrvAudioHlpFramesToBytes(csFrame, &pSink->Codec.Parms.PCMProps);
+    uint32_t cbSrc;
 
     /* Only encode data if we have data for the given time period (or more). */
-    while (RTCircBufUsed(pCircBuf) >= cbFrame)
+    while (RTCircBufUsed(pCircBuf) >= pCodec->Opus.cbFrame)
     {
+        LogFunc(("cbAvail=%zu, csFrame=%RU32, cbFrame=%RU32\n",
+                 RTCircBufUsed(pCircBuf), pCodec->Opus.csFrame, pCodec->Opus.cbFrame));
+
         cbSrc = 0;
 
-        while (cbSrc < cbFrame)
+        while (cbSrc < pCodec->Opus.cbFrame)
         {
-            RTCircBufAcquireReadBlock(pCircBuf, cbFrame - cbSrc, &pvCircBuf, &cbCircBuf);
+            RTCircBufAcquireReadBlock(pCircBuf, pCodec->Opus.cbFrame - cbSrc, &pvCircBuf, &cbCircBuf);
 
             if (cbCircBuf)
             {
-                memcpy(&abSrc[cbSrc], pvCircBuf, cbCircBuf);
+                memcpy((uint8_t *)pStreamAV->pvSrcBuf + cbSrc, pvCircBuf, cbCircBuf);
 
                 cbSrc += cbCircBuf;
-                Assert(cbSrc <= sizeof(abSrc));
+                Assert(cbSrc <= pStreamAV->cbSrcBuf);
             }
 
             RTCircBufReleaseReadBlock(pCircBuf, cbCircBuf);
@@ -738,41 +783,37 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
         RTFILE fh;
         RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "DrvAudioVideoRec.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, abSrc, cbSrc, NULL);
+        RTFileWrite(fh, pStreamAV->pvSrcBuf, cbSrc, NULL);
         RTFileClose(fh);
 # endif
 
-        Assert(cbSrc == cbFrame);
+        Assert(cbSrc == pCodec->Opus.cbFrame);
 
         /*
-         * Opus always encodes PER FRAME, that is, exactly 2.5, 5, 10, 20, 40 or 60 ms of audio data.
+         * Opus always encodes PER "OPUS FRAME", that is, exactly 2.5, 5, 10, 20, 40 or 60 ms of audio data.
          *
          * A packet can have up to 120ms worth of audio data.
          * Anything > 120ms of data will result in a "corrupted package" error message by
          * by decoding application.
          */
-        uint8_t abDst[_64K]; /** @todo Fix! */
-        size_t  cbDst = sizeof(abDst);
 
-        /* Call the encoder to encode one frame per iteration. */
+        /* Call the encoder to encode one "Opus frame" per iteration. */
         opus_int32 cbWritten = opus_encode(pSink->Codec.Opus.pEnc,
-                                           (opus_int16 *)abSrc, csFrame, abDst, (opus_int32)cbDst);
+                                           (opus_int16 *)pStreamAV->pvSrcBuf, pCodec->Opus.csFrame,
+                                           (uint8_t *)pStreamAV->pvDstBuf, (opus_int32)pStreamAV->cbDstBuf);
         if (cbWritten > 0)
         {
             /* Get overall frames encoded. */
-            const uint32_t cEncFrames     = opus_packet_get_nb_frames(abDst, cbWritten);
+            const uint32_t cEncFrames     = opus_packet_get_nb_frames((uint8_t *)pStreamAV->pvDstBuf, cbWritten);
 
 # ifdef VBOX_WITH_STATISTICS
             pSink->Codec.STAM.cEncFrames += cEncFrames;
             pSink->Codec.STAM.msEncTotal += pSink->Codec.Opus.msFrame * cEncFrames;
-
-            LogFunc(("%RU64ms [%RU64 frames]: cbSrc=%zu, cbDst=%zu, cEncFrames=%RU32\n",
-                     pSink->Codec.STAM.msEncTotal, pSink->Codec.STAM.cEncFrames, cbSrc, cbDst, cEncFrames));
 # endif
-            Assert((uint32_t)cbWritten <= cbDst);
-            cbDst = RT_MIN((uint32_t)cbWritten, cbDst); /* Update cbDst to actual bytes encoded (written). */
+            Assert((uint32_t)cbWritten <= (uint32_t)pStreamAV->cbDstBuf);
+            const uint32_t cbDst = RT_MIN((uint32_t)cbWritten, pStreamAV->cbDstBuf);
 
-            Assert(cEncFrames == 1); /* At the moment we encode exactly *one* frame per frame. */
+            Assert(cEncFrames == 1);
 
             if (pStreamAV->uLastPTSMs == 0)
                 pStreamAV->uLastPTSMs = RTTimeProgramMilliTS(); /* We want the absolute time (in ms) since program start. */
@@ -786,7 +827,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             {
                 case AVRECCONTAINERTYPE_MAIN_CONSOLE:
                 {
-                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, uPTSMs);
+                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
                     Assert(hr == S_OK);
                     RT_NOREF(hr);
 
@@ -795,7 +836,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
                 case AVRECCONTAINERTYPE_WEBM:
                 {
-                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst, uPTSMs };
+                    WebMWriter::BlockData_Opus blockData = { pStreamAV->pvDstBuf, cbDst, uPTSMs };
                     rc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
                     AssertRC(rc);
 
