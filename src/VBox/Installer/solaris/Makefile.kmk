@@ -677,6 +677,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	$(call MSG_L1,Creating install package: $(PKG_FILENAME).pkg)
 	$(REDIRECT) -C $(VBOX_PATH_SOL_INST_SRC) -- $(VBOX_PATH_SI_SCRATCH_PKG)/makepackage.sh \
 		$(if-expr defined(VBOX_WITH_HARDENING),--hardened,) \
+		$(if-expr defined(VBOX_GUI_WITH_SHARED_LIBRARY),--guisharedlib,) \
 		$(VBOX_PATH_SI_SCRATCH_PKG) \
 		$(PKG_FILENAME) \
 		$(KBUILD_TARGET_ARCH) \
