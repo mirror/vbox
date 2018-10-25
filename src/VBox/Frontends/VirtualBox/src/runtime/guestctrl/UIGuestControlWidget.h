@@ -42,16 +42,9 @@ class UIGuestControlWidget : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    /** Constructs the Guet Control Widget by passing @a pParent to QWidget base-class constructor.
-      * @param  enmEmbedding  Brings the type of widget embedding.
-      * @param  pActionPool   Brings the action-pool reference.
-      * @param  fShowToolbar  Brings whether we should create/show toolbar.
-      * @param  comMachine    Brings the machine for which VM Log-Viewer is requested. */
     UIGuestControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                          const CGuest &comGuest,
                          bool fShowToolbar = true, QWidget *pParent = 0);
-    /** Destructs the VM Log-Viewer. */
-    ~UIGuestControlWidget();
 
 protected:
 
@@ -67,12 +60,12 @@ private:
     };
 
     void prepare();
-        /** Holds the widget's embedding type. */
-    const EmbedTo m_enmEmbedding;
-    UIActionPool *m_pActionPool;
-    CGuest       m_comGuest;
-
-    QITabWidget                  *m_pTabWidget;
+    /** m_enmEmbedding determines if the widget is embedded into a standalone dialog
+      * or into the manager UI.*/
+    const EmbedTo                m_enmEmbedding;
+    UIActionPool                *m_pActionPool;
+    CGuest                       m_comGuest;
+    QITabWidget                 *m_pTabWidget;
     UIGuestProcessControlWidget *m_pProcessControlWidget;
     UIGuestControlFileManager   *m_pFileManager;
     bool                         m_fShowToolbar;

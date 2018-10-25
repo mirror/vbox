@@ -19,13 +19,11 @@
 #define ___UIGuestControlDialog_h___
 
 /* Qt includes: */
-#include <QMap>
 #include <QString>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -39,41 +37,36 @@ class UIGuestControlDialog;
 class CGuest;
 
 
-/** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */
+/** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */
 class UIGuestControlDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    /** Constructs Log Viewer factory acquiring additional arguments.
-      * @param  pActionPool  Brings the action-pool reference.
-      * @param  comGuest   Brings the machine for which VM Log-Viewer is requested. */
     UIGuestControlDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
 
 protected:
 
     /** Creates derived @a pDialog instance.
-      * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
+      * @param  pCenterWidget  Passes the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
 
-    /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the machine reference. */
-    CGuest      m_comGuest;
-    QString     m_strMachineName;
+    CGuest        m_comGuest;
+    QString       m_strMachineName;
 };
 
 
-/** QIManagerDialog extension providing GUI with the dialog displaying machine logs. */
+/** QIManagerDialog extension providing GUI with the dialog displaying guest control releated logs. */
 class UIGuestControlDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs Log Viewer dialog.
-      * @param  pCenterWidget  Brings the widget reference to center according to.
-      * @param  pActionPool    Brings the action-pool reference.
-      * @param  comGuest     Brings the machine reference. */
+    /** Constructs Guest Control dialog.
+      * @param  pCenterWidget  Passes the widget reference to center according to.
+      * @param  pActionPool    Passes the action-pool reference.
+      * @param  comGuest       Passes the com-guest reference. */
     UIGuestControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
 
 protected:
@@ -107,14 +100,11 @@ protected:
 
 private slots:
 
-    /** Must be handles soemthing related to close @a shortcut. */
     void sltSetCloseButtonShortCut(QKeySequence shortcut);
 
 private:
 
-    /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the machine reference. */
     CGuest      m_comGuest;
     QString     m_strMachineName;
 };
