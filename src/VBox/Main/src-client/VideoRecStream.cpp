@@ -416,14 +416,17 @@ int VideoRecStreamInit(PVIDEORECSTREAM pStream, PVIDEORECCONTEXT pCtx, uint32_t 
             break;
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        pStream->pCtx     = pCtx;
+        pStream->fEnabled = true;
+    }
+    else
     {
         int rc2 = VideoRecStreamClose(pStream);
         AssertRC(rc2);
         return rc;
     }
-
-    pStream->fEnabled = true;
 
     return VINF_SUCCESS;
 }
