@@ -52,6 +52,9 @@ public:
     void           isGlobalScaleFactor(bool bFlag);
     void           setDefaultScaleFactor(double dDefaultScaleFactor);
 
+    /** Defines minimum width @a iHint for internal spin-box. */
+    void           setSpinBoxWidthHint(int iHint);
+
 protected:
 
     virtual void retranslateUi() /* override */;

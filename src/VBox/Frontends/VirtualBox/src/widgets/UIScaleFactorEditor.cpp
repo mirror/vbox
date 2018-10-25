@@ -151,6 +151,11 @@ void UIScaleFactorEditor::setDefaultScaleFactor(double dDefaultScaleFactor)
     m_dDefaultScaleFactor = dDefaultScaleFactor;
 }
 
+void UIScaleFactorEditor::setSpinBoxWidthHint(int iHint)
+{
+    m_pScaleSpinBox->setMinimumWidth(iHint);
+}
+
 void UIScaleFactorEditor::retranslateUi()
 {
     if (m_pMaxScaleLabel)
