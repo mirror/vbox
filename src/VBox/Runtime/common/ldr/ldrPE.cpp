@@ -4314,6 +4314,7 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                     return rc;
                 if (   fNewerStructureHack
                     && Dir.Size > cbMaxKnown
+                    && !(fFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION))
                     && !ASMMemIsZero(&u.abZeros[cbMaxKnown], Dir.Size - cbMaxKnown))
                 {
                     Log(("rtldrPEOpen: %s: load cfg dir: Unknown bytes are non-zero (%u bytes of which %u expected to be zero): %.*Rhxs\n",
