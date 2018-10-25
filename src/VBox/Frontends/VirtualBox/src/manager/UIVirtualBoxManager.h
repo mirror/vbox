@@ -62,6 +62,9 @@ public:
     /** Returns the action-pool instance. */
     UIActionPool *actionPool() const { return m_pActionPool; }
 
+    /** Opens Cloud Profile Manager. */
+    void openCloudProfileManager() { sltOpenCloudProfileManagerWindow(); }
+
 protected:
 
     /** Constructs VirtualBox Manager. */

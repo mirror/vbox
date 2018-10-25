@@ -33,9 +33,12 @@
 
 /* GUI includes: */
 # include "QIRichTextLabel.h"
+# include "QIToolButton.h"
 # include "VBoxGlobal.h"
 # include "UIConverter.h"
 # include "UIEmptyFilePathSelector.h"
+# include "UIIconPool.h"
+# include "UIVirtualBoxManager.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
 # include "UIWizardExportAppPageBasic2.h"
@@ -66,6 +69,7 @@ UIWizardExportAppPage2::UIWizardExportAppPage2()
     , m_pIncludeISOsCheckbox(0)
     , m_pAccountComboBoxLabel(0)
     , m_pAccountComboBox(0)
+    , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
 {
     /* Init Cloud Provider Manager: */
@@ -156,6 +160,8 @@ void UIWizardExportAppPage2::populateAccountProperties()
 {
     /* Clear table initially: */
     m_pAccountPropertyTable->clear();
+    m_pAccountPropertyTable->setRowCount(0);
+    m_pAccountPropertyTable->setColumnCount(0);
     /* Return if no provider chosen: */
     if (providerId().isNull())
         return;
@@ -622,7 +628,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
             }
 
             /* Create settings pane 2: */
-            QWidget *pSettingsPane2 = new QWidget;;
+            QWidget *pSettingsPane2 = new QWidget;
             if (pSettingsPane2)
             {
                 /* Create settings layout 2: */
@@ -640,22 +646,43 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
                     m_pSettingsLayout2->setColumnStretch(0, 0);
                     m_pSettingsLayout2->setColumnStretch(1, 1);
 
-                    /* Create provider combo-box: */
-                    m_pAccountComboBox = new QComboBox;
-                    if (m_pAccountComboBox)
-                    {
-                        /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
-                    }
                     /* Create provider label: */
                     m_pAccountComboBoxLabel = new QLabel;
                     if (m_pAccountComboBoxLabel)
                     {
                         m_pAccountComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                        m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
 
                         /* Add into layout: */
                         m_pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
+                    }
+                    /* Create sub-layout: */
+                    QHBoxLayout *pSubLayout = new QHBoxLayout;
+                    if (pSubLayout)
+                    {
+                        pSubLayout->setContentsMargins(0, 0, 0, 0);
+                        pSubLayout->setSpacing(1);
+
+                        /* Create provider combo-box: */
+                        m_pAccountComboBox = new QComboBox;
+                        if (m_pAccountComboBox)
+                        {
+                            m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
+
+                            /* Add into layout: */
+                            pSubLayout->addWidget(m_pAccountComboBox);
+                        }
+                        /* Create provider combo-box: */
+                        m_pAccountToolButton = new QIToolButton;
+                        if (m_pAccountToolButton)
+                        {
+                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png"));
+
+                            /* Add into layout: */
+                            pSubLayout->addWidget(m_pAccountToolButton);
+                        }
+
+                        /* Add into layout: */
+                        m_pSettingsLayout2->addLayout(pSubLayout, 0, 1);
                     }
                     /* Create profile property table: */
                     m_pAccountPropertyTable = new QTableWidget;
@@ -697,6 +724,9 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
     populateAccountProperties();
 
     /* Setup connections: */
+    if (gpManager)
+        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
+                this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic2::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
@@ -704,6 +734,8 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
             this, &UIWizardExportAppPageBasic2::sltHandleMACAddressPolicyComboChange);
     connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleAccountComboChange);
+    connect(m_pAccountToolButton, &QIToolButton::clicked,
+            this, &UIWizardExportAppPageBasic2::sltHandleAccountButtonClick);
 
     /* Register fields: */
     registerField("format", this, "format");
@@ -854,16 +886,18 @@ bool UIWizardExportAppPageBasic2::isComplete() const
     /* Check appliance settings: */
     if (fResult)
     {
-        const QString &strFile = field("path").toString().toLower();
-
         const bool fOVF =    field("format").toString() == "ovf-0.9"
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fCSP =    isFormatCloudOne();
 
+        const QString &strFile = field("path").toString().toLower();
+        const QString &strAccount = field("profileName").toString();
+
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
-                  || fCSP;
+                  || (   fCSP
+                      && !strAccount.isNull());
     }
 
     return fResult;
@@ -906,6 +940,7 @@ void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
     refreshIncludeISOsCheckBoxAccess();
     populateAccounts();
     populateAccountProperties();
+    emit completeChanged();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleMACAddressPolicyComboChange()
@@ -918,4 +953,11 @@ void UIWizardExportAppPageBasic2::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
+}
+
+void UIWizardExportAppPageBasic2::sltHandleAccountButtonClick()
+{
+    /* Open Cloud Profile Manager: */
+    if (gpManager)
+        gpManager->openCloudProfileManager();
 }

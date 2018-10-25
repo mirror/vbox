@@ -90,6 +90,9 @@ private slots:
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();
 
+    /** Handles account tool-button click. */
+    void sltHandleAccountButtonClick();
+
 private:
 
     /** Holds the VM selector container instance. */

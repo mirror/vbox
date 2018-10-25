@@ -39,6 +39,7 @@ class QLineEdit;
 class QStackedWidget;
 class QTableWidget;
 class QIRichTextLabel;
+class QIToolButton;
 class UIEmptyFilePathSelector;
 
 
@@ -195,6 +196,8 @@ protected:
     QLabel       *m_pAccountComboBoxLabel;
     /** Holds the account combo-box instance. */
     QComboBox    *m_pAccountComboBox;
+    /** Holds the account management tool-button instance. */
+    QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
     QTableWidget *m_pAccountPropertyTable;
 };
@@ -249,6 +252,9 @@ private slots:
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();
+
+    /** Handles account tool-button click. */
+    void sltHandleAccountButtonClick();
 
 private:
 

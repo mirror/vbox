@@ -33,10 +33,13 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QIToolButton.h"
 # include "VBoxGlobal.h"
 # include "UIApplianceExportEditorWidget.h"
 # include "UIConverter.h"
 # include "UIEmptyFilePathSelector.h"
+# include "UIIconPool.h"
+# include "UIVirtualBoxManager.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
 # include "UIWizardExportAppPageExpert.h"
@@ -264,22 +267,43 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pSettingsLayout2->setColumnStretch(0, 0);
                             m_pSettingsLayout2->setColumnStretch(1, 1);
 
-                            /* Create account combo-box: */
-                            m_pAccountComboBox = new QComboBox;
-                            if (m_pAccountComboBox)
-                            {
-                                /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pAccountComboBox, 0, 1);
-                            }
                             /* Create account label: */
                             m_pAccountComboBoxLabel = new QLabel;
                             if (m_pAccountComboBoxLabel)
                             {
                                 m_pAccountComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                                m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
 
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
+                            }
+                            /* Create sub-layout: */
+                            QHBoxLayout *pSubLayout = new QHBoxLayout;
+                            if (pSubLayout)
+                            {
+                                pSubLayout->setContentsMargins(0, 0, 0, 0);
+                                pSubLayout->setSpacing(1);
+
+                                /* Create provider combo-box: */
+                                m_pAccountComboBox = new QComboBox;
+                                if (m_pAccountComboBox)
+                                {
+                                    m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
+
+                                    /* Add into layout: */
+                                    pSubLayout->addWidget(m_pAccountComboBox);
+                                }
+                                /* Create provider combo-box: */
+                                m_pAccountToolButton = new QIToolButton;
+                                if (m_pAccountToolButton)
+                                {
+                                    m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png"));
+
+                                    /* Add into layout: */
+                                    pSubLayout->addWidget(m_pAccountToolButton);
+                                }
+
+                                /* Add into layout: */
+                                m_pSettingsLayout2->addLayout(pSubLayout, 0, 1);
                             }
                             /* Create account property table: */
                             m_pAccountPropertyTable = new QTableWidget;
@@ -328,6 +352,9 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateAccountProperties();
 
     /* Setup connections: */
+    if (gpManager)
+        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
+                this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -336,6 +363,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleMACAddressPolicyComboChange);
     connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleAccountComboChange);
+    connect(m_pAccountToolButton, &QIToolButton::clicked,
+            this, &UIWizardExportAppPageExpert::sltHandleAccountButtonClick);
 
     /* Register classes: */
     qRegisterMetaType<ExportAppliancePointer>();
@@ -489,16 +518,18 @@ bool UIWizardExportAppPageExpert::isComplete() const
     /* Check appliance settings: */
     if (fResult)
     {
-        const QString &strFile = field("path").toString().toLower();
-
         const bool fOVF =    field("format").toString() == "ovf-0.9"
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
         const bool fCSP =    isFormatCloudOne();
 
+        const QString &strFile = field("path").toString().toLower();
+        const QString &strAccount = field("profileName").toString();
+
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
-                  || fCSP;
+                  || (   fCSP
+                      && !strAccount.isNull());
     }
 
     return fResult;
@@ -545,6 +576,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     populateAccounts();
     populateAccountProperties();
     refreshApplianceSettingsWidget();
+    emit completeChanged();
 }
 
 void UIWizardExportAppPageExpert::sltHandleMACAddressPolicyComboChange()
@@ -557,4 +589,11 @@ void UIWizardExportAppPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
+}
+
+void UIWizardExportAppPageExpert::sltHandleAccountButtonClick()
+{
+    /* Open Cloud Profile Manager: */
+    if (gpManager)
+        gpManager->openCloudProfileManager();
 }
