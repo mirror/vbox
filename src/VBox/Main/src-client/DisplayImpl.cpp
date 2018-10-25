@@ -2611,7 +2611,7 @@ int Display::i_videoRecStart(void)
     {
         for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
         {
-            int rc2 = VideoRecStreamInit(mpVideoRecCtx, uScreen);
+            int rc2 = VideoRecStreamInit(VideoRecGetStream(mpVideoRecCtx, uScreen), mpVideoRecCtx, uScreen);
             if (RT_SUCCESS(rc2))
             {
                 i_videoRecScreenChanged(uScreen);

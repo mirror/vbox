@@ -195,10 +195,8 @@ typedef struct VIDEORECCONTEXT
 int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORECCONTEXT *ppCtx);
 int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx);
 
-int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen);
-int VideoRecStreamUninit(PVIDEORECCONTEXT pCtx, uint32_t uScreen);
-
 VIDEORECFEATURES VideoRecGetFeatures(PVIDEORECCFG pCfg);
+PVIDEORECSTREAM VideoRecGetStream(PVIDEORECCONTEXT pCtx, uint32_t uScreen);
 
 int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs);
 int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
