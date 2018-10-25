@@ -4306,8 +4306,8 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                 Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the old linker kludge.\n",
                      pszLogName, u.Cfg64.Size, Dir.Size));
 
-                Dir.Size = u.Cfg64.Size;
                 uint32_t const uOrgDir = Dir.Size;
+                Dir.Size = u.Cfg64.Size;
                 RT_ZERO(u.Cfg64);
                 rc = rtldrPEReadRVA(pModPe, &u.Cfg64, Dir.Size, Dir.VirtualAddress);
                 if (RT_FAILURE(rc))
