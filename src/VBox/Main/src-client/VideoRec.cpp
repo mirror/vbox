@@ -387,7 +387,7 @@ VIDEORECFEATURES VideoRecGetFeatures(PVIDEORECCFG pCfg)
  * @param   pCtx                Recording context to look up stream for.
  * @param   uScreen             Screen number of recording stream to look up.
  */
-PVIDEORECSTREAM videoRecGetStream(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
+PVIDEORECSTREAM VideoRecGetStream(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 {
     AssertPtrReturn(pCtx, NULL);
 
@@ -423,7 +423,7 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStam
 
     bool fIsReady = false;
 
-    PVIDEORECSTREAM pStream = videoRecGetStream(pCtx, uScreen);
+    PVIDEORECSTREAM pStream = VideoRecGetStream(pCtx, uScreen);
     if (pStream)
     {
         VideoRecStreamLock(pStream);
@@ -462,7 +462,7 @@ bool VideoRecIsStarted(PVIDEORECCONTEXT pCtx)
  */
 bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNowMs)
 {
-    PVIDEORECSTREAM pStream = videoRecGetStream(pCtx, uScreen);
+    PVIDEORECSTREAM pStream = VideoRecGetStream(pCtx, uScreen);
     if (   !pStream
         || !pStream->fEnabled)
     {
@@ -607,7 +607,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
     int rc = RTCritSectEnter(&pCtx->CritSect);
     AssertRC(rc);
 
-    PVIDEORECSTREAM pStream = videoRecGetStream(pCtx, uScreen);
+    PVIDEORECSTREAM pStream = VideoRecGetStream(pCtx, uScreen);
     if (!pStream)
     {
         rc = RTCritSectLeave(&pCtx->CritSect);
