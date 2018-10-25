@@ -71,7 +71,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowVirtualMediaManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/media_manager_16px.png", ":/media_manager_16px.png")
+        : UIActionSimple(pParent, ":/media_manager_16px.png", ":/media_manager_disabled_16px.png")
     {}
 
 protected:
@@ -105,7 +105,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowHostNetworkManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_16px.png")
+        : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_disabled_16px.png")
     {}
 
 protected:
@@ -139,7 +139,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowCloudProfileManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/cloud_profile_manager_16px.png", ":/cloud_profile_manager_16px.png")
+        : UIActionSimple(pParent, ":/cloud_profile_manager_16px.png", ":/cloud_profile_manager_disabled_16px.png")
     {}
 
 protected:
@@ -1400,7 +1400,7 @@ public:
     UIActionSimpleSelectorToolsMachineShowDetails(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/machine_details_manager_24px.png", ":/machine_details_manager_16px.png",
-                         ":/machine_details_manager_24px.png", ":/machine_details_manager_16px.png")
+                         ":/machine_details_manager_disabled_24px.png", ":/machine_details_manager_disabled_16px.png")
     {}
 
 protected:
@@ -1430,7 +1430,7 @@ public:
     UIActionSimpleSelectorToolsMachineShowSnapshots(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/snapshot_manager_24px.png", ":/snapshot_manager_16px.png",
-                         ":/snapshot_manager_24px.png", ":/snapshot_manager_16px.png")
+                         ":/snapshot_manager_disabled_24px.png", ":/snapshot_manager_disabled_16px.png")
     {}
 
 protected:
@@ -1459,8 +1459,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsMachineShowLogs(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/vm_show_logs_32px.png", ":/vm_show_logs_32px.png",
-                         ":/vm_show_logs_32px.png", ":/vm_show_logs_32px.png")
+                         ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
+                         ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
     {}
 
 protected:
@@ -1547,7 +1547,7 @@ public:
     UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/media_manager_24px.png", ":/media_manager_16px.png",
-                         ":/media_manager_24px.png", ":/media_manager_16px.png")
+                         ":/media_manager_disabled_24px.png", ":/media_manager_disabled_16px.png")
     {}
 
 protected:
@@ -1577,7 +1577,7 @@ public:
     UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
-                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png")
+                         ":/host_iface_manager_disabled_24px.png", ":/host_iface_manager_disabled_16px.png")
     {}
 
 protected:
@@ -1607,7 +1607,7 @@ public:
     UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
-                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png")
+                         ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png")
     {}
 
 protected:

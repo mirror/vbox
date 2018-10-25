@@ -462,13 +462,13 @@ void UIToolsModel::prepareItems()
 
     /* Prepare icons: */
     QList<QIcon> icons;
-    icons << UIIconPool::iconSet(":/welcome_screen_24px.png");
-    icons << UIIconPool::iconSet(":/media_manager_24px.png");
-    icons << UIIconPool::iconSet(":/host_iface_manager_24px.png");
-    icons << UIIconPool::iconSet(":/cloud_profile_manager_24px.png");
-    icons << UIIconPool::iconSet(":/machine_details_manager_24px.png");
-    icons << UIIconPool::iconSet(":/snapshot_manager_24px.png");
-    icons << UIIconPool::iconSet(":/vm_show_logs_24px.png");
+    icons << UIIconPool::iconSet(":/welcome_screen_24px.png",          ":/welcome_screen_24px.png"); /// @todo fix icon!
+    icons << UIIconPool::iconSet(":/media_manager_24px.png",           ":/media_manager_disabled_24px.png");
+    icons << UIIconPool::iconSet(":/host_iface_manager_24px.png",      ":/host_iface_manager_disabled_24px.png");
+    icons << UIIconPool::iconSet(":/cloud_profile_manager_24px.png",   ":/cloud_profile_manager_disabled_24px.png");
+    icons << UIIconPool::iconSet(":/machine_details_manager_24px.png", ":/machine_details_manager_disabled_24px.png");
+    icons << UIIconPool::iconSet(":/snapshot_manager_24px.png",        ":/snapshot_manager_disabled_24px.png");
+    icons << UIIconPool::iconSet(":/vm_show_logs_24px.png",            ":/vm_show_logs_disabled_24px.png");
 
     /* Prepare names: */
     QList<QString> names;

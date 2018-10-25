@@ -1,5 +1,20 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_freebsd_64.png">images/os_freebsd_64.png</file>
+        <file alias="os_gentoo.png">images/os_gentoo.png</file>
+        <file alias="os_gentoo_64.png">images/os_gentoo_64.png</file>
+        <file alias="os_jrockitve.png">images/os_jrockitve.png</file>
+        <file alias="os_l4.png">images/os_l4.png</file>
+        <file alias="os_linux.png">images/os_linux.png</file>
+        <file alias="os_linux22.png">images/os_linux22.png</file>
+        <file alias="os_linux24.png">images/os_linux24.png</file>
+        <file alias="os_linux24_64.png">images/os_linux24_64.png</file>
+        <file alias="os_linux26.png">images/os_linux26.png</file>
+        <file alias="os_linux26_64.png">images/os_linux26_64.png</file>
+        <file alias="os_linux_64.png">images/os_linux_64.png</file>
+        <file alias="os_macosx.png">images/os_macosx.png</file>
+        <file alias="os_macosx_64.png">images/os_macosx_64.png</file>
+        <file alias="os_mandriva.png">images/os_mandriva.png</file>
         <file alias="os_mandriva_64.png">images/os_mandriva_64.png</file>
         <file alias="os_netbsd.png">images/os_netbsd.png</file>
         <file alias="os_netbsd_64.png">images/os_netbsd_64.png</file>
@@ -165,6 +180,8 @@
         <file alias="snapshot_delete_disabled_32px.png">images/snapshot_delete_disabled_32px.png</file>
         <file alias="snapshot_manager_16px.png">images/snapshot_manager_16px.png</file>
         <file alias="snapshot_manager_24px.png">images/snapshot_manager_24px.png</file>
+        <file alias="snapshot_manager_disabled_16px.png">images/snapshot_manager_disabled_16px.png</file>
+        <file alias="snapshot_manager_disabled_24px.png">images/snapshot_manager_disabled_24px.png</file>
         <file alias="snapshot_offline_16px.png">images/snapshot_offline_16px.png</file>
         <file alias="snapshot_online_16px.png">images/snapshot_online_16px.png</file>
         <file alias="snapshot_restore_16px.png">images/snapshot_restore_16px.png</file>
@@ -286,6 +303,7 @@
         <file alias="vm_show_logs_24px.png">images/vm_show_logs_24px.png</file>
         <file alias="vm_show_logs_32px.png">images/vm_show_logs_32px.png</file>
         <file alias="vm_show_logs_disabled_16px.png">images/vm_show_logs_disabled_16px.png</file>
+        <file alias="vm_show_logs_disabled_24px.png">images/vm_show_logs_disabled_24px.png</file>
         <file alias="vm_show_logs_disabled_32px.png">images/vm_show_logs_disabled_32px.png</file>
         <file alias="vm_shutdown_16px.png">images/vm_shutdown_16px.png</file>
         <file alias="vm_shutdown_disabled_16px.png">images/vm_shutdown_disabled_16px.png</file>

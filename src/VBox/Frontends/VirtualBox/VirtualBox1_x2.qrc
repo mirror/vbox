@@ -74,6 +74,8 @@
         <file alias="cloud_profile_manager_16px_x2.png">images/x2/cloud_profile_manager_16px_x2.png</file>
         <file alias="cloud_profile_manager_24px_x2.png">images/x2/cloud_profile_manager_24px_x2.png</file>
         <file alias="cloud_profile_manager_32px_x2.png">images/x2/cloud_profile_manager_32px_x2.png</file>
+        <file alias="cloud_profile_manager_disabled_16px_x2.png">images/x2/cloud_profile_manager_disabled_16px_x2.png</file>
+        <file alias="cloud_profile_manager_disabled_24px_x2.png">images/x2/cloud_profile_manager_disabled_24px_x2.png</file>
         <file alias="cloud_profile_remove_16px_x2.png">images/x2/cloud_profile_remove_16px_x2.png</file>
         <file alias="cloud_profile_remove_32px_x2.png">images/x2/cloud_profile_remove_32px_x2.png</file>
         <file alias="cloud_profile_remove_disabled_16px_x2.png">images/x2/cloud_profile_remove_disabled_16px_x2.png</file>
@@ -224,6 +226,8 @@
         <file alias="host_iface_manager_16px_x2.png">images/x2/host_iface_manager_16px_x2.png</file>
         <file alias="host_iface_manager_24px_x2.png">images/x2/host_iface_manager_24px_x2.png</file>
         <file alias="host_iface_manager_32px_x2.png">images/x2/host_iface_manager_32px_x2.png</file>
+        <file alias="host_iface_manager_disabled_16px_x2.png">images/x2/host_iface_manager_disabled_16px_x2.png</file>
+        <file alias="host_iface_manager_disabled_24px_x2.png">images/x2/host_iface_manager_disabled_24px_x2.png</file>
         <file alias="host_iface_remove_16px_x2.png">images/x2/host_iface_remove_16px_x2.png</file>
         <file alias="host_iface_remove_32px_x2.png">images/x2/host_iface_remove_32px_x2.png</file>
         <file alias="host_iface_remove_disabled_16px_x2.png">images/x2/host_iface_remove_disabled_16px_x2.png</file>
@@ -285,10 +289,14 @@
         <file alias="machine_abstract_16px_x2.png">images/x2/machine_abstract_16px_x2.png</file>
         <file alias="machine_details_manager_16px_x2.png">images/x2/machine_details_manager_16px_x2.png</file>
         <file alias="machine_details_manager_24px_x2.png">images/x2/machine_details_manager_24px_x2.png</file>
+        <file alias="machine_details_manager_disabled_16px_x2.png">images/x2/machine_details_manager_disabled_16px_x2.png</file>
+        <file alias="machine_details_manager_disabled_24px_x2.png">images/x2/machine_details_manager_disabled_24px_x2.png</file>
         <file alias="machine_warning_16px_x2.png">images/x2/machine_warning_16px_x2.png</file>
         <file alias="media_manager_16px_x2.png">images/x2/media_manager_16px_x2.png</file>
         <file alias="media_manager_24px_x2.png">images/x2/media_manager_24px_x2.png</file>
         <file alias="media_manager_32px_x2.png">images/x2/media_manager_32px_x2.png</file>
+        <file alias="media_manager_disabled_16px_x2.png">images/x2/media_manager_disabled_16px_x2.png</file>
+        <file alias="media_manager_disabled_24px_x2.png">images/x2/media_manager_disabled_24px_x2.png</file>
         <file alias="meditation_32px_x2.png">images/x2/meditation_32px_x2.png</file>
         <file alias="menubar_16px_x2.png">images/x2/menubar_16px_x2.png</file>
         <file alias="menubar_disabled_16px_x2.png">images/x2/menubar_disabled_16px_x2.png</file>
@@ -326,18 +334,5 @@
         <file alias="os_fedora_64_x2.png">images/x2/os_fedora_64_x2.png</file>
         <file alias="os_fedora_x2.png">images/x2/os_fedora_x2.png</file>
         <file alias="os_freebsd_64_x2.png">images/x2/os_freebsd_64_x2.png</file>
-        <file alias="os_freebsd_x2.png">images/x2/os_freebsd_x2.png</file>
-        <file alias="os_gentoo_64_x2.png">images/x2/os_gentoo_64_x2.png</file>
-        <file alias="os_gentoo_x2.png">images/x2/os_gentoo_x2.png</file>
-        <file alias="os_jrockitve_x2.png">images/x2/os_jrockitve_x2.png</file>
-        <file alias="os_l4_x2.png">images/x2/os_l4_x2.png</file>
-        <file alias="os_linux22_x2.png">images/x2/os_linux22_x2.png</file>
-        <file alias="os_linux24_64_x2.png">images/x2/os_linux24_64_x2.png</file>
-        <file alias="os_linux24_x2.png">images/x2/os_linux24_x2.png</file>
-        <file alias="os_linux26_64_x2.png">images/x2/os_linux26_64_x2.png</file>
-        <file alias="os_linux26_x2.png">images/x2/os_linux26_x2.png</file>
-        <file alias="os_linux_64_x2.png">images/x2/os_linux_64_x2.png</file>
-        <file alias="os_linux_x2.png">images/x2/os_linux_x2.png</file>
-        <file alias="os_macosx_64_x2.png">images/x2/os_macosx_64_x2.png</file>
     </qresource>
 </RCC>

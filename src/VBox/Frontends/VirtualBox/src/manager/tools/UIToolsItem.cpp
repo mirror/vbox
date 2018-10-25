@@ -272,6 +272,15 @@ const QString &UIToolsItem::name() const
     return m_strName;
 }
 
+void UIToolsItem::setEnabled(bool fEnabled)
+{
+    /* Call to base-class: */
+    QIGraphicsWidget::setEnabled(fEnabled);
+
+    /* Update linked values: */
+    updatePixmap();
+}
+
 void UIToolsItem::setHovered(bool fHovered)
 {
     m_fHovered = fHovered;
@@ -592,7 +601,7 @@ void UIToolsItem::updatePixmap()
 
     /* Prepare new pixmap size: */
     const QSize pixmapSize = QSize(iIconMetric, iIconMetric);
-    const QPixmap pixmap = m_icon.pixmap(gpManager->windowHandle(), pixmapSize);
+    const QPixmap pixmap = m_icon.pixmap(gpManager->windowHandle(), pixmapSize, isEnabled() ? QIcon::Normal : QIcon::Disabled);
     /* Update linked values: */
     if (m_pixmapSize != pixmapSize)
     {
@@ -883,25 +892,12 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
         int iPixmapX = iMargin;
         int iPixmapY = (iFullHeight - m_pixmap.height() / m_pixmap.devicePixelRatio()) / 2;
         /* Paint pixmap: */
-        // WORKAROUND:
-        // We have no disabled tool icons for now.
-        // So we will emulate that functionality.
-        // Maybe one day we should do that everywhere?
-        /// @todo just use proper icons!
-        if (!isEnabled())
-            paintPixmap(/* Painter: */
-                        pPainter,
-                        /* Point to paint in: */
-                        QPoint(iPixmapX, iPixmapY),
-                        /* Pixmap to paint: */
-                        QPixmap::fromImage(toGray(m_pixmap.toImage())));
-        else
-            paintPixmap(/* Painter: */
-                        pPainter,
-                        /* Point to paint in: */
-                        QPoint(iPixmapX, iPixmapY),
-                        /* Pixmap to paint: */
-                        m_pixmap);
+        paintPixmap(/* Painter: */
+                    pPainter,
+                    /* Point to paint in: */
+                    QPoint(iPixmapX, iPixmapY),
+                    /* Pixmap to paint: */
+                    m_pixmap);
     }
 
     /* Paint right column: */

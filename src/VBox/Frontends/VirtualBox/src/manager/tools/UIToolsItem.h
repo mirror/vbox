@@ -100,6 +100,9 @@ public:
         /** Returns item name. */
         const QString &name() const;
 
+        /** Defines whether item is @a fEnabled. */
+        void setEnabled(bool fEnabled);
+
         /** Defines whether item is @a fHovered. */
         void setHovered(bool fHovered);
         /** Returns whether item is hovered. */
