@@ -28,7 +28,6 @@
 # include "QILabel.h"
 # include "UIErrorString.h"
 # include "UIGuestFileTable.h"
-# include "UIVMInformationDialog.h"
 
 /* COM includes: */
 # include "CFsObjInfo.h"
@@ -162,7 +161,7 @@ void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
 void UIGuestFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIVMInformationDialog::tr("Guest System"));
+        m_pLocationLabel->setText(QApplication::translate("UIGuestControlWidget", "Guest System"));
     UIGuestControlFileTable::retranslateUi();
 }
 

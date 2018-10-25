@@ -851,6 +851,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/guestctrl/UIGuestControlTreeItem.h \
 	src/runtime/guestctrl/UIGuestControlWidget.h \
 	src/runtime/guestctrl/UIGuestFileTable.h \
+	src/runtime/guestctrl/UIGuestProcessControlWidget.h \
 	src/runtime/guestctrl/UIHostFileTable.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
@@ -1000,6 +1001,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/guestctrl/UIGuestControlTreeItem.h \
 	src/runtime/guestctrl/UIGuestControlWidget.h \
 	src/runtime/guestctrl/UIGuestFileTable.h \
+	src/runtime/guestctrl/UIGuestProcessControlWidget.h \
 	src/runtime/guestctrl/UIHostFileTable.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
@@ -1216,8 +1218,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
 	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestControlWidget.cpp \
 	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
@@ -1266,8 +1268,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
 	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestControlWidget.cpp \
 	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/widgets/UIMiniToolBar.cpp
 
@@ -1550,6 +1552,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
 	src/runtime/guestctrl/UIGuestControlWidget.cpp \
 	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
@@ -1723,6 +1726,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
 	src/runtime/guestctrl/UIGuestControlWidget.cpp \
 	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \

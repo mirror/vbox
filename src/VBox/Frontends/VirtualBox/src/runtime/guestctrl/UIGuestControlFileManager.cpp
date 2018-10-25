@@ -44,7 +44,6 @@
 # include "UIGuestControlInterface.h"
 # include "UIHostFileTable.h"
 # include "UIToolBar.h"
-# include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -228,20 +227,20 @@ void UIGuestSessionCreateWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
-        m_pUserNameEdit->setToolTip(UIVMInformationDialog::tr("User name to authenticate session creation"));
-        m_pUserNameEdit->setPlaceholderText(UIVMInformationDialog::tr("User Name"));
+        m_pUserNameEdit->setToolTip(QApplication::translate("UIGuestControlWidget", "User name to authenticate session creation"));
+        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIGuestControlWidget", "User Name"));
 
     }
     if (m_pPasswordEdit)
     {
-        m_pPasswordEdit->setToolTip(UIVMInformationDialog::tr("Password to authenticate session creation"));
-        m_pPasswordEdit->setPlaceholderText(UIVMInformationDialog::tr("Password"));
+        m_pPasswordEdit->setToolTip(QApplication::translate("UIGuestControlWidget", "Password to authenticate session creation"));
+        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIGuestControlWidget", "Password"));
     }
 
     if (m_pCreateButton)
-        m_pCreateButton->setText(UIVMInformationDialog::tr("Create Session"));
+        m_pCreateButton->setText(QApplication::translate("UIGuestControlWidget", "Create Session"));
     if (m_pCloseButton)
-        m_pCloseButton->setText(UIVMInformationDialog::tr("Close Session"));
+        m_pCloseButton->setText(QApplication::translate("UIGuestControlWidget", "Close Session"));
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
@@ -325,22 +324,22 @@ void UIGuestControlFileManager::retranslateUi()
 {
     if (m_pCopyGuestToHost)
     {
-        m_pCopyGuestToHost->setText(UIVMInformationDialog::tr("Copy the selected object(s) from guest to host"));
-        m_pCopyGuestToHost->setToolTip(UIVMInformationDialog::tr("Copy the selected object(s) from guest to host"));
-        m_pCopyGuestToHost->setStatusTip(UIVMInformationDialog::tr("Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setText(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setToolTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setStatusTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from guest to host"));
     }
 
     if (m_pCopyHostToGuest)
     {
-        m_pCopyHostToGuest->setText(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
-        m_pCopyHostToGuest->setToolTip(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
-        m_pCopyHostToGuest->setStatusTip(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setText(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setToolTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setStatusTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from host to guest"));
     }
 
 
-    m_pTabWidget->setTabText(0, tr("Log"));
-    m_pTabWidget->setTabText(1, tr("File Operations"));
-    m_pTabWidget->setTabText(2, tr("Terminal"));
+    m_pTabWidget->setTabText(0, QApplication::translate("UIGuestControlWidget", "Log"));
+    m_pTabWidget->setTabText(1, QApplication::translate("UIGuestControlWidget", "File Operations"));
+    m_pTabWidget->setTabText(2, QApplication::translate("UIGuestControlWidget", "Terminal"));
 
 }
 
@@ -724,14 +723,14 @@ void UIGuestControlFileManager::saveSettings()
 {
     if (!m_pVerticalSplitter)
         return;
-    gEDataManager->setGuestFileManagerTabSplitterHints(m_pVerticalSplitter->sizes());
+    gEDataManager->setGuestControlFileManagerSplitterHints(m_pVerticalSplitter->sizes());
 }
 
 void UIGuestControlFileManager::loadSettings()
 {
     if (!m_pVerticalSplitter)
         return;
-    QList<int> splitterHints = gEDataManager->guestFileManagerTabSplitterHints();
+    QList<int> splitterHints = gEDataManager->guestControlFileManagerSplitterHints();
     if (splitterHints.size() != 2)
         return;
     if (splitterHints[0] != 0 && splitterHints[1] != 0)

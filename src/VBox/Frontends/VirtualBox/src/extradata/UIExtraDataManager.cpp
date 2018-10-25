@@ -2030,8 +2030,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_ScaleFactor << GUI_Scaling_Optimization
            << GUI_InformationWindowGeometry
            << GUI_InformationWindowElements
-           << GUI_GuestSessionManagerTabSplitterHints
-           << GUI_GuestFileManagerTabSplitterHints
+           << GUI_GuestControl_ProcessControlSplitterHints
+           << GUI_GuestControl_FileManagerSplitterHints
+           << GUI_GuestControl_DialogGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -4087,20 +4088,20 @@ void UIExtraDataManager::setInformationWindowGeometry(const QRect &geometry, boo
 }
 
 
-void UIExtraDataManager::setGuestSessionManagerTabSplitterHints(const QList<int> &hints)
+void UIExtraDataManager::setGuestControlProcessControlSplitterHints(const QList<int> &hints)
 {
     QStringList data;
     data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
     data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_GuestSessionManagerTabSplitterHints, data);
+    setExtraDataStringList(GUI_GuestControl_ProcessControlSplitterHints, data);
 }
 
-QList<int> UIExtraDataManager::guestSessionManagerTabSplitterHints()
+QList<int> UIExtraDataManager::guestControlProcessControlSplitterHints()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestSessionManagerTabSplitterHints);
+    const QStringList data = extraDataStringList(GUI_GuestControl_ProcessControlSplitterHints);
 
     /* Parse loaded data: */
     QList<int> hints;
@@ -4111,20 +4112,20 @@ QList<int> UIExtraDataManager::guestSessionManagerTabSplitterHints()
     return hints;
 }
 
-void UIExtraDataManager::setGuestFileManagerTabSplitterHints(const QList<int> &hints)
+void UIExtraDataManager::setGuestControlFileManagerSplitterHints(const QList<int> &hints)
 {
     QStringList data;
     data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
     data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_GuestFileManagerTabSplitterHints, data);
+    setExtraDataStringList(GUI_GuestControl_FileManagerSplitterHints, data);
 }
 
-QList<int> UIExtraDataManager::guestFileManagerTabSplitterHints()
+QList<int> UIExtraDataManager::guestControlFileManagerSplitterHints()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestFileManagerTabSplitterHints);
+    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerSplitterHints);
 
     /* Parse loaded data: */
     QList<int> hints;
@@ -4133,6 +4134,73 @@ QList<int> UIExtraDataManager::guestFileManagerTabSplitterHints()
 
     /* Return hints: */
     return hints;
+}
+
+QRect UIExtraDataManager::guestControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_GuestControl_DialogGeometry);
+
+    /* Parse loaded data: */
+    int iX = 0, iY = 0, iW = 0, iH = 0;
+    bool fOk = data.size() >= 4;
+    do
+    {
+        if (!fOk) break;
+        iX = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iY = data[1].toInt(&fOk);
+        if (!fOk) break;
+        iW = data[2].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[3].toInt(&fOk);
+    }
+    while (0);
+
+    /* Use geometry (loaded or default): */
+    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : defaultGeometry;
+
+    /* Take hint-widget into account: */
+    if (pWidget)
+        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
+
+    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
+#ifdef VBOX_WS_WIN
+    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
+
+    /* Make sure resulting geometry is within current bounds: */
+    if (!availableGeometry.contains(geometry))
+        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+#endif /* VBOX_WS_WIN */
+
+    /* Return result: */
+    return geometry;
+}
+
+bool UIExtraDataManager::guestControlDialogShouldBeMaximized()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_GuestControl_DialogGeometry);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+}
+
+void UIExtraDataManager::setGuestControlDialogGeometry(const QRect &geometry, bool fMaximized)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_Geometry_State_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_GuestControl_DialogGeometry, data);
 }
 
 QMap<InformationElementType, bool> UIExtraDataManager::informationWindowElements()

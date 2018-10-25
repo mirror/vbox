@@ -347,8 +347,9 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowGeometry;
         /** Holds information-window elements. */
         SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowElements;
-        extern const char *GUI_GuestSessionManagerTabSplitterHints;
-        extern const char *GUI_GuestFileManagerTabSplitterHints;
+        extern const char *GUI_GuestControl_ProcessControlSplitterHints;
+        extern const char *GUI_GuestControl_FileManagerSplitterHints;
+        extern const char *GUI_GuestControl_DialogGeometry;
     /** @} */
 
     /** @name Virtual Machine: Close dialog

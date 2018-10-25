@@ -28,7 +28,7 @@
 # include "QILabel.h"
 # include "UIGuestControlFileModel.h"
 # include "UIHostFileTable.h"
-# include "UIVMInformationDialog.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -133,7 +133,7 @@ UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
 void UIHostFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIVMInformationDialog::tr("Host System"));
+        m_pLocationLabel->setText(QApplication::translate("UIGuestControlWidget", "Host System"));
     UIGuestControlFileTable::retranslateUi();
 }
 

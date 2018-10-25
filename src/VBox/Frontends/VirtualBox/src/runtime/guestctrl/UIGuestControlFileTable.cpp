@@ -44,7 +44,6 @@
 # include "UIGuestControlFileTable.h"
 # include "UIGuestControlFileModel.h"
 # include "UIToolBar.h"
-# include "UIVMInformationDialog.h"
 
 /* COM includes: */
 # include "CFsObjInfo.h"
@@ -331,21 +330,21 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         return;
     /* I know this is ugly: */
     bool isGuestFileTable = qobject_cast<UIGuestFileTable*>(parent());
-
-    QAction *pActionGoUp = menu->addAction(UIVMInformationDialog::tr("Go up"));
+    //setText(QApplication::translate("UIGuestControlWidget", "Host System"));
+    QAction *pActionGoUp = menu->addAction(QApplication::translate("UIGuestControlWidget","Go up"));
     if (pActionGoUp)
     {
         pActionGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
         connect(pActionGoUp, &QAction::triggered, this, &UIGuestControlFileView::sigGoUp);
     }
-    QAction *pActionGoHome = menu->addAction(UIVMInformationDialog::tr("Go home"));
+    QAction *pActionGoHome = menu->addAction(QApplication::translate("UIGuestControlWidget", "Go home"));
     if (pActionGoHome)
     {
         pActionGoHome->setIcon(UIIconPool::iconSet(QString(":/nw_24px.png")));
         connect(pActionGoHome, &QAction::triggered, this, &UIGuestControlFileView::sigGoHome);
     }
 
-    QAction *pActionRefresh = menu->addAction(UIVMInformationDialog::tr("Refresh"));
+    QAction *pActionRefresh = menu->addAction(QApplication::translate("UIGuestControlWidget", "Refresh"));
     if (pActionRefresh)
     {
         pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24px.png")));
@@ -353,7 +352,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
     }
 
     menu->addSeparator();
-    QAction *pActionDelete = menu->addAction(UIVMInformationDialog::tr("Delete"));
+    QAction *pActionDelete = menu->addAction(QApplication::translate("UIGuestControlWidget", "Delete"));
     if (pActionDelete)
     {
         pActionDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
@@ -361,7 +360,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         connect(pActionDelete, &QAction::triggered, this, &UIGuestControlFileView::sigDelete);
     }
 
-    QAction *pActionRename = menu->addAction(UIVMInformationDialog::tr("Rename"));
+    QAction *pActionRename = menu->addAction(QApplication::translate("UIGuestControlWidget", "Rename"));
     if (pActionRename)
     {
         pActionRename->setIcon(UIIconPool::iconSet(QString(":/name_16px_x2.png")));
@@ -370,7 +369,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         connect(pActionRename, &QAction::triggered, this, &UIGuestControlFileView::sigRename);
     }
 
-    QAction *pActionCreateNewDirectory = menu->addAction(UIVMInformationDialog::tr("Create New Directory"));
+    QAction *pActionCreateNewDirectory = menu->addAction(QApplication::translate("UIGuestControlWidget", "Create New Directory"));
     if (pActionCreateNewDirectory)
     {
         pActionCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
@@ -383,7 +382,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
 
     if (isGuestFileTable)
     {
-        pActionCopy = menu->addAction(UIVMInformationDialog::tr("Copy"));
+        pActionCopy = menu->addAction(QApplication::translate("UIGuestControlWidget", "Copy"));
         if (pActionCopy)
         {
             pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_32px.png")));
@@ -391,7 +390,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
             connect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
         }
 
-        pActionCut = menu->addAction(UIVMInformationDialog::tr("Cut"));
+        pActionCut = menu->addAction(QApplication::translate("UIGuestControlWidget", "Cut"));
         if (pActionCut)
         {
             pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_32px.png")));
@@ -399,7 +398,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
             connect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
         }
 
-        pActionPaste = menu->addAction(UIVMInformationDialog::tr("Paste"));
+        pActionPaste = menu->addAction(QApplication::translate("UIGuestControlWidget", "Paste"));
         if (pActionPaste)
         {
             pActionPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
@@ -408,7 +407,7 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
     }
 
     menu->addSeparator();
-    QAction *pActionShowProperties = menu->addAction(UIVMInformationDialog::tr("Properties"));
+    QAction *pActionShowProperties = menu->addAction(QApplication::translate("UIGuestControlWidget", "Properties"));
     if (pActionShowProperties)
     {
         pActionShowProperties->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
@@ -1435,87 +1434,87 @@ void UIGuestControlFileTable::retranslateUi()
 {
     if (m_pGoUp)
     {
-        m_pGoUp->setText(UIVMInformationDialog::tr("Move one level up"));
-        m_pGoUp->setToolTip(UIVMInformationDialog::tr("Move one level up"));
-        m_pGoUp->setStatusTip(UIVMInformationDialog::tr("Move one level up"));
+        m_pGoUp->setText(QApplication::translate("UIGuestControlWidget", "Move one level up"));
+        m_pGoUp->setToolTip(QApplication::translate("UIGuestControlWidget", "Move one level up"));
+        m_pGoUp->setStatusTip(QApplication::translate("UIGuestControlWidget", "Move one level up"));
     }
 
     if (m_pGoHome)
     {
-        m_pGoHome->setText(UIVMInformationDialog::tr("Go to home directory"));
-        m_pGoHome->setToolTip(UIVMInformationDialog::tr("Go to home directory"));
-        m_pGoHome->setStatusTip(UIVMInformationDialog::tr("Go to home directory"));
+        m_pGoHome->setText(QApplication::translate("UIGuestControlWidget", "Go to home directory"));
+        m_pGoHome->setToolTip(QApplication::translate("UIGuestControlWidget", "Go to home directory"));
+        m_pGoHome->setStatusTip(QApplication::translate("UIGuestControlWidget", "Go to home directory"));
     }
 
     if (m_pRename)
     {
-        m_pRename->setText(UIVMInformationDialog::tr("Rename the selected item"));
-        m_pRename->setToolTip(UIVMInformationDialog::tr("Rename the selected item"));
-        m_pRename->setStatusTip(UIVMInformationDialog::tr("Rename the selected item"));
+        m_pRename->setText(QApplication::translate("UIGuestControlWidget", "Rename the selected item"));
+        m_pRename->setToolTip(QApplication::translate("UIGuestControlWidget", "Rename the selected item"));
+        m_pRename->setStatusTip(QApplication::translate("UIGuestControlWidget", "Rename the selected item"));
     }
 
     if (m_pRefresh)
     {
-        m_pRefresh->setText(UIVMInformationDialog::tr("Refresh"));
-        m_pRefresh->setToolTip(UIVMInformationDialog::tr("Refresh the current directory"));
-        m_pRefresh->setStatusTip(UIVMInformationDialog::tr("Refresh the current directory"));
+        m_pRefresh->setText(QApplication::translate("UIGuestControlWidget", "Refresh"));
+        m_pRefresh->setToolTip(QApplication::translate("UIGuestControlWidget", "Refresh the current directory"));
+        m_pRefresh->setStatusTip(QApplication::translate("UIGuestControlWidget", "Refresh the current directory"));
     }
     if (m_pDelete)
     {
-        m_pDelete->setText(UIVMInformationDialog::tr("Delete"));
-        m_pDelete->setToolTip(UIVMInformationDialog::tr("Delete the selected item(s)"));
-        m_pDelete->setStatusTip(UIVMInformationDialog::tr("Delete the selected item(s)"));
+        m_pDelete->setText(QApplication::translate("UIGuestControlWidget", "Delete"));
+        m_pDelete->setToolTip(QApplication::translate("UIGuestControlWidget", "Delete the selected item(s)"));
+        m_pDelete->setStatusTip(QApplication::translate("UIGuestControlWidget", "Delete the selected item(s)"));
     }
 
     if (m_pCreateNewDirectory)
     {
-        m_pCreateNewDirectory->setText(UIVMInformationDialog::tr("Create new directory"));
-        m_pCreateNewDirectory->setToolTip(UIVMInformationDialog::tr("Create new directory"));
-        m_pCreateNewDirectory->setStatusTip(UIVMInformationDialog::tr("Create new directory"));
+        m_pCreateNewDirectory->setText(QApplication::translate("UIGuestControlWidget", "Create new directory"));
+        m_pCreateNewDirectory->setToolTip(QApplication::translate("UIGuestControlWidget", "Create new directory"));
+        m_pCreateNewDirectory->setStatusTip(QApplication::translate("UIGuestControlWidget", "Create new directory"));
     }
 
     if (m_pCopy)
     {
-        m_pCopy->setText(UIVMInformationDialog::tr("Copy the selected item"));
-        m_pCopy->setToolTip(UIVMInformationDialog::tr("Copy the selected item(s)"));
-        m_pCopy->setStatusTip(UIVMInformationDialog::tr("Copy the selected item(s)"));
+        m_pCopy->setText(QApplication::translate("UIGuestControlWidget", "Copy the selected item"));
+        m_pCopy->setToolTip(QApplication::translate("UIGuestControlWidget", "Copy the selected item(s)"));
+        m_pCopy->setStatusTip(QApplication::translate("UIGuestControlWidget", "Copy the selected item(s)"));
 
     }
 
     if (m_pCut)
     {
-        m_pCut->setText(UIVMInformationDialog::tr("Cut the selected item(s)"));
-        m_pCut->setToolTip(UIVMInformationDialog::tr("Cut the selected item(s)"));
-        m_pCut->setStatusTip(UIVMInformationDialog::tr("Cut the selected item(s)"));
+        m_pCut->setText(QApplication::translate("UIGuestControlWidget", "Cut the selected item(s)"));
+        m_pCut->setToolTip(QApplication::translate("UIGuestControlWidget", "Cut the selected item(s)"));
+        m_pCut->setStatusTip(QApplication::translate("UIGuestControlWidget", "Cut the selected item(s)"));
 
     }
 
     if ( m_pPaste)
     {
-        m_pPaste->setText(UIVMInformationDialog::tr("Paste the copied item(s)"));
-        m_pPaste->setToolTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
-        m_pPaste->setStatusTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
+        m_pPaste->setText(QApplication::translate("UIGuestControlWidget", "Paste the copied item(s)"));
+        m_pPaste->setToolTip(QApplication::translate("UIGuestControlWidget", "Paste the copied item(s)"));
+        m_pPaste->setStatusTip(QApplication::translate("UIGuestControlWidget", "Paste the copied item(s)"));
     }
 
     if (m_pShowProperties)
     {
-        m_pShowProperties->setText(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
-        m_pShowProperties->setToolTip(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
-        m_pShowProperties->setStatusTip(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
+        m_pShowProperties->setText(QApplication::translate("UIGuestControlWidget", "Show the properties of the selected item(s)"));
+        m_pShowProperties->setToolTip(QApplication::translate("UIGuestControlWidget", "Show the properties of the selected item(s)"));
+        m_pShowProperties->setStatusTip(QApplication::translate("UIGuestControlWidget", "Show the properties of the selected item(s)"));
     }
 
     if (m_pSelectAll)
     {
-        m_pSelectAll->setText(UIVMInformationDialog::tr("Select All"));
-        m_pSelectAll->setToolTip(UIVMInformationDialog::tr("Select All"));
-        m_pSelectAll->setStatusTip(UIVMInformationDialog::tr("Select All"));
+        m_pSelectAll->setText(QApplication::translate("UIGuestControlWidget", "Select All"));
+        m_pSelectAll->setToolTip(QApplication::translate("UIGuestControlWidget", "Select All"));
+        m_pSelectAll->setStatusTip(QApplication::translate("UIGuestControlWidget", "Select All"));
     }
 
     if (m_pInvertSelection)
     {
-        m_pInvertSelection->setText(UIVMInformationDialog::tr("Invert Selection"));
-        m_pInvertSelection->setToolTip(UIVMInformationDialog::tr("Invert Selection"));
-        m_pInvertSelection->setStatusTip(UIVMInformationDialog::tr("Invert Selection"));
+        m_pInvertSelection->setText(QApplication::translate("UIGuestControlWidget", "Invert Selection"));
+        m_pInvertSelection->setToolTip(QApplication::translate("UIGuestControlWidget", "Invert Selection"));
+        m_pInvertSelection->setStatusTip(QApplication::translate("UIGuestControlWidget", "Invert Selection"));
     }
 }
 

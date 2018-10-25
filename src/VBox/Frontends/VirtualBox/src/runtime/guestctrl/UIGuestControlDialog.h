@@ -29,14 +29,14 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMachine.h"
+#include "CGuest.h"
 
 /* Forward declarations: */
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIActionPool;
 class UIGuestControlDialog;
-class CMachine;
+class CGuest;
 
 
 /** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */
@@ -46,8 +46,8 @@ public:
 
     /** Constructs Log Viewer factory acquiring additional arguments.
       * @param  pActionPool  Brings the action-pool reference.
-      * @param  comMachine   Brings the machine for which VM Log-Viewer is requested. */
-    UIGuestControlDialogFactory(UIActionPool *pActionPool = 0, const CMachine &comMachine = CMachine());
+      * @param  comGuest   Brings the machine for which VM Log-Viewer is requested. */
+    UIGuestControlDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
 
 protected:
 
@@ -58,7 +58,8 @@ protected:
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
     /** Holds the machine reference. */
-    CMachine      m_comMachine;
+    CGuest      m_comGuest;
+    QString     m_strMachineName;
 };
 
 
@@ -72,8 +73,8 @@ public:
     /** Constructs Log Viewer dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference.
-      * @param  comMachine     Brings the machine reference. */
-    UIGuestControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine);
+      * @param  comGuest     Brings the machine reference. */
+    UIGuestControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
 
 protected:
 
@@ -114,7 +115,8 @@ private:
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
     /** Holds the machine reference. */
-    CMachine      m_comMachine;
+    CGuest      m_comGuest;
+    QString     m_strMachineName;
 };
 
 

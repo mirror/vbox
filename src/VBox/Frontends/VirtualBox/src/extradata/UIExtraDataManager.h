@@ -621,10 +621,17 @@ public:
         QMap<InformationElementType, bool> informationWindowElements();
         /** Defines information-window @a elements. */
         void setInformationWindowElements(const QMap<InformationElementType, bool> &elements);
-        void setGuestSessionManagerTabSplitterHints(const QList<int> &hints);
-        void setGuestFileManagerTabSplitterHints(const QList<int> &hints);
-        QList<int> guestSessionManagerTabSplitterHints();
-        QList<int> guestFileManagerTabSplitterHints();
+    /** @} */
+
+    /** @name Virtual Machine: Guest Control dialog
+      * @{ */
+        void setGuestControlProcessControlSplitterHints(const QList<int> &hints);
+        void setGuestControlFileManagerSplitterHints(const QList<int> &hints);
+        QList<int> guestControlProcessControlSplitterHints();
+        QList<int> guestControlFileManagerSplitterHints();
+        QRect guestControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
+        bool guestControlDialogShouldBeMaximized();
+        void setGuestControlDialogGeometry(const QRect &geometry, bool fMaximized);
     /** @} */
 
     /** @name Virtual Machine: Close dialog

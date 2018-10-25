@@ -36,7 +36,7 @@
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIGuestControlDialog.h"
-# include "UIVMLogViewerWidget.h"
+# include "UIGuestControlWidget.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
@@ -50,15 +50,17 @@
 *********************************************************************************************************************************/
 
 UIGuestControlDialogFactory::UIGuestControlDialogFactory(UIActionPool *pActionPool /* = 0 */,
-                                                       const CMachine &comMachine /* = CMachine() */)
+                                                         const CGuest &comGuest /* = CGuest() */,
+                                                         const QString &strMachineName /* = QString() */)
     : m_pActionPool(pActionPool)
-    , m_comMachine(comMachine)
+    , m_comGuest(comGuest)
+    , m_strMachineName(strMachineName)
 {
 }
 
 void UIGuestControlDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIGuestControlDialog(pCenterWidget, m_pActionPool, m_comMachine);
+    pDialog = new UIGuestControlDialog(pCenterWidget, m_pActionPool, m_comGuest, m_strMachineName);
 }
 
 
@@ -66,23 +68,23 @@ void UIGuestControlDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCe
 *   Class UIGuestControlDialog implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIGuestControlDialog::UIGuestControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine)
+UIGuestControlDialog::UIGuestControlDialog(QWidget *pCenterWidget,
+                                           UIActionPool *pActionPool,
+                                           const CGuest &comGuest,
+                                           const QString &strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
-    , m_comMachine(comMachine)
+    , m_comGuest(comGuest)
+    , m_strMachineName(strMachineName)
 {
 }
 
 void UIGuestControlDialog::retranslateUi()
 {
     /* Translate window title: */
-    if (!m_comMachine.isNull())
-        setWindowTitle(tr("%1 - Log Viewer").arg(m_comMachine.GetName()));
-    else
-        setWindowTitle(UIVMLogViewerWidget::tr("Log Viewer"));
-
+    setWindowTitle(tr("%1 - Guest Control").arg(m_strMachineName));
     /* Translate buttons: */
-    button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
+    button(ButtonType_Close)->setText(UIGuestControlWidget::tr("Close"));
 }
 
 void UIGuestControlDialog::configure()
@@ -94,17 +96,18 @@ void UIGuestControlDialog::configure()
 void UIGuestControlDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, true /* show toolbar */, m_comMachine, this);
+    UIGuestControlWidget *pWidget = new UIGuestControlWidget(EmbedTo_Dialog, m_pActionPool, m_comGuest, true /* show toolbar */,  this);
+
     if (pWidget)
     {
         /* Configure widget: */
         setWidget(pWidget);
-        setWidgetMenu(pWidget->menu());
+        //setWidgetMenu(pWidget->menu());
 #ifdef VBOX_WS_MAC
-        setWidgetToolbar(pWidget->toolbar());
+        //setWidgetToolbar(pWidget->toolbar());
 #endif
-        connect(pWidget, &UIVMLogViewerWidget::sigSetCloseButtonShortCut,
-                this, &UIGuestControlDialog::sltSetCloseButtonShortCut);
+        // connect(pWidget, &UIGuestControlWidget::sigSetCloseButtonShortCut,
+        //         this, &UIGuestControlWidget::sltSetCloseButtonShortCut);
 
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
@@ -115,38 +118,23 @@ void UIGuestControlDialog::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
-
-    // WTF? Why here?
-    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
 }
 
 void UIGuestControlDialog::loadSettings()
 {
-    /* Acquire widget: */
-    const UIVMLogViewerWidget *pWidget = qobject_cast<const UIVMLogViewerWidget*>(widget());
-
-    /* Restore window geometry: */
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
     int iDefaultHeight = desktopRect.height() * 3 / 4;
-
-    /* Try obtain the default width of the current logviewer: */
-    if (pWidget)
-    {
-        int iWidth =  pWidget->defaultLogPageWidth();
-        if (iWidth != 0)
-            iDefaultWidth = iWidth;
-    }
 
     QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
     if (centerWidget())
         defaultGeometry.moveCenter(centerWidget()->geometry().center());
 
     /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
+    QRect geometry = gEDataManager->guestControlDialogGeometry(this, defaultGeometry);
 
     /* Restore geometry: */
-    LogRel2(("GUI: UIVMLogViewer: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+    LogRel2(("GUI: UIGuestControlDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geometry.x(), geometry.y(), geometry.width(), geometry.height()));
     setDialogGeometry(geometry);
 }
@@ -158,9 +146,9 @@ void UIGuestControlDialog::saveSettings() const
 #ifdef VBOX_WS_MAC
     /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setLogWindowGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
+    gEDataManager->setGuestControlDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
-    gEDataManager->setLogWindowGeometry(saveGeometry, isMaximized());
+    gEDataManager->setGuestControlDialogGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
     LogRel2(("GUI: UIVMLogViewer: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
              saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
@@ -168,7 +156,7 @@ void UIGuestControlDialog::saveSettings() const
 
 bool UIGuestControlDialog::shouldBeMaximized() const
 {
-    return gEDataManager->logWindowShouldBeMaximized();
+    return gEDataManager->guestControlDialogShouldBeMaximized();
 }
 
 void UIGuestControlDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)

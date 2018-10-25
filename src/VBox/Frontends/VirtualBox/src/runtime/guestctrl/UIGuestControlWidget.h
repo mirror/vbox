@@ -27,65 +27,54 @@
 #include "CEventListener.h"
 
 /* GUI includes: */
-#include "UIMainEventListener.h"
+#include "QIManagerDialog.h"
+#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class QITreeWidget;
-class QVBoxLayout;
-class QSplitter;
-class UIGuestControlConsole;
-class UIGuestControlInterface;
-class UIGuestSessionsEventHandler;
-class UIGuestControlTreeWidget;
+class QITabWidget;
+class UIActionPool;
+class UIGuestControlFileManager;
+class UIGuestProcessControlWidget;
 
-/** QWidget extension
-  * providing GUI with guest session information and control tab in session-information window. */
-class UIGuestControlWidget : public QWidget
+class UIGuestControlWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestControlWidget(QWidget *pParent, const CGuest &comGuest);
+    /** Constructs the Guet Control Widget by passing @a pParent to QWidget base-class constructor.
+      * @param  enmEmbedding  Brings the type of widget embedding.
+      * @param  pActionPool   Brings the action-pool reference.
+      * @param  fShowToolbar  Brings whether we should create/show toolbar.
+      * @param  comMachine    Brings the machine for which VM Log-Viewer is requested. */
+    UIGuestControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+                         const CGuest &comGuest,
+                         bool fShowToolbar = true, QWidget *pParent = 0);
+    /** Destructs the VM Log-Viewer. */
     ~UIGuestControlWidget();
 
-private slots:
+protected:
 
-    void sltGuestSessionsUpdated();
-    void sltConsoleCommandEntered(const QString &strCommand);
-    void sltConsoleOutputReceived(const QString &strOutput);
-
-    void sltGuestSessionRegistered(CGuestSession guestSession);
-    void sltGuestSessionUnregistered(CGuestSession guestSession);
-    void sltGuestControlErrorText(QString strError);
-
-    void sltTreeItemUpdated();
-    void sltCloseSessionOrProcess();
+    virtual void retranslateUi() /* override */;
 
 private:
 
-    void prepareObjects();
-    void prepareConnections();
-    void prepareListener();
-    void initGuestSessionTree();
-    void updateTreeWidget();
-    void cleanupListener();
-    void addGuestSession(CGuestSession guestSession);
-    void saveSettings();
-    void loadSettings();
+    enum TabIndex
+    {
+        TabIndex_FileManager,
+        TabIndex_ProcessControl,
+        TabIndex_Max
+    };
 
-    CGuest                    m_comGuest;
-    QVBoxLayout              *m_pMainLayout;
-    QSplitter                *m_pSplitter;
-    UIGuestControlTreeWidget *m_pTreeWidget;
-    UIGuestControlConsole    *m_pConsole;
-    UIGuestControlInterface  *m_pControlInterface;
+    void prepare();
+        /** Holds the widget's embedding type. */
+    const EmbedTo m_enmEmbedding;
+    UIActionPool *m_pActionPool;
+    CGuest       m_comGuest;
 
-    /** Holds the Qt event listener instance. */
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
-    /** Holds the COM event listener instance. */
-    CEventListener m_comEventListener;
+    QITabWidget                  *m_pTabWidget;
+    UIGuestProcessControlWidget *m_pProcessControlWidget;
+    UIGuestControlFileManager   *m_pFileManager;
 };
 
 #endif /* !___UIGuestControlWidget_h___ */
-

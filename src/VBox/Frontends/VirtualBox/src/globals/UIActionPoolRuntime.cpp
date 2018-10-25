@@ -229,6 +229,7 @@ protected:
     }
 };
 
+#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
 /** Simple action extension, used as 'Show Guest Control Dialog' action class. */
 class UIActionSimpleRuntimeShowGuestControlDialog : public UIActionSimple
 {
@@ -278,6 +279,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine guest control window"));
     }
 };
+#endif
 
 /** Toggle action extension, used as 'Pause' action class. */
 class UIActionToggleRuntimePause : public UIActionToggle
@@ -3233,7 +3235,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleRuntimeShowSettings(this);
     m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimpleRuntimePerformTakeSnapshot(this);
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleRuntimeShowInformationDialog(this);
+#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     m_pool[UIActionIndexRT_M_Machine_S_ShowGuestControl] = new UIActionSimpleRuntimeShowGuestControlDialog(this);
+#endif
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionToggleRuntimePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimpleRuntimePerformReset(this);
     m_pool[UIActionIndexRT_M_Machine_S_Detach] = new UIActionSimpleRuntimePerformDetach(this);
@@ -3535,8 +3539,9 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
+#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestControl)) || fSeparator;
-
+#endif
     /* Separator: */
     if (fSeparator)
     {
