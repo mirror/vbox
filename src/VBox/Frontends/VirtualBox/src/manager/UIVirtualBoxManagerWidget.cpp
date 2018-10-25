@@ -150,16 +150,6 @@ void UIVirtualBoxManagerWidget::switchToMachineTool(UIToolType enmType)
     /* Open corresponding tool: */
     m_pPaneToolsMachine->openTool(enmType);
 
-    /* If that was 'Details' => pass there current items: */
-    if (enmType == UIToolType_Details)
-        m_pPaneToolsMachine->setItems(currentItems());
-    /* If that was 'Snapshot' or 'LogViewer' => pass there current or null machine: */
-    if (enmType == UIToolType_Snapshots || enmType == UIToolType_Logs)
-    {
-        UIVirtualMachineItem *pItem = currentItem();
-        m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
-    }
-
     /* Let the parent know: */
     emit sigToolTypeChange();
 
@@ -228,7 +218,7 @@ void UIVirtualBoxManagerWidget::retranslateUi()
 
 void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
                                                                 bool fUpdateSnapshots /* = true */,
-                                                                bool fUpdateLogViewer /* = true */)
+                                                                bool fUpdateLogs /* = true */)
 {
     /* Let the parent know: */
     emit sigChooserPaneIndexChange();
@@ -248,7 +238,7 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
 
     /* If machine or group item is selected and we are on global tools pane => switch to machine tools pane: */
     if (   (isMachineItemSelected() || isGroupItemSelected())
-             && m_pStackedWidget->currentWidget() != m_pPaneToolsMachine)
+        && m_pStackedWidget->currentWidget() != m_pPaneToolsMachine)
     {
         /* Just start animation and return, do nothing else.. */
         m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine); // rendering w/a
@@ -262,25 +252,26 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
     {
         /* Get current item: */
         UIVirtualMachineItem *pItem = currentItem();
+        const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
-        /* Update Tools-pane: */
+        /* Update machine tools availability: */
+        m_pPaneTools->setToolsEnabled(UIToolClass_Machine, fCurrentItemIsOk);
+
+        /* Propagate current item anyway: */
         m_pPaneToolsMachine->setCurrentItem(pItem);
 
-        /* Update Machine Tools availability: */
-        m_pPaneTools->setToolsEnabled(UIToolClass_Machine, pItem && pItem->accessible());
-
-        /* If current item exists & accessible: */
-        if (pItem && pItem->accessible())
+        /* If current item is Ok: */
+        if (fCurrentItemIsOk)
         {
-            /* If Error pane is chosen currently => open tool currently chosen in Tools-pane: */
+            /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
             if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
                 sltHandleToolsPaneIndexChange();
 
-            /* Update Details-pane (if requested): */
+            /* Propagate current items to update the Details-pane (if requested): */
             if (fUpdateDetails)
                 m_pPaneToolsMachine->setItems(currentItems());
-            /* Update the Snapshots-pane or/and Logviewer-pane (if requested): */
-            if (fUpdateSnapshots || fUpdateLogViewer)
+            /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane (if requested): */
+            if (fUpdateSnapshots || fUpdateLogs)
                 m_pPaneToolsMachine->setMachine(pItem->machine());
         }
         else
@@ -288,17 +279,13 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
             /* Make sure Error pane raised: */
             m_pPaneToolsMachine->openTool(UIToolType_Error);
 
-            /* Note that the machine becomes inaccessible (or if the last VM gets
-             * deleted), we have to update all fields, ignoring input arguments. */
+            /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
             if (pItem)
-            {
-                /* The VM is inaccessible: */
                 m_pPaneToolsMachine->setErrorDetails(UIErrorString::formatErrorInfo(pItem->accessError()));
-            }
 
-            /* Update Details-pane (in any case): */
+            /* Propagate current items to update the Details-pane (in any case): */
             m_pPaneToolsMachine->setItems(currentItems());
-            /* Update Snapshots-pane and Logviewer-pane (in any case): */
+            /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane (in any case): */
             m_pPaneToolsMachine->setMachine(CMachine());
         }
     }
@@ -342,26 +329,26 @@ void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass,
 
 void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
 {
+    /* Acquire current class/type: */
+    const UIToolClass enmCurrentClass = m_pPaneTools->toolsClass();
+    const UIToolType enmCurrentType = m_pPaneTools->toolsType();
+
+    /* Invent default for fallback case: */
+    const UIToolType enmDefaultType = enmCurrentClass == UIToolClass_Global ? UIToolType_Welcome
+                                    : enmCurrentClass == UIToolClass_Machine ? UIToolType_Details
+                                    : UIToolType_Invalid;
+    AssertReturnVoid(enmDefaultType != UIToolType_Invalid);
+
+    /* Calculate new type to choose: */
+    const UIToolType enmNewType = UIToolStuff::isTypeOfClass(enmCurrentType, enmCurrentClass)
+                                ? enmCurrentType : enmDefaultType;
+
+    /* Choose new type: */
     switch (m_pPaneTools->toolsClass())
     {
-        case UIToolClass_Global:
-        {
-            const UIToolType enmType = m_pPaneTools->areToolsEnabled(UIToolClass_Global)
-                                     ? m_pPaneTools->toolsType()
-                                     : UIToolType_Welcome;
-            switchToGlobalTool(enmType);
-            break;
-        }
-        case UIToolClass_Machine:
-        {
-            const UIToolType enmType = m_pPaneTools->areToolsEnabled(UIToolClass_Machine)
-                                     ? m_pPaneTools->toolsType()
-                                     : UIToolType_Details;
-            switchToMachineTool(enmType);
-            break;
-        }
-        default:
-            break;
+        case UIToolClass_Global: switchToGlobalTool(enmNewType); break;
+        case UIToolClass_Machine: switchToMachineTool(enmNewType); break;
+        default: break;
     }
 }
 
