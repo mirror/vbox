@@ -646,17 +646,16 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
             fClusterStart = true;
         }
 
-        /* No blocks written yet? Start a new cluster. */
-        if (Cluster.cBlocks == 0)
+        /* Determine if we need to start a new cluster. */
+            /* No blocks written yet? Start a new cluster. */
+        if (   Cluster.cBlocks == 0
+            /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
+            || mapAbsPTSMs - Cluster.tcAbsStartMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS
+            /* If the block map indicates that a cluster is needed for this timecode, create one. */
+            || mapBlocks.fClusterNeeded)
+        {
             fClusterStart = true;
-
-        /* Did we reach the maximum a cluster can hold? Use a new cluster then. */
-        if (mapAbsPTSMs - Cluster.tcAbsStartMs > VBOX_WEBM_CLUSTER_MAX_LEN_MS)
-            fClusterStart = true;
-
-        /* If the block map indicates that a cluster is needed for this timecode, create one. */
-        if (mapBlocks.fClusterNeeded)
-            fClusterStart = true;
+        }
 
         if (   fClusterStart
             && !mapBlocks.fClusterStarted)
@@ -682,15 +681,17 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
             else /* First cluster ever? Use the segment's starting timecode. */
                 tcAbsClusterLastWrittenMs = CurSeg.tcAbsStartMs;
 
-            Assert(tcAbsClusterLastWrittenMs >= CurSeg.tcAbsStartMs);
-
             Cluster.fOpen              = true;
             Cluster.uID                = CurSeg.cClusters;
-            /* Use the last written timecode of the former cluster as starting point. */
-            Cluster.tcAbsStartMs       = tcAbsClusterLastWrittenMs;
+            /* Use the block map's currently processed TC as the cluster's starting TC. */
+            Cluster.tcAbsStartMs       = mapAbsPTSMs;
             Cluster.tcAbsLastWrittenMs = Cluster.tcAbsStartMs;
             Cluster.offStart           = RTFileTell(getFile());
             Cluster.cBlocks            = 0;
+
+            AssertMsg(Cluster.tcAbsStartMs <= mapAbsPTSMs,
+                      ("Cluster #%RU64 start TC (%RU64) must not bigger than the block map's currently processed TC (%RU64)\n",
+                       Cluster.uID, Cluster.tcAbsStartMs, mapAbsPTSMs));
 
             Log2Func(("[C%RU64] Start @ %RU64ms (map TC is %RU64) / %RU64 bytes\n",
                       Cluster.uID, Cluster.tcAbsStartMs, mapAbsPTSMs, Cluster.offStart));
