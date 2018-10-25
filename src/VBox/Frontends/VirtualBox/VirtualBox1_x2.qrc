@@ -122,6 +122,7 @@
         <file alias="exit_16px_x2.png">images/x2/exit_16px_x2.png</file>
         <file alias="expanding_collapsing_16px_x2.png">images/x2/expanding_collapsing_16px_x2.png</file>
         <file alias="export_16px_x2.png">images/x2/export_16px_x2.png</file>
+        <file alias="export_32px_x2.png">images/x2/export_32px_x2.png</file>
         <file alias="extension_pack_16px_x2.png">images/x2/extension_pack_16px_x2.png</file>
         <file alias="extension_pack_24px_x2.png">images/x2/extension_pack_24px_x2.png</file>
         <file alias="extension_pack_32px_x2.png">images/x2/extension_pack_32px_x2.png</file>
@@ -170,6 +171,7 @@
         <file alias="fullscreen_on_16px_x2.png">images/x2/fullscreen_on_16px_x2.png</file>
         <file alias="fullscreen_on_disabled_16px_x2.png">images/x2/fullscreen_on_disabled_16px_x2.png</file>
         <file alias="global_settings_16px_x2.png">images/x2/global_settings_16px_x2.png</file>
+        <file alias="global_settings_32px_x2.png">images/x2/global_settings_32px_x2.png</file>
         <file alias="group_abstract_16px_x2.png">images/x2/group_abstract_16px_x2.png</file>
         <file alias="guesttools_16px_x2.png">images/x2/guesttools_16px_x2.png</file>
         <file alias="guesttools_disabled_16px_x2.png">images/x2/guesttools_disabled_16px_x2.png</file>
@@ -237,6 +239,7 @@
         <file alias="ide_collapse_16px_x2.png">images/x2/ide_collapse_16px_x2.png</file>
         <file alias="ide_expand_16px_x2.png">images/x2/ide_expand_16px_x2.png</file>
         <file alias="import_16px_x2.png">images/x2/import_16px_x2.png</file>
+        <file alias="import_32px_x2.png">images/x2/import_32px_x2.png</file>
         <file alias="interface_16px_x2.png">images/x2/interface_16px_x2.png</file>
         <file alias="interface_24px_x2.png">images/x2/interface_24px_x2.png</file>
         <file alias="interface_32px_x2.png">images/x2/interface_32px_x2.png</file>

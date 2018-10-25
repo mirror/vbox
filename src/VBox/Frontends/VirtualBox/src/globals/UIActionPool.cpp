@@ -1132,7 +1132,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePreferences(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/global_settings_16px.png", ":/global_settings_16px.png", true)
+        : UIActionSimple(pParent, ":/global_settings_32px.png", ":/global_settings_16px.png", true)
     {
         setMenuRole(QAction::PreferencesRole);
         retranslateUi();

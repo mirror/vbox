@@ -240,6 +240,7 @@
         <file alias="virtual_screen_16px.png">images/virtual_screen_16px.png</file>
         <file alias="virtual_screen_disabled_16px.png">images/virtual_screen_disabled_16px.png</file>
         <file alias="vm_add_16px.png">images/vm_add_16px.png</file>
+        <file alias="vm_add_32px.png">images/vm_add_32px.png</file>
         <file alias="vm_clone_16px.png">images/vm_clone_16px.png</file>
         <file alias="vm_clone_32px.png">images/vm_clone_32px.png</file>
         <file alias="vm_clone_disabled_16px.png">images/vm_clone_disabled_16px.png</file>
