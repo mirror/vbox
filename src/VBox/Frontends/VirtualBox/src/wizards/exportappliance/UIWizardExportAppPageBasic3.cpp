@@ -56,10 +56,10 @@ void UIWizardExportAppPage3::populateCloudClientParameters()
     /* Forget current parameters: */
     m_listCloudClientParameters.clear();
 
-    /* Acquire Cloud Profile: */
+    /* Make sure Cloud Profile is not null: */
     CCloudProfile comCloudProfile = fieldImp("profile").value<CCloudProfile>();
-    AssertMsgReturnVoid(comCloudProfile.isNotNull(),
-                        ("Cloud profile object is undefined!"));
+    if (comCloudProfile.isNull())
+        return;
 
     /* Create Cloud Client: */
     CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
