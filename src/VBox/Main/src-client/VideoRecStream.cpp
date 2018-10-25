@@ -42,36 +42,11 @@
 
 
 /**
- * Retrieves a specific recording stream of a recording context.
- *
- * @returns Pointer to recording stream if found, or NULL if not found.
- * @param   pCtx                Recording context to look up stream for.
- * @param   uScreen             Screen number of recording stream to look up.
- */
-PVIDEORECSTREAM videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
-{
-    AssertPtrReturn(pCtx, NULL);
-
-    PVIDEORECSTREAM pStream;
-
-    try
-    {
-        pStream = pCtx->vecStreams.at(uScreen);
-    }
-    catch (std::out_of_range &)
-    {
-        pStream = NULL;
-    }
-
-    return pStream;
-}
-
-/**
  * Locks a recording stream.
  *
  * @param   pStream             Recording stream to lock.
  */
-void videoRecStreamLock(PVIDEORECSTREAM pStream)
+void VideoRecStreamLock(PVIDEORECSTREAM pStream)
 {
     int rc = RTCritSectEnter(&pStream->CritSect);
     AssertRC(rc);
@@ -82,7 +57,7 @@ void videoRecStreamLock(PVIDEORECSTREAM pStream)
  *
  * @param   pStream             Recording stream to unlock.
  */
-void videoRecStreamUnlock(PVIDEORECSTREAM pStream)
+void VideoRecStreamUnlock(PVIDEORECSTREAM pStream)
 {
     int rc = RTCritSectLeave(&pStream->CritSect);
     AssertRC(rc);
@@ -95,7 +70,7 @@ void videoRecStreamUnlock(PVIDEORECSTREAM pStream)
  * @param   pStream             Recording stream to open.
  * @param   pCfg                Recording configuration to use.
  */
-int videoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+int VideoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,    VERR_INVALID_POINTER);
@@ -208,11 +183,11 @@ int VideoRecStreamProcess(PVIDEORECSTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    videoRecStreamLock(pStream);
+    VideoRecStreamLock(pStream);
 
     if (!pStream->fEnabled)
     {
-        videoRecStreamUnlock(pStream);
+        VideoRecStreamUnlock(pStream);
         return VINF_SUCCESS;
     }
 
@@ -246,7 +221,7 @@ int VideoRecStreamProcess(PVIDEORECSTREAM pStream)
                                       pVideoFrame->pu8RGBBuf, pStream->Video.uWidth, pStream->Video.uHeight);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = videoRecStreamWriteVideoVPX(pStream, uTimeStampMs, pVideoFrame);
+                    rc = VideoRecStreamWriteVideoVPX(pStream, uTimeStampMs, pVideoFrame);
                 }
                 else
                     break;
@@ -324,21 +299,23 @@ int VideoRecStreamProcess(PVIDEORECSTREAM pStream)
     }
 #endif
 
-    videoRecStreamUnlock(pStream);
+    VideoRecStreamUnlock(pStream);
 
     return rc;
 }
 
 /**
- * VideoRec utility function to initialize video recording context.
+ * Initializes a recording stream.
  *
  * @returns IPRT status code.
- * @param   pCtx                Pointer to video recording context.
+ * @param   pStream             Recording stream to initialize.
+ * @param   pCtx                Recording context to use for initialization.
  * @param   uScreen             Screen number to record.
  */
-int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
+int VideoRecStreamInit(PVIDEORECSTREAM pStream, PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 {
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
 
     PVIDEORECCFG pCfg = &pCtx->Cfg;
 
@@ -352,18 +329,12 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     }
 #endif
 
-    PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
-    if (!pStream)
-        return VERR_NOT_FOUND;
-
-    int rc = videoRecStreamOpen(pStream, pCfg);
+    int rc = VideoRecStreamOpen(pStream, pCfg);
     if (RT_FAILURE(rc))
         return rc;
 
-    pStream->pCtx = pCtx;
-
     if (pCfg->Video.fEnabled)
-        rc = videoRecStreamInitVideo(pStream, pCfg);
+        rc = VideoRecStreamInitVideo(pStream, pCfg);
 
     switch (pStream->enmDst)
     {
@@ -447,7 +418,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 
     if (RT_FAILURE(rc))
     {
-        int rc2 = videoRecStreamClose(pStream);
+        int rc2 = VideoRecStreamClose(pStream);
         AssertRC(rc2);
         return rc;
     }
@@ -466,7 +437,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
  * @param   pStream             Recording stream to close.
  *
  */
-int videoRecStreamClose(PVIDEORECSTREAM pStream)
+int VideoRecStreamClose(PVIDEORECSTREAM pStream)
 {
     int rc = VINF_SUCCESS;
 
@@ -547,13 +518,13 @@ int videoRecStreamClose(PVIDEORECSTREAM pStream)
  * @returns IPRT status code.
  * @param   pStream             Recording stream to uninitialize.
  */
-int videoRecStreamUninit(PVIDEORECSTREAM pStream)
+int VideoRecStreamUninit(PVIDEORECSTREAM pStream)
 {
     int rc = VINF_SUCCESS;
 
     if (pStream->pCtx->Cfg.Video.fEnabled)
     {
-        int rc2 = videoRecStreamUnitVideo(pStream);
+        int rc2 = VideoRecStreamUnitVideo(pStream);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -567,11 +538,11 @@ int videoRecStreamUninit(PVIDEORECSTREAM pStream)
  * @returns IPRT status code.
  * @param   pStream             Recording stream to uninitialize video recording for.
  */
-int videoRecStreamUnitVideo(PVIDEORECSTREAM pStream)
+int VideoRecStreamUnitVideo(PVIDEORECSTREAM pStream)
 {
 #ifdef VBOX_WITH_LIBVPX
     /* At the moment we only have VPX. */
-    return videoRecStreamUninitVideoVPX(pStream);
+    return VideoRecStreamUninitVideoVPX(pStream);
 #else
     return VERR_NOT_SUPPORTED;
 #endif
@@ -584,7 +555,7 @@ int videoRecStreamUnitVideo(PVIDEORECSTREAM pStream)
  * @returns IPRT status code.
  * @param   pStream             Recording stream to uninitialize VPX codec for.
  */
-int videoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream)
+int VideoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream)
 {
     vpx_img_free(&pStream->Video.Codec.VPX.RawImage);
     vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Video.Codec.VPX.Ctx);
@@ -601,11 +572,11 @@ int videoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream)
  * @param   pStream             Recording stream to initialize video recording for.
  * @param   pCfg                Video recording configuration to use for initialization.
  */
-int videoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+int VideoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
 {
 #ifdef VBOX_WITH_LIBVPX
     /* At the moment we only have VPX. */
-    return videoRecStreamInitVideoVPX(pStream, pCfg);
+    return VideoRecStreamInitVideoVPX(pStream, pCfg);
 #else
     return VERR_NOT_SUPPORTED;
 #endif
@@ -619,7 +590,7 @@ int videoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
  * @param   pStream             Recording stream to initialize VPX codec for.
  * @param   pCfg                Video recording configuration to use for initialization.
  */
-int videoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
+int VideoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
 {
     pStream->Video.uWidth                = pCfg->Video.uWidth;
     pStream->Video.uHeight               = pCfg->Video.uHeight;
@@ -686,7 +657,7 @@ int videoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
  * @param   uTimeStampMs        Absolute timestamp (PTS) of frame (in ms) to encode.
  * @param   pFrame              Frame to encode and submit.
  */
-int videoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame)
+int VideoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pFrame,  VERR_INVALID_POINTER);

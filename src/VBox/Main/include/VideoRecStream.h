@@ -165,20 +165,19 @@ typedef struct VIDEORECSTREAM
 /** Vector of video recording streams. */
 typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
 
-int videoRecStreamClose(PVIDEORECSTREAM pStream);
-PVIDEORECSTREAM videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uScreen);
-int videoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+int VideoRecStreamClose(PVIDEORECSTREAM pStream);
+int VideoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
 int VideoRecStreamProcess(PVIDEORECSTREAM pStream);
-int videoRecStreamUninit(PVIDEORECSTREAM pStream);
-int videoRecStreamUnitVideo(PVIDEORECSTREAM pStream);
-int videoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+int VideoRecStreamUninit(PVIDEORECSTREAM pStream);
+int VideoRecStreamUnitVideo(PVIDEORECSTREAM pStream);
+int VideoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
 #ifdef VBOX_WITH_LIBVPX
-int videoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
-int videoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream);
-int videoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
+int VideoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
+int VideoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream);
+int VideoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
 #endif
-void videoRecStreamLock(PVIDEORECSTREAM pStream);
-void videoRecStreamUnlock(PVIDEORECSTREAM pStream);
+void VideoRecStreamLock(PVIDEORECSTREAM pStream);
+void VideoRecStreamUnlock(PVIDEORECSTREAM pStream);
 
 #endif /* ____H_VIDEOREC_STREAM */
 
