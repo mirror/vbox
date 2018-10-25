@@ -769,7 +769,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             {
                 memcpy((uint8_t *)pStreamAV->pvSrcBuf + cbSrc, pvCircBuf, cbCircBuf);
 
-                cbSrc += cbCircBuf;
+                cbSrc += (uint32_t)cbCircBuf;
                 Assert(cbSrc <= pStreamAV->cbSrcBuf);
             }
 
@@ -811,7 +811,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             pSink->Codec.STAM.msEncTotal += pSink->Codec.Opus.msFrame * cEncFrames;
 # endif
             Assert((uint32_t)cbWritten <= (uint32_t)pStreamAV->cbDstBuf);
-            const uint32_t cbDst = RT_MIN((uint32_t)cbWritten, pStreamAV->cbDstBuf);
+            const uint32_t cbDst = RT_MIN((uint32_t)cbWritten, (uint32_t)pStreamAV->cbDstBuf);
 
             Assert(cEncFrames == 1);
 
