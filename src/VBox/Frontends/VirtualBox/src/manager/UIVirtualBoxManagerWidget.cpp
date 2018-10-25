@@ -584,8 +584,9 @@ void UIVirtualBoxManagerWidget::loadSettings()
                                        : Qt::ToolButtonIconOnly);
     }
 
-    /* Open tool currently chosen in Tools-pane:  */
-    sltHandleToolsPaneIndexChange();
+    /* Open tools last chosen in Tools-pane: */
+    switchToGlobalTool(m_pPaneTools->lastSelectedToolGlobal());
+    switchToMachineTool(m_pPaneTools->lastSelectedToolMachine());
 }
 
 void UIVirtualBoxManagerWidget::updateToolbar()

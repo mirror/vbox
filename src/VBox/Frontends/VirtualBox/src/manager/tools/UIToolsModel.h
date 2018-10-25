@@ -106,6 +106,11 @@ public:
         /** Returns current tools type. */
         UIToolType toolsType() const;
 
+        /** Returns last selected global tool. */
+        UIToolType lastSelectedToolGlobal() const;
+        /** Returns last selected machine tool. */
+        UIToolType lastSelectedToolMachine() const;
+
         /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
         void setToolsEnabled(UIToolClass enmClass, bool fEnabled);
         /** Returns whether certain class of tools is enabled.*/

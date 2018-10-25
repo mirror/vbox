@@ -154,6 +154,16 @@ UIToolType UIToolsModel::toolsType() const
     return currentItem()->itemType();
 }
 
+UIToolType UIToolsModel::lastSelectedToolGlobal() const
+{
+    return m_pLastItemGlobal->itemType();
+}
+
+UIToolType UIToolsModel::lastSelectedToolMachine() const
+{
+    return m_pLastItemMachine->itemType();
+}
+
 void UIToolsModel::setToolsEnabled(UIToolClass enmClass, bool fEnabled)
 {
     /* Update linked values: */

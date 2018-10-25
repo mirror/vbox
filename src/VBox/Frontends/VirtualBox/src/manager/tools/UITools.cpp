@@ -74,6 +74,16 @@ UIToolType UITools::toolsType() const
     return m_pToolsModel->toolsType();
 }
 
+UIToolType UITools::lastSelectedToolGlobal() const
+{
+    return m_pToolsModel->lastSelectedToolGlobal();
+}
+
+UIToolType UITools::lastSelectedToolMachine() const
+{
+    return m_pToolsModel->lastSelectedToolMachine();
+}
+
 void UITools::setToolsEnabled(UIToolClass enmClass, bool fEnabled)
 {
     m_pToolsModel->setToolsEnabled(enmClass, fEnabled);
