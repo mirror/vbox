@@ -65,10 +65,8 @@
 # include "UIExtraDataManager.h"
 # include "UIAddDiskEncryptionPasswordDialog.h"
 # include "UIVMInformationDialog.h"
+# include "UIGuestControlDialog.h"
 
-# ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
-#  include "UIGuestControlDialog.h"
-# endif
 
 # ifdef VBOX_WS_MAC
 #  include "DockIconPreview.h"
@@ -1113,10 +1111,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTakeSnapshot()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
-#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowGuestControl), SIGNAL(triggered()),
             this, SLOT(sltShowGuestControlDialog()));
-#endif
     connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
             this, SLOT(sltPause(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
@@ -1786,7 +1782,6 @@ void UIMachineLogic::sltShowInformationDialog()
     UIVMInformationDialog::invoke(activeMachineWindow());
 }
 
-#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
 void UIMachineLogic::sltShowGuestControlDialog()
 {
     if (machine().isNull() || !activeMachineWindow())
@@ -1823,7 +1818,6 @@ void UIMachineLogic::sltCloseGuestControlWindow()
     pDialog->close();
     UIGuestControlDialogFactory().cleanup(pDialog);
 }
-#endif
 
 void UIMachineLogic::sltReset()
 {

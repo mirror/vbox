@@ -273,10 +273,8 @@ private slots:
     void sltTypeHostKeyComboPressRelease(bool fToggleSequence);
     void sltTakeSnapshot();
     void sltShowInformationDialog();
-#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     void sltShowGuestControlDialog();
     void sltCloseGuestControlWindow();
-#endif
     void sltReset();
     void sltPause(bool fOn);
     void sltDetach();
