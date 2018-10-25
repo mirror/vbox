@@ -29,6 +29,7 @@
 
 /* GUI includes: */
 # include "QIAdvancedSlider.h"
+# include "VBoxGlobal.h"
 # include "UIScaleFactorEditor.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -236,6 +237,8 @@ void UIScaleFactorEditor::prepare()
     if (m_pScaleSpinBox)
     {
         m_pMainLayout->addWidget(m_pScaleSpinBox, 0, 3);
+        vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pScaleSpinBox, 7);
+        m_pScaleSpinBox->setSuffix("%");
         m_pScaleSpinBox->setMinimum(100);
         m_pScaleSpinBox->setMaximum(200);
         connect(m_pScaleSpinBox ,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
