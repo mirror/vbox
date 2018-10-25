@@ -56,6 +56,9 @@ signals:
     /** Notifies about Tool type change. */
     void sigToolTypeChange();
 
+    /** Notifies listeners about Cloud Profile Manager change. */
+    void sigCloudProfileManagerChange();
+
 public:
 
     /** Constructs VirtualBox Manager widget. */

@@ -161,6 +161,8 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneCloud->setProperty("ToolType", QVariant::fromValue(UIToolType_Cloud));
+                    connect(m_pPaneCloud, &UICloudProfileManagerWidget::sigChange,
+                            this, &UIToolPaneGlobal::sigCloudProfileManagerChange);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneCloud);

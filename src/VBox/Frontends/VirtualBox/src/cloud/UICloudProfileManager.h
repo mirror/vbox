@@ -44,6 +44,9 @@ class UICloudProfileManagerWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
+    /** Notifies listeners about dialog change. */
+    void sigChange();
+
     /** Notifies listeners about cloud profile details-widget @a fVisible. */
     void sigCloudProfileDetailsVisibilityChanged(bool fVisible);
     /** Notifies listeners about cloud profile details data @a fDiffers. */

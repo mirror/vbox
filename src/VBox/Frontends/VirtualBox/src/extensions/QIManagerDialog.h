@@ -87,7 +87,10 @@ class SHARED_LIBRARY_STUFF QIManagerDialog : public QMainWindow
 
 signals:
 
-    /** Notifies listener about dialog should be closed. */
+    /** Notifies listeners about dialog change. */
+    void sigChange();
+
+    /** Notifies listeners about dialog should be closed. */
     void sigClose();
 
 protected:

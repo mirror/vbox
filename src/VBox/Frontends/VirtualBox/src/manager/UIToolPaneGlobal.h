@@ -42,6 +42,11 @@ class UIToolPaneGlobal : public QWidget
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about Cloud Profile Manager change. */
+    void sigCloudProfileManagerChange();
+
 public:
 
     /** Constructs tools pane passing @a pParent to the base-class. */

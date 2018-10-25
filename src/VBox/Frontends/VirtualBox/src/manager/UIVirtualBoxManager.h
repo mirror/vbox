@@ -47,6 +47,9 @@ signals:
     /** Notifies listeners about this window remapped to another screen. */
     void sigWindowRemapped();
 
+    /** Notifies listeners about Cloud Profile Manager change. */
+    void sigCloudProfileManagerChange();
+
 public:
 
     /** Singleton constructor. */

@@ -455,6 +455,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pPaneToolsGlobal = new UIToolPaneGlobal(actionPool());
                         if (m_pPaneToolsGlobal)
                         {
+                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigCloudProfileManagerChange,
+                                    this, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange);
+
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsGlobal);
                         }
