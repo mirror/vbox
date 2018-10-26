@@ -1333,34 +1333,6 @@ protected:
 };
 
 
-/** Toggle action extension, used as 'Machine Tools' action class. */
-class UIActionToggleSelectorToolsMachine : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsMachine(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/tools_machine_32px.png", ":/tools_machine_32px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsMachine");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Machine Tools"));
-        setStatusTip(QApplication::translate("UIActionPool", "Switch to machine tools"));
-    }
-};
-
 /** Menu action extension, used as 'Machine Tools' menu class. */
 class UIActionMenuSelectorToolsMachine : public UIActionMenu
 {
@@ -1479,34 +1451,6 @@ protected:
     }
 };
 
-
-/** Toggle action extension, used as 'Global Tools' action class. */
-class UIActionToggleSelectorToolsGlobal : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsGlobal(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/tools_global_32px.png", ":/tools_global_32px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobal");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Global Tools"));
-        setStatusTip(QApplication::translate("UIActionPool", "Switch to global tools"));
-    }
-};
 
 /** Menu action extension, used as 'Global Tools' menu class. */
 class UIActionMenuSelectorToolsGlobal : public UIActionMenu
@@ -2659,14 +2603,12 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleSelectorMachinePerformSortParent(this);
 
     /* Machine Tools actions: */
-    m_pool[UIActionIndexST_M_Tools_T_Machine] = new UIActionToggleSelectorToolsMachine(this);
     m_pool[UIActionIndexST_M_Tools_M_Machine] = new UIActionMenuSelectorToolsMachine(this);
     m_pool[UIActionIndexST_M_Tools_M_Machine_S_Details] = new UIActionSimpleSelectorToolsMachineShowDetails(this);
     m_pool[UIActionIndexST_M_Tools_M_Machine_S_Snapshots] = new UIActionSimpleSelectorToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexST_M_Tools_M_Machine_S_LogViewer] = new UIActionSimpleSelectorToolsMachineShowLogs(this);
 
     /* Global Tools actions: */
-    m_pool[UIActionIndexST_M_Tools_T_Global] = new UIActionToggleSelectorToolsGlobal(this);
     m_pool[UIActionIndexST_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
     m_pool[UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(this);
     m_pool[UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(this);

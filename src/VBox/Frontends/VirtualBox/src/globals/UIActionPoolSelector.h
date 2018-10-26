@@ -41,7 +41,7 @@ enum UIActionIndexST
     UIActionIndexST_M_File_S_ExportAppliance,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     UIActionIndexST_M_File_S_ShowExtraDataManager,
-#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+#endif
     UIActionIndexST_M_File_S_Close,
 
     /* 'Welcome' menu actions: */
@@ -101,14 +101,12 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_S_SortParent,
 
     /* Machine Tools actions: */
-    UIActionIndexST_M_Tools_T_Machine,
     UIActionIndexST_M_Tools_M_Machine,
     UIActionIndexST_M_Tools_M_Machine_S_Details,
     UIActionIndexST_M_Tools_M_Machine_S_Snapshots,
     UIActionIndexST_M_Tools_M_Machine_S_LogViewer,
 
     /* Global Tools actions: */
-    UIActionIndexST_M_Tools_T_Global,
     UIActionIndexST_M_Tools_M_Global,
     UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager,
     UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager,
