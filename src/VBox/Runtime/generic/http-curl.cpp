@@ -415,6 +415,11 @@ RTR3DECL(int) RTHttpReset(RTHTTP hHttp)
 
     AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
 
+    /* This resets options, but keeps open connections, cookies, etc. */
+    curl_easy_reset(pThis->pCurl);
+
+    rtHttpFreeHeaders(pThis);
+
     pThis->uDownloadHttpStatus      = UINT32_MAX;
     pThis->cbDownloadContent        = UINT64_MAX;
     pThis->offDownloadContent       = 0;
@@ -422,8 +427,6 @@ RTR3DECL(int) RTHttpReset(RTHTTP hHttp)
     pThis->offUploadContent         = 0;
     pThis->rcOutput                 = VINF_SUCCESS;
 
-    /* This resets options, but keeps open connections, cookies, etc. */
-    curl_easy_reset(pThis->pCurl);
     return VINF_SUCCESS;
 }
 
