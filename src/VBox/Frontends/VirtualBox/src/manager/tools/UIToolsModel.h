@@ -122,8 +122,11 @@ public:
 
     /** @name Children stuff.
       * @{ */
-        /** Holds the item list. */
+        /** Returns the item list. */
         QList<UIToolsItem*> items() const;
+
+        /** Returns the item of passed @a enmType. */
+        UIToolsItem *item(UIToolType enmType) const;
     /** @} */
 
     /** @name Selection stuff.
