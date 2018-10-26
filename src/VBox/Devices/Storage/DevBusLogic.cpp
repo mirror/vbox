@@ -1939,7 +1939,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             memset(pReply, 0, sizeof(ReplyInquireConfiguration));
 
             pReply->uHostAdapterId = 7; /* The controller has always 7 as ID. */
-            pReply->fDmaChannel5  = 1;  /* DMA channel 6 is a good default. */
+            pReply->fDmaChannel6  = 1;  /* DMA channel 6 is a good default. */
 
             /* The PCI IRQ is not necessarily representable in this structure.
              * If that is the case, the guest likely won't function correctly,
