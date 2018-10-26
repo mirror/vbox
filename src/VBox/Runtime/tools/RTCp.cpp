@@ -103,7 +103,7 @@ static RTEXITCODE rtCmdCpDoIt(PCRTCMDCPOPTS pOpts)
     else
         RT_ZERO(DstObjInfo);
 /* gcc 8.2 produces a tautological compare warning here. */
-#if __GNUC__ != 8 || __GNUC_MINOR__ != 2
+#if !defined __GNUC__ || __GNUC__ != 8 || __GNUC_MINOR__ != 2
     AssertCompile(!RTFS_IS_DIRECTORY(0));
 #endif
 
