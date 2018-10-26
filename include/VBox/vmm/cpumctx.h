@@ -658,8 +658,10 @@ typedef struct CPUMCTX
                 uint64_t                uFirstPauseLoopTick;
                 /** 0x390 - Guest TSC timestamp of the previous PAUSE instruction. */
                 uint64_t                uPrevPauseTick;
-                /** 0x398 - Padding. */
-                uint8_t             abPadding[0x3f0 - 0x398];
+                /** 0x398 - Guest TSC timestamp of VM-entry (used for VMX-preemption timer). */
+                uint64_t                uVmentryTick;
+                /** 0x3a0 - Padding. */
+                uint8_t             abPadding[0x3f0 - 0x3a0];
             } vmx;
         } CPUM_UNION_NM(s);
 
@@ -769,6 +771,7 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR0,   
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR3,           0x380);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uFirstPauseLoopTick,    0x388);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uPrevPauseTick,         0x390);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uVmentryTick,           0x398);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,           8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,     8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR0,  8);

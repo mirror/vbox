@@ -167,6 +167,11 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pAutoMsrAreaR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvMsrBitmapR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvMsrBitmapR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvIoBitmapR0);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvIoBitmapR3);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.uFirstPauseLoopTick);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.uPrevPauseTick);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.uVmentryTick);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.enmHwvirt);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fGif);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
