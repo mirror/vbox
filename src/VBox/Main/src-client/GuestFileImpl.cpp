@@ -399,6 +399,10 @@ Utf8Str GuestFile::i_guestErrorToString(int rcGuest)
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
+        case VERR_ACCESS_DENIED:
+            strError += Utf8StrFmt(tr("Access denied"));
+            break;
+
         case VERR_ALREADY_EXISTS:
             strError += Utf8StrFmt(tr("File already exists"));
             break;
