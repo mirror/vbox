@@ -197,9 +197,6 @@ endif
 if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
  VirtualBox_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 endif
-ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
-endif
 
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
@@ -269,9 +266,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
   VirtualBoxVM_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
  endif
- ifdef VBOX_WITH_ICHAT_THEATER
-  VirtualBoxVM_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
- endif
 
 
  #
@@ -327,9 +321,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  endif
  if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_GUEST_CONTROL_UI)
   VBoxGlobal_DEFS        += VBOX_GUI_WITH_GUEST_CONTROL_UI
- endif
- ifdef VBOX_WITH_ICHAT_THEATER
-  VBoxGlobal_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
  endif
 
 endif # VBOX_GUI_WITH_SHARED_LIBRARY
@@ -450,9 +441,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_LDFLAGS.darwin += \
 	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib)
 endif
-ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
-endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LDFLAGS.darwin += -framework OpenGL
@@ -490,9 +478,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBoxVM_LDFLAGS.darwin = \
 	-framework AppKit -framework Carbon -framework IOKit \
 	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib)
- ifdef VBOX_WITH_ICHAT_THEATER
-  VirtualBoxVM_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
- endif
 
  if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
   VirtualBoxVM_LDFLAGS.darwin += -framework OpenGL
@@ -1445,11 +1430,6 @@ VirtualBox_SOURCES.win += \
 	src/platform/win/VirtualBox.rc \
 	src/platform/win/UIDesktopServices_win.cpp
 
-ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox_SOURCES.darwin += \
-	src/platform/darwin/VBoxIChatTheaterWrapper.m
-endif
-
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
 	src/VBox2DHelpers.cpp \
@@ -1768,11 +1748,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIDnDDataObject_win.cpp \
 	src/runtime/UIDnDEnumFormat_win.cpp
   endif
- endif
-
- ifdef VBOX_WITH_ICHAT_THEATER
-  VirtualBoxVM_SOURCES.darwin += \
-	src/platform/darwin/VBoxIChatTheaterWrapper.m
  endif
 
  if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)

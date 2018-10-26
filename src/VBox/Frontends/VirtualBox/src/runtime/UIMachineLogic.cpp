@@ -964,12 +964,6 @@ void UIMachineLogic::updateDockOverlay()
 
 void UIMachineLogic::prepareRequiredFeatures()
 {
-#ifdef VBOX_WS_MAC
-# ifdef VBOX_WITH_ICHAT_THEATER
-    /* Init shared AV manager: */
-    initSharedAVManager();
-# endif /* VBOX_WITH_ICHAT_THEATER */
-#endif /* VBOX_WS_MAC */
 }
 
 void UIMachineLogic::prepareSessionConnections()
