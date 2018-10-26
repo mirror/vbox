@@ -1703,7 +1703,7 @@ efi-packing:
 
 
 #
-# Generate VirtualBox-x.x.x.tar.bz2 (PUEL) zip archives for internal use only
+# Generate VirtualBox-x.x.x.zip (PUEL) snapshot archive for internal use only
 # - includes kBuild
 # - must be executed on an PUEL checkout
 #
@@ -1762,6 +1762,26 @@ snapshot-puel:
 	    -x!$(ZIPROOT)/src/VBox/Installer/linux/rpm \
 	    $(ZIPPATH)/$(ZIPNAME))
 	$(QUIET)$(RM) $(ZIPPATH)/$(ZIPROOT)
+
+
+#
+# Generate VirtualBox-x.x.x.tar.bz2 (OSE) snapshot archive
+# - includes kBuild
+#
+
+snapshot-ose:
+ifndef VBOX_OSE
+	$(QUIET)$(RM) -Rf $(wildcard $(PATH_OUT)/vbox-ose-snap-*) $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+	$(call MSG_L1,Making OSE snapshot at $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING))
+	$(PATH_DEVTOOLS)/bin/ose-snapshot.sh $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING)
+	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2)
+	$(REDIRECT) -C $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING) -- \
+		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+else
+	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2)
+	$(REDIRECT) -C $(PATH_ROOT) -- \
+		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+endif
 
 
 #
