@@ -35,7 +35,7 @@ verstr="$vermajor.$verminor.$verbuild"
 [ -n "$verpub" ] && verstr="$verstr$verpub"
 rootpath=`cd ..;pwd`
 rootname="VirtualBox-$verstr"
-if [ $# -eq 1]; then
+if [ $# -eq 1 ]; then
     tarballname="$1"
 else
     tarballname="$rootpath/$rootname.tar.bz2"
