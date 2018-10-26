@@ -71,7 +71,8 @@ fi
 
 PACKAGES_EL="bzip2 gcc-c++ glibc-devel gzip libcap-devel libIDL-devel \
     libxslt-devel libXmu-devel make openssl-devel pam-devel python-devel \
-    rpm-build wget kernel kernel-devel tar libpng-devel"
+    rpm-build wget kernel kernel-devel tar libpng-devel libXcursor-devel \
+    libXinerama-devel libXrandr-devel which"
 PACKAGES_EL5="curl-devel SDL-devel libstdc++-devel.i386 openssh-clients \
     which gcc44-c++"
 PACKAGES_EPEL5_ARCH="/usr/bin/python2.6:python26-2.6.8-2.el5 \
