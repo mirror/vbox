@@ -405,20 +405,19 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
 }
 
 
-RTR3DECL(int) RTHttpReset(RTHTTP hHttp)
+RTR3DECL(int) RTHttpReset(RTHTTP hHttp, uint32_t fFlags)
 {
-    if (hHttp == NIL_RTHTTP)
-        return VERR_INVALID_HANDLE;
-
+    /* Validate the instance handle, state and flags. */
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
-
     AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
+    AssertReturn(!(fFlags & ~RTHTTP_RESET_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     /* This resets options, but keeps open connections, cookies, etc. */
     curl_easy_reset(pThis->pCurl);
 
-    rtHttpFreeHeaders(pThis);
+    if (!(fFlags & RTHTTP_RESET_F_KEEP_HEADERS))
+        rtHttpFreeHeaders(pThis);
 
     pThis->uDownloadHttpStatus      = UINT32_MAX;
     pThis->cbDownloadContent        = UINT64_MAX;

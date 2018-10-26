@@ -57,9 +57,19 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp);
  * Resets a HTTP client instance.
  *
  * @returns IPRT status code.
- * @param   hHttp      Handle to the HTTP interface.
+ * @param   hHttp       Handle to the HTTP interface.
+ * @param   fFlags      Flags, RTHTTP_RESET_F_XXX.
  */
-RTR3DECL(int) RTHttpReset(RTHTTP hHttp);
+RTR3DECL(int) RTHttpReset(RTHTTP hHttp, uint32_t fFlags);
+
+/** @name RTHTTP_RESET_F_XXX - Flags for RTHttpReset.
+ * @{ */
+/** Keep the headers. */
+#define RTHTTP_RESET_F_KEEP_HEADERS     RT_BIT_32(0)
+/** Mask containing the valid flags. */
+#define RTHTTP_RESET_F_VALID_MASK       UINT32_C(0x00000001)
+/** @} */
+
 
 /**
  * Destroys a HTTP client instance.
