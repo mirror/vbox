@@ -545,18 +545,19 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
     QString strResult;
     switch (runtimeMenuMachineActionType)
     {
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog:     strResult = "SettingsDialog"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot:       strResult = "TakeSnapshot"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog:  strResult = "InformationDialog"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog: strResult = "GuestControlDialog"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:              strResult = "Pause"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:              strResult = "Reset"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach:             strResult = "Detach"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:          strResult = "SaveState"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown:           strResult = "Shutdown"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff:           strResult = "PowerOff"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing:            strResult = "Nothing"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All:                strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog:                strResult = "SettingsDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot:                  strResult = "TakeSnapshot"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog:             strResult = "InformationDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog: strResult = "GuestControlFileManagerDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog:     strResult = "GuestProcessControlDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:                         strResult = "Pause"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:                         strResult = "Reset"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach:                        strResult = "Detach"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:                     strResult = "SaveState"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown:                      strResult = "Shutdown"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff:                      strResult = "PowerOff"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing:                       strResult = "Nothing"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All:                           strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuMachineActionType));
@@ -572,18 +573,19 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;             QList<UIExtraDataMetaDefs::RuntimeMenuMachineActionType> values;
-    keys << "SettingsDialog";     values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
-    keys << "TakeSnapshot";       values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
-    keys << "InformationDialog";  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
-    keys << "GuestControlDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog;
-    keys << "Pause";              values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
-    keys << "Reset";              values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
-    keys << "Detach";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach;
-    keys << "SaveState";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
-    keys << "Shutdown";           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
-    keys << "PowerOff";           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
-    keys << "Nothing";            values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
-    keys << "All";                values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
+    keys << "SettingsDialog";                values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
+    keys << "TakeSnapshot";                  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
+    keys << "InformationDialog";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
+    keys << "GuestControlFileManagerDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog;
+    keys << "GuestProcessControlDialog";     values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog;
+    keys << "Pause";                         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
+    keys << "Reset";                         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
+    keys << "Detach";                        values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach;
+    keys << "SaveState";                     values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
+    keys << "Shutdown";                      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
+    keys << "PowerOff";                      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
+    keys << "Nothing";                       values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
+    keys << "All";                           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuMachineActionType, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;

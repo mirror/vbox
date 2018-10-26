@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlDialog class implementation.
+ * VBox Qt GUI - UIGuestControlFileManagerDialog class implementation.
  */
 
 /*
@@ -27,8 +27,8 @@
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
-# include "UIGuestControlDialog.h"
-# include "UIGuestControlWidget.h"
+# include "UIGuestControlFileManager.h"
+# include "UIGuestControlFileManagerDialog.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
@@ -38,10 +38,10 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIGuestControlDialogFactory implementation.                                                                            *
+*   Class UIGuestControlFileManagerDialogFactory implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UIGuestControlDialogFactory::UIGuestControlDialogFactory(UIActionPool *pActionPool /* = 0 */,
+UIGuestControlFileManagerDialogFactory::UIGuestControlFileManagerDialogFactory(UIActionPool *pActionPool /* = 0 */,
                                                          const CGuest &comGuest /* = CGuest() */,
                                                          const QString &strMachineName /* = QString() */)
     : m_pActionPool(pActionPool)
@@ -50,17 +50,17 @@ UIGuestControlDialogFactory::UIGuestControlDialogFactory(UIActionPool *pActionPo
 {
 }
 
-void UIGuestControlDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
+void UIGuestControlFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIGuestControlDialog(pCenterWidget, m_pActionPool, m_comGuest, m_strMachineName);
+    pDialog = new UIGuestControlFileManagerDialog(pCenterWidget, m_pActionPool, m_comGuest, m_strMachineName);
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIGuestControlDialog implementation.                                                                                   *
+*   Class UIGuestControlFileManagerDialog implementation.                                                                        *
 *********************************************************************************************************************************/
 
-UIGuestControlDialog::UIGuestControlDialog(QWidget *pCenterWidget,
+UIGuestControlFileManagerDialog::UIGuestControlFileManagerDialog(QWidget *pCenterWidget,
                                            UIActionPool *pActionPool,
                                            const CGuest &comGuest,
                                            const QString &strMachineName /* = QString() */)
@@ -71,24 +71,25 @@ UIGuestControlDialog::UIGuestControlDialog(QWidget *pCenterWidget,
 {
 }
 
-void UIGuestControlDialog::retranslateUi()
+void UIGuestControlFileManagerDialog::retranslateUi()
 {
     /* Translate window title: */
     setWindowTitle(tr("%1 - Guest Control").arg(m_strMachineName));
     /* Translate buttons: */
-    button(ButtonType_Close)->setText(UIGuestControlWidget::tr("Close"));
+    button(ButtonType_Close)->setText(UIGuestControlFileManager::tr("Close"));
 }
 
-void UIGuestControlDialog::configure()
+void UIGuestControlFileManagerDialog::configure()
 {
     /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+    //setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
 }
 
-void UIGuestControlDialog::configureCentralWidget()
+void UIGuestControlFileManagerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIGuestControlWidget *pWidget = new UIGuestControlWidget(EmbedTo_Dialog, m_pActionPool, m_comGuest, true /* show toolbar */,  this);
+    UIGuestControlFileManager *pWidget = new UIGuestControlFileManager(EmbedTo_Dialog, m_pActionPool,
+                                                                       m_comGuest, this);
 
     if (pWidget)
     {
@@ -106,13 +107,13 @@ void UIGuestControlDialog::configureCentralWidget()
     }
 }
 
-void UIGuestControlDialog::finalize()
+void UIGuestControlFileManagerDialog::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
 }
 
-void UIGuestControlDialog::loadSettings()
+void UIGuestControlFileManagerDialog::loadSettings()
 {
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
@@ -123,35 +124,35 @@ void UIGuestControlDialog::loadSettings()
         defaultGeometry.moveCenter(centerWidget()->geometry().center());
 
     /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->guestControlDialogGeometry(this, defaultGeometry);
+    QRect geometry = gEDataManager->guestControlFileManagerDialogGeometry(this, defaultGeometry);
 
     /* Restore geometry: */
-    LogRel2(("GUI: UIGuestControlDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+    LogRel2(("GUI: UIGuestControlFileManagerDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geometry.x(), geometry.y(), geometry.width(), geometry.height()));
     setDialogGeometry(geometry);
 }
 
-void UIGuestControlDialog::saveSettings() const
+void UIGuestControlFileManagerDialog::saveSettings() const
 {
     /* Save window geometry to extradata: */
     const QRect saveGeometry = geometry();
 #ifdef VBOX_WS_MAC
     /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setGuestControlDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
+    gEDataManager->setGuestControlDialogFileManagerDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
-    gEDataManager->setGuestControlDialogGeometry(saveGeometry, isMaximized());
+    gEDataManager->setGuestControlFileManagerDialogGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
-    LogRel2(("GUI: Guest Control Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+    LogRel2(("GUI: Guest Control File Manager Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
              saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
 }
 
-bool UIGuestControlDialog::shouldBeMaximized() const
+bool UIGuestControlFileManagerDialog::shouldBeMaximized() const
 {
-    return gEDataManager->guestControlDialogShouldBeMaximized();
+    return gEDataManager->guestControlFileManagerDialogShouldBeMaximized();
 }
 
-void UIGuestControlDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
+void UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);

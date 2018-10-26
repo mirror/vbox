@@ -273,8 +273,10 @@ private slots:
     void sltTypeHostKeyComboPressRelease(bool fToggleSequence);
     void sltTakeSnapshot();
     void sltShowInformationDialog();
-    void sltShowGuestControlDialog();
-    void sltCloseGuestControlWindow();
+    void sltShowGuestControlFileManagerDialog();
+    void sltCloseGuestControlFileManagerDialog();
+    void sltShowGuestProcessControlDialog();
+    void sltCloseGuestProcessControlDialog();
     void sltReset();
     void sltPause(bool fOn);
     void sltDetach();

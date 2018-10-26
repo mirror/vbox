@@ -2032,7 +2032,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_InformationWindowElements
            << GUI_GuestControl_ProcessControlSplitterHints
            << GUI_GuestControl_FileManagerSplitterHints
-           << GUI_GuestControl_DialogGeometry
+           << GUI_GuestControl_FileManagerDialogGeometry
+           << GUI_GuestControl_ProcessControlDialogGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -4136,72 +4137,44 @@ QList<int> UIExtraDataManager::guestControlFileManagerSplitterHints()
     return hints;
 }
 
-QRect UIExtraDataManager::guestControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+QRect UIExtraDataManager::guestControlFileManagerDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestControl_DialogGeometry);
-
-    /* Parse loaded data: */
-    int iX = 0, iY = 0, iW = 0, iH = 0;
-    bool fOk = data.size() >= 4;
-    do
-    {
-        if (!fOk) break;
-        iX = data[0].toInt(&fOk);
-        if (!fOk) break;
-        iY = data[1].toInt(&fOk);
-        if (!fOk) break;
-        iW = data[2].toInt(&fOk);
-        if (!fOk) break;
-        iH = data[3].toInt(&fOk);
-    }
-    while (0);
-
-    /* Use geometry (loaded or default): */
-    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : defaultGeometry;
-
-    /* Take hint-widget into account: */
-    if (pWidget)
-        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
-
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
-                                          gpDesktop->availableGeometry();
-
-    /* Make sure resulting geometry is within current bounds: */
-    if (!availableGeometry.contains(geometry))
-        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
-    /* Return result: */
-    return geometry;
+    return dialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, pWidget, defaultGeometry);
 }
 
-bool UIExtraDataManager::guestControlDialogShouldBeMaximized()
+bool UIExtraDataManager::guestControlFileManagerDialogShouldBeMaximized()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestControl_DialogGeometry);
+    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerDialogGeometry);
 
     /* Make sure 5th item has required value: */
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
-void UIExtraDataManager::setGuestControlDialogGeometry(const QRect &geometry, bool fMaximized)
+void UIExtraDataManager::setGuestControlFileManagerDialogGeometry(const QRect &geometry, bool fMaximized)
 {
-    /* Serialize passed values: */
-    QStringList data;
-    data << QString::number(geometry.x());
-    data << QString::number(geometry.y());
-    data << QString::number(geometry.width());
-    data << QString::number(geometry.height());
-    if (fMaximized)
-        data << GUI_Geometry_State_Max;
-
-    /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_GuestControl_DialogGeometry, data);
+    setDialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, geometry, fMaximized);
 }
+
+QRect UIExtraDataManager::guestProcessControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+{
+    return dialogGeometry(GUI_GuestControl_ProcessControlDialogGeometry, pWidget, defaultGeometry);
+}
+
+bool UIExtraDataManager::guestProcessControlDialogShouldBeMaximized()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_GuestControl_ProcessControlDialogGeometry);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+}
+
+void UIExtraDataManager::setGuestProcessControlDialogGeometry(const QRect &geometry, bool fMaximized)
+{
+    setDialogGeometry(GUI_GuestControl_ProcessControlDialogGeometry, geometry, fMaximized);
+}
+
 
 QMap<InformationElementType, bool> UIExtraDataManager::informationWindowElements()
 {
@@ -4781,6 +4754,64 @@ QString UIExtraDataManager::toFeatureRestricted(bool fRestricted)
 QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex, bool fSameRuleForPrimary /* = false */)
 {
     return fSameRuleForPrimary || uScreenIndex ? strBase + QString::number(uScreenIndex) : strBase;
+}
+
+QRect UIExtraDataManager::dialogGeometry(const QString &strKey, QWidget *pWidget, const QRect &defaultGeometry)
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(strKey);
+
+    /* Parse loaded data: */
+    int iX = 0, iY = 0, iW = 0, iH = 0;
+    bool fOk = data.size() >= 4;
+    do
+    {
+        if (!fOk) break;
+        iX = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iY = data[1].toInt(&fOk);
+        if (!fOk) break;
+        iW = data[2].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[3].toInt(&fOk);
+    }
+    while (0);
+
+    /* Use geometry (loaded or default): */
+    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : defaultGeometry;
+
+    /* Take hint-widget into account: */
+    if (pWidget)
+        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
+
+    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
+#ifdef VBOX_WS_WIN
+    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
+
+    /* Make sure resulting geometry is within current bounds: */
+    if (!availableGeometry.contains(geometry))
+        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+#endif /* VBOX_WS_WIN */
+
+    /* Return result: */
+    return geometry;
+}
+
+void UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &geometry, bool fMaximized)
+{
+        /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_Geometry_State_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(strKey, data);
 }
 
 #include "UIExtraDataManager.moc"

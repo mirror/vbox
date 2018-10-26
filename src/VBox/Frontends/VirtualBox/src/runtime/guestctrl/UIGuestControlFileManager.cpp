@@ -35,6 +35,7 @@
 # include "QITabWidget.h"
 # include "QITreeWidget.h"
 # include "QIWithRetranslateUI.h"
+# include "UIActionPool.h"
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
@@ -227,20 +228,20 @@ void UIGuestSessionCreateWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
-        m_pUserNameEdit->setToolTip(QApplication::translate("UIGuestControlWidget", "User name to authenticate session creation"));
-        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIGuestControlWidget", "User Name"));
+        m_pUserNameEdit->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "User name to authenticate session creation"));
+        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIGuestProcessControlWidget", "User Name"));
 
     }
     if (m_pPasswordEdit)
     {
-        m_pPasswordEdit->setToolTip(QApplication::translate("UIGuestControlWidget", "Password to authenticate session creation"));
-        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIGuestControlWidget", "Password"));
+        m_pPasswordEdit->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Password to authenticate session creation"));
+        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIGuestProcessControlWidget", "Password"));
     }
 
     if (m_pCreateButton)
-        m_pCreateButton->setText(QApplication::translate("UIGuestControlWidget", "Create Session"));
+        m_pCreateButton->setText(QApplication::translate("UIGuestProcessControlWidget", "Create Session"));
     if (m_pCloseButton)
-        m_pCloseButton->setText(QApplication::translate("UIGuestControlWidget", "Close Session"));
+        m_pCloseButton->setText(QApplication::translate("UIGuestProcessControlWidget", "Close Session"));
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
@@ -284,7 +285,8 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
 *   UIGuestControlFileManager implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGuest &comGuest)
+UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+                                                     const CGuest &comGuest, QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_iMaxRecursionDepth(1)
     , m_comGuest(comGuest)
@@ -301,6 +303,8 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
+    , m_enmEmbedding(enmEmbedding)
+    , m_pActionPool(pActionPool)
 {
     prepareGuestListener();
     prepareObjects();
@@ -324,22 +328,22 @@ void UIGuestControlFileManager::retranslateUi()
 {
     if (m_pCopyGuestToHost)
     {
-        m_pCopyGuestToHost->setText(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from guest to host"));
-        m_pCopyGuestToHost->setToolTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from guest to host"));
-        m_pCopyGuestToHost->setStatusTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setText(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setStatusTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from guest to host"));
     }
 
     if (m_pCopyHostToGuest)
     {
-        m_pCopyHostToGuest->setText(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from host to guest"));
-        m_pCopyHostToGuest->setToolTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from host to guest"));
-        m_pCopyHostToGuest->setStatusTip(QApplication::translate("UIGuestControlWidget", "Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setText(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setStatusTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from host to guest"));
     }
 
 
-    m_pTabWidget->setTabText(0, QApplication::translate("UIGuestControlWidget", "Log"));
-    m_pTabWidget->setTabText(1, QApplication::translate("UIGuestControlWidget", "File Operations"));
-    m_pTabWidget->setTabText(2, QApplication::translate("UIGuestControlWidget", "Terminal"));
+    m_pTabWidget->setTabText(0, QApplication::translate("UIGuestProcessControlWidget", "Log"));
+    m_pTabWidget->setTabText(1, QApplication::translate("UIGuestProcessControlWidget", "File Operations"));
+    m_pTabWidget->setTabText(2, QApplication::translate("UIGuestProcessControlWidget", "Terminal"));
 
 }
 

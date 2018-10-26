@@ -133,7 +133,7 @@ UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
 void UIHostFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(QApplication::translate("UIGuestControlWidget", "Host System"));
+        m_pLocationLabel->setText(QApplication::translate("UIGuestControlFileManager", "Host System"));
     UIGuestControlFileTable::retranslateUi();
 }
 

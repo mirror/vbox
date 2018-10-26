@@ -161,7 +161,7 @@ void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
 void UIGuestFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(QApplication::translate("UIGuestControlWidget", "Guest System"));
+        m_pLocationLabel->setText(QApplication::translate("UIGuestControlFileManager", "Guest System"));
     UIGuestControlFileTable::retranslateUi();
 }
 

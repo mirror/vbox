@@ -229,15 +229,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Guest Control Dialog' action class. */
-class UIActionSimpleRuntimeShowGuestControlDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Guest Control File Manager Dialog' action class. */
+class UIActionSimpleRuntimeShowGuestControlFileManagerDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleRuntimeShowGuestControlDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowGuestControlFileManagerDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png", true)
     {}
 
@@ -246,23 +246,23 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const /* override */
     {
-        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog;
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const /* override */
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const /* override */
     {
-        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlDialog);
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog);
     }
 
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("GuestControlDialog");
+        return QString("GuestControlFileManagerDialog");
     }
 
     /** Returns default shortcut. */
@@ -274,10 +274,61 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Guest Control..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine guest control window"));
+        setName(QApplication::translate("UIActionPool", "File Manager..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine guest control file manager window"));
     }
 };
+
+/** Simple action extension, used as 'Show Guest Process Control Dialog' action class. */
+class UIActionSimpleRuntimeShowGuestProcessControlDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleRuntimeShowGuestProcessControlDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png", true)
+    {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("GuestProcessControlDialog");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Guest Process Control..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine guest process control window"));
+    }
+};
+
 
 /** Toggle action extension, used as 'Pause' action class. */
 class UIActionToggleRuntimePause : public UIActionToggle
@@ -3233,7 +3284,8 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleRuntimeShowSettings(this);
     m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimpleRuntimePerformTakeSnapshot(this);
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleRuntimeShowInformationDialog(this);
-    m_pool[UIActionIndexRT_M_Machine_S_ShowGuestControl] = new UIActionSimpleRuntimeShowGuestControlDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager] = new UIActionSimpleRuntimeShowGuestControlFileManagerDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowGuestProcessControl] = new UIActionSimpleRuntimeShowGuestProcessControlDialog(this);
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionToggleRuntimePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimpleRuntimePerformReset(this);
     m_pool[UIActionIndexRT_M_Machine_S_Detach] = new UIActionSimpleRuntimePerformDetach(this);
@@ -3536,7 +3588,8 @@ void UIActionPoolRuntime::updateMenuMachine()
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
 #ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestControl)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestProcessControl)) || fSeparator;
 #endif
     /* Separator: */
     if (fSeparator)

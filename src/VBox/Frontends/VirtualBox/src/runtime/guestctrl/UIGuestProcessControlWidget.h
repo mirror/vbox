@@ -27,12 +27,15 @@
 #include "CEventListener.h"
 
 /* GUI includes: */
+#include "QIManagerDialog.h"
+#include "QIWithRetranslateUI.h"
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
 class QITreeWidget;
 class QVBoxLayout;
 class QSplitter;
+class UIActionPool;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestSessionsEventHandler;
@@ -41,14 +44,19 @@ class UIGuestControlTreeWidget;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
-class UIGuestProcessControlWidget : public QWidget
+class UIGuestProcessControlWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestProcessControlWidget(QWidget *pParent, const CGuest &comGuest);
+    UIGuestProcessControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+                                const CGuest &comGuest, QWidget *pParent);
     ~UIGuestProcessControlWidget();
+
+protected:
+
+    void retranslateUi();
 
 private slots:
 
@@ -81,6 +89,8 @@ private:
     UIGuestControlTreeWidget *m_pTreeWidget;
     UIGuestControlConsole    *m_pConsole;
     UIGuestControlInterface  *m_pControlInterface;
+    const EmbedTo             m_enmEmbedding;
+    UIActionPool             *m_pActionPool;
 
     /** Holds the Qt event listener instance. */
     ComObjPtr<UIMainEventListenerImpl> m_pQtListener;

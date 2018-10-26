@@ -29,6 +29,7 @@
 #include "CGuestSession.h"
 
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMainEventListener.h"
 
@@ -39,6 +40,7 @@ class QVBoxLayout;
 class QSplitter;
 class QITabWidget;
 class CGuestSessionStateChangedEvent;
+class UIActionPool;
 class UIFileOperationsList;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
@@ -72,7 +74,8 @@ class UIGuestControlFileManager : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    UIGuestControlFileManager(QWidget *pParent, const CGuest &comGuest);
+    UIGuestControlFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+                              const CGuest &comGuest, QWidget *pParent);
     ~UIGuestControlFileManager();
     //const UIGuestControlFileManagerSettings& settings() const;
 
@@ -142,6 +145,9 @@ private:
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
     CEventListener m_comSessionListener;
     CEventListener m_comGuestListener;
+    const EmbedTo  m_enmEmbedding;
+    UIActionPool  *m_pActionPool;
+
     //UIGuestControlFileManagerSettings m_settings;
 };
 

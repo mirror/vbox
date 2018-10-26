@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlDialog class declaration.
+ * VBox Qt GUI - UIGuestProcessControlDialog class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlDialog_h___
-#define ___UIGuestControlDialog_h___
+#ifndef ___UIGuestProcessControlDialog_h___
+#define ___UIGuestProcessControlDialog_h___
 
 /* Qt includes: */
 #include <QString>
@@ -33,16 +33,16 @@
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIActionPool;
-class UIGuestControlDialog;
+class UIGuestProcessControlDialog;
 class CGuest;
 
 
 /** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */
-class UIGuestControlDialogFactory : public QIManagerDialogFactory
+class UIGuestProcessControlDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIGuestControlDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
+    UIGuestProcessControlDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
 
 protected:
 
@@ -57,7 +57,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog displaying guest control releated logs. */
-class UIGuestControlDialog : public QIWithRetranslateUI<QIManagerDialog>
+class UIGuestProcessControlDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
@@ -67,7 +67,7 @@ public:
       * @param  pCenterWidget  Passes the widget reference to center according to.
       * @param  pActionPool    Passes the action-pool reference.
       * @param  comGuest       Passes the com-guest reference. */
-    UIGuestControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
+    UIGuestProcessControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
 
 protected:
 
@@ -110,4 +110,4 @@ private:
 };
 
 
-#endif /* !___UIGuestControlDialog_h___ */
+#endif /* !___UIGuestProcessControlDialog_h___ */
