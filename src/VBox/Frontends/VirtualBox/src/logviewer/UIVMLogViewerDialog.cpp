@@ -115,9 +115,6 @@ void UIVMLogViewerDialog::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
-
-    // WTF? Why here?
-    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
 }
 
 void UIVMLogViewerDialog::loadSettings()
