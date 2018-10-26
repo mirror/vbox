@@ -983,15 +983,16 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 #
 # VM IP addresses.
 #
-VBOX_BLD_VM_LNX_IP           := 192.168.27.2
-VBOX_BLD_VM_OS2_IP           := 192.168.27.3
-VBOX_BLD_VM_SOLARIS_IP       := 192.168.27.4
-VBOX_BLD_VM_DARWIN_X86_IP    := 192.168.27.5
-VBOX_BLD_VM_DARWIN_AMD64_IP  := 192.168.27.15
-VBOX_BLD_VM_WIN_X86_IP       := 192.168.27.6
-VBOX_BLD_VM_WIN_AMD64_IP     := 192.168.27.16
-VBOX_BLD_VM_FBSD_X86_IP      := 192.168.27.7
-VBOX_BLD_VM_FBSD_AMD64_IP    := 192.168.27.17
+VBOX_BLD_VM_LNX_IP               := 192.168.27.2
+VBOX_BLD_VM_OS2_IP               := 192.168.27.3
+VBOX_BLD_VM_SOLARIS_IP           := 192.168.27.4
+VBOX_BLD_VM_DARWIN_X86_IP        := 192.168.27.5
+VBOX_BLD_VM_DARWIN_AMD64_IP      := 192.168.27.15
+VBOX_BLD_VM_DARWIN_109_AMD64_IP  := 192.168.27.18
+VBOX_BLD_VM_WIN_X86_IP           := 192.168.27.6
+VBOX_BLD_VM_WIN_AMD64_IP         := 192.168.27.16
+VBOX_BLD_VM_FBSD_X86_IP          := 192.168.27.7
+VBOX_BLD_VM_FBSD_AMD64_IP        := 192.168.27.17
 
 VBOX_WITH_OS2_ADD_BUILD=1
 
@@ -1412,9 +1413,9 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
 	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 extension packs)
-	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
-	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'PATH=$$PATH:/opt/local/bin; cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && KBUILD_HOST_ARCH=amd64 tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
-	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_109_AMD64_IP) 'PATH=$$PATH:/opt/local/bin; cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && KBUILD_HOST_ARCH=amd64 tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
+	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 extension packs)
 endif
 
