@@ -1809,13 +1809,19 @@ int GuestSessionTaskCopyTo::Run(void)
                     if (!pList->mSourceSpec.fDryRun)
                     {
                         rc = directoryCreate(strDstAbs.c_str(), DirectoryCreateFlag_None, fDirMode, fFollowSymlinks);
-                        if (   rc == VERR_ALREADY_EXISTS
-                            && !fCopyIntoExisting)
+                        if (RT_FAILURE(rc))
                         {
-                            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" already exists"),
-                                                           strDstAbs.c_str()));
-                            break;
+                            if (rc == VERR_ALREADY_EXISTS)
+                            {
+                                if (!fCopyIntoExisting)
+                                {
+                                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                        Utf8StrFmt(GuestSession::tr("Destination directory '%s' already exists"),
+                                                                   strDstAbs.c_str()));
+                                }
+                                else /* Copy into destination directory. */
+                                    rc = VINF_SUCCESS;
+                            }
                         }
                     }
                     break;
