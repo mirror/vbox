@@ -479,7 +479,6 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
     }
     else
         u64 = pVCpu->tm.s.u64TSC;
-    /** @todo @bugref{7243}: SVM TSC offset. */
     return u64;
 }
 
