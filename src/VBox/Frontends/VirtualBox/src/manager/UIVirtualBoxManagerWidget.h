@@ -59,6 +59,9 @@ signals:
     /** Notifies listeners about Cloud Profile Manager change. */
     void sigCloudProfileManagerChange();
 
+    /** Notifies listeners about current Snapshots pane item change. */
+    void sigCurrentSnapshotItemChange();
+
 public:
 
     /** Constructs VirtualBox Manager widget. */
@@ -110,6 +113,12 @@ public:
         void closeGlobalTool(UIToolType enmType);
         /** Closes Machine tool of passed @a enmType. */
         void closeMachineTool(UIToolType enmType);
+    /** @} */
+
+    /** @name Snapshot pane stuff.
+      * @{ */
+        /** Returns whether current-state item of Snapshot pane is selected. */
+        bool isCurrentStateItemSelected() const;
     /** @} */
 
 public slots:

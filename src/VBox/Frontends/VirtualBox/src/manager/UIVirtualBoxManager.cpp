@@ -393,6 +393,11 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     }
 }
 
+void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
+{
+    updateActionsAppearance();
+}
+
 void UIVirtualBoxManager::sltHandleStateChange(const QUuid &)
 {
     updateActionsAppearance();
@@ -1844,6 +1849,8 @@ void UIVirtualBoxManager::prepareWidgets()
         /* Configure central-widget: */
         connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange,
                 this, &UIVirtualBoxManager::sigCloudProfileManagerChange);
+        connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
+                this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
         setCentralWidget(m_pWidget);
     }
 }
@@ -2304,7 +2311,9 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
-                   pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null;
+                   pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null &&
+                   (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
+                    m_pWidget->isCurrentStateItemSelected());
         }
         case UIActionIndexST_M_Machine_S_Clone:
         case UIActionIndexST_M_Machine_S_Move:
@@ -2334,13 +2343,17 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable:
         {
             return !isGroupSavingInProgress() &&
-                   isAtLeastOneItemCanBeStartedOrShown(items);
+                   isAtLeastOneItemCanBeStartedOrShown(items) &&
+                    (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
+                     m_pWidget->isCurrentStateItemSelected());
         }
         case UIActionIndexST_M_Group_S_Discard:
         case UIActionIndexST_M_Machine_S_Discard:
         {
             return !isGroupSavingInProgress() &&
-                   isAtLeastOneItemDiscardable(items);
+                   isAtLeastOneItemDiscardable(items) &&
+                    (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
+                     m_pWidget->isCurrentStateItemSelected());
         }
         case UIActionIndexST_M_Group_S_ShowLogDialog:
         case UIActionIndexST_M_Machine_S_ShowLogDialog:

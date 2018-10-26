@@ -167,6 +167,11 @@ void UIVirtualBoxManagerWidget::closeMachineTool(UIToolType enmType)
     m_pPaneToolsMachine->closeTool(enmType);
 }
 
+bool UIVirtualBoxManagerWidget::isCurrentStateItemSelected() const
+{
+    return m_pPaneToolsMachine->isCurrentStateItemSelected();
+}
+
 void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
     /* Populate toolbar actions: */
@@ -453,6 +458,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pPaneToolsMachine = new UIToolPaneMachine(actionPool());
                         if (m_pPaneToolsMachine)
                         {
+                            connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigCurrentSnapshotItemChange,
+                                    this, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange);
+
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsMachine);
                         }
@@ -656,31 +664,29 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 }
                 case UIToolType_Snapshots:
                 {
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-                    m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
                     break;
                 }
                 case UIToolType_Logs:
                 {
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-                    m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Save));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Find));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Filter));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Bookmark));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Settings));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Refresh));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
                     break;
                 }
                 default:

@@ -120,6 +120,9 @@ private slots:
 
         /** Handles singal about Tool type change.  */
         void sltHandleToolTypeChange();
+
+        /** Handles current snapshot item change. */
+        void sltCurrentSnapshotItemChange();
     /** @} */
 
     /** @name CVirtualBox event handling stuff.

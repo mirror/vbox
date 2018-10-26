@@ -505,6 +505,11 @@ const QIcon *UISnapshotPane::snapshotItemIcon(bool fOnline) const
     return !fOnline ? m_pIconSnapshotOffline : m_pIconSnapshotOnline;
 }
 
+bool UISnapshotPane::isCurrentStateItemSelected() const
+{
+    return m_pCurrentStateItem && m_pSnapshotTree->currentItem() == m_pCurrentStateItem;
+}
+
 void UISnapshotPane::retranslateUi()
 {
     /* Translate snapshot tree: */
@@ -1050,6 +1055,9 @@ void UISnapshotPane::sltHandleCurrentItemChange()
         else
             m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
     }
+
+    /* Notify listeners: */
+    emit sigCurrentItemChange();
 }
 
 void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)

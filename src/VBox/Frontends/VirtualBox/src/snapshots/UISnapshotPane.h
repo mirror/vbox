@@ -54,6 +54,11 @@ class UISnapshotPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about current item change. */
+    void sigCurrentItemChange();
+
 public:
 
     /** Constructs snapshot pane passing @a pParent to the base-class. */
@@ -66,6 +71,9 @@ public:
 
     /** Returns cached snapshot-item icon depending on @a fOnline flag. */
     const QIcon *snapshotItemIcon(bool fOnline) const;
+
+    /** Returns whether "current state" item selected. */
+    bool isCurrentStateItemSelected() const;
 
 protected:
 

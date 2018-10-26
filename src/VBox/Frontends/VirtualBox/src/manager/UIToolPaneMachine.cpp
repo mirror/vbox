@@ -143,6 +143,8 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneSnapshots->setProperty("ToolType", QVariant::fromValue(UIToolType_Snapshots));
+                    connect(m_pPaneSnapshots, &UISnapshotPane::sigCurrentItemChange,
+                            this, &UIToolPaneMachine::sigCurrentSnapshotItemChange);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneSnapshots);
@@ -243,6 +245,13 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
         AssertPtrReturnVoid(m_pPaneLogViewer);
         m_pPaneLogViewer->setMachine(comMachine);
     }
+}
+
+bool UIToolPaneMachine::isCurrentStateItemSelected() const
+{
+    if (!m_pPaneSnapshots)
+        return false;
+    return m_pPaneSnapshots->isCurrentStateItemSelected();
 }
 
 void UIToolPaneMachine::prepare()
