@@ -204,7 +204,7 @@ void UINameAndSystemEditor::retranslateUi()
     m_pLabelType->setText(tr("&Version:"));
     m_pNameLabel->setText(tr("Name:"));
     if (m_pPathLabel)
-        m_pPathLabel->setText(tr("Path:"));
+        m_pPathLabel->setText(tr("Machine Folder:"));
 
     m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
                                     "you plan to install into this virtual machine."));
