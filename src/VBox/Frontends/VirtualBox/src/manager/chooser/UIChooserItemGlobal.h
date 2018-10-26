@@ -48,7 +48,7 @@ public:
     /** @name Item stuff.
       * @{ */
         /** Returns whether passed @a position belongs to tools button area. */
-        bool isToolsButtonArea(const QPoint &position) const;
+        bool isToolsButtonArea(const QPoint &position, int iMarginMultiplier = 1) const;
     /** @} */
 
     /** @name Layout stuff.

@@ -162,7 +162,7 @@ bool UIChooserItemMachine::isLockedMachine() const
            state != KMachineState_Aborted;
 }
 
-bool UIChooserItemMachine::isToolsButtonArea(const QPoint &position) const
+bool UIChooserItemMachine::isToolsButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
 {
     const int iFullWidth = geometry().width();
     const int iFullHeight = geometry().height();
@@ -174,7 +174,8 @@ bool UIChooserItemMachine::isToolsButtonArea(const QPoint &position) const
                        iToolsPixmapY,
                        m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio(),
                        m_toolsPixmap.height() / m_toolsPixmap.devicePixelRatio());
-    rect.adjust(- iButtonMargin, -iButtonMargin, iButtonMargin, iButtonMargin);
+    rect.adjust(-iMarginMultiplier * iButtonMargin, -iMarginMultiplier * iButtonMargin,
+                 iMarginMultiplier * iButtonMargin,  iMarginMultiplier * iButtonMargin);
     return rect.contains(position);
 }
 
@@ -1263,12 +1264,14 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
         const QPoint itemCursorPosition = mapFromScene(sceneCursorPosition).toPoint();
 
         /* Paint flat button: */
-        paintFlatButton(/* Painter: */
-                        pPainter,
-                        /* Button rectangle: */
-                        buttonRectangle,
-                        /* Cursor position: */
-                        itemCursorPosition);
+        if (   isHovered()
+            && isToolsButtonArea(itemCursorPosition, 4))
+            paintFlatButton(/* Painter: */
+                            pPainter,
+                            /* Button rectangle: */
+                            buttonRectangle,
+                            /* Cursor position: */
+                            itemCursorPosition);
 
         /* Paint pixmap: */
         paintPixmap(/* Painter: */
