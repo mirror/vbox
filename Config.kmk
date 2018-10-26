@@ -4358,12 +4358,10 @@ TEMPLATE_VBoxR0_CFLAGS.x86          = -m32
 TEMPLATE_VBoxR0_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -nostdlib
 TEMPLATE_VBoxR0_LDFLAGS.amd64       = -m64 -static
 TEMPLATE_VBoxR0_LDFLAGS.x86         = -m32
- ifdef VBOX_WITH_SIGNED_R0_ON_MAC
 TEMPLATE_VBoxR0_CXXFLAGS.amd64     += -mkernel
 TEMPLATE_VBoxR0_CFLAGS.amd64       += -mkernel
 TEMPLATE_VBoxR0_LDFLAGS            += -Wl,-kext -mkernel
 TEMPLATE_VBoxR0_POST_CMDS           = $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_VMM_MOD_FN,$(out),org.virtualbox.app.r0.$(target)))
- endif
 endif
 
 ifeq ($(VBOX_LDR_FMT),lx)
