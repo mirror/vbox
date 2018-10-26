@@ -79,7 +79,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
   VirtualBoxVM_DEFS    = $(VirtualBoxHardened_DEFS) VBOX_RUNTIME_UI
  endif
 
-else
+else # !VBOX_GUI_WITH_SHARED_LIBRARY
 
  #
  # Hardened VirtualBoxVM.
@@ -93,7 +93,7 @@ else
  src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
  src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
 
-endif
+endif # !VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -194,7 +194,7 @@ ifdef VBOX_WITH_LIBCURL
  VirtualBox_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
 endif
-ifneq ($(KBUILD_TYPE),release)
+if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
  VirtualBox_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 endif
 ifdef VBOX_WITH_ICHAT_THEATER
@@ -203,6 +203,7 @@ endif
 
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  #
@@ -265,7 +266,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
   VirtualBoxVM_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
   VBOX_GUI_WITH_NETWORK_MANAGER := 1
  endif
- ifneq ($(KBUILD_TYPE),release)
+ if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
   VirtualBoxVM_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
  endif
  ifdef VBOX_WITH_ICHAT_THEATER
@@ -321,14 +322,17 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
   VBoxGlobal_DEFS        += VBOX_GUI_WITH_NETWORK_MANAGER
   VBOX_GUI_WITH_NETWORK_MANAGER := 1
  endif
- ifneq ($(KBUILD_TYPE),release)
+ if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_EXTRADATA_MANAGER_UI)
   VBoxGlobal_DEFS        += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+ endif
+ if  "$(KBUILD_TYPE)" != "release" || defined(VBOX_GUI_WITH_GUEST_CONTROL_UI)
   VBoxGlobal_DEFS        += VBOX_GUI_WITH_GUEST_CONTROL_UI
  endif
  ifdef VBOX_WITH_ICHAT_THEATER
   VBoxGlobal_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
  endif
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -393,6 +397,7 @@ VirtualBox_INCS = \
 	$(VBOX_GRAPHICS_INCS)
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # Include folders.
@@ -409,7 +414,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  VBoxGlobal_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
 	$(VBoxGlobal_0_OUTDIR)/include
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -454,6 +460,7 @@ endif
 
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # Compiling/linking flags.
@@ -515,7 +522,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
   VBoxGlobal_LDFLAGS.darwin += -framework OpenGL
  endif
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -574,6 +582,7 @@ endif
 
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # Libraries.
@@ -663,7 +672,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
    VBoxGlobal_LIBS += $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB)
   endif
  endif
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -963,6 +973,7 @@ endif
 
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # Headers containing definitions of classes that use the Q_OBJECT macro.
@@ -1179,7 +1190,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  VBoxGlobal_QT_MOCHDRS.darwin += \
 	src/platform/darwin/UICocoaSpecialControls.h \
 	src/platform/darwin/UIWindowMenuManager.h
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -1254,10 +1266,10 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIDesktopWidgetWatchdog.cpp
  VirtualBox_QT_MOCSRCS.freebsd += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
-endif
-
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # Sources containing local definitions of classes that use the Q_OBJECT macro.
@@ -1326,7 +1338,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIDesktopWidgetWatchdog.cpp
  VBoxGlobal_QT_MOCSRCS.freebsd += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -1683,10 +1696,10 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/platform/darwin/UIWindowMenuManager.cpp \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
-endif
 
-
+endif # !VBOX_GUI_WITH_SHARED_LIBRARY
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # Sources.
@@ -1961,7 +1974,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/VBox2DHelpers.cpp \
 	src/VBoxGLSupportInfo.cpp
  endif
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
@@ -1999,6 +2013,7 @@ endif
 
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+
  #
  # VirtualBox Virtual Machine Application
  # The Qt modules we're using.
@@ -2029,7 +2044,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
   VBoxGlobal_QT_MODULES += OpenGL
  endif
-endif
+
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 # Pull in the ui files
@@ -2147,7 +2163,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  # alias for generating the COM Wrappers file.
  testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers
 
-else
+else # VBOX_GUI_WITH_SHARED_LIBRARY
 
  #
  # VirtualBox - GUI Global Shared Library.
@@ -2181,7 +2197,7 @@ else
  # alias for generating the COM Wrappers file.
  testwrappers:: $$(VBoxGlobal_0_OUTDIR)/include/COMWrappers
 
-endif
+endif # VBOX_GUI_WITH_SHARED_LIBRARY
 
 
 #
