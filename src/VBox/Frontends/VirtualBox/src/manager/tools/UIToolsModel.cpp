@@ -446,57 +446,37 @@ void UIToolsModel::prepareScene()
 
 void UIToolsModel::prepareItems()
 {
-    /* Enable all classes of tools initially: */
+    /* Enable both classes of tools initially: */
     m_statesToolsEnabled[UIToolClass_Global] = true;
     m_statesToolsEnabled[UIToolClass_Machine] = true;
 
-    /* Prepare classes: */
-    QList<UIToolClass> classes;
-    classes << UIToolClass_Global;
-    classes << UIToolClass_Global;
-    classes << UIToolClass_Global;
-    classes << UIToolClass_Global;
-    classes << UIToolClass_Machine;
-    classes << UIToolClass_Machine;
-    classes << UIToolClass_Machine;
+    /* Welcome: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Welcome, tr("Welcome"),
+                               UIIconPool::iconSet(":/welcome_screen_24px.png", ":/welcome_screen_24px.png")); /// @todo fix icon!
 
-    /* Prepare types: */
-    QList<UIToolType> types;
-    types << UIToolType_Welcome;
-    types << UIToolType_Media;
-    types << UIToolType_Network;
-    types << UIToolType_Cloud;
-    types << UIToolType_Details;
-    types << UIToolType_Snapshots;
-    types << UIToolType_Logs;
+    /* Media: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Media, tr("Media"),
+                               UIIconPool::iconSet(":/media_manager_24px.png", ":/media_manager_disabled_24px.png"));
 
-    /* Prepare icons: */
-    QList<QIcon> icons;
-    icons << UIIconPool::iconSet(":/welcome_screen_24px.png",          ":/welcome_screen_24px.png"); /// @todo fix icon!
-    icons << UIIconPool::iconSet(":/media_manager_24px.png",           ":/media_manager_disabled_24px.png");
-    icons << UIIconPool::iconSet(":/host_iface_manager_24px.png",      ":/host_iface_manager_disabled_24px.png");
-    icons << UIIconPool::iconSet(":/cloud_profile_manager_24px.png",   ":/cloud_profile_manager_disabled_24px.png");
-    icons << UIIconPool::iconSet(":/machine_details_manager_24px.png", ":/machine_details_manager_disabled_24px.png");
-    icons << UIIconPool::iconSet(":/snapshot_manager_24px.png",        ":/snapshot_manager_disabled_24px.png");
-    icons << UIIconPool::iconSet(":/vm_show_logs_24px.png",            ":/vm_show_logs_disabled_24px.png");
+    /* Network: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Network, tr("Network"),
+                               UIIconPool::iconSet(":/host_iface_manager_24px.png", ":/host_iface_manager_disabled_24px.png"));
 
-    /* Prepare names: */
-    QList<QString> names;
-    names << tr("Welcome");
-    names << tr("Media");
-    names << tr("Network");
-    names << tr("Cloud");
-    names << tr("Details");
-    names << tr("Snapshots");
-    names << tr("Logs");
+    /* Cloud: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Cloud, tr("Cloud"),
+                               UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
 
-    /* Populate the items: */
-    for (int i = 0; i < names.size(); ++i)
-        m_items << new UIToolsItem(scene(),
-                                   classes.value(i),
-                                   types.value(i),
-                                   icons.value(i),
-                                   names.value(i));
+    /* Details: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Details, tr("Details"),
+                               UIIconPool::iconSet(":/machine_details_manager_24px.png", ":/machine_details_manager_disabled_24px.png"));
+
+    /* Snapshots: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Snapshots, tr("Snapshots"),
+                               UIIconPool::iconSet(":/snapshot_manager_24px.png",        ":/snapshot_manager_disabled_24px.png"));
+
+    /* Logs: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Logs, tr("Logs"),
+                               UIIconPool::iconSet(":/vm_show_logs_24px.png", ":/vm_show_logs_disabled_24px.png"));
 }
 
 void UIToolsModel::prepareHandlers()

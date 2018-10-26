@@ -180,7 +180,7 @@ private:
 
 UIToolsItem::UIToolsItem(QGraphicsScene *pScene,
                          UIToolClass enmClass, UIToolType enmType,
-                         const QIcon &icon, const QString &strName)
+                         const QString &strName, const QIcon &icon)
     : m_pScene(pScene)
     , m_enmClass(enmClass)
     , m_enmType(enmType)
