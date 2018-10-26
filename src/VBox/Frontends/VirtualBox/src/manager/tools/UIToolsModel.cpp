@@ -46,6 +46,10 @@
 # include "UIVirtualBoxEventHandler.h"
 # include "UIWizardNewVM.h"
 
+/* COM includes: */
+# include "CExtPack.h"
+# include "CExtPackManager.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
@@ -454,6 +458,10 @@ void UIToolsModel::prepareScene()
 
 void UIToolsModel::prepareItems()
 {
+    /* Check if Ext Pack is ready, some of actions my depend on it: */
+    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
+
     /* Enable both classes of tools initially: */
     m_statesToolsEnabled[UIToolClass_Global] = true;
     m_statesToolsEnabled[UIToolClass_Machine] = true;
@@ -471,8 +479,9 @@ void UIToolsModel::prepareItems()
                                UIIconPool::iconSet(":/host_iface_manager_24px.png", ":/host_iface_manager_disabled_24px.png"));
 
     /* Cloud: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Cloud, tr("Cloud"),
-                               UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
+    if (fExtPackAccessible)
+        m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Cloud, tr("Cloud"),
+                                   UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
 
     /* Details: */
     m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Details, tr("Details"),

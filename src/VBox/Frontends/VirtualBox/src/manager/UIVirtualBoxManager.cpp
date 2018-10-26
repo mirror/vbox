@@ -62,6 +62,8 @@
 # endif
 
 /* COM includes: */
+# include "CExtPack.h"
+# include "CExtPackManager.h"
 # include "CSystemProperties.h"
 
 /* Other VBox stuff: */
@@ -1347,6 +1349,10 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     if (!pMenu->isEmpty())
         return;
 
+    /* Check if Ext Pack is ready, some of actions my depend on it: */
+    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
+
     /* The Application / 'File' menu contents is very different depending on host type. */
 
 #ifdef VBOX_WS_MAC
@@ -1380,7 +1386,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+    if (fExtPackAccessible)
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1399,7 +1406,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
 #  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+    if (fExtPackAccessible)
+        addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 #  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
@@ -1427,7 +1435,8 @@ void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+    if (fExtPackAccessible)
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
