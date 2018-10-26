@@ -102,8 +102,7 @@ static RTEXITCODE rtCmdCpDoIt(PCRTCMDCPOPTS pOpts)
         return RTVfsChainMsgErrorExitFailure("RTVfsChainQueryInfo", pOpts->pszDestination, rc, offError, &ErrInfo.Core);
     else
         RT_ZERO(DstObjInfo);
-/* gcc 8.2 produces a tautological compare warning here. */
-#if !defined __GNUC__ || __GNUC__ != 8 || __GNUC_MINOR__ != 2
+#if !RT_GNUC_PREREQ(8,2) || RT_GNUC_PREREQ(8,3) /* GCC 8.2 produces a tautological compare warning/error here. */
     AssertCompile(!RTFS_IS_DIRECTORY(0));
 #endif
 
