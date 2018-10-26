@@ -5212,6 +5212,12 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         /*
          * Create all hardware streams.
          */
+        static const char * const s_apszNames[] =
+        {
+            "HDA SD0", "HDA SD1", "HDA SD2", "HDA SD3",
+            "HDA SD4", "HDA SD5", "HDA SD6", "HDA SD7",
+        };
+        AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
         for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
         {
             /* Create the emulation timer (per stream).
@@ -5220,11 +5226,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
              *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
              *        instead of the LPIB registers.
              */
-            char szTimer[16];
-            RTStrPrintf2(szTimer, sizeof(szTimer), "HDA SD%RU8", i);
-
             rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, &pThis->aStreams[i],
-                                        TMTIMER_FLAGS_NO_CRIT_SECT, szTimer, &pThis->pTimer[i]);
+                                        TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimer[i]);
             AssertRCReturn(rc, rc);
 
             /* Use our own critcal section for the device timer.
