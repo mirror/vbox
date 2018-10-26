@@ -2835,6 +2835,14 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
 {
 #ifndef IN_RC
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+    {
+        PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
+            return uTicks + pVmcs->u64TscOffset.u;
+        return uTicks;
+    }
+
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
         if (!HMHasGuestSvmVmcbCached(pVCpu))
@@ -2844,8 +2852,6 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
         }
         return HMSvmNstGstApplyTscOffset(pVCpu, uTicks);
     }
-
-    /** @todo Intel. */
 #else
     RT_NOREF(pVCpu);
 #endif
