@@ -1054,10 +1054,12 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t
 
     pBusLogic->regInterrupt |= BL_INTR_INTV;
     if (pBusLogic->fIRQEnabled && !fSuppressIrq)
+    {
         if (!pBusLogic->uIsaIrq)
             PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
         else
             PDMDevHlpISASetIrq(pBusLogic->CTX_SUFF(pDevIns), pBusLogic->uIsaIrq, 1);
+    }
 }
 
 /**
