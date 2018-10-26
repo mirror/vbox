@@ -139,7 +139,7 @@ void UIGuestControlFileManagerDialog::saveSettings() const
 #ifdef VBOX_WS_MAC
     /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setGuestControlDialogFileManagerDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
+    gEDataManager->setGuestControlFileManagerDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
     gEDataManager->setGuestControlFileManagerDialogGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
