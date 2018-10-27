@@ -1388,6 +1388,10 @@ static void vboxNetLwfWinDestroySG(PINTNETSG pSG)
     Log4(("vboxNetLwfWinDestroySG: freed SG 0x%p\n", pSG));
 }
 
+/**
+ * Worker for vboxNetLwfWinNBtoSG() that gets the max segment count needed.
+ * @note  vboxNetLwfWinNBtoSG may use fewer depending on cbPacket and offset!
+ */
 DECLINLINE(ULONG) vboxNetLwfWinCalcSegments(PNET_BUFFER pNetBuf)
 {
     ULONG cSegs = 0;
@@ -1597,7 +1601,7 @@ static PNET_BUFFER_LIST vboxNetLwfWinSGtoNB(PVBOXNETLWF_MODULE pModule, PINTNETS
 static PINTNETSG vboxNetLwfWinNBtoSG(PVBOXNETLWF_MODULE pModule, PNET_BUFFER pNetBuf)
 {
     ULONG cbPacket = NET_BUFFER_DATA_LENGTH(pNetBuf);
-    UINT cSegs = vboxNetLwfWinCalcSegments(pNetBuf);
+    ULONG cSegs = vboxNetLwfWinCalcSegments(pNetBuf);
     /* Allocate and initialize SG */
     PINTNETSG pSG = (PINTNETSG)NdisAllocateMemoryWithTagPriority(pModule->hFilter,
                                                                  RT_UOFFSETOF_DYN(INTNETSG, aSegs[cSegs]),
@@ -1607,34 +1611,42 @@ static PINTNETSG vboxNetLwfWinNBtoSG(PVBOXNETLWF_MODULE pModule, PNET_BUFFER pNe
     Log4(("vboxNetLwfWinNBtoSG: allocated SG 0x%p\n", pSG));
     IntNetSgInitTempSegs(pSG, cbPacket /*cbTotal*/, cSegs, cSegs /*cSegsUsed*/);
 
-    int rc = NDIS_STATUS_SUCCESS;
     ULONG uOffset = NET_BUFFER_CURRENT_MDL_OFFSET(pNetBuf);
     cSegs = 0;
     for (PMDL pMdl = NET_BUFFER_CURRENT_MDL(pNetBuf);
          pMdl != NULL && cbPacket > 0;
          pMdl = NDIS_MDL_LINKAGE(pMdl))
     {
-        PUCHAR pSrc = (PUCHAR)MmGetSystemAddressForMdlSafe(pMdl, LowPagePriority);
-        if (!pSrc)
-        {
-            rc = NDIS_STATUS_RESOURCES;
-            break;
-        }
         ULONG cbSrc = MmGetMdlByteCount(pMdl);
         if (cbSrc == 0)
             continue; /* Skip empty MDLs (see @bugref{9233}) */
 
-        if (uOffset)
+        PUCHAR pSrc = (PUCHAR)MmGetSystemAddressForMdlSafe(pMdl, LowPagePriority);
+        if (!pSrc)
         {
-            Assert(uOffset < cbSrc);
-            pSrc  += uOffset;
-            cbSrc -= uOffset;
-            uOffset = 0;
+            vboxNetLwfWinDestroySG(pSG);
+            return NULL;
         }
 
         if (cbSrc > cbPacket)
             cbSrc = cbPacket;
 
+        if (uOffset)
+        {
+            if (uOffset < cbSrc)
+            {
+                pSrc  += uOffset;
+                cbSrc -= uOffset;
+                uOffset = 0;
+            }
+            else
+            {
+                uOffset -= cbSrc;
+                continue;
+            }
+        }
+
+        Assert(cSegs < pSG->cSegsAlloc);
         pSG->aSegs[cSegs].pv = pSrc;
         pSG->aSegs[cSegs].cb = cbSrc;
         pSG->aSegs[cSegs].Phys = NIL_RTHCPHYS;
@@ -1642,18 +1654,12 @@ static PINTNETSG vboxNetLwfWinNBtoSG(PVBOXNETLWF_MODULE pModule, PNET_BUFFER pNe
         cbPacket -= cbSrc;
     }
 
-    Assert(cSegs <= pSG->cSegsAlloc);
+    Assert(cbPacket == 0);
+    Assert(cSegs <= pSG->cSegsUsed);
 
-    if (RT_FAILURE(rc))
-    {
-        vboxNetLwfWinDestroySG(pSG);
-        pSG = NULL;
-    }
-    else
-    {
-        Assert(cbPacket == 0);
-        Assert(pSG->cSegsUsed == cSegs);
-    }
+    /* Update actual segment count in case we used fewer than anticipated. */
+    pSG->cSegsUsed = (uint16_t)cSegs;
+
     return pSG;
 }
 
