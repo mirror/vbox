@@ -2228,14 +2228,22 @@ RTDECL(int) RTDbgModUnwindFrame(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR of
     /*
      * Try the debug module first, then the image.
      */
-    int rc = pDbgMod->pDbgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
-    if (rc == VERR_DBG_NO_UNWIND_INFO)
-        rc = pDbgMod->pImgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
-    else if (rc == VERR_DBG_UNWIND_INFO_NOT_FOUND)
+    int rc = VERR_DBG_NO_UNWIND_INFO;
+    if (pDbgMod->pDbgVt->pfnUnwindFrame)
+        rc = pDbgMod->pDbgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
+    if (   (   rc == VERR_DBG_NO_UNWIND_INFO
+            || rc == VERR_DBG_UNWIND_INFO_NOT_FOUND)
+        && pDbgMod->pImgVt
+        && pDbgMod->pImgVt->pfnUnwindFrame)
     {
-        rc = pDbgMod->pImgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
         if (rc == VERR_DBG_NO_UNWIND_INFO)
-            rc = VERR_DBG_UNWIND_INFO_NOT_FOUND;
+            rc = pDbgMod->pImgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
+        else
+        {
+            rc = pDbgMod->pImgVt->pfnUnwindFrame(pDbgMod, iSeg, off, pState);
+            if (rc == VERR_DBG_NO_UNWIND_INFO)
+                rc = VERR_DBG_UNWIND_INFO_NOT_FOUND;
+        }
     }
 
     RTDBGMOD_UNLOCK(pDbgMod);
