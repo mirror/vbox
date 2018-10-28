@@ -770,7 +770,7 @@ void testDouble(void)
         int rcTmp = RTJsonParseFromString(&hTmpValue, TST_DBL_MIN_STRING1, NULL);
         RTJsonValueRelease(hTmpValue);
         if (rcTmp == VERR_INVALID_PARAMETER)
-            fGorksMinString = false;
+            fGroksMinString = false;
 #endif
 
         /* from json: */
