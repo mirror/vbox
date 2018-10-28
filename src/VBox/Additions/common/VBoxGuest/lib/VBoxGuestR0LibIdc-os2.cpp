@@ -40,9 +40,11 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+RT_C_DECLS_BEGIN /* for watcom */
 /* This is defined in some assembly file.  The AttachDD operation
    is done in the driver init code. */
 extern VBGLOS2ATTACHDD g_VBoxGuestIDC;
+RT_C_DECLS_END
 
 
 
