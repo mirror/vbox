@@ -763,6 +763,16 @@ void testDouble(void)
     /* deserialize: */
     RTERRINFOSTATIC ErrInfo;
     {
+        /* Some linux systems and probably all solaris fail to parse the longer MIN string, so just detect and skip. */
+        bool fGroksMinString = true;
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+        RTJSONVAL hTmpValue = NIL_RTJSONVAL;
+        int rcTmp = RTJsonParseFromString(&hTmpValue, TST_DBL_MIN_STRING1, NULL);
+        RTJsonValueRelease(hTmpValue);
+        if (rcTmp == VERR_INVALID_PARAMETER)
+            fGorksMinString = false;
+#endif
+
         /* from json: */
         RTCRestDouble obj4;
         obj4.setNull();
@@ -780,10 +790,13 @@ void testDouble(void)
         RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj4.isNull() == false);
 
-        obj4.setNull();
-        RTTESTI_CHECK_RC(deserializeFromJson(&obj4, TST_DBL_MIN_STRING1, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
-        RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MIN);
-        RTTESTI_CHECK(obj4.isNull() == false);
+        if (fGroksMinString)
+        {
+            obj4.setNull();
+            RTTESTI_CHECK_RC(deserializeFromJson(&obj4, TST_DBL_MIN_STRING1, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
+            RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MIN);
+            RTTESTI_CHECK(obj4.isNull() == false);
+        }
 
         RTTESTI_CHECK_RC(deserializeFromJson(&obj4, "null", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
         RTTESTI_CHECK(obj4.m_rdValue == 0.0);
@@ -831,13 +844,7 @@ void testDouble(void)
         RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MAX);
         RTTESTI_CHECK(obj4.isNull() == false);
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-        /* Some linux systems and probably all solaris fail to parse the longer MIN string, so just detect and skip. */
-        RTJSONVAL hTmpValue = NIL_RTJSONVAL;
-        int rcTmp = RTJsonParseFromString(&hTmpValue, TST_DBL_MIN_STRING1, NULL);
-        RTJsonValueRelease(hTmpValue);
-        if (rcTmp != VERR_INVALID_PARAMETER)
-#endif
+        if (fGroksMinString)
         {
             RTTESTI_CHECK_RC(fromString(&obj4, TST_DBL_MIN_STRING1, &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
             RTTESTI_CHECK(obj4.m_rdValue == TST_DBL_MIN);
