@@ -35,7 +35,6 @@
 #define LOG_GROUP LOG_GROUP_HGCM
 
 #include "VBoxGuestR0LibInternal.h"
-#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
@@ -536,7 +535,7 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, PCVBGLIOCHGCMC
                     pDstParm->u.PageList.offset = offExtra;
                     pDstPgLst->flags            = pSrcPgLst->flags;
                     pDstPgLst->offFirstPage     = pSrcPgLst->offFirstPage;
-                    pDstPgLst->cPages           = cPages;
+                    pDstPgLst->cPages           = (uint16_t)cPages;
                     for (iPage = 0; iPage < cPages; iPage++)
                         pDstPgLst->aPages[iPage] = pSrcPgLst->aPages[iPage];
 
@@ -583,8 +582,8 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, PCVBGLIOCHGCMC
                             pDstPgLst->offFirstPage = (uintptr_t)pvSmallBuf & PAGE_OFFSET_MASK;
                         else
 #endif
-                            pDstPgLst->offFirstPage = pSrcParm->u.Pointer.u.linearAddr & PAGE_OFFSET_MASK;
-                        pDstPgLst->cPages           = (uint32_t)cPages; Assert(pDstPgLst->cPages == cPages);
+                            pDstPgLst->offFirstPage = (uint16_t)(pSrcParm->u.Pointer.u.linearAddr & PAGE_OFFSET_MASK);
+                        pDstPgLst->cPages           = (uint16_t)cPages; Assert(pDstPgLst->cPages == cPages);
                         for (iPage = 0; iPage < cPages; iPage++)
                         {
                             pDstPgLst->aPages[iPage] = RTR0MemObjGetPagePhysAddr(hObj, iPage);

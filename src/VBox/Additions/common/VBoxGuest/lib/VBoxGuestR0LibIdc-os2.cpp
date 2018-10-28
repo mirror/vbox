@@ -56,6 +56,7 @@ int VBOXCALL vbglR0IdcNativeOpen(PVBGLIDCHANDLE pHandle, PVBGLIOCIDCCONNECT pReq
         && RT_VALID_PTR(g_VBoxGuestIDC.pfnServiceEP))
         return g_VBoxGuestIDC.pfnServiceEP(g_VBoxGuestIDC.u32Session, VBGL_IOCTL_IDC_CONNECT, &pReq->Hdr, sizeof(*pReq));
     Log(("vbglDriverOpen: failed\n"));
+    RT_NOREF(pHandle);
     return VERR_FILE_NOT_FOUND;
 }
 
