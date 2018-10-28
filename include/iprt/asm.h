@@ -88,17 +88,11 @@
 /*
  * Undefine all symbols we have Watcom C/C++ #pragma aux'es for.
  */
-#undef RT_ASM_DECL_PRAGMA_WATCOM
 #if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
 # include "asm-watcom-x86-16.h"
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) type
 #elif defined(__WATCOMC__) && ARCH_BITS == 32 && defined(RT_ARCH_X86)
 # include "asm-watcom-x86-32.h"
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) type
-#else
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) DECLASM(type)
 #endif
-
 
 
 /** @defgroup grp_rt_asm    ASM - Assembly Routines
@@ -5222,7 +5216,7 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
  * @remarks Similar to ffs() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(unsigned) ASMBitFirstSetU32(uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU32(uint32_t u32);
 #else
 DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32)
 {
@@ -5288,7 +5282,7 @@ DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32)
  * @remarks Similar to ffs() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(unsigned) ASMBitFirstSetU64(uint64_t u64);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU64(uint64_t u64);
 #else
 DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64)
 {
@@ -5343,7 +5337,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64)
  * @remarks For 16-bit bs3kit code.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(unsigned) ASMBitFirstSetU16(uint16_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU16(uint16_t u16);
 #else
 DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16)
 {
@@ -5362,7 +5356,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16)
  * @remark  Similar to fls() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(unsigned) ASMBitLastSetU32(uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU32(uint32_t u32);
 #else
 DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32)
 {
@@ -5428,7 +5422,7 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
  * @remark  Similar to fls() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(unsigned) ASMBitLastSetU64(uint64_t u64);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU64(uint64_t u64);
 #else
 DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64)
 {
@@ -5481,7 +5475,7 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64)
  * @remarks For 16-bit bs3kit code.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(unsigned) ASMBitLastSetU16(uint16_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU16(uint16_t u16);
 #else
 DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16)
 {

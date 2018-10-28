@@ -87,15 +87,10 @@
 /*
  * Undefine all symbols we have Watcom C/C++ #pragma aux'es for.
  */
-#undef RT_ASM_DECL_PRAGMA_WATCOM
 #if defined(__WATCOMC__) && ARCH_BITS == 16
 # include "asm-amd64-x86-watcom-16.h"
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) type
 #elif defined(__WATCOMC__) && ARCH_BITS == 32
 # include "asm-amd64-x86-watcom-32.h"
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) type
-#else
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) DECLASM(type)
 #endif
 
 

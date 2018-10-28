@@ -1312,6 +1312,26 @@
  */
 #define DECLASMTYPE(type)       type RTCALL
 
+/** @def RT_ASM_DECL_PRAGMA_WATCOM
+ * How to declare a assembly method prototype with watcom \#pragma aux definition.  */
+/** @def RT_ASM_DECL_PRAGMA_WATCOM_386
+ * Same as RT_ASM_DECL_PRAGMA_WATCOM, but there is no 16-bit version when
+ * 8086, 80186 or 80286 is selected as the target CPU. */
+#if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
+# define RT_ASM_DECL_PRAGMA_WATCOM(type) type
+# if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
+#  define RT_ASM_DECL_PRAGMA_WATCOM_386(type)   DECLASM(type)
+# else
+#  define RT_ASM_DECL_PRAGMA_WATCOM_386(type)   type
+# endif
+#elif defined(__WATCOMC__) && ARCH_BITS == 32 && defined(RT_ARCH_X86)
+# define RT_ASM_DECL_PRAGMA_WATCOM(type)        type
+# define RT_ASM_DECL_PRAGMA_WATCOM_386(type)    type
+#else
+# define RT_ASM_DECL_PRAGMA_WATCOM(type)        DECLASM(type)
+# define RT_ASM_DECL_PRAGMA_WATCOM_386(type)    DECLASM(type)
+#endif
+
 /** @def DECL_NO_RETURN
  * How to declare a function which does not return.
  * @note This macro can be combined with other macros, for example
