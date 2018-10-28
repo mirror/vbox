@@ -1216,6 +1216,8 @@
 # if __GNUC__ >= 3 /* not entirely sure when this was added */
 #  define RT_COMPILER_SUPPORTS_VA_ARGS
 # endif
+#elif defined(__WATCOMC__)
+# define RT_COMPILER_SUPPORTS_VA_ARGS
 #endif
 
 

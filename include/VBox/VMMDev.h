@@ -1755,7 +1755,7 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
         case VMMDevReq_GetDisplayChangeRequestEx:
             return sizeof(VMMDevDisplayChangeRequestEx);
         case VMMDevReq_GetDisplayChangeRequestMulti:
-            return RT_UOFFSETOF(VMMDevDisplayChangeRequestMulti, aDisplays);
+            return RT_UOFFSETOF(VMMDevDisplayChangeRequestMulti, aDisplays[0]);
         case VMMDevReq_VideoModeSupported:
             return sizeof(VMMDevVideoModeSupportedRequest);
         case VMMDevReq_GetHeightReduction:

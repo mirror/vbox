@@ -37,18 +37,20 @@
  * Note! The #undef that preceds the #pragma aux statements is for undoing
  *       the mangling, because the symbol in #pragma aux [symbol] statements
  *       doesn't get subjected to preprocessing.  This is also why we include
- *       the watcom header at the top rather than at the bottom of the
- *       asm-amd64-x86.h file.
+ *       the watcom header at both the top and the bottom of asm-amd64-x86.h file.
  */
 
 #undef      ASMGetIDTR
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetIDTR = \
     ".286p" \
     "sidt fword ptr es:[bx]" \
     parm [es bx] \
     modify exact [];
+#endif
 
 #undef      ASMGetIdtrLimit
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetIdtrLimit = \
     ".286p" \
     "sub  sp, 8" \
@@ -59,106 +61,134 @@
     parm [] \
     value [bx] \
     modify exact [bx];
+#endif
 
 #undef      ASMSetIDTR
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetIDTR = \
     ".286p" \
     "lidt fword ptr es:[bx]" \
     parm [es bx] nomemory \
     modify nomemory;
+#endif
 
 #undef      ASMGetGDTR
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetGDTR = \
     ".286p" \
     "sgdt fword ptr es:[bx]" \
     parm [es bx] \
     modify exact [];
+#endif
 
 #undef      ASMSetGDTR
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetGDTR = \
     ".286p" \
     "lgdt fword ptr es:[bx]" \
     parm [es bx] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMGetCS
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetCS = \
     "mov ax, cs" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetDS
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDS = \
     "mov ax, ds" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetES
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetES = \
     "mov ax, es" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetFS
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetFS = \
     ".386" \
     "mov ax, fs" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetGS
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetGS = \
     ".386" \
     "mov ax, gs" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetSS
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetSS = \
     "mov ax, ss" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetTR
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetTR = \
     ".286" \
     "str ax" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetLDTR
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetLDTR = \
     ".286" \
     "sldt ax" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 /** @todo ASMGetSegAttr   */
 
 #undef      ASMGetFlags
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetFlags = \
     "pushf" \
     "pop ax" \
     parm [] nomemory \
     value [ax] \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMSetFlags
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetFlags = \
     "push ax" \
     "popf" \
     parm [ax] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMChangeFlags
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMChangeFlags = \
     "pushf" \
     "pop ax" \
@@ -169,8 +199,10 @@
     parm [dx] [cx] nomemory \
     value [ax] \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMAddFlags
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMAddFlags = \
     "pushf" \
     "pop ax" \
@@ -180,8 +212,10 @@
     parm [dx] nomemory \
     value [ax] \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMClearFlags
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMClearFlags = \
     "pushf" \
     "pop ax" \
@@ -191,10 +225,12 @@
     parm [dx] nomemory \
     value [ax] \
     modify exact [dx] nomemory;
+#endif
 
 /* Note! Must use the 64-bit integer return value convension.
          The order of registers in the value [set] does not seem to mean anything. */
 #undef      ASMReadTSC
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMReadTSC = \
     ".586" \
     "rdtsc" \
@@ -206,6 +242,7 @@
     parm [] nomemory \
     value [dx cx bx ax] \
     modify exact [ax bx cx dx] nomemory;
+#endif
 
 /** @todo ASMReadTscWithAux if needed (rdtscp not recognized by compiler)   */
 
@@ -216,6 +253,7 @@
 /* ASMCpuId_ECX_EDX: Implemented externally, too many parameters. */
 
 #undef      ASMCpuId_EAX
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMCpuId_EAX = \
     ".586" \
     "xchg ax, dx" \
@@ -227,8 +265,10 @@
     parm [ax dx] \
     value [ax dx] \
     modify exact [ax bx cx dx];
+#endif
 
 #undef      ASMCpuId_EBX
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMCpuId_EBX = \
     ".586" \
     "xchg ax, dx" \
@@ -240,8 +280,10 @@
     parm [ax dx] \
     value [ax bx] \
     modify exact [ax bx cx dx];
+#endif
 
 #undef      ASMCpuId_ECX
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMCpuId_ECX = \
     ".586" \
     "xchg ax, dx" \
@@ -253,8 +295,10 @@
     parm [ax dx] \
     value [ax cx] \
     modify exact [ax bx cx dx];
+#endif
 
 #undef      ASMCpuId_EDX
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMCpuId_EDX = \
     ".586" \
     "xchg ax, dx" \
@@ -266,6 +310,7 @@
     parm [ax dx] \
     value [ax dx] \
     modify exact [ax bx cx dx];
+#endif
 
 /* ASMHasCpuId: MSC inline in main source file. */
 /* ASMGetApicId: Implemented externally, lazy bird. */
@@ -278,6 +323,7 @@
             si:di
          This ordering seems to apply to parameter values too. */
 #undef      ASMGetCR0
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetCR0 = \
     ".386" \
     "mov eax, cr0" \
@@ -286,8 +332,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMSetCR0
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetCR0 = \
     ".386" \
     "shl edx, 16" \
@@ -295,8 +343,10 @@
     "mov cr0, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMGetCR2
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetCR2 = \
     ".386" \
     "mov eax, cr2" \
@@ -305,8 +355,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMSetCR2
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetCR2 = \
     ".386" \
     "shl edx, 16" \
@@ -314,8 +366,10 @@
     "mov cr2, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMGetCR3
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetCR3 = \
     ".386" \
     "mov eax, cr3" \
@@ -324,8 +378,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMSetCR3
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetCR3 = \
     ".386" \
     "shl edx, 16" \
@@ -333,16 +389,20 @@
     "mov cr3, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMReloadCR3
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMReloadCR3 = \
     ".386" \
     "mov eax, cr3" \
     "mov cr3, eax" \
     parm [] nomemory \
     modify exact [ax] nomemory;
+#endif
 
 #undef      ASMGetCR4
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetCR4 = \
     ".386" \
     "mov eax, cr4" \
@@ -351,8 +411,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMSetCR4
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetCR4 = \
     ".386" \
     "shl edx, 16" \
@@ -360,23 +422,29 @@
     "mov cr4, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 /* ASMGetCR8: Don't bother for 16-bit. */
 /* ASMSetCR8: Don't bother for 16-bit. */
 
 #undef      ASMIntEnable
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMIntEnable = \
     "sti" \
     parm [] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMIntDisable
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMIntDisable = \
     "cli" \
     parm [] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMIntDisableFlags
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMIntDisableFlags = \
     "pushf" \
     "cli" \
@@ -384,14 +452,18 @@
     parm [] nomemory \
     value [ax] \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMHalt
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMHalt = \
     "hlt" \
     parm [] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMRdMsr
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMRdMsr = \
     ".586" \
     "shl ecx, 16" \
@@ -405,12 +477,14 @@
     parm [ax cx] nomemory \
     value [dx cx bx ax] \
     modify exact [ax bx cx dx] nomemory;
+#endif
 
 /* ASMWrMsr: Implemented externally, lazy bird. */
 /* ASMRdMsrEx: Implemented externally, lazy bird. */
 /* ASMWrMsrEx: Implemented externally, lazy bird. */
 
 #undef      ASMRdMsr_Low
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMRdMsr_Low = \
     ".586" \
     "shl ecx, 16" \
@@ -421,8 +495,10 @@
     parm [ax cx] nomemory \
     value [ax dx] \
     modify exact [ax bx cx dx] nomemory;
+#endif
 
 #undef      ASMRdMsr_High
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMRdMsr_High = \
     ".586" \
     "shl ecx, 16" \
@@ -433,9 +509,11 @@
     parm [ax cx] nomemory \
     value [ax dx] \
     modify exact [ax bx cx dx] nomemory;
+#endif
 
 
 #undef      ASMGetDR0
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDR0 = \
     ".386" \
     "mov eax, dr0" \
@@ -444,8 +522,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMGetDR1
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDR1 = \
     ".386" \
     "mov eax, dr1" \
@@ -454,8 +534,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMGetDR2
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDR2 = \
     ".386" \
     "mov eax, dr2" \
@@ -464,8 +546,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMGetDR3
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDR3 = \
     ".386" \
     "mov eax, dr3" \
@@ -474,8 +558,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMGetDR6
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDR6 = \
     ".386" \
     "mov eax, dr6" \
@@ -484,8 +570,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMGetAndClearDR6
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetAndClearDR6 = \
     ".386" \
     "mov edx, 0ffff0ff0h" \
@@ -496,8 +584,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMGetDR7
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMGetDR7 = \
     ".386" \
     "mov eax, dr7" \
@@ -506,8 +596,10 @@
     parm [] nomemory \
     value [ax dx] \
     modify exact [ax dx] nomemory;
+#endif
 
 #undef      ASMSetDR0
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetDR0 = \
     ".386" \
     "shl edx, 16" \
@@ -515,8 +607,10 @@
     "mov dr0, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMSetDR1
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetDR1 = \
     ".386" \
     "shl edx, 16" \
@@ -524,8 +618,10 @@
     "mov dr1, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMSetDR2
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetDR2 = \
     ".386" \
     "shl edx, 16" \
@@ -533,8 +629,10 @@
     "mov dr2, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMSetDR3
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetDR3 = \
     ".386" \
     "shl edx, 16" \
@@ -542,8 +640,10 @@
     "mov dr3, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMSetDR6
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetDR6 = \
     ".386" \
     "shl edx, 16" \
@@ -551,8 +651,10 @@
     "mov dr6, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 #undef      ASMSetDR7
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMSetDR7 = \
     ".386" \
     "shl edx, 16" \
@@ -560,36 +662,45 @@
     "mov dr7, edx" \
     parm [ax dx] nomemory \
     modify exact [dx] nomemory;
+#endif
 
 /* Yeah, could've used outp here, but this keeps the main file simpler. */
 #undef      ASMOutU8
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutU8 = \
     "out dx, al" \
     parm [dx] [al] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMInU8
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInU8 = \
     "in al, dx" \
     parm [dx] nomemory \
     value [al] \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMOutU16
-#undef      ASMOutU16
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutU16 = \
     "out dx, ax" \
     parm [dx] [ax] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMInU16
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInU16 = \
     "in ax, dx" \
     parm [dx] nomemory \
     value [ax] \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMOutU32
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutU32 = \
     ".386" \
     "shl ecx, 16" \
@@ -598,8 +709,10 @@
     "out dx, eax" \
     parm [dx] [ax cx] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMInU32
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInU32 = \
     ".386" \
     "in eax, dx" \
@@ -608,53 +721,67 @@
     parm [dx] nomemory \
     value [ax cx] \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMOutStrU8
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutStrU8 = \
     ".186" \
     "mov ds, bx" \
     "rep outsb" \
     parm [dx] [bx si] [cx] nomemory \
     modify exact [si cx ds] nomemory;
+#endif
 
 #undef      ASMInStrU8
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInStrU8 = \
     ".186" \
     "rep insb" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
+#endif
 
 #undef      ASMOutStrU16
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutStrU16 = \
     ".186" \
     "mov ds, bx" \
     "rep outsw" \
     parm [dx] [bx si] [cx] nomemory \
     modify exact [si cx ds] nomemory;
+#endif
 
 #undef      ASMInStrU16
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInStrU16 = \
     ".186" \
     "rep insw" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
+#endif
 
 #undef      ASMOutStrU32
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutStrU32 = \
     ".386" \
     "mov ds, bx" \
     "rep outsd" \
     parm [dx] [bx si] [cx] nomemory \
     modify exact [si cx ds] nomemory;
+#endif
 
 #undef      ASMInStrU32
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInStrU32 = \
     ".386" \
     "rep insd" \
     parm [dx] [es di] [cx] \
     modify exact [di cx];
+#endif
 
 #undef ASMInvalidatePage
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInvalidatePage = \
     ".486" \
     "shl edx, 16" \
@@ -662,20 +789,25 @@
     "invlpg [edx]" \
     parm [ax dx] \
     modify exact [dx];
+#endif
 
 #undef      ASMWriteBackAndInvalidateCaches
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMWriteBackAndInvalidateCaches = \
     ".486" \
     "wbinvd" \
     parm [] nomemory \
     modify exact [] nomemory;
+#endif
 
 #undef      ASMInvalidateInternalCaches
+#ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMInvalidateInternalCaches = \
     ".486" \
     "invd" \
     parm [] \
     modify exact [];
+#endif
 
 #endif
 
