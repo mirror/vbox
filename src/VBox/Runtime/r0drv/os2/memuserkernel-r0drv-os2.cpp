@@ -78,12 +78,14 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
 
 RTR0DECL(int) RTR0MemKernelCopyFrom(void *pvDst, void const *pvSrc, size_t cb)
 {
+    RT_NOREF(pvDst, pvSrc, cb);
     return VERR_NOT_SUPPORTED;
 }
 
 
 RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
 {
+    RT_NOREF(pvDst, pvSrc, cb);
     return VERR_NOT_SUPPORTED;
 }
 

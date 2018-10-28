@@ -288,7 +288,7 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
     if (!rtTimerIsValid(pTimer))
         return VERR_INVALID_HANDLE;
-
+    RT_NOREF(u64NanoInterval);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -366,12 +366,14 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 
 RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32Granted)
 {
+    RT_NOREF(u32Request, pu32Granted);
     return VERR_NOT_SUPPORTED;
 }
 
 
 RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 {
+    RT_NOREF(u32Granted);
     return VERR_NOT_SUPPORTED;
 }
 

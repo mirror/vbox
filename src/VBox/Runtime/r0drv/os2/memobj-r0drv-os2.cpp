@@ -79,7 +79,6 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS_NC:
             AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
             return VERR_INTERNAL_ERROR;
-            break;
 
         case RTR0MEMOBJTYPE_PHYS:
             if (!pMemOs2->Core.pv)
@@ -308,6 +307,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
 
 DECLHIDDEN(int) rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
 {
+    RT_NOREF(ppMem, pvFixed, cb, uAlignment);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -315,6 +315,7 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *
 DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment,
                                             RTR0PROCESS R0Process)
 {
+    RT_NOREF(ppMem, R3PtrFixed, cb, uAlignment, R0Process);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -355,7 +356,8 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                 /* no ring-0 mapping, so allocate a mapping in the process. */
                 AssertMsgReturn(fProt & RTMEM_PROT_WRITE, ("%#x\n", fProt), VERR_NOT_SUPPORTED);
                 Assert(!pMemToMapOs2->Core.u.Phys.fAllocated);
-                ULONG ulPhys = pMemToMapOs2->Core.u.Phys.PhysBase;
+                ULONG ulPhys = (ULONG)pMemToMapOs2->Core.u.Phys.PhysBase;
+                AssertReturn(ulPhys == pMemToMapOs2->Core.u.Phys.PhysBase, VERR_OUT_OF_RANGE);
                 rc = KernVMAlloc(pMemToMapOs2->Core.cb, VMDHA_PHYS, &pvR0, (PPVOID)&ulPhys, NULL);
                 if (rc)
                     return RTErrConvertFromOS2(rc);
@@ -366,7 +368,6 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
         case RTR0MEMOBJTYPE_PHYS_NC:
             AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
             return VERR_INTERNAL_ERROR_3;
-            break;
 
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
@@ -443,7 +444,6 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
         case RTR0MEMOBJTYPE_PHYS_NC:
             AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
             return VERR_INTERNAL_ERROR_5;
-            break;
 
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
