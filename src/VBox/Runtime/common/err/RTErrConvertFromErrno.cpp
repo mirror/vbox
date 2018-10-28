@@ -389,10 +389,14 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
         case EHOSTUNREACH:      return VERR_NET_HOST_UNREACHABLE;
 #endif
 #ifdef EALREADY
+# if !defined(ENOLCK) || (EALREADY != ENOLCK)
         case EALREADY:          return VERR_NET_ALREADY_IN_PROGRESS;
+# endif
 #endif
 #ifdef EINPROGRESS
+# if !defined(ENODEV) || (EINPROGRESS != ENODEV)
         case EINPROGRESS:       return VERR_NET_IN_PROGRESS;
+# endif
 #endif
 #ifdef ESTALE
         //case ESTALE           116     /* Stale NFS file handle */
