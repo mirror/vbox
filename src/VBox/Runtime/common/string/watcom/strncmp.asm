@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT strlen - AMD64 & X86.
+; IPRT - No-CRT strncmp - Watcom register calling convention.
 ;
 
 ;
@@ -26,40 +26,7 @@
 
 %include "iprt/asmdefs.mac"
 
-BEGINCODE
-
-;;
-; @param    psz     gcc: rdi  msc: rcx  x86: [esp+4]  wcall: eax
-RT_NOCRT_BEGINPROC strlen
-        cld
-%ifdef RT_ARCH_AMD64
- %ifdef ASM_CALL64_MSC
-        mov     r9, rdi                 ; save rdi
-        mov     rdi, rcx
- %endif
-%else
-        mov     edx, edi                ; save edi
- %ifdef ASM_CALL32_WATCOM
-        mov     edi, eax
- %else
-        mov     edi, [esp + 4]
- %endif
-%endif
-
-        ; do the search
-        mov     xCX, -1
-        xor     eax, eax
-        repne   scasb
-
-        ; found it
-        neg     xCX
-        lea     xAX, [xCX - 2]
-%ifdef ASM_CALL64_MSC
-        mov     rdi, r9
-%endif
-%ifdef RT_ARCH_X86
-        mov     edi, edx
-%endif
-        ret
-ENDPROC RT_NOCRT(strlen)
+%define ASM_CALL32_WATCOM
+%define NAME(name) name %+ _
+%include "common/string/strncmp.asm"
 

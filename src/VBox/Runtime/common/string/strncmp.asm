@@ -29,9 +29,9 @@
 BEGINCODE
 
 ;;
-; @param    psz1   gcc: rdi  msc: rcx  x86:[esp+4]
-; @param    psz2   gcc: rsi  msc: rdx  x86:[esp+8]
-; @param    cch    gcc: rdx  msc: r8   x86:[esp+12]
+; @param    psz1   gcc: rdi  msc: rcx  x86:[esp+4]   wcall: eax
+; @param    psz2   gcc: rsi  msc: rdx  x86:[esp+8]   wcall: edx
+; @param    cch    gcc: rdx  msc: r8   x86:[esp+12]  wcall: ebx
 RT_NOCRT_BEGINPROC strncmp
         ; input
 %ifdef RT_ARCH_AMD64
@@ -44,6 +44,12 @@ RT_NOCRT_BEGINPROC strncmp
   %define psz2 rsi
   %define cch  rdx
  %endif
+%elifdef ASM_CALL32_WATCOM
+        mov    ecx, eax
+  %define psz1 ecx
+  %define psz2 edx
+  %define cch  ebx
+
 %elifdef RT_ARCH_X86
         mov     ecx, [esp + 4]
         mov     edx, [esp + 8]
@@ -104,8 +110,10 @@ RT_NOCRT_BEGINPROC strncmp
 
 .equal:
         xor     eax, eax
-%ifdef RT_ARCH_X86
+%ifndef ASM_CALL32_WATCOM
+ %ifdef RT_ARCH_X86
         pop     ebx
+ %endif
 %endif
         ret
 
@@ -113,8 +121,10 @@ RT_NOCRT_BEGINPROC strncmp
         movzx   ecx, ah
         and     eax, 0ffh
         sub     eax, ecx
-%ifdef RT_ARCH_X86
+%ifndef ASM_CALL32_WATCOM
+ %ifdef RT_ARCH_X86
         pop     ebx
+ %endif
 %endif
         ret
 ENDPROC RT_NOCRT(strncmp)

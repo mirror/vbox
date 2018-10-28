@@ -35,9 +35,11 @@
 #include <iprt/types.h>
 
 #define INCL_ERRORS
-#include <os2ddk/bsekee.h>
+#define INCL_DOSSEMAPHORES /* for SEM_INDEFINITE_WAIT */
 #undef RT_MAX
+#include <os2ddk/bsekee.h>
 #include <os2ddk/devhlp.h>
+#undef RT_MAX
 
 RT_C_DECLS_BEGIN
 

@@ -29,9 +29,9 @@
 BEGINCODE
 
 ;;
-; @param    pv      gcc: rdi  msc: ecx  x86:[esp+4]
-; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
-; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
+; @param    pv      gcc: rdi  msc: ecx  x86:[esp+4]   wcall: eax
+; @param    ch      gcc: esi  msc: edx  x86:[esp+8]   wcall: edx
+; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch] wcall: ebx
 RT_NOCRT_BEGINPROC memchr
         cld
 %ifdef RT_ARCH_AMD64
@@ -51,11 +51,18 @@ RT_NOCRT_BEGINPROC memchr
  %endif
 
 %else
+ %ifdef ASM_CALL32_WATCOM
+        mov     ecx, ebx
+        jecxz   .not_found_early
+        xchg    eax, edx
+        xchg    edi, edx                ; load and save edi.
+ %else
         mov     ecx, [esp + 0ch]
         jecxz   .not_found_early
         mov     edx, edi                ; save edi
         mov     eax, [esp + 8]
         mov     edi, [esp + 4]
+ %endif
 %endif
 
         ; do the search

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - CRT Strings, strncmp().
+ * BS3Kit - Unsigned 64-bit division (compiler support routine helper).
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2007-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,29 +24,15 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include <iprt/string.h>
 
-#ifdef _MSC_VER
-_CRTIMP int __cdecl strncmp
-#elif defined(__WATCOMC__)
-_WCRTLINK int std::strncmp
-#else
-int strncmp
-#endif
-    (const char *pszStr1, const char *pszStr2, size_t cb)
-#if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-    __THROW
-#endif
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <iprt/uint64.h>
+
+
+DECLASM(void) RTWatcomUInt64Div(RTUINT64U uDividend, RTUINT64U uDivisor, RTUINT64U RT_FAR *paQuotientReminder)
 {
-    const char* fini = pszStr1+cb;
-    while (pszStr1 < fini)
-    {
-        int res=*pszStr1-*pszStr2;
-        if (res)
-            return res;
-        if (!*pszStr1)
-            return 0;
-        ++pszStr1; ++pszStr2;
-    }
-    return 0;
+    RTUInt64DivRem(&paQuotientReminder[0], &paQuotientReminder[1], &uDividend, &uDivisor);
 }
+

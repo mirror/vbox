@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT strlen - AMD64 & X86.
+; BS3Kit - 32-bit Watcom C/C++, 64-bit integer left shift.
 ;
 
 ;
-; Copyright (C) 2006-2017 Oracle Corporation
+; Copyright (C) 2007-2017 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -26,40 +26,39 @@
 
 %include "iprt/asmdefs.mac"
 
+
 BEGINCODE
 
 ;;
-; @param    psz     gcc: rdi  msc: rcx  x86: [esp+4]  wcall: eax
-RT_NOCRT_BEGINPROC strlen
-        cld
-%ifdef RT_ARCH_AMD64
- %ifdef ASM_CALL64_MSC
-        mov     r9, rdi                 ; save rdi
-        mov     rdi, rcx
- %endif
-%else
-        mov     edx, edi                ; save edi
- %ifdef ASM_CALL32_WATCOM
-        mov     edi, eax
- %else
-        mov     edi, [esp + 4]
- %endif
-%endif
+; 64-bit integer left shift.
+;
+; @returns  EDX:EAX
+; @param    EDX:EAX     Value to shift.
+; @param    BL          Shift count (it's specified as ECX:EBX, but we only use BL).
+;
+global __U8LS
+__U8LS:
+global __I8LS
+__I8LS:
+        push    ecx                     ; We're allowed to trash ECX, but why bother.
 
-        ; do the search
-        mov     xCX, -1
-        xor     eax, eax
-        repne   scasb
+        mov     cl, bl
+        and     cl, 3fh
+        test    cl, 20h
+        jnz     .big_shift
 
-        ; found it
-        neg     xCX
-        lea     xAX, [xCX - 2]
-%ifdef ASM_CALL64_MSC
-        mov     rdi, r9
-%endif
-%ifdef RT_ARCH_X86
-        mov     edi, edx
-%endif
+        ; Shifting less than 32.
+        shld    edx, eax, cl
+        shl     eax, cl
+
+.return:
+        pop     ecx
         ret
-ENDPROC RT_NOCRT(strlen)
+
+.big_shift:
+        ; Shifting 32 or more.
+        mov     edx, eax
+        shl     edx, cl                 ; Only uses lower 5 bits.
+        xor     eax, eax
+        jmp     .return
 

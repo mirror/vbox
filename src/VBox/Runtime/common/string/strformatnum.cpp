@@ -248,17 +248,36 @@ RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80V
 
     if (pr80Value->s.uExponent == 0)
     {
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
         if (   !pr80Value->sj64.u63Fraction
             && pr80Value->sj64.fInteger)
+#else
+        if (   !pr80Value->sj.u32FractionLow
+            && !pr80Value->sj.u31FractionHigh
+            && pr80Value->sj.fInteger)
+#endif
             *pszTmp++ = '0';
         /* else: Denormal, handled way below. */
     }
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
     else if (pr80Value->sj64.uExponent == UINT16_C(0x7fff))
+#else
+    else if (pr80Value->sj.uExponent == UINT16_C(0x7fff))
+#endif
     {
         /** @todo Figure out Pseudo inf/nan... */
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
         if (pr80Value->sj64.fInteger)
+#else
+        if (pr80Value->sj.fInteger)
+#endif
             *pszTmp++ = 'P';
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
         if (pr80Value->sj64.u63Fraction == 0)
+#else
+        if (   pr80Value->sj.u32FractionLow == 0
+            && pr80Value->sj.u31FractionHigh == 0)
+#endif
         {
             *pszTmp++ = 'I';
             *pszTmp++ = 'n';
@@ -275,14 +294,28 @@ RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80V
         *pszTmp = '\0';
     else
     {
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
         *pszTmp++ = pr80Value->sj64.fInteger ? '1' : '0';
+#else
+        *pszTmp++ = pr80Value->sj.fInteger ? '1' : '0';
+#endif
         *pszTmp++ = 'm';
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
         pszTmp += RTStrFormatNumber(pszTmp, pr80Value->sj64.u63Fraction, 16, 2+16, 0,
                                     RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+#else
+        pszTmp += RTStrFormatNumber(pszTmp, RT_MAKE_U64(pr80Value->sj.u32FractionLow, pr80Value->sj.u31FractionHigh), 16, 2+16, 0,
+                                    RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+#endif
 
         *pszTmp++ = 'e';
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
         pszTmp += RTStrFormatNumber(pszTmp, (int32_t)pr80Value->sj64.uExponent - 16383, 10, 0, 0,
                                     RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
+#else
+        pszTmp += RTStrFormatNumber(pszTmp, (int32_t)pr80Value->sj.uExponent - 16383, 10, 0, 0,
+                                    RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
+#endif
     }
 
     /*

@@ -78,6 +78,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
     Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
     AssertCompile(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
     AssertPtrReturn(phEventSem, VERR_INVALID_POINTER);
+    RT_NOREF(hClass, pszNameFmt);
 
     PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (!pThis)

@@ -29,9 +29,9 @@
 BEGINCODE
 
 ;;
-; @param    pvDst   gcc: rdi  msc: ecx  x86:[esp+4]
-; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
-; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
+; @param    pvDst   gcc: rdi  msc: ecx  x86:[esp+4]    wcall: eax
+; @param    ch      gcc: esi  msc: edx  x86:[esp+8]    wcall: edx
+; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]  wcall: ebx
 RT_NOCRT_BEGINPROC memset
         cld
 %ifdef RT_ARCH_AMD64
@@ -90,9 +90,16 @@ RT_NOCRT_BEGINPROC memset
 %else ; X86
         push    edi
 
+ %ifdef ASM_CALL32_WATCOM
+        push    eax
+        mov     edi, eax
+        mov     ecx, ebx
+        movzx   eax, dl
+ %else
         mov     ecx, [esp + 0ch + 4]
         movzx   eax, byte [esp + 08h + 4]
         mov     edi, [esp + 04h + 4]
+ %endif
         cmp     ecx, 12
         jb      .dobytes
 
@@ -111,8 +118,13 @@ RT_NOCRT_BEGINPROC memset
 .dobytes:
         rep stosb
 
+ %ifdef ASM_CALL32_WATCOM
+        pop     eax
+        pop     edi
+ %else
         pop     edi
         mov     eax, [esp + 4]
+ %endif
 %endif ; X86
         ret
 ENDPROC RT_NOCRT(memset)

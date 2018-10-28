@@ -29,9 +29,9 @@
 BEGINCODE
 
 ;;
-; @param    pszDst   gcc: rdi  msc: rcx  x86:[esp+4]
-; @param    pszSrc   gcc: rsi  msc: rdx  x86:[esp+8]
-; @param    cbMax    gcc: rdx  msc: r8   x86:[esp+12]
+; @param    pszDst   gcc: rdi  msc: rcx  x86:[esp+4]   wcall: eax
+; @param    pszSrc   gcc: rsi  msc: rdx  x86:[esp+8]   wcall: edx
+; @param    cbMax    gcc: rdx  msc: r8   x86:[esp+12]  wcall: ebx
 RT_NOCRT_BEGINPROC strncpy
         ; input
 %ifdef RT_ARCH_AMD64
@@ -46,6 +46,12 @@ RT_NOCRT_BEGINPROC strncpy
  %endif
         mov     r9, pszDst
 %else
+ %ifdef ASM_CALL32_WATCOM
+  mov   ecx, eax
+  %define pszDst ecx
+  %define pszSrc edx
+  %define cbMax  ebx
+ %else
         mov     ecx, [esp + 4]
         mov     edx, [esp + 8]
         push    ebx
@@ -53,6 +59,7 @@ RT_NOCRT_BEGINPROC strncpy
   %define pszDst ecx
   %define pszSrc edx
   %define cbMax  ebx
+ %endif
         push    pszDst
 %endif
 
@@ -112,7 +119,9 @@ RT_NOCRT_BEGINPROC strncpy
 %ifdef RT_ARCH_AMD64
         mov     rax, r9
 %else
+ %ifndef ASM_CALL32_WATCOM
         pop     ebx
+ %endif
         pop     eax
 %endif
         ret

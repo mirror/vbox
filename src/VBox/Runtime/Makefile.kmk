@@ -3114,28 +3114,52 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/thread2-r0drv-os2.cpp \
 	r0drv/os2/time-r0drv-os2.cpp \
 	r0drv/os2/timer-r0drv-os2.cpp \
-	r0drv/os2/timerA-r0drv-os2.asm \
-	\
-	common/math/gcc/adddi3.c \
-	common/math/gcc/anddi3.c \
-	common/math/gcc/ashldi3.c \
-	common/math/gcc/ashrdi3.c \
-	common/math/gcc/cmpdi2.c \
-	common/math/gcc/divdi3.c \
-	common/math/gcc/iordi3.c \
-	common/math/gcc/lshldi3.c \
-	common/math/gcc/lshrdi3.c \
-	common/math/gcc/moddi3.c \
-	common/math/gcc/muldi3.c \
-	common/math/gcc/negdi2.c \
-	common/math/gcc/notdi2.c \
-	common/math/gcc/qdivrem.c \
-	common/math/gcc/subdi3.c \
-	common/math/gcc/ucmpdi2.c \
-	common/math/gcc/udivdi3.c \
-	common/math/gcc/udivmoddi4.c \
-	common/math/gcc/umoddi3.c \
-	common/math/gcc/xordi3.c
+	r0drv/os2/timerA-r0drv-os2.asm
+ifndef VBOX_USE_WATCOM_FOR_OS2
+ RuntimeR0Drv_SOURCES.os2 += \
+ 	common/math/gcc/adddi3.c \
+ 	common/math/gcc/anddi3.c \
+ 	common/math/gcc/ashldi3.c \
+ 	common/math/gcc/ashrdi3.c \
+ 	common/math/gcc/cmpdi2.c \
+ 	common/math/gcc/divdi3.c \
+ 	common/math/gcc/iordi3.c \
+ 	common/math/gcc/lshldi3.c \
+ 	common/math/gcc/lshrdi3.c \
+ 	common/math/gcc/moddi3.c \
+ 	common/math/gcc/muldi3.c \
+ 	common/math/gcc/negdi2.c \
+ 	common/math/gcc/notdi2.c \
+ 	common/math/gcc/qdivrem.c \
+ 	common/math/gcc/subdi3.c \
+ 	common/math/gcc/ucmpdi2.c \
+ 	common/math/gcc/udivdi3.c \
+ 	common/math/gcc/udivmoddi4.c \
+ 	common/math/gcc/umoddi3.c \
+ 	common/math/gcc/xordi3.c
+else
+ RuntimeR0Drv_SOURCES.os2 += \
+ 	common/math/watcom/I8D-x86-32.asm \
+ 	common/math/watcom/U8D-x86-32.asm \
+ 	common/math/watcom/RTWatcomUInt64Div.c \
+ 	common/math/watcom/U8LS-x86-32.asm \
+ 	common/math/watcom/U8RS-x86-32.asm \
+ 	common/math/watcom/U8M-I8M-x86-32.asm \
+	common/string/watcom/bzero.asm \
+	common/string/watcom/memchr.asm \
+	common/string/watcom/memcmp.asm \
+	common/string/watcom/memcpy.asm \
+	common/string/watcom/memmove.asm \
+	common/string/watcom/mempcpy.asm \
+	common/string/watcom/memrchr.asm \
+	common/string/watcom/memset.asm \
+	common/string/watcom/strchr.asm \
+	common/string/watcom/strcmp.asm \
+	common/string/watcom/strcpy.asm \
+	common/string/watcom/strlen.asm \
+	common/string/watcom/strncmp.asm \
+	common/string/watcom/strncpy.asm
+endif
 
 RuntimeR0Drv_SOURCES.freebsd = \
 	common/misc/thread.cpp \

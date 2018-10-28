@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT strlen - AMD64 & X86.
+; BS3Kit - 32-bit Watcom C/C++, 64-bit unsigned integer division.
 ;
 
 ;
-; Copyright (C) 2006-2017 Oracle Corporation
+; Copyright (C) 2007-2017 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -26,40 +26,49 @@
 
 %include "iprt/asmdefs.mac"
 
+
 BEGINCODE
 
+extern NAME(RTWatcomUInt64Div)
+
+
 ;;
-; @param    psz     gcc: rdi  msc: rcx  x86: [esp+4]  wcall: eax
-RT_NOCRT_BEGINPROC strlen
-        cld
-%ifdef RT_ARCH_AMD64
- %ifdef ASM_CALL64_MSC
-        mov     r9, rdi                 ; save rdi
-        mov     rdi, rcx
- %endif
-%else
-        mov     edx, edi                ; save edi
- %ifdef ASM_CALL32_WATCOM
-        mov     edi, eax
- %else
-        mov     edi, [esp + 4]
- %endif
-%endif
+; 64-bit unsigned integer division.
+;
+; @returns  EDX:EAX Quotient, ECX:EBX Remainder.
+; @param    EDX:EAX     Dividend.
+; @param    ECX:EBX     Divisor
+;
+global __U8D
+__U8D:
+        ;
+        ; Convert to a C __cdecl call - not doing this in assembly.
+        ;
 
-        ; do the search
-        mov     xCX, -1
-        xor     eax, eax
-        repne   scasb
+        ; Set up a frame, allocating 16 bytes for the result buffer.
+        push    ebp
+        mov     ebp, esp
+        sub     esp, 10h
 
-        ; found it
-        neg     xCX
-        lea     xAX, [xCX - 2]
-%ifdef ASM_CALL64_MSC
-        mov     rdi, r9
-%endif
-%ifdef RT_ARCH_X86
-        mov     edi, edx
-%endif
+        ; Pointer to the return buffer.
+        push    esp
+
+        ; The divisor.
+        push    ecx
+        push    ebx
+
+        ; The dividend.
+        push    edx
+        push    eax
+
+        call    NAME(RTWatcomUInt64Div)
+
+        ; Load the result.
+        mov     ecx, [ebp - 10h + 12]
+        mov     ebx, [ebp - 10h + 8]
+        mov     edx, [ebp - 10h + 4]
+        mov     eax, [ebp - 10h]
+
+        leave
         ret
-ENDPROC RT_NOCRT(strlen)
 

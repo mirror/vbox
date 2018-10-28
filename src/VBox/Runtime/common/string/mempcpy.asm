@@ -29,9 +29,9 @@
 BEGINCODE
 
 ;;
-; @param    pvDst   gcc: rdi  msc: rcx  x86:[esp+4]
-; @param    pvSrc   gcc: rsi  msc: rdx  x86:[esp+8]
-; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
+; @param    pvDst   gcc: rdi  msc: rcx  x86:[esp+4]    wcall: eax
+; @param    pvSrc   gcc: rsi  msc: rdx  x86:[esp+8]    wcall: edx
+; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]  wcall: ebx
 RT_NOCRT_BEGINPROC mempcpy
         cld                             ; paranoia
 
@@ -50,13 +50,20 @@ RT_NOCRT_BEGINPROC mempcpy
         shr     rcx, 3
         rep movsq
 %else
+ %ifdef ASM_CALL32_WATCOM
+        xchg    eax, edi                ; saving edi in eax and loading it
+        push    esi
+        mov     esi, edx
+        mov     ecx, ebx
+        mov     edx, ebx
+ %else
         mov     eax, edi                ; saving edi in eax
         push    esi
-
         mov     ecx, [esp + 0ch + 4]
         mov     edi, [esp + 04h + 4]
         mov     esi, [esp + 08h + 4]
         mov     edx, ecx
+ %endif
         shr     ecx, 2
         rep movsd
 %endif

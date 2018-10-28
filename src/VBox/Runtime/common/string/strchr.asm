@@ -29,8 +29,8 @@
 BEGINCODE
 
 ;;
-; @param    psz     gcc: rdi  msc: rcx  x86:[esp+4]
-; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
+; @param    psz     gcc: rdi  msc: rcx  x86:[esp+4]  wcall: eax
+; @param    ch      gcc: esi  msc: edx  x86:[esp+8]  wcall: edx
 RT_NOCRT_BEGINPROC strchr
         cld
 
@@ -48,11 +48,17 @@ RT_NOCRT_BEGINPROC strchr
         mov     rsi, rdi
  %endif
 %else
+ %ifndef ASM_CALL32_WATCOM
         mov     edx, [esp + 8]
+ %endif
         or      dl, dl
         jz near .strlen
         mov     ecx, esi                ; save esi
+ %ifdef ASM_CALL32_WATCOM
+        mov     esi, eax
+ %else
         mov     esi, [esp + 4]
+ %endif
 %endif
 
         ; do the search
@@ -114,7 +120,11 @@ align 16
  %endif
 %else
         mov     edx, edi                ; save edi
+ %ifdef ASM_CALL32_WATCOM
+        mov     edi, eax
+ %else
         mov     edi, [esp + 4]
+ %endif
 %endif
         mov     xCX, -1
         xor     eax, eax
