@@ -183,58 +183,63 @@ static DECLCALLBACK(int) serialR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
-    uint8_t    uIrq;
+    uint8_t    bIrq;
     RTIOPORT   PortBase;
     UARTTYPE   enmType;
+    int rc;
 
     AssertMsgReturn(uVersion >= UART_SAVED_STATE_VERSION_16450, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-
-    if (uPass != SSM_PASS_FINAL)
+    if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
     {
-        SSMR3GetU8(pSSM, &uIrq);
+        SSMR3GetU8(    pSSM, &bIrq);
         SSMR3GetIOPort(pSSM, &PortBase);
-        int rc = SSMR3GetU32(pSSM, (uint32_t *)&enmType);
+        rc = SSMR3GetU32(   pSSM, (uint32_t *)&enmType);
         AssertRCReturn(rc, rc);
+        if (uPass == SSM_PASS_FINAL)
+        {
+            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
+            AssertRCReturn(rc, rc);
+        }
     }
     else
     {
-        int rc = VINF_SUCCESS;
-
-        if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
+        enmType = uVersion > UART_SAVED_STATE_VERSION_16450 ? UARTTYPE_16550A : UARTTYPE_16450;
+        if (uPass != SSM_PASS_FINAL)
         {
-            SSMR3GetU8(    pSSM, &uIrq);
-            SSMR3GetIOPort(pSSM, &PortBase);
-            SSMR3GetU32(   pSSM, (uint32_t *)&enmType);
-            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
+            int32_t iIrqTmp;
+            SSMR3GetS32(pSSM, &iIrqTmp);
+            uint32_t uPortBaseTmp;
+            rc = SSMR3GetU32(pSSM, &uPortBaseTmp);
+            AssertRCReturn(rc, rc);
+
+            bIrq     = (uint8_t)iIrqTmp;
+            PortBase = (uint32_t)uPortBaseTmp;
         }
         else
         {
-            if (uVersion > UART_SAVED_STATE_VERSION_16450)
-                enmType = UARTTYPE_16550A;
-            else
-                enmType = UARTTYPE_16450;
-            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, &uIrq, &PortBase);
+            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, &bIrq, &PortBase);
+            AssertRCReturn(rc, rc);
         }
-        if (RT_SUCCESS(rc))
-        {
-            /* The marker. */
-            uint32_t u32;
-            rc = SSMR3GetU32(pSSM, &u32);
-            if (RT_FAILURE(rc))
-                return rc;
-            AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        }
+    }
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        /* The marker. */
+        uint32_t u32;
+        rc = SSMR3GetU32(pSSM, &u32);
+        AssertRCReturn(rc, rc);
+        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 
     /*
      * Check the config.
      */
-    if (    pThis->uIrq     != uIrq
+    if (    pThis->uIrq     != bIrq
         ||  pThis->PortBase != PortBase
         ||  pThis->UartCore.enmType != enmType)
         return SSMR3SetCfgError(pSSM, RT_SRC_POS,
                                 N_("Config mismatch - saved IRQ=%#x PortBase=%#x Type=%d; configured IRQ=%#x PortBase=%#x Type=%d"),
-                                uIrq, PortBase, enmType, pThis->uIrq, pThis->PortBase, pThis->UartCore.enmType);
+                                bIrq, PortBase, enmType, pThis->uIrq, pThis->PortBase, pThis->UartCore.enmType);
 
     return VINF_SUCCESS;
 }

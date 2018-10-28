@@ -1581,10 +1581,10 @@ DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
 
 
 DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
-                               uint8_t *puIrq, RTIOPORT *pPortBase)
+                               uint8_t *pbIrq, RTIOPORT *pPortBase)
 {
     RT_NOREF(uPass);
-    int rc = VINF_SUCCESS;
+    int rc;
 
     if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
     {
@@ -1606,21 +1606,19 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbMax);
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbItl);
 
-        TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+        rc = TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
         if (uVersion > UART_SAVED_STATE_VERSION_PRE_UNCONNECTED_TX_TIMER)
-            TMR3TimerLoad(pThis->pTimerTxUnconnectedR3, pSSM);
+            rc = TMR3TimerLoad(pThis->pTimerTxUnconnectedR3, pSSM);
     }
     else
     {
+        AssertPtr(pbIrq);
+        AssertPtr(pPortBase);
         if (uVersion == UART_SAVED_STATE_VERSION_16450)
         {
             pThis->enmType = UARTTYPE_16450;
             LogRel(("Serial#%d: falling back to 16450 mode from load state\n", pThis->pDevInsR3->iInstance));
         }
-
-        int      uIrq;
-        int32_t  iTmp;
-        uint32_t PortBase;
 
         SSMR3GetU16(pSSM, &pThis->uRegDivisor);
         SSMR3GetU8(pSSM, &pThis->uRegRbr);
@@ -1632,13 +1630,23 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM, &pThis->uRegScr);
         if (uVersion > UART_SAVED_STATE_VERSION_16450)
             SSMR3GetU8(pSSM, &pThis->uRegFcr);
+
+        int32_t iTmp = 0;
         SSMR3GetS32(pSSM, &iTmp);
         pThis->fThreEmptyPending = RT_BOOL(iTmp);
-        SSMR3GetS32(pSSM, &uIrq);
-        SSMR3Skip(pSSM, sizeof(int32_t));
-        SSMR3GetU32(pSSM, &PortBase);
-        rc = SSMR3Skip(pSSM, sizeof(int32_t));
 
+        rc = SSMR3GetS32(pSSM, &iTmp);
+        AssertRCReturn(rc, rc);
+        *pbIrq = (uint8_t)iTmp;
+
+        SSMR3Skip(pSSM, sizeof(int32_t)); /* was: last_break_enable */
+
+        uint32_t uPortBaseTmp = 0;
+        rc = SSMR3GetU32(pSSM, &uPortBaseTmp);
+        AssertRCReturn(rc, rc);
+        *pPortBase = (RTIOPORT)uPortBaseTmp;
+
+        rc = SSMR3Skip(pSSM, sizeof(bool)); /* was: msr_changed */
         if (   RT_SUCCESS(rc)
             && uVersion > UART_SAVED_STATE_VERSION_MISSING_BITS)
         {
@@ -1646,22 +1654,19 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
             SSMR3Skip(pSSM, sizeof(uint8_t)); /* The old transmit shift register, not used anymore. */
             SSMR3GetU8(pSSM, &pThis->uRegIir);
 
-            int iTimeoutPending = 0;
+            int32_t iTimeoutPending = 0;
             SSMR3GetS32(pSSM, &iTimeoutPending);
             pThis->fIrqCtiPending = RT_BOOL(iTimeoutPending);
 
-            TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
-            TMR3TimerSkip(pSSM, NULL);
+            rc = TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+            AssertRCReturn(rc, rc);
+
+            bool fWasActiveIgn;
+            rc = TMR3TimerSkip(pSSM, &fWasActiveIgn);  /* was: transmit_timerR3 */
+            AssertRCReturn(rc, rc);
+
             SSMR3GetU8(pSSM, &pThis->FifoRecv.cbItl);
             rc = SSMR3GetU8(pSSM, &pThis->FifoRecv.cbItl);
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            AssertPtr(puIrq);
-            AssertPtr(pPortBase);
-            *puIrq     = (uint8_t)uIrq;
-            *pPortBase = (RTIOPORT)PortBase;
         }
     }
 
