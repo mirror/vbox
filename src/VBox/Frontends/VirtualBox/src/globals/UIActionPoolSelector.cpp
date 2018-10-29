@@ -119,7 +119,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+W");
+        return QKeySequence("Ctrl+H");
     }
 
     /** Handles translation event. */
@@ -153,7 +153,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+C");
+        return QKeySequence("Ctrl+F");
     }
 
     /** Handles translation event. */
@@ -1250,12 +1250,6 @@ protected:
         return QString("SaveVM");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+V");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
@@ -1284,12 +1278,6 @@ protected:
         return QString("ACPIShutdownVM");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+H");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
@@ -1316,12 +1304,6 @@ protected:
     virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("PowerOffVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+F");
     }
 
     /** Handles translation event. */
