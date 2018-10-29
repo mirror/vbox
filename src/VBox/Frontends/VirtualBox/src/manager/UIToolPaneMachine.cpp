@@ -123,6 +123,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                     connect(this, &UIToolPaneMachine::sigToggleStarted,  m_pPaneDetails, &UIDetails::sigToggleStarted);
                     connect(this, &UIToolPaneMachine::sigToggleFinished, m_pPaneDetails, &UIDetails::sigToggleFinished);
                     connect(m_pPaneDetails, &UIDetails::sigLinkClicked,  this, &UIToolPaneMachine::sigLinkClicked);
+                    m_pPaneDetails->setItems(m_items);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneDetails);
@@ -145,6 +146,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                     m_pPaneSnapshots->setProperty("ToolType", QVariant::fromValue(UIToolType_Snapshots));
                     connect(m_pPaneSnapshots, &UISnapshotPane::sigCurrentItemChange,
                             this, &UIToolPaneMachine::sigCurrentSnapshotItemChange);
+                    m_pPaneSnapshots->setMachine(m_comMachine);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneSnapshots);
@@ -165,6 +167,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(UIToolType_Logs));
+                    m_pPaneLogViewer->setMachine(m_comMachine);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneLogViewer);
@@ -223,27 +226,33 @@ void UIToolPaneMachine::setCurrentItem(UIVirtualMachineItem *pItem)
 
 void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
 {
+    /* Cache passed value: */
+    m_items = items;
+
     /* Update details pane is it is open: */
     if (isToolOpened(UIToolType_Details))
     {
         AssertPtrReturnVoid(m_pPaneDetails);
-        m_pPaneDetails->setItems(items);
+        m_pPaneDetails->setItems(m_items);
     }
 }
 
 void UIToolPaneMachine::setMachine(const CMachine &comMachine)
 {
+    /* Cache passed value: */
+    m_comMachine = comMachine;
+
     /* Update snapshots pane is it is open: */
     if (isToolOpened(UIToolType_Snapshots))
     {
         AssertPtrReturnVoid(m_pPaneSnapshots);
-        m_pPaneSnapshots->setMachine(comMachine);
+        m_pPaneSnapshots->setMachine(m_comMachine);
     }
     /* Update logviewer pane is it is open: */
     if (isToolOpened(UIToolType_Logs))
     {
         AssertPtrReturnVoid(m_pPaneLogViewer);
-        m_pPaneLogViewer->setMachine(comMachine);
+        m_pPaneLogViewer->setMachine(m_comMachine);
     }
 }
 

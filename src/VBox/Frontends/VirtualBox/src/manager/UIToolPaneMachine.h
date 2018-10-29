@@ -24,6 +24,10 @@
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+
 /* Forward declarations: */
 class QHBoxLayout;
 class QStackedLayout;
@@ -34,7 +38,6 @@ class UIErrorPane;
 class UISnapshotPane;
 class UIVirtualMachineItem;
 class UIVMLogViewerWidget;
-class CMachine;
 
 
 /** QWidget subclass representing container for tool panes. */
@@ -112,6 +115,11 @@ private:
     UISnapshotPane      *m_pPaneSnapshots;
     /** Holds the Logviewer pane instance. */
     UIVMLogViewerWidget *m_pPaneLogViewer;
+
+    /** Holds the cache of passed items. */
+    QList<UIVirtualMachineItem*>  m_items;
+    /** Holds the cache of passed machine. */
+    CMachine                      m_comMachine;
 };
 
 #endif /* !___UIToolPaneMachine_h___ */
