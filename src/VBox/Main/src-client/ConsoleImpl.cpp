@@ -8022,6 +8022,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         /* Leave the lock since EMT might wait for it and will call us back as addVMCaller() */
         alock.release();
 
+        DBGFR3InfoDeregisterExternal(pUVM, "guestprops"); /* will crash in unloaded code if we guru later */
         m_pVMMDev->hgcmShutdown();
 
         alock.acquire();

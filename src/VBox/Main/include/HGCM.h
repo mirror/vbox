@@ -60,4 +60,4 @@ int HGCMHostLoadState (PSSMHANDLE pSSM);
 
 RT_C_DECLS_END
 
-#endif /* __HGCM_h__ */
+#endif /* !__HGCM_h__ */

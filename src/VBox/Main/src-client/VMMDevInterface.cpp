@@ -97,6 +97,12 @@ VMMDev::~VMMDev()
     if (hgcmIsActive())
     {
         ASMAtomicWriteBool(&m_fHGCMActive, false);
+        if (mParent)
+        {
+            Console::SafeVMPtrQuiet ptrVM(mParent);
+            if (ptrVM.rawUVM())
+                DBGFR3InfoDeregisterExternal(ptrVM.rawUVM(), "guestprops"); /* will crash in unloaded code if we guru later */
+        }
         HGCMHostShutdown();
     }
 #endif /* VBOX_WITH_HGCM */

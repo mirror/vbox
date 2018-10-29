@@ -103,6 +103,7 @@ EXPORTS
     DBGFR3CoreWrite
     DBGFR3Info
     DBGFR3InfoRegisterExternal
+    DBGFR3InfoDeregisterExternal
     DBGFR3InjectNMI
     DBGFR3LogModifyDestinations
     DBGFR3LogModifyFlags
