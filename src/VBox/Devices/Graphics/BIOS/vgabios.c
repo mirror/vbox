@@ -2107,6 +2107,8 @@ extern void vbe_biosfn_return_mode_information(uint16_t STACK_BASED *AX, uint16_
 extern void vbe_biosfn_set_mode(uint16_t STACK_BASED *AX, uint16_t BX, uint16_t ES, uint16_t DI);
 extern void vbe_biosfn_save_restore_state(uint16_t STACK_BASED *AX, uint16_t CX, uint16_t DX, uint16_t ES, uint16_t STACK_BASED *BX);
 extern void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK_BASED *BX, uint16_t STACK_BASED *CX, uint16_t STACK_BASED *DX);
+extern void private_biosfn_custom_mode(uint16_t STACK_BASED *AX, uint16_t STACK_BASED *BX, uint16_t STACK_BASED *CX, uint16_t STACK_BASED *DX);
+
 
 // --------------------------------------------------------------------------------------------
 /*
@@ -2334,6 +2336,22 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
           AX=0x0100;
           }
         break;
+   case 0x56:
+     if (vbe_has_vbe_display()) {
+       switch(GET_AL())
+       {
+         case 0x42:
+           private_biosfn_custom_mode(&AX,&BX,&CX,&DX);
+           break;
+         default:
+           AX=0x0100;
+           break;
+       }
+     } else {
+         // No VBE display
+         AX=0x0100;
+     }
+     break;
 #endif
 
 #ifdef VGA_DEBUG

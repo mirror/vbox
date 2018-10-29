@@ -698,3 +698,105 @@ void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK
     }
     *AX = result;
 }
+
+
+/* We would very much like to avoid dragging in the long multiply library
+ * routine, and we really just need to multiply two 16-bit numbers to
+ * obtain a 32-bit result, so...
+ */
+uint32_t mul32_16x16(uint16_t a, uint16_t b);
+#pragma aux mul32_16x16 =   \
+    "mul    dx"             \
+    parm [ax] [dx] modify nomemory;
+
+
+/** Private INT 10h function 5642h - Manage custom video modes using X/Y
+ *  resolution and bit depth rather than mode number
+ *
+ *  Input:
+ *              AX      = 5642h ('VB')
+ *              BL      = 00h Set video mode
+ *              BH      = If BL=00h Desired bit depth in pixels
+ *              CX      = If BL=00h Desired width in pixels
+ *              DX      = If BL=00h Desired height in pixels
+ *
+ *  Output:
+ *              AX      = VBE style return status
+ */
+void private_biosfn_custom_mode(uint16_t STACK_BASED *AX, uint16_t STACK_BASED *BX,
+                                uint16_t STACK_BASED *CX, uint16_t STACK_BASED *DX)
+{
+    uint16_t    result;
+    uint8_t     subfn;
+    uint8_t     bpp;
+    uint8_t     lfb_flag;
+    uint16_t    xres;
+    uint16_t    yres;
+    uint16_t    line_size;
+    uint32_t    vram_size;
+    uint32_t    mode_size;
+
+    result = 0x004F;
+    subfn  = *BX & 0xFF;
+    switch (subfn) {
+    case 0x00:
+        xres = *CX;
+        yres = *DX;
+        bpp  = (*BX >> 8) & 0x7F;
+#ifdef VGA_DEBUG
+        printf("Set custom mode %04x by %04x %xbpp\n", xres, yres, bpp);
+#endif
+        /* Only allow 32/16/8bpp. */
+        if (bpp != 8 && bpp != 16 && bpp != 32) {
+            result = 0x100;
+            break;
+        }
+
+        /* Determine the LFB flag. */
+        lfb_flag = *BX & 0x8000 ? VBE_DISPI_LFB_ENABLED : 0;
+
+        /* Cap the resolution to something not insanely high or low. */
+        if (xres < 640)
+            xres = 640;
+        else if (xres > 2560)
+            xres = 2560;
+        if (yres < 480)
+            yres = 480;
+        else if (yres > 1920)
+            yres = 1920;
+#ifdef VGA_DEBUG
+        printf("Adjusted resolution %04x by %04x\n", xres, yres);
+#endif
+
+        /* Calculate the VRAM size in bytes. */
+        vram_size = (uint32_t)in_word(VBE_EXTRA_PORT, 0xffff) << 16;
+
+        /* Calculate the scanline size in bytes. */
+        line_size = xres * (bpp / 8);
+        line_size = (line_size + 3) & ~3;
+        /* And now the memory required for the mode. */
+        mode_size = mul32_16x16(line_size, yres);
+
+        if (mode_size > vram_size) {
+            /* No can do. Don't have that much VRAM. */
+            result = 0x200;
+            break;
+        }
+
+        /* Mode looks valid, let's get cracking. */
+        dispi_set_enable(VBE_DISPI_DISABLED);
+        dispi_set_bpp(bpp);
+        dispi_set_xres(xres);
+        dispi_set_yres(yres);
+        dispi_set_bank(0);
+        dispi_set_enable(VBE_DISPI_ENABLED | lfb_flag);
+        vga_compat_setup();
+        break;
+
+    default:
+        // unsupported sub-function
+        result = 0x100;
+        break;
+    }
+    *AX = result;
+}

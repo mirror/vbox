@@ -62,6 +62,19 @@ uint16_t vesa_get_mode(uint16_t __far *mode);
 
 
 /**
+ * Set custom video mode.
+ * @param   xres    Requested width
+ * @param   yres    Requested height
+ * @param   bpp     Requested bits per pixel
+ */
+uint16_t custom_set_mode(uint16_t xres, uint16_t yres, uint8_t bpp);
+#pragma aux custom_set_mode = \
+    "mov    ax, 5642h"      \
+    "mov    bl, 0"          \
+    "int    10h"            \
+    parm [cx] [dx] [bh] modify [ax] nomemory;
+
+/**
  * Check for keystroke.
  * @returns    True if keystroke available, False if not.
  */
@@ -368,8 +381,11 @@ void show_logo(void)
     if (!is_fade_in && !is_fade_out && !logo_time)
         goto done;
 
-    // Set video mode #0x142 640x480x32bpp
-    vesa_set_mode(0x142);
+    /* Set video mode using private video BIOS interface. */
+    tmp = custom_set_mode(640*2, 480*2, 32);
+    /* If custom mode set failed, fall back to VBE. */
+    if (tmp != 0x4F)
+        vesa_set_mode(0x142);
 
     if (is_fade_in)
     {
