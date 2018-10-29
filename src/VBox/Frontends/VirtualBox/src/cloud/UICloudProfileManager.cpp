@@ -606,6 +606,13 @@ void UICloudProfileManagerWidget::prepare()
 
 void UICloudProfileManagerWidget::prepareActions()
 {
+    /* First of all, add actions which has smaller shortcut scope: */
+    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
+
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltAddCloudProfile);

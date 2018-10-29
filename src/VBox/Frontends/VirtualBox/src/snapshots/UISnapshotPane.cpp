@@ -1223,6 +1223,13 @@ void UISnapshotPane::prepareConnections()
 
 void UISnapshotPane::prepareActions()
 {
+    /* First of all, add actions which has smaller shortcut scope: */
+    addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Delete));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Restore));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_T_Properties));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Clone));
+
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexST_M_Snapshot_S_Take), &UIAction::triggered,
             this, &UISnapshotPane::sltTakeSnapshot);

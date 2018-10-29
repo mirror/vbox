@@ -719,6 +719,15 @@ void UIMediumManagerWidget::prepareConnections()
 
 void UIMediumManagerWidget::prepareActions()
 {
+    /* First of all, add actions which has smaller shortcut scope: */
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
+
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add), &QAction::triggered,
             this, &UIMediumManagerWidget::sltAddMedium);

@@ -1593,7 +1593,9 @@ public:
         : UIActionSimple(pParent,
                          ":/snapshot_take_32px.png", ":/snapshot_take_16px.png",
                          ":/snapshot_take_disabled_32px.png", ":/snapshot_take_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1631,7 +1633,9 @@ public:
         : UIActionSimple(pParent,
                          ":/snapshot_delete_32px.png", ":/snapshot_delete_16px.png",
                          ":/snapshot_delete_disabled_32px.png", ":/snapshot_delete_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1669,7 +1673,9 @@ public:
         : UIActionSimple(pParent,
                          ":/snapshot_restore_32px.png", ":/snapshot_restore_16px.png",
                          ":/snapshot_restore_disabled_32px.png", ":/snapshot_restore_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1706,6 +1712,7 @@ public:
     UIActionMenuSelectorSnapshotToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(UIIconPool::iconSetFull(":/snapshot_show_details_32px.png", ":/snapshot_show_details_16px.png",
                                         ":/snapshot_show_details_disabled_32px.png", ":/snapshot_show_details_disabled_16px.png"));
     }
@@ -1721,7 +1728,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+Space");
+        return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
@@ -1746,7 +1753,9 @@ public:
         : UIActionSimple(pParent,
                          ":/vm_clone_32px.png", ":/vm_clone_16px.png",
                          ":/vm_clone_disabled_32px.png", ":/vm_clone_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1812,6 +1821,7 @@ public:
     UIActionMenuSelectorMediumPerformAdd(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(0, UIIconPool::iconSetFull(":/hd_add_32px.png",          ":/hd_add_16px.png",
                                            ":/hd_add_disabled_32px.png", ":/hd_add_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_add_32px.png",          ":/cd_add_16px.png",
@@ -1855,6 +1865,7 @@ public:
     UIActionMenuSelectorMediumPerformCopy(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(0, UIIconPool::iconSetFull(":/hd_copy_32px.png",          ":/hd_copy_16px.png",
                                            ":/hd_copy_disabled_32px.png", ":/hd_copy_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_copy_32px.png",          ":/cd_copy_16px.png",
@@ -1898,6 +1909,7 @@ public:
     UIActionMenuSelectorMediumPerformMove(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(0, UIIconPool::iconSetFull(":/hd_move_32px.png",          ":/hd_move_16px.png",
                                            ":/hd_move_disabled_32px.png", ":/hd_move_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_move_32px.png",          ":/cd_move_16px.png",
@@ -1941,6 +1953,7 @@ public:
     UIActionMenuSelectorMediumPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(0, UIIconPool::iconSetFull(":/hd_remove_32px.png",          ":/hd_remove_16px.png",
                                            ":/hd_remove_disabled_32px.png", ":/hd_remove_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_remove_32px.png",          ":/cd_remove_16px.png",
@@ -1984,6 +1997,7 @@ public:
     UIActionMenuSelectorMediumPerformRelease(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(0, UIIconPool::iconSetFull(":/hd_release_32px.png",          ":/hd_release_16px.png",
                                            ":/hd_release_disabled_32px.png", ":/hd_release_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_release_32px.png",          ":/cd_release_16px.png",
@@ -2027,6 +2041,7 @@ public:
     UIActionMenuSelectorMediumToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(0, UIIconPool::iconSetFull(":/hd_modify_32px.png",          ":/hd_modify_16px.png",
                                            ":/hd_modify_disabled_32px.png", ":/hd_modify_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_modify_32px.png",          ":/cd_modify_16px.png",
@@ -2046,7 +2061,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+Space");
+        return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
@@ -2071,7 +2086,9 @@ public:
         : UIActionSimple(pParent,
                          ":/refresh_32px.png",          ":/refresh_16px.png",
                          ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2138,7 +2155,9 @@ public:
         : UIActionSimple(pParent,
                          ":/host_iface_add_32px.png",          ":/host_iface_add_16px.png",
                          ":/host_iface_add_disabled_32px.png", ":/host_iface_add_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2176,7 +2195,9 @@ public:
         : UIActionSimple(pParent,
                          ":/host_iface_remove_32px.png",          ":/host_iface_remove_16px.png",
                          ":/host_iface_remove_disabled_32px.png", ":/host_iface_remove_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2213,6 +2234,7 @@ public:
     UIActionMenuSelectorNetworkToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(UIIconPool::iconSetFull(":/host_iface_edit_32px.png",          ":/host_iface_edit_16px.png",
                                         ":/host_iface_edit_disabled_32px.png", ":/host_iface_edit_disabled_16px.png"));
     }
@@ -2228,7 +2250,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+Space");
+        return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
@@ -2253,7 +2275,9 @@ public:
         : UIActionSimple(pParent,
                          ":/refresh_32px.png",          ":/refresh_16px.png",
                          ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2320,7 +2344,9 @@ public:
         : UIActionSimple(pParent,
                          ":/cloud_profile_add_32px.png",          ":/cloud_profile_add_16px.png",
                          ":/cloud_profile_add_disabled_32px.png", ":/cloud_profile_add_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2359,7 +2385,9 @@ public:
         : UIActionSimple(pParent,
                          ":/cloud_profile_restore_32px.png",          ":/cloud_profile_restore_16px.png",
                          ":/cloud_profile_restore_disabled_32px.png", ":/cloud_profile_restore_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2398,7 +2426,9 @@ public:
         : UIActionSimple(pParent,
                          ":/cloud_profile_remove_32px.png",          ":/cloud_profile_remove_16px.png",
                          ":/cloud_profile_remove_disabled_32px.png", ":/cloud_profile_remove_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -2436,6 +2466,7 @@ public:
     UIActionMenuSelectorCloudToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
         setIcon(UIIconPool::iconSetFull(":/cloud_profile_edit_32px.png",          ":/cloud_profile_edit_16px.png",
                                         ":/cloud_profile_edit_disabled_32px.png", ":/cloud_profile_edit_disabled_16px.png"));
     }
@@ -2451,7 +2482,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+Space");
+        return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
@@ -2477,7 +2508,9 @@ public:
         : UIActionSimple(pParent,
                          ":/cloud_profile_help_32px.png",          ":/cloud_profile_help_16px.png",
                          ":/cloud_profile_help_disabled_32px.png", ":/cloud_profile_help_disabled_16px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 

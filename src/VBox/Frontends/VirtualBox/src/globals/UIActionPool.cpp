@@ -1222,7 +1222,9 @@ public:
     UIActionMenuSelectorLogTogglePaneFind(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/log_viewer_find_32px.png", ":/log_viewer_find_disabled_32px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1259,7 +1261,9 @@ public:
     UIActionMenuSelectorLogTogglePaneFilter(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/log_viewer_filter_32px.png", ":/log_viewer_filter_disabled_32px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1296,7 +1300,9 @@ public:
     UIActionMenuSelectorLogTogglePaneBookmark(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/log_viewer_bookmark_32px.png", ":/log_viewer_bookmark_disabled_32px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1333,7 +1339,9 @@ public:
     UIActionMenuSelectorLogTogglePaneSettings(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/log_viewer_settings_32px.png", ":/log_viewer_settings_disabled_32px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1370,7 +1378,9 @@ public:
     UIActionMenuSelectorLogPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/log_viewer_refresh_32px.png", ":/log_viewer_refresh_disabled_32px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 
@@ -1407,7 +1417,9 @@ public:
     UIActionMenuSelectorLogPerformSave(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/log_viewer_save_32px.png", ":/log_viewer_save_disabled_32px.png")
-    {}
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
 

@@ -692,6 +692,12 @@ void UIHostNetworkManagerWidget::prepare()
 
 void UIHostNetworkManagerWidget::prepareActions()
 {
+    /* First of all, add actions which has smaller shortcut scope: */
+    addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
+
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Create), &QAction::triggered,
             this, &UIHostNetworkManagerWidget::sltCreateHostNetwork);
