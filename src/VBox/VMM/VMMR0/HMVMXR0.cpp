@@ -538,7 +538,7 @@ static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
 };
 #endif /* HMVMX_USE_FUNCTION_TABLE */
 
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) && defined(LOG_ENABLED)
 static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
 {
     /*  0 */ "(Not Used)",
