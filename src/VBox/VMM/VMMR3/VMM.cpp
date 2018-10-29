@@ -112,6 +112,7 @@
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/nem.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/selm.h>
@@ -1555,7 +1556,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
 
 
 /**
- * VCPU worker for VMMSendStartupIpi.
+ * VCPU worker for VMMR3SendStartupIpi.
  *
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       Virtual CPU to perform SIPI on.
@@ -1567,14 +1568,26 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     VMCPU_ASSERT_EMT(pVCpu);
 
     /*
-     * Active, halt and shutdown states of the processor all block SIPIs.
-     * So we can safely discard the SIPI. See Intel spec. 26.6.2 "Activity State".
+     * In the INIT state, the target CPU is only responsive to an SIPI.
+     * This is also true for when when the CPU is in VMX non-root mode.
+     *
+     * See AMD spec. 16.5 "Interprocessor Interrupts (IPI)".
+     * See Intel spec. 26.6.2 "Activity State".
      */
     if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
-        return VERR_ACCESS_DENIED;
+        return VINF_SUCCESS;
 
 
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    if (CPUMIsGuestInVmxRootMode(pCtx))
+    {
+        /* If the CPU is in VMX non-root mode we must cause a VM-exit. */
+        if (CPUMIsGuestInVmxNonRootMode(pCtx))
+            return IEMExecVmxVmexitStartupIpi(pVCpu, uVector);
+
+        /* If the CPU is in VMX root mode (and not in VMX non-root mode) SIPIs are blocked. */
+        return VINF_SUCCESS;
+    }
 
     pCtx->cs.Sel        = uVector << 8;
     pCtx->cs.ValidSel   = uVector << 8;
@@ -1596,12 +1609,27 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
 }
 
 
+/**
+ * VCPU worker for VMMR3SendInitIpi.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   idCpu       Virtual CPU to perform SIPI on.
+ */
 static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
 
     Log(("vmmR3SendInitIpi for VCPU %d\n", idCpu));
+
+    /** @todo r=ramshankar: We should probably block INIT signal when the CPU is in
+     *        wait-for-SIPI state. Verify. */
+
+    /* If the CPU is in VMX non-root mode, INIT signals cause VM-exits. */
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+        return IEMExecVmxVmexitInitIpi(pVCpu);
 
     /** @todo Figure out how to handle a nested-guest intercepts here for INIT
      *  IPI (e.g. SVM_EXIT_INIT). */
