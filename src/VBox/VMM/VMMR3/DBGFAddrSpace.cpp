@@ -958,7 +958,7 @@ static int dbgfR3AsSearchCfgPath(PUVM pUVM, const char *pszFilename, const char 
  * @param   pModAddress     The load address of the module.
  * @param   iModSeg         The segment to load, pass NIL_RTDBGSEGIDX to load
  *                          the whole image.
- * @param   fFlags          Flags reserved for future extensions, must be 0.
+ * @param   fFlags          For DBGFR3AsLinkModule, see RTDBGASLINK_FLAGS_*.
  */
 VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, RTLDRARCH enmArch,
                                  PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
@@ -970,7 +970,7 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilen
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
     AssertReturn(DBGFR3AddrIsValid(pUVM, pModAddress), VERR_INVALID_PARAMETER);
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTDBGASLINK_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
     RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
@@ -979,7 +979,7 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilen
     int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszModName, enmArch, pUVM->dbgf.s.hDbgCfg);
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3AsLinkModule(pUVM, hRealAS, hDbgMod, pModAddress, iModSeg, 0);
+        rc = DBGFR3AsLinkModule(pUVM, hRealAS, hDbgMod, pModAddress, iModSeg, fFlags & RTDBGASLINK_FLAGS_VALID_MASK);
         if (RT_FAILURE(rc))
             RTDbgModRelease(hDbgMod);
     }
