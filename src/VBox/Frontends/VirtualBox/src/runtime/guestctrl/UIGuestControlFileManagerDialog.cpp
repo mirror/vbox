@@ -95,7 +95,7 @@ void UIGuestControlFileManagerDialog::configureCentralWidget()
     {
         /* Configure widget: */
         setWidget(pWidget);
-        //setWidgetMenu(pWidget->menu());
+        setWidgetMenu(pWidget->menu());
 #ifdef VBOX_WS_MAC
         //setWidgetToolbar(pWidget->toolbar());
 #endif

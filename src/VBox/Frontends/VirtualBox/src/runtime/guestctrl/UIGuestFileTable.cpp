@@ -26,8 +26,10 @@
 
 /* GUI includes: */
 # include "QILabel.h"
+# include "UIActionPool.h"
 # include "UIErrorString.h"
 # include "UIGuestFileTable.h"
+# include "UIToolBar.h"
 
 /* COM includes: */
 # include "CFsObjInfo.h"
@@ -142,9 +144,10 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
     sigResultUpdated(statistics);
 }
 
-UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
-    :UIGuestControlFileTable(pParent)
+UIGuestFileTable::UIGuestFileTable(UIActionPool *pActionPool, QWidget *pParent /*= 0*/)
+    :UIGuestControlFileTable(pActionPool, pParent)
 {
+    prepareActions();
     retranslateUi();
 }
 
@@ -583,6 +586,32 @@ void UIGuestFileTable::determineDriveLetters()
         if (exists)
             m_driveLetterList.push_back(path);
     }
+}
+
+void UIGuestFileTable::prepareActions()
+{
+    if (m_pToolBar && m_pActionPool)
+    {
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh));
+
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
+    }
+
+    UIGuestControlFileTable::prepareActions();
 }
 
 #include "UIGuestFileTable.moc"

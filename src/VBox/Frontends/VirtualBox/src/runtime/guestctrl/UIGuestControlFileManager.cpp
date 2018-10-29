@@ -324,6 +324,13 @@ UIGuestControlFileManager::~UIGuestControlFileManager()
     UIGuestControlFileManagerSettings::destroy();
 }
 
+QMenu *UIGuestControlFileManager::menu() const
+{
+    if (!m_pActionPool)
+        return 0;
+    return m_pActionPool->action(UIActionIndex_M_GuestControlFileManager)->menu();
+}
+
 void UIGuestControlFileManager::retranslateUi()
 {
     if (m_pCopyGuestToHost)
@@ -393,10 +400,10 @@ void UIGuestControlFileManager::prepareObjects()
             m_pFileTableContainerWidget->setLayout(m_pFileTableContainerLayout);
             m_pFileTableContainerLayout->setSpacing(0);
             m_pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
-            m_pGuestFileTable = new UIGuestFileTable;
+            m_pGuestFileTable = new UIGuestFileTable(m_pActionPool);
             m_pGuestFileTable->setEnabled(false);
 
-            m_pHostFileTable = new UIHostFileTable;
+            m_pHostFileTable = new UIHostFileTable(m_pActionPool);
             if (m_pHostFileTable)
             {
                 connect(m_pHostFileTable, &UIHostFileTable::sigLogOutput,

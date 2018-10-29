@@ -77,6 +77,7 @@ public:
     UIGuestControlFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                               const CGuest &comGuest, QWidget *pParent);
     ~UIGuestControlFileManager();
+    QMenu *menu() const;
     //const UIGuestControlFileManagerSettings& settings() const;
 
 protected:

@@ -1183,7 +1183,6 @@ protected:
     }
 };
 
-
 /** Menu action extension, used as 'Log' menu class. */
 class UIActionMenuSelectorLog : public UIActionMenu
 {
@@ -1434,6 +1433,557 @@ protected:
     }
 };
 
+/** Menu action extension, used as 'Guest Control File Manager' menu class. */
+class UIActionMenuGuestControlFileManager : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManager(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("GuestControlFileManagerMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the guest control file manager"));
+    }
+};
+
+class UIActionMenuGuestControlFileManagerHostSubmenu : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerHostSubmenu(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("GuestControlFileManagerHostSubmenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Host"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the guest control file manager submenu"));
+    }
+};
+
+class UIActionMenuGuestControlFileManagerGuestSubmenu : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerGuestSubmenu(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("GuestControlFileManagerGuestSubmenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Guest"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the guest control file manager submenu"));
+    }
+};
+
+
+/** Simple action extension, used as 'File Manager Settings' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerSettings : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerSettings(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_delete_32px.png", ":/vm_delete_disabled_32px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerSettings");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Settings"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Modify file manager settings"));
+        setToolTip(tr("Modify File Manager Settings"));
+    }
+};
+/** Simple action extension, used as 'Perform GoUp' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerGoUp : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerGoUp(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/arrow_up_10px_x2.png", ":/arrow_up_10px_x2.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerGoUp");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "GoUp"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go one level up to parent folder"));
+        setToolTip(tr("Go One Level Up to Parent Folder"));
+    }
+};
+
+
+/** Simple action extension, used as 'Perform GoHome' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerGoHome : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerGoHome(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/nw_24px.png", ":/nw_disabled_24px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerGoHome");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "GoHome"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go to home folder"));
+        setToolTip(tr("Go to Home Folder"));
+    }
+};
+
+
+/** Simple action extension, used as 'Perform Copy' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerDelete : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerDelete(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_delete_32px.png", ":/vm_delete_disabled_32px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerDelete");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Delete"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Delete selected file object(s)"));
+        setToolTip(tr("Delete Selected File Object(s)"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Refresh' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerRefresh : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerRefresh(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/refresh_16px.png", ":/refresh_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerRefresh");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Refresh"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh"));
+        setToolTip(tr("Refresh"));
+    }
+};
+
+
+/** Simple action extension, used as 'Perform Rename' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerRename : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerRename(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/name_16px.png", ":/name_16px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerRename");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Rename"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Rename"));
+        setToolTip(tr("Rename"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Rename' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerCreateNewDirectory : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerCreateNewDirectory(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/sf_add_16px.png", ":/sf_add_disabled_16px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerCreateNewDirectory");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "CreateNewDirectory"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create New Directory"));
+        setToolTip(tr("Create New Directory"));
+    }
+};
+
+
+/** Simple action extension, used as 'Perform Copy' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerCopy : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerCopy(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/fd_copy_32px.png", ":/fd_copy_disabled_32px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerCopy");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Copy"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Copy selected file object(s)"));
+        setToolTip(tr("Copy Selected File Object(s)"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Cut' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerCut : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerCut(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/fd_move_32px.png", ":/fd_move_disabled_32px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerCut");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Cut"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Cut selected file object(s)"));
+        setToolTip(tr("Cut Selected File Object(s)"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Paste' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerPaste : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerPaste(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerPaste");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Paste"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Paste copied/cut file object(s)"));
+        setToolTip(tr("Paste Copied/Cut File Object(s)"));
+    }
+};
+
+/** Simple action extension, used as 'Select All' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerSelectAll : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerSelectAll(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/session_info_32px.png", ":/session_info_disabled_32px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerSelectAll");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "SelectAll"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Select all files objects"));
+        setToolTip(tr("Select All Files Objects"));
+    }
+};
+
+
+/** Simple action extension, used as 'Invert Selection' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerInvertSelection : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerInvertSelection(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/session_info_32px.png", ":/session_info_disabled_32px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerInvertSelection");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "InvertSelection"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Invert the current selection"));
+        setToolTip(tr("Invert The Current Selection"));
+    }
+};
+
+
+/** Simple action extension, used as 'Show Properties' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerShowProperties : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerShowProperties(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/session_info_32px.png", ":/session_info_disabled_32px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerShowProperties");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "ShowProperties"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the properties of currently selected file object(s)"));
+        setToolTip(tr("Show the Properties of Currently Selected File Object(s)"));
+    }
+};
+
+
+
+
 
 /*********************************************************************************************************************************
 *   Class UIActionPool implementation.                                                                                           *
@@ -1640,6 +2190,37 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Log_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
     m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
 
+    /* Create 'Guest Control File Manager' actions: */
+    m_pool[UIActionIndex_M_GuestControlFileManager] = new UIActionMenuGuestControlFileManager(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_M_HostSubmenu] = new UIActionMenuGuestControlFileManagerHostSubmenu(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu] = new UIActionMenuGuestControlFileManagerGuestSubmenu(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Settings] = new UIActionMenuGuestControlFileManagerSettings(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_GoUp] = new UIActionMenuGuestControlFileManagerGoUp(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp] = new UIActionMenuGuestControlFileManagerGoUp(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_GoHome] = new UIActionMenuGuestControlFileManagerGoHome(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome] = new UIActionMenuGuestControlFileManagerGoHome(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_Refresh] = new UIActionMenuGuestControlFileManagerRefresh(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh] = new UIActionMenuGuestControlFileManagerRefresh(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_Delete] = new UIActionMenuGuestControlFileManagerDelete(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_Delete] = new UIActionMenuGuestControlFileManagerDelete(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_Rename] = new UIActionMenuGuestControlFileManagerRename(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_Rename] = new UIActionMenuGuestControlFileManagerRename(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory] = new UIActionMenuGuestControlFileManagerCreateNewDirectory(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory] = new UIActionMenuGuestControlFileManagerCreateNewDirectory(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_Copy] = new UIActionMenuGuestControlFileManagerCopy(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_Copy] = new UIActionMenuGuestControlFileManagerCopy(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_Cut] = new UIActionMenuGuestControlFileManagerCut(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_Cut] = new UIActionMenuGuestControlFileManagerCut(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_Paste] = new UIActionMenuGuestControlFileManagerPaste(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_Paste] = new UIActionMenuGuestControlFileManagerPaste(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll] = new UIActionMenuGuestControlFileManagerSelectAll(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll] = new UIActionMenuGuestControlFileManagerSelectAll(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection] = new UIActionMenuGuestControlFileManagerInvertSelection(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection] = new UIActionMenuGuestControlFileManagerInvertSelection(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties] = new UIActionMenuGuestControlFileManagerShowProperties(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties] = new UIActionMenuGuestControlFileManagerShowProperties(this);
+
+
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC
     m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
@@ -1648,6 +2229,8 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
     m_menuUpdateHandlers[UIActionIndex_M_LogWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
     m_menuUpdateHandlers[UIActionIndex_M_Log].ptf = &UIActionPool::updateMenuLogViewer;
+
+    m_menuUpdateHandlers[UIActionIndex_M_GuestControlFileManager].ptf = &UIActionPool::updateMenuGuestControlFileManager;
 
     /* Invalidate all known menus: */
     m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
@@ -1938,6 +2521,56 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
 
     /* 'Refresh' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;;
+}
+
+void UIActionPool::updateMenuGuestControlFileManager()
+{
+    updateMenuGuestControlFileManagerWrapper(action(UIActionIndex_M_GuestControlFileManager)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_Log);
+
+}
+
+void UIActionPool::updateMenuGuestControlFileManagerWrapper(UIMenu *pMenu)
+{
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_S_Settings));
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_M_HostSubmenu));
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu));
+
+    UIMenu *pHostSubmenu = action(UIActionIndex_M_GuestControlFileManager_M_HostSubmenu)->menu();
+    if (pHostSubmenu)
+    {
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection));
+        addAction(pHostSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
+    }
+
+    UIMenu *pGuestSubmenu = action(UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu)->menu();
+    if (pGuestSubmenu)
+    {
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection));
+        addAction(pGuestSubmenu, action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
+    }
 }
 
 void UIActionPool::retranslateUi()

@@ -36,7 +36,6 @@
 /* Forward declarations: */
 class QAction;
 class QFileInfo;
-
 class QComboBox;
 class QILabel;
 class QILineEdit;
@@ -44,6 +43,7 @@ class QGridLayout;
 class QSortFilterProxyModel;
 class QTextEdit;
 class QVBoxLayout;
+class UIActionPool;
 class UIFileTableItem;
 class UIGuestControlFileModel;
 class UIGuestControlFileProxyModel;
@@ -247,7 +247,7 @@ signals:
 
 public:
 
-    UIGuestControlFileTable(QWidget *pParent = 0);
+    UIGuestControlFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
     virtual ~UIGuestControlFileTable();
     /** Deletes all the tree nodes */
     void reset();
@@ -291,13 +291,17 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
+    virtual void     prepareActions();
 
     UIFileTableItem         *m_pRootItem;
     QILabel                 *m_pLocationLabel;
-    QAction                 *m_pCopy;
-    QAction                 *m_pCut;
-    QAction                 *m_pPaste;
+    // QAction                 *m_pCopy;
+    // QAction                 *m_pCut;
+    // QAction                 *m_pPaste;
     UIPropertiesDialog      *m_pPropertiesDialog;
+    UIActionPool            *m_pActionPool;
+    UIToolBar               *m_pToolBar;
+
     /** Stores the drive letters the file system has (for windows system). For non-windows
      *  systems this is empty and for windows system it should at least contain C:/ */
     QStringList m_driveLetterList;
@@ -330,7 +334,6 @@ private slots:
 private:
 
     void             prepareObjects();
-    void             prepareActions();
     /** @p itemIndex is assumed to be 'model' index not 'proxy model' index */
     void             deleteByIndex(const QModelIndex &itemIndex);
     /** Returns the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
@@ -357,22 +360,21 @@ private:
 
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
-    UIToolBar       *m_pToolBar;
-    QAction         *m_pGoUp;
-    QAction         *m_pGoHome;
-    QAction         *m_pRefresh;
-    QAction         *m_pDelete;
-    QAction         *m_pRename;
-    QAction         *m_pCreateNewDirectory;
-    QAction         *m_pShowProperties;
-    QAction         *m_pSelectAll;
-    QAction         *m_pInvertSelection;
+    //QAction         *m_pGoUp;
+    //QAction         *m_pGoHome;
+    //QAction         *m_pRefresh;
+    //QAction         *m_pDelete;
+    //QAction         *m_pRename;
+    //QAction         *m_pCreateNewDirectory;
+    // QAction         *m_pShowProperties;
+    // QAction         *m_pSelectAll;
+    // QAction         *m_pInvertSelection;
     /** The vector of actions which need some selection to work on. Like cut, copy etc. */
     QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
-    QStringList     m_copyCutBuffer;
-    QILineEdit     *m_pSearchLineEdit;
+    QStringList      m_copyCutBuffer;
+    QILineEdit      *m_pSearchLineEdit;
     friend class    UIGuestControlFileModel;
 };
 

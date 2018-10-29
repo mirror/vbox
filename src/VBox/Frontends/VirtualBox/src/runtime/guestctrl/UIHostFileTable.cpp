@@ -26,8 +26,10 @@
 
 /* GUI includes: */
 # include "QILabel.h"
+# include "UIActionPool.h"
 # include "UIGuestControlFileModel.h"
 # include "UIHostFileTable.h"
+# include "UIToolBar.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -122,8 +124,8 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
 *   UIHostFileTable implementation.                                                                                              *
 *********************************************************************************************************************************/
 
-UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
-    :UIGuestControlFileTable(pParent)
+UIHostFileTable::UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
+    :UIGuestControlFileTable(pActionPool, pParent)
 {
     initializeFileTree();
     retranslateUi();
@@ -139,14 +141,37 @@ void UIHostFileTable::retranslateUi()
 
 void UIHostFileTable::prepareActions()
 {
+    if (m_pToolBar && m_pActionPool)
+    {
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh));
+
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection));
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
+    }
+
     /* Hide cut, copy, and paste for now. We will implement those
        when we have an API for host file operations: */
-    if (m_pCopy)
-        m_pCopy->setVisible(false);
-    if (m_pCut)
-        m_pCut->setVisible(false);
-    if (m_pPaste)
-        m_pPaste->setVisible(false);
+    // if (m_pCopy)
+    //     m_pCopy->setVisible(false);
+    // if (m_pCut)
+    //     m_pCut->setVisible(false);
+    // if (m_pPaste)
+    //     m_pPaste->setVisible(false);
+
+    UIGuestControlFileTable::prepareActions();
 }
 
 void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
