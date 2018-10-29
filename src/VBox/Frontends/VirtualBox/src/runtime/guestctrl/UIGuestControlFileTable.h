@@ -281,6 +281,7 @@ protected:
     /** For non-windows system does nothing and for windows systems populates m_driveLetterList with
      *  drive letters */
     virtual void     determineDriveLetters() = 0;
+    virtual void     prepareToolbar() = 0;
     QString          fileTypeString(FileObjectType type);
     /* @p item index is item location in model not in 'proxy' model */
     void             goIntoDirectory(const QModelIndex &itemIndex);
@@ -291,13 +292,13 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
-    virtual void     prepareActions();
+    void             enableSelectionDependentActions();
+    void             disableSelectionDependentActions();
+    void             prepareActionConnections();
+
 
     UIFileTableItem         *m_pRootItem;
     QILabel                 *m_pLocationLabel;
-    // QAction                 *m_pCopy;
-    // QAction                 *m_pCut;
-    // QAction                 *m_pPaste;
     UIPropertiesDialog      *m_pPropertiesDialog;
     UIActionPool            *m_pActionPool;
     UIToolBar               *m_pToolBar;
@@ -306,9 +307,11 @@ protected:
      *  systems this is empty and for windows system it should at least contain C:/ */
     QStringList m_driveLetterList;
 
+
 protected slots:
 
     void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
+    void sltCreateNewDirectory();
 
 private slots:
 
@@ -324,7 +327,7 @@ private slots:
     void sltCut();
     void sltPaste();
     void sltShowProperties();
-    void sltCreateNewDirectory();
+
     void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
     void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSelectAll();
@@ -340,8 +343,6 @@ private:
     UIFileTableItem *getStartDirectoryItem();
     /** Shows a modal dialog with a line edit for user to enter a new directory name and return the entered string*/
     QString         getNewDirectoryName();
-    void            enableSelectionDependentActions();
-    void            disableSelectionDependentActions();
     void            deSelectUpDirectoryItem();
     void            setSelectionForAll(QItemSelectionModel::SelectionFlags flags);
     void            setSelection(const QModelIndex &indexInProxyModel);

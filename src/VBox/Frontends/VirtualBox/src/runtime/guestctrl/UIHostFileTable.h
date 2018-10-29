@@ -46,10 +46,10 @@ protected:
     virtual QString fsObjectPropertyString() /* override */;
     virtual void    showProperties() /* override */;
     virtual void    determineDriveLetters() /* override */;
+    virtual void    prepareToolbar() /* override */;
 
 private:
 
-    void prepareActions();
     QString permissionString(QFileDevice::Permissions permissions);
 };
 

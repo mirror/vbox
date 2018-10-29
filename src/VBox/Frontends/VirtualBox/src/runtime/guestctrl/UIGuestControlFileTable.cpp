@@ -870,117 +870,6 @@ void UIGuestControlFileTable::prepareObjects()
     }
 }
 
-void UIGuestControlFileTable::prepareActions()
-{
-    if (!m_pToolBar)
-        return;
-
-    // m_pGoUp = new QAction(this);
-    // if (m_pGoUp)
-    // {
-    //     connect(m_pGoUp, &QAction::triggered, this, &UIGuestControlFileTable::sltGoUp);
-    //     m_pGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
-    //     m_pToolBar->addAction(m_pGoUp);
-    // }
-
-    // m_pGoHome = new QAction(this);
-    // if (m_pGoHome)
-    // {
-    //     connect(m_pGoHome, &QAction::triggered, this, &UIGuestControlFileTable::sltGoHome);
-    //     m_pGoHome->setIcon(UIIconPool::iconSet(QString(":/nw_24px.png")));
-    //     m_pToolBar->addAction(m_pGoHome);
-    // }
-
-    // m_pRefresh = new QAction(this);
-    // if (m_pRefresh)
-    // {
-    //     connect(m_pRefresh, &QAction::triggered, this, &UIGuestControlFileTable::sltRefresh);
-    //     m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24px.png")));
-    //     m_pToolBar->addAction(m_pRefresh);
-    // }
-
-    //m_pToolBar->addSeparator();
-
-    // m_pDelete = new QAction(this);
-    // if (m_pDelete)
-    // {
-    //     connect(m_pDelete, &QAction::triggered, this, &UIGuestControlFileTable::sltDelete);
-    //     m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
-    //     m_pToolBar->addAction(m_pDelete);
-    //     m_selectionDependentActions.push_back(m_pDelete);
-    // }
-
-    // m_pRename = new QAction(this);
-    // if (m_pRename)
-    // {
-    //     connect(m_pRename, &QAction::triggered, this, &UIGuestControlFileTable::sltRename);
-    //     m_pRename->setIcon(UIIconPool::iconSet(QString(":/name_16px_x2.png")));
-    //     m_pToolBar->addAction(m_pRename);
-    //     m_selectionDependentActions.push_back(m_pRename);
-    // }
-
-    // m_pCreateNewDirectory = new QAction(this);
-    // if (m_pCreateNewDirectory)
-    // {
-    //     connect(m_pCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileTable::sltCreateNewDirectory);
-    //     m_pCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
-    //     m_pToolBar->addAction(m_pCreateNewDirectory);
-    // }
-
-    // m_pCopy = new QAction(this);
-    // if (m_pCopy)
-    // {
-    //     m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_32px.png")));
-    //     m_pToolBar->addAction(m_pCopy);
-    //     connect(m_pCopy, &QAction::triggered, this, &UIGuestControlFileTable::sltCopy);
-    //     m_selectionDependentActions.push_back(m_pCopy);
-    // }
-
-    // m_pCut = new QAction(this);
-    // if (m_pCut)
-    // {
-    //     m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_32px.png")));
-    //     m_pToolBar->addAction(m_pCut);
-    //     connect(m_pCut, &QAction::triggered, this, &UIGuestControlFileTable::sltCut);
-    //     m_selectionDependentActions.push_back(m_pCut);
-    // }
-
-    // m_pPaste = new QAction(this);
-    // if (m_pPaste)
-    // {
-    //     m_pPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
-    //     m_pToolBar->addAction(m_pPaste);
-    //     connect(m_pPaste, &QAction::triggered, this, &UIGuestControlFileTable::sltPaste);
-    //     m_pPaste->setEnabled(false);
-    // }
-
-    // m_pToolBar->addSeparator();
-
-    // m_pShowProperties = new QAction(this);
-    // {
-    //     m_pShowProperties->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
-    //     m_pToolBar->addAction(m_pShowProperties);
-    //     connect(m_pShowProperties, &QAction::triggered, this, &UIGuestControlFileTable::sltShowProperties);
-    //     m_selectionDependentActions.push_back(m_pShowProperties);
-    // }
-
-    // m_pSelectAll = new QAction(this);
-    // {
-    //     m_pSelectAll->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
-    //     m_pToolBar->addAction(m_pSelectAll);
-    //     connect(m_pSelectAll, &QAction::triggered, this, &UIGuestControlFileTable::sltSelectAll);
-    // }
-
-    // m_pInvertSelection = new QAction(this);
-    // {
-    //     m_pInvertSelection->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
-    //     m_pToolBar->addAction(m_pInvertSelection);
-    //     connect(m_pInvertSelection, &QAction::triggered, this, &UIGuestControlFileTable::sltInvertSelection);
-    // }
-
-    disableSelectionDependentActions();
-}
-
 void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocation)
 {
     if (!m_pLocationComboBox)
@@ -1324,6 +1213,59 @@ void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selecte
         disableSelectionDependentActions();
 }
 
+
+void UIGuestControlFileTable::prepareActionConnections()
+{
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltGoUp);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltGoUp);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltGoHome);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltGoHome);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltRefresh);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltRefresh);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltDelete);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltDelete);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltRename);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltRename);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCopy);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCopy);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCut);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCut);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltPaste);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltPaste);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltSelectAll);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltSelectAll);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltInvertSelection);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltInvertSelection);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltShowProperties);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltShowProperties);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCreateNewDirectory);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCreateNewDirectory);
+}
+
 void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLocation)
 {
     QString comboLocation(UIPathOperations::sanitize(strLocation));
@@ -1420,90 +1362,6 @@ void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
 
 void UIGuestControlFileTable::retranslateUi()
 {
-    // if (m_pGoUp)
-    // {
-    //     m_pGoUp->setText(QApplication::translate("UIGuestControlFileManager", "Move one level up"));
-    //     m_pGoUp->setToolTip(QApplication::translate("UIGuestControlFileManager", "Move one level up"));
-    //     m_pGoUp->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Move one level up"));
-    // }
-
-    // if (m_pGoHome)
-    // {
-    //     m_pGoHome->setText(QApplication::translate("UIGuestControlFileManager", "Go to home directory"));
-    //     m_pGoHome->setToolTip(QApplication::translate("UIGuestControlFileManager", "Go to home directory"));
-    //     m_pGoHome->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Go to home directory"));
-    // }
-
-    // if (m_pRename)
-    // {
-    //     m_pRename->setText(QApplication::translate("UIGuestControlFileManager", "Rename the selected item"));
-    //     m_pRename->setToolTip(QApplication::translate("UIGuestControlFileManager", "Rename the selected item"));
-    //     m_pRename->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Rename the selected item"));
-    // }
-
-    // if (m_pRefresh)
-    // {
-    //     m_pRefresh->setText(QApplication::translate("UIGuestControlFileManager", "Refresh"));
-    //     m_pRefresh->setToolTip(QApplication::translate("UIGuestControlFileManager", "Refresh the current directory"));
-    //     m_pRefresh->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Refresh the current directory"));
-    // }
-    // if (m_pDelete)
-    // {
-    //     m_pDelete->setText(QApplication::translate("UIGuestControlFileManager", "Delete"));
-    //     m_pDelete->setToolTip(QApplication::translate("UIGuestControlFileManager", "Delete the selected item(s)"));
-    //     m_pDelete->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Delete the selected item(s)"));
-    // }
-
-    // if (m_pCreateNewDirectory)
-    // {
-    //     m_pCreateNewDirectory->setText(QApplication::translate("UIGuestControlFileManager", "Create new directory"));
-    //     m_pCreateNewDirectory->setToolTip(QApplication::translate("UIGuestControlFileManager", "Create new directory"));
-    //     m_pCreateNewDirectory->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Create new directory"));
-    // }
-
-    // if (m_pCopy)
-    // {
-    //     m_pCopy->setText(QApplication::translate("UIGuestControlFileManager", "Copy the selected item"));
-    //     m_pCopy->setToolTip(QApplication::translate("UIGuestControlFileManager", "Copy the selected item(s)"));
-    //     m_pCopy->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Copy the selected item(s)"));
-
-    // }
-
-    // if (m_pCut)
-    // {
-    //     m_pCut->setText(QApplication::translate("UIGuestControlFileManager", "Cut the selected item(s)"));
-    //     m_pCut->setToolTip(QApplication::translate("UIGuestControlFileManager", "Cut the selected item(s)"));
-    //     m_pCut->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Cut the selected item(s)"));
-
-    // }
-
-    // if ( m_pPaste)
-    // {
-    //     m_pPaste->setText(QApplication::translate("UIGuestControlFileManager", "Paste the copied item(s)"));
-    //     m_pPaste->setToolTip(QApplication::translate("UIGuestControlFileManager", "Paste the copied item(s)"));
-    //     m_pPaste->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Paste the copied item(s)"));
-    // }
-
-    // if (m_pShowProperties)
-    // {
-    //     m_pShowProperties->setText(QApplication::translate("UIGuestControlFileManager", "Show the properties of the selected item(s)"));
-    //     m_pShowProperties->setToolTip(QApplication::translate("UIGuestControlFileManager", "Show the properties of the selected item(s)"));
-    //     m_pShowProperties->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Show the properties of the selected item(s)"));
-    // }
-
-    // if (m_pSelectAll)
-    // {
-    //     m_pSelectAll->setText(QApplication::translate("UIGuestControlFileManager", "Select All"));
-    //     m_pSelectAll->setToolTip(QApplication::translate("UIGuestControlFileManager", "Select All"));
-    //     m_pSelectAll->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Select All"));
-    // }
-
-    // if (m_pInvertSelection)
-    // {
-    //     m_pInvertSelection->setText(QApplication::translate("UIGuestControlFileManager", "Invert Selection"));
-    //     m_pInvertSelection->setToolTip(QApplication::translate("UIGuestControlFileManager", "Invert Selection"));
-    //     m_pInvertSelection->setStatusTip(QApplication::translate("UIGuestControlFileManager", "Invert Selection"));
-    // }
 }
 
 bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */

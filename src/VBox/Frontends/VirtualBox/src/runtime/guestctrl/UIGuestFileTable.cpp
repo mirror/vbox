@@ -147,7 +147,8 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
 UIGuestFileTable::UIGuestFileTable(UIActionPool *pActionPool, QWidget *pParent /*= 0*/)
     :UIGuestControlFileTable(pActionPool, pParent)
 {
-    prepareActions();
+    prepareToolbar();
+    prepareActionConnections();
     retranslateUi();
 }
 
@@ -588,14 +589,13 @@ void UIGuestFileTable::determineDriveLetters()
     }
 }
 
-void UIGuestFileTable::prepareActions()
+void UIGuestFileTable::prepareToolbar()
 {
     if (m_pToolBar && m_pActionPool)
     {
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh));
-
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename));
@@ -611,7 +611,7 @@ void UIGuestFileTable::prepareActions()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
     }
 
-    UIGuestControlFileTable::prepareActions();
+    disableSelectionDependentActions();
 }
 
 #include "UIGuestFileTable.moc"

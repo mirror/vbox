@@ -52,7 +52,8 @@ protected:
     virtual QString fsObjectPropertyString() /* override */;
     virtual void    showProperties() /* override */;
     virtual void    determineDriveLetters() /* override */;
-    virtual void    prepareActions() /* override */;
+    virtual void    prepareToolbar() /* override */;
+
 
 private:
 
