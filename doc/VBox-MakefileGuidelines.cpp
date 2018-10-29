@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,28 +20,28 @@
  * These guidelines apply to all the Makefile.kmk files in the tree.
  * No exceptions.
  *
- * All these makefiles are ultimately the responsiblity of bird. Since there are
- * currently more than two hundred files and the number is growing, they have to
- * be very kept uniform or it will become very difficult to maintain them and
- * impossible do bulk refactoring. Thus these guidelines have no bits that are
- * optional unlike the coding guidelines, and should be thought of as rules
- * rather than guidelines.
+ * All these makefiles are ultimately the responsiblity of bird.  Since there
+ * are currently more than three hundred files and the number is growing, they
+ * have to be very kept uniform or it will become very difficult to maintain
+ * them and impossible do bulk refactoring.  Thus these guidelines have no bits
+ * that are optional unlike the coding guidelines, and should be thought of as
+ * rules rather than guidelines.
  *
- * Note! The guidelines do not apply to the other makefiles found in the source
- * tree, like the ones shipped in the SDK and the ones for the linux kernel
- * modules.
+ * Note! The guidelines do not apply to the non-kBuild makefiles found in the
+ *       source tree, like the ones shipped in the SDK and the ones for the
+ *       linux kernel modules.
  *
  *
  * @section sec_vbox_makefile_guidelines_kbuild         kBuild
  *
  * kBuild is way older than VirtualBox, at least as a concept, but the
- * VirtualBox project was a push to get something done about it again. It's
+ * VirtualBox project was a push to get something done about it again.  It's
  * maintained by bird in his spare time because: "We don't make buildsystems, we
- * make virtual machines". So, kBuild makes progress when there is spare time or
- * when there is an urgent need for something.
+ * make virtual machines".  So, kBuild makes progress when there is spare time
+ * or when there is an urgent need for something.
  *
- * The kBuild docs are in the process of being written. The current items and
- * their status per 2009-04-19:
+ * The kBuild docs are in the process of being written.  The current items and
+ * their status per 2018-10-29:
  *      - kmk Quick Reference [completed]:
  *        http://svn.netlabs.org/kbuild/wiki/kmk%20Quick%20Reference
  *      - kBuild Quick Reference [just started]:
@@ -79,8 +79,9 @@
  *        by a parent, sibling, uncle, cousine, or remoter relatives is not
  *        Okay. It may break sub-tree building which is not acceptable.
  *
- *      - Template names starts with VBOX and are all upper cased, no
- *        underscores or other separators. (TODO: Change this to camel case.)
+ *      - Template names starts with VBox and are camel cased, no
+ *        underscores or other separators.  (Note this used to be all upper
+ *        case, fixing this incomplete.)
  *
  *      - Makefile variables shall be prefixed with VBOX or VB to avoid clashes
  *        with environment and kBuild variables.
@@ -94,8 +95,9 @@
  *      - Makefile variables goes after the inclusion of the header and
  *        usually after including sub-makefiles.
  *
- *      - Variables that are used by more than one makefile usually belongs
- *        in the monster file, Config.kmk.
+ *      - Variables that are used by more than one makefile usually ends up
+ *        in the monster file, Config.kmk.  However, see if there are any
+ *        sub-tree specific Config.kmk files that could do the job first.
  *
  *      - Targets are lower or camel cased and as a rule the same as the
  *        resulting binary.
@@ -103,7 +105,7 @@
  *      - Install targets frequently have a -inst in their name, and a name that
  *        gives some idea what they install
  *
- *      - Always use templates (mytarget_TEMPLATE = VBOXSOMETHING).
+ *      - Always use templates (mytarget_TEMPLATE = VBoxSomething).
  *
  *      - Comment each target with a 3+ line block as seen in
  *        src/VBox/Debugger/Makefile.kmk.
@@ -127,26 +129,29 @@
  *      - The last element of an broken list should not have a slash-newline,
  *        otherwise we risk getting the next variable into the list.
  *
- *      - Indentation of if'ed blocks is done in 1 space increments, this also
- *        applies to broken lists. It does not apply to the commands in a
- *        recipes of course, because that would make kmk choke. (Yes, there are
- *        plenty examples of doing this differently, but these will be weeded
- *        out over time.)
+ *      - When if'ed blocks come into play, we will only indent the conditional
+ *        makefile directives (if, ifeq, ifneq, if1of, ifn1of, ifdef, ifndef,
+ *        else, endif, ++), one space for each level.  (Note! We used to indent
+ *        non-directives, which made emacs upset as we'd have both tabs and
+ *        spaces on as indentation on the same line.  There are a lot of cases
+ *        of this still around.)
  *
  *      - \$(NO_SUCH_VARIABLE) should be when you need to put nothing somewhere,
  *        for instance to prevent inherting an attribute.
  *
  *      - Always put the defines in the DEFS properties, never use the FLAGS
- *        properties for this. Doing so may screw up depenencies and object
+ *        properties for this.  Doing so may screw up depenencies and object
  *        caches.
  *
  *      - Mark each section and target of the file with a 3+ lines comment
  *        block.
  *
- *      - Document variables that are not obvious using double hash comments.
+ *      - Document variables that are not immediately obvious using double hash
+ *        comments, doxygen style.
  *
  *      - Each an every Makefile.kmk shall have a file header with Id, file
- *        description and copyright/license exactly like in the examples.
+ *        description and copyright/license exactly like in the examples.  (The
+ *        SCM tool will complain if you don't.)
  *
  *      - Multiple blank lines in a makefile is very seldom there without a
  *        reason and shall be preserved.
@@ -182,6 +187,9 @@
  *      - Even install targets: kmk nobin
  *
  *      - You can compile individual source files: kmk ConsoleImpl.o
+ *
+ *      - You can invoke recipes in the root makefile more efficiently via the
+ *        Maintenance.kmk file: kmk -f Maintenance.kmk incs
  *
  */
 
