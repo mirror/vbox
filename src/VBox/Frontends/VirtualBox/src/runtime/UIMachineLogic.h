@@ -430,7 +430,8 @@ private:
 
     /** Holds the log viewer dialog instance. */
     QIManagerDialog *m_pLogViewerDialog;
-    QIManagerDialog *m_pGuestControlDialog;
+    QIManagerDialog *m_pFileManagerDialog;
+    QIManagerDialog *m_pProcessControlDialog;
 
     /* Friend classes: */
     friend class UIMachineWindow;

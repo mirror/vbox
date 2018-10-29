@@ -856,7 +856,8 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pHostLedsState(NULL)
     , m_fIsHidLedsSyncEnabled(false)
     , m_pLogViewerDialog(0)
-    , m_pGuestControlDialog(0)
+    , m_pFileManagerDialog(0)
+    , m_pProcessControlDialog(0)
 {
 }
 
@@ -1785,21 +1786,21 @@ void UIMachineLogic::sltShowGuestControlFileManagerDialog()
         return;
 
     /* Create a logviewer only if we don't have one already */
-    if (m_pGuestControlDialog)
+    if (m_pFileManagerDialog)
         return;
 
-    QIManagerDialog *pGuestControlDialog;
+    QIManagerDialog *pFileManagerDialog;
     UIGuestControlFileManagerDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
-    dialogFactory.prepare(pGuestControlDialog, activeMachineWindow());
-    if (pGuestControlDialog)
+    dialogFactory.prepare(pFileManagerDialog, activeMachineWindow());
+    if (pFileManagerDialog)
     {
-        m_pGuestControlDialog = pGuestControlDialog;
+        m_pFileManagerDialog = pFileManagerDialog;
 
         /* Show instance: */
-        pGuestControlDialog->show();
-        pGuestControlDialog->setWindowState(pGuestControlDialog->windowState() & ~Qt::WindowMinimized);
-        pGuestControlDialog->activateWindow();
-        connect(pGuestControlDialog, &QIManagerDialog::sigClose,
+        pFileManagerDialog->show();
+        pFileManagerDialog->setWindowState(pFileManagerDialog->windowState() & ~Qt::WindowMinimized);
+        pFileManagerDialog->activateWindow();
+        connect(pFileManagerDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseGuestControlFileManagerDialog);
     }
 }
@@ -1807,11 +1808,11 @@ void UIMachineLogic::sltShowGuestControlFileManagerDialog()
 void UIMachineLogic::sltCloseGuestControlFileManagerDialog()
 {
     QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pGuestControlDialog != pDialog || !pDialog)
+    if (m_pFileManagerDialog != pDialog || !pDialog)
         return;
 
     /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pGuestControlDialog = 0;
+    m_pFileManagerDialog = 0;
     pDialog->close();
     UIGuestControlFileManagerDialogFactory().cleanup(pDialog);
 }
@@ -1822,21 +1823,21 @@ void UIMachineLogic::sltShowGuestProcessControlDialog()
         return;
 
     /* Create a logviewer only if we don't have one already */
-    if (m_pGuestControlDialog)
+    if (m_pProcessControlDialog)
         return;
 
-    QIManagerDialog *pGuestControlDialog;
+    QIManagerDialog *pProcessControlDialog;
     UIGuestProcessControlDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
-    dialogFactory.prepare(pGuestControlDialog, activeMachineWindow());
-    if (pGuestControlDialog)
+    dialogFactory.prepare(pProcessControlDialog, activeMachineWindow());
+    if (pProcessControlDialog)
     {
-        m_pGuestControlDialog = pGuestControlDialog;
+        m_pProcessControlDialog = pProcessControlDialog;
 
         /* Show instance: */
-        pGuestControlDialog->show();
-        pGuestControlDialog->setWindowState(pGuestControlDialog->windowState() & ~Qt::WindowMinimized);
-        pGuestControlDialog->activateWindow();
-        connect(pGuestControlDialog, &QIManagerDialog::sigClose,
+        pProcessControlDialog->show();
+        pProcessControlDialog->setWindowState(pProcessControlDialog->windowState() & ~Qt::WindowMinimized);
+        pProcessControlDialog->activateWindow();
+        connect(pProcessControlDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseGuestProcessControlDialog);
     }
 }
@@ -1844,11 +1845,11 @@ void UIMachineLogic::sltShowGuestProcessControlDialog()
 void UIMachineLogic::sltCloseGuestProcessControlDialog()
 {
     QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pGuestControlDialog != pDialog || !pDialog)
+    if (m_pProcessControlDialog != pDialog || !pDialog)
         return;
 
     /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pGuestControlDialog = 0;
+    m_pProcessControlDialog = 0;
     pDialog->close();
     UIGuestProcessControlDialogFactory().cleanup(pDialog);
 }
