@@ -44,6 +44,9 @@
 #include <iprt/string.h>
 
 #include <iprt/formats/lx.h>
+#include <iprt/formats/pecoff.h>
+#include <iprt/formats/codeview.h>
+#include <iprt/formats/elf32.h>
 #include "internal/ldr.h"
 
 
@@ -219,6 +222,8 @@ static int kldrModLXDoCreate(PRTLDRREADER pRdr, RTFOFF offNewHdr, uint32_t fFlag
     if (off > offEnd)
         return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION,
                              "Object table spans beyond the executable: e32_objcnt=%u", Hdr.e32_objcnt);
+    if (Hdr.e32_objcnt >= _32K)
+        return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION, "Too many segments: %#x\n", Hdr.e32_objcnt);
     if (    Hdr.e32_objmap
         &&  (Hdr.e32_objmap < off || Hdr.e32_objmap > offEnd))
         return RTErrInfoSetF(pErrInfo, VERR_LDRLX_BAD_LOADER_SECTION,
@@ -266,6 +271,8 @@ static int kldrModLXDoCreate(PRTLDRREADER pRdr, RTFOFF offNewHdr, uint32_t fFlag
      * Calc the instance size, allocate and initialize it.
      */
     size_t cbModLXAndSegments = RT_ALIGN_Z(RT_UOFFSETOF_DYN(KLDRMODLX, aSegments[Hdr.e32_objcnt + 1]), 8);
+    cbModLXAndSegments += sizeof("segXXXXX") * (Hdr.e32_objcnt + 1);
+
     pModLX = (PKLDRMODLX)RTMemAlloc(cbModLXAndSegments + Hdr.e32_ldrsize + 2 /*for two extra zeros*/);
     if (!pModLX)
         return VERR_NO_MEMORY;
@@ -409,17 +416,28 @@ static int kldrModLXDoCreate(PRTLDRREADER pRdr, RTFOFF offNewHdr, uint32_t fFlag
      * Check if we can optimize the mapping by using a different
      * object alignment. The linker typically uses 64KB alignment,
      * we can easily get away with page alignment in most cases.
+     *
+     * However, this screws up DwARF debug info, let's not do this
+     * when the purpose is reading debug info.
      */
-    fCanOptimizeMapping = !(Hdr.e32_mflags & (E32NOINTFIX | E32SYSDLL));
+    /** @todo Add flag for enabling this optimization. */
+    fCanOptimizeMapping = !(Hdr.e32_mflags & (E32NOINTFIX | E32SYSDLL))
+                       && !(fFlags & (RTLDR_O_FOR_DEBUG | RTLDR_O_FOR_VALIDATION));
     NextRVA = 0;
 
     /*
      * Setup the KLDRMOD segment array.
      */
+    char *pszSegNm = (char *)&pModLX->aSegments[pModLX->cSegments];
     for (i = 0; i < pModLX->cSegments; i++)
     {
+        /* dummy segment name */
+        pModLX->aSegments[i].pszName    = pszSegNm;
+        size_t cchName = RTStrPrintf(pszSegNm, sizeof("segXXXXX"), "seg%u", i);
+        pszSegNm += cchName + 1;
+        pModLX->aSegments[i].cchName    = (uint32_t)cchName;
+
         /* unused */
-        pModLX->aSegments[i].pszName    = NULL;
         pModLX->aSegments[i].offFile    = -1;
         pModLX->aSegments[i].cbFile     = -1;
         pModLX->aSegments[i].SelFlat    = 0;
@@ -448,6 +466,8 @@ static int kldrModLXDoCreate(PRTLDRREADER pRdr, RTFOFF offNewHdr, uint32_t fFlag
             pModLX->aSegments[i].cbMapped = RT_ALIGN_Z(pModLX->paObjs[i].o32_size, OBJPAGELEN);
         else
             pModLX->aSegments[i].cbMapped = pModLX->paObjs[i + 1].o32_base - pModLX->paObjs[i].o32_base;
+        /** @todo Above probably doesn't work for os2krnl and other images
+         *        non-sequential virtual address assignments. */
         NextRVA += (uint32_t)pModLX->aSegments[i].cbMapped;
 
         /* protection */
@@ -1257,6 +1277,188 @@ static int kldrModLXQueryMainEntrypoint(PRTLDRMODINTERNAL pMod, const void *pvBi
 
 #endif
 
+/** Helper for rtldrLX_EnumDbgInfo. */
+static int rtldrLx_EnumDbgInfoHelper(PKLDRMODLX pModLX, PFNRTLDRENUMDBG pfnCallback, void *pvUser,
+                                     uint8_t *pbBuf, uint32_t cbRead, uint32_t offDbgInfo, bool *pfReturn)
+{
+    RTLDRDBGINFO DbgInfo;
+    uint32_t     iDbgInfo = 0;
+    uint32_t     cbDbgInfo = pModLX->Hdr.e32_debuglen;
+
+    /*
+     * Recent watcom linkers emit PE style IMAGE_DEBUG_MISC for specifying
+     * external file with CV info.
+     */
+    if (cbRead >= sizeof(IMAGE_DEBUG_MISC))
+    {
+        PCIMAGE_DEBUG_MISC pMisc = (PCIMAGE_DEBUG_MISC)pbBuf;
+        if (   pMisc->DataType    == IMAGE_DEBUG_MISC_EXENAME
+            && pMisc->Length      <= cbRead
+            && pMisc->Length      >= RT_UOFFSETOF(IMAGE_DEBUG_MISC, Data[4])
+            && pMisc->Unicode     == 0
+            && pMisc->Reserved[0] == 0
+            && pMisc->Reserved[1] == 0
+            && pMisc->Reserved[2] == 0
+            && pMisc->Data[0]     >= 0x20
+            && pMisc->Data[0]     <  0x7f
+            && pMisc->Data[1]     >= 0x20
+            && pMisc->Data[1]     <  0x7f
+            && pMisc->Data[2]     >= 0x20
+            && pMisc->Data[2]     <  0x7f )
+        {
+            uint32_t cchMaxName = pMisc->Length - RT_UOFFSETOF(IMAGE_DEBUG_MISC, Data[0]);
+            for (uint32_t cchName = 3; cchName < cchMaxName; cchName++)
+            {
+                char const ch = pMisc->Data[cchName];
+                if (ch == 0)
+                {
+                    DbgInfo.enmType         = RTLDRDBGINFOTYPE_CODEVIEW;
+                    DbgInfo.iDbgInfo        = iDbgInfo;
+                    DbgInfo.offFile         = offDbgInfo;
+                    DbgInfo.LinkAddress     = NIL_RTLDRADDR;
+                    DbgInfo.cb              = pMisc->Length;
+                    DbgInfo.pszExtFile      = (char *)&pMisc->Data[0];
+                    DbgInfo.u.Cv.cbImage    = pModLX->Hdr.e32_mpages * pModLX->Hdr.e32_pagesize;
+                    DbgInfo.u.Cv.uTimestamp = 0;
+                    DbgInfo.u.Cv.uMajorVer  = 0;
+                    DbgInfo.u.Cv.uMinorVer  = 0;
+
+                    *pfReturn = true;
+                    int rc = pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
+                    if (rc != VINF_SUCCESS)
+                        return rc;
+                }
+                else if (ch >= 0x30 && ch < 0x7f)
+                    continue;
+                break;
+            }
+
+            /* Skip it. */
+            pbBuf      += pMisc->Length;
+            cbRead     -= pMisc->Length;
+            offDbgInfo += pMisc->Length;
+            cbDbgInfo  -= pMisc->Length;
+            iDbgInfo++;
+        }
+    }
+
+    /*
+     * Look for codeview signature.
+     */
+    RTCVHDR const *pCvHdr = (RTCVHDR const *)pbBuf;
+    if (   cbRead > sizeof(*pCvHdr)
+        && pCvHdr->off >= sizeof(*pCvHdr)
+        && pCvHdr->off < cbDbgInfo)
+    {
+        switch (pCvHdr->u32Magic)
+        {
+            case RTCVHDR_MAGIC_NB11:
+            case RTCVHDR_MAGIC_NB09:
+            case RTCVHDR_MAGIC_NB08:
+            case RTCVHDR_MAGIC_NB07:
+            case RTCVHDR_MAGIC_NB06:
+            case RTCVHDR_MAGIC_NB05:
+            case RTCVHDR_MAGIC_NB04:
+            case RTCVHDR_MAGIC_NB02:
+            case RTCVHDR_MAGIC_NB01:
+            case RTCVHDR_MAGIC_NB00:
+                DbgInfo.enmType         = RTLDRDBGINFOTYPE_CODEVIEW;
+                DbgInfo.iDbgInfo        = iDbgInfo;
+                DbgInfo.offFile         = offDbgInfo;
+                DbgInfo.LinkAddress     = NIL_RTLDRADDR;
+                DbgInfo.cb              = cbDbgInfo;
+                DbgInfo.pszExtFile      = NULL;
+                DbgInfo.u.Cv.cbImage    = pModLX->Hdr.e32_mpages * pModLX->Hdr.e32_pagesize;
+                DbgInfo.u.Cv.uTimestamp = 0;
+                DbgInfo.u.Cv.uMajorVer  = 0;
+                DbgInfo.u.Cv.uMinorVer  = 0;
+
+                *pfReturn = true;
+                return pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
+        }
+    }
+
+    /*
+     * Watcom wraps its DWARF output in an ELF image, so look for and ELF magic.
+     */
+    Elf32_Ehdr const *pElfHdr = (Elf32_Ehdr const *)pbBuf;
+    if (   cbRead >= sizeof(*pElfHdr)
+        && pElfHdr->e_ident[EI_MAG0]    == ELFMAG0
+        && pElfHdr->e_ident[EI_MAG1]    == ELFMAG1
+        && pElfHdr->e_ident[EI_MAG2]    == ELFMAG2
+        && pElfHdr->e_ident[EI_MAG3]    == ELFMAG3
+        && pElfHdr->e_ident[EI_CLASS]   == ELFCLASS32
+        && pElfHdr->e_ident[EI_DATA]    == ELFDATA2LSB
+        && pElfHdr->e_ident[EI_VERSION] == EV_CURRENT
+        && pElfHdr->e_shentsize         == sizeof(Elf32_Shdr)
+        && pElfHdr->e_shnum             >= 2
+        && pElfHdr->e_shnum             <  _32K + 10
+        && pElfHdr->e_shstrndx          <= pElfHdr->e_shnum
+        && pElfHdr->e_shstrndx          >  0
+       )
+    {
+        /** @todo try use pBuf for reading into and try to read more at once. */
+        uint32_t const offShdrs = pElfHdr->e_shoff + offDbgInfo;
+        uint32_t const cShdrs   = pElfHdr->e_shnum;
+        uint32_t const cbShdr   = pElfHdr->e_shentsize;
+        int            rc       = VINF_SUCCESS;
+
+        /* Read the section string table. */
+        Elf32_Shdr Shdr;
+        int rc2 = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &Shdr, sizeof(Shdr),
+                                                offShdrs + pElfHdr->e_shstrndx * cbShdr);
+        if (   RT_SUCCESS(rc2)
+            && Shdr.sh_offset > 0
+            && Shdr.sh_size > 0
+            && Shdr.sh_size < _256K
+            && Shdr.sh_type == SHT_STRTAB)
+        {
+            uint32_t const cbStrTab = Shdr.sh_size;
+            char * const   pszStrTab = (char *)RTMemTmpAlloc(cbStrTab + 2);
+            if (pszStrTab)
+            {
+                rc2 = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, pszStrTab, Shdr.sh_size, offDbgInfo + Shdr.sh_offset);
+                if (RT_SUCCESS(rc2))
+                {
+                    pszStrTab[cbStrTab] = '\0';
+
+                    /* Iterate the sections, one by one. */
+                    for (uint32_t i = 1; i < cShdrs; i++)
+                    {
+                        rc = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &Shdr, sizeof(Shdr), offShdrs + i * cbShdr);
+                        if (   RT_SUCCESS(rc)
+                            && Shdr.sh_name < cbStrTab
+                            && strncmp(&pszStrTab[Shdr.sh_name], RT_STR_TUPLE(".debug_")) == 0)
+                        {
+                            DbgInfo.enmType            = RTLDRDBGINFOTYPE_DWARF;
+                            DbgInfo.iDbgInfo           = iDbgInfo;
+                            DbgInfo.offFile            = offDbgInfo + Shdr.sh_offset;
+                            DbgInfo.LinkAddress        = NIL_RTLDRADDR;
+                            DbgInfo.cb                 = Shdr.sh_size;
+                            DbgInfo.pszExtFile         = NULL;
+                            DbgInfo.u.Dwarf.pszSection = &pszStrTab[Shdr.sh_name];
+
+                            *pfReturn = true;
+                            rc = pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
+                            if (rc != VINF_SUCCESS)
+                                break;
+                            iDbgInfo++;
+                        }
+                    }
+                }
+                RTMemTmpFree(pszStrTab);
+            }
+        }
+        return rc;
+    }
+
+    /*
+     * Watcom debug info? Don't know how to detect it...
+     */
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * @interface_method_impl{RTLDROPS,pfnEnumDbgInfo}
@@ -1273,14 +1475,35 @@ static DECLCALLBACK(int) rtldrLX_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
      */
     if (kldrModLXHasDbgInfo(pMod, pvBits))
         return VINF_SUCCESS;
-#if 0
+    PKLDRMODLX pModLX = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
+
     /*
      * Read the debug info and look for familiar magics and structures.
      */
-    /** @todo */
-#endif
+    union
+    {
+        uint8_t             ab[1024];
+        IMAGE_DEBUG_MISC    Misc;
+        RTCVHDR             CvHdr;
+    } uBuf;
 
-    return VINF_SUCCESS;
+    bool fReturn = false;
+
+    /* Try the offset without header displacement first. */
+    uint32_t cbToRead = RT_MIN(pModLX->Hdr.e32_debuglen, sizeof(uBuf));
+    int rc = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &uBuf, cbToRead, pModLX->Hdr.e32_debuginfo);
+    if (RT_SUCCESS(rc))
+        rc = rtldrLx_EnumDbgInfoHelper(pModLX, pfnCallback, pvUser, &uBuf.ab[0], cbToRead, pModLX->Hdr.e32_debuginfo, &fReturn);
+
+    /* If that didn't yield anything, try displaying it by the header offset. */
+    if (!fReturn && pModLX->offHdr > 0)
+    {
+        rc = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &uBuf, cbToRead, pModLX->Hdr.e32_debuginfo + pModLX->offHdr);
+        if (RT_SUCCESS(rc))
+            rc = rtldrLx_EnumDbgInfoHelper(pModLX, pfnCallback, pvUser, &uBuf.ab[0], cbToRead,
+                                           pModLX->Hdr.e32_debuginfo + pModLX->offHdr, &fReturn);
+    }
+    return rc;
 }
 
 
@@ -1290,7 +1513,7 @@ static int kldrModLXHasDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits)
     RT_NOREF(pvBits);
 
     /*
-     * Don't curretnly bother with linkers which doesn't advertise it in the header.
+     * Don't currently bother with linkers which doesn't advertise it in the header.
      */
     if (    !pModLX->Hdr.e32_debuginfo
         ||  !pModLX->Hdr.e32_debuglen)
@@ -2752,9 +2975,8 @@ static DECLCALLBACK(int) rtldrLX_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADD
 static DECLCALLBACK(int) rtldrLX_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf)
 {
     PKLDRMODLX pThis = RT_FROM_MEMBER(pMod, KLDRMODLX, Core);
-    if (iDbgInfo == 0)
-        return pThis->Core.pReader->pfnRead(pThis->Core.pReader, pvBuf, cb, off);
-    return VERR_OUT_OF_RANGE;
+    RT_NOREF(iDbgInfo);
+    return pThis->Core.pReader->pfnRead(pThis->Core.pReader, pvBuf, cb, off);
 }
 
 

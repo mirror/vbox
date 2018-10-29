@@ -143,6 +143,8 @@
 #define DW_TAG_lo_user                      UINT16_C(0x4080)
 #define DW_TAG_GNU_call_site                UINT16_C(0x4109)
 #define DW_TAG_GNU_call_site_parameter      UINT16_C(0x410a)
+#define DW_TAG_WATCOM_address_class_type    UINT16_C(0x4100) /**< Watcom extension. */
+#define DW_TAG_WATCOM_namespace             UINT16_C(0x4101) /**< Watcom extension. */
 #define DW_TAG_hi_user                      UINT16_C(0xffff)
 /** @} */
 
@@ -244,13 +246,16 @@
 #define DW_AT_lo_user                       UINT16_C(0x2000)
 /** Used by GCC and others, same as DW_AT_linkage_name. See http://wiki.dwarfstd.org/index.php?title=DW_AT_linkage_name*/
 #define DW_AT_MIPS_linkage_name             UINT16_C(0x2007)
+#define DW_AT_WATCOM_memory_model           UINT16_C(0x2082) /**< Watcom extension. */
+#define DW_AT_WATCOM_references_start       UINT16_C(0x2083) /**< Watcom extension. */
+#define DW_AT_WATCOM_parm_entry             UINT16_C(0x2084) /**< Watcom extension. */
 #define DW_AT_hi_user                       UINT16_C(0x3fff)
 /** @} */
 
 /** @name DIE Forms.
  * @{ */
 #define DW_FORM_addr                        UINT16_C(0x01)
-/* What was 0x02? */
+/* 0x02 was FORM_REF in DWARF v1, obsolete now. */
 #define DW_FORM_block2                      UINT16_C(0x03)
 #define DW_FORM_block4                      UINT16_C(0x04)
 #define DW_FORM_data2                       UINT16_C(0x05)
@@ -459,6 +464,9 @@ typedef struct RTDWARFABBREV
 {
     /** Whether there are children or not. */
     bool                fChildren;
+#ifdef LOG_ENABLED
+    uint8_t             cbHdr; /**< For calcing ABGOFF matching dwarfdump. */
+#endif
     /** The tag. */
     uint16_t            uTag;
     /** Offset into the abbrev section of the specification pairs. */
@@ -1224,6 +1232,9 @@ static const char *rtDwarfLog_AttrName(uint32_t uAttr)
         RT_CASE_RET_STR(DW_AT_enum_class);
         RT_CASE_RET_STR(DW_AT_linkage_name);
         RT_CASE_RET_STR(DW_AT_MIPS_linkage_name);
+        RT_CASE_RET_STR(DW_AT_WATCOM_memory_model);
+        RT_CASE_RET_STR(DW_AT_WATCOM_references_start);
+        RT_CASE_RET_STR(DW_AT_WATCOM_parm_entry);
     }
     static char s_szStatic[32];
     RTStrPrintf(s_szStatic, sizeof(s_szStatic),"DW_AT_%#x", uAttr);
@@ -2381,13 +2392,13 @@ static int rtDwarfCursor_Init(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF pThis, krtD
 
 
 /**
- * Initialize a section reader cursor with an offset.
+ * Initialize a section reader cursor with a skip offset.
  *
  * @returns IPRT status code.
  * @param   pCursor             The cursor.
  * @param   pThis               The dwarf module.
  * @param   enmSect             The name of the section to read.
- * @param   offSect             The offset into the section.
+ * @param   offSect             The offset to skip into the section.
  */
 static int rtDwarfCursor_InitWithOffset(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF pThis,
                                         krtDbgModDwarfSect enmSect, uint32_t offSect)
@@ -2401,7 +2412,7 @@ static int rtDwarfCursor_InitWithOffset(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF p
     int rc = rtDwarfCursor_Init(pCursor, pThis, enmSect);
     if (RT_SUCCESS(rc))
     {
-        pCursor->pbStart    += offSect;
+        /* pCursor->pbStart += offSect; - we're skipping, offsets are relative to start of section... */
         pCursor->pb         += offSect;
         pCursor->cbLeft     -= offSect;
         pCursor->cbUnitLeft -= offSect;
@@ -3549,6 +3560,9 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
         for (;;)
         {
             /* Read the 'header'. Skipping zero code bytes. */
+#ifdef LOG_ENABLED
+            uint32_t const offStart = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
+#endif
             uint32_t const uCurCode = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
             if (pRet && (uCurCode == 0 || uCurCode < uPrevCode))
                 break; /* probably end of unit. */
@@ -3575,7 +3589,11 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
                         pEntry->fChildren = RT_BOOL(uChildren);
                         pEntry->uTag      = uCurTag;
                         pEntry->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
-
+#ifdef LOG_ENABLED
+                        pEntry->cbHdr     = (uint8_t)(pEntry->offSpec - offStart);
+                        Log7(("rtDwarfAbbrev_LookupMiss(%#x): fill: %#x: uTag=%#x offAbbrev=%#x%s\n",
+                              uCode, offStart, pEntry->uTag, pEntry->offAbbrev, pEntry->fChildren ? " has-children" : ""));
+#endif
                         if (uCurCode == uCode)
                         {
                             Assert(!pRet);
@@ -3606,6 +3624,11 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
                 break;
             uPrevCode = uCurCode;
         }
+        if (pRet)
+            Log6(("rtDwarfAbbrev_LookupMiss(%#x): uTag=%#x offSpec=%#x offAbbrev=%#x [fill]\n",
+                  uCode, pRet->uTag, pRet->offSpec, pRet->offAbbrev));
+        else
+            Log6(("rtDwarfAbbrev_LookupMiss(%#x): failed [fill]\n", uCode));
     }
     else
     {
@@ -3615,6 +3638,9 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
         for (;;)
         {
             /* Read the 'header'. */
+#ifdef LOG_ENABLED
+            uint32_t const offStart  = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
+#endif
             uint32_t const uCurCode  = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
             uint32_t const uCurTag   = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
             uint8_t  const uChildren = rtDwarfCursor_GetU8(&Cursor, 0);
@@ -3635,6 +3661,9 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
                 pRet->uTag      = uCurTag;
                 pRet->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
                 pRet->offAbbrev = pThis->offCachedAbbrev;
+#ifdef LOG_ENABLED
+                pRet->cbHdr     = (uint8_t)(pRet->offSpec - offStart);
+#endif
                 break;
             }
 
@@ -3648,6 +3677,11 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
             if (RT_FAILURE(Cursor.rc))
                 break;
         }
+        if (pRet)
+            Log6(("rtDwarfAbbrev_LookupMiss(%#x): uTag=%#x offSpec=%#x offAbbrev=%#x [no-fill]\n",
+                  uCode, pRet->uTag, pRet->offSpec, pRet->offAbbrev));
+        else
+            Log6(("rtDwarfAbbrev_LookupMiss(%#x): failed [no-fill]\n", uCode));
     }
 
     rtDwarfCursor_Delete(&Cursor, VINF_SUCCESS);
@@ -3665,10 +3699,13 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
  */
 static PCRTDWARFABBREV rtDwarfAbbrev_Lookup(PRTDBGMODDWARF pThis, uint32_t uCode)
 {
-    if (   uCode - 1 >= pThis->cCachedAbbrevsAlloced
-        || pThis->paCachedAbbrevs[uCode - 1].offAbbrev != pThis->offCachedAbbrev)
-        return rtDwarfAbbrev_LookupMiss(pThis, uCode);
-    return &pThis->paCachedAbbrevs[uCode - 1];
+    uCode -= 1;
+    if (uCode < pThis->cCachedAbbrevsAlloced)
+    {
+        if (pThis->paCachedAbbrevs[uCode].offAbbrev == pThis->offCachedAbbrev)
+            return &pThis->paCachedAbbrevs[uCode];
+    }
+    return rtDwarfAbbrev_LookupMiss(pThis, uCode + 1);
 }
 
 
@@ -4573,7 +4610,8 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                     {
                         rc = RTDbgModSymbolAdd(pThis->hCnt, pLabel->pszName, iSeg, offSeg, 0 /*cb*/,
                                                0 /*fFlags*/, NULL /*piOrdinal*/);
-                        AssertRC(rc);
+                        AssertMsg(RT_SUCCESS(rc) || rc == VERR_DBG_ADDRESS_CONFLICT,
+                                  ("%Rrc %s %x:%x\n", rc, pLabel->pszName, iSeg, offSeg));
                     }
                     else
                         Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
@@ -4784,6 +4822,7 @@ static int rtDwarfInfo_SkipForm(PRTDWARFCURSOR pCursor, uint32_t uForm)
             return pCursor->rc; /* no data */
 
         default:
+            Log(("rtDwarfInfo_SkipForm: Unknown form %#x\n", uForm));
             return VERR_DWARF_UNKNOWN_FORM;
     }
 }
@@ -4842,8 +4881,12 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
         rtDwarfInfo_InitDie(pDie, pDieDesc);
     for (;;)
     {
+#ifdef LOG_ENABLED
+        uint32_t const off = (uint32_t)(AbbrevCursor.pb - AbbrevCursor.pbStart);
+#endif
         uint32_t uAttr = rtDwarfCursor_GetULeb128AsU32(&AbbrevCursor, 0);
         uint32_t uForm = rtDwarfCursor_GetULeb128AsU32(&AbbrevCursor, 0);
+        Log4(("    %04x: %-23s [%s]\n", off, rtDwarfLog_AttrName(uAttr), rtDwarfLog_FormName(uForm)));
         if (uAttr == 0)
             break;
         if (uForm == DW_FORM_indirect)
@@ -4867,7 +4910,6 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
         {
             pDie->cUnhandledAttrs++;
             rc = rtDwarfInfo_SkipForm(pCursor, uForm);
-            Log4(("          %-20s    [%s]\n", rtDwarfLog_AttrName(uAttr), rtDwarfLog_FormName(uForm)));
         }
         if (RT_FAILURE(rc))
             break;
@@ -4885,7 +4927,7 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
         rc = rtDwarfInfo_SnoopSymbols(pThis, pDie);
         /* Ignore duplicates, get work done instead. */
         /** @todo clean up global/static symbol mess. */
-        if (rc == VERR_DBG_DUPLICATE_SYMBOL)
+        if (rc == VERR_DBG_DUPLICATE_SYMBOL || rc == VERR_DBG_ADDRESS_CONFLICT)
             rc = VINF_SUCCESS;
     }
 
@@ -5011,8 +5053,8 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
                 pszName  = "<unknown>";
                 pDieDesc = &g_CoreDieDesc;
             }
-            Log4(("%08x: %*stag=%s (%#x, abbrev %u)%s\n", offLog, cDepth * 2, "", pszName,
-                  pAbbrev->uTag, uAbbrCode, pAbbrev->fChildren ? " has children" : ""));
+            Log4(("%08x: %*stag=%s (%#x, abbrev %u @ %#x)%s\n", offLog, cDepth * 2, "", pszName,
+                  pAbbrev->uTag, uAbbrCode, pAbbrev->offSpec - pAbbrev->cbHdr, pAbbrev->fChildren ? " has children" : ""));
 
             /*
              * Create a new internal DIE structure and parse the
@@ -5509,7 +5551,9 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
     pThis->pDbgInfoMod = pMod;
     pThis->pImgMod     = pMod;
     RTListInit(&pThis->CompileUnitList);
+
     /** @todo better fUseLinkAddress heuristics! */
+    /* mach_kernel: */
     if (   (pMod->pszDbgFile          && strstr(pMod->pszDbgFile,          "mach_kernel"))
         || (pMod->pszImgFile          && strstr(pMod->pszImgFile,          "mach_kernel"))
         || (pMod->pszImgFileSpecified && strstr(pMod->pszImgFileSpecified, "mach_kernel")) )
