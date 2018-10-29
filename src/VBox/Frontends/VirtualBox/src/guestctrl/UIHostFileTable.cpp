@@ -147,7 +147,6 @@ void UIHostFileTable::prepareToolbar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh));
-
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
@@ -161,6 +160,12 @@ void UIHostFileTable::prepareToolbar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
+
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
     }
 
     /* Hide cut, copy, and paste for now. We will implement those
@@ -171,8 +176,7 @@ void UIHostFileTable::prepareToolbar()
     //     m_pCut->setVisible(false);
     // if (m_pPaste)
     //     m_pPaste->setVisible(false);
-
-    disableSelectionDependentActions();
+    setSelectionDependentActionsEnabled(false);
 }
 
 void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)

@@ -292,8 +292,7 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
-    void             enableSelectionDependentActions();
-    void             disableSelectionDependentActions();
+    void             setSelectionDependentActionsEnabled(bool fIsEnabled);
     void             prepareActionConnections();
 
 
@@ -306,7 +305,8 @@ protected:
     /** Stores the drive letters the file system has (for windows system). For non-windows
      *  systems this is empty and for windows system it should at least contain C:/ */
     QStringList m_driveLetterList;
-
+    /** The set of actions which need some selection to work on. Like cut, copy etc. */
+    QSet<QAction*> m_selectionDependentActions;
 
 protected slots:
 
@@ -361,17 +361,6 @@ private:
 
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
-    //QAction         *m_pGoUp;
-    //QAction         *m_pGoHome;
-    //QAction         *m_pRefresh;
-    //QAction         *m_pDelete;
-    //QAction         *m_pRename;
-    //QAction         *m_pCreateNewDirectory;
-    // QAction         *m_pShowProperties;
-    // QAction         *m_pSelectAll;
-    // QAction         *m_pInvertSelection;
-    /** The vector of actions which need some selection to work on. Like cut, copy etc. */
-    QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
     QStringList      m_copyCutBuffer;
