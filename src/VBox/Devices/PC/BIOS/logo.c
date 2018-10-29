@@ -382,7 +382,7 @@ void show_logo(void)
         goto done;
 
     /* Set video mode using private video BIOS interface. */
-    tmp = custom_set_mode(640*2, 480*2, 32);
+    tmp = custom_set_mode(640, 480, 32);
     /* If custom mode set failed, fall back to VBE. */
     if (tmp != 0x4F)
         vesa_set_mode(0x142);
