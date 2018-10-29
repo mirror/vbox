@@ -6962,8 +6962,8 @@ if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd) # the gnu ld gu
  TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.x86     = -m elf_i386
  TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.amd64   = -m elf_x86_64
 endif
-TEMPLATE_VBOXGUESTR3XF86MOD_CFLAGS  = $(TEMPLATE_VBOXGUESTR3EXE_CFLAGS) -fno-pie -fno-merge-constants -std=c99 -ffreestanding
-TEMPLATE_VBOXGUESTR3XF86MOD_CXXFLAGS= $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS) -fno-pie -fno-merge-constants -ffreestanding
+TEMPLATE_VBOXGUESTR3XF86MOD_CFLAGS  = $(VBOX_GCC_fno-stack-protector) -fno-pie -fno-merge-constants -std=c99 -ffreestanding
+TEMPLATE_VBOXGUESTR3XF86MOD_CXXFLAGS= $(VBOX_GCC_fno-stack-protector) -fno-pie -fno-merge-constants -ffreestanding
 TEMPLATE_VBOXGUESTR3XF86MOD_SYSSUFF = .o
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS  = \
 	$(VBOX_LIB_VBGL_R3_XFREE86)
