@@ -579,6 +579,7 @@ void UIGuestFileTable::determineDriveLetters()
 
     /** @todo Currently API lacks a way to query windows drive letters.
      *  so we enumarate them by using CGuestSession::DirectoryExists() */
+    m_driveLetterList.clear();
     for (int i = 'A'; i <= 'Z'; ++i)
     {
         QString path((char)i);
