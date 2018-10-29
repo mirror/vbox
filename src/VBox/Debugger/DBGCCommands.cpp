@@ -1500,7 +1500,7 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     if (RT_FAILURE(rc))
         return DBGCCmdHlpVBoxError(pCmdHlp, rc, "pfnVarToDbgfAddr: %Dv\n", &paArgs[1]);
 
-    RTDBGSEGIDX     iModSeg     = (RTDBGSEGIDX)paArgs[1].u.u64Number;
+    RTDBGSEGIDX     iModSeg     = (RTDBGSEGIDX)paArgs[2].u.u64Number;
     if (    iModSeg != paArgs[2].u.u64Number
         ||  iModSeg > RTDBGSEGIDX_LAST)
         return DBGCCmdHlpPrintf(pCmdHlp, "Segment index out of range: %Dv; range={0..%#x}\n", &paArgs[1], RTDBGSEGIDX_LAST);
@@ -1516,9 +1516,10 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
      * Call the debug info manager about this loading.
      */
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    rc = DBGFR3AsLoadImage(pUVM, pDbgc->hDbgAs, pszFilename, pszModName, RTLDRARCH_WHATEVER, &ModAddress, iModSeg, 0 /*fFlags*/);
+    rc = DBGFR3AsLoadImage(pUVM, pDbgc->hDbgAs, pszFilename, pszModName, RTLDRARCH_WHATEVER,
+                           &ModAddress, iModSeg, RTDBGASLINK_FLAGS_REPLACE);
     if (RT_FAILURE(rc))
-        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3ModuleLoadImage(,,'%s','%s',%Dv,)\n",
+        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3ModuleLoadImage(,,'%s','%s',%Dv,,)\n",
                                    pszFilename, pszModName, &paArgs[1]);
 
     NOREF(pCmd);
