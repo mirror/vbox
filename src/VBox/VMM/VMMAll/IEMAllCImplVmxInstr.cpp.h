@@ -2153,7 +2153,51 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
         pVmcs->u64GuestPendingDbgXcpt.u = 0;
     }
 
-    /** @todo NSTVMX: Save VMX preemption timer value. */
+    /* Save VMX-preemption timer value. */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
+    {
+        uint32_t uPreemptTimer;
+        if (uExitReason == VMX_EXIT_PREEMPT_TIMER)
+            uPreemptTimer = 0;
+        else
+        {
+            /*
+             * Assume the following:
+             * PreemptTimerShift = 5
+             * VmcsPreemptTimer  = 2 (i.e. need to decrement by 1 every 2 * RT_BIT(5) = 20000 TSC ticks)
+             * VmentryTick       = 50000 (TSC at time of VM-entry)
+             *
+             * CurTick   Delta    PreemptTimerVal
+             * ----------------------------------
+             *  60000    10000    2
+             *  80000    30000    1
+             *  90000    40000    0  -> VM-exit.
+             *
+             * If Delta >= VmcsPreemptTimer * RT_BIT(PreemptTimerShift) cause a VMX-preemption timer VM-exit.
+             *
+             * The saved VMX-preemption timer value is calculated as follows:
+             * PreemptTimerVal = VmcsPreemptTimer - (Delta / (VmcsPreemptTimer * RT_BIT(PreemptTimerShift)))
+             * E.g.:
+             *  Delta  = 10000
+             *    Tmp    = 10000 / (2 * 10000) = 0.5
+             *    NewPt  = 2 - 0.5 = 2
+             *  Delta  = 30000
+             *    Tmp    = 30000 / (2 * 10000) = 1.5
+             *    NewPt  = 2 - 1.5 = 1
+             *  Delta  = 40000
+             *    Tmp    = 40000 / 20000 = 2
+             *    NewPt  = 2 - 2 = 0
+             */
+            uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
+            uint64_t const uVmentryTick    = pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick;
+            uint64_t const uDelta          = uCurTick - uVmentryTick;
+            uint32_t const uVmcsPreemptVal = pVmcs->u32PreemptTimer;
+            uPreemptTimer = uVmcsPreemptVal - ASMDivU64ByU32RetU32(uDelta, uVmcsPreemptVal * RT_BIT(VMX_V_PREEMPT_TIMER_SHIFT));
+        }
+
+        pVmcs->u32PreemptTimer = uPreemptTimer;
+    }
+
 
     /* PDPTEs. */
     /* We don't support EPT yet. */
@@ -4929,40 +4973,6 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
 
 
 /**
- * Checks if an interrupt-window exiting occurs immediately as part of VM-entry.
- *
- * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
- *
- * @remarks This must be called after loading the guest-state and switching
- *          page-tables as part of VM-entry!
- */
-IEM_STATIC int iemVmxVmentryCheckIntWindowExit(PVMCPU pVCpu, const char *pszInstr)
-{
-    /*
-     * An interrupt-window exit occurs immediately after VM-entry if interrupts
-     * are enabled and the interrupt-window exit control is set.
-     *
-     * See Intel spec. 25.2 "Other Causes Of VM Exits".
-     * See Intel spec. 26.6.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
-     */
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-
-    if (   (pVmcs->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT)
-        &&  pVCpu->cpum.GstCtx.eflags.Bits.u1IF
-        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-    {
-        Log(("%s: Interrupt-window detected during VM-entry -> VM-exit\n", pszInstr));
-        return iemVmxVmexitIntWindow(pVCpu);
-    }
-
-    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
-}
-
-
-/**
  * Checks host-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -5884,6 +5894,31 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
 
 
 /**
+ * Set up the VMX-preemption timer.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
+    {
+        uint64_t const uVmentryTick = TMCpuTickGetNoCheck(pVCpu);
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick = uVmentryTick;
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
+
+        Log(("%s: VM-entry set up VMX-preemption timer at %#RX64\n", pszInstr, uVmentryTick));
+    }
+    else
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
+
+    NOREF(pszInstr);
+}
+
+
+/**
  * Performs event injection (if any) as part of VM-entry.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -6090,18 +6125,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 /* We've now entered nested-guest execution. */
                                 pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
 
-                                /** The priority of potential VM-exits during VM-entry is important. */
-                                /** @todo NSTVMX: Any debug trap exceptions must be handled here. */
-                                /** @todo NSTVMX: VMX preemption timer exiting. */
-                                /** @todo NSTVMX: TPR thresholding exiting. */
-                                /** @todo NSTVMX: NMI-window exiting. */
+                                /*
+                                 * The priority of potential VM-exits during VM-entry is important.
+                                 * The priorities are listed from highest to lowest as follows:
+                                 *
+                                 * 1. Debug exceptions.
+                                 * 2. VMX-preemption timer.
+                                 * 3. NMI-window exit.
+                                 * 4. NMI injection.
+                                 * 5. Interrupt-window exit.
+                                 * 6. Interrupt injection.
+                                 * 7. MTF exit.
+                                 */
 
-                                /* Check premature interrupt-window exiting. */
-                                rc = iemVmxVmentryCheckIntWindowExit(pVCpu, pszInstr);
-                                if (rc != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                                    return rc;
-
-                                /** @todo NSTVMX: Pending MTF exiting. */
+                                /* Setup the VMX-preemption timer. */
+                                iemVmxVmentrySetupPreemptTimer(pVCpu, pszInstr);
 
                                 /* Now that we've switched page tables, we can inject events if any. */
                                 iemVmxVmentryInjectEvent(pVCpu, pszInstr);

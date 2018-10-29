@@ -547,6 +547,9 @@ typedef struct VMCPU
 /** Hardware virtualized nested-guest interrupt pending. */
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_64(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 31
+/** VMX-preemption timer in effect. */
+#define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
+#define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      32
 
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */

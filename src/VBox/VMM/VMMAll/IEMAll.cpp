@@ -117,6 +117,7 @@
 #include <VBox/param.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
+#include <iprt/asm-math.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/x86.h>
