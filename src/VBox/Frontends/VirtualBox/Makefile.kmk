@@ -351,7 +351,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime/scale \
 	./src/runtime/seamless \
 	./src/runtime/information \
-	./src/runtime/guestctrl \
+	./src/guestctrl \
 	./src/settings \
 	./src/settings/global \
 	./src/settings/machine \
@@ -837,17 +837,17 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationRuntime.h \
 	src/runtime/information/UIInformationView.h \
 	src/runtime/information/UIVMInformationDialog.h \
-	src/runtime/guestctrl/UIGuestControlConsole.h \
-	src/runtime/guestctrl/UIGuestControlFileManager.h \
-	src/runtime/guestctrl/UIGuestControlFileManagerDialog.h \
-	src/runtime/guestctrl/UIGuestControlFileModel.h \
-	src/runtime/guestctrl/UIGuestControlFileTable.h \
-	src/runtime/guestctrl/UIGuestControlInterface.h \
-	src/runtime/guestctrl/UIGuestControlTreeItem.h \
-	src/runtime/guestctrl/UIGuestFileTable.h \
-	src/runtime/guestctrl/UIGuestProcessControlDialog.h \
-	src/runtime/guestctrl/UIGuestProcessControlWidget.h \
-	src/runtime/guestctrl/UIHostFileTable.h \
+	src/guestctrl/UIGuestControlConsole.h \
+	src/guestctrl/UIGuestControlFileManager.h \
+	src/guestctrl/UIGuestControlFileManagerDialog.h \
+	src/guestctrl/UIGuestControlFileModel.h \
+	src/guestctrl/UIGuestControlFileTable.h \
+	src/guestctrl/UIGuestControlInterface.h \
+	src/guestctrl/UIGuestControlTreeItem.h \
+	src/guestctrl/UIGuestFileTable.h \
+	src/guestctrl/UIGuestProcessControlDialog.h \
+	src/guestctrl/UIGuestProcessControlWidget.h \
+	src/guestctrl/UIHostFileTable.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -988,17 +988,17 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationRuntime.h \
 	src/runtime/information/UIInformationView.h \
 	src/runtime/information/UIVMInformationDialog.h \
-	src/runtime/guestctrl/UIGuestControlConsole.h \
-	src/runtime/guestctrl/UIGuestControlFileManager.h \
-	src/runtime/guestctrl/UIGuestControlFileManagerDialog.h \
-	src/runtime/guestctrl/UIGuestControlFileModel.h \
-	src/runtime/guestctrl/UIGuestControlFileTable.h \
-	src/runtime/guestctrl/UIGuestControlInterface.h \
-	src/runtime/guestctrl/UIGuestControlTreeItem.h \
-	src/runtime/guestctrl/UIGuestFileTable.h \
-	src/runtime/guestctrl/UIGuestProcessControlDialog.h \
-	src/runtime/guestctrl/UIGuestProcessControlWidget.h \
-	src/runtime/guestctrl/UIHostFileTable.h \
+	src/guestctrl/UIGuestControlConsole.h \
+	src/guestctrl/UIGuestControlFileManager.h \
+	src/guestctrl/UIGuestControlFileManagerDialog.h \
+	src/guestctrl/UIGuestControlFileModel.h \
+	src/guestctrl/UIGuestControlFileTable.h \
+	src/guestctrl/UIGuestControlInterface.h \
+	src/guestctrl/UIGuestControlTreeItem.h \
+	src/guestctrl/UIGuestFileTable.h \
+	src/guestctrl/UIGuestProcessControlDialog.h \
+	src/guestctrl/UIGuestProcessControlWidget.h \
+	src/guestctrl/UIHostFileTable.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -1213,11 +1213,11 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
-	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestFileTable.cpp \
-	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
-	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/guestctrl/UIGuestControlFileManager.cpp \
+	src/guestctrl/UIGuestControlFileTable.cpp \
+	src/guestctrl/UIGuestFileTable.cpp \
+	src/guestctrl/UIGuestProcessControlWidget.cpp \
+	src/guestctrl/UIHostFileTable.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
@@ -1263,11 +1263,11 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
-	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestFileTable.cpp \
-	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
-	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/guestctrl/UIGuestControlFileManager.cpp \
+	src/guestctrl/UIGuestControlFileTable.cpp \
+	src/guestctrl/UIGuestFileTable.cpp \
+	src/guestctrl/UIGuestProcessControlWidget.cpp \
+	src/guestctrl/UIHostFileTable.cpp \
 	src/widgets/UIMiniToolBar.cpp
 
 
@@ -1536,17 +1536,17 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationRuntime.cpp \
 	src/runtime/information/UIInformationView.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
-	src/runtime/guestctrl/UIGuestControlConsole.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManagerDialog.cpp \
-	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
-	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestControlInterface.cpp \
-	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
-	src/runtime/guestctrl/UIGuestFileTable.cpp \
-	src/runtime/guestctrl/UIGuestProcessControlDialog.cpp \
-	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
-	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/guestctrl/UIGuestControlConsole.cpp \
+	src/guestctrl/UIGuestControlFileManager.cpp \
+	src/guestctrl/UIGuestControlFileManagerDialog.cpp \
+	src/guestctrl/UIGuestControlFileModel.cpp \
+	src/guestctrl/UIGuestControlFileTable.cpp \
+	src/guestctrl/UIGuestControlInterface.cpp \
+	src/guestctrl/UIGuestControlTreeItem.cpp \
+	src/guestctrl/UIGuestFileTable.cpp \
+	src/guestctrl/UIGuestProcessControlDialog.cpp \
+	src/guestctrl/UIGuestProcessControlWidget.cpp \
+	src/guestctrl/UIHostFileTable.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
@@ -1710,17 +1710,17 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/information/UIInformationRuntime.cpp \
 	src/runtime/information/UIInformationView.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
-	src/runtime/guestctrl/UIGuestControlConsole.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManagerDialog.cpp \
-	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
-	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestControlInterface.cpp \
-	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
-	src/runtime/guestctrl/UIGuestFileTable.cpp \
-	src/runtime/guestctrl/UIGuestProcessControlWidget.cpp \
-	src/runtime/guestctrl/UIGuestProcessControlDialog.cpp \
-	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/guestctrl/UIGuestControlConsole.cpp \
+	src/guestctrl/UIGuestControlFileManager.cpp \
+	src/guestctrl/UIGuestControlFileManagerDialog.cpp \
+	src/guestctrl/UIGuestControlFileModel.cpp \
+	src/guestctrl/UIGuestControlFileTable.cpp \
+	src/guestctrl/UIGuestControlInterface.cpp \
+	src/guestctrl/UIGuestControlTreeItem.cpp \
+	src/guestctrl/UIGuestFileTable.cpp \
+	src/guestctrl/UIGuestProcessControlWidget.cpp \
+	src/guestctrl/UIGuestProcessControlDialog.cpp \
+	src/guestctrl/UIHostFileTable.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
