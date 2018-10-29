@@ -188,6 +188,13 @@
  *
  *      - You can compile individual source files: kmk ConsoleImpl.o
  *
+ *      - You can tell kmk to continue on failure: kmk -k
+ *
+ *      - You can tell kmk to run at low priority: kmk --nice
+ *
+ *      - The --pretty-command-printing option is useful for seeing exactly
+ *        what's passed to the tools.
+ *
  *      - You can invoke recipes in the root makefile more efficiently via the
  *        Maintenance.kmk file: kmk -f Maintenance.kmk incs
  *
