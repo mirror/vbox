@@ -429,6 +429,7 @@ int UIChooserItemMachine::minimumWidthHint() const
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
+    const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
@@ -448,7 +449,7 @@ int UIChooserItemMachine::minimumWidthHint() const
                             iMajorSpacing +
                             iMiddleColumnWidth +
                             iMajorSpacing +
-                            m_toolsPixmapSize.width();
+                            m_toolsPixmapSize.width() + 2 * iButtonMargin;
     iProposedWidth += iMachineItemWidth;
 
     /* Return result: */
@@ -458,8 +459,9 @@ int UIChooserItemMachine::minimumWidthHint() const
 int UIChooserItemMachine::minimumHeightHint() const
 {
     /* Prepare variables: */
-    int iMargin = data(MachineItemData_Margin).toInt();
-    int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
+    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
+    const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
@@ -473,7 +475,7 @@ int UIChooserItemMachine::minimumHeightHint() const
                               iMachineItemTextSpacing +
                               iBottomLineHeight;
     QList<int> heights;
-    heights << m_pixmapSize.height() << iMiddleColumnHeight << m_toolsPixmapSize.height();
+    heights << m_pixmapSize.height() << iMiddleColumnHeight << m_toolsPixmapSize.height() + 2 * iButtonMargin;
     int iMaxHeight = 0;
     foreach (int iHeight, heights)
         iMaxHeight = qMax(iMaxHeight, iHeight);
@@ -495,11 +497,11 @@ QSizeF UIChooserItemMachine::sizeHint(Qt::SizeHint enmWhich, const QSizeF &const
 QPixmap UIChooserItemMachine::toPixmap()
 {
     /* Ask item to paint itself into pixmap: */
-    QSize minimumSize = minimumSizeHint().toSize();
-    QPixmap pixmap(minimumSize);
+    const QSize actualSize = size().toSize();
+    QPixmap pixmap(actualSize);
     QPainter painter(&pixmap);
     QStyleOptionGraphicsItem options;
-    options.rect = QRect(QPoint(0, 0), minimumSize);
+    options.rect = QRect(QPoint(0, 0), actualSize);
     paint(&painter, &options);
     return pixmap;
 }
@@ -776,14 +778,19 @@ void UIChooserItemMachine::updateSnapshotName()
 void UIChooserItemMachine::updateFirstRowMaximumWidth()
 {
     /* Prepare variables: */
-    int iMargin = data(MachineItemData_Margin).toInt();
-    int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+    const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
+    const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Calculate new maximum width for the first row: */
     int iFirstRowMaximumWidth = (int)geometry().width();
+    iFirstRowMaximumWidth -= iParentIndent * level();
     iFirstRowMaximumWidth -= iMargin; /* left margin */
-    iFirstRowMaximumWidth -= m_pixmapSize.width(); /* pixmap width */
-    iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between pixmap and name(s) */
+    iFirstRowMaximumWidth -= m_pixmapSize.width(); /* left pixmap width */
+    iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between left pixmap and name(s) */
+    iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between name(s) and right pixmap */
+    iFirstRowMaximumWidth -= m_toolsPixmapSize.width() + 2 * iButtonMargin; /* right pixmap width */
     iFirstRowMaximumWidth -= iMargin; /* right margin */
 
     /* Is there something changed? */
