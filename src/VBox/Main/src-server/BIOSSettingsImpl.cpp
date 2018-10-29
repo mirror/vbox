@@ -1,11 +1,11 @@
 /* $Id$ */
 /** @file
  *
- * VirtualBox COM class implementation
+ * VirtualBox COM class implementation - Machine BIOS settings.
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,7 +66,7 @@ void BIOSSettings::FinalRelease()
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the audio adapter object.
+ * Initializes the BIOS settings object.
  *
  * @returns COM result indicator
  */
@@ -95,7 +95,7 @@ HRESULT BIOSSettings::init(Machine *aParent)
 }
 
 /**
- *  Initializes the audio adapter object given another audio adapter object
+ *  Initializes the BIOS settings object given another BIOS settings object
  *  (a kind of copy constructor). This object shares data with
  *  the object passed as an argument.
  *
