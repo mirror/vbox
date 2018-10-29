@@ -2073,6 +2073,8 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          DECL_NO_INLINE(type)=type \
                          DECL_NO_RETURN(type)=type \
                          DECLCALLBACK(type)=type \
+                         RT_ASM_DECL_PRAGMA_WATCOM(type)=type \
+                         RT_ASM_DECL_PRAGMA_WATCOM_386(type)=type \
                          AssertCompile(expr) \
                          AssertCompileSize(a,b) \
                          AssertCompileSizeAlignment(a,b) \
