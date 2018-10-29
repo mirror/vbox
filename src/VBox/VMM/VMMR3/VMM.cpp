@@ -112,7 +112,9 @@
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/nem.h>
-#include <VBox/vmm/iem.h>
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# include <VBox/vmm/iem.h>
+#endif
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/selm.h>
@@ -1579,6 +1581,7 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
 
 
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (CPUMIsGuestInVmxRootMode(pCtx))
     {
         /* If the CPU is in VMX non-root mode we must cause a VM-exit. */
@@ -1588,6 +1591,7 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
         /* If the CPU is in VMX root mode (and not in VMX non-root mode) SIPIs are blocked. */
         return VINF_SUCCESS;
     }
+#endif
 
     pCtx->cs.Sel        = uVector << 8;
     pCtx->cs.ValidSel   = uVector << 8;
@@ -1627,9 +1631,11 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
      *        wait-for-SIPI state. Verify. */
 
     /* If the CPU is in VMX non-root mode, INIT signals cause VM-exits. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
         return IEMExecVmxVmexitInitIpi(pVCpu);
+#endif
 
     /** @todo Figure out how to handle a nested-guest intercepts here for INIT
      *  IPI (e.g. SVM_EXIT_INIT). */
