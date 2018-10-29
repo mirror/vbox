@@ -1118,10 +1118,11 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Video Capture:</emphasis> On the
-          <emphasis role="bold">Video Capture</emphasis> tab you can
-          enable video capturing for this VM. Note that this feature can
-          also be enabled/disabled while the VM is executed.
+          <emphasis role="bold">Capture:</emphasis> On the
+          <emphasis role="bold">Capture</emphasis> tab you can
+          enable video and audio capturing, as well as changing related options
+          for this VM. Note that these features can also be enabled/disabled
+          while the VM is being executed.
         </para>
       </listitem>
 

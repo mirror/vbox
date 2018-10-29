@@ -4200,12 +4200,12 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
         <varlistentry>
           <term>
-            <computeroutput>VideoCapture</computeroutput>
+            <computeroutput>Capture</computeroutput>
           </term>
 
           <listitem>
             <para>
-              Do not show the video capture icon in the status bar.
+              Do not show the capture icon in the status bar.
             </para>
           </listitem>
         </varlistentry>
