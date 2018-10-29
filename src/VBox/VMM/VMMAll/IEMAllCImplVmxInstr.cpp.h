@@ -3778,6 +3778,39 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to startup-IPIs (SIPI).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uVector     The SIPI vector.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    iemVmxVmcsSetExitQual(pVCpu, uVector);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_SIPI);
+}
+
+
+/**
+ * VMX VM-exit handler for VM-exits due to init-IPIs (INIT).
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInitIpi(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    iemVmxVmcsSetExitQual(pVCpu, 0);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_INIT_SIGNAL);
+}
+
+
+/**
  * VMX VM-exit handler for interrupt-window VM-exits.
  *
  * @returns VBox strict status code.

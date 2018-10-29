@@ -979,6 +979,8 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uin
                                               uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitInitIpi(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitIntWindow(PVMCPU pVCpu);
 #endif
 
@@ -15654,6 +15656,41 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector,
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitExtInt(pVCpu, uVector, fIntPending);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate VM-exit due to startup-IPI (SIPI).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   uVector         The SIPI vector.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitStartupIpi(pVCpu, uVector);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate VM-exit due to init-IPI (INIT).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInitIpi(PVMCPU pVCpu)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitInitIpi(pVCpu);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
