@@ -11995,7 +11995,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
      * (Should probably do it lazy fashion from CPUMAllMsrs.cpp). */
     uint32_t const idMsr = pVCpu->cpum.GstCtx.ecx; /* Save it. */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS);
+    rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK
+                                             | CPUMCTX_EXTRN_ALL_MSRS | CPUMCTX_EXTRN_FS | CPUMCTX_EXTRN_GS);
     AssertRCReturn(rc, rc);
 
     Log4Func(("ecx=%#RX32 edx:eax=%#RX32:%#RX32\n", idMsr, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.eax));
