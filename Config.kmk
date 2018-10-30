@@ -3620,7 +3620,14 @@ ifdef VBOX_SIGNING_MODE
   endif
 
   # The above version with complicated requirements is what Xcode 5.0.1GM suggest for kexts.
-  VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
+  ifdef VBOX_WITH_CORP_CODE_SIGNING
+   ## @todo cannot handle $(2), the identifier. $(3) is hopefully either empty or --deep
+   VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
+    ditto -c -k $(1) $(1).zip$(NLTAB) \
+    $(call VBOX_CCS_SIGN_CMD,apple,$(1),,$(3))$(NLTAB) \
+	ditto -x -k $(1).zip $(1)
+  else
+   VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
@@ -3628,6 +3635,7 @@ ifdef VBOX_SIGNING_MODE
        $(3) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) $(if $(2),--identifier "$(2)",)
+  endif
 
   ## Sign a Mach-O image.
   # @param 1  The bundle to sign.
