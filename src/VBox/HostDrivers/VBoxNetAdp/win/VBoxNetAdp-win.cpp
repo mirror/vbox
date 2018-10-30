@@ -525,9 +525,7 @@ DECLHIDDEN(PINTNETSG) vboxNetAdpWinNBtoSG(PVBOXNETADP_ADAPTER pThis, PNET_BUFFER
             return NULL;
         }
 
-        if (cbSrc > cbPacket)
-            cbSrc = cbPacket;
-
+        /* Handle the offset in the current (which is the first for us) MDL */
         if (uOffset)
         {
             if (uOffset < cbSrc)
@@ -538,10 +536,15 @@ DECLHIDDEN(PINTNETSG) vboxNetAdpWinNBtoSG(PVBOXNETADP_ADAPTER pThis, PNET_BUFFER
             }
             else
             {
-                uOffset -= cbSrc;
-                continue;
+                /* This is an invalid MDL chain */
+                vboxNetAdpWinDestroySG(pSG);
+                return NULL;
             }
         }
+
+        /* Do not read the last MDL beyond packet's end */
+        if (cbSrc > cbPacket)
+            cbSrc = cbPacket;
 
         Assert(cSegs < pSG->cSegsAlloc);
         pSG->aSegs[cSegs].pv = pSrc;
