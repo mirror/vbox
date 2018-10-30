@@ -910,6 +910,8 @@ endif
 
 # Continue to support Vista w/o any service pack, at least for now.
 VBOX_WITH_VISTA_NO_SP = 1
+# Enable image verification on darwin @bugref{9232}.
+VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION = 1
 ## @}
 
 
