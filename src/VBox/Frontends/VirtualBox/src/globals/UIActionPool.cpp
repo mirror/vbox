@@ -2540,8 +2540,7 @@ void UIActionPool::updateMenuGuestControlFileManager()
     updateMenuGuestControlFileManagerWrapper(action(UIActionIndex_M_GuestControlFileManager)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndex_M_Log);
-
+    m_invalidations.remove(UIActionIndex_M_GuestControlFileManager);
 }
 
 void UIActionPool::updateMenuGuestControlFileManagerWrapper(UIMenu *pMenu)
