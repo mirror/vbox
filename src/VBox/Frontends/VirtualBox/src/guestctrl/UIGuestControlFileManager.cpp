@@ -352,8 +352,6 @@ UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIAct
     , m_pVerticalSplitter(0)
     , m_pLogOutput(0)
     , m_pToolBar(0)
-    , m_pCopyGuestToHost(0)
-    , m_pCopyHostToGuest(0)
     , m_pFileTableContainerWidget(0)
     , m_pFileTableContainerLayout(0)
     , m_pTabWidget(0)
@@ -391,25 +389,9 @@ QMenu *UIGuestControlFileManager::menu() const
 
 void UIGuestControlFileManager::retranslateUi()
 {
-    if (m_pCopyGuestToHost)
-    {
-        m_pCopyGuestToHost->setText(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from guest to host"));
-        m_pCopyGuestToHost->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from guest to host"));
-        m_pCopyGuestToHost->setStatusTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from guest to host"));
-    }
-
-    if (m_pCopyHostToGuest)
-    {
-        m_pCopyHostToGuest->setText(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from host to guest"));
-        m_pCopyHostToGuest->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from host to guest"));
-        m_pCopyHostToGuest->setStatusTip(QApplication::translate("UIGuestProcessControlWidget", "Copy the selected object(s) from host to guest"));
-    }
-
-
     m_pTabWidget->setTabText(0, QApplication::translate("UIGuestProcessControlWidget", "Log"));
     m_pTabWidget->setTabText(1, QApplication::translate("UIGuestProcessControlWidget", "File Operations"));
     m_pTabWidget->setTabText(2, QApplication::translate("UIGuestProcessControlWidget", "Terminal"));
-
 }
 
 void UIGuestControlFileManager::prepareGuestListener()
@@ -522,24 +504,15 @@ void UIGuestControlFileManager::prepareToolBar()
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
 
-    m_pCopyGuestToHost = new QAction(this);
-    if(m_pCopyGuestToHost)
-    {
-        m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
-        connect(m_pCopyGuestToHost, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyGuestToHost);
-    }
-
-    m_pCopyHostToGuest = new QAction(this);
-    if (m_pCopyHostToGuest)
-    {
-        m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
-        connect(m_pCopyHostToGuest, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyHostToGuest);
-    }
-
     m_pToolBar->addWidget(topSpacerWidget);
-    m_pToolBar->addAction(m_pCopyGuestToHost);
-    m_pToolBar->addAction(m_pCopyHostToGuest);
+    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost));
+    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest));
     m_pToolBar->addWidget(bottomSpacerWidget);
+
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost), &QAction::triggered,
+            this, &UIGuestControlFileManager::sltCopyHostToGuest);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest), &QAction::triggered,
+            this, &UIGuestControlFileManager::sltCopyGuestToHost);
 
     m_pFileTableContainerLayout->addWidget(m_pToolBar);
 }

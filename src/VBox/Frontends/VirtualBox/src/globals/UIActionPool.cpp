@@ -1246,7 +1246,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Find"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with searching options"));
-        setToolTip(tr("Open Find Pane (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Find Pane (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1285,7 +1285,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Filter"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with filtering options"));
-        setToolTip(tr("Open Filter Pane (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Filter Pane (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1324,7 +1324,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Bookmark"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with bookmarking options"));
-        setToolTip(tr("Open Bookmark Pane (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Bookmark Pane (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1363,7 +1363,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Settings"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer settings"));
-        setToolTip(tr("Open Settings Pane (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Settings Pane (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1402,7 +1402,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh selected virtual machine log"));
-        setToolTip(tr("Refresh Virtual Machine Log (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Refresh Virtual Machine Log (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1441,7 +1441,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Save..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Save selected virtual machine log"));
-        setToolTip(tr("Save Virtual Machine Log (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Save Virtual Machine Log (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1528,6 +1528,79 @@ protected:
 };
 
 
+/** Simple action extension, used as 'Copy to Guest' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerCopyToGuest : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerCopyToGuest(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/arrow_left_10px_x2.png", ":/arrow_left_disabled_10px_x2.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerCopyToGuest");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Copy the selected object(s) from host to guest"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setToolTip(QApplication::translate("UIActionPool", "Copy the Selected Object(s) from Host to Guest"));
+        setStatusTip(QApplication::translate("UIActionPool", "Copy the selected object(s) from host to guest"));
+    }
+};
+
+/** Simple action extension, used as 'Copy to Host' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerCopyToHost : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerCopyToHost(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/arrow_right_10px_x2.png", ":/arrow_right_disabled_10px_x2.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerCopyToHost");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Copy the selected object(s) from guest to host"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setToolTip(QApplication::translate("UIActionPool", "Copy the Selected Object(s) from Guest to Host"));
+        setStatusTip(QApplication::translate("UIActionPool", "Copy the selected object(s) from guest to host"));
+    }
+};
+
+
 /** Simple action extension, used as 'File Manager Settings' in guest control file manager action class. */
 class UIActionMenuGuestControlFileManagerSettings : public UIActionSimple
 {
@@ -1560,7 +1633,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Settings"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Modify file manager settings"));
-        setToolTip(tr("Modify File Manager Settings"));
+        setToolTip(QApplication::translate("UIActionPool", "Modify File Manager Settings"));
     }
 };
 /** Simple action extension, used as 'Perform GoUp' in guest control file manager action class. */
@@ -1595,7 +1668,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "GoUp"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Go one level up to parent folder"));
-        setToolTip(tr("Go One Level Up to Parent Folder"));
+        setToolTip(QApplication::translate("UIActionPool", "Go One Level Up to Parent Folder"));
     }
 };
 
@@ -1632,7 +1705,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "GoHome"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Go to home folder"));
-        setToolTip(tr("Go to Home Folder"));
+        setToolTip(QApplication::translate("UIActionPool", "Go to Home Folder"));
     }
 };
 
@@ -1669,7 +1742,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Delete"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Delete selected file object(s)"));
-        setToolTip(tr("Delete Selected File Object(s)"));
+        setToolTip(QApplication::translate("UIActionPool", "Delete Selected File Object(s)"));
     }
 };
 
@@ -1705,7 +1778,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh"));
-        setToolTip(tr("Refresh"));
+        setToolTip(QApplication::translate("UIActionPool", "Refresh"));
     }
 };
 
@@ -1741,7 +1814,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Rename"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Rename"));
-        setToolTip(tr("Rename"));
+        setToolTip(QApplication::translate("UIActionPool", "Rename"));
     }
 };
 
@@ -1776,7 +1849,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "CreateNewDirectory"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Create New Directory"));
-        setToolTip(tr("Create New Directory"));
+        setToolTip(QApplication::translate("UIActionPool", "Create New Directory"));
     }
 };
 
@@ -1812,7 +1885,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Copy"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Copy selected file object(s)"));
-        setToolTip(tr("Copy Selected File Object(s)"));
+        setToolTip(QApplication::translate("UIActionPool", "Copy Selected File Object(s)"));
     }
 };
 
@@ -1847,7 +1920,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Cut"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Cut selected file object(s)"));
-        setToolTip(tr("Cut Selected File Object(s)"));
+        setToolTip(QApplication::translate("UIActionPool", "Cut Selected File Object(s)"));
     }
 };
 
@@ -1882,7 +1955,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Paste"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Paste copied/cut file object(s)"));
-        setToolTip(tr("Paste Copied/Cut File Object(s)"));
+        setToolTip(QApplication::translate("UIActionPool", "Paste Copied/Cut File Object(s)"));
     }
 };
 
@@ -1917,7 +1990,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "SelectAll"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Select all files objects"));
-        setToolTip(tr("Select All Files Objects"));
+        setToolTip(QApplication::translate("UIActionPool", "Select All Files Objects"));
     }
 };
 
@@ -1953,7 +2026,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "InvertSelection"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Invert the current selection"));
-        setToolTip(tr("Invert The Current Selection"));
+        setToolTip(QApplication::translate("UIActionPool", "Invert The Current Selection"));
     }
 };
 
@@ -1989,7 +2062,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "ShowProperties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Show the properties of currently selected file object(s)"));
-        setToolTip(tr("Show the Properties of Currently Selected File Object(s)"));
+        setToolTip(QApplication::translate("UIActionPool", "Show the Properties of Currently Selected File Object(s)"));
     }
 };
 
@@ -2206,6 +2279,9 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_GuestControlFileManager] = new UIActionMenuGuestControlFileManager(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_M_HostSubmenu] = new UIActionMenuGuestControlFileManagerHostSubmenu(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu] = new UIActionMenuGuestControlFileManagerGuestSubmenu(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_CopyToGuest] = new  UIActionMenuGuestControlFileManagerCopyToGuest(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_CopyToHost] = new  UIActionMenuGuestControlFileManagerCopyToHost(this);
+
     m_pool[UIActionIndex_M_GuestControlFileManager_S_Settings] = new UIActionMenuGuestControlFileManagerSettings(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_Host_GoUp] = new UIActionMenuGuestControlFileManagerGoUp(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp] = new UIActionMenuGuestControlFileManagerGoUp(this);
