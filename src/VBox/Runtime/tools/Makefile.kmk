@@ -56,7 +56,7 @@ if !defined(VBOX_ONLY_DOCS)
  bldRTManifest_SOURCES  = RTManifest.cpp
 
 
- if !defined(VBOX_ONLY_EXTPACKS) || "$(KBUILD_TARGET)" == "win"
+ if !defined(VBOX_ONLY_EXTPACKS) || "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "darwin"
   # RTSignTool - Signing utility - build version.  Signed on windows so we can get the certificate from it.
   BLDPROGS += bldRTSignTool
   bldRTSignTool_TEMPLATE = VBoxAdvBldProg
