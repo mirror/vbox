@@ -111,7 +111,9 @@ endif
 $$(VBOX_SUP_WIN_CERTS_FILE): $(MAKEFILE_CURRENT) \
 		$(foreach cert,$(VBOX_SUP_WIN_CERTS),$(VBOX_PATH_SUPR3_CERTIFICATES)/$(lastword $(subst =,$(SPACE) ,$(cert)))) \
 		$(VBOX_BIN2C) \
-		$(if-expr  "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING),$(VBOX_RTSIGNTOOL)) \
+		$(if-expr  ("$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING)) \
+		        || ("$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION) && defined(VBOX_SIGNING_MODE)) \
+		,$(VBOX_RTSIGNTOOL)) \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@ $@.cer
 	$(QUIET)$(APPEND) -n "$@" \
