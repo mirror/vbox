@@ -153,7 +153,7 @@ protected:
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence("Ctrl+F");
+        return QKeySequence("Ctrl+P");
     }
 
     /** Handles translation event. */
@@ -422,12 +422,6 @@ protected:
         return QString("RenameVMGroup");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+M");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
@@ -454,12 +448,6 @@ protected:
     virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("AddVMGroup");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+U");
     }
 
     /** Handles translation event. */
@@ -612,12 +600,6 @@ protected:
         return QString("AddVMGroup");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+U");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
@@ -718,14 +700,6 @@ protected:
         return QString("MoveVM");
     }
 
-#if 0 /* conflict with RenameVMGroup action to be resolved first */
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+M");
-    }
-#endif /* conflict with RenameVMGroup action to be resolved first */
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
@@ -754,12 +728,6 @@ protected:
     virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("RemoveVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+R");
     }
 
     /** Handles translation event. */
@@ -956,12 +924,6 @@ protected:
         return QString("PauseVM");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+P");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
@@ -988,12 +950,6 @@ protected:
     virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ResetVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+T");
     }
 
     /** Handles translation event. */
@@ -1024,12 +980,6 @@ protected:
     virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("DiscardVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+J");
     }
 
     /** Handles translation event. */
