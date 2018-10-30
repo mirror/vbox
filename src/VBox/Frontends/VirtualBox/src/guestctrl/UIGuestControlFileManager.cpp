@@ -57,36 +57,27 @@
 # include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIGuestControlFileManagerSettings *UIGuestControlFileManagerSettings::m_pInstance = 0;
+/*********************************************************************************************************************************
+*   UIFileManagerLogViewer definition.                                                                                   *
+*********************************************************************************************************************************/
 
-UIGuestControlFileManagerSettings* UIGuestControlFileManagerSettings::instance()
-{
-    return m_pInstance;
-}
-
-void UIGuestControlFileManagerSettings::create()
-{
-    if (m_pInstance)
-        return;
-    m_pInstance = new UIGuestControlFileManagerSettings;
-}
-
-void UIGuestControlFileManagerSettings::destroy()
-{
-    delete m_pInstance;
-    m_pInstance = 0;
-}
-
- UIGuestControlFileManagerSettings::~UIGuestControlFileManagerSettings()
+class UIFileManagerLogViewer : public QTextEdit
 {
 
-}
+    Q_OBJECT;
 
-UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
-    : bListDirectoriesOnTop(true)
-    , bAskDeleteConfirmation(false)
-{
-}
+public:
+
+    UIFileManagerLogViewer(QWidget *pParent = 0);
+
+protected:
+
+    virtual void contextMenuEvent(QContextMenuEvent * event) /* override */;
+
+private slots:
+
+    void sltClear();
+};
 
 /*********************************************************************************************************************************
 *   UIFileOperationsList definition.                                                                                   *
@@ -141,6 +132,67 @@ private:
     QCheckBox    *m_pShowPasswordCheckBox;
 
 };
+
+/*********************************************************************************************************************************
+*   UIFileManagerLogViewer implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIFileManagerLogViewer::UIFileManagerLogViewer(QWidget *pParent /* = 0 */)
+    :QTextEdit(pParent)
+{
+}
+
+void UIFileManagerLogViewer::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu *menu = createStandardContextMenu();
+    void sltClear();
+
+    QAction *pClearAction = menu->addAction(tr("Clear"));
+    connect(pClearAction, &QAction::triggered, this, &UIFileManagerLogViewer::sltClear);
+    menu->exec(event->globalPos());
+    delete menu;
+}
+
+void UIFileManagerLogViewer::sltClear()
+{
+    clear();
+}
+
+
+/*********************************************************************************************************************************
+*   UIGuestControlFileManagerSettings implementation.                                                                            *
+*********************************************************************************************************************************/
+
+UIGuestControlFileManagerSettings *UIGuestControlFileManagerSettings::m_pInstance = 0;
+
+UIGuestControlFileManagerSettings* UIGuestControlFileManagerSettings::instance()
+{
+    return m_pInstance;
+}
+
+void UIGuestControlFileManagerSettings::create()
+{
+    if (m_pInstance)
+        return;
+    m_pInstance = new UIGuestControlFileManagerSettings;
+}
+
+void UIGuestControlFileManagerSettings::destroy()
+{
+    delete m_pInstance;
+    m_pInstance = 0;
+}
+
+ UIGuestControlFileManagerSettings::~UIGuestControlFileManagerSettings()
+{
+
+}
+
+UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
+    : bListDirectoriesOnTop(true)
+    , bAskDeleteConfirmation(false)
+{
+}
 
 /*********************************************************************************************************************************
 *   UIFileOperationsList implementation.                                                                                   *
@@ -435,7 +487,7 @@ void UIGuestControlFileManager::prepareObjects()
         m_pTabWidget->setTabPosition(QTabWidget::South);
     }
 
-    m_pLogOutput = new QTextEdit;
+    m_pLogOutput = new UIFileManagerLogViewer;
     if (m_pLogOutput)
     {
         m_pTabWidget->addTab(m_pLogOutput, "Log");

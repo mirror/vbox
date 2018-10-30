@@ -335,10 +335,10 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
 
 void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
 {
-    QVector<QString> sourcePaths;// = selectedItemPathList().toVector();
+    QVector<QString> sourcePaths = selectedItemPathList().toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
-    sourcePaths.append("opt/VBoxGuestAdditions-5.2.97/bin/");
+
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
     if (!m_comGuestSession.isOk())
     {
