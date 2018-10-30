@@ -27,9 +27,7 @@
 #include "UIChooserItem.h"
 
 /* Forward declarations: */
-class QGraphicsProxyWidget;
 class QGraphicsScene;
-class QLineEdit;
 class QMenu;
 class QMimeData;
 class QPainter;
@@ -345,9 +343,7 @@ private:
         UIGraphicsButton        *m_pExitButton;
 
         /** Holds the group name editor instance. */
-        UIEditorGroupRename  *m_pNameEditorWidget;
-        /** Holds the group name editor proxy instance. */
-        QGraphicsProxyWidget *m_pNameEditor;
+        UIEditorGroupRename *m_pNameEditorWidget;
     /** @} */
 
     /** @name Children stuff.
@@ -409,39 +405,21 @@ signals:
 
 public:
 
-    /** Constructs group editor with initial @a strName passing @a pParent to the base-class. */
-    UIEditorGroupRename(const QString &strName, UIChooserItem *pParent);
+    /** Constructs group editor with initial @a strName. */
+    UIEditorGroupRename(const QString &strName);
 
-    /** Defines editor @a strText. */
-    void setText(const QString &strText);
     /** Returns editor text. */
     QString text() const;
+    /** Defines editor @a strText. */
+    void setText(const QString &strText);
 
     /** Defines editor @a font. */
     void setFont(const QFont &font);
 
-public slots:
-
-    /** ACquires keyboard focus. */
-    void setFocus();
-
-protected:
-
-    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-
 private:
-
-    /** Handles context-menu @a pEvent. */
-    void handleContextMenuEvent(QContextMenuEvent *pEvent);
-
-    /** Holds the parent reference. */
-    UIChooserItem *m_pParent;
 
     /** Holds the line-edit instance. */
     QLineEdit *m_pLineEdit;
-    /** Holds the conect-menu instance. */
-    QMenu     *m_pTemporaryMenu;
 };
 
 

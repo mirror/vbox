@@ -57,7 +57,6 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
 {
     /* Prepare: */
     prepare();
@@ -89,7 +88,6 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene,
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
 {
     /* Prepare: */
     prepare();
@@ -124,7 +122,6 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
 {
     /* Prepare: */
     prepare();
@@ -170,7 +167,6 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
 {
     /* Prepare: */
     prepare();
@@ -388,9 +384,21 @@ void UIChooserItemGroup::startEditing()
     if (model()->isGroupSavingInProgress())
         return;
 
-    /* Unlock name-editor: */
-    m_pNameEditor->show();
+    /* Assign name-editor text: */
     m_pNameEditorWidget->setText(name());
+
+    /* Layout name-editor: */
+    const int iMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+    const QSize headerSize = QSize(geometry().width(), iHeaderHeight);
+    const QGraphicsView *pView = model()->scene()->views().first();
+    const QPoint viewPoint = pView->mapFromScene(geometry().topLeft().toPoint());
+    const QPoint globalPoint = pView->parentWidget()->mapToGlobal(viewPoint);
+    m_pNameEditorWidget->move(globalPoint);
+    m_pNameEditorWidget->resize(headerSize);
+
+    /* Show name-editor: */
+    m_pNameEditorWidget->show();
     m_pNameEditorWidget->setFocus();
 }
 
@@ -813,19 +821,6 @@ void UIChooserItemGroup::updateLayout()
             m_pEnterButton->setPos(iEnterButtonX, iEnterButtonY);
         }
 
-        /* Name-editor: */
-        if (m_pNameEditor && m_pNameEditorWidget)
-        {
-            /* Prepare variables: */
-            int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
-            int iToggleButtonWidth = m_toggleButtonSize.width();
-            /* Layout name-editor: */
-            int iNameEditorX = iHorizontalMargin + iToggleButtonWidth + iHeaderSpacing;
-            int iNameEditorY = 1;
-            m_pNameEditor->setPos(iNameEditorX, iNameEditorY);
-            m_pNameEditorWidget->resize((int)(geometry().width() - iNameEditorX - iHorizontalMargin), m_pNameEditorWidget->height());
-        }
-
         /* Prepare body indent: */
         iPreviousVerticalIndent = 2 * iVerticalMargin + iFullHeaderHeight;
     }
@@ -1105,8 +1100,8 @@ void UIChooserItemGroup::sltNameEditingFinished()
     if (isRoot())
         return;
 
-    /* Lock name-editor: */
-    m_pNameEditor->hide();
+    /* Close name-editor: */
+    m_pNameEditorWidget->close();
 
     /* Enumerate all the group names: */
     QStringList groupNames;
@@ -1225,13 +1220,10 @@ void UIChooserItemGroup::prepare()
         m_pEnterButton->hide();
 
         /* Setup name-editor: */
-        m_pNameEditorWidget = new UIEditorGroupRename(name(), this);
+        m_pNameEditorWidget = new UIEditorGroupRename(name());
         m_pNameEditorWidget->setFont(m_nameFont);
         connect(m_pNameEditorWidget, &UIEditorGroupRename::sigEditingFinished,
                 this, &UIChooserItemGroup::sltNameEditingFinished);
-        m_pNameEditor = new QGraphicsProxyWidget(this);
-        m_pNameEditor->setWidget(m_pNameEditorWidget);
-        m_pNameEditor->hide();
     }
     /* Items except main root: */
     if (!isMainRoot())
@@ -1878,10 +1870,9 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
 *   Class UIEditorGroupRename implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIEditorGroupRename::UIEditorGroupRename(const QString &strName, UIChooserItem *pParent)
-    : m_pParent(pParent)
+UIEditorGroupRename::UIEditorGroupRename(const QString &strName)
+    : QWidget(0, Qt::Popup)
     , m_pLineEdit(0)
-    , m_pTemporaryMenu(0)
 {
     /* Create layout: */
     QHBoxLayout *pLayout = new QHBoxLayout(this);
@@ -1894,6 +1885,8 @@ UIEditorGroupRename::UIEditorGroupRename(const QString &strName, UIChooserItem *
         m_pLineEdit = new QLineEdit(strName);
         if (m_pLineEdit)
         {
+            setFocusProxy(m_pLineEdit);
+            m_pLineEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
             m_pLineEdit->setTextMargins(0, 0, 0, 0);
             connect(m_pLineEdit, &QLineEdit::returnPressed,
                     this, &UIEditorGroupRename::sigEditingFinished);
@@ -1902,14 +1895,6 @@ UIEditorGroupRename::UIEditorGroupRename(const QString &strName, UIChooserItem *
         /* Add into layout: */
         pLayout->addWidget(m_pLineEdit);
     }
-
-    /* Install event-filter: */
-    m_pLineEdit->installEventFilter(this);
-}
-
-void UIEditorGroupRename::setText(const QString &strText)
-{
-    m_pLineEdit->setText(strText);
 }
 
 QString UIEditorGroupRename::text() const
@@ -1917,72 +1902,13 @@ QString UIEditorGroupRename::text() const
     return m_pLineEdit->text();
 }
 
+void UIEditorGroupRename::setText(const QString &strText)
+{
+    m_pLineEdit->setText(strText);
+}
+
 void UIEditorGroupRename::setFont(const QFont &font)
 {
     QWidget::setFont(font);
     m_pLineEdit->setFont(font);
 }
-
-void UIEditorGroupRename::setFocus()
-{
-    m_pLineEdit->setFocus();
-}
-
-bool UIEditorGroupRename::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    /* Process only events sent to line-edit: */
-    if (pWatched != m_pLineEdit)
-        return QWidget::eventFilter(pWatched, pEvent);
-
-    /* Handle events: */
-    switch (pEvent->type())
-    {
-        case QEvent::ContextMenu:
-        {
-            /* Handle context-menu event: */
-            handleContextMenuEvent(static_cast<QContextMenuEvent*>(pEvent));
-            /* Filter out this event: */
-            return true;
-        }
-        case QEvent::FocusOut:
-        {
-            if (!m_pTemporaryMenu)
-                emit sigEditingFinished();
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QWidget::eventFilter(pWatched, pEvent);
-}
-
-void UIEditorGroupRename::handleContextMenuEvent(QContextMenuEvent *pContextMenuEvent)
-{
-    /* Prepare variables: */
-    QGraphicsView *pView = m_pParent->model()->scene()->views().first();
-
-    /* Create context-menu: */
-    m_pTemporaryMenu = new QMenu(pView);
-    QMenu *pMenu = m_pLineEdit->createStandardContextMenu();
-    const QList<QAction*> &actions = pMenu->actions();
-    foreach (QAction *pAction, actions)
-        m_pTemporaryMenu->addAction(pAction);
-
-    /* Determine global position: */
-    QPoint subItemPos = pContextMenuEvent->pos();
-    QPoint itemPos = mapToParent(subItemPos);
-    QPointF scenePos = m_pParent->mapToScene(itemPos);
-    QPoint viewPos = pView->mapFromScene(scenePos);
-    QPoint globalPos = pView->mapToGlobal(viewPos);
-
-    /* Show context menu: */
-    m_pTemporaryMenu->exec(globalPos);
-
-    /* Delete context menu: */
-    delete m_pTemporaryMenu;
-    m_pTemporaryMenu = 0;
-    delete pMenu;
-}
-
