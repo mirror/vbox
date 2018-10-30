@@ -1233,7 +1233,26 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenImportCallback(RTLDRMOD hLdrMod, con
     PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
 
     /*
-     * Consult the SUPDrv export table first.
+     * First consult the VMMR0 module if there is one fully loaded.
+     * This is necessary as VMMR0 may overload assertion and logger symbols.
+     */
+    if (pDevExt->pvVMMR0)
+        for (PSUPDRVLDRIMAGE pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
+            if (pImage->pvImage == pDevExt->pvVMMR0)
+            {
+                if (   pImage->uState == SUP_IOCTL_LDR_LOAD
+                    && pImage->hLdrMod != NIL_RTLDRMOD)
+                {
+                    int rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pvImage, (uintptr_t)pImage->pvImage,
+                                              UINT32_MAX, pszSymbol, pValue);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                }
+                break;
+            }
+
+    /*
+     * Then we consult the SUPDrv export table.
      */
     uintptr_t uValue = 0;
     int rc = supdrvLdrGetExportedSymbol(pszSymbol, &uValue);
@@ -1242,18 +1261,6 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenImportCallback(RTLDRMOD hLdrMod, con
         *pValue = uValue;
         return VINF_SUCCESS;
     }
-
-    /*
-     * Check already loaded modules.
-     */
-    for (PSUPDRVLDRIMAGE pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
-        if (   pImage->uState == SUP_IOCTL_LDR_LOAD
-            && pImage->hLdrMod != NIL_RTLDRMOD)
-        {
-            rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pvImage, (uintptr_t)pImage->pvImage, UINT32_MAX, pszSymbol, pValue);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-        }
 
     /*
      * Failed.
