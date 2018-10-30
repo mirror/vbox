@@ -2354,7 +2354,8 @@ void UIActionPool::updateConfiguration()
 void UIActionPool::updateMenu(int iIndex)
 {
     /* Make sure index belongs to this class: */
-    AssertReturnVoid(iIndex < UIActionIndex_Max);
+    if (iIndex > UIActionIndex_Max)
+        return;
 
     /* If menu with such index is invalidated
      * and there is update-handler => handle it here: */
