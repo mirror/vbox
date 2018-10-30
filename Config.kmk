@@ -3624,7 +3624,7 @@ ifdef VBOX_SIGNING_MODE
 	--verbose=9 \
 	--force \
 	--file-list - \
-	$(if-expr VBOX_TSA_URL,--timestamp="$(VBOX_TSA_URL)") \
+	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
        $(3) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) $(if $(2),--identifier "$(2)",)
@@ -3636,7 +3636,7 @@ ifdef VBOX_SIGNING_MODE
 	--verbose=9 \
 	--force \
 	--file-list - \
-	$(if-expr VBOX_TSA_URL,--timestamp="$(VBOX_TSA_URL)") \
+	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
@@ -3653,7 +3653,7 @@ ifdef VBOX_SIGNING_MODE
 	--verbose=9 \
 	--force \
 	--file-list - \
-	$(if-expr VBOX_TSA_URL,--timestamp="$(VBOX_TSA_URL)") \
+	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
