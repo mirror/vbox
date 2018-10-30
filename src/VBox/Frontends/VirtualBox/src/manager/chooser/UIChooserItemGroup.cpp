@@ -197,6 +197,10 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
 
 UIChooserItemGroup::~UIChooserItemGroup()
 {
+    /* Delete group name editor: */
+    delete m_pNameEditorWidget;
+    m_pNameEditorWidget = 0;
+
     /* Delete all the items: */
     clearItems();
 
