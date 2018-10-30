@@ -1544,7 +1544,30 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
     if (!memcmp(pImage->pvImage, pbImageBits, pImage->cbImageBits))
         return VINF_SUCCESS;
 
-    RT_NOREF(pDevExt, pReq);
+    /*
+     * Try show what when wrong (code is copied from supdrvNtCompare).
+     */
+    uint32_t        cbLeft       = pImage->cbImageBits;
+    const uint8_t  *pbNativeBits = (const uint8_t *)pImage->pvImage;
+    for (size_t off = 0; cbLeft > 0; off++, cbLeft--)
+        if (pbNativeBits[off] != pbImageBits[off])
+        {
+            /* Note! We need to copy image bits into a temporary stack buffer here as we'd
+                     otherwise risk overwriting them while formatting the error message. */
+            uint8_t abBytes[64];
+            memcpy(abBytes, &pbImageBits[off], RT_MIN(64, cbLeft));
+            supdrvLdrLoadError(VERR_LDR_MISMATCH_NATIVE, pReq,
+                               "Mismatch at %#x (%p) of %s loaded at %p:\n"
+                               "ring-0: %.*Rhxs\n"
+                               "ring-3: %.*Rhxs",
+                               off, &pbNativeBits[off], pImage->szName, pImage->pvImage,
+                               RT_MIN(64, cbLeft), &pbNativeBits[off],
+                               RT_MIN(64, cbLeft), &abBytes[0]);
+            printf("SUPDrv: %s", pReq->u.Out.szError);
+            break;
+        }
+
+    RT_NOREF(pDevExt);
     return VERR_LDR_MISMATCH_NATIVE;
 
 #else
