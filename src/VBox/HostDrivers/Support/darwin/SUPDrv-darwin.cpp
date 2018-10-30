@@ -1570,7 +1570,7 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                                off, &pbNativeBits[off], pImage->szName, pImage->pvImage,
                                RT_MIN(64, cbLeft), &pbNativeBits[off],
                                RT_MIN(64, cbLeft), &abBytes[0]);
-            printf("SUPDrv: %s", pReq->u.Out.szError);
+            printf("SUPDrv: %s\n", pReq->u.Out.szError);
             break;
         }
 
